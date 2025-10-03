@@ -17,11 +17,11 @@
 //     `_RYML_SINGLE_HEADER_AMALGAMATED_HPP_`, ie like this:
 //     ```
 //     #ifndef _RYML_SINGLE_HEADER_AMALGAMATED_HPP_
-//     #include <ryml_all.hpp>
+//     #include <header_file_name.hpp>
 //     #endif
 //     ```
 //
-//   - In one (and only one) of your project source files, #define
+//   - In one -- and only one -- of your project source files, #define
 //     RYML_SINGLE_HDR_DEFINE_NOW and then include this header. This will enable
 //     the function and class definitions in the header file.
 //
@@ -36,7 +36,6 @@
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // LICENSE.txt
-// https://github.com/biojppm/rapidyaml/LICENSE.txt
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -91,7 +90,6 @@
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/c4core_all.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/c4core_all.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -122,7 +120,6 @@
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // LICENSE.txt
-// https://github.com/biojppm/c4core/LICENSE.txt
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -158,7 +155,6 @@
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/export.hpp
-// https://github.com/biojppm/c4core/src/c4/export.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -182,14 +178,13 @@
 #endif /* C4CORE_EXPORT_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/export.hpp)
+// (end src/c4/export.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/version.hpp
-// https://github.com/biojppm/c4core/src/c4/version.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -198,13 +193,13 @@
 
 /** @file version.hpp */
 
-#define C4CORE_VERSION "0.2.6"
+#define C4CORE_VERSION "0.2.7"
 #define C4CORE_VERSION_MAJOR 0
 #define C4CORE_VERSION_MINOR 2
-#define C4CORE_VERSION_PATCH 6
+#define C4CORE_VERSION_PATCH 7
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/export.hpp
+// c4/export.hpp
 //#include <c4/export.hpp>
 #if !defined(C4_EXPORT_HPP_) && !defined(_C4_EXPORT_HPP_)
 #error "amalgamate: file c4/export.hpp must have been included at this point"
@@ -223,14 +218,13 @@ C4CORE_EXPORT int version_patch();
 #endif /* _C4_VERSION_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/version.hpp)
+// (end src/c4/version.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/preprocessor.hpp
-// https://github.com/biojppm/c4core/src/c4/preprocessor.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -359,14 +353,13 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 #endif /* _C4_PREPROCESSOR_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/preprocessor.hpp)
+// (end src/c4/preprocessor.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/platform.hpp
-// https://github.com/biojppm/c4core/src/c4/platform.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -418,14 +411,13 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 #endif /* _C4_PLATFORM_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/platform.hpp)
+// (end src/c4/platform.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/cpu.hpp
-// https://github.com/biojppm/c4core/src/c4/cpu.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -636,7 +628,7 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 #endif /* _C4_CPU_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/cpu.hpp)
+// (end src/c4/cpu.hpp)
 
 // (amalgamate) these includes are needed to work around
 // conditional includes in the gcc4.8 shim
@@ -650,7 +642,6 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/gcc-4.8.hpp
-// https://github.com/biojppm/c4core/src/c4/gcc-4.8.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -731,14 +722,13 @@ typedef long double max_align_t ;
 #endif // _C4_GCC_4_8_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/gcc-4.8.hpp)
+// (end src/c4/gcc-4.8.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/compiler.hpp
-// https://github.com/biojppm/c4core/src/c4/compiler.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -749,7 +739,7 @@ typedef long double max_align_t ;
  * @ingroup basic_headers */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/platform.hpp
+// c4/platform.hpp
 //#include "c4/platform.hpp"
 #if !defined(C4_PLATFORM_HPP_) && !defined(_C4_PLATFORM_HPP_)
 #error "amalgamate: file c4/platform.hpp must have been included at this point"
@@ -856,7 +846,7 @@ typedef long double max_align_t ;
 #           if __GNUC__ == 4 && __GNUC_MINOR__ >= 8
 // provided by cmake sub-project
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/gcc-4.8.hpp
+// c4/gcc-4.8.hpp
 //#               include "c4/gcc-4.8.hpp"
 #if !defined(C4_GCC_4_8_HPP_) && !defined(_C4_GCC_4_8_HPP_)
 #error "amalgamate: file c4/gcc-4.8.hpp must have been included at this point"
@@ -876,14 +866,13 @@ typedef long double max_align_t ;
 #endif /* _C4_COMPILER_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/compiler.hpp)
+// (end src/c4/compiler.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/language.hpp
-// https://github.com/biojppm/c4core/src/c4/language.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -896,14 +885,14 @@ typedef long double max_align_t ;
  * @ingroup basic_headers */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/preprocessor.hpp
+// c4/preprocessor.hpp
 //#include "c4/preprocessor.hpp"
 #if !defined(C4_PREPROCESSOR_HPP_) && !defined(_C4_PREPROCESSOR_HPP_)
 #error "amalgamate: file c4/preprocessor.hpp must have been included at this point"
 #endif /* C4_PREPROCESSOR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/compiler.hpp
+// c4/compiler.hpp
 //#include "c4/compiler.hpp"
 #if !defined(C4_COMPILER_HPP_) && !defined(_C4_COMPILER_HPP_)
 #error "amalgamate: file c4/compiler.hpp must have been included at this point"
@@ -1259,14 +1248,13 @@ void use_char_pointer(char const volatile*);
 #endif /* _C4_LANGUAGE_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/language.hpp)
+// (end src/c4/language.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/types.hpp
-// https://github.com/biojppm/c4core/src/c4/types.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -1284,14 +1272,14 @@ void use_char_pointer(char const volatile*);
 #endif
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/preprocessor.hpp
+// c4/preprocessor.hpp
 //#include "c4/preprocessor.hpp"
 #if !defined(C4_PREPROCESSOR_HPP_) && !defined(_C4_PREPROCESSOR_HPP_)
 #error "amalgamate: file c4/preprocessor.hpp must have been included at this point"
 #endif /* C4_PREPROCESSOR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/language.hpp
+// c4/language.hpp
 //#include "c4/language.hpp"
 #if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
 #error "amalgamate: file c4/language.hpp must have been included at this point"
@@ -1793,14 +1781,13 @@ using index_sequence_for = make_index_sequence<sizeof...(_Tp)>;
 #endif /* _C4_TYPES_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/types.hpp)
+// (end src/c4/types.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/config.hpp
-// https://github.com/biojppm/c4core/src/c4/config.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -1835,49 +1822,49 @@ using index_sequence_for = make_index_sequence<sizeof...(_Tp)>;
 #endif
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/export.hpp
+// c4/export.hpp
 //#include "c4/export.hpp"
 #if !defined(C4_EXPORT_HPP_) && !defined(_C4_EXPORT_HPP_)
 #error "amalgamate: file c4/export.hpp must have been included at this point"
 #endif /* C4_EXPORT_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/preprocessor.hpp
+// c4/preprocessor.hpp
 //#include "c4/preprocessor.hpp"
 #if !defined(C4_PREPROCESSOR_HPP_) && !defined(_C4_PREPROCESSOR_HPP_)
 #error "amalgamate: file c4/preprocessor.hpp must have been included at this point"
 #endif /* C4_PREPROCESSOR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/platform.hpp
+// c4/platform.hpp
 //#include "c4/platform.hpp"
 #if !defined(C4_PLATFORM_HPP_) && !defined(_C4_PLATFORM_HPP_)
 #error "amalgamate: file c4/platform.hpp must have been included at this point"
 #endif /* C4_PLATFORM_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/cpu.hpp
+// c4/cpu.hpp
 //#include "c4/cpu.hpp"
 #if !defined(C4_CPU_HPP_) && !defined(_C4_CPU_HPP_)
 #error "amalgamate: file c4/cpu.hpp must have been included at this point"
 #endif /* C4_CPU_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/compiler.hpp
+// c4/compiler.hpp
 //#include "c4/compiler.hpp"
 #if !defined(C4_COMPILER_HPP_) && !defined(_C4_COMPILER_HPP_)
 #error "amalgamate: file c4/compiler.hpp must have been included at this point"
 #endif /* C4_COMPILER_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/language.hpp
+// c4/language.hpp
 //#include "c4/language.hpp"
 #if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
 #error "amalgamate: file c4/language.hpp must have been included at this point"
 #endif /* C4_LANGUAGE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/types.hpp
+// c4/types.hpp
 //#include "c4/types.hpp"
 #if !defined(C4_TYPES_HPP_) && !defined(_C4_TYPES_HPP_)
 #error "amalgamate: file c4/types.hpp must have been included at this point"
@@ -1887,14 +1874,13 @@ using index_sequence_for = make_index_sequence<sizeof...(_Tp)>;
 #endif // _C4_CONFIG_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/config.hpp)
+// (end src/c4/config.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/ext/debugbreak/debugbreak.h
-// https://github.com/biojppm/c4core/src/c4/ext/debugbreak/debugbreak.h
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -2075,14 +2061,13 @@ __inline__ static void debug_break(void)
 #endif /* ifndef DEBUG_BREAK_H */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/ext/debugbreak/debugbreak.h)
+// (end src/c4/ext/debugbreak/debugbreak.h)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/error.hpp
-// https://github.com/biojppm/c4core/src/c4/error.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -2094,7 +2079,7 @@ __inline__ static void debug_break(void)
 /** @defgroup error_checking Error checking */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/config.hpp
+// c4/config.hpp
 //#include "c4/config.hpp"
 #if !defined(C4_CONFIG_HPP_) && !defined(_C4_CONFIG_HPP_)
 #error "amalgamate: file c4/config.hpp must have been included at this point"
@@ -2172,7 +2157,7 @@ struct fail_type__ {};
 #       pragma GCC diagnostic ignored "-Wundef"
 #   endif
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/ext/debugbreak/debugbreak.h
+// c4/ext/debugbreak/debugbreak.h
 //#   include <c4/ext/debugbreak/debugbreak.h>
 #if !defined(DEBUG_BREAK_H) && !defined(_DEBUG_BREAK_H)
 #error "amalgamate: file c4/ext/debugbreak/debugbreak.h must have been included at this point"
@@ -2540,14 +2525,13 @@ struct srcloc
 #endif /* _C4_ERROR_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/error.hpp)
+// (end src/c4/error.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/memory_util.hpp
-// https://github.com/biojppm/c4core/src/c4/memory_util.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -2555,28 +2539,28 @@ struct srcloc
 #define _C4_MEMORY_UTIL_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/config.hpp
+// c4/config.hpp
 //#include "c4/config.hpp"
 #if !defined(C4_CONFIG_HPP_) && !defined(_C4_CONFIG_HPP_)
 #error "amalgamate: file c4/config.hpp must have been included at this point"
 #endif /* C4_CONFIG_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
 #endif /* C4_ERROR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/compiler.hpp
+// c4/compiler.hpp
 //#include "c4/compiler.hpp"
 #if !defined(C4_COMPILER_HPP_) && !defined(_C4_COMPILER_HPP_)
 #error "amalgamate: file c4/compiler.hpp must have been included at this point"
 #endif /* C4_COMPILER_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/cpu.hpp
+// c4/cpu.hpp
 //#include "c4/cpu.hpp"
 #if !defined(C4_CPU_HPP_) && !defined(_C4_CPU_HPP_)
 #error "amalgamate: file c4/cpu.hpp must have been included at this point"
@@ -3360,14 +3344,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* _C4_MEMORY_UTIL_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/memory_util.hpp)
+// (end src/c4/memory_util.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/memory_resource.hpp
-// https://github.com/biojppm/c4core/src/c4/memory_resource.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -3388,14 +3371,14 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
  */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/config.hpp
+// c4/config.hpp
 //#include "c4/config.hpp"
 #if !defined(C4_CONFIG_HPP_) && !defined(_C4_CONFIG_HPP_)
 #error "amalgamate: file c4/config.hpp must have been included at this point"
 #endif /* C4_CONFIG_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
@@ -3947,14 +3930,13 @@ struct ScopedMemoryResourceCounts // NOLINT(*-member-functions)
 #endif /* _C4_MEMORY_RESOURCE_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/memory_resource.hpp)
+// (end src/c4/memory_resource.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/ctor_dtor.hpp
-// https://github.com/biojppm/c4core/src/c4/ctor_dtor.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -3962,28 +3944,28 @@ struct ScopedMemoryResourceCounts // NOLINT(*-member-functions)
 #define _C4_CTOR_DTOR_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/preprocessor.hpp
+// c4/preprocessor.hpp
 //#include "c4/preprocessor.hpp"
 #if !defined(C4_PREPROCESSOR_HPP_) && !defined(_C4_PREPROCESSOR_HPP_)
 #error "amalgamate: file c4/preprocessor.hpp must have been included at this point"
 #endif /* C4_PREPROCESSOR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/language.hpp
+// c4/language.hpp
 //#include "c4/language.hpp"
 #if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
 #error "amalgamate: file c4/language.hpp must have been included at this point"
 #endif /* C4_LANGUAGE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/memory_util.hpp
+// c4/memory_util.hpp
 //#include "c4/memory_util.hpp"
 #if !defined(C4_MEMORY_UTIL_HPP_) && !defined(_C4_MEMORY_UTIL_HPP_)
 #error "amalgamate: file c4/memory_util.hpp must have been included at this point"
 #endif /* C4_MEMORY_UTIL_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
@@ -4450,14 +4432,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* _C4_CTOR_DTOR_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/ctor_dtor.hpp)
+// (end src/c4/ctor_dtor.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/allocator.hpp
-// https://github.com/biojppm/c4core/src/c4/allocator.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -4465,14 +4446,14 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #define _C4_ALLOCATOR_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/memory_resource.hpp
+// c4/memory_resource.hpp
 //#include "c4/memory_resource.hpp"
 #if !defined(C4_MEMORY_RESOURCE_HPP_) && !defined(_C4_MEMORY_RESOURCE_HPP_)
 #error "amalgamate: file c4/memory_resource.hpp must have been included at this point"
 #endif /* C4_MEMORY_RESOURCE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/ctor_dtor.hpp
+// c4/ctor_dtor.hpp
 //#include "c4/ctor_dtor.hpp"
 #if !defined(C4_CTOR_DTOR_HPP_) && !defined(_C4_CTOR_DTOR_HPP_)
 #error "amalgamate: file c4/ctor_dtor.hpp must have been included at this point"
@@ -4885,14 +4866,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* _C4_ALLOCATOR_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/allocator.hpp)
+// (end src/c4/allocator.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/char_traits.hpp
-// https://github.com/biojppm/c4core/src/c4/char_traits.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -4900,7 +4880,7 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #define _C4_CHAR_TRAITS_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/config.hpp
+// c4/config.hpp
 //#include "c4/config.hpp"
 #if !defined(C4_CONFIG_HPP_) && !defined(_C4_CONFIG_HPP_)
 #error "amalgamate: file c4/config.hpp must have been included at this point"
@@ -5002,14 +4982,13 @@ struct literal_as<wchar_t>
 #endif /* _C4_CHAR_TRAITS_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/char_traits.hpp)
+// (end src/c4/char_traits.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/hash.hpp
-// https://github.com/biojppm/c4core/src/c4/hash.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -5017,7 +4996,7 @@ struct literal_as<wchar_t>
 #define _C4_HASH_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/config.hpp
+// c4/config.hpp
 //#include "c4/config.hpp"
 #if !defined(C4_CONFIG_HPP_) && !defined(_C4_CONFIG_HPP_)
 #error "amalgamate: file c4/config.hpp must have been included at this point"
@@ -5116,14 +5095,13 @@ C4_CONSTEXPR14 inline size_t hash_bytes(const char (&str)[N]) noexcept
 #endif // _C4_HASH_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/hash.hpp)
+// (end src/c4/hash.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/szconv.hpp
-// https://github.com/biojppm/c4core/src/c4/szconv.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -5133,14 +5111,14 @@ C4_CONSTEXPR14 inline size_t hash_bytes(const char (&str)[N]) noexcept
 /** @file szconv.hpp utilities to deal safely with narrowing conversions */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/config.hpp
+// c4/config.hpp
 //#include "c4/config.hpp"
 #if !defined(C4_CONFIG_HPP_) && !defined(_C4_CONFIG_HPP_)
 #error "amalgamate: file c4/config.hpp must have been included at this point"
 #endif /* C4_CONFIG_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
@@ -5209,14 +5187,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* _C4_SZCONV_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/szconv.hpp)
+// (end src/c4/szconv.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/blob.hpp
-// https://github.com/biojppm/c4core/src/c4/blob.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -5224,14 +5201,14 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #define _C4_BLOB_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/types.hpp
+// c4/types.hpp
 //#include "c4/types.hpp"
 #if !defined(C4_TYPES_HPP_) && !defined(_C4_TYPES_HPP_)
 #error "amalgamate: file c4/types.hpp must have been included at this point"
 #endif /* C4_TYPES_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
@@ -5305,14 +5282,13 @@ C4_MUST_BE_TRIVIAL_COPY(cblob);
 #endif // _C4_BLOB_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/blob.hpp)
+// (end src/c4/blob.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/substr_fwd.hpp
-// https://github.com/biojppm/c4core/src/c4/substr_fwd.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -5320,7 +5296,7 @@ C4_MUST_BE_TRIVIAL_COPY(cblob);
 #define _C4_SUBSTR_FWD_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/export.hpp
+// c4/export.hpp
 //#include "c4/export.hpp"
 #if !defined(C4_EXPORT_HPP_) && !defined(_C4_EXPORT_HPP_)
 #error "amalgamate: file c4/export.hpp must have been included at this point"
@@ -5340,14 +5316,13 @@ using substr = C4CORE_EXPORT basic_substring<char>;
 #endif /* _C4_SUBSTR_FWD_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/substr_fwd.hpp)
+// (end src/c4/substr_fwd.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/substr.hpp
-// https://github.com/biojppm/c4core/src/c4/substr.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -5364,21 +5339,21 @@ using substr = C4CORE_EXPORT basic_substring<char>;
 //#include <type_traits>
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/config.hpp
+// c4/config.hpp
 //#include "c4/config.hpp"
 #if !defined(C4_CONFIG_HPP_) && !defined(_C4_CONFIG_HPP_)
 #error "amalgamate: file c4/config.hpp must have been included at this point"
 #endif /* C4_CONFIG_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
 #endif /* C4_ERROR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/substr_fwd.hpp
+// c4/substr_fwd.hpp
 //#include "c4/substr_fwd.hpp"
 #if !defined(C4_SUBSTR_FWD_HPP_) && !defined(_C4_SUBSTR_FWD_HPP_)
 #error "amalgamate: file c4/substr_fwd.hpp must have been included at this point"
@@ -7664,14 +7639,13 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 #endif /* _C4_SUBSTR_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/substr.hpp)
+// (end src/c4/substr.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/ext/fast_float.hpp
-// https://github.com/biojppm/c4core/src/c4/ext/fast_float.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -12129,14 +12103,13 @@ from_chars_advanced(UC const *first, UC const *last, T &value,
 #endif // _C4_EXT_FAST_FLOAT_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/ext/fast_float.hpp)
+// (end src/c4/ext/fast_float.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/std/vector_fwd.hpp
-// https://github.com/biojppm/c4core/src/c4/std/vector_fwd.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -12182,7 +12155,7 @@ template<typename T, typename Alloc> class vector;
 
 #ifndef C4CORE_SINGLE_HEADER
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/substr_fwd.hpp
+// c4/substr_fwd.hpp
 //#include "c4/substr_fwd.hpp"
 #if !defined(C4_SUBSTR_FWD_HPP_) && !defined(_C4_SUBSTR_FWD_HPP_)
 #error "amalgamate: file c4/substr_fwd.hpp must have been included at this point"
@@ -12219,14 +12192,13 @@ template<class Alloc> bool from_chars(c4::csubstr buf, std::vector<char, Alloc> 
 #endif // _C4_STD_VECTOR_FWD_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/std/vector_fwd.hpp)
+// (end src/c4/std/vector_fwd.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/std/string_fwd.hpp
-// https://github.com/biojppm/c4core/src/c4/std/string_fwd.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -12239,7 +12211,7 @@ template<class Alloc> bool from_chars(c4::csubstr buf, std::vector<char, Alloc> 
 
 #ifndef C4CORE_SINGLE_HEADER
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/substr_fwd.hpp
+// c4/substr_fwd.hpp
 //#include "c4/substr_fwd.hpp"
 #if !defined(C4_SUBSTR_FWD_HPP_) && !defined(_C4_SUBSTR_FWD_HPP_)
 #error "amalgamate: file c4/substr_fwd.hpp must have been included at this point"
@@ -12257,7 +12229,7 @@ template<class Alloc> bool from_chars(c4::csubstr buf, std::vector<char, Alloc> 
 #include <iosfwd>  // use the fwd header in stdlibc++
 #elif defined(_MSC_VER)
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
@@ -12304,14 +12276,13 @@ bool from_chars(c4::csubstr buf, std::string * s);
 #endif // _C4_STD_STRING_FWD_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/std/string_fwd.hpp)
+// (end src/c4/std/string_fwd.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/std/std_fwd.hpp
-// https://github.com/biojppm/c4core/src/c4/std/std_fwd.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -12321,14 +12292,14 @@ bool from_chars(c4::csubstr buf, std::string * s);
 /** @file std_fwd.hpp includes all c4-std interop fwd files */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/std/vector_fwd.hpp
+// c4/std/vector_fwd.hpp
 //#include "c4/std/vector_fwd.hpp"
 #if !defined(C4_STD_VECTOR_FWD_HPP_) && !defined(_C4_STD_VECTOR_FWD_HPP_)
 #error "amalgamate: file c4/std/vector_fwd.hpp must have been included at this point"
 #endif /* C4_STD_VECTOR_FWD_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/std/string_fwd.hpp
+// c4/std/string_fwd.hpp
 //#include "c4/std/string_fwd.hpp"
 #if !defined(C4_STD_STRING_FWD_HPP_) && !defined(_C4_STD_STRING_FWD_HPP_)
 #error "amalgamate: file c4/std/string_fwd.hpp must have been included at this point"
@@ -12339,7 +12310,7 @@ bool from_chars(c4::csubstr buf, std::string * s);
 #endif // _C4_STD_STD_FWD_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/std/std_fwd.hpp)
+// (end src/c4/std/std_fwd.hpp)
 
 // (amalgamate) this include is needed to work around
 // conditional includes in charconv.hpp
@@ -12353,7 +12324,6 @@ bool from_chars(c4::csubstr buf, std::string * s);
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/charconv.hpp
-// https://github.com/biojppm/c4core/src/c4/charconv.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -12365,7 +12335,7 @@ bool from_chars(c4::csubstr buf, std::string * s);
  */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/language.hpp
+// c4/language.hpp
 //#include "c4/language.hpp"
 #if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
 #error "amalgamate: file c4/language.hpp must have been included at this point"
@@ -12383,35 +12353,35 @@ bool from_chars(c4::csubstr buf, std::string * s);
 //#include <utility>
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/config.hpp
+// c4/config.hpp
 //#include "c4/config.hpp"
 #if !defined(C4_CONFIG_HPP_) && !defined(_C4_CONFIG_HPP_)
 #error "amalgamate: file c4/config.hpp must have been included at this point"
 #endif /* C4_CONFIG_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/substr.hpp
+// c4/substr.hpp
 //#include "c4/substr.hpp"
 #if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
 #error "amalgamate: file c4/substr.hpp must have been included at this point"
 #endif /* C4_SUBSTR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/std/std_fwd.hpp
+// c4/std/std_fwd.hpp
 //#include "c4/std/std_fwd.hpp"
 #if !defined(C4_STD_STD_FWD_HPP_) && !defined(_C4_STD_STD_FWD_HPP_)
 #error "amalgamate: file c4/std/std_fwd.hpp must have been included at this point"
 #endif /* C4_STD_STD_FWD_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/memory_util.hpp
+// c4/memory_util.hpp
 //#include "c4/memory_util.hpp"
 #if !defined(C4_MEMORY_UTIL_HPP_) && !defined(_C4_MEMORY_UTIL_HPP_)
 #error "amalgamate: file c4/memory_util.hpp must have been included at this point"
 #endif /* C4_MEMORY_UTIL_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/szconv.hpp
+// c4/szconv.hpp
 //#include "c4/szconv.hpp"
 #if !defined(C4_SZCONV_HPP_) && !defined(_C4_SZCONV_HPP_)
 #error "amalgamate: file c4/szconv.hpp must have been included at this point"
@@ -12458,7 +12428,7 @@ bool from_chars(c4::csubstr buf, std::string * s);
 #   endif
 #   if C4CORE_HAVE_FAST_FLOAT
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/ext/fast_float.hpp
+// c4/ext/fast_float.hpp
 //#       include "c4/ext/fast_float.hpp"
 #if !defined(C4_EXT_FAST_FLOAT_HPP_) && !defined(_C4_EXT_FAST_FLOAT_HPP_)
 #error "amalgamate: file c4/ext/fast_float.hpp must have been included at this point"
@@ -15080,14 +15050,13 @@ inline size_t to_chars(substr buf, const char * C4_RESTRICT v) noexcept
 #endif /* _C4_CHARCONV_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/charconv.hpp)
+// (end src/c4/charconv.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/utf.hpp
-// https://github.com/biojppm/c4core/src/c4/utf.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -15095,14 +15064,14 @@ inline size_t to_chars(substr buf, const char * C4_RESTRICT v) noexcept
 #define C4_UTF_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/language.hpp
+// c4/language.hpp
 //#include "c4/language.hpp"
 #if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
 #error "amalgamate: file c4/language.hpp must have been included at this point"
 #endif /* C4_LANGUAGE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/substr_fwd.hpp
+// c4/substr_fwd.hpp
 //#include "c4/substr_fwd.hpp"
 #if !defined(C4_SUBSTR_FWD_HPP_) && !defined(_C4_SUBSTR_FWD_HPP_)
 #error "amalgamate: file c4/substr_fwd.hpp must have been included at this point"
@@ -15168,10 +15137,10 @@ C4CORE_EXPORT substr decode_code_point(substr out, csubstr code_point);
  * @param code: the code point must have length in ]0,8], and must not begin
  * with any of `U+`,`\\x`,`\\u,`\\U`,`0` (asserted)
  *
- * @return the part of @p out that was written, which will always be
+ * @return the number of written characters, which will always be
  * at most 4 bytes.
  */
-size_t decode_code_point(uint8_t *C4_RESTRICT buf, size_t buflen, uint32_t code);
+C4CORE_EXPORT size_t decode_code_point(uint8_t *C4_RESTRICT buf, size_t buflen, uint32_t code);
 
 /** @} */
 
@@ -15180,14 +15149,13 @@ size_t decode_code_point(uint8_t *C4_RESTRICT buf, size_t buflen, uint32_t code)
 #endif // C4_UTF_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/utf.hpp)
+// (end src/c4/utf.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/format.hpp
-// https://github.com/biojppm/c4core/src/c4/format.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -15198,14 +15166,14 @@ size_t decode_code_point(uint8_t *C4_RESTRICT buf, size_t buflen, uint32_t code)
  * to string buffers */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/charconv.hpp
+// c4/charconv.hpp
 //#include "c4/charconv.hpp"
 #if !defined(C4_CHARCONV_HPP_) && !defined(_C4_CHARCONV_HPP_)
 #error "amalgamate: file c4/charconv.hpp must have been included at this point"
 #endif /* C4_CHARCONV_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/blob.hpp
+// c4/blob.hpp
 //#include "c4/blob.hpp"
 #if !defined(C4_BLOB_HPP_) && !defined(_C4_BLOB_HPP_)
 #error "amalgamate: file c4/blob.hpp must have been included at this point"
@@ -16263,14 +16231,13 @@ retry:
 #endif /* _C4_FORMAT_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/format.hpp)
+// (end src/c4/format.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/dump.hpp
-// https://github.com/biojppm/c4core/src/c4/dump.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -16278,7 +16245,7 @@ retry:
 #define C4_DUMP_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/substr.hpp
+// c4/substr.hpp
 //#include <c4/substr.hpp>
 #if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
 #error "amalgamate: file c4/substr.hpp must have been included at this point"
@@ -16843,7 +16810,7 @@ template<class T>
 C4_ALWAYS_INLINE auto _format_dump_compute_size(T const& v)
     -> typename std::enable_if<!dump_directly<T>::value, size_t>::type
 {
-    return to_chars({}, v);
+    return to_chars(substr{}, v);
 }
 template<class Arg, class... Args>
 size_t _format_dump_compute_size(Arg const& a, Args const& ...more)
@@ -17080,14 +17047,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* C4_DUMP_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/dump.hpp)
+// (end src/c4/dump.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/enum.hpp
-// https://github.com/biojppm/c4core/src/c4/enum.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -17095,7 +17061,7 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #define _C4_ENUM_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
@@ -17159,6 +17125,7 @@ public:
 
     template<size_t N>
     EnumSymbols(Sym const (&p)[N]) : m_symbols(p), m_num(N) {}
+    EnumSymbols(Sym const *p, size_t N) : m_symbols(p), m_num(N) {}
 
     size_t size() const { return m_num; }
     bool empty() const { return m_num == 0; }
@@ -17190,7 +17157,7 @@ private:
  * type. Failure to provide a specialization will cause a linker
  * error. */
 template<class Enum>
-EnumSymbols<Enum> const esyms();
+EnumSymbols<Enum> esyms();
 
 
 /** return the offset for an enum symbol class. For example,
@@ -17381,14 +17348,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif // _C4_ENUM_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/enum.hpp)
+// (end src/c4/enum.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/bitmask.hpp
-// https://github.com/biojppm/c4core/src/c4/bitmask.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -17403,14 +17369,14 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 //#include <type_traits>
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/enum.hpp
+// c4/enum.hpp
 //#include "c4/enum.hpp"
 #if !defined(C4_ENUM_HPP_) && !defined(_C4_ENUM_HPP_)
 #error "amalgamate: file c4/enum.hpp must have been included at this point"
 #endif /* C4_ENUM_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/format.hpp
+// c4/format.hpp
 //#include "c4/format.hpp"
 #if !defined(C4_FORMAT_HPP_) && !defined(_C4_FORMAT_HPP_)
 #error "amalgamate: file c4/format.hpp must have been included at this point"
@@ -17431,6 +17397,7 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #   if __GNUC__ >= 8
 #       pragma GCC diagnostic ignored "-Wstringop-truncation"
 #       pragma GCC diagnostic ignored "-Wstringop-overflow"
+#       pragma GCC diagnostic ignored "-Warray-bounds"
 #   endif
 #endif
 
@@ -17746,14 +17713,13 @@ typename std::underlying_type<Enum>::type str2bm(const char *str)
 #endif // _C4_BITMASK_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/bitmask.hpp)
+// (end src/c4/bitmask.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/span.hpp
-// https://github.com/biojppm/c4core/src/c4/span.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -17763,21 +17729,21 @@ typename std::underlying_type<Enum>::type str2bm(const char *str)
 /** @file span.hpp Provides span classes. */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/config.hpp
+// c4/config.hpp
 //#include "c4/config.hpp"
 #if !defined(C4_CONFIG_HPP_) && !defined(_C4_CONFIG_HPP_)
 #error "amalgamate: file c4/config.hpp must have been included at this point"
 #endif /* C4_CONFIG_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
 #endif /* C4_ERROR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/szconv.hpp
+// c4/szconv.hpp
 //#include "c4/szconv.hpp"
 #if !defined(C4_SZCONV_HPP_) && !defined(_C4_SZCONV_HPP_)
 #error "amalgamate: file c4/szconv.hpp must have been included at this point"
@@ -18306,14 +18272,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* _C4_SPAN_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/span.hpp)
+// (end src/c4/span.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/type_name.hpp
-// https://github.com/biojppm/c4core/src/c4/type_name.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -18323,14 +18288,14 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 /** @file type_name.hpp compile-time type name */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/span.hpp
+// c4/span.hpp
 //#include "c4/span.hpp"
 #if !defined(C4_SPAN_HPP_) && !defined(_C4_SPAN_HPP_)
 #error "amalgamate: file c4/span.hpp must have been included at this point"
 #endif /* C4_SPAN_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/compiler.hpp
+// c4/compiler.hpp
 //#include "c4/compiler.hpp"
 #if !defined(C4_COMPILER_HPP_) && !defined(_C4_COMPILER_HPP_)
 #error "amalgamate: file c4/compiler.hpp must have been included at this point"
@@ -18458,14 +18423,13 @@ C4_CONSTEXPR14 C4_ALWAYS_INLINE cspan<char> type_name(T const&)
 #endif //_C4_TYPENAME_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/type_name.hpp)
+// (end src/c4/type_name.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/base64.hpp
-// https://github.com/biojppm/c4core/src/c4/base64.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -18478,14 +18442,14 @@ C4_CONSTEXPR14 C4_ALWAYS_INLINE cspan<char> type_name(T const&)
  * */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/charconv.hpp
+// c4/charconv.hpp
 //#include "c4/charconv.hpp"
 #if !defined(C4_CHARCONV_HPP_) && !defined(_C4_CHARCONV_HPP_)
 #error "amalgamate: file c4/charconv.hpp must have been included at this point"
 #endif /* C4_CHARCONV_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/blob.hpp
+// c4/blob.hpp
 //#include "c4/blob.hpp"
 #if !defined(C4_BLOB_HPP_) && !defined(_C4_BLOB_HPP_)
 #error "amalgamate: file c4/blob.hpp must have been included at this point"
@@ -18624,14 +18588,13 @@ inline size_t from_chars(csubstr buf, fmt::base64_wrapper *b)
 #endif /* _C4_BASE64_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/base64.hpp)
+// (end src/c4/base64.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/std/string.hpp
-// https://github.com/biojppm/c4core/src/c4/std/string.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -18642,7 +18605,7 @@ inline size_t from_chars(csubstr buf, fmt::base64_wrapper *b)
 
 #ifndef C4CORE_SINGLE_HEADER
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/substr.hpp
+// c4/substr.hpp
 //#include "c4/substr.hpp"
 #if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
 #error "amalgamate: file c4/substr.hpp must have been included at this point"
@@ -18741,14 +18704,13 @@ inline bool from_chars(c4::csubstr buf, std::string * s)
 #endif // _C4_STD_STRING_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/std/string.hpp)
+// (end src/c4/std/string.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/std/string_view.hpp
-// https://github.com/biojppm/c4core/src/c4/std/string_view.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -18759,7 +18721,7 @@ inline bool from_chars(c4::csubstr buf, std::string * s)
 
 #ifndef C4CORE_SINGLE_HEADER
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/language.hpp
+// c4/language.hpp
 //#include "c4/language.hpp"
 #if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
 #error "amalgamate: file c4/language.hpp must have been included at this point"
@@ -18771,7 +18733,7 @@ inline bool from_chars(c4::csubstr buf, std::string * s)
 
 #ifndef C4CORE_SINGLE_HEADER
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/substr.hpp
+// c4/substr.hpp
 //#include "c4/substr.hpp"
 #if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
 #error "amalgamate: file c4/substr.hpp must have been included at this point"
@@ -18837,14 +18799,13 @@ inline size_t to_chars(c4::substr buf, std::string_view s)
 #endif // _C4_STD_STRING_VIEW_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/std/string_view.hpp)
+// (end src/c4/std/string_view.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/std/vector.hpp
-// https://github.com/biojppm/c4core/src/c4/std/vector.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -18858,7 +18819,7 @@ inline size_t to_chars(c4::substr buf, std::string_view s)
 
 #ifndef C4CORE_SINGLE_HEADER
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/substr.hpp
+// c4/substr.hpp
 //#include "c4/substr.hpp"
 #if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
 #error "amalgamate: file c4/substr.hpp must have been included at this point"
@@ -18944,14 +18905,13 @@ inline bool from_chars(c4::csubstr buf, std::vector<char, Alloc> * s)
 #endif // _C4_STD_VECTOR_HPP_
 
 
-// (end https://github.com/biojppm/c4core/src/c4/std/vector.hpp)
+// (end src/c4/std/vector.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/std/tuple.hpp
-// https://github.com/biojppm/c4core/src/c4/std/tuple.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -18962,7 +18922,7 @@ inline bool from_chars(c4::csubstr buf, std::vector<char, Alloc> * s)
 
 #ifndef C4CORE_SINGLE_HEADER
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/format.hpp
+// c4/format.hpp
 //#include "c4/format.hpp"
 #if !defined(C4_FORMAT_HPP_) && !defined(_C4_FORMAT_HPP_)
 #error "amalgamate: file c4/format.hpp must have been included at this point"
@@ -19147,14 +19107,13 @@ inline size_t unformat(csubstr buf, csubstr fmt, std::tuple< Types... > & tp)
 #endif /* _C4_STD_TUPLE_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/std/tuple.hpp)
+// (end src/c4/std/tuple.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/ext/rng/rng.hpp
-// https://github.com/biojppm/c4core/src/c4/ext/rng/rng.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -19366,14 +19325,13 @@ inline bool operator!=(pcg const &lhs, pcg const &rhs)
 #endif /* AG_RANDOM_H */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/ext/rng/rng.hpp)
+// (end src/c4/ext/rng/rng.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/ext/sg14/inplace_function.h
-// https://github.com/biojppm/c4core/src/c4/ext/sg14/inplace_function.h
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -19738,20 +19696,19 @@ private:
 #endif /* _C4_EXT_SG14_INPLACE_FUNCTION_H_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/ext/sg14/inplace_function.h)
+// (end src/c4/ext/sg14/inplace_function.h)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/version.cpp
-// https://github.com/biojppm/c4core/src/c4/version.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef C4CORE_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/version.hpp
+// c4/version.hpp
 //#include "c4/version.hpp"
 #if !defined(C4_VERSION_HPP_) && !defined(_C4_VERSION_HPP_)
 #error "amalgamate: file c4/version.hpp must have been included at this point"
@@ -19785,20 +19742,19 @@ int version_patch()
 #endif /* C4CORE_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/version.cpp)
+// (end src/c4/version.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/language.cpp
-// https://github.com/biojppm/c4core/src/c4/language.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef C4CORE_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/language.hpp
+// c4/language.hpp
 //#include "c4/language.hpp"
 #if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
 #error "amalgamate: file c4/language.hpp must have been included at this point"
@@ -19823,20 +19779,19 @@ void foo() {} // to avoid empty file warning from the linker
 #endif /* C4CORE_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/language.cpp)
+// (end src/c4/language.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/format.cpp
-// https://github.com/biojppm/c4core/src/c4/format.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef C4CORE_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/format.hpp
+// c4/format.hpp
 //#include "c4/format.hpp"
 #if !defined(C4_FORMAT_HPP_) && !defined(_C4_FORMAT_HPP_)
 #error "amalgamate: file c4/format.hpp must have been included at this point"
@@ -19910,27 +19865,26 @@ bool from_chars(csubstr buf, fmt::raw_wrapper *r)
 #endif /* C4CORE_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/format.cpp)
+// (end src/c4/format.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/memory_util.cpp
-// https://github.com/biojppm/c4core/src/c4/memory_util.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef C4CORE_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/memory_util.hpp
+// c4/memory_util.hpp
 //#include "c4/memory_util.hpp"
 #if !defined(C4_MEMORY_UTIL_HPP_) && !defined(_C4_MEMORY_UTIL_HPP_)
 #error "amalgamate: file c4/memory_util.hpp must have been included at this point"
 #endif /* C4_MEMORY_UTIL_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
@@ -19970,20 +19924,19 @@ void mem_repeat(void* dest, void const* pattern, size_t pattern_size, size_t num
 #endif /* C4CORE_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/memory_util.cpp)
+// (end src/c4/memory_util.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/char_traits.cpp
-// https://github.com/biojppm/c4core/src/c4/char_traits.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef C4CORE_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/char_traits.hpp
+// c4/char_traits.hpp
 //#include "c4/char_traits.hpp"
 #if !defined(C4_CHAR_TRAITS_HPP_) && !defined(_C4_CHAR_TRAITS_HPP_)
 #error "amalgamate: file c4/char_traits.hpp must have been included at this point"
@@ -20002,27 +19955,26 @@ constexpr const size_t char_traits< wchar_t >::num_whitespace_chars;
 #endif /* C4CORE_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/char_traits.cpp)
+// (end src/c4/char_traits.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/memory_resource.cpp
-// https://github.com/biojppm/c4core/src/c4/memory_resource.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef C4CORE_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/memory_resource.hpp
+// c4/memory_resource.hpp
 //#include "c4/memory_resource.hpp"
 #if !defined(C4_MEMORY_RESOURCE_HPP_) && !defined(_C4_MEMORY_RESOURCE_HPP_)
 #error "amalgamate: file c4/memory_resource.hpp must have been included at this point"
 #endif /* C4_MEMORY_RESOURCE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/memory_util.hpp
+// c4/memory_util.hpp
 //#include "c4/memory_util.hpp"
 #if !defined(C4_MEMORY_UTIL_HPP_) && !defined(_C4_MEMORY_UTIL_HPP_)
 #error "amalgamate: file c4/memory_util.hpp must have been included at this point"
@@ -20373,27 +20325,26 @@ void operator delete[](void *p, size_t, std::nothrow_t)
 #endif /* C4CORE_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/memory_resource.cpp)
+// (end src/c4/memory_resource.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/utf.cpp
-// https://github.com/biojppm/c4core/src/c4/utf.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef C4CORE_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/utf.hpp
+// c4/utf.hpp
 //#include "c4/utf.hpp"
 #if !defined(C4_UTF_HPP_) && !defined(_C4_UTF_HPP_)
 #error "amalgamate: file c4/utf.hpp must have been included at this point"
 #endif /* C4_UTF_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/charconv.hpp
+// c4/charconv.hpp
 //#include "c4/charconv.hpp"
 #if !defined(C4_CHARCONV_HPP_) && !defined(_C4_CHARCONV_HPP_)
 #error "amalgamate: file c4/charconv.hpp must have been included at this point"
@@ -20515,20 +20466,19 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* C4CORE_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/utf.cpp)
+// (end src/c4/utf.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/base64.cpp
-// https://github.com/biojppm/c4core/src/c4/base64.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef C4CORE_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/base64.hpp
+// c4/base64.hpp
 //#include "c4/base64.hpp"
 #if !defined(C4_BASE64_HPP_) && !defined(_C4_BASE64_HPP_)
 #error "amalgamate: file c4/base64.hpp must have been included at this point"
@@ -20763,7 +20713,7 @@ size_t base64_decode(csubstr encoded, blob data)
 #endif /* C4CORE_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/base64.cpp)
+// (end src/c4/base64.cpp)
 
 #define C4_WINDOWS_POP_HPP_
 
@@ -20772,7 +20722,6 @@ size_t base64_decode(csubstr encoded, blob data)
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/windows_push.hpp
-// https://github.com/biojppm/c4core/src/c4/windows_push.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -20880,14 +20829,13 @@ size_t base64_decode(csubstr encoded, blob data)
 #endif /* _C4_WINDOWS_PUSH_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/windows_push.hpp)
+// (end src/c4/windows_push.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/windows.hpp
-// https://github.com/biojppm/c4core/src/c4/windows.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -20896,7 +20844,7 @@ size_t base64_decode(csubstr encoded, blob data)
 
 #if defined(_WIN64) || defined(_WIN32)
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/windows_push.hpp
+// c4/windows_push.hpp
 //#include "c4/windows_push.hpp"
 #if !defined(C4_WINDOWS_PUSH_HPP_) && !defined(_C4_WINDOWS_PUSH_HPP_)
 #error "amalgamate: file c4/windows_push.hpp must have been included at this point"
@@ -20904,7 +20852,7 @@ size_t base64_decode(csubstr encoded, blob data)
 
 #include <windows.h>
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/windows_pop.hpp
+// c4/windows_pop.hpp
 //#include "c4/windows_pop.hpp"
 #if !defined(C4_WINDOWS_POP_HPP_) && !defined(_C4_WINDOWS_POP_HPP_)
 #error "amalgamate: file c4/windows_pop.hpp must have been included at this point"
@@ -20915,14 +20863,13 @@ size_t base64_decode(csubstr encoded, blob data)
 #endif /* _C4_WINDOWS_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/windows.hpp)
+// (end src/c4/windows.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/windows_pop.hpp
-// https://github.com/biojppm/c4core/src/c4/windows_pop.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -20969,20 +20916,19 @@ size_t base64_decode(csubstr encoded, blob data)
 #endif /* _C4_WINDOWS_POP_HPP_ */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/windows_pop.hpp)
+// (end src/c4/windows_pop.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/error.cpp
-// https://github.com/biojppm/c4core/src/c4/error.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef C4CORE_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
@@ -21002,7 +20948,7 @@ size_t base64_decode(csubstr encoded, blob data)
 
 #if defined(C4_XBOX) || (defined(C4_WIN) && defined(C4_MSVC))
 // amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/windows.hpp
+// c4/windows.hpp
 //#   include "c4/windows.hpp"
 #if !defined(C4_WINDOWS_HPP_) && !defined(_C4_WINDOWS_HPP_)
 #error "amalgamate: file c4/windows.hpp must have been included at this point"
@@ -21236,20 +21182,19 @@ bool is_debugger_attached()
 #endif /* C4CORE_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/c4core/src/c4/error.cpp)
+// (end src/c4/error.cpp)
 
 #endif /* _C4CORE_SINGLE_HEADER_AMALGAMATED_HPP_ */
 
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/c4core_all.hpp)
+// (end src/c4/c4core_all.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/export.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/export.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -21273,14 +21218,13 @@ bool is_debugger_attached()
 #endif /* C4_YML_EXPORT_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/export.hpp)
+// (end src/c4/yml/export.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/fwd.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/fwd.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -21310,14 +21254,13 @@ using Parser = ParseEngine<EventHandlerTree>;
 #endif /* _C4_YML_FWD_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/fwd.hpp)
+// (end src/c4/yml/fwd.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/version.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/version.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -21326,20 +21269,20 @@ using Parser = ParseEngine<EventHandlerTree>;
 
 /** @file version.hpp */
 
-#define RYML_VERSION "0.9.0"
+#define RYML_VERSION "0.10.0"
 #define RYML_VERSION_MAJOR 0
-#define RYML_VERSION_MINOR 9
+#define RYML_VERSION_MINOR 10
 #define RYML_VERSION_PATCH 0
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/substr.hpp
+// c4/substr.hpp
 //#include <c4/substr.hpp>
 #if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
 #error "amalgamate: file c4/substr.hpp must have been included at this point"
 #endif /* C4_SUBSTR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/export.hpp
+// c4/yml/export.hpp
 //#include <c4/yml/export.hpp>
 #if !defined(C4_YML_EXPORT_HPP_) && !defined(_C4_YML_EXPORT_HPP_)
 #error "amalgamate: file c4/yml/export.hpp must have been included at this point"
@@ -21360,14 +21303,13 @@ RYML_EXPORT int version_patch();
 #endif /* _C4_YML_VERSION_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/version.hpp)
+// (end src/c4/yml/version.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/common.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/common.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -21379,35 +21321,35 @@ RYML_EXPORT int version_patch();
 //included above:
 //#include <cstddef>
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/substr.hpp
+// c4/substr.hpp
 //#include <c4/substr.hpp>
 #if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
 #error "amalgamate: file c4/substr.hpp must have been included at this point"
 #endif /* C4_SUBSTR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/charconv.hpp
+// c4/charconv.hpp
 //#include <c4/charconv.hpp>
 #if !defined(C4_CHARCONV_HPP_) && !defined(_C4_CHARCONV_HPP_)
 #error "amalgamate: file c4/charconv.hpp must have been included at this point"
 #endif /* C4_CHARCONV_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/dump.hpp
+// c4/dump.hpp
 //#include <c4/dump.hpp>
 #if !defined(C4_DUMP_HPP_) && !defined(_C4_DUMP_HPP_)
 #error "amalgamate: file c4/dump.hpp must have been included at this point"
 #endif /* C4_DUMP_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/export.hpp
+// c4/yml/export.hpp
 //#include <c4/yml/export.hpp>
 #if !defined(C4_YML_EXPORT_HPP_) && !defined(_C4_YML_EXPORT_HPP_)
 #error "amalgamate: file c4/yml/export.hpp must have been included at this point"
 #endif /* C4_YML_EXPORT_HPP_ */
 
 
-#if defined(C4_MSVC) || defined(C4_MINGW) || defined(_WIN32)
+#if defined(C4_MSVC) || defined(C4_MINGW)
 //included above:
 //#include <malloc.h>
 #else
@@ -21687,7 +21629,8 @@ struct RYML_EXPORT LineCol
     //! construct from offset, line and column
     LineCol(size_t o, size_t l, size_t c) : offset(o), line(l), col(c) {}
 };
-static_assert(std::is_trivial<LineCol>::value, "LineCol not trivial");
+static_assert(std::is_trivially_copyable<LineCol>::value, "LineCol not trivially copyable");
+static_assert(std::is_trivially_default_constructible<LineCol>::value, "LineCol not trivially default constructible");
 static_assert(std::is_standard_layout<LineCol>::value, "Location not trivial");
 
 
@@ -22058,14 +22001,13 @@ C4_SUPPRESS_WARNING_GCC_POP
 #endif /* _C4_YML_COMMON_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/common.hpp)
+// (end src/c4/yml/common.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/node_type.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node_type.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -22074,7 +22016,7 @@ C4_SUPPRESS_WARNING_GCC_POP
 
 #ifndef _C4_YML_COMMON_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/common.hpp
+// c4/yml/common.hpp
 //#include "c4/yml/common.hpp"
 #if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
 #error "amalgamate: file c4/yml/common.hpp must have been included at this point"
@@ -22085,6 +22027,9 @@ C4_SUPPRESS_WARNING_GCC_POP
 C4_SUPPRESS_WARNING_MSVC_PUSH
 C4_SUPPRESS_WARNING_GCC_CLANG_PUSH
 C4_SUPPRESS_WARNING_GCC_CLANG("-Wold-style-cast")
+#if __GNUC__ >= 6
+C4_SUPPRESS_WARNING_GCC("-Wnull-dereference")
+#endif
 
 namespace c4 {
 namespace yml {
@@ -22270,7 +22215,7 @@ public:
 
 public:
 
-    /** @name container+scalar style queries
+    /** @name style functions
      * @{ */
 
     C4_ALWAYS_INLINE bool is_container_styled() const noexcept { return (type & (CONTAINER_STYLE)) != 0; }
@@ -22295,9 +22240,13 @@ public:
     C4_ALWAYS_INLINE bool is_val_quoted() const noexcept { return (type & VALQUO) != 0; }
     C4_ALWAYS_INLINE bool is_quoted() const noexcept { return (type & (KEYQUO|VALQUO)) != 0; }
 
+    C4_ALWAYS_INLINE NodeType key_style() const noexcept { return (type & (KEY_STYLE)); }
+    C4_ALWAYS_INLINE NodeType val_style() const noexcept { return (type & (VAL_STYLE)); }
+
     C4_ALWAYS_INLINE void set_container_style(NodeType_e style) noexcept { type = ((style & CONTAINER_STYLE) | (type & ~CONTAINER_STYLE)); }
     C4_ALWAYS_INLINE void set_key_style(NodeType_e style) noexcept { type = ((style & KEY_STYLE) | (type & ~KEY_STYLE)); }
     C4_ALWAYS_INLINE void set_val_style(NodeType_e style) noexcept { type = ((style & VAL_STYLE) | (type & ~VAL_STYLE)); }
+    C4_ALWAYS_INLINE void clear_style() noexcept { type &= ~STYLE; }
 
     /** @} */
 
@@ -22352,14 +22301,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* C4_YML_NODE_TYPE_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/node_type.hpp)
+// (end src/c4/yml/node_type.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/tag.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tag.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -22367,7 +22315,7 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #define _C4_YML_TAG_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/common.hpp
+// c4/yml/common.hpp
 //#include <c4/yml/common.hpp>
 #if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
 #error "amalgamate: file c4/yml/common.hpp must have been included at this point"
@@ -22435,8 +22383,7 @@ struct RYML_EXPORT TagDirective
     id_type next_node_id;
 
     bool create_from_str(csubstr directive_); ///< leaves next_node_id unfilled
-    bool create_from_str(csubstr directive_, Tree *tree);
-    size_t transform(csubstr tag, substr output, Callbacks const& callbacks) const;
+    size_t transform(csubstr tag, substr output, Callbacks const& callbacks, bool with_brackets=true) const;
 };
 
 struct RYML_EXPORT TagDirectiveRange
@@ -22455,14 +22402,13 @@ struct RYML_EXPORT TagDirectiveRange
 #endif /* _C4_YML_TAG_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/tag.hpp)
+// (end src/c4/yml/tag.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/tree.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tree.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -22472,14 +22418,14 @@ struct RYML_EXPORT TagDirectiveRange
 /** @file tree.hpp */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
 #endif /* C4_ERROR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/types.hpp
+// c4/types.hpp
 //#include "c4/types.hpp"
 #if !defined(C4_TYPES_HPP_) && !defined(_C4_TYPES_HPP_)
 #error "amalgamate: file c4/types.hpp must have been included at this point"
@@ -22487,7 +22433,7 @@ struct RYML_EXPORT TagDirectiveRange
 
 #ifndef _C4_YML_FWD_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/fwd.hpp
+// c4/yml/fwd.hpp
 //#include "c4/yml/fwd.hpp"
 #if !defined(C4_YML_FWD_HPP_) && !defined(_C4_YML_FWD_HPP_)
 #error "amalgamate: file c4/yml/fwd.hpp must have been included at this point"
@@ -22496,7 +22442,7 @@ struct RYML_EXPORT TagDirectiveRange
 #endif
 #ifndef _C4_YML_COMMON_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/common.hpp
+// c4/yml/common.hpp
 //#include "c4/yml/common.hpp"
 #if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
 #error "amalgamate: file c4/yml/common.hpp must have been included at this point"
@@ -22505,7 +22451,7 @@ struct RYML_EXPORT TagDirectiveRange
 #endif
 #ifndef C4_YML_NODE_TYPE_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node_type.hpp
+// c4/yml/node_type.hpp
 //#include "c4/yml/node_type.hpp"
 #if !defined(C4_YML_NODE_TYPE_HPP_) && !defined(_C4_YML_NODE_TYPE_HPP_)
 #error "amalgamate: file c4/yml/node_type.hpp must have been included at this point"
@@ -22514,7 +22460,7 @@ struct RYML_EXPORT TagDirectiveRange
 #endif
 #ifndef _C4_YML_TAG_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tag.hpp
+// c4/yml/tag.hpp
 //#include "c4/yml/tag.hpp"
 #if !defined(C4_YML_TAG_HPP_) && !defined(_C4_YML_TAG_HPP_)
 #error "amalgamate: file c4/yml/tag.hpp must have been included at this point"
@@ -22523,7 +22469,7 @@ struct RYML_EXPORT TagDirectiveRange
 #endif
 #ifndef _C4_CHARCONV_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/charconv.hpp
+// c4/charconv.hpp
 //#include <c4/charconv.hpp>
 #if !defined(C4_CHARCONV_HPP_) && !defined(_C4_CHARCONV_HPP_)
 #error "amalgamate: file c4/charconv.hpp must have been included at this point"
@@ -23024,10 +22970,19 @@ public:
     C4_ALWAYS_INLINE bool is_val_quoted(id_type node) const { return _p(node)->m_type.is_val_quoted(); }
     C4_ALWAYS_INLINE bool is_quoted(id_type node) const { return _p(node)->m_type.is_quoted(); }
 
+    C4_ALWAYS_INLINE NodeType key_style(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_key(node)); return _p(node)->m_type.key_style(); }
+    C4_ALWAYS_INLINE NodeType val_style(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_val(node) || is_root(node)); return _p(node)->m_type.val_style(); }
+
     C4_ALWAYS_INLINE void set_container_style(id_type node, NodeType_e style) { _RYML_CB_ASSERT(m_callbacks, is_container(node)); _p(node)->m_type.set_container_style(style); }
     C4_ALWAYS_INLINE void set_key_style(id_type node, NodeType_e style) { _RYML_CB_ASSERT(m_callbacks, has_key(node)); _p(node)->m_type.set_key_style(style); }
     C4_ALWAYS_INLINE void set_val_style(id_type node, NodeType_e style) { _RYML_CB_ASSERT(m_callbacks, has_val(node)); _p(node)->m_type.set_val_style(style); }
 
+    void clear_style(id_type node, bool recurse=false);
+    void set_style_conditionally(id_type node,
+                                 NodeType type_mask,
+                                 NodeType rem_style_flags,
+                                 NodeType add_style_flags,
+                                 bool recurse=false);
     /** @} */
 
 public:
@@ -23091,6 +23046,8 @@ public:
      * ReferenceResolver::resolve() for further details. This overload
      * uses a throwaway resolver object. */
     void resolve(bool clear_anchors=true);
+
+    /** @} */
 
 public:
 
@@ -23275,6 +23232,21 @@ public:
 public:
 
     void merge_with(Tree const* src, id_type src_node=NONE, id_type dst_root=NONE);
+
+    /** @} */
+
+public:
+
+    /** @name locations */
+    /** @{ */
+
+    /** Get the location of a node from the parse used to parse this tree. */
+    Location location(Parser const& p, id_type node) const;
+
+private:
+
+    bool _location_from_node(Parser const& p, id_type node, Location *C4_RESTRICT loc, id_type level) const;
+    bool _location_from_cont(Parser const& p, id_type node, Location *C4_RESTRICT loc) const;
 
     /** @} */
 
@@ -24047,14 +24019,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* _C4_YML_TREE_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/tree.hpp)
+// (end src/c4/yml/tree.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/node.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -24067,14 +24038,14 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 //#include <cstddef>
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tree.hpp
+// c4/yml/tree.hpp
 //#include "c4/yml/tree.hpp"
 #if !defined(C4_YML_TREE_HPP_) && !defined(_C4_YML_TREE_HPP_)
 #error "amalgamate: file c4/yml/tree.hpp must have been included at this point"
 #endif /* C4_YML_TREE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/base64.hpp
+// c4/base64.hpp
 //#include "c4/base64.hpp"
 #if !defined(C4_BASE64_HPP_) && !defined(_C4_BASE64_HPP_)
 #error "amalgamate: file c4/base64.hpp must have been included at this point"
@@ -24333,7 +24304,7 @@ public:
 
 public:
 
-    /** @name node container+scalar style predicates */
+    /** @name style predicates */
     /** @{ */
 
     // documentation to the right -->
@@ -24341,6 +24312,9 @@ public:
     C4_ALWAYS_INLINE bool type_has_any(NodeType_e bits)  const RYML_NOEXCEPT { _C4RR(); return tree_->type_has_any(id_, bits); }  /**< Forward to @ref Tree::type_has_any(). Node must be readable. */
     C4_ALWAYS_INLINE bool type_has_all(NodeType_e bits)  const RYML_NOEXCEPT { _C4RR(); return tree_->type_has_all(id_, bits); }  /**< Forward to @ref Tree::type_has_all(). Node must be readable. */
     C4_ALWAYS_INLINE bool type_has_none(NodeType_e bits) const RYML_NOEXCEPT { _C4RR(); return tree_->type_has_none(id_, bits); } /**< Forward to @ref Tree::type_has_none(). Node must be readable. */
+
+    C4_ALWAYS_INLINE NodeType key_style()       const RYML_NOEXCEPT { _C4RR(); return tree_->key_style(id_); } /**< Forward to @ref Tree::key_style(). Node must be readable. */
+    C4_ALWAYS_INLINE NodeType val_style()       const RYML_NOEXCEPT { _C4RR(); return tree_->val_style(id_); } /**< Forward to @ref Tree::val_style(). Node must be readable. */
 
     C4_ALWAYS_INLINE bool is_container_styled() const RYML_NOEXCEPT { _C4RR(); return tree_->is_container_styled(id_); } /**< Forward to @ref Tree::is_container_styled(). Node must be readable. */
     C4_ALWAYS_INLINE bool is_block()            const RYML_NOEXCEPT { _C4RR(); return tree_->is_block(id_); }   /**< Forward to @ref Tree::is_block(). Node must be readable. */
@@ -24683,6 +24657,19 @@ public:
 
 public:
 
+    /** @name locations */
+    /** @{ */
+
+    Location location(Parser const& parser) const
+    {
+        _C4RR();
+        return tree_->location(parser, id_);
+    }
+
+    /** @} */
+
+public:
+
     /** @name deserialization */
     /** @{ */
 
@@ -24954,7 +24941,6 @@ public:
     ConstNodeRef& operator= (NodeRef const&) noexcept;
     ConstNodeRef& operator= (NodeRef     &&) noexcept;
 
-
     /** @} */
 
 public:
@@ -25201,6 +25187,14 @@ public:
     void set_container_style(NodeType_e style) { _C4RR(); m_tree->set_container_style(m_id, style); }
     void set_key_style(NodeType_e style) { _C4RR(); m_tree->set_key_style(m_id, style); }
     void set_val_style(NodeType_e style) { _C4RR(); m_tree->set_val_style(m_id, style); }
+    void clear_style(bool recurse=false) { _C4RR(); m_tree->clear_style(m_id, recurse); }
+    void set_style_conditionally(NodeType type_mask,
+                                 NodeType rem_style_flags,
+                                 NodeType add_style_flags,
+                                 bool recurse=false)
+    {
+        _C4RR(); m_tree->set_style_conditionally(m_id, type_mask, rem_style_flags, add_style_flags, recurse);
+    }
 
 public:
 
@@ -25729,14 +25723,13 @@ C4_ALWAYS_INLINE bool readkey(NodeRef const& C4_RESTRICT n, T *v)
 #endif /* _C4_YML_NODE_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/node.hpp)
+// (end src/c4/yml/node.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/writer.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/writer.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -25748,7 +25741,7 @@ C4_ALWAYS_INLINE bool readkey(NodeRef const& C4_RESTRICT n, T *v)
 #endif
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/substr.hpp
+// c4/substr.hpp
 //#include <c4/substr.hpp>
 #if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
 #error "amalgamate: file c4/substr.hpp must have been included at this point"
@@ -25945,19 +25938,18 @@ struct WriterBuf
 #endif /* _C4_YML_WRITER_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/writer.hpp)
+// (end src/c4/yml/writer.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
-// src/c4/yml/detail/parser_dbg.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/parser_dbg.hpp
+// src/c4/yml/detail/dbgprint.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
-#ifndef _C4_YML_DETAIL_PARSER_DBG_HPP_
-#define _C4_YML_DETAIL_PARSER_DBG_HPP_
+#ifndef _C4_YML_DETAIL_DBGPRINT_HPP_
+#define _C4_YML_DETAIL_DBGPRINT_HPP_
 
 #ifndef _C4_YML_COMMON_HPP_
 #include "../common.hpp"
@@ -25970,22 +25962,9 @@ struct WriterBuf
 
 
 //-----------------------------------------------------------------------------
-// some debugging scaffolds
-
-// NOLINTBEGIN(*)
-C4_SUPPRESS_WARNING_GCC_CLANG_PUSH
-C4_SUPPRESS_WARNING_MSVC_PUSH
-C4_SUPPRESS_WARNING_MSVC(4068/*unknown pragma*/)
-
-#pragma GCC system_header
-C4_SUPPRESS_WARNING_GCC("-Wunknown-pragmas")
-C4_SUPPRESS_WARNING_CLANG("-Wgnu-zero-variadic-macro-arguments")
-// NOLINTEND(*)
-
+// debug prints
 
 #ifndef RYML_DBG
-#   define _c4err(fmt, ...)   \
-    this->_err("ERROR: " fmt, ## __VA_ARGS__)
 #   define _c4dbgt(fmt, ...)
 #   define _c4dbgpf(fmt, ...)
 #   define _c4dbgpf_(fmt, ...)
@@ -25995,14 +25974,12 @@ C4_SUPPRESS_WARNING_CLANG("-Wgnu-zero-variadic-macro-arguments")
 #   define _c4presc(...)
 #   define _c4prscalar(msg, scalar, keep_newlines)
 #else
-#   define _c4err(fmt, ...)   \
-    do { RYML_DEBUG_BREAK(); this->_err("ERROR:\n" "{}:{}: " fmt, __FILE__, __LINE__, ## __VA_ARGS__); } while(0)
 #   define _c4dbgt(fmt, ...)   do { if(_dbg_enabled()) {                \
-                               this->_dbg ("{}:{}: "   fmt     , __FILE__, __LINE__, ## __VA_ARGS__); } } while(0)
-#   define _c4dbgpf(fmt, ...)  _dbg_printf("{}:{}: "   fmt "\n", __FILE__, __LINE__, ## __VA_ARGS__)
-#   define _c4dbgpf_(fmt, ...) _dbg_printf("{}:{}: "   fmt     , __FILE__, __LINE__, ## __VA_ARGS__)
-#   define _c4dbgp(msg)        _dbg_printf("{}:{}: "   msg "\n", __FILE__, __LINE__                )
-#   define _c4dbgp_(msg)       _dbg_printf("{}:{}: "   msg     , __FILE__, __LINE__                )
+                               this->_dbg ("{}:{}: "   fmt     , __FILE__, __LINE__, __VA_ARGS__); } } while(0)
+#   define _c4dbgpf(fmt, ...)  _dbg_printf("{}:{}: "   fmt "\n", __FILE__, __LINE__, __VA_ARGS__)
+#   define _c4dbgpf_(fmt, ...) _dbg_printf("{}:{}: "   fmt     , __FILE__, __LINE__, __VA_ARGS__)
+#   define _c4dbgp(msg)        _dbg_printf("{}:{}: "   msg "\n", __FILE__, __LINE__             )
+#   define _c4dbgp_(msg)       _dbg_printf("{}:{}: "   msg     , __FILE__, __LINE__             )
 #   define _c4dbgq(msg)        _dbg_printf(msg "\n")
 #   define _c4presc(...)       do { if(_dbg_enabled()) __c4presc(__VA_ARGS__); } while(0)
 #   define _c4prscalar(msg, scalar, keep_newlines)                  \
@@ -26021,7 +25998,7 @@ C4_SUPPRESS_WARNING_CLANG("-Wgnu-zero-variadic-macro-arguments")
 #ifdef RYML_DBG
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/dump.hpp
+// c4/dump.hpp
 //#include <c4/dump.hpp>
 #if !defined(C4_DUMP_HPP_) && !defined(_C4_DUMP_HPP_)
 #error "amalgamate: file c4/dump.hpp must have been included at this point"
@@ -26106,13 +26083,10 @@ inline void __c4presc(csubstr s, bool keep_newlines=false)
 
 #endif // RYML_DBG
 
-C4_SUPPRESS_WARNING_GCC_CLANG_POP
-C4_SUPPRESS_WARNING_MSVC_POP
-
-#endif /* _C4_YML_DETAIL_PARSER_DBG_HPP_ */
+#endif /* _C4_YML_DETAIL_DBGPRINT_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/detail/parser_dbg.hpp)
+// (end src/c4/yml/detail/dbgprint.hpp)
 
 #define C4_YML_EMIT_DEF_HPP_
 
@@ -26121,7 +26095,6 @@ C4_SUPPRESS_WARNING_MSVC_POP
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/emit.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/emit.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -27032,7 +27005,7 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #undef RYML_DEPRECATE_EMITRS
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/emit.def.hpp
+// c4/yml/emit.def.hpp
 //#include "c4/yml/emit.def.hpp" // NOLINT
 #if !defined(C4_YML_EMIT_DEF_HPP_) && !defined(_C4_YML_EMIT_DEF_HPP_)
 #error "amalgamate: file c4/yml/emit.def.hpp must have been included at this point"
@@ -27042,14 +27015,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* _C4_YML_EMIT_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/emit.hpp)
+// (end src/c4/yml/emit.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/emit.def.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/emit.def.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -27058,7 +27030,7 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 
 #ifndef _C4_YML_EMIT_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/emit.hpp
+// c4/yml/emit.hpp
 //#include "c4/yml/emit.hpp"
 #if !defined(C4_YML_EMIT_HPP_) && !defined(_C4_YML_EMIT_HPP_)
 #error "amalgamate: file c4/yml/emit.hpp must have been included at this point"
@@ -27067,13 +27039,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif
 
 /** @file emit.def.hpp Definitions for emit functions. */
-#ifndef _C4_YML_DETAIL_PARSER_DBG_HPP_
+#ifndef _C4_YML_DETAIL_DBGPRINT_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/parser_dbg.hpp
-//#include "c4/yml/detail/parser_dbg.hpp"
-#if !defined(C4_YML_DETAIL_PARSER_DBG_HPP_) && !defined(_C4_YML_DETAIL_PARSER_DBG_HPP_)
-#error "amalgamate: file c4/yml/detail/parser_dbg.hpp must have been included at this point"
-#endif /* C4_YML_DETAIL_PARSER_DBG_HPP_ */
+// c4/yml/detail/dbgprint.hpp
+//#include "c4/yml/detail/dbgprint.hpp"
+#if !defined(C4_YML_DETAIL_DBGPRINT_HPP_) && !defined(_C4_YML_DETAIL_DBGPRINT_HPP_)
+#error "amalgamate: file c4/yml/detail/dbgprint.hpp must have been included at this point"
+#endif /* C4_YML_DETAIL_DBGPRINT_HPP_ */
 
 #endif
 
@@ -28151,14 +28123,13 @@ void Emitter<Writer>::_write_scalar_json_dquo(csubstr s)
 #endif /* _C4_YML_EMIT_DEF_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/emit.def.hpp)
+// (end src/c4/yml/emit.def.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/detail/stack.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/stack.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -28458,14 +28429,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* _C4_YML_DETAIL_STACK_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/detail/stack.hpp)
+// (end src/c4/yml/detail/stack.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/filter_processor.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/filter_processor.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -28473,7 +28443,7 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #define _C4_YML_FILTER_PROCESSOR_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/common.hpp
+// c4/yml/common.hpp
 //#include "c4/yml/common.hpp"
 #if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
 #error "amalgamate: file c4/yml/common.hpp must have been included at this point"
@@ -28482,18 +28452,18 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 
 #ifdef RYML_DBG
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/charconv.hpp
+// c4/charconv.hpp
 //#include "c4/charconv.hpp"
 #if !defined(C4_CHARCONV_HPP_) && !defined(_C4_CHARCONV_HPP_)
 #error "amalgamate: file c4/charconv.hpp must have been included at this point"
 #endif /* C4_CHARCONV_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/parser_dbg.hpp
-//#include "c4/yml/detail/parser_dbg.hpp"
-#if !defined(C4_YML_DETAIL_PARSER_DBG_HPP_) && !defined(_C4_YML_DETAIL_PARSER_DBG_HPP_)
-#error "amalgamate: file c4/yml/detail/parser_dbg.hpp must have been included at this point"
-#endif /* C4_YML_DETAIL_PARSER_DBG_HPP_ */
+// c4/yml/detail/dbgprint.hpp
+//#include "c4/yml/detail/dbgprint.hpp"
+#if !defined(C4_YML_DETAIL_DBGPRINT_HPP_) && !defined(_C4_YML_DETAIL_DBGPRINT_HPP_)
+#error "amalgamate: file c4/yml/detail/dbgprint.hpp must have been included at this point"
+#endif /* C4_YML_DETAIL_DBGPRINT_HPP_ */
 
 #endif
 
@@ -29001,14 +28971,13 @@ struct FilterProcessorInplaceMidExtending
 #endif /* _C4_YML_FILTER_PROCESSOR_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/filter_processor.hpp)
+// (end src/c4/yml/filter_processor.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/parser_state.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parser_state.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -29017,7 +28986,7 @@ struct FilterProcessorInplaceMidExtending
 
 #ifndef _C4_YML_COMMON_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/common.hpp
+// c4/yml/common.hpp
 //#include "c4/yml/common.hpp"
 #if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
 #error "amalgamate: file c4/yml/common.hpp must have been included at this point"
@@ -29232,14 +29201,13 @@ static_assert(std::is_standard_layout<ParserState>::value, "ParserState not stan
 #endif /* _C4_YML_PARSER_STATE_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/parser_state.hpp)
+// (end src/c4/yml/parser_state.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/event_handler_stack.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/event_handler_stack.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -29248,7 +29216,7 @@ static_assert(std::is_standard_layout<ParserState>::value, "ParserState not stan
 
 #ifndef _C4_YML_DETAIL_STACK_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/stack.hpp
+// c4/yml/detail/stack.hpp
 //#include "c4/yml/detail/stack.hpp"
 #if !defined(C4_YML_DETAIL_STACK_HPP_) && !defined(_C4_YML_DETAIL_STACK_HPP_)
 #error "amalgamate: file c4/yml/detail/stack.hpp must have been included at this point"
@@ -29258,7 +29226,7 @@ static_assert(std::is_standard_layout<ParserState>::value, "ParserState not stan
 
 #ifndef _C4_YML_NODE_TYPE_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node_type.hpp
+// c4/yml/node_type.hpp
 //#include "c4/yml/node_type.hpp"
 #if !defined(C4_YML_NODE_TYPE_HPP_) && !defined(_C4_YML_NODE_TYPE_HPP_)
 #error "amalgamate: file c4/yml/node_type.hpp must have been included at this point"
@@ -29266,19 +29234,19 @@ static_assert(std::is_standard_layout<ParserState>::value, "ParserState not stan
 
 #endif
 
-#ifndef _C4_YML_DETAIL_PARSER_DBG_HPP_
+#ifndef _C4_YML_DETAIL_DBGPRINT_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/parser_dbg.hpp
-//#include "c4/yml/detail/parser_dbg.hpp"
-#if !defined(C4_YML_DETAIL_PARSER_DBG_HPP_) && !defined(_C4_YML_DETAIL_PARSER_DBG_HPP_)
-#error "amalgamate: file c4/yml/detail/parser_dbg.hpp must have been included at this point"
-#endif /* C4_YML_DETAIL_PARSER_DBG_HPP_ */
+// c4/yml/detail/dbgprint.hpp
+//#include "c4/yml/detail/dbgprint.hpp"
+#if !defined(C4_YML_DETAIL_DBGPRINT_HPP_) && !defined(_C4_YML_DETAIL_DBGPRINT_HPP_)
+#error "amalgamate: file c4/yml/detail/dbgprint.hpp must have been included at this point"
+#endif /* C4_YML_DETAIL_DBGPRINT_HPP_ */
 
 #endif
 
 #ifndef _C4_YML_PARSER_STATE_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parser_state.hpp
+// c4/yml/parser_state.hpp
 //#include "c4/yml/parser_state.hpp"
 #if !defined(C4_YML_PARSER_STATE_HPP_) && !defined(_C4_YML_PARSER_STATE_HPP_)
 #error "amalgamate: file c4/yml/parser_state.hpp must have been included at this point"
@@ -29289,7 +29257,7 @@ static_assert(std::is_standard_layout<ParserState>::value, "ParserState not stan
 #ifdef RYML_DBG
 #ifndef _C4_YML_DETAIL_PRINT_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/print.hpp
+// c4/yml/detail/print.hpp
 //#include "c4/yml/detail/print.hpp"
 #if !defined(C4_YML_DETAIL_PRINT_HPP_) && !defined(_C4_YML_DETAIL_PRINT_HPP_)
 #error "amalgamate: file c4/yml/detail/print.hpp must have been included at this point"
@@ -29469,14 +29437,13 @@ protected:
 #endif /* _C4_YML_EVENT_HANDLER_STACK_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/event_handler_stack.hpp)
+// (end src/c4/yml/event_handler_stack.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/event_handler_tree.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/event_handler_tree.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -29485,7 +29452,7 @@ protected:
 
 #ifndef _C4_YML_TREE_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tree.hpp
+// c4/yml/tree.hpp
 //#include "c4/yml/tree.hpp"
 #if !defined(C4_YML_TREE_HPP_) && !defined(_C4_YML_TREE_HPP_)
 #error "amalgamate: file c4/yml/tree.hpp must have been included at this point"
@@ -29495,7 +29462,7 @@ protected:
 
 #ifndef _C4_YML_EVENT_HANDLER_STACK_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/event_handler_stack.hpp
+// c4/yml/event_handler_stack.hpp
 //#include "c4/yml/event_handler_stack.hpp"
 #if !defined(C4_YML_EVENT_HANDLER_STACK_HPP_) && !defined(_C4_YML_EVENT_HANDLER_STACK_HPP_)
 #error "amalgamate: file c4/yml/event_handler_stack.hpp must have been included at this point"
@@ -29513,11 +29480,12 @@ namespace yml {
  * @{ */
 
 
-/** The stack state needed specifically by @ref EventHandlerTree */
+/** @cond dev */
 struct EventHandlerTreeState : public ParserState
 {
     NodeData *tr_data;
 };
+/** @endcond */
 
 
 /** The event handler to create a ryml @ref Tree. See the
@@ -29957,9 +29925,8 @@ public:
     {
         _c4dbgpf("node[{}]: set key anchor: [{}]~~~{}~~~", m_curr->node_id, anchor.len, anchor);
         _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
-        if(C4_UNLIKELY(_has_any_(KEYREF)))
-            _RYML_CB_ERR_(m_tree->callbacks(), "key cannot have both anchor and ref", m_curr->pos);
-        _RYML_CB_ASSERT(m_tree->callbacks(), !anchor.begins_with('&'));
+        _RYML_CB_ASSERT(m_stack.m_callbacks, !_has_any_(KEYREF));
+        _RYML_CB_ASSERT(m_stack.m_callbacks, !anchor.begins_with('&'));
         _enable_(KEYANCH);
         m_curr->tr_data->m_key.anchor = anchor;
     }
@@ -29967,9 +29934,8 @@ public:
     {
         _c4dbgpf("node[{}]: set val anchor: [{}]~~~{}~~~", m_curr->node_id, anchor.len, anchor);
         _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
-        if(C4_UNLIKELY(_has_any_(VALREF)))
-            _RYML_CB_ERR_(m_tree->callbacks(), "val cannot have both anchor and ref", m_curr->pos);
-        _RYML_CB_ASSERT(m_tree->callbacks(), !anchor.begins_with('&'));
+        _RYML_CB_ASSERT(m_stack.m_callbacks, !_has_any_(VALREF));
+        _RYML_CB_ASSERT(m_stack.m_callbacks, !anchor.begins_with('&'));
         _enable_(VALANCH);
         m_curr->tr_data->m_val.anchor = anchor;
     }
@@ -30263,33 +30229,22 @@ C4_SUPPRESS_WARNING_MSVC_POP
 #endif /* _C4_YML_EVENT_HANDLER_TREE_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/event_handler_tree.hpp)
+// (end src/c4/yml/event_handler_tree.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/parse_engine.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parse_engine.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifndef _C4_YML_PARSE_ENGINE_HPP_
 #define _C4_YML_PARSE_ENGINE_HPP_
 
-#ifndef _C4_YML_DETAIL_PARSER_DBG_HPP_
-// amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/parser_dbg.hpp
-//#include "c4/yml/detail/parser_dbg.hpp"
-#if !defined(C4_YML_DETAIL_PARSER_DBG_HPP_) && !defined(_C4_YML_DETAIL_PARSER_DBG_HPP_)
-#error "amalgamate: file c4/yml/detail/parser_dbg.hpp must have been included at this point"
-#endif /* C4_YML_DETAIL_PARSER_DBG_HPP_ */
-
-#endif
-
 #ifndef _C4_YML_PARSER_STATE_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parser_state.hpp
+// c4/yml/parser_state.hpp
 //#include "c4/yml/parser_state.hpp"
 #if !defined(C4_YML_PARSER_STATE_HPP_) && !defined(_C4_YML_PARSER_STATE_HPP_)
 #error "amalgamate: file c4/yml/parser_state.hpp must have been included at this point"
@@ -30329,7 +30284,10 @@ namespace yml {
  * - @ref EventHandlerTree is the handler responsible for creating the
  *   ryml @ref Tree
  *
- * - @ref EventHandlerYamlStd is the handler responsible for emitting
+ * - @ref extra::EventHandlerInts parses YAML into an integer array
+     representation of the tree and scalars.
+ *
+ * - @ref extra::EventHandlerTestSuite is the handler responsible for emitting
  *   standardized [YAML test suite
  *   events](https://github.com/yaml/yaml-test-suite), used (only) in
  *   the CI of this project.
@@ -30391,8 +30349,8 @@ namespace yml {
  * cases. They are called by the parser when a just-handled
  * value/container is actually the first key of a new map:
  *
- *   - `actually_val_is_first_key_of_new_map_flow()` (@ref EventHandlerTree::actually_val_is_first_key_of_new_map_flow() "see implementation in EventHandlerTree" / @ref EventHandlerYamlStd::actually_val_is_first_key_of_new_map_flow() "see implementation in EventHandlerYamlStd")
- *   - `actually_val_is_first_key_of_new_map_block()` (@ref EventHandlerTree::actually_val_is_first_key_of_new_map_block() "see implementation in EventHandlerTree" / @ref EventHandlerYamlStd::actually_val_is_first_key_of_new_map_block() "see implementation in EventHandlerYamlStd")
+ *   - `actually_val_is_first_key_of_new_map_flow()` (@ref EventHandlerTree::actually_val_is_first_key_of_new_map_flow() "see implementation in EventHandlerTree" / @ref EventHandlerTestSuite::actually_val_is_first_key_of_new_map_flow() "see implementation in EventHandlerTestSuite")
+ *   - `actually_val_is_first_key_of_new_map_block()` (@ref EventHandlerTree::actually_val_is_first_key_of_new_map_block() "see implementation in EventHandlerTree" / @ref EventHandlerTestSuite::actually_val_is_first_key_of_new_map_block() "see implementation in EventHandlerTestSuite")
  *
  * For example, consider an implicit map inside a seq: `[a: b, c:
  * d]` which is parsed as `[{a: b}, {c: d}]`. The standard event
@@ -30570,11 +30528,20 @@ public:
  * - @ref EventHandlerTree is the handler responsible for creating the
  *   ryml @ref Tree
  *
- * - @ref EventHandlerYamlStd is the handler responsible for emitting
+ * - @ref extra::EventHandlerTestSuite is a handler responsible for emitting
  *   standardized [YAML test suite
  *   events](https://github.com/yaml/yaml-test-suite), used (only) in
  *   the CI of this project. This is not part of the library and is
  *   not installed.
+ *
+ * - @ref extra::EventHandlerInts is the handler responsible for
+ *   emitting integer-coded events. It is intended for implementing
+ *   fully-conformant parsing in other programming languages
+ *   (integration is currently under work for
+ *   [YamlScript](https://github.com/yaml/yamlscript) and
+ *   [go-yaml](https://github.com/yaml/go-yaml/)). It is not part of
+ *   the library and is not installed.
+ *
  */
 template<class EventHandler>
 class ParseEngine
@@ -30681,8 +30648,7 @@ public:
 
 public:
 
-    /** @name deprecated parse methods
-     * @{ */
+    // deprecated parse methods
 
     /** @cond dev */
     template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding function in parse.hpp.") typename std::enable_if<U::is_wtree, void>::type parse_in_place(csubstr filename, substr yaml, Tree *t, size_t node_id);
@@ -30711,26 +30677,33 @@ public:
     template<class U=EventHandler> RYML_DEPRECATED("removed, deliberately undefined. use the freestanding csubstr version in parse.hpp.") typename std::enable_if<U::is_wtree, Tree>::type parse_in_arena(                  substr yaml                         );
     /** @endcond */
 
-    /** @} */
-
 public:
 
     /** @name locations */
     /** @{ */
 
-    /** Get the location of a node of the last tree to be parsed by this parser. */
-    Location location(Tree const& tree, id_type node_id) const;
-    /** Get the location of a node of the last tree to be parsed by this parser. */
-    Location location(ConstNodeRef node) const;
     /** Get the string starting at a particular location, to the end
      * of the parsed source buffer. */
     csubstr location_contents(Location const& loc) const;
+
     /** Given a pointer to a buffer position, get the location.
      * @param[in] val must be pointing to somewhere in the source
      * buffer that was last parsed by this object. */
     Location val_location(const char *val) const;
 
     /** @} */
+
+public:
+
+    /** @cond dev */
+    template<class U>
+    RYML_DEPRECATED("moved to Tree::location(Parser const&). deliberately undefined here.")
+    auto location(Tree const&, id_type node) const -> typename std::enable_if<U::is_wtree, Location>::type;
+
+    template<class U>
+    RYML_DEPRECATED("moved to ConstNodeRef::location(Parser const&), deliberately undefined here.")
+    auto location(ConstNodeRef const&) const -> typename std::enable_if<U::is_wtree, Location>::type;
+    /** @endcond */
 
 public:
 
@@ -30810,6 +30783,7 @@ public: // exposed for testing
     csubstr _filter_scalar_dquot(substr s);
     csubstr _filter_scalar_literal(substr s, size_t indentation, BlockChomp_e chomp);
     csubstr _filter_scalar_folded(substr s, size_t indentation, BlockChomp_e chomp);
+    csubstr _move_scalar_left_and_add_newline(substr s);
 
     csubstr _maybe_filter_key_scalar_plain(ScannedScalar const& sc, size_t indendation);
     csubstr _maybe_filter_val_scalar_plain(ScannedScalar const& sc, size_t indendation);
@@ -30960,9 +30934,6 @@ private:
     void _resize_locations(size_t sz);
     bool _locations_dirty() const;
 
-    bool _location_from_cont(Tree const& tree, id_type node, Location *C4_RESTRICT loc) const;
-    bool _location_from_node(Tree const& tree, id_type node, Location *C4_RESTRICT loc, id_type level) const;
-
 private:
 
     void _reset();
@@ -31045,10 +31016,6 @@ private:
 
 };
 
-/** @cond dev */
-RYML_EXPORT C4_NO_INLINE size_t _find_last_newline_and_larger_indentation(csubstr s, size_t indentation) noexcept;
-/** @endcond */
-
 
 /** Quickly inspect the source to estimate the number of nodes the
  * resulting tree is likely have. If a tree is empty before
@@ -31079,14 +31046,13 @@ RYML_EXPORT id_type estimate_tree_capacity(csubstr src); // NOLINT(readability-r
 #endif /* _C4_YML_PARSE_ENGINE_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/parse_engine.hpp)
+// (end src/c4/yml/parse_engine.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/preprocess.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/preprocess.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -31100,7 +31066,7 @@ RYML_EXPORT id_type estimate_tree_capacity(csubstr src); // NOLINT(readability-r
 //#include "./common.hpp"
 #endif
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/substr.hpp
+// c4/substr.hpp
 //#include <c4/substr.hpp>
 #if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
 #error "amalgamate: file c4/substr.hpp must have been included at this point"
@@ -31196,14 +31162,13 @@ CharContainer preprocess_rxmap(csubstr rxmap)
 #endif /* _C4_YML_PREPROCESS_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/preprocess.hpp)
+// (end src/c4/yml/preprocess.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/reference_resolver.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/reference_resolver.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -31211,14 +31176,14 @@ CharContainer preprocess_rxmap(csubstr rxmap)
 #define _C4_YML_REFERENCE_RESOLVER_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tree.hpp
+// c4/yml/tree.hpp
 //#include "c4/yml/tree.hpp"
 #if !defined(C4_YML_TREE_HPP_) && !defined(_C4_YML_TREE_HPP_)
 #error "amalgamate: file c4/yml/tree.hpp must have been included at this point"
 #endif /* C4_YML_TREE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/stack.hpp
+// c4/yml/detail/stack.hpp
 //#include "c4/yml/detail/stack.hpp"
 #if !defined(C4_YML_DETAIL_STACK_HPP_) && !defined(_C4_YML_DETAIL_STACK_HPP_)
 #error "amalgamate: file c4/yml/detail/stack.hpp must have been included at this point"
@@ -31309,14 +31274,13 @@ public:
 #endif // _C4_YML_REFERENCE_RESOLVER_HPP_
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/reference_resolver.hpp)
+// (end src/c4/yml/reference_resolver.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/parse.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parse.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -31325,7 +31289,7 @@ public:
 
 #ifndef _C4_YML_COMMON_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/common.hpp
+// c4/yml/common.hpp
 //#include "c4/yml/common.hpp"
 #if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
 #error "amalgamate: file c4/yml/common.hpp must have been included at this point"
@@ -31652,14 +31616,13 @@ RYML_DEPRECATED(RYML_DONT_PARSE_SUBSTR_IN_ARENA) Tree parse_json_in_arena(csubst
 #endif /* _C4_YML_PARSE_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/parse.hpp)
+// (end src/c4/yml/parse.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/std/map.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/std/map.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -31669,7 +31632,7 @@ RYML_DEPRECATED(RYML_DONT_PARSE_SUBSTR_IN_ARENA) Tree parse_json_in_arena(csubst
 /** @file map.hpp write/read std::map to/from a YAML tree. */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node.hpp
+// c4/yml/node.hpp
 //#include "c4/yml/node.hpp"
 #if !defined(C4_YML_NODE_HPP_) && !defined(_C4_YML_NODE_HPP_)
 #error "amalgamate: file c4/yml/node.hpp must have been included at this point"
@@ -31717,14 +31680,13 @@ bool read(c4::yml::ConstNodeRef const& n, std::map<K, V, Less, Alloc> * m)
 #endif // _C4_YML_STD_MAP_HPP_
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/std/map.hpp)
+// (end src/c4/yml/std/map.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/std/string.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/std/string.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -31735,7 +31697,7 @@ bool read(c4::yml::ConstNodeRef const& n, std::map<K, V, Less, Alloc> * m)
 
 // everything we need is implemented here:
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/std/string.hpp
+// c4/std/string.hpp
 //#include <c4/std/string.hpp>
 #if !defined(C4_STD_STRING_HPP_) && !defined(_C4_STD_STRING_HPP_)
 #error "amalgamate: file c4/std/string.hpp must have been included at this point"
@@ -31745,14 +31707,13 @@ bool read(c4::yml::ConstNodeRef const& n, std::map<K, V, Less, Alloc> * m)
 #endif // C4_YML_STD_STRING_HPP_
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/std/string.hpp)
+// (end src/c4/yml/std/string.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/std/vector.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/std/vector.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -31760,14 +31721,14 @@ bool read(c4::yml::ConstNodeRef const& n, std::map<K, V, Less, Alloc> * m)
 #define _C4_YML_STD_VECTOR_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node.hpp
+// c4/yml/node.hpp
 //#include "c4/yml/node.hpp"
 #if !defined(C4_YML_NODE_HPP_) && !defined(_C4_YML_NODE_HPP_)
 #error "amalgamate: file c4/yml/node.hpp must have been included at this point"
 #endif /* C4_YML_NODE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/std/vector.hpp
+// c4/std/vector.hpp
 //#include <c4/std/vector.hpp>
 #if !defined(C4_STD_VECTOR_HPP_) && !defined(_C4_STD_VECTOR_HPP_)
 #error "amalgamate: file c4/std/vector.hpp must have been included at this point"
@@ -31830,14 +31791,13 @@ bool read(c4::yml::ConstNodeRef const& n, std::vector<bool, Alloc> *vec)
 #endif // _C4_YML_STD_VECTOR_HPP_
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/std/vector.hpp)
+// (end src/c4/yml/std/vector.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/std/std.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/std/std.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -31845,21 +31805,21 @@ bool read(c4::yml::ConstNodeRef const& n, std::vector<bool, Alloc> *vec)
 #define _C4_YML_STD_STD_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/std/string.hpp
+// c4/yml/std/string.hpp
 //#include "c4/yml/std/string.hpp"
 #if !defined(C4_YML_STD_STRING_HPP_) && !defined(_C4_YML_STD_STRING_HPP_)
 #error "amalgamate: file c4/yml/std/string.hpp must have been included at this point"
 #endif /* C4_YML_STD_STRING_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/std/vector.hpp
+// c4/yml/std/vector.hpp
 //#include "c4/yml/std/vector.hpp"
 #if !defined(C4_YML_STD_VECTOR_HPP_) && !defined(_C4_YML_STD_VECTOR_HPP_)
 #error "amalgamate: file c4/yml/std/vector.hpp must have been included at this point"
 #endif /* C4_YML_STD_VECTOR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/std/map.hpp
+// c4/yml/std/map.hpp
 //#include "c4/yml/std/map.hpp"
 #if !defined(C4_YML_STD_MAP_HPP_) && !defined(_C4_YML_STD_MAP_HPP_)
 #error "amalgamate: file c4/yml/std/map.hpp must have been included at this point"
@@ -31869,20 +31829,19 @@ bool read(c4::yml::ConstNodeRef const& n, std::vector<bool, Alloc> *vec)
 #endif // _C4_YML_STD_STD_HPP_
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/std/std.hpp)
+// (end src/c4/yml/std/std.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/version.cpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/version.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef RYML_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/version.hpp
+// c4/yml/version.hpp
 //#include "c4/yml/version.hpp"
 #if !defined(C4_YML_VERSION_HPP_) && !defined(_C4_YML_VERSION_HPP_)
 #error "amalgamate: file c4/yml/version.hpp must have been included at this point"
@@ -31918,20 +31877,19 @@ int version_patch()
 #endif /* RYML_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/version.cpp)
+// (end src/c4/yml/version.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/common.cpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/common.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef RYML_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/common.hpp
+// c4/yml/common.hpp
 //#include "c4/yml/common.hpp"
 #if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
 #error "amalgamate: file c4/yml/common.hpp must have been included at this point"
@@ -32091,20 +32049,19 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* RYML_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/common.cpp)
+// (end src/c4/yml/common.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/node_type.cpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node_type.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef RYML_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node_type.hpp
+// c4/yml/node_type.hpp
 //#include "c4/yml/node_type.hpp"
 #if !defined(C4_YML_NODE_TYPE_HPP_) && !defined(_C4_YML_NODE_TYPE_HPP_)
 #error "amalgamate: file c4/yml/node_type.hpp must have been included at this point"
@@ -32328,38 +32285,30 @@ NodeType_e scalar_style_json_choose(csubstr s) noexcept
 #endif /* RYML_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/node_type.cpp)
+// (end src/c4/yml/node_type.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/tag.cpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tag.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef RYML_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tag.hpp
+// c4/yml/tag.hpp
 //#include "c4/yml/tag.hpp"
 #if !defined(C4_YML_TAG_HPP_) && !defined(_C4_YML_TAG_HPP_)
 #error "amalgamate: file c4/yml/tag.hpp must have been included at this point"
 #endif /* C4_YML_TAG_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tree.hpp
-//#include "c4/yml/tree.hpp"
-#if !defined(C4_YML_TREE_HPP_) && !defined(_C4_YML_TREE_HPP_)
-#error "amalgamate: file c4/yml/tree.hpp must have been included at this point"
-#endif /* C4_YML_TREE_HPP_ */
-
-// amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/parser_dbg.hpp
-//#include "c4/yml/detail/parser_dbg.hpp"
-#if !defined(C4_YML_DETAIL_PARSER_DBG_HPP_) && !defined(_C4_YML_DETAIL_PARSER_DBG_HPP_)
-#error "amalgamate: file c4/yml/detail/parser_dbg.hpp must have been included at this point"
-#endif /* C4_YML_DETAIL_PARSER_DBG_HPP_ */
+// c4/yml/detail/dbgprint.hpp
+//#include "c4/yml/detail/dbgprint.hpp"
+#if !defined(C4_YML_DETAIL_DBGPRINT_HPP_) && !defined(_C4_YML_DETAIL_DBGPRINT_HPP_)
+#error "amalgamate: file c4/yml/detail/dbgprint.hpp must have been included at this point"
+#endif /* C4_YML_DETAIL_DBGPRINT_HPP_ */
 
 
 
@@ -32582,25 +32531,7 @@ bool TagDirective::create_from_str(csubstr directive_)
     return true;
 }
 
-bool TagDirective::create_from_str(csubstr directive_, Tree *tree)
-{
-    _RYML_CB_CHECK(tree->callbacks(), directive_.begins_with("%TAG "));
-    if(!create_from_str(directive_))
-    {
-        _RYML_CB_ERR(tree->callbacks(), "invalid tag directive");
-    }
-    next_node_id = tree->size();
-    if(!tree->empty())
-    {
-        const id_type prev = tree->size() - 1;
-        if(tree->is_root(prev) && tree->type(prev) != NOTYPE && !tree->is_stream(prev))
-            ++next_node_id;
-    }
-    _c4dbgpf("%TAG: handle={} prefix={} next_node={}", handle, prefix, next_node_id);
-    return true;
-}
-
-size_t TagDirective::transform(csubstr tag, substr output, Callbacks const& callbacks) const
+size_t TagDirective::transform(csubstr tag, substr output, Callbacks const& callbacks, bool with_brackets) const
 {
     _c4dbgpf("%TAG: handle={} prefix={} next_node={}. tag={}", handle, prefix, next_node_id, tag);
     _RYML_CB_ASSERT(callbacks, tag.len >= handle.len);
@@ -32618,16 +32549,26 @@ size_t TagDirective::transform(csubstr tag, substr output, Callbacks const& call
             return 0; // return 0 to signal that the tag is local and cannot be resolved
         }
     }
-    size_t len = 1u + prefix.len + rest.len + 1u;
+    size_t len = prefix.len + rest.len;
+    if(with_brackets)
+        len += 2;
     size_t numpc = rest.count('%');
     if(numpc == 0)
     {
         if(len <= output.len)
         {
-            output.str[0] = '<';
-            memcpy(1u + output.str, prefix.str, prefix.len);
-            memcpy(1u + output.str + prefix.len, rest.str, rest.len);
-            output.str[1u + prefix.len + rest.len] = '>';
+            if(with_brackets)
+            {
+                output.str[0] = '<';
+                memcpy(1u + output.str, prefix.str, prefix.len);
+                memcpy(1u + output.str + prefix.len, rest.str, rest.len);
+                output.str[1u + prefix.len + rest.len] = '>';
+            }
+            else
+            {
+                memcpy(output.str, prefix.str, prefix.len);
+                memcpy(output.str + prefix.len, rest.str, rest.len);
+            }
         }
     }
     else
@@ -32650,7 +32591,8 @@ size_t TagDirective::transform(csubstr tag, substr output, Callbacks const& call
             size_t prev = 0, wpos = 0;
             auto appendstr = [&](csubstr s) { memcpy(output.str + wpos, s.str, s.len); wpos += s.len; };
             auto appendchar = [&](char c) { output.str[wpos++] = c; };
-            appendchar('<');
+            if(with_brackets)
+                appendchar('<');
             appendstr(prefix);
             pos = rest.find('%');
             _RYML_CB_ASSERT(callbacks, pos != npos);
@@ -32672,7 +32614,8 @@ size_t TagDirective::transform(csubstr tag, substr output, Callbacks const& call
             _RYML_CB_ASSERT(callbacks, prev > 0);
             _RYML_CB_ASSERT(callbacks, rest.len >= prev);
             appendstr(rest.sub(prev));
-            appendchar('>');
+            if(with_brackets)
+                appendchar('>');
             _RYML_CB_ASSERT(callbacks, wpos == len);
         }
     }
@@ -32685,1860 +32628,13 @@ size_t TagDirective::transform(csubstr tag, substr output, Callbacks const& call
 #endif /* RYML_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/tag.cpp)
-
-
-
-//********************************************************************************
-//--------------------------------------------------------------------------------
-// src/c4/yml/tree.cpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tree.cpp
-//--------------------------------------------------------------------------------
-//********************************************************************************
-
-#ifdef RYML_SINGLE_HDR_DEFINE_NOW
-// amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tree.hpp
-//#include "c4/yml/tree.hpp"
-#if !defined(C4_YML_TREE_HPP_) && !defined(_C4_YML_TREE_HPP_)
-#error "amalgamate: file c4/yml/tree.hpp must have been included at this point"
-#endif /* C4_YML_TREE_HPP_ */
-
-// amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/parser_dbg.hpp
-//#include "c4/yml/detail/parser_dbg.hpp"
-#if !defined(C4_YML_DETAIL_PARSER_DBG_HPP_) && !defined(_C4_YML_DETAIL_PARSER_DBG_HPP_)
-#error "amalgamate: file c4/yml/detail/parser_dbg.hpp must have been included at this point"
-#endif /* C4_YML_DETAIL_PARSER_DBG_HPP_ */
-
-// amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node.hpp
-//#include "c4/yml/node.hpp"
-#if !defined(C4_YML_NODE_HPP_) && !defined(_C4_YML_NODE_HPP_)
-#error "amalgamate: file c4/yml/node.hpp must have been included at this point"
-#endif /* C4_YML_NODE_HPP_ */
-
-// amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/reference_resolver.hpp
-//#include "c4/yml/reference_resolver.hpp"
-#if !defined(C4_YML_REFERENCE_RESOLVER_HPP_) && !defined(_C4_YML_REFERENCE_RESOLVER_HPP_)
-#error "amalgamate: file c4/yml/reference_resolver.hpp must have been included at this point"
-#endif /* C4_YML_REFERENCE_RESOLVER_HPP_ */
-
-
-
-C4_SUPPRESS_WARNING_MSVC_WITH_PUSH(4296/*expression is always 'boolean_value'*/)
-C4_SUPPRESS_WARNING_MSVC(4702/*unreachable code*/)
-C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
-C4_SUPPRESS_WARNING_GCC("-Wtype-limits")
-C4_SUPPRESS_WARNING_GCC("-Wuseless-cast")
-
-namespace c4 {
-namespace yml {
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-NodeRef Tree::rootref()
-{
-    return NodeRef(this, root_id());
-}
-ConstNodeRef Tree::rootref() const
-{
-    return ConstNodeRef(this, root_id());
-}
-
-ConstNodeRef Tree::crootref() const
-{
-    return ConstNodeRef(this, root_id());
-}
-
-NodeRef Tree::ref(id_type id)
-{
-    _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_cap);
-    return NodeRef(this, id);
-}
-ConstNodeRef Tree::ref(id_type id) const
-{
-    _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_cap);
-    return ConstNodeRef(this, id);
-}
-ConstNodeRef Tree::cref(id_type id) const
-{
-    _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_cap);
-    return ConstNodeRef(this, id);
-}
-
-NodeRef Tree::operator[] (csubstr key)
-{
-    return rootref()[key];
-}
-ConstNodeRef Tree::operator[] (csubstr key) const
-{
-    return rootref()[key];
-}
-
-NodeRef Tree::operator[] (id_type i)
-{
-    return rootref()[i];
-}
-ConstNodeRef Tree::operator[] (id_type i) const
-{
-    return rootref()[i];
-}
-
-NodeRef Tree::docref(id_type i)
-{
-    return ref(doc(i));
-}
-ConstNodeRef Tree::docref(id_type i) const
-{
-    return cref(doc(i));
-}
-ConstNodeRef Tree::cdocref(id_type i) const
-{
-    return cref(doc(i));
-}
-
-
-//-----------------------------------------------------------------------------
-Tree::Tree(Callbacks const& cb)
-    : m_buf(nullptr)
-    , m_cap(0)
-    , m_size(0)
-    , m_free_head(NONE)
-    , m_free_tail(NONE)
-    , m_arena()
-    , m_arena_pos(0)
-    , m_callbacks(cb)
-    , m_tag_directives()
-{
-}
-
-Tree::Tree(id_type node_capacity, size_t arena_capacity, Callbacks const& cb)
-    : Tree(cb)
-{
-    reserve(node_capacity);
-    reserve_arena(arena_capacity);
-}
-
-Tree::~Tree()
-{
-    _free();
-}
-
-
-Tree::Tree(Tree const& that) : Tree(that.m_callbacks)
-{
-    _copy(that);
-}
-
-Tree& Tree::operator= (Tree const& that)
-{
-    if(&that != this)
-    {
-        _free();
-        m_callbacks = that.m_callbacks;
-        _copy(that);
-    }
-    return *this;
-}
-
-Tree::Tree(Tree && that) noexcept : Tree(that.m_callbacks)
-{
-    _move(that);
-}
-
-Tree& Tree::operator= (Tree && that) noexcept
-{
-    if(&that != this)
-    {
-        _free();
-        m_callbacks = that.m_callbacks;
-        _move(that);
-    }
-    return *this;
-}
-
-void Tree::_free()
-{
-    if(m_buf)
-    {
-        _RYML_CB_ASSERT(m_callbacks, m_cap > 0);
-        _RYML_CB_FREE(m_callbacks, m_buf, NodeData, (size_t)m_cap);
-    }
-    if(m_arena.str)
-    {
-        _RYML_CB_ASSERT(m_callbacks, m_arena.len > 0);
-        _RYML_CB_FREE(m_callbacks, m_arena.str, char, m_arena.len);
-    }
-    _clear();
-}
-
-
-C4_SUPPRESS_WARNING_GCC_PUSH
-#if defined(__GNUC__) && __GNUC__>= 8
-    C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wclass-memaccess") // error: ‘void* memset(void*, int, size_t)’ clearing an object of type ‘class c4::yml::Tree’ with no trivial copy-assignment; use assignment or value-initialization instead
-#endif
-
-void Tree::_clear()
-{
-    m_buf = nullptr;
-    m_cap = 0;
-    m_size = 0;
-    m_free_head = 0;
-    m_free_tail = 0;
-    m_arena = {};
-    m_arena_pos = 0;
-    for(id_type i = 0; i < RYML_MAX_TAG_DIRECTIVES; ++i)
-        m_tag_directives[i] = {};
-}
-
-void Tree::_copy(Tree const& that)
-{
-    _RYML_CB_ASSERT(m_callbacks, m_buf == nullptr);
-    _RYML_CB_ASSERT(m_callbacks, m_arena.str == nullptr);
-    _RYML_CB_ASSERT(m_callbacks, m_arena.len == 0);
-    if(that.m_cap)
-    {
-        m_buf = _RYML_CB_ALLOC_HINT(m_callbacks, NodeData, (size_t)that.m_cap, that.m_buf);
-        memcpy(m_buf, that.m_buf, (size_t)that.m_cap * sizeof(NodeData));
-    }
-    m_cap = that.m_cap;
-    m_size = that.m_size;
-    m_free_head = that.m_free_head;
-    m_free_tail = that.m_free_tail;
-    m_arena_pos = that.m_arena_pos;
-    m_arena = that.m_arena;
-    if(that.m_arena.str)
-    {
-        _RYML_CB_ASSERT(m_callbacks, that.m_arena.len > 0);
-        substr arena;
-        arena.str = _RYML_CB_ALLOC_HINT(m_callbacks, char, that.m_arena.len, that.m_arena.str);
-        arena.len = that.m_arena.len;
-        _relocate(arena); // does a memcpy of the arena and updates nodes using the old arena
-        m_arena = arena;
-    }
-    for(id_type i = 0; i < RYML_MAX_TAG_DIRECTIVES; ++i)
-        m_tag_directives[i] = that.m_tag_directives[i];
-}
-
-void Tree::_move(Tree & that) noexcept
-{
-    _RYML_CB_ASSERT(m_callbacks, m_buf == nullptr);
-    _RYML_CB_ASSERT(m_callbacks, m_arena.str == nullptr);
-    _RYML_CB_ASSERT(m_callbacks, m_arena.len == 0);
-    m_buf = that.m_buf;
-    m_cap = that.m_cap;
-    m_size = that.m_size;
-    m_free_head = that.m_free_head;
-    m_free_tail = that.m_free_tail;
-    m_arena = that.m_arena;
-    m_arena_pos = that.m_arena_pos;
-    for(id_type i = 0; i < RYML_MAX_TAG_DIRECTIVES; ++i)
-        m_tag_directives[i] = that.m_tag_directives[i];
-    that._clear();
-}
-
-void Tree::_relocate(substr next_arena)
-{
-    _RYML_CB_ASSERT(m_callbacks, next_arena.not_empty());
-    _RYML_CB_ASSERT(m_callbacks, next_arena.len >= m_arena.len);
-    if(m_arena_pos)
-        memcpy(next_arena.str, m_arena.str, m_arena_pos);
-    for(NodeData *C4_RESTRICT n = m_buf, *e = m_buf + m_cap; n != e; ++n)
-    {
-        if(in_arena(n->m_key.scalar))
-            n->m_key.scalar = _relocated(n->m_key.scalar, next_arena);
-        if(in_arena(n->m_key.tag))
-            n->m_key.tag = _relocated(n->m_key.tag, next_arena);
-        if(in_arena(n->m_key.anchor))
-            n->m_key.anchor = _relocated(n->m_key.anchor, next_arena);
-        if(in_arena(n->m_val.scalar))
-            n->m_val.scalar = _relocated(n->m_val.scalar, next_arena);
-        if(in_arena(n->m_val.tag))
-            n->m_val.tag = _relocated(n->m_val.tag, next_arena);
-        if(in_arena(n->m_val.anchor))
-            n->m_val.anchor = _relocated(n->m_val.anchor, next_arena);
-    }
-    for(TagDirective &C4_RESTRICT td : m_tag_directives)
-    {
-        if(in_arena(td.prefix))
-            td.prefix = _relocated(td.prefix, next_arena);
-        if(in_arena(td.handle))
-            td.handle = _relocated(td.handle, next_arena);
-    }
-}
-
-
-//-----------------------------------------------------------------------------
-void Tree::reserve(id_type cap)
-{
-    if(cap > m_cap)
-    {
-        NodeData *buf = _RYML_CB_ALLOC_HINT(m_callbacks, NodeData, (size_t)cap, m_buf);
-        if(m_buf)
-        {
-            memcpy(buf, m_buf, (size_t)m_cap * sizeof(NodeData));
-            _RYML_CB_FREE(m_callbacks, m_buf, NodeData, (size_t)m_cap);
-        }
-        id_type first = m_cap, del = cap - m_cap;
-        m_cap = cap;
-        m_buf = buf;
-        _clear_range(first, del);
-        if(m_free_head != NONE)
-        {
-            _RYML_CB_ASSERT(m_callbacks, m_buf != nullptr);
-            _RYML_CB_ASSERT(m_callbacks, m_free_tail != NONE);
-            m_buf[m_free_tail].m_next_sibling = first;
-            m_buf[first].m_prev_sibling = m_free_tail;
-            m_free_tail = cap-1;
-        }
-        else
-        {
-            _RYML_CB_ASSERT(m_callbacks, m_free_tail == NONE);
-            m_free_head = first;
-            m_free_tail = cap-1;
-        }
-        _RYML_CB_ASSERT(m_callbacks, m_free_head == NONE || (m_free_head >= 0 && m_free_head < cap));
-        _RYML_CB_ASSERT(m_callbacks, m_free_tail == NONE || (m_free_tail >= 0 && m_free_tail < cap));
-
-        if( ! m_size)
-            _claim_root();
-    }
-}
-
-
-//-----------------------------------------------------------------------------
-void Tree::clear()
-{
-    _clear_range(0, m_cap);
-    m_size = 0;
-    if(m_buf)
-    {
-        _RYML_CB_ASSERT(m_callbacks, m_cap >= 0);
-        m_free_head = 0;
-        m_free_tail = m_cap-1;
-        _claim_root();
-    }
-    else
-    {
-        m_free_head = NONE;
-        m_free_tail = NONE;
-    }
-    for(id_type i = 0; i < RYML_MAX_TAG_DIRECTIVES; ++i)
-        m_tag_directives[i] = {};
-}
-
-void Tree::_claim_root()
-{
-    id_type r = _claim();
-    _RYML_CB_ASSERT(m_callbacks, r == 0);
-    _set_hierarchy(r, NONE, NONE);
-}
-
-
-//-----------------------------------------------------------------------------
-void Tree::_clear_range(id_type first, id_type num)
-{
-    if(num == 0)
-        return; // prevent overflow when subtracting
-    _RYML_CB_ASSERT(m_callbacks, first >= 0 && first + num <= m_cap);
-    memset(m_buf + first, 0, (size_t)num * sizeof(NodeData)); // TODO we should not need this
-    for(id_type i = first, e = first + num; i < e; ++i)
-    {
-        _clear(i);
-        NodeData *n = m_buf + i;
-        n->m_prev_sibling = i - 1;
-        n->m_next_sibling = i + 1;
-    }
-    m_buf[first + num - 1].m_next_sibling = NONE;
-}
-
-C4_SUPPRESS_WARNING_GCC_POP
-
-
-//-----------------------------------------------------------------------------
-void Tree::_release(id_type i)
-{
-    _RYML_CB_ASSERT(m_callbacks, i >= 0 && i < m_cap);
-
-    _rem_hierarchy(i);
-    _free_list_add(i);
-    _clear(i);
-
-    --m_size;
-}
-
-//-----------------------------------------------------------------------------
-// add to the front of the free list
-void Tree::_free_list_add(id_type i)
-{
-    _RYML_CB_ASSERT(m_callbacks, i >= 0 && i < m_cap);
-    NodeData &C4_RESTRICT w = m_buf[i];
-
-    w.m_parent = NONE;
-    w.m_next_sibling = m_free_head;
-    w.m_prev_sibling = NONE;
-    if(m_free_head != NONE)
-        m_buf[m_free_head].m_prev_sibling = i;
-    m_free_head = i;
-    if(m_free_tail == NONE)
-        m_free_tail = m_free_head;
-}
-
-void Tree::_free_list_rem(id_type i)
-{
-    if(m_free_head == i)
-        m_free_head = _p(i)->m_next_sibling;
-    _rem_hierarchy(i);
-}
-
-//-----------------------------------------------------------------------------
-id_type Tree::_claim()
-{
-    if(m_free_head == NONE || m_buf == nullptr)
-    {
-        id_type sz = 2 * m_cap;
-        sz = sz ? sz : 16;
-        reserve(sz);
-        _RYML_CB_ASSERT(m_callbacks, m_free_head != NONE);
-    }
-
-    _RYML_CB_ASSERT(m_callbacks, m_size < m_cap);
-    _RYML_CB_ASSERT(m_callbacks, m_free_head >= 0 && m_free_head < m_cap);
-
-    id_type ichild = m_free_head;
-    NodeData *child = m_buf + ichild;
-
-    ++m_size;
-    m_free_head = child->m_next_sibling;
-    if(m_free_head == NONE)
-    {
-        m_free_tail = NONE;
-        _RYML_CB_ASSERT(m_callbacks, m_size == m_cap);
-    }
-
-    _clear(ichild);
-
-    return ichild;
-}
-
-//-----------------------------------------------------------------------------
-
-C4_SUPPRESS_WARNING_GCC_PUSH
-C4_SUPPRESS_WARNING_CLANG_PUSH
-C4_SUPPRESS_WARNING_CLANG("-Wnull-dereference")
-#if defined(__GNUC__)
-#if (__GNUC__ >= 6)
-C4_SUPPRESS_WARNING_GCC("-Wnull-dereference")
-#endif
-#if (__GNUC__ > 9)
-C4_SUPPRESS_WARNING_GCC("-Wanalyzer-fd-leak")
-#endif
-#endif
-
-void Tree::_set_hierarchy(id_type ichild, id_type iparent, id_type iprev_sibling)
-{
-    _RYML_CB_ASSERT(m_callbacks, ichild >= 0 && ichild < m_cap);
-    _RYML_CB_ASSERT(m_callbacks, iparent == NONE || (iparent >= 0 && iparent < m_cap));
-    _RYML_CB_ASSERT(m_callbacks, iprev_sibling == NONE || (iprev_sibling >= 0 && iprev_sibling < m_cap));
-
-    NodeData *C4_RESTRICT child = _p(ichild);
-
-    child->m_parent = iparent;
-    child->m_prev_sibling = NONE;
-    child->m_next_sibling = NONE;
-
-    if(iparent == NONE)
-    {
-        _RYML_CB_ASSERT(m_callbacks, ichild == 0);
-        _RYML_CB_ASSERT(m_callbacks, iprev_sibling == NONE);
-    }
-
-    if(iparent == NONE)
-        return;
-
-    id_type inext_sibling = iprev_sibling != NONE ? next_sibling(iprev_sibling) : first_child(iparent);
-    NodeData *C4_RESTRICT parent = get(iparent);
-    NodeData *C4_RESTRICT psib   = get(iprev_sibling);
-    NodeData *C4_RESTRICT nsib   = get(inext_sibling);
-
-    if(psib)
-    {
-        _RYML_CB_ASSERT(m_callbacks, next_sibling(iprev_sibling) == id(nsib));
-        child->m_prev_sibling = id(psib);
-        psib->m_next_sibling = id(child);
-        _RYML_CB_ASSERT(m_callbacks, psib->m_prev_sibling != psib->m_next_sibling || psib->m_prev_sibling == NONE);
-    }
-
-    if(nsib)
-    {
-        _RYML_CB_ASSERT(m_callbacks, prev_sibling(inext_sibling) == id(psib));
-        child->m_next_sibling = id(nsib);
-        nsib->m_prev_sibling = id(child);
-        _RYML_CB_ASSERT(m_callbacks, nsib->m_prev_sibling != nsib->m_next_sibling || nsib->m_prev_sibling == NONE);
-    }
-
-    if(parent->m_first_child == NONE)
-    {
-        _RYML_CB_ASSERT(m_callbacks, parent->m_last_child == NONE);
-        parent->m_first_child = id(child);
-        parent->m_last_child = id(child);
-    }
-    else
-    {
-        if(child->m_next_sibling == parent->m_first_child)
-            parent->m_first_child = id(child);
-
-        if(child->m_prev_sibling == parent->m_last_child)
-            parent->m_last_child = id(child);
-    }
-}
-
-C4_SUPPRESS_WARNING_GCC_POP
-C4_SUPPRESS_WARNING_CLANG_POP
-
-
-//-----------------------------------------------------------------------------
-void Tree::_rem_hierarchy(id_type i)
-{
-    _RYML_CB_ASSERT(m_callbacks, i >= 0 && i < m_cap);
-
-    NodeData &C4_RESTRICT w = m_buf[i];
-
-    // remove from the parent
-    if(w.m_parent != NONE)
-    {
-        NodeData &C4_RESTRICT p = m_buf[w.m_parent];
-        if(p.m_first_child == i)
-        {
-            p.m_first_child = w.m_next_sibling;
-        }
-        if(p.m_last_child == i)
-        {
-            p.m_last_child = w.m_prev_sibling;
-        }
-    }
-
-    // remove from the used list
-    if(w.m_prev_sibling != NONE)
-    {
-        NodeData *C4_RESTRICT prev = get(w.m_prev_sibling);
-        prev->m_next_sibling = w.m_next_sibling;
-    }
-    if(w.m_next_sibling != NONE)
-    {
-        NodeData *C4_RESTRICT next = get(w.m_next_sibling);
-        next->m_prev_sibling = w.m_prev_sibling;
-    }
-}
-
-//-----------------------------------------------------------------------------
-/** @cond dev */
-id_type Tree::_do_reorder(id_type *node, id_type count)
-{
-    // swap this node if it's not in place
-    if(*node != count)
-    {
-        _swap(*node, count);
-        *node = count;
-    }
-    ++count; // bump the count from this node
-
-    // now descend in the hierarchy
-    for(id_type i = first_child(*node); i != NONE; i = next_sibling(i))
-    {
-        // this child may have been relocated to a different index,
-        // so get an updated version
-        count = _do_reorder(&i, count);
-    }
-    return count;
-}
-/** @endcond */
-
-void Tree::reorder()
-{
-    id_type r = root_id();
-    _do_reorder(&r, 0);
-}
-
-
-//-----------------------------------------------------------------------------
-/** @cond dev */
-void Tree::_swap(id_type n_, id_type m_)
-{
-    _RYML_CB_ASSERT(m_callbacks, (parent(n_) != NONE) || type(n_) == NOTYPE);
-    _RYML_CB_ASSERT(m_callbacks, (parent(m_) != NONE) || type(m_) == NOTYPE);
-    NodeType tn = type(n_);
-    NodeType tm = type(m_);
-    if(tn != NOTYPE && tm != NOTYPE)
-    {
-        _swap_props(n_, m_);
-        _swap_hierarchy(n_, m_);
-    }
-    else if(tn == NOTYPE && tm != NOTYPE)
-    {
-        _copy_props(n_, m_);
-        _free_list_rem(n_);
-        _copy_hierarchy(n_, m_);
-        _clear(m_);
-        _free_list_add(m_);
-    }
-    else if(tn != NOTYPE && tm == NOTYPE)
-    {
-        _copy_props(m_, n_);
-        _free_list_rem(m_);
-        _copy_hierarchy(m_, n_);
-        _clear(n_);
-        _free_list_add(n_);
-    }
-    else
-    {
-        C4_NEVER_REACH();
-    }
-}
-
-//-----------------------------------------------------------------------------
-void Tree::_swap_hierarchy(id_type ia, id_type ib)
-{
-    if(ia == ib) return;
-
-    for(id_type i = first_child(ia); i != NONE; i = next_sibling(i))
-    {
-        if(i == ib || i == ia)
-            continue;
-        _p(i)->m_parent = ib;
-    }
-
-    for(id_type i = first_child(ib); i != NONE; i = next_sibling(i))
-    {
-        if(i == ib || i == ia)
-            continue;
-        _p(i)->m_parent = ia;
-    }
-
-    auto & C4_RESTRICT a  = *_p(ia);
-    auto & C4_RESTRICT b  = *_p(ib);
-    auto & C4_RESTRICT pa = *_p(a.m_parent);
-    auto & C4_RESTRICT pb = *_p(b.m_parent);
-
-    if(&pa == &pb)
-    {
-        if((pa.m_first_child == ib && pa.m_last_child == ia)
-            ||
-           (pa.m_first_child == ia && pa.m_last_child == ib))
-        {
-            std::swap(pa.m_first_child, pa.m_last_child);
-        }
-        else
-        {
-            bool changed = false;
-            if(pa.m_first_child == ia)
-            {
-                pa.m_first_child = ib;
-                changed = true;
-            }
-            if(pa.m_last_child  == ia)
-            {
-                pa.m_last_child = ib;
-                changed = true;
-            }
-            if(pb.m_first_child == ib && !changed)
-            {
-                pb.m_first_child = ia;
-            }
-            if(pb.m_last_child  == ib && !changed)
-            {
-                pb.m_last_child  = ia;
-            }
-        }
-    }
-    else
-    {
-        if(pa.m_first_child == ia)
-            pa.m_first_child = ib;
-        if(pa.m_last_child  == ia)
-            pa.m_last_child  = ib;
-        if(pb.m_first_child == ib)
-            pb.m_first_child = ia;
-        if(pb.m_last_child  == ib)
-            pb.m_last_child  = ia;
-    }
-    std::swap(a.m_first_child , b.m_first_child);
-    std::swap(a.m_last_child  , b.m_last_child);
-
-    if(a.m_prev_sibling != ib && b.m_prev_sibling != ia &&
-       a.m_next_sibling != ib && b.m_next_sibling != ia)
-    {
-        if(a.m_prev_sibling != NONE && a.m_prev_sibling != ib)
-            _p(a.m_prev_sibling)->m_next_sibling = ib;
-        if(a.m_next_sibling != NONE && a.m_next_sibling != ib)
-            _p(a.m_next_sibling)->m_prev_sibling = ib;
-        if(b.m_prev_sibling != NONE && b.m_prev_sibling != ia)
-            _p(b.m_prev_sibling)->m_next_sibling = ia;
-        if(b.m_next_sibling != NONE && b.m_next_sibling != ia)
-            _p(b.m_next_sibling)->m_prev_sibling = ia;
-        std::swap(a.m_prev_sibling, b.m_prev_sibling);
-        std::swap(a.m_next_sibling, b.m_next_sibling);
-    }
-    else
-    {
-        if(a.m_next_sibling == ib) // n will go after m
-        {
-            _RYML_CB_ASSERT(m_callbacks, b.m_prev_sibling == ia);
-            if(a.m_prev_sibling != NONE)
-            {
-                _RYML_CB_ASSERT(m_callbacks, a.m_prev_sibling != ib);
-                _p(a.m_prev_sibling)->m_next_sibling = ib;
-            }
-            if(b.m_next_sibling != NONE)
-            {
-                _RYML_CB_ASSERT(m_callbacks, b.m_next_sibling != ia);
-                _p(b.m_next_sibling)->m_prev_sibling = ia;
-            }
-            id_type ns = b.m_next_sibling;
-            b.m_prev_sibling = a.m_prev_sibling;
-            b.m_next_sibling = ia;
-            a.m_prev_sibling = ib;
-            a.m_next_sibling = ns;
-        }
-        else if(a.m_prev_sibling == ib) // m will go after n
-        {
-            _RYML_CB_ASSERT(m_callbacks, b.m_next_sibling == ia);
-            if(b.m_prev_sibling != NONE)
-            {
-                _RYML_CB_ASSERT(m_callbacks, b.m_prev_sibling != ia);
-                _p(b.m_prev_sibling)->m_next_sibling = ia;
-            }
-            if(a.m_next_sibling != NONE)
-            {
-                _RYML_CB_ASSERT(m_callbacks, a.m_next_sibling != ib);
-                _p(a.m_next_sibling)->m_prev_sibling = ib;
-            }
-            id_type ns = b.m_prev_sibling;
-            a.m_prev_sibling = b.m_prev_sibling;
-            a.m_next_sibling = ib;
-            b.m_prev_sibling = ia;
-            b.m_next_sibling = ns;
-        }
-        else
-        {
-            C4_NEVER_REACH();
-        }
-    }
-    _RYML_CB_ASSERT(m_callbacks, a.m_next_sibling != ia);
-    _RYML_CB_ASSERT(m_callbacks, a.m_prev_sibling != ia);
-    _RYML_CB_ASSERT(m_callbacks, b.m_next_sibling != ib);
-    _RYML_CB_ASSERT(m_callbacks, b.m_prev_sibling != ib);
-
-    if(a.m_parent != ib && b.m_parent != ia)
-    {
-        std::swap(a.m_parent, b.m_parent);
-    }
-    else
-    {
-        if(a.m_parent == ib && b.m_parent != ia)
-        {
-            a.m_parent = b.m_parent;
-            b.m_parent = ia;
-        }
-        else if(a.m_parent != ib && b.m_parent == ia)
-        {
-            b.m_parent = a.m_parent;
-            a.m_parent = ib;
-        }
-        else
-        {
-            C4_NEVER_REACH();
-        }
-    }
-}
-
-//-----------------------------------------------------------------------------
-void Tree::_copy_hierarchy(id_type dst_, id_type src_)
-{
-    auto const& C4_RESTRICT src = *_p(src_);
-    auto      & C4_RESTRICT dst = *_p(dst_);
-    auto      & C4_RESTRICT prt = *_p(src.m_parent);
-    for(id_type i = src.m_first_child; i != NONE; i = next_sibling(i))
-    {
-        _p(i)->m_parent = dst_;
-    }
-    if(src.m_prev_sibling != NONE)
-    {
-        _p(src.m_prev_sibling)->m_next_sibling = dst_;
-    }
-    if(src.m_next_sibling != NONE)
-    {
-        _p(src.m_next_sibling)->m_prev_sibling = dst_;
-    }
-    if(prt.m_first_child == src_)
-    {
-        prt.m_first_child = dst_;
-    }
-    if(prt.m_last_child  == src_)
-    {
-        prt.m_last_child  = dst_;
-    }
-    dst.m_parent       = src.m_parent;
-    dst.m_first_child  = src.m_first_child;
-    dst.m_last_child   = src.m_last_child;
-    dst.m_prev_sibling = src.m_prev_sibling;
-    dst.m_next_sibling = src.m_next_sibling;
-}
-
-//-----------------------------------------------------------------------------
-void Tree::_swap_props(id_type n_, id_type m_)
-{
-    NodeData &C4_RESTRICT n = *_p(n_);
-    NodeData &C4_RESTRICT m = *_p(m_);
-    std::swap(n.m_type, m.m_type);
-    std::swap(n.m_key, m.m_key);
-    std::swap(n.m_val, m.m_val);
-}
-/** @endcond */
-
-//-----------------------------------------------------------------------------
-void Tree::move(id_type node, id_type after)
-{
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, node != after);
-    _RYML_CB_ASSERT(m_callbacks,  ! is_root(node));
-    _RYML_CB_ASSERT(m_callbacks, (after == NONE) || (has_sibling(node, after) && has_sibling(after, node)));
-
-    _rem_hierarchy(node);
-    _set_hierarchy(node, parent(node), after);
-}
-
-//-----------------------------------------------------------------------------
-
-void Tree::move(id_type node, id_type new_parent, id_type after)
-{
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, node != after);
-    _RYML_CB_ASSERT(m_callbacks, new_parent != NONE);
-    _RYML_CB_ASSERT(m_callbacks, new_parent != node);
-    _RYML_CB_ASSERT(m_callbacks, new_parent != after);
-    _RYML_CB_ASSERT(m_callbacks,  ! is_root(node));
-
-    _rem_hierarchy(node);
-    _set_hierarchy(node, new_parent, after);
-}
-
-id_type Tree::move(Tree *src, id_type node, id_type new_parent, id_type after)
-{
-    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, new_parent != NONE);
-    _RYML_CB_ASSERT(m_callbacks, new_parent != after);
-
-    id_type dup = duplicate(src, node, new_parent, after);
-    src->remove(node);
-    return dup;
-}
-
-void Tree::set_root_as_stream()
-{
-    id_type root = root_id();
-    if(is_stream(root))
-        return;
-    // don't use _add_flags() because it's checked and will fail
-    if(!has_children(root))
-    {
-        if(is_val(root))
-        {
-            _p(root)->m_type.add(SEQ);
-            id_type next_doc = append_child(root);
-            _copy_props_wo_key(next_doc, root);
-            _p(next_doc)->m_type.add(DOC);
-            _p(next_doc)->m_type.rem(SEQ);
-        }
-        _p(root)->m_type = STREAM;
-        return;
-    }
-    _RYML_CB_ASSERT(m_callbacks, !has_key(root));
-    id_type next_doc = append_child(root);
-    _copy_props_wo_key(next_doc, root);
-    _add_flags(next_doc, DOC);
-    for(id_type prev = NONE, ch = first_child(root), next = next_sibling(ch); ch != NONE; )
-    {
-        if(ch == next_doc)
-            break;
-        move(ch, next_doc, prev);
-        prev = ch;
-        ch = next;
-        next = next_sibling(next);
-    }
-    _p(root)->m_type = STREAM;
-}
-
-
-//-----------------------------------------------------------------------------
-void Tree::remove_children(id_type node)
-{
-    _RYML_CB_ASSERT(m_callbacks, get(node) != nullptr);
-    id_type ich = get(node)->m_first_child;
-    while(ich != NONE)
-    {
-        remove_children(ich);
-        _RYML_CB_ASSERT(m_callbacks, get(ich) != nullptr);
-        id_type next = get(ich)->m_next_sibling;
-        _release(ich);
-        if(ich == get(node)->m_last_child)
-            break;
-        ich = next;
-    }
-}
-
-bool Tree::change_type(id_type node, NodeType type)
-{
-    _RYML_CB_ASSERT(m_callbacks, type.is_val() || type.is_map() || type.is_seq());
-    _RYML_CB_ASSERT(m_callbacks, type.is_val() + type.is_map() + type.is_seq() == 1);
-    _RYML_CB_ASSERT(m_callbacks, type.has_key() == has_key(node) || (has_key(node) && !type.has_key()));
-    NodeData *d = _p(node);
-    if(type.is_map() && is_map(node))
-        return false;
-    else if(type.is_seq() && is_seq(node))
-        return false;
-    else if(type.is_val() && is_val(node))
-        return false;
-    d->m_type = (d->m_type & (~(MAP|SEQ|VAL))) | type;
-    remove_children(node);
-    return true;
-}
-
-
-//-----------------------------------------------------------------------------
-id_type Tree::duplicate(id_type node, id_type parent, id_type after)
-{
-    return duplicate(this, node, parent, after);
-}
-
-id_type Tree::duplicate(Tree const* src, id_type node, id_type parent, id_type after)
-{
-    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, parent != NONE);
-    _RYML_CB_ASSERT(m_callbacks,  ! src->is_root(node));
-
-    id_type copy = _claim();
-
-    _copy_props(copy, src, node);
-    _set_hierarchy(copy, parent, after);
-    duplicate_children(src, node, copy, NONE);
-
-    return copy;
-}
-
-//-----------------------------------------------------------------------------
-id_type Tree::duplicate_children(id_type node, id_type parent, id_type after)
-{
-    return duplicate_children(this, node, parent, after);
-}
-
-id_type Tree::duplicate_children(Tree const* src, id_type node, id_type parent, id_type after)
-{
-    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, parent != NONE);
-    _RYML_CB_ASSERT(m_callbacks, after == NONE || has_child(parent, after));
-
-    id_type prev = after;
-    for(id_type i = src->first_child(node); i != NONE; i = src->next_sibling(i))
-    {
-        prev = duplicate(src, i, parent, prev);
-    }
-
-    return prev;
-}
-
-//-----------------------------------------------------------------------------
-void Tree::duplicate_contents(id_type node, id_type where)
-{
-    duplicate_contents(this, node, where);
-}
-
-void Tree::duplicate_contents(Tree const *src, id_type node, id_type where)
-{
-    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, where != NONE);
-    _copy_props_wo_key(where, src, node);
-    duplicate_children(src, node, where, last_child(where));
-}
-
-//-----------------------------------------------------------------------------
-id_type Tree::duplicate_children_no_rep(id_type node, id_type parent, id_type after)
-{
-    return duplicate_children_no_rep(this, node, parent, after);
-}
-
-id_type Tree::duplicate_children_no_rep(Tree const *src, id_type node, id_type parent, id_type after)
-{
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, parent != NONE);
-    _RYML_CB_ASSERT(m_callbacks, after == NONE || has_child(parent, after));
-
-    // don't loop using pointers as there may be a relocation
-
-    // find the position where "after" is
-    id_type after_pos = NONE;
-    if(after != NONE)
-    {
-        for(id_type i = first_child(parent), icount = 0; i != NONE; ++icount, i = next_sibling(i))
-        {
-            if(i == after)
-            {
-                after_pos = icount;
-                break;
-            }
-        }
-        _RYML_CB_ASSERT(m_callbacks, after_pos != NONE);
-    }
-
-    // for each child to be duplicated...
-    id_type prev = after;
-    for(id_type i = src->first_child(node); i != NONE; i = src->next_sibling(i))
-    {
-        _c4dbgpf("duplicate_no_rep: {} -> {}/{}", i, parent, prev);
-        _RYML_CB_CHECK(m_callbacks, this != src || (parent != i && !is_ancestor(parent, i)));
-        if(is_seq(parent))
-        {
-            _c4dbgpf("duplicate_no_rep: {} is seq", parent);
-            prev = duplicate(src, i, parent, prev);
-        }
-        else
-        {
-            _c4dbgpf("duplicate_no_rep: {} is map", parent);
-            _RYML_CB_ASSERT(m_callbacks, is_map(parent));
-            // does the parent already have a node with key equal to that of the current duplicate?
-            id_type dstnode_dup = NONE, dstnode_dup_pos = NONE;
-            {
-                csubstr srckey = src->key(i);
-                for(id_type j = first_child(parent), jcount = 0; j != NONE; ++jcount, j = next_sibling(j))
-                {
-                    if(key(j) == srckey)
-                    {
-                        _c4dbgpf("duplicate_no_rep: found matching key '{}' src={}/{} dst={}/{}", srckey, node, i, parent, j);
-                        dstnode_dup = j;
-                        dstnode_dup_pos = jcount;
-                        break;
-                    }
-                }
-            }
-            _c4dbgpf("duplicate_no_rep: dstnode_dup={} dstnode_dup_pos={} after_pos={}", dstnode_dup, dstnode_dup_pos, after_pos);
-            if(dstnode_dup == NONE) // there is no repetition; just duplicate
-            {
-                _c4dbgpf("duplicate_no_rep: no repetition, just duplicate i={} parent={} prev={}", i, parent, prev);
-                prev = duplicate(src, i, parent, prev);
-            }
-            else  // yes, there is a repetition
-            {
-                if(after_pos != NONE && dstnode_dup_pos <= after_pos)
-                {
-                    // the dst duplicate is located before the node which will be inserted,
-                    // and will be overridden by the duplicate. So replace it.
-                    _c4dbgpf("duplicate_no_dstnode_dup: replace {}/{} with {}/{}", parent, dstnode_dup, node, i);
-                    if(prev == dstnode_dup)
-                        prev = prev_sibling(dstnode_dup);
-                    remove(dstnode_dup);
-                    prev = duplicate(src, i, parent, prev);
-                }
-                else if(prev == NONE)
-                {
-                    _c4dbgpf("duplicate_no_dstnode_dup: {}=prev <- {}", prev, dstnode_dup);
-                    // first iteration with prev = after = NONE and dstnode_dupetition
-                    prev = dstnode_dup;
-                }
-                else if(dstnode_dup != prev)
-                {
-                    // dstnode_dup is located after the node which will be inserted
-                    // and overrides it. So move the dstnode_dup into this node's place.
-                    _c4dbgpf("duplicate_no_dstnode_dup: move({}, {})", dstnode_dup, prev);
-                    move(dstnode_dup, prev);
-                    prev = dstnode_dup;
-                }
-            } // there's a dstnode_dupetition
-        }
-    }
-
-    return prev;
-}
-
-
-//-----------------------------------------------------------------------------
-
-void Tree::merge_with(Tree const *src, id_type src_node, id_type dst_node)
-{
-    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
-    if(src_node == NONE)
-        src_node = src->root_id();
-    if(dst_node == NONE)
-        dst_node = root_id();
-    _RYML_CB_ASSERT(m_callbacks, src->has_val(src_node) || src->is_seq(src_node) || src->is_map(src_node));
-    if(src->has_val(src_node))
-    {
-        type_bits mask_src = ~STYLE; // keep the existing style if it is already a val
-        if( ! has_val(dst_node))
-        {
-            if(has_children(dst_node))
-                remove_children(dst_node);
-            mask_src |= VAL_STYLE; // copy the src style
-        }
-        if(src->is_keyval(src_node))
-        {
-            _copy_props(dst_node, src, src_node, mask_src);
-        }
-        else
-        {
-            _RYML_CB_ASSERT(m_callbacks, src->is_val(src_node));
-            _copy_props_wo_key(dst_node, src, src_node, mask_src);
-        }
-    }
-    else if(src->is_seq(src_node))
-    {
-        if( ! is_seq(dst_node))
-        {
-            if(has_children(dst_node))
-                remove_children(dst_node);
-            _clear_type(dst_node);
-            if(src->has_key(src_node))
-                to_seq(dst_node, src->key(src_node));
-            else
-                to_seq(dst_node);
-            _p(dst_node)->m_type = src->_p(src_node)->m_type;
-        }
-        for(id_type sch = src->first_child(src_node); sch != NONE; sch = src->next_sibling(sch))
-        {
-            id_type dch = append_child(dst_node);
-            _copy_props_wo_key(dch, src, sch);
-            merge_with(src, sch, dch);
-        }
-    }
-    else
-    {
-        _RYML_CB_ASSERT(m_callbacks, src->is_map(src_node));
-        if( ! is_map(dst_node))
-        {
-            if(has_children(dst_node))
-                remove_children(dst_node);
-            _clear_type(dst_node);
-            if(src->has_key(src_node))
-                to_map(dst_node, src->key(src_node));
-            else
-                to_map(dst_node);
-            _p(dst_node)->m_type = src->_p(src_node)->m_type;
-        }
-        for(id_type sch = src->first_child(src_node); sch != NONE; sch = src->next_sibling(sch))
-        {
-            id_type dch = find_child(dst_node, src->key(sch));
-            if(dch == NONE)
-            {
-                dch = append_child(dst_node);
-                _copy_props(dch, src, sch);
-            }
-            merge_with(src, sch, dch);
-        }
-    }
-}
-
-
-//-----------------------------------------------------------------------------
-
-void Tree::resolve(bool clear_anchors)
-{
-    if(m_size == 0)
-        return;
-    ReferenceResolver rr;
-    resolve(&rr, clear_anchors);
-}
-
-void Tree::resolve(ReferenceResolver *C4_RESTRICT rr, bool clear_anchors)
-{
-    if(m_size == 0)
-        return;
-    rr->resolve(this, clear_anchors);
-}
-
-
-//-----------------------------------------------------------------------------
-
-id_type Tree::num_children(id_type node) const
-{
-    id_type count = 0;
-    for(id_type i = first_child(node); i != NONE; i = next_sibling(i))
-        ++count;
-    return count;
-}
-
-id_type Tree::child(id_type node, id_type pos) const
-{
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    id_type count = 0;
-    for(id_type i = first_child(node); i != NONE; i = next_sibling(i))
-    {
-        if(count++ == pos)
-            return i;
-    }
-    return NONE;
-}
-
-id_type Tree::child_pos(id_type node, id_type ch) const
-{
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    id_type count = 0;
-    for(id_type i = first_child(node); i != NONE; i = next_sibling(i))
-    {
-        if(i == ch)
-            return count;
-        ++count;
-    }
-    return NONE;
-}
-
-#if defined(__clang__)
-#   pragma clang diagnostic push
-#   pragma GCC diagnostic ignored "-Wnull-dereference"
-#elif defined(__GNUC__)
-#   pragma GCC diagnostic push
-#   if __GNUC__ >= 6
-#       pragma GCC diagnostic ignored "-Wnull-dereference"
-#   endif
-#   if __GNUC__ > 9
-#       pragma GCC diagnostic ignored "-Wanalyzer-null-dereference"
-#   endif
-#endif
-
-id_type Tree::find_child(id_type node, csubstr const& name) const
-{
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    _RYML_CB_ASSERT(m_callbacks, is_map(node));
-    if(get(node)->m_first_child == NONE)
-    {
-        _RYML_CB_ASSERT(m_callbacks, _p(node)->m_last_child == NONE);
-        return NONE;
-    }
-    else
-    {
-        _RYML_CB_ASSERT(m_callbacks, _p(node)->m_last_child != NONE);
-    }
-    for(id_type i = first_child(node); i != NONE; i = next_sibling(i))
-    {
-        if(_p(i)->m_key.scalar == name)
-        {
-            return i;
-        }
-    }
-    return NONE;
-}
-
-#if defined(__clang__)
-#   pragma clang diagnostic pop
-#elif defined(__GNUC__)
-#   pragma GCC diagnostic pop
-#endif
-
-namespace {
-id_type depth_desc_(Tree const& C4_RESTRICT t, id_type id, id_type currdepth=0, id_type maxdepth=0)
-{
-    maxdepth = currdepth > maxdepth ? currdepth : maxdepth;
-    for(id_type child = t.first_child(id); child != NONE; child = t.next_sibling(child))
-    {
-        const id_type d = depth_desc_(t, child, currdepth+1, maxdepth);
-        maxdepth = d > maxdepth ? d : maxdepth;
-    }
-    return maxdepth;
-}
-}
-
-id_type Tree::depth_desc(id_type node) const
-{
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    return depth_desc_(*this, node);
-}
-
-id_type Tree::depth_asc(id_type node) const
-{
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    id_type depth = 0;
-    while(!is_root(node))
-    {
-        ++depth;
-        node = parent(node);
-    }
-    return depth;
-}
-
-bool Tree::is_ancestor(id_type node, id_type ancestor) const
-{
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    id_type p = parent(node);
-    while(p != NONE)
-    {
-        if(p == ancestor)
-            return true;
-        p = parent(p);
-    }
-    return false;
-}
-
-
-//-----------------------------------------------------------------------------
-
-void Tree::to_val(id_type node, csubstr val, type_bits more_flags)
-{
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || ! parent_is_map(node));
-    _set_flags(node, VAL|more_flags);
-    _p(node)->m_key.clear();
-    _p(node)->m_val = val;
-}
-
-void Tree::to_keyval(id_type node, csubstr key, csubstr val, type_bits more_flags)
-{
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || parent_is_map(node));
-    _set_flags(node, KEYVAL|more_flags);
-    _p(node)->m_key = key;
-    _p(node)->m_val = val;
-}
-
-void Tree::to_map(id_type node, type_bits more_flags)
-{
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || ! parent_is_map(node)); // parent must not have children with keys
-    _set_flags(node, MAP|more_flags);
-    _p(node)->m_key.clear();
-    _p(node)->m_val.clear();
-}
-
-void Tree::to_map(id_type node, csubstr key, type_bits more_flags)
-{
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || parent_is_map(node));
-    _set_flags(node, KEY|MAP|more_flags);
-    _p(node)->m_key = key;
-    _p(node)->m_val.clear();
-}
-
-void Tree::to_seq(id_type node, type_bits more_flags)
-{
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || parent_is_seq(node));
-    _set_flags(node, SEQ|more_flags);
-    _p(node)->m_key.clear();
-    _p(node)->m_val.clear();
-}
-
-void Tree::to_seq(id_type node, csubstr key, type_bits more_flags)
-{
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || parent_is_map(node));
-    _set_flags(node, KEY|SEQ|more_flags);
-    _p(node)->m_key = key;
-    _p(node)->m_val.clear();
-}
-
-void Tree::to_doc(id_type node, type_bits more_flags)
-{
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _set_flags(node, DOC|more_flags);
-    _p(node)->m_key.clear();
-    _p(node)->m_val.clear();
-}
-
-void Tree::to_stream(id_type node, type_bits more_flags)
-{
-    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
-    _set_flags(node, STREAM|more_flags);
-    _p(node)->m_key.clear();
-    _p(node)->m_val.clear();
-}
-
-
-//-----------------------------------------------------------------------------
-id_type Tree::num_tag_directives() const
-{
-    // this assumes we have a very small number of tag directives
-    for(id_type i = 0; i < RYML_MAX_TAG_DIRECTIVES; ++i)
-        if(m_tag_directives[i].handle.empty())
-            return i;
-    return RYML_MAX_TAG_DIRECTIVES;
-}
-
-void Tree::clear_tag_directives()
-{
-    for(TagDirective &td : m_tag_directives)
-        td = {};
-}
-
-id_type Tree::add_tag_directive(TagDirective const& td)
-{
-    _RYML_CB_CHECK(m_callbacks, !td.handle.empty());
-    _RYML_CB_CHECK(m_callbacks, !td.prefix.empty());
-    _RYML_CB_CHECK(m_callbacks, td.handle.begins_with('!'));
-    _RYML_CB_CHECK(m_callbacks, td.handle.ends_with('!'));
-    // https://yaml.org/spec/1.2.2/#rule-ns-word-char
-    _RYML_CB_CHECK(m_callbacks, td.handle == '!' || td.handle == "!!" || td.handle.trim('!').first_not_of("01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-") == npos);
-    id_type pos = num_tag_directives();
-    _RYML_CB_CHECK(m_callbacks, pos < RYML_MAX_TAG_DIRECTIVES);
-    m_tag_directives[pos] = td;
-    return pos;
-}
-
-bool Tree::add_tag_directive(csubstr directive_)
-{
-    TagDirective td;
-    if(td.create_from_str(directive_, this))
-    {
-        add_tag_directive(td);
-        return true;
-    }
-    return false;
-}
-
-size_t Tree::resolve_tag(substr output, csubstr tag, id_type node_id) const
-{
-    // lookup from the end. We want to find the first directive that
-    // matches the tag and has a target node id leq than the given
-    // node_id.
-    for(id_type i = RYML_MAX_TAG_DIRECTIVES-1; i != (id_type)-1; --i)
-    {
-        auto const& td = m_tag_directives[i];
-        if(td.handle.empty())
-            continue;
-        if(tag.begins_with(td.handle) && td.next_node_id <= node_id)
-            return td.transform(tag, output, m_callbacks);
-    }
-    if(tag.begins_with('!'))
-    {
-        if(is_custom_tag(tag))
-        {
-            _RYML_CB_ERR(m_callbacks, "tag directive not found");
-        }
-    }
-    return 0; // return 0 to signal that the tag is local and cannot be resolved
-}
-
-namespace {
-csubstr _transform_tag(Tree *t, csubstr tag, id_type node)
-{
-    _c4dbgpf("[{}] resolving tag ~~~{}~~~", node, tag);
-    size_t required_size = t->resolve_tag(substr{}, tag, node);
-    if(!required_size)
-    {
-        if(tag.begins_with("!<"))
-            tag = tag.sub(1);
-        _c4dbgpf("[{}] resolved tag: ~~~{}~~~", node, tag);
-        return tag;
-    }
-    const char *prev_arena = t->arena().str;(void)prev_arena;
-    substr buf = t->alloc_arena(required_size);
-    _RYML_CB_ASSERT(t->m_callbacks, t->arena().str == prev_arena);
-    size_t actual_size = t->resolve_tag(buf, tag, node);
-    _RYML_CB_ASSERT(t->m_callbacks, actual_size <= required_size);
-    _c4dbgpf("[{}] resolved tag: ~~~{}~~~", node, buf.first(actual_size));
-    return buf.first(actual_size);
-}
-void _resolve_tags(Tree *t, id_type node)
-{
-    NodeData *C4_RESTRICT d = t->_p(node);
-    if(d->m_type & KEYTAG)
-        d->m_key.tag = _transform_tag(t, d->m_key.tag, node);
-    if(d->m_type & VALTAG)
-        d->m_val.tag = _transform_tag(t, d->m_val.tag, node);
-    for(id_type child = t->first_child(node); child != NONE; child = t->next_sibling(child))
-        _resolve_tags(t, child);
-}
-size_t _count_resolved_tags_size(Tree const* t, id_type node)
-{
-    size_t sz = 0;
-    NodeData const* C4_RESTRICT d = t->_p(node);
-    if(d->m_type & KEYTAG)
-        sz += t->resolve_tag(substr{}, d->m_key.tag, node);
-    if(d->m_type & VALTAG)
-        sz += t->resolve_tag(substr{}, d->m_val.tag, node);
-    for(id_type child = t->first_child(node); child != NONE; child = t->next_sibling(child))
-        sz += _count_resolved_tags_size(t, child);
-    return sz;
-}
-void _normalize_tags(Tree *t, id_type node)
-{
-    NodeData *C4_RESTRICT d = t->_p(node);
-    if(d->m_type & KEYTAG)
-        d->m_key.tag = normalize_tag(d->m_key.tag);
-    if(d->m_type & VALTAG)
-        d->m_val.tag = normalize_tag(d->m_val.tag);
-    for(id_type child = t->first_child(node); child != NONE; child = t->next_sibling(child))
-        _normalize_tags(t, child);
-}
-void _normalize_tags_long(Tree *t, id_type node)
-{
-    NodeData *C4_RESTRICT d = t->_p(node);
-    if(d->m_type & KEYTAG)
-        d->m_key.tag = normalize_tag_long(d->m_key.tag);
-    if(d->m_type & VALTAG)
-        d->m_val.tag = normalize_tag_long(d->m_val.tag);
-    for(id_type child = t->first_child(node); child != NONE; child = t->next_sibling(child))
-        _normalize_tags_long(t, child);
-}
-} // namespace
-
-void Tree::resolve_tags()
-{
-    if(empty())
-        return;
-    size_t needed_size = _count_resolved_tags_size(this, root_id());
-    if(needed_size)
-        reserve_arena(arena_size() + needed_size);
-    _resolve_tags(this, root_id());
-}
-
-void Tree::normalize_tags()
-{
-    if(empty())
-        return;
-    _normalize_tags(this, root_id());
-}
-
-void Tree::normalize_tags_long()
-{
-    if(empty())
-        return;
-    _normalize_tags_long(this, root_id());
-}
-
-
-//-----------------------------------------------------------------------------
-
-csubstr Tree::lookup_result::resolved() const
-{
-    csubstr p = path.first(path_pos);
-    if(p.ends_with('.'))
-        p = p.first(p.len-1);
-    return p;
-}
-
-csubstr Tree::lookup_result::unresolved() const
-{
-    return path.sub(path_pos);
-}
-
-void Tree::_advance(lookup_result *r, size_t more)
-{
-    r->path_pos += more;
-    if(r->path.sub(r->path_pos).begins_with('.'))
-        ++r->path_pos;
-}
-
-Tree::lookup_result Tree::lookup_path(csubstr path, id_type start) const
-{
-    if(start == NONE)
-        start = root_id();
-    lookup_result r(path, start);
-    if(path.empty())
-        return r;
-    _lookup_path(&r);
-    if(r.target == NONE && r.closest == start)
-        r.closest = NONE;
-    return r;
-}
-
-id_type Tree::lookup_path_or_modify(csubstr default_value, csubstr path, id_type start)
-{
-    id_type target = _lookup_path_or_create(path, start);
-    if(parent_is_map(target))
-        to_keyval(target, key(target), default_value);
-    else
-        to_val(target, default_value);
-    return target;
-}
-
-id_type Tree::lookup_path_or_modify(Tree const *src, id_type src_node, csubstr path, id_type start)
-{
-    id_type target = _lookup_path_or_create(path, start);
-    merge_with(src, src_node, target);
-    return target;
-}
-
-id_type Tree::_lookup_path_or_create(csubstr path, id_type start)
-{
-    if(start == NONE)
-        start = root_id();
-    lookup_result r(path, start);
-    _lookup_path(&r);
-    if(r.target != NONE)
-    {
-        C4_ASSERT(r.unresolved().empty());
-        return r.target;
-    }
-    _lookup_path_modify(&r);
-    return r.target;
-}
-
-void Tree::_lookup_path(lookup_result *r) const
-{
-    C4_ASSERT( ! r->unresolved().empty());
-    _lookup_path_token parent{"", type(r->closest)};
-    id_type node;
-    do
-    {
-        node = _next_node(r, &parent);
-        if(node != NONE)
-            r->closest = node;
-        if(r->unresolved().empty())
-        {
-            r->target = node;
-            return;
-        }
-    } while(node != NONE);
-}
-
-void Tree::_lookup_path_modify(lookup_result *r)
-{
-    C4_ASSERT( ! r->unresolved().empty());
-    _lookup_path_token parent{"", type(r->closest)};
-    id_type node;
-    do
-    {
-        node = _next_node_modify(r, &parent);
-        if(node != NONE)
-            r->closest = node;
-        if(r->unresolved().empty())
-        {
-            r->target = node;
-            return;
-        }
-    } while(node != NONE);
-}
-
-id_type Tree::_next_node(lookup_result * r, _lookup_path_token *parent) const
-{
-    _lookup_path_token token = _next_token(r, *parent);
-    if( ! token)
-        return NONE;
-
-    id_type node = NONE;
-    csubstr prev = token.value;
-    if(token.type == MAP || token.type == SEQ)
-    {
-        _RYML_CB_ASSERT(m_callbacks, !token.value.begins_with('['));
-        //_RYML_CB_ASSERT(m_callbacks, is_container(r->closest) || r->closest == NONE);
-        _RYML_CB_ASSERT(m_callbacks, is_map(r->closest));
-        node = find_child(r->closest, token.value);
-    }
-    else if(token.type == KEYVAL)
-    {
-        _RYML_CB_ASSERT(m_callbacks, r->unresolved().empty());
-        if(is_map(r->closest))
-            node = find_child(r->closest, token.value);
-    }
-    else if(token.type == KEY)
-    {
-        _RYML_CB_ASSERT(m_callbacks, token.value.begins_with('[') && token.value.ends_with(']'));
-        token.value = token.value.offs(1, 1).trim(' ');
-        id_type idx = 0;
-        _RYML_CB_CHECK(m_callbacks, from_chars(token.value, &idx));
-        node = child(r->closest, idx);
-    }
-    else
-    {
-        C4_NEVER_REACH();
-    }
-
-    if(node != NONE)
-    {
-        *parent = token;
-    }
-    else
-    {
-        csubstr p = r->path.sub(r->path_pos > 0 ? r->path_pos - 1 : r->path_pos);
-        r->path_pos -= prev.len;
-        if(p.begins_with('.'))
-            r->path_pos -= 1u;
-    }
-
-    return node;
-}
-
-id_type Tree::_next_node_modify(lookup_result * r, _lookup_path_token *parent)
-{
-    _lookup_path_token token = _next_token(r, *parent);
-    if( ! token)
-        return NONE;
-
-    id_type node = NONE;
-    if(token.type == MAP || token.type == SEQ)
-    {
-        _RYML_CB_ASSERT(m_callbacks, !token.value.begins_with('['));
-        //_RYML_CB_ASSERT(m_callbacks, is_container(r->closest) || r->closest == NONE);
-        if( ! is_container(r->closest))
-        {
-            if(has_key(r->closest))
-                to_map(r->closest, key(r->closest));
-            else
-                to_map(r->closest);
-        }
-        else
-        {
-            if(is_map(r->closest))
-                node = find_child(r->closest, token.value);
-            else
-            {
-                id_type pos = NONE;
-                _RYML_CB_CHECK(m_callbacks, c4::atox(token.value, &pos));
-                _RYML_CB_ASSERT(m_callbacks, pos != NONE);
-                node = child(r->closest, pos);
-            }
-        }
-        if(node == NONE)
-        {
-            _RYML_CB_ASSERT(m_callbacks, is_map(r->closest));
-            node = append_child(r->closest);
-            NodeData *n = _p(node);
-            n->m_key.scalar = token.value;
-            n->m_type.add(KEY);
-        }
-    }
-    else if(token.type == KEYVAL)
-    {
-        _RYML_CB_ASSERT(m_callbacks, r->unresolved().empty());
-        if(is_map(r->closest))
-        {
-            node = find_child(r->closest, token.value);
-            if(node == NONE)
-                node = append_child(r->closest);
-        }
-        else
-        {
-            _RYML_CB_ASSERT(m_callbacks, !is_seq(r->closest));
-            _add_flags(r->closest, MAP);
-            node = append_child(r->closest);
-        }
-        NodeData *n = _p(node);
-        n->m_key.scalar = token.value;
-        n->m_val.scalar = "";
-        n->m_type.add(KEYVAL);
-    }
-    else if(token.type == KEY)
-    {
-        _RYML_CB_ASSERT(m_callbacks, token.value.begins_with('[') && token.value.ends_with(']'));
-        token.value = token.value.offs(1, 1).trim(' ');
-        id_type idx;
-        if( ! from_chars(token.value, &idx))
-             return NONE;
-        if( ! is_container(r->closest))
-        {
-            if(has_key(r->closest))
-            {
-                csubstr k = key(r->closest);
-                _clear_type(r->closest);
-                to_seq(r->closest, k);
-            }
-            else
-            {
-                _clear_type(r->closest);
-                to_seq(r->closest);
-            }
-        }
-        _RYML_CB_ASSERT(m_callbacks, is_container(r->closest));
-        node = child(r->closest, idx);
-        if(node == NONE)
-        {
-            _RYML_CB_ASSERT(m_callbacks, num_children(r->closest) <= idx);
-            for(id_type i = num_children(r->closest); i <= idx; ++i)
-            {
-                node = append_child(r->closest);
-                if(i < idx)
-                {
-                    if(is_map(r->closest))
-                        to_keyval(node, /*"~"*/{}, /*"~"*/{});
-                    else if(is_seq(r->closest))
-                        to_val(node, /*"~"*/{});
-                }
-            }
-        }
-    }
-    else
-    {
-        C4_NEVER_REACH();
-    }
-
-    _RYML_CB_ASSERT(m_callbacks, node != NONE);
-    *parent = token;
-    return node;
-}
-
-/* types of tokens:
- * - seeing "map."  ---> "map"/MAP
- * - finishing "scalar" ---> "scalar"/KEYVAL
- * - seeing "seq[n]" ---> "seq"/SEQ (--> "[n]"/KEY)
- * - seeing "[n]" ---> "[n]"/KEY
- */
-Tree::_lookup_path_token Tree::_next_token(lookup_result *r, _lookup_path_token const& parent) const
-{
-    csubstr unres = r->unresolved();
-    if(unres.empty())
-        return {};
-
-    // is it an indexation like [0], [1], etc?
-    if(unres.begins_with('['))
-    {
-        size_t pos = unres.find(']');
-        if(pos == csubstr::npos)
-            return {};
-        csubstr idx = unres.first(pos + 1);
-        _advance(r, pos + 1);
-        return {idx, KEY};
-    }
-
-    // no. so it must be a name
-    size_t pos = unres.first_of(".[");
-    if(pos == csubstr::npos)
-    {
-        _advance(r, unres.len);
-        NodeType t;
-        if(( ! parent) || parent.type.is_seq())
-            return {unres, VAL};
-        return {unres, KEYVAL};
-    }
-
-    // it's either a map or a seq
-    _RYML_CB_ASSERT(m_callbacks, unres[pos] == '.' || unres[pos] == '[');
-    if(unres[pos] == '.')
-    {
-        _RYML_CB_ASSERT(m_callbacks, pos != 0);
-        _advance(r, pos + 1);
-        return {unres.first(pos), MAP};
-    }
-
-    _RYML_CB_ASSERT(m_callbacks, unres[pos] == '[');
-    _advance(r, pos);
-    return {unres.first(pos), SEQ};
-}
-
-
-} // namespace yml
-} // namespace c4
-
-
-C4_SUPPRESS_WARNING_GCC_CLANG_POP
-C4_SUPPRESS_WARNING_MSVC_POP
-
-#endif /* RYML_SINGLE_HDR_DEFINE_NOW */
-
-
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/tree.cpp)
+// (end src/c4/yml/tag.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/parse_engine.def.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parse_engine.def.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -34546,28 +32642,28 @@ C4_SUPPRESS_WARNING_MSVC_POP
 #define _C4_YML_PARSE_ENGINE_DEF_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parse_engine.hpp
+// c4/yml/parse_engine.hpp
 //#include "c4/yml/parse_engine.hpp"
 #if !defined(C4_YML_PARSE_ENGINE_HPP_) && !defined(_C4_YML_PARSE_ENGINE_HPP_)
 #error "amalgamate: file c4/yml/parse_engine.hpp must have been included at this point"
 #endif /* C4_YML_PARSE_ENGINE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/error.hpp
+// c4/error.hpp
 //#include "c4/error.hpp"
 #if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
 #error "amalgamate: file c4/error.hpp must have been included at this point"
 #endif /* C4_ERROR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/charconv.hpp
+// c4/charconv.hpp
 //#include "c4/charconv.hpp"
 #if !defined(C4_CHARCONV_HPP_) && !defined(_C4_CHARCONV_HPP_)
 #error "amalgamate: file c4/charconv.hpp must have been included at this point"
 #endif /* C4_CHARCONV_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/utf.hpp
+// c4/utf.hpp
 //#include "c4/utf.hpp"
 #if !defined(C4_UTF_HPP_) && !defined(_C4_UTF_HPP_)
 #error "amalgamate: file c4/utf.hpp must have been included at this point"
@@ -34578,14 +32674,14 @@ C4_SUPPRESS_WARNING_MSVC_POP
 //#include <ctype.h>
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/parser_dbg.hpp
-//#include "c4/yml/detail/parser_dbg.hpp"
-#if !defined(C4_YML_DETAIL_PARSER_DBG_HPP_) && !defined(_C4_YML_DETAIL_PARSER_DBG_HPP_)
-#error "amalgamate: file c4/yml/detail/parser_dbg.hpp must have been included at this point"
-#endif /* C4_YML_DETAIL_PARSER_DBG_HPP_ */
+// c4/yml/detail/dbgprint.hpp
+//#include "c4/yml/detail/dbgprint.hpp"
+#if !defined(C4_YML_DETAIL_DBGPRINT_HPP_) && !defined(_C4_YML_DETAIL_DBGPRINT_HPP_)
+#error "amalgamate: file c4/yml/detail/dbgprint.hpp must have been included at this point"
+#endif /* C4_YML_DETAIL_DBGPRINT_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/filter_processor.hpp
+// c4/yml/filter_processor.hpp
 //#include "c4/yml/filter_processor.hpp"
 #if !defined(C4_YML_FILTER_PROCESSOR_HPP_) && !defined(_C4_YML_FILTER_PROCESSOR_HPP_)
 #error "amalgamate: file c4/yml/filter_processor.hpp must have been included at this point"
@@ -34593,19 +32689,24 @@ C4_SUPPRESS_WARNING_MSVC_POP
 
 #ifdef RYML_DBG
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/dump.hpp
+// c4/dump.hpp
 //#include <c4/dump.hpp>
 #if !defined(C4_DUMP_HPP_) && !defined(_C4_DUMP_HPP_)
 #error "amalgamate: file c4/dump.hpp must have been included at this point"
 #endif /* C4_DUMP_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/print.hpp
+// c4/yml/detail/print.hpp
 //#include "c4/yml/detail/print.hpp"
 #if !defined(C4_YML_DETAIL_PRINT_HPP_) && !defined(_C4_YML_DETAIL_PRINT_HPP_)
 #error "amalgamate: file c4/yml/detail/print.hpp must have been included at this point"
 #endif /* C4_YML_DETAIL_PRINT_HPP_ */
 
+#define _c4err_(fmt, ...) do { RYML_DEBUG_BREAK(); this->_err("ERROR:\n" "{}:{}: " fmt, __FILE__, __LINE__, __VA_ARGS__); } while(0)
+#define _c4err(fmt) do { RYML_DEBUG_BREAK(); this->_err("ERROR:\n" "{}:{}: " fmt, __FILE__, __LINE__); } while(0)
+#else
+#define _c4err_(fmt, ...) this->_err("ERROR: " fmt, __VA_ARGS__)
+#define _c4err(fmt) this->_err("ERROR: {}", fmt)
 #endif
 
 
@@ -35389,7 +33490,7 @@ bool ParseEngine<EventHandler>::_is_valid_start_scalar_plain_flow(csubstr s)
             case '{':
             case '[':
             //_RYML_WITHOUT_TAB_TOKENS(case '\t'):
-                _c4err("invalid token \":{}\"", _c4prc(s.str[1]));
+                _c4err_("invalid token \":{}\"", _c4prc(s.str[1]));
                 break;
             case ' ':
             case '}':
@@ -35424,7 +33525,7 @@ bool ParseEngine<EventHandler>::_is_valid_start_scalar_plain_flow(csubstr s)
             case '}':
             case '[':
             case ']':
-                _c4err("invalid token \"?{}\"", _c4prc(s.str[1]));
+                _c4err_("invalid token \"?{}\"", _c4prc(s.str[1]));
                 break;
             default:
                 break;
@@ -35538,7 +33639,7 @@ bool ParseEngine<EventHandler>::_scan_scalar_plain_seq_flow(ScannedScalar *C4_RE
             case '{':
             case '}':
                 _line_progressed(i);
-                _c4err("invalid character: '{}'", c); // noreturn
+                _c4err_("invalid character: '{}'", c); // noreturn
             default:
                 ;
             }
@@ -35614,14 +33715,14 @@ bool ParseEngine<EventHandler>::_scan_scalar_plain_map_flow(ScannedScalar *C4_RE
             case '{':
             case '[':
                 _line_progressed(i);
-                _c4err("invalid character: '{}'", c); // noreturn
+                _c4err_("invalid character: '{}'", c); // noreturn
                 break;
             case ']':
                 _line_progressed(i);
                 if(has_any(RSEQIMAP))
                     goto ended_scalar;
                 else
-                    _c4err("invalid character: '{}'", c); // noreturn
+                    _c4err_("invalid character: '{}'", c); // noreturn
                 break;
             case '#':
                 if(!i || s.str[i-1] == ' ' _RYML_WITH_TAB_TOKENS(|| s.str[i-1] == '\t'))
@@ -37254,45 +35355,50 @@ void ParseEngine<EventHandler>::_filter_dquoted_backslash(FilterProcessor &C4_RE
     {
         proc.translate_esc('\\');
     }
-    else if(next == 'x') // UTF8
+    else if(next == 'x') // 2-digit Unicode escape (\xXX), code point 0x00–0xFF
     {
         if(C4_UNLIKELY(proc.rpos + 1u + 2u >= proc.src.len))
-            _c4err("\\x requires 2 hex digits. scalar pos={}", proc.rpos);
+            _c4err_("\\x requires 2 hex digits. scalar pos={}", proc.rpos);
+        char readbuf[8];
         csubstr codepoint = proc.src.sub(proc.rpos + 2u, 2u);
         _c4dbgfdq("utf8 ~~~{}~~~ rpos={} rem=~~~{}~~~", codepoint, proc.rpos, proc.src.sub(proc.rpos));
-        uint8_t byteval = {};
-        if(C4_UNLIKELY(!read_hex(codepoint, &byteval)))
-            _c4err("failed to read \\x codepoint. scalar pos={}", proc.rpos);
-        proc.translate_esc_bulk((const char*)&byteval, 1u, /*nread*/3u);
+        uint32_t codepoint_val = {};
+        if(C4_UNLIKELY(!read_hex(codepoint, &codepoint_val)))
+            _c4err_("failed to read \\x codepoint. scalar pos={}", proc.rpos);
+        const size_t numbytes = decode_code_point((uint8_t*)readbuf, sizeof(readbuf), codepoint_val);
+        if(C4_UNLIKELY(numbytes == 0))
+            _c4err_("failed to decode code point={}", proc.rpos);
+        _RYML_CB_ASSERT(callbacks(), numbytes <= 4);
+        proc.translate_esc_bulk(readbuf, numbytes, /*nread*/3u);
         _c4dbgfdq("utf8 after rpos={} rem=~~~{}~~~", proc.rpos, proc.src.sub(proc.rpos));
     }
-    else if(next == 'u') // UTF16
+    else if(next == 'u') // 4-digit Unicode escape (\uXXXX), code point 0x0000–0xFFFF
     {
         if(C4_UNLIKELY(proc.rpos + 1u + 4u >= proc.src.len))
-            _c4err("\\u requires 4 hex digits. scalar pos={}", proc.rpos);
+            _c4err_("\\u requires 4 hex digits. scalar pos={}", proc.rpos);
         char readbuf[8];
         csubstr codepoint = proc.src.sub(proc.rpos + 2u, 4u);
         uint32_t codepoint_val = {};
         if(C4_UNLIKELY(!read_hex(codepoint, &codepoint_val)))
-            _c4err("failed to parse \\u codepoint. scalar pos={}", proc.rpos);
+            _c4err_("failed to parse \\u codepoint. scalar pos={}", proc.rpos);
         const size_t numbytes = decode_code_point((uint8_t*)readbuf, sizeof(readbuf), codepoint_val);
         if(C4_UNLIKELY(numbytes == 0))
-            _c4err("failed to decode code point={}", proc.rpos);
+            _c4err_("failed to decode code point={}", proc.rpos);
         _RYML_CB_ASSERT(callbacks(), numbytes <= 4);
         proc.translate_esc_bulk(readbuf, numbytes, /*nread*/5u);
     }
-    else if(next == 'U') // UTF32
+    else if(next == 'U') // 8-digit Unicode escape (\UXXXXXXXX), full 32-bit code point
     {
         if(C4_UNLIKELY(proc.rpos + 1u + 8u >= proc.src.len))
-            _c4err("\\U requires 8 hex digits. scalar pos={}", proc.rpos);
+            _c4err_("\\U requires 8 hex digits. scalar pos={}", proc.rpos);
         char readbuf[8];
         csubstr codepoint = proc.src.sub(proc.rpos + 2u, 8u);
         uint32_t codepoint_val = {};
         if(C4_UNLIKELY(!read_hex(codepoint, &codepoint_val)))
-            _c4err("failed to parse \\U codepoint. scalar pos={}", proc.rpos);
+            _c4err_("failed to parse \\U codepoint. scalar pos={}", proc.rpos);
         const size_t numbytes = decode_code_point((uint8_t*)readbuf, sizeof(readbuf), codepoint_val);
         if(C4_UNLIKELY(numbytes == 0))
-            _c4err("failed to decode code point={}", proc.rpos);
+            _c4err_("failed to decode code point={}", proc.rpos);
         _RYML_CB_ASSERT(callbacks(), numbytes <= 4);
         proc.translate_esc_bulk(readbuf, numbytes, /*nread*/9u);
     }
@@ -37365,7 +35471,7 @@ void ParseEngine<EventHandler>::_filter_dquoted_backslash(FilterProcessor &C4_RE
     }
     else
     {
-        _c4err("unknown character '{}' after '\\' pos={}", _c4prc(next), proc.rpos);
+        _c4err_("unknown character '{}' after '\\' pos={}", _c4prc(next), proc.rpos);
     }
     _c4dbgfdq("backslash...sofar=[{}]~~~{}~~~", proc.wpos, proc.sofar());
 }
@@ -37441,6 +35547,24 @@ FilterResultExtending ParseEngine<EventHandler>::filter_scalar_dquoted_in_place(
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // block filtering helpers
+
+C4_NO_INLINE inline size_t _find_last_newline_and_larger_indentation(csubstr s, size_t indentation) noexcept
+{
+    if(indentation + 1 > s.len)
+        return npos;
+    for(size_t i = s.len-indentation-1; i != size_t(-1); --i)
+    {
+        if(s.str[i] == '\n')
+        {
+            csubstr rem = s.sub(i + 1);
+            size_t first = rem.first_not_of(' ');
+            first = (first != npos) ? first : rem.len;
+            if(first > indentation)
+                return i;
+        }
+    }
+    return npos;
+}
 
 template<class EventHandler>
 template<class FilterProcessor>
@@ -38099,37 +36223,67 @@ csubstr ParseEngine<EventHandler>::_filter_scalar_dquot(substr s)
         _c4dbgpf("filtering dquo scalar: not enough space: needs {}, have {}", len, s.len);
         substr dst = m_evt_handler->alloc_arena(len, &s);
         _c4dbgpf("filtering dquo scalar: dst.len={}", dst.len);
-        _RYML_CB_ASSERT(this->callbacks(), dst.len == len);
-        FilterResult rsd = this->filter_scalar_dquoted(s, dst);
-        _c4dbgpf("filtering dquo scalar: ... result now needs {} was {}", rsd.required_len(), len);
-        _RYML_CB_ASSERT(this->callbacks(), rsd.required_len() <= len); // may be smaller!
-        _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, rsd.valid());
-        _c4dbgpf("filtering dquo scalar: success! s=[{}]~~~{}~~~", rsd.get().len, rsd.get());
-        return rsd.get();
+        if(dst.str)
+        {
+            _RYML_CB_ASSERT(this->callbacks(), dst.len == len);
+            FilterResult rsd = this->filter_scalar_dquoted(s, dst);
+            _c4dbgpf("filtering dquo scalar: ... result now needs {} was {}", rsd.required_len(), len);
+            _RYML_CB_ASSERT(this->callbacks(), rsd.required_len() <= len); // may be smaller!
+            _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, rsd.valid());
+            _c4dbgpf("filtering dquo scalar: success! s=[{}]~~~{}~~~", rsd.get().len, rsd.get());
+            return rsd.get();
+        }
+        return dst;
     }
 }
 
 
 //-----------------------------------------------------------------------------
+
+template<class EventHandler>
+csubstr ParseEngine<EventHandler>::_move_scalar_left_and_add_newline(substr s)
+{
+    if(s.is_sub(m_buf))
+    {
+        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.str > m_buf.str);
+        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, s.str-1 >= m_buf.str);
+        if(s.len)
+            memmove(s.str - 1, s.str, s.len);
+        --s.str;
+        s.str[s.len] = '\n';
+        ++s.len;
+        return s;
+    }
+    else
+    {
+        substr dst = m_evt_handler->alloc_arena(s.len + 1);
+        if(s.len)
+            memcpy(dst.str, s.str, s.len);
+        dst[s.len] = '\n';
+        return dst;
+    }
+}
+
 template<class EventHandler>
 csubstr ParseEngine<EventHandler>::_filter_scalar_literal(substr s, size_t indentation, BlockChomp_e chomp)
 {
     _c4dbgpf("filtering block literal scalar: s=[{}]~~~{}~~~", s.len, s);
     FilterResult r = this->filter_scalar_block_literal_in_place(s, s.len, indentation, chomp);
+    csubstr result;
     if(C4_LIKELY(r.valid()))
     {
-        _c4dbgpf("filtering block literal scalar: success! s=[{}]~~~{}~~~", r.get().len, r.get());
-        return r.get();
+        result = r.get();
     }
     else
     {
         _c4dbgpf("filtering block literal scalar: not enough space: needs {}, have {}", r.required_len(), s.len);
-        substr dst = m_evt_handler->alloc_arena(r.required_len(), &s);
-        FilterResult rsd = this->filter_scalar_block_literal(s, dst, indentation, chomp);
-        _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, rsd.valid());
-        _c4dbgpf("filtering block literal scalar: success! s=[{}]~~~{}~~~", rsd.get().len, rsd.get());
-        return rsd.get();
+        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, r.required_len() == s.len + 1);
+        // this can only happen when adding a single newline in clip mode.
+        // so we shift left the scalar by one place
+        result = _move_scalar_left_and_add_newline(s);
     }
+    _c4dbgpf("filtering block literal scalar: success! s=[{}]~~~{}~~~", result.len, result);
+    return result;
 }
 
 
@@ -38139,20 +36293,21 @@ csubstr ParseEngine<EventHandler>::_filter_scalar_folded(substr s, size_t indent
 {
     _c4dbgpf("filtering block folded scalar: s=[{}]~~~{}~~~", s.len, s);
     FilterResult r = this->filter_scalar_block_folded_in_place(s, s.len, indentation, chomp);
+    csubstr result;
     if(C4_LIKELY(r.valid()))
     {
-        _c4dbgpf("filtering block folded scalar: success! s=[{}]~~~{}~~~", r.get().len, r.get());
-        return r.get();
+        result = r.get();
     }
     else
     {
         _c4dbgpf("filtering block folded scalar: not enough space: needs {}, have {}", r.required_len(), s.len);
-        substr dst = m_evt_handler->alloc_arena(r.required_len(), &s);
-        FilterResult rsd = this->filter_scalar_block_folded(s, dst, indentation, chomp);
-        _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, rsd.valid());
-        _c4dbgpf("filtering block folded scalar: success! s=[{}]~~~{}~~~", rsd.get().len, rsd.get());
-        return rsd.get();
+        _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, r.required_len() == s.len + 1);
+        // this can only happen when adding a single newline in clip mode.
+        // so we shift left the scalar by one place
+        result = _move_scalar_left_and_add_newline(s);
     }
+    _c4dbgpf("filtering block folded scalar: success! s=[{}]~~~{}~~~", result.len, result);
+    return result;
 }
 
 
@@ -38468,119 +36623,6 @@ csubstr ParseEngine<EventHandler>::location_contents(Location const& loc) const
     _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, loc.offset < m_buf.len);
     return m_buf.sub(loc.offset);
 }
-
-template<class EventHandler>
-Location ParseEngine<EventHandler>::location(ConstNodeRef node) const
-{
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, node.readable());
-    return location(*node.tree(), node.id());
-}
-
-template<class EventHandler>
-Location ParseEngine<EventHandler>::location(Tree const& tree, id_type node) const
-{
-    // try hard to avoid getting the location from a null string.
-    Location loc;
-    if(_location_from_node(tree, node, &loc, 0))
-        return loc;
-    return val_location(m_buf.str);
-}
-
-template<class EventHandler>
-bool ParseEngine<EventHandler>::_location_from_node(Tree const& tree, id_type node, Location *C4_RESTRICT loc, id_type level) const
-{
-    if(tree.has_key(node))
-    {
-        csubstr k = tree.key(node);
-        if(C4_LIKELY(k.str != nullptr))
-        {
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, k.is_sub(m_buf));
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_buf.is_super(k));
-            *loc = val_location(k.str);
-            return true;
-        }
-    }
-
-    if(tree.has_val(node))
-    {
-        csubstr v = tree.val(node);
-        if(C4_LIKELY(v.str != nullptr))
-        {
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, v.is_sub(m_buf));
-            _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_buf.is_super(v));
-            *loc = val_location(v.str);
-            return true;
-        }
-    }
-
-    if(tree.is_container(node))
-    {
-        if(_location_from_cont(tree, node, loc))
-            return true;
-    }
-
-    if(tree.type(node) != NOTYPE && level == 0)
-    {
-        // try the prev sibling
-        {
-            const id_type prev = tree.prev_sibling(node);
-            if(prev != NONE)
-            {
-                if(_location_from_node(tree, prev, loc, level+1))
-                    return true;
-            }
-        }
-        // try the next sibling
-        {
-            const id_type next = tree.next_sibling(node);
-            if(next != NONE)
-            {
-                if(_location_from_node(tree, next, loc, level+1))
-                    return true;
-            }
-        }
-        // try the parent
-        {
-            const id_type parent = tree.parent(node);
-            if(parent != NONE)
-            {
-                if(_location_from_node(tree, parent, loc, level+1))
-                    return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-template<class EventHandler>
-bool ParseEngine<EventHandler>::_location_from_cont(Tree const& tree, id_type node, Location *C4_RESTRICT loc) const
-{
-    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, tree.is_container(node));
-    if(!tree.is_stream(node))
-    {
-        const char *node_start = tree._p(node)->m_val.scalar.str;  // this was stored in the container
-        if(tree.has_children(node))
-        {
-            id_type child = tree.first_child(node);
-            if(tree.has_key(child))
-            {
-                // when a map starts, the container was set after the key
-                csubstr k = tree.key(child);
-                if(k.str && node_start > k.str)
-                    node_start = k.str;
-            }
-        }
-        *loc = val_location(node_start);
-        return true;
-    }
-    else // it's a stream
-    {
-        *loc = val_location(m_buf.str); // just return the front of the buffer
-    }
-    return true;
-}
-
 
 template<class EventHandler>
 Location ParseEngine<EventHandler>::val_location(const char *val) const
@@ -41156,7 +39198,6 @@ mapblck_start:
                     csubstr maybe_filtered = _maybe_filter_key_scalar_squot(sc); // KEY!
                     m_evt_handler->set_key_scalar_squoted(maybe_filtered);
                     _maybe_skip_whitespace_tokens();
-                    _set_indentation(m_evt_handler->m_curr->line_contents.indentation);
                     // keep the child state on RVAL
                     addrem_flags(RVAL, RNXT);
                 }
@@ -41197,7 +39238,6 @@ mapblck_start:
                     csubstr maybe_filtered = _maybe_filter_key_scalar_dquot(sc); // KEY!
                     m_evt_handler->set_key_scalar_dquoted(maybe_filtered);
                     _maybe_skip_whitespace_tokens();
-                    _set_indentation(m_evt_handler->m_curr->line_contents.indentation);
                     // keep the child state on RVAL
                     addrem_flags(RVAL, RNXT);
                 }
@@ -41259,7 +39299,6 @@ mapblck_start:
                     csubstr maybe_filtered = _maybe_filter_key_scalar_plain(sc, m_evt_handler->m_curr->indref); // KEY!
                     m_evt_handler->set_key_scalar_plain(maybe_filtered);
                     _maybe_skip_whitespace_tokens();
-                    _set_indentation(m_evt_handler->m_curr->line_contents.indentation);
                     // keep the child state on RVAL
                     addrem_flags(RVAL, RNXT);
                 }
@@ -41439,7 +39478,6 @@ mapblck_start:
                 m_evt_handler->begin_map_val_block();
                 _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
                 m_evt_handler->set_key_scalar_plain_empty();
-                _set_indentation(m_evt_handler->m_curr->line_contents.indentation);
                 // keep the child state on RVAL
                 addrem_flags(RVAL, RNXT);
             }
@@ -42968,42 +41006,2076 @@ void ParseEngine<EventHandler>::parse_in_place_ev(csubstr filename, substr src)
 #endif // _C4_YML_PARSE_ENGINE_DEF_HPP_
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/parse_engine.def.hpp)
+// (end src/c4/yml/parse_engine.def.hpp)
+
+
+
+//********************************************************************************
+//--------------------------------------------------------------------------------
+// src/c4/yml/tree.cpp
+//--------------------------------------------------------------------------------
+//********************************************************************************
+
+#ifdef RYML_SINGLE_HDR_DEFINE_NOW
+// amalgamate: removed include of
+// c4/yml/tree.hpp
+//#include "c4/yml/tree.hpp"
+#if !defined(C4_YML_TREE_HPP_) && !defined(_C4_YML_TREE_HPP_)
+#error "amalgamate: file c4/yml/tree.hpp must have been included at this point"
+#endif /* C4_YML_TREE_HPP_ */
+
+// amalgamate: removed include of
+// c4/yml/detail/dbgprint.hpp
+//#include "c4/yml/detail/dbgprint.hpp"
+#if !defined(C4_YML_DETAIL_DBGPRINT_HPP_) && !defined(_C4_YML_DETAIL_DBGPRINT_HPP_)
+#error "amalgamate: file c4/yml/detail/dbgprint.hpp must have been included at this point"
+#endif /* C4_YML_DETAIL_DBGPRINT_HPP_ */
+
+// amalgamate: removed include of
+// c4/yml/node.hpp
+//#include "c4/yml/node.hpp"
+#if !defined(C4_YML_NODE_HPP_) && !defined(_C4_YML_NODE_HPP_)
+#error "amalgamate: file c4/yml/node.hpp must have been included at this point"
+#endif /* C4_YML_NODE_HPP_ */
+
+// amalgamate: removed include of
+// c4/yml/reference_resolver.hpp
+//#include "c4/yml/reference_resolver.hpp"
+#if !defined(C4_YML_REFERENCE_RESOLVER_HPP_) && !defined(_C4_YML_REFERENCE_RESOLVER_HPP_)
+#error "amalgamate: file c4/yml/reference_resolver.hpp must have been included at this point"
+#endif /* C4_YML_REFERENCE_RESOLVER_HPP_ */
+
+
+
+C4_SUPPRESS_WARNING_MSVC_WITH_PUSH(4296/*expression is always 'boolean_value'*/)
+C4_SUPPRESS_WARNING_MSVC(4702/*unreachable code*/)
+C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
+C4_SUPPRESS_WARNING_GCC("-Wtype-limits")
+C4_SUPPRESS_WARNING_GCC("-Wuseless-cast")
+
+namespace c4 {
+namespace yml {
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+NodeRef Tree::rootref()
+{
+    return NodeRef(this, root_id());
+}
+ConstNodeRef Tree::rootref() const
+{
+    return ConstNodeRef(this, root_id());
+}
+
+ConstNodeRef Tree::crootref() const
+{
+    return ConstNodeRef(this, root_id());
+}
+
+NodeRef Tree::ref(id_type id)
+{
+    _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_cap);
+    return NodeRef(this, id);
+}
+ConstNodeRef Tree::ref(id_type id) const
+{
+    _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_cap);
+    return ConstNodeRef(this, id);
+}
+ConstNodeRef Tree::cref(id_type id) const
+{
+    _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_cap);
+    return ConstNodeRef(this, id);
+}
+
+NodeRef Tree::operator[] (csubstr key)
+{
+    return rootref()[key];
+}
+ConstNodeRef Tree::operator[] (csubstr key) const
+{
+    return rootref()[key];
+}
+
+NodeRef Tree::operator[] (id_type i)
+{
+    return rootref()[i];
+}
+ConstNodeRef Tree::operator[] (id_type i) const
+{
+    return rootref()[i];
+}
+
+NodeRef Tree::docref(id_type i)
+{
+    return ref(doc(i));
+}
+ConstNodeRef Tree::docref(id_type i) const
+{
+    return cref(doc(i));
+}
+ConstNodeRef Tree::cdocref(id_type i) const
+{
+    return cref(doc(i));
+}
+
+
+//-----------------------------------------------------------------------------
+Tree::Tree(Callbacks const& cb)
+    : m_buf(nullptr)
+    , m_cap(0)
+    , m_size(0)
+    , m_free_head(NONE)
+    , m_free_tail(NONE)
+    , m_arena()
+    , m_arena_pos(0)
+    , m_callbacks(cb)
+    , m_tag_directives()
+{
+}
+
+Tree::Tree(id_type node_capacity, size_t arena_capacity, Callbacks const& cb)
+    : Tree(cb)
+{
+    reserve(node_capacity);
+    reserve_arena(arena_capacity);
+}
+
+Tree::~Tree()
+{
+    _free();
+}
+
+
+Tree::Tree(Tree const& that) : Tree(that.m_callbacks)
+{
+    _copy(that);
+}
+
+Tree& Tree::operator= (Tree const& that)
+{
+    if(&that != this)
+    {
+        _free();
+        m_callbacks = that.m_callbacks;
+        _copy(that);
+    }
+    return *this;
+}
+
+Tree::Tree(Tree && that) noexcept : Tree(that.m_callbacks)
+{
+    _move(that);
+}
+
+Tree& Tree::operator= (Tree && that) noexcept
+{
+    if(&that != this)
+    {
+        _free();
+        m_callbacks = that.m_callbacks;
+        _move(that);
+    }
+    return *this;
+}
+
+void Tree::_free()
+{
+    if(m_buf)
+    {
+        _RYML_CB_ASSERT(m_callbacks, m_cap > 0);
+        _RYML_CB_FREE(m_callbacks, m_buf, NodeData, (size_t)m_cap);
+    }
+    if(m_arena.str)
+    {
+        _RYML_CB_ASSERT(m_callbacks, m_arena.len > 0);
+        _RYML_CB_FREE(m_callbacks, m_arena.str, char, m_arena.len);
+    }
+    _clear();
+}
+
+
+C4_SUPPRESS_WARNING_GCC_PUSH
+#if defined(__GNUC__) && __GNUC__>= 8
+    C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wclass-memaccess") // error: ‘void* memset(void*, int, size_t)’ clearing an object of type ‘class c4::yml::Tree’ with no trivial copy-assignment; use assignment or value-initialization instead
+#endif
+
+void Tree::_clear()
+{
+    m_buf = nullptr;
+    m_cap = 0;
+    m_size = 0;
+    m_free_head = 0;
+    m_free_tail = 0;
+    m_arena = {};
+    m_arena_pos = 0;
+    for(id_type i = 0; i < RYML_MAX_TAG_DIRECTIVES; ++i)
+        m_tag_directives[i] = {};
+}
+
+void Tree::_copy(Tree const& that)
+{
+    _RYML_CB_ASSERT(m_callbacks, m_buf == nullptr);
+    _RYML_CB_ASSERT(m_callbacks, m_arena.str == nullptr);
+    _RYML_CB_ASSERT(m_callbacks, m_arena.len == 0);
+    if(that.m_cap)
+    {
+        m_buf = _RYML_CB_ALLOC_HINT(m_callbacks, NodeData, (size_t)that.m_cap, that.m_buf);
+        memcpy(m_buf, that.m_buf, (size_t)that.m_cap * sizeof(NodeData));
+    }
+    m_cap = that.m_cap;
+    m_size = that.m_size;
+    m_free_head = that.m_free_head;
+    m_free_tail = that.m_free_tail;
+    m_arena_pos = that.m_arena_pos;
+    m_arena = that.m_arena;
+    if(that.m_arena.str)
+    {
+        _RYML_CB_ASSERT(m_callbacks, that.m_arena.len > 0);
+        substr arena;
+        arena.str = _RYML_CB_ALLOC_HINT(m_callbacks, char, that.m_arena.len, that.m_arena.str);
+        arena.len = that.m_arena.len;
+        _relocate(arena); // does a memcpy of the arena and updates nodes using the old arena
+        m_arena = arena;
+    }
+    for(id_type i = 0; i < RYML_MAX_TAG_DIRECTIVES; ++i)
+        m_tag_directives[i] = that.m_tag_directives[i];
+}
+
+void Tree::_move(Tree & that) noexcept
+{
+    _RYML_CB_ASSERT(m_callbacks, m_buf == nullptr);
+    _RYML_CB_ASSERT(m_callbacks, m_arena.str == nullptr);
+    _RYML_CB_ASSERT(m_callbacks, m_arena.len == 0);
+    m_buf = that.m_buf;
+    m_cap = that.m_cap;
+    m_size = that.m_size;
+    m_free_head = that.m_free_head;
+    m_free_tail = that.m_free_tail;
+    m_arena = that.m_arena;
+    m_arena_pos = that.m_arena_pos;
+    for(id_type i = 0; i < RYML_MAX_TAG_DIRECTIVES; ++i)
+        m_tag_directives[i] = that.m_tag_directives[i];
+    that._clear();
+}
+
+void Tree::_relocate(substr next_arena)
+{
+    _RYML_CB_ASSERT(m_callbacks, next_arena.not_empty());
+    _RYML_CB_ASSERT(m_callbacks, next_arena.len >= m_arena.len);
+    if(m_arena_pos)
+        memcpy(next_arena.str, m_arena.str, m_arena_pos);
+    for(NodeData *C4_RESTRICT n = m_buf, *e = m_buf + m_cap; n != e; ++n)
+    {
+        if(in_arena(n->m_key.scalar))
+            n->m_key.scalar = _relocated(n->m_key.scalar, next_arena);
+        if(in_arena(n->m_key.tag))
+            n->m_key.tag = _relocated(n->m_key.tag, next_arena);
+        if(in_arena(n->m_key.anchor))
+            n->m_key.anchor = _relocated(n->m_key.anchor, next_arena);
+        if(in_arena(n->m_val.scalar))
+            n->m_val.scalar = _relocated(n->m_val.scalar, next_arena);
+        if(in_arena(n->m_val.tag))
+            n->m_val.tag = _relocated(n->m_val.tag, next_arena);
+        if(in_arena(n->m_val.anchor))
+            n->m_val.anchor = _relocated(n->m_val.anchor, next_arena);
+    }
+    for(TagDirective &C4_RESTRICT td : m_tag_directives)
+    {
+        if(in_arena(td.prefix))
+            td.prefix = _relocated(td.prefix, next_arena);
+        if(in_arena(td.handle))
+            td.handle = _relocated(td.handle, next_arena);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+void Tree::reserve(id_type cap)
+{
+    if(cap > m_cap)
+    {
+        NodeData *buf = _RYML_CB_ALLOC_HINT(m_callbacks, NodeData, (size_t)cap, m_buf);
+        if(m_buf)
+        {
+            memcpy(buf, m_buf, (size_t)m_cap * sizeof(NodeData));
+            _RYML_CB_FREE(m_callbacks, m_buf, NodeData, (size_t)m_cap);
+        }
+        id_type first = m_cap, del = cap - m_cap;
+        m_cap = cap;
+        m_buf = buf;
+        _clear_range(first, del);
+        if(m_free_head != NONE)
+        {
+            _RYML_CB_ASSERT(m_callbacks, m_buf != nullptr);
+            _RYML_CB_ASSERT(m_callbacks, m_free_tail != NONE);
+            m_buf[m_free_tail].m_next_sibling = first;
+            m_buf[first].m_prev_sibling = m_free_tail;
+            m_free_tail = cap-1;
+        }
+        else
+        {
+            _RYML_CB_ASSERT(m_callbacks, m_free_tail == NONE);
+            m_free_head = first;
+            m_free_tail = cap-1;
+        }
+        _RYML_CB_ASSERT(m_callbacks, m_free_head == NONE || (m_free_head >= 0 && m_free_head < cap));
+        _RYML_CB_ASSERT(m_callbacks, m_free_tail == NONE || (m_free_tail >= 0 && m_free_tail < cap));
+
+        if( ! m_size)
+            _claim_root();
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+void Tree::clear()
+{
+    _clear_range(0, m_cap);
+    m_size = 0;
+    if(m_buf)
+    {
+        _RYML_CB_ASSERT(m_callbacks, m_cap >= 0);
+        m_free_head = 0;
+        m_free_tail = m_cap-1;
+        _claim_root();
+    }
+    else
+    {
+        m_free_head = NONE;
+        m_free_tail = NONE;
+    }
+    for(id_type i = 0; i < RYML_MAX_TAG_DIRECTIVES; ++i)
+        m_tag_directives[i] = {};
+}
+
+void Tree::_claim_root()
+{
+    id_type r = _claim();
+    _RYML_CB_ASSERT(m_callbacks, r == 0);
+    _set_hierarchy(r, NONE, NONE);
+}
+
+
+//-----------------------------------------------------------------------------
+void Tree::_clear_range(id_type first, id_type num)
+{
+    if(num == 0)
+        return; // prevent overflow when subtracting
+    _RYML_CB_ASSERT(m_callbacks, first >= 0 && first + num <= m_cap);
+    memset(m_buf + first, 0, (size_t)num * sizeof(NodeData)); // TODO we should not need this
+    for(id_type i = first, e = first + num; i < e; ++i)
+    {
+        _clear(i);
+        NodeData *n = m_buf + i;
+        n->m_prev_sibling = i - 1;
+        n->m_next_sibling = i + 1;
+    }
+    m_buf[first + num - 1].m_next_sibling = NONE;
+}
+
+C4_SUPPRESS_WARNING_GCC_POP
+
+
+//-----------------------------------------------------------------------------
+void Tree::_release(id_type i)
+{
+    _RYML_CB_ASSERT(m_callbacks, i >= 0 && i < m_cap);
+
+    _rem_hierarchy(i);
+    _free_list_add(i);
+    _clear(i);
+
+    --m_size;
+}
+
+//-----------------------------------------------------------------------------
+// add to the front of the free list
+void Tree::_free_list_add(id_type i)
+{
+    _RYML_CB_ASSERT(m_callbacks, i >= 0 && i < m_cap);
+    NodeData &C4_RESTRICT w = m_buf[i];
+
+    w.m_parent = NONE;
+    w.m_next_sibling = m_free_head;
+    w.m_prev_sibling = NONE;
+    if(m_free_head != NONE)
+        m_buf[m_free_head].m_prev_sibling = i;
+    m_free_head = i;
+    if(m_free_tail == NONE)
+        m_free_tail = m_free_head;
+}
+
+void Tree::_free_list_rem(id_type i)
+{
+    if(m_free_head == i)
+        m_free_head = _p(i)->m_next_sibling;
+    _rem_hierarchy(i);
+}
+
+//-----------------------------------------------------------------------------
+id_type Tree::_claim()
+{
+    if(m_free_head == NONE || m_buf == nullptr)
+    {
+        id_type sz = 2 * m_cap;
+        sz = sz ? sz : 16;
+        reserve(sz);
+        _RYML_CB_ASSERT(m_callbacks, m_free_head != NONE);
+    }
+
+    _RYML_CB_ASSERT(m_callbacks, m_size < m_cap);
+    _RYML_CB_ASSERT(m_callbacks, m_free_head >= 0 && m_free_head < m_cap);
+
+    id_type ichild = m_free_head;
+    NodeData *child = m_buf + ichild;
+
+    ++m_size;
+    m_free_head = child->m_next_sibling;
+    if(m_free_head == NONE)
+    {
+        m_free_tail = NONE;
+        _RYML_CB_ASSERT(m_callbacks, m_size == m_cap);
+    }
+
+    _clear(ichild);
+
+    return ichild;
+}
+
+//-----------------------------------------------------------------------------
+
+C4_SUPPRESS_WARNING_GCC_PUSH
+C4_SUPPRESS_WARNING_CLANG_PUSH
+C4_SUPPRESS_WARNING_CLANG("-Wnull-dereference")
+#if defined(__GNUC__)
+#if (__GNUC__ >= 6)
+C4_SUPPRESS_WARNING_GCC("-Wnull-dereference")
+#endif
+#if (__GNUC__ > 9)
+C4_SUPPRESS_WARNING_GCC("-Wanalyzer-fd-leak")
+#endif
+#endif
+
+void Tree::_set_hierarchy(id_type ichild, id_type iparent, id_type iprev_sibling)
+{
+    _RYML_CB_ASSERT(m_callbacks, ichild >= 0 && ichild < m_cap);
+    _RYML_CB_ASSERT(m_callbacks, iparent == NONE || (iparent >= 0 && iparent < m_cap));
+    _RYML_CB_ASSERT(m_callbacks, iprev_sibling == NONE || (iprev_sibling >= 0 && iprev_sibling < m_cap));
+
+    NodeData *C4_RESTRICT child = _p(ichild);
+
+    child->m_parent = iparent;
+    child->m_prev_sibling = NONE;
+    child->m_next_sibling = NONE;
+
+    if(iparent == NONE)
+    {
+        _RYML_CB_ASSERT(m_callbacks, ichild == 0);
+        _RYML_CB_ASSERT(m_callbacks, iprev_sibling == NONE);
+    }
+
+    if(iparent == NONE)
+        return;
+
+    id_type inext_sibling = iprev_sibling != NONE ? next_sibling(iprev_sibling) : first_child(iparent);
+    NodeData *C4_RESTRICT parent = get(iparent);
+    NodeData *C4_RESTRICT psib   = get(iprev_sibling);
+    NodeData *C4_RESTRICT nsib   = get(inext_sibling);
+
+    if(psib)
+    {
+        _RYML_CB_ASSERT(m_callbacks, next_sibling(iprev_sibling) == id(nsib));
+        child->m_prev_sibling = id(psib);
+        psib->m_next_sibling = id(child);
+        _RYML_CB_ASSERT(m_callbacks, psib->m_prev_sibling != psib->m_next_sibling || psib->m_prev_sibling == NONE);
+    }
+
+    if(nsib)
+    {
+        _RYML_CB_ASSERT(m_callbacks, prev_sibling(inext_sibling) == id(psib));
+        child->m_next_sibling = id(nsib);
+        nsib->m_prev_sibling = id(child);
+        _RYML_CB_ASSERT(m_callbacks, nsib->m_prev_sibling != nsib->m_next_sibling || nsib->m_prev_sibling == NONE);
+    }
+
+    if(parent->m_first_child == NONE)
+    {
+        _RYML_CB_ASSERT(m_callbacks, parent->m_last_child == NONE);
+        parent->m_first_child = id(child);
+        parent->m_last_child = id(child);
+    }
+    else
+    {
+        if(child->m_next_sibling == parent->m_first_child)
+            parent->m_first_child = id(child);
+
+        if(child->m_prev_sibling == parent->m_last_child)
+            parent->m_last_child = id(child);
+    }
+}
+
+C4_SUPPRESS_WARNING_GCC_POP
+C4_SUPPRESS_WARNING_CLANG_POP
+
+
+//-----------------------------------------------------------------------------
+void Tree::_rem_hierarchy(id_type i)
+{
+    _RYML_CB_ASSERT(m_callbacks, i >= 0 && i < m_cap);
+
+    NodeData &C4_RESTRICT w = m_buf[i];
+
+    // remove from the parent
+    if(w.m_parent != NONE)
+    {
+        NodeData &C4_RESTRICT p = m_buf[w.m_parent];
+        if(p.m_first_child == i)
+        {
+            p.m_first_child = w.m_next_sibling;
+        }
+        if(p.m_last_child == i)
+        {
+            p.m_last_child = w.m_prev_sibling;
+        }
+    }
+
+    // remove from the used list
+    if(w.m_prev_sibling != NONE)
+    {
+        NodeData *C4_RESTRICT prev = get(w.m_prev_sibling);
+        prev->m_next_sibling = w.m_next_sibling;
+    }
+    if(w.m_next_sibling != NONE)
+    {
+        NodeData *C4_RESTRICT next = get(w.m_next_sibling);
+        next->m_prev_sibling = w.m_prev_sibling;
+    }
+}
+
+//-----------------------------------------------------------------------------
+/** @cond dev */
+id_type Tree::_do_reorder(id_type *node, id_type count)
+{
+    // swap this node if it's not in place
+    if(*node != count)
+    {
+        _swap(*node, count);
+        *node = count;
+    }
+    ++count; // bump the count from this node
+
+    // now descend in the hierarchy
+    for(id_type i = first_child(*node); i != NONE; i = next_sibling(i))
+    {
+        // this child may have been relocated to a different index,
+        // so get an updated version
+        count = _do_reorder(&i, count);
+    }
+    return count;
+}
+/** @endcond */
+
+void Tree::reorder()
+{
+    id_type r = root_id();
+    _do_reorder(&r, 0);
+}
+
+
+//-----------------------------------------------------------------------------
+/** @cond dev */
+void Tree::_swap(id_type n_, id_type m_)
+{
+    _RYML_CB_ASSERT(m_callbacks, (parent(n_) != NONE) || type(n_) == NOTYPE);
+    _RYML_CB_ASSERT(m_callbacks, (parent(m_) != NONE) || type(m_) == NOTYPE);
+    NodeType tn = type(n_);
+    NodeType tm = type(m_);
+    if(tn != NOTYPE && tm != NOTYPE)
+    {
+        _swap_props(n_, m_);
+        _swap_hierarchy(n_, m_);
+    }
+    else if(tn == NOTYPE && tm != NOTYPE)
+    {
+        _copy_props(n_, m_);
+        _free_list_rem(n_);
+        _copy_hierarchy(n_, m_);
+        _clear(m_);
+        _free_list_add(m_);
+    }
+    else if(tn != NOTYPE && tm == NOTYPE)
+    {
+        _copy_props(m_, n_);
+        _free_list_rem(m_);
+        _copy_hierarchy(m_, n_);
+        _clear(n_);
+        _free_list_add(n_);
+    }
+    else
+    {
+        C4_NEVER_REACH();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void Tree::_swap_hierarchy(id_type ia, id_type ib)
+{
+    if(ia == ib) return;
+
+    for(id_type i = first_child(ia); i != NONE; i = next_sibling(i))
+    {
+        if(i == ib || i == ia)
+            continue;
+        _p(i)->m_parent = ib;
+    }
+
+    for(id_type i = first_child(ib); i != NONE; i = next_sibling(i))
+    {
+        if(i == ib || i == ia)
+            continue;
+        _p(i)->m_parent = ia;
+    }
+
+    auto & C4_RESTRICT a  = *_p(ia);
+    auto & C4_RESTRICT b  = *_p(ib);
+    auto & C4_RESTRICT pa = *_p(a.m_parent);
+    auto & C4_RESTRICT pb = *_p(b.m_parent);
+
+    if(&pa == &pb)
+    {
+        if((pa.m_first_child == ib && pa.m_last_child == ia)
+            ||
+           (pa.m_first_child == ia && pa.m_last_child == ib))
+        {
+            std::swap(pa.m_first_child, pa.m_last_child);
+        }
+        else
+        {
+            bool changed = false;
+            if(pa.m_first_child == ia)
+            {
+                pa.m_first_child = ib;
+                changed = true;
+            }
+            if(pa.m_last_child  == ia)
+            {
+                pa.m_last_child = ib;
+                changed = true;
+            }
+            if(pb.m_first_child == ib && !changed)
+            {
+                pb.m_first_child = ia;
+            }
+            if(pb.m_last_child  == ib && !changed)
+            {
+                pb.m_last_child  = ia;
+            }
+        }
+    }
+    else
+    {
+        if(pa.m_first_child == ia)
+            pa.m_first_child = ib;
+        if(pa.m_last_child  == ia)
+            pa.m_last_child  = ib;
+        if(pb.m_first_child == ib)
+            pb.m_first_child = ia;
+        if(pb.m_last_child  == ib)
+            pb.m_last_child  = ia;
+    }
+    std::swap(a.m_first_child , b.m_first_child);
+    std::swap(a.m_last_child  , b.m_last_child);
+
+    if(a.m_prev_sibling != ib && b.m_prev_sibling != ia &&
+       a.m_next_sibling != ib && b.m_next_sibling != ia)
+    {
+        if(a.m_prev_sibling != NONE && a.m_prev_sibling != ib)
+            _p(a.m_prev_sibling)->m_next_sibling = ib;
+        if(a.m_next_sibling != NONE && a.m_next_sibling != ib)
+            _p(a.m_next_sibling)->m_prev_sibling = ib;
+        if(b.m_prev_sibling != NONE && b.m_prev_sibling != ia)
+            _p(b.m_prev_sibling)->m_next_sibling = ia;
+        if(b.m_next_sibling != NONE && b.m_next_sibling != ia)
+            _p(b.m_next_sibling)->m_prev_sibling = ia;
+        std::swap(a.m_prev_sibling, b.m_prev_sibling);
+        std::swap(a.m_next_sibling, b.m_next_sibling);
+    }
+    else
+    {
+        if(a.m_next_sibling == ib) // n will go after m
+        {
+            _RYML_CB_ASSERT(m_callbacks, b.m_prev_sibling == ia);
+            if(a.m_prev_sibling != NONE)
+            {
+                _RYML_CB_ASSERT(m_callbacks, a.m_prev_sibling != ib);
+                _p(a.m_prev_sibling)->m_next_sibling = ib;
+            }
+            if(b.m_next_sibling != NONE)
+            {
+                _RYML_CB_ASSERT(m_callbacks, b.m_next_sibling != ia);
+                _p(b.m_next_sibling)->m_prev_sibling = ia;
+            }
+            id_type ns = b.m_next_sibling;
+            b.m_prev_sibling = a.m_prev_sibling;
+            b.m_next_sibling = ia;
+            a.m_prev_sibling = ib;
+            a.m_next_sibling = ns;
+        }
+        else if(a.m_prev_sibling == ib) // m will go after n
+        {
+            _RYML_CB_ASSERT(m_callbacks, b.m_next_sibling == ia);
+            if(b.m_prev_sibling != NONE)
+            {
+                _RYML_CB_ASSERT(m_callbacks, b.m_prev_sibling != ia);
+                _p(b.m_prev_sibling)->m_next_sibling = ia;
+            }
+            if(a.m_next_sibling != NONE)
+            {
+                _RYML_CB_ASSERT(m_callbacks, a.m_next_sibling != ib);
+                _p(a.m_next_sibling)->m_prev_sibling = ib;
+            }
+            id_type ns = b.m_prev_sibling;
+            a.m_prev_sibling = b.m_prev_sibling;
+            a.m_next_sibling = ib;
+            b.m_prev_sibling = ia;
+            b.m_next_sibling = ns;
+        }
+        else
+        {
+            C4_NEVER_REACH();
+        }
+    }
+    _RYML_CB_ASSERT(m_callbacks, a.m_next_sibling != ia);
+    _RYML_CB_ASSERT(m_callbacks, a.m_prev_sibling != ia);
+    _RYML_CB_ASSERT(m_callbacks, b.m_next_sibling != ib);
+    _RYML_CB_ASSERT(m_callbacks, b.m_prev_sibling != ib);
+
+    if(a.m_parent != ib && b.m_parent != ia)
+    {
+        std::swap(a.m_parent, b.m_parent);
+    }
+    else
+    {
+        if(a.m_parent == ib && b.m_parent != ia)
+        {
+            a.m_parent = b.m_parent;
+            b.m_parent = ia;
+        }
+        else if(a.m_parent != ib && b.m_parent == ia)
+        {
+            b.m_parent = a.m_parent;
+            a.m_parent = ib;
+        }
+        else
+        {
+            C4_NEVER_REACH();
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void Tree::_copy_hierarchy(id_type dst_, id_type src_)
+{
+    auto const& C4_RESTRICT src = *_p(src_);
+    auto      & C4_RESTRICT dst = *_p(dst_);
+    auto      & C4_RESTRICT prt = *_p(src.m_parent);
+    for(id_type i = src.m_first_child; i != NONE; i = next_sibling(i))
+    {
+        _p(i)->m_parent = dst_;
+    }
+    if(src.m_prev_sibling != NONE)
+    {
+        _p(src.m_prev_sibling)->m_next_sibling = dst_;
+    }
+    if(src.m_next_sibling != NONE)
+    {
+        _p(src.m_next_sibling)->m_prev_sibling = dst_;
+    }
+    if(prt.m_first_child == src_)
+    {
+        prt.m_first_child = dst_;
+    }
+    if(prt.m_last_child  == src_)
+    {
+        prt.m_last_child  = dst_;
+    }
+    dst.m_parent       = src.m_parent;
+    dst.m_first_child  = src.m_first_child;
+    dst.m_last_child   = src.m_last_child;
+    dst.m_prev_sibling = src.m_prev_sibling;
+    dst.m_next_sibling = src.m_next_sibling;
+}
+
+//-----------------------------------------------------------------------------
+void Tree::_swap_props(id_type n_, id_type m_)
+{
+    NodeData &C4_RESTRICT n = *_p(n_);
+    NodeData &C4_RESTRICT m = *_p(m_);
+    std::swap(n.m_type, m.m_type);
+    std::swap(n.m_key, m.m_key);
+    std::swap(n.m_val, m.m_val);
+}
+/** @endcond */
+
+//-----------------------------------------------------------------------------
+void Tree::move(id_type node, id_type after)
+{
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_CB_ASSERT(m_callbacks, node != after);
+    _RYML_CB_ASSERT(m_callbacks,  ! is_root(node));
+    _RYML_CB_ASSERT(m_callbacks, (after == NONE) || (has_sibling(node, after) && has_sibling(after, node)));
+
+    _rem_hierarchy(node);
+    _set_hierarchy(node, parent(node), after);
+}
+
+//-----------------------------------------------------------------------------
+
+void Tree::move(id_type node, id_type new_parent, id_type after)
+{
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_CB_ASSERT(m_callbacks, node != after);
+    _RYML_CB_ASSERT(m_callbacks, new_parent != NONE);
+    _RYML_CB_ASSERT(m_callbacks, new_parent != node);
+    _RYML_CB_ASSERT(m_callbacks, new_parent != after);
+    _RYML_CB_ASSERT(m_callbacks,  ! is_root(node));
+
+    _rem_hierarchy(node);
+    _set_hierarchy(node, new_parent, after);
+}
+
+id_type Tree::move(Tree *src, id_type node, id_type new_parent, id_type after)
+{
+    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_CB_ASSERT(m_callbacks, new_parent != NONE);
+    _RYML_CB_ASSERT(m_callbacks, new_parent != after);
+
+    id_type dup = duplicate(src, node, new_parent, after);
+    src->remove(node);
+    return dup;
+}
+
+void Tree::set_root_as_stream()
+{
+    id_type root = root_id();
+    if(is_stream(root))
+        return;
+    // don't use _add_flags() because it's checked and will fail
+    if(!has_children(root))
+    {
+        if(is_val(root))
+        {
+            _p(root)->m_type.add(SEQ);
+            id_type next_doc = append_child(root);
+            _copy_props_wo_key(next_doc, root);
+            _p(next_doc)->m_type.add(DOC);
+            _p(next_doc)->m_type.rem(SEQ);
+        }
+        _p(root)->m_type = STREAM;
+        return;
+    }
+    _RYML_CB_ASSERT(m_callbacks, !has_key(root));
+    id_type next_doc = append_child(root);
+    _copy_props_wo_key(next_doc, root);
+    _add_flags(next_doc, DOC);
+    for(id_type prev = NONE, ch = first_child(root), next = next_sibling(ch); ch != NONE; )
+    {
+        if(ch == next_doc)
+            break;
+        move(ch, next_doc, prev);
+        prev = ch;
+        ch = next;
+        next = next_sibling(next);
+    }
+    _p(root)->m_type = STREAM;
+}
+
+
+//-----------------------------------------------------------------------------
+void Tree::remove_children(id_type node)
+{
+    _RYML_CB_ASSERT(m_callbacks, get(node) != nullptr);
+    #if __GNUC__ >= 6
+    C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wnull-dereference")
+    #endif
+    id_type ich = get(node)->m_first_child;
+    #if __GNUC__ >= 6
+    C4_SUPPRESS_WARNING_GCC_POP
+    #endif
+    while(ich != NONE)
+    {
+        remove_children(ich);
+        _RYML_CB_ASSERT(m_callbacks, get(ich) != nullptr);
+        id_type next = get(ich)->m_next_sibling;
+        _release(ich);
+        if(ich == get(node)->m_last_child)
+            break;
+        ich = next;
+    }
+}
+
+bool Tree::change_type(id_type node, NodeType type)
+{
+    _RYML_CB_ASSERT(m_callbacks, type.is_val() || type.is_map() || type.is_seq());
+    _RYML_CB_ASSERT(m_callbacks, type.is_val() + type.is_map() + type.is_seq() == 1);
+    _RYML_CB_ASSERT(m_callbacks, type.has_key() == has_key(node) || (has_key(node) && !type.has_key()));
+    NodeData *d = _p(node);
+    if(type.is_map() && is_map(node))
+        return false;
+    else if(type.is_seq() && is_seq(node))
+        return false;
+    else if(type.is_val() && is_val(node))
+        return false;
+    d->m_type = (d->m_type & (~(MAP|SEQ|VAL))) | type;
+    remove_children(node);
+    return true;
+}
+
+
+//-----------------------------------------------------------------------------
+id_type Tree::duplicate(id_type node, id_type parent, id_type after)
+{
+    return duplicate(this, node, parent, after);
+}
+
+id_type Tree::duplicate(Tree const* src, id_type node, id_type parent, id_type after)
+{
+    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_CB_ASSERT(m_callbacks, parent != NONE);
+    _RYML_CB_ASSERT(m_callbacks,  ! src->is_root(node));
+
+    id_type copy = _claim();
+
+    _copy_props(copy, src, node);
+    _set_hierarchy(copy, parent, after);
+    duplicate_children(src, node, copy, NONE);
+
+    return copy;
+}
+
+//-----------------------------------------------------------------------------
+id_type Tree::duplicate_children(id_type node, id_type parent, id_type after)
+{
+    return duplicate_children(this, node, parent, after);
+}
+
+id_type Tree::duplicate_children(Tree const* src, id_type node, id_type parent, id_type after)
+{
+    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_CB_ASSERT(m_callbacks, parent != NONE);
+    _RYML_CB_ASSERT(m_callbacks, after == NONE || has_child(parent, after));
+
+    id_type prev = after;
+    for(id_type i = src->first_child(node); i != NONE; i = src->next_sibling(i))
+    {
+        prev = duplicate(src, i, parent, prev);
+    }
+
+    return prev;
+}
+
+//-----------------------------------------------------------------------------
+void Tree::duplicate_contents(id_type node, id_type where)
+{
+    duplicate_contents(this, node, where);
+}
+
+void Tree::duplicate_contents(Tree const *src, id_type node, id_type where)
+{
+    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_CB_ASSERT(m_callbacks, where != NONE);
+    _copy_props_wo_key(where, src, node);
+    duplicate_children(src, node, where, last_child(where));
+}
+
+//-----------------------------------------------------------------------------
+id_type Tree::duplicate_children_no_rep(id_type node, id_type parent, id_type after)
+{
+    return duplicate_children_no_rep(this, node, parent, after);
+}
+
+id_type Tree::duplicate_children_no_rep(Tree const *src, id_type node, id_type parent, id_type after)
+{
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_CB_ASSERT(m_callbacks, parent != NONE);
+    _RYML_CB_ASSERT(m_callbacks, after == NONE || has_child(parent, after));
+
+    // don't loop using pointers as there may be a relocation
+
+    // find the position where "after" is
+    id_type after_pos = NONE;
+    if(after != NONE)
+    {
+        for(id_type i = first_child(parent), icount = 0; i != NONE; ++icount, i = next_sibling(i))
+        {
+            if(i == after)
+            {
+                after_pos = icount;
+                break;
+            }
+        }
+        _RYML_CB_ASSERT(m_callbacks, after_pos != NONE);
+    }
+
+    // for each child to be duplicated...
+    id_type prev = after;
+    for(id_type i = src->first_child(node); i != NONE; i = src->next_sibling(i))
+    {
+        _c4dbgpf("duplicate_no_rep: {} -> {}/{}", i, parent, prev);
+        _RYML_CB_CHECK(m_callbacks, this != src || (parent != i && !is_ancestor(parent, i)));
+        if(is_seq(parent))
+        {
+            _c4dbgpf("duplicate_no_rep: {} is seq", parent);
+            prev = duplicate(src, i, parent, prev);
+        }
+        else
+        {
+            _c4dbgpf("duplicate_no_rep: {} is map", parent);
+            _RYML_CB_ASSERT(m_callbacks, is_map(parent));
+            // does the parent already have a node with key equal to that of the current duplicate?
+            id_type dstnode_dup = NONE, dstnode_dup_pos = NONE;
+            {
+                csubstr srckey = src->key(i);
+                for(id_type j = first_child(parent), jcount = 0; j != NONE; ++jcount, j = next_sibling(j))
+                {
+                    if(key(j) == srckey)
+                    {
+                        _c4dbgpf("duplicate_no_rep: found matching key '{}' src={}/{} dst={}/{}", srckey, node, i, parent, j);
+                        dstnode_dup = j;
+                        dstnode_dup_pos = jcount;
+                        break;
+                    }
+                }
+            }
+            _c4dbgpf("duplicate_no_rep: dstnode_dup={} dstnode_dup_pos={} after_pos={}", dstnode_dup, dstnode_dup_pos, after_pos);
+            if(dstnode_dup == NONE) // there is no repetition; just duplicate
+            {
+                _c4dbgpf("duplicate_no_rep: no repetition, just duplicate i={} parent={} prev={}", i, parent, prev);
+                prev = duplicate(src, i, parent, prev);
+            }
+            else  // yes, there is a repetition
+            {
+                if(after_pos != NONE && dstnode_dup_pos <= after_pos)
+                {
+                    // the dst duplicate is located before the node which will be inserted,
+                    // and will be overridden by the duplicate. So replace it.
+                    _c4dbgpf("duplicate_no_dstnode_dup: replace {}/{} with {}/{}", parent, dstnode_dup, node, i);
+                    if(prev == dstnode_dup)
+                        prev = prev_sibling(dstnode_dup);
+                    remove(dstnode_dup);
+                    prev = duplicate(src, i, parent, prev);
+                }
+                else if(prev == NONE)
+                {
+                    _c4dbgpf("duplicate_no_dstnode_dup: {}=prev <- {}", prev, dstnode_dup);
+                    // first iteration with prev = after = NONE and dstnode_dupetition
+                    prev = dstnode_dup;
+                }
+                else if(dstnode_dup != prev)
+                {
+                    // dstnode_dup is located after the node which will be inserted
+                    // and overrides it. So move the dstnode_dup into this node's place.
+                    _c4dbgpf("duplicate_no_dstnode_dup: move({}, {})", dstnode_dup, prev);
+                    move(dstnode_dup, prev);
+                    prev = dstnode_dup;
+                }
+            } // there's a dstnode_dupetition
+        }
+    }
+
+    return prev;
+}
+
+
+//-----------------------------------------------------------------------------
+
+void Tree::merge_with(Tree const *src, id_type src_node, id_type dst_node)
+{
+    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
+    if(src_node == NONE)
+        src_node = src->root_id();
+    if(dst_node == NONE)
+        dst_node = root_id();
+    _RYML_CB_ASSERT(m_callbacks, src->has_val(src_node) || src->is_seq(src_node) || src->is_map(src_node));
+    if(src->has_val(src_node))
+    {
+        type_bits mask_src = ~STYLE; // keep the existing style if it is already a val
+        if( ! has_val(dst_node))
+        {
+            if(has_children(dst_node))
+                remove_children(dst_node);
+            mask_src |= VAL_STYLE; // copy the src style
+        }
+        if(src->is_keyval(src_node))
+        {
+            _copy_props(dst_node, src, src_node, mask_src);
+        }
+        else
+        {
+            _RYML_CB_ASSERT(m_callbacks, src->is_val(src_node));
+            _copy_props_wo_key(dst_node, src, src_node, mask_src);
+        }
+    }
+    else if(src->is_seq(src_node))
+    {
+        if( ! is_seq(dst_node))
+        {
+            if(has_children(dst_node))
+                remove_children(dst_node);
+            _clear_type(dst_node);
+            if(src->has_key(src_node))
+                to_seq(dst_node, src->key(src_node));
+            else
+                to_seq(dst_node);
+            _p(dst_node)->m_type = src->_p(src_node)->m_type;
+        }
+        for(id_type sch = src->first_child(src_node); sch != NONE; sch = src->next_sibling(sch))
+        {
+            id_type dch = append_child(dst_node);
+            _copy_props_wo_key(dch, src, sch);
+            merge_with(src, sch, dch);
+        }
+    }
+    else
+    {
+        _RYML_CB_ASSERT(m_callbacks, src->is_map(src_node));
+        if( ! is_map(dst_node))
+        {
+            if(has_children(dst_node))
+                remove_children(dst_node);
+            _clear_type(dst_node);
+            if(src->has_key(src_node))
+                to_map(dst_node, src->key(src_node));
+            else
+                to_map(dst_node);
+            _p(dst_node)->m_type = src->_p(src_node)->m_type;
+        }
+        for(id_type sch = src->first_child(src_node); sch != NONE; sch = src->next_sibling(sch))
+        {
+            id_type dch = find_child(dst_node, src->key(sch));
+            if(dch == NONE)
+            {
+                dch = append_child(dst_node);
+                _copy_props(dch, src, sch);
+            }
+            merge_with(src, sch, dch);
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+
+void Tree::resolve(bool clear_anchors)
+{
+    if(m_size == 0)
+        return;
+    ReferenceResolver rr;
+    resolve(&rr, clear_anchors);
+}
+
+void Tree::resolve(ReferenceResolver *C4_RESTRICT rr, bool clear_anchors)
+{
+    if(m_size == 0)
+        return;
+    rr->resolve(this, clear_anchors);
+}
+
+
+//-----------------------------------------------------------------------------
+
+id_type Tree::num_children(id_type node) const
+{
+    id_type count = 0;
+    for(id_type i = first_child(node); i != NONE; i = next_sibling(i))
+        ++count;
+    return count;
+}
+
+id_type Tree::child(id_type node, id_type pos) const
+{
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    id_type count = 0;
+    for(id_type i = first_child(node); i != NONE; i = next_sibling(i))
+    {
+        if(count++ == pos)
+            return i;
+    }
+    return NONE;
+}
+
+id_type Tree::child_pos(id_type node, id_type ch) const
+{
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    id_type count = 0;
+    for(id_type i = first_child(node); i != NONE; i = next_sibling(i))
+    {
+        if(i == ch)
+            return count;
+        ++count;
+    }
+    return NONE;
+}
+
+#if defined(__clang__)
+#   pragma clang diagnostic push
+#elif defined(__GNUC__)
+#   pragma GCC diagnostic push
+#   if __GNUC__ >= 6
+#       pragma GCC diagnostic ignored "-Wnull-dereference"
+#   endif
+#   if __GNUC__ > 9
+#       pragma GCC diagnostic ignored "-Wanalyzer-null-dereference"
+#   endif
+#endif
+
+id_type Tree::find_child(id_type node, csubstr const& name) const
+{
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_CB_ASSERT(m_callbacks, is_map(node));
+    if(get(node)->m_first_child == NONE)
+    {
+        _RYML_CB_ASSERT(m_callbacks, _p(node)->m_last_child == NONE);
+        return NONE;
+    }
+    else
+    {
+        _RYML_CB_ASSERT(m_callbacks, _p(node)->m_last_child != NONE);
+    }
+    for(id_type i = first_child(node); i != NONE; i = next_sibling(i))
+    {
+        if(_p(i)->m_key.scalar == name)
+        {
+            return i;
+        }
+    }
+    return NONE;
+}
+
+#if defined(__clang__)
+#   pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#   pragma GCC diagnostic pop
+#endif
+
+namespace {
+id_type depth_desc_(Tree const& C4_RESTRICT t, id_type id, id_type currdepth=0, id_type maxdepth=0)
+{
+    maxdepth = currdepth > maxdepth ? currdepth : maxdepth;
+    for(id_type child = t.first_child(id); child != NONE; child = t.next_sibling(child))
+    {
+        const id_type d = depth_desc_(t, child, currdepth+1, maxdepth);
+        maxdepth = d > maxdepth ? d : maxdepth;
+    }
+    return maxdepth;
+}
+}
+
+id_type Tree::depth_desc(id_type node) const
+{
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    return depth_desc_(*this, node);
+}
+
+id_type Tree::depth_asc(id_type node) const
+{
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    id_type depth = 0;
+    while(!is_root(node))
+    {
+        ++depth;
+        node = parent(node);
+    }
+    return depth;
+}
+
+bool Tree::is_ancestor(id_type node, id_type ancestor) const
+{
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    id_type p = parent(node);
+    while(p != NONE)
+    {
+        if(p == ancestor)
+            return true;
+        p = parent(p);
+    }
+    return false;
+}
+
+
+//-----------------------------------------------------------------------------
+
+void Tree::to_val(id_type node, csubstr val, type_bits more_flags)
+{
+    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
+    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || ! parent_is_map(node));
+    _set_flags(node, VAL|more_flags);
+    _p(node)->m_key.clear();
+    _p(node)->m_val = val;
+}
+
+void Tree::to_keyval(id_type node, csubstr key, csubstr val, type_bits more_flags)
+{
+    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
+    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || parent_is_map(node));
+    _set_flags(node, KEYVAL|more_flags);
+    _p(node)->m_key = key;
+    _p(node)->m_val = val;
+}
+
+void Tree::to_map(id_type node, type_bits more_flags)
+{
+    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
+    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || ! parent_is_map(node)); // parent must not have children with keys
+    _set_flags(node, MAP|more_flags);
+    _p(node)->m_key.clear();
+    _p(node)->m_val.clear();
+}
+
+void Tree::to_map(id_type node, csubstr key, type_bits more_flags)
+{
+    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
+    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || parent_is_map(node));
+    _set_flags(node, KEY|MAP|more_flags);
+    _p(node)->m_key = key;
+    _p(node)->m_val.clear();
+}
+
+void Tree::to_seq(id_type node, type_bits more_flags)
+{
+    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
+    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || parent_is_seq(node));
+    _set_flags(node, SEQ|more_flags);
+    _p(node)->m_key.clear();
+    _p(node)->m_val.clear();
+}
+
+void Tree::to_seq(id_type node, csubstr key, type_bits more_flags)
+{
+    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
+    _RYML_CB_ASSERT(m_callbacks, parent(node) == NONE || parent_is_map(node));
+    _set_flags(node, KEY|SEQ|more_flags);
+    _p(node)->m_key = key;
+    _p(node)->m_val.clear();
+}
+
+void Tree::to_doc(id_type node, type_bits more_flags)
+{
+    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
+    _set_flags(node, DOC|more_flags);
+    _p(node)->m_key.clear();
+    _p(node)->m_val.clear();
+}
+
+void Tree::to_stream(id_type node, type_bits more_flags)
+{
+    _RYML_CB_ASSERT(m_callbacks,  ! has_children(node));
+    _set_flags(node, STREAM|more_flags);
+    _p(node)->m_key.clear();
+    _p(node)->m_val.clear();
+}
+
+
+//-----------------------------------------------------------------------------
+
+void Tree::clear_style(id_type node, bool recurse)
+{
+    NodeData *C4_RESTRICT d = _p(node);
+    d->m_type.clear_style();
+    if(!recurse)
+        return;
+    for(id_type child = d->m_first_child; child != NONE; child = next_sibling(child))
+        clear_style(child, recurse);
+}
+
+void Tree::set_style_conditionally(id_type node,
+                                   NodeType type_mask,
+                                   NodeType rem_style_flags,
+                                   NodeType add_style_flags,
+                                   bool recurse)
+{
+    NodeData *C4_RESTRICT d = _p(node);
+    if((d->m_type & type_mask) == type_mask)
+    {
+        d->m_type &= ~(NodeType)rem_style_flags;
+        d->m_type |= (NodeType)add_style_flags;
+    }
+    if(!recurse)
+        return;
+    for(id_type child = d->m_first_child; child != NONE; child = next_sibling(child))
+        set_style_conditionally(child, type_mask, rem_style_flags, add_style_flags, recurse);
+}
+
+
+//-----------------------------------------------------------------------------
+id_type Tree::num_tag_directives() const
+{
+    // this assumes we have a very small number of tag directives
+    for(id_type i = 0; i < RYML_MAX_TAG_DIRECTIVES; ++i)
+        if(m_tag_directives[i].handle.empty())
+            return i;
+    return RYML_MAX_TAG_DIRECTIVES;
+}
+
+void Tree::clear_tag_directives()
+{
+    for(TagDirective &td : m_tag_directives)
+        td = {};
+}
+
+id_type Tree::add_tag_directive(TagDirective const& td)
+{
+    _RYML_CB_CHECK(m_callbacks, !td.handle.empty());
+    _RYML_CB_CHECK(m_callbacks, !td.prefix.empty());
+    _RYML_CB_CHECK(m_callbacks, td.handle.begins_with('!'));
+    _RYML_CB_CHECK(m_callbacks, td.handle.ends_with('!'));
+    // https://yaml.org/spec/1.2.2/#rule-ns-word-char
+    _RYML_CB_CHECK(m_callbacks, td.handle == '!' || td.handle == "!!" || td.handle.trim('!').first_not_of("01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-") == npos);
+    id_type pos = num_tag_directives();
+    _RYML_CB_CHECK(m_callbacks, pos < RYML_MAX_TAG_DIRECTIVES);
+    m_tag_directives[pos] = td;
+    return pos;
+}
+
+namespace {
+bool _create_tag_directive_from_str(csubstr directive_, TagDirective *td, Tree *tree)
+{
+    _RYML_CB_CHECK(tree->callbacks(), directive_.begins_with("%TAG "));
+    if(!td->create_from_str(directive_))
+    {
+        _RYML_CB_ERR(tree->callbacks(), "invalid tag directive");
+    }
+    td->next_node_id = tree->size();
+    if(!tree->empty())
+    {
+        const id_type prev = tree->size() - 1;
+        if(tree->is_root(prev) && tree->type(prev) != NOTYPE && !tree->is_stream(prev))
+            ++td->next_node_id;
+    }
+    _c4dbgpf("%TAG: handle={} prefix={} next_node={}", td->handle, td->prefix, td->next_node_id);
+    return true;
+}
+} // namespace
+
+bool Tree::add_tag_directive(csubstr directive_)
+{
+    TagDirective td;
+    if(_create_tag_directive_from_str(directive_, &td, this))
+    {
+        add_tag_directive(td);
+        return true;
+    }
+    return false;
+}
+
+size_t Tree::resolve_tag(substr output, csubstr tag, id_type node_id) const
+{
+    // lookup from the end. We want to find the first directive that
+    // matches the tag and has a target node id leq than the given
+    // node_id.
+    for(id_type i = RYML_MAX_TAG_DIRECTIVES-1; i != (id_type)-1; --i)
+    {
+        auto const& td = m_tag_directives[i];
+        if(td.handle.empty())
+            continue;
+        if(tag.begins_with(td.handle) && td.next_node_id <= node_id)
+            return td.transform(tag, output, m_callbacks);
+    }
+    if(tag.begins_with('!'))
+    {
+        if(is_custom_tag(tag))
+        {
+            _RYML_CB_ERR(m_callbacks, "tag directive not found");
+        }
+    }
+    return 0; // return 0 to signal that the tag is local and cannot be resolved
+}
+
+namespace {
+csubstr _transform_tag(Tree *t, csubstr tag, id_type node)
+{
+    _c4dbgpf("[{}] resolving tag ~~~{}~~~", node, tag);
+    size_t required_size = t->resolve_tag(substr{}, tag, node);
+    if(!required_size)
+    {
+        if(tag.begins_with("!<"))
+            tag = tag.sub(1);
+        _c4dbgpf("[{}] resolved tag: ~~~{}~~~", node, tag);
+        return tag;
+    }
+    const char *prev_arena = t->arena().str;(void)prev_arena;
+    substr buf = t->alloc_arena(required_size);
+    _RYML_CB_ASSERT(t->m_callbacks, t->arena().str == prev_arena);
+    size_t actual_size = t->resolve_tag(buf, tag, node);
+    _RYML_CB_ASSERT(t->m_callbacks, actual_size <= required_size);
+    _c4dbgpf("[{}] resolved tag: ~~~{}~~~", node, buf.first(actual_size));
+    return buf.first(actual_size);
+}
+void _resolve_tags(Tree *t, id_type node)
+{
+    NodeData *C4_RESTRICT d = t->_p(node);
+    if(d->m_type & KEYTAG)
+        d->m_key.tag = _transform_tag(t, d->m_key.tag, node);
+    if(d->m_type & VALTAG)
+        d->m_val.tag = _transform_tag(t, d->m_val.tag, node);
+    for(id_type child = t->first_child(node); child != NONE; child = t->next_sibling(child))
+        _resolve_tags(t, child);
+}
+size_t _count_resolved_tags_size(Tree const* t, id_type node)
+{
+    size_t sz = 0;
+    NodeData const* C4_RESTRICT d = t->_p(node);
+    if(d->m_type & KEYTAG)
+        sz += t->resolve_tag(substr{}, d->m_key.tag, node);
+    if(d->m_type & VALTAG)
+        sz += t->resolve_tag(substr{}, d->m_val.tag, node);
+    for(id_type child = t->first_child(node); child != NONE; child = t->next_sibling(child))
+        sz += _count_resolved_tags_size(t, child);
+    return sz;
+}
+void _normalize_tags(Tree *t, id_type node)
+{
+    NodeData *C4_RESTRICT d = t->_p(node);
+    if(d->m_type & KEYTAG)
+        d->m_key.tag = normalize_tag(d->m_key.tag);
+    if(d->m_type & VALTAG)
+        d->m_val.tag = normalize_tag(d->m_val.tag);
+    for(id_type child = t->first_child(node); child != NONE; child = t->next_sibling(child))
+        _normalize_tags(t, child);
+}
+void _normalize_tags_long(Tree *t, id_type node)
+{
+    NodeData *C4_RESTRICT d = t->_p(node);
+    if(d->m_type & KEYTAG)
+        d->m_key.tag = normalize_tag_long(d->m_key.tag);
+    if(d->m_type & VALTAG)
+        d->m_val.tag = normalize_tag_long(d->m_val.tag);
+    for(id_type child = t->first_child(node); child != NONE; child = t->next_sibling(child))
+        _normalize_tags_long(t, child);
+}
+} // namespace
+
+void Tree::resolve_tags()
+{
+    if(empty())
+        return;
+    size_t needed_size = _count_resolved_tags_size(this, root_id());
+    if(needed_size)
+        reserve_arena(arena_size() + needed_size);
+    _resolve_tags(this, root_id());
+}
+
+void Tree::normalize_tags()
+{
+    if(empty())
+        return;
+    _normalize_tags(this, root_id());
+}
+
+void Tree::normalize_tags_long()
+{
+    if(empty())
+        return;
+    _normalize_tags_long(this, root_id());
+}
+
+
+//-----------------------------------------------------------------------------
+
+csubstr Tree::lookup_result::resolved() const
+{
+    csubstr p = path.first(path_pos);
+    if(p.ends_with('.'))
+        p = p.first(p.len-1);
+    return p;
+}
+
+csubstr Tree::lookup_result::unresolved() const
+{
+    return path.sub(path_pos);
+}
+
+void Tree::_advance(lookup_result *r, size_t more)
+{
+    r->path_pos += more;
+    if(r->path.sub(r->path_pos).begins_with('.'))
+        ++r->path_pos;
+}
+
+Tree::lookup_result Tree::lookup_path(csubstr path, id_type start) const
+{
+    if(start == NONE)
+        start = root_id();
+    lookup_result r(path, start);
+    if(path.empty())
+        return r;
+    _lookup_path(&r);
+    if(r.target == NONE && r.closest == start)
+        r.closest = NONE;
+    return r;
+}
+
+id_type Tree::lookup_path_or_modify(csubstr default_value, csubstr path, id_type start)
+{
+    id_type target = _lookup_path_or_create(path, start);
+    if(parent_is_map(target))
+        to_keyval(target, key(target), default_value);
+    else
+        to_val(target, default_value);
+    return target;
+}
+
+id_type Tree::lookup_path_or_modify(Tree const *src, id_type src_node, csubstr path, id_type start)
+{
+    id_type target = _lookup_path_or_create(path, start);
+    merge_with(src, src_node, target);
+    return target;
+}
+
+id_type Tree::_lookup_path_or_create(csubstr path, id_type start)
+{
+    if(start == NONE)
+        start = root_id();
+    lookup_result r(path, start);
+    _lookup_path(&r);
+    if(r.target != NONE)
+    {
+        C4_ASSERT(r.unresolved().empty());
+        return r.target;
+    }
+    _lookup_path_modify(&r);
+    return r.target;
+}
+
+void Tree::_lookup_path(lookup_result *r) const
+{
+    C4_ASSERT( ! r->unresolved().empty());
+    _lookup_path_token parent{"", type(r->closest)};
+    id_type node;
+    do
+    {
+        node = _next_node(r, &parent);
+        if(node != NONE)
+            r->closest = node;
+        if(r->unresolved().empty())
+        {
+            r->target = node;
+            return;
+        }
+    } while(node != NONE);
+}
+
+void Tree::_lookup_path_modify(lookup_result *r)
+{
+    C4_ASSERT( ! r->unresolved().empty());
+    _lookup_path_token parent{"", type(r->closest)};
+    id_type node;
+    do
+    {
+        node = _next_node_modify(r, &parent);
+        if(node != NONE)
+            r->closest = node;
+        if(r->unresolved().empty())
+        {
+            r->target = node;
+            return;
+        }
+    } while(node != NONE);
+}
+
+id_type Tree::_next_node(lookup_result * r, _lookup_path_token *parent) const
+{
+    _lookup_path_token token = _next_token(r, *parent);
+    if( ! token)
+        return NONE;
+
+    id_type node = NONE;
+    csubstr prev = token.value;
+    if(token.type == MAP || token.type == SEQ)
+    {
+        _RYML_CB_ASSERT(m_callbacks, !token.value.begins_with('['));
+        //_RYML_CB_ASSERT(m_callbacks, is_container(r->closest) || r->closest == NONE);
+        _RYML_CB_ASSERT(m_callbacks, is_map(r->closest));
+        node = find_child(r->closest, token.value);
+    }
+    else if(token.type == KEYVAL)
+    {
+        _RYML_CB_ASSERT(m_callbacks, r->unresolved().empty());
+        if(is_map(r->closest))
+            node = find_child(r->closest, token.value);
+    }
+    else if(token.type == KEY)
+    {
+        _RYML_CB_ASSERT(m_callbacks, token.value.begins_with('[') && token.value.ends_with(']'));
+        token.value = token.value.offs(1, 1).trim(' ');
+        id_type idx = 0;
+        _RYML_CB_CHECK(m_callbacks, from_chars(token.value, &idx));
+        node = child(r->closest, idx);
+    }
+    else
+    {
+        C4_NEVER_REACH();
+    }
+
+    if(node != NONE)
+    {
+        *parent = token;
+    }
+    else
+    {
+        csubstr p = r->path.sub(r->path_pos > 0 ? r->path_pos - 1 : r->path_pos);
+        r->path_pos -= prev.len;
+        if(p.begins_with('.'))
+            r->path_pos -= 1u;
+    }
+
+    return node;
+}
+
+id_type Tree::_next_node_modify(lookup_result * r, _lookup_path_token *parent)
+{
+    _lookup_path_token token = _next_token(r, *parent);
+    if( ! token)
+        return NONE;
+
+    id_type node = NONE;
+    if(token.type == MAP || token.type == SEQ)
+    {
+        _RYML_CB_ASSERT(m_callbacks, !token.value.begins_with('['));
+        //_RYML_CB_ASSERT(m_callbacks, is_container(r->closest) || r->closest == NONE);
+        if( ! is_container(r->closest))
+        {
+            if(has_key(r->closest))
+                to_map(r->closest, key(r->closest));
+            else
+                to_map(r->closest);
+        }
+        else
+        {
+            if(is_map(r->closest))
+                node = find_child(r->closest, token.value);
+            else
+            {
+                id_type pos = NONE;
+                _RYML_CB_CHECK(m_callbacks, c4::atox(token.value, &pos));
+                _RYML_CB_ASSERT(m_callbacks, pos != NONE);
+                node = child(r->closest, pos);
+            }
+        }
+        if(node == NONE)
+        {
+            _RYML_CB_ASSERT(m_callbacks, is_map(r->closest));
+            node = append_child(r->closest);
+            NodeData *n = _p(node);
+            n->m_key.scalar = token.value;
+            n->m_type.add(KEY);
+        }
+    }
+    else if(token.type == KEYVAL)
+    {
+        _RYML_CB_ASSERT(m_callbacks, r->unresolved().empty());
+        if(is_map(r->closest))
+        {
+            node = find_child(r->closest, token.value);
+            if(node == NONE)
+                node = append_child(r->closest);
+        }
+        else
+        {
+            _RYML_CB_ASSERT(m_callbacks, !is_seq(r->closest));
+            _add_flags(r->closest, MAP);
+            node = append_child(r->closest);
+        }
+        NodeData *n = _p(node);
+        n->m_key.scalar = token.value;
+        n->m_val.scalar = "";
+        n->m_type.add(KEYVAL);
+    }
+    else if(token.type == KEY)
+    {
+        _RYML_CB_ASSERT(m_callbacks, token.value.begins_with('[') && token.value.ends_with(']'));
+        token.value = token.value.offs(1, 1).trim(' ');
+        id_type idx;
+        if( ! from_chars(token.value, &idx))
+             return NONE;
+        if( ! is_container(r->closest))
+        {
+            if(has_key(r->closest))
+            {
+                csubstr k = key(r->closest);
+                _clear_type(r->closest);
+                to_seq(r->closest, k);
+            }
+            else
+            {
+                _clear_type(r->closest);
+                to_seq(r->closest);
+            }
+        }
+        _RYML_CB_ASSERT(m_callbacks, is_container(r->closest));
+        node = child(r->closest, idx);
+        if(node == NONE)
+        {
+            _RYML_CB_ASSERT(m_callbacks, num_children(r->closest) <= idx);
+            for(id_type i = num_children(r->closest); i <= idx; ++i)
+            {
+                node = append_child(r->closest);
+                if(i < idx)
+                {
+                    if(is_map(r->closest))
+                        to_keyval(node, /*"~"*/{}, /*"~"*/{});
+                    else if(is_seq(r->closest))
+                        to_val(node, /*"~"*/{});
+                }
+            }
+        }
+    }
+    else
+    {
+        C4_NEVER_REACH();
+    }
+
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    *parent = token;
+    return node;
+}
+
+/* types of tokens:
+ * - seeing "map."  ---> "map"/MAP
+ * - finishing "scalar" ---> "scalar"/KEYVAL
+ * - seeing "seq[n]" ---> "seq"/SEQ (--> "[n]"/KEY)
+ * - seeing "[n]" ---> "[n]"/KEY
+ */
+Tree::_lookup_path_token Tree::_next_token(lookup_result *r, _lookup_path_token const& parent) const
+{
+    csubstr unres = r->unresolved();
+    if(unres.empty())
+        return {};
+
+    // is it an indexation like [0], [1], etc?
+    if(unres.begins_with('['))
+    {
+        size_t pos = unres.find(']');
+        if(pos == csubstr::npos)
+            return {};
+        csubstr idx = unres.first(pos + 1);
+        _advance(r, pos + 1);
+        return {idx, KEY};
+    }
+
+    // no. so it must be a name
+    size_t pos = unres.first_of(".[");
+    if(pos == csubstr::npos)
+    {
+        _advance(r, unres.len);
+        NodeType t;
+        if(( ! parent) || parent.type.is_seq())
+            return {unres, VAL};
+        return {unres, KEYVAL};
+    }
+
+    // it's either a map or a seq
+    _RYML_CB_ASSERT(m_callbacks, unres[pos] == '.' || unres[pos] == '[');
+    if(unres[pos] == '.')
+    {
+        _RYML_CB_ASSERT(m_callbacks, pos != 0);
+        _advance(r, pos + 1);
+        return {unres.first(pos), MAP};
+    }
+
+    _RYML_CB_ASSERT(m_callbacks, unres[pos] == '[');
+    _advance(r, pos);
+    return {unres.first(pos), SEQ};
+}
+
+
+} // namespace yml
+} // namespace c4
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+// amalgamate: removed include of
+// c4/yml/event_handler_tree.hpp
+//#include "c4/yml/event_handler_tree.hpp"
+#if !defined(C4_YML_EVENT_HANDLER_TREE_HPP_) && !defined(_C4_YML_EVENT_HANDLER_TREE_HPP_)
+#error "amalgamate: file c4/yml/event_handler_tree.hpp must have been included at this point"
+#endif /* C4_YML_EVENT_HANDLER_TREE_HPP_ */
+
+// amalgamate: removed include of
+// c4/yml/parse_engine.def.hpp
+//#include "c4/yml/parse_engine.def.hpp"
+#if !defined(C4_YML_PARSE_ENGINE_DEF_HPP_) && !defined(_C4_YML_PARSE_ENGINE_DEF_HPP_)
+#error "amalgamate: file c4/yml/parse_engine.def.hpp must have been included at this point"
+#endif /* C4_YML_PARSE_ENGINE_DEF_HPP_ */
+
+// amalgamate: removed include of
+// c4/yml/parse.hpp
+//#include "c4/yml/parse.hpp"
+#if !defined(C4_YML_PARSE_HPP_) && !defined(_C4_YML_PARSE_HPP_)
+#error "amalgamate: file c4/yml/parse.hpp must have been included at this point"
+#endif /* C4_YML_PARSE_HPP_ */
+
+
+namespace c4 {
+namespace yml {
+
+Location Tree::location(Parser const& parser, id_type node) const
+{
+    // try hard to avoid getting the location from a null string.
+    Location loc;
+    if(_location_from_node(parser, node, &loc, 0))
+        return loc;
+    return parser.val_location(parser.source().str);
+}
+
+bool Tree::_location_from_node(Parser const& parser, id_type node, Location *C4_RESTRICT loc, id_type level) const
+{
+    if(has_key(node))
+    {
+        csubstr k = key(node);
+        if(C4_LIKELY(k.str != nullptr))
+        {
+            _RYML_CB_ASSERT(m_callbacks, k.is_sub(parser.source()));
+            _RYML_CB_ASSERT(m_callbacks, parser.source().is_super(k));
+            *loc = parser.val_location(k.str);
+            return true;
+        }
+    }
+
+    if(has_val(node))
+    {
+        csubstr v = val(node);
+        if(C4_LIKELY(v.str != nullptr))
+        {
+            _RYML_CB_ASSERT(m_callbacks, v.is_sub(parser.source()));
+            _RYML_CB_ASSERT(m_callbacks, parser.source().is_super(v));
+            *loc = parser.val_location(v.str);
+            return true;
+        }
+    }
+
+    if(is_container(node))
+    {
+        if(_location_from_cont(parser, node, loc))
+            return true;
+    }
+
+    if(type(node) != NOTYPE && level == 0)
+    {
+        // try the prev sibling
+        {
+            const id_type prev = prev_sibling(node);
+            if(prev != NONE)
+            {
+                if(_location_from_node(parser, prev, loc, level+1))
+                    return true;
+            }
+        }
+        // try the next sibling
+        {
+            const id_type next = next_sibling(node);
+            if(next != NONE)
+            {
+                if(_location_from_node(parser, next, loc, level+1))
+                    return true;
+            }
+        }
+        // try the parent
+        {
+            const id_type parent = this->parent(node);
+            if(parent != NONE)
+            {
+                if(_location_from_node(parser, parent, loc, level+1))
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool Tree::_location_from_cont(Parser const& parser, id_type node, Location *C4_RESTRICT loc) const
+{
+    _RYML_CB_ASSERT(m_callbacks, is_container(node));
+    if(!is_stream(node))
+    {
+        const char *node_start = _p(node)->m_val.scalar.str;  // this was stored in the container
+        if(has_children(node))
+        {
+            id_type child = first_child(node);
+            if(has_key(child))
+            {
+                // when a map starts, the container was set after the key
+                csubstr k = key(child);
+                if(k.str && node_start > k.str)
+                    node_start = k.str;
+            }
+        }
+        *loc = parser.val_location(node_start);
+        return true;
+    }
+    else // it's a stream
+    {
+        *loc = parser.val_location(parser.source().str); // just return the front of the buffer
+    }
+    return true;
+}
+
+} // namespace yml
+} // namespace c4
+
+
+C4_SUPPRESS_WARNING_GCC_CLANG_POP
+C4_SUPPRESS_WARNING_MSVC_POP
+
+#endif /* RYML_SINGLE_HDR_DEFINE_NOW */
+
+
+// (end src/c4/yml/tree.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/reference_resolver.cpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/reference_resolver.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef RYML_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/reference_resolver.hpp
+// c4/yml/reference_resolver.hpp
 //#include "c4/yml/reference_resolver.hpp"
 #if !defined(C4_YML_REFERENCE_RESOLVER_HPP_) && !defined(_C4_YML_REFERENCE_RESOLVER_HPP_)
 #error "amalgamate: file c4/yml/reference_resolver.hpp must have been included at this point"
 #endif /* C4_YML_REFERENCE_RESOLVER_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/common.hpp
+// c4/yml/common.hpp
 //#include "c4/yml/common.hpp"
 #if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
 #error "amalgamate: file c4/yml/common.hpp must have been included at this point"
 #endif /* C4_YML_COMMON_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/parser_dbg.hpp
-//#include "c4/yml/detail/parser_dbg.hpp"
-#if !defined(C4_YML_DETAIL_PARSER_DBG_HPP_) && !defined(_C4_YML_DETAIL_PARSER_DBG_HPP_)
-#error "amalgamate: file c4/yml/detail/parser_dbg.hpp must have been included at this point"
-#endif /* C4_YML_DETAIL_PARSER_DBG_HPP_ */
+// c4/yml/detail/dbgprint.hpp
+//#include "c4/yml/detail/dbgprint.hpp"
+#if !defined(C4_YML_DETAIL_DBGPRINT_HPP_) && !defined(_C4_YML_DETAIL_DBGPRINT_HPP_)
+#error "amalgamate: file c4/yml/detail/dbgprint.hpp must have been included at this point"
+#endif /* C4_YML_DETAIL_DBGPRINT_HPP_ */
 
 #ifdef RYML_DBG
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/print.hpp
+// c4/yml/detail/print.hpp
 //#include "c4/yml/detail/print.hpp"
 #if !defined(C4_YML_DETAIL_PRINT_HPP_) && !defined(_C4_YML_DETAIL_PRINT_HPP_)
 #error "amalgamate: file c4/yml/detail/print.hpp must have been included at this point"
@@ -43037,7 +43109,7 @@ void ReferenceResolver::gather_anchors_and_refs__(id_type n)
     // insert key refs BEFORE inserting val refs
     if(m_tree->has_key(n))
     {
-        if(m_tree->key(n) == "<<")
+        if(!m_tree->is_key_quoted(n) && m_tree->key(n) == "<<")
         {
             _c4dbgpf("node[{}]: key is <<", n);
             if(m_tree->has_val(n))
@@ -43270,7 +43342,7 @@ void ReferenceResolver::resolve_()
                 _RYML_CB_ASSERT(m_tree->m_callbacks, refdata.type.is_val_ref());
                 if(m_tree->has_key_anchor(refdata.target) && m_tree->key_anchor(refdata.target) == m_tree->val_ref(refdata.node))
                 {
-                    _c4dbgpf("instance[{}:node{}] target.anchor==key.anchor=={}", i, refdata.node, m_tree->val_anchor(refdata.target));
+                    _c4dbgpf("instance[{}:node{}] target.anchor==key.anchor=={}", i, refdata.node, m_tree->key_anchor(refdata.target));
                     _RYML_CB_CHECK(m_tree->m_callbacks, !m_tree->is_container(refdata.target));
                     _RYML_CB_CHECK(m_tree->m_callbacks, m_tree->has_val(refdata.target));
                     // keys cannot be containers, so don't inherit container flags
@@ -43341,20 +43413,19 @@ void ReferenceResolver::resolve(Tree *t_, bool clear_anchors)
 #endif /* RYML_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/reference_resolver.cpp)
+// (end src/c4/yml/reference_resolver.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/parse.cpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parse.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef RYML_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parse.hpp
+// c4/yml/parse.hpp
 //#include "c4/yml/parse.hpp"
 #if !defined(C4_YML_PARSE_HPP_) && !defined(_C4_YML_PARSE_HPP_)
 #error "amalgamate: file c4/yml/parse.hpp must have been included at this point"
@@ -43363,7 +43434,7 @@ void ReferenceResolver::resolve(Tree *t_, bool clear_anchors)
 
 #ifndef _C4_YML_NODE_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node.hpp
+// c4/yml/node.hpp
 //#include "c4/yml/node.hpp"
 #if !defined(C4_YML_NODE_HPP_) && !defined(_C4_YML_NODE_HPP_)
 #error "amalgamate: file c4/yml/node.hpp must have been included at this point"
@@ -43372,7 +43443,7 @@ void ReferenceResolver::resolve(Tree *t_, bool clear_anchors)
 #endif
 #ifndef _C4_YML_PARSE_ENGINE_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parse_engine.hpp
+// c4/yml/parse_engine.hpp
 //#include "c4/yml/parse_engine.hpp"
 #if !defined(C4_YML_PARSE_ENGINE_HPP_) && !defined(_C4_YML_PARSE_ENGINE_HPP_)
 #error "amalgamate: file c4/yml/parse_engine.hpp must have been included at this point"
@@ -43381,7 +43452,7 @@ void ReferenceResolver::resolve(Tree *t_, bool clear_anchors)
 #endif
 #ifndef _C4_YML_PARSE_ENGINE_DEF_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parse_engine.def.hpp
+// c4/yml/parse_engine.def.hpp
 //#include "c4/yml/parse_engine.def.hpp"
 #if !defined(C4_YML_PARSE_ENGINE_DEF_HPP_) && !defined(_C4_YML_PARSE_ENGINE_DEF_HPP_)
 #error "amalgamate: file c4/yml/parse_engine.def.hpp must have been included at this point"
@@ -43390,7 +43461,7 @@ void ReferenceResolver::resolve(Tree *t_, bool clear_anchors)
 #endif
 #ifndef _C4_YML_EVENT_HANDLER_TREE_HPP_
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/event_handler_tree.hpp
+// c4/yml/event_handler_tree.hpp
 //#include "c4/yml/event_handler_tree.hpp"
 #if !defined(C4_YML_EVENT_HANDLER_TREE_HPP_) && !defined(_C4_YML_EVENT_HANDLER_TREE_HPP_)
 #error "amalgamate: file c4/yml/event_handler_tree.hpp must have been included at this point"
@@ -43514,24 +43585,6 @@ Tree parse_json_in_arena(csubstr filename, csubstr json                         
 Tree parse_json_in_arena(                  csubstr json                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(&parser, {}      , src, &tree, tree.root_id()); return tree; }
 
 
-RYML_EXPORT C4_NO_INLINE size_t _find_last_newline_and_larger_indentation(csubstr s, size_t indentation) noexcept
-{
-    if(indentation + 1 > s.len)
-        return npos;
-    for(size_t i = s.len-indentation-1; i != size_t(-1); --i)
-    {
-        if(s.str[i] == '\n')
-        {
-            csubstr rem = s.sub(i + 1);
-            size_t first = rem.first_not_of(' ');
-            first = (first != npos) ? first : rem.len;
-            if(first > indentation)
-                return i;
-        }
-    }
-    return npos;
-}
-
 //-----------------------------------------------------------------------------
 
 RYML_EXPORT id_type estimate_tree_capacity(csubstr src)
@@ -43551,20 +43604,19 @@ RYML_EXPORT id_type estimate_tree_capacity(csubstr src)
 #endif /* RYML_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/parse.cpp)
+// (end src/c4/yml/parse.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/node.cpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef RYML_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node.hpp
+// c4/yml/node.hpp
 //#include "c4/yml/node.hpp"
 #if !defined(C4_YML_NODE_HPP_) && !defined(_C4_YML_NODE_HPP_)
 #error "amalgamate: file c4/yml/node.hpp must have been included at this point"
@@ -43603,31 +43655,30 @@ size_t NodeRef::set_val_serialized(c4::fmt::const_base64_wrapper w)
 #endif /* RYML_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/node.cpp)
+// (end src/c4/yml/node.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/preprocess.cpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/preprocess.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef RYML_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/preprocess.hpp
+// c4/yml/preprocess.hpp
 //#include "c4/yml/preprocess.hpp"
 #if !defined(C4_YML_PREPROCESS_HPP_) && !defined(_C4_YML_PREPROCESS_HPP_)
 #error "amalgamate: file c4/yml/preprocess.hpp must have been included at this point"
 #endif /* C4_YML_PREPROCESS_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/parser_dbg.hpp
-//#include "c4/yml/detail/parser_dbg.hpp"
-#if !defined(C4_YML_DETAIL_PARSER_DBG_HPP_) && !defined(_C4_YML_DETAIL_PARSER_DBG_HPP_)
-#error "amalgamate: file c4/yml/detail/parser_dbg.hpp must have been included at this point"
-#endif /* C4_YML_DETAIL_PARSER_DBG_HPP_ */
+// c4/yml/detail/dbgprint.hpp
+//#include "c4/yml/detail/dbgprint.hpp"
+#if !defined(C4_YML_DETAIL_DBGPRINT_HPP_) && !defined(_C4_YML_DETAIL_DBGPRINT_HPP_)
+#error "amalgamate: file c4/yml/detail/dbgprint.hpp must have been included at this point"
+#endif /* C4_YML_DETAIL_DBGPRINT_HPP_ */
 
 
 /** @file preprocess.hpp Functions for preprocessing YAML prior to parsing. */
@@ -43743,14 +43794,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* RYML_SINGLE_HDR_DEFINE_NOW */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/preprocess.cpp)
+// (end src/c4/yml/preprocess.cpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/detail/checks.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/checks.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -43758,7 +43808,7 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #define C4_YML_DETAIL_CHECKS_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tree.hpp
+// c4/yml/tree.hpp
 //#include "c4/yml/tree.hpp"
 #if !defined(C4_YML_TREE_HPP_) && !defined(_C4_YML_TREE_HPP_)
 #error "amalgamate: file c4/yml/tree.hpp must have been included at this point"
@@ -43962,14 +44012,13 @@ inline void check_arena(Tree const& t)
 #endif /* C4_YML_DETAIL_CHECKS_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/detail/checks.hpp)
+// (end src/c4/yml/detail/checks.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/detail/print.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/detail/print.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -43977,14 +44026,14 @@ inline void check_arena(Tree const& t)
 #define C4_YML_DETAIL_PRINT_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tree.hpp
+// c4/yml/tree.hpp
 //#include "c4/yml/tree.hpp"
 #if !defined(C4_YML_TREE_HPP_) && !defined(_C4_YML_TREE_HPP_)
 #error "amalgamate: file c4/yml/tree.hpp must have been included at this point"
 #endif /* C4_YML_TREE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node.hpp
+// c4/yml/node.hpp
 //#include "c4/yml/node.hpp"
 #if !defined(C4_YML_NODE_HPP_) && !defined(_C4_YML_NODE_HPP_)
 #error "amalgamate: file c4/yml/node.hpp must have been included at this point"
@@ -44171,14 +44220,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif /* C4_YML_DETAIL_PRINT_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/detail/print.hpp)
+// (end src/c4/yml/detail/print.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/yml/yml.hpp
-// https://github.com/biojppm/rapidyaml/src/c4/yml/yml.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -44186,77 +44234,77 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #define _C4_YML_YML_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/version.hpp
+// c4/yml/version.hpp
 //#include "c4/yml/version.hpp"
 #if !defined(C4_YML_VERSION_HPP_) && !defined(_C4_YML_VERSION_HPP_)
 #error "amalgamate: file c4/yml/version.hpp must have been included at this point"
 #endif /* C4_YML_VERSION_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tree.hpp
+// c4/yml/tree.hpp
 //#include "c4/yml/tree.hpp"
 #if !defined(C4_YML_TREE_HPP_) && !defined(_C4_YML_TREE_HPP_)
 #error "amalgamate: file c4/yml/tree.hpp must have been included at this point"
 #endif /* C4_YML_TREE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/node.hpp
+// c4/yml/node.hpp
 //#include "c4/yml/node.hpp"
 #if !defined(C4_YML_NODE_HPP_) && !defined(_C4_YML_NODE_HPP_)
 #error "amalgamate: file c4/yml/node.hpp must have been included at this point"
 #endif /* C4_YML_NODE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/emit.hpp
+// c4/yml/emit.hpp
 //#include "c4/yml/emit.hpp"
 #if !defined(C4_YML_EMIT_HPP_) && !defined(_C4_YML_EMIT_HPP_)
 #error "amalgamate: file c4/yml/emit.hpp must have been included at this point"
 #endif /* C4_YML_EMIT_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/event_handler_tree.hpp
+// c4/yml/event_handler_tree.hpp
 //#include "c4/yml/event_handler_tree.hpp"
 #if !defined(C4_YML_EVENT_HANDLER_TREE_HPP_) && !defined(_C4_YML_EVENT_HANDLER_TREE_HPP_)
 #error "amalgamate: file c4/yml/event_handler_tree.hpp must have been included at this point"
 #endif /* C4_YML_EVENT_HANDLER_TREE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parse_engine.hpp
+// c4/yml/parse_engine.hpp
 //#include "c4/yml/parse_engine.hpp"
 #if !defined(C4_YML_PARSE_ENGINE_HPP_) && !defined(_C4_YML_PARSE_ENGINE_HPP_)
 #error "amalgamate: file c4/yml/parse_engine.hpp must have been included at this point"
 #endif /* C4_YML_PARSE_ENGINE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/filter_processor.hpp
+// c4/yml/filter_processor.hpp
 //#include "c4/yml/filter_processor.hpp"
 #if !defined(C4_YML_FILTER_PROCESSOR_HPP_) && !defined(_C4_YML_FILTER_PROCESSOR_HPP_)
 #error "amalgamate: file c4/yml/filter_processor.hpp must have been included at this point"
 #endif /* C4_YML_FILTER_PROCESSOR_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/parse.hpp
+// c4/yml/parse.hpp
 //#include "c4/yml/parse.hpp"
 #if !defined(C4_YML_PARSE_HPP_) && !defined(_C4_YML_PARSE_HPP_)
 #error "amalgamate: file c4/yml/parse.hpp must have been included at this point"
 #endif /* C4_YML_PARSE_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/preprocess.hpp
+// c4/yml/preprocess.hpp
 //#include "c4/yml/preprocess.hpp"
 #if !defined(C4_YML_PREPROCESS_HPP_) && !defined(_C4_YML_PREPROCESS_HPP_)
 #error "amalgamate: file c4/yml/preprocess.hpp must have been included at this point"
 #endif /* C4_YML_PREPROCESS_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/reference_resolver.hpp
+// c4/yml/reference_resolver.hpp
 //#include "c4/yml/reference_resolver.hpp"
 #if !defined(C4_YML_REFERENCE_RESOLVER_HPP_) && !defined(_C4_YML_REFERENCE_RESOLVER_HPP_)
 #error "amalgamate: file c4/yml/reference_resolver.hpp must have been included at this point"
 #endif /* C4_YML_REFERENCE_RESOLVER_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/tag.hpp
+// c4/yml/tag.hpp
 //#include "c4/yml/tag.hpp"
 #if !defined(C4_YML_TAG_HPP_) && !defined(_C4_YML_TAG_HPP_)
 #error "amalgamate: file c4/yml/tag.hpp must have been included at this point"
@@ -44266,14 +44314,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #endif // _C4_YML_YML_HPP_
 
 
-// (end https://github.com/biojppm/rapidyaml/src/c4/yml/yml.hpp)
+// (end src/c4/yml/yml.hpp)
 
 
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/ryml.hpp
-// https://github.com/biojppm/rapidyaml/src/ryml.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
@@ -44281,7 +44328,7 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #define _RYML_HPP_
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/yml/yml.hpp
+// c4/yml/yml.hpp
 //#include "c4/yml/yml.hpp"
 #if !defined(C4_YML_YML_HPP_) && !defined(_C4_YML_YML_HPP_)
 #error "amalgamate: file c4/yml/yml.hpp must have been included at this point"
@@ -44296,7 +44343,7 @@ using namespace c4;
 #endif /* _RYML_HPP_ */
 
 
-// (end https://github.com/biojppm/rapidyaml/src/ryml.hpp)
+// (end src/ryml.hpp)
 
 #endif /* _RYML_SINGLE_HEADER_AMALGAMATED_HPP_ */
 

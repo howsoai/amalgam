@@ -234,11 +234,11 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{c ["alpha" "beta" "gamma"] b 2 a 1}
+{a 1 c ["alpha" "beta" "gamma"] b 2}
 {
+	a 1
 	c ["alpha" "beta" "gamma"]
 	b 2
-	a 1
 }
 
 (apply "6")
@@ -701,7 +701,7 @@ abcdef
 0.14384103622589045
 --first--
 4
-2
+1
 1
 0
 a
@@ -717,18 +717,18 @@ a
 [1 2 3 4 5 6]
 []
 {
-	a 1
 	b 2
+	c 3
 	d 4
 	e 5
 	f 6
 }
-{a 1 e 5}
+{b 2 d 4}
 {
-	a 1
 	b 2
+	c 3
+	d 4
 	e 5
-	f 6
 }
 {
 	a 1
@@ -752,7 +752,7 @@ abcdef
 
 --last--
 this
-2
+1
 1
 0
 c
@@ -768,18 +768,18 @@ c
 [1 2 3 4 5 6]
 []
 {
-	a 1
 	b 2
+	c 3
 	d 4
 	e 5
 	f 6
 }
-{a 1 e 5}
+{b 2 d 4}
 {
-	a 1
 	b 2
+	c 3
+	d 4
 	e 5
-	f 6
 }
 {
 	a 1
@@ -1131,7 +1131,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["c" 4 "b" "a"]
+["a" 4 "c" "b"]
 [
 	0
 	1
@@ -1143,10 +1143,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[0 2 3 1]
-[0 2 3 1]
+[2 0 3 1]
+[2 0 3 1]
 --values--
-[3 "d" 2 1]
+[1 "d" 3 2]
 [
 	"a"
 	1
@@ -1167,7 +1167,7 @@ abcdef
 	4
 	"d"
 ]
-[3 "d" 2 1]
+[1 "d" 3 2]
 [
 	1
 	2
@@ -1304,10 +1304,10 @@ string
 list
 assoc
 [
-	"4"
 	[4]
-	4
 	{4 4}
+	4
+	"4"
 ]
 --set--
 {
@@ -1420,7 +1420,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1759355451.991533
+		start_time 1759534743.001102
 		www 1
 		x 12
 		zz 10
@@ -1466,7 +1466,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1759355451.991533
+	start_time 1759534743.001102
 	www 1
 	x 12
 	zz 10
@@ -1511,7 +1511,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1759355451.991533
+	start_time 1759534743.001102
 	www 1
 	x 12
 	zz 10
@@ -1645,28 +1645,28 @@ true
 b
 [
 	"b"
-	"a"
-	"b"
-	"b"
-	"b"
-	"b"
-	"b"
-	"b"
-	"b"
 	"b"
 	"b"
 	"a"
 	"a"
+	"b"
+	"b"
 	"a"
 	"b"
 	"a"
+	"b"
+	"b"
+	"b"
+	"b"
+	"b"
+	"b"
 ]
 
 infinity test c or d: ["d" "d" "c" "c"]
 
-{a 21 b 63 c 16}
+{a 16 b 49 c 35}
 
-[1 10 5]
+[1 10 6]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1713,8 +1713,8 @@ infinity test c or d: ["d" "d" "c" "c"]
 string
 --set_type--
 (- 3 4)
-["b" 3 "a" 4]
-["b" 3 "a" 4]
+["a" 4 "b" 3]
+["a" 4 "b" 3]
 {a 4 b 3}
 8.7
 (parallel
@@ -1763,17 +1763,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"b":4,"a":3},{"c":"c","d":null}]
+21: [{"a":3,"b":4},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: c: 3
-d: 4
-b: 2
+23: a: 1
 e:
   - a
   - b
   - 
   - .inf
-a: 1
+c: 3
+b: 2
+d: 4
 
 24: a: 1
 b: 2
@@ -1786,7 +1786,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-10-01-17.50.52.3714510
+current date-time in epoch: 2025-10-03-19.39.03.4149580
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1844,7 +1844,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB .true
 		)
@@ -1855,7 +1855,7 @@ domingo, jun. 07, 2020
 	labelQ @(target .true "labelA")
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB .true
 		)
@@ -2615,8 +2615,8 @@ abcdexyz
 {
 	a [0 1]
 	b [1 2]
+	c [2 3]
 	w [2 3]
-	x (null)
 }
 --total_entity_size--
 79
@@ -3608,7 +3608,7 @@ deep sets
 
 --set_entity_permissions--
 RootTest
-1759355452.739254
+1759534744.324211
 {
 	alter_performance .true
 	environment .true
@@ -4485,14 +4485,14 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-190: 0.045454545454545456 (null
-	##deg 12
-)
 155: 0.1 (null
 	##deg 0
 )
 200: 0.05555555555555555 (null
 	##deg 8
+)
+190: 0.045454545454545456 (null
+	##deg 12
 )
 --contains_label--
 .true
@@ -5068,4 +5068,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-1.9469518661499023
+2.407433032989502

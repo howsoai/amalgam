@@ -342,7 +342,7 @@ function render() {
 	<p>
 	Entities may be explicitly named and may be used as code libraries.  For example, a library named MyLibrary with function MyFunction can be called as:<br>
 	<span class='ex code'>
-	(call (retrieve_from_contained_entity "MyLibrary" "MyFunction") (assoc parameter_a 1 parameter_b 2))
+	(call_entity "MyLibrary" "MyFunction" { parameter_a 1 parameter_b 2 })
 	</span>
 	<p>
 	Numbers are represented via numbers, as well as ".", "-", and "e" for base-ten exponents.  Further, infinity and negative infinity are represented as ".infinity" and "-.infinity" respectively.  Not-a-number and non-string results are represented via the opcode (null).  The type of number is the string "number".

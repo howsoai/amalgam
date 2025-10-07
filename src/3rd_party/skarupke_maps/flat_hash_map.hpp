@@ -741,19 +741,21 @@ public:
         }
     }
 
-    void clear()
+    void clear(bool immediate_destruction_after_clear = false)
     {
-        if constexpr(std::is_trivially_destructible_v<FindKey> && std::is_trivially_destructible_v<value_type>)
-        {
-            reset_to_empty_state(false);
-        }
-        else
+        //if don't need control_bytes to be clean, don't bother clearing the values
+        if(!immediate_destruction_after_clear
+            || !std::is_trivially_destructible_v<FindKey> || !std::is_trivially_destructible_v<value_type>)
         {
             for (EntryPointer it = entries, end = it + static_cast<ptrdiff_t>(num_slots_minus_one + max_lookups); it != end; ++it)
             {
                 if (it->has_value())
                     it->destroy_value();
             }
+        }
+        else
+        {
+            reset_to_empty_state(false);
         }
         num_elements = 0;
     }

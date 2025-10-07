@@ -405,8 +405,8 @@ static std::pair<bool, ValueType> Mode(ValueIterator first, ValueIterator last,
 			if(get_value(i, value))
 			{
 				double weight_value = 1.0;
-				bool has_weight = get_weight(i, weight_value);
-				if(!has_weight)
+				bool i_has_weight = get_weight(i, weight_value);
+				if(!i_has_weight)
 					weight_value = 1.0;
 
 				auto [inserted_value, inserted] = value_weights.emplace(value, weight_value);

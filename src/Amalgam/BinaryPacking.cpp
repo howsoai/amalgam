@@ -5,7 +5,7 @@
 #include <array>
 #include <queue>
 
-const static size_t NUM_UINT8_VALUES = std::numeric_limits<uint8_t>::max() + 1;
+constexpr static size_t NUM_UINT8_VALUES = static_cast<size_t>(std::numeric_limits<uint8_t>::max()) + 1;
 
 template<typename value_type>
 HuffmanTree<value_type> *BuildTreeFromValueFrequencies(

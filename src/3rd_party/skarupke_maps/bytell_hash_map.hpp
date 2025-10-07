@@ -316,7 +316,7 @@ public:
     }
     ~sherwood_v8_table()
     {
-        clear();
+        clear(true);
         deallocate_data(entries, num_slots_minus_one);
     }
 
@@ -692,7 +692,7 @@ public:
         }
     }
 
-    void clear()
+    void clear(bool immediate_destruction_after_clear = false)
     {
         if (!num_slots_minus_one)
             return;
@@ -700,14 +700,20 @@ public:
         size_t num_blocks = num_slots / BlockSize;
         if (num_slots % BlockSize)
             ++num_blocks;
-        for (BlockPointer it = entries, end = it + num_blocks; it != end; ++it)
+
+        //if don't need control_bytes to be clean, don't bother clearing the values
+        if(!immediate_destruction_after_clear
+            || !std::is_trivially_destructible_v<FindKey> || !std::is_trivially_destructible_v<value_type>)
         {
-            for (int i = 0; i < BlockSize; ++i)
+            for (BlockPointer it = entries, end = it + num_blocks; it != end; ++it)
             {
-                if (it->control_bytes[i] != Constants::magic_for_empty)
+                for (int i = 0; i < BlockSize; ++i)
                 {
-                    AllocatorTraits::destroy(*this, std::addressof(it->data[i]));
-                    it->control_bytes[i] = Constants::magic_for_empty;
+                    if (it->control_bytes[i] != Constants::magic_for_empty)
+                    {
+                        AllocatorTraits::destroy(*this, std::addressof(it->data[i]));
+                        it->control_bytes[i] = Constants::magic_for_empty;
+                    }
                 }
             }
         }
@@ -729,7 +735,7 @@ public:
             swap(static_cast<ByteAlloc &>(*this), static_cast<ByteAlloc &>(other));
     }
 
-    size_t size() const
+    inline size_t size() const
     {
         return num_elements;
     }
@@ -764,7 +770,7 @@ public:
         return _max_load_factor;
     }
 
-    bool empty() const
+    inline bool empty() const
     {
         return num_elements == 0;
     }

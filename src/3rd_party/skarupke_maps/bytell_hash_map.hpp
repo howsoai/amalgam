@@ -156,7 +156,7 @@ class sherwood_v8_table : private ByteAlloc, private Hasher, private Equal
 public:
 
 #ifdef BYTELL_HASH_MAP_AMALGAM_MEM_REDUCTION
-	static constexpr float _max_load_factor = 0.5f;
+    static constexpr float _max_load_factor = 0.5f;
 #endif
 
     using value_type = T;
@@ -229,7 +229,7 @@ public:
     sherwood_v8_table(const sherwood_v8_table & other, const ArgumentAlloc & alloc)
         : ByteAlloc(alloc), Hasher(other), Equal(other)
 #ifndef BYTELL_HASH_MAP_AMALGAM_MEM_REDUCTION
-		, _max_load_factor(other._max_load_factor)
+        , _max_load_factor(other._max_load_factor)
 #endif
     {
         rehash_for_other_container(other);
@@ -255,7 +255,7 @@ public:
     sherwood_v8_table(sherwood_v8_table && other, const ArgumentAlloc & alloc) noexcept
         : ByteAlloc(alloc), Hasher(std::move(other)), Equal(std::move(other))
 #ifndef BYTELL_HASH_MAP_AMALGAM_MEM_REDUCTION
-		, _max_load_factor(other._max_load_factor)
+        , _max_load_factor(other._max_load_factor)
 #endif
     {
         swap_pointers(other);
@@ -275,7 +275,7 @@ public:
             AssignIfTrue<ByteAlloc, AllocatorTraits::propagate_on_container_copy_assignment::value>()(*this, other);
         }
 #ifndef BYTELL_HASH_MAP_AMALGAM_MEM_REDUCTION
-		_max_load_factor = other._max_load_factor;
+        _max_load_factor = other._max_load_factor;
 #endif
         static_cast<Hasher &>(*this) = other;
         static_cast<Equal &>(*this) = other;
@@ -302,7 +302,7 @@ public:
         {
             clear();
 #ifndef BYTELL_HASH_MAP_AMALGAM_MEM_REDUCTION
-			_max_load_factor = other._max_load_factor;
+            _max_load_factor = other._max_load_factor;
 #endif
 
             rehash_for_other_container(other);

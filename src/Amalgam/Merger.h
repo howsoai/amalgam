@@ -390,8 +390,8 @@ public:
 
 				if(i + 1 < unmatched_a1.size())
 				{
-					T m = MergeValues(unmatched_a1[i + 1], NullValue, true);
-					merged.emplace_back(m);
+					T unmatched_m = MergeValues(unmatched_a1[i + 1], NullValue, true);
+					merged.emplace_back(unmatched_m);
 				}
 				else
 				{
@@ -409,8 +409,8 @@ public:
 
 				if(i + 1 < a2.size())
 				{
-					T m = MergeValues(NullValue, a2[i + 1], true);
-					merged.emplace_back(m);
+					T unmatched_m = MergeValues(NullValue, a2[i + 1], true);
+					merged.emplace_back(unmatched_m);
 				}
 				else
 				{

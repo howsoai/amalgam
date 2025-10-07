@@ -1657,7 +1657,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 	auto &ocn = en->GetOrderedChildNodes();
 
 	bool has_valid_depth = false;
-	int64_t depth;
+	int64_t depth = 0;
 	if(ocn.size() > 0)
 	{
 		double value = InterpretNodeIntoNumberValue(ocn[0]);

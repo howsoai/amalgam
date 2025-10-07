@@ -741,12 +741,21 @@ public:
         }
     }
 
-    void clear()
+    void clear(bool immediate_destruction_after_clear = false)
     {
-        for (EntryPointer it = entries, end = it + static_cast<ptrdiff_t>(num_slots_minus_one + max_lookups); it != end; ++it)
+        //if don't need control_bytes to be clean, don't bother clearing the values
+        if(!immediate_destruction_after_clear
+            || !std::is_trivially_destructible_v<FindKey> || !std::is_trivially_destructible_v<value_type>)
         {
-            if (it->has_value())
-                it->destroy_value();
+            for (EntryPointer it = entries, end = it + static_cast<ptrdiff_t>(num_slots_minus_one + max_lookups); it != end; ++it)
+            {
+                if (it->has_value())
+                    it->destroy_value();
+            }
+        }
+        else
+        {
+            reset_to_empty_state(false);
         }
         num_elements = 0;
     }
@@ -907,9 +916,11 @@ private:
         }
     }
 
-    void reset_to_empty_state()
+    void reset_to_empty_state(bool deallocate = true)
     {
-        deallocate_data(entries, num_slots_minus_one, max_lookups);
+        if(deallocate)
+            deallocate_data(entries, num_slots_minus_one, max_lookups);
+
         entries = Entry::empty_default_table();
         num_slots_minus_one = 0;
         hash_policy.reset();

@@ -96,11 +96,10 @@ bool EvaluableNode::AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
 
 	//check numeric equality
 	if(DoesEvaluableNodeTypeUseNumberData(a_type))
-	{
-		double av = EvaluableNode::ToNumber(a);
-		double bv = EvaluableNode::ToNumber(b);
-		return (av == bv);
-	}
+		return a->GetNumberValueReference() == b->GetNumberValueReference();
+	
+	if(DoesEvaluableNodeTypeUseBoolData(a_type))
+		return a->GetBoolValueReference() == b->GetBoolValueReference();
 
 	//if made it here, then it's an instruction, and they're of equal type
 	return true;

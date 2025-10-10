@@ -13,16 +13,16 @@ class MergeMetricResultsBase
 {
 public:
 	//starts off with an exact match of nothing
-	constexpr MergeMetricResultsBase()
+	inline MergeMetricResultsBase()
 		: commonality(0.0), mustMatch(false), exactMatch(true)
 	{	}
 
-	constexpr MergeMetricResultsBase(double _similarity, bool must_match = false, bool exact_match = true)
+	inline MergeMetricResultsBase(double _similarity, bool must_match = false, bool exact_match = true)
 		: commonality(_similarity), mustMatch(must_match), exactMatch(exact_match)
 	{	}
 
 	//adds the commonality and keeps track of whether it is an exact match
-	constexpr void AccumulateResults(const MergeMetricResultsBase &mmr)
+	inline void AccumulateResults(const MergeMetricResultsBase &mmr)
 	{
 		commonality += mmr.commonality;
 
@@ -31,7 +31,7 @@ public:
 	}
 
 	//syntactic sugar for accumulating merge metric results
-	constexpr MergeMetricResultsBase &operator +=(const MergeMetricResultsBase &mmr)
+	inline MergeMetricResultsBase &operator +=(const MergeMetricResultsBase &mmr)
 	{
 		AccumulateResults(mmr);
 		return *this;
@@ -39,7 +39,7 @@ public:
 
 	//returns true if this entity has more favorable matching results than mmr
 	// if require_nontrivial_match, then it requires at least one node or atomic value to be equal
-	constexpr bool IsBetterMatchThan(const MergeMetricResultsBase &mmr)
+	inline bool IsBetterMatchThan(const MergeMetricResultsBase &mmr)
 	{
 		if(mustMatch && !mmr.mustMatch)
 			return true;
@@ -57,13 +57,13 @@ public:
 	}
 
 	//syntactic sugar for comparing merge metric results
-	constexpr bool operator >(const MergeMetricResultsBase &mmr)
+	inline bool operator >(const MergeMetricResultsBase &mmr)
 	{
 		return IsBetterMatchThan(mmr);
 	}
 
 	//returns true if the match is substantial enough that it has at least one equal value of its atoms
-	constexpr bool IsNontrivialMatch()
+	inline bool IsNontrivialMatch()
 	{
 		return exactMatch || mustMatch || commonality >= 1.0;
 	}
@@ -87,11 +87,11 @@ public:
 	//starts off with an exact match of nothing
 	//note that if ElementType is a pointer or has a nondefault constructor,
 	//C++ initializes to 0 or nullptr
-	constexpr MergeMetricResults()
+	inline MergeMetricResults()
 		: MergeMetricResultsBase(), elementA(), elementB()
 	{	}
 
-	constexpr MergeMetricResults(double _similarity, ElementType a, ElementType b, bool must_match = false, bool exact_match = true)
+	inline MergeMetricResults(double _similarity, ElementType a, ElementType b, bool must_match = false, bool exact_match = true)
 		: MergeMetricResultsBase(_similarity, must_match, exact_match), elementA(a), elementB(b)
 	{	}
 
@@ -114,7 +114,7 @@ public:
 	}
 
 	//returns the matrix value at pos1, pos2
-	constexpr ElementType &At(size_t pos1, size_t pos2)
+	inline ElementType &At(size_t pos1, size_t pos2)
 	{
 		return flatMatrix[firstDimensionSize * pos2 + pos1];
 	}

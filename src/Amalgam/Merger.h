@@ -13,16 +13,16 @@ class MergeMetricResultsBase
 {
 public:
 	//starts off with an exact match of nothing
-	constexpr MergeMetricResultsBase()
+	inline MergeMetricResultsBase()
 		: commonality(0.0), mustMatch(false), exactMatch(true)
 	{	}
 
-	constexpr MergeMetricResultsBase(double _similarity, bool must_match = false, bool exact_match = true)
+	inline MergeMetricResultsBase(double _similarity, bool must_match = false, bool exact_match = true)
 		: commonality(_similarity), mustMatch(must_match), exactMatch(exact_match)
 	{	}
 
 	//adds the commonality and keeps track of whether it is an exact match
-	constexpr void AccumulateResults(const MergeMetricResultsBase &mmr)
+	inline void AccumulateResults(const MergeMetricResultsBase &mmr)
 	{
 		commonality += mmr.commonality;
 
@@ -31,7 +31,7 @@ public:
 	}
 
 	//syntactic sugar for accumulating merge metric results
-	constexpr MergeMetricResultsBase &operator +=(const MergeMetricResultsBase &mmr)
+	inline MergeMetricResultsBase &operator +=(const MergeMetricResultsBase &mmr)
 	{
 		AccumulateResults(mmr);
 		return *this;
@@ -39,7 +39,7 @@ public:
 
 	//returns true if this entity has more favorable matching results than mmr
 	// if require_nontrivial_match, then it requires at least one node or atomic value to be equal
-	constexpr bool IsBetterMatchThan(const MergeMetricResultsBase &mmr)
+	inline bool IsBetterMatchThan(const MergeMetricResultsBase &mmr)
 	{
 		if(mustMatch && !mmr.mustMatch)
 			return true;
@@ -57,13 +57,13 @@ public:
 	}
 
 	//syntactic sugar for comparing merge metric results
-	constexpr bool operator >(const MergeMetricResultsBase &mmr)
+	inline bool operator >(const MergeMetricResultsBase &mmr)
 	{
 		return IsBetterMatchThan(mmr);
 	}
 
 	//returns true if the match is substantial enough that it has at least one equal value of its atoms
-	constexpr bool IsNontrivialMatch()
+	inline bool IsNontrivialMatch()
 	{
 		return exactMatch || mustMatch || commonality >= 1.0;
 	}
@@ -87,11 +87,11 @@ public:
 	//starts off with an exact match of nothing
 	//note that if ElementType is a pointer or has a nondefault constructor,
 	//C++ initializes to 0 or nullptr
-	constexpr MergeMetricResults()
+	inline MergeMetricResults()
 		: MergeMetricResultsBase(), elementA(), elementB()
 	{	}
 
-	constexpr MergeMetricResults(double _similarity, ElementType a, ElementType b, bool must_match = false, bool exact_match = true)
+	inline MergeMetricResults(double _similarity, ElementType a, ElementType b, bool must_match = false, bool exact_match = true)
 		: MergeMetricResultsBase(_similarity, must_match, exact_match), elementA(a), elementB(b)
 	{	}
 
@@ -105,22 +105,21 @@ template<typename ElementType>
 class FlatMatrix
 {
 public:
-	void ClearAndResize(size_t size1, size_t size2)
+	inline void ClearAndResize(size_t num_columns, size_t num_rows)
 	{
-		firstDimensionSize = size1;
-		secondDimensionSize = size2;
+		numColumns = num_columns;
 		flatMatrix.clear();
-		flatMatrix.resize(size1 * size2);
+		flatMatrix.resize(num_columns * num_rows);
 	}
 
-	//returns the matrix value at pos1, pos2
-	constexpr ElementType &At(size_t pos1, size_t pos2)
+	//returns the matrix value at column, row
+	inline ElementType &At(size_t column, size_t row)
 	{
-		return flatMatrix[firstDimensionSize * pos2 + pos1];
+		return flatMatrix[numColumns * row + column];
 	}
-	
-	size_t firstDimensionSize;
-	size_t secondDimensionSize;
+
+protected:
+	size_t numColumns;
 	std::vector<ElementType> flatMatrix;
 };
 
@@ -129,7 +128,7 @@ public:
 //commonality_function is used to return the commonality of two given elements of ElementType,
 //and starting_index can be specified if some elements should be skipped before computing commonality
 template<typename ElementType, typename MergeResultType, typename CommonalityFunction>
-void ComputeSequenceCommonalityMatrix(FlatMatrix<MergeResultType> &sequence_commonality,
+inline void ComputeSequenceCommonalityMatrix(FlatMatrix<MergeResultType> &sequence_commonality,
 	std::vector<ElementType> &a, std::vector<ElementType> &b,
 	CommonalityFunction commonality_function, size_t starting_index = 0)
 {

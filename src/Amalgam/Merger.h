@@ -105,22 +105,21 @@ template<typename ElementType>
 class FlatMatrix
 {
 public:
-	void ClearAndResize(size_t size1, size_t size2)
+	inline void ClearAndResize(size_t num_columns, size_t num_rows)
 	{
-		firstDimensionSize = size1;
-		secondDimensionSize = size2;
+		numColumns = num_columns;
 		flatMatrix.clear();
-		flatMatrix.resize(size1 * size2);
+		flatMatrix.resize(num_columns * num_rows);
 	}
 
-	//returns the matrix value at pos1, pos2
-	inline ElementType &At(size_t pos1, size_t pos2)
+	//returns the matrix value at column, row
+	inline ElementType &At(size_t column, size_t row)
 	{
-		return flatMatrix[firstDimensionSize * pos2 + pos1];
+		return flatMatrix[numColumns * row + column];
 	}
-	
-	size_t firstDimensionSize;
-	size_t secondDimensionSize;
+
+protected:
+	size_t numColumns;
 	std::vector<ElementType> flatMatrix;
 };
 
@@ -129,7 +128,7 @@ public:
 //commonality_function is used to return the commonality of two given elements of ElementType,
 //and starting_index can be specified if some elements should be skipped before computing commonality
 template<typename ElementType, typename MergeResultType, typename CommonalityFunction>
-void ComputeSequenceCommonalityMatrix(FlatMatrix<MergeResultType> &sequence_commonality,
+inline void ComputeSequenceCommonalityMatrix(FlatMatrix<MergeResultType> &sequence_commonality,
 	std::vector<ElementType> &a, std::vector<ElementType> &b,
 	CommonalityFunction commonality_function, size_t starting_index = 0)
 {

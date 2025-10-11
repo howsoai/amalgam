@@ -391,7 +391,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 			}
 		}
 		
-		//if target_value_type == ENIVT_CODE or ENIVT_STRING_ID, just compute all
+		//if target_value_type == ENIVT_CODE or ENIVT_STRING_ID or ENIVT_BOOL, just compute all
 		// won't save much for code until cache equal values
 		// won't save much for string ids because it's just a lookup (though could make it a little faster by streamlining a specialized string loop)
 		//else, there are less indices to consider than possible unique values, so save computation by just considering entities that are still valid
@@ -750,7 +750,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		{
 			AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, enabled_indices, value.nodeValue.stringID, query_feature_index, *column);
 		}
-		else if(value.nodeType == ENIVT_CODE)
+		else if(value.nodeType == ENIVT_CODE || value.nodeType == ENIVT_BOOL)
 		{
 			//compute partial sums for all code of matching size
 			size_t code_size = EvaluableNode::GetDeepSize(value.nodeValue.code);

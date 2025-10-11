@@ -113,14 +113,9 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 			built_element << nullptr;
 			return true;
 		}
-		else if(node_type == ENT_TRUE)
+		else if(node_type == ENT_BOOL)
 		{
-			built_element << "true";
-			return true;
-		}
-		else if(node_type == ENT_FALSE)
-		{
-			built_element << "false";
+			built_element << (en->GetBoolValueReference() ? "true" : "false");
 			return true;
 		}
 		else if(node_type != ENT_LIST)

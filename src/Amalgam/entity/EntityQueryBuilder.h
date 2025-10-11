@@ -708,7 +708,7 @@ namespace EntityQueryBuilder
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{
 				EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0];
-				cur_condition->returnSortedList = EvaluableNode::IsTrue(list_param);
+				cur_condition->returnSortedList = EvaluableNode::ToBool(list_param);
 				if(!EvaluableNode::IsNull(list_param))
 				{
 					if(list_param->GetType() == ENT_STRING)
@@ -729,14 +729,14 @@ namespace EntityQueryBuilder
 		{
 			cur_condition->convictionOfRemoval = false;
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
-				cur_condition->convictionOfRemoval = EvaluableNode::IsTrue(ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0]);
+				cur_condition->convictionOfRemoval = EvaluableNode::ToBool(ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0]);
 
 			if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS || condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 			{
 				if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1)
 				{
 					EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1];
-					cur_condition->returnSortedList = EvaluableNode::IsTrue(list_param);
+					cur_condition->returnSortedList = EvaluableNode::ToBool(list_param);
 					if(!EvaluableNode::IsNull(list_param))
 					{
 						if(list_param->GetType() == ENT_STRING)
@@ -969,7 +969,7 @@ namespace EntityQueryBuilder
 					cur_condition->maxToRetrieve = static_cast<size_t>(EvaluableNode::ToNumber(value, 1));
 				}
 
-				if(ocn.size() <= 2 || EvaluableNode::IsTrue(ocn[2]))
+				if(ocn.size() <= 2 || EvaluableNode::ToBool(ocn[2]))
 					cur_condition->singleLabelType = ENIVT_NUMBER;
 				else
 					cur_condition->singleLabelType = ENIVT_STRING_ID;
@@ -1036,7 +1036,7 @@ namespace EntityQueryBuilder
 
 				cur_condition->includeZeroDifferences = true;
 				if(ocn.size() >= 3)
-					cur_condition->includeZeroDifferences = EvaluableNode::IsTrue(ocn[2]);
+					cur_condition->includeZeroDifferences = EvaluableNode::ToBool(ocn[2]);
 				break;
 
 			case ENT_QUERY_MAX_DIFFERENCE:
@@ -1096,11 +1096,11 @@ namespace EntityQueryBuilder
 
 				cur_condition->calculateMoment = false;
 				if(ocn.size() >= 5)
-					cur_condition->calculateMoment = EvaluableNode::IsTrue(ocn[4]);
+					cur_condition->calculateMoment = EvaluableNode::ToBool(ocn[4]);
 
 				cur_condition->absoluteValue = false;
 				if(ocn.size() >= 6)
-					cur_condition->absoluteValue = EvaluableNode::IsTrue(ocn[5]);
+					cur_condition->absoluteValue = EvaluableNode::ToBool(ocn[5]);
 
 				break;
 			}

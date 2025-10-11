@@ -152,13 +152,12 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_TYPE_NEQUALS,													// ENT_TYPE_NEQUALS
 
 	//built-in constants and variables
-	&Interpreter::InterpretNode_ENT_TRUE,															// ENT_TRUE
-	&Interpreter::InterpretNode_ENT_FALSE,															// ENT_FALSE
 	&Interpreter::InterpretNode_ENT_NULL,															// ENT_NULL
 
 	//data types
 	&Interpreter::InterpretNode_ENT_LIST,															// ENT_LIST
 	&Interpreter::InterpretNode_ENT_ASSOC,															// ENT_ASSOC
+	&Interpreter::InterpretNode_ENT_BOOL,															// ENT_BOOL
 	&Interpreter::InterpretNode_ENT_NUMBER,															// ENT_NUMBER
 	&Interpreter::InterpretNode_ENT_STRING,															// ENT_STRING
 	&Interpreter::InterpretNode_ENT_SYMBOL,															// ENT_SYMBOL
@@ -574,7 +573,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluabl
 {
 	//if can skip InterpretNode, then just allocate the string
 	if(n == nullptr || n->GetIsIdempotent()
-		|| n->GetType() == ENT_STRING || n->GetType() == ENT_NUMBER)
+		|| n->GetType() == ENT_STRING || n->GetType() == ENT_BOOL || n->GetType() == ENT_NUMBER)
 	{
 		auto sid = EvaluableNode::ToStringIDWithReference(n);
 

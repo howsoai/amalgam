@@ -134,6 +134,15 @@ public:
 		}
 	}
 
+	inline void InitializeType(bool bool_value)
+	{
+		attributes.allAttributes = 0;
+		type = ENT_BOOL;
+		attributes.individualAttribs.isIdempotent = true;
+		value.boolValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		value.boolValueContainer.boolValue = bool_value;
+	}
+
 	//initializes to ENT_UNINITIALIZED
 	//useful to mark a node in a hold state before it's ready so it isn't counted as ENT_DEALLOCATED
 	//but also such that the fields don't need to be initialized or cleared
@@ -152,6 +161,12 @@ public:
 		attributes.allAttributes = 0;
 		attributes.individualAttribs.isIdempotent = IsEvaluableNodeTypePotentiallyIdempotent(_type);
 
+		if(DoesEvaluableNodeTypeUseBoolData(_type))
+		{
+			value.boolValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+			value.boolValueContainer.boolValue = false;
+			attributes.individualAttribs.isIdempotent = true;
+		}
 		if(DoesEvaluableNodeTypeUseNumberData(_type))
 		{
 			value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
@@ -257,9 +272,6 @@ public:
 		}
 	}
 
-	//Returns true if this node evaluates to true
-	static bool IsTrue(EvaluableNode *n);
-
 	//Returns true if the node is some form of associative array
 	__forceinline bool IsAssociativeArray()
 	{
@@ -334,9 +346,8 @@ public:
 
 		switch(e->GetType())
 		{
+		case ENT_BOOL:
 		case ENT_NUMBER:
-		case ENT_TRUE:
-		case ENT_FALSE:
 		case ENT_NULL:
 			return true;
 		default:
@@ -349,6 +360,13 @@ public:
 	{
 		return (e == nullptr || e->GetType() == ENT_NULL);
 	}
+
+	//Returns true if this node evaluates to true
+	static bool ToBool(EvaluableNode *n);
+
+	//Converts a number to a string in a consistent way that should be used for anything dealing with EvaluableNode
+	static std::string BoolToString(bool value, bool key_string = false);
+	static StringInternPool::StringID BoolToStringID(bool value, bool key_string = false);
 
 	//Converts the node to a number
 	//if null, then will return value_if_null
@@ -471,6 +489,26 @@ public:
 	// attempt_to_preserve_immediate_value should be set to false if the value will be immediately overwritten
 	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm,
 		bool attempt_to_preserve_immediate_value);
+
+	//sets up boolean value
+	void InitBoolValue();
+
+	//gets the value by reference
+	__forceinline bool &GetBoolValue()
+	{
+		if(DoesEvaluableNodeTypeUseBoolData(GetType()))
+			return GetBoolValueReference();
+
+		//none of the above, return an empty one
+		return falseBoolValue;
+	}
+
+	//changes the type by setting it to the number value specified
+	inline void SetTypeViaBoolValue(bool v)
+	{
+		SetType(ENT_BOOL, nullptr, false);
+		GetBoolValueReference() = v;
+	}
 
 	//sets up number value
 	void InitNumberValue();
@@ -806,7 +844,7 @@ public:
 		if(found_value != end(mcn))
 		{
 			if constexpr(std::is_same<T, bool>::value)
-				value = EvaluableNode::IsTrue(found_value->second);
+				value = EvaluableNode::ToBool(found_value->second);
 			else if constexpr(std::is_same<T, double>::value)
 				value = EvaluableNode::ToNumber(found_value->second);
 			else if constexpr(std::is_same<T, std::string>::value)
@@ -824,6 +862,15 @@ public:
 	//returns true if value contains an extended type
 	__forceinline constexpr bool HasExtendedValue()
 	{	return attributes.individualAttribs.hasExtendedValue;	}
+
+	//assumes that the EvaluableNode is of type ENT_BOOL, and returns the value by reference
+	constexpr bool &GetBoolValueReference()
+	{
+		if(!HasExtendedValue())
+			return value.boolValueContainer.boolValue;
+		else
+			return value.extension.extendedValue->value.boolValueContainer.boolValue;
+	}
 
 	//assumes that the EvaluableNode is of type ENT_NUMBER, and returns the value by reference
 	__forceinline constexpr double &GetNumberValueReference()
@@ -864,13 +911,15 @@ public:
 	//if it is storing an immediate value and has room to store a label
 	constexpr bool HasCompactSingleLabelStorage()
 	{
-		return ((type == ENT_NUMBER || type == ENT_STRING || type == ENT_SYMBOL) && !HasExtendedValue());
+		return ((type == ENT_BOOL || type == ENT_NUMBER || type == ENT_STRING || type == ENT_SYMBOL) && !HasExtendedValue());
 	}
 
 	//returns a reference to the storage location for a single label
 	// will only return valid results if HasCompactSingleLabelStorage() is true, so that should be called first
 	__forceinline constexpr StringInternPool::StringID &GetCompactSingleLabelStorage()
 	{
+		if(type == ENT_BOOL)
+			return value.boolValueContainer.labelStringID;
 		if(type == ENT_NUMBER)
 			return value.numberValueContainer.labelStringID;
 		//else assume type == ENT_STRING || type == ENT_SYMBOL
@@ -959,6 +1008,16 @@ protected:
 			StringInternPool::StringID labelStringID;
 		} numberValueContainer;
 
+		//when type represents a bool, holds the corresponding value
+		struct EvaluableNodeValueBool
+		{
+			//bool value
+			bool boolValue;
+
+			//allow up to one label -- only used when not part of an extended value
+			StringInternPool::StringID labelStringID;
+		} boolValueContainer;
+
 		struct EvaluableNodeExtension
 		{
 			//pointer to store any extra data if EvaluableNode needs multiple fields
@@ -1034,6 +1093,7 @@ protected:
 	EvaluableNodeAttributesType attributes;
 
 	//values used to be able to return a reference
+	static bool falseBoolValue;
 	static double nanNumberValue;
 	static std::string emptyStringValue;
 	static EvaluableNode *emptyEvaluableNodeNullptr;
@@ -1057,6 +1117,7 @@ enum EvaluableNodeImmediateValueType : uint8_t
 {
 	ENIVT_NOT_EXIST,			//there is nothing to even hold the data
 	ENIVT_NULL,					//no data being held
+	ENIVT_BOOL,					//bool
 	ENIVT_NUMBER,				//number
 	ENIVT_STRING_ID,			//stringID
 	ENIVT_CODE,					//code (more general than any of the above)
@@ -1071,6 +1132,10 @@ union EvaluableNodeImmediateValue
 	__forceinline constexpr EvaluableNodeImmediateValue()
 		: code(nullptr)
 	{	}
+
+	__forceinline constexpr EvaluableNodeImmediateValue(bool bool_value)
+		: boolValue(bool_value)
+	{}
 
 	__forceinline constexpr EvaluableNodeImmediateValue(double _number)
 		: number(_number)
@@ -1115,6 +1180,12 @@ union EvaluableNodeImmediateValue
 			return ENIVT_NULL;
 		}
 
+		if(en_type == ENT_BOOL)
+		{
+			boolValue = en->GetBoolValueReference();
+			return ENIVT_BOOL;
+		}
+
 		if(en_type == ENT_NUMBER)
 		{
 			number = en->GetNumberValueReference();
@@ -1140,6 +1211,8 @@ union EvaluableNodeImmediateValue
 		//types are the same, just use type_1 for reference
 		if(type_1 == ENIVT_NULL)
 			return true;
+		else if(type_1 == ENIVT_BOOL)
+			return (value_1.boolValue == value_2.boolValue);
 		else if(type_1 == ENIVT_NUMBER)
 			return (value_1.number == value_2.number);
 		else if(type_1 == ENIVT_STRING_ID)
@@ -1166,6 +1239,7 @@ union EvaluableNodeImmediateValue
 		return stringID;
 	}
 
+	bool boolValue;
 	double number;
 	StringInternPool::StringID stringID;
 	EvaluableNode *code;
@@ -1187,11 +1261,11 @@ public:
 
 	__forceinline EvaluableNodeImmediateValueWithType(bool value)
 	{
-		nodeType = ENIVT_NUMBER;
+		nodeType = ENIVT_BOOL;
 		if(value)
-			nodeValue.number = 1.0;
+			nodeValue.boolValue = true;
 		else
-			nodeValue.number = 0.0;
+			nodeValue.boolValue = false;
 	}
 
 	__forceinline EvaluableNodeImmediateValueWithType(double number)

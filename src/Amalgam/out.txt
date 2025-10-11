@@ -717,18 +717,18 @@ a
 [1 2 3 4 5 6]
 []
 {
+	a 1
 	b 2
 	c 3
-	d 4
 	e 5
 	f 6
 }
-{b 2 d 4}
+{b 2 f 6}
 {
+	a 1
 	b 2
 	c 3
-	d 4
-	e 5
+	f 6
 }
 {
 	a 1
@@ -768,18 +768,18 @@ c
 [1 2 3 4 5 6]
 []
 {
+	a 1
 	b 2
 	c 3
-	d 4
 	e 5
 	f 6
 }
-{b 2 d 4}
+{b 2 f 6}
 {
+	a 1
 	b 2
 	c 3
-	d 4
-	e 5
+	f 6
 }
 {
 	a 1
@@ -1131,7 +1131,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["a" 4 "c" "b"]
+[4 "a" "c" "b"]
 [
 	0
 	1
@@ -1143,10 +1143,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[2 0 3 1]
-[2 0 3 1]
+[1 2 0 3]
+[1 2 0 3]
 --values--
-[1 "d" 3 2]
+["d" 1 3 2]
 [
 	"a"
 	1
@@ -1304,10 +1304,10 @@ string
 list
 assoc
 [
-	[4]
-	{4 4}
 	4
 	"4"
+	[4]
+	{4 4}
 ]
 --set--
 {
@@ -1420,7 +1420,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1759534743.001102
+		start_time 1760141351.208027
 		www 1
 		x 12
 		zz 10
@@ -1466,7 +1466,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1759534743.001102
+	start_time 1760141351.208027
 	www 1
 	x 12
 	zz 10
@@ -1511,7 +1511,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1759534743.001102
+	start_time 1760141351.208027
 	www 1
 	x 12
 	zz 10
@@ -1662,11 +1662,11 @@ b
 	"b"
 ]
 
-infinity test c or d: ["d" "d" "c" "c"]
+infinity test c or d: ["c" "c" "d" "d"]
 
 {a 16 b 49 c 35}
 
-[1 10 6]
+[8 2 4]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1763,17 +1763,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"c":"c","d":null}]
+21: [{"a":3,"b":4},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: a: 1
+23: d: 4
 e:
   - a
   - b
   - 
   - .inf
+a: 1
 c: 3
 b: 2
-d: 4
 
 24: a: 1
 b: 2
@@ -1786,7 +1786,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-10-03-19.39.03.4149580
+current date-time in epoch: 2025-10-10-20.09.11.6367840
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2093,7 +2093,7 @@ decrypted: hello
 3
 15
 0.25
-0.375
+0.125
 1
 0.25
 1
@@ -2327,16 +2327,6 @@ decrypted: hello
 	{_ (null)}
 	(replace
 		_
-		["g"]
-		(lambda
-			[
-				(get
-					(current_value 1)
-					0
-				)
-				4
-			]
-		)
 		[]
 		(lambda
 			{
@@ -2346,6 +2336,16 @@ decrypted: hello
 						"g"
 					)
 			}
+		)
+		["g"]
+		(lambda
+			[
+				(get
+					(current_value 1)
+					0
+				)
+				4
+			]
 		)
 	)
 )
@@ -2556,7 +2556,11 @@ decrypted: hello
 			(parallel
 				(get_entity_comments)
 				1
-				(lambda (null))
+				(lambda
+					(print
+						[2]
+					)
+				)
 			)
 		)
 	)
@@ -2616,7 +2620,8 @@ abcdexyz
 	a [0 1]
 	b [1 2]
 	c [2 3]
-	w [2 3]
+	x [3 4]
+	y [4 5]
 }
 --total_entity_size--
 79
@@ -2926,10 +2931,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_1651806471
-(associate "e" 3 "f" 4)
 _3130331116
 (associate "E" 3 "F" 4)
+_1651806471
+(associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild1
@@ -2947,17 +2952,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-_1651806471
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _3130331116
 (associate
 	"E"
@@ -2969,20 +2963,20 @@ _3130331116
 	"H"
 	6
 )
+_1651806471
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
+	6
+)
 (parallel
 	##p
 	["_2325275497" "_2973704165" "_2325275497" "_2973704165"]
-)
-_2325275497
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
 )
 _2973704165
 (associate
@@ -2993,6 +2987,17 @@ _2973704165
 	"g"
 	5
 	"h"
+	6
+)
+_2325275497
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 --difference_entities--
@@ -3449,8 +3454,14 @@ difference between DiffEntity2 and new_entity:
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3475,7 +3486,16 @@ difference between DiffEntity2 and new_entity:
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3501,7 +3521,89 @@ contained_entities new_entity: ["OnlyIn2" "_1985995361" "_2783372341" "DiffEntit
 difference between DiffContainer and DiffEntity2:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_1985995361")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_1985995361")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_2783372341")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_2783372341")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	new_entity
 )
 --mix_entities--
 (associate "b" 4 "c" 3)
@@ -3518,10 +3620,10 @@ MergeEntityChild2
 	"w"
 	7
 )
-_1651806471
-(associate "e" 3 "f" 4)
 _3130331116
-(associate "E" 3 "F" 4 "H" 6)
+(associate "E" 3 "F" 4)
+_1651806471
+(associate "e" 3 "f" 4 "h" 6)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3608,7 +3710,7 @@ deep sets
 
 --set_entity_permissions--
 RootTest
-1759534744.324211
+1760141352.055453
 {
 	alter_performance .true
 	environment .true
@@ -5068,4 +5170,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-2.407433032989502
+2.2305471897125244

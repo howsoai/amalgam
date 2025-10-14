@@ -12,11 +12,11 @@
 //these macros define the specific algorithm used for aggregation of distance contributions
 //the geometric mean has been found to be the best combination of performance and mathematical defensibility
 // #define DIST_CONTRIBS_HARMONIC_MEAN
-#define DIST_CONTRIBS_GEOMETRIC_MEAN
+// #define DIST_CONTRIBS_GEOMETRIC_MEAN
 // #define DIST_CONTRIBS_ARITHMETIC_MEAN
 //#define DIST_CONTRIBS_PROBABILITY_MEAN
 //this last one is the default if none of the above are defined
-//#define DIST_CONTRIBS_ENTROPY
+#define DIST_CONTRIBS_ENTROPY
 
 //the following parameter is independent of those above and if defined, will change to use inverse surprisal weighting
 // rather than converting the surprisals to probabilities

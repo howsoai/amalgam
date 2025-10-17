@@ -145,7 +145,7 @@ namespace EntityQueryBuilder
 	{
 		feature_attribs.deviation = std::numeric_limits<double>::quiet_NaN();
 
-		if(deviation_node == nullptr)
+		if(EvaluableNode::IsNull(deviation_node))
 			return;
 
 		auto dnt = deviation_node->GetType();

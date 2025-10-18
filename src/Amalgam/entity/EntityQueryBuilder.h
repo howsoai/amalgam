@@ -325,18 +325,14 @@ namespace EntityQueryBuilder
 		else
 		{
 			//get weights
-			double default_weight = 1.0;
-			if(dist_eval.computeSurprisal)
-				default_weight = 1.0 / dist_eval.featureAttribs.size();
-
 			EvaluableNode::ConvertChildNodesAndStoreValue(weights_node, element_names, num_elements,
-				[&dist_eval, default_weight](size_t i, bool found, EvaluableNode *en) {
+				[&dist_eval](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_eval.featureAttribs.size())
 				{
 					if(found)
-						dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en, default_weight);
+						dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en, 1.0);
 					else
-						dist_eval.featureAttribs[i].weight = default_weight;
+						dist_eval.featureAttribs[i].weight = 1.0;
 				}
 			});
 		}

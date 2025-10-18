@@ -634,12 +634,9 @@ namespace EntityQueryBuilder
 		StringInternPool::StringID weights_selection_feature = string_intern_pool.NOT_A_STRING_ID;
 		if(ocn.size() > WEIGHTS_SELECTION_FEATURE)
 			weights_selection_feature = EvaluableNode::ToStringIDIfExists(ocn[WEIGHTS_SELECTION_FEATURE]);
-
-		PopulateDistanceFeatureParameters(cur_condition->distEvaluator,
-			cur_condition->positionLabels.size(), cur_condition->positionLabels,
-			weights_node, weights_selection_feature, distance_types_node, attributes_node, deviations_node);
 		
 		//value transforms for whatever is measured as "distance"
+		//need to populate distance transform BEFORE populating feature attributes
 		cur_condition->distanceWeightExponent = 1.0;
 		cur_condition->distEvaluator.computeSurprisal = false;
 		cur_condition->distEvaluator.transformSurprisalToProb = false;
@@ -665,6 +662,10 @@ namespace EntityQueryBuilder
 				}
 			}
 		}
+
+		PopulateDistanceFeatureParameters(cur_condition->distEvaluator,
+			cur_condition->positionLabels.size(), cur_condition->positionLabels,
+			weights_node, weights_selection_feature, distance_types_node, attributes_node, deviations_node);
 
 		cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
 		if(ocn.size() > ENTITY_WEIGHT_LABEL_NAME)

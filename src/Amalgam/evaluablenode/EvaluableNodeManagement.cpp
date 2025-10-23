@@ -58,7 +58,7 @@ EvaluableNode *EvaluableNodeManager::AllocNode(EvaluableNode *original, Evaluabl
 				label = label.substr(1);
 
 			n->AppendLabel(label);
-		}
+		} 
 	}
 
 	return n;
@@ -441,35 +441,6 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	firstUnusedNodeIndex = first_unused_node_index_temp;
 
 	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
-}
-
-void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree, bool place_nodes_in_lab)
-{
-#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(tree->IsNodeValid());
-	assert(!tree->GetNeedCycleCheck());
-#endif
-
-	if(tree->IsAssociativeArray())
-	{
-		for(auto &[_, e] : tree->GetMappedChildNodesReference())
-		{
-			if(e != nullptr)
-				FreeNodeTreeRecurse(e, place_nodes_in_lab);
-		}
-	}
-	else if(!tree->IsImmediate())
-	{
-		for(auto &e : tree->GetOrderedChildNodesReference())
-		{
-			if(e != nullptr)
-				FreeNodeTreeRecurse(e, place_nodes_in_lab);
-		}
-	}
-
-	tree->Invalidate();
-	if(place_nodes_in_lab)
-		AddNodeToLocalAllocationBuffer(tree);
 }
 
 void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_lab)

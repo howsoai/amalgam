@@ -544,18 +544,18 @@ public:
 
 	inline EvaluableNode *AllocNode(EvaluableNodeType type, StringRef &sir)
 	{	return AllocNode(type, static_cast<StringInternPool::StringID>(sir));	}
-	
-	inline EvaluableNode *AllocNode(double float_value)
-	{
-		EvaluableNode *n = AllocUninitializedNode();
-		n->InitializeType(float_value);
-		return n;
-	}
 
 	inline EvaluableNode *AllocNode(bool bool_value)
 	{
 		EvaluableNode *n = AllocUninitializedNode();
-		n->InitializeType(bool_value ? ENT_TRUE : ENT_FALSE);
+		n->InitializeType(bool_value);
+		return n;
+	}
+
+	inline EvaluableNode *AllocNode(double float_value)
+	{
+		EvaluableNode *n = AllocUninitializedNode();
+		n->InitializeType(float_value);
 		return n;
 	}
 

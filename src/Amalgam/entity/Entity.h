@@ -124,7 +124,7 @@ union EntityPermissions
 		{
 			for(auto [permission_type, allow_en] : en->GetMappedChildNodesReference())
 			{
-				bool allow = EvaluableNode::IsTrue(allow_en);
+				bool allow = EvaluableNode::ToBool(allow_en);
 				if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err))
 				{
 					permissions_to_set.individualPermissions.stdOutAndStdErr = true;
@@ -162,7 +162,7 @@ union EntityPermissions
 				}
 			}
 		}
-		else if(EvaluableNode::IsTrue(en))
+		else if(EvaluableNode::ToBool(en))
 		{
 			permissions_to_set = EntityPermissions::AllPermissions();
 			permission_values = EntityPermissions::AllPermissions();
@@ -396,6 +396,11 @@ public:
 		auto cur_value_it = labelIndex.find(label_sid);
 		return (cur_value_it != end(labelIndex));
 	}
+
+	//Evaluates the specified label into a number returns the value
+	//If the label exists, sets value_out to the value and returns true.
+	// Otherwise sets value_out to false and returns false
+	std::pair<bool, bool> GetValueAtLabelAsBool(StringInternPool::StringID label_sid, bool on_self = false);
 
 	//Evaluates the specified label into a number returns the value
 	//If the label exists, sets value_out to the value and returns true.

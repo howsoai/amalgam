@@ -1346,13 +1346,12 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode *en, bool immediate_result);
 
 	//built-in constants and variables
-	EvaluableNodeReference InterpretNode_ENT_TRUE(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_FALSE(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_NULL(EvaluableNode *en, bool immediate_result);
 
 	//data types
 	EvaluableNodeReference InterpretNode_ENT_LIST(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_ASSOC(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_BOOL(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_NUMBER(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_STRING(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_SYMBOL(EvaluableNode *en, bool immediate_result);

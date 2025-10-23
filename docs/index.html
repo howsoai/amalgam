@@ -298,9 +298,9 @@ function render() {
 	<h2>Type descriptions</h2>
 	
 	<div class='td1'>null</div><div class='td3'>null value</div><br>
-	<div class='td1'>bool</div><div class='td3'>true or false</div><br>
+	<div class='td1'>bool</div><div class='td3'>true or false, denoted in language as the immediate values .true and .false</div><br>
 	<div class='td1'>number</div><div class='td3'>64-bit floating point, for integer or float</div><br>
-	<div class='td1'>string</div><div class='td3'>null terminated string, treated as an immutable object</div><br>
+	<div class='td1'>string</div><div class='td3'>a string of bytes, assumed by most opcodes to be interpreted as utf-8, but can also be treated as binary strings</div><br>
 	<div class='td1'>bstring</div><div class='td3'>bare string - a string without quotes</div><br>
 	<div class='td1'>list</div><div class='td3'>list of other data types</div><br>
 	<div class='td1'>assoc</div><div class='td3'>a map of data types to other entities of key-value pairs, where the keys are strings</div><br>
@@ -342,10 +342,14 @@ function render() {
 	<p>
 	Entities may be explicitly named and may be used as code libraries.  For example, a library named MyLibrary with function MyFunction can be called as:<br>
 	<span class='ex code'>
-	(call (retrieve_from_contained_entity "MyLibrary" "MyFunction") (assoc parameter_a 1 parameter_b 2))
+	(call_entity "MyLibrary" "MyFunction" { parameter_a 1 parameter_b 2 })
 	</span>
 	<p>
-	Numbers are represented via numbers, as well as ".", "-", and "e" for base-ten exponents.  Further, infinity and negative infinity are represented as ".infinity" and "-.infinity" respectively.  Not-a-number and non-string results are represented via the opcode (null).
+	Numbers are represented via numbers, as well as ".", "-", and "e" for base-ten exponents.  Further, infinity and negative infinity are represented as ".infinity" and "-.infinity" respectively.  Not-a-number and non-string results are represented via the opcode (null).  The type of number is the string "number".
+	<p>
+	Strings begin and end with double quotes.  Certain characters can be encoded by preceding with a backslash, which are backslash, null represented as 0, double quote, tab represented as t, newline represented as n, and carriage return represented as r.  The type of string is the string "string".
+	<p>
+	Boolean values can be represented as immediate values ".true" and ".false" respectively.  The type of a bool is the string "bool".
 	<p>
 	All regular expressions are EMCA-standard regular expressions.  See <a href="https://en.cppreference.com/w/cpp/regex/ecmascript">https://en.cppreference.com/w/cpp/regex/ecmascript</a> or <a href="https://262.ecma-international.org/5.1/#sec-15.10">https://262.ecma-international.org/5.1/#sec-15.10</a> for further details on syntax.
 

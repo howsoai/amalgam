@@ -89,7 +89,7 @@ void SBFDSColumnData::InsertIndexValue(EvaluableNodeImmediateValueType value_typ
 		return;
 	}
 
-	//value_type == ENIVT_CODE
+	//value_type == ENIVT_CODE or ENIVT_BOOL
 	codeIndices.insert(index);
 
 	//find the entities that have the corresponding size; if the size doesn't exist, create it
@@ -140,7 +140,7 @@ void SBFDSColumnData::InsertNextIndexValueExceptNumbers(EvaluableNodeImmediateVa
 
 		UpdateLongestString(value.stringID, index);
 	}
-	else if(value_type == ENIVT_CODE)
+	else //value_type == ENIVT_CODE or ENIVT_BOOL
 	{
 		codeIndices.insert(index);
 
@@ -322,7 +322,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 			return;
 		}
 
-		if(old_value_type_resolved == ENIVT_CODE)
+		if(old_value_type_resolved == ENIVT_CODE || old_value_resolved == ENIVT_BOOL)
 		{
 			//only early exit if the pointers to the code are exactly the same,
 			// as equivalent code may be garbage collected
@@ -460,6 +460,7 @@ void SBFDSColumnData::DeleteIndexValue(EvaluableNodeImmediateValueType value_typ
 	}
 	break;
 
+	case ENIVT_BOOL:
 	case ENIVT_CODE:
 	{
 		codeIndices.erase(index);

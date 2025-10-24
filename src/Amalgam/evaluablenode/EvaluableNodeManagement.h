@@ -623,20 +623,7 @@ public:
 	}
 
 	//Copies the data structure and everything underneath it, modifying labels as specified
-	// if cycle_free is true on input, then it can perform a faster copy
-	inline EvaluableNodeReference DeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
-	{
-		if(tree == nullptr)
-			return EvaluableNodeReference::Null();
-
-		//TODO 24626: try to make efficiently iterative instead of recursive
-
-		if(!tree->GetNeedCycleCheck())
-			return EvaluableNodeReference(NonCycleDeepAllocCopy(tree, metadata_modifier), true);
-
-		EvaluableNode::ReferenceAssocType references;
-		return DeepAllocCopy(tree, references, metadata_modifier);
-	}
+	EvaluableNodeReference DeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
 
 	//used to hold all of the references for DeepAllocCopy calls
 	struct DeepAllocCopyParams
@@ -1235,10 +1222,6 @@ protected:
 	//returns a pair of the copy and true if the copy needs cycle check
 	//assumes tree is not nullptr
 	std::pair<EvaluableNode *, bool> DeepAllocCopy(EvaluableNode *tree, DeepAllocCopyParams &dacp);
-
-	//performs a deep copy on tree when tree is guaranteed to have no reference cycles
-	// assumes tree is NOT nullptr
-	EvaluableNode *NonCycleDeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier);
 
 	//recursive helper function for ModifyLabelsForNodeTree
 	//assumes tree is not nullptr

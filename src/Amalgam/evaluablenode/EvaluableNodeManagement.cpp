@@ -443,53 +443,6 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
 }
 
-void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_lab)
-{
-#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(tree->IsNodeValid());
-#endif
-
-	if(tree->IsAssociativeArray())
-	{
-		//pull the mapped child nodes out of the tree before invalidating it
-		//need to invalidate before call child nodes to prevent infinite recursion loop
-		EvaluableNode::AssocType mcn = std::move(tree->GetMappedChildNodesReference());
-		tree->Invalidate();
-		if(place_nodes_in_lab)
-			AddNodeToLocalAllocationBuffer(tree);
-
-		for(auto &[_, e] : mcn)
-		{
-			if(e != nullptr && !e->IsNodeDeallocated())
-				FreeNodeTreeWithCyclesRecurse(e, place_nodes_in_lab);
-		}
-
-		//free the references
-		string_intern_pool.DestroyStringReferences(mcn, [](auto n) { return n.first; });
-	}
-	else if(tree->IsImmediate())
-	{
-		tree->Invalidate();
-		if(place_nodes_in_lab)
-			AddNodeToLocalAllocationBuffer(tree);
-	}
-	else //ordered
-	{
-		//pull the ordered child nodes out of the tree before invalidating it
-		//need to invalidate before call child nodes to prevent infinite recursion loop
-		std::vector<EvaluableNode *> ocn = std::move(tree->GetOrderedChildNodesReference());
-		tree->Invalidate();
-		if(place_nodes_in_lab)
-			AddNodeToLocalAllocationBuffer(tree);
-
-		for(auto &e : ocn)
-		{
-			if(e != nullptr && !e->IsNodeDeallocated())
-				FreeNodeTreeWithCyclesRecurse(e, place_nodes_in_lab);
-		}
-	}
-}
-
 void EvaluableNodeManager::ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataModifier metadata_modifier)
 {
 	size_t num_labels = n->GetNumLabels();

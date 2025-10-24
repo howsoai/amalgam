@@ -6,7 +6,7 @@
 
 //system headers:
 #include <memory>
-#define PEDANTIC_GARBAGE_COLLECTION
+
 //if the macro PEDANTIC_GARBAGE_COLLECTION is defined, then garbage collection will be performed
 //after every opcode, to help find and debug memory issues
 //if the macro DEBUG_REPORT_LAB_USAGE is defined, then the local allocation buffer storage will be
@@ -629,6 +629,8 @@ public:
 		if(tree == nullptr)
 			return EvaluableNodeReference::Null();
 
+		//TODO 24626: try to make efficiently iterative instead of recursive
+
 		if(!tree->GetNeedCycleCheck())
 			return EvaluableNodeReference(NonCycleDeepAllocCopy(tree, metadata_modifier), true);
 
@@ -887,47 +889,30 @@ public:
 			if(en != nullptr)
 				nodeMarkBuffer.push_back(en);
 
+		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+			assert(en->IsNodeValid());
+		#endif
+
 			//perform depth-first traversal
 			while(!nodeMarkBuffer.empty())
 			{
 				EvaluableNode *cur = nodeMarkBuffer.back();
 				nodeMarkBuffer.pop_back();
+
 				if(cur->IsNodeDeallocated())
 					continue;
 
-			#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-				assert(cur->IsNodeValid());
-				assert(!cur->GetNeedCycleCheck());
-			#endif
-
 				if(cur->IsAssociativeArray())
 				{
-					//pull the mapped child nodes out of the tree before invalidating it
-					//need to invalidate before call child nodes to prevent infinite recursion loop
-					EvaluableNode::AssocType mcn = std::move(cur->GetMappedChildNodesReference());
-					cur->Invalidate();
-					if(place_nodes_in_lab)
-						AddNodeToLocalAllocationBuffer(cur);
-
-					for(auto &[_, e] : mcn)
+					for(auto &[_, e] : cur->GetMappedChildNodesReference())
 					{
 						if(e != nullptr && !e->IsNodeDeallocated())
 							nodeMarkBuffer.push_back(e);
 					}
-
-					//free the references
-					string_intern_pool.DestroyStringReferences(mcn, [](auto n) { return n.first; });
 				}
 				else if(!cur->IsImmediate())
 				{
-					//pull the ordered child nodes out of the tree before invalidating it
-					//need to invalidate before call child nodes to prevent infinite recursion loop
-					std::vector<EvaluableNode *> ocn = std::move(cur->GetOrderedChildNodesReference());
-					cur->Invalidate();
-					if(place_nodes_in_lab)
-						AddNodeToLocalAllocationBuffer(cur);
-
-					for(auto &e : ocn)
+					for(auto &e : cur->GetOrderedChildNodesReference())
 					{
 						if(e != nullptr && !e->IsNodeDeallocated())
 							nodeMarkBuffer.push_back(e);
@@ -1241,10 +1226,6 @@ protected:
 	//note that this method does not read from firstUnusedNodeIndex, as it may be cleared to indicate threads
 	//to stop spinlocks
 	void FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index);
-
-	//support for FreeNodeTreeWithCycles, but requires that tree not be nullptr
-	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it
-	void FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_lab = true);
 
 	//modifies the labels of n with regard to metadata_modifier
 	// assumes n is not nullptr

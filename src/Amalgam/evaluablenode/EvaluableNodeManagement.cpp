@@ -563,6 +563,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en,
 	if(en == nullptr)
 		return EvaluableNodeReference::Null();
 
+	//quick copy iteratively if don't need cycle check
 	if(!en->GetNeedCycleCheck())
 	{
 		nodeMarkBuffer.clear();

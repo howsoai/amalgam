@@ -606,8 +606,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en,
 	}
 
 	//TODO 24626: try to make efficiently iterative instead of recursive
-	EvaluableNode::ReferenceAssocType references;
-	DeepAllocCopyParams dacp(&references, metadata_modifier);
+	DeepAllocCopyParams dacp(metadata_modifier);
 	auto [copy, need_cycle_check] = DeepAllocCopy(en, dacp);
 	return EvaluableNodeReference(copy, true);
 }
@@ -615,7 +614,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en,
 std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNode *tree, DeepAllocCopyParams &dacp)
 {
 	//attempt to insert a new reference for this node, start with null
-	auto [inserted_copy, inserted] = dacp.references->emplace(tree, nullptr);
+	auto [inserted_copy, inserted] = dacp.references.emplace(tree, nullptr);
 
 	//can't insert, so already have a copy
 	// need to indicate that it has a cycle

@@ -628,11 +628,11 @@ public:
 	//used to hold all of the references for DeepAllocCopy calls
 	struct DeepAllocCopyParams
 	{
-		constexpr DeepAllocCopyParams(EvaluableNode::ReferenceAssocType *_references, EvaluableNodeMetadataModifier metadata_modifier)
-			: references(_references), labelModifier(metadata_modifier)
+		inline DeepAllocCopyParams(EvaluableNodeMetadataModifier metadata_modifier)
+			: labelModifier(metadata_modifier)
 		{	}
 
-		EvaluableNode::ReferenceAssocType *references;
+		EvaluableNode::ReferenceAssocType references;
 		EvaluableNodeMetadataModifier labelModifier;
 	};
 

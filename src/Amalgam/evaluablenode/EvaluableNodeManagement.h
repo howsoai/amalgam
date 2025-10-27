@@ -636,21 +636,6 @@ public:
 		EvaluableNodeMetadataModifier labelModifier;
 	};
 
-	//Copies the data structure and everything underneath it, modifying labels as specified
-	//  modifies labels as specified
-	//  will determine whether the tree is cycle free and return the appropriate value in the EvaluableNodeReference
-	//references is a map of those nodes that have already been copied, with the key being the original and the value being the copy -- it first looks in references before making a copy
-	inline EvaluableNodeReference DeepAllocCopy(EvaluableNode *tree, EvaluableNode::ReferenceAssocType &references, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
-	{
-		if(tree == nullptr)
-			return EvaluableNodeReference::Null();
-
-		//start with cycleFree true, will be set to false if it isn't
-		DeepAllocCopyParams dacp(&references, metadata_modifier);
-		auto [copy, need_cycle_check] = DeepAllocCopy(tree, dacp);
-		return EvaluableNodeReference(copy, true);
-	}
-
 	//modifies the labels for the tree as described by metadata_modifier
 	inline static void ModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
 	{

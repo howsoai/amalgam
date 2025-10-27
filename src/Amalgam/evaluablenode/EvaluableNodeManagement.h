@@ -1203,10 +1203,11 @@ protected:
 	// assumes n is not nullptr
 	static void ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataModifier metadata_modifier);
 
-	//more efficient version of DeepAllocCopy
+	//implemented as a recursive method because the extra complexity of an iterative implementation
+	// is not worth the very small performance benefit
 	//returns a pair of the copy and true if the copy needs cycle check
 	//assumes tree is not nullptr
-	std::pair<EvaluableNode *, bool> DeepAllocCopy(EvaluableNode *tree, DeepAllocCopyParams &dacp);
+	std::pair<EvaluableNode *, bool> DeepAllocCopyRecurse(EvaluableNode *tree, DeepAllocCopyParams &dacp);
 
 	//recursive helper function for ModifyLabelsForNodeTree
 	//assumes tree is not nullptr

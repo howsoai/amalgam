@@ -605,13 +605,13 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en,
 		return EvaluableNodeReference(root_copy, true);
 	}
 
-	//TODO 24626: try to make efficiently iterative instead of recursive
 	DeepAllocCopyParams dacp(metadata_modifier);
-	auto [copy, need_cycle_check] = DeepAllocCopy(en, dacp);
+	auto [copy, need_cycle_check] = DeepAllocCopyRecurse(en, dacp);
 	return EvaluableNodeReference(copy, true);
 }
 
-std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNode *tree, DeepAllocCopyParams &dacp)
+std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(EvaluableNode *tree,
+	DeepAllocCopyParams &dacp)
 {
 	//attempt to insert a new reference for this node, start with null
 	auto [inserted_copy, inserted] = dacp.references.emplace(tree, nullptr);
@@ -645,7 +645,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNo
 				continue;
 
 			//make copy; if need cycle check, then mark it on the parent copy
-			auto [child_copy, need_cycle_check] = DeepAllocCopy(n, dacp);
+			auto [child_copy, need_cycle_check] = DeepAllocCopyRecurse(n, dacp);
 			if(need_cycle_check)
 				copy->SetNeedCycleCheck(true);
 
@@ -664,7 +664,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNo
 				continue;
 
 			//make copy; if need cycle check, then mark it on the parent copy
-			auto [child_copy, need_cycle_check] = DeepAllocCopy(n, dacp);
+			auto [child_copy, need_cycle_check] = DeepAllocCopyRecurse(n, dacp);
 			if(need_cycle_check)
 				copy->SetNeedCycleCheck(true);
 

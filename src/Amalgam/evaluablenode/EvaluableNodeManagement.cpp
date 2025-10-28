@@ -1,4 +1,4 @@
-//project headers:
+﻿//project headers:
 #include "EvaluableNodeManagement.h"
 #include "PerformanceProfiler.h"
 
@@ -58,7 +58,7 @@ EvaluableNode *EvaluableNodeManager::AllocNode(EvaluableNode *original, Evaluabl
 				label = label.substr(1);
 
 			n->AppendLabel(label);
-		}
+		} 
 	}
 
 	return n;
@@ -443,82 +443,6 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
 }
 
-void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree, bool place_nodes_in_lab)
-{
-#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(tree->IsNodeValid());
-	assert(!tree->GetNeedCycleCheck());
-#endif
-
-	if(tree->IsAssociativeArray())
-	{
-		for(auto &[_, e] : tree->GetMappedChildNodesReference())
-		{
-			if(e != nullptr)
-				FreeNodeTreeRecurse(e, place_nodes_in_lab);
-		}
-	}
-	else if(!tree->IsImmediate())
-	{
-		for(auto &e : tree->GetOrderedChildNodesReference())
-		{
-			if(e != nullptr)
-				FreeNodeTreeRecurse(e, place_nodes_in_lab);
-		}
-	}
-
-	tree->Invalidate();
-	if(place_nodes_in_lab)
-		AddNodeToLocalAllocationBuffer(tree);
-}
-
-void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_lab)
-{
-#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(tree->IsNodeValid());
-#endif
-
-	if(tree->IsAssociativeArray())
-	{
-		//pull the mapped child nodes out of the tree before invalidating it
-		//need to invalidate before call child nodes to prevent infinite recursion loop
-		EvaluableNode::AssocType mcn = std::move(tree->GetMappedChildNodesReference());
-		tree->Invalidate();
-		if(place_nodes_in_lab)
-			AddNodeToLocalAllocationBuffer(tree);
-
-		for(auto &[_, e] : mcn)
-		{
-			if(e != nullptr && !e->IsNodeDeallocated())
-				FreeNodeTreeWithCyclesRecurse(e, place_nodes_in_lab);
-		}
-
-		//free the references
-		string_intern_pool.DestroyStringReferences(mcn, [](auto n) { return n.first; });
-	}
-	else if(tree->IsImmediate())
-	{
-		tree->Invalidate();
-		if(place_nodes_in_lab)
-			AddNodeToLocalAllocationBuffer(tree);
-	}
-	else //ordered
-	{
-		//pull the ordered child nodes out of the tree before invalidating it
-		//need to invalidate before call child nodes to prevent infinite recursion loop
-		std::vector<EvaluableNode *> ocn = std::move(tree->GetOrderedChildNodesReference());
-		tree->Invalidate();
-		if(place_nodes_in_lab)
-			AddNodeToLocalAllocationBuffer(tree);
-
-		for(auto &e : ocn)
-		{
-			if(e != nullptr && !e->IsNodeDeallocated())
-				FreeNodeTreeWithCyclesRecurse(e, place_nodes_in_lab);
-		}
-	}
-}
-
 void EvaluableNodeManager::ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataModifier metadata_modifier)
 {
 	size_t num_labels = n->GetNumLabels();
@@ -633,10 +557,65 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNod
 	}
 }
 
-std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNode *tree, DeepAllocCopyParams &dacp)
+EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en,
+	EvaluableNodeMetadataModifier metadata_modifier)
+{
+	if(en == nullptr)
+		return EvaluableNodeReference::Null();
+
+	//quick copy iteratively if don't need cycle check
+	if(!en->GetNeedCycleCheck())
+	{
+		nodeMarkBuffer.clear();
+
+		EvaluableNode *root_copy = AllocNode(en, metadata_modifier);
+		nodeMarkBuffer.push_back(root_copy);
+
+		//walk the tree depth‑first using the buffer as a stack
+		while(!nodeMarkBuffer.empty())
+		{
+			EvaluableNode *cur = nodeMarkBuffer.back();
+			nodeMarkBuffer.pop_back();
+
+			if(cur->IsAssociativeArray())
+			{
+				for(auto &[_, child] : cur->GetMappedChildNodesReference())
+				{
+					if(child == nullptr)
+						continue;
+
+					EvaluableNode *child_copy = AllocNode(child, metadata_modifier);
+					child = child_copy;
+					nodeMarkBuffer.push_back(child_copy);
+				}
+			}
+			else if(!cur->IsImmediate())
+			{
+				for(auto &child : cur->GetOrderedChildNodesReference())
+				{
+					if(child == nullptr)
+						continue;
+
+					EvaluableNode *child_copy = AllocNode(child, metadata_modifier);
+					child = child_copy;
+					nodeMarkBuffer.push_back(child_copy);
+				}
+			}
+		}
+
+		return EvaluableNodeReference(root_copy, true);
+	}
+
+	DeepAllocCopyParams dacp(metadata_modifier);
+	auto [copy, need_cycle_check] = DeepAllocCopyRecurse(en, dacp);
+	return EvaluableNodeReference(copy, true);
+}
+
+std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(EvaluableNode *tree,
+	DeepAllocCopyParams &dacp)
 {
 	//attempt to insert a new reference for this node, start with null
-	auto [inserted_copy, inserted] = dacp.references->emplace(tree, nullptr);
+	auto [inserted_copy, inserted] = dacp.references.emplace(tree, nullptr);
 
 	//can't insert, so already have a copy
 	// need to indicate that it has a cycle
@@ -667,7 +646,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNo
 				continue;
 
 			//make copy; if need cycle check, then mark it on the parent copy
-			auto [child_copy, need_cycle_check] = DeepAllocCopy(n, dacp);
+			auto [child_copy, need_cycle_check] = DeepAllocCopyRecurse(n, dacp);
 			if(need_cycle_check)
 				copy->SetNeedCycleCheck(true);
 
@@ -686,7 +665,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNo
 				continue;
 
 			//make copy; if need cycle check, then mark it on the parent copy
-			auto [child_copy, need_cycle_check] = DeepAllocCopy(n, dacp);
+			auto [child_copy, need_cycle_check] = DeepAllocCopyRecurse(n, dacp);
 			if(need_cycle_check)
 				copy->SetNeedCycleCheck(true);
 
@@ -696,43 +675,6 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNo
 	}
 
 	return std::make_pair(copy, copy->GetNeedCycleCheck());
-}
-
-EvaluableNode *EvaluableNodeManager::NonCycleDeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier)
-{
-	EvaluableNode *copy = AllocNode(tree, metadata_modifier);
-
-	if(copy->IsAssociativeArray())
-	{
-		//for any mapped children, copy and update
-		for(auto &[_, s] : copy->GetMappedChildNodesReference())
-		{
-			//get current item in list
-			EvaluableNode *n = s;
-			if(n == nullptr)
-				continue;
-
-			//replace item in list with copy
-			s = NonCycleDeepAllocCopy(n, metadata_modifier);
-		}
-	}
-	else if(!copy->IsImmediate())
-	{
-		//for any ordered children, copy and update
-		auto &copy_ocn = copy->GetOrderedChildNodesReference();
-		for(size_t i = 0; i < copy_ocn.size(); i++)
-		{
-			//get current item in list
-			EvaluableNode *n = copy_ocn[i];
-			if(n == nullptr)
-				continue;
-
-			//replace current item in list with copy
-			copy_ocn[i] = NonCycleDeepAllocCopy(n, metadata_modifier);
-		}
-	}
-
-	return copy;
 }
 
 void EvaluableNodeManager::ModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNode::ReferenceSetType &checked, EvaluableNodeMetadataModifier metadata_modifier)

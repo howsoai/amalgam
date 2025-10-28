@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 //project headers:
 #include "Concurrency.h"
@@ -623,44 +623,18 @@ public:
 	}
 
 	//Copies the data structure and everything underneath it, modifying labels as specified
-	// if cycle_free is true on input, then it can perform a faster copy
-	inline EvaluableNodeReference DeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
-	{
-		if(tree == nullptr)
-			return EvaluableNodeReference::Null();
-
-		if(!tree->GetNeedCycleCheck())
-			return EvaluableNodeReference(NonCycleDeepAllocCopy(tree, metadata_modifier), true);
-
-		EvaluableNode::ReferenceAssocType references;
-		return DeepAllocCopy(tree, references, metadata_modifier);
-	}
+	EvaluableNodeReference DeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
 
 	//used to hold all of the references for DeepAllocCopy calls
 	struct DeepAllocCopyParams
 	{
-		constexpr DeepAllocCopyParams(EvaluableNode::ReferenceAssocType *_references, EvaluableNodeMetadataModifier metadata_modifier)
-			: references(_references), labelModifier(metadata_modifier)
+		inline DeepAllocCopyParams(EvaluableNodeMetadataModifier metadata_modifier)
+			: labelModifier(metadata_modifier)
 		{	}
 
-		EvaluableNode::ReferenceAssocType *references;
+		EvaluableNode::ReferenceAssocType references;
 		EvaluableNodeMetadataModifier labelModifier;
 	};
-
-	//Copies the data structure and everything underneath it, modifying labels as specified
-	//  modifies labels as specified
-	//  will determine whether the tree is cycle free and return the appropriate value in the EvaluableNodeReference
-	//references is a map of those nodes that have already been copied, with the key being the original and the value being the copy -- it first looks in references before making a copy
-	inline EvaluableNodeReference DeepAllocCopy(EvaluableNode *tree, EvaluableNode::ReferenceAssocType &references, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
-	{
-		if(tree == nullptr)
-			return EvaluableNodeReference::Null();
-
-		//start with cycleFree true, will be set to false if it isn't
-		DeepAllocCopyParams dacp(&references, metadata_modifier);
-		auto [copy, need_cycle_check] = DeepAllocCopy(tree, dacp);
-		return EvaluableNodeReference(copy, true);
-	}
 
 	//modifies the labels for the tree as described by metadata_modifier
 	inline static void ModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
@@ -844,11 +818,83 @@ public:
 		}
 		else if(!en->GetNeedCycleCheck())
 		{
-			FreeNodeTreeRecurse(en, place_nodes_in_lab);
+			nodeMarkBuffer.clear();
+			if(en != nullptr)
+				nodeMarkBuffer.push_back(en);
+
+			//perform depth-first traversal
+			while(!nodeMarkBuffer.empty())
+			{
+				EvaluableNode *cur = nodeMarkBuffer.back();
+				nodeMarkBuffer.pop_back();
+
+			#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+				assert(cur->IsNodeValid());
+				assert(!cur->GetNeedCycleCheck());
+			#endif
+
+				if(cur->IsAssociativeArray())
+				{
+					for(auto &[_, child] : cur->GetMappedChildNodesReference())
+					{
+						if(child != nullptr)
+							nodeMarkBuffer.push_back(child);
+					}
+				}
+				else if(!cur->IsImmediate())
+				{
+					for(auto &child : cur->GetOrderedChildNodesReference())
+					{
+						if(child != nullptr)
+							nodeMarkBuffer.push_back(child);
+					}
+				}
+
+				cur->Invalidate();
+				if(place_nodes_in_lab)
+					AddNodeToLocalAllocationBuffer(cur);
+			}
 		}
 		else //more costly cyclic free
 		{
-			FreeNodeTreeWithCyclesRecurse(en, place_nodes_in_lab);
+			nodeMarkBuffer.clear();
+			if(en != nullptr)
+				nodeMarkBuffer.push_back(en);
+
+		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+			assert(en->IsNodeValid());
+		#endif
+
+			//perform depth-first traversal
+			while(!nodeMarkBuffer.empty())
+			{
+				EvaluableNode *cur = nodeMarkBuffer.back();
+				nodeMarkBuffer.pop_back();
+
+				if(cur->IsNodeDeallocated())
+					continue;
+
+				if(cur->IsAssociativeArray())
+				{
+					for(auto &[_, e] : cur->GetMappedChildNodesReference())
+					{
+						if(e != nullptr && !e->IsNodeDeallocated())
+							nodeMarkBuffer.push_back(e);
+					}
+				}
+				else if(!cur->IsImmediate())
+				{
+					for(auto &e : cur->GetOrderedChildNodesReference())
+					{
+						if(e != nullptr && !e->IsNodeDeallocated())
+							nodeMarkBuffer.push_back(e);
+					}
+				}
+
+				cur->Invalidate();
+				if(place_nodes_in_lab)
+					AddNodeToLocalAllocationBuffer(cur);
+			}
 		}
 	}
 
@@ -867,12 +913,15 @@ public:
 	//just frees the child nodes of tree, but not tree itself; assumes no cycles
 	inline void FreeNodeChildNodes(EvaluableNode *tree)
 	{
+		nodeMarkBuffer.clear();
+
+		// Seed the buffer with the direct children of *tree*.
 		if(tree->IsAssociativeArray())
 		{
 			for(auto &[_, e] : tree->GetMappedChildNodesReference())
 			{
 				if(e != nullptr)
-					FreeNodeTreeRecurse(e);
+					nodeMarkBuffer.push_back(e);
 			}
 		}
 		else if(tree->IsOrderedArray())
@@ -880,8 +929,40 @@ public:
 			for(auto &e : tree->GetOrderedChildNodesReference())
 			{
 				if(e != nullptr)
-					FreeNodeTreeRecurse(e);
+					nodeMarkBuffer.push_back(e);
 			}
+		}
+
+		//perform depth-first traversal
+		while(!nodeMarkBuffer.empty())
+		{
+			EvaluableNode *cur = nodeMarkBuffer.back();
+			nodeMarkBuffer.pop_back();
+
+		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+			assert(cur->IsNodeValid());
+			assert(!cur->GetNeedCycleCheck());
+		#endif
+
+			if(cur->IsAssociativeArray())
+			{
+				for(auto &[_, child] : cur->GetMappedChildNodesReference())
+				{
+					if(child != nullptr)
+						nodeMarkBuffer.push_back(child);
+				}
+			}
+			else if(!cur->IsImmediate())
+			{
+				for(auto &child : cur->GetOrderedChildNodesReference())
+				{
+					if(child != nullptr)
+						nodeMarkBuffer.push_back(child);
+				}
+			}
+
+			cur->Invalidate();
+			AddNodeToLocalAllocationBuffer(cur);
 		}
 	}
 
@@ -1076,26 +1157,15 @@ protected:
 	//to stop spinlocks
 	void FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index);
 
-	//support for FreeNodeTree, but requires that tree not be nullptr
-	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it
-	void FreeNodeTreeRecurse(EvaluableNode *tree, bool place_nodes_in_lab = true);
-
-	//support for FreeNodeTreeWithCycles, but requires that tree not be nullptr
-	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it
-	void FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_lab = true);
-
 	//modifies the labels of n with regard to metadata_modifier
 	// assumes n is not nullptr
 	static void ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataModifier metadata_modifier);
 
-	//more efficient version of DeepAllocCopy
+	//implemented as a recursive method because the extra complexity of an iterative implementation
+	// is not worth the very small performance benefit
 	//returns a pair of the copy and true if the copy needs cycle check
 	//assumes tree is not nullptr
-	std::pair<EvaluableNode *, bool> DeepAllocCopy(EvaluableNode *tree, DeepAllocCopyParams &dacp);
-
-	//performs a deep copy on tree when tree is guaranteed to have no reference cycles
-	// assumes tree is NOT nullptr
-	EvaluableNode *NonCycleDeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier);
+	std::pair<EvaluableNode *, bool> DeepAllocCopyRecurse(EvaluableNode *tree, DeepAllocCopyParams &dacp);
 
 	//recursive helper function for ModifyLabelsForNodeTree
 	//assumes tree is not nullptr

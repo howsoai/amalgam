@@ -86,15 +86,32 @@ extern "C"
 	// ************************************
 
 	LoadEntityStatus LoadEntity(char *handle, char *path, char *file_type,
-		bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename)
+		bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename,
+		const char **entity_path, size_t entity_path_len)
 	{
 		std::string h(handle);
-		std::string p(path);
+		EntityExternalInterface::LoadSource ls(path);
 		std::string ft(file_type);
 		std::string_view params(json_file_params);
 		std::string wlfname(write_log_filename);
 		std::string plfname(print_log_filename);
-		auto status = entint.LoadEntity(h, p, ft, persistent, params, wlfname, plfname);
+		std::vector<std::string> eps(entity_path, entity_path + entity_path_len);
+		auto status = entint.LoadEntity(h, ls, ft, persistent, params, wlfname, plfname, eps);
+		return ConvertLoadStatusToCStatus(status);
+	}
+
+	LoadEntityStatus LoadEntityFromMemory(char *handle, void *data, size_t len, char *file_type,
+		bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename,
+		const char **entity_path, size_t entity_path_len)
+	{
+		std::string h(handle);
+		EntityExternalInterface::LoadSource ls(std::in_place_type<std::pair<void *, size_t>>, data, len);
+		std::string ft(file_type);
+		std::string_view params(json_file_params);
+		std::string wlfname(write_log_filename);
+		std::string plfname(print_log_filename);
+		std::vector<std::string> eps(entity_path, entity_path + entity_path_len);
+		auto status = entint.LoadEntity(h, ls, ft, persistent, params, wlfname, plfname, eps);
 		return ConvertLoadStatusToCStatus(status);
 	}
 
@@ -132,13 +149,25 @@ extern "C"
 		return entint.CloneEntity(h, ch, p, ft, persistent, params, wlfname, plfname);
 	}
 
-	void StoreEntity(char *handle, char *path, char *file_type, bool persistent, char *json_file_params)
+	void StoreEntity(char *handle, char *path, char *file_type, bool persistent, char *json_file_params, const char **entity_path, size_t entity_path_len)
 	{
 		std::string h(handle);
-		std::string p(path);
+		EntityExternalInterface::StoreSource ss(path);
 		std::string ft(file_type);
 		std::string_view params(json_file_params);
-		entint.StoreEntity(h, p, ft, persistent, params);
+		std::vector<std::string> eps(entity_path, entity_path + entity_path_len);
+		entint.StoreEntity(h, ss, ft, persistent, params, eps);
+	}
+
+	void StoreEntityToMemory(char *handle, void **data_p, size_t *len_p, char *file_type,
+		bool persistent, char *json_file_params, const char **entity_path, size_t entity_path_len)
+	{
+		std::string h(handle);
+		EntityExternalInterface::StoreSource ss(std::in_place_type<std::pair<void **, size_t *>>, data_p, len_p);
+		std::string ft(file_type);
+		std::string_view params(json_file_params);
+		std::vector<std::string> eps(entity_path, entity_path + entity_path_len);
+		entint.StoreEntity(h, ss, ft, persistent, params, eps);
 	}
 
 	void SetJSONToLabel(char *handle, char *label, char *json)

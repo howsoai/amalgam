@@ -42,6 +42,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 	std::string transaction_listener_path;
 	std::string rand_seed;
 	std::string response;
+	std::vector<std::string> entity_path;
 
 	// program loop
 	while(in_stream->good())
@@ -85,8 +86,13 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				else
 					rand_seed = random_stream.CreateOtherStreamStateViaString("trace");
 
+				if(command_tokens.size() > 8)
+					entity_path = StringManipulation::Split(command_tokens[8]);
+				else
+					entity_path.clear();
+
 				auto status = entint.LoadEntity(handle, path, file_type,
-					persistent == "true", json_payload, transaction_listener_path, print_listener_path, rand_seed);
+					persistent == "true", json_payload, transaction_listener_path, print_listener_path, entity_path, rand_seed);
 				response = status.loaded ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
 			}
 			else
@@ -164,7 +170,12 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				if(command_tokens.size() > 4)
 					json_payload = command_tokens[4];
 
-				entint.StoreEntity(handle, path, file_type, persistent == "true", json_payload);
+				if(command_tokens.size() > 5)
+					entity_path = StringManipulation::Split(command_tokens[5]);
+				else
+					entity_path.clear();
+
+				entint.StoreEntity(handle, path, file_type, persistent == "true", json_payload, entity_path);
 				response = SUCCESS_RESPONSE;
 			}
 			else

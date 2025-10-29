@@ -74,10 +74,24 @@ extern "C"
 
 	LoadEntityStatus ConvertLoadStatusToCStatus(EntityExternalInterface::LoadEntityStatus &status)
 	{
+		size_t entity_path_len = status.entity_path.size();
+		char **entity_path = nullptr;
+		if(entity_path_len > 0)
+		{
+			//We need to return a pointer that can be passed back to DestroyEntity().  That
+			//believes it is being handed char[], so allocate exactly a char[] (as though we were
+			//using plain-C malloc()) and then turn that into the pointer type we need.
+			char *entity_path_alloc = new char[sizeof(char *) * entity_path_len];
+			entity_path = reinterpret_cast<char **>(entity_path_alloc);
+			for (size_t i = 0; i < entity_path_len; i++)
+				entity_path[i] = StringToCharPtr(status.entity_path[i]);
+		}
 		return {
 			status.loaded,
 			StringToCharPtr(status.message),
-			StringToCharPtr(status.version)
+			StringToCharPtr(status.version),
+			entity_path,
+			entity_path_len
 		};
 	}
 
@@ -86,7 +100,8 @@ extern "C"
 	// ************************************
 
 	LoadEntityStatus LoadEntity(char *handle, char *path, char *file_type,
-		bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename)
+		bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename,
+		const char **entity_path, size_t entity_path_len)
 	{
 		std::string h(handle);
 		std::string p(path);
@@ -94,7 +109,23 @@ extern "C"
 		std::string_view params(json_file_params);
 		std::string wlfname(write_log_filename);
 		std::string plfname(print_log_filename);
-		auto status = entint.LoadEntity(h, p, ft, persistent, params, wlfname, plfname);
+		std::vector<std::string> eps(entity_path, entity_path + entity_path_len);
+		auto status = entint.LoadEntity(h, EntityExternalInterface::LoadFromFile{ p }, ft, persistent, params, wlfname, plfname, eps);
+		return ConvertLoadStatusToCStatus(status);
+	}
+
+	LoadEntityStatus LoadEntityFromMemory(char *handle, void *data, size_t len, char *file_type,
+		bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename,
+		const char **entity_path, size_t entity_path_len)
+	{
+		std::string h(handle);
+		std::string d(reinterpret_cast<char *>(data), len);
+		std::string ft(file_type);
+		std::string_view params(json_file_params);
+		std::string wlfname(write_log_filename);
+		std::string plfname(print_log_filename);
+		std::vector<std::string> eps(entity_path, entity_path + entity_path_len);
+		auto status = entint.LoadEntity(h, EntityExternalInterface::LoadFromMemory{ std::move(d) }, ft, persistent, params, wlfname, plfname, eps);
 		return ConvertLoadStatusToCStatus(status);
 	}
 
@@ -132,13 +163,32 @@ extern "C"
 		return entint.CloneEntity(h, ch, p, ft, persistent, params, wlfname, plfname);
 	}
 
-	void StoreEntity(char *handle, char *path, char *file_type, bool persistent, char *json_file_params)
+	void StoreEntity(char *handle, char *path, char *file_type, bool persistent, char *json_file_params, const char **entity_path, size_t entity_path_len)
 	{
 		std::string h(handle);
 		std::string p(path);
 		std::string ft(file_type);
 		std::string_view params(json_file_params);
-		entint.StoreEntity(h, p, ft, persistent, params);
+		std::vector<std::string> eps(entity_path, entity_path + entity_path_len);
+		entint.StoreEntity(h, EntityExternalInterface::StoreToFile{ p }, ft, persistent, params, eps);
+	}
+
+	void StoreEntityToMemory(char *handle, void **data_p, size_t *len_p, char *file_type,
+		bool persistent, char *json_file_params, const char **entity_path, size_t entity_path_len)
+	{
+		std::string h(handle);
+		std::string d;
+		std::string ft(file_type);
+		std::string_view params(json_file_params);
+		std::vector<std::string> eps(entity_path, entity_path + entity_path_len);
+		entint.StoreEntity(h, EntityExternalInterface::StoreToMemory{ d }, ft, persistent, params, eps);
+		// This is the same fundamental API as StringToCharPtr() above; the caller needs to
+		// DeleteString() on the result.
+		char *out = new char[d.size() + 1];
+		std::memcpy(out, d.data(), d.size());
+		out[d.size()] = '\0';
+		*data_p = out;
+		*len_p = d.size();
 	}
 
 	void SetJSONToLabel(char *handle, char *label, char *json)

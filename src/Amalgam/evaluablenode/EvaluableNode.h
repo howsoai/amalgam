@@ -139,7 +139,7 @@ public:
 		attributes.allAttributes = 0;
 		type = ENT_BOOL;
 		attributes.individualAttribs.isIdempotent = true;
-		value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		value.boolValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 		value.boolValueContainer.boolValue = bool_value;
 	}
 
@@ -161,6 +161,12 @@ public:
 		attributes.allAttributes = 0;
 		attributes.individualAttribs.isIdempotent = IsEvaluableNodeTypePotentiallyIdempotent(_type);
 
+		if(DoesEvaluableNodeTypeUseBoolData(_type))
+		{
+			value.boolValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+			value.boolValueContainer.boolValue = false;
+			attributes.individualAttribs.isIdempotent = true;
+		}
 		if(DoesEvaluableNodeTypeUseNumberData(_type))
 		{
 			value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
@@ -358,6 +364,10 @@ public:
 	//Returns true if this node evaluates to true
 	static bool ToBool(EvaluableNode *n);
 
+	//Converts a number to a string in a consistent way that should be used for anything dealing with EvaluableNode
+	static std::string BoolToString(bool value, bool key_string = false);
+	static StringInternPool::StringID BoolToStringID(bool value, bool key_string = false);
+
 	//Converts the node to a number
 	//if null, then will return value_if_null
 	static double ToNumber(EvaluableNode *e, double value_if_null = std::numeric_limits<double>::quiet_NaN());
@@ -479,6 +489,9 @@ public:
 	// attempt_to_preserve_immediate_value should be set to false if the value will be immediately overwritten
 	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm,
 		bool attempt_to_preserve_immediate_value);
+
+	//sets up boolean value
+	void InitBoolValue();
 
 	//gets the value by reference
 	__forceinline bool &GetBoolValue()
@@ -898,13 +911,15 @@ public:
 	//if it is storing an immediate value and has room to store a label
 	constexpr bool HasCompactSingleLabelStorage()
 	{
-		return ((type == ENT_NUMBER || type == ENT_STRING || type == ENT_SYMBOL) && !HasExtendedValue());
+		return ((type == ENT_BOOL || type == ENT_NUMBER || type == ENT_STRING || type == ENT_SYMBOL) && !HasExtendedValue());
 	}
 
 	//returns a reference to the storage location for a single label
 	// will only return valid results if HasCompactSingleLabelStorage() is true, so that should be called first
 	__forceinline constexpr StringInternPool::StringID &GetCompactSingleLabelStorage()
 	{
+		if(type == ENT_BOOL)
+			return value.boolValueContainer.labelStringID;
 		if(type == ENT_NUMBER)
 			return value.numberValueContainer.labelStringID;
 		//else assume type == ENT_STRING || type == ENT_SYMBOL
@@ -1102,7 +1117,6 @@ enum EvaluableNodeImmediateValueType : uint8_t
 {
 	ENIVT_NOT_EXIST,			//there is nothing to even hold the data
 	ENIVT_NULL,					//no data being held
-	//TODO 22139: implement this value everywhere appropriate -- search for all of ENIVT_NUMBER, ENIVT_STRING_ID, etc.
 	ENIVT_BOOL,					//bool
 	ENIVT_NUMBER,				//number
 	ENIVT_STRING_ID,			//stringID
@@ -1118,6 +1132,10 @@ union EvaluableNodeImmediateValue
 	__forceinline constexpr EvaluableNodeImmediateValue()
 		: code(nullptr)
 	{	}
+
+	__forceinline constexpr EvaluableNodeImmediateValue(bool bool_value)
+		: boolValue(bool_value)
+	{}
 
 	__forceinline constexpr EvaluableNodeImmediateValue(double _number)
 		: number(_number)
@@ -1193,6 +1211,8 @@ union EvaluableNodeImmediateValue
 		//types are the same, just use type_1 for reference
 		if(type_1 == ENIVT_NULL)
 			return true;
+		else if(type_1 == ENIVT_BOOL)
+			return (value_1.boolValue == value_2.boolValue);
 		else if(type_1 == ENIVT_NUMBER)
 			return (value_1.number == value_2.number);
 		else if(type_1 == ENIVT_STRING_ID)
@@ -1241,11 +1261,11 @@ public:
 
 	__forceinline EvaluableNodeImmediateValueWithType(bool value)
 	{
-		nodeType = ENIVT_NUMBER;
+		nodeType = ENIVT_BOOL;
 		if(value)
-			nodeValue.number = 1.0;
+			nodeValue.boolValue = true;
 		else
-			nodeValue.number = 0.0;
+			nodeValue.boolValue = false;
 	}
 
 	__forceinline EvaluableNodeImmediateValueWithType(double number)

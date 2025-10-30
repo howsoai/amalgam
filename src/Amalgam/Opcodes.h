@@ -599,7 +599,7 @@ __forceinline constexpr bool DoesEvaluableNodeTypeUseNumberData(EvaluableNodeTyp
 }
 
 //returns true if t uses string data
-constexpr bool DoesEvaluableNodeTypeUseStringData(EvaluableNodeType t)
+__forceinline bool DoesEvaluableNodeTypeUseStringData(EvaluableNodeType t)
 {
 	return (t == ENT_STRING || t == ENT_SYMBOL);
 }

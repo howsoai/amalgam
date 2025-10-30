@@ -3,6 +3,7 @@
 #include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeManagement.h"
 #include "FastMath.h"
+#include "Opcodes.h"
 #include "Parser.h"
 #include "StringInternPool.h"
 
@@ -95,11 +96,10 @@ bool EvaluableNode::AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
 
 	//check numeric equality
 	if(DoesEvaluableNodeTypeUseNumberData(a_type))
-	{
-		double av = EvaluableNode::ToNumber(a);
-		double bv = EvaluableNode::ToNumber(b);
-		return (av == bv);
-	}
+		return a->GetNumberValueReference() == b->GetNumberValueReference();
+	
+	if(DoesEvaluableNodeTypeUseBoolData(a_type))
+		return a->GetBoolValueReference() == b->GetBoolValueReference();
 
 	//if made it here, then it's an instruction, and they're of equal type
 	return true;
@@ -173,6 +173,20 @@ bool EvaluableNode::ToBool(EvaluableNode *n)
 	}
 
 	return true;
+}
+
+std::string EvaluableNode::BoolToString(bool value, bool key_string)
+{
+	if(key_string)
+		return GetStringIdFromBuiltInStringId(value ? ENBISI_true_key : ENBISI_false_key)->string;
+	return GetStringIdFromBuiltInStringId(value ? ENBISI_true : ENBISI_false)->string;
+}
+
+StringInternPool::StringID EvaluableNode::BoolToStringID(bool value, bool key_string)
+{
+	if(key_string)
+		return GetStringIdFromBuiltInStringId(value ? ENBISI_true_key : ENBISI_false_key);
+	return GetStringIdFromBuiltInStringId(value ? ENBISI_true : ENBISI_false);
 }
 
 double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
@@ -398,6 +412,10 @@ bool EvaluableNode::IsNodeValid()
 
 		return (sid->string.size() < 2000000000);
 	}
+	else if(DoesEvaluableNodeTypeUseBoolData(type))
+	{
+		return true;
+	}
 	else //ordered
 	{
 		auto &ocn = GetOrderedChildNodesReference();
@@ -436,6 +454,12 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_labels, bool copy
 			if(cn != nullptr && !cn->GetIsIdempotent())
 				SetIsIdempotent(false);
 		}
+	}
+	else if(DoesEvaluableNodeTypeUseBoolData(type))
+	{
+		value.boolValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		value.boolValueContainer.boolValue = n->GetBoolValueReference();
+		SetIsIdempotent(true);
 	}
 	else if(DoesEvaluableNodeTypeUseNumberData(type))
 	{
@@ -619,7 +643,19 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	}
 
 	//transform as appropriate
-	if(DoesEvaluableNodeTypeUseNumberData(new_type))
+	if(DoesEvaluableNodeTypeUseBoolData(new_type))
+	{
+		bool bool_value = false;
+		if(attempt_to_preserve_immediate_value)
+			bool_value = EvaluableNode::ToBool(this);
+
+		InitBoolValue();
+		GetBoolValueReference() = bool_value;
+
+		//will check below if any reason to not be idempotent
+		SetIsIdempotent(true);
+	}
+	else if(DoesEvaluableNodeTypeUseNumberData(new_type))
 	{
 		double number_value = 0.0;
 		if(attempt_to_preserve_immediate_value)
@@ -735,6 +771,21 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	}
 	else
 		SetIsIdempotent(false);
+}
+
+void EvaluableNode::InitBoolValue()
+{
+	DestructValue();
+
+	if(HasExtendedValue())
+	{
+		value.extension.extendedValue->value.boolValueContainer.boolValue = false;
+	}
+	else
+	{
+		value.boolValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		value.boolValueContainer.boolValue = false;
+	}
 }
 
 void EvaluableNode::InitNumberValue()
@@ -1615,6 +1666,11 @@ void EvaluableNode::EnsureEvaluableNodeExtended()
 
 	switch(GetType())
 	{
+	case ENT_BOOL:
+		ev->value.boolValueContainer.boolValue = value.boolValueContainer.boolValue;
+		if(value.boolValueContainer.labelStringID != StringInternPool::NOT_A_STRING_ID)
+			ev->labelsStringIds.push_back(value.boolValueContainer.labelStringID);
+		break;
 	case ENT_NUMBER:
 		ev->value.numberValueContainer.numberValue = value.numberValueContainer.numberValue;
 		if(value.numberValueContainer.labelStringID != StringInternPool::NOT_A_STRING_ID)
@@ -1650,6 +1706,9 @@ void EvaluableNode::DestructValue()
 	{
 		switch(GetType())
 		{
+		case ENT_BOOL:
+			string_intern_pool.DestroyStringReference(value.boolValueContainer.labelStringID);
+			break;
 		case ENT_NUMBER:
 			string_intern_pool.DestroyStringReference(value.numberValueContainer.labelStringID);
 			break;
@@ -1671,6 +1730,7 @@ void EvaluableNode::DestructValue()
 	{
 		switch(GetType())
 		{
+		case ENT_BOOL:
 		case ENT_NUMBER:
 			//don't need to do anything
 			break;
@@ -1699,6 +1759,9 @@ void EvaluableNode::Invalidate()
 	{
 		switch(GetType())
 		{
+		case ENT_BOOL:
+			string_intern_pool.DestroyStringReference(value.boolValueContainer.labelStringID);
+			break;
 		case ENT_NUMBER:
 			string_intern_pool.DestroyStringReference(value.numberValueContainer.labelStringID);
 			break;
@@ -1733,6 +1796,7 @@ void EvaluableNode::Invalidate()
 	//has extended type
 	switch(GetType())
 	{
+	case ENT_BOOL:
 	case ENT_NUMBER:
 		//don't need to do anything
 		break;
@@ -1986,6 +2050,13 @@ void EvaluableNodeImmediateValueWithType::CopyValueFromEvaluableNode(EvaluableNo
 		return;
 	}
 
+	if(en_type == ENT_BOOL)
+	{
+		nodeType = ENIVT_BOOL;
+		nodeValue = EvaluableNodeImmediateValue(en->GetBoolValueReference());
+		return;
+	}
+
 	if(en_type == ENT_NUMBER)
 	{
 		nodeType = ENIVT_NUMBER;
@@ -2014,6 +2085,9 @@ void EvaluableNodeImmediateValueWithType::CopyValueFromEvaluableNode(EvaluableNo
 
 bool EvaluableNodeImmediateValueWithType::GetValueAsBoolean()
 {
+	if(nodeType == ENIVT_BOOL)
+		return nodeValue.boolValue;
+
 	if(nodeType == ENIVT_NUMBER)
 	{
 		if(nodeValue.number == 0.0)
@@ -2040,6 +2114,9 @@ double EvaluableNodeImmediateValueWithType::GetValueAsNumber(double value_if_nul
 {
 	if(nodeType == ENIVT_NUMBER)
 		return nodeValue.number;
+
+	if(nodeType == ENIVT_BOOL)
+		return (nodeValue.boolValue ? 1.0 : 0.0);
 
 	if(nodeType == ENIVT_STRING_ID)
 	{
@@ -2071,6 +2148,9 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 		return std::make_pair(true, str);
 	}
 
+	if(nodeType == ENIVT_BOOL)
+		return std::make_pair(true, EvaluableNode::BoolToString(nodeValue.boolValue, key_string));
+
 	if(nodeType == ENIVT_NUMBER)
 		return std::make_pair(true, EvaluableNode::NumberToString(nodeValue.number, key_string));
 
@@ -2094,7 +2174,8 @@ StringInternPool::StringID EvaluableNodeImmediateValueWithType::GetValueAsString
 	if(nodeType == ENIVT_STRING_ID)
 		return nodeValue.stringID;
 
-	//TODO 22139: add lookup for ENIVT_BOOL based on key_string
+	if(nodeType == ENIVT_BOOL)
+		return EvaluableNode::BoolToStringID(nodeValue.boolValue, key_string);
 
 	if(nodeType == ENIVT_CODE && nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
 		return nodeValue.code->GetStringIDReference();
@@ -2110,6 +2191,9 @@ StringInternPool::StringID EvaluableNodeImmediateValueWithType::GetValueAsString
 {
 	if(nodeType == ENIVT_STRING_ID)
 		return string_intern_pool.CreateStringReference(nodeValue.stringID);
+
+	if(nodeType == ENIVT_BOOL)
+		return string_intern_pool.CreateStringReference(EvaluableNode::BoolToStringID(nodeValue.boolValue, key_string));
 
 	if(nodeType == ENIVT_CODE && nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
 		return string_intern_pool.CreateStringReference(nodeValue.code->GetStringIDReference());

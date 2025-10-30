@@ -1121,7 +1121,7 @@
  (print (list 0 1 2 3 (+ (target 0 1)) 4) "\n")
  (print (list 0 1 2 3 (list 0 1 2 3 (+ (target 1 1)) 4)) "\n")
  (print { a 0 b 1 c 2 d 3 e (list 0 1 2 3 (+ (target 1 "a")) 4)} "\n")
- (print { a 0 b 1 c 2 d 3 e (list (list 0 1 2 3 (+ (target (true) "a")) 4))} "\n")
+ (print { a 0 b 1 c 2 d 3 e (list (list 0 1 2 3 (+ (target .true "a")) 4))} "\n")
 
  (print "--current_index--\n")
  (list 1 2 3 (print (current_index) "\n") 4)
@@ -1287,9 +1287,13 @@
  (print (rand) "\n")
 
 
- (print "--booleans--\n")
+ (print "--bool--\n")
  (print .true "\n")
  (print .false "\n")
+
+ ;legacy values
+ (print (true) "\n")
+ (print (false) "\n")
 
  (print "--null--\n")
  (print (null) "\n")
@@ -2260,11 +2264,11 @@
  (print (get_entity_permissions "RootTest") "\n")
 
  (print "--set_entity_permissions--\n")
- (print (set_entity_permissions "RootTest" (true)) "\n")
+ (print (set_entity_permissions "RootTest" .true) "\n")
  (call_entity "RootTest")
  (print "\n")
  (print (get_entity_permissions "RootTest") "\n")
- (print (set_entity_permissions "RootTest" {environment (false) }) "\n")
+ (print (set_entity_permissions "RootTest" {environment .false }) "\n")
  (call_entity "RootTest")
  (print "\n")
  (print (get_entity_permissions "RootTest") "\n")
@@ -2308,7 +2312,7 @@
  (print "load from .amlg:\n")
  
  (load_entity "amlg_code/module_test.amlg" "ModuleTest")
- (set_entity_permissions "ModuleTest" {std_out_and_std_err (true) })
+ (set_entity_permissions "ModuleTest" {std_out_and_std_err .true })
  (call_entity "ModuleTest" "hello")
  (print (flatten_entity "ModuleTest"))
 
@@ -3638,7 +3642,7 @@
 	  )
 	)
   ) )
-  (set_entity_permissions "CEGCTest" (true) )
+  (set_entity_permissions "CEGCTest" .true )
 
  (print (call_entity_get_changes "CEGCTest" "a_assign"))
 
@@ -3693,7 +3697,7 @@
  (print [ 0 1 2 3 (+ (target 0 1)) 4] "\n")
  (print [ 0 1 2 3 [ 0 1 2 3 (+ (target 1 1)) 4]] "\n")
  (print { a 0 b 1 c 2 d 3 e [ 0 1 2 3 (+ (target 1 "a")) 4]} "\n")
- (print { a 0 b 1 c 2 d 3 e [ [ 0 1 2 3 (+ (target (true) "a")) 4]]} "\n")
+ (print { a 0 b 1 c 2 d 3 e [ [ 0 1 2 3 (+ (target .true "a")) 4]]} "\n")
  
  (print
  		(list
@@ -3779,7 +3783,7 @@
 
 (print "--reclaim_resources--\n")
 
-(reclaim_resources (null) (true) (true) (true) (true) )
+(reclaim_resources (null) .true .true .true .true )
 
  (print "--null equality tests--\n")
 
@@ -4244,8 +4248,7 @@
  (print "removal conviction\n")
 
  (print "kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-
- (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" .true)
+  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" .true)
  )))
 
  (print "weighted kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
@@ -4275,7 +4278,6 @@
   (print "addition conviction\n")
  
   (print "kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-
   (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" .false)
  )))
 

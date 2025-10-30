@@ -573,7 +573,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluabl
 {
 	//if can skip InterpretNode, then just allocate the string
 	if(n == nullptr || n->GetIsIdempotent()
-		|| n->GetType() == ENT_STRING || n->GetType() == ENT_NUMBER)
+		|| n->GetType() == ENT_STRING || n->GetType() == ENT_BOOL || n->GetType() == ENT_NUMBER)
 	{
 		auto sid = EvaluableNode::ToStringIDWithReference(n);
 

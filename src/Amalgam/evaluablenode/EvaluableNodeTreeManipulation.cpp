@@ -1239,6 +1239,13 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 	//if types are the same, need special handling for immediates, otherwise return true
 	if(n1_type == n2_type)
 	{
+		if(n1_type == ENT_BOOL)
+		{
+			bool n1_value = n1->GetBoolValueReference();
+			bool n2_value = n2->GetBoolValueReference();
+			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.375);
+		}
+
 		if(n1_type == ENT_STRING)
 		{
 			auto n1sid = n1->GetStringID();
@@ -1333,11 +1340,6 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		if(n2_type == ENT_NULL)
 			return std::make_pair(n2, n1_value ? 0.25 : 0.5);
 
-		if(n2_type == ENT_BOOL)
-		{
-			bool n2_value = n2->GetBoolValueReference();
-			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.375);
-		}
 		if(n2_type == ENT_NUMBER)
 		{
 			double n2_value = n2->GetNumberValueReference();
@@ -1367,7 +1369,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 			double n2_value = n2->GetNumberValueReference();
 			if(n2_value == 0.0)
 				return std::make_pair(n2, 0.5);
-			return std::make_pair(n2, 0.375);
+			return std::make_pair(n2, 0.125);
 		}
 		if(n2_type == ENT_SEQUENCE)			return std::make_pair(n1, 0.125);
 		if(n2_type == ENT_PARALLEL)			return std::make_pair(n1, 0.125);
@@ -1388,8 +1390,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		{
 			if(n1_value == 0.0)
 				return std::make_pair(n1, 0.5);
-
-			return std::make_pair(n1, 0.375);
+			return std::make_pair(n1, 0.125);
 		}
 
 		if(n2_type == ENT_BOOL)
@@ -1397,7 +1398,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 			bool n2_value = n2->GetBoolValueReference();
 			if(n1_value && n2_value)
 				return std::make_pair(n2, 0.875);
-			return std::make_pair(n1, 0.25);
+			return std::make_pair(n1, 0.125);
 		}
 
 		if(n2_type == ENT_RAND)
@@ -2010,7 +2011,7 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	//data types
 	{ENT_LIST,											2.0},
 	{ENT_ASSOC,											3.0},
-	{ENT_BOOL,											2.0},
+	{ENT_BOOL,											3.0},
 	{ENT_NUMBER,										8.0},
 	{ENT_STRING,										4.0},
 	{ENT_SYMBOL,										10.0},

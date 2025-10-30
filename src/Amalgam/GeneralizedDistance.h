@@ -562,8 +562,8 @@ public:
 			auto &feature_attributes = featureAttribs[index];
 			double smallest_deviation = feature_attributes.deviation;
 
-			feature_attributes.nominalStringSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
 			feature_attributes.nominalNumberSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
+			feature_attributes.nominalStringSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
 			
 			//find the probability that any other class besides the correct class was selected
 			//divide the probability among the other classes
@@ -876,6 +876,9 @@ public:
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 				return a.number - b.number;
 
+			if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+				return (a.boolValue == b.boolValue ? 0.0 : 1.0);
+
 			if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
 				return (a.stringID == b.stringID ? 0.0 : 1.0);
 
@@ -919,6 +922,9 @@ public:
 
 		if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 			return 1.0 - EvaluableNodeTreeManipulation::CommonalityBetweenNumbers(a.number, b.number);
+
+		if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+			return (a.boolValue == b.boolValue ? 0.0 : 1.0);
 
 		if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
 			return (a.stringID == b.stringID ? 0.0 : 1.0);

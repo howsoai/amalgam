@@ -1093,6 +1093,9 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 	{
 		switch(tree_type)
 		{
+		case ENT_BOOL:
+			upd.result.append(tree->GetBoolValueReference() ? ".true" : ".false");
+			break;
 		case ENT_NUMBER:
 			upd.result.append(StringManipulation::NumberToString(tree->GetNumberValueReference()));
 			break;

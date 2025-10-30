@@ -940,9 +940,10 @@ namespace EntityQueryBuilder
 			{
 				cur_condition->singleLabel = label_sid;
 
-				//already checked for nullptr above
-				CopyOrderedChildNodesToImmediateValuesAndTypes(ocn[1]->GetOrderedChildNodes(),
-					cur_condition->valueToCompare, cur_condition->valueTypes);
+				EvaluableNode *value_list = ocn[1];
+				if(EvaluableNode::IsOrderedArray(value_list))
+					CopyOrderedChildNodesToImmediateValuesAndTypes(value_list->GetOrderedChildNodesReference(),
+						cur_condition->valueToCompare, cur_condition->valueTypes);
 				break;
 			}
 

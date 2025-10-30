@@ -537,9 +537,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, bo
 	{
 		auto &value = n.GetValue();
 
-		if(value.nodeType == ENIVT_NUMBER)
+		if(value.nodeType == ENIVT_BOOL)
+			size = (value.nodeValue.boolValue ? 1 : 0);
+		else if(value.nodeType == ENIVT_NUMBER)
 			size = value.nodeValue.number;
-		if(value.nodeType == ENIVT_STRING_ID)
+		else if(value.nodeType == ENIVT_STRING_ID)
 			size = static_cast<double>(StringManipulation::GetNumUTF8Characters(value.nodeValue.stringID->string));
 		else if(value.nodeType == ENIVT_CODE && value.nodeValue.code != nullptr)
 			size = static_cast<double>(value.nodeValue.code->GetNumChildNodes());

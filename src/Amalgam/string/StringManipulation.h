@@ -8,7 +8,6 @@
 
 namespace StringManipulation
 {
-	//converts a number into a string quickly and accurately (more so than built-in C++ libraries)
 	std::string NumberToString(double value);
 	std::string NumberToString(size_t value);
 

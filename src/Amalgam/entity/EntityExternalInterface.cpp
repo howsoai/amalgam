@@ -300,7 +300,7 @@ void EntityExternalInterface::StoreEntity(std::string &handle, const EntityExter
 		auto [datap, lenp] = std::get<std::pair<void **, size_t *>>(source);
 		std::string &result = asset_params->resourceContents;
 		*datap = new char[result.size() + 1];
-		memcpy(*datap, result.c_str(), result.size() + 1);
+		std::memcpy(*datap, result.c_str(), result.size() + 1);
 		*lenp = result.size();
 	}
 }

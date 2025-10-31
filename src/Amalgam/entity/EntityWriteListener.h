@@ -18,7 +18,7 @@ public:
 	//if retain_writes is true, then the listener will store the writes, and GetWrites() will return the list of all writes accumulated
 	//if _pretty is true, then the listener will pretty print to filename
 	//if sort_keys is true, then the listener will print with keys sorted for assocs
-	//if transaction_file is not empty, then it will log all writes to that file, and then flush the file stream
+	//if transaction_file is not empty, then it takes ownership of the file, logging all writes and flushing the stream after each
 	EntityWriteListener(Entity *listening_entity, std::unique_ptr<std::ostream> &&transaction_file, bool retain_writes = false,
 		bool _pretty = false, bool sort_keys = false);
 

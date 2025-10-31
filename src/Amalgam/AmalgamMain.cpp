@@ -332,7 +332,8 @@ PLATFORM_MAIN_CONSOLE
 
 		if(write_log_filename != "")
 		{
-			EntityWriteListener *write_log = new EntityWriteListener(entity, false, false, false, write_log_filename);
+			std::unique_ptr<std::ostream> log_file = std::make_unique<std::ofstream>(write_log_filename, std::ios::binary);
+			EntityWriteListener *write_log = new EntityWriteListener(entity, std::move(log_file), false, false, false);
 			write_listeners.push_back(write_log);
 		}
 

@@ -1,7 +1,7 @@
 #pragma once
 
 //system headers:
-#include <fstream>
+#include <istream>
 #include <ostream>
 #include <string>
 #include <tuple>
@@ -12,8 +12,8 @@ namespace FileSupportCAML
 	//read the header from the stream
 	//if success: returns an empty string indicating no error, file version, and true
 	//if failure: returns error message, file version, and false
-	std::tuple<std::string, std::string, bool> ReadHeader(std::ifstream &stream, size_t &header_size);
+	std::tuple<std::string, std::string, bool> ReadHeader(std::istream &stream, size_t &header_size);
 
 	//write the header to the stream
-	bool WriteHeader(std::ofstream &stream);
+	bool WriteHeader(std::ostream &stream);
 };

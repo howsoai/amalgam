@@ -8,6 +8,7 @@
 
 //system headers:
 #include <string>
+#include <variant>
 #include <vector>
 
 /*
@@ -36,10 +37,14 @@ public:
 		std::string version;
 	};
 
-	LoadEntityStatus LoadEntity(std::string &handle, std::string &path,
+	//load/store destinations:
+	using LoadSource = std::variant<std::string, std::pair<void *, size_t>>;
+	using StoreSource = std::variant<std::string, std::pair<void **, size_t *>>;
+
+	LoadEntityStatus LoadEntity(std::string &handle, const LoadSource &source,
 		std::string file_type, bool persistent, std::string_view json_file_params,
 		std::string &write_log_filename, std::string &print_log_filename,
-		std::string rand_seed = std::string(""));
+		const std::vector<std::string> &entity_path, std::string rand_seed = std::string(""));
 	LoadEntityStatus VerifyEntity(std::string &path);
 
 	std::string GetEntityPermissions(std::string &handle);
@@ -49,8 +54,9 @@ public:
 		std::string file_type, bool persistent, std::string_view json_file_params,
 		std::string &write_log_filename, std::string &print_log_filename);
 
-	void StoreEntity(std::string &handle, std::string &path,
-		std::string file_type, bool persistent, std::string_view json_file_params);
+	void StoreEntity(std::string &handle, const StoreSource &source,
+		std::string file_type, bool persistent, std::string_view json_file_params,
+		const std::vector<std::string> &entity_path);
 
 	void ExecuteEntity(std::string &handle, std::string &label);
 

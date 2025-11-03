@@ -740,7 +740,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	}
 
 	//if symmetric nominal, only need to compute the exact match
-	if(r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index))
+	if(feature_attribs.IsFeatureSymmetricNominal())
 	{
 		if(value.nodeType == ENIVT_NUMBER)
 		{
@@ -750,7 +750,11 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		{
 			AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, enabled_indices, value.nodeValue.stringID, query_feature_index, *column);
 		}
-		else if(value.nodeType == ENIVT_CODE || value.nodeType == ENIVT_BOOL)
+		else if(value.nodeType == ENIVT_BOOL)
+		{
+			//TODO 24510: implement this
+		}
+		else if(value.nodeType == ENIVT_CODE)
 		{
 			//compute partial sums for all code of matching size
 			size_t code_size = EvaluableNode::GetDeepSize(value.nodeValue.code);
@@ -769,6 +773,10 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		double nonmatch_dist_term = feature_attribs.nominalSymmetricNonMatchDistanceTerm;
 		feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
 		return nonmatch_dist_term;
+	}
+	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
+	{
+		//TODO 24510: implement this
 	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
 	{
@@ -1117,7 +1125,7 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralized
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
 			//if the value is not a null, need to accumulate null distance terms if it's a symmetric nominal feature,
 			// because then there's only one value left, or if the nulls are closer than what has already been considered
-			if(r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(i)
+			if(feature_attribs.IsFeatureSymmetricNominal()
 				|| feature_attribs.knownToUnknownDistanceTerm.deviation <= next_closest_distance)
 			{
 				double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(i);
@@ -1277,7 +1285,9 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 
 	if(feature_attribs.IsFeatureNominal() || complex_comparison)
 	{
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_BOOL;
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING;

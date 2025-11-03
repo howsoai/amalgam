@@ -109,10 +109,10 @@ namespace EntityQueryBuilder
 	//populates deviation data for feature_attribs from deviation_node given that deviation_node is known to be an ENT_ASSOC
 	inline void PopulateFeatureDeviationNominalValuesMatrixData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
 	{
-		auto &number_sdm = feature_attribs.nominalNumberSparseDeviationMatrix;
 		auto &string_sdm = feature_attribs.nominalStringSparseDeviationMatrix;
-		number_sdm.clear();
+		auto &number_sdm = feature_attribs.nominalNumberSparseDeviationMatrix;
 		string_sdm.clear();
+		number_sdm.clear();
 
 		auto &mcn = deviation_node->GetMappedChildNodesReference();
 		if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
@@ -128,7 +128,8 @@ namespace EntityQueryBuilder
 				PopulateFeatureDeviationNominalValueData(number_sdm.back().second, cn.second);
 			}
 		}
-		else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
+		else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL
+			|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 			|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
 			string_sdm.reserve(mcn.size());
@@ -346,7 +347,8 @@ namespace EntityQueryBuilder
 					if(found)
 					{
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
-						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_number))					feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER;
+						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_bool))						feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_number))				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER;
 						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_string))				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
 						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_code))					feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;
 						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number))			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
@@ -367,6 +369,7 @@ namespace EntityQueryBuilder
 					//get attributes based on feature type
 					switch(dist_eval.featureAttribs[i].featureType)
 					{
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
@@ -399,6 +402,7 @@ namespace EntityQueryBuilder
 					//get deviations based on feature type
 					switch(dist_eval.featureAttribs[i].featureType)
 					{
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:

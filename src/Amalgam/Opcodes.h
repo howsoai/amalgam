@@ -738,6 +738,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_system,
 
 	//distance types
+	ENBISI_nominal_bool,
 	ENBISI_nominal_number,
 	ENBISI_nominal_string,
 	ENBISI_nominal_code,

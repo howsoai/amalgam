@@ -982,6 +982,14 @@ protected:
 					query_feature_index);
 		}
 
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_BOOL:
+		{
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &column_data = columnData[feature_attribs.featureIndex];
+			//TODO 24510: finish this
+			return 0.0;
+		}
+
 		default:
 			//RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING
 			//or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE

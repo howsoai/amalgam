@@ -200,6 +200,7 @@ public:
 	{
 		switch(feature_attribs.featureType)
 		{
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
@@ -544,6 +545,13 @@ public:
 
 	//indices of entities with no value for this feature
 	EfficientIntegerSet invalidIndices;
+
+	//TODO 24510: implement this
+	//indices of entities with a bool value for this feature
+	EfficientIntegerSet boolIndices;
+
+	//for all indices that are boolean, contains the truth value of each
+	EfficientIntegerSet boolIndicesValues;
 
 	//indices of entities with a number value for this feature
 	EfficientIntegerSet numberIndices;

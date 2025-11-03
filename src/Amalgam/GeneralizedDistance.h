@@ -21,6 +21,8 @@ public:
 	// align at 32-bits in order to play nice with data alignment where it is used
 	enum FeatureDifferenceType : uint32_t
 	{
+		//nominal based on boolean equivalence
+		FDT_NOMINAL_BOOL,
 		//nominal based on numeric equivalence
 		FDT_NOMINAL_NUMBER,
 		//nominal based on string equivalence
@@ -180,7 +182,6 @@ public:
 		double deviationReciprocal;
 		double deviationReciprocalNegative;
 		double deviationTimesThree;
-
 
 		//sparse deviation matrix if the nominal is a string
 		//store as a vector of pairs instead of a map because either only one value will be looked up once,
@@ -402,12 +403,6 @@ public:
 		return featureAttribs[feature_index].DoesFeatureHaveDeviation();
 	}
 
-	//returns true if the feature is a nominal that only has one difference value for match and one for nonmatch
-	__forceinline bool IsFeatureSymmetricNominal(size_t feature_index)
-	{
-		return featureAttribs[feature_index].IsFeatureSymmetricNominal();
-	}
-
 	//computes the exponentiation of d to 1/p
 	__forceinline double InverseExponentiateDistance(double d, bool high_accuracy)
 	{
@@ -486,7 +481,7 @@ public:
 		bool are_equal = EvaluableNodeImmediateValue::AreEqual(a_type, a, b_type, b);
 
 		auto &feature_attribs = featureAttribs[index];
-		if(IsFeatureSymmetricNominal(index))
+		if(feature_attribs.IsFeatureSymmetricNominal())
 		{
 			//if both were null, that was caught above, so one must be known
 			if(a_is_null || b_is_null)
@@ -892,7 +887,8 @@ public:
 		if(a_type == ENIVT_NULL || b_type == ENIVT_NULL)
 			return std::numeric_limits<double>::quiet_NaN();
 
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL
+			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
@@ -1120,6 +1116,8 @@ public:
 		EFDT_NUMERIC_INTERNED_PRECOMPUTED,
 		//continuous or nominal string precomputed, may contain nonnumeric data
 		EFDT_STRING_INTERNED_PRECOMPUTED,
+		//nominal compared to a bool value where nominals may not be symmetric
+		EFDT_NOMINAL_BOOL,
 		//nominal compared to a string value where nominals may not be symmetric
 		EFDT_NOMINAL_STRING,
 		//nominal compared to a number value where nominals may not be symmetric

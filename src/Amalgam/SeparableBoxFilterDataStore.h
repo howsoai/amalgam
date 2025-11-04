@@ -974,6 +974,27 @@ protected:
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
 
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_BOOL_PRECOMPUTED:
+		{
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &column_data = columnData[feature_attribs.featureIndex];
+			auto &target_value = r_dist_eval.featureData[query_feature_index].targetValue;
+
+			if(target_value.nodeType == ENIVT_BOOL)
+			{
+				//since this method only involves nonmatches, only check the nonmatching bool values,
+				//and the interned indices match the boolean value of 0->false, 1->true
+				if(target_value.nodeValue.boolValue && column_data->falseBoolIndices.contains(entity_index))
+					return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
+						0, query_feature_index);
+				else if(!target_value.nodeValue.boolValue && column_data->trueBoolIndices.contains(entity_index))
+					return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
+						1, query_feature_index);
+			}
+			
+			return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
+		}
+
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];

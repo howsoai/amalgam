@@ -776,7 +776,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
 	{
-		//TODO 24510: implement this
+		//TODO 24510: implement this and check if can call SetPrecomputedRemainingIdenticalDistanceTerm based on terms that aren't true/false
 	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
 	{
@@ -1281,7 +1281,13 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, column_data->internedStringIdValues.internedIndexToValue);
 			return;
 		}
-		//TODO 24510: implement this for bool
+		else if(position_value_type == ENIVT_BOOL)
+		{
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_BOOL_PRECOMPUTED;
+
+			r_dist_eval.ComputeAndStoreInternedDistanceTermsForBool(query_feature_index);
+			return;
+		}
 	}
 
 	if(feature_attribs.IsFeatureNominal() || complex_comparison)

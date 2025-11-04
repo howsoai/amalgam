@@ -1134,6 +1134,8 @@ public:
 		EFDT_NUMERIC_INTERNED_PRECOMPUTED,
 		//continuous or nominal string precomputed, may contain nonnumeric data
 		EFDT_STRING_INTERNED_PRECOMPUTED,
+		//bool precomputed, may contain other data
+		EFDT_BOOL_PRECOMPUTED,
 		//nominal compared to a bool value where nominals may not be symmetric
 		EFDT_NOMINAL_BOOL,
 		//nominal compared to a string value where nominals may not be symmetric
@@ -1311,6 +1313,41 @@ public:
 						feature_data.targetValue.nodeValue, interned_values[i], immediate_type, immediate_type,
 						index, high_accuracy_interned_values);
 			}
+		}
+	}
+
+	inline void ComputeAndStoreInternedDistanceTermsForBool(size_t index)
+	{
+		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
+		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
+
+		//make sure there's room for the interned index
+		if(featureData.size() <= index)
+			featureData.resize(index + 1);
+
+		auto &feature_data = featureData[index];
+
+		feature_data.internedDistanceTerms.resize(3);
+
+		auto &feature_attribs = distEvaluator->featureAttribs[index];
+
+		bool high_accuracy_interned_values = (compute_accurate && !compute_approximate);
+
+		if(feature_data.targetValue.IsNull())
+		{
+			double k_to_unk = feature_attribs.knownToUnknownDistanceTerm.distanceTerm;
+			for(size_t i = 0; i < 2; i++)
+				feature_data.internedDistanceTerms[i] = k_to_unk;
+		}
+		else
+		{
+			feature_data.internedDistanceTerms[0] = distEvaluator->ComputeDistanceTermRegular(
+						feature_data.targetValue.nodeValue, false, ENIVT_BOOL, ENIVT_BOOL,
+						index, high_accuracy_interned_values);
+
+			feature_data.internedDistanceTerms[1] = distEvaluator->ComputeDistanceTermRegular(
+						feature_data.targetValue.nodeValue, true, ENIVT_BOOL, ENIVT_BOOL,
+						index, high_accuracy_interned_values);
 		}
 	}
 
@@ -1562,6 +1599,7 @@ public:
 		//the distance term for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
 		double precomputedRemainingIdenticalDistanceTerm;
 
+		//interned distance values, assumes that term 0 is null
 		std::vector<double> internedDistanceTerms;
 
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix

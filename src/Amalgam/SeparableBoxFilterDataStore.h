@@ -985,11 +985,12 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 
-			//TODO 24510: revisit this
 			if(column_data->trueBoolIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
-					GetValue(entity_index, feature_attribs.featureIndex).boolValue, ENIVT_BOOL,
-					query_feature_index);
+					true, ENIVT_BOOL, query_feature_index);
+			else if(column_data->falseBoolIndices.contains(entity_index))
+				return r_dist_eval.ComputeDistanceTermNominal(
+					false, ENIVT_BOOL, query_feature_index);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}

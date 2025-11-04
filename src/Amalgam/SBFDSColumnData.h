@@ -310,6 +310,14 @@ public:
 			//only want nulls that are not numbers
 			nullIndices.UnionTo(out);
 		}
+		else if(value_type == ENIVT_BOOL)
+		{
+			if(value.boolValue)
+				out.InsertInBatch(boolIndicesValues);
+			//else
+			//	out.InsertNotInBatch
+			//TODO 24510: implement this for bool
+		}
 		else if(value_type == ENIVT_NUMBER)
 		{
 			auto value_entry = sortedNumberValueEntries.find(value.number);
@@ -322,7 +330,6 @@ public:
 			if(id_entry != end(stringIdValueEntries))
 				out.InsertInBatch(id_entry->second->indicesWithValue);
 		}
-		//TODO 24510: implement this for bool
 	}
 
 	//fills out with the num_to_find min (if findMax == false) or max (find_max == true) entities in the database

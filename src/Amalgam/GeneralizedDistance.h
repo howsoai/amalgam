@@ -486,7 +486,7 @@ public:
 			//if both were null, that was caught above, so one must be known
 			if(a_is_null || b_is_null)
 				return ComputeDistanceTermKnownToUnknown(index);
-			
+
 			return are_equal ? feature_attribs.nominalSymmetricMatchDistanceTerm
 				: feature_attribs.nominalSymmetricNonMatchDistanceTerm;
 		}
@@ -494,12 +494,29 @@ public:
 		double prob_class_given_match = std::numeric_limits<double>::quiet_NaN();
 		double prob_class_given_nonmatch = std::numeric_limits<double>::quiet_NaN();
 		if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
+		{
 			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
 				feature_attribs.nominalNumberSparseDeviationMatrix, index, a.number, b.number);
+		}
 		else if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
+		{
 			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
 				feature_attribs.nominalStringSparseDeviationMatrix, index, a.stringID, b.stringID);
-		//TODO 24510: implement what is needed for bool
+		}
+		else if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+		{
+			StringInternPool::StringID a_sid = EvaluableNode::BoolToStringID(a.boolValue, true);
+			StringInternPool::StringID b_sid = EvaluableNode::BoolToStringID(b.boolValue, true);
+			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
+				feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);
+		}
+		else if(a_type == ENIVT_CODE && b_type == ENIVT_CODE)
+		{
+			StringInternPool::StringID a_sid = EvaluableNode::ToStringIDIfExists(a.code, true);
+			StringInternPool::StringID b_sid = EvaluableNode::ToStringIDIfExists(b.code, true);
+			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
+				feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);
+		}
 
 		if(!FastIsNaN(prob_class_given_match))
 		{
@@ -1283,7 +1300,8 @@ public:
 				immediate_type = ENIVT_NUMBER;
 			else if constexpr(std::is_same<ValueType, StringInternPool::StringID>::value)
 				immediate_type = ENIVT_STRING_ID;
-			//TODO 24510: implement what is needed for bool
+			else if constexpr(std::is_same<ValueType, bool>::value)
+				immediate_type = ENIVT_BOOL;
 
 			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
 			{
@@ -1337,7 +1355,13 @@ public:
 		}
 		else if(other_type == ENIVT_BOOL)
 		{
-			//TODO 24510: finish this
+			StringInternPool::StringID other_sid = EvaluableNode::BoolToStringID(other_value.boolValue, true);
+			auto dist_term_entry = feature_data.nominalStringDistanceTerms.find(other_sid);
+			if(dist_term_entry != end(feature_data.nominalStringDistanceTerms))
+				return dist_term_entry->second;
+
+			if(other_value.boolValue == feature_data.targetValue.GetValueAsBoolean())
+				return feature_data.defaultNominalMatchDistanceTerm;
 		}
 		
 		if(EvaluableNodeImmediateValue::IsNull(other_type, other_value))
@@ -1440,7 +1464,18 @@ public:
 				}
 			}
 		}
-		//TODO 24510: implement what is needed for bool
+		if(feature_data.targetValue.nodeType == ENIVT_BOOL)
+		{
+			auto value_sid = feature_data.targetValue.GetValueAsStringIDIfExists(true);
+			for(auto &entry : feature_data.nominalStringDistanceTerms)
+			{
+				if(entry.first != value_sid)
+				{
+					if(entry.second < next_smallest_dist_term)
+						next_smallest_dist_term = entry.second;
+				}
+			}
+		}
 
 		//use defaultNominalNonMatchDistanceTerm if it isn't NaN and less than next_smallest_dist_term
 		if(feature_data.defaultNominalNonMatchDistanceTerm < next_smallest_dist_term)

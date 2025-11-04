@@ -499,6 +499,7 @@ public:
 		else if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
 			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
 				feature_attribs.nominalStringSparseDeviationMatrix, index, a.stringID, b.stringID);
+		//TODO 24510: implement what is needed for bool
 
 		if(!FastIsNaN(prob_class_given_match))
 		{
@@ -1228,6 +1229,7 @@ public:
 					feature_data.nominalStringDistanceTerms))
 				return;
 		}
+		//TODO 24510: implement what is needed for bool
 
 		//made it here, so didn't find anything in the SDM.  use fallback for default nominal terms
 		feature_data.defaultNominalMatchDistanceTerm
@@ -1281,6 +1283,7 @@ public:
 				immediate_type = ENIVT_NUMBER;
 			else if constexpr(std::is_same<ValueType, StringInternPool::StringID>::value)
 				immediate_type = ENIVT_STRING_ID;
+			//TODO 24510: implement what is needed for bool
 
 			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
 			{
@@ -1332,7 +1335,11 @@ public:
 			if(other_value.stringID == feature_data.targetValue.GetValueAsStringIDIfExists())
 				return feature_data.defaultNominalMatchDistanceTerm;
 		}
-
+		else if(other_type == ENIVT_BOOL)
+		{
+			//TODO 24510: finish this
+		}
+		
 		if(EvaluableNodeImmediateValue::IsNull(other_type, other_value))
 		{
 			if(feature_data.targetValue.IsNull())
@@ -1433,6 +1440,7 @@ public:
 				}
 			}
 		}
+		//TODO 24510: implement what is needed for bool
 
 		//use defaultNominalNonMatchDistanceTerm if it isn't NaN and less than next_smallest_dist_term
 		if(feature_data.defaultNominalNonMatchDistanceTerm < next_smallest_dist_term)

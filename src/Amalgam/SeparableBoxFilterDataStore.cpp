@@ -1281,6 +1281,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedStringIdValues.internedIndexToValue);
 			return;
 		}
+		//TODO 24510: implement this for bool
 	}
 
 	if(feature_attribs.IsFeatureNominal() || complex_comparison)

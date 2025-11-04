@@ -81,6 +81,10 @@ public:
 
 		if(nullIndices.contains(index))
 			return ENIVT_NULL;
+
+		if(boolIndices.contains(index))
+			return ENIVT_BOOL;
+
 		if(invalidIndices.contains(index))
 			return ENIVT_NOT_EXIST;
 		return ENIVT_CODE;
@@ -182,16 +186,27 @@ public:
 		if(nullIndices.size() > 0)
 			null_count = 1;
 
+		size_t num_bool_values = 0;
+		size_t num_bool_indices = boolIndices.size();
+		if(num_bool_indices > 0)
+		{
+			num_bool_values++;
+			size_t num_true_values = boolIndicesValues.size();
+			//if there's at least one true and one false, count both
+			if(num_true_values != 0 && num_true_values != boolIndicesValues.size())
+				num_bool_values++;
+		}
+
 		//add up unique number and string values,
 		// and use a heuristic for judging how many unique code values there are
-		return null_count + sortedNumberValueEntries.size() + stringIdIndices.size()
+		return null_count + num_bool_values + sortedNumberValueEntries.size() + stringIdIndices.size()
 			+ (valueCodeSizeToIndices.size() + codeIndices.size()) / 2;
 	}
 
 	//returns the number of valid values (exist and not null) in the column
 	inline size_t GetNumValidDataElements()
 	{
-		return numberIndices.size() + stringIdIndices.size() + codeIndices.size();
+		return boolIndices.size() + numberIndices.size() + stringIdIndices.size() + codeIndices.size();
 	}
 
 	//returns the maximum difference between value and any other value for this column
@@ -307,6 +322,7 @@ public:
 			if(id_entry != end(stringIdValueEntries))
 				out.InsertInBatch(id_entry->second->indicesWithValue);
 		}
+		//TODO 24510: implement this for bool
 	}
 
 	//fills out with the num_to_find min (if findMax == false) or max (find_max == true) entities in the database
@@ -444,6 +460,13 @@ public:
 				assert(entity_index < max_num_entities);
 		}
 
+		//ensure all bools are valid
+		for(auto entity_index : boolIndices)
+		{
+			bool is_true = boolIndicesValues.contains(entity_index);
+			assert(is_true == valueEntries[entity_index].boolValue);
+		}
+
 		//ensure all numbers are valid
 		for(auto entity_index : numberIndices)
 		{
@@ -546,7 +569,6 @@ public:
 	//indices of entities with no value for this feature
 	EfficientIntegerSet invalidIndices;
 
-	//TODO 24510: implement this
 	//indices of entities with a bool value for this feature
 	EfficientIntegerSet boolIndices;
 

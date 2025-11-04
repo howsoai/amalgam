@@ -763,7 +763,7 @@ protected:
 
 	//accumulates the partial sums for the specified value
 	// returns the distance term evaluated, or 0.0 if value was not found
-	inline double AccumulatePartialSumsForNominalNumberValueIfExists(
+	inline double AccumulatePartialSumsForNominalNumberValue(
 		RepeatedGeneralizedDistanceEvaluator &r_dist_eval, BitArrayIntegerSet &enabled_indices,
 		double value, size_t query_feature_index, SBFDSColumnData &column)
 	{
@@ -780,7 +780,7 @@ protected:
 
 	//accumulates the partial sums for the specified value
 	// returns the distance term evaluated, or 0.0 if value was not found
-	inline double AccumulatePartialSumsForNominalStringIdValueIfExists(
+	inline double AccumulatePartialSumsForNominalStringIdValue(
 		RepeatedGeneralizedDistanceEvaluator &r_dist_eval, BitArrayIntegerSet &enabled_indices,
 		StringInternPool::StringID value, size_t query_feature_index, SBFDSColumnData &column)
 	{
@@ -789,6 +789,24 @@ protected:
 		{
 			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_STRING_ID, query_feature_index);
 			AccumulatePartialSums(enabled_indices, value_found->second->indicesWithValue, query_feature_index, term);
+			return term;
+		}
+
+		return 0.0;
+	}
+
+	//accumulates the partial sums for the specified value
+	// returns the distance term evaluated, or 0.0 if value was not found
+	inline double AccumulatePartialSumsForBoolValue(
+		RepeatedGeneralizedDistanceEvaluator &r_dist_eval, BitArrayIntegerSet &enabled_indices,
+		bool value, size_t query_feature_index, SBFDSColumnData &column)
+	{
+		if( (value && column.trueBoolIndices.size() > 0)
+			|| (!value && column.falseBoolIndices.size() > 0) )
+		{
+			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_BOOL, query_feature_index);
+			auto &indices = (value ? column.trueBoolIndices : column.falseBoolIndices);
+			AccumulatePartialSums(enabled_indices, indices, query_feature_index, term);
 			return term;
 		}
 

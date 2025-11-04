@@ -1247,6 +1247,14 @@ public:
 				return;
 		}
 		//TODO 24510: implement what is needed for bool
+		/*else if(feature_data.targetValue.nodeType == ENIVT_BOOL)
+		{
+			if(ComputeAndStoreNominalDistanceTermsForSDM(
+				distEvaluator->featureAttribs[index].nominalStringSparseDeviationMatrix,
+				index, ENIVT_BOOL, feature_data.targetValue.nodeValue.boolValue,
+				feature_data.nominalStringDistanceTerms))
+				return;
+		}*/
 
 		//made it here, so didn't find anything in the SDM.  use fallback for default nominal terms
 		feature_data.defaultNominalMatchDistanceTerm
@@ -1258,7 +1266,7 @@ public:
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
 	template<typename ValueType>
-	inline void ComputeAndStoreInternedDistanceTerms(size_t index, std::vector<ValueType> *interned_values)
+	inline void ComputeAndStoreInternedDistanceTerms(size_t index, std::vector<ValueType> &interned_values)
 	{
 		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
 		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
@@ -1269,13 +1277,7 @@ public:
 
 		auto &feature_data = featureData[index];
 
-		if(interned_values == nullptr)
-		{
-			feature_data.internedDistanceTerms.clear();
-			return;
-		}
-
-		feature_data.internedDistanceTerms.resize(interned_values->size());
+		feature_data.internedDistanceTerms.resize(interned_values.size());
 
 		auto &feature_attribs = distEvaluator->featureAttribs[index];
 
@@ -1306,7 +1308,7 @@ public:
 			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
 			{
 				feature_data.internedDistanceTerms[i] = distEvaluator->ComputeDistanceTermRegular(
-						feature_data.targetValue.nodeValue, (*interned_values)[i], immediate_type, immediate_type,
+						feature_data.targetValue.nodeValue, interned_values[i], immediate_type, immediate_type,
 						index, high_accuracy_interned_values);
 			}
 		}

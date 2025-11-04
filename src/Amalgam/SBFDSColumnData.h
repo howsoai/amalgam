@@ -82,7 +82,7 @@ public:
 		if(nullIndices.contains(index))
 			return ENIVT_NULL;
 
-		if(boolIndices.contains(index))
+		if(falseBoolIndices.contains(index) || trueBoolIndices.contains(index))
 			return ENIVT_BOOL;
 
 		if(invalidIndices.contains(index))
@@ -186,27 +186,18 @@ public:
 		if(nullIndices.size() > 0)
 			null_count = 1;
 
-		size_t num_bool_values = 0;
-		size_t num_bool_indices = boolIndices.size();
-		if(num_bool_indices > 0)
-		{
-			num_bool_values++;
-			size_t num_true_values = boolIndicesValues.size();
-			//if there's at least one true and one false, count both
-			if(num_true_values != 0 && num_true_values != boolIndicesValues.size())
-				num_bool_values++;
-		}
-
-		//add up unique number and string values,
+		//add up unique bool, number, and string values,
 		// and use a heuristic for judging how many unique code values there are
-		return null_count + num_bool_values + sortedNumberValueEntries.size() + stringIdIndices.size()
+		return null_count + falseBoolIndices.size() + trueBoolIndices.size()
+			+ sortedNumberValueEntries.size() + stringIdIndices.size()
 			+ (valueCodeSizeToIndices.size() + codeIndices.size()) / 2;
 	}
 
 	//returns the number of valid values (exist and not null) in the column
 	inline size_t GetNumValidDataElements()
 	{
-		return boolIndices.size() + numberIndices.size() + stringIdIndices.size() + codeIndices.size();
+		return falseBoolIndices.size() + trueBoolIndices.size()
+			+ numberIndices.size() + stringIdIndices.size() + codeIndices.size();
 	}
 
 	//returns the maximum difference between value and any other value for this column
@@ -313,10 +304,9 @@ public:
 		else if(value_type == ENIVT_BOOL)
 		{
 			if(value.boolValue)
-				out.InsertInBatch(boolIndicesValues);
-			//else
-			//	out.InsertNotInBatch
-			//TODO 24510: implement this for bool
+				trueBoolIndices.UnionTo(out);
+			else
+				falseBoolIndices.UnionTo(out);
 		}
 		else if(value_type == ENIVT_NUMBER)
 		{
@@ -468,10 +458,16 @@ public:
 		}
 
 		//ensure all bools are valid
-		for(auto entity_index : boolIndices)
+		for(auto entity_index : falseBoolIndices)
 		{
-			bool is_true = boolIndicesValues.contains(entity_index);
-			assert(is_true == valueEntries[entity_index].boolValue);
+			assert(!valueEntries[entity_index].boolValue);
+			assert(!trueBoolIndices.contains(entity_index));
+		}
+
+		for(auto entity_index : trueBoolIndices)
+		{
+			assert(valueEntries[entity_index].boolValue);
+			assert(!falseBoolIndices.contains(entity_index));
 		}
 
 		//ensure all numbers are valid
@@ -576,11 +572,11 @@ public:
 	//indices of entities with no value for this feature
 	EfficientIntegerSet invalidIndices;
 
-	//indices of entities with a bool value for this feature
-	EfficientIntegerSet boolIndices;
+	//indices of entities with a bool value of true for this feature
+	EfficientIntegerSet falseBoolIndices;
 
 	//for all indices that are boolean, contains the truth value of each
-	EfficientIntegerSet boolIndicesValues;
+	EfficientIntegerSet trueBoolIndices;
 
 	//indices of entities with a number value for this feature
 	EfficientIntegerSet numberIndices;

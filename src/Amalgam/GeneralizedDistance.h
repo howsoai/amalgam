@@ -1248,15 +1248,15 @@ public:
 					feature_data.nominalStringDistanceTerms))
 				return;
 		}
-		//TODO 24510: implement what is needed for bool
-		/*else if(feature_data.targetValue.nodeType == ENIVT_BOOL)
+		else if(feature_data.targetValue.nodeType == ENIVT_BOOL)
 		{
+			auto bool_value_sid = EvaluableNode::BoolToStringID(feature_data.targetValue.nodeValue.boolValue, true);
 			if(ComputeAndStoreNominalDistanceTermsForSDM(
-				distEvaluator->featureAttribs[index].nominalStringSparseDeviationMatrix,
-				index, ENIVT_BOOL, feature_data.targetValue.nodeValue.boolValue,
-				feature_data.nominalStringDistanceTerms))
+					distEvaluator->featureAttribs[index].nominalStringSparseDeviationMatrix,
+					index, ENIVT_STRING_ID, bool_value_sid,
+					feature_data.nominalStringDistanceTerms))
 				return;
-		}*/
+		}
 
 		//made it here, so didn't find anything in the SDM.  use fallback for default nominal terms
 		feature_data.defaultNominalMatchDistanceTerm

@@ -776,33 +776,37 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
 	{
+		bool comparison_value = value.nodeValue.boolValue;
 		//initialize to zero, because if don't find an exact match, but there are distance terms of
 		//0, then need to accumulate those later
-		double accumulated_term = 0.0;
+		double match_dist_term = 0.0;
 		if(value.nodeType == ENIVT_BOOL)
-			accumulated_term = AccumulatePartialSumsForBoolValue(
-				r_dist_eval, enabled_indices, value.nodeValue.boolValue, query_feature_index, *column);
+			match_dist_term = AccumulatePartialSumsForBoolValue(
+				r_dist_eval, enabled_indices, comparison_value, query_feature_index, *column);
 
-		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch(query_feature_index);
-		//if the next closest match is larger, no need to compute any more values
-		if(nonmatch_dist_term > accumulated_term)
-			return nonmatch_dist_term;
+		size_t num_true = column->trueBoolIndices.size();
+		size_t num_false = column->trueBoolIndices.size();
+		size_t num_non_bool = (numEntities - column->invalidIndices.size()) - (num_true + num_false);
+		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominal(!comparison_value, ENIVT_BOOL, query_feature_index);
 
-		//TODO 24510: implement this and check if can call SetPrecomputedRemainingIdenticalDistanceTerm based on terms that aren't true/false
-		/*		
-		//need to iterate over everything with the same distance term
-		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
-			feature_data.nominalStringDistanceTerms, accumulated_term,
-			[this, &value, &r_dist_eval, &enabled_indices, &column, query_feature_index](StringInternPool::StringID sid)
+		if(num_non_bool == 0)
 		{
-			//don't want to double-accumulate the exact match
-			if(sid != value.nodeValue.stringID)
-				AccumulatePartialSumsForNominalStringIdValue(
-					r_dist_eval, enabled_indices, value.nodeValue.stringID, query_feature_index, *column);
-		});
-		*/
+			feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
+			return nonmatch_dist_term;
+		}
 
-		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(nonmatch_dist_term, query_feature_index);
+		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
+
+		size_t num_opposite = (comparison_value ? num_false : num_true);
+		if(num_opposite < 2000 || known_unknown_term < nonmatch_dist_term)
+		{
+			AccumulatePartialSumsForBoolValue(r_dist_eval, enabled_indices, !comparison_value, query_feature_index, *column);
+
+			feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(known_unknown_term);
+			return known_unknown_term;
+		}
+
+		return std::min(nonmatch_dist_term, known_unknown_term);
 	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
 	{

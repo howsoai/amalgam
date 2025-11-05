@@ -3982,6 +3982,22 @@
       ))
    )
 
+   (create_entities "bool_test" (null))
+  (create_entities ["bool_test" "case1"] (zip_labels ["A" "B"] [.true 1]))
+  (create_entities ["bool_test" "case2"] (zip_labels ["A" "B"] [.true 2]))
+  (create_entities ["bool_test" "case3"] (zip_labels ["A" "B"] [.false 1]))
+
+  (print
+    "should print case1 and case2: "
+    (contained_entities "bool_test"
+      (query_equals "A" .true)
+    )
+    "should print .true: "
+    (compute_on_contained_entities "bool_test"
+      (query_mode "A" (null))
+    )
+  )
+
    (print "--accuracy tests--\n")
    (print (generalized_distance
 		(list 1	2	1	100	1	50)

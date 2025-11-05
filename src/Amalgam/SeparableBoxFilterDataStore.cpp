@@ -777,11 +777,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
 	{
 		bool comparison_value = value.nodeValue.boolValue;
-		//initialize to zero, because if don't find an exact match, but there are distance terms of
-		//0, then need to accumulate those later
-		double match_dist_term = 0.0;
 		if(value.nodeType == ENIVT_BOOL)
-			match_dist_term = AccumulatePartialSumsForBoolValue(
+			AccumulatePartialSumsForBoolValue(
 				r_dist_eval, enabled_indices, comparison_value, query_feature_index, *column);
 
 		size_t num_true = column->trueBoolIndices.size();

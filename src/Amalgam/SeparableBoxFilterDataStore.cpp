@@ -776,7 +776,33 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
 	{
+		//initialize to zero, because if don't find an exact match, but there are distance terms of
+		//0, then need to accumulate those later
+		double accumulated_term = 0.0;
+		if(value.nodeType == ENIVT_BOOL)
+			accumulated_term = AccumulatePartialSumsForBoolValue(
+				r_dist_eval, enabled_indices, value.nodeValue.boolValue, query_feature_index, *column);
+
+		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch(query_feature_index);
+		//if the next closest match is larger, no need to compute any more values
+		if(nonmatch_dist_term > accumulated_term)
+			return nonmatch_dist_term;
+
 		//TODO 24510: implement this and check if can call SetPrecomputedRemainingIdenticalDistanceTerm based on terms that aren't true/false
+		/*		
+		//need to iterate over everything with the same distance term
+		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
+			feature_data.nominalStringDistanceTerms, accumulated_term,
+			[this, &value, &r_dist_eval, &enabled_indices, &column, query_feature_index](StringInternPool::StringID sid)
+		{
+			//don't want to double-accumulate the exact match
+			if(sid != value.nodeValue.stringID)
+				AccumulatePartialSumsForNominalStringIdValue(
+					r_dist_eval, enabled_indices, value.nodeValue.stringID, query_feature_index, *column);
+		});
+		*/
+
+		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(nonmatch_dist_term, query_feature_index);
 	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
 	{

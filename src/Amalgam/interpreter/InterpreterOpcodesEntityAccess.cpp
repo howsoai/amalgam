@@ -301,7 +301,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			#endif
 
 			target_entity->CollectGarbageWithEntityWriteReference();
-			
+
 			#ifdef AMALGAM_MEMORY_INTEGRITY
 				VerifyEvaluableNodeIntegrity();
 			#endif
@@ -452,7 +452,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
 	if(ocn.size() > 2)
 		args = InterpretNodeForImmediateUse(ocn[2]);
-	
+
 	auto node_stack = CreateOpcodeStackStateSaver(args);
 
 	//current pointer to write listeners
@@ -465,7 +465,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		// keep the copying here in this if statement so don't need to make copies when not calling ENT_CALL_ENTITY_GET_CHANGES
 		if(writeListeners != nullptr)
 			get_changes_write_listeners = *writeListeners;
-		get_changes_write_listeners.push_back(new EntityWriteListener(curEntity, true));
+		get_changes_write_listeners.push_back(new EntityWriteListener(curEntity, std::unique_ptr<std::ostream>(), true));
 		cur_write_listeners = &get_changes_write_listeners;
 	}
 

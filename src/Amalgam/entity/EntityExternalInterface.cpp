@@ -29,11 +29,42 @@ void EntityExternalInterface::LoadEntityStatus::SetStatus(bool loaded_in, std::s
 	version = std::move(version_in);
 }
 
-EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path,
+EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, const EntityExternalInterface::LoadSource &source,
 	std::string file_type, bool persistent, std::string_view json_file_params,
-	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
+	std::string &write_log_filename, std::string &print_log_filename, const std::vector<std::string> &entity_path, std::string rand_seed)
 {
 	LoadEntityStatus status;
+	// If loading into a sub-entity:
+	// The root entity and its container
+	EntityListenerBundleReadReference bundle(nullptr);
+	// Existing entity to replace if id_sid is invalid, or existing parent container
+	EntityWriteReference container;
+	// If valid, container is the parent entity and this is the name of a new child
+	StringRef id_sid;
+
+	if(!entity_path.empty())
+	{
+		// We're trying to load into an embedded entity.  First find the existing root
+		bundle = FindEntityBundle(handle);
+		if(bundle == nullptr || bundle->entity == nullptr)
+		{
+			status.SetStatus(false, "root entity does not exist");
+			return status;
+		}
+		// Then look up the entity path within the root
+		EvaluableNodeReference id_path = CreateListOfStringsFromIteratorAndFunction(entity_path, &bundle->entity->evaluableNodeManager, [](const std::string &s) -> const std::string &{ return s; });
+		EntityWriteReference always_null;
+		std::tie(always_null, container) = TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(bundle->entity, id_path, &id_sid);
+		bundle->entity->evaluableNodeManager.FreeNodeTreeIfPossible(id_path);
+		if(container == nullptr)
+		{
+			// The parent node (that is, the path up to but not including the last element) doesn't exist.
+			status.SetStatus(false, "invalid entity path");
+			return status;
+		}
+		// If id_sid is invalid, then container is the node itself.
+		// If id_sid is valid, then container is the parent.
+	}
 
 	if(rand_seed.empty())
 	{
@@ -41,8 +72,15 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 		Platform_GenerateSecureRandomData(rand_seed.data(), RandomStream::randStateStringifiedSizeInBytes);
 	}
 
-	AssetManager::AssetParametersRef asset_params
-		= std::make_shared<AssetManager::AssetParameters>(path, file_type, true);
+	AssetManager::AssetParametersRef asset_params;
+	if(std::holds_alternative<LoadFromFile>(source))
+		asset_params = std::make_shared<AssetManager::AssetParameters>(std::get<LoadFromFile>(source).path, file_type, true);
+	else
+	{
+		asset_params = std::make_shared<AssetManager::AssetParameters>(std::string(), file_type, true);
+		asset_params->resourceContents = std::move(std::get<LoadFromMemory>(source).data);
+		asset_params->toMemory = true;
+	}
 
 	if(json_file_params.size() > 0)
 	{
@@ -68,11 +106,40 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 
 	if(!write_log_filename.empty())
 	{
-		EntityWriteListener *write_log = new EntityWriteListener(entity, false, false, false, write_log_filename);
+		std::unique_ptr<std::ostream> log_file = std::make_unique<std::ofstream>(write_log_filename, std::ios::binary);
+		EntityWriteListener *write_log = new EntityWriteListener(entity, std::move(log_file), false, false, false);
 		wl.push_back(write_log);
 	}
 
-	AddEntityBundle(handle, new EntityListenerBundle(entity, wl, pl));
+	if(container != nullptr)
+	{
+		// Add the entity at the place identified by the path.
+		// (This might be the exact path passed if its parent does not exist
+		// but the node itself does not, and also id_sid is valid; or it
+		// might be a new child of the path passed if that path does exist,
+		// and also id_sid is invalid.)
+		container->AddContainedEntityViaReference(entity, id_sid, &wl);
+		// Where did it actually get added?  Produce a new entity_path accordingly.
+		if(bundle != nullptr)
+		{
+			EvaluableNode *new_id_path = GetTraversalIDPathFromAToB(&bundle->entity->evaluableNodeManager, bundle->entity, entity);
+			if(new_id_path != nullptr)
+			{
+				if(new_id_path->GetType() == ENT_LIST)
+					for(EvaluableNode *id_path_item : new_id_path->GetOrderedChildNodes())
+						// They really should be ENT_STRING, but
+						status.entity_path.push_back(EvaluableNode::ToString(id_path_item));
+				else
+					// Either it's a string, or something else.  If it's "something else" we don't
+					// have a better answer than coercing to string.
+					status.entity_path.push_back(EvaluableNode::ToString(new_id_path));
+				bundle->entity->evaluableNodeManager.FreeNodeTree(new_id_path);
+			}
+		}
+	}
+	else
+		// new top-level entity
+		AddEntityBundle(handle, new EntityListenerBundle(entity, wl, pl));
 
 	return status;
 }
@@ -100,7 +167,7 @@ std::string EntityExternalInterface::GetEntityPermissions(std::string &handle)
 	auto permissions_en = permissions.GetPermissionsAsEvaluableNode(&entity->evaluableNodeManager);
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(permissions_en);
-	
+
 	entity->evaluableNodeManager.FreeNodeTree(permissions_en);
 	if(converted)
 		return result;
@@ -161,7 +228,8 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 
 	if(!write_log_filename.empty())
 	{
-		EntityWriteListener *write_log = new EntityWriteListener(entity, false, false, false, write_log_filename);
+		std::unique_ptr<std::ostream> log_file = std::make_unique<std::ofstream>(write_log_filename, std::ios::binary);
+		EntityWriteListener *write_log = new EntityWriteListener(entity, std::move(log_file), false, false, false);
 		wl.push_back(write_log);
 	}
 
@@ -173,17 +241,36 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 	return true;
 }
 
-void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path,
-	std::string file_type, bool persistent, std::string_view json_file_params)
+void EntityExternalInterface::StoreEntity(std::string &handle, const EntityExternalInterface::StoreSource &source,
+	std::string file_type, bool persistent, std::string_view json_file_params, const std::vector<std::string> &entity_path)
 {
 	auto bundle = FindEntityBundle(handle);
 	if(bundle == nullptr || bundle->entity == nullptr)
 		return;
 
 	EntityReadReference entity(bundle->entity);
+	if(entity_path.empty())
+		entity = bundle->entity;
+	else
+	{
+		// We're actually working on an embedded entity; retrieve it.
+		EvaluableNodeReference id_path = CreateListOfStringsFromIteratorAndFunction(entity_path, &bundle->entity->evaluableNodeManager, [](const std::string &s) -> const std::string &{ return s; });
+		entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(bundle->entity, id_path);
+		bundle->entity->evaluableNodeManager.FreeNodeTreeIfPossible(id_path);
+		if(entity == nullptr)
+			// ...didn't find it.
+			return;
+	}
 
-	AssetManager::AssetParametersRef asset_params
-		= std::make_shared<AssetManager::AssetParameters>(path, file_type, true);
+	AssetManager::AssetParametersRef asset_params;
+	if(std::holds_alternative<StoreToFile>(source))
+		asset_params = std::make_shared<AssetManager::AssetParameters>(std::get<StoreToFile>(source).path, file_type, true);
+	else
+	{
+		asset_params = std::make_shared<AssetManager::AssetParameters>(std::string(), file_type, true);
+		asset_params->flatten = true;
+		asset_params->toMemory = true;
+	}
 
 	if(json_file_params.size() > 0)
 	{
@@ -198,6 +285,8 @@ void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path
 	asset_params->UpdateResources();
 
 	asset_manager.StoreEntityToResource(entity, asset_params, true, persistent);
+	if(std::holds_alternative<StoreToMemory>(source))
+		std::get<StoreToMemory>(source).data.assign(std::move(asset_params->resourceContents));
 }
 
 void EntityExternalInterface::ExecuteEntity(std::string &handle, std::string &label)
@@ -299,8 +388,8 @@ std::pair<std::string, std::string> EntityExternalInterface::ExecuteEntityJSONLo
 	auto bundle = FindEntityBundle(handle);
 	if(bundle == nullptr)
 		return std::pair("", "");
-	
-	EntityWriteListener logger(bundle->entity, true);
+
+	EntityWriteListener logger(bundle->entity, std::unique_ptr<std::ostream>(), true);
 	std::vector<EntityWriteListener *> listeners(bundle->writeListeners);
 	listeners.push_back(&logger);
 

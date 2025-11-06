@@ -1026,12 +1026,12 @@
  (print (contains_value (list "a" 1 "b" 2 "c" 3 4 "d") "d") "\n")
  (print (contains_value (list "a" 1 "b" 2 "c" 3 4 "d") 100) "\n")
 
- (print (contains_value "hello world" ".*world"))
- (print (contains_value "abcdefg" "a.*g"))
- (print (contains_value "3.141" "[0-9]+\\.[0-9]+"))
- (print (contains_value "3.141" "\\d+\\.\\d+"))
- (print (contains_value "3.a141" "\\d+\\.\\d+"))
- (print (contains_value "abc\r\n123" "(.|\r)*\n.*"))
+ (print (contains_value "hello world" ".*world") "\n")
+ (print (contains_value "abcdefg" "a.*g") "\n")
+ (print (contains_value "3.141" "[0-9]+\\.[0-9]+") "\n")
+ (print (contains_value "3.141" "\\d+\\.\\d+") "\n")
+ (print (contains_value "3.a141" "\\d+\\.\\d+") "\n")
+ (print (contains_value "abc\r\n123" "(.|\r)*\n.*") "\n")
 
  (print "--remove--\n")
  (print (remove (associate "a" 1 "b" 2 "c" 3 4 "d") 4))

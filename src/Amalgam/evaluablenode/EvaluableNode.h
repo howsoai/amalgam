@@ -364,7 +364,9 @@ public:
 	//Returns true if this node evaluates to true
 	static bool ToBool(EvaluableNode *n);
 
-	//Converts a number to a string in a consistent way that should be used for anything dealing with EvaluableNode
+	//Converts a bool value to a string
+	//if key_string is false, will return the appropriate string as code
+	//if key_string is true, will return for use as a key string in an ENT_ASSOC
 	static std::string BoolToString(bool value, bool key_string = false);
 	static StringInternPool::StringID BoolToStringID(bool value, bool key_string = false);
 

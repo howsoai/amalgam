@@ -56,7 +56,7 @@
 					"fixed rand seed"
 					(null)
 					"precise"
-					(true)
+					.true
 			)
 		))
 	 )

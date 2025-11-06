@@ -22,6 +22,11 @@ extern "C"
 		bool loaded;
 		char *message;
 		char *version;
+		//If an entity_path parameter was passed to LoadEntity, the path where the entity was
+		//actually loaded.  If non-null, contains entity_path_len entries.  Both the entries
+		//and the array itself need to be freed via DeleteString.
+		char **entity_path;
+		size_t entity_path_len;
 	};
 
 	//output from ExecuteEntityJsonPtrLogged
@@ -33,7 +38,13 @@ extern "C"
 
 	//loads the entity specified into handle
 	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, char *file_type,
-		bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename);
+		bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename,
+		const char **entity_path, size_t entity_path_len);
+
+	//loads the entity specified into handle, from a memory buffer
+	AMALGAM_EXPORT LoadEntityStatus LoadEntityFromMemory(char *handle, void *data, size_t len, char *file_type,
+		bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename,
+		const char **entity_path, size_t entity_path_len);
 
 	//verifies the entity specified by path. Uses LoadEntityStatus to return any errors and version
 	AMALGAM_EXPORT LoadEntityStatus VerifyEntity(char *path);
@@ -53,7 +64,12 @@ extern "C"
 		char *write_log_filename, char *print_log_filename);
 
 	//stores the entity specified by handle into path
-	AMALGAM_EXPORT void StoreEntity(char *handle, char *path, char *file_type, bool persistent, char *json_file_params);
+	AMALGAM_EXPORT void StoreEntity(char *handle, char *path, char *file_type, bool persistent, char *json_file_params,
+		const char **entity_path, size_t entity_path_len);
+
+	//stores the entity specified into a memory buffer
+	AMALGAM_EXPORT void StoreEntityToMemory(char *handle, void **data_p, size_t *len_p, char *file_type,
+		bool persistent, char *json_file_params, const char **entity_path, size_t entity_path_len);
 
 	//executes label on handle
 	AMALGAM_EXPORT void ExecuteEntity(char *handle, char *label);

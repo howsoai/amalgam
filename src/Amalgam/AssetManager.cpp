@@ -294,9 +294,10 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters *asset_params,
 		}
 		else
 		{
-			std::ifstream inf(asset_params->resourceContents, std::ios::binary);
+			std::ifstream inf(asset_params->resourcePath, std::ios::binary);
 			std::tie(error_msg, version, success) = LoadStreamToBuffer<BinaryData>(inf, asset_params->resourceType, compressed_data);
 		}
+
 		if(!success)
 		{
 			status.SetStatus(false, error_msg, version);

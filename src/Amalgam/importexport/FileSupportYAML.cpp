@@ -113,11 +113,6 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 			built_element << nullptr;
 			return true;
 		}
-		else if(node_type == ENT_BOOL)
-		{
-			built_element << (en->GetBoolValueReference() ? "true" : "false");
-			return true;
-		}
 		else if(node_type != ENT_LIST)
 		{
 			//must be a list, so return false as can't build
@@ -133,7 +128,11 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 	}
 	else //immediate
 	{
-		if(DoesEvaluableNodeTypeUseNumberData(en->GetType()))
+		if(DoesEvaluableNodeTypeUseBoolData(en->GetType()))
+		{
+			built_element << (en->GetBoolValueReference() ? "true" : "false");
+		}
+		else if(DoesEvaluableNodeTypeUseNumberData(en->GetType()))
 		{
 			double number = en->GetNumberValueReference();
 			built_element << number;

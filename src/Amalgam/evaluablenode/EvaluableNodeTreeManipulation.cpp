@@ -1462,7 +1462,12 @@ std::string GenerateRandomStringGivenStringSet(RandomStream &rs, std::vector<std
 //helper function for EvaluableNodeTreeManipulation::MutateNode to populate immediate data
 void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<std::string> &strings)
 {
-	if(DoesEvaluableNodeTypeUseNumberData(n->GetType()))
+	auto node_type = n->GetType();
+	if(DoesEvaluableNodeTypeUseBoolData(node_type))
+	{
+		n->GetBoolValueReference() = (rs.Rand() > 0.5 ? true : false);
+	}
+	else if(DoesEvaluableNodeTypeUseNumberData(node_type))
 	{
 		double cur_value = n->GetNumberValueReference();
 
@@ -1491,7 +1496,7 @@ void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<std::st
 
 		n->SetTypeViaNumberValue((new_number_negative ? -1 : 1) * new_value);
 	}
-	else if(DoesEvaluableNodeTypeUseStringData(n->GetType()))
+	else if(DoesEvaluableNodeTypeUseStringData(node_type))
 	{
 		n->SetStringValue(GenerateRandomStringGivenStringSet(rs, strings));
 	}

@@ -225,11 +225,6 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 			json_str += "null";
 			return true;
 		}
-		else if(node_type == ENT_BOOL)
-		{
-			json_str += (en->GetBoolValueReference() ? "true" : "false");
-			return true;
-		}
 		else if(node_type != ENT_LIST)
 		{
 			//must be a list, so return false as can't build
@@ -261,6 +256,10 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 	}
 	else //immediate
 	{
+		if(DoesEvaluableNodeTypeUseBoolData(en->GetType()))
+		{
+			json_str += (en->GetBoolValueReference() ? "true" : "false");
+		}
 		if(DoesEvaluableNodeTypeUseNumberData(en->GetType()))
 		{
 			double number = en->GetNumberValueReference();

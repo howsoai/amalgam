@@ -1859,6 +1859,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, b
 		std::string s;
 		if(cur == nullptr)
 			s = "(null)";
+		else if(DoesEvaluableNodeTypeUseBoolData(cur->GetType()))
+			s = EvaluableNode::BoolToString(cur->GetBoolValueReference());
 		else if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
 			s = cur->GetStringValue();
 		else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))

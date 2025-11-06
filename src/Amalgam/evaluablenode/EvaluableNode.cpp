@@ -555,10 +555,18 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 		else
 			SetMappedChildNodes(n_mcn, true, n->GetNeedCycleCheck(), n->GetIsIdempotent());
 	}
+	else if(DoesEvaluableNodeTypeUseBoolData(cur_type))
+	{
+		GetBoolValueReference() = n->GetBoolValueReference();
+	}
 	else if(DoesEvaluableNodeTypeUseNumberData(cur_type))
+	{
 		GetNumberValueReference() = n->GetNumberValueReference();
+	}
 	else if(DoesEvaluableNodeTypeUseStringData(cur_type))
+	{
 		SetStringID(n->GetStringIDReference());
+	}
 	else //ordered
 	{
 		auto &n_ocn = n->GetOrderedChildNodesReference();
@@ -620,7 +628,8 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	if(new_type == cur_type)
 		return;
 
-	if(    (DoesEvaluableNodeTypeUseNumberData(cur_type) && DoesEvaluableNodeTypeUseNumberData(new_type))
+	if(    (DoesEvaluableNodeTypeUseBoolData(cur_type) && DoesEvaluableNodeTypeUseBoolData(new_type))
+		|| (DoesEvaluableNodeTypeUseNumberData(cur_type) && DoesEvaluableNodeTypeUseNumberData(new_type))
 		|| (DoesEvaluableNodeTypeUseStringData(cur_type) && DoesEvaluableNodeTypeUseStringData(new_type))
 		|| (DoesEvaluableNodeTypeUseAssocData(cur_type)  && DoesEvaluableNodeTypeUseAssocData(new_type))
 		|| (DoesEvaluableNodeTypeUseOrderedData(cur_type) && DoesEvaluableNodeTypeUseOrderedData(new_type)) )

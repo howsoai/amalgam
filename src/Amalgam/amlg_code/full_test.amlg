@@ -1479,10 +1479,10 @@
    .true)) "\n")
 
  (print "--set_comments--\n")
- (print (set_comments
+ (print (unparse (set_comments
    ;this is a comment
   (lambda ;comment too
-   .true) "new comment"))
+   .true) "new comment")) "\n")
 
  (print "--get_concurrency--\n")
  (print (get_concurrency
@@ -1519,7 +1519,7 @@
  (print (get_value
    ;this is a comment
   (lambda ;comment too
-   #withalabel .true)))
+   #withalabel .true)) "\n")
 
  (print "--set_value--\n")
  (print (set_value
@@ -1594,7 +1594,7 @@
  (declare (zip (list "public_sign_key" "secret_sign_key") (system "sign_key_pair")))
  (declare (assoc message "hello"))
  (declare (assoc signature (crypto_sign message secret_sign_key)))
- (print "valid signature: " (crypto_sign_verify message public_sign_key signature))
+ (print "valid signature: " (crypto_sign_verify message public_sign_key signature) "\n")
 
  (print "--encrypt and decrypt--\n")
  (print "symmetric key encryption\n")
@@ -3996,6 +3996,7 @@
     (compute_on_contained_entities "bool_test"
       (query_mode "A" (null))
     )
+	   "\n"
   )
 
    (print "--accuracy tests--\n")

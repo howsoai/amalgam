@@ -73,6 +73,10 @@ function render() {
 		fullCommand = "";
 		for(var j in commandChunks) {
 			chunk = commandChunks[j];
+			if(chunk == "") {
+				fullCommand += " ";
+				continue;
+			}
 			includeBracket = false;
 			//if chunk is something like "[number", chop that [ off but set flag to append it back on
 			if(chunk[0] == "[" && 
@@ -82,10 +86,17 @@ function render() {
 				chunk = "<b>[</b>" + chunk.substr(1,chunk.length - 1);
 			}
 			else if(!typeList.includes(chunk) && "list|" != chunk.substr(0,5) && "string|" != chunk.substr(0,7) && "number|" != chunk.substr(0,7)) {
-				chunk = "<b>" + chunk + "</b>";
+				chunk = "<b>" + chunk + "</b> ";
 			}
 			
-			fullCommand += chunk + " ";
+			if(typeList.includes(chunk) || includeBracket) {
+				spacing = " ";
+			} else {
+				//two spaces between each parameter
+				spacing = "&nbsp;&nbsp;";
+			}
+			
+			fullCommand += chunk + spacing;
 		}
 		
 		

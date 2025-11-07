@@ -260,7 +260,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 		{
 			json_str += (en->GetBoolValueReference() ? "true" : "false");
 		}
-		if(DoesEvaluableNodeTypeUseNumberData(en->GetType()))
+		else if(DoesEvaluableNodeTypeUseNumberData(en->GetType()))
 		{
 			double number = en->GetNumberValueReference();
 

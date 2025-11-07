@@ -391,7 +391,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 			}
 		}
 		
-		//if target_value_type == ENIVT_CODE or ENIVT_STRING_ID, just compute all
+		//if target_value_type == ENIVT_CODE or ENIVT_STRING_ID or ENIVT_BOOL, just compute all
 		// won't save much for code until cache equal values
 		// won't save much for string ids because it's just a lookup (though could make it a little faster by streamlining a specialized string loop)
 		//else, there are less indices to consider than possible unique values, so save computation by just considering entities that are still valid
@@ -725,14 +725,14 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				feature_data.nominalNumberDistanceTerms, unknown_unknown_term,
 				[this, &r_dist_eval, &enabled_indices, &column, query_feature_index](double number_value)
 				{
-					AccumulatePartialSumsForNominalNumberValueIfExists(r_dist_eval, enabled_indices, number_value, query_feature_index, *column);
+					AccumulatePartialSumsForNominalNumberValue(r_dist_eval, enabled_indices, number_value, query_feature_index, *column);
 				});
 
 			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
 				feature_data.nominalStringDistanceTerms, unknown_unknown_term,
 				[this, &r_dist_eval, &enabled_indices, &column, query_feature_index](StringInternPool::StringID sid)
 				{
-					AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, enabled_indices, sid, query_feature_index, *column);
+					AccumulatePartialSumsForNominalStringIdValue(r_dist_eval, enabled_indices, sid, query_feature_index, *column);
 				});
 
 			return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(unknown_unknown_term, query_feature_index);
@@ -740,15 +740,19 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	}
 
 	//if symmetric nominal, only need to compute the exact match
-	if(r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index))
+	if(feature_attribs.IsFeatureSymmetricNominal())
 	{
 		if(value.nodeType == ENIVT_NUMBER)
 		{
-			AccumulatePartialSumsForNominalNumberValueIfExists(r_dist_eval, enabled_indices, value.nodeValue.number, query_feature_index, *column);
+			AccumulatePartialSumsForNominalNumberValue(r_dist_eval, enabled_indices, value.nodeValue.number, query_feature_index, *column);
 		}
 		else if(value.nodeType == ENIVT_STRING_ID)
 		{
-			AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, enabled_indices, value.nodeValue.stringID, query_feature_index, *column);
+			AccumulatePartialSumsForNominalStringIdValue(r_dist_eval, enabled_indices, value.nodeValue.stringID, query_feature_index, *column);
+		}
+		else if(value.nodeType == ENIVT_BOOL)
+		{
+			AccumulatePartialSumsForBoolValue(r_dist_eval, enabled_indices, value.nodeValue.boolValue, query_feature_index, *column);
 		}
 		else if(value.nodeType == ENIVT_CODE)
 		{
@@ -770,13 +774,44 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
 		return nonmatch_dist_term;
 	}
+	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
+	{
+		bool comparison_value = value.nodeValue.boolValue;
+		if(value.nodeType == ENIVT_BOOL)
+			AccumulatePartialSumsForBoolValue(
+				r_dist_eval, enabled_indices, comparison_value, query_feature_index, *column);
+
+		size_t num_true = column->trueBoolIndices.size();
+		size_t num_false = column->trueBoolIndices.size();
+		size_t num_non_bool = (numEntities - column->invalidIndices.size()) - (num_true + num_false);
+		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominal(!comparison_value, ENIVT_BOOL, query_feature_index);
+
+		if(num_non_bool == 0)
+		{
+			feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
+			return nonmatch_dist_term;
+		}
+
+		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
+
+		size_t num_opposite = (comparison_value ? num_false : num_true);
+		if(num_opposite < 2000 || known_unknown_term < nonmatch_dist_term)
+		{
+			AccumulatePartialSumsForBoolValue(r_dist_eval, enabled_indices, !comparison_value, query_feature_index, *column);
+
+			feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(known_unknown_term);
+			return known_unknown_term;
+		}
+
+		return std::min(nonmatch_dist_term, known_unknown_term);
+	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
 	{
 		//initialize to zero, because if don't find an exact match, but there are distance terms of
 		//0, then need to accumulate those later
 		double accumulated_term = 0.0;
 		if(value.nodeType == ENIVT_STRING_ID)
-			accumulated_term = AccumulatePartialSumsForNominalStringIdValueIfExists(
+			accumulated_term = AccumulatePartialSumsForNominalStringIdValue(
 				r_dist_eval, enabled_indices, value.nodeValue.stringID, query_feature_index, *column);
 
 		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch(query_feature_index);
@@ -791,7 +826,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			{
 				//don't want to double-accumulate the exact match
 				if(sid != value.nodeValue.stringID)
-					AccumulatePartialSumsForNominalStringIdValueIfExists(
+					AccumulatePartialSumsForNominalStringIdValue(
 						r_dist_eval, enabled_indices, value.nodeValue.stringID, query_feature_index, *column);
 			});
 
@@ -803,7 +838,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//0, then need to accumulate those later
 		double accumulated_term = 0.0;
 		if(value.nodeType == ENIVT_NUMBER)
-			accumulated_term = AccumulatePartialSumsForNominalNumberValueIfExists(
+			accumulated_term = AccumulatePartialSumsForNominalNumberValue(
 				r_dist_eval, enabled_indices, value.nodeValue.number, query_feature_index, *column);
 
 		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch(query_feature_index);
@@ -818,7 +853,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			{
 				//don't want to double-accumulate the exact match
 				if(!EqualIncludingNaN(number_value, value.nodeValue.number))
-					AccumulatePartialSumsForNominalNumberValueIfExists(
+					AccumulatePartialSumsForNominalNumberValue(
 						r_dist_eval, enabled_indices, value.nodeValue.number, query_feature_index, *column);
 			});
 
@@ -1117,7 +1152,7 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralized
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
 			//if the value is not a null, need to accumulate null distance terms if it's a symmetric nominal feature,
 			// because then there's only one value left, or if the nulls are closer than what has already been considered
-			if(r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(i)
+			if(feature_attribs.IsFeatureSymmetricNominal()
 				|| feature_attribs.knownToUnknownDistanceTerm.deviation <= next_closest_distance)
 			{
 				double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(i);
@@ -1258,7 +1293,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 			else
 				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED;
 
-			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedNumberValues.internedIndexToValue);
+			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, column_data->internedNumberValues.internedIndexToValue);
 			return;
 		}
 		else if(position_value_type == ENIVT_STRING_ID && column_data->internedStringIdValues.valueInterningEnabled)
@@ -1270,14 +1305,23 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 			else
 				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_STRING_INTERNED_PRECOMPUTED;
 
-			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedStringIdValues.internedIndexToValue);
+			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, column_data->internedStringIdValues.internedIndexToValue);
+			return;
+		}
+		else if(position_value_type == ENIVT_BOOL)
+		{
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_BOOL_PRECOMPUTED;
+
+			r_dist_eval.ComputeAndStoreInternedDistanceTermsForBool(query_feature_index);
 			return;
 		}
 	}
 
 	if(feature_attribs.IsFeatureNominal() || complex_comparison)
 	{
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_BOOL;
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING;

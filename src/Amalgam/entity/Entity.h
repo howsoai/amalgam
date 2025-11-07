@@ -124,7 +124,7 @@ union EntityPermissions
 		{
 			for(auto [permission_type, allow_en] : en->GetMappedChildNodesReference())
 			{
-				bool allow = EvaluableNode::IsTrue(allow_en);
+				bool allow = EvaluableNode::ToBool(allow_en);
 				if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err))
 				{
 					permissions_to_set.individualPermissions.stdOutAndStdErr = true;
@@ -162,7 +162,7 @@ union EntityPermissions
 				}
 			}
 		}
-		else if(EvaluableNode::IsTrue(en))
+		else if(EvaluableNode::ToBool(en))
 		{
 			permissions_to_set = EntityPermissions::AllPermissions();
 			permission_values = EntityPermissions::AllPermissions();
@@ -397,25 +397,32 @@ public:
 		return (cur_value_it != end(labelIndex));
 	}
 
+	//Evaluates the specified label into a bool and returns the value
+	//If the label exists, returns the pair of the value and true.
+	// Otherwise returns the pair of false and false.
+	std::pair<bool, bool> GetValueAtLabelAsBool(StringInternPool::StringID label_sid, bool on_self = false);
+
 	//Evaluates the specified label into a number returns the value
-	//If the label exists, sets value_out to the value and returns true.
-	// Otherwise sets value_out to NaN and returns false
+	//If the label exists, returns the pair of the value and true.
+	// Otherwise returns the pair of NaN and false.
 	std::pair<double, bool> GetValueAtLabelAsNumber(StringInternPool::StringID label_sid, bool on_self = false);
 
 	//Evaluates the specified label into a string and returns the value
-	//If the label exists, sets value_out to the value and returns true.
-	// Otherwise sets value_out to empty string and returns false
+	//If the label exists, returns the pair of the value and true.
+	// Otherwise returns the pair of empty string and false.
 	//if key_string is true, then it will generate a string used for comparing in assoc keys
 	std::pair<std::string, bool> GetValueAtLabelAsString(StringInternPool::StringID label_sid, bool on_self = false, bool key_string = false);
 
 	//Evaluates the specified label into a string and returns the value
-	//If the label exists, sets value_out to the value and returns true.
-	// Otherwise sets value_out to empty string and returns false
+	//If the label exists, returns the pair of the value and true.
+	// Otherwise returns the pair of not a string and false.
 	//if key_string is true, then it will generate a string used for comparing in assoc keys
 	std::pair<StringInternPool::StringID, bool> GetValueAtLabelAsStringIdWithReference(StringInternPool::StringID label_sid, bool on_self = false, bool key_string = false);
 
 	//Evaluates the specified label into a EvaluableNodeImmediateValueWithType
 	//if destination_temp_enm is not null and code is needed, it will make a copy
+	//If the label exists, returns the pair of the value and true.
+	// Otherwise returns the pair of null and false.
 	std::pair<EvaluableNodeImmediateValueWithType, bool> GetValueAtLabelAsImmediateValue(
 		StringInternPool::StringID label_sid, bool on_self = false, EvaluableNodeManager *destination_temp_enm = nullptr);
 

@@ -1,9 +1,9 @@
-:
+;
 ;tests for: number_services.amlg
-:
+;
 (seq
 	(load_entity "number_services.amlg" "ns")
-	(set_entity_root_permission "ns" (true)) ; ns entity needs root access to open version file
+	(set_entity_permissions "ns" .true) ; ns entity needs root access to open version file
 
 	(print (call_entity "ns" "get_api") "\n")
 	(print (call_entity "ns" "version") "\n")

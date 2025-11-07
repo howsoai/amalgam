@@ -840,7 +840,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		if(!EvaluableNode::IsNull(persistence_node))
 		{
 			update_persistence = true;
-			persistent = EvaluableNode::IsTrue(persistence_node);
+			persistent = EvaluableNode::ToBool(persistence_node);
 		}
 		evaluableNodeManager->FreeNodeTreeIfPossible(persistence_node);
 	}

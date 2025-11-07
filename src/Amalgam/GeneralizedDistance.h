@@ -21,6 +21,8 @@ public:
 	// align at 32-bits in order to play nice with data alignment where it is used
 	enum FeatureDifferenceType : uint32_t
 	{
+		//nominal based on boolean equivalence
+		FDT_NOMINAL_BOOL,
 		//nominal based on numeric equivalence
 		FDT_NOMINAL_NUMBER,
 		//nominal based on string equivalence
@@ -180,7 +182,6 @@ public:
 		double deviationReciprocal;
 		double deviationReciprocalNegative;
 		double deviationTimesThree;
-
 
 		//sparse deviation matrix if the nominal is a string
 		//store as a vector of pairs instead of a map because either only one value will be looked up once,
@@ -402,12 +403,6 @@ public:
 		return featureAttribs[feature_index].DoesFeatureHaveDeviation();
 	}
 
-	//returns true if the feature is a nominal that only has one difference value for match and one for nonmatch
-	__forceinline bool IsFeatureSymmetricNominal(size_t feature_index)
-	{
-		return featureAttribs[feature_index].IsFeatureSymmetricNominal();
-	}
-
 	//computes the exponentiation of d to 1/p
 	__forceinline double InverseExponentiateDistance(double d, bool high_accuracy)
 	{
@@ -486,12 +481,12 @@ public:
 		bool are_equal = EvaluableNodeImmediateValue::AreEqual(a_type, a, b_type, b);
 
 		auto &feature_attribs = featureAttribs[index];
-		if(IsFeatureSymmetricNominal(index))
+		if(feature_attribs.IsFeatureSymmetricNominal())
 		{
 			//if both were null, that was caught above, so one must be known
 			if(a_is_null || b_is_null)
 				return ComputeDistanceTermKnownToUnknown(index);
-			
+
 			return are_equal ? feature_attribs.nominalSymmetricMatchDistanceTerm
 				: feature_attribs.nominalSymmetricNonMatchDistanceTerm;
 		}
@@ -499,11 +494,29 @@ public:
 		double prob_class_given_match = std::numeric_limits<double>::quiet_NaN();
 		double prob_class_given_nonmatch = std::numeric_limits<double>::quiet_NaN();
 		if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
+		{
 			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
 				feature_attribs.nominalNumberSparseDeviationMatrix, index, a.number, b.number);
+		}
 		else if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
+		{
 			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
 				feature_attribs.nominalStringSparseDeviationMatrix, index, a.stringID, b.stringID);
+		}
+		else if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+		{
+			StringInternPool::StringID a_sid = EvaluableNode::BoolToStringID(a.boolValue, true);
+			StringInternPool::StringID b_sid = EvaluableNode::BoolToStringID(b.boolValue, true);
+			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
+				feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);
+		}
+		else if(a_type == ENIVT_CODE && b_type == ENIVT_CODE)
+		{
+			StringInternPool::StringID a_sid = EvaluableNode::ToStringIDIfExists(a.code, true);
+			StringInternPool::StringID b_sid = EvaluableNode::ToStringIDIfExists(b.code, true);
+			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
+				feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);
+		}
 
 		if(!FastIsNaN(prob_class_given_match))
 		{
@@ -880,6 +893,9 @@ public:
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 				return a.number - b.number;
 
+			if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+				return (a.boolValue == b.boolValue ? 0.0 : 1.0);
+
 			if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
 				return (a.stringID == b.stringID ? 0.0 : 1.0);
 
@@ -889,10 +905,14 @@ public:
 		if(a_type == ENIVT_NULL || b_type == ENIVT_NULL)
 			return std::numeric_limits<double>::quiet_NaN();
 
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL
+			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
+			if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+				return (a.boolValue == b.boolValue ? 0.0 : 1.0);
+
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 				return (a.number == b.number ? 0.0 : 1.0);
 
@@ -922,6 +942,9 @@ public:
 
 		if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 			return 1.0 - EvaluableNodeTreeManipulation::CommonalityBetweenNumbers(a.number, b.number);
+
+		if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+			return (a.boolValue == b.boolValue ? 0.0 : 1.0);
 
 		if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
 			return (a.stringID == b.stringID ? 0.0 : 1.0);
@@ -1111,6 +1134,10 @@ public:
 		EFDT_NUMERIC_INTERNED_PRECOMPUTED,
 		//continuous or nominal string precomputed, may contain nonnumeric data
 		EFDT_STRING_INTERNED_PRECOMPUTED,
+		//bool precomputed, may contain other data
+		EFDT_BOOL_PRECOMPUTED,
+		//nominal compared to a bool value where nominals may not be symmetric
+		EFDT_NOMINAL_BOOL,
 		//nominal compared to a string value where nominals may not be symmetric
 		EFDT_NOMINAL_STRING,
 		//nominal compared to a number value where nominals may not be symmetric
@@ -1221,6 +1248,15 @@ public:
 					feature_data.nominalStringDistanceTerms))
 				return;
 		}
+		else if(feature_data.targetValue.nodeType == ENIVT_BOOL)
+		{
+			auto bool_value_sid = EvaluableNode::BoolToStringID(feature_data.targetValue.nodeValue.boolValue, true);
+			if(ComputeAndStoreNominalDistanceTermsForSDM(
+					distEvaluator->featureAttribs[index].nominalStringSparseDeviationMatrix,
+					index, ENIVT_STRING_ID, bool_value_sid,
+					feature_data.nominalStringDistanceTerms))
+				return;
+		}
 
 		//made it here, so didn't find anything in the SDM.  use fallback for default nominal terms
 		feature_data.defaultNominalMatchDistanceTerm
@@ -1232,7 +1268,7 @@ public:
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
 	template<typename ValueType>
-	inline void ComputeAndStoreInternedDistanceTerms(size_t index, std::vector<ValueType> *interned_values)
+	inline void ComputeAndStoreInternedDistanceTerms(size_t index, std::vector<ValueType> &interned_values)
 	{
 		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
 		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
@@ -1243,13 +1279,7 @@ public:
 
 		auto &feature_data = featureData[index];
 
-		if(interned_values == nullptr)
-		{
-			feature_data.internedDistanceTerms.clear();
-			return;
-		}
-
-		feature_data.internedDistanceTerms.resize(interned_values->size());
+		feature_data.internedDistanceTerms.resize(interned_values.size());
 
 		auto &feature_attribs = distEvaluator->featureAttribs[index];
 
@@ -1274,13 +1304,50 @@ public:
 				immediate_type = ENIVT_NUMBER;
 			else if constexpr(std::is_same<ValueType, StringInternPool::StringID>::value)
 				immediate_type = ENIVT_STRING_ID;
+			else if constexpr(std::is_same<ValueType, bool>::value)
+				immediate_type = ENIVT_BOOL;
 
 			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
 			{
 				feature_data.internedDistanceTerms[i] = distEvaluator->ComputeDistanceTermRegular(
-						feature_data.targetValue.nodeValue, (*interned_values)[i], immediate_type, immediate_type,
+						feature_data.targetValue.nodeValue, interned_values[i], immediate_type, immediate_type,
 						index, high_accuracy_interned_values);
 			}
+		}
+	}
+
+	inline void ComputeAndStoreInternedDistanceTermsForBool(size_t index)
+	{
+		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
+		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
+
+		//make sure there's room for the interned index
+		if(featureData.size() <= index)
+			featureData.resize(index + 1);
+
+		auto &feature_data = featureData[index];
+
+		feature_data.internedDistanceTerms.resize(3);
+
+		auto &feature_attribs = distEvaluator->featureAttribs[index];
+
+		bool high_accuracy_interned_values = (compute_accurate && !compute_approximate);
+
+		if(feature_data.targetValue.IsNull())
+		{
+			double k_to_unk = feature_attribs.knownToUnknownDistanceTerm.distanceTerm;
+			for(size_t i = 0; i < 2; i++)
+				feature_data.internedDistanceTerms[i] = k_to_unk;
+		}
+		else
+		{
+			feature_data.internedDistanceTerms[0] = distEvaluator->ComputeDistanceTermRegular(
+						feature_data.targetValue.nodeValue, false, ENIVT_BOOL, ENIVT_BOOL,
+						index, high_accuracy_interned_values);
+
+			feature_data.internedDistanceTerms[1] = distEvaluator->ComputeDistanceTermRegular(
+						feature_data.targetValue.nodeValue, true, ENIVT_BOOL, ENIVT_BOOL,
+						index, high_accuracy_interned_values);
 		}
 	}
 
@@ -1325,7 +1392,17 @@ public:
 			if(other_value.stringID == feature_data.targetValue.GetValueAsStringIDIfExists())
 				return feature_data.defaultNominalMatchDistanceTerm;
 		}
+		else if(other_type == ENIVT_BOOL)
+		{
+			StringInternPool::StringID other_sid = EvaluableNode::BoolToStringID(other_value.boolValue, true);
+			auto dist_term_entry = feature_data.nominalStringDistanceTerms.find(other_sid);
+			if(dist_term_entry != end(feature_data.nominalStringDistanceTerms))
+				return dist_term_entry->second;
 
+			if(other_value.boolValue == feature_data.targetValue.GetValueAsBoolean())
+				return feature_data.defaultNominalMatchDistanceTerm;
+		}
+		
 		if(EvaluableNodeImmediateValue::IsNull(other_type, other_value))
 		{
 			if(feature_data.targetValue.IsNull())
@@ -1426,6 +1503,18 @@ public:
 				}
 			}
 		}
+		if(feature_data.targetValue.nodeType == ENIVT_BOOL)
+		{
+			auto value_sid = feature_data.targetValue.GetValueAsStringIDIfExists(true);
+			for(auto &entry : feature_data.nominalStringDistanceTerms)
+			{
+				if(entry.first != value_sid)
+				{
+					if(entry.second < next_smallest_dist_term)
+						next_smallest_dist_term = entry.second;
+				}
+			}
+		}
 
 		//use defaultNominalNonMatchDistanceTerm if it isn't NaN and less than next_smallest_dist_term
 		if(feature_data.defaultNominalNonMatchDistanceTerm < next_smallest_dist_term)
@@ -1510,6 +1599,7 @@ public:
 		//the distance term for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
 		double precomputedRemainingIdenticalDistanceTerm;
 
+		//interned distance values, assumes that term 0 is null
 		std::vector<double> internedDistanceTerms;
 
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix

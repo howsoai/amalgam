@@ -156,7 +156,7 @@ static std::string increment("increment");
 static std::string amlgSuffix("amlg");
 static std::string camlSuffix("caml");
 // This string shows up at the start of persisted entities
-static std::string declare("(declare\r\n\t{create_new_entity (true)");
+static std::string declare("(declare\r\n\t{create_new_entity .true");
 
 
 static void InitializeCounter(TestResult &test_result)

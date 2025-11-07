@@ -28,10 +28,10 @@
 							"description"
 							(current_value 1)
 							"parameters"
-							(get_entity_comments (null) (current_index 1) (true))
+							(get_entity_comments (null) (current_index 1) .true)
 						)
 					)
-					(get_entity_comments (null) (null) (true))
+					(get_entity_comments (null) (null) .true)
 				)
 			)
 		)
@@ -52,16 +52,16 @@
 
 			(if
 				(= number .infinity)
-				(true)
+				.true
 
 				(= number -.infinity)
-				(true)
+				.true
 
 				(= number 42)
 				(assoc "a" (list (null) 3 (null) (list) (assoc "x" 12) .infinity) )
 
 				(= number (null))
-				(list (true) (false))
+				(list .true .false)
 
 				(< number 0)
 				"Negative numbers are not yet supported."
@@ -69,7 +69,7 @@
 				(!= (get_type_string number) "number")
 				"That's not a number."
 
-				(if (mod number 2) (false) (true))
+				(if (mod number 2) .false .true)
 			)
 		)
 

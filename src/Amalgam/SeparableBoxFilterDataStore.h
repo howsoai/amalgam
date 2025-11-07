@@ -763,7 +763,7 @@ protected:
 
 	//accumulates the partial sums for the specified value
 	// returns the distance term evaluated, or 0.0 if value was not found
-	inline double AccumulatePartialSumsForNominalNumberValueIfExists(
+	inline double AccumulatePartialSumsForNominalNumberValue(
 		RepeatedGeneralizedDistanceEvaluator &r_dist_eval, BitArrayIntegerSet &enabled_indices,
 		double value, size_t query_feature_index, SBFDSColumnData &column)
 	{
@@ -780,7 +780,7 @@ protected:
 
 	//accumulates the partial sums for the specified value
 	// returns the distance term evaluated, or 0.0 if value was not found
-	inline double AccumulatePartialSumsForNominalStringIdValueIfExists(
+	inline double AccumulatePartialSumsForNominalStringIdValue(
 		RepeatedGeneralizedDistanceEvaluator &r_dist_eval, BitArrayIntegerSet &enabled_indices,
 		StringInternPool::StringID value, size_t query_feature_index, SBFDSColumnData &column)
 	{
@@ -789,6 +789,24 @@ protected:
 		{
 			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_STRING_ID, query_feature_index);
 			AccumulatePartialSums(enabled_indices, value_found->second->indicesWithValue, query_feature_index, term);
+			return term;
+		}
+
+		return 0.0;
+	}
+
+	//accumulates the partial sums for the specified value
+	// returns the distance term evaluated, or 0.0 if value was not found
+	inline double AccumulatePartialSumsForBoolValue(
+		RepeatedGeneralizedDistanceEvaluator &r_dist_eval, BitArrayIntegerSet &enabled_indices,
+		bool value, size_t query_feature_index, SBFDSColumnData &column)
+	{
+		if( (value && column.trueBoolIndices.size() > 0)
+			|| (!value && column.falseBoolIndices.size() > 0) )
+		{
+			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_BOOL, query_feature_index);
+			auto &indices = (value ? column.trueBoolIndices : column.falseBoolIndices);
+			AccumulatePartialSums(enabled_indices, indices, query_feature_index, term);
 			return term;
 		}
 
@@ -956,6 +974,27 @@ protected:
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
 
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_BOOL_PRECOMPUTED:
+		{
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &column_data = columnData[feature_attribs.featureIndex];
+			auto &target_value = r_dist_eval.featureData[query_feature_index].targetValue;
+
+			if(target_value.nodeType == ENIVT_BOOL)
+			{
+				//since this method only involves nonmatches, only check the nonmatching bool values,
+				//and the interned indices match the boolean value of 0->false, 1->true
+				if(target_value.nodeValue.boolValue && column_data->falseBoolIndices.contains(entity_index))
+					return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
+						0, query_feature_index);
+				else if(!target_value.nodeValue.boolValue && column_data->trueBoolIndices.contains(entity_index))
+					return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
+						1, query_feature_index);
+			}
+			
+			return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
+		}
+
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
@@ -965,8 +1004,7 @@ protected:
 					GetValue(entity_index, feature_attribs.featureIndex).stringID, ENIVT_STRING_ID,
 					query_feature_index);
 			else
-				return r_dist_eval.ComputeDistanceTermNominal(string_intern_pool.emptyStringId, ENIVT_STRING_ID,
-					query_feature_index);
+				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC:
@@ -978,8 +1016,22 @@ protected:
 					GetValue(entity_index, feature_attribs.featureIndex).number, ENIVT_NUMBER,
 					query_feature_index);
 			else
-				return r_dist_eval.ComputeDistanceTermNominal(0.0, ENIVT_NUMBER,
-					query_feature_index);
+				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
+		}
+
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_BOOL:
+		{
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &column_data = columnData[feature_attribs.featureIndex];
+
+			if(column_data->trueBoolIndices.contains(entity_index))
+				return r_dist_eval.ComputeDistanceTermNominal(
+					true, ENIVT_BOOL, query_feature_index);
+			else if(column_data->falseBoolIndices.contains(entity_index))
+				return r_dist_eval.ComputeDistanceTermNominal(
+					false, ENIVT_BOOL, query_feature_index);
+			else
+				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
 
 		default:

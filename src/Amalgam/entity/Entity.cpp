@@ -153,6 +153,21 @@ std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(StringInternPool
 	return std::pair(destination_temp_enm->DeepAllocCopy(retval, direct_get ? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL), true);
 }
 
+std::pair<bool, bool> Entity::GetValueAtLabelAsBool(StringInternPool::StringID label_sid, bool on_self)
+{
+	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
+		return std::pair(false, false);
+
+	if(!on_self && IsLabelPrivate(label_sid))
+		return std::pair(false, false);
+
+	const auto &label = labelIndex.find(label_sid);
+	if(label == end(labelIndex))
+		return std::pair(false, false);
+
+	return std::pair(EvaluableNode::ToBool(label->second), true);
+}
+
 std::pair<double, bool> Entity::GetValueAtLabelAsNumber(StringInternPool::StringID label_sid, bool on_self)
 {
 	constexpr double value_if_not_found = std::numeric_limits<double>::quiet_NaN();

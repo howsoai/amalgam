@@ -31,6 +31,16 @@ void SBFDSColumnData::InsertIndexValue(EvaluableNodeImmediateValueType value_typ
 		return;
 	}
 
+	if(value_type == ENIVT_BOOL)
+	{
+		if(value.boolValue)
+			trueBoolIndices.insert(index);
+		else
+			falseBoolIndices.insert(index);
+
+		return;
+	}
+
 	if(value_type == ENIVT_NUMBER || value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
 	{
 		numberIndices.insert(index);
@@ -120,6 +130,13 @@ void SBFDSColumnData::InsertNextIndexValueExceptNumbers(EvaluableNodeImmediateVa
 	{
 		nullIndices.insert(index);
 	}
+	else if(value_type == ENIVT_BOOL)
+	{
+		if(value.boolValue)
+			trueBoolIndices.insert(index);
+		else
+			falseBoolIndices.insert(index);
+	}
 	else if(value_type == ENIVT_NUMBER)
 	{
 		numberIndices.insert(index);
@@ -140,7 +157,7 @@ void SBFDSColumnData::InsertNextIndexValueExceptNumbers(EvaluableNodeImmediateVa
 
 		UpdateLongestString(value.stringID, index);
 	}
-	else if(value_type == ENIVT_CODE)
+	else //value_type == ENIVT_CODE or ENIVT_BOOL
 	{
 		codeIndices.insert(index);
 
@@ -193,6 +210,20 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 	{
 		if(old_value_type_resolved == ENIVT_NULL)
 			return;
+
+		if(old_value_resolved == ENIVT_BOOL)
+		{
+			bool old_bool_value = old_value_resolved.boolValue;
+			bool new_bool_value = new_value_resolved.boolValue;
+			if(old_bool_value == new_bool_value)
+				return;
+
+			if(new_bool_value)
+				trueBoolIndices.insert(index);
+			else
+				trueBoolIndices.erase(index);
+			return;
+		}
 
 		if(old_value_type_resolved == ENIVT_NUMBER)
 		{
@@ -405,6 +436,11 @@ void SBFDSColumnData::DeleteIndexValue(EvaluableNodeImmediateValueType value_typ
 
 	case ENIVT_NULL:
 		nullIndices.erase(index);
+		break;
+
+	case ENIVT_BOOL:
+		falseBoolIndices.erase(index);
+		trueBoolIndices.erase(index);
 		break;
 
 	case ENIVT_NUMBER:

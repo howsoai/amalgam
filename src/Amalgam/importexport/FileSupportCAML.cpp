@@ -7,7 +7,7 @@
 //system headers:
 #include <cstdint>
 #include <cstring>
-#include <fstream>
+#include <istream>
 #include <ostream>
 #include <string>
 #include <tuple>
@@ -15,7 +15,7 @@
 //magic number written at beginning of CAML file
 static const uint8_t s_magic_number[] = { 'c', 'a', 'm', 'l' };
 
-bool ReadBigEndian(std::ifstream &stream, uint32_t &val)
+bool ReadBigEndian(std::istream &stream, uint32_t &val)
 {
 	uint8_t buffer[4] = { 0 };
 	if(!stream.read(reinterpret_cast<char *>(buffer), sizeof(uint32_t)))
@@ -30,7 +30,7 @@ bool ReadBigEndian(std::ifstream &stream, uint32_t &val)
 	return true;
 }
 
-bool WriteBigEndian(std::ofstream &stream, const uint32_t &val)
+bool WriteBigEndian(std::ostream &stream, const uint32_t &val)
 {
 	uint8_t buffer[4] = { 0 };
 	buffer[0] = (val >> 24) & 0xFF;
@@ -42,7 +42,7 @@ bool WriteBigEndian(std::ofstream &stream, const uint32_t &val)
 	return true;
 }
 
-bool ReadVersion(std::ifstream &stream, uint32_t &major, uint32_t &minor, uint32_t &patch)
+bool ReadVersion(std::istream &stream, uint32_t &major, uint32_t &minor, uint32_t &patch)
 {
 	if(!ReadBigEndian(stream, major))
 		return false;
@@ -54,7 +54,7 @@ bool ReadVersion(std::ifstream &stream, uint32_t &major, uint32_t &minor, uint32
 	return true;
 }
 
-bool WriteVersion(std::ofstream &stream)
+bool WriteVersion(std::ostream &stream)
 {
 	if(!WriteBigEndian(stream, AMALGAM_VERSION_MAJOR))
 		return false;
@@ -66,7 +66,7 @@ bool WriteVersion(std::ofstream &stream)
 	return true;
 }
 
-std::tuple<std::string, std::string, bool> FileSupportCAML::ReadHeader(std::ifstream &stream, size_t &header_size)
+std::tuple<std::string, std::string, bool> FileSupportCAML::ReadHeader(std::istream &stream, size_t &header_size)
 {
 	uint8_t magic[4] = { 0 };
 	if(!stream.read(reinterpret_cast<char *>(magic), sizeof(magic)))
@@ -96,11 +96,11 @@ std::tuple<std::string, std::string, bool> FileSupportCAML::ReadHeader(std::ifst
 		if(!success)
 			return std::make_tuple(error_message, version, false);
 	}
-	
+
 	return std::make_tuple("", version, true);
 }
 
-bool FileSupportCAML::WriteHeader(std::ofstream &stream)
+bool FileSupportCAML::WriteHeader(std::ostream &stream)
 {
 	if(!stream.write(reinterpret_cast<const char *>(s_magic_number), sizeof(s_magic_number)))
 		return false;

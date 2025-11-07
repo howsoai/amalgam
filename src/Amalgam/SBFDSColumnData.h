@@ -81,6 +81,10 @@ public:
 
 		if(nullIndices.contains(index))
 			return ENIVT_NULL;
+
+		if(falseBoolIndices.contains(index) || trueBoolIndices.contains(index))
+			return ENIVT_BOOL;
+
 		if(invalidIndices.contains(index))
 			return ENIVT_NOT_EXIST;
 		return ENIVT_CODE;
@@ -182,16 +186,18 @@ public:
 		if(nullIndices.size() > 0)
 			null_count = 1;
 
-		//add up unique number and string values,
+		//add up unique bool, number, and string values,
 		// and use a heuristic for judging how many unique code values there are
-		return null_count + sortedNumberValueEntries.size() + stringIdIndices.size()
+		return null_count + falseBoolIndices.size() + trueBoolIndices.size()
+			+ sortedNumberValueEntries.size() + stringIdIndices.size()
 			+ (valueCodeSizeToIndices.size() + codeIndices.size()) / 2;
 	}
 
 	//returns the number of valid values (exist and not null) in the column
 	inline size_t GetNumValidDataElements()
 	{
-		return numberIndices.size() + stringIdIndices.size() + codeIndices.size();
+		return falseBoolIndices.size() + trueBoolIndices.size()
+			+ numberIndices.size() + stringIdIndices.size() + codeIndices.size();
 	}
 
 	//returns the maximum difference between value and any other value for this column
@@ -200,6 +206,7 @@ public:
 	{
 		switch(feature_attribs.featureType)
 		{
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
@@ -293,6 +300,13 @@ public:
 		{
 			//only want nulls that are not numbers
 			nullIndices.UnionTo(out);
+		}
+		else if(value_type == ENIVT_BOOL)
+		{
+			if(value.boolValue)
+				trueBoolIndices.UnionTo(out);
+			else
+				falseBoolIndices.UnionTo(out);
 		}
 		else if(value_type == ENIVT_NUMBER)
 		{
@@ -443,6 +457,19 @@ public:
 				assert(entity_index < max_num_entities);
 		}
 
+		//ensure all bools are valid
+		for(auto entity_index : falseBoolIndices)
+		{
+			assert(!valueEntries[entity_index].boolValue);
+			assert(!trueBoolIndices.contains(entity_index));
+		}
+
+		for(auto entity_index : trueBoolIndices)
+		{
+			assert(valueEntries[entity_index].boolValue);
+			assert(!falseBoolIndices.contains(entity_index));
+		}
+
 		//ensure all numbers are valid
 		for(auto entity_index : numberIndices)
 		{
@@ -544,6 +571,12 @@ public:
 
 	//indices of entities with no value for this feature
 	EfficientIntegerSet invalidIndices;
+
+	//indices of entities with a bool value of true for this feature
+	EfficientIntegerSet falseBoolIndices;
+
+	//for all indices that are boolean, contains the truth value of each
+	EfficientIntegerSet trueBoolIndices;
 
 	//indices of entities with a number value for this feature
 	EfficientIntegerSet numberIndices;

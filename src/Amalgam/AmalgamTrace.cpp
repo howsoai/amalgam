@@ -42,6 +42,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 	std::string transaction_listener_path;
 	std::string rand_seed;
 	std::string response;
+	std::vector<std::string> entity_path;
 
 	// program loop
 	while(in_stream->good())
@@ -85,8 +86,58 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				else
 					rand_seed = random_stream.CreateOtherStreamStateViaString("trace");
 
-				auto status = entint.LoadEntity(handle, path, file_type,
-					persistent == "true", json_payload, transaction_listener_path, print_listener_path, rand_seed);
+				if(command_tokens.size() > 8)
+					entity_path = StringManipulation::Split(command_tokens[8]);
+				else
+					entity_path.clear();
+
+				auto status = entint.LoadEntity(handle, EntityExternalInterface::LoadFromFile{ path }, file_type,
+					persistent == "true", json_payload, transaction_listener_path, print_listener_path, entity_path, rand_seed);
+				response = status.loaded ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
+			}
+			else
+			{
+				//Insufficient arguments
+				response = FAILURE_RESPONSE;
+			}
+		}
+		else if(command == "LOAD_ENTITY_FROM_MEMORY")
+		{
+			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
+			if(command_tokens.size() >= 3)
+			{
+				handle = command_tokens[0];
+				std::string base64_data = command_tokens[1];
+				file_type = command_tokens[2];
+				if(command_tokens.size() > 3)
+					persistent = command_tokens[3];
+
+				if(command_tokens.size() > 4)
+					json_payload = command_tokens[4];
+
+				if(command_tokens.size() > 5)
+					transaction_listener_path = command_tokens[5];
+				else
+					transaction_listener_path = "";
+
+				if(command_tokens.size() > 6)
+					print_listener_path = command_tokens[6];
+				else
+					print_listener_path = "";
+
+				if(command_tokens.size() > 7)
+					rand_seed = command_tokens[7];
+				else
+					rand_seed = random_stream.CreateOtherStreamStateViaString("trace");
+
+				if(command_tokens.size() > 8)
+					entity_path = StringManipulation::Split(command_tokens[8]);
+				else
+					entity_path.clear();
+
+				std::string raw_data = StringManipulation::Base64ToBinaryString(base64_data);
+				auto status = entint.LoadEntity(handle, EntityExternalInterface::LoadFromMemory{ std::move(raw_data) }, file_type,
+					persistent == "true", json_payload, transaction_listener_path, print_listener_path, entity_path, rand_seed);
 				response = status.loaded ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
 			}
 			else
@@ -164,8 +215,42 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				if(command_tokens.size() > 4)
 					json_payload = command_tokens[4];
 
-				entint.StoreEntity(handle, path, file_type, persistent == "true", json_payload);
+				if(command_tokens.size() > 5)
+					entity_path = StringManipulation::Split(command_tokens[5]);
+				else
+					entity_path.clear();
+
+				entint.StoreEntity(handle, EntityExternalInterface::StoreToFile{ path }, file_type, persistent == "true", json_payload, entity_path);
 				response = SUCCESS_RESPONSE;
+			}
+			else
+			{
+				//Insufficient arguments
+				response = FAILURE_RESPONSE;
+			}
+		}
+		else if(command == "STORE_ENTITY_TO_MEMORY")
+		{
+			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
+			if(command_tokens.size() >= 2)
+			{
+				handle = command_tokens[0];
+				file_type = command_tokens[1];
+
+				if(command_tokens.size() > 2)
+					persistent = command_tokens[2];
+
+				if(command_tokens.size() > 3)
+					json_payload = command_tokens[3];
+
+				if(command_tokens.size() > 4)
+					entity_path = StringManipulation::Split(command_tokens[4]);
+				else
+					entity_path.clear();
+
+				std::string raw_data;
+				entint.StoreEntity(handle, EntityExternalInterface::StoreToMemory{ raw_data }, file_type, persistent == "true", json_payload, entity_path);
+				response = StringManipulation::BinaryStringToBase64(raw_data);
 			}
 			else
 			{

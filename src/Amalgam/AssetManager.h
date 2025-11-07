@@ -33,7 +33,7 @@ class AssetManager
 public:
 	AssetManager()
 		: defaultEntityExtension(FILE_EXTENSION_AMALGAM), debugSources(false), warnOnUndefined(false), debugMinimal(false)
-	{	}
+	{}
 
 	class AssetParameters;
 	using AssetParametersRef = std::shared_ptr<AssetParameters>;
@@ -55,6 +55,7 @@ public:
 			resourceBasePath(other.resourceBasePath),
 			resourceType(other.resourceType),
 			extension(other.extension),
+			resourceContents(other.resourceContents),
 			includeRandSeeds(other.includeRandSeeds),
 			escapeResourceName(other.escapeResourceName),
 			escapeContainedResourceNames(other.escapeContainedResourceNames),
@@ -63,9 +64,9 @@ public:
 			sortKeys(other.sortKeys),
 			flatten(other.flatten),
 			parallelCreate(other.parallelCreate),
-			executeOnLoad(other.executeOnLoad)
-		{
-		}
+			executeOnLoad(other.executeOnLoad),
+			toMemory(other.toMemory)
+		{}
 
 		//initializes in a way intended for contained entities for _resource_base_path, will inherit parameters
 		//but update with the new resource_base_path
@@ -137,6 +138,9 @@ public:
 		//extension of the file name, which may or may not be equal to the file type
 		std::string extension;
 
+		//contents of the serialized resource, if toMemory is set
+		std::string resourceContents;
+
 		//storage and loading parameters
 		bool includeRandSeeds;
 		bool escapeResourceName;
@@ -148,6 +152,7 @@ public:
 		bool parallelCreate;
 		bool executeOnLoad;
 		bool requireVersionCompatibility;
+		bool toMemory;
 	};
 
 	//read status of the file from path
@@ -171,6 +176,9 @@ public:
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity
 	//if the resource does not have a metadata file, will use default_random_seed as its seed
 	Entity *LoadEntityFromResource(AssetParametersRef &asset_params, bool persistent,
+		std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
+
+	Entity *LoadEntityFromMemory(void *data, size_t len, AssetParametersRef &asset_params, bool persistent,
 		std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Flattens entity piece-by-piece in a manner to reduce memory when storing
@@ -204,47 +212,60 @@ public:
 
 		if(asset_params->resourceType == FILE_EXTENSION_AMALGAM)
 		{
-			std::ofstream outf(asset_params->resourcePath, std::ios::out | std::ios::binary);
-			if(!outf.good())
-				return false;
-
-			outf.write(code_string.c_str(), code_string.size());
-			
-			if(persistent)
+			if(asset_params->toMemory)
 			{
-				asset_params->writeListener = std::make_unique<EntityWriteListener>(entity,
-					asset_params->prettyPrint, asset_params->sortKeys, outf);
+				asset_params->resourceContents = code_string;
+				asset_params->writeListener = nullptr;
 			}
 			else
 			{
-				outf.close();
-				asset_params->writeListener = nullptr;
+				auto outf = std::make_unique<std::ofstream>(asset_params->resourcePath, std::ios::out | std::ios::binary);
+				if(!outf->good())
+					return false;
+
+				outf->write(code_string.c_str(), code_string.size());
+
+				if(persistent)
+					asset_params->writeListener = std::make_unique<EntityWriteListener>(entity,
+						asset_params->prettyPrint, asset_params->sortKeys, std::move(outf));
+				else
+					asset_params->writeListener = nullptr;
 			}
 
 			return true;
 		}
 		else if(asset_params->resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 		{
-			std::ofstream outf(asset_params->resourcePath, std::ios::out | std::ios::binary);
-			if(!outf.good())
-				return false;
-
-			if(!FileSupportCAML::WriteHeader(outf))
-				return false;
-
 			auto [compressed_data, huffman_tree] = CompressString(code_string);
-			outf.write(reinterpret_cast<char *>(compressed_data.data()), compressed_data.size());
-
-			if(persistent)
+			if(asset_params->toMemory)
 			{
-				asset_params->writeListener = std::make_unique<EntityWriteListener>(entity,
-					asset_params->prettyPrint, asset_params->sortKeys, outf, huffman_tree);
+				std::ostringstream outs;
+				if(!FileSupportCAML::WriteHeader(outs))
+					return false;
+				outs.write(reinterpret_cast<char *>(compressed_data.data()), compressed_data.size());
+				delete huffman_tree;
+				asset_params->resourceContents = outs.str();
+				asset_params->writeListener = nullptr;
 			}
 			else
 			{
-				delete huffman_tree;
-				outf.close();
-				asset_params->writeListener = nullptr;
+				auto outf = std::make_unique<std::ofstream>(asset_params->resourcePath, std::ios::out | std::ios::binary);
+				if(!outf->good())
+					return false;
+
+				if(!FileSupportCAML::WriteHeader(*outf))
+					return false;
+
+				outf->write(reinterpret_cast<char *>(compressed_data.data()), compressed_data.size());
+
+				if(persistent)
+					asset_params->writeListener = std::make_unique<EntityWriteListener>(entity,
+						asset_params->prettyPrint, asset_params->sortKeys, std::move(outf), huffman_tree);
+				else
+				{
+					delete huffman_tree;
+					asset_params->writeListener = nullptr;
+				}
 			}
 
 			return true;
@@ -521,13 +542,15 @@ public:
 
 	// Checks if this entity specifically has been loaded as persistent
 	inline bool IsEntityDirectlyPersistent(Entity *entity)
-	{	return persistentEntities.find(entity) != end(persistentEntities);	}
+	{
+		return persistentEntities.find(entity) != end(persistentEntities);
+	}
 
 	inline EntityPermissions GetEntityPermissions(Entity *entity)
 	{
 		if(entity == nullptr)
 			return EntityPermissions();
-			
+
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::ReadLock lock(entityPermissionsMutex);
 	#endif
@@ -543,10 +566,8 @@ public:
 	//if successful, returns no error message, file version (if available), and true
 	//if failure, returns error message, file version (if available) and false
 	template<typename BufferType>
-	static std::tuple<std::string, std::string, bool> LoadFileToBuffer(const std::string &filename, std::string &file_type, BufferType &b)
+	static std::tuple<std::string, std::string, bool> LoadStreamToBuffer(std::istream &f, std::string &file_type, BufferType &b)
 	{
-		std::ifstream f(filename, std::fstream::binary | std::fstream::in);
-
 		if(!f.good())
 			return std::make_tuple("Cannot open file", "", false);
 
@@ -571,9 +592,8 @@ public:
 
 	//stores buffer b (of type BufferType of elements BufferElementType) into the filename, returns true if successful, false if not
 	template<typename BufferType>
-	static bool StoreFileFromBuffer(const std::string &filename, std::string &file_type, const BufferType &b)
+	static bool StoreFileFromBuffer(std::ostream &f, std::string &file_type, const BufferType &b)
 	{
-		std::ofstream f(filename, std::fstream::binary | std::fstream::out);
 		if(!f.good())
 			return false;
 

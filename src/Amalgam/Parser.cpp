@@ -336,7 +336,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	//can't shortcut to use top node when accumulating a transaction or it may get assigned
 	// to the incorrect node
 	if(!upd.transaction && lowest_common_node == upd.topNode)
-		target->AppendOrderedChildNode(enm.AllocNode(ENT_TRUE));
+		target->AppendOrderedChildNode(enm.AllocNode(true));
 	else
 		target->AppendOrderedChildNode(enm.AllocNode(static_cast<double>(a_ancestor_depth)));
 
@@ -631,10 +631,24 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 
 		//check for special values
 		double value = 0.0;
+		if(s == ".true")
+		{
+			new_token->SetTypeViaBoolValue(true);
+			return new_token;
+		}
+		else if(s == ".false")
+		{
+			new_token->SetTypeViaBoolValue(false);
+			return new_token;
+		}
 		if(s == ".infinity")
+		{
 			value = std::numeric_limits<double>::infinity();
+		}
 		else if(s == "-.infinity")
+		{
 			value = -std::numeric_limits<double>::infinity();
+		}
 		else
 		{
 			auto [converted_value, success] = Platform_StringToNumber(s);
@@ -1079,6 +1093,9 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 	{
 		switch(tree_type)
 		{
+		case ENT_BOOL:
+			upd.result.append(tree->GetBoolValueReference() ? ".true" : ".false");
+			break;
 		case ENT_NUMBER:
 			upd.result.append(StringManipulation::NumberToString(tree->GetNumberValueReference()));
 			break;
@@ -1379,7 +1396,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 				result = found->second;
 			}
 		}
-		else if(step_node_type == ENT_TRUE)
+		else if(step_node_type == ENT_BOOL && result->GetBoolValueReference())
 		{
 			//climb up to the top
 			while(true)
@@ -1391,7 +1408,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 				result = found->second;
 			}
 		}
-		else if(step_node_type != ENT_FALSE)
+		else if(step_node_type != ENT_BOOL)
 		{
 			return nullptr;
 		}

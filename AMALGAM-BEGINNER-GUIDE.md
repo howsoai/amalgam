@@ -1037,7 +1037,7 @@ or
     #mymap (map (lambda (print (current_value) "\n")) (range 1 30))
 )
 (if run_mt
-    (call (set_concurrency mymap (true)))
+    (call (set_concurrency mymap .true))
     (call mymap)
 )
 ```

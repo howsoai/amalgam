@@ -18,14 +18,14 @@ public:
 	//if retain_writes is true, then the listener will store the writes, and GetWrites() will return the list of all writes accumulated
 	//if _pretty is true, then the listener will pretty print to filename
 	//if sort_keys is true, then the listener will print with keys sorted for assocs
-	//if filename is not empty, then it will attempt to open the file and log all writes to that file, and then flush the file stream
-	EntityWriteListener(Entity *listening_entity, bool retain_writes = false,
-		bool _pretty = false, bool sort_keys = false, const std::string &filename = std::string());
+	//if transaction_file is not empty, then it takes ownership of the file, logging all writes and flushing the stream after each
+	EntityWriteListener(Entity *listening_entity, std::unique_ptr<std::ostream> &&transaction_file, bool retain_writes = false,
+		bool _pretty = false, bool sort_keys = false);
 
 	//stores all writes, appending them to transaction_file
 	//if huffman_tree is not null, the write listener will assume ownership of the memory and use it to compress output
 	EntityWriteListener(Entity *listening_entity,
-		bool _pretty, bool sort_keys, std::ofstream &transaction_file, HuffmanTree<uint8_t> *huffman_tree = nullptr);
+		bool _pretty, bool sort_keys, std::unique_ptr<std::ostream> &&transaction_file, HuffmanTree<uint8_t> *huffman_tree = nullptr);
 
 	~EntityWriteListener();
 
@@ -78,7 +78,7 @@ protected:
 	EvaluableNodeManager listenerStorage;
 
 	EvaluableNode *storedWrites;
-	std::ofstream logFile;
+	std::unique_ptr<std::ostream> logFile;
 	//used for compressing output if not nullptr; this memory is managed by this listener and must be freed
 	HuffmanTree<uint8_t> *huffmanTree;
 

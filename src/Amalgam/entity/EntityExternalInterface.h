@@ -8,6 +8,7 @@
 
 //system headers:
 #include <string>
+#include <variant>
 #include <vector>
 
 /*
@@ -34,12 +35,31 @@ public:
 		bool loaded;
 		std::string message;
 		std::string version;
+		std::vector<std::string> entity_path;
 	};
 
-	LoadEntityStatus LoadEntity(std::string &handle, std::string &path,
+	//load/store destinations:
+	struct LoadFromFile { const std::string &path; };
+	struct LoadFromMemory { const std::string &&data; };
+	using LoadSource = std::variant<LoadFromFile, LoadFromMemory>;
+
+	struct StoreToFile { const std::string &path; };
+	struct StoreToMemory { std::string &data; };
+	using StoreSource = std::variant<StoreToFile, StoreToMemory>;
+
+	// Load an entity from some source into a handle.
+	//
+	// If entity_path is non-empty, then load into an entity nested inside handle.  handle must
+	// exist, as must all entries in entity_path except for the last one.  If that entity_path
+	// resolves to a missing entity with an extant parent, load the entity into exactly the
+	// specified entity path.  If entity_path resolves to an extant entity, then load the entity
+	// into a new child of it with a unique name.  Return the actual path to the loaded entity
+	// in the entity_path field of the returned status structure.
+	LoadEntityStatus LoadEntity(std::string &handle, const LoadSource &source,
 		std::string file_type, bool persistent, std::string_view json_file_params,
 		std::string &write_log_filename, std::string &print_log_filename,
-		std::string rand_seed = std::string(""));
+		const std::vector<std::string> &entity_path, std::string rand_seed = std::string(""));
+
 	LoadEntityStatus VerifyEntity(std::string &path);
 
 	std::string GetEntityPermissions(std::string &handle);
@@ -49,8 +69,13 @@ public:
 		std::string file_type, bool persistent, std::string_view json_file_params,
 		std::string &write_log_filename, std::string &print_log_filename);
 
-	void StoreEntity(std::string &handle, std::string &path,
-		std::string file_type, bool persistent, std::string_view json_file_params);
+	// Store an entity from a handle into some source.
+	//
+	// If entity_path is non-empty, then store the entity at that path within the entity
+	// identified by handle, or do nothing if that path does not exist.
+	void StoreEntity(std::string &handle, const StoreSource &source,
+		std::string file_type, bool persistent, std::string_view json_file_params,
+		const std::vector<std::string> &entity_path);
 
 	void ExecuteEntity(std::string &handle, std::string &label);
 

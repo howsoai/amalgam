@@ -2,8 +2,8 @@
 #include "EntityWriteListener.h"
 #include "EvaluableNodeTreeFunctions.h"
 
-EntityWriteListener::EntityWriteListener(Entity *listening_entity,
-	bool retain_writes, bool _pretty, bool sort_keys, const std::string &filename)
+EntityWriteListener::EntityWriteListener(Entity *listening_entity, std::unique_ptr<std::ostream> &&transaction_file,
+	bool retain_writes, bool _pretty, bool sort_keys) : logFile(std::move(transaction_file))
 {
 	listeningEntity = listening_entity;
 
@@ -15,16 +15,15 @@ EntityWriteListener::EntityWriteListener(Entity *listening_entity,
 	fileSuffix = ")\r\n";
 	pretty = _pretty;
 	sortKeys = sort_keys;
-	if(!filename.empty())
+	if(logFile != nullptr && logFile->good())
 	{
-		logFile.open(filename, std::ios::binary);
-		logFile << "(" << GetStringFromEvaluableNodeType(ENT_SEQUENCE) << "\r\n";
+		*logFile << "(" << GetStringFromEvaluableNodeType(ENT_SEQUENCE) << "\r\n";
 	}
 	huffmanTree = nullptr;
 }
 
 EntityWriteListener::EntityWriteListener(Entity *listening_entity,
-	bool _pretty, bool sort_keys, std::ofstream &transaction_file, HuffmanTree<uint8_t> *huffman_tree)
+	bool _pretty, bool sort_keys, std::unique_ptr<std::ostream> &&transaction_file, HuffmanTree<uint8_t> *huffman_tree) : logFile(std::move(transaction_file))
 {
 	listeningEntity = listening_entity;
 	storedWrites = nullptr;
@@ -41,27 +40,25 @@ EntityWriteListener::EntityWriteListener(Entity *listening_entity,
 
 	pretty = _pretty;
 	sortKeys = sort_keys;
-	logFile = std::move(transaction_file);
 
 	huffmanTree = huffman_tree;
 }
 
 EntityWriteListener::~EntityWriteListener()
 {
-	if(logFile.is_open())
+	if(logFile != nullptr)
 	{
 		if(huffmanTree == nullptr)
 		{
-			logFile << fileSuffix;
+			*logFile << fileSuffix;
 		}
 		else
 		{
 			auto to_append = CompressStringToAppend(fileSuffix, huffmanTree);
-			logFile.write(reinterpret_cast<char *>(to_append.data()), to_append.size());
+			logFile->write(reinterpret_cast<char *>(to_append.data()), to_append.size());
 
 			delete huffmanTree;
 		}
-		logFile.close();
 	}
 }
 
@@ -251,8 +248,8 @@ void EntityWriteListener::FlushLogFile()
 	Concurrency::Lock lock(mutex);
 #endif
 
-	if(logFile.is_open() && logFile.good())
-		logFile.flush();
+	if(logFile != nullptr && logFile->good())
+		logFile->flush();
 }
 
 EvaluableNode *EntityWriteListener::BuildNewWriteOperation(EvaluableNodeType assign_type, Entity *target_entity)
@@ -291,16 +288,16 @@ void EntityWriteListener::LogCreateEntityRecurse(Entity *new_entity)
 
 void EntityWriteListener::LogNewEntry(EvaluableNode *new_entry, bool flush)
 {
-	if(logFile.is_open() && logFile.good())
+	if(logFile != nullptr && logFile->good())
 	{
 		if(huffmanTree == nullptr)
 		{
 			//one extra indentation if pretty because already have the seq or declare
-			logFile << Parser::Unparse(new_entry, pretty, true, sortKeys, false, pretty ? 1 : 0);
+			*logFile << Parser::Unparse(new_entry, pretty, true, sortKeys, false, pretty ? 1 : 0);
 
 			//append a new line if not already appended
 			if(!pretty)
-				logFile << "\r\n";
+				*logFile << "\r\n";
 		}
 		else
 		{
@@ -312,11 +309,11 @@ void EntityWriteListener::LogNewEntry(EvaluableNode *new_entry, bool flush)
 				new_code += "\r\n";
 
 			auto to_append = CompressStringToAppend(new_code, huffmanTree);
-			logFile.write(reinterpret_cast<char *>(to_append.data()), to_append.size());
+			logFile->write(reinterpret_cast<char *>(to_append.data()), to_append.size());
 		}
 
 		if(flush)
-			logFile.flush();
+			logFile->flush();
 	}
 
 	if(storedWrites == nullptr)

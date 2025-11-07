@@ -239,10 +239,11 @@ function render() {
 	.sp { font-style: italic; color: #aaaadd; font-size: 15pt; }
 	.description { font-size: 12pt; margin-left: 10px;}
 	.output, .extra { font-size: 11pt; margin-left: 30px; }
-	.td1, .td2, .td3 { display: inline-block; }
-	.td1 {	width: 200px; vertical-align: top;}
-	.td2 {	width: 400px; }
-	.td3 { margin-left: 20px; }
+	.td1, .td2, .td3, .td5 { display: inline-block; }
+	.td1 { width: 200px; vertical-align: top;}
+	.td2 { width: 400px; vertical-align: top;}
+	.td3 { width: 600px; }
+	.td5 { margin-left: 20px; }
 	.bold { font-weight: bold; }
 	.italic { font-style: italic; }
 	.indent { margin-left: 30px; }
@@ -297,17 +298,17 @@ function render() {
 	<a name="typeDescriptions"></a>
 	<h2>Type descriptions</h2>
 	
-	<div class='td1'>null</div><div class='td3'>null value</div><br>
-	<div class='td1'>bool</div><div class='td3'>true or false, denoted in language as the immediate values .true and .false</div><br>
-	<div class='td1'>number</div><div class='td3'>64-bit floating point, for integer or float</div><br>
-	<div class='td1'>string</div><div class='td3'>a string of bytes, assumed by most opcodes to be interpreted as utf-8, but can also be treated as binary strings</div><br>
-	<div class='td1'>bstring</div><div class='td3'>bare string - a string without quotes</div><br>
-	<div class='td1'>list</div><div class='td3'>list of other data types</div><br>
-	<div class='td1'>assoc</div><div class='td3'>a map of data types to other entities of key-value pairs, where the keys are strings</div><br>
-	<div class='td1'>code</div><div class='td3'>tree of code</div><br>
-	<div class='td1'>*</div><div class='td3'>whatever type is evaluated</div><br>
-	<div class='td1'>id</div><div class='td3'>a string representing the id of a child entity that is an immediate child of the current entity.<br>  If it is an underscore followed by a number, then it is considered "unnamed" and thus will be matched and compared against other unnamed entities.</div><br>
-	<div class='td1'>id_path</div><div class='td3'>either a string or a list of strings representing the sequential ids when traversing the child entities to address entities other than just immediate child entities.  <br>For example, <span class='ex code'>(list "my_library" "my_object" "my_subobject")</span> would address my_subobject in my_object in "my_library"</div><br>
+	<div class='td1'>null</div><div class='td5'>null value</div><br>
+	<div class='td1'>bool</div><div class='td5'>true or false, denoted in language as the immediate values .true and .false</div><br>
+	<div class='td1'>number</div><div class='td5'>64-bit floating point, for integer or float</div><br>
+	<div class='td1'>string</div><div class='td5'>a string of bytes, assumed by most opcodes to be interpreted as utf-8, but can also be treated as binary strings</div><br>
+	<div class='td1'>bstring</div><div class='td5'>bare string - a string without quotes</div><br>
+	<div class='td1'>list</div><div class='td5'>list of other data types</div><br>
+	<div class='td1'>assoc</div><div class='td5'>a map of data types to other entities of key-value pairs, where the keys are strings</div><br>
+	<div class='td1'>code</div><div class='td5'>tree of code</div><br>
+	<div class='td1'>*</div><div class='td5'>whatever type is evaluated</div><br>
+	<div class='td1'>id</div><div class='td5'>a string representing the id of a child entity that is an immediate child of the current entity.<br>  If it is an underscore followed by a number, then it is considered "unnamed" and thus will be matched and compared against other unnamed entities.</div><br>
+	<div class='td1'>id_path</div><div class='td5'>either a string or a list of strings representing the sequential ids when traversing the child entities to address entities other than just immediate child entities.  <br>For example, <span class='ex code'>(list "my_library" "my_object" "my_subobject")</span> would address my_subobject in my_object in "my_library"</div><br>
 	<p>
 	Comparisons and sorting on any strings are done in "natural order", meaning that 1x comes before 10, and m20x comes after m2a
 	<p>
@@ -374,24 +375,24 @@ function render() {
 	<a name="systemCommands"></a>
 	<h2>System Commands</h2>
 
-	<div class='td1'><span class="parameter">exit<span></div><div class='td2'>Exits the application.</div><br />
-	<div class='td1'><span class="parameter">readline<span></div><div class='td2'>Reads a line of input from the terminal and returns the string.</div><br />
-	<div class='td1'><span class="parameter">printline<span></div><div class='td2'>Prints a line of string output of the 2nd argument directly to the terminal and returns null.</div><br />
-	<div class='td1'><span class="parameter">cwd<span></div><div class='td2'>If no additional parameter is specified, returns the current working directory.  If an additional parameter is specified, it attempts to change the current working directory to that parameter, returning true on success and false on failure.</div><br />
-	<div class='td1'><span class="parameter">system<span></div><div class='td2'>Runs the system command (i.e., a string that would normally be run on the command line) specified by the 2nd argument.  Returns null if the command was not found.  If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.</div><br />
-	<div class='td1'><span class="parameter">os<span></div><div class='td2'>Returns a string describing the operating system.</div><br />
-	<div class='td1'><span class="parameter">sleep<span></div><div class='td2'>Sleeps for the amount of seconds specified by the 2nd argument.</div><br />
-	<div class='td1'><span class="parameter">version<span></div><div class='td2'>Returns a string representing the current Amalgam version.</div><br />
-	<div class='td1'><span class="parameter">est_mem_reserved<span></div><div class='td2'>Returns data involving the estimated memory reserved.</div><br />
-	<div class='td1'><span class="parameter">est_mem_used<span></div><div class='td2'>Returns data involving the estimated memory used (excluding memory management overhead, caching, etc.).</div><br />
-	<div class='td1'><span class="parameter">mem_diagnostics<span></div><div class='td2'>Returns data involving memory diagnostics.</div><br />
-	<div class='td1'><span class="parameter">rand<span></div><div class='td2'>Returns the number of bytes specified by the additional parameter of secure random data intended for cryptographic use.</div><br />
-	<div class='td1'><span class="parameter">sign_key_pair<span></div><div class='td2'>Returns a list of two values, first a public key and second a secret key, for use with cryptographic signatures using the Ed25519 algorithm, generated via securely generated random numbers.</div><br />
-	<div class='td1'><span class="parameter">encrypt_key_pair<span></div><div class='td2'>Returns a list of two values, first a public key and second a secret key, for use with cryptographic encryption using the XSalsa20 and Curve25519 algorithms, generated via securely generated random numbers.</div><br />
-	<div class='td1'><span class="parameter">debugging_info<span></div><div class='td2'>Returns a list of two values.  The first is true if a debugger is present, false if it is not.  The second is true if debugging sounces is enabled, which means that source code location information is prepended to opcodes comments for any opcodes loaded from a file.</div><br />
-	<div class='td1'><span class="parameter">get_max_num_threads<span></div><div class='td2'>Returns the current maximum number of threads.</div><br />
-	<div class='td1'><span class="parameter">set_max_num_threads<span></div><div class='td2'>Attempts to set the current maximum number of threads, where 0 means to use the number of processor cores reported by the operating system.  Returns the maximum number of threads after it has been set.</div><br />
-	<div class='td1'><span class="parameter">built_in_data<span></div><div class='td2'>Returns built-in data compiled along with the version information.</div><br />
+	<div class='td2'><span class="parameter">exit<span></div><div class='td3'>Exits the application.</div><br />
+	<div class='td2'><span class="parameter">readline<span></div><div class='td3'>Reads a line of input from the terminal and returns the string.</div><br />
+	<div class='td2'><span class="parameter">printline<span></div><div class='td3'>Prints a line of string output of the 2nd argument directly to the terminal and returns null.</div><br />
+	<div class='td2'><span class="parameter">cwd<span></div><div class='td3'>If no additional parameter is specified, returns the current working directory.  If an additional parameter is specified, it attempts to change the current working directory to that parameter, returning true on success and false on failure.</div><br />
+	<div class='td2'><span class="parameter">system<span></div><div class='td3'>Runs the system command (i.e., a string that would normally be run on the command line) specified by the 2nd argument.  Returns null if the command was not found.  If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.</div><br />
+	<div class='td2'><span class="parameter">os<span></div><div class='td3'>Returns a string describing the operating system.</div><br />
+	<div class='td2'><span class="parameter">sleep<span></div><div class='td3'>Sleeps for the amount of seconds specified by the 2nd argument.</div><br />
+	<div class='td2'><span class="parameter">version<span></div><div class='td3'>Returns a string representing the current Amalgam version.</div><br />
+	<div class='td2'><span class="parameter">est_mem_reserved<span></div><div class='td3'>Returns data involving the estimated memory reserved.</div><br />
+	<div class='td2'><span class="parameter">est_mem_used<span></div><div class='td3'>Returns data involving the estimated memory used (excluding memory management overhead, caching, etc.).</div><br />
+	<div class='td2'><span class="parameter">mem_diagnostics<span></div><div class='td3'>Returns data involving memory diagnostics.</div><br />
+	<div class='td2'><span class="parameter">rand<span></div><div class='td3'>Returns the number of bytes specified by the additional parameter of secure random data intended for cryptographic use.</div><br />
+	<div class='td2'><span class="parameter">sign_key_pair<span></div><div class='td3'>Returns a list of two values, first a public key and second a secret key, for use with cryptographic signatures using the Ed25519 algorithm, generated via securely generated random numbers.</div><br />
+	<div class='td2'><span class="parameter">encrypt_key_pair<span></div><div class='td3'>Returns a list of two values, first a public key and second a secret key, for use with cryptographic encryption using the XSalsa20 and Curve25519 algorithms, generated via securely generated random numbers.</div><br />
+	<div class='td2'><span class="parameter">debugging_info<span></div><div class='td3'>Returns a list of two values.  The first is true if a debugger is present, false if it is not.  The second is true if debugging sounces is enabled, which means that source code location information is prepended to opcodes comments for any opcodes loaded from a file.</div><br />
+	<div class='td2'><span class="parameter">get_max_num_threads<span></div><div class='td3'>Returns the current maximum number of threads.</div><br />
+	<div class='td2'><span class="parameter">set_max_num_threads<span></div><div class='td3'>Attempts to set the current maximum number of threads, where 0 means to use the number of processor cores reported by the operating system.  Returns the maximum number of threads after it has been set.</div><br />
+	<div class='td2'><span class="parameter">built_in_data<span></div><div class='td3'>Returns built-in data compiled along with the version information.</div><br />
 	
 	<br />
 	Additionally, the argument vector passed in on the command line is passed in as the variable <em>argv</em>, with any arguments consumed by the interpreter removed.  This includes the standard 0th argument which is the Amalgam script being run.  The interpreter path and name are passed in as the variable <em>interpreter</em>.
@@ -400,16 +401,16 @@ function render() {
 	<a name="fileIO"></a>
 	<h2>File I/O</h2>
 	These parameters apply to load and store opcodes and API calls:<br />
-<div class='td1'><span class="parameter">include_rand_seeds<span></div><div class='td2'>If true, attempts to include random seeds when storing and loading.</div><br />
-<div class='td1'><span class="parameter">escape_resource_name<span></div><div class='td2'>If true, will escape any characters in the resource or file name that are not universally supported across platforms.</div><br />
-<div class='td1'><span class="parameter">escape_contained_resource_names<span></div><div class='td2'>If true, then for any contained entities and their resource or file paths that extend the base file path, it will escape any characters in the names that are not universally supported across platforms.  This only applies to file formats where the entities are not flattened into one file.</div><br />
-<div class='td1'><span class="parameter">transactional<span></div><div class='td2'>If true, attempts to load and store files in a transactional manner, such that any interruption will not corrupt the file.  Not applicable to all file types.</div><br />
-<div class='td1'><span class="parameter">pretty_print<span></div><div class='td2'>If true, then any code stored will be pretty printed.</div><br />
-<div class='td1'><span class="parameter">sort_keys<span></div><div class='td2'>If true, then any associative arrays will be sorted by keys.</div><br />
-<div class='td1'><span class="parameter">flatten<span></div><div class='td2'>If true, then will attempt to flatten all contained entities into one executable object and thus one file.</div><br />
-<div class='td1'><span class="parameter">parallel_create<span></div><div class='td2'>If true, will attempt use concurrency to store and load entities in parallel.</div><br />
-<div class='td1'><span class="parameter">execute_on_load<span></div><div class='td2'>If true, will execute the code upon load, which is required when entities are stored using flatten in order to create all of the entity structures.</div><br />
-<div class='td1'><span class="parameter">require_version_compatibility<span></div><div class='td2'>If true, will fail on a load if the version of Amalgam is not compatible with the file version.</div><br />
+	<div class='td2'><span class="parameter">include_rand_seeds<span></div><div class='td3'>If true, attempts to include random seeds when storing and loading.</div><br />
+	<div class='td2'><span class="parameter">escape_resource_name<span></div><div class='td3'>If true, will escape any characters in the resource or file name that are not universally supported across platforms.</div><br />
+	<div class='td2'><span class="parameter">escape_contained_resource_names<span></div><div class='td3'>If true, then for any contained entities and their resource or file paths that extend the base file path, it will escape any characters in the names that are not universally supported across platforms.  This only applies to file formats where the entities are not flattened into one file.</div><br />
+	<div class='td2'><span class="parameter">transactional<span></div><div class='td3'>If true, attempts to load and store files in a transactional manner, such that any interruption will not corrupt the file.  Not applicable to all file types.</div><br />
+	<div class='td2'><span class="parameter">pretty_print<span></div><div class='td3'>If true, then any code stored will be pretty printed.</div><br />
+	<div class='td2'><span class="parameter">sort_keys<span></div><div class='td3'>If true, then any associative arrays will be sorted by keys.</div><br />
+	<div class='td2'><span class="parameter">flatten<span></div><div class='td3'>If true, then will attempt to flatten all contained entities into one executable object and thus one file.</div><br />
+	<div class='td2'><span class="parameter">parallel_create<span></div><div class='td3'>If true, will attempt use concurrency to store and load entities in parallel.</div><br />
+	<div class='td2'><span class="parameter">execute_on_load<span></div><div class='td3'>If true, will execute the code upon load, which is required when entities are stored using flatten in order to create all of the entity structures.</div><br />
+	<div class='td2'><span class="parameter">require_version_compatibility<span></div><div class='td3'>If true, will fail on a load if the version of Amalgam is not compatible with the file version.</div><br />
 
 	File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.
 	

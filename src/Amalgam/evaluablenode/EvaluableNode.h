@@ -1311,7 +1311,7 @@ public:
 	//if enm is not nullptr, then it will make a copy of any code or string ids
 	void CopyValueFromEvaluableNode(EvaluableNode *en, EvaluableNodeManager *enm = nullptr);
 
-	bool GetValueAsBoolean();
+	bool GetValueAsBoolean(bool value_if_null = false);
 
 	double GetValueAsNumber(double value_if_null = std::numeric_limits<double>::quiet_NaN());
 

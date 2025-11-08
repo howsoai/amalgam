@@ -2092,7 +2092,7 @@ void EvaluableNodeImmediateValueWithType::CopyValueFromEvaluableNode(EvaluableNo
 		nodeValue.code = enm->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
 }
 
-bool EvaluableNodeImmediateValueWithType::GetValueAsBoolean()
+bool EvaluableNodeImmediateValueWithType::GetValueAsBoolean(bool value_if_null)
 {
 	if(nodeType == ENIVT_BOOL)
 		return nodeValue.boolValue;
@@ -2116,7 +2116,7 @@ bool EvaluableNodeImmediateValueWithType::GetValueAsBoolean()
 		return EvaluableNode::ToBool(nodeValue.code);
 
 	//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-	return false;
+	return value_if_null;
 }
 
 double EvaluableNodeImmediateValueWithType::GetValueAsNumber(double value_if_null)

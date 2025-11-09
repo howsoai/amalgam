@@ -6,7 +6,7 @@
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -87,7 +87,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -208,7 +208,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -292,7 +292,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -411,7 +411,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -525,7 +525,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -568,7 +568,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, bo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_params = ocn.size();
 
 	if(num_params < 2)

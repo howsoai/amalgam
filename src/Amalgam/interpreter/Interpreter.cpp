@@ -601,13 +601,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluabl
 
 double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 {
-	if(EvaluableNode::IsNull(n))
-		return std::numeric_limits<double>::quiet_NaN();
-
-	auto type = n->GetType();
-
-	//shortcut if the node has what is being asked
-	if(type == ENT_NUMBER)
+	if(n != nullptr && n->GetType() == ENT_NUMBER)
 		return n->GetNumberValueReference();
 
 	auto result = InterpretNodeForImmediateUse(n, true);
@@ -640,14 +634,13 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueNumberValueOrNullEval
 
 bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_null)
 {
-	//shortcut if the node has what is being asked
-	if(EvaluableNode::IsNull(n))
-		return value_if_null;
+	if(n != nullptr && n->GetType() == ENT_BOOL)
+		return n->GetBoolValueReference();
 
 	auto result = InterpretNodeForImmediateUse(n, true);
 	auto &result_value = result.GetValue();
 
-	bool value = result_value.GetValueAsBoolean();
+	bool value = result_value.GetValueAsBoolean(value_if_null);
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
 	return value;

@@ -5,7 +5,7 @@
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -60,7 +60,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, boo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_OR(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -104,7 +104,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OR(EvaluableNode *en, bool
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_XOR(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -144,7 +144,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_XOR(EvaluableNode *en, boo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -165,7 +165,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, boo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EQUAL(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -233,7 +233,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EQUAL(EvaluableNode *en, b
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NEQUAL(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -318,7 +318,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NEQUAL(EvaluableNode *en, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -402,7 +402,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -486,7 +486,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -567,7 +567,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();

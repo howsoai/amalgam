@@ -13,7 +13,7 @@
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -69,7 +69,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -105,7 +105,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -143,7 +143,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -164,7 +164,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -185,7 +185,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, b
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -204,7 +204,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE(EvaluableNode *
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -269,7 +269,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -285,7 +285,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE(Evaluabl
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -313,7 +313,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -406,7 +406,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -421,7 +421,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(Evalu
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -436,7 +436,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(Eva
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -496,7 +496,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -556,7 +556,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE_ENTITIES(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -574,7 +574,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE_ENTITIES(Evalua
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();

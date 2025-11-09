@@ -9,7 +9,7 @@
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -35,7 +35,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -364,7 +364,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
@@ -653,7 +653,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	size_t num_params = ocn.size();
 	if(num_params < 1)
@@ -782,7 +782,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -848,7 +848,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -929,7 +929,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -950,7 +950,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en,
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -1094,25 +1094,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
 	//get assoc array to look up
 	auto container = InterpretNodeForImmediateUse(ocn[0]);
+	EvaluableNodeReference index_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	if(container == nullptr)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
+		return index_list;
 
-	EvaluableNodeReference index_list;
+	auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
 
 	if(container->IsAssociativeArray())
 	{
 		auto &container_mcn = container->GetMappedChildNodesReference();
-		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
-
-		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
 		index_list_ocn.reserve(container_mcn.size());
 		for(auto &[node_id, _] : container_mcn)
 		{
@@ -1124,15 +1122,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 	else if(container->IsOrderedArray())
 	{
 		size_t num_ordered_nodes = container->GetOrderedChildNodesReference().size();
-		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
-
-		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
 		index_list_ocn.resize(num_ordered_nodes);
 		for(size_t i = 0; i < num_ordered_nodes; i++)
 			index_list_ocn[i] = evaluableNodeManager->AllocNode(static_cast<double>(i));
 	}
-	else //no child nodes, just alloc an empty list
-		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
 
 	//none of the original container is needed
 	evaluableNodeManager->FreeNodeTreeIfPossible(container);
@@ -1142,7 +1135,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -1300,7 +1293,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -1325,7 +1318,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -1394,7 +1387,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -1504,7 +1497,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -1688,7 +1681,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 	//use stack to lock it in place, but copy it back to temporary before returning
 	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_nodes = ocn.size();
 
 	if(num_nodes > 0)
@@ -1773,7 +1766,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	size_t num_params = ocn.size();
 	if(num_params < 1)
@@ -1910,7 +1903,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();

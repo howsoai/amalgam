@@ -615,7 +615,7 @@ public:
 
 	//returns an EvaluableNodeReference for value, allocating if necessary based on if immediate result is needed
 	template<typename T>
-	inline EvaluableNodeReference AllocIfNotImmediate(T value, bool immediate_result)
+	__forceinline EvaluableNodeReference AllocIfNotImmediate(T value, bool immediate_result)
 	{
 		if(immediate_result)
 			return EvaluableNodeReference(value);

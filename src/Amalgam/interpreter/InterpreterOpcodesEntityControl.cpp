@@ -12,7 +12,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID;
 	if(ocn.size() > 1)
@@ -125,7 +125,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 {
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	//get second parameter if exists
 	auto label_escape_increment = EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT;
@@ -156,7 +156,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	bool accum = (en->GetType() == ENT_ACCUM_ENTITY_ROOTS);
 	bool all_assignments_successful = true;
@@ -243,7 +243,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 	EntityReadReference entity;
 	if(ocn.size() > 0)
 		entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
@@ -260,7 +260,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(Evalu
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_params = ocn.size();
 
 	if(num_params < 1)
@@ -312,7 +312,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	EntityReadReference entity;
 	if(ocn.size() > 0)
@@ -329,7 +329,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(Eva
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_params = ocn.size();
 
 	if(num_params < 2)
@@ -378,7 +378,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	EvaluableNodeReference new_entity_ids_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	new_entity_ids_list->ReserveOrderedChildNodes((ocn.size() + 1) / 2);
@@ -452,7 +452,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	EvaluableNodeReference new_entity_ids_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	new_entity_ids_list->ReserveOrderedChildNodes((ocn.size() + 1) / 2);
@@ -525,7 +525,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	EvaluableNodeReference new_entity_ids_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	new_entity_ids_list->ReserveOrderedChildNodes((ocn.size() + 1) / 2);
@@ -600,7 +600,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 		return EvaluableNodeReference::Null();
 
 	bool all_destroys_successful = true;
-	for(auto &cn : en->GetOrderedChildNodes())
+	for(auto &cn : en->GetOrderedChildNodesReference())
 	{
 		//get the id of the source entity
 		auto id_node = InterpretNodeForImmediateUse(cn);
@@ -645,7 +645,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -685,7 +685,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -767,7 +767,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -811,7 +811,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();

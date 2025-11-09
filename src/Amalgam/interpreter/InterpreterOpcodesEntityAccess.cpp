@@ -16,7 +16,7 @@
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -38,7 +38,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	bool return_query_value = (en->GetType() == ENT_COMPUTE_ON_CONTAINED_ENTITIES);
 
 	EvaluableNodeReference entity_id_path = EvaluableNodeReference::Null();
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 	auto node_stack = CreateOpcodeStackStateSaver();
 
 	//interpret and buffer nodes for querying conditions
@@ -197,7 +197,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_opcodes(EvaluableNod
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -237,7 +237,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	bool direct = (en->GetType() == ENT_DIRECT_ASSIGN_TO_ENTITIES);
 	bool accum_assignment = (en->GetType() == ENT_ACCUM_TO_ENTITIES);
@@ -331,7 +331,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_DIRECT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -426,7 +426,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -567,7 +567,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, bool immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();

@@ -38,6 +38,7 @@ void SBFDSColumnData::InsertIndexValue(EvaluableNodeImmediateValueType value_typ
 		else
 			falseBoolIndices.insert(index);
 
+		valueEntries[index] = value;
 		return;
 	}
 
@@ -219,9 +220,18 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 				return;
 
 			if(new_bool_value)
+			{
 				trueBoolIndices.insert(index);
+				falseBoolIndices.erase(index);
+			}
 			else
+			{
 				trueBoolIndices.erase(index);
+				falseBoolIndices.insert(index);
+			}
+
+			valueEntries[index] = EvaluableNodeImmediateValue(new_bool_value);
+
 			return;
 		}
 

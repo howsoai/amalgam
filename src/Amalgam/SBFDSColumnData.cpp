@@ -158,7 +158,7 @@ void SBFDSColumnData::InsertNextIndexValueExceptNumbers(EvaluableNodeImmediateVa
 
 		UpdateLongestString(value.stringID, index);
 	}
-	else //value_type == ENIVT_CODE or ENIVT_BOOL
+	else //value_type == ENIVT_CODE
 	{
 		codeIndices.insert(index);
 
@@ -212,7 +212,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 		if(old_value_type_resolved == ENIVT_NULL)
 			return;
 
-		if(old_value_resolved == ENIVT_BOOL)
+		if(old_value_type_resolved == ENIVT_BOOL)
 		{
 			bool old_bool_value = old_value_resolved.boolValue;
 			bool new_bool_value = new_value_resolved.boolValue;

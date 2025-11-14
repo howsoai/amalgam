@@ -1160,9 +1160,13 @@ public:
 		for(size_t query_feature_index = 0; query_feature_index < num_features; query_feature_index++)
 		{
 			auto column = labelIdToColumnIndex.find(position_label_sids[query_feature_index]);
-			if(column != end(labelIdToColumnIndex))
-				PopulateTargetValueAndLabelIndex(r_dist_eval, query_feature_index,
-					position_values[query_feature_index], position_value_types[query_feature_index]);
+			if(column == end(labelIdToColumnIndex))
+				continue;
+
+			//TODO 24719: populate values if r_dist_eval.distEvaluator->populateOmittedFeatureValues is set
+			//TODO 24719: update language js file and unit tests
+			PopulateTargetValueAndLabelIndex(r_dist_eval, query_feature_index,
+				position_values[query_feature_index], position_value_types[query_feature_index]);
 		}
 	}
 

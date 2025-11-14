@@ -301,7 +301,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				return;
 
 			sbfds.PopulateGeneralizedDistanceEvaluatorFromColumnData(cond->distEvaluator, cond->positionLabels);
-			cond->distEvaluator.InitializeParametersAndFeatureParams();
+			cond->distEvaluator.InitializeParametersAndFeatureParams(cond->populateOmittedFeatureValues);
 
 			if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 			{
@@ -967,13 +967,14 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			break;
 		}
 
+		case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 		case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
 		{
 			//if excluding an entity, translate it into the index
-			if(cond.exclusionLabel == string_intern_pool.NOT_A_STRING_ID)
+			if(cond.entityIdToExclude == string_intern_pool.NOT_A_STRING_ID)
 				cond.exclusionEntityIndex = std::numeric_limits<size_t>::max();
 			else
-				cond.exclusionEntityIndex = container->GetContainedEntityIndex(cond.exclusionLabel);
+				cond.exclusionEntityIndex = container->GetContainedEntityIndex(cond.entityIdToExclude);
 			//fall through to cases below
 		}
 
@@ -987,7 +988,6 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		case ENT_QUERY_NOT_AMONG:
 		case ENT_QUERY_MAX:
 		case ENT_QUERY_MIN:
-		case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 		case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
 		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
 		case ENT_QUERY_ENTITY_CONVICTIONS:

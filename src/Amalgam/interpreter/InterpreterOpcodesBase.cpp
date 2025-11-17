@@ -1084,7 +1084,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			node_stack.PushEvaluableNode(variable_value_node);
 
 			Concurrency::SingleLock write_lock;
-			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+			auto [value_destination, top_of_stack, never_accessed] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 			if(write_lock.owns_lock())
 				RecordStackLockForProfiling(en, variable_sid);
 
@@ -1095,9 +1095,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			if(accum)
 			{
-				//values should always be copied before changing, in case the value is used elsewhere, especially in another thread
-				EvaluableNodeReference value_destination_node = evaluableNodeManager->DeepAllocCopy(*value_destination);
-				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
+				if(never_accessed)
+				{
+					//values should always be copied before changing, in case the value is used elsewhere, especially in another thread
+					EvaluableNodeReference value_destination_node = evaluableNodeManager->DeepAllocCopy(*value_destination);
+					variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
+				}
+				else
+				{
+					EvaluableNodeReference value_destination_node(*value_destination, true);
+					variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
+				}
+			}
+			else if(never_accessed)
+			{
+				EvaluableNodeReference value_destination_node(*value_destination, true);
+				evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
 			}
 
 			any_nonunique_assignments |= !variable_value_node.unique;

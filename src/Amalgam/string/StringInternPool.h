@@ -72,12 +72,14 @@ public:
 	//translates the string to the corresponding ID, 0 is the empty string, maximum value of size_t means it does not exist
 	inline StringID GetIDFromString(const std::string &str)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::Lock lock(mutex);
-	#endif
-
+		//TODO 24709: put this back in when implement method
+	//#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	//	auto [id_iter, lock] = stringToID.FindWithLock(str);
+	//#else
 		auto id_iter = stringToID.find(str);
-		if(id_iter == end(stringToID))
+	//#endif
+
+		if(id_iter == stringToID.end())
 			return NOT_A_STRING_ID;	//the string was never entered in and don't want to cause more errors
 
 		StringID id = id_iter->second.get();
@@ -93,12 +95,14 @@ public:
 		if(str.size() == 0)
 			return emptyStringId;
 
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::Lock lock(mutex);
-	#endif
-
+		//TODO 24709: put this back in when implement method
 		//try to insert it as a new string
+	//#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	//	auto [inserted, lock] = stringToID.EmplaceWithLock(str, nullptr);
+	//#else
 		auto inserted = stringToID.emplace(str, nullptr);
+	//#endif
+
 		if(inserted.second)
 			inserted.first->second = std::make_unique<StringInternStringData>(str);
 		else
@@ -214,7 +218,9 @@ public:
 				return;
 		}
 
-		Concurrency::Lock lock(mutex);
+		//TODO 24709: put this back in when implement method and change the erase at the end to accept a lock and hash?
+		//lock this shard
+		//auto lock = stringToID.LockForKey(id->string);
 	#endif
 
 		//remove any that aren't the last reference
@@ -239,30 +245,18 @@ public:
 	//even when "empty" it will still return 2 since the NOT_A_STRING_ID and emptyStringId take up slots
 	inline size_t GetNumStringsInUse()
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::Lock lock(mutex);
-	#endif
-
 		return stringToID.size();
 	}
 
 	//returns the number of strings that are still in use
 	inline size_t GetNumDynamicStringsInUse()
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::Lock lock(mutex);
-	#endif
-
 		return stringToID.size() - staticStringIDToIndex.size();
 	}
 
 	//returns a vector of all the strings still in use.  Intended for debugging.
 	inline std::vector<std::pair<std::string, size_t>> GetDynamicStringsInUse()
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::Lock lock(mutex);
-	#endif
-
 		std::vector<std::pair<std::string, size_t>> in_use;
 		for(auto &[str, sisd] : stringToID)
 		{
@@ -277,9 +271,6 @@ public:
 	//validates the string id, throwing an assert if it is not valid
 	inline void ValidateStringIdExistence(StringID sid)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::Lock lock(mutex);
-	#endif
 		ValidateStringIdExistenceUnderLock(sid);
 	}
 
@@ -309,12 +300,12 @@ protected:
 	//must be defined outside of this class and initialize all static strings
 	void InitializeStaticStrings();
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::SingleMutex mutex;
-#endif
-
 	//mapping from string to ID (index of idToRefCountAndString)
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	ConcurrentFastHashMap<std::string, std::unique_ptr<StringInternStringData>> stringToID;
+#else
 	FastHashMap<std::string, std::unique_ptr<StringInternStringData>> stringToID;
+#endif
 
 public:
 	//indicates that it is not a string, like NaN or null

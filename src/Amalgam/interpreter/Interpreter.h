@@ -278,7 +278,15 @@ public:
 		if(returning_unique_value && scopeStackFreeable.back())
 			evaluableNodeManager->FreeNodeTree(scopeStackNodes->back());
 		else
-			evaluableNodeManager->FreeNode(scopeStackNodes->back());
+		{
+			EvaluableNode *scope = scopeStackNodes->back();
+			for(auto &[id, cn] : scope->GetMappedChildNodesReference())
+			{
+				if(cn != nullptr && cn->GetIsFreeable())
+					evaluableNodeManager->FreeNodeTree(cn);
+			}
+			evaluableNodeManager->FreeNode(scope);
+		}
 
 		scopeStackNodes->pop_back();
 		scopeStackFreeable.pop_back();

@@ -802,9 +802,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 
 	//add new context
 	auto new_context = InterpretNodeForImmediateUse(ocn[0]);
+	bool context_unique = new_context.unique;
 	//can keep constant, but need the top node to be unique in case assignments are made
 	evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
 	PushNewScopeStack(new_context);
+
+	if(context_unique)
+	{
+		for(auto &[id, cn] : new_context->GetMappedChildNodesReference())
+		{
+			if(cn != nullptr)
+				cn->SetIsFreeable(true);
+		}
+	}
 
 	//run code
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -967,7 +977,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						//relock if needed before assigning the value
 						if(need_write_lock)
 							LockScopeStackTop(write_lock, required_vars);
+						else
 					#endif
+						//only set unread if writing to parts of the stack that aren't shared
+						if(value.unique && value != nullptr)
+							value->SetIsFreeable(true);
 
 						scope->SetMappedChildNode(cn_id, value, false);
 					}

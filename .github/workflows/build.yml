@@ -166,11 +166,11 @@ jobs:
           - arch: amd64
             type: release
             platform: macos
-            os: macos-13   # Intel runner
+            os: macos-15-intel   # Intel runner
           - arch: arm64
             type: release
             platform: macos
-            os: macos-14   # Apple Silicon runner
+            os: macos-15   # Apple Silicon runner
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write

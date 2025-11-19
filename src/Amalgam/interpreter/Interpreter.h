@@ -505,14 +505,15 @@ public:
 				bool is_freeable = true;
 				if(found->second != nullptr)
 				{
+					//TODO 24720: check if faster to check flag than to always set it
 					if(clear_freeable_flag)
 					{
 					#ifdef MULTITHREAD_SUPPORT
 						if(use_atomic_when_setting_access_flag)
-							is_freeable = found->second->SetIsFreeableAtomic(true);
+							is_freeable = found->second->SetIsFreeableAtomic(false);
 						else
 					#endif
-							is_freeable = found->second->SetIsFreeable(true);
+							is_freeable = found->second->SetIsFreeable(false);
 					}
 					else
 					{
@@ -578,8 +579,6 @@ public:
 	#endif
 	)
 	{
-		//TODO 24720: finish scope stack methods, update their usage, and ensure that newly created variables have the appropriate flag state
-		//TODO 24720: to reduce writes, check if the flag is set before setting it and doing a memory write, though profile
 		//find appropriate context for symbol by walking up the stack
 		//acquire lock if found
 		size_t cur_scope_stack_size = scopeStackNodes->size();
@@ -589,6 +588,7 @@ public:
 			auto &mcn = cur_context->GetMappedChildNodesReference();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
+				bool is_freeable = true;
 				if(scopeStackMutex != nullptr)
 				{
 					if(executing_interpreter != nullptr)
@@ -600,9 +600,16 @@ public:
 					cur_context = (*scopeStackNodes)[scope_stack_index - 1];
 					mcn = cur_context->GetMappedChildNodesReference();
 					found = mcn.find(symbol_sid);
+
+					if(found->second != nullptr)
+						is_freeable = found->second->GetIsFreeableAtomic();
+				}
+				else if(found->second != nullptr)
+				{
+					is_freeable = found->second->GetIsFreeable();
 				}
 
-				return std::make_tuple(&found->second, scope_stack_index == cur_scope_stack_size, );
+				return std::make_tuple(&found->second, scope_stack_index == cur_scope_stack_size, is_freeable);
 			}
 		}
 
@@ -612,6 +619,7 @@ public:
 			bool top_is_next_stack = (cur_scope_stack_size == 0);
 			auto [value_destination, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocationWithLock(
 				symbol_sid, top_is_next_stack && create_if_nonexistent, lock, executing_interpreter == nullptr ? this : executing_interpreter);
+			
 			if(value_destination != nullptr)
 				return std::make_tuple(value_destination, top_is_next_stack && top_of_stack, is_freeable);
 		}

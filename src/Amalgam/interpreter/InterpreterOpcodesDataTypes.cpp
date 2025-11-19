@@ -172,7 +172,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	if(sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 
-	auto [symbol_value, found] = GetScopeStackSymbol(sid);
+	auto [symbol_value, found, is_freeable] = GetScopeStackSymbol(sid, true);
 	if(found)
 		return EvaluableNodeReference(symbol_value, false);
 

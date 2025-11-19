@@ -809,6 +809,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 
 	if(context_unique)
 	{
+		//TODO 24720: if unique, set scope is freeable and only iterate and collect if freeable
+		//TODO 24720: also implement this for other scope-based opcodes if any node is freeable
+		//TODO 24720: to reduce writes, check if the flag is set before setting it and doing a memory write, though profile
 		for(auto &[id, cn] : new_context->GetMappedChildNodesReference())
 		{
 			if(cn != nullptr)

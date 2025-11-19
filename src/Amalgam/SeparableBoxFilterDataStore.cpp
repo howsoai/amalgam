@@ -281,7 +281,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	r_dist_eval.distEvaluator = &dist_eval;
 
 	//look up these data structures upfront for performance
-	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_sids, position_values, position_value_types);
+	PopulateTargetValuesAndLabelIndicesFromPosition(r_dist_eval, position_label_sids, position_values, position_value_types);
 	
 	bool high_accuracy = dist_eval.highAccuracyDistances;
 	double max_dist_exponentiated = dist_eval.ExponentiateDifferenceTerm(max_dist, high_accuracy);

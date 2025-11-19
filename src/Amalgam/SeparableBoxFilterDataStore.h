@@ -500,20 +500,7 @@ public:
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 		r_dist_eval.distEvaluator = &dist_eval;
 
-		//build target
-		size_t num_enabled_features = dist_eval.featureAttribs.size();
-		r_dist_eval.featureData.resize(num_enabled_features);
-		for(size_t i = 0; i < num_enabled_features; i++)
-		{
-			auto found = labelIdToColumnIndex.find(position_label_sids[i]);
-			if(found == end(labelIdToColumnIndex))
-				continue;
-
-			size_t column_index = found->second;
-			auto [value_type, value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(search_index);
-
-			PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
-		}
+		PopulateTargetValuesAndLabelIndicesFromEntityIndex(r_dist_eval, position_label_sids, search_index);
 
 		//TODO 24719: separate this extra copy so not needed when only calling once
 		//make a copy of the entities so that the list can be modified
@@ -543,7 +530,7 @@ public:
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 		r_dist_eval.distEvaluator = &dist_eval;
 
-		PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_sids, position_values, position_value_types);
+		PopulateTargetValuesAndLabelIndicesFromPosition(r_dist_eval, position_label_sids, position_values, position_value_types);
 
 		if(expand_to_first_nonzero_distance)
 			FindNearestEntities<true>(r_dist_eval, position_label_sids, top_k,
@@ -1153,7 +1140,7 @@ public:
 		EvaluableNodeImmediateValueType position_value_type);
 
 	//populates all target values given the selected target values for each value in corresponding position* parameters
-	void PopulateTargetValuesAndLabelIndices(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	void PopulateTargetValuesAndLabelIndicesFromPosition(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValue> &position_values,
 		std::vector<EvaluableNodeImmediateValueType> &position_value_types)
 	{
@@ -1167,6 +1154,25 @@ public:
 
 			PopulateTargetValueAndLabelIndex(r_dist_eval, query_feature_index,
 				position_values[query_feature_index], position_value_types[query_feature_index]);
+		}
+	}
+
+	//populates all target values given the selected target values for each label stored in the entity of entity_index
+	void PopulateTargetValuesAndLabelIndicesFromEntityIndex(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		std::vector<StringInternPool::StringID> &position_label_sids, size_t entity_index)
+	{
+		size_t num_enabled_features = parametersAndBuffers.rDistEvaluator.distEvaluator->featureAttribs.size();
+		r_dist_eval.featureData.resize(num_enabled_features);
+		for(size_t i = 0; i < num_enabled_features; i++)
+		{
+			auto found = labelIdToColumnIndex.find(position_label_sids[i]);
+			if(found == end(labelIdToColumnIndex))
+				continue;
+
+			size_t column_index = found->second;
+			auto [value_type, value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(entity_index);
+
+			PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
 		}
 	}
 

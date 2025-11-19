@@ -586,7 +586,7 @@ namespace EntityQueryBuilder
 			}
 			cur_condition->positionsToCompare = &positions->GetOrderedChildNodesReference();
 		}
-		else
+		else //ENT_QUERY_NEAREST_GENERALIZED_DISTANCE or ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 		{
 			//set position
 			EvaluableNode *position = ocn[POSITION_OR_ENTITIES];

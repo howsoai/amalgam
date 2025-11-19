@@ -333,14 +333,36 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 				else if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
 				{
-					sbfds.FindNearestEntitiesToPosition(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
-						distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->exclusionEntityIndex, matching_entities, false,
-						compute_results, cond->randomStream.CreateOtherStreamViaRand());
+					//TODO 24719: update language js file and unit tests
+
+					if(cond->distEvaluator.populateOmittedFeatureValues)
+					{
+						size_t entity_index = container->GetContainedEntityIndex(cond->entityIdToExclude);
+						sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels, entity_index,
+							distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false,
+							compute_results, std::numeric_limits<size_t>::max(), cond->randomStream.CreateOtherStreamViaRand());
+					}
+					else
+					{
+						sbfds.FindEntitiesNearestToPosition(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
+							distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->exclusionEntityIndex, matching_entities, false,
+							compute_results, cond->randomStream.CreateOtherStreamViaRand());
+					}
 				}
 				else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 				{
-					sbfds.FindEntitiesWithinDistance(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
-						cond->maxDistance, cond->singleLabel, matching_entities, compute_results);
+					if(cond->distEvaluator.populateOmittedFeatureValues)
+					{
+						//TODO 24719: break this into a separate method
+						size_t entity_index = container->GetContainedEntityIndex(cond->entityIdToExclude);
+						sbfds.FindEntitiesWithinDistance(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
+							cond->maxDistance, cond->singleLabel, matching_entities, compute_results);
+					}
+					else
+					{
+						sbfds.FindEntitiesWithinDistance(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
+							cond->maxDistance, cond->singleLabel, matching_entities, compute_results);
+					}
 				}
 
 				size_t num_to_keep = distance_transform.TransformDistances(

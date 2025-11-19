@@ -486,6 +486,7 @@ public:
 		double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out);
 
+	//TODO 24719: make sure random stream is used throughout
 	//Finds the top_k nearest neighbors results to the entity at search_index.
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
 	//will not modify enabled_indices, but instead will make a copy for any modifications
@@ -514,6 +515,7 @@ public:
 			PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
 		}
 
+		//TODO 24719: separate this extra copy so not needed when only calling once
 		//make a copy of the entities so that the list can be modified
 		BitArrayIntegerSet &possible_knn_indices = parametersAndBuffers.nullAccumSet;
 		possible_knn_indices = enabled_indices;
@@ -532,7 +534,7 @@ public:
 	//Finds the nearest neighbors
 	//enabled_indices is the set of entities to find from, and will be modified
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindNearestEntitiesToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+	void FindEntitiesNearestToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
 		BitArrayIntegerSet &enabled_indices, bool expand_to_first_nonzero_distance,
@@ -1163,8 +1165,6 @@ public:
 			if(column == end(labelIdToColumnIndex))
 				continue;
 
-			//TODO 24719: populate values if r_dist_eval.distEvaluator->populateOmittedFeatureValues is set
-			//TODO 24719: update language js file and unit tests
 			PopulateTargetValueAndLabelIndex(r_dist_eval, query_feature_index,
 				position_values[query_feature_index], position_value_types[query_feature_index]);
 		}

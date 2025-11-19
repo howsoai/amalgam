@@ -637,7 +637,20 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 	case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
 	{
-		//TODO 24719: populate valueToCompare and valueTypes if needed
+		if(distEvaluator.populateOmittedFeatureValues)
+		{
+			//populate values from the comparison entity
+			Entity *comparison_entity = container->GetContainedEntity(entityIdToExclude);
+			valueToCompare.resize(positionLabels.size());
+			valueTypes.resize(positionLabels.size());
+			for(size_t i = 0; i < positionLabels.size(); i++)
+			{
+				auto [value, found] = comparison_entity->GetValueAtLabelAsImmediateValue(positionLabels[i]);
+				valueTypes[i] = value.nodeType;
+				valueToCompare[i] = value.nodeValue;
+			}
+		}
+
 		size_t num_to_keep = std::min(maxToRetrieve, matching_entities.size());
 
 		distEvaluator.InitializeParametersAndFeatureParams();
@@ -706,7 +719,19 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 	case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 	{
-		//TODO 24719: populate valueToCompare and valueTypes if needed
+		if(distEvaluator.populateOmittedFeatureValues)
+		{
+			//populate values from the comparison entity
+			Entity *comparison_entity = container->GetContainedEntity(entityIdToExclude);
+			valueToCompare.resize(positionLabels.size());
+			valueTypes.resize(positionLabels.size());
+			for(size_t i = 0; i < positionLabels.size(); i++)
+			{
+				auto [value, found] = comparison_entity->GetValueAtLabelAsImmediateValue(positionLabels[i]);
+				valueTypes[i] = value.nodeType;
+				valueToCompare[i] = value.nodeValue;
+			}
+		}
 
 		distEvaluator.InitializeParametersAndFeatureParams();
 		//find those that match

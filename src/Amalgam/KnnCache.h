@@ -99,7 +99,7 @@ public:
 		values.resize(num_position_labels);
 		value_types.resize(num_position_labels, ENIVT_NULL);
 
-		sbfDataStore->FindNearestEntitiesToPosition(*distEvaluator,
+		sbfDataStore->FindEntitiesNearestToPosition(*distEvaluator,
 			*positionLabelIds, values, value_types, top_k, radiusLabelId,
 			additional_holdout_index, *relevantIndices, expand_to_first_nonzero_distance, out);
 	}

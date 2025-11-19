@@ -49,7 +49,7 @@ public:
 			{
 				cachedNeighbors[entity].clear();
 				sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-					*positionLabelIds, entity, top_k, radiusLabelId, *relevantIndices, expand_to_first_nonzero_distance, cachedNeighbors[entity]);
+					*positionLabelIds, entity, top_k, radiusLabelId, *relevantIndices, true, expand_to_first_nonzero_distance, cachedNeighbors[entity]);
 			}
 		#ifdef MULTITHREAD_SUPPORT
 			,
@@ -81,7 +81,7 @@ public:
 	{
 		out.clear();
 		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-			*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices,
+			*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, true,
 			expand_to_first_nonzero_distance, out, additional_holdout_index);
 	}
 
@@ -101,7 +101,7 @@ public:
 
 		sbfDataStore->FindEntitiesNearestToPosition(*distEvaluator,
 			*positionLabelIds, values, value_types, top_k, radiusLabelId,
-			additional_holdout_index, *relevantIndices, expand_to_first_nonzero_distance, out);
+			additional_holdout_index, *relevantIndices, true, expand_to_first_nonzero_distance, out);
 	}
 
 	//gets the top_k nearest neighbor results of entities for the given index, excluding the additional_holdout_index, sets out to the results
@@ -126,7 +126,7 @@ public:
 		//there were not enough results for this search, just do a new search
 		out.clear();
 		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-			*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices,
+			*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, true,
 			expand_to_first_nonzero_distance, out, additional_holdout_index);
 	}
 
@@ -148,7 +148,7 @@ public:
 		//there were not enough results for this search, just do a new search
 		out.clear();
 		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-			*positionLabelIds, index, top_k, radiusLabelId, from_indices, expand_to_first_nonzero_distance, out);
+			*positionLabelIds, index, top_k, radiusLabelId, from_indices, true, expand_to_first_nonzero_distance, out);
 	}
 
 	//returns a pointer to the relevant indices of the cache

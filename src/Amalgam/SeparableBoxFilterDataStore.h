@@ -481,19 +481,68 @@ public:
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
 	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
-		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
-		double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
-		std::vector<DistanceReferencePair<size_t>> &distances_out);
+	void FindEntitiesWithinDistanceToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+		size_t search_index, double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices,
+		std::vector<DistanceReferencePair<size_t>> &distances_out)
+	{
+		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
+		r_dist_eval.distEvaluator = &dist_eval;
 
-	//TODO 24719: make sure random stream is used throughout
+		PopulateTargetValuesAndLabelIndicesFromEntityIndex(r_dist_eval, position_label_sids, search_index);
+
+		//make a copy of the entities if enabled_indices is read-only
+		BitArrayIntegerSet *possible_knn_indices;
+		if(read_only_enabled_indices)
+		{
+			possible_knn_indices = &parametersAndBuffers.nullAccumSet;
+			*possible_knn_indices = enabled_indices;
+		}
+		else
+		{
+			possible_knn_indices = &enabled_indices;
+		}
+
+		//remove search_index so it doesn't find itself
+		possible_knn_indices->erase(search_index);
+
+		FindEntitiesWithinDistance(dist_eval, max_dist, radius_label, *possible_knn_indices, distances_out);
+	}
+
+	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
+	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
+	//assumes that enabled_indices only contains indices that have valid values for all the features
+	inline void FindEntitiesWithinDistanceToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
+		double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices,
+		std::vector<DistanceReferencePair<size_t>> &distances_out)
+	{
+		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
+		r_dist_eval.distEvaluator = &dist_eval;
+
+		PopulateTargetValuesAndLabelIndicesFromPosition(r_dist_eval, position_label_sids, position_values, position_value_types);
+
+		//make a copy of the entities if enabled_indices is read-only
+		BitArrayIntegerSet *possible_knn_indices;
+		if(read_only_enabled_indices)
+		{
+			possible_knn_indices = &parametersAndBuffers.nullAccumSet;
+			*possible_knn_indices = enabled_indices;
+		}
+		else
+		{
+			possible_knn_indices = &enabled_indices;
+		}
+
+		FindEntitiesWithinDistance(dist_eval, max_dist, radius_label, *possible_knn_indices, distances_out);
+	}
+
 	//Finds the top_k nearest neighbors results to the entity at search_index.
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	inline void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		size_t search_index, size_t top_k, StringInternPool::StringID radius_label,
-		BitArrayIntegerSet &enabled_indices, bool expand_to_first_nonzero_distance,
+		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices, bool expand_to_first_nonzero_distance,
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
 		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream())
 	{
@@ -502,35 +551,54 @@ public:
 
 		PopulateTargetValuesAndLabelIndicesFromEntityIndex(r_dist_eval, position_label_sids, search_index);
 
-		//TODO 24719: separate this extra copy so not needed when only calling once
-		//make a copy of the entities so that the list can be modified
-		BitArrayIntegerSet &possible_knn_indices = parametersAndBuffers.nullAccumSet;
-		possible_knn_indices = enabled_indices;
+		//make a copy of the entities if enabled_indices is read-only
+		BitArrayIntegerSet *possible_knn_indices;
+		if(read_only_enabled_indices)
+		{
+			possible_knn_indices = &parametersAndBuffers.nullAccumSet;
+			*possible_knn_indices = enabled_indices;
+		}
+		else
+		{
+			possible_knn_indices = &enabled_indices;
+		}
 
 		//remove search_index so it doesn't find itself
-		possible_knn_indices.erase(search_index);
+		possible_knn_indices->erase(search_index);
 
 		if(expand_to_first_nonzero_distance)
 			FindNearestEntities<true>(r_dist_eval, position_label_sids, top_k,
-				radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
+				radius_label, *possible_knn_indices, distances_out, ignore_index, rand_stream);
 		else
 			FindNearestEntities<false>(r_dist_eval, position_label_sids, top_k,
-				radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
+				radius_label, *possible_knn_indices, distances_out, ignore_index, rand_stream);
 	}
 	
 	//Finds the nearest neighbors
 	//enabled_indices is the set of entities to find from, and will be modified
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesNearestToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+	inline void FindEntitiesNearestToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
-		BitArrayIntegerSet &enabled_indices, bool expand_to_first_nonzero_distance,
+		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices, bool expand_to_first_nonzero_distance,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream())
 	{
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 		r_dist_eval.distEvaluator = &dist_eval;
 
 		PopulateTargetValuesAndLabelIndicesFromPosition(r_dist_eval, position_label_sids, position_values, position_value_types);
+
+		//make a copy of the entities if enabled_indices is read-only
+		BitArrayIntegerSet *possible_knn_indices;
+		if(read_only_enabled_indices)
+		{
+			possible_knn_indices = &parametersAndBuffers.nullAccumSet;
+			*possible_knn_indices = enabled_indices;
+		}
+		else
+		{
+			possible_knn_indices = &enabled_indices;
+		}
 
 		if(expand_to_first_nonzero_distance)
 			FindNearestEntities<true>(r_dist_eval, position_label_sids, top_k,
@@ -541,6 +609,13 @@ public:
 	}
 
 protected:
+
+	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
+	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
+	//assumes that enabled_indices only contains indices that have valid values for all the features
+	void FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &dist_eval,
+		double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
+		std::vector<DistanceReferencePair<size_t>> &distances_out);
 
 	//Finds the top_k nearest neighbors results to the entity at search_index.
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 

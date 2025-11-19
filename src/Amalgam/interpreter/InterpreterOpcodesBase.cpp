@@ -807,18 +807,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 	evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
 	PushNewScopeStack(new_context);
 
-	if(context_unique)
-	{
-		//TODO 24720: if unique, set scope is freeable and only iterate and collect if freeable
-		//TODO 24720: also implement this for other scope-based opcodes if any node is freeable
-		//TODO 24720: to reduce writes, check if the flag is set before setting it and doing a memory write, though profile
-		for(auto &[id, cn] : new_context->GetMappedChildNodesReference())
-		{
-			if(cn != nullptr)
-				cn->SetIsFreeable(true);
-		}
-	}
-
 	//run code
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 	for(size_t i = 1; i < ocn_size; i++)
@@ -920,6 +908,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					{
 						//not unique so just set to true
 						any_nonunique_assignments = true;
+
+						if(required_vars.unique && cn != nullptr)
+							cn->SetIsFreeable(true);
 					}
 					else
 					{
@@ -984,8 +975,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					#endif
 						//only set unread if writing to parts of the stack that aren't shared
 						if(value.unique && value != nullptr)
+						{
 							value->SetIsFreeable(true);
-
+							scope->SetIsFreeable(true);
+						}
 						scope->SetMappedChildNode(cn_id, value, false);
 					}
 				}

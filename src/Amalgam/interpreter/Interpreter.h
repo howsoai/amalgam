@@ -255,8 +255,21 @@ public:
 		//make sure unique assoc
 		if(EvaluableNode::IsAssociativeArray(new_context))
 		{
-			if(!new_context.unique)
+			if(new_context.unique)
+			{
+				for(auto &[id, cn] : new_context->GetMappedChildNodesReference())
+				{
+					if(cn != nullptr)
+						cn->SetIsFreeable(true);
+				}
+
+				//set the context to be freeable so it knows to look for any possible freeable values
+				new_context->SetIsFreeable(true);
+			}
+			else
+			{
 				new_context.SetReference(evaluableNodeManager->AllocNode(new_context, EvaluableNodeManager::ENMM_REMOVE_ALL));
+			}
 		}
 		else //not assoc, make a new one
 		{
@@ -280,10 +293,15 @@ public:
 		else
 		{
 			EvaluableNode *scope = scopeStackNodes->back();
-			for(auto &[id, cn] : scope->GetMappedChildNodesReference())
+			//only check its child nodes if it itself has a freeable flag set,
+			//since iterating over the mapped child nodes can be costly wrt performance
+			if(scope->GetIsFreeable())
 			{
-				if(cn != nullptr && cn->GetIsFreeable())
-					evaluableNodeManager->FreeNodeTree(cn);
+				for(auto &[id, cn] : scope->GetMappedChildNodesReference())
+				{
+					if(cn != nullptr && cn->GetIsFreeable())
+						evaluableNodeManager->FreeNodeTree(cn);
+				}
 			}
 			evaluableNodeManager->FreeNode(scope);
 		}
@@ -561,6 +579,7 @@ public:
 	)
 	{
 		//TODO 24720: finish scope stack methods, update their usage, and ensure that newly created variables have the appropriate flag state
+		//TODO 24720: to reduce writes, check if the flag is set before setting it and doing a memory write, though profile
 		//find appropriate context for symbol by walking up the stack
 		//acquire lock if found
 		size_t cur_scope_stack_size = scopeStackNodes->size();

@@ -305,8 +305,9 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 			if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 			{
-				//labels and values must have the same size
-				if(cond->valueToCompare.size() != cond->positionLabels.size())
+
+				//labels and values must have the same size if they're prepopulated
+				if(!cond->distEvaluator.populateOmittedFeatureValues && cond->valueToCompare.size() != cond->positionLabels.size())
 				{
 					matching_entities.clear();
 					return;

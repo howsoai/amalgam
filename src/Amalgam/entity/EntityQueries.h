@@ -66,8 +66,8 @@ public:
 	//when requesting a single type
 	EvaluableNodeImmediateValueType singleLabelType;
 
-	//a label of an id to exclude
-	StringInternPool::StringID exclusionLabel;
+	//an entity to exclude, and to use its label values if relevant
+	StringInternPool::StringID entityIdToExclude;
 
 	//index of an entity to exclude
 	size_t exclusionEntityIndex;
@@ -108,6 +108,9 @@ public:
 
 	//includes zero as a valid difference for ENT_QUERY_MIN_DIFFERENCE
 	bool includeZeroDifferences;
+
+	//if true, will populate any omitted feature values
+	bool populateOmittedFeatureValues;
 
 	//quantile percentage, for ENT_QUERY_QUANTILE
 	double qPercentage;

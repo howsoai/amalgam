@@ -2779,6 +2779,12 @@
 	))
  )
 
+ (print "nearest existing entity: "
+	(contained_entities "TestContainerExec" (list
+		(query_nearest_generalized_distance 1 (list "x" "y") "Child3" 0.5)
+	))
+ )
+
   (print "cascading query_not_in_entity_list: "
 	(contained_entities "TestContainerExec" (list
 		(query_not_in_entity_list (list "Child1"))

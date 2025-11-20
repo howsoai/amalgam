@@ -163,17 +163,17 @@ extern "C"
 		return entint.CloneEntity(h, ch, p, ft, persistent, params, wlfname, plfname);
 	}
 
-	void StoreEntity(char *handle, char *path, char *file_type, bool persistent, char *json_file_params, const char **entity_path, size_t entity_path_len)
+	bool StoreEntity(char *handle, char *path, char *file_type, bool persistent, char *json_file_params, const char **entity_path, size_t entity_path_len)
 	{
 		std::string h(handle);
 		std::string p(path);
 		std::string ft(file_type);
 		std::string_view params(json_file_params);
 		std::vector<std::string> eps(entity_path, entity_path + entity_path_len);
-		entint.StoreEntity(h, EntityExternalInterface::StoreToFile{ p }, ft, persistent, params, eps);
+		return entint.StoreEntity(h, EntityExternalInterface::StoreToFile{ p }, ft, persistent, params, eps);
 	}
 
-	void StoreEntityToMemory(char *handle, void **data_p, size_t *len_p, char *file_type,
+	bool StoreEntityToMemory(char *handle, void **data_p, size_t *len_p, char *file_type,
 		bool persistent, char *json_file_params, const char **entity_path, size_t entity_path_len)
 	{
 		std::string h(handle);
@@ -181,7 +181,7 @@ extern "C"
 		std::string ft(file_type);
 		std::string_view params(json_file_params);
 		std::vector<std::string> eps(entity_path, entity_path + entity_path_len);
-		entint.StoreEntity(h, EntityExternalInterface::StoreToMemory{ d }, ft, persistent, params, eps);
+		bool success = entint.StoreEntity(h, EntityExternalInterface::StoreToMemory{ d }, ft, persistent, params, eps);
 		// This is the same fundamental API as StringToCharPtr() above; the caller needs to
 		// DeleteString() on the result.
 		char *out = new char[d.size() + 1];
@@ -189,6 +189,7 @@ extern "C"
 		out[d.size()] = '\0';
 		*data_p = out;
 		*len_p = d.size();
+		return success;
 	}
 
 	void SetJSONToLabel(char *handle, char *label, char *json)

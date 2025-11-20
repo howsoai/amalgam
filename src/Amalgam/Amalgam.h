@@ -64,11 +64,11 @@ extern "C"
 		char *write_log_filename, char *print_log_filename);
 
 	//stores the entity specified by handle into path
-	AMALGAM_EXPORT void StoreEntity(char *handle, char *path, char *file_type, bool persistent, char *json_file_params,
+	AMALGAM_EXPORT bool StoreEntity(char *handle, char *path, char *file_type, bool persistent, char *json_file_params,
 		const char **entity_path, size_t entity_path_len);
 
 	//stores the entity specified into a memory buffer
-	AMALGAM_EXPORT void StoreEntityToMemory(char *handle, void **data_p, size_t *len_p, char *file_type,
+	AMALGAM_EXPORT bool StoreEntityToMemory(char *handle, void **data_p, size_t *len_p, char *file_type,
 		bool persistent, char *json_file_params, const char **entity_path, size_t entity_path_len);
 
 	//executes label on handle

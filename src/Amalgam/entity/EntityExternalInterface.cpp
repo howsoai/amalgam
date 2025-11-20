@@ -241,12 +241,12 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 	return true;
 }
 
-void EntityExternalInterface::StoreEntity(std::string &handle, const EntityExternalInterface::StoreSource &source,
+bool EntityExternalInterface::StoreEntity(std::string &handle, const EntityExternalInterface::StoreSource &source,
 	std::string file_type, bool persistent, std::string_view json_file_params, const std::vector<std::string> &entity_path)
 {
 	auto bundle = FindEntityBundle(handle);
 	if(bundle == nullptr || bundle->entity == nullptr)
-		return;
+		return false;
 
 	EntityReadReference entity(bundle->entity);
 	if(entity_path.empty())
@@ -259,7 +259,7 @@ void EntityExternalInterface::StoreEntity(std::string &handle, const EntityExter
 		bundle->entity->evaluableNodeManager.FreeNodeTreeIfPossible(id_path);
 		if(entity == nullptr)
 			// ...didn't find it.
-			return;
+			return false;
 	}
 
 	AssetManager::AssetParametersRef asset_params;
@@ -284,9 +284,11 @@ void EntityExternalInterface::StoreEntity(std::string &handle, const EntityExter
 	}
 	asset_params->UpdateResources();
 
-	asset_manager.StoreEntityToResource(entity, asset_params, true, persistent);
+	bool success = asset_manager.StoreEntityToResource(entity, asset_params, true, persistent);
 	if(std::holds_alternative<StoreToMemory>(source))
 		std::get<StoreToMemory>(source).data.assign(std::move(asset_params->resourceContents));
+
+	return success;
 }
 
 void EntityExternalInterface::ExecuteEntity(std::string &handle, std::string &label)

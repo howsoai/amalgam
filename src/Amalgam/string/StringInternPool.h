@@ -48,9 +48,11 @@ public:
 
 	inline StringInternPool()
 	{
-		//create the empty string first
-		auto inserted = stringToID.emplace("", std::make_unique<StringInternStringData>(""));
-		emptyStringId = inserted.first->second.get();
+		//create the empty string first, put in scope to destruct any locks
+		{
+			auto inserted = stringToID.emplace("", std::make_unique<StringInternStringData>(""));
+			emptyStringId = inserted.first->second.get();
+		}
 		InitializeStaticStrings();
 	}
 

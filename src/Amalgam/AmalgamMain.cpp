@@ -1,4 +1,4 @@
-//project headers:
+﻿//project headers:
 #include "Amalgam.h"
 #include "AmalgamVersion.h"
 #include "AssetManager.h"
@@ -154,6 +154,134 @@ PLATFORM_MAIN_CONSOLE
 	{
 		std::cout << GetUsage() << std::endl;
 		return 0;
+	}
+//TODO 24709: remove this
+
+	using Map = ConcurrentFastHashMap<std::string, std::unique_ptr<int>>;
+	Map m;
+	assert(m.empty());
+	assert(m.size() == 0);
+
+	// ---------- 2. insert & size ----------
+	{
+		auto p1 = m.insert({ "one", std::make_unique<int>(1) });
+		assert(p1.second);                     // inserted
+	}
+	assert(m.size() == 1);
+	assert(!m.empty());
+
+	// inserting the same key again must not insert
+	{
+		auto p2 = m.insert({ "one", std::make_unique<int>(42) });
+		assert(!p2.second);                    // not inserted
+	}
+	assert(m.size() == 1);                 // size unchanged
+
+	// ---------- 3. emplace ----------
+	{
+		auto p3 = m.emplace("two", std::make_unique<int>(2));
+		assert(p3.second);
+	}
+	assert(m.size() == 2);
+
+	// ---------- 4. find ----------
+	{
+		auto it = m.find("one");
+		assert(it != m.end());                 // found
+		assert(*(it->second) == 1);            // value correct
+	}
+
+	{
+		auto cit = static_cast<const Map &>(m).find("two");
+		assert(cit != m.end());
+		assert(*(cit->second) == 2);
+	}
+
+	{
+		// ---------- 5. operator[] ----------
+		m["three"] = std::make_unique<int>(3);
+		assert(m.size() == 3);
+		assert(*(m["three"]) == 3);
+	}
+
+	// ---------- 6. at ----------
+	try
+	{
+		int val = *m.at("three");
+		assert(val == 3);
+	}
+	catch(...)
+	{
+		assert(false);
+	}
+
+	bool threw = false;
+	try
+	{
+		m.at("nonexistent");
+	}
+	catch(std::out_of_range &)
+	{
+		threw = true;
+	}
+	assert(threw);                         // at must throw on missing key
+
+	// ---------- 7. iteration ----------
+	{
+		std::size_t count = 0;
+		for(auto &kv : m)
+		{
+			++count;
+			// each iteration holds the shard lock – we can safely read
+			assert(!kv.first.empty());
+			assert(kv.second != nullptr);
+		}
+		assert(count == m.size());
+	}
+
+	// ---------- 8. erase ----------
+	{
+		std::size_t erased = m.erase("two");
+		assert(erased == 1);
+		assert(m.size() == 2);
+		assert(m.find("two") == m.end());
+	}
+
+	{
+		// erase via iterator
+		auto itErase = m.find("one");
+		assert(itErase != m.end());
+		auto nextIt = m.erase(itErase);
+		// nextIt may be end() or point to the next element; both are fine
+		assert(nextIt == m.end() || nextIt->first != "one");
+		assert(m.size() == 1);
+	}
+
+	// ---------- 9. clear ----------
+	m.clear();
+	assert(m.empty());
+	assert(m.size() == 0);
+	assert(m.begin() == m.end());
+
+	// ---------- 10. concurrent access sanity ----------
+	{
+		Map concurrentMap;
+		std::thread t1([&] {
+			for(int i = 0; i < 1000; ++i)
+				concurrentMap.emplace("t1_" + std::to_string(i),
+									 std::make_unique<int>(i));
+		});
+		std::thread t2([&] {
+			for(int i = 0; i < 1000; ++i)
+				concurrentMap.emplace("t2_" + std::to_string(i),
+									 std::make_unique<int>(i));
+		});
+		t1.join(); t2.join();
+
+		assert(concurrentMap.size() == 2000);
+		// spot‑check a few keys
+		assert(*(concurrentMap.find("t1_42")->second) == 42);
+		assert(*(concurrentMap.find("t2_999")->second) == 999);
 	}
 
 	//run options

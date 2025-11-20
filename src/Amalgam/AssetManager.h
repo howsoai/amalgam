@@ -341,7 +341,8 @@ public:
 			en_assoc.SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_rand_seed), &en_rand_seed);
 			en_assoc.SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_version), &en_version);
 
-			StoreResource(&en_assoc, metadata_asset_params.get(), &entity->evaluableNodeManager);
+			if(!StoreResource(&en_assoc, metadata_asset_params.get(), &entity->evaluableNodeManager))
+				return false;
 		}
 
 		//store contained entities
@@ -360,10 +361,8 @@ public:
 						= asset_params->CreateAssetParametersForContainedResourceByEntityId(contained_entity->GetId());
 
 					//don't escape filename again because it's already escaped in this loop
-					bool stored_successfully = StoreEntityToResource(contained_entity, ce_asset_params,
-						update_persistence, persistent, true, all_contained_entities);
-
-					if(!stored_successfully)
+					if(!StoreEntityToResource(contained_entity, ce_asset_params,
+							update_persistence, persistent, true, all_contained_entities))
 						return false;
 				}
 			}

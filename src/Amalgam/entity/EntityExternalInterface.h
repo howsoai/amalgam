@@ -73,7 +73,8 @@ public:
 	//
 	// If entity_path is non-empty, then store the entity at that path within the entity
 	// identified by handle, or do nothing if that path does not exist.
-	void StoreEntity(std::string &handle, const StoreSource &source,
+	// Returns true if successful.
+	bool StoreEntity(std::string &handle, const StoreSource &source,
 		std::string file_type, bool persistent, std::string_view json_file_params,
 		const std::vector<std::string> &entity_path);
 

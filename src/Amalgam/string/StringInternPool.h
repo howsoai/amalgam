@@ -74,15 +74,9 @@ public:
 	//translates the string to the corresponding ID, 0 is the empty string, maximum value of size_t means it does not exist
 	inline StringID GetIDFromString(const std::string &str)
 	{
-		//TODO 24709: put this back in when implement method
-	//#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	//	auto [id_iter, lock] = stringToID.FindWithLock(str);
-	//#else
 		auto id_iter = stringToID.find(str);
-	//#endif
-
 		if(id_iter == stringToID.end())
-			return NOT_A_STRING_ID;	//the string was never entered in and don't want to cause more errors
+			return NOT_A_STRING_ID;
 
 		StringID id = id_iter->second.get();
 	#ifdef STRING_INTERN_POOL_VALIDATION
@@ -97,14 +91,8 @@ public:
 		if(str.size() == 0)
 			return emptyStringId;
 
-		//TODO 24709: put this back in when implement method
 		//try to insert it as a new string
-	//#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	//	auto [inserted, lock] = stringToID.EmplaceWithLock(str, nullptr);
-	//#else
 		auto inserted = stringToID.emplace(str, nullptr);
-	//#endif
-
 		if(inserted.second)
 			inserted.first->second = std::make_unique<StringInternStringData>(str);
 		else
@@ -220,9 +208,10 @@ public:
 				return;
 		}
 
-		//TODO 24709: put this back in when implement method and change the erase at the end to accept a lock and hash?
+		//TODO 24709: put this back in when implement method and change the erase at the end to accept a lock and hash? and/or remove iterator_with_lock
 		//lock this shard
 		//auto lock = stringToID.LockForKey(id->string);
+		auto iterator_with_lock = stringToID.find(id->string);
 	#endif
 
 		//remove any that aren't the last reference
@@ -230,7 +219,8 @@ public:
 		if(ref_count > 1)
 			return;
 		
-		stringToID.erase(id->string);
+		//stringToID.erase(id->string);
+		stringToID.erase(iterator_with_lock);
 	}
 
 	//creates new references from the references container and function

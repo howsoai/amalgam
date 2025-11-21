@@ -254,8 +254,9 @@ PLATFORM_MAIN_CONSOLE
 		auto nextIt = m.erase(itErase);
 		// nextIt may be end() or point to the next element; both are fine
 		assert(nextIt == m.end() || nextIt->first != "one");
-		assert(m.size() == 1);
 	}
+	assert(m.size() == 1);
+	
 
 	// ---------- 9. clear ----------
 	m.clear();

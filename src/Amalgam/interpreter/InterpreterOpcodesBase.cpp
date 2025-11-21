@@ -1100,7 +1100,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			node_stack.PopEvaluableNode();
 		#else
-			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
+			auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 		#endif
 
 			if(accum)
@@ -1162,7 +1162,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		node_stack.PopEvaluableNode();
 	#else
-		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
+		auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
 		if(accum)
@@ -1240,7 +1240,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(write_lock.owns_lock())
 		RecordStackLockForProfiling(en, variable_sid);
 #else
-	auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
+	auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 #endif
 
 	//if writing to an outer scope, can't guarantee the memory at this scope can be freed

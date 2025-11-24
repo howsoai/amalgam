@@ -1127,6 +1127,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
 			any_nonunique_assignments |= !top_of_stack;
 
+			if(variable_value_node.unique && variable_value_node != nullptr)
+				variable_value_node->SetIsFreeable(true);
+
 			//assign back into the context_to_use
 			*value_destination = variable_value_node;
 		}

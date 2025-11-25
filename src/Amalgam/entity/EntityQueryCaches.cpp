@@ -285,10 +285,13 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					cond->positionLabels.erase(cond->positionLabels.begin() + i);
 					cond->distEvaluator.featureAttribs.erase(begin(cond->distEvaluator.featureAttribs) + i);
 
-					if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
+					if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
+							|| cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 					{
-						cond->valueToCompare.erase(cond->valueToCompare.begin() + i);
-						cond->valueTypes.erase(cond->valueTypes.begin() + i);
+						if(cond->valueToCompare.size() > i)
+							cond->valueToCompare.erase(cond->valueToCompare.begin() + i);
+						if(cond->valueTypes.size() > i)
+							cond->valueTypes.erase(cond->valueTypes.begin() + i);
 					}
 
 					//need to process the new value in this feature slot
@@ -334,8 +337,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 				else if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
 				{
-					//TODO 24719: update language js file and unit tests
-
 					if(cond->distEvaluator.populateOmittedFeatureValues)
 					{
 						size_t entity_index = container->GetContainedEntityIndex(cond->entityIdToExclude);

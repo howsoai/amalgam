@@ -802,7 +802,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 
 	//add new context
 	auto new_context = InterpretNodeForImmediateUse(ocn[0]);
-	bool context_unique = new_context.unique;
 	//can keep constant, but need the top node to be unique in case assignments are made
 	evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
 	PushNewScopeStack(new_context);

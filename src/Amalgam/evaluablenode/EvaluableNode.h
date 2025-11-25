@@ -660,6 +660,62 @@ public:
 		attributes.individualAttribs.isIdempotent = is_idempotent;
 	}
 
+	//returns true if the node has never been read / accessed
+	__forceinline constexpr bool GetIsFreeable()
+	{
+		return attributes.individualAttribs.isFreeable;
+	}
+
+	//sets whether the node has never been read / accessed
+	//returns the previous value
+	__forceinline constexpr bool SetIsFreeable(bool is_freeable)
+	{
+		bool old_value = attributes.individualAttribs.isFreeable;
+		attributes.individualAttribs.isFreeable = is_freeable;
+		return old_value;
+	}
+
+#ifdef MULTITHREAD_SUPPORT
+	//returns true if the node has never been read / accessed
+	__forceinline bool GetIsFreeableAtomic()
+	{
+		EvaluableNodeAttributesType attrib_with_known_true;
+		attrib_with_known_true.allAttributes = 0;
+		attrib_with_known_true.individualAttribs.isFreeable = true;
+
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		uint8_t all_attributes = reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes);
+		return (all_attributes & attrib_with_known_true.allAttributes);
+	}
+
+	//sets whether the node has never been read / accessed
+	//returns the previous value
+	__forceinline bool SetIsFreeableAtomic(bool is_freeable)
+	{
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		auto &atomic_byte = reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes);
+
+		if(is_freeable)
+		{
+			EvaluableNodeAttributesType attrib_with_known_true;
+			attrib_with_known_true.allAttributes = 0;
+			attrib_with_known_true.individualAttribs.isFreeable = true;
+
+			uint8_t previous_value = atomic_byte.fetch_or(attrib_with_known_true.allAttributes);
+			return (previous_value & attrib_with_known_true.allAttributes) != 0;
+		}
+		else
+		{
+			EvaluableNodeAttributesType attrib_with_known_false;
+			attrib_with_known_false.allAttributes = 0xFF;
+			attrib_with_known_false.individualAttribs.isFreeable = false;
+
+			uint8_t previous_value = atomic_byte.fetch_and(attrib_with_known_false.allAttributes);
+			return (previous_value & ~static_cast<uint8_t>(~attrib_with_known_false.allAttributes)) != 0;
+		}
+	}
+#endif
+
 	//returns whether this node has been marked as known to be currently in use
 	__forceinline constexpr bool GetKnownToBeInUse()
 	{
@@ -688,14 +744,15 @@ public:
 	//sets whether this node is currently known to be in use
 	__forceinline void SetKnownToBeInUseAtomic(bool in_use)
 	{
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		auto &atomic_byte = reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes);
 		if(in_use)
 		{
 			EvaluableNodeAttributesType attrib_with_known_true;
 			attrib_with_known_true.allAttributes = 0;
 			attrib_with_known_true.individualAttribs.knownToBeInUse = true;
 
-			//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-			reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes).fetch_or(attrib_with_known_true.allAttributes);
+			atomic_byte.fetch_or(attrib_with_known_true.allAttributes);
 		}
 		else
 		{
@@ -703,8 +760,7 @@ public:
 			attrib_with_known_false.allAttributes = 0xFF;
 			attrib_with_known_false.individualAttribs.knownToBeInUse = false;
 
-			//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-			reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes).fetch_and(attrib_with_known_false.allAttributes);
+			atomic_byte.fetch_and(attrib_with_known_false.allAttributes);
 		}
 	}
 #endif
@@ -1085,6 +1141,9 @@ protected:
 			bool isIdempotent : 1;
 			//if true, then the node is marked for concurrency
 			bool concurrent : 1;
+			//if true, then the node has not yet been read/accessed and can be freed
+			//used to optimize flows to avoid copies when there has been no other accesses
+			bool isFreeable : 1;
 			//if true, then known to be in use with regard to garbage collection
 			bool knownToBeInUse : 1;
 		} individualAttribs;

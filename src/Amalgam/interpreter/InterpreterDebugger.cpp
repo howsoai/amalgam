@@ -497,7 +497,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 				bool value_exists = true;
 
 				bool found = false;
-				std::tie(node, found) = GetScopeStackSymbol(sid);
+				bool is_freeable = true;
+				std::tie(node, found, is_freeable) = GetScopeStackSymbol(sid, false);
 				if(!found)
 				{
 					if(curEntity == nullptr)

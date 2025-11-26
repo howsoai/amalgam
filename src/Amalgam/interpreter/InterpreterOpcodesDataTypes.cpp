@@ -181,11 +181,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	if(cur_entity_ref != nullptr)
 	{
 		auto [label_value, label_found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
-
-		if(!label_found)
-			EmitOrLogUndefinedVariableWarningIfNeeded(sid, en);
-
-		return label_value;
+		if(label_found)
+			return label_value;
 	}
 
 	EmitOrLogUndefinedVariableWarningIfNeeded(sid, en);

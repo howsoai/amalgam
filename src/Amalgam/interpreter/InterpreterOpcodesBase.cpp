@@ -1334,7 +1334,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
 	{
 		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
-		auto [symbol_value, found, is_freeable] = GetScopeStackSymbol(symbol_name_sid, true);
+		auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid, true);
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 		return EvaluableNodeReference(symbol_value, false);
 	}
@@ -1351,8 +1351,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
 			bool found = false;
-			bool is_freeable = true;
-			std::tie(cn, found, is_freeable) = GetScopeStackSymbol(cn_id, true);
+			std::tie(cn, found) = GetScopeStackSymbol(cn_id, true);
 		}
 
 		return EvaluableNodeReference(to_lookup, false);
@@ -1371,7 +1370,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 				continue;
 			}
 
-			auto [symbol_value, found, is_freeable] = GetScopeStackSymbol(symbol_name_sid, true);
+			auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid, true);
 			//if there are values passed in, free them to be clobbered
 			EvaluableNodeReference cnr(cn, to_lookup.unique);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);

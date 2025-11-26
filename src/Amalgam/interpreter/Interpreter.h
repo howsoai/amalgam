@@ -505,7 +505,6 @@ public:
 				bool is_freeable = true;
 				if(found->second != nullptr)
 				{
-					//TODO 24720: check if faster to check flag than to always set it
 					if(clear_freeable_flag)
 					{
 					#ifdef MULTITHREAD_SUPPORT
@@ -552,16 +551,17 @@ public:
 		return std::make_tuple(new_location, true, false);
 	}
 
-	//like the other type of GetScopeStackSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer
+	//like the other type of GetScopeStackSymbolLocation,
+	// but returns the EvaluableNode pointer instead of a pointer-to-a-pointer and true if the variable was found
 	//if clear_freeable_flag is true, then it will mark the node as having been accessed and no longer freeable
-	__forceinline std::tuple<EvaluableNode *, bool, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid,
+	__forceinline std::tuple<EvaluableNode *, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid,
 		bool clear_freeable_flag)
 	{
 		auto [node_ptr, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(symbol_sid, false, clear_freeable_flag);
 		if(node_ptr == nullptr)
-			return std::make_tuple(nullptr, false, false);
+			return std::make_tuple(nullptr, false);
 
-		return std::make_tuple(*node_ptr, true, is_freeable);
+		return std::make_tuple(*node_ptr, true);
 	}
 
 #ifdef MULTITHREAD_SUPPORT

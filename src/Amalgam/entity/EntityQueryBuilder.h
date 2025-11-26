@@ -17,7 +17,7 @@ namespace EntityQueryBuilder
 	{
 		MAX_TO_FIND_OR_MAX_DISTANCE,
 		POSITION_LABELS,
-		POSITION,
+		POSITION_OR_ENTITIES,
 
 		//optional params
 		MINKOWSKI_PARAMETER,
@@ -466,16 +466,17 @@ namespace EntityQueryBuilder
 		auto &ocn = cn->GetOrderedChildNodes();
 
 		//need to at least have position, otherwise not valid query
-		if(ocn.size() <= POSITION)
+		if(ocn.size() <= POSITION_OR_ENTITIES)
 			return;
 
 		//if ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, see if excluding an entity in the previous query -- if so, exclude here
 		EntityQueryCondition *cur_condition = nullptr;
-		if(condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE && conditions.size() > 0
+		if( (condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
+			&& conditions.size() > 0
 			&& conditions.back().queryType == ENT_QUERY_NOT_IN_ENTITY_LIST && conditions.back().existLabels.size() == 1)
 		{
 			cur_condition = &(conditions.back());
-			cur_condition->exclusionLabel = cur_condition->existLabels[0];
+			cur_condition->entityIdToExclude = cur_condition->existLabels[0];
 			cur_condition->existLabels.clear();
 		}
 		else
@@ -484,7 +485,7 @@ namespace EntityQueryBuilder
 			conditions.emplace_back();
 			cur_condition = &(conditions.back());
 
-			cur_condition->exclusionLabel = string_intern_pool.NOT_A_STRING_ID;
+			cur_condition->entityIdToExclude = string_intern_pool.NOT_A_STRING_ID;
 		}
 
 		//set query condition type
@@ -562,13 +563,15 @@ namespace EntityQueryBuilder
 			}
 		}
 
+		cur_condition->populateOmittedFeatureValues = false;
+
 		//select based on type for position or entities
 		if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS
 			|| condition_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
 			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
 			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 		{
-			EvaluableNode *entities = ocn[POSITION];
+			EvaluableNode *entities = ocn[POSITION_OR_ENTITIES];
 			if(EvaluableNode::IsOrderedArray(entities))
 			{
 				auto &entities_ocn = entities->GetOrderedChildNodesReference();
@@ -579,7 +582,7 @@ namespace EntityQueryBuilder
 		}
 		else if(condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
 		{
-			EvaluableNode *positions = ocn[POSITION];
+			EvaluableNode *positions = ocn[POSITION_OR_ENTITIES];
 			if(!EvaluableNode::IsOrderedArray(positions))
 			{
 				cur_condition->queryType = ENT_NULL;
@@ -587,14 +590,22 @@ namespace EntityQueryBuilder
 			}
 			cur_condition->positionsToCompare = &positions->GetOrderedChildNodesReference();
 		}
-		else
+		else //ENT_QUERY_NEAREST_GENERALIZED_DISTANCE or ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 		{
 			//set position
-			EvaluableNode *position = ocn[POSITION];
+			EvaluableNode *position = ocn[POSITION_OR_ENTITIES];
 			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == cur_condition->positionLabels.size()))
 			{
 				CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),
 					cur_condition->valueToCompare, cur_condition->valueTypes);
+			}
+			else if(position != nullptr && position->GetType() == ENT_STRING)
+			{
+				cur_condition->entityIdToExclude = position->GetStringIDReference();
+				//these will be set later under lock
+				cur_condition->valueTypes.clear();
+				cur_condition->valueToCompare.clear();
+				cur_condition->populateOmittedFeatureValues = true;
 			}
 			else // no positions given, default to nulls for each label
 			{

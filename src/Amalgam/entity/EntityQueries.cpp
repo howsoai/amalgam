@@ -236,7 +236,7 @@ double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e, bool high_ac
 		return std::numeric_limits<double>::quiet_NaN();
 
 	//make sure not excluding this entity
-	if(e->GetIdStringId() == exclusionLabel)
+	if(e->GetIdStringId() == entityIdToExclude)
 		return std::numeric_limits<double>::quiet_NaN();
 
 	std::vector<EvaluableNodeImmediateValue> position(positionLabels.size());
@@ -637,6 +637,20 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 	case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
 	{
+		if(distEvaluator.populateOmittedFeatureValues)
+		{
+			//populate values from the comparison entity
+			Entity *comparison_entity = container->GetContainedEntity(entityIdToExclude);
+			valueToCompare.resize(positionLabels.size());
+			valueTypes.resize(positionLabels.size());
+			for(size_t i = 0; i < positionLabels.size(); i++)
+			{
+				auto [value, found] = comparison_entity->GetValueAtLabelAsImmediateValue(positionLabels[i]);
+				valueTypes[i] = value.nodeType;
+				valueToCompare[i] = value.nodeValue;
+			}
+		}
+
 		size_t num_to_keep = std::min(maxToRetrieve, matching_entities.size());
 
 		distEvaluator.InitializeParametersAndFeatureParams();
@@ -705,6 +719,20 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 	case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 	{
+		if(distEvaluator.populateOmittedFeatureValues)
+		{
+			//populate values from the comparison entity
+			Entity *comparison_entity = container->GetContainedEntity(entityIdToExclude);
+			valueToCompare.resize(positionLabels.size());
+			valueTypes.resize(positionLabels.size());
+			for(size_t i = 0; i < positionLabels.size(); i++)
+			{
+				auto [value, found] = comparison_entity->GetValueAtLabelAsImmediateValue(positionLabels[i]);
+				valueTypes[i] = value.nodeType;
+				valueToCompare[i] = value.nodeValue;
+			}
+		}
+
 		distEvaluator.InitializeParametersAndFeatureParams();
 		//find those that match
 		for(size_t i = 0; i < matching_entities.size(); i++)

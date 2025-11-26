@@ -206,7 +206,7 @@ public:
 
 	//initializes and precomputes relevant data including featureAttribs
 	//this should be called after all relevant attributes have been populated
-	inline void InitializeParametersAndFeatureParams()
+	inline void InitializeParametersAndFeatureParams(bool populate_omitted_feature_values = false)
 	{
 		inversePValue = 1.0 / pValue;
 
@@ -217,6 +217,8 @@ public:
 		}
 
 		ComputeAndStoreCommonDistanceTerms();
+
+		populateOmittedFeatureValues = populate_omitted_feature_values;
 	}
 
 	//going out n deviations is likely to only miss 0.5^s_deviation_expansion
@@ -1107,6 +1109,9 @@ public:
 	//if true, then estimates should be computed with low accuracy, but final results with high accuracy
 	// if false, will reuse accuracy from estimates
 	bool recomputeAccurateDistances;
+
+	//if true, will populate any omitted feature values
+	bool populateOmittedFeatureValues;
 };
 
 //base data struct for holding distance parameters and metadata
@@ -1151,11 +1156,11 @@ public:
 	};
 
 	RepeatedGeneralizedDistanceEvaluator()
-		: distEvaluator(nullptr)
+		: distEvaluator(nullptr), evaluableNodeManager(nullptr)
 	{	}
 
 	inline RepeatedGeneralizedDistanceEvaluator(GeneralizedDistanceEvaluator *dist_evaluator,
-		EvaluableNodeManager *enm)
+		EvaluableNodeManager *enm, bool populate_omitted_feature_values)
 		: distEvaluator(dist_evaluator), evaluableNodeManager(enm)
 	{	}
 

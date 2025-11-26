@@ -285,10 +285,13 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					cond->positionLabels.erase(cond->positionLabels.begin() + i);
 					cond->distEvaluator.featureAttribs.erase(begin(cond->distEvaluator.featureAttribs) + i);
 
-					if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
+					if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
+							|| cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 					{
-						cond->valueToCompare.erase(cond->valueToCompare.begin() + i);
-						cond->valueTypes.erase(cond->valueTypes.begin() + i);
+						if(cond->valueToCompare.size() > i)
+							cond->valueToCompare.erase(cond->valueToCompare.begin() + i);
+						if(cond->valueTypes.size() > i)
+							cond->valueTypes.erase(cond->valueTypes.begin() + i);
 					}
 
 					//need to process the new value in this feature slot
@@ -301,12 +304,13 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				return;
 
 			sbfds.PopulateGeneralizedDistanceEvaluatorFromColumnData(cond->distEvaluator, cond->positionLabels);
-			cond->distEvaluator.InitializeParametersAndFeatureParams();
+			cond->distEvaluator.InitializeParametersAndFeatureParams(cond->populateOmittedFeatureValues);
 
 			if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 			{
-				//labels and values must have the same size
-				if(cond->valueToCompare.size() != cond->positionLabels.size())
+
+				//labels and values must have the same size if they're prepopulated
+				if(!cond->distEvaluator.populateOmittedFeatureValues && cond->valueToCompare.size() != cond->positionLabels.size())
 				{
 					matching_entities.clear();
 					return;
@@ -333,14 +337,33 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 				else if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
 				{
-					sbfds.FindNearestEntitiesToPosition(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
-						distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->exclusionEntityIndex, matching_entities, false,
-						compute_results, cond->randomStream.CreateOtherStreamViaRand());
+					if(cond->distEvaluator.populateOmittedFeatureValues)
+					{
+						size_t entity_index = container->GetContainedEntityIndex(cond->entityIdToExclude);
+						sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels, entity_index,
+							distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false, false,
+							compute_results, std::numeric_limits<size_t>::max(), cond->randomStream.CreateOtherStreamViaRand());
+					}
+					else
+					{
+						sbfds.FindEntitiesNearestToPosition(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
+							distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->exclusionEntityIndex, matching_entities, false, false,
+							compute_results, cond->randomStream.CreateOtherStreamViaRand());
+					}
 				}
 				else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 				{
-					sbfds.FindEntitiesWithinDistance(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
-						cond->maxDistance, cond->singleLabel, matching_entities, compute_results);
+					if(cond->distEvaluator.populateOmittedFeatureValues)
+					{
+						size_t entity_index = container->GetContainedEntityIndex(cond->entityIdToExclude);
+						sbfds.FindEntitiesWithinDistanceToIndexedEntity(cond->distEvaluator, cond->positionLabels, entity_index,
+							cond->maxDistance, cond->singleLabel, matching_entities, false, compute_results);
+					}
+					else
+					{
+						sbfds.FindEntitiesWithinDistanceToPosition(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
+							cond->maxDistance, cond->singleLabel, matching_entities, false, compute_results);
+					}
 				}
 
 				size_t num_to_keep = distance_transform.TransformDistances(
@@ -967,13 +990,14 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			break;
 		}
 
+		case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 		case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
 		{
 			//if excluding an entity, translate it into the index
-			if(cond.exclusionLabel == string_intern_pool.NOT_A_STRING_ID)
+			if(cond.entityIdToExclude == string_intern_pool.NOT_A_STRING_ID)
 				cond.exclusionEntityIndex = std::numeric_limits<size_t>::max();
 			else
-				cond.exclusionEntityIndex = container->GetContainedEntityIndex(cond.exclusionLabel);
+				cond.exclusionEntityIndex = container->GetContainedEntityIndex(cond.entityIdToExclude);
 			//fall through to cases below
 		}
 
@@ -987,7 +1011,6 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		case ENT_QUERY_NOT_AMONG:
 		case ENT_QUERY_MAX:
 		case ENT_QUERY_MIN:
-		case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 		case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
 		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
 		case ENT_QUERY_ENTITY_CONVICTIONS:

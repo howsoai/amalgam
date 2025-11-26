@@ -505,7 +505,6 @@ public:
 				bool is_freeable = true;
 				if(found->second != nullptr)
 				{
-					//TODO 24720: check if faster to check flag than to always set it
 					if(clear_freeable_flag)
 					{
 					#ifdef MULTITHREAD_SUPPORT

@@ -128,10 +128,10 @@ Entity::~Entity()
 std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm, bool direct_get, bool on_self, bool batch_call)
 {
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
-		return std::pair(EvaluableNodeReference::Null(), true);
+		return std::pair(EvaluableNodeReference::Null(), false);
 
 	if(!on_self && IsLabelPrivate(label_sid))
-		return std::pair(EvaluableNodeReference::Null(), true);
+		return std::pair(EvaluableNodeReference::Null(), false);
 
 	auto &label_index = GetLabelIndex();
 	const auto &label = label_index.find(label_sid);

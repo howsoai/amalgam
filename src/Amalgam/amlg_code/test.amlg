@@ -1,29 +1,55 @@
 ﻿(seq
- (print
-	[
-		{ "a" 1}
-		@(get (target 2) 0)
-		1
-	]
+
+ (create_entities "TestContainerExec"
+	(lambda (parallel
+    ##^a 3
+	##b (contained_entities)
+	##c (+ x 1)
+	##d (call_entity "Child5" "q" (assoc x x))
+	##!e 12
+	##x 4
+	##y 5
+	))
+ )
+ (create_entities (list "TestContainerExec" "Child1")
+	(lambda (parallel
+	##x 3
+	##y 4
+	##!e 7
+	##weight 0.45
+	##weight_eq 1
+	))
+ )
+ (create_entities (list "TestContainerExec" "Child2")
+	(lambda (parallel
+	##x -1
+	##y -1
+	##weight 0.45
+	##weight_eq 1
+	))
+ )
+ (create_entities (list "TestContainerExec" "Child3")
+	(lambda (parallel
+	##x 100
+	##y 100
+	##weight 0.02
+	##weight_eq 1
+	))
+ )
+ (create_entities (list "TestContainerExec" "Child4")
+	(lambda (parallel
+	##x 100
+	##y 100
+	##radius 400
+	##weight 0.02
+	##weight_eq 1
+	))
  )
 
- (print
-	[
-		{ "a" 1}
-		{ b @(get (target 3) 0)}
-		1
-	]
+
+ (print "nearest existing entity: "
+	(contained_entities "TestContainerExec" (list
+		(query_nearest_generalized_distance 1 (list "x" "y") "Child3" 0.5)
+	))
  )
-
- (print
-	[
-		@(get (target 0) 0)
-	]
- )
-
- (print [ 0 1 2 3 (+ (target 0 1)) 4] "\n")
- (print [ 0 1 2 3 [ 0 1 2 3 (+ (target 1 1)) 4]] "\n")
- (print { a 0 b 1 c 2 d 3 e [ 0 1 2 3 (+ (target 1 "a")) 4]} "\n")
- (print { a 0 b 1 c 2 d 3 e [ [ 0 1 2 3 (+ (target (true) "a")) 4]]} "\n")
-
  )

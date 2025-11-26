@@ -386,8 +386,8 @@ public:
 	size_t GetEstimatedReservedDeepSizeInBytes();
 	size_t GetEstimatedUsedDeepSizeInBytes();
 
-	//Returns the EvaluableNode at the specified label_sid
-	// Returns nullptr if the label does not exist
+	//Returns the EvaluableNode and true at the specified label_sid if the label is found
+	// Returns nullptr and false if the label does not exist
 	// Uses the EvaluableNodeManager destination_temp_enm to make a deep copy of the value.
 	// If destination_temp_enm is nullptr, it will return the node reference directly.
 	// If direct_get is true, then it will return values with all labels

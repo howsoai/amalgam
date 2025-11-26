@@ -172,7 +172,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	if(sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 
-	auto [symbol_value, found, is_freeable] = GetScopeStackSymbol(sid, true);
+	auto [symbol_value, found] = GetScopeStackSymbol(sid, true);
 	if(found)
 		return EvaluableNodeReference(symbol_value, false);
 
@@ -181,11 +181,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	if(curEntity != nullptr)
 	{
 		auto [label_value, label_found] = curEntity->GetValueAtLabel(sid, nullptr, true, true);
-
-		if(!label_found)
-			EmitOrLogUndefinedVariableWarningIfNeeded(sid, en);
-
-		return label_value;
+		if(label_found)
+			return label_value;
 	}
 
 	EmitOrLogUndefinedVariableWarningIfNeeded(sid, en);

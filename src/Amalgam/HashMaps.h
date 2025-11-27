@@ -153,17 +153,17 @@ public:
 		{
 			while(parent_ && shardIdx_ < ShardCount)
 			{
-				if(inner_ != parent_->shards_[shardIdx_].map.end())
+				if(inner_ != parent_->shards[shardIdx_].map.end())
 					return;                     // still inside a valid element
 
 				// move to next shard
 				++shardIdx_;
 				if(shardIdx_ == ShardCount) break;
 
-				lock_ = std::unique_lock<std::mutex>(parent_->shards_[shardIdx_].mtx);
-				inner_ = parent_->shards_[shardIdx_].map.begin();
+				lock_ = std::unique_lock<std::mutex>(parent_->shards[shardIdx_].mtx);
+				inner_ = parent_->shards[shardIdx_].map.begin();
 
-				if(inner_ != parent_->shards_[shardIdx_].map.end())
+				if(inner_ != parent_->shards[shardIdx_].map.end())
 					return;
 			}
 			// reached end – clear state
@@ -263,16 +263,16 @@ public:
 		{
 			while(parent_ && shardIdx_ < ShardCount)
 			{
-				if(inner_ != parent_->shards_[shardIdx_].map.end())
+				if(inner_ != parent_->shards[shardIdx_].map.end())
 					return;
 
 				++shardIdx_;
 				if(shardIdx_ == ShardCount) break;
 
-				lock_ = std::unique_lock<std::mutex>(parent_->shards_[shardIdx_].mtx);
-				inner_ = parent_->shards_[shardIdx_].map.begin();
+				lock_ = std::unique_lock<std::mutex>(parent_->shards[shardIdx_].mtx);
+				inner_ = parent_->shards[shardIdx_].map.begin();
 
-				if(inner_ != parent_->shards_[shardIdx_].map.end())
+				if(inner_ != parent_->shards[shardIdx_].map.end())
 					return;
 			}
 			parent_ = nullptr;
@@ -311,7 +311,7 @@ public:
 		const H &hash = H(),
 		const E &equal = E(),
 		const A &alloc = A())
-		: hash_(hash), equal_(equal), alloc_(alloc)
+		: hash(hash), equal(equal), alloc(alloc)
 	{
 		(void)bucket_count; // bucket count is ignored – shards are fixed
 	}
@@ -320,8 +320,8 @@ public:
 	{
 		for(std::size_t i = 0; i < ShardCount; ++i)
 		{
-			std::lock_guard<std::mutex> lk(shards_[i].mtx);
-			if(!shards_[i].map.empty())
+			std::lock_guard<std::mutex> lk(shards[i].mtx);
+			if(!shards[i].map.empty())
 				return false;
 		}
 		return true;
@@ -332,8 +332,8 @@ public:
 		size_type total = 0;
 		for(std::size_t i = 0; i < ShardCount; ++i)
 		{
-			std::lock_guard<std::mutex> lk(shards_[i].mtx);
-			total += shards_[i].map.size();
+			std::lock_guard<std::mutex> lk(shards[i].mtx);
+			total += shards[i].map.size();
 		}
 		return total;
 	}
@@ -342,31 +342,31 @@ public:
 	{
 		for(std::size_t i = 0; i < ShardCount; ++i)
 		{
-			std::lock_guard<std::mutex> lk(shards_[i].mtx);
-			shards_[i].map.clear();
+			std::lock_guard<std::mutex> lk(shards[i].mtx);
+			shards[i].map.clear();
 		}
 	}
 
 	mapped_type &operator[](const key_type &key)
 	{
 		std::size_t idx = shard_index(key);
-		std::unique_lock<std::mutex> lk(shards_[idx].mtx);
-		return shards_[idx].map[key];
+		std::unique_lock<std::mutex> lk(shards[idx].mtx);
+		return shards[idx].map[key];
 	}
 
 	mapped_type &operator[](key_type &&key)
 	{
 		std::size_t idx = shard_index(key);
-		std::unique_lock<std::mutex> lk(shards_[idx].mtx);
-		return shards_[idx].map[std::move(key)];
+		std::unique_lock<std::mutex> lk(shards[idx].mtx);
+		return shards[idx].map[std::move(key)];
 	}
 
 	mapped_type &at(const key_type &key)
 	{
 		std::size_t idx = shard_index(key);
-		std::unique_lock<std::mutex> lk(shards_[idx].mtx);
-		auto it = shards_[idx].map.find(key);
-		if(it == shards_[idx].map.end())
+		std::unique_lock<std::mutex> lk(shards[idx].mtx);
+		auto it = shards[idx].map.find(key);
+		if(it == shards[idx].map.end())
 			throw std::out_of_range("ConcurrentFastHashMap::at");
 		return it->second;
 	}
@@ -374,64 +374,77 @@ public:
 	const mapped_type &at(const key_type &key) const
 	{
 		std::size_t idx = shard_index(key);
-		std::unique_lock<std::mutex> lk(shards_[idx].mtx);
-		auto it = shards_[idx].map.find(key);
-		if(it == shards_[idx].map.end())
+		std::unique_lock<std::mutex> lk(shards[idx].mtx);
+		auto it = shards[idx].map.find(key);
+		if(it == shards[idx].map.end())
 			throw std::out_of_range("ConcurrentFastHashMap::at");
 		return it->second;
 	}
 
+	template<class InnerIter>
+	static iterator make_iterator(ConcurrentFastHashMap *parent,
+								  std::size_t shardIdx,
+								  InnerIter inner,
+								  std::unique_lock<std::mutex> lk)
+	{
+		// inner is copied; lk is moved – no “move‑from inner” warning
+		return iterator(parent, shardIdx, inner, std::move(lk));
+	}
+
+	// ---------- insert ----------
 	std::pair<iterator, bool> insert(const value_type &value)
 	{
 		std::size_t idx = shard_index(value.first);
-		std::unique_lock<std::mutex> lk(shards_[idx].mtx);
-		auto [innerIt, inserted] = shards_[idx].map.insert(value);
-		iterator wrapped(this, idx, innerIt, std::move(lk));
-		return std::pair<iterator, bool>(std::move(wrapped), inserted);
+		std::unique_lock<std::mutex> lk(shards[idx].mtx);
+		auto [inner_it, inserted] = shards[idx].map.insert(value); // copy, no move
+		return { make_iterator(this, idx, inner_it, std::move(lk)), inserted };
 	}
 
 	std::pair<iterator, bool> insert(value_type &&value)
 	{
 		std::size_t idx = shard_index(value.first);
-		std::unique_lock<std::mutex> lk(shards_[idx].mtx);
-		auto [innerIt, inserted] = shards_[idx].map.insert(std::move(value));
-		iterator wrapped(this, idx, innerIt, std::move(lk));
-		return std::pair<iterator, bool>(std::move(wrapped), inserted);
+		std::unique_lock<std::mutex> lk(shards[idx].mtx);
+		// move the value *into* the map, but keep the iterator copy
+		auto [inner_it, inserted] = shards[idx].map.insert(std::move(value));
+		return { make_iterator(this, idx, inner_it, std::move(lk)), inserted };
 	}
 
+	// ---------- emplace ----------
 	template<class KArg, class... Rest>
 	std::pair<iterator, bool> emplace(KArg &&key, Rest&&... rest)
 	{
 		std::size_t idx = shard_index(key);
-		std::unique_lock<std::mutex> lk(shards_[idx].mtx);
-		auto [innerIt, inserted] =
-			shards_[idx].map.emplace(std::forward<KArg>(key),
-									 std::forward<Rest>(rest)...);
-		return { iterator(this, idx, innerIt, std::move(lk)), inserted };
+		std::unique_lock<std::mutex> lk(shards[idx].mtx);
+		auto [inner_it, inserted] =
+			shards[idx].map.emplace(std::forward<KArg>(key),
+								   std::forward<Rest>(rest)...);
+		return { make_iterator(this, idx, inner_it, std::move(lk)), inserted };
 	}
 
 	template<class... Args>
 	std::pair<iterator, bool> try_emplace(const key_type &key, Args&&... args)
 	{
 		std::size_t idx = shard_index(key);
-		std::unique_lock<std::mutex> lk(shards_[idx].mtx);
-		auto [innerIt, inserted] = shards_[idx].map.try_emplace(key, std::forward<Args>(args)...);
-		iterator wrapped(this, idx, innerIt, std::move(lk));
-		return std::pair<iterator, bool>(std::move(wrapped), inserted);
+		std::unique_lock<std::mutex> lk(shards[idx].mtx);
+		// try_emplace may construct the value in‑place; we only move the arguments,
+		// the iterator itself is copied.
+		auto [inner_it, inserted] =
+			shards[idx].map.try_emplace(key, std::forward<Args>(args)...);
+		return { make_iterator(this, idx, inner_it, std::move(lk)), inserted };
 	}
 
 	size_type erase(const key_type &key)
 	{
 		std::size_t idx = shard_index(key);
-		std::unique_lock<std::mutex> lk(shards_[idx].mtx);
-		return shards_[idx].map.erase(key);
+		std::unique_lock<std::mutex> lk(shards[idx].mtx);
+		return shards[idx].map.erase(key);
 	}
 
 	// erase that moves the iterator (no copy)
 	iterator erase(iterator &&pos)               // by r‑value reference
 	{
 		std::size_t idx = pos.shardIdx_;
-		auto nextInner = shards_[idx].map.erase(pos.inner_);
+		auto nextInner = shards[idx].map.erase(pos.inner_);
 		return iterator(this, idx, nextInner, std::move(pos.lock_));
 	}
 
@@ -439,7 +452,7 @@ public:
 	iterator erase(const_iterator &&pos)
 	{
 		std::size_t idx = pos.shardIdx_;
-		auto nextInner = shards_[idx].map.erase(pos.inner_);
+		auto nextInner = shards[idx].map.erase(pos.inner_);
 		return iterator(this, idx, nextInner, std::move(pos.lock_));
 	}
 
@@ -457,9 +470,9 @@ public:
 	iterator find(const key_type &key)
 	{
 		std::size_t idx = shard_index(key);
-		std::unique_lock<std::mutex> lk(shards_[idx].mtx);
-		auto it = shards_[idx].map.find(key);
-		if(it == shards_[idx].map.end())
+		std::unique_lock<std::mutex> lk(shards[idx].mtx);
+		auto it = shards[idx].map.find(key);
+		if(it == shards[idx].map.end())
 			return end();
 		return iterator(this, idx, it, std::move(lk));
 	}
@@ -467,9 +480,9 @@ public:
 	const_iterator find(const key_type &key) const
 	{
 		std::size_t idx = shard_index(key);
-		std::unique_lock<std::mutex> lk(shards_[idx].mtx);
-		auto it = shards_[idx].map.find(key);
-		if(it == shards_[idx].map.end())
+		std::unique_lock<std::mutex> lk(shards[idx].mtx);
+		auto it = shards[idx].map.find(key);
+		if(it == shards[idx].map.end())
 			return end();
 		return const_iterator(this, idx, it, std::move(lk));
 	}
@@ -477,18 +490,18 @@ public:
 	size_type count(const key_type &key) const
 	{
 		std::size_t idx = shard_index(key);
-		std::lock_guard<std::mutex> lk(shards_[idx].mtx);
-		return shards_[idx].map.count(key);
+		std::lock_guard<std::mutex> lk(shards[idx].mtx);
+		return shards[idx].map.count(key);
 	}
 
 	iterator begin()
 	{
 		for(std::size_t i = 0; i < ShardCount; ++i)
 		{
-			std::unique_lock<std::mutex> lk(shards_[i].mtx);
-			if(!shards_[i].map.empty())
+			std::unique_lock<std::mutex> lk(shards[i].mtx);
+			if(!shards[i].map.empty())
 			{
-				return iterator(this, i, shards_[i].map.begin(), std::move(lk));
+				return iterator(this, i, shards[i].map.begin(), std::move(lk));
 			}
 		}
 		return iterator(); // empty iterator (null state)
@@ -498,10 +511,10 @@ public:
 	{
 		for(std::size_t i = 0; i < ShardCount; ++i)
 		{
-			std::unique_lock<std::mutex> lk(shards_[i].mtx);
-			if(!shards_[i].map.empty())
+			std::unique_lock<std::mutex> lk(shards[i].mtx);
+			if(!shards[i].map.empty())
 			{
-				return const_iterator(this, i, shards_[i].map.begin(), std::move(lk));
+				return const_iterator(this, i, shards[i].map.begin(), std::move(lk));
 			}
 		}
 		return const_iterator();
@@ -521,9 +534,9 @@ public:
 		if(size() != other.size()) return false;
 		for(std::size_t i = 0; i < ShardCount; ++i)
 		{
-			std::lock_guard<std::mutex> lk1(shards_[i].mtx);
-			std::lock_guard<std::mutex> lk2(other.shards_[i].mtx);
-			if(shards_[i].map != other.shards_[i].map) return false;
+			std::lock_guard<std::mutex> lk1(shards[i].mtx);
+			std::lock_guard<std::mutex> lk2(other.shards[i].mtx);
+			if(shards[i].map != other.shards[i].map) return false;
 		}
 		return true;
 	}
@@ -536,7 +549,7 @@ public:
 protected:
 	std::size_t shard_index(const key_type &key) const
 	{
-		std::size_t fullHash = hash_(key);
+		std::size_t fullHash = hash(key);
 		return fullHash & (ShardCount - 1);   // ShardCount must be power‑of‑2
 	}
 
@@ -547,10 +560,10 @@ private:
 		ska::flat_hash_map<K, V, H, E, A>      map;
 	};
 
-	H                                          hash_;
-	E                                          equal_;
-	A                                          alloc_;
-	std::array<Shard, ShardCount>              shards_;
+	H                                          hash;
+	E                                          equal;
+	A                                          alloc;
+	std::array<Shard, ShardCount>              shards;
 };
 
 #endif

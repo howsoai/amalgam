@@ -95,22 +95,22 @@ public:
 				 std::size_t shardIdx,
 				 InnerIter inner,
 				 std::unique_lock<std::mutex> lk) noexcept
-			: parent_(parent), shardIdx_(shardIdx), inner_(inner), lock_(std::move(lk))
+			: parent(parent), shardIdx(shardIdx), inner(inner), lock(std::move(lk))
 		{}
 
 		reference operator*()  const noexcept
 		{
-			return *inner_;
+			return *inner;
 		}
 		pointer   operator->() const noexcept
 		{
-			return &(*inner_);
+			return &(*inner);
 		}
 
 		// pre‑increment
 		iterator &operator++()
 		{
-			++inner_;
+			++inner;
 			advance_until_valid();
 			return *this;
 		}
@@ -125,9 +125,9 @@ public:
 
 		friend bool operator==(const iterator &a, const iterator &b) noexcept
 		{
-			return a.parent_ == b.parent_ &&
-				a.shardIdx_ == b.shardIdx_ &&
-				(a.shardIdx_ == ShardCount || a.inner_ == b.inner_);
+			return a.parent == b.parent &&
+				a.shardIdx == b.shardIdx &&
+				(a.shardIdx == ShardCount || a.inner == b.inner);
 		}
 		friend bool operator!=(const iterator &a, const iterator &b) noexcept
 		{
@@ -137,45 +137,45 @@ public:
 		// mixed‑type equality as a member
 		bool operator==(const const_iterator &b) const noexcept
 		{
-			return parent_ == b.parent_ &&
-				shardIdx_ == b.shardIdx_ &&
-				(shardIdx_ == ShardCount || inner_ == b.inner_);
+			return parent == b.parent &&
+				shardIdx == b.shardIdx &&
+				(shardIdx == ShardCount || inner == b.inner);
 		}
 		bool operator!=(const const_iterator &b) const noexcept
 		{
-			return parent_ != b.parent_ ||
-				shardIdx_ != b.shardIdx_ ||
-				!(shardIdx_ == ShardCount || inner_ == b.inner_);
+			return parent != b.parent ||
+				shardIdx != b.shardIdx ||
+				!(shardIdx == ShardCount || inner == b.inner);
 		}
 
 	private:
 		void advance_until_valid()
 		{
-			while(parent_ && shardIdx_ < ShardCount)
+			while(parent && shardIdx < ShardCount)
 			{
-				if(inner_ != parent_->shards[shardIdx_].map.end())
+				if(inner != parent->shards[shardIdx].map.end())
 					return;                     // still inside a valid element
 
 				// move to next shard
-				++shardIdx_;
-				if(shardIdx_ == ShardCount) break;
+				++shardIdx;
+				if(shardIdx == ShardCount) break;
 
-				lock_ = std::unique_lock<std::mutex>(parent_->shards[shardIdx_].mtx);
-				inner_ = parent_->shards[shardIdx_].map.begin();
+				lock = std::unique_lock<std::mutex>(parent->shards[shardIdx].mtx);
+				inner = parent->shards[shardIdx].map.begin();
 
-				if(inner_ != parent_->shards[shardIdx_].map.end())
+				if(inner != parent->shards[shardIdx].map.end())
 					return;
 			}
 			// reached end – clear state
-			parent_ = nullptr;
-			shardIdx_ = ShardCount;
-			lock_.unlock();
+			parent = nullptr;
+			shardIdx = ShardCount;
+			lock.unlock();
 		}
 
-		ConcurrentFastHashMap *parent_ = nullptr;
-		std::size_t                     shardIdx_ = ShardCount;
-		InnerIter                       inner_;
-		std::unique_lock<std::mutex>    lock_;
+		ConcurrentFastHashMap *parent = nullptr;
+		std::size_t                     shardIdx = ShardCount;
+		InnerIter                       inner;
+		std::unique_lock<std::mutex>    lock;
 	};
 
 	class const_iterator
@@ -205,21 +205,21 @@ public:
 					   std::size_t shardIdx,
 					   InnerIter inner,
 					   std::unique_lock<std::mutex> lk) noexcept
-			: parent_(parent), shardIdx_(shardIdx), inner_(inner), lock_(std::move(lk))
+			: parent(parent), shardIdx(shardIdx), inner(inner), lock(std::move(lk))
 		{}
 
 		reference operator*()  const noexcept
 		{
-			return *inner_;
+			return *inner;
 		}
 		pointer   operator->() const noexcept
 		{
-			return &(*inner_);
+			return &(*inner);
 		}
 
 		const_iterator &operator++()
 		{
-			++inner_;
+			++inner;
 			advance_until_valid();
 			return *this;
 		}
@@ -234,9 +234,9 @@ public:
 		friend bool operator==(const const_iterator &a,
 							   const const_iterator &b) noexcept
 		{
-			return a.parent_ == b.parent_ &&
-				a.shardIdx_ == b.shardIdx_ &&
-				(a.shardIdx_ == ShardCount || a.inner_ == b.inner_);
+			return a.parent == b.parent &&
+				a.shardIdx == b.shardIdx &&
+				(a.shardIdx == ShardCount || a.inner == b.inner);
 		}
 		friend bool operator!=(const const_iterator &a,
 							   const const_iterator &b) noexcept
@@ -247,43 +247,43 @@ public:
 		// mixed‑type equality as a member
 		bool operator==(const iterator &b) const noexcept
 		{
-			return parent_ == b.parent_ &&
-				shardIdx_ == b.shardIdx_ &&
-				(shardIdx_ == ShardCount || inner_ == b.inner_);
+			return parent == b.parent &&
+				shardIdx == b.shardIdx &&
+				(shardIdx == ShardCount || inner == b.inner);
 		}
 		bool operator!=(const iterator &b) const noexcept
 		{
-			return parent_ != b.parent_ ||
-				shardIdx_ != b.shardIdx_ ||
-				!(shardIdx_ == ShardCount || inner_ == b.inner_);
+			return parent != b.parent ||
+				shardIdx != b.shardIdx ||
+				!(shardIdx == ShardCount || inner == b.inner);
 		}
 
 	private:
 		void advance_until_valid()
 		{
-			while(parent_ && shardIdx_ < ShardCount)
+			while(parent && shardIdx < ShardCount)
 			{
-				if(inner_ != parent_->shards[shardIdx_].map.end())
+				if(inner != parent->shards[shardIdx].map.end())
 					return;
 
-				++shardIdx_;
-				if(shardIdx_ == ShardCount) break;
+				++shardIdx;
+				if(shardIdx == ShardCount) break;
 
-				lock_ = std::unique_lock<std::mutex>(parent_->shards[shardIdx_].mtx);
-				inner_ = parent_->shards[shardIdx_].map.begin();
+				lock = std::unique_lock<std::mutex>(parent->shards[shardIdx].mtx);
+				inner = parent->shards[shardIdx].map.begin();
 
-				if(inner_ != parent_->shards[shardIdx_].map.end())
+				if(inner != parent->shards[shardIdx].map.end())
 					return;
 			}
-			parent_ = nullptr;
-			shardIdx_ = ShardCount;
-			lock_.unlock();
+			parent = nullptr;
+			shardIdx = ShardCount;
+			lock.unlock();
 		}
 
-		const ConcurrentFastHashMap *parent_ = nullptr;
-		std::size_t                     shardIdx_ = ShardCount;
-		InnerIter                       inner_;
-		std::unique_lock<std::mutex>    lock_;
+		const ConcurrentFastHashMap *parent = nullptr;
+		std::size_t                     shardIdx = ShardCount;
+		InnerIter                       inner;
+		std::unique_lock<std::mutex>    lock;
 	};
 
 	using key_type = K;
@@ -385,9 +385,9 @@ public:
 	static iterator make_iterator(ConcurrentFastHashMap *parent,
 								  std::size_t shardIdx,
 								  InnerIter inner,
-								  std::unique_lock<std::mutex> lk)
+								  std::unique_lock<std::mutex> lk) noexcept
 	{
-		// inner is copied; lk is moved – no “move‑from inner” warning
+		// inner is copied, lk is moved – no “use‑of‑moved‑object” here
 		return iterator(parent, shardIdx, inner, std::move(lk));
 	}
 
@@ -396,7 +396,11 @@ public:
 	{
 		std::size_t idx = shard_index(value.first);
 		std::unique_lock<std::mutex> lk(shards[idx].mtx);
-		auto [inner_it, inserted] = shards[idx].map.insert(value); // copy, no move
+
+		auto result = shards[idx].map.insert(value);
+		auto inner_it = result.first;
+		bool inserted = result.second;
+
 		return { make_iterator(this, idx, inner_it, std::move(lk)), inserted };
 	}
 
@@ -404,8 +408,13 @@ public:
 	{
 		std::size_t idx = shard_index(value.first);
 		std::unique_lock<std::mutex> lk(shards[idx].mtx);
-		// move the value *into* the map, but keep the iterator copy
-		auto [inner_it, inserted] = shards[idx].map.insert(std::move(value));
+
+		// keep the pair in a temporary; the map *does* move‑construct the value,
+		// but the iterator itself is just copied out.
+		auto result = shards[idx].map.insert(std::move(value));
+		auto inner_it = result.first;
+		bool inserted = result.second;
+
 		return { make_iterator(this, idx, inner_it, std::move(lk)), inserted };
 	}
 
@@ -415,9 +424,13 @@ public:
 	{
 		std::size_t idx = shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[idx].mtx);
-		auto [inner_it, inserted] =
-			shards[idx].map.emplace(std::forward<KArg>(key),
-								   std::forward<Rest>(rest)...);
+
+		// store the whole pair first; no structured‑binding that mixes move
+		auto result = shards[idx].map.emplace(std::forward<KArg>(key),
+											  std::forward<Rest>(rest)...);
+		auto inner_it = result.first;
+		bool inserted = result.second;
+
 		return { make_iterator(this, idx, inner_it, std::move(lk)), inserted };
 	}
 
@@ -426,10 +439,13 @@ public:
 	{
 		std::size_t idx = shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[idx].mtx);
-		// try_emplace may construct the value in‑place; we only move the arguments,
-		// the iterator itself is copied.
-		auto [inner_it, inserted] =
-			shards[idx].map.try_emplace(key, std::forward<Args>(args)...);
+
+		// same pattern – keep the pair in a temporary variable
+		auto result = shards[idx].map.try_emplace(key,
+												 std::forward<Args>(args)...);
+		auto inner_it = result.first;
+		bool inserted = result.second;
+
 		return { make_iterator(this, idx, inner_it, std::move(lk)), inserted };
 	}
 
@@ -443,17 +459,17 @@ public:
 	// erase that moves the iterator (no copy)
 	iterator erase(iterator &&pos)               // by r‑value reference
 	{
-		std::size_t idx = pos.shardIdx_;
-		auto nextInner = shards[idx].map.erase(pos.inner_);
-		return iterator(this, idx, nextInner, std::move(pos.lock_));
+		std::size_t idx = pos.shardIdx;
+		auto next_inner = shards[idx].map.erase(pos.inner);
+		return iterator(this, idx, next_inner, std::move(pos.lock));
 	}
 
 	// overload for const_iterator (also moves)
 	iterator erase(const_iterator &&pos)
 	{
-		std::size_t idx = pos.shardIdx_;
-		auto nextInner = shards[idx].map.erase(pos.inner_);
-		return iterator(this, idx, nextInner, std::move(pos.lock_));
+		std::size_t idx = pos.shardIdx;
+		auto next_inner = shards[idx].map.erase(pos.inner);
+		return iterator(this, idx, next_inner, std::move(pos.lock));
 	}
 
 	iterator erase(iterator &pos)          // l‑value reference

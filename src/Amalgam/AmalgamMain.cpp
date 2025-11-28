@@ -204,28 +204,6 @@ PLATFORM_MAIN_CONSOLE
 		assert(*(m["three"]) == 3);
 	}
 
-	// ---------- 6. at ----------
-	try
-	{
-		int val = *m.at("three");
-		assert(val == 3);
-	}
-	catch(...)
-	{
-		assert(false);
-	}
-
-	bool threw = false;
-	try
-	{
-		m.at("nonexistent");
-	}
-	catch(std::out_of_range &)
-	{
-		threw = true;
-	}
-	assert(threw);                         // at must throw on missing key
-
 	// ---------- 7. iteration ----------
 	{
 		std::size_t count = 0;

@@ -456,31 +456,16 @@ public:
 		return shards[idx].map.erase(key);
 	}
 
-	// erase that moves the iterator (no copy)
-	iterator erase(iterator &&pos)               // by r‑value reference
+	void erase(iterator &pos)          // l‑value reference
 	{
 		std::size_t idx = pos.shardIdx;
 		auto next_inner = shards[idx].map.erase(pos.inner);
-		return iterator(this, idx, next_inner, std::move(pos.lock));
 	}
 
-	// overload for const_iterator (also moves)
-	iterator erase(const_iterator &&pos)
+	void erase(const_iterator &pos)    // l‑value reference
 	{
 		std::size_t idx = pos.shardIdx;
 		auto next_inner = shards[idx].map.erase(pos.inner);
-		return iterator(this, idx, next_inner, std::move(pos.lock));
-	}
-
-	iterator erase(iterator &pos)          // l‑value reference
-	{
-		// reuse the r‑value implementation
-		return erase(std::move(pos));
-	}
-
-	iterator erase(const_iterator &pos)    // l‑value reference
-	{
-		return erase(std::move(pos));
 	}
 
 	iterator find(const key_type &key)

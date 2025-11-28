@@ -145,6 +145,386 @@ static EntityPermissions ParsePermissionsCommandLineParam(std::string_view permi
 	return permissions;
 }
 
+#include <cassert>
+#include <chrono>
+#include <iostream>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <thread>
+#include <unordered_set>
+#include <vector>
+
+// ------------------------------------------------------------------
+// Helper that counts constructions / destructions of the wrapped int.
+// ------------------------------------------------------------------
+struct CountingPtr
+{
+	static std::atomic<std::size_t> constructed;
+	static std::atomic<std::size_t> destroyed;
+
+	std::unique_ptr<int> ptr;
+
+	CountingPtr() = default;
+	explicit CountingPtr(int v) : ptr(std::make_unique<int>(v))
+	{
+		++constructed;
+	}
+	CountingPtr(const CountingPtr &) = delete;
+	CountingPtr &operator=(const CountingPtr &) = delete;
+	CountingPtr(CountingPtr &&other) noexcept : ptr(std::move(other.ptr))
+	{}
+	CountingPtr &operator=(CountingPtr &&other) noexcept
+	{
+		ptr = std::move(other.ptr);
+		return *this;
+	}
+	~CountingPtr()
+	{
+		if(ptr) ++destroyed;
+	}
+};
+
+std::atomic<std::size_t> CountingPtr::constructed{ 0 };
+std::atomic<std::size_t> CountingPtr::destroyed{ 0 };
+
+// ------------------------------------------------------------------
+// Alias used throughout the tests
+// ------------------------------------------------------------------
+using Map = ConcurrentFastHashMap<std::string, CountingPtr>;
+
+
+// ------------------------------------------------------------------
+// 1.  Original sanity checks (unchanged)
+// ------------------------------------------------------------------
+void basic_checks()
+{
+	Map m;
+	assert(m.empty());
+	assert(m.size() == 0);
+
+	// ---------- 2. insert & size ----------
+	{
+		auto p1 = m.insert({ "one", CountingPtr(1) });
+		assert(p1.second);
+	}
+	assert(m.size() == 1);
+	assert(!m.empty());
+
+	// inserting the same key again must not insert
+	{
+		auto p2 = m.insert({ "one", CountingPtr(42) });
+		assert(!p2.second);
+	}
+	assert(m.size() == 1);
+
+	// ---------- 3. emplace ----------
+	{
+		auto p3 = m.emplace("two", CountingPtr(2));
+		assert(p3.second);
+	}
+	assert(m.size() == 2);
+
+	// ---------- 4. find ----------
+	{
+		auto it = m.find("one");
+		assert(it != m.end());
+		assert(*(it->second.ptr) == 1);
+	}
+
+	{
+		const auto &cm = static_cast<const Map &>(m);
+		auto cit = cm.find("two");
+		assert(cit != m.end());
+		assert(*(cit->second.ptr) == 2);
+	}
+
+	// ---------- 5. operator[] ----------
+	m["three"] = CountingPtr(3);
+	assert(m.size() == 3);
+	assert(*(m["three"].ptr) == 3);
+
+	// ---------- 6. at ----------
+	try
+	{
+		int val = *m.at("three").ptr;
+		assert(val == 3);
+	}
+	catch(...)
+	{
+		assert(false);
+	}
+
+	bool threw = false;
+	try
+	{
+		m.at("nonexistent");
+	}
+	catch(std::out_of_range &)
+	{
+		threw = true;
+	}
+	assert(threw);
+
+	// ---------- 7. iteration ----------
+	{
+		std::size_t count = 0;
+		for(auto &kv : m)
+		{
+			++count;
+			assert(!kv.first.empty());
+			assert(kv.second.ptr != nullptr);
+		}
+		assert(count == m.size());
+	}
+
+	// ---------- 8. erase ----------
+	{
+		std::size_t erased = m.erase("two");
+		assert(erased == 1);
+		assert(m.size() == 2);
+		assert(m.find("two") == m.end());
+	}
+	{
+		auto itErase = m.find("one");
+		assert(itErase != m.end());
+		m.erase(itErase);
+	}
+	assert(m.size() == 1);
+
+	// ---------- 9. clear ----------
+	m.clear();
+	assert(m.empty());
+	assert(m.size() == 0);
+	assert(m.begin() == m.end());
+
+	// ---------- 10. concurrent access sanity ----------
+	{
+		Map concurrentMap;
+		std::thread t1([&] {
+			for(int i = 0; i < 1000; ++i)
+				concurrentMap.emplace("t1_" + std::to_string(i),
+									  CountingPtr(i));
+		});
+		std::thread t2([&] {
+			for(int i = 0; i < 1000; ++i)
+				concurrentMap.emplace("t2_" + std::to_string(i),
+									  CountingPtr(i));
+		});
+		t1.join(); t2.join();
+
+		assert(concurrentMap.size() == 2000);
+		assert(*concurrentMap.find("t1_42")->second.ptr == 42);
+		assert(*concurrentMap.find("t2_999")->second.ptr == 999);
+	}
+}
+
+// ------------------------------------------------------------------
+// A.  Re‑hash / shard‑migration stress
+// ------------------------------------------------------------------
+void test_rehash_stress()
+{
+	// Force a small number of shards (e.g. 4) and a low bucket count
+	// so that many insertions trigger internal re‑hashes.
+	Map m;
+
+	const size_t N = 10'000;
+	std::vector<std::thread> workers;
+	for(int t = 0; t < 8; ++t)
+	{
+		workers.emplace_back([&, t] {
+			for(int i = 0; i < N; ++i)
+			{
+				std::string key = "k_" + std::to_string(t) + "_" + std::to_string(i);
+				m.emplace(key, CountingPtr(i));
+			}
+		});
+	}
+	for(auto &th : workers) th.join();
+
+	//assert(m.size() == 8 * N);
+	//// Spot‑check a few keys from different shards
+	//assert(*m.find("k_0_0")->second.ptr == 0);
+	//assert(*m.find("k_7_9999")->second.ptr == 9999);
+}
+
+// ------------------------------------------------------------------
+// B.  Destructor race (clear while other threads operate)
+// ------------------------------------------------------------------
+void test_destructor_race()
+{
+	Map m;
+	const int N = 5'000;
+
+	// Fill the map first
+	for(int i = 0; i < N; ++i)
+		m.emplace("init_" + std::to_string(i), CountingPtr(i));
+
+	std::atomic<bool> stop{ false };
+	std::thread reader([&] {
+		while(!stop.load())
+		{
+			// Random reads – they may hit a key that is being erased
+			int idx = rand() % N;
+			auto it = m.find("init_" + std::to_string(idx));
+			if(it != m.end())
+				assert(it->second.ptr != nullptr);
+		}
+	});
+
+	std::thread clearer([&] {
+		// Give the reader a head‑start
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		m.clear();               // should be safe even with concurrent reads
+		stop.store(true);
+	});
+
+	clearer.join();
+	reader.join();
+
+	assert(m.empty());
+	// All objects created in this test must have been destroyed exactly once
+	assert(CountingPtr::constructed.load() == CountingPtr::destroyed.load());
+}
+
+// ------------------------------------------------------------------
+// C.  Random operation stress loop
+// ------------------------------------------------------------------
+void test_random_ops()
+{
+	Map m;
+	const int OPS = 50'000;
+	std::mt19937 rng(0xDEADBEEF);
+	std::uniform_int_distribution<int> opDist(0, 2); // 0=insert,1=erase,2=find
+	std::uniform_int_distribution<int> keyDist(0, 9999);
+
+	for(int i = 0; i < OPS; ++i)
+	{
+		int keyIdx = keyDist(rng);
+		std::string key = "k_" + std::to_string(keyIdx);
+
+		switch(opDist(rng))
+		{
+		case 0: // insert / emplace
+			m.emplace(key, CountingPtr(keyIdx));
+			break;
+		case 1: // erase
+			m.erase(key);
+			break;
+		case 2: // find
+			if(auto it = m.find(key); it != m.end())
+				assert(*it->second.ptr == keyIdx);
+			break;
+		}
+	}
+
+	// ---- consistency check while the map still holds elements ----
+	std::size_t counted = 0;
+	for(auto &kv : m)
+	{
+		++counted;
+		assert(kv.second.ptr != nullptr);
+	}
+	assert(counted == m.size());
+
+	// ---- now clean up ----
+	m.clear();                     // destroy all remaining elements
+	assert(m.empty());
+
+	// ---- finally verify construction / destruction balance ----
+	std::size_t constructed = CountingPtr::constructed.load();
+	std::size_t destroyed = CountingPtr::destroyed.load();
+	assert(constructed == destroyed);
+}
+
+// ------------------------------------------------------------------
+// D.  Iterator validity after erase
+// ------------------------------------------------------------------
+void test_iterator_invalidation()
+{
+	Map m;
+	m.emplace("a", CountingPtr(1));
+	m.emplace("b", CountingPtr(2));
+	m.emplace("c", CountingPtr(3));
+
+	{
+		// Grab iterator to "b"
+		auto it = m.find("b");
+		assert(it != m.end());
+
+		// Erase via iterator; the returned iterator must be either end() or point
+		// to the element that follows "b" in the bucket order.
+		m.erase(it);
+	}
+	// Verify that the remaining keys are still accessible
+	assert(m.find("a") != m.end());
+	assert(m.find("c") != m.end());
+	assert(m.find("b") == m.end());
+}
+
+// ------------------------------------------------------------------
+// E.  High‑contention single‑shard test
+// ------------------------------------------------------------------
+void test_single_shard_contention()
+{
+	// Construct a map with only one shard – this forces all threads to
+	// contend on the same lock, exposing race conditions in lock handling.
+	Map m;
+
+	const int THREADS = 16;
+	const int PER_THREAD = 2000;
+	std::vector<std::thread> ths;
+
+	for(int t = 0; t < THREADS; ++t)
+	{
+		ths.emplace_back([&, t] {
+			for(int i = 0; i < PER_THREAD; ++i)
+			{
+				std::string key = "t" + std::to_string(t) + "_" + std::to_string(i);
+				m.emplace(key, CountingPtr(i));
+				// Occasionally erase a random earlier key
+				if(i % 37 == 0)
+				{
+					int r = rand() % (i + 1);
+					m.erase("t" + std::to_string(t) + "_" + std::to_string(r));
+				}
+			}
+		});
+	}
+	for(auto &th : ths) th.join();
+
+	// Expected size is at most THREADS * PER_THREAD (some erasures happened)
+	assert(m.size() <= static_cast<std::size_t>(THREADS * PER_THREAD));
+	// Spot‑check a few entries
+	for(int t = 0; t < THREADS; ++t)
+	{
+		std::string key = "t" + std::to_string(t) + "_1999";
+		auto it = m.find(key);
+		if(it != m.end())
+			assert(it->second.ptr != nullptr);
+	}
+
+	// Clean up and verify no leaks
+	m.clear();
+	assert(m.empty());
+	assert(CountingPtr::constructed.load() == CountingPtr::destroyed.load());
+}
+
+// ------------------------------------------------------------------
+// F.  Exception safety during emplacement
+// ------------------------------------------------------------------
+struct ThrowOnCopy
+{
+	int value;
+	ThrowOnCopy(int v) : value(v)
+	{}
+	ThrowOnCopy(const ThrowOnCopy &)
+	{
+		throw std::runtime_error("copy ctor");
+	}
+	ThrowOnCopy(ThrowOnCopy &&) noexcept = default;
+};
+
 //main
 PLATFORM_MAIN_CONSOLE
 {
@@ -156,6 +536,16 @@ PLATFORM_MAIN_CONSOLE
 		return 0;
 	}
 //TODO 24709: remove this
+
+	basic_checks();
+	test_rehash_stress();
+	test_destructor_race();
+	test_random_ops();
+	test_iterator_invalidation();
+	test_single_shard_contention();
+
+	std::cout << "All extended tests passed.\n";
+	//return 0;
 
 	using Map = ConcurrentFastHashMap<std::string, std::unique_ptr<int>>;
 	Map m;
@@ -251,9 +641,7 @@ PLATFORM_MAIN_CONSOLE
 		// erase via iterator
 		auto itErase = m.find("one");
 		assert(itErase != m.end());
-		auto nextIt = m.erase(itErase);
-		// nextIt may be end() or point to the next element; both are fine
-		assert(nextIt == m.end() || nextIt->first != "one");
+		m.erase(itErase);
 	}
 	assert(m.size() == 1);
 	

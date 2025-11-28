@@ -167,7 +167,7 @@ public:
 			value.boolValueContainer.boolValue = false;
 			attributes.individualAttribs.isIdempotent = true;
 		}
-		if(DoesEvaluableNodeTypeUseNumberData(_type))
+		else if(DoesEvaluableNodeTypeUseNumberData(_type))
 		{
 			value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 			value.numberValueContainer.numberValue = 0.0;

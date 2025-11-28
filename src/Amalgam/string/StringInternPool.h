@@ -208,20 +208,22 @@ public:
 				return;
 		}
 
-		//TODO 24709: put this back in when implement method and change the erase at the end to accept a lock and hash? and/or remove iterator_with_lock
-		//TODO 24709: add versions of methods to flat hash map that accept hash values so don't need to recompute them
-		//lock this shard
-		//auto lock = stringToID.LockForKey(id->string);
+		//lock this shard and double-check that it's the last reference before erasing
 		auto iterator_with_lock = stringToID.find(id->string);
-	#endif
 
+		size_t ref_count = id->refCount--;
+		if(ref_count > 1)
+			return;
+
+		stringToID.erase(iterator_with_lock);
+	#else
 		//remove any that aren't the last reference
 		size_t ref_count = id->refCount--;
 		if(ref_count > 1)
 			return;
-		
-		//stringToID.erase(id->string);
-		stringToID.erase(iterator_with_lock);
+
+		stringToID.erase(id->string);
+	#endif
 	}
 
 	//creates new references from the references container and function

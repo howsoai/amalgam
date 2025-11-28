@@ -52,7 +52,14 @@ using CompactHashSet = ska::bytell_hash_set<T, H, E, A>;
 template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using CompactHashMap = ska::bytell_hash_map<K, V, H, E, A>;
 
-//ShardCount must be a power‑of‑2 (multiple of 16)
+//A hash map based on a custom version of ska::flat_hash_map that
+// exposes methods that accept precomputed hashes of values.
+//It allows consistent concurrent access for all access types, though
+// iteration locks one shard at a time.
+//This class mostly works like the std::unordered_map interface, however
+//only one iterator may be used at a time due to each iterator containing a lock.
+//Larger values of ShardCount require more memory but allow more concurrency.
+//ShardCount must be a power of 2
 template<
 	typename K,
 	typename V,
@@ -84,11 +91,11 @@ public:
 
 		iterator() = default;
 
-		// disallow copying
+		//disallow copying because it contains a lock
 		iterator(const iterator &) = delete;
 		iterator &operator=(const iterator &) = delete;
 
-		// allow moving (defaulted is fine)
+		//allow moving
 		iterator(iterator &&) = default;
 		iterator &operator=(iterator &&) = default;
 
@@ -99,29 +106,20 @@ public:
 			: parent(parent), shardIdx(shardIdx), inner(inner), lock(std::move(lk))
 		{}
 
-		reference operator*()  const noexcept
+		reference operator*() const noexcept
 		{
 			return *inner;
 		}
-		pointer   operator->() const noexcept
+		pointer operator->() const noexcept
 		{
 			return &(*inner);
 		}
 
-		// pre‑increment
 		iterator &operator++()
 		{
 			++inner;
 			advance_until_valid();
 			return *this;
-		}
-
-		// post‑increment
-		iterator operator++(int)
-		{
-			iterator tmp = *this;
-			++(*this);
-			return tmp;
 		}
 
 		friend bool operator==(const iterator &a, const iterator &b) noexcept
@@ -135,7 +133,7 @@ public:
 			return !(a == b);
 		}
 
-		// mixed‑type equality as a member
+		//mixed‑type equality
 		bool operator==(const const_iterator &b) const noexcept
 		{
 			return parent == b.parent &&
@@ -155,9 +153,9 @@ public:
 			while(parent && shardIdx < ShardCount)
 			{
 				if(inner != parent->shards[shardIdx].map.end())
-					return;                     // still inside a valid element
+					return;
 
-				// move to next shard
+				//advance to next shard
 				++shardIdx;
 				if(shardIdx == ShardCount) break;
 
@@ -167,7 +165,8 @@ public:
 				if(inner != parent->shards[shardIdx].map.end())
 					return;
 			}
-			// reached end – clear state
+
+			//reached end, clear state
 			parent = nullptr;
 			shardIdx = ShardCount;
 			if(lock.owns_lock())
@@ -195,11 +194,11 @@ public:
 
 		const_iterator() = default;
 
-		// disallow copying
+		//disallow copying because it contains a lock
 		const_iterator(const const_iterator &) = delete;
 		const_iterator &operator=(const const_iterator &) = delete;
 
-		// allow moving
+		//allow moving
 		const_iterator(const_iterator &&) = default;
 		const_iterator &operator=(const_iterator &&) = default;
 
@@ -226,13 +225,6 @@ public:
 			return *this;
 		}
 
-		const_iterator operator++(int)
-		{
-			const_iterator tmp = *this;
-			++(*this);
-			return tmp;
-		}
-
 		friend bool operator==(const const_iterator &a,
 							   const const_iterator &b) noexcept
 		{
@@ -246,7 +238,7 @@ public:
 			return !(a == b);
 		}
 
-		// mixed‑type equality as a member
+		//mixed‑type equality
 		bool operator==(const iterator &b) const noexcept
 		{
 			return parent == b.parent &&
@@ -277,6 +269,8 @@ public:
 				if(inner != parent->shards[shardIdx].map.end())
 					return;
 			}
+
+			//reached end, clear state
 			parent = nullptr;
 			shardIdx = ShardCount;
 			lock.unlock();
@@ -315,7 +309,6 @@ public:
 		const A &alloc = A())
 		: hash(hash), equal(equal), alloc(alloc)
 	{
-		(void)bucket_count; // bucket count is ignored – shards are fixed
 	}
 
 	bool empty() const
@@ -385,7 +378,6 @@ public:
 								  InnerIter inner,
 								  std::unique_lock<std::mutex> lk) noexcept
 	{
-		// inner is copied, lk is moved – no “use‑of‑moved‑object” here
 		return iterator(parent, shardIdx, inner, std::move(lk));
 	}
 
@@ -406,8 +398,8 @@ public:
 		auto [full_hash, shard_index] = get_hash_and_shard_index(value.first);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 
-		// keep the pair in a temporary; the map *does* move‑construct the value,
-		// but the iterator itself is just copied out.
+		//keep the pair in a temporary; the map *does* move‑construct the value,
+		//but the iterator itself is just copied out
 		auto result = shards[shard_index].map.insert_with_hash(std::move(value), full_hash);
 		auto inner_it = result.first;
 		bool inserted = result.second;
@@ -421,7 +413,7 @@ public:
 		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 
-		// store the whole pair first; no structured‑binding that mixes move
+		//store the whole pair first; no structured‑binding that mixes move
 		auto result = shards[shard_index].map.emplace_with_hash(std::forward<KArg>(key), full_hash,
 											  std::forward<Rest>(rest)...);
 		auto inner_it = result.first;
@@ -436,7 +428,7 @@ public:
 		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 
-		// same pattern – keep the pair in a temporary variable
+		//store the whole pair first; no structured‑binding that mixes move
 		auto result = shards[shard_index].map.try_emplace_with_hash(key, full_hash,
 												 std::forward<Args>(args)...);
 		auto inner_it = result.first;
@@ -455,13 +447,13 @@ public:
 	void erase(iterator &pos)
 	{
 		size_t shard_index = pos.shardIdx;
-		auto next_inner = shards[shard_index].map.erase(pos.inner);
+		shards[shard_index].map.erase(pos.inner);
 	}
 
 	void erase(const_iterator &pos)
 	{
 		size_t shard_index = pos.shardIdx;
-		auto next_inner = shards[shard_index].map.erase(pos.inner);
+		shards[shard_index].map.erase(pos.inner);
 	}
 
 	iterator find(const key_type &key)
@@ -497,11 +489,10 @@ public:
 		{
 			std::unique_lock<std::mutex> lk(shards[i].mtx);
 			if(!shards[i].map.empty())
-			{
 				return iterator(this, i, shards[i].map.begin(), std::move(lk));
-			}
 		}
-		return iterator(); // empty iterator (null state)
+		//if nothing found return empty/end
+		return iterator();
 	}
 
 	const_iterator begin() const
@@ -510,9 +501,7 @@ public:
 		{
 			std::unique_lock<std::mutex> lk(shards[i].mtx);
 			if(!shards[i].map.empty())
-			{
 				return const_iterator(this, i, shards[i].map.begin(), std::move(lk));
-			}
 		}
 		return const_iterator();
 	}
@@ -552,16 +541,18 @@ protected:
 	}
 
 private:
+
+	//a shard that can be locked independently
 	struct Shard
 	{
-		mutable std::mutex                     mtx;
-		ska::flat_hash_map<K, V, H, E, A>      map;
+		mutable std::mutex mtx;
+		ska::flat_hash_map<K, V, H, E, A> map;
 	};
 
-	H                                          hash;
-	E                                          equal;
-	A                                          alloc;
-	std::array<Shard, ShardCount>              shards;
+	H hash;
+	E equal;
+	A alloc;
+	std::array<Shard, ShardCount> shards;
 };
 
 #endif

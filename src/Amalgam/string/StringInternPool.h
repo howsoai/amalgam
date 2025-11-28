@@ -209,6 +209,7 @@ public:
 		}
 
 		//TODO 24709: put this back in when implement method and change the erase at the end to accept a lock and hash? and/or remove iterator_with_lock
+		//TODO 24709: add versions of methods to flat hash map that accept hash values so don't need to recompute them
 		//lock this shard
 		//auto lock = stringToID.LockForKey(id->string);
 		auto iterator_with_lock = stringToID.find(id->string);

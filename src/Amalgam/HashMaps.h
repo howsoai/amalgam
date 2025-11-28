@@ -169,7 +169,8 @@ public:
 			// reached end – clear state
 			parent = nullptr;
 			shardIdx = ShardCount;
-			lock.unlock();
+			if(lock.owns_lock())
+				lock.unlock();
 		}
 
 		ConcurrentFastHashMap *parent = nullptr;
@@ -366,8 +367,6 @@ public:
 		std::size_t idx = shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[idx].mtx);
 		auto it = shards[idx].map.find(key);
-		if(it == shards[idx].map.end())
-			throw std::out_of_range("ConcurrentFastHashMap::at");
 		return it->second;
 	}
 
@@ -376,8 +375,6 @@ public:
 		std::size_t idx = shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[idx].mtx);
 		auto it = shards[idx].map.find(key);
-		if(it == shards[idx].map.end())
-			throw std::out_of_range("ConcurrentFastHashMap::at");
 		return it->second;
 	}
 
@@ -391,7 +388,6 @@ public:
 		return iterator(parent, shardIdx, inner, std::move(lk));
 	}
 
-	// ---------- insert ----------
 	std::pair<iterator, bool> insert(const value_type &value)
 	{
 		std::size_t idx = shard_index(value.first);
@@ -418,7 +414,6 @@ public:
 		return { make_iterator(this, idx, inner_it, std::move(lk)), inserted };
 	}
 
-	// ---------- emplace ----------
 	template<class KArg, class... Rest>
 	std::pair<iterator, bool> emplace(KArg &&key, Rest&&... rest)
 	{

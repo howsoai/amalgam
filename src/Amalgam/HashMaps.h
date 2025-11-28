@@ -99,48 +99,49 @@ public:
 		iterator(iterator &&) = default;
 		iterator &operator=(iterator &&) = default;
 
-		iterator(ConcurrentFastHashMap *parent,
+		inline iterator(ConcurrentFastHashMap *parent,
 				 size_t shardIdx,
 				 InnerIter inner,
 				 std::unique_lock<std::mutex> lk) noexcept
 			: parent(parent), shardIdx(shardIdx), inner(inner), lock(std::move(lk))
 		{}
 
-		reference operator*() const noexcept
+		inline reference operator*() const noexcept
 		{
 			return *inner;
 		}
-		pointer operator->() const noexcept
+
+		inline pointer operator->() const noexcept
 		{
 			return &(*inner);
 		}
 
-		iterator &operator++()
+		inline iterator &operator++()
 		{
 			++inner;
 			advance_until_valid();
 			return *this;
 		}
 
-		friend bool operator==(const iterator &a, const iterator &b) noexcept
+		inline friend bool operator==(const iterator &a, const iterator &b) noexcept
 		{
 			return a.parent == b.parent &&
 				a.shardIdx == b.shardIdx &&
 				(a.shardIdx == ShardCount || a.inner == b.inner);
 		}
-		friend bool operator!=(const iterator &a, const iterator &b) noexcept
+		inline friend bool operator!=(const iterator &a, const iterator &b) noexcept
 		{
 			return !(a == b);
 		}
 
 		//mixed‑type equality
-		bool operator==(const const_iterator &b) const noexcept
+		inline bool operator==(const const_iterator &b) const noexcept
 		{
 			return parent == b.parent &&
 				shardIdx == b.shardIdx &&
 				(shardIdx == ShardCount || inner == b.inner);
 		}
-		bool operator!=(const const_iterator &b) const noexcept
+		inline bool operator!=(const const_iterator &b) const noexcept
 		{
 			return parent != b.parent ||
 				shardIdx != b.shardIdx ||
@@ -174,9 +175,9 @@ public:
 		}
 
 		ConcurrentFastHashMap *parent = nullptr;
-		size_t                     shardIdx = ShardCount;
-		InnerIter                       inner;
-		std::unique_lock<std::mutex>    lock;
+		size_t shardIdx = ShardCount;
+		InnerIter inner;
+		std::unique_lock<std::mutex> lock;
 	};
 
 	class const_iterator
@@ -202,50 +203,53 @@ public:
 		const_iterator(const_iterator &&) = default;
 		const_iterator &operator=(const_iterator &&) = default;
 
-		const_iterator(const ConcurrentFastHashMap *parent,
+		inline const_iterator(const ConcurrentFastHashMap *parent,
 					   size_t shardIdx,
 					   InnerIter inner,
 					   std::unique_lock<std::mutex> lk) noexcept
 			: parent(parent), shardIdx(shardIdx), inner(inner), lock(std::move(lk))
 		{}
 
-		reference operator*()  const noexcept
+		inline reference operator*()  const noexcept
 		{
 			return *inner;
 		}
-		pointer   operator->() const noexcept
+
+		inline pointer operator->() const noexcept
 		{
 			return &(*inner);
 		}
 
-		const_iterator &operator++()
+		inline const_iterator &operator++()
 		{
 			++inner;
 			advance_until_valid();
 			return *this;
 		}
 
-		friend bool operator==(const const_iterator &a,
+		inline friend bool operator==(const const_iterator &a,
 							   const const_iterator &b) noexcept
 		{
 			return a.parent == b.parent &&
 				a.shardIdx == b.shardIdx &&
 				(a.shardIdx == ShardCount || a.inner == b.inner);
 		}
-		friend bool operator!=(const const_iterator &a,
+
+		inline friend bool operator!=(const const_iterator &a,
 							   const const_iterator &b) noexcept
 		{
 			return !(a == b);
 		}
 
 		//mixed‑type equality
-		bool operator==(const iterator &b) const noexcept
+		inline bool operator==(const iterator &b) const noexcept
 		{
 			return parent == b.parent &&
 				shardIdx == b.shardIdx &&
 				(shardIdx == ShardCount || inner == b.inner);
 		}
-		bool operator!=(const iterator &b) const noexcept
+
+		inline bool operator!=(const iterator &b) const noexcept
 		{
 			return parent != b.parent ||
 				shardIdx != b.shardIdx ||
@@ -302,7 +306,7 @@ public:
 
 	ConcurrentFastHashMap() = default;
 
-	explicit ConcurrentFastHashMap(
+	inline explicit ConcurrentFastHashMap(
 		size_t bucket_count,
 		const H &hash = H(),
 		const E &equal = E(),
@@ -342,21 +346,21 @@ public:
 		}
 	}
 
-	mapped_type &operator[](const key_type &key)
+	inline mapped_type &operator[](const key_type &key)
 	{
 		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 		return shards[shard_index].map[key];
 	}
 
-	mapped_type &operator[](key_type &&key)
+	inline mapped_type &operator[](key_type &&key)
 	{
 		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 		return shards[shard_index].map[std::move(key)];
 	}
 
-	mapped_type &at(const key_type &key)
+	inline mapped_type &at(const key_type &key)
 	{
 		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
@@ -364,7 +368,7 @@ public:
 		return it->second;
 	}
 
-	const mapped_type &at(const key_type &key) const
+	inline const mapped_type &at(const key_type &key) const
 	{
 		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
@@ -373,7 +377,7 @@ public:
 	}
 
 	template<class InnerIter>
-	static iterator make_iterator(ConcurrentFastHashMap *parent,
+	inline static iterator make_iterator(ConcurrentFastHashMap *parent,
 								  size_t shardIdx,
 								  InnerIter inner,
 								  std::unique_lock<std::mutex> lk) noexcept
@@ -381,7 +385,7 @@ public:
 		return iterator(parent, shardIdx, inner, std::move(lk));
 	}
 
-	std::pair<iterator, bool> insert(const value_type &value)
+	inline std::pair<iterator, bool> insert(const value_type &value)
 	{
 		auto [full_hash, shard_index] = get_hash_and_shard_index(value.first);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
@@ -393,7 +397,7 @@ public:
 		return { make_iterator(this, idx, inner_it, std::move(lk)), inserted };
 	}
 
-	std::pair<iterator, bool> insert(value_type &&value)
+	inline std::pair<iterator, bool> insert(value_type &&value)
 	{
 		auto [full_hash, shard_index] = get_hash_and_shard_index(value.first);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
@@ -408,7 +412,7 @@ public:
 	}
 
 	template<class KArg, class... Rest>
-	std::pair<iterator, bool> emplace(KArg &&key, Rest&&... rest)
+	inline std::pair<iterator, bool> emplace(KArg &&key, Rest&&... rest)
 	{
 		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
@@ -423,7 +427,7 @@ public:
 	}
 
 	template<class... Args>
-	std::pair<iterator, bool> try_emplace(const key_type &key, Args&&... args)
+	inline std::pair<iterator, bool> try_emplace(const key_type &key, Args&&... args)
 	{
 		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
@@ -437,26 +441,26 @@ public:
 		return { make_iterator(this, shard_index, inner_it, std::move(lk)), inserted };
 	}
 
-	size_type erase(const key_type &key)
+	inline size_type erase(const key_type &key)
 	{
 		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 		return shards[shard_index].map.erase_with_hash(key, full_hash);
 	}
 
-	void erase(iterator &pos)
+	inline void erase(iterator &pos)
 	{
 		size_t shard_index = pos.shardIdx;
 		shards[shard_index].map.erase(pos.inner);
 	}
 
-	void erase(const_iterator &pos)
+	inline void erase(const_iterator &pos)
 	{
 		size_t shard_index = pos.shardIdx;
 		shards[shard_index].map.erase(pos.inner);
 	}
 
-	iterator find(const key_type &key)
+	inline iterator find(const key_type &key)
 	{
 		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
@@ -466,7 +470,7 @@ public:
 		return iterator(this, shard_index, it, std::move(lk));
 	}
 
-	const_iterator find(const key_type &key) const
+	inline const_iterator find(const key_type &key) const
 	{
 		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
@@ -506,16 +510,17 @@ public:
 		return const_iterator();
 	}
 
-	iterator end() noexcept
+	inline iterator end() noexcept
 	{
 		return iterator();
 	}
-	const_iterator end() const noexcept
+
+	inline const_iterator end() const noexcept
 	{
 		return const_iterator();
 	}
 
-	bool operator==(const ConcurrentFastHashMap &other) const
+	inline bool operator==(const ConcurrentFastHashMap &other) const
 	{
 		if(size() != other.size()) return false;
 		for(size_t i = 0; i < ShardCount; ++i)
@@ -527,13 +532,13 @@ public:
 		return true;
 	}
 
-	bool operator!=(const ConcurrentFastHashMap &other) const
+	inline bool operator!=(const ConcurrentFastHashMap &other) const
 	{
 		return !(*this == other);
 	}
 
 protected:
-	std::pair<size_t, size_t> get_hash_and_shard_index(const key_type &key) const
+	inline std::pair<size_t, size_t> get_hash_and_shard_index(const key_type &key) const
 	{
 		size_t full_hash = hash(key);
 		//ShardCount assumed to be power‑of‑2

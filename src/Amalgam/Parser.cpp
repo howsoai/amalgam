@@ -210,12 +210,24 @@ double Parser::ParseNumberFromKeyStringId(StringInternPool::StringID code_string
 
 std::string Parser::UnparseToKeyString(EvaluableNode *tree)
 {
-	//if just a regular string, return it
-	if(tree != nullptr && (tree->GetType() == ENT_STRING || tree->GetType() == ENT_SYMBOL))
+	//handle quick types
+	if(tree != nullptr)
 	{
-		const auto &string_value = tree->GetStringValue();
-		if(string_value.size() > 0 && string_value[0] != '\0')
-			return string_value;
+		auto type = tree->GetType();
+		if(type == ENT_STRING || type == ENT_SYMBOL)
+		{
+			const auto &string_value = tree->GetStringValue();
+			if(string_value.size() > 0 && string_value[0] != '\0')
+				return string_value;
+		}
+		else if(type == ENT_NUMBER)
+		{
+			return Parser::UnparseNumberToKeyString(tree->GetNumberValueReference());
+		}
+		else if(type == ENT_BOOL)
+		{
+			return GetStringIdFromBuiltInStringId(tree->GetBoolValueReference() ? ENBISI_true_key : ENBISI_false_key)->string;
+		}
 	}
 
 	std::string unparsed = Parser::Unparse(tree, false, false, true);

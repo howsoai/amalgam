@@ -395,7 +395,7 @@ public:
 		auto inner_it = result.first;
 		bool inserted = result.second;
 
-		return { make_iterator(this, idx, inner_it, std::move(lk)), inserted };
+		return { make_iterator(this, shard_index, inner_it, std::move(lk)), inserted };
 	}
 
 	inline std::pair<iterator, bool> insert(value_type &&value)

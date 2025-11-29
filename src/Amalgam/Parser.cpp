@@ -222,11 +222,11 @@ std::string Parser::UnparseToKeyString(EvaluableNode *tree)
 		}
 		else if(type == ENT_NUMBER)
 		{
-			return EvaluableNode::NumberToString(tree->GetNumberValueReference(), true);
-		}			
+			return Parser::UnparseNumberToKeyString(tree->GetNumberValueReference());
+		}
 		else if(type == ENT_BOOL)
 		{
-			return EvaluableNode::BoolToString(tree->GetBoolValueReference(), true);
+			return GetStringIdFromBuiltInStringId(tree->GetBoolValueReference() ? ENBISI_true_key : ENBISI_false_key)->string;
 		}
 	}
 

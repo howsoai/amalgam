@@ -277,7 +277,8 @@ public:
 			//reached end, clear state
 			parent = nullptr;
 			shardIdx = ShardCount;
-			lock.unlock();
+			if(lock.owns_lock())
+				lock.unlock();
 		}
 
 		const ConcurrentFastHashMap *parent = nullptr;
@@ -541,8 +542,16 @@ protected:
 	inline std::pair<size_t, size_t> get_hash_and_shard_index(const key_type &key) const
 	{
 		size_t full_hash = hash(key);
-		//ShardCount assumed to be power‑of‑2
-		return std::make_pair(full_hash, full_hash & (ShardCount - 1));
+
+		//SplitMix64 scramble for shard selection
+		std::size_t x = full_hash + 0x9e3779b97f4a7c15ULL;
+		x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+		x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+		std::size_t scrambled = x ^ (x >> 31);
+
+		//ShardCount must be a power of 2
+		std::size_t shard = scrambled & (ShardCount - 1);
+		return { full_hash, shard };
 	}
 
 private:

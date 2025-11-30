@@ -569,10 +569,29 @@ public:
         }
         return end();
     }
+
+	iterator find_with_hash(const FindKey &key, const size_t key_hash)
+	{
+		size_t index = hash_policy.index_for_hash(key_hash, num_slots_minus_one);
+		EntryPointer it = entries + ptrdiff_t(index);
+		for(int8_t distance = 0; it->distance_from_desired >= distance; ++distance, ++it)
+		{
+			if(compares_equal(key, it->value))
+				return { it };
+		}
+		return end();
+	}
+
     inline const_iterator find(const FindKey & key) const
     {
         return const_cast<sherwood_v3_table *>(this)->find(key);
     }
+
+	inline const_iterator find_with_hash(const FindKey &key, const size_t key_hash) const
+	{
+		return const_cast<sherwood_v3_table *>(this)->find(key, key_hash);
+	}
+
     inline size_t count(const FindKey & key) const
     {
         return find(key) == end() ? 0 : 1;
@@ -608,14 +627,40 @@ public:
         return emplace_new_key(distance_from_desired, current_entry, std::forward<Key>(key), std::forward<Args>(args)...);
     }
 
+	template<typename Key, typename... Args>
+	std::pair<iterator, bool> emplace_with_hash(Key &&key, size_t key_hash, Args &&... args)
+	{
+		size_t index = hash_policy.index_for_hash(key_hash, num_slots_minus_one);
+		EntryPointer current_entry = entries + ptrdiff_t(index);
+		int8_t distance_from_desired = 0;
+		for(; current_entry->distance_from_desired >= distance_from_desired; ++current_entry, ++distance_from_desired)
+		{
+			if(compares_equal(key, current_entry->value))
+				return { { current_entry }, false };
+		}
+		return emplace_new_key(distance_from_desired, current_entry, std::forward<Key>(key), std::forward<Args>(args)...);
+	}
+
     inline std::pair<iterator, bool> insert(const value_type & value)
     {
         return emplace(value);
     }
+
+	inline std::pair<iterator, bool> insert_with_hash(const value_type &value, size_t key_hash)
+	{
+		return emplace_with_hash(value, key_hash);
+	}
+
     inline std::pair<iterator, bool> insert(value_type && value)
     {
         return emplace(std::move(value));
     }
+
+	inline std::pair<iterator, bool> insert_with_hash(value_type &&value, size_t key_hash)
+	{
+		return emplace_with_hash(std::move(value), key_hash);
+	}
+
     template<typename... Args>
     inline iterator emplace_hint(const_iterator, Args &&... args)
     {
@@ -740,6 +785,18 @@ public:
             return 1;
         }
     }
+
+	size_t erase_with_hash(const FindKey &key, size_t key_hash)
+	{
+		auto found = find_with_hash(key, key_hash);
+		if(found == end())
+			return 0;
+		else
+		{
+			erase(found);
+			return 1;
+		}
+	}
 
     void clear(bool immediate_destruction_after_clear = false)
     {

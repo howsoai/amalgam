@@ -21353,7 +21353,7 @@ RYML_EXPORT int version_patch();
 //included above:
 //#include <malloc.h>
 #else
-#include <alloca.h>
+//#include <alloca.h>
 #endif
 
 

@@ -18,7 +18,6 @@ inline void EmplaceNodeTypeString(EvaluableNodeType t, const char *str)
 
 void StringInternPool::InitializeStaticStrings()
 {
-	stringToID.reserve(ENBISI_FIRST_DYNAMIC_STRING);
 	staticStringsIndexToStringID.resize(ENBISI_FIRST_DYNAMIC_STRING);
 	staticStringIDToIndex.reserve(ENBISI_FIRST_DYNAMIC_STRING);
 

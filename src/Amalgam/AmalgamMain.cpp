@@ -1,4 +1,4 @@
-//project headers:
+﻿//project headers:
 #include "Amalgam.h"
 #include "AmalgamVersion.h"
 #include "AssetManager.h"

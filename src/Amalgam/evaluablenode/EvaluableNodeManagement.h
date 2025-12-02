@@ -255,7 +255,8 @@ public:
 	}
 
 protected:
-
+	//align so the entire data structure takes up 16 bytes
+#pragma pack(push, 4)
 	EvaluableNodeImmediateValueWithType value;
 
 public:
@@ -265,6 +266,7 @@ public:
 
 	//true if this is the only reference to the top node, including no child nodes referencing it
 	bool uniqueUnreferencedTopNode;
+#pragma pack(pop)
 };
 
 

@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+//project headers:
+#include "Concurrency.h"
+
 ////////////////////
 // Defines hash set types in a generic way so they can be easily changed
 // * * * Profile and choose whichever works fastest and with least memory  * * *
@@ -27,6 +30,51 @@ using CompactHashSet = std::unordered_set<T, H, E, A>;
 template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using CompactHashMap = std::unordered_map<K, V, H, E, A>;
 
+//wrapper that includes method specializations of _with_hash to enable the use of std::unordered_set with ConcurrentFastHashMap
+template<
+	typename K,
+	typename V,
+	typename H = std::hash<K>,
+	typename E = std::equal_to<K>,
+	typename A = std::allocator<std::pair<const K, V>>>
+class FastHashMapWithHashInserts : public std::unordered_map<K, V, H, E, A>
+{
+	using Base = std::unordered_map<K, V, H, E, A>;
+
+public:
+	using Base::Base;
+
+	typename Base::iterator find_with_hash(const K &key, std::size_t /*key_hash*/)
+	{
+		return this->find(key);
+	}
+
+	typename Base::const_iterator find_with_hash(const K &key, std::size_t /*key_hash*/) const
+	{
+		return this->find(key);
+	}
+
+	bool erase_with_hash(const K &key, std::size_t /*key_hash*/)
+	{
+		return this->erase(key) != 0;    // returns true if something was erased
+	}
+
+	std::pair<typename Base::iterator, bool> insert_with_hash(const std::pair<const K, V> &value,
+						 std::size_t /*key_hash*/)
+	{
+		return this->insert(value);
+	}
+
+	template<class... Args>
+	std::pair<typename Base::iterator, bool> emplace_with_hash(const K &key, std::size_t /*key_hash*/, Args&&... args)
+	{
+		// Forward to the normal emplace; the hash argument is discarded.
+		return this->emplace(std::piecewise_construct,
+							 std::forward_as_tuple(key),
+							 std::forward_as_tuple(std::forward<Args>(args)...));
+	}
+};
+
 #else
 
 #include <array>
@@ -46,16 +94,24 @@ using FastHashSet = ska::flat_hash_set<T, H, E, A>;
 template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using FastHashMap = ska::flat_hash_map<K, V, H, E, A>;
 
+template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
+using FastHashMapWithHashInserts = ska::flat_hash_map<K, V, H, E, A>;
+
 template<typename T, typename H = std::hash<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
 using CompactHashSet = ska::bytell_hash_set<T, H, E, A>;
 
 template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using CompactHashMap = ska::bytell_hash_map<K, V, H, E, A>;
 
-//A hash map based on a custom version of ska::flat_hash_map that
-// exposes methods that accept precomputed hashes of values.
-//It allows consistent concurrent access for all access types, though
-// iteration locks one shard at a time.
+#endif
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#include <mutex>
+#include <shared_mutex>
+
+//A hash map based on a custom version of FastHashMapWithHashInserts that uses an extended variant of the
+// std::unordered_map interface that exposes methods that accept precomputed hashes of values.
+//It allows consistent concurrent access for all access types, though iteration locks one shard at a time.
 //This class mostly works like the std::unordered_map interface, however
 //only one iterator may be used at a time due to each iterator containing a lock.
 //Larger values of ShardCount require more memory but allow more concurrency.
@@ -66,7 +122,13 @@ template<
 	typename H = std::hash<K>,
 	typename E = std::equal_to<K>,
 	typename A = std::allocator<std::pair<const K, V>>,
+
+	//if USE_STL_HASH_MAPS, then it's debugging, want a single unordered map to make it easy to debug
+#ifdef USE_STL_HASH_MAPS
+	size_t ShardCount = 1
+#else
 	size_t ShardCount = 256
+#endif
 >
 class ConcurrentFastHashMap
 {
@@ -77,8 +139,7 @@ public:
 
 	class iterator
 	{
-		using InnerIter = typename ska::flat_hash_map<K, V, H, E, A>::iterator;
-		using InnerMap = typename ska::flat_hash_map<K, V, H, E, A>;
+		using InnerIter = typename FastHashMapWithHashInserts<K, V, H, E, A>::iterator;
 		friend class const_iterator;
 		friend class ConcurrentFastHashMap<K, V, H, E, A>;
 
@@ -182,7 +243,7 @@ public:
 
 	class const_iterator
 	{
-		using InnerIter = typename ska::flat_hash_map<K, V, H, E, A>::const_iterator;
+		using InnerIter = typename FastHashMapWithHashInserts<K, V, H, E, A>::const_iterator;
 		friend class iterator;
 		friend class ConcurrentFastHashMap<K, V, H, E, A>;
 
@@ -560,7 +621,7 @@ private:
 	struct Shard
 	{
 		mutable std::mutex mtx;
-		ska::flat_hash_map<K, V, H, E, A> map;
+		FastHashMapWithHashInserts<K, V, H, E, A> map;
 	};
 
 	H hash;

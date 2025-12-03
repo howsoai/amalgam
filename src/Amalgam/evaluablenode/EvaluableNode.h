@@ -1263,7 +1263,8 @@ union EvaluableNodeImmediateValue
 		return ENIVT_CODE;
 	}
 
-	static bool AreEqual(EvaluableNodeImmediateValueType type_1, EvaluableNodeImmediateValue &value_1,
+	//returns true if the values are equal, which can include ENIVT_CODE containing null, etc.
+	inline static bool AreEqual(EvaluableNodeImmediateValueType type_1, EvaluableNodeImmediateValue &value_1,
 		EvaluableNodeImmediateValueType type_2, EvaluableNodeImmediateValue &value_2)
 	{
 		if(type_1 != type_2)
@@ -1293,6 +1294,29 @@ union EvaluableNodeImmediateValue
 
 			return false;
 		}
+
+		//types are the same, just use type_1 for reference
+		if(type_1 == ENIVT_NULL)
+			return true;
+		else if(type_1 == ENIVT_BOOL)
+			return (value_1.boolValue == value_2.boolValue);
+		else if(type_1 == ENIVT_NUMBER)
+			return (value_1.number == value_2.number);
+		else if(type_1 == ENIVT_STRING_ID)
+			return (value_1.stringID == value_2.stringID);
+		else if(type_1 == ENIVT_NUMBER_INDIRECTION_INDEX || type_1 == ENIVT_STRING_ID_INDIRECTION_INDEX)
+			return (value_1.indirectionIndex == value_2.indirectionIndex);
+		else
+			return EvaluableNode::AreDeepEqual(value_1.code, value_2.code);
+	}
+
+	//like AreEqual but requires that immediate values are already transformed into immediate representations,
+	//e.g., ENIVT_CODE would not contain a null
+	inline static bool AreEqualGivenImmediateValuesNotCode(EvaluableNodeImmediateValueType type_1, EvaluableNodeImmediateValue &value_1,
+		EvaluableNodeImmediateValueType type_2, EvaluableNodeImmediateValue &value_2)
+	{
+		if(type_1 != type_2)
+			return false;
 
 		//types are the same, just use type_1 for reference
 		if(type_1 == ENIVT_NULL)
@@ -1411,6 +1435,11 @@ public:
 	static inline bool AreEqual(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)
 	{
 		return EvaluableNodeImmediateValue::AreEqual(a.nodeType, a.nodeValue, b.nodeType, b.nodeValue);
+	}
+
+	static inline bool AreEqualGivenImmediateValuesNotCode(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)
+	{
+		return EvaluableNodeImmediateValue::AreEqualGivenImmediateValuesNotCode(a.nodeType, a.nodeValue, b.nodeType, b.nodeValue);
 	}
 
 	//returns true if it is a null or null equivalent

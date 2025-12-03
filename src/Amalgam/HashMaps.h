@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+//project headers:
+#include "Concurrency.h"
+
 ////////////////////
 // Defines hash set types in a generic way so they can be easily changed
 // * * * Profile and choose whichever works fastest and with least memory  * * *

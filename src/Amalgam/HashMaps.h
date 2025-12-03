@@ -137,7 +137,6 @@ public:
 	class iterator
 	{
 		using InnerIter = typename FastHashMapWithHashInserts<K, V, H, E, A>::iterator;
-		using InnerMap = typename FastHashMapWithHashInserts<K, V, H, E, A>;
 		friend class const_iterator;
 		friend class ConcurrentFastHashMap<K, V, H, E, A>;
 

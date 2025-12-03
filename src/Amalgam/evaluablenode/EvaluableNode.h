@@ -1263,7 +1263,56 @@ union EvaluableNodeImmediateValue
 		return ENIVT_CODE;
 	}
 
-	static bool AreEqual(EvaluableNodeImmediateValueType type_1, EvaluableNodeImmediateValue &value_1,
+	//returns true if the values are equal, which can include ENIVT_CODE containing null, etc.
+	inline static bool AreEqual(EvaluableNodeImmediateValueType type_1, EvaluableNodeImmediateValue &value_1,
+		EvaluableNodeImmediateValueType type_2, EvaluableNodeImmediateValue &value_2)
+	{
+		if(type_1 != type_2)
+		{
+			if(type_1 == ENIVT_CODE)
+			{
+				if(type_2 == ENIVT_NULL)
+					return EvaluableNode::IsNull(value_1.code);
+				else if(type_2 == ENIVT_BOOL)
+					return (value_2.boolValue == EvaluableNode::ToBool(value_1.code));
+				else if(type_2 == ENIVT_NUMBER)
+					return (value_2.number == EvaluableNode::ToNumber(value_1.code));
+				else if(type_2 == ENIVT_STRING_ID)
+					return (value_2.stringID == EvaluableNode::ToStringIDIfExists(value_1.code));
+			}
+			else if(type_2 == ENIVT_CODE)
+			{
+				if(type_1 == ENIVT_NULL)
+					return EvaluableNode::IsNull(value_2.code);
+				else if(type_1 == ENIVT_BOOL)
+					return (value_1.boolValue == EvaluableNode::ToBool(value_2.code));
+				else if(type_1 == ENIVT_NUMBER)
+					return (value_1.number == EvaluableNode::ToNumber(value_2.code));
+				else if(type_1 == ENIVT_STRING_ID)
+					return (value_1.stringID == EvaluableNode::ToStringIDIfExists(value_2.code));
+			}
+
+			return false;
+		}
+
+		//types are the same, just use type_1 for reference
+		if(type_1 == ENIVT_NULL)
+			return true;
+		else if(type_1 == ENIVT_BOOL)
+			return (value_1.boolValue == value_2.boolValue);
+		else if(type_1 == ENIVT_NUMBER)
+			return (value_1.number == value_2.number);
+		else if(type_1 == ENIVT_STRING_ID)
+			return (value_1.stringID == value_2.stringID);
+		else if(type_1 == ENIVT_NUMBER_INDIRECTION_INDEX || type_1 == ENIVT_STRING_ID_INDIRECTION_INDEX)
+			return (value_1.indirectionIndex == value_2.indirectionIndex);
+		else
+			return EvaluableNode::AreDeepEqual(value_1.code, value_2.code);
+	}
+
+	//like AreEqual but requires that immediate values are already transformed into immediate representations,
+	//e.g., ENIVT_CODE would not contain a null
+	inline static bool AreEqualGivenImmediateValuesNotCode(EvaluableNodeImmediateValueType type_1, EvaluableNodeImmediateValue &value_1,
 		EvaluableNodeImmediateValueType type_2, EvaluableNodeImmediateValue &value_2)
 	{
 		if(type_1 != type_2)
@@ -1287,7 +1336,10 @@ union EvaluableNodeImmediateValue
 	//returns true if it is a null or null equivalent
 	static __forceinline constexpr bool IsNull(EvaluableNodeImmediateValueType type, EvaluableNodeImmediateValue &value)
 	{
-		return type == ENIVT_NULL;
+		if(type != ENIVT_CODE)
+			return type == ENIVT_NULL;
+
+		return EvaluableNode::IsNull(value.code);
 	}
 
 	__forceinline operator double()
@@ -1312,21 +1364,21 @@ class EvaluableNodeImmediateValueWithType
 {
 public:
 	__forceinline constexpr EvaluableNodeImmediateValueWithType()
-		: nodeType(ENIVT_NULL), nodeValue(static_cast<EvaluableNode *>(nullptr))
+		: nodeValue(static_cast<EvaluableNode *>(nullptr)), nodeType(ENIVT_NULL)
 	{	}
 
 	__forceinline EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,
 		EvaluableNodeImmediateValueType node_type)
-		: nodeType(node_type), nodeValue(node_value)
+		: nodeValue(node_value), nodeType(node_type)
 	{	}
 
 	__forceinline EvaluableNodeImmediateValueWithType(bool value)
 	{
-		nodeType = ENIVT_BOOL;
 		if(value)
 			nodeValue.boolValue = true;
 		else
 			nodeValue.boolValue = false;
+		nodeType = ENIVT_BOOL;
 	}
 
 	__forceinline EvaluableNodeImmediateValueWithType(double number)
@@ -1335,8 +1387,8 @@ public:
 			nodeType = ENIVT_NULL;
 		else
 		{
-			nodeType = ENIVT_NUMBER;
 			nodeValue = number;
+			nodeType = ENIVT_NUMBER;
 		}
 	}
 
@@ -1346,23 +1398,23 @@ public:
 			nodeType = ENIVT_NULL;
 		else
 		{
-			nodeType = ENIVT_STRING_ID;
 			nodeValue = string_id;
+			nodeType = ENIVT_STRING_ID;
 		}
 	}
 
 	constexpr EvaluableNodeImmediateValueWithType(EvaluableNode *code)
-		: nodeType(ENIVT_CODE), nodeValue(code)
+		: nodeValue(code), nodeType(ENIVT_CODE)
 	{	}
 
 	constexpr EvaluableNodeImmediateValueWithType(const EvaluableNodeImmediateValueWithType &enimvwt)
-		: nodeType(enimvwt.nodeType), nodeValue(enimvwt.nodeValue)
+		: nodeValue(enimvwt.nodeValue), nodeType(enimvwt.nodeType)
 	{	}
 
 	__forceinline EvaluableNodeImmediateValueWithType &operator =(const EvaluableNodeImmediateValueWithType &enimvwt)
 	{
-		nodeType = enimvwt.nodeType;
 		nodeValue = enimvwt.nodeValue;
+		nodeType = enimvwt.nodeType;
 		return *this;
 	}
 
@@ -1385,14 +1437,19 @@ public:
 		return EvaluableNodeImmediateValue::AreEqual(a.nodeType, a.nodeValue, b.nodeType, b.nodeValue);
 	}
 
+	static inline bool AreEqualGivenImmediateValuesNotCode(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)
+	{
+		return EvaluableNodeImmediateValue::AreEqualGivenImmediateValuesNotCode(a.nodeType, a.nodeValue, b.nodeType, b.nodeValue);
+	}
+
 	//returns true if it is a null or null equivalent
 	constexpr bool IsNull()
 	{
 		return EvaluableNodeImmediateValue::IsNull(nodeType, nodeValue);
 	}
 
-	EvaluableNodeImmediateValueType nodeType;
 	EvaluableNodeImmediateValue nodeValue;
+	EvaluableNodeImmediateValueType nodeType;
 };
 
 //copies ocn into immediate values and value_types

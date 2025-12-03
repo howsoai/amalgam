@@ -58,7 +58,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				if(value.nodeType == ENIVT_NOT_EXIST)
 					return false;
 
-				if(!EvaluableNodeImmediateValueWithType::AreEqual(compare, value))
+				if(!EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(compare, value))
 					return false;
 			}
 			return true;
@@ -76,7 +76,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				if(value.nodeType == ENIVT_NOT_EXIST)
 					return false;
 
-				if(EvaluableNodeImmediateValueWithType::AreEqual(compare, value))
+				if(EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(compare, value))
 					return false;
 			}
 			return true;
@@ -144,7 +144,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			
 			for(size_t i = 0; i < valueToCompare.size(); i++)
 			{
-				if(EvaluableNodeImmediateValue::AreEqual(value.nodeType, value.nodeValue, valueTypes[i], valueToCompare[i]))
+				if(EvaluableNodeImmediateValue::AreEqualGivenImmediateValuesNotCode(value.nodeType, value.nodeValue, valueTypes[i], valueToCompare[i]))
 					return true;
 			}
 
@@ -164,7 +164,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				if(value.nodeType != valueTypes[i])
 					return false;
 
-				if(EvaluableNodeImmediateValue::AreEqual(value.nodeType, value.nodeValue, valueTypes[i], valueToCompare[i]))
+				if(EvaluableNodeImmediateValue::AreEqualGivenImmediateValuesNotCode(value.nodeType, value.nodeValue, valueTypes[i], valueToCompare[i]))
 					return false;
 			}
 

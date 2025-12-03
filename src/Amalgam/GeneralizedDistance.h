@@ -480,7 +480,7 @@ public:
 		if(a_is_null && b_is_null)
 			return ComputeDistanceTermUnknownToUnknown(index);
 
-		bool are_equal = EvaluableNodeImmediateValue::AreEqual(a_type, a, b_type, b);
+		bool are_equal = EvaluableNodeImmediateValue::AreEqualGivenImmediateValuesNotCode(a_type, a, b_type, b);
 
 		auto &feature_attribs = featureAttribs[index];
 		if(feature_attribs.IsFeatureSymmetricNominal())

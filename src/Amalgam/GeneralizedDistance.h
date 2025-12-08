@@ -264,6 +264,7 @@ public:
 	//if surprisal_transform is true, then it will transform the result into surprisal space and remove the appropriate assumption of uncertainty
 	// for Laplace, the Laplace distribution has 1 nat worth of information, but additionally, there is a 50/50 chance that the
 	// difference is within the mean absolute error, yielding an overcounting of an additional 1/2 nat.  So the total reduction is 1.5 nats
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	__forceinline double ComputeDifferenceWithDeviation(double diff, size_t feature_index, bool surprisal_transform, bool high_accuracy)
 	{
 		auto &feature_attribs = featureAttribs[feature_index];
@@ -406,8 +407,13 @@ public:
 	}
 
 	//computes the exponentiation of d to 1/p
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double InverseExponentiateDistance(double d, bool high_accuracy)
 	{
+		if constexpr(compute_surprisal)
+			return d;
+
 		if(pValue == 1)
 			return d;
 
@@ -421,8 +427,13 @@ public:
 	}
 
 	//computes the exponentiation of d to p
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ExponentiateDifferenceTerm(double d, bool high_accuracy)
 	{
+		if constexpr(compute_surprisal)
+			return d;
+
 		if(pValue == 1)
 			return d;
 
@@ -710,8 +721,13 @@ public:
 	}
 
 	//computes the inner term for a non-nominal with an exact match of values
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermContinuousExactMatch(size_t index, bool high_accuracy)
 	{
+		if constexpr(compute_surprisal)
+			return 0.0;
+
 		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
 			return 0.0;
 
@@ -723,6 +739,8 @@ public:
 	}
 
 	//computes the base of the difference between two continuous values without exponentiation
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDifferenceTermBaseContinuous(double diff, size_t index, bool high_accuracy)
 	{
 		//compute absolute value
@@ -733,6 +751,9 @@ public:
 			diff = ConstrainDifferenceToCyclicDifference(diff, featureAttribs[index].typeAttributes.maxCyclicDifference);
 
 		//apply deviations
+		if constexpr(compute_surprisal)
+			return ComputeDifferenceWithDeviation(diff, index, true, high_accuracy);
+
 		if(DoesFeatureHaveDeviation(index))
 			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal, high_accuracy);
 		else
@@ -740,12 +761,17 @@ public:
 	}
 
 	//computes the base of the difference between two values non-nominal (e.g., continuous) that isn't cyclic
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDifferenceTermBaseContinuousNonCyclic(double diff, size_t index, bool high_accuracy)
 	{
 		//compute absolute value
 		diff = std::abs(diff);
 
 		//apply deviations
+		if constexpr(compute_surprisal)
+			return ComputeDifferenceWithDeviation(diff, index, true, high_accuracy);
+
 		if(DoesFeatureHaveDeviation(index))
 			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal, high_accuracy);
 		else
@@ -754,45 +780,53 @@ public:
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite with no nulls
 	// diff can be negative
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermContinuousNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
-		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous<compute_surprisal>(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
-		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
+		return ExponentiateDifferenceTerm<compute_surprisal>(diff, high_accuracy) * featureAttribs[index].weight;
 	}
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite with max of one null
 	// diff can be negative
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermContinuousOneNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
-		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous<compute_surprisal>(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
-		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
+		return ExponentiateDifferenceTerm<compute_surprisal>(diff, high_accuracy) * featureAttribs[index].weight;
 	}
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite that isn't cyclic with no nulls
 	// diff can be negative
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermContinuousNonCyclicNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
-		diff = ComputeDifferenceTermBaseContinuousNonCyclic(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuousNonCyclic<compute_surprisal>(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
-		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
+		return ExponentiateDifferenceTerm<compute_surprisal>(diff, high_accuracy) * featureAttribs[index].weight;
 	}
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite that isn't cyclic with max of one null
 	// diff can be negative
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
 		if(FastIsNaN(diff))
 			return ComputeDistanceTermKnownToUnknown(index);
 
-		diff = ComputeDifferenceTermBaseContinuousNonCyclic(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuousNonCyclic<compute_surprisal>(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
-		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
+		return ExponentiateDifferenceTerm<compute_surprisal>(diff, high_accuracy) * featureAttribs[index].weight;
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p=0
@@ -1538,6 +1572,8 @@ public:
 	}
 
 	//computes the inner term of the Minkowski norm summation
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTerm(EvaluableNodeImmediateValue other_value,
 		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)
 	{
@@ -1554,7 +1590,7 @@ public:
 			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue.nodeValue, other_value,
 				feature_data.targetValue.nodeType, other_type, index, high_accuracy);
 
-		return distEvaluator->ComputeDistanceTermContinuousNonNullRegular(diff, index, high_accuracy);
+		return distEvaluator->ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(diff, index, high_accuracy);
 	}
 
 	//pointer to a valid, populated GeneralizedDistanceEvaluator

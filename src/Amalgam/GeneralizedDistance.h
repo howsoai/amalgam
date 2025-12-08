@@ -483,6 +483,8 @@ public:
 	}
 
 	//returns the distance term given that it is nominal
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index)
 	{
@@ -508,36 +510,40 @@ public:
 		double prob_class_given_nonmatch = std::numeric_limits<double>::quiet_NaN();
 		if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 		{
-			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
-				feature_attribs.nominalNumberSparseDeviationMatrix, index, a.number, b.number);
+			std::tie(prob_class_given_match, prob_class_given_nonmatch)
+				= ComputeProbClassGivenMatchAndNonMatchFromSDM(
+					feature_attribs.nominalNumberSparseDeviationMatrix, index, a.number, b.number);
 		}
 		else if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
 		{
-			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
-				feature_attribs.nominalStringSparseDeviationMatrix, index, a.stringID, b.stringID);
+			std::tie(prob_class_given_match, prob_class_given_nonmatch)
+				= ComputeProbClassGivenMatchAndNonMatchFromSDM(
+					feature_attribs.nominalStringSparseDeviationMatrix, index, a.stringID, b.stringID);
 		}
 		else if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
 		{
 			StringInternPool::StringID a_sid = EvaluableNode::BoolToStringID(a.boolValue, true);
 			StringInternPool::StringID b_sid = EvaluableNode::BoolToStringID(b.boolValue, true);
-			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
-				feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);
+			std::tie(prob_class_given_match, prob_class_given_nonmatch)
+				= ComputeProbClassGivenMatchAndNonMatchFromSDM(
+					feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);
 		}
 		else if(a_type == ENIVT_CODE && b_type == ENIVT_CODE)
 		{
 			StringInternPool::StringID a_sid = EvaluableNode::ToStringIDIfExists(a.code, true);
 			StringInternPool::StringID b_sid = EvaluableNode::ToStringIDIfExists(b.code, true);
-			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
-				feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);
+			std::tie(prob_class_given_match, prob_class_given_nonmatch)
+				= ComputeProbClassGivenMatchAndNonMatchFromSDM(
+					feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);
 		}
 
 		if(!FastIsNaN(prob_class_given_match))
 		{
 			if(are_equal)
-				return ComputeDistanceTermNominalMatchFromMatchProbabilities(
+				return ComputeDistanceTermNominalMatchFromMatchProbabilities<compute_surprisal>(
 					index, prob_class_given_match);
 			else if(!FastIsNaN(prob_class_given_nonmatch))
-				return ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
+				return ComputeDistanceTermNominalNonmatchFromMatchProbabilities<compute_surprisal>(
 					index, prob_class_given_match, prob_class_given_nonmatch);
 		}
 
@@ -547,15 +553,20 @@ public:
 
 		//need to compute because didn't match any above
 		if(are_equal)
-			return ComputeDistanceTermNominalUniversallySymmetricExactMatch(index);
+			return ComputeDistanceTermNominalUniversallySymmetricExactMatch<compute_surprisal>(index);
 		else
-			return ComputeDistanceTermNominalUniversallySymmetricNonMatch(index);
+			return ComputeDistanceTermNominalUniversallySymmetricNonMatch<compute_surprisal>(index);
 	}
 
 	//exponentiates and weights the difference term contextually based on pValue
 	//note that it has extra logic to account for extreme values like infinity, negative infinity, and 0
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ContextuallyExponentiateAndWeightDifferenceTerm(double dist_term, size_t index, bool high_accuracy)
 	{
+		if constexpr(compute_surprisal)
+			return dist_term * featureAttribs[index].weight;
+
 		if(dist_term == 0.0)
 			return 0.0;
 
@@ -576,7 +587,7 @@ public:
 		}
 		else
 		{
-			return ExponentiateDifferenceTerm(dist_term, high_accuracy) * weight;
+			return ExponentiateDifferenceTerm<compute_surprisal>(dist_term, high_accuracy) * weight;
 		}
 	}
 
@@ -632,6 +643,8 @@ public:
 
 	//returns the base of the distance term for nominal comparisons for a match
 	//given the probability of the class being observed given that it is a match
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermNominalMatchFromMatchProbabilities(size_t index,
 		double prob_class_given_match)
 	{
@@ -639,17 +652,19 @@ public:
 		if(!computeSurprisal)
 			dist_term_base = 1 - prob_class_given_match;
 
-		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term_base, index, true);
+		return ContextuallyExponentiateAndWeightDifferenceTerm<compute_surprisal>(dist_term_base, index, true);
 	}
 
 	//computes the distance term
 	// for a given prob_class_given_match, which is the probability that the classes compared should have been a match,
 	// and prob_class_given_nonmatch, the probability that the particular comparison class does not match
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermNominalNonmatchFromMatchProbabilities(size_t index,
 		double prob_class_given_match, double prob_class_given_nonmatch)
 	{
 		double dist_term_base = 0.0;
-		if(computeSurprisal)
+		if(compute_surprisal || computeSurprisal)
 		{
 			if(prob_class_given_match >= prob_class_given_nonmatch)
 			{
@@ -671,21 +686,25 @@ public:
 			dist_term_base = 1.0 - prob_class_given_nonmatch;
 		}
 
-		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term_base, index, true);
+		return ContextuallyExponentiateAndWeightDifferenceTerm<compute_surprisal>(dist_term_base, index, true);
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are equal
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index)
 	{
 		double prob_class_given_match = 1;
-		if(DoesFeatureHaveDeviation(index))
+		if(compute_surprisal || DoesFeatureHaveDeviation(index))
 			prob_class_given_match = 1 - featureAttribs[index].deviation;
 
-		double dist_term = ComputeDistanceTermNominalMatchFromMatchProbabilities(index, prob_class_given_match);
-		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, true);
+		double dist_term = ComputeDistanceTermNominalMatchFromMatchProbabilities<compute_surprisal>(index, prob_class_given_match);
+		return ContextuallyExponentiateAndWeightDifferenceTerm<compute_surprisal>(dist_term, index, true);
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are not equal
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index)
 	{
 		auto &feature_attribs = featureAttribs[index];
@@ -694,7 +713,7 @@ public:
 			std::max<size_t>(1, feature_attribs.GetNumDeviationEntries()));
 
 		double match_deviation = 0.0;
-		if(DoesFeatureHaveDeviation(index))
+		if(compute_surprisal || DoesFeatureHaveDeviation(index))
 			match_deviation = feature_attribs.deviation;
 
 		//find probability that the correct class was selected
@@ -704,7 +723,7 @@ public:
 		//divide the probability among the other classes
 		double prob_class_given_nonmatch = match_deviation / nonmatching_classes;
 
-		return ComputeDistanceTermNominalNonmatchFromMatchProbabilities(index,
+		return ComputeDistanceTermNominalNonmatchFromMatchProbabilities<compute_surprisal>(index,
 			prob_class_given_match, prob_class_given_nonmatch);
 	}
 
@@ -890,6 +909,8 @@ public:
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p non-zero and non-infinite
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermRegular(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
@@ -901,7 +922,7 @@ public:
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
 
-		return ComputeDistanceTermContinuousNonNullRegular(diff, index, high_accuracy);
+		return ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(diff, index, high_accuracy);
 	}
 
 	//returns the distance term for the either one or two unknown values
@@ -1201,7 +1222,8 @@ public:
 	//computes the distance terms given the sdm for feature index, of type target_type and target_value,
 	// and populates nominal_distance_terms
 	//returns true if target_value was found in the sdm
-	template<typename SparseNominalDeviationMatrixType, typename NominalValueType,
+	//if compute_surprisal is true, it will use a faster execution path
+	template<bool compute_surprisal, typename SparseNominalDeviationMatrixType, typename NominalValueType,
 		typename NominalDistanceTermsType>
 	inline bool ComputeAndStoreNominalDistanceTermsForSDM(SparseNominalDeviationMatrixType &sdm,
 		size_t index, EvaluableNodeImmediateValueType target_type, NominalValueType &target_value,
@@ -1251,11 +1273,11 @@ public:
 			double prob_class_given_nonmatch = (1 - default_mismatch_deviation) / nonmatching_classes;
 
 			feature_data.defaultNominalMatchDistanceTerm
-				= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
+				= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities<compute_surprisal>(
 					index, prob_class_given_match);
 
 			feature_data.defaultNominalNonMatchDistanceTerm
-				= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
+				= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities<compute_surprisal>(
 					index, prob_class_given_match, prob_class_given_nonmatch);
 		}
 
@@ -1263,6 +1285,8 @@ public:
 	}
 
 	//for the feature index, computes and stores the distance terms for nominal values
+	//if compute_surprisal is true, it will use a faster execution path
+	template<bool compute_surprisal>
 	inline void ComputeAndStoreNominalDistanceTerms(size_t index)
 	{
 		//make sure there's room for the interned index
@@ -1273,7 +1297,7 @@ public:
 
 		if(feature_data.targetValue.nodeType == ENIVT_NUMBER)
 		{
-			if(ComputeAndStoreNominalDistanceTermsForSDM(
+			if(ComputeAndStoreNominalDistanceTermsForSDM<compute_surprisal>(
 					distEvaluator->featureAttribs[index].nominalNumberSparseDeviationMatrix,
 					index, ENIVT_NUMBER, feature_data.targetValue.nodeValue.number,
 					feature_data.nominalNumberDistanceTerms))
@@ -1281,7 +1305,7 @@ public:
 		}
 		else if(feature_data.targetValue.nodeType == ENIVT_STRING_ID)
 		{
-			if(ComputeAndStoreNominalDistanceTermsForSDM(
+			if(ComputeAndStoreNominalDistanceTermsForSDM<compute_surprisal>(
 					distEvaluator->featureAttribs[index].nominalStringSparseDeviationMatrix,
 					index, ENIVT_STRING_ID, feature_data.targetValue.nodeValue.stringID,
 					feature_data.nominalStringDistanceTerms))
@@ -1290,7 +1314,7 @@ public:
 		else if(feature_data.targetValue.nodeType == ENIVT_BOOL)
 		{
 			auto bool_value_sid = EvaluableNode::BoolToStringID(feature_data.targetValue.nodeValue.boolValue, true);
-			if(ComputeAndStoreNominalDistanceTermsForSDM(
+			if(ComputeAndStoreNominalDistanceTermsForSDM<compute_surprisal>(
 					distEvaluator->featureAttribs[index].nominalStringSparseDeviationMatrix,
 					index, ENIVT_STRING_ID, bool_value_sid,
 					feature_data.nominalStringDistanceTerms))
@@ -1299,14 +1323,15 @@ public:
 
 		//made it here, so didn't find anything in the SDM.  use fallback for default nominal terms
 		feature_data.defaultNominalMatchDistanceTerm
-			= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index);
+			= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch<compute_surprisal>(index);
 
 		feature_data.defaultNominalNonMatchDistanceTerm
-			= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index);
+			= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch<compute_surprisal>(index);
 	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
-	template<typename ValueType>
+	//if compute_surprisal is true, it will use a faster execution path
+	template<bool compute_surprisal, typename ValueType>
 	inline void ComputeAndStoreInternedDistanceTerms(size_t index, std::vector<ValueType> &interned_values)
 	{
 		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
@@ -1348,13 +1373,15 @@ public:
 
 			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
 			{
-				feature_data.internedDistanceTerms[i] = distEvaluator->ComputeDistanceTermRegular(
+				feature_data.internedDistanceTerms[i] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
 						feature_data.targetValue.nodeValue, interned_values[i], immediate_type, immediate_type,
 						index, high_accuracy_interned_values);
 			}
 		}
 	}
 
+	//if compute_surprisal is true, it will use a faster execution path
+	template<bool compute_surprisal = false>
 	inline void ComputeAndStoreInternedDistanceTermsForBool(size_t index)
 	{
 		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
@@ -1380,11 +1407,11 @@ public:
 		}
 		else
 		{
-			feature_data.internedDistanceTerms[0] = distEvaluator->ComputeDistanceTermRegular(
+			feature_data.internedDistanceTerms[0] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
 						feature_data.targetValue.nodeValue, false, ENIVT_BOOL, ENIVT_BOOL,
 						index, high_accuracy_interned_values);
 
-			feature_data.internedDistanceTerms[1] = distEvaluator->ComputeDistanceTermRegular(
+			feature_data.internedDistanceTerms[1] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
 						feature_data.targetValue.nodeValue, true, ENIVT_BOOL, ENIVT_BOOL,
 						index, high_accuracy_interned_values);
 		}
@@ -1472,6 +1499,8 @@ public:
 	}
 
 	//returns the smallest distance term larger than compared_dist_term
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermNonNullNominalNextSmallest(double compared_dist_term, size_t index)
 	{
 		double next_smallest_dist_term = std::numeric_limits<double>::infinity();
@@ -1505,7 +1534,7 @@ public:
 			return next_smallest_dist_term;
 
 		//use symmetric if smaller
-		double symmetric_dist_term = distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index);
+		double symmetric_dist_term = distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch<compute_surprisal>(index);
 		if(symmetric_dist_term > compared_dist_term && symmetric_dist_term < next_smallest_dist_term)
 			next_smallest_dist_term = symmetric_dist_term;
 
@@ -1513,6 +1542,8 @@ public:
 	}
 
 	//returns the smallest nonmatching distance term regardless of value
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermNominalNonNullSmallestNonmatch(size_t index)
 	{
 		double next_smallest_dist_term = std::numeric_limits<double>::infinity();
@@ -1564,7 +1595,7 @@ public:
 			return next_smallest_dist_term;
 
 		//use symmetric if smaller
-		double symmetric_dist_term = distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index);
+		double symmetric_dist_term = distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch<compute_surprisal>(index);
 		if(symmetric_dist_term < next_smallest_dist_term)
 			next_smallest_dist_term = symmetric_dist_term;
 

@@ -62,12 +62,14 @@ public:
 	//Gets the maximum possible distance term from value assuming the feature is continuous
 	// absolute_feature_index is the offset to access the feature relative to the entire data store
 	// query_feature_index is relative to feature attributes and data in r_dist_eval
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	inline double GetMaxDistanceTermForContinuousFeature(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
 		double max_diff = columnData[absolute_feature_index]->GetMaxDifference(
 														r_dist_eval.distEvaluator->featureAttribs[query_feature_index]);
-		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(
 														max_diff, query_feature_index, high_accuracy);
 	}
 
@@ -519,7 +521,10 @@ public:
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 		r_dist_eval.distEvaluator = &dist_eval;
 
-		PopulateTargetValuesAndLabelIndicesFromPosition(r_dist_eval, position_label_sids, position_values, position_value_types);
+		if(r_dist_eval.distEvaluator->computeSurprisal)
+			PopulateTargetValuesAndLabelIndicesFromPosition<true>(r_dist_eval, position_label_sids, position_values, position_value_types);
+		else
+			PopulateTargetValuesAndLabelIndicesFromPosition<false>(r_dist_eval, position_label_sids, position_values, position_value_types);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -549,7 +554,10 @@ public:
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 		r_dist_eval.distEvaluator = &dist_eval;
 
-		PopulateTargetValuesAndLabelIndicesFromEntityIndex(r_dist_eval, position_label_sids, search_index);
+		if(r_dist_eval.distEvaluator->computeSurprisal)
+			PopulateTargetValuesAndLabelIndicesFromEntityIndex<true>(r_dist_eval, position_label_sids, search_index);
+		else
+			PopulateTargetValuesAndLabelIndicesFromEntityIndex<false>(r_dist_eval, position_label_sids, search_index);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -678,6 +686,8 @@ protected:
 
 	//computes each partial sum and adds the term to the partial sums associated for each id in entity_indices for query_feature_index
 	//returns the number of entities indices accumulated
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	size_t ComputeAndAccumulatePartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		BitArrayIntegerSet &enabled_indices, SortedIntegerSet &entity_indices,
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
@@ -712,7 +722,7 @@ protected:
 				continue;
 
 			auto [other_value_type, other_value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
-			double term = r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
+			double term = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, other_value_type, query_feature_index, high_accuracy);
 
 			partial_sums.Accum(entity_index, accum_location, term);
 		}
@@ -908,6 +918,8 @@ protected:
 	//will only consider indices in enabled_indices
 	// query_feature_index is the offset to access the feature relative to the particular query data parameters
 	//returns the smallest partial sum for any value not yet computed
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	double PopulatePartialSumsWithSimilarFeatureValue(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t num_entities_to_populate, bool expand_search_if_optimal, bool high_accuracy,
 		size_t query_feature_index, BitArrayIntegerSet &enabled_indices);
@@ -918,6 +930,8 @@ protected:
 	// if radius_column_index is specified, it will populate the initial partial sums with them
 	// will compute and populate min_unpopulated_distances and min_distance_by_unpopulated_count, where the former is the next smallest uncomputed feature distance indexed by the number of features not computed
 	// and min_distance_by_unpopulated_count is the total distance of all uncomputed features where the index is the number of uncomputed features
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	void PopulateInitialPartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t top_k, size_t radius_column_index,
 		bool high_accuracy, BitArrayIntegerSet &enabled_indices,
 		std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count);
@@ -1143,6 +1157,8 @@ protected:
 	}
 
 	//computes the distance term for value_entry, query_feature_index, and feature_type,
+	//if compute_surprisal is true, it will use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermContinuousNonNullRegular(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		double target_value, SBFDSColumnData::ValueEntry &value_entry, size_t query_feature_index, bool high_accuracy)
 	{
@@ -1153,10 +1169,12 @@ protected:
 				value_entry.valueInternIndex, query_feature_index);
 
 		double diff = target_value - value_entry.value.number;
-		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(diff, query_feature_index, high_accuracy);
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(diff, query_feature_index, high_accuracy);
 	}
 
 	//computes the inner term for a non-nominal with an exact match of values
+	//if compute_surprisal is true, it will use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermContinuousExactMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		SBFDSColumnData::ValueEntry &value_entry, size_t query_feature_index, bool high_accuracy)
 	{
@@ -1166,7 +1184,7 @@ protected:
 			return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
 				value_entry.valueInternIndex, query_feature_index);
 
-		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch<compute_surprisal>(query_feature_index, high_accuracy);
 	}
 
 	//given an estimate of distance that uses best_possible_feature_distance filled in for any features not computed,
@@ -1245,11 +1263,15 @@ protected:
 public:
 
 	//populates specified target value given the selected target values for each value in corresponding position* parameters
+	//if compute_surprisal is true, it will use a faster execution path
+	template<bool compute_surprisal = false>
 	void PopulateTargetValueAndLabelIndex(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t query_feature_index, EvaluableNodeImmediateValue position_value,
 		EvaluableNodeImmediateValueType position_value_type);
 
 	//populates all target values given the selected target values for each value in corresponding position* parameters
+	//if compute_surprisal is true, it will use a faster execution path
+	template<bool compute_surprisal = false>
 	void PopulateTargetValuesAndLabelIndicesFromPosition(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValue> &position_values,
 		std::vector<EvaluableNodeImmediateValueType> &position_value_types)
@@ -1262,12 +1284,14 @@ public:
 			if(column == end(labelIdToColumnIndex))
 				continue;
 
-			PopulateTargetValueAndLabelIndex(r_dist_eval, query_feature_index,
+			PopulateTargetValueAndLabelIndex<compute_surprisal>(r_dist_eval, query_feature_index,
 				position_values[query_feature_index], position_value_types[query_feature_index]);
 		}
 	}
 
 	//populates all target values given the selected target values for each label stored in the entity of entity_index
+	//if compute_surprisal is true, it will use a faster execution path
+	template<bool compute_surprisal = false>
 	void PopulateTargetValuesAndLabelIndicesFromEntityIndex(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		std::vector<StringInternPool::StringID> &position_label_sids, size_t entity_index)
 	{
@@ -1282,7 +1306,7 @@ public:
 			size_t column_index = found->second;
 			auto [value_type, value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(entity_index);
 
-			PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
+			PopulateTargetValueAndLabelIndex<compute_surprisal>(r_dist_eval, i, value, value_type);
 		}
 	}
 

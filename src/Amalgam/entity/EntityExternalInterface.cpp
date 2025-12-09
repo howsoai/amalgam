@@ -126,7 +126,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 			if(new_id_path != nullptr)
 			{
 				if(new_id_path->GetType() == ENT_LIST)
-					for(EvaluableNode *id_path_item : new_id_path->GetOrderedChildNodes())
+					for(EvaluableNode *id_path_item : new_id_path->GetOrderedChildNodesReference())
 						// They really should be ENT_STRING, but
 						status.entity_path.push_back(EvaluableNode::ToString(id_path_item));
 				else

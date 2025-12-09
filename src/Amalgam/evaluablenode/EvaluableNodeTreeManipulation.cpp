@@ -1133,7 +1133,7 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNorma
 	}
 	else if(tree->IsOrderedArray())
 	{
-		for(auto &e : tree->GetOrderedChildNodes())
+		for(auto &e : tree->GetOrderedChildNodesReference())
 		{
 			EvaluableNode *replace_node_by = nullptr;
 			if(!CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(e, index, checked, replace_node_by))
@@ -1501,9 +1501,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		case ENBISI_delete:
 			if(n->GetOrderedChildNodes().size() > 0)
 			{
-				size_t num_children = n->GetOrderedChildNodes().size();
+				size_t num_children = n->GetOrderedChildNodesReference().size();
 				size_t replace_with = mp.interpreter->randomStream.RandSize(num_children);
-				n = mp.enm->AllocNode(n->GetOrderedChildNodes()[replace_with]);
+				n = mp.enm->AllocNode(n->GetOrderedChildNodesReference()[replace_with]);
 			}
 			else if(n->GetMappedChildNodes().size() > 0)
 			{
@@ -1663,14 +1663,15 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	//clear excess nulls (with no child nodes) in lists
 	if(n != nullptr)
 	{
-		while(!n->GetOrderedChildNodes().empty()
-			&& (n->GetOrderedChildNodes().back() == nullptr
-					|| (n->GetOrderedChildNodes().back()->GetOrderedChildNodes().size() == 0
-						&& n->GetOrderedChildNodes().back()->GetMappedChildNodes().size() == 0) ))
+		auto &n_ocn = n->GetOrderedChildNodes();
+		while(!n_ocn.empty()
+			&& (n_ocn.back() == nullptr
+					|| (n_ocn.back()->GetOrderedChildNodes().size() == 0
+						&& n_ocn.back()->GetMappedChildNodes().size() == 0) ))
 		{
 			//either remove this one or stop removing
 			if(mp.interpreter->randomStream.Rand() > 0.125)
-				n->GetOrderedChildNodes().pop_back();
+				n_ocn.pop_back();
 			else
 				break;
 		}

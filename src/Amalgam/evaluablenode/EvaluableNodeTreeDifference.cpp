@@ -175,8 +175,9 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 					continue;
 
 				//get position from tree1
-				auto position_in_merged = std::find(begin(tree1_node->GetOrderedChildNodes()), end(tree1_node->GetOrderedChildNodes()), tree1_cn);
-				size_t index = std::distance(begin(tree1_node->GetOrderedChildNodes()), position_in_merged);
+				auto &tree1_node_ocn = tree1_node->GetOrderedChildNodes();
+				auto position_in_merged = std::find(begin(tree1_node_ocn), end(tree1_node_ocn), tree1_cn);
+				size_t index = std::distance(begin(tree1_node_ocn), position_in_merged);
 				retrieval->AppendOrderedChildNode(enm->AllocNode(static_cast<double>(index)));
 			}
 		}
@@ -221,10 +222,16 @@ void EvaluableNodeTreeDifference::FindParentReferences(EvaluableNode *tree, Eval
 	if(references_with_parents.emplace(tree, parent).second == false)
 		return;
 
-	for(auto &cn : tree->GetOrderedChildNodes())
-		FindParentReferences(cn, references_with_parents, tree);
-	for(auto &[_, cn] : tree->GetMappedChildNodes())
-		FindParentReferences(cn, references_with_parents, tree);
+	if(tree->IsAssociativeArray())
+	{
+		for(auto &[_, cn] : tree->GetMappedChildNodesReference())
+			FindParentReferences(cn, references_with_parents, tree);
+	}
+	else
+	{
+		for(auto &cn : tree->GetOrderedChildNodes())
+			FindParentReferences(cn, references_with_parents, tree);
+	}
 }
 
 void EvaluableNodeTreeDifference::FindTopNodesExcluded(EvaluableNode *tree, EvaluableNode::ReferenceAssocType &nodes_included,

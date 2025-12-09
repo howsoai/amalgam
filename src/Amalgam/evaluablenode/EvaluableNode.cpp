@@ -334,7 +334,7 @@ void EvaluableNode::ConvertListToNumberedAssoc()
 	AssocType new_mcn;
 
 	//convert ordered child nodes into index number -> value
-	auto &ocn = GetOrderedChildNodes();
+	auto &ocn = GetOrderedChildNodesReference();
 	new_mcn.reserve(ocn.size());
 	for(size_t i = 0; i < ocn.size(); i++)
 	{
@@ -1362,7 +1362,7 @@ void EvaluableNode::ClearOrderedChildNodes()
 	if(!IsOrderedArray())
 		return;
 
-	GetOrderedChildNodes().clear();
+	GetOrderedChildNodesReference().clear();
 
 	SetNeedCycleCheck(false);
 

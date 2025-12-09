@@ -404,7 +404,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered
-		auto &lookup_ocn = to_lookup->GetOrderedChildNodes();
+		auto &lookup_ocn = to_lookup->GetOrderedChildNodesReference();
 		for(size_t i = 0; i < lookup_ocn.size(); i++)
 		{
 			auto &cn = lookup_ocn[i];

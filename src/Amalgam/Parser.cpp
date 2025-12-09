@@ -137,7 +137,7 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::Par
 
 std::string Parser::Unparse(EvaluableNode *tree,
 	bool expanded_whitespace, bool emit_attributes, bool sort_keys,
-	bool first_of_transactional_unparse, size_t starting_indendation)
+	bool first_of_transactional_unparse, size_t starting_indendation, size_t max_length)
 {
 	UnparseData upd;
 	upd.topNode = tree;
@@ -148,6 +148,7 @@ std::string Parser::Unparse(EvaluableNode *tree,
 	upd.emitAttributes = emit_attributes;
 	upd.sortKeys = sort_keys;
 	upd.transaction = first_of_transactional_unparse;
+	upd.maxLength = max_length;
 	Unparse(upd, tree, nullptr, expanded_whitespace, starting_indendation, starting_indendation > 0);
 	return upd.result;
 }
@@ -1044,6 +1045,9 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 	assert(!(upd.cycleFree && tree != nullptr && tree->GetNeedCycleCheck()));
 #endif
 
+	if(upd.result.size() > upd.maxLength)
+		return;
+
 	//if need to check for circular references,
 	// can skip if nullptr, as the code below this will handle nullptr and apply appropriate spacing
 	if(!upd.cycleFree && tree != nullptr)
@@ -1123,6 +1127,9 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				upd.result.push_back('"');
 
 				auto &s = tree->GetStringValue();
+				if(upd.result.size() + s.size() > upd.maxLength)
+					return;
+
 				if(NeedsBackslashify(s))
 					upd.result.append(Backslashify(s));
 				else
@@ -1133,8 +1140,13 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			break;
 		}
 		case ENT_SYMBOL:
-			upd.result.append(tree->GetStringValue());
+		{
+			auto &s = tree->GetStringValue();
+			if(upd.result.size() + s.size() > upd.maxLength)
+				return;
+			upd.result.append(s);
 			break;
+		}
 		default:
 			break;
 		}

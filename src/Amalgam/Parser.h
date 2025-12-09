@@ -132,9 +132,11 @@ public:
 	// if sort_keys, then it will perform a sort on all unordered nodes
 	// if first_of_transactional_unparse, it will not emit the final closing parenthesis or appropriate other character
 	// starting_indentation indicates where it will start, in case there was other code prior to which it is being concatenated
+	// if the string grows to length larger than max_length, it will be truncated
 	static std::string Unparse(EvaluableNode *tree,
 		bool expanded_whitespace = true, bool emit_attributes = true, bool sort_keys = false,
-		bool first_of_transactional_unparse = false, size_t starting_indendation = 0);
+		bool first_of_transactional_unparse = false, size_t starting_indendation = 0,
+		size_t max_length = std::numeric_limits<size_t>::max());
 
 	//transforms the code_string into evaluable nodes
 	static EvaluableNodeReference ParseFromKeyString(std::string &code_string, EvaluableNodeManager *enm);
@@ -211,6 +213,9 @@ protected:
 
 		//top node of what is being unparsed
 		EvaluableNode *topNode;
+
+		//maximum string length
+		size_t maxLength;
 
 		//if true, then the tree is cycle free and don't need to keep track of potential circular references
 		bool cycleFree;

@@ -143,7 +143,7 @@ void PrintStackNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t max_num
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	DebugCheckBreakpointsAndUpdateState(en, true);
 
@@ -798,7 +798,7 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool be
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_PROFILE(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_PROFILE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	std::string opcode_str = asset_manager.GetEvaluableNodeSourceFromComments(en);
 	opcode_str += GetStringFromEvaluableNodeType(en->GetType(), true);

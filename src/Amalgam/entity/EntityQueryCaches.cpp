@@ -907,7 +907,7 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 
 EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Entity *container,
 	std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm,
-	bool return_query_value, bool immediate_result)
+	bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//get the cache associated with this container
 	// use the first condition as an heuristic for building it if it doesn't exist
@@ -940,7 +940,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		if(cond.queryType == ENT_NULL)
 		{
 			if(immediate_result)
-				return EvaluableNodeReference(0.0);
+				return EvaluableNodeReference::Null();
 			return EvaluableNodeReference(enm->AllocNode(ENT_LIST), true);
 		}
 
@@ -1274,7 +1274,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 
 EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadReference &container,
-	std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value, bool immediate_result)
+	std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	if(_enable_SBF_datastore && CanUseQueryCaches(conditions))
 	{

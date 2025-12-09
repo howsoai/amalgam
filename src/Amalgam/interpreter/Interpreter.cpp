@@ -317,7 +317,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *scope_stack, EvaluableNode *opcode_stack, EvaluableNode *construction_stack,
 	bool manage_stack_references,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	bool immediate_result
+	EvaluableNodeRequestedValueTypes immediate_result
 #ifdef MULTITHREAD_SUPPORT
 	, bool new_scope_stack
 #endif
@@ -444,7 +444,7 @@ void Interpreter::SetSideEffectFlagsAndAccumulatePerformanceCounters(EvaluableNo
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	if(EvaluableNode::IsNull(en))
 		return EvaluableNodeReference::Null();
@@ -569,7 +569,7 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 }
 
 EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluableNode(
-	EvaluableNode *n, bool immediate_result)
+	EvaluableNode *n, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//if can skip InterpretNode, then just allocate the string
 	if(n == nullptr || n->GetIsIdempotent()
@@ -1030,7 +1030,7 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 
 bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
 	std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
-	bool immediate_results)
+	EvaluableNodeRequestedValueTypes immediate_results)
 {
 	if(!parent_node->GetConcurrency())
 		return false;

@@ -1186,6 +1186,25 @@ enum EvaluableNodeImmediateValueType : uint8_t
 	ENIVT_STRING_ID_INDIRECTION_INDEX	//not a real EvaluableNode type, but an index to some data structure that has a stringID
 };
 
+//When an EvaluableNodeImmediateValue is requested, this class can indicate which types of values are allowed
+union EvaluableNodeRequestedValueTypes
+{
+	EvaluableNodeRequestedValueTypes()
+		: allTypes(0)
+	{	}
+
+	uint8_t allTypes;
+	struct DataTypeBits
+	{
+		bool null : 1;
+		bool boolean : 1;
+		bool number : 1;
+		bool existingString : 1;
+		bool string : 1;
+		bool code : 1;
+	} individualTypes;
+};
+
 //structure that can hold the most immediate value type of an EvaluableNode
 // EvaluableNodeImmediateValueType can be used to communicate which type of data is being held
 union EvaluableNodeImmediateValue

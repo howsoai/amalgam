@@ -216,7 +216,7 @@ EvaluableNode *GetTraversalIDPathFromAToB(EvaluableNodeManager *enm, Entity *a, 
 
 	//create list to address entity
 	EvaluableNode *id_list = enm->AllocNode(ENT_LIST);
-	auto &ocn = id_list->GetOrderedChildNodes();
+	auto &ocn = id_list->GetOrderedChildNodesReference();
 	while(b != nullptr && b != a)
 	{
 		ocn.push_back(enm->AllocNode(ENT_STRING, b->GetIdStringId()));
@@ -286,7 +286,7 @@ EvaluableNode *GetTraversalPathListFromAToB(EvaluableNodeManager *enm, Evaluable
 	}
 	
 	//reverse because assembled in reverse order
-	auto &ocn = path_list->GetOrderedChildNodes();
+	auto &ocn = path_list->GetOrderedChildNodesReference();
 	std::reverse(begin(ocn), end(ocn));
 	return path_list;
 }

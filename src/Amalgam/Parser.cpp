@@ -1305,9 +1305,10 @@ static EvaluableNode *GetNodeRelativeToIndex(EvaluableNode *node, EvaluableNode 
 	if(node->IsAssociativeArray())
 	{
 		StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index_node, true);
-		EvaluableNode **found = node->GetMappedChildNode(index_sid);
-		if(found != nullptr)
-			return *found;
+		auto &node_mcn = node->GetMappedChildNodesReference();
+		auto found = node_mcn.find(index_sid);
+		if(found != end(node_mcn))
+			return found->second;
 		return nullptr;
 	}
 
@@ -1317,8 +1318,9 @@ static EvaluableNode *GetNodeRelativeToIndex(EvaluableNode *node, EvaluableNode 
 
 	//otherwise treat the index as a number for a list
 	size_t index = static_cast<size_t>(EvaluableNode::ToNumber(index_node));
-	if(index < node->GetOrderedChildNodes().size())
-		return node->GetOrderedChildNodesReference()[index];
+	auto &node_ocn = node->GetOrderedChildNodes();
+	if(index < node_ocn.size())
+		return node_ocn[index];
 
 	//didn't find anything
 	return nullptr;
@@ -1363,10 +1365,10 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 
 	case ENT_GET:
 	{
-		if(path->GetOrderedChildNodes().size() < 2)
+		auto &path_ocn = path->GetOrderedChildNodesReference();
+		if(path_ocn.size() < 2)
 			return nullptr;
 
-		auto &path_ocn = path->GetOrderedChildNodesReference();
 		EvaluableNode *result = GetNodeFromRelativeCodePath(path_ocn[0]);
 		EvaluableNode *walk_path = path_ocn[1];
 		return GetNodeFromNodeAndWalkPath(result, walk_path);
@@ -1379,7 +1381,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 		if(path_ocn.size() == 0)
 			return path;
 
-		EvaluableNode *step_node = path->GetOrderedChildNodes()[0];
+		EvaluableNode *step_node = path_ocn[0];
 		if(EvaluableNode::IsNull(step_node))
 			return path;
 

@@ -1361,7 +1361,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered
-		for(auto &cn : to_lookup->GetOrderedChildNodes())
+		for(auto &cn : to_lookup->GetOrderedChildNodesReference())
 		{
 			StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(cn, true);
 			if(symbol_name_sid == StringInternPool::NOT_A_STRING_ID)

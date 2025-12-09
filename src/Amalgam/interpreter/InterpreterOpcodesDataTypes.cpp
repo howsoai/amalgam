@@ -1748,7 +1748,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, 
 
 		//want to exit early if out of resources because
 		// this opcode can chew through memory with string concatenation via returned nulls
-		if(AreExecutionResourcesExhausted())
+		if(AreExecutionResourcesExhausted()
+				|| (interpreterConstraints != nullptr && s.size() > interpreterConstraints->maxNumAllocatedNodes) )
 			return EvaluableNodeReference::Null();
 
 		//since UTF-8, don't need to do any conversions to concatenate

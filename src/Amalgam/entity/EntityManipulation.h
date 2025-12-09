@@ -227,7 +227,7 @@ public:
 				//make a copy of the value at additionalSortedListLabel for each entity
 				EvaluableNode *list_of_values = enm->AllocNode(ENT_LIST);
 				qr_ocn[2 + label_offset] = list_of_values;
-				auto &list_ocn = list_of_values->GetOrderedChildNodes();
+				auto &list_ocn = list_of_values->GetOrderedChildNodesReference();
 				list_ocn.resize(results.size());
 				for(size_t i = 0; i < results.size(); i++)
 				{

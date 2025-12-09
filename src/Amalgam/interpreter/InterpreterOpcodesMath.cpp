@@ -259,7 +259,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DIGITS(EvaluableNode *
 	NormalizeStartAndEndDigitToZerosPlace(value, base, relative_to_zero, first_digit, start_digit, end_digit);
 
 	EvaluableNodeReference digits(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto &digits_ocn = digits->GetOrderedChildNodes();
+	auto &digits_ocn = digits->GetOrderedChildNodesReference();
 	if(std::isfinite(start_digit) && std::isfinite(end_digit) && start_digit >= end_digit)
 	{
 		size_t num_digits = static_cast<size_t>(std::floor(start_digit - end_digit + 1));
@@ -348,7 +348,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 	double first_digit = std::numeric_limits<double>::quiet_NaN();
 	NormalizeStartAndEndDigitToZerosPlace(value, base, relative_to_zero, first_digit, start_digit, end_digit);
 
-	auto &digits_ocn = digits->GetOrderedChildNodes();
+	auto &digits_ocn = digits->GetOrderedChildNodesReference();
 	size_t cur_digit_index = 0;
 	if(std::isfinite(start_digit) && std::isfinite(end_digit) && start_digit >= end_digit)
 	{
@@ -1834,8 +1834,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 		}
 		else if(EvaluableNode::IsOrderedArray(q_node))
 		{
-			q_num_elements = q_node->GetOrderedChildNodes().size();
-			q_values = &q_node->GetOrderedChildNodes();
+			q_values = &q_node->GetOrderedChildNodesReference();
+			q_num_elements = q_values->size();
 		}
 		else //not an assoc or list, so treat as a constant probability instead
 		{

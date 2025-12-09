@@ -196,7 +196,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 		//set to need cycle check because don't know what will be attached
 		inputs_list_node->SetNeedCycleCheck(true);
 		inputs_list_node->SetOrderedChildNodesSize(ocn.size() - 1);
-		auto &inputs = inputs_list_node->GetOrderedChildNodes();
+		auto &inputs = inputs_list_node->GetOrderedChildNodesReference();
 
 		//process inputs, get size and whether needs to be associative array
 		bool need_assoc = false;
@@ -233,7 +233,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 		if(!need_assoc)
 		{
 			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
-			result->GetOrderedChildNodes().resize(largest_size);
+			result->GetOrderedChildNodesReference().resize(largest_size);
 
 			PushNewConstructionContext(inputs_list_node, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
@@ -244,7 +244,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 				//combine input slices together into value
 				EvaluableNode *input_slice = evaluableNodeManager->AllocNode(ENT_LIST);
-				auto &is_ocn = input_slice->GetOrderedChildNodes();
+				auto &is_ocn = input_slice->GetOrderedChildNodesReference();
 				is_ocn.resize(inputs.size());
 				for(size_t i = 0; i < inputs.size(); i++)
 				{
@@ -258,7 +258,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				SetTopCurrentValueInConstructionStack(input_slice);
 
 				EvaluableNodeReference element_result = InterpretNode(function);
-				result->GetOrderedChildNodes()[index] = element_result;
+				result->GetOrderedChildNodesReference()[index] = element_result;
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
@@ -283,7 +283,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 				//combine input slices together into value
 				EvaluableNode *input_slice = evaluableNodeManager->AllocNode(ENT_LIST);
-				auto &is_ocn = input_slice->GetOrderedChildNodes();
+				auto &is_ocn = input_slice->GetOrderedChildNodesReference();
 				is_ocn.resize(inputs.size());
 				for(size_t i = 0; i < inputs.size(); i++)
 				{
@@ -488,8 +488,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 	if(list->GetOrderedChildNodes().size() > 0)
 	{
-		auto &list_ocn = list->GetOrderedChildNodes();
-		auto &result_ocn = result_list->GetOrderedChildNodes();
+		auto &list_ocn = list->GetOrderedChildNodesReference();
+		auto &result_ocn = result_list->GetOrderedChildNodesReference();
 
 	#ifdef MULTITHREAD_SUPPORT
 		size_t num_nodes = list_ocn.size();
@@ -825,7 +825,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 	}
 	else if(list->GetOrderedChildNodes().size() >= 1)
 	{
-		auto &list_ocn = list->GetOrderedChildNodes();
+		auto &list_ocn = list->GetOrderedChildNodesReference();
 		//inform that the first result is not unique; if no side effects and unique result, can free all at once
 		previous_result = EvaluableNodeReference(list_ocn[0], false);
 

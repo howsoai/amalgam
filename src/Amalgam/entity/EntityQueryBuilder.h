@@ -548,8 +548,9 @@ namespace EntityQueryBuilder
 		EvaluableNode *position_labels = ocn[POSITION_LABELS];
 		if(EvaluableNode::IsOrderedArray(position_labels))
 		{
-			cur_condition->positionLabels.reserve(position_labels->GetOrderedChildNodes().size());
-			for(auto &pl : position_labels->GetOrderedChildNodes())
+			auto &pos_labels_ocn = position_labels->GetOrderedChildNodesReference();
+			cur_condition->positionLabels.reserve(pos_labels_ocn.size());
+			for(auto &pl : pos_labels_ocn)
 			{
 				StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(pl);
 				if(Entity::IsLabelValidAndPublic(label_sid))
@@ -912,8 +913,9 @@ namespace EntityQueryBuilder
 					EvaluableNode *entity_sids = ocn[0];
 					if(EvaluableNode::IsOrderedArray(entity_sids))
 					{
-						cur_condition->existLabels.reserve(entity_sids->GetOrderedChildNodes().size());
-						for(auto &esid : entity_sids->GetOrderedChildNodes())
+						auto &entity_sids_ocn = entity_sids->GetOrderedChildNodesReference();
+						cur_condition->existLabels.reserve(entity_sids_ocn.size());
+						for(auto &esid : entity_sids_ocn)
 						{
 							StringInternPool::StringID entity_sid = EvaluableNode::ToStringIDIfExists(esid);
 							cur_condition->existLabels.push_back(entity_sid);

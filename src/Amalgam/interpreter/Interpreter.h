@@ -1590,7 +1590,7 @@ protected:
 
 	//opcode function pointers
 	// each opcode function takes in an EvaluableNode
-	typedef EvaluableNodeReference(Interpreter::*OpcodeFunction) (EvaluableNode *, bool);
+	typedef EvaluableNodeReference(Interpreter::*OpcodeFunction) (EvaluableNode *, EvaluableNodeRequestedValueTypes);
 	static std::array<OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> _opcodes;
 
 	//opcodes that all point to debugging

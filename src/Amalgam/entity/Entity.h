@@ -71,23 +71,44 @@ public:
 	EntityType *entity;
 };
 
-union EntityPermissions
+class EntityPermissions
 {
-	EntityPermissions()
-		: allPermissions(0)
-	{	}
-
-	inline static EntityPermissions AllPermissions()
+public:
+	enum class Permission : uint8_t
 	{
-		EntityPermissions perm;
-		perm.individualPermissions.stdOutAndStdErr = true;
-		perm.individualPermissions.stdIn = true;
-		perm.individualPermissions.load = true;
-		perm.individualPermissions.store = true;
-		perm.individualPermissions.environment = true;
-		perm.individualPermissions.alterPerformance = true;
-		perm.individualPermissions.system = true;
-		return perm;
+		NONE = 0,
+		STD_OUT_AND_STD_ERR = 1 << 0,
+		STD_IN = 1 << 1,
+		LOAD = 1 << 2,
+		STORE = 1 << 3,
+		ENVIRONMENT = 1 << 4,
+		ALTER_PERFORMANCE = 1 << 5,
+		SYSTEM = 1 << 6,
+		ALL = STD_OUT_AND_STD_ERR | STD_IN | LOAD | STORE | ENVIRONMENT | ALTER_PERFORMANCE | SYSTEM
+	};
+
+	EntityPermissions() = default;
+
+	explicit inline EntityPermissions(Permission initial_permissions)
+		: allPermissions(static_cast<uint8_t>(initial_permissions))
+	{}
+
+	inline bool HasPermission(Permission permission) const
+	{
+		return (allPermissions & static_cast<uint8_t>(permission)) != 0;
+	}
+
+	inline void SetPermission(Permission permission, bool enable = true)
+	{
+		if(enable)
+			allPermissions |= static_cast<uint8_t>(permission);
+		else
+			allPermissions &= ~static_cast<uint8_t>(permission);
+	}
+
+	static inline EntityPermissions AllPermissions()
+	{
+		return EntityPermissions(Permission::ALL);
 	}
 
 	//builds a new assoc from enm and returns it populated with
@@ -96,19 +117,19 @@ union EntityPermissions
 	{
 		EvaluableNode *permissions_en = enm->AllocNode(ENT_ASSOC);
 		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err),
-			enm->AllocNode(individualPermissions.stdOutAndStdErr));
+			enm->AllocNode(HasPermission(Permission::STD_OUT_AND_STD_ERR)));
 		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_in),
-			enm->AllocNode(individualPermissions.stdIn));
+			enm->AllocNode(HasPermission(Permission::STD_IN)));
 		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_load),
-			enm->AllocNode(individualPermissions.load));
+			enm->AllocNode(HasPermission(Permission::LOAD)));
 		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_store),
-			enm->AllocNode(individualPermissions.store));
+			enm->AllocNode(HasPermission(Permission::STORE)));
 		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_environment),
-			enm->AllocNode(individualPermissions.environment));
+			enm->AllocNode(HasPermission(Permission::ENVIRONMENT)));
 		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_alter_performance),
-			enm->AllocNode(individualPermissions.alterPerformance));
+			enm->AllocNode(HasPermission(Permission::ALTER_PERFORMANCE)));
 		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_system),
-			enm->AllocNode(individualPermissions.system));
+			enm->AllocNode(HasPermission(Permission::SYSTEM)));
 
 		return permissions_en;
 	}
@@ -120,78 +141,43 @@ union EntityPermissions
 	{
 		EntityPermissions permissions_to_set;
 		EntityPermissions permission_values;
+
 		if(EvaluableNode::IsAssociativeArray(en))
 		{
 			for(auto [permission_type, allow_en] : en->GetMappedChildNodesReference())
 			{
 				bool allow = EvaluableNode::ToBool(allow_en);
-				if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err))
+
+				auto set_permission_if_matches = [&](EvaluableNodeBuiltInStringId sid, Permission perm)
 				{
-					permissions_to_set.individualPermissions.stdOutAndStdErr = true;
-					permission_values.individualPermissions.stdOutAndStdErr = allow;
-				}
-				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_in))
-				{
-					permissions_to_set.individualPermissions.stdIn = true;
-					permission_values.individualPermissions.stdIn = allow;
-				}
-				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_load))
-				{
-					permissions_to_set.individualPermissions.load = true;
-					permission_values.individualPermissions.load = allow;
-				}
-				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_store))
-				{
-					permissions_to_set.individualPermissions.store = true;
-					permission_values.individualPermissions.store = allow;
-				}
-				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_environment))
-				{
-					permissions_to_set.individualPermissions.environment = true;
-					permission_values.individualPermissions.environment = allow;
-				}
-				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_alter_performance))
-				{
-					permissions_to_set.individualPermissions.alterPerformance = true;
-					permission_values.individualPermissions.alterPerformance = allow;
-				}
-				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_system))
-				{
-					permissions_to_set.individualPermissions.system = true;
-					permission_values.individualPermissions.system = allow;
-				}
+					if(permission_type == GetStringIdFromBuiltInStringId(sid))
+						if(permission_type == GetStringIdFromBuiltInStringId(sid))
+						{
+							permissions_to_set.SetPermission(perm, true);
+							permission_values.SetPermission(perm, allow);
+						}
+				};
+
+				set_permission_if_matches(ENBISI_std_out_and_std_err, Permission::STD_OUT_AND_STD_ERR);
+				set_permission_if_matches(ENBISI_std_in, Permission::STD_IN);
+				set_permission_if_matches(ENBISI_load, Permission::LOAD);
+				set_permission_if_matches(ENBISI_store, Permission::STORE);
+				set_permission_if_matches(ENBISI_environment, Permission::ENVIRONMENT);
+				set_permission_if_matches(ENBISI_alter_performance, Permission::ALTER_PERFORMANCE);
+				set_permission_if_matches(ENBISI_system, Permission::SYSTEM);
 			}
 		}
 		else if(EvaluableNode::ToBool(en))
 		{
-			permissions_to_set = EntityPermissions::AllPermissions();
-			permission_values = EntityPermissions::AllPermissions();
+			permissions_to_set = AllPermissions();
+			permission_values = AllPermissions();
 		}
-		//else false, leave permissions empty
 
 		return std::make_pair(permissions_to_set, permission_values);
 	}
 
-	//quick way to initialize all permissions to 0
-	uint8_t allPermissions;
-	//for each permission, true if has permission
-	struct
-	{
-		//write to stdout and stderr
-		bool stdOutAndStdErr : 1;
-		//read from stdin
-		bool stdIn : 1;
-		//read from file system
-		bool load : 1;
-		//write to file system
-		bool store : 1;
-		//read from the environment
-		bool environment : 1;
-		//alter performance characteristics
-		bool alterPerformance : 1;
-		//command the system
-		bool system : 1;
-	} individualPermissions;
+	//permissions as a bit field for use with bitwise operations
+	uint8_t allPermissions = 0;
 };
 
 #ifdef MULTITHREAD_SUPPORT

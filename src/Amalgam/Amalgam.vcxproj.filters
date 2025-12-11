@@ -352,4 +352,7 @@
   <ItemGroup>
     <Text Include="out.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\debug-visualizers\AmalgamInternalTypes.natvis" />
+  </ItemGroup>
 </Project>

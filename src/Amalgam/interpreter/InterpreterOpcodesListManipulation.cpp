@@ -320,14 +320,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 		//remove the last element(s)
 		if(truncate_to > 0 && truncate_to < list_ocn.size())
 		{
-			list->GetOrderedChildNodes().erase(begin(list_ocn) + static_cast<size_t>(truncate_to), end(list_ocn));
+			list_ocn.erase(begin(list_ocn) + static_cast<size_t>(truncate_to), end(list_ocn));
 		}
 		else if(truncate_to < 0)
 		{
 			//make sure have things to remove while keeping something in the list
 			if(-truncate_to < list_ocn.size())
 			{
-				size_t last_index = static_cast<size_t>(truncate_to + list->GetOrderedChildNodes().size());
+				size_t last_index = static_cast<size_t>(truncate_to + list_ocn.size());
 				list_ocn.erase(begin(list_ocn) + last_index, end(list_ocn));
 			}
 			else //remove everything
@@ -474,8 +474,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 				new_list.UpdatePropertiesBasedOnAttachedNode(new_elements, first_append);
 				if(new_list->GetType() == ENT_LIST)
 				{
-					new_list->GetOrderedChildNodes().insert(
-						end(new_list->GetOrderedChildNodes()), begin(new_elements_ocn), end(new_elements_ocn));
+					new_list->GetOrderedChildNodesReference().insert(
+						end(new_list->GetOrderedChildNodesReference()), begin(new_elements_ocn), end(new_elements_ocn));
 				}
 				else
 				{

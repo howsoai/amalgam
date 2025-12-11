@@ -27,7 +27,8 @@ EvaluableNode *FileSupportCSV::Load(const std::string &resource_path, EvaluableN
 	while(cur_position < file_size)
 	{
 		EvaluableNode *cur_row = enm->AllocNode(ENT_LIST);
-		data_top_node->GetOrderedChildNodes().push_back(cur_row);
+		auto &cur_row_ocn = cur_row->GetOrderedChildNodesReference();
+		data_top_node->GetOrderedChildNodesReference().push_back(cur_row);
 
 		//instantiate this once so the memory can be reused and start with a reasonable string size
 		std::string value;
@@ -111,7 +112,7 @@ EvaluableNode *FileSupportCSV::Load(const std::string &resource_path, EvaluableN
 				else
 					element = enm->AllocNode(ENT_STRING, value);
 			}
-			cur_row->GetOrderedChildNodes().push_back(element);
+			cur_row_ocn.push_back(element);
 
 			//start at next field
 			cur_position = end_position;

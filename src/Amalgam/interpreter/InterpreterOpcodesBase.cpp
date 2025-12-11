@@ -401,8 +401,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en,
 	if(ocn.size() > 2)
 		deterministic_order = InterpretNodeIntoBoolValue(ocn[2]);
 
+	size_t max_length = std::numeric_limits<size_t>::max();
+	if(interpreterConstraints != nullptr)
+		max_length = interpreterConstraints->maxNumAllocatedNodes;
+
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);
-	std::string s = Parser::Unparse(tree, pretty, true, deterministic_order);
+	std::string s = Parser::Unparse(tree, pretty, true, deterministic_order, false, false, max_length);
 	evaluableNodeManager->FreeNodeTreeIfPossible(tree);
 
 	return AllocReturn(s, immediate_result);
@@ -1361,7 +1365,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered
-		for(auto &cn : to_lookup->GetOrderedChildNodes())
+		for(auto &cn : to_lookup->GetOrderedChildNodesReference())
 		{
 			StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(cn, true);
 			if(symbol_name_sid == StringInternPool::NOT_A_STRING_ID)

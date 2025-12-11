@@ -137,7 +137,7 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::Par
 
 std::string Parser::Unparse(EvaluableNode *tree,
 	bool expanded_whitespace, bool emit_attributes, bool sort_keys,
-	bool first_of_transactional_unparse, size_t starting_indendation)
+	bool first_of_transactional_unparse, size_t starting_indendation, size_t max_length)
 {
 	UnparseData upd;
 	upd.topNode = tree;
@@ -148,6 +148,7 @@ std::string Parser::Unparse(EvaluableNode *tree,
 	upd.emitAttributes = emit_attributes;
 	upd.sortKeys = sort_keys;
 	upd.transaction = first_of_transactional_unparse;
+	upd.maxLength = max_length;
 	Unparse(upd, tree, nullptr, expanded_whitespace, starting_indendation, starting_indendation > 0);
 	return upd.result;
 }
@@ -1044,6 +1045,9 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 	assert(!(upd.cycleFree && tree != nullptr && tree->GetNeedCycleCheck()));
 #endif
 
+	if(upd.result.size() > upd.maxLength)
+		return;
+
 	//if need to check for circular references,
 	// can skip if nullptr, as the code below this will handle nullptr and apply appropriate spacing
 	if(!upd.cycleFree && tree != nullptr)
@@ -1123,6 +1127,9 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				upd.result.push_back('"');
 
 				auto &s = tree->GetStringValue();
+				if(upd.result.size() + s.size() > upd.maxLength)
+					return;
+
 				if(NeedsBackslashify(s))
 					upd.result.append(Backslashify(s));
 				else
@@ -1133,8 +1140,13 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			break;
 		}
 		case ENT_SYMBOL:
-			upd.result.append(tree->GetStringValue());
+		{
+			auto &s = tree->GetStringValue();
+			if(upd.result.size() + s.size() > upd.maxLength)
+				return;
+			upd.result.append(s);
 			break;
+		}
 		default:
 			break;
 		}
@@ -1305,9 +1317,10 @@ static EvaluableNode *GetNodeRelativeToIndex(EvaluableNode *node, EvaluableNode 
 	if(node->IsAssociativeArray())
 	{
 		StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index_node, true);
-		EvaluableNode **found = node->GetMappedChildNode(index_sid);
-		if(found != nullptr)
-			return *found;
+		auto &node_mcn = node->GetMappedChildNodesReference();
+		auto found = node_mcn.find(index_sid);
+		if(found != end(node_mcn))
+			return found->second;
 		return nullptr;
 	}
 
@@ -1317,8 +1330,9 @@ static EvaluableNode *GetNodeRelativeToIndex(EvaluableNode *node, EvaluableNode 
 
 	//otherwise treat the index as a number for a list
 	size_t index = static_cast<size_t>(EvaluableNode::ToNumber(index_node));
-	if(index < node->GetOrderedChildNodes().size())
-		return node->GetOrderedChildNodesReference()[index];
+	auto &node_ocn = node->GetOrderedChildNodes();
+	if(index < node_ocn.size())
+		return node_ocn[index];
 
 	//didn't find anything
 	return nullptr;
@@ -1363,10 +1377,10 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 
 	case ENT_GET:
 	{
-		if(path->GetOrderedChildNodes().size() < 2)
+		auto &path_ocn = path->GetOrderedChildNodesReference();
+		if(path_ocn.size() < 2)
 			return nullptr;
 
-		auto &path_ocn = path->GetOrderedChildNodesReference();
 		EvaluableNode *result = GetNodeFromRelativeCodePath(path_ocn[0]);
 		EvaluableNode *walk_path = path_ocn[1];
 		return GetNodeFromNodeAndWalkPath(result, walk_path);
@@ -1379,7 +1393,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 		if(path_ocn.size() == 0)
 			return path;
 
-		EvaluableNode *step_node = path->GetOrderedChildNodes()[0];
+		EvaluableNode *step_node = path_ocn[0];
 		if(EvaluableNode::IsNull(step_node))
 			return path;
 

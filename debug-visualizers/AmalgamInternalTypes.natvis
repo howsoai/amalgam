@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name="EvaluableNode">
+		<DisplayString>{type}</DisplayString>
+
+		<Expand>
+			<Item Name="type">type</Item>
+			<Item Name="HAS_EXTENDED_VALUE">(attributes &amp; 1) != 0</Item>
+			<Item Name="value.orderedChildNodes">value.orderedChildNodes</Item>
+			<Item Name="value.mappedChildNodes">value.mappedChildNodes</Item>
+			<Item Name="value.stringValueContainer">value.stringValueContainer</Item>
+			<Item Name="value.numberValueContainer">value.numberValueContainer</Item>
+			<Item Name="value.boolValueContainer">value.boolValueContainer</Item>
+			<Item Name="value.extension">value.extension</Item>
+			<Item Name="NEED_CYCLE_CHECK">(attributes &amp; 2) != 0</Item>
+			<Item Name="IDEMPOTENT">(attributes &amp; 4) != 0</Item>
+			<Item Name="CONCURRENT">(attributes &amp; 8) != 0</Item>
+			<Item Name="FREEABLE">(attributes &amp; 16) != 0</Item>
+			<Item Name="KNOWN_TO_BE_IN_USE">(attributes &amp; 32) != 0</Item>
+			<Item Name="attributes">attributes</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="EntityPermissions">
+		<DisplayString Condition="allPermissions == 0">None</DisplayString>
+		<DisplayString Condition="allPermissions == 1">STD_OUT_AND_STD_ERR</DisplayString>
+		<DisplayString Condition="allPermissions == 2">STD_IN</DisplayString>
+		<DisplayString Condition="allPermissions == 4">LOAD</DisplayString>
+		<DisplayString Condition="allPermissions == 8">STORE</DisplayString>
+		<DisplayString Condition="allPermissions == 16">ENVIRONMENT</DisplayString>
+		<DisplayString Condition="allPermissions == 32">ALTER_PERFORMANCE</DisplayString>
+		<DisplayString Condition="allPermissions == 64">SYSTEM</DisplayString>
+		<DisplayString Condition="allPermissions == 127">ALL</DisplayString>
+		<DisplayString>{allPermissions}</DisplayString>
+
+		<Expand>
+			<Item Name="Raw Value">allPermissions</Item>
+			<Item Name="STD_OUT_AND_STD_ERR">(allPermissions &amp; 1) != 0</Item>
+			<Item Name="STD_IN">(allPermissions &amp; 2) != 0</Item>
+			<Item Name="LOAD">(allPermissions &amp; 4) != 0</Item>
+			<Item Name="STORE">(allPermissions &amp; 8) != 0</Item>
+			<Item Name="ENVIRONMENT">(allPermissions &amp; 16) != 0</Item>
+			<Item Name="ALTER_PERFORMANCE">(allPermissions &amp; 32) != 0</Item>
+			<Item Name="SYSTEM">(allPermissions &amp; 64) != 0</Item>
+		</Expand>
+	</Type>
+</AutoVisualizer>

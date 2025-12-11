@@ -149,23 +149,41 @@ public:
 			{
 				bool allow = EvaluableNode::ToBool(allow_en);
 
-				auto set_permission_if_matches = [&](EvaluableNodeBuiltInStringId sid, Permission perm)
+				if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err))
 				{
-					if(permission_type == GetStringIdFromBuiltInStringId(sid))
-						if(permission_type == GetStringIdFromBuiltInStringId(sid))
-						{
-							permissions_to_set.SetPermission(perm, true);
-							permission_values.SetPermission(perm, allow);
-						}
-				};
-
-				set_permission_if_matches(ENBISI_std_out_and_std_err, Permission::STD_OUT_AND_STD_ERR);
-				set_permission_if_matches(ENBISI_std_in, Permission::STD_IN);
-				set_permission_if_matches(ENBISI_load, Permission::LOAD);
-				set_permission_if_matches(ENBISI_store, Permission::STORE);
-				set_permission_if_matches(ENBISI_environment, Permission::ENVIRONMENT);
-				set_permission_if_matches(ENBISI_alter_performance, Permission::ALTER_PERFORMANCE);
-				set_permission_if_matches(ENBISI_system, Permission::SYSTEM);
+					permissions_to_set.SetPermission(Permission::STD_OUT_AND_STD_ERR, true);
+					permission_values.SetPermission(Permission::STD_OUT_AND_STD_ERR, allow);
+				}
+				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_in))
+				{
+					permissions_to_set.SetPermission(Permission::STD_IN, true);
+					permission_values.SetPermission(Permission::STD_IN, allow);
+				}
+				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_load))
+				{
+					permissions_to_set.SetPermission(Permission::LOAD, true);
+					permission_values.SetPermission(Permission::LOAD, allow);
+				}
+				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_store))
+				{
+					permissions_to_set.SetPermission(Permission::STORE, true);
+					permission_values.SetPermission(Permission::STORE, allow);
+				}
+				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_environment))
+				{
+					permissions_to_set.SetPermission(Permission::ENVIRONMENT, true);
+					permission_values.SetPermission(Permission::ENVIRONMENT, allow);
+				}
+				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_alter_performance))
+				{
+					permissions_to_set.SetPermission(Permission::ALTER_PERFORMANCE, true);
+					permission_values.SetPermission(Permission::ALTER_PERFORMANCE, allow);
+				}
+				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_system))
+				{
+					permissions_to_set.SetPermission(Permission::SYSTEM, true);
+					permission_values.SetPermission(Permission::SYSTEM, allow);
+				}
 			}
 		}
 		else if(EvaluableNode::ToBool(en))
@@ -175,6 +193,12 @@ public:
 		}
 
 		return std::make_pair(permissions_to_set, permission_values);
+	}
+
+	//method to get the type into a basic permissions type easily
+	Permission permissions() const noexcept
+	{
+		return static_cast<Permission>(allPermissions);
 	}
 
 	//permissions as a bit field for use with bitwise operations

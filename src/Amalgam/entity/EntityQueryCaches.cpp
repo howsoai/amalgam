@@ -938,11 +938,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 		//if query_none, return results as empty list
 		if(cond.queryType == ENT_NULL)
-		{
-			if(immediate_result)
-				return EvaluableNodeReference::Null();
-			return EvaluableNodeReference(enm->AllocNode(ENT_LIST), true);
-		}
+			return EvaluableNodeReference::Null();
 
 		switch(cond.queryType)
 		{

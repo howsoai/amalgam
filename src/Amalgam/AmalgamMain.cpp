@@ -131,13 +131,13 @@ static EntityPermissions ParsePermissionsCommandLineParam(std::string_view permi
 	{
 		switch(permissions_str[i])
 		{
-		case 'o': permissions.individualPermissions.stdOutAndStdErr		= add_permissions;	break;
-		case 'i': permissions.individualPermissions.stdIn				= add_permissions;	break;
-		case 'l': permissions.individualPermissions.load				= add_permissions;	break;
-		case 's': permissions.individualPermissions.store				= add_permissions;	break;
-		case 'e': permissions.individualPermissions.environment			= add_permissions;	break;
-		case 'a': permissions.individualPermissions.alterPerformance	= add_permissions;	break;
-		case 'x': permissions.individualPermissions.system				= add_permissions;	break;
+		case 'o': permissions.SetPermission(EntityPermissions::Permission::STD_OUT_AND_STD_ERR, add_permissions);	break;
+		case 'i': permissions.SetPermission(EntityPermissions::Permission::STD_IN, add_permissions);	break;
+		case 'l': permissions.SetPermission(EntityPermissions::Permission::LOAD, add_permissions);	break;
+		case 's': permissions.SetPermission(EntityPermissions::Permission::STORE, add_permissions);	break;
+		case 'e': permissions.SetPermission(EntityPermissions::Permission::ENVIRONMENT, add_permissions);	break;
+		case 'a': permissions.SetPermission(EntityPermissions::Permission::ALTER_PERFORMANCE, add_permissions);	break;
+		case 'x': permissions.SetPermission(EntityPermissions::Permission::SYSTEM, add_permissions);	break;
 		default:  std::cerr << "Invalid permission character: '" << permissions_str[i] << "'" << std::endl;
 		}
 	}

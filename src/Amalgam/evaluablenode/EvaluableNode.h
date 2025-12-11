@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 //project headers:
 #include "FastMath.h"
@@ -45,6 +45,26 @@ public:
 	//Storage for labels
 	using LabelsAssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
 
+	using AttributeStorageType = uint8_t;
+	enum class Attribute : AttributeStorageType
+	{
+		NONE = 0,
+		//if true, then contains an extended type
+		HAS_EXTENDED_VALUE = 1 << 0,
+		//if true, then this node and any nodes it contains may have a cycle so needs to be checked
+		NEED_CYCLE_CHECK = 1 << 1,
+		//if true, then this node and any nodes it contains are idempotent
+		IDEMPOTENT = 1 << 2,
+		//if true, then the node is marked for concurrency
+		CONCURRENT = 1 << 3,
+		//if true, then the node has not yet been read/accessed and can be freed
+		//used to optimize flows to avoid copies when there has been no other accesses
+		FREEABLE = 1 << 4,
+		//if true, then known to be in use with regard to garbage collection
+		KNOWN_TO_BE_IN_USE = 1 << 5,
+		ALL = HAS_EXTENDED_VALUE | NEED_CYCLE_CHECK | IDEMPOTENT | CONCURRENT | FREEABLE | KNOWN_TO_BE_IN_USE
+	};
+
 	//constructors
 	__forceinline EvaluableNode() { InitializeUnallocated(); }
 	__forceinline EvaluableNode(EvaluableNodeType type, const std::string &string_value) { InitializeType(type, string_value); }
@@ -70,8 +90,8 @@ public:
 	#endif
 
 		type = _type;
-		attributes.allAttributes = 0;
-		attributes.individualAttribs.isIdempotent = true;
+		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+		SetIsIdempotent(true);
 		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
 		value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 	}
@@ -82,7 +102,7 @@ public:
 		assert(IsEvaluableNodeTypeValid(_type));
 	#endif
 
-		attributes.allAttributes = 0;
+		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		if(string_id == StringInternPool::NOT_A_STRING_ID)
 		{
 			type = ENT_NULL;
@@ -103,7 +123,7 @@ public:
 		assert(IsEvaluableNodeTypeValid(_type));
 	#endif
 
-		attributes.allAttributes = 0;
+		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		if(string_id == StringInternPool::NOT_A_STRING_ID)
 		{
 			type = ENT_NULL;
@@ -119,7 +139,7 @@ public:
 
 	inline void InitializeType(double number_value)
 	{
-		attributes.allAttributes = 0;
+		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		if(FastIsNaN(number_value))
 		{
 			type = ENT_NULL;
@@ -128,7 +148,7 @@ public:
 		else
 		{
 			type = ENT_NUMBER;
-			attributes.individualAttribs.isIdempotent = true;
+			SetIsIdempotent(true);
 			value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 			value.numberValueContainer.numberValue = number_value;
 		}
@@ -136,9 +156,9 @@ public:
 
 	inline void InitializeType(bool bool_value)
 	{
-		attributes.allAttributes = 0;
+		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		type = ENT_BOOL;
-		attributes.individualAttribs.isIdempotent = true;
+		SetIsIdempotent(true);
 		value.boolValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 		value.boolValueContainer.boolValue = bool_value;
 	}
@@ -158,32 +178,31 @@ public:
 	#endif
 
 		type = _type;
-		attributes.allAttributes = 0;
-		attributes.individualAttribs.isIdempotent = IsEvaluableNodeTypePotentiallyIdempotent(_type);
+		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+		SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(_type));
 
 		if(DoesEvaluableNodeTypeUseBoolData(_type))
 		{
 			value.boolValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 			value.boolValueContainer.boolValue = false;
-			attributes.individualAttribs.isIdempotent = true;
+			SetIsIdempotent(true);
 		}
 		else if(DoesEvaluableNodeTypeUseNumberData(_type))
 		{
 			value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 			value.numberValueContainer.numberValue = 0.0;
-			attributes.individualAttribs.isIdempotent = true;
+			SetIsIdempotent(true);
 		}
 		else if(DoesEvaluableNodeTypeUseStringData(_type))
 		{
 			value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
 			value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
-			attributes.individualAttribs.isIdempotent = (_type == ENT_STRING);
+			SetIsIdempotent(_type == ENT_STRING);
 		}
 		else if(DoesEvaluableNodeTypeUseAssocData(_type))
 		{
 			type = _type;
-			attributes.allAttributes = 0;
-			attributes.individualAttribs.isIdempotent = true;
+			SetIsIdempotent(true);
 			value.ConstructMappedChildNodes();
 		}
 		else if(_type == ENT_DEALLOCATED)
@@ -624,54 +643,90 @@ public:
 	void AppendCommentsStringId(StringInternPool::StringID comments_string_id);
 	void AppendComments(const std::string &comments);
 
-	//returns true if the EvaluableNode is marked with preference for concurrency
-	__forceinline constexpr bool GetConcurrency()
+	__forceinline bool HasAttribute(Attribute attr) const
 	{
-		return attributes.individualAttribs.concurrent;
+		return (attributes & static_cast<AttributeStorageType>(attr)) != 0;
+	}
+
+	__forceinline void SetAttribute(Attribute attr, bool enable = true)
+	{
+		if(enable)
+			attributes |= static_cast<AttributeStorageType>(attr);
+		else
+			attributes &= ~static_cast<AttributeStorageType>(attr);
+	}
+
+#ifdef MULTITHREAD_SUPPORT
+	__forceinline bool HasAttributeAtomic(Attribute attr)
+	{
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		const std::atomic<AttributeStorageType> *atomic_ref
+			= reinterpret_cast<const std::atomic<AttributeStorageType>*>(&attributes);
+		AttributeStorageType cur = atomic_ref->load(std::memory_order_seq_cst);
+		return (cur & static_cast<AttributeStorageType>(attr)) != 0;
+	}
+
+	__forceinline void SetAttributeAtomic(Attribute attr, bool enable = true)
+	{
+		AttributeStorageType mask = static_cast<AttributeStorageType>(attr);
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		std::atomic<AttributeStorageType> *atomic_ref
+			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
+		if(enable)
+			atomic_ref->fetch_or(mask, std::memory_order_seq_cst);
+		else
+			atomic_ref->fetch_and(~mask, std::memory_order_seq_cst);
+	}
+#endif
+
+	//returns true if the EvaluableNode is marked with preference for concurrency
+	__forceinline bool GetConcurrency()
+	{
+		return HasAttribute(Attribute::CONCURRENT);
 	}
 
 	//sets the EvaluableNode's preference for concurrency
-	__forceinline constexpr void SetConcurrency(bool concurrent)
+	__forceinline void SetConcurrency(bool concurrent)
 	{
-		attributes.individualAttribs.concurrent = concurrent;
+		SetAttribute(Attribute::CONCURRENT, concurrent);
 	}
 
 	//returns true if the EvaluableNode and all its dependents need to be checked for cycles
-	__forceinline constexpr bool GetNeedCycleCheck()
+	__forceinline bool GetNeedCycleCheck()
 	{
-		return attributes.individualAttribs.needCycleCheck;
+		return HasAttribute(Attribute::NEED_CYCLE_CHECK);
 	}
 
 	//sets the EvaluableNode's needCycleCheck flag
-	__forceinline constexpr void SetNeedCycleCheck(bool need_cycle_check)
+	__forceinline void SetNeedCycleCheck(bool need_cycle_check)
 	{
-		attributes.individualAttribs.needCycleCheck = need_cycle_check;
+		SetAttribute(Attribute::NEED_CYCLE_CHECK, need_cycle_check);
 	}
 
 	//returns true if the EvaluableNode and all its dependents are idempotent
-	__forceinline constexpr bool GetIsIdempotent()
+	__forceinline bool GetIsIdempotent()
 	{
-		return attributes.individualAttribs.isIdempotent;
+		return HasAttribute(Attribute::IDEMPOTENT);
 	}
 
 	//sets the EvaluableNode's idempotentcy flag
-	__forceinline constexpr void SetIsIdempotent(bool is_idempotent)
+	__forceinline void SetIsIdempotent(bool is_idempotent)
 	{
-		attributes.individualAttribs.isIdempotent = is_idempotent;
+		SetAttribute(Attribute::IDEMPOTENT, is_idempotent);
 	}
 
 	//returns true if the node has never been read / accessed
-	__forceinline constexpr bool GetIsFreeable()
+	__forceinline bool GetIsFreeable()
 	{
-		return attributes.individualAttribs.isFreeable;
+		return HasAttribute(Attribute::FREEABLE);
 	}
 
 	//sets whether the node has never been read / accessed
 	//returns the previous value
-	__forceinline constexpr bool SetIsFreeable(bool is_freeable)
+	__forceinline bool SetIsFreeable(bool is_freeable)
 	{
-		bool old_value = attributes.individualAttribs.isFreeable;
-		attributes.individualAttribs.isFreeable = is_freeable;
+		bool old_value = HasAttribute(Attribute::FREEABLE);
+		SetAttribute(Attribute::FREEABLE, is_freeable);
 		return old_value;
 	}
 
@@ -679,91 +734,69 @@ public:
 	//returns true if the node has never been read / accessed
 	__forceinline bool GetIsFreeableAtomic()
 	{
-		EvaluableNodeAttributesType attrib_with_known_true;
-		attrib_with_known_true.allAttributes = 0;
-		attrib_with_known_true.individualAttribs.isFreeable = true;
-
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		uint8_t all_attributes = reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes);
-		return (all_attributes & attrib_with_known_true.allAttributes);
+		return HasAttributeAtomic(Attribute::FREEABLE);
 	}
 
 	//sets whether the node has never been read / accessed
 	//returns the previous value
 	__forceinline bool SetIsFreeableAtomic(bool is_freeable)
 	{
+		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE);
+
 		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		auto &atomic_byte = reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes);
+		std::atomic<AttributeStorageType> *atomic_ref
+			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
 
 		if(is_freeable)
 		{
-			EvaluableNodeAttributesType attrib_with_known_true;
-			attrib_with_known_true.allAttributes = 0;
-			attrib_with_known_true.individualAttribs.isFreeable = true;
-
-			uint8_t previous_value = atomic_byte.fetch_or(attrib_with_known_true.allAttributes);
-			return (previous_value & attrib_with_known_true.allAttributes) != 0;
+			AttributeStorageType previous_value = atomic_ref->fetch_or(mask);
+			return (previous_value & mask) != 0;
 		}
 		else
 		{
-			EvaluableNodeAttributesType attrib_with_known_false;
-			attrib_with_known_false.allAttributes = 0xFF;
-			attrib_with_known_false.individualAttribs.isFreeable = false;
-
-			uint8_t previous_value = atomic_byte.fetch_and(attrib_with_known_false.allAttributes);
-			return (previous_value & ~static_cast<uint8_t>(~attrib_with_known_false.allAttributes)) != 0;
+			AttributeStorageType previous_value = atomic_ref->fetch_and(~mask);
+			return (previous_value & mask) != 0;
 		}
 	}
 #endif
 
 	//returns whether this node has been marked as known to be currently in use
-	__forceinline constexpr bool GetKnownToBeInUse()
+	__forceinline bool GetKnownToBeInUse()
 	{
-		return attributes.individualAttribs.knownToBeInUse;
+		return HasAttribute(Attribute::KNOWN_TO_BE_IN_USE);
 	}
 
 	//sets whether this node is currently known to be in use
-	__forceinline constexpr void SetKnownToBeInUse(bool in_use)
+	__forceinline void SetKnownToBeInUse(bool in_use)
 	{
-		attributes.individualAttribs.knownToBeInUse = in_use;
+		SetAttribute(Attribute::KNOWN_TO_BE_IN_USE, in_use);
 	}
 
 #ifdef MULTITHREAD_SUPPORT
 	//returns whether this node has been marked as known to be currently in use
 	__forceinline bool GetKnownToBeInUseAtomic()
 	{
-		EvaluableNodeAttributesType attrib_with_known_true;
-		attrib_with_known_true.allAttributes = 0;
-		attrib_with_known_true.individualAttribs.knownToBeInUse = true;
-
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		uint8_t all_attributes = reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes);
-		return (all_attributes & attrib_with_known_true.allAttributes);
+		return HasAttributeAtomic(Attribute::KNOWN_TO_BE_IN_USE);
 	}
 
 	//sets whether this node is currently known to be in use
 	__forceinline void SetKnownToBeInUseAtomic(bool in_use)
 	{
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		auto &atomic_byte = reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes);
-		if(in_use)
-		{
-			EvaluableNodeAttributesType attrib_with_known_true;
-			attrib_with_known_true.allAttributes = 0;
-			attrib_with_known_true.individualAttribs.knownToBeInUse = true;
-
-			atomic_byte.fetch_or(attrib_with_known_true.allAttributes);
-		}
-		else
-		{
-			EvaluableNodeAttributesType attrib_with_known_false;
-			attrib_with_known_false.allAttributes = 0xFF;
-			attrib_with_known_false.individualAttribs.knownToBeInUse = false;
-
-			atomic_byte.fetch_and(attrib_with_known_false.allAttributes);
-		}
+		SetAttributeAtomic(Attribute::KNOWN_TO_BE_IN_USE, in_use);
 	}
 #endif
+
+	//returns true if value contains an extended type
+	__forceinline bool HasExtendedValue()
+	{
+		return HasAttribute(Attribute::HAS_EXTENDED_VALUE);
+	}
+
+	//sets whether this node contains an extended type
+	__forceinline void SetExtendedValue(bool extended_value)
+	{
+		SetAttribute(Attribute::HAS_EXTENDED_VALUE, extended_value);
+	}
 
 	//returns the number of child nodes regardless of mapped or ordered
 	size_t GetNumChildNodes();
@@ -917,12 +950,8 @@ protected:
 	struct EvaluableNodeExtendedValue;
 public:
 
-	//returns true if value contains an extended type
-	__forceinline constexpr bool HasExtendedValue()
-	{	return attributes.individualAttribs.hasExtendedValue;	}
-
 	//assumes that the EvaluableNode is of type ENT_BOOL, and returns the value by reference
-	constexpr bool &GetBoolValueReference()
+	__forceinline bool &GetBoolValueReference()
 	{
 		if(!HasExtendedValue())
 			return value.boolValueContainer.boolValue;
@@ -931,7 +960,7 @@ public:
 	}
 
 	//assumes that the EvaluableNode is of type ENT_NUMBER, and returns the value by reference
-	__forceinline constexpr double &GetNumberValueReference()
+	__forceinline double &GetNumberValueReference()
 	{
 		if(!HasExtendedValue())
 			return value.numberValueContainer.numberValue;
@@ -940,7 +969,7 @@ public:
 	}
 
 	//assumes that the EvaluableNode is of type that holds a string, and returns the value by reference
-	__forceinline constexpr StringInternPool::StringID &GetStringIDReference()
+	__forceinline StringInternPool::StringID &GetStringIDReference()
 	{
 		if(!HasExtendedValue())
 			return value.stringValueContainer.stringID;
@@ -949,7 +978,7 @@ public:
 	}
 
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
-	__forceinline constexpr std::vector<EvaluableNode *> &GetOrderedChildNodesReference()
+	__forceinline std::vector<EvaluableNode *> &GetOrderedChildNodesReference()
 	{
 		if(!HasExtendedValue())
 			return value.orderedChildNodes;
@@ -958,7 +987,7 @@ public:
 	}
 
 	//assumes that the EvaluableNode is has mapped child nodes, and returns the value by reference
-	__forceinline constexpr AssocType &GetMappedChildNodesReference()
+	__forceinline AssocType &GetMappedChildNodesReference()
 	{
 		if(!HasExtendedValue())
 			return value.mappedChildNodes;
@@ -967,14 +996,14 @@ public:
 	}
 
 	//if it is storing an immediate value and has room to store a label
-	constexpr bool HasCompactSingleLabelStorage()
+	bool HasCompactSingleLabelStorage()
 	{
 		return ((type == ENT_BOOL || type == ENT_NUMBER || type == ENT_STRING || type == ENT_SYMBOL) && !HasExtendedValue());
 	}
 
 	//returns a reference to the storage location for a single label
 	// will only return valid results if HasCompactSingleLabelStorage() is true, so that should be called first
-	__forceinline constexpr StringInternPool::StringID &GetCompactSingleLabelStorage()
+	__forceinline StringInternPool::StringID &GetCompactSingleLabelStorage()
 	{
 		if(type == ENT_BOOL)
 			return value.boolValueContainer.labelStringID;
@@ -1125,33 +1154,8 @@ protected:
 	//Executable/data type of the node
 	EvaluableNodeType type;
 
-	//make sure this only takes up one byte
-#pragma pack(push, 1)
-	union EvaluableNodeAttributesType
-	{
-		//quick way to initialize all attributes to 0
-		uint8_t allAttributes;
-		struct
-		{
-			//if true, then contains an extended type
-			bool hasExtendedValue : 1;
-			//if true, then this node and any nodes it contains may have a cycle so needs to be checked
-			bool needCycleCheck : 1;
-			//if true, then this node and any nodes it contains are idempotent
-			bool isIdempotent : 1;
-			//if true, then the node is marked for concurrency
-			bool concurrent : 1;
-			//if true, then the node has not yet been read/accessed and can be freed
-			//used to optimize flows to avoid copies when there has been no other accesses
-			bool isFreeable : 1;
-			//if true, then known to be in use with regard to garbage collection
-			bool knownToBeInUse : 1;
-		} individualAttribs;
-	};
-#pragma pack(pop)
-
 	//fields contained within the current set of data
-	EvaluableNodeAttributesType attributes;
+	AttributeStorageType attributes;
 
 	//values used to be able to return a reference
 	static bool falseBoolValue;

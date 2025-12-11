@@ -651,7 +651,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.individualPermissions.load)
+	if(!permissions.HasPermission(EntityPermissions::Permission::LOAD))
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -691,7 +691,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.individualPermissions.load)
+	if(!permissions.HasPermission(EntityPermissions::Permission::LOAD))
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -773,7 +773,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.individualPermissions.store)
+	if(!permissions.HasPermission(EntityPermissions::Permission::STORE))
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -817,7 +817,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.individualPermissions.store)
+	if(!permissions.HasPermission(EntityPermissions::Permission::STORE))
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);

@@ -208,33 +208,33 @@ void EntityWriteListener::LogSetEntityPermissions(Entity *entity,
 	EvaluableNode *assoc = listenerStorage.AllocNode(ENT_ASSOC);
 	new_set->AppendOrderedChildNode(assoc);
 
-	if(permissions_to_set.individualPermissions.stdOutAndStdErr)
+	if(permissions_to_set.HasPermission(EntityPermissions::Permission::STD_OUT_AND_STD_ERR))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err),
-			listenerStorage.AllocNode(permission_values.individualPermissions.stdOutAndStdErr));
+			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::STD_OUT_AND_STD_ERR)));
 
-	if(permissions_to_set.individualPermissions.stdIn)
+	if(permissions_to_set.HasPermission(EntityPermissions::Permission::STD_IN))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_in),
-			listenerStorage.AllocNode(permission_values.individualPermissions.stdIn));
+			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::STD_IN)));
 
-	if(permissions_to_set.individualPermissions.load)
+	if(permissions_to_set.HasPermission(EntityPermissions::Permission::LOAD))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_load),
-			listenerStorage.AllocNode(permission_values.individualPermissions.load));
+			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::LOAD)));
 
-	if(permissions_to_set.individualPermissions.store)
+	if(permissions_to_set.HasPermission(EntityPermissions::Permission::STORE))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_store),
-			listenerStorage.AllocNode(permission_values.individualPermissions.store));
+			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::STORE)));
 
-	if(permissions_to_set.individualPermissions.environment)
+	if(permissions_to_set.HasPermission(EntityPermissions::Permission::ENVIRONMENT))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_environment),
-			listenerStorage.AllocNode(permission_values.individualPermissions.environment));
+			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::ENVIRONMENT)));
 
-	if(permissions_to_set.individualPermissions.alterPerformance)
+	if(permissions_to_set.HasPermission(EntityPermissions::Permission::ALTER_PERFORMANCE))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_alter_performance),
-			listenerStorage.AllocNode(permission_values.individualPermissions.alterPerformance));
+			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::ALTER_PERFORMANCE)));
 
-	if(permissions_to_set.individualPermissions.system)
+	if(permissions_to_set.HasPermission(EntityPermissions::Permission::SYSTEM))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_system),
-			listenerStorage.AllocNode(permission_values.individualPermissions.system));
+			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::SYSTEM)));
 
 	if(!deep_set)
 		new_set->AppendOrderedChildNode(listenerStorage.AllocNode(false));

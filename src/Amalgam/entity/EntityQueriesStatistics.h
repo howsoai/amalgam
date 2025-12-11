@@ -369,8 +369,6 @@ public:
 					auto [weighted_value, unweighted_value, prob_same, prob_mass, weight]
 						= transform_func(entity_distance_pair_container_begin + main_k + extra_k);
 
-					total_prob += prob_same;
-
 					result_func(entity_distance_pair_container_begin + main_k + extra_k, weighted_value, unweighted_value, prob_mass, weight);
 				}
 

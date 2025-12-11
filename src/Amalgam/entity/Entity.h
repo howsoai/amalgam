@@ -152,11 +152,10 @@ public:
 				auto set_permission_if_matches = [&](EvaluableNodeBuiltInStringId sid, Permission perm)
 				{
 					if(permission_type == GetStringIdFromBuiltInStringId(sid))
-						if(permission_type == GetStringIdFromBuiltInStringId(sid))
-						{
-							permissions_to_set.SetPermission(perm, true);
-							permission_values.SetPermission(perm, allow);
-						}
+					{
+						permissions_to_set.SetPermission(perm, true);
+						permission_values.SetPermission(perm, allow);
+					}
 				};
 
 				set_permission_if_matches(ENBISI_std_out_and_std_err, Permission::STD_OUT_AND_STD_ERR);

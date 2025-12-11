@@ -428,7 +428,7 @@ bool EvaluableNode::IsNodeValid()
 
 void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_labels, bool copy_comments_and_concurrency)
 {
-	attributes.allAttributes = 0;
+	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 	if(n == nullptr)
 	{
 		type = ENT_NULL;
@@ -997,8 +997,8 @@ void EvaluableNode::SetLabelsStringIds(const std::vector<StringInternPool::Strin
 	}
 
 	//can no longer be idempotent because it could be altered by something collecting labels
-	attributes.individualAttribs.isIdempotent = false;
-
+	SetIsIdempotent(false);
+	
 	if(!HasExtendedValue())
 	{
 		if(label_string_ids.size() == 1 && HasCompactSingleLabelStorage())
@@ -1140,7 +1140,7 @@ void EvaluableNode::ReserveLabels(size_t num_labels)
 void EvaluableNode::AppendLabelStringId(StringInternPool::StringID label_string_id, bool handoff_reference)
 {
 	//can no longer be idempotent because it could be altered by something collecting labels
-	attributes.individualAttribs.isIdempotent = false;
+	SetIsIdempotent(false);
 
 	if(!handoff_reference)
 		string_intern_pool.CreateStringReference(label_string_id);
@@ -1160,7 +1160,7 @@ void EvaluableNode::AppendLabelStringId(StringInternPool::StringID label_string_
 void EvaluableNode::AppendLabel(const std::string &label)
 {
 	//can no longer be idempotent because it could be altered by something collecting labels
-	attributes.individualAttribs.isIdempotent = false;
+	SetIsIdempotent(false);
 
 	if(HasCompactSingleLabelStorage() && GetCompactSingleLabelStorage() == StringInternPool::NOT_A_STRING_ID)
 	{
@@ -1704,7 +1704,7 @@ void EvaluableNode::EnsureEvaluableNodeExtended()
 		break;
 	}
 
-	attributes.individualAttribs.hasExtendedValue = true;
+	SetExtendedValue(true);
 	value.extension.extendedValue = ev;
 	value.extension.commentsStringId = StringInternPool::NOT_A_STRING_ID;
 }
@@ -1790,7 +1790,7 @@ void EvaluableNode::Invalidate()
 
 		//return early if no extended value, make sure to clear out data so it isn't double-deleted
 		type = ENT_DEALLOCATED;
-		attributes.allAttributes = 0;
+		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		//use a value that is more apparent that something went wrong
 		value.numberValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
@@ -1829,7 +1829,7 @@ void EvaluableNode::Invalidate()
 	delete value.extension.extendedValue;
 
 	type = ENT_DEALLOCATED;
-	attributes.allAttributes = 0;
+	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 	
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	//use a value that is more apparent that something went wrong

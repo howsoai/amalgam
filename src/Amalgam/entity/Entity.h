@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 //project headers:
 #include "Concurrency.h"
@@ -74,7 +74,8 @@ public:
 class EntityPermissions
 {
 public:
-	enum class Permission : uint8_t
+	using StorageType = uint8_t;
+	enum class Permission : StorageType
 	{
 		NONE = 0,
 		STD_OUT_AND_STD_ERR = 1 << 0,
@@ -90,20 +91,20 @@ public:
 	EntityPermissions() = default;
 
 	explicit inline EntityPermissions(Permission initial_permissions)
-		: allPermissions(static_cast<uint8_t>(initial_permissions))
+		: allPermissions(static_cast<StorageType>(initial_permissions))
 	{}
 
 	inline bool HasPermission(Permission permission) const
 	{
-		return (allPermissions & static_cast<uint8_t>(permission)) != 0;
+		return (allPermissions & static_cast<StorageType>(permission)) != 0;
 	}
 
 	inline void SetPermission(Permission permission, bool enable = true)
 	{
 		if(enable)
-			allPermissions |= static_cast<uint8_t>(permission);
+			allPermissions |= static_cast<StorageType>(permission);
 		else
-			allPermissions &= ~static_cast<uint8_t>(permission);
+			allPermissions &= ~static_cast<StorageType>(permission);
 	}
 
 	static inline EntityPermissions AllPermissions()
@@ -177,7 +178,7 @@ public:
 	}
 
 	//permissions as a bit field for use with bitwise operations
-	uint8_t allPermissions = 0;
+	StorageType allPermissions = static_cast<StorageType>(Permission::NONE);
 };
 
 #ifdef MULTITHREAD_SUPPORT

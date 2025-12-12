@@ -1191,64 +1191,100 @@ enum EvaluableNodeImmediateValueType : uint8_t
 };
 
 //when an EvaluableNodeImmediateValue is requested, this class can indicate which types of values are allowed
-enum class EvaluableNodeRequestedValueTypes : uint8_t
+// EvaluableNodeRequestedValueTypes.h
+class EvaluableNodeRequestedValueTypes
 {
-	NONE = 0,
-	NULL_VALUE = 1 << 0,
-	BOOL = 1 << 1,
-	NUMBER = 1 << 2,
-	EXISTING_STRING_ID = 1 << 3,
-	STRING_ID = 1 << 4,
-	STRING = 1 << 5,
-	CODE = 1 << 6,
-	ALL = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID | STRING_ID | STRING | CODE
+public:
+	using StorageType = uint8_t;
+
+	enum class Type : StorageType
+	{
+		NONE = 0,
+		NULL_VALUE = 1 << 0,
+		BOOL = 1 << 1,
+		NUMBER = 1 << 2,
+		EXISTING_STRING_ID = 1 << 3,
+		STRING_ID = 1 << 4,
+		STRING = 1 << 5,
+		CODE = 1 << 6,
+		ALL = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID |
+		STRING_ID | STRING | CODE
+	};
+
+	constexpr EvaluableNodeRequestedValueTypes() noexcept
+		: bits(Type::NONE)
+	{}
+
+	constexpr explicit EvaluableNodeRequestedValueTypes(Type t) noexcept
+		: bits(t)
+	{}
+
+	constexpr EvaluableNodeRequestedValueTypes(StorageType raw) noexcept
+		: bits(static_cast<Type>(raw))
+	{}
+
+	//bit‑wise operators
+	constexpr EvaluableNodeRequestedValueTypes &operator|=(EvaluableNodeRequestedValueTypes rhs) noexcept
+	{
+		bits = static_cast<Type>(static_cast<StorageType>(bits) |
+								 static_cast<StorageType>(rhs.bits));
+		return *this;
+	}
+
+	constexpr EvaluableNodeRequestedValueTypes &operator&=(EvaluableNodeRequestedValueTypes rhs) noexcept
+	{
+		bits = static_cast<Type>(static_cast<StorageType>(bits) &
+								 static_cast<StorageType>(rhs.bits));
+		return *this;
+	}
+
+	constexpr friend EvaluableNodeRequestedValueTypes operator|(
+		EvaluableNodeRequestedValueTypes lhs,
+		EvaluableNodeRequestedValueTypes rhs) noexcept
+	{
+		return EvaluableNodeRequestedValueTypes(
+			static_cast<Type>(static_cast<StorageType>(lhs.bits) |
+				static_cast<StorageType>(rhs.bits)));
+	}
+
+	constexpr friend EvaluableNodeRequestedValueTypes operator&(
+		EvaluableNodeRequestedValueTypes lhs,
+		EvaluableNodeRequestedValueTypes rhs) noexcept
+	{
+		return EvaluableNodeRequestedValueTypes(
+			static_cast<Type>(static_cast<StorageType>(lhs.bits) &
+				static_cast<StorageType>(rhs.bits)));
+	}
+
+	constexpr friend EvaluableNodeRequestedValueTypes operator~(
+		EvaluableNodeRequestedValueTypes v) noexcept
+	{
+		return EvaluableNodeRequestedValueTypes(
+			static_cast<Type>(~static_cast<StorageType>(v.bits)));
+	}
+
+	constexpr bool Allows(Type flag) const noexcept
+	{
+		return (static_cast<StorageType>(bits) &
+				static_cast<StorageType>(flag)) != 0;
+	}
+
+	//returns true if any immediate is allowed
+	constexpr bool AnyImmediate() const noexcept
+	{
+		return (static_cast<StorageType>(bits) & ~static_cast<StorageType>(Type::CODE)) != 0;
+	}
+
+	//returns true if immediates are not allowed
+	constexpr bool NotImmediate() const noexcept
+	{
+		return (static_cast<StorageType>(bits) & ~static_cast<StorageType>(Type::CODE)) == 0;
+	}
+
+private:
+	Type bits;
 };
 
-__forceinline constexpr EvaluableNodeRequestedValueTypes operator|(
-	EvaluableNodeRequestedValueTypes lhs, EvaluableNodeRequestedValueTypes rhs)
-{
-	return static_cast<EvaluableNodeRequestedValueTypes>(
-		static_cast<std::underlying_type<EvaluableNodeRequestedValueTypes>::type>(lhs) |
-		static_cast<std::underlying_type<EvaluableNodeRequestedValueTypes>::type>(rhs)
-	);
-}
-
-__forceinline constexpr EvaluableNodeRequestedValueTypes operator&(
-	EvaluableNodeRequestedValueTypes lhs, EvaluableNodeRequestedValueTypes rhs)
-{
-	return static_cast<EvaluableNodeRequestedValueTypes>(
-		static_cast<std::underlying_type<EvaluableNodeRequestedValueTypes>::type>(lhs) &
-		static_cast<std::underlying_type<EvaluableNodeRequestedValueTypes>::type>(rhs)
-	);
-}
-
-__forceinline constexpr EvaluableNodeRequestedValueTypes operator~(
-	EvaluableNodeRequestedValueTypes v)
-{
-	return static_cast<EvaluableNodeRequestedValueTypes>(
-		~static_cast<std::underlying_type<EvaluableNodeRequestedValueTypes>::type>(v)
-	);
-}
-
-__forceinline constexpr EvaluableNodeRequestedValueTypes &operator|=(
-	EvaluableNodeRequestedValueTypes &lhs, EvaluableNodeRequestedValueTypes rhs)
-{
-	lhs = static_cast<EvaluableNodeRequestedValueTypes>(
-		static_cast<std::underlying_type<EvaluableNodeRequestedValueTypes>::type>(lhs) |
-		static_cast<std::underlying_type<EvaluableNodeRequestedValueTypes>::type>(rhs)
-	);
-	return lhs;
-}
-
-__forceinline constexpr EvaluableNodeRequestedValueTypes &operator&=(
-	EvaluableNodeRequestedValueTypes &lhs, EvaluableNodeRequestedValueTypes rhs)
-{
-	lhs = static_cast<EvaluableNodeRequestedValueTypes>(
-		static_cast<std::underlying_type<EvaluableNodeRequestedValueTypes>::type>(lhs) &
-		static_cast<std::underlying_type<EvaluableNodeRequestedValueTypes>::type>(rhs)
-	);
-	return lhs;
-}
 
 //structure that can hold the most immediate value type of an EvaluableNode
 // EvaluableNodeImmediateValueType can be used to communicate which type of data is being held

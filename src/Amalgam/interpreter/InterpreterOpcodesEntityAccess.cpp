@@ -142,7 +142,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		auto &contained_entities = source_entity->GetContainedEntities();
 
 		//if only looking for how many entities are contained, quickly exit
-		if(immediate_result)
+		if(immediate_result.AnyImmediate())
 			return EvaluableNodeReference(static_cast<double>(contained_entities.size()));
 
 		//new list containing the contained entity ids to return
@@ -366,7 +366,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
 		EvaluableNodeReference value;
-		if(immediate_result)
+		if(immediate_result.AnyImmediate())
 			value.SetReference(
 				target_entity->GetValueAtLabelAsImmediateValue(label_sid, target_entity == curEntity, evaluableNodeManager).first, true);
 		else

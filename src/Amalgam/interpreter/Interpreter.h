@@ -707,7 +707,7 @@ public:
 	__forceinline EvaluableNodeReference InterpretNodeUnaryNumericOperation(EvaluableNode *n, EvaluableNodeRequestedValueTypes immediate_result,
 		std::function<double(double)> func)
 	{
-		if(immediate_result.individualTypes.number)
+		if(immediate_result.AnyImmediate())
 		{
 			double value = InterpretNodeIntoNumberValue(n);
 			return EvaluableNodeReference(func(value));

@@ -454,7 +454,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en
 
 		//request immediate values when not last, since any allocs for returns would be wasted
 		//concludes won't be immediate
-		result = InterpretNode(ocn[i], immediate_result || i + 1 < ocn_size);
+		result = InterpretNode(ocn[i], immediate_result.AnyImmediate() || i + 1 < ocn_size);
 	}
 	return result;
 }
@@ -834,7 +834,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 
 		//request immediate values when not last, since any allocs for returns would be wasted
 		//concludes won't be immediate
-		result = InterpretNode(ocn[i], immediate_result || i + 1 < ocn_size);
+		result = InterpretNode(ocn[i], immediate_result.AnyImmediate() || i + 1 < ocn_size);
 	}
 
 	//all finished with new context, but can't free it in case returning something
@@ -1020,7 +1020,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 		//request immediate values when not last, since any allocs for returns would be wasted
 		//concludes won't be immediate
-		result = InterpretNode(ocn[i], immediate_result || i + 1 < ocn_size);
+		result = InterpretNode(ocn[i], immediate_result.AnyImmediate() || i + 1 < ocn_size);
 	}
 
 	return result;
@@ -1634,7 +1634,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	}
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
 	{
-		if(immediate_result)
+		if(immediate_result.AnyImmediate())
 		{
 			//parse into key, which may be the same StringID if not escaped and desired to be in an immediate format
 			auto cur_index_sid = Parser::ParseFromKeyStringIdToStringIdWithReference(enivwt.nodeValue.stringID);

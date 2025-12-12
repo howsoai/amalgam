@@ -577,7 +577,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluabl
 	{
 		auto sid = EvaluableNode::ToStringIDWithReference(n);
 
-		if(immediate_result)
+		if(immediate_result.AnyImmediate())
 			return EvaluableNodeReference(sid, true);
 		else
 			return EvaluableNodeReference(evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,

@@ -1215,7 +1215,7 @@ public:
 		: bits(Type::NONE)
 	{}
 
-	constexpr explicit EvaluableNodeRequestedValueTypes(Type t) noexcept
+	constexpr EvaluableNodeRequestedValueTypes(Type t) noexcept
 		: bits(t)
 	{}
 
@@ -1270,13 +1270,19 @@ public:
 	}
 
 	//returns true if any immediate is allowed
-	constexpr bool AnyImmediate() const noexcept
+	constexpr bool AnyImmediateType() const noexcept
 	{
 		return (static_cast<StorageType>(bits) & ~static_cast<StorageType>(Type::CODE)) != 0;
 	}
 
-	//returns true if immediates are not allowed
-	constexpr bool NotImmediate() const noexcept
+	//returns true if an immediates is allowed
+	constexpr bool ImmediateValue() const noexcept
+	{
+		return bits != Type::NONE;
+	}
+
+	//returns true if an immediate value is allowed but immediate types are not allowed
+	constexpr bool ImmediateValueButNotImmediateType() const noexcept
 	{
 		return (static_cast<StorageType>(bits) & ~static_cast<StorageType>(Type::CODE)) == 0;
 	}

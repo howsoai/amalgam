@@ -452,9 +452,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en
 		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
-		//request immediate values when not last, since any allocs for returns would be wasted
+		//request immediate result when not last, since any allocs for returns would be wasted
 		//concludes won't be immediate
-		result = InterpretNode(ocn[i], immediate_result.AnyImmediate() || i + 1 < ocn_size);
+		EvaluableNodeRequestedValueTypes cur_immediate(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
+		if(i + 1 == ocn_size)
+			cur_immediate = immediate_result;
+		result = InterpretNode(ocn[i], cur_immediate);
 	}
 	return result;
 }
@@ -832,9 +835,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
-		//request immediate values when not last, since any allocs for returns would be wasted
+		//request immediate result when not last, since any allocs for returns would be wasted
 		//concludes won't be immediate
-		result = InterpretNode(ocn[i], immediate_result.AnyImmediate() || i + 1 < ocn_size);
+		EvaluableNodeRequestedValueTypes cur_immediate(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
+		if(i + 1 == ocn_size)
+			cur_immediate = immediate_result;
+		result = InterpretNode(ocn[i], cur_immediate);
 	}
 
 	//all finished with new context, but can't free it in case returning something
@@ -1018,9 +1024,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
-		//request immediate values when not last, since any allocs for returns would be wasted
+		//request immediate result when not last, since any allocs for returns would be wasted
 		//concludes won't be immediate
-		result = InterpretNode(ocn[i], immediate_result.AnyImmediate() || i + 1 < ocn_size);
+		EvaluableNodeRequestedValueTypes cur_immediate(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
+		if(i + 1 == ocn_size)
+			cur_immediate = immediate_result;
+		result = InterpretNode(ocn[i], cur_immediate);
 	}
 
 	return result;
@@ -1634,7 +1643,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	}
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
 	{
-		if(immediate_result.AnyImmediate())
+		if(immediate_result.ImmediateValue())
 		{
 			//parse into key, which may be the same StringID if not escaped and desired to be in an immediate format
 			auto cur_index_sid = Parser::ParseFromKeyStringIdToStringIdWithReference(enivwt.nodeValue.stringID);

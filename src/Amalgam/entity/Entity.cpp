@@ -124,8 +124,12 @@ Entity::~Entity()
 	string_intern_pool.DestroyStringReferences(labelIndex, [](auto l) { return l.first; });
 }
 
-std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm, bool direct_get, bool on_self, bool batch_call)
+std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(
+	StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm,
+	bool direct_get, bool on_self, bool batch_call)
 {
+	//TODO 21800: allow this to return references with immediate values, ensure they're marked as unique
+
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 		return std::pair(EvaluableNodeReference::Null(), false);
 
@@ -146,7 +150,8 @@ std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(StringInternPool
 	if(destination_temp_enm == nullptr)
 		return std::pair(retval, true);
 
-	return std::pair(destination_temp_enm->DeepAllocCopy(retval, direct_get ? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL), true);
+	return std::pair(destination_temp_enm->DeepAllocCopy(retval,
+		direct_get ? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL), true);
 }
 
 std::pair<bool, bool> Entity::GetValueAtLabelAsBool(StringInternPool::StringID label_sid, bool on_self)

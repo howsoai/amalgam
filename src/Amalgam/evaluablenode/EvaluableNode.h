@@ -1207,34 +1207,38 @@ public:
 		STRING_ID = 1 << 4,
 		STRING = 1 << 5,
 		CODE = 1 << 6,
-		ALL = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID |
-		STRING_ID | STRING | CODE
+		ALL = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID | STRING_ID | STRING | CODE
 	};
 
 	constexpr EvaluableNodeRequestedValueTypes() noexcept
-		: bits(Type::NONE)
+		: requestedValueTypes(Type::NONE)
 	{}
 
 	constexpr EvaluableNodeRequestedValueTypes(Type t) noexcept
-		: bits(t)
+		: requestedValueTypes(t)
 	{}
 
 	constexpr EvaluableNodeRequestedValueTypes(StorageType raw) noexcept
-		: bits(static_cast<Type>(raw))
+		: requestedValueTypes(static_cast<Type>(raw))
+	{}
+
+	//boolean implies all or none
+	constexpr EvaluableNodeRequestedValueTypes(bool all_or_none) noexcept
+		: requestedValueTypes(all_or_none ? Type::ALL : Type::NONE)
 	{}
 
 	//bit‑wise operators
 	constexpr EvaluableNodeRequestedValueTypes &operator|=(EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
-		bits = static_cast<Type>(static_cast<StorageType>(bits) |
-								 static_cast<StorageType>(rhs.bits));
+		requestedValueTypes = static_cast<Type>(static_cast<StorageType>(requestedValueTypes) |
+								 static_cast<StorageType>(rhs.requestedValueTypes));
 		return *this;
 	}
 
 	constexpr EvaluableNodeRequestedValueTypes &operator&=(EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
-		bits = static_cast<Type>(static_cast<StorageType>(bits) &
-								 static_cast<StorageType>(rhs.bits));
+		requestedValueTypes = static_cast<Type>(static_cast<StorageType>(requestedValueTypes) &
+								 static_cast<StorageType>(rhs.requestedValueTypes));
 		return *this;
 	}
 
@@ -1243,8 +1247,8 @@ public:
 		EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
 		return EvaluableNodeRequestedValueTypes(
-			static_cast<Type>(static_cast<StorageType>(lhs.bits) |
-				static_cast<StorageType>(rhs.bits)));
+			static_cast<Type>(static_cast<StorageType>(lhs.requestedValueTypes) |
+				static_cast<StorageType>(rhs.requestedValueTypes)));
 	}
 
 	constexpr friend EvaluableNodeRequestedValueTypes operator&(
@@ -1252,43 +1256,43 @@ public:
 		EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
 		return EvaluableNodeRequestedValueTypes(
-			static_cast<Type>(static_cast<StorageType>(lhs.bits) &
-				static_cast<StorageType>(rhs.bits)));
+			static_cast<Type>(static_cast<StorageType>(lhs.requestedValueTypes) &
+				static_cast<StorageType>(rhs.requestedValueTypes)));
 	}
 
 	constexpr friend EvaluableNodeRequestedValueTypes operator~(
 		EvaluableNodeRequestedValueTypes v) noexcept
 	{
 		return EvaluableNodeRequestedValueTypes(
-			static_cast<Type>(~static_cast<StorageType>(v.bits)));
+			static_cast<Type>(~static_cast<StorageType>(v.requestedValueTypes)));
 	}
 
 	constexpr bool Allows(Type flag) const noexcept
 	{
-		return (static_cast<StorageType>(bits) &
+		return (static_cast<StorageType>(requestedValueTypes) &
 				static_cast<StorageType>(flag)) != 0;
 	}
 
 	//returns true if any immediate is allowed
 	constexpr bool AnyImmediateType() const noexcept
 	{
-		return (static_cast<StorageType>(bits) & ~static_cast<StorageType>(Type::CODE)) != 0;
+		return (static_cast<StorageType>(requestedValueTypes) & ~static_cast<StorageType>(Type::CODE)) != 0;
 	}
 
 	//returns true if an immediates is allowed
 	constexpr bool ImmediateValue() const noexcept
 	{
-		return bits != Type::NONE;
+		return requestedValueTypes != Type::NONE;
 	}
 
 	//returns true if an immediate value is allowed but immediate types are not allowed
 	constexpr bool ImmediateValueButNotImmediateType() const noexcept
 	{
-		return (static_cast<StorageType>(bits) & ~static_cast<StorageType>(Type::CODE)) == 0;
+		return (static_cast<StorageType>(requestedValueTypes) & ~static_cast<StorageType>(Type::CODE)) == 0;
 	}
 
 private:
-	Type bits;
+	Type requestedValueTypes;
 };
 
 

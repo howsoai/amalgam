@@ -28,9 +28,12 @@
 		<DisplayString Condition="requestedValueTypes == 4">NUMBER</DisplayString>
 		<DisplayString Condition="requestedValueTypes == 8">EXISTING_STRING_ID</DisplayString>
 		<DisplayString Condition="requestedValueTypes == 16">STRING_ID</DisplayString>
-		<DisplayString Condition="requestedValueTypes == 32">STRING</DisplayString>
 		<DisplayString Condition="requestedValueTypes == 64">CODE</DisplayString>
-		<DisplayString Condition="requestedValueTypes == 127">ALL</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 3">REQUEST_BOOL</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 5">REQUEST_NUMBER</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 9">REQUEST_EXISTING_STRING_ID</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 17">REQUEST_STRING_ID</DisplayString>		
+		<DisplayString Condition="requestedValueTypes == 63">ALL</DisplayString>
 		<DisplayString>{requestedValueTypes}</DisplayString>
 
 		<Expand>

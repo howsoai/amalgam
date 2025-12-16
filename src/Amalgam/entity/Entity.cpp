@@ -126,10 +126,8 @@ Entity::~Entity()
 
 std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(
 	StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm,
-	bool direct_get, bool on_self, bool batch_call)
+	bool direct_get, EvaluableNodeRequestedValueTypes immediate_result, bool on_self, bool batch_call)
 {
-	//TODO 21800: allow this to return references with immediate values, ensure they're marked as unique
-
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 		return std::pair(EvaluableNodeReference::Null(), false);
 
@@ -141,10 +139,43 @@ std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(
 	if(label == end(labelIndex))
 		return std::pair(EvaluableNodeReference::Null(), false);
 
-	if(label->second == nullptr)
+	EvaluableNode *label_value = label->second;
+	if(label_value == nullptr)
 		return std::pair(EvaluableNodeReference::Null(), true);
 
-	EvaluableNodeReference retval(label->second, false);
+	//if can return an immediate result and the value is immediate, use a fast path
+	if(immediate_result.AnyImmediateType() && label_value->IsImmediate())
+	{
+		//TODO 21800: pull this method out and call elsewhere
+		//TODO 21800: check and update all callers of GetValueAtLabel
+
+		auto label_value_type = label_value->GetType();
+		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
+		{
+			if(label_value_type == ENT_NULL)
+				return std::pair(EvaluableNodeReference::Null(), true);
+		}
+
+		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::BOOL))
+			return std::pair(EvaluableNodeReference(EvaluableNode::ToBool(label_value)), true);
+
+		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NUMBER))
+			return std::pair(EvaluableNodeReference(EvaluableNode::ToNumber(label_value)), true);
+
+		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID))
+			return std::pair(EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(label_value)), true);
+
+		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::STRING_ID))
+			return std::pair(EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(label_value), true), true);
+
+		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
+			return std::pair(EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(label_value, true)), true);
+
+		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID))
+			return std::pair(EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(label_value, true), true), true);
+	}
+
+	EvaluableNodeReference retval(label_value, false);
 
 	//if didn't give a valid destination, just return what we have
 	if(destination_temp_enm == nullptr)

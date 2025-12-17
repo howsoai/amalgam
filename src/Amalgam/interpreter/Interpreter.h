@@ -496,7 +496,7 @@ public:
 	#endif
 	)
 	{
-		//TODO 21800: allow this to return references with immediate values; ensure they're marked as unique
+		//TODO 21800: allow this to return references with immediate values; use EvaluableNodeReference::CoerceNonUniqueEvaluableNodeToImmediateIfPossible
 
 		//find appropriate context for symbol by walking up the stack
 		for(auto it = rbegin(*scopeStackNodes); it != rend(*scopeStackNodes); ++it)

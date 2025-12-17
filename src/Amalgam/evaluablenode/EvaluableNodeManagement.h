@@ -55,6 +55,45 @@ public:
 		: value(string_intern_pool.CreateStringReference(str)), unique(true), uniqueUnreferencedTopNode(true)
 	{	}
 
+	//constructs an EvaluableNodeReference with an immediate type and true if possible to coerce node
+	//into one of the immediate request types, or returns a non-unique EvaluableNodeReference and false if not
+	static inline EvaluableNodeReference CoerceNonUniqueEvaluableNodeToImmediateIfPossible(EvaluableNode *en,
+		EvaluableNodeRequestedValueTypes immediate_result)
+	{
+		if(en == nullptr)
+			return EvaluableNodeReference::Null();
+
+		if(immediate_result.AnyImmediateType() && en->IsImmediate())
+		{
+			auto en_type = en->GetType();
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
+			{
+				if(en_type == ENT_NULL)
+					return EvaluableNodeReference::Null();
+			}
+
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::BOOL))
+				return EvaluableNodeReference(EvaluableNode::ToBool(en));
+
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NUMBER))
+				return EvaluableNodeReference(EvaluableNode::ToNumber(en));
+
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID))
+				return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en));
+
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::STRING_ID))
+				return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en), true);
+
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
+				return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en, true));
+
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID))
+				return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en, true), true);
+		}
+
+		return EvaluableNodeReference(en, false);
+	}
+
 	//frees resources associated with immediate values
 	//note that this could be placed in a destructor, but this is such a rare use,
 	//i.e., only when an immediate value is requested, and the references are usually handled specially,
@@ -210,7 +249,7 @@ public:
 	//returns true if it is an immediate value stored in this EvaluableNodeReference
 	__forceinline bool IsImmediateValue()
 	{
-		return (value.nodeType != ENIVT_CODE);
+		return (value.nodeType != ENIVT_CODE || value.nodeValue.code == nullptr);
 	}
 
 	//returns true if the type of whatever is stored is an immediate type

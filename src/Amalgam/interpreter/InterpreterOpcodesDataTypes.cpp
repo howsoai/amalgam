@@ -180,7 +180,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	EntityReadReference cur_entity_ref(curEntity);
 	if(cur_entity_ref != nullptr)
 	{
-		auto [label_value, label_found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
+		auto [label_value, label_found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, immediate_result, true);
 		if(label_found)
 			return label_value;
 	}

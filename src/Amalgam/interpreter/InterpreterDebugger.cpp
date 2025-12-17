@@ -507,7 +507,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 					}
 
 					bool found_value = false;
-					std::tie(node, found_value) = curEntity->GetValueAtLabel(sid, nullptr, true, true);
+					std::tie(node, found_value) = curEntity->GetValueAtLabel(sid, nullptr, true,
+						EvaluableNodeRequestedValueTypes::Type::NONE, true);
 					if(!found_value)
 					{
 						std::cout << "Variable " << input << " does not exist on the stack or as a label in the current entity." << std::endl;

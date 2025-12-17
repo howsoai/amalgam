@@ -365,12 +365,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	if(to_lookup == nullptr || to_lookup->IsImmediate())
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
-		EvaluableNodeReference value;
-		if(immediate_result.ImmediateValue())
-			value.SetReference(
-				target_entity->GetValueAtLabelAsImmediateValue(label_sid, target_entity == curEntity, evaluableNodeManager).first, true);
-		else
-			value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity).first;
+		EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager,
+			direct, immediate_result, target_entity == curEntity).first;
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 
@@ -391,7 +387,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			auto [value, _] = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager, direct, target_entity == curEntity);
+			auto [value, _] = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager, direct,
+				EvaluableNodeRequestedValueTypes::Type::NONE, target_entity == curEntity);
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, first_node);
@@ -418,7 +415,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			auto [value, _] = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
+			auto [value, _] = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct,
+				EvaluableNodeRequestedValueTypes::Type::NONE, target_entity == curEntity);
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, i == 0);

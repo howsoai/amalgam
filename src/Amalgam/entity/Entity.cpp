@@ -147,7 +147,6 @@ std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(
 	if(immediate_result.AnyImmediateType() && label_value->IsImmediate())
 	{
 		//TODO 21800: pull this method out and call elsewhere
-		//TODO 21800: check and update all callers of GetValueAtLabel
 
 		auto label_value_type = label_value->GetType();
 		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
@@ -423,8 +422,8 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		{
 			//need to make a copy in case it is modified, so pass in evaluableNodeManager
 			EvaluableNodeReference value_destination_node(
-				GetValueAtLabel(variable_sid, &evaluableNodeManager, true, true, true).first,
-				true);
+				GetValueAtLabel(variable_sid, &evaluableNodeManager, true,
+					EvaluableNodeRequestedValueTypes::Type::NONE, true, true).first, true);
 			//can't assign to a label if it doesn't exist
 			if(value_destination_node == nullptr)
 				continue;

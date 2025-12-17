@@ -96,23 +96,30 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 		{
 			merged = MergeTrees(this, a, b);
 
-			//if the original and merged, check to see if mergeable of same type, and if so, interpolate
-			if(merged != nullptr && a != nullptr && b != nullptr)
+			//if the original and merged, check to see if mergeable of same type,
+			// and if so and similarMixChance is large enough, interpolate
+			if(merged != nullptr && a != nullptr && b != nullptr && similarMixChance > 0)
 			{
 				if(merged->IsNumericOrNull() && a->IsNumericOrNull() && b->IsNumericOrNull())
 				{
-					double a_value = a->GetNumberValue();
-					double b_value = b->GetNumberValue();
-					double mixed_value = MixNumberValues(a_value, b_value, fractionA, fractionB);
-					merged->SetTypeViaNumberValue(mixed_value);
+					if(randomStream.Rand() < similarMixChance)
+					{
+						double a_value = a->GetNumberValue();
+						double b_value = b->GetNumberValue();
+						double mixed_value = MixNumberValues(a_value, b_value, fractionA, fractionB);
+						merged->SetTypeViaNumberValue(mixed_value);
+					}
 				}
 				else if(merged->GetType() == ENT_STRING && a->GetType() == ENT_STRING && b->GetType() == ENT_STRING)
 				{
-					auto a_value = a->GetStringIDReference();
-					auto b_value = b->GetStringIDReference();
-					auto mixed_value = MixStringValues(a_value, b_value,
-						randomStream.CreateOtherStreamViaRand(), fractionA, fractionB);
-					merged->SetStringIDWithReferenceHandoff(mixed_value);
+					if(randomStream.Rand() < similarMixChance)
+					{
+						auto a_value = a->GetStringIDReference();
+						auto b_value = b->GetStringIDReference();
+						auto mixed_value = MixStringValues(a_value, b_value,
+							randomStream.CreateOtherStreamViaRand(), fractionA, fractionB);
+						merged->SetStringIDWithReferenceHandoff(mixed_value);
+					}
 				}
 			}
 		}

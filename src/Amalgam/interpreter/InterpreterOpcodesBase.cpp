@@ -1347,9 +1347,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
 	{
 		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
-		auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid, true);
+
+		//when retrieving symbol, only need to retain the node if it's not an immediate type
+		bool retain_node = !immediate_result.AnyImmediateType();
+		auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid, retain_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
-		return EvaluableNodeReference(symbol_value, false);
+		return EvaluableNodeReference::CoerceNonUniqueEvaluableNodeToImmediateIfPossible(symbol_value, immediate_result);
 	}
 	else if(to_lookup->IsAssociativeArray())
 	{

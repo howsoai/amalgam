@@ -172,9 +172,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	if(sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 
-	auto [symbol_value, found] = GetScopeStackSymbol(sid, true);
+	//when retrieving symbol, only need to retain the node if it's not an immediate type
+	bool retain_node = !immediate_result.AnyImmediateType();
+	auto [symbol_value, found] = GetScopeStackSymbol(sid, retain_node);
 	if(found)
-		return EvaluableNodeReference(symbol_value, false);
+		return EvaluableNodeReference::CoerceNonUniqueEvaluableNodeToImmediateIfPossible(symbol_value, immediate_result);
 
 	// if didn't find it in the stack, try it in the labels
 	EntityReadReference cur_entity_ref(curEntity);

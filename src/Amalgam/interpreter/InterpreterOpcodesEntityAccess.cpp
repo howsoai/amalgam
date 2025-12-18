@@ -142,7 +142,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		auto &contained_entities = source_entity->GetContainedEntities();
 
 		//if only looking for how many entities are contained, quickly exit
-		if(immediate_result.ImmediateValue())
+		if(immediate_result.AnyImmediateType())
 			return EvaluableNodeReference(static_cast<double>(contained_entities.size()));
 
 		//new list containing the contained entity ids to return

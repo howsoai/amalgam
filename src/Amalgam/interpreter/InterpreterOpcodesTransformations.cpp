@@ -372,7 +372,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	if(ocn.size() == 1)
 	{
 		//specialized path for immediate result just getting the count
-		if(immediate_result.ImmediateValue())
+		if(immediate_result.AnyImmediateType())
 		{
 			auto list = InterpretNodeForImmediateUse(ocn[0]);
 			if(list == nullptr)

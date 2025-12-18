@@ -665,7 +665,7 @@ public:
 	template<typename T>
 	__forceinline EvaluableNodeReference AllocIfNotImmediate(T value, EvaluableNodeRequestedValueTypes immediate_result)
 	{
-		if(immediate_result.ImmediateValue())
+		if(immediate_result.AnyImmediateType())
 			return EvaluableNodeReference(value);
 		return EvaluableNodeReference(AllocNode(value), true);
 	}

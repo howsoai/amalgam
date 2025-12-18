@@ -1043,7 +1043,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			FastHashMap<StringInternPool::StringID, double> value_weights;
 			entity_caches->ComputeValuesFromMatchingEntities(&cond, matching_ents, value_weights, is_first);
 
-			if(immediate_result.ImmediateValue())
+			if(immediate_result.AnyImmediateType())
 			{
 				double num_results = static_cast<double>(value_weights.size());
 				for(auto &[value, weight] : value_weights)
@@ -1196,7 +1196,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 	//if last query condition is query sample, return each sampled entity id which may include duplicates
 	if(last_query_type == ENT_QUERY_SAMPLE)
 	{
-		if(immediate_result.ImmediateValue())
+		if(immediate_result.AnyImmediateType())
 			return EvaluableNodeReference(static_cast<double>(indices_with_duplicates.size()));
 
 		return CreateListOfStringsIdsFromIteratorAndFunction(indices_with_duplicates, enm, entity_index_to_id);
@@ -1209,7 +1209,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 		if(last_query_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
 		{
-			if(immediate_result.ImmediateValue())
+			if(immediate_result.AnyImmediateType())
 				return EvaluableNodeReference(static_cast<double>(compute_results.size()));
 
 			return CreateListOfNumbersFromIteratorAndFunction(compute_results, enm,
@@ -1221,7 +1221,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			|| last_query_type == ENT_QUERY_ENTITY_CONVICTIONS
 			|| last_query_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 		{
-			if(immediate_result.ImmediateValue())
+			if(immediate_result.AnyImmediateType())
 				return EvaluableNodeReference(static_cast<double>(compute_results.size()));
 
 			return EntityManipulation::ConvertResultsToEvaluableNodes<size_t>(compute_results,
@@ -1230,7 +1230,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		}
 		else //if there are no compute results, return an assoc of the requested labels for each entity
 		{
-			if(immediate_result.ImmediateValue())
+			if(immediate_result.AnyImmediateType())
 				return EvaluableNodeReference(static_cast<double>(matching_ents.size()));
 
 			//return assoc of distances if requested
@@ -1267,7 +1267,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		}
 	}
 
-	if(immediate_result.ImmediateValue())
+	if(immediate_result.AnyImmediateType())
 		return EvaluableNodeReference(static_cast<double>(matching_ents.size()));
 	return CreateListOfStringsIdsFromIteratorAndFunction(matching_ents, enm, entity_index_to_id);
 }

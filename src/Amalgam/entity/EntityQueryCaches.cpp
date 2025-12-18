@@ -27,8 +27,10 @@ bool EntityQueryCaches::DoesCachedConditionMatch(EntityQueryCondition *cond, boo
 	EvaluableNodeType qt = cond->queryType;
 
 	if(qt == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || qt == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
-		|| qt == ENT_QUERY_DISTANCE_CONTRIBUTIONS || qt == ENT_QUERY_ENTITY_CONVICTIONS
-		|| qt == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || qt == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS || qt == ENT_QUERY_ENTITY_KL_DIVERGENCES)
+		|| qt == ENT_QUERY_DISTANCE_CONTRIBUTIONS || qt == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+		|| qt == ENT_QUERY_ENTITY_CONVICTIONS || qt == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+		|| qt == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS || qt == ENT_QUERY_ENTITY_KL_DIVERGENCES
+		|| qt == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 	{
 		//accelerating a p of 0 with the current caches would be a large effort, as everything would have to be
 		// transformed via logarithms and then pValue = 1 applied
@@ -69,10 +71,12 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 		case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
 		case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 		case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
+		case ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
 		case ENT_QUERY_ENTITY_CONVICTIONS:
 		case ENT_QUERY_ENTITY_KL_DIVERGENCES:
 		case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
+		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		{
 			for(auto label : cond->positionLabels)
 			{
@@ -247,11 +251,16 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 		case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
 		case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 		case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
+		case ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		case ENT_QUERY_ENTITY_CONVICTIONS:
 		case ENT_QUERY_ENTITY_KL_DIVERGENCES:
 		case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
 		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
+		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		{
+			//TODO 24867: finish updating this code for cumulative nearest entity weights
+			//TODO 24867: update documentation
+			//TODO 24867: add tests to full_test.amlg
 			//get entity (case) weighting if applicable
 			bool use_entity_weights = (cond->weightLabel != StringInternPool::NOT_A_STRING_ID);
 			size_t weight_column = std::numeric_limits<size_t>::max();
@@ -1013,8 +1022,10 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		case ENT_QUERY_MIN:
 		case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
 		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
+		case ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		case ENT_QUERY_ENTITY_CONVICTIONS:
 		case ENT_QUERY_ENTITY_KL_DIVERGENCES:
+		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		{
 			entity_caches->GetMatchingEntities(&cond, matching_ents, compute_results, is_first, !is_last || !return_query_value);
 			break;
@@ -1228,6 +1239,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 				enm, last_query->returnSortedList, last_query->additionalSortedListLabels,
 				[&contained_entities](auto entity_index) { return contained_entities[entity_index]; });
 		}
+		//TODO 24867: will need else for code for cumulative nearest entity weights
 		else //if there are no compute results, return an assoc of the requested labels for each entity
 		{
 			if(immediate_result)
@@ -1314,10 +1326,12 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 
 		//check for any unsupported operations by brute force; if possible, use query caches, otherwise return null
 		if(conditions[cond_index].queryType == ENT_QUERY_DISTANCE_CONTRIBUTIONS
+			|| conditions[cond_index].queryType == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			|| conditions[cond_index].queryType == ENT_QUERY_ENTITY_CONVICTIONS
 			|| conditions[cond_index].queryType == ENT_QUERY_ENTITY_KL_DIVERGENCES
 			|| conditions[cond_index].queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
-			|| conditions[cond_index].queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)
+			|| conditions[cond_index].queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+			|| conditions[cond_index].queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
 			if(!CanUseQueryCaches(conditions))
 				return EvaluableNodeReference::Null();

@@ -74,23 +74,32 @@ public:
 
 			if(en->IsImmediate())
 			{
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::BOOL))
-					return EvaluableNodeReference(EvaluableNode::ToBool(en));
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NUMBER))
-					return EvaluableNodeReference(EvaluableNode::ToNumber(en));
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID))
-					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en));
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::STRING_ID))
-					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en), true);
-
+				//first check for key strings
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
 					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en, true));
 
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID))
 					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en, true), true);
+
+				//if type matches the usable return type, then return that, otherwise fall back to returning
+				//the node as the caller will know the most appropriate type change to apply
+				auto type = en->GetType();
+				if(type == ENT_BOOL)
+				{
+					if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::BOOL))
+						return EvaluableNodeReference(en->GetBoolValueReference());
+				}
+				else if(type == ENT_NUMBER)
+				{
+					if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NUMBER))
+						return EvaluableNodeReference(en->GetNumberValueReference());
+				}
+				else if(type == ENT_STRING)
+				{
+					if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID)
+							|| immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::STRING_ID))
+						return EvaluableNodeReference(en->GetStringIDReference());
+				}
 			}
 		}
 

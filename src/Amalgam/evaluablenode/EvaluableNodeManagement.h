@@ -78,7 +78,7 @@ public:
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
 					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en, true));
 
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID))
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::KEY_STRING_ID))
 					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en, true), true);
 
 				//if type matches the usable return type, then return that, otherwise fall back to returning

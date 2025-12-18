@@ -1289,7 +1289,7 @@ public:
 		return (static_cast<StorageType>(requestedValueTypes) & ~static_cast<StorageType>(Type::CODE)) != 0;
 	}
 
-	//returns true if an immediates is allowed
+	//returns true if an immediate is allowed
 	constexpr bool ImmediateValue() const noexcept
 	{
 		return requestedValueTypes != Type::NONE;

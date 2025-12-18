@@ -92,10 +92,6 @@ public:
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID))
 					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en, true), true);
 			}
-
-			//if code isn't allowed, then just return null
-			if(!immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::CODE))
-				return EvaluableNodeReference::Null();
 		}
 
 		return EvaluableNodeReference(en, false);

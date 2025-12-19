@@ -1,4 +1,4 @@
-//This library has been edited by Amalgam to reduce memory use
+﻿//This library has been edited by Amalgam to reduce memory use
 // by making _max_load_factor a constant
 // remove the BYTELL_HASH_MAP_AMALGAM_MEM_REDUCTION definition to get
 // the original behavior
@@ -116,16 +116,28 @@ struct sherwood_v8_block
         T data[BlockSize];
     };
 
-    static sherwood_v8_block * empty_block()
-    {
-        static std::array<int8_t, BlockSize> empty_bytes = []
-        {
-            std::array<int8_t, BlockSize> result;
-            result.fill(sherwood_v8_constants<>::magic_for_empty);
-            return result;
-        }();
-        return reinterpret_cast<sherwood_v8_block *>(&empty_bytes);
-    }
+	template<std::size_t... I>
+	static constexpr std::array<std::uint8_t, BlockSize>
+		make_filled_array_impl(std::index_sequence<I...>)
+	{
+		return { ((void)I,
+					static_cast<std::uint8_t>(sherwood_v8_constants<>::magic_for_empty))... };
+	}
+
+	static constexpr std::array<std::uint8_t, BlockSize>
+		make_filled_array()
+	{
+		return make_filled_array_impl(std::make_index_sequence<BlockSize>{});
+	}
+
+	static sherwood_v8_block *empty_block()
+	{
+		alignas(sherwood_v8_block) static constexpr std::array<std::uint8_t, BlockSize>
+			empty_bytes = make_filled_array();
+
+		return reinterpret_cast<sherwood_v8_block *>(
+			const_cast<std::uint8_t *>(&empty_bytes[0]));
+	}
 
     int first_empty_index() const
     {

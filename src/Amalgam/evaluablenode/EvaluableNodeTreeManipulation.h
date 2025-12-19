@@ -48,7 +48,7 @@ constexpr bool operator==(const std::pair<T *, T *> &a, const std::pair<T *, T *
 struct MergeMetricResultsParams
 {
 	EvaluableNode::ReferenceSetType *checked;
-	FastHashMap<std::pair<EvaluableNode *, EvaluableNode *>, MergeMetricResults<EvaluableNode *>> memoizedNodeMergePairs;
+	CompactHashMap<std::pair<EvaluableNode *, EvaluableNode *>, MergeMetricResults<EvaluableNode *>> memoizedNodeMergePairs;
 	bool requireExactMatches;
 };
 

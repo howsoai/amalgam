@@ -259,7 +259,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		{
 			//TODO 24867: finish updating this code for cumulative nearest entity weights
-			//TODO 24867: update documentation
 			//TODO 24867: add tests to full_test.amlg
 			//get entity (case) weighting if applicable
 			bool use_entity_weights = (cond->weightLabel != StringInternPool::NOT_A_STRING_ID);
@@ -1218,7 +1217,8 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 	{
 		auto &contained_entities = container->GetContainedEntities();
 
-		if(last_query_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
+		if(last_query_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
+			|| last_query_type == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
 			if(immediate_result)
 				return EvaluableNodeReference(static_cast<double>(compute_results.size()));
@@ -1230,7 +1230,8 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			|| last_query_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 			|| last_query_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
 			|| last_query_type == ENT_QUERY_ENTITY_CONVICTIONS
-			|| last_query_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
+			|| last_query_type == ENT_QUERY_ENTITY_KL_DIVERGENCES
+			|| last_query_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
 			if(immediate_result)
 				return EvaluableNodeReference(static_cast<double>(compute_results.size()));
@@ -1239,7 +1240,6 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 				enm, last_query->returnSortedList, last_query->additionalSortedListLabels,
 				[&contained_entities](auto entity_index) { return contained_entities[entity_index]; });
 		}
-		//TODO 24867: will need else for code for cumulative nearest entity weights
 		else //if there are no compute results, return an assoc of the requested labels for each entity
 		{
 			if(immediate_result)

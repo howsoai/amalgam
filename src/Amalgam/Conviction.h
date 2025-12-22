@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 //project headers:
 #include "EntityQueriesStatistics.h"
@@ -186,6 +186,129 @@ public:
 	#endif
 		);
 	}
+
+	//placeholder function to implement C++20 functionality around std::atomic_ref<double>
+	//TODO: remove this when migrating to C++20
+	inline double fetch_add_double(double &obj,
+								   double arg,
+								   std::memory_order order = std::memory_order_seq_cst)
+	{
+		//reinterpret as atomic 64-bit integer to support C++17 limitations
+		auto *atomic_u64 = reinterpret_cast<std::atomic<std::uint64_t>*>(&obj);
+
+		std::uint64_t expected = atomic_u64->load(order);
+		for(;;)
+		{
+			double cur_val = *reinterpret_cast<double *>(&expected);
+			double new_val = cur_val + arg;
+			std::uint64_t desired = *reinterpret_cast<std::uint64_t *>(&new_val);
+
+			//try to replace the old bit pattern with the new one.
+			if(atomic_u64->compare_exchange_weak(expected, desired, order, std::memory_order_relaxed))
+				return *reinterpret_cast<double *>(&expected);
+
+			//on failure expected has the new value
+		}
+	}
+
+	inline void ComputeNeighborWeightsForEntities(EntityReferenceSet *entities_to_compute, std::vector<DistanceReferencePair<size_t>> &neighbors_with_weights)
+	{
+		if(entities_to_compute == nullptr)
+			entities_to_compute = knnCache->GetRelevantEntities();
+
+		neighbors_with_weights.clear();
+
+		if(knnCache->GetNumRelevantEntities() == 0)
+			return;
+
+		size_t end_entity_index = knnCache->GetEndEntityIndex();
+
+		auto &entity_probabilities = buffers.baseDistanceProbabilities;
+		entity_probabilities.clear();
+		entity_probabilities.resize(end_entity_index, 0.0);
+
+		IterateOverConcurrentlyIfPossible(*entities_to_compute,
+			[this, &entity_probabilities](auto index, auto entity)
+		{
+			knnCache->GetKnnWithoutCache(entity, numNearestNeighbors, false, buffers.neighbors);
+
+			double total_prob = 0.0;
+			for(auto &n : buffers.neighbors)
+				total_prob += n.distance;
+
+			//modulate total probability based on this entity's weight
+			//and change operation into a multiply since it's faster than a divide
+			double entity_weight = 0.0;
+			distanceTransform->getEntityWeightFunction(entity, entity_weight);
+			double weight_multiplier = entity_weight / total_prob;
+
+			//accumulate neighbor weights
+			for(auto &n : buffers.neighbors)
+				fetch_add_double(entity_probabilities[n.reference], n.distance * weight_multiplier);
+		}
+	#ifdef MULTITHREAD_SUPPORT
+			, runConcurrently
+	#endif
+		);
+
+		//pull together all neighbors with nonzero weight
+		for(size_t i = 0; i < entity_probabilities.size(); i++)
+		{
+			if(entity_probabilities[i] > 0.0)
+				neighbors_with_weights.push_back(DistanceReferencePair(entity_probabilities[i], i));
+		}
+	}
+
+	inline void ComputeNeighborWeightsOnPositions(std::vector<EvaluableNode *> &positions_to_compare, std::vector<DistanceReferencePair<size_t>> &neighbors_with_weights)
+	{
+		neighbors_with_weights.clear();
+		if(knnCache->GetNumRelevantEntities() == 0)
+			return;
+
+		size_t end_entity_index = knnCache->GetEndEntityIndex();
+
+		auto &entity_probabilities = buffers.baseDistanceProbabilities;
+		entity_probabilities.clear();
+		entity_probabilities.resize(end_entity_index, 0.0);
+
+		IterateOverConcurrentlyIfPossible(positions_to_compare,
+			[this, &entity_probabilities](auto index, auto position)
+		{
+			if(!EvaluableNode::IsOrderedArray(position))
+				return;
+
+			CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),
+					buffers.positionValues, buffers.positionValueTypes);
+
+			knnCache->GetKnnWithoutCache(buffers.positionValues, buffers.positionValueTypes,
+				numNearestNeighbors, false, buffers.neighbors);
+
+			double total_prob = 0.0;
+			for(auto &n : buffers.neighbors)
+				total_prob += n.distance;
+
+			//change operation into a multiply since it's faster than a divide
+			double weight_multiplier = 1.0 / total_prob;
+
+			//accumulate neighbor weights
+			for(auto &n : buffers.neighbors)
+				fetch_add_double(entity_probabilities[n.reference], n.distance * weight_multiplier);
+		}
+	#ifdef MULTITHREAD_SUPPORT
+			, runConcurrently
+	#endif
+		);
+
+		//pull together all neighbors with nonzero weight
+		for(size_t i = 0; i < entity_probabilities.size(); i++)
+		{
+			if(entity_probabilities[i] > 0.0)
+				neighbors_with_weights.push_back(DistanceReferencePair(entity_probabilities[i], i));
+		}
+
+		//TODO 24867: add tests to full_test.amlg
+	}
+
 
 	//Like ComputeDistanceContributions, but will populate contribs_out with a value for each of the included_entities, and will set any relevant entity
 	// in the cache but only in included_entities to excluded_entity_distance_contribution_value, which will not be included in the contribs_sum_out

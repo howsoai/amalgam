@@ -163,6 +163,12 @@ public:
 		return relevantIndices->size();
 	}
 
+	//returns the index one past the final entity
+	inline size_t GetEndEntityIndex()
+	{
+		return relevantIndices->GetEndInteger();
+	}
+
 protected:
 	//cache of nearest neighbor results.  The index of cache is the entity, and the corresponding vector are its nearest neighbors.
 	std::vector<std::vector<DistanceReferencePair<size_t>>> cachedNeighbors;

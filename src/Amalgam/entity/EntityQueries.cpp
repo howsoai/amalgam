@@ -712,8 +712,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			minToRetrieve, maxToRetrieve, numToRetrieveMinIncrementalProbability, extraToRetrieve,
 			weightLabel != StringInternPool::NOT_A_STRING_ID, 0.0, weight_function);
 
-		num_to_keep = distance_transform.TransformDistances(begin(entity_values), end(entity_values), returnSortedList);
-		entity_values.resize(num_to_keep);
+		distance_transform.TransformDistances(entity_values, returnSortedList);
 
 		return EntityManipulation::ConvertResultsToEvaluableNodes<Entity *>(entity_values,
 			enm, returnSortedList, additionalSortedListLabels, [](auto entity) { return entity;  });
@@ -776,8 +775,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			minToRetrieve, maxToRetrieve, numToRetrieveMinIncrementalProbability, extraToRetrieve,
 			weightLabel != StringInternPool::NOT_A_STRING_ID, 0.0, weight_function);
 
-		size_t num_to_keep = distance_transform.TransformDistances(begin(entity_values), end(entity_values), returnSortedList);
-		entity_values.resize(num_to_keep);
+		distance_transform.TransformDistances(entity_values, returnSortedList);
 
 		return EntityManipulation::ConvertResultsToEvaluableNodes<Entity *>(entity_values,
 			enm, returnSortedList, additionalSortedListLabels, [](auto entity) { return entity;  });

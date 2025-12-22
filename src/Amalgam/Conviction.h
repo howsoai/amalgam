@@ -232,6 +232,8 @@ public:
 		{
 			knnCache->GetKnnWithoutCache(entity, numNearestNeighbors, false, buffers.neighbors);
 
+			distanceTransform->TransformDistances(buffers.neighbors, false);
+
 			double total_prob = 0.0;
 			for(auto &n : buffers.neighbors)
 				total_prob += n.distance;
@@ -282,6 +284,8 @@ public:
 
 			knnCache->GetKnnWithoutCache(buffers.positionValues, buffers.positionValueTypes,
 				numNearestNeighbors, false, buffers.neighbors);
+
+			distanceTransform->TransformDistances(buffers.neighbors, false);
 
 			double total_prob = 0.0;
 			for(auto &n : buffers.neighbors)

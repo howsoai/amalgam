@@ -372,9 +372,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					}
 				}
 
-				size_t num_to_keep = distance_transform.TransformDistances(
-					begin(compute_results), end(compute_results), cond->returnSortedList);
-				compute_results.resize(num_to_keep);
+				distance_transform.TransformDistances(compute_results, cond->returnSortedList);
 
 				//populate matching_entities if needed
 				if(update_matching_entities)

@@ -216,6 +216,7 @@ public:
 								   double arg)
 	{
 		obj += arg;
+		return obj;
 	}
 #endif
 

@@ -258,8 +258,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
 		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		{
-			//TODO 24867: finish updating this code for cumulative nearest entity weights
-			//TODO 24867: add tests to full_test.amlg
 			//get entity (case) weighting if applicable
 			bool use_entity_weights = (cond->weightLabel != StringInternPool::NOT_A_STRING_ID);
 			size_t weight_column = std::numeric_limits<size_t>::max();
@@ -387,14 +385,17 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 			}
 			else //cond->queryType in ENT_QUERY_DISTANCE_CONTRIBUTIONS, ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS,
-				//ENT_QUERY_ENTITY_CONVICTIONS, ENT_QUERY_ENTITY_KL_DIVERGENCES, ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+				//ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS,  ENT_QUERY_ENTITY_CONVICTIONS,
+				//ENT_QUERY_ENTITY_KL_DIVERGENCES, ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE,
+				//ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			{
 				BitArrayIntegerSet *ents_to_compute_ptr = nullptr; //if nullptr, compute is done on all entities in the cache
 
 				if(cond->queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
 					|| cond->queryType == ENT_QUERY_ENTITY_CONVICTIONS
 					|| cond->queryType == ENT_QUERY_ENTITY_KL_DIVERGENCES
-					|| cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
+					|| cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+					|| cond->queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 				{
 					if(cond->existLabels.size() != 0) //if subset is specified, set ents_to_compute_ptr to set of ents_to_compute
 					{
@@ -447,6 +448,13 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				{
 					conviction_processor.ComputeDistanceContributionsOnPositions(*cond->positionsToCompare, results_buffer);
 				}
+				else if(cond->queryType == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
+				{
+					conviction_processor.ComputeNeighborWeightsOnPositions(*cond->positionsToCompare, compute_results);
+
+					//early exit because don't need to translate distances
+					return;
+				}
 				else if(cond->queryType == ENT_QUERY_ENTITY_CONVICTIONS)
 				{
 					conviction_processor.ComputeCaseKLDivergences(*ents_to_compute_ptr, results_buffer, true, cond->convictionOfRemoval);
@@ -465,9 +473,16 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					//early exit because don't need to translate distances
 					return;
 				}
-				else //ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+				else if(cond->queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)
 				{
 					conviction_processor.ComputeDistanceContributionsWithoutCache(ents_to_compute_ptr, results_buffer);
+				}
+				else //ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+				{
+					conviction_processor.ComputeNeighborWeightsForEntities(ents_to_compute_ptr, compute_results);
+
+					//early exit because don't need to translate distances
+					return;
 				}
 
 				//clear compute_results as it may have been used for intermediate results
@@ -1217,8 +1232,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 	{
 		auto &contained_entities = container->GetContainedEntities();
 
-		if(last_query_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
-			|| last_query_type == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
+		if(last_query_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
 		{
 			if(immediate_result)
 				return EvaluableNodeReference(static_cast<double>(compute_results.size()));
@@ -1228,6 +1242,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		}
 		else if(last_query_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 			|| last_query_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
+			|| last_query_type == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			|| last_query_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
 			|| last_query_type == ENT_QUERY_ENTITY_CONVICTIONS
 			|| last_query_type == ENT_QUERY_ENTITY_KL_DIVERGENCES

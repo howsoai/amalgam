@@ -305,8 +305,6 @@ public:
 			if(entity_probabilities[i] > 0.0)
 				neighbors_with_weights.push_back(DistanceReferencePair(entity_probabilities[i], i));
 		}
-
-		//TODO 24867: add tests to full_test.amlg
 	}
 
 

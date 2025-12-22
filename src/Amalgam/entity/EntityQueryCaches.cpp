@@ -1232,8 +1232,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 	{
 		auto &contained_entities = container->GetContainedEntities();
 
-		if(last_query_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
-			|| last_query_type == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
+		if(last_query_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
 		{
 			if(immediate_result)
 				return EvaluableNodeReference(static_cast<double>(compute_results.size()));
@@ -1243,6 +1242,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		}
 		else if(last_query_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 			|| last_query_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
+			|| last_query_type == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			|| last_query_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
 			|| last_query_type == ENT_QUERY_ENTITY_CONVICTIONS
 			|| last_query_type == ENT_QUERY_ENTITY_KL_DIVERGENCES

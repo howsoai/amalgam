@@ -3317,8 +3317,8 @@
 (print (compute_on_contained_entities (list
   (query_distance_contributions 2 (list "x" "y") [[1 2]] 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234")
  )))
-
-(print "--query_entity_convictions--\n")
+ 
+ (print "--query_entity_cumulative_nearest_entity_weights--\n")
 
  (create_entities "entity1" (lambda
  	(parallel ##alpha 3 ##b 0.17 ##c 1)
@@ -3364,6 +3364,18 @@
  (create_entities "vert5" (lambda
   (parallel ##x 2 ##y 1 ##object 2)
  ) )
+
+ (print "neighbor entity weights:\n" (compute_on_contained_entities (list
+	(query_entity_cumulative_nearest_entity_weights 2 (list "alpha" "b" "c") (null) 0.5 (null) (list 0 0 1) )
+ )))
+
+ (print "--query_cumulative_nearest_entity_weights--\n")
+
+ (print "neighbor entity weights:\n" (compute_on_contained_entities (list
+ (query_cumulative_nearest_entity_weights 2 (list "alpha" "b" "c") [ [3 0.18 1] ] 0.5 (null) (list 0 0 1) )
+ )))
+
+(print "--query_entity_convictions--\n")
 
  (print "case convictions:\n" (compute_on_contained_entities (list
  (query_exists "alpha")

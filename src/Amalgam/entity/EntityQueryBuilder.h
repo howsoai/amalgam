@@ -724,7 +724,7 @@ namespace EntityQueryBuilder
 			|| condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
 			|| condition_type == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
-			|| condition_type == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
+			|| condition_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{

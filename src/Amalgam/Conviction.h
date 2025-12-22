@@ -187,9 +187,10 @@ public:
 		);
 	}
 
+#ifdef MULTITHREAD_SUPPORT
 	//placeholder function to implement C++20 functionality around std::atomic_ref<double>
 	//TODO: remove this when migrating to C++20
-	inline double fetch_add_double(double &obj,
+	static inline double fetch_add_double(double &obj,
 								   double arg,
 								   std::memory_order order = std::memory_order_seq_cst)
 	{
@@ -210,6 +211,13 @@ public:
 			//on failure expected has the new value
 		}
 	}
+#else
+	static inline double fetch_add_double(double &obj,
+								   double arg)
+	{
+		obj += arg;
+	}
+#endif
 
 	inline void ComputeNeighborWeightsForEntities(EntityReferenceSet *entities_to_compute, std::vector<DistanceReferencePair<size_t>> &neighbors_with_weights)
 	{

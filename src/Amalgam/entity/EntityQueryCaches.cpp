@@ -451,6 +451,12 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				else if(cond->queryType == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 				{
 					conviction_processor.ComputeNeighborWeightsOnPositions(*cond->positionsToCompare, compute_results);
+					if(cond->returnSortedList)
+					{
+						std::sort(begin(compute_results), end(compute_results),
+							[](auto a, auto b) {return a.distance < b.distance; }
+						);
+					}
 
 					//early exit because don't need to translate distances
 					return;
@@ -480,6 +486,13 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				else //ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 				{
 					conviction_processor.ComputeNeighborWeightsForEntities(ents_to_compute_ptr, compute_results);
+
+					if(cond->returnSortedList)
+					{
+						std::sort(begin(compute_results), end(compute_results),
+							[](auto a, auto b) {return a.distance < b.distance; }
+						);
+					}
 
 					//early exit because don't need to translate distances
 					return;

@@ -190,14 +190,14 @@ public:
 #ifdef MULTITHREAD_SUPPORT
 	//placeholder function to implement C++20 functionality around std::atomic_ref<double>
 	//TODO: remove this when migrating to C++20
-	static inline double fetch_add_double(double &obj,
+	static inline double fetch_add_double(double &atomic_value,
 								   double arg,
 								   std::memory_order order = std::memory_order_seq_cst)
 	{
 		//reinterpret as atomic 64-bit integer to support C++17 limitations
-		auto *atomic_u64 = reinterpret_cast<std::atomic<std::uint64_t>*>(&obj);
+		auto *atomic_ptr = reinterpret_cast<std::atomic<std::uint64_t>*>(&atomic_value);
 
-		std::uint64_t expected = atomic_u64->load(order);
+		std::uint64_t expected = atomic_ptr->load(order);
 		for(;;)
 		{
 			double cur_val = *reinterpret_cast<double *>(&expected);
@@ -205,22 +205,25 @@ public:
 			std::uint64_t desired = *reinterpret_cast<std::uint64_t *>(&new_val);
 
 			//try to replace the old bit pattern with the new one.
-			if(atomic_u64->compare_exchange_weak(expected, desired, order, std::memory_order_relaxed))
+			if(atomic_ptr->compare_exchange_weak(expected, desired, order, std::memory_order_relaxed))
 				return *reinterpret_cast<double *>(&expected);
 
 			//on failure expected has the new value
 		}
 	}
 #else
-	static inline double fetch_add_double(double &obj,
+	static inline double fetch_add_double(double &value,
 								   double arg)
 	{
-		obj += arg;
-		return obj;
+		value += arg;
+		return value;
 	}
 #endif
 
-	inline void ComputeNeighborWeightsForEntities(EntityReferenceSet *entities_to_compute, std::vector<DistanceReferencePair<size_t>> &neighbors_with_weights)
+	//computes cumulative neighbor influence weights for all entities_to_compute and returns the
+	//neighbor weights in neighbors_with_weights
+	inline void ComputeNeighborWeightsForEntities(EntityReferenceSet *entities_to_compute,
+		std::vector<DistanceReferencePair<size_t>> &neighbors_with_weights)
 	{
 		if(entities_to_compute == nullptr)
 			entities_to_compute = knnCache->GetRelevantEntities();
@@ -270,7 +273,10 @@ public:
 		}
 	}
 
-	inline void ComputeNeighborWeightsOnPositions(std::vector<EvaluableNode *> &positions_to_compare, std::vector<DistanceReferencePair<size_t>> &neighbors_with_weights)
+	//computes cumulative neighbor influence weights for all positions_to_compare and returns the
+	//neighbor weights in neighbors_with_weights
+	inline void ComputeNeighborWeightsOnPositions(std::vector<EvaluableNode *> &positions_to_compare,
+		std::vector<DistanceReferencePair<size_t>> &neighbors_with_weights)
 	{
 		neighbors_with_weights.clear();
 		if(knnCache->GetNumRelevantEntities() == 0)

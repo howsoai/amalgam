@@ -454,7 +454,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					if(cond->returnSortedList)
 					{
 						std::sort(begin(compute_results), end(compute_results),
-							[](auto a, auto b) {return a.distance < b.distance; }
+							[](auto a, auto b) {return a.distance > b.distance; }
 						);
 					}
 
@@ -490,7 +490,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					if(cond->returnSortedList)
 					{
 						std::sort(begin(compute_results), end(compute_results),
-							[](auto a, auto b) {return a.distance < b.distance; }
+							[](auto a, auto b) {return a.distance > b.distance; }
 						);
 					}
 

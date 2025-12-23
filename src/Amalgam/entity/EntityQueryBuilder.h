@@ -39,9 +39,10 @@ namespace EntityQueryBuilder
 	constexpr static bool IsEvaluableNodeTypeDistanceQuery(EvaluableNodeType t)
 	{
 		return (t == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || t == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
-			|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_CONVICTIONS
-			|| t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
-			|| t == ENT_QUERY_ENTITY_KL_DIVERGENCES
+			|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+			|| t == ENT_QUERY_ENTITY_CONVICTIONS || t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+			|| t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_KL_DIVERGENCES
+			|| t == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			);
 	}
 
@@ -570,7 +571,8 @@ namespace EntityQueryBuilder
 		if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS
 			|| condition_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
 			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
-			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
+			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES
+			|| condition_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
 			EvaluableNode *entities = ocn[POSITION_OR_ENTITIES];
 			if(EvaluableNode::IsOrderedArray(entities))
@@ -581,7 +583,8 @@ namespace EntityQueryBuilder
 					cur_condition->existLabels.push_back(EvaluableNode::ToStringIDIfExists(entity_en));
 			}
 		}
-		else if(condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
+		else if(condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
+			|| condition_type == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
 			EvaluableNode *positions = ocn[POSITION_OR_ENTITIES];
 			if(!EvaluableNode::IsOrderedArray(positions))
@@ -724,7 +727,9 @@ namespace EntityQueryBuilder
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 			|| condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 			|| condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
-			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)
+			|| condition_type == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+			|| condition_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{

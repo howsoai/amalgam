@@ -216,10 +216,12 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			return true;
 
 		case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
+		case ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		case ENT_QUERY_ENTITY_CONVICTIONS:
 		case ENT_QUERY_ENTITY_KL_DIVERGENCES:
 		case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
 		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
+		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 			return false;
 
 		default:
@@ -710,8 +712,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			minToRetrieve, maxToRetrieve, numToRetrieveMinIncrementalProbability, extraToRetrieve,
 			weightLabel != StringInternPool::NOT_A_STRING_ID, 0.0, weight_function);
 
-		num_to_keep = distance_transform.TransformDistances(begin(entity_values), end(entity_values), returnSortedList);
-		entity_values.resize(num_to_keep);
+		distance_transform.TransformDistances(entity_values, returnSortedList);
 
 		return EntityManipulation::ConvertResultsToEvaluableNodes<Entity *>(entity_values,
 			enm, returnSortedList, additionalSortedListLabels, [](auto entity) { return entity;  });
@@ -774,8 +775,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			minToRetrieve, maxToRetrieve, numToRetrieveMinIncrementalProbability, extraToRetrieve,
 			weightLabel != StringInternPool::NOT_A_STRING_ID, 0.0, weight_function);
 
-		size_t num_to_keep = distance_transform.TransformDistances(begin(entity_values), end(entity_values), returnSortedList);
-		entity_values.resize(num_to_keep);
+		distance_transform.TransformDistances(entity_values, returnSortedList);
 
 		return EntityManipulation::ConvertResultsToEvaluableNodes<Entity *>(entity_values,
 			enm, returnSortedList, additionalSortedListLabels, [](auto entity) { return entity;  });

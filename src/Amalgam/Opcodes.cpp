@@ -290,6 +290,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS, "query_entity_distance_contributions");
 	EmplaceNodeTypeString(ENT_QUERY_ENTITY_KL_DIVERGENCES, "query_entity_kl_divergences");
 	EmplaceNodeTypeString(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS, "query_entity_cumulative_nearest_entity_weights");
+	EmplaceNodeTypeString(ENT_QUERY_ENTITY_CLUSTERS, "query_entity_clusters");
 
 	//entity access
 	EmplaceNodeTypeString(ENT_CONTAINS_LABEL, "contains_label");

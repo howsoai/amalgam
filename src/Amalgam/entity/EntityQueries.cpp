@@ -222,6 +222,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 		case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
 		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
 		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
+		case ENT_QUERY_ENTITY_CLUSTERS:
 			return false;
 
 		default:

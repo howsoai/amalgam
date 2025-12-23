@@ -2142,6 +2142,7 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS,			0.2},
 	{ENT_QUERY_ENTITY_KL_DIVERGENCES,					0.2},
 	{ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS,0.2},
+	{ENT_QUERY_ENTITY_CLUSTERS,							0.2},
 
 	//entity access
 	{ENT_CONTAINS_LABEL,								0.5},

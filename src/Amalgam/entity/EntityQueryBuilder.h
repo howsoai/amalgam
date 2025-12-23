@@ -42,7 +42,7 @@ namespace EntityQueryBuilder
 			|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			|| t == ENT_QUERY_ENTITY_CONVICTIONS || t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
 			|| t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_KL_DIVERGENCES
-			|| t == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+			|| t == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS || t == ENT_QUERY_ENTITY_CLUSTERS
 			);
 	}
 
@@ -590,6 +590,10 @@ namespace EntityQueryBuilder
 			}
 			cur_condition->positionsToCompare = &positions->GetOrderedChildNodesReference();
 		}
+		else if(condition_type == ENT_QUERY_ENTITY_CLUSTERS)
+		{
+			//TODO 24886: finish this
+		}
 		else //ENT_QUERY_NEAREST_GENERALIZED_DISTANCE or ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 		{
 			//set position
@@ -724,7 +728,8 @@ namespace EntityQueryBuilder
 			|| condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
 			|| condition_type == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
-			|| condition_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
+			|| condition_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+			|| condition_type == ENT_QUERY_ENTITY_CLUSTERS)
 		{
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{

@@ -314,10 +314,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			sbfds.PopulateGeneralizedDistanceEvaluatorFromColumnData(cond->distEvaluator, cond->positionLabels);
 			cond->distEvaluator.InitializeParametersAndFeatureParams(cond->populateOmittedFeatureValues);
 
-			//TODO 24886: finish from here down
-			//TODO 24886: add documentation
-			//TODO 24886: add tests to full_test.amlg
-
 			if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 			{
 
@@ -487,7 +483,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				{
 					conviction_processor.ComputeDistanceContributionsWithoutCache(ents_to_compute_ptr, results_buffer);
 				}
-				else //ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+				else if(cond->queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 				{
 					conviction_processor.ComputeNeighborWeightsForEntities(ents_to_compute_ptr, compute_results);
 
@@ -499,6 +495,14 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					}
 
 					//early exit because don't need to translate distances
+					return;
+				}
+				else //ENT_QUERY_ENTITY_CLUSTERS
+				{
+					//TODO 24886: finish from here down
+					//TODO 24886: add documentation
+					//TODO 24886: add tests to full_test.amlg
+
 					return;
 				}
 

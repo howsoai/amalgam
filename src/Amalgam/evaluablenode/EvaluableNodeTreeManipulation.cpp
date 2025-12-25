@@ -10,7 +10,8 @@
 #include <cmath>
 
 EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream random_stream, EvaluableNodeManager *_enm,
-	double fraction_a, double fraction_b, double similar_mix_chance, size_t max_mix_depth) : NodesMergeMethod(_enm, true, false)
+	double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching)
+	: NodesMergeMethod(_enm, true, false, recursive_matching)
 {
 	randomStream = random_stream;
 
@@ -34,8 +35,7 @@ EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream rando
 	else
 		similarMixChance = std::min(1.0, std::max(-1.0, similar_mix_chance));
 
-	maxMixDepth = max_mix_depth;
-	curMixDepth = 0;
+	recursiveMatching = recursive_matching;
 }
 
 //returns a mix of a and b based on their fractions
@@ -88,83 +88,46 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 		return nullptr;
 
 	EvaluableNode *merged = nullptr;
-	curMixDepth++;
-
-	if(curMixDepth <= maxMixDepth || maxMixDepth == std::numeric_limits<size_t>::max())
+	if(AreMergeable(a, b) || must_merge)
 	{
-		if(AreMergeable(a, b) || must_merge)
-		{
-			merged = MergeTrees(this, a, b);
+		merged = MergeTrees(this, a, b);
 
-			//if the original and merged, check to see if mergeable of same type,
-			// and if so and similarMixChance is large enough, interpolate
-			if(merged != nullptr && a != nullptr && b != nullptr && similarMixChance > 0)
+		//if the original and merged, check to see if mergeable of same type,
+		// and if so and similarMixChance is large enough, interpolate
+		if(merged != nullptr && a != nullptr && b != nullptr && similarMixChance > 0)
+		{
+			if(merged->IsNumericOrNull() && a->IsNumericOrNull() && b->IsNumericOrNull())
 			{
-				if(merged->IsNumericOrNull() && a->IsNumericOrNull() && b->IsNumericOrNull())
+				if(randomStream.Rand() < similarMixChance)
 				{
-					if(randomStream.Rand() < similarMixChance)
-					{
-						double a_value = a->GetNumberValue();
-						double b_value = b->GetNumberValue();
-						double mixed_value = MixNumberValues(a_value, b_value, fractionA, fractionB);
-						merged->SetTypeViaNumberValue(mixed_value);
-					}
-				}
-				else if(merged->GetType() == ENT_STRING && a->GetType() == ENT_STRING && b->GetType() == ENT_STRING)
-				{
-					if(randomStream.Rand() < similarMixChance)
-					{
-						auto a_value = a->GetStringIDReference();
-						auto b_value = b->GetStringIDReference();
-						auto mixed_value = MixStringValues(a_value, b_value,
-							randomStream.CreateOtherStreamViaRand(), fractionA, fractionB);
-						merged->SetStringIDWithReferenceHandoff(mixed_value);
-					}
+					double a_value = a->GetNumberValue();
+					double b_value = b->GetNumberValue();
+					double mixed_value = MixNumberValues(a_value, b_value, fractionA, fractionB);
+					merged->SetTypeViaNumberValue(mixed_value);
 				}
 			}
-		}
-		else if(KeepNonMergeableAInsteadOfB())
-			merged = MergeTrees(this, a, nullptr);
-		else
-			merged = MergeTrees(this, nullptr, b);
-	}
-	else //select one and copy instead of merging
-	{
-		if(KeepNonMergeableAInsteadOfB())
-		{
-			if(a != nullptr)
+			else if(merged->GetType() == ENT_STRING && a->GetType() == ENT_STRING && b->GetType() == ENT_STRING)
 			{
-				auto find_tree_a = references.find(a);
-				if(find_tree_a != end(references))
+				if(randomStream.Rand() < similarMixChance)
 				{
-					merged = find_tree_a->second;
-				}
-				else
-				{
-					merged = enm->DeepAllocCopy(a);
-					references[a] = merged;
-				}
-			}
-		}
-		else
-		{
-			if(b != nullptr)
-			{
-				auto find_tree_b = references.find(b);
-				if(find_tree_b != end(references))
-				{
-					merged = find_tree_b->second;
-				}
-				else
-				{
-					merged = enm->DeepAllocCopy(b);
-					references[b] = merged;
+					auto a_value = a->GetStringIDReference();
+					auto b_value = b->GetStringIDReference();
+					auto mixed_value = MixStringValues(a_value, b_value,
+						randomStream.CreateOtherStreamViaRand(), fractionA, fractionB);
+					merged->SetStringIDWithReferenceHandoff(mixed_value);
 				}
 			}
 		}
 	}
+	else if(KeepNonMergeableAInsteadOfB())
+	{
+		merged = MergeTrees(this, a, nullptr);
+	}
+	else
+	{
+		merged = MergeTrees(this, nullptr, b);
+	}
 
-	curMixDepth--;
 	return merged;
 }
 
@@ -247,20 +210,20 @@ EvaluableNodeTreeManipulation::StringsMixMethodUtf8::StringsMixMethodUtf8(Random
 
 EvaluableNode *EvaluableNodeTreeManipulation::IntersectTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2)
 {
-	NodesMergeMethod mm(enm, false, true);
+	NodesMergeMethod mm(enm, false, true, false);
 	return mm.MergeValues(tree1, tree2);
 }
 
 EvaluableNode *EvaluableNodeTreeManipulation::UnionTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2)
 {
-	NodesMergeMethod mm(enm, true, true);
+	NodesMergeMethod mm(enm, true, true, false);
 	return mm.MergeValues(tree1, tree2);
 }
 
 EvaluableNode *EvaluableNodeTreeManipulation::MixTrees(RandomStream random_stream, EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
-	double fraction_a, double fraction_b, double similar_mix_chance, size_t max_mix_depth)
+	double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching)
 {
-	NodesMixMethod mm(random_stream, enm, fraction_a, fraction_b, similar_mix_chance, max_mix_depth);
+	NodesMixMethod mm(random_stream, enm, fraction_a, fraction_b, similar_mix_chance, recursive_matching);
 	return mm.MergeValues(tree1, tree2);
 }
 
@@ -909,87 +872,90 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		}
 	}
 
-	//if not exact match of nodes and all child nodes, then check all child nodes for better submatches
-	if(!commonality.exactMatch)
+	if(mmrp.recursiveMatching)
 	{
-		if(tree1_ordered_nodes_size > 0)
+		//if not exact match of nodes and all child nodes, then check all child nodes for better submatches
+		if(!commonality.exactMatch)
 		{
-			for(auto node : tree1->GetOrderedChildNodesReference())
+			if(tree1_ordered_nodes_size > 0)
 			{
-				auto sub_match = NumberOfSharedNodes(node, tree2, mmrp);
-
-				//mark as nonexact match because had to traverse downward,
-				// but preserve whether was an exact match for early stopping
-				bool exact_match = sub_match.exactMatch;
-				sub_match.exactMatch = false;
-				if(sub_match > commonality)
+				for(auto node : tree1->GetOrderedChildNodesReference())
 				{
-					commonality = sub_match;
-					mmrp.memoizedNodeMergePairs.emplace(std::make_pair(node, tree2), commonality);
-					if(exact_match)
-						break;
+					auto sub_match = NumberOfSharedNodes(node, tree2, mmrp);
+
+					//mark as nonexact match because had to traverse downward,
+					// but preserve whether was an exact match for early stopping
+					bool exact_match = sub_match.exactMatch;
+					sub_match.exactMatch = false;
+					if(sub_match > commonality)
+					{
+						commonality = sub_match;
+						mmrp.memoizedNodeMergePairs.emplace(std::make_pair(node, tree2), commonality);
+						if(exact_match)
+							break;
+					}
+				}
+			}
+			else if(tree1_mapped_nodes_size > 0)
+			{
+				for(auto &[node_id, node] : tree1->GetMappedChildNodesReference())
+				{
+					auto sub_match = NumberOfSharedNodes(node, tree2, mmrp);
+
+					//mark as nonexact match because had to traverse downward,
+					// but preserve whether was an exact match for early stopping
+					bool exact_match = sub_match.exactMatch;
+					sub_match.exactMatch = false;
+					if(sub_match > commonality)
+					{
+						commonality = sub_match;
+						mmrp.memoizedNodeMergePairs.emplace(std::make_pair(node, tree2), commonality);
+						if(exact_match)
+							break;
+					}
 				}
 			}
 		}
-		else if(tree1_mapped_nodes_size > 0)
-		{
-			for(auto &[node_id, node] : tree1->GetMappedChildNodesReference())
-			{
-				auto sub_match = NumberOfSharedNodes(node, tree2, mmrp);
 
-				//mark as nonexact match because had to traverse downward,
-				// but preserve whether was an exact match for early stopping
-				bool exact_match = sub_match.exactMatch;
-				sub_match.exactMatch = false;
-				if(sub_match > commonality)
+		//check again for commonality in case exact match was found by iterating via tree1 above
+		if(!commonality.exactMatch)
+		{
+			if(tree2_ordered_nodes_size > 0)
+			{
+				for(auto node : tree2->GetOrderedChildNodesReference())
 				{
-					commonality = sub_match;
-					mmrp.memoizedNodeMergePairs.emplace(std::make_pair(node, tree2), commonality);
-					if(exact_match)
-						break;
+					auto sub_match = NumberOfSharedNodes(tree1, node, mmrp);
+
+					//mark as nonexact match because had to traverse downward,
+					// but preserve whether was an exact match for early stopping
+					bool exact_match = sub_match.exactMatch;
+					sub_match.exactMatch = false;
+					if(sub_match > commonality)
+					{
+						commonality = sub_match;
+						mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, node), commonality);
+						if(exact_match)
+							break;
+					}
 				}
 			}
-		}
-	}
-
-	//check again for commonality in case exact match was found by iterating via tree1 above
-	if(!commonality.exactMatch)
-	{
-		if(tree2_ordered_nodes_size > 0)
-		{
-			for(auto node : tree2->GetOrderedChildNodesReference())
+			else if(tree2_mapped_nodes_size > 0)
 			{
-				auto sub_match = NumberOfSharedNodes(tree1, node, mmrp);
-
-				//mark as nonexact match because had to traverse downward,
-				// but preserve whether was an exact match for early stopping
-				bool exact_match = sub_match.exactMatch;
-				sub_match.exactMatch = false;
-				if(sub_match > commonality)
+				for(auto &[node_id, node] : tree2->GetMappedChildNodesReference())
 				{
-					commonality = sub_match;
-					mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, node), commonality);
-					if(exact_match)
-						break;
-				}
-			}
-		}
-		else if(tree2_mapped_nodes_size > 0)
-		{
-			for(auto &[node_id, node] : tree2->GetMappedChildNodesReference())
-			{
-				auto sub_match = NumberOfSharedNodes(tree1, node, mmrp);
+					auto sub_match = NumberOfSharedNodes(tree1, node, mmrp);
 
-				//mark as nonexact match because had to traverse downward,
-				// but preserve whether was an exact match for early stopping
-				bool exact_match = sub_match.exactMatch;
-				sub_match.exactMatch = false;
-				if(sub_match > commonality)
-				{
-					commonality = sub_match;
-					mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, node), commonality);
-					if(exact_match)
-						break;
+					//mark as nonexact match because had to traverse downward,
+					// but preserve whether was an exact match for early stopping
+					bool exact_match = sub_match.exactMatch;
+					sub_match.exactMatch = false;
+					if(sub_match > commonality)
+					{
+						commonality = sub_match;
+						mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, node), commonality);
+						if(exact_match)
+							break;
+					}
 				}
 			}
 		}

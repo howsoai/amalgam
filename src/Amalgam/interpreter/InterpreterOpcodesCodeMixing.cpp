@@ -78,12 +78,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 	if(ocn.size() > 2)
 		use_string_edit_distance = InterpretNodeIntoBoolValue(ocn[2]);
 
+	bool recursive_matching = true;
+	if(ocn.size() > 3)
+		recursive_matching = InterpretNodeIntoBoolValue(ocn[3]);
+
 	//calculate edit distance based commonality if string edit distance true and both args are string literals
 	if(use_string_edit_distance && (ocn[0]->GetType() == ENT_STRING && ocn[1]->GetType() == ENT_STRING))
 	{
 		size_t s1_len = 0;
 		size_t s2_len = 0;
-		auto edit_distance = EvaluableNodeTreeManipulation::EditDistance(ocn[0]->GetStringValue(), ocn[1]->GetStringValue(), s1_len, s2_len);
+		auto edit_distance = EvaluableNodeTreeManipulation::EditDistance(
+			ocn[0]->GetStringValue(), ocn[1]->GetStringValue(), s1_len, s2_len);
 		auto commonality = static_cast<double>(std::max(s1_len, s2_len) - edit_distance);
 		return AllocReturn(commonality, immediate_result);
 	}
@@ -93,7 +98,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 	auto node_stack = CreateOpcodeStackStateSaver(tree1);
 
 	auto tree2 = InterpretNodeForImmediateUse(ocn[1]);
-	auto results = EvaluableNodeTreeManipulation::NumberOfSharedNodes(tree1, tree2);
+	auto results = EvaluableNodeTreeManipulation::NumberOfSharedNodes(tree1, tree2, false, recursive_matching);
 
 	node_stack.PopEvaluableNode();
 
@@ -114,6 +119,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 	if(ocn.size() > 2)
 		use_string_edit_distance = InterpretNodeIntoBoolValue(ocn[2]);
 
+	bool recursive_matching = true;
+	if(ocn.size() > 3)
+		recursive_matching = InterpretNodeIntoBoolValue(ocn[3]);
+
 	//otherwise, treat both as nodes and calculate node edit distance
 	auto tree1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(tree1);
@@ -126,11 +135,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 		&& tree1 != nullptr && tree2 != nullptr
 		&& (tree1->GetType() == ENT_STRING && tree2->GetType() == ENT_STRING))
 	{
-		edit_distance = static_cast<double>(EvaluableNodeTreeManipulation::EditDistance(tree1->GetStringValue(), tree2->GetStringValue()));
+		edit_distance = static_cast<double>(EvaluableNodeTreeManipulation::EditDistance(
+			tree1->GetStringValue(), tree2->GetStringValue()));
 	}
 	else
 	{
-		edit_distance = EvaluableNodeTreeManipulation::EditDistance(tree1, tree2);
+		edit_distance = EvaluableNodeTreeManipulation::EditDistance(tree1, tree2, false, recursive_matching);
 	}
 
 	node_stack.PopEvaluableNode();
@@ -244,13 +254,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 			similar_mix_chance = new_value;
 	}
 
-	size_t max_mix_depth = std::numeric_limits<size_t>::max();
+	bool recursive_matching = true;
 	if(ocn.size() > 5)
-	{
-		double new_value = InterpretNodeIntoNumberValue(ocn[5]);
-		if(new_value > 0 && new_value < max_mix_depth)
-			max_mix_depth = static_cast<size_t>(new_value);
-	}
+		recursive_matching = InterpretNodeIntoBoolValue(ocn[5]);
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(n1);
@@ -258,7 +264,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::MixTrees(randomStream.CreateOtherStreamViaRand(),
-		evaluableNodeManager, n1, n2, blend1, blend2, similar_mix_chance, max_mix_depth);
+		evaluableNodeManager, n1, n2, blend1, blend2, similar_mix_chance, recursive_matching);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(n1);
@@ -430,7 +436,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(Eva
 	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
-	double edit_distance = EntityManipulation::EditDistance(source_entity_1, source_entity_2);
+	double edit_distance = EntityManipulation::EditDistance(source_entity_1, source_entity_2, true, false);
 	return AllocReturn(edit_distance, immediate_result);
 }
 

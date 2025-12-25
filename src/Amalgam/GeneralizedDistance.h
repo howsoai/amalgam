@@ -942,7 +942,8 @@ public:
 
 	//computes the difference between a and b given their types and the distance_type and the feature difference type
 	__forceinline static double ComputeDifference(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
-		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, GeneralizedDistanceEvaluator::FeatureDifferenceType feature_type)
+		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type,
+		GeneralizedDistanceEvaluator::FeatureDifferenceType feature_type)
 	{
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC)

@@ -12,8 +12,10 @@ public:
 	class EntitiesMergeMethod : public Merger<Entity *>
 	{
 	public:
-		constexpr EntitiesMergeMethod(Interpreter *_interpreter, bool keep_all_of_both)
-			: interpreter(_interpreter), keepAllOfBoth(keep_all_of_both)
+		constexpr EntitiesMergeMethod(Interpreter *_interpreter,
+			bool keep_all_of_both, bool require_exact_matches, bool recursive_matching)
+			: interpreter(_interpreter), keepAllOfBoth(keep_all_of_both),
+			requireExactMatches(require_exact_matches), recursiveMatching(recursive_matching)
 		{	}
 
 		virtual MergeMetricResults<Entity *> MergeMetric(Entity *a, Entity *b)
@@ -43,10 +45,18 @@ public:
 		virtual bool AreMergeable(Entity *a, Entity *b)
 		{	return keepAllOfBoth;	}
 
+		constexpr bool RequireExactMatches()
+		{	return requireExactMatches;		}
+
+		constexpr bool RecursiveMatching()
+		{	return recursiveMatching;		}
+
 		Interpreter *interpreter;
 
 	protected:
 		bool keepAllOfBoth;
+		bool requireExactMatches;
+		bool recursiveMatching;
 	};
 
 	//functionality to difference two Entities
@@ -55,7 +65,7 @@ public:
 	{
 	public:
 		inline EntitiesMergeForDifferenceMethod(Interpreter *_interpreter)
-			: EntitiesMergeMethod(_interpreter, false)
+			: EntitiesMergeMethod(_interpreter, false, true, false)
 		{	}
 
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge = false);
@@ -78,7 +88,7 @@ public:
 	{
 	public:
 		EntitiesMixMethod(Interpreter *_interpreter,
-			double fraction_a, double fraction_b, double similar_mix_chance, size_t max_mix_depth,
+			double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching,
 			double fraction_entities_to_mix);
 
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge);
@@ -104,7 +114,6 @@ public:
 		double fractionAOrB;
 		double fractionAInsteadOfB;
 		double similarMixChance;
-		size_t maxMixDepth;
 		double fractionEntitiesToMix;
 	};
 
@@ -121,10 +130,12 @@ public:
 		double fraction_entities_to_mix);
 
 	//Computes the total number of nodes in both trees that are equal
-	static MergeMetricResults<Entity *> NumberOfSharedNodes(Entity *entity1, Entity *entity2);
+	static MergeMetricResults<Entity *> NumberOfSharedNodes(Entity *entity1, Entity *entity2,
+		bool require_exact_matches = false, bool recursive_matching = true);
 
 	//computes the edit distance between the two entities
-	static double EditDistance(Entity *entity1, Entity *entity2);
+	static double EditDistance(Entity *entity1, Entity *entity2,
+		bool require_exact_matches = false, bool recursive_matching = true);
 
 	static Entity *MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
 		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *operation_type);

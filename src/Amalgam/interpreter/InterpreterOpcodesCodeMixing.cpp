@@ -417,11 +417,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(Evalu
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
+	bool recursive_matching = true;
+	if(ocn.size() > 2)
+		recursive_matching = InterpretNodeIntoBoolValue(ocn[2]);
+
 	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
 	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto commonality = EntityManipulation::NumberOfSharedNodes(source_entity_1, source_entity_2);
+	auto commonality = EntityManipulation::NumberOfSharedNodes(source_entity_1, source_entity_2, false, recursive_matching);
 	return AllocReturn(commonality.commonality, immediate_result);
 }
 
@@ -432,11 +436,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(Eva
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
+	bool recursive_matching = true;
+	if(ocn.size() > 2)
+		recursive_matching = InterpretNodeIntoBoolValue(ocn[2]);
+
 	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
 	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
-	double edit_distance = EntityManipulation::EditDistance(source_entity_1, source_entity_2, true, false);
+	double edit_distance = EntityManipulation::EditDistance(source_entity_1, source_entity_2, false, recursive_matching);
 	return AllocReturn(edit_distance, immediate_result);
 }
 

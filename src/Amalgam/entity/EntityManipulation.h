@@ -20,7 +20,7 @@ public:
 
 		virtual MergeMetricResults<Entity *> MergeMetric(Entity *a, Entity *b)
 		{
-			return NumberOfSharedNodes(a, b);
+			return NumberOfSharedNodes(a, b, requireExactMatches, recursiveMatching);
 		}
 
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge = false);

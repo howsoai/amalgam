@@ -393,6 +393,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_continuous_number, "continuous_number");
 	EmplaceStaticString(ENBISI_continuous_number_cyclic, "continuous_number_cyclic");
 	EmplaceStaticString(ENBISI_continuous_string, "continuous_string");
+	EmplaceStaticString(ENBISI_continuous_code_no_recursive_matching, "continuous_code_no_recursive_matching");
 	EmplaceStaticString(ENBISI_continuous_code, "continuous_code");
 
 	//distance parameter values

@@ -35,6 +35,10 @@ public:
 		FDT_CONTINUOUS_NUMBER_CYCLIC,
 		//edit distance between strings
 		FDT_CONTINUOUS_STRING,
+		//continuous measures of the number of nodes different between two sets of code,
+		// but it will only attempt to merge the two at the same level, which yield better
+		// results if the data structures are common, and additionally will be much faster
+		FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING,
 		//continuous measures of the number of nodes different between two sets of code
 		FDT_CONTINUOUS_CODE,
 	};
@@ -996,7 +1000,7 @@ public:
 			return std::numeric_limits<double>::quiet_NaN();
 		}
 
-		//everything below is for feature_type == FDT_CONTINUOUS_CODE
+		//everything below is for feature_type == FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING or FDT_CONTINUOUS_CODE
 
 		if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 			return 1.0 - EvaluableNodeTreeManipulation::CommonalityBetweenNumbers(a.number, b.number);
@@ -1015,7 +1019,7 @@ public:
 			if(b_type != ENIVT_CODE)
 				return std::max(1.0, static_cast<double>(EvaluableNode::GetDeepSize(a.code)));
 
-			return EvaluableNodeTreeManipulation::EditDistance(a.code, b.code);
+			return EvaluableNodeTreeManipulation::EditDistance(a.code, b.code, false, feature_type == FDT_CONTINUOUS_CODE);
 		}
 
 		//different immediate types
@@ -1207,6 +1211,10 @@ public:
 		EFDT_NOMINAL_CODE,
 		//edit distance between strings
 		EFDT_CONTINUOUS_STRING,
+		//continuous measures of the number of nodes different between two sets of code,
+		// but it will only attempt to merge the two at the same level, which yield better
+		// results if the data structures are common, and additionally will be much faster
+		EFDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING,
 		//continuous measures of the number of nodes different between two sets of code
 		EFDT_CONTINUOUS_CODE,
 	};

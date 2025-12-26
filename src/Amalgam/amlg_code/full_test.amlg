@@ -2941,6 +2941,12 @@
 	))
   )
 
+  (print "6: "
+	(contained_entities "TestContainerSimilarCode" (list
+		(query_nearest_generalized_distance 4 (list "x" "y" ) (list 1 (list (list 1 2))) 1 (list 1 1) (list "continuous_number" "continuous_code_no_recursive_matching") (null) (null) (null) 1)
+	))
+  )
+
  (print "--query_max--\n")
  (print (contained_entities "TestContainerExec" (list
 		(query_max "x" 3)

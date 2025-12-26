@@ -617,13 +617,16 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 	if(mutation_weights != nullptr && !mutation_weights->empty())
 		rand_mutation_type.Initialize(*mutation_weights, true);
 
-	MutationParameters mp(interpreter, enm, mutation_rate, &strings, operation_type_wrs.IsInitialized() ? &operation_type_wrs : &evaluableNodeTypeRandomStream, rand_mutation_type.IsInitialized() ? &rand_mutation_type : &mutationOperationTypeRandomStream);
+	MutationParameters mp(interpreter, enm, mutation_rate, &strings,
+		operation_type_wrs.IsInitialized() ? &operation_type_wrs : &evaluableNodeTypeRandomStream,
+		rand_mutation_type.IsInitialized() ? &rand_mutation_type : &mutationOperationTypeRandomStream);
 	EvaluableNode *ret = MutateTree(mp, tree);
 
 	return ret;
 }
 
-void EvaluableNodeTreeManipulation::ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace)
+void EvaluableNodeTreeManipulation::ReplaceStringsInTree(EvaluableNode *tree,
+	CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace)
 {
 	EvaluableNode::ReferenceSetType checked;
 	ReplaceStringsInTree(tree, to_replace, checked);
@@ -637,8 +640,8 @@ EvaluableNodeType EvaluableNodeTreeManipulation::GetRandomEvaluableNodeType(Rand
 	return evaluableNodeTypeRandomStream.WeightedDiscreteRand(*rs);
 }
 
-MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfSharedNodes(EvaluableNode *tree1, EvaluableNode *tree2,
-	MergeMetricResultsParams &mmrp)
+MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfSharedNodes(
+	EvaluableNode *tree1, EvaluableNode *tree2, MergeMetricResultsParams &mmrp)
 {
 	if(tree1 == nullptr && tree2 == nullptr)
 		return MergeMetricResults(1.0, tree1, tree2, false, true);

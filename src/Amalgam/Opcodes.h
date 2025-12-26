@@ -762,6 +762,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_continuous_number,
 	ENBISI_continuous_number_cyclic,
 	ENBISI_continuous_string,
+	ENBISI_continuous_code_no_recursive_matching,
 	ENBISI_continuous_code,
 
 	//distance parameter values

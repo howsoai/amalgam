@@ -505,7 +505,8 @@ double EntityManipulation::EditDistance(Entity *entity1, Entity *entity2,
 	if(entity2 != nullptr)
 		entity_2_size = static_cast<double>(entity2->GetDeepSizeInNodes());
 
-	//find the distance to edit from tree1 to shared, then from shared to tree_2.  Shared is the smallest, so subtract from each.
+	//find the distance to edit from tree1 to shared, then from shared to tree_2
+	//shared is the smallest, so subtract from each
 	return (entity_1_size - shared_nodes.commonality) + (entity_2_size - shared_nodes.commonality);
 }
 

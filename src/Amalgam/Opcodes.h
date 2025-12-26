@@ -625,8 +625,9 @@ constexpr bool DoesEvaluableNodeTypeCreateScope(EvaluableNodeType t)
 {
 	return (t == ENT_CALL || t == ENT_CALL_SANDBOXED || t == ENT_WHILE || t == ENT_LET || t == ENT_REPLACE
 		|| t == ENT_RANGE || t == ENT_REWRITE || t == ENT_MAP || t == ENT_FILTER || t == ENT_WEAVE
-		|| t == ENT_REDUCE || t == ENT_SORT || t == ENT_ASSOCIATE || t == ENT_ZIP || t == ENT_LIST
-		|| t == ENT_ASSOC || t == ENT_CALL_ENTITY || t == ENT_CALL_ENTITY_GET_CHANGES || t == ENT_CALL_CONTAINER
+		|| t == ENT_REDUCE || t == ENT_SORT || t == ENT_ASSOCIATE || t == ENT_ZIP
+		|| t == ENT_LIST || t == ENT_UNORDERED_LIST || t == ENT_ASSOC
+		|| t == ENT_CALL_ENTITY || t == ENT_CALL_ENTITY_GET_CHANGES || t == ENT_CALL_CONTAINER
 		);
 }
 
@@ -653,7 +654,7 @@ constexpr bool IsEvaluableNodeTypeQuery(EvaluableNodeType t)
 constexpr bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType t)
 {
 	return (t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING
-		|| t == ENT_NULL || t == ENT_LIST || t == ENT_ASSOC
+		|| t == ENT_NULL || t == ENT_LIST || t == ENT_UNORDERED_LIST || t == ENT_ASSOC
 		|| t == ENT_CONCLUDE || t == ENT_RETURN
 		|| IsEvaluableNodeTypeQuery(t));
 }

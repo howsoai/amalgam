@@ -166,18 +166,6 @@ bool EntityManipulation::EntitiesMixMethod::AreMergeable(Entity *a, Entity *b)
 	return interpreter->randomStream.Rand() < fractionEntitiesToMix;
 }
 
-Entity *EntityManipulation::IntersectEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2)
-{
-	EntitiesMergeMethod mm(interpreter, false, true, false);
-	return mm.MergeValues(entity1, entity2);
-}
-
-Entity *EntityManipulation::UnionEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2)
-{
-	EntitiesMergeMethod mm(interpreter, true, true, false);
-	return mm.MergeValues(entity1, entity2);
-}
-
 //returns true if root_entity can be deep copied because all contained entities (recursively)
 // are identical to those matched in entities_included
 // regardless, it will accumulate contained entities examined into top_entities_identical if they
@@ -414,15 +402,6 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 		EvaluableNodeManager::UpdateFlagsForNodeTree(difference_function);
 
 	return EvaluableNodeReference(difference_function, true);
-}
-
-Entity *EntityManipulation::MixEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2,
-	double fractionA, double fractionB, double similar_mix_chance, size_t max_mix_depth,
-	double fraction_entities_to_mix)
-{
-	EntitiesMixMethod mm(interpreter, fractionA, fractionB, similar_mix_chance, max_mix_depth,
-		fraction_entities_to_mix);
-	return mm.MergeValues(entity1, entity2, true);
 }
 
 MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *entity1, Entity *entity2,

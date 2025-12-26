@@ -324,12 +324,26 @@ public:
 	};
 
 	//Tree and string merging functions
-	static EvaluableNode *IntersectTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2);
+	static inline EvaluableNode *IntersectTrees(EvaluableNodeManager *enm,
+		EvaluableNode *tree1, EvaluableNode *tree2, bool recursive_matching)
+	{
+		NodesMergeMethod mm(enm, false, true, recursive_matching);
+		return mm.MergeValues(tree1, tree2);
+	}
 
-	static EvaluableNode *UnionTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2);
+	static inline EvaluableNode *UnionTrees(EvaluableNodeManager *enm,
+		EvaluableNode *tree1, EvaluableNode *tree2, bool recursive_matching)
+	{
+		NodesMergeMethod mm(enm, true, true, recursive_matching);
+		return mm.MergeValues(tree1, tree2);
+	}
 
-	static EvaluableNode *MixTrees(RandomStream random_stream, EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
-		double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching);
+	static inline EvaluableNode *MixTrees(RandomStream random_stream, EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
+		double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching)
+	{
+		NodesMixMethod mm(random_stream, enm, fraction_a, fraction_b, similar_mix_chance, recursive_matching);
+		return mm.MergeValues(tree1, tree2);
+	}
 
 	static std::string MixStrings(const std::string &a, const std::string &b, RandomStream random_stream, double fraction_a, double fraction_b);
 
@@ -518,7 +532,11 @@ public:
 		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace
-	static void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace);
+	static inline void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace)
+	{
+		EvaluableNode::ReferenceSetType checked;
+		ReplaceStringsInTree(tree, to_replace, checked);
+	}
 
 	//returns an EvaluableNodeType based on the probabilities specified by evaluableNodeTypeRandomStream
 	static EvaluableNodeType GetRandomEvaluableNodeType(RandomStream *rs);

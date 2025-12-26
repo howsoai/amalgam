@@ -158,12 +158,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
+	bool recursive_matching = true;
+	if(ocn.size() > 2)
+		recursive_matching = InterpretNodeIntoBoolValue(ocn[2]);
+
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(n1);
 
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
-	EvaluableNode *result = EvaluableNodeTreeManipulation::IntersectTrees(evaluableNodeManager, n1, n2);
+	EvaluableNode *result = EvaluableNodeTreeManipulation::IntersectTrees(
+		evaluableNodeManager, n1, n2, recursive_matching);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(n1);
@@ -179,12 +184,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, b
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
+	bool recursive_matching = true;
+	if(ocn.size() > 2)
+		recursive_matching = InterpretNodeIntoBoolValue(ocn[2]);
+
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(n1);
 	
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
-	EvaluableNode *result = EvaluableNodeTreeManipulation::UnionTrees(evaluableNodeManager, n1, n2);
+	EvaluableNode *result = EvaluableNodeTreeManipulation::UnionTrees(
+		evaluableNodeManager, n1, n2, recursive_matching);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(n1);
@@ -455,6 +465,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
+	bool recursive_matching = true;
+	if(ocn.size() > 2)
+		recursive_matching = InterpretNodeIntoBoolValue(ocn[2]);
+
 	//not allowed if don't have a Entity to create within
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
@@ -468,7 +482,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging
-	Entity *new_entity = EntityManipulation::IntersectEntities(this, source_entity_1, source_entity_2);
+	Entity *new_entity = EntityManipulation::IntersectEntities(this,
+		source_entity_1, source_entity_2, recursive_matching);
 
 	//no longer need entity references
 	erbr.Clear();
@@ -478,8 +493,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
 	StringRef new_entity_id;
-	if(ocn.size() > 2)
-		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[2]);
+	if(ocn.size() > 3)
+		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[3]);
 	else
 		destination_entity_parent = EntityWriteReference(curEntity);
 
@@ -515,6 +530,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
+	bool recursive_matching = true;
+	if(ocn.size() > 2)
+		recursive_matching = InterpretNodeIntoBoolValue(ocn[2]);
+
 	//not allowed if don't have a Entity to create within
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
@@ -528,7 +547,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging
-	Entity *new_entity = EntityManipulation::UnionEntities(this, source_entity_1, source_entity_2);
+	Entity *new_entity = EntityManipulation::UnionEntities(this,
+		source_entity_1, source_entity_2, recursive_matching);
 
 	//no longer need entity references
 	erbr.Clear();
@@ -538,8 +558,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
 	StringRef new_entity_id;
-	if(ocn.size() > 2)
-		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[2]);
+	if(ocn.size() > 3)
+		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[3]);
 	else
 		destination_entity_parent = EntityWriteReference(curEntity);
 
@@ -632,13 +652,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 			similar_mix_chance = new_value;
 	}
 
-	size_t max_depth = std::numeric_limits<size_t>::max();
+	bool recursive_matching = true;
 	if(ocn.size() > 5)
-	{
-		double new_value = InterpretNodeIntoNumberValue(ocn[5]);
-		if(new_value > 0 && new_value < max_depth)
-			max_depth = static_cast<size_t>(new_value);
-	}
+		recursive_matching = InterpretNodeIntoBoolValue(ocn[5]);
 
 	double fraction_unnamed_entities_to_mix = 0.2;
 	if(ocn.size() > 6)
@@ -658,7 +674,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 
 	//create new entity by merging
 	Entity *new_entity = EntityManipulation::MixEntities(this, source_entity_1, source_entity_2,
-		blend1, blend2, similar_mix_chance, max_depth, fraction_unnamed_entities_to_mix);
+		blend1, blend2, similar_mix_chance, recursive_matching, fraction_unnamed_entities_to_mix);
 
 	//no longer need entity references
 	erbr.Clear();

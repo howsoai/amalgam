@@ -118,16 +118,31 @@ public:
 	};
 
 	//Entity merging functions
-	static Entity *IntersectEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2);
+	static inline Entity *IntersectEntities(Interpreter *interpreter,
+		Entity *entity1, Entity *entity2, bool recursive_matching)
+	{
+		EntitiesMergeMethod mm(interpreter, false, true, recursive_matching);
+		return mm.MergeValues(entity1, entity2);
+	}
 
-	static Entity *UnionEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2);
+	static inline Entity *UnionEntities(Interpreter *interpreter,
+		Entity *entity1, Entity *entity2, bool recursive_matching)
+	{
+		EntitiesMergeMethod mm(interpreter, true, true, recursive_matching);
+		return mm.MergeValues(entity1, entity2);
+	}
 
 	//returns code that will transform entity1 into entity2, allocated with enm
 	static EvaluableNodeReference DifferenceEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2);
 
-	static Entity *MixEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2,
-		double fractionA, double fractionB, double similar_mix_chance, size_t max_mix_depth,
-		double fraction_entities_to_mix);
+	static inline Entity *MixEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2,
+		double fractionA, double fractionB, double similar_mix_chance, bool recursive_matching,
+		double fraction_entities_to_mix)
+	{
+		EntitiesMixMethod mm(interpreter, fractionA, fractionB, similar_mix_chance, recursive_matching,
+			fraction_entities_to_mix);
+		return mm.MergeValues(entity1, entity2, true);
+	}
 
 	//Computes the total number of nodes in both trees that are equal
 	static MergeMetricResults<Entity *> NumberOfSharedNodes(Entity *entity1, Entity *entity2,

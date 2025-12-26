@@ -1755,6 +1755,13 @@
 		) "\n"
 	)
 
+ (print (intersect
+			(list 1 2 3)
+			(list (list 1 2 3))
+			.false
+		) "\n"
+	)
+
  (print "--union--\n")
 
  (print (union
@@ -1816,9 +1823,18 @@
 	
 	(print (union
 			(list 1 2 3)
-			(lambda (parallel
+			(lambda (list
 				(list 1 2 3)
 			))
+		) "\n"
+	)
+
+	(print (union
+			(list 1 2 3)
+			(lambda (list
+				(list 1 2 3)
+			))
+			.false
 		) "\n"
 	)
 
@@ -2037,7 +2053,7 @@
 
  (print "--intersect_entities--\n")
 
- (intersect_entities "MergeEntity1" "MergeEntity2" "AndedEntities")
+ (intersect_entities "MergeEntity1" "MergeEntity2" (null) "AndedEntities")
  (print (retrieve_entity_root "AndedEntities"))
  (map
    (lambda (seq
@@ -2050,7 +2066,7 @@
 
  (print "--union_entities--\n")
 
- (union_entities "MergeEntity1" "MergeEntity2" "OredEntities")
+ (union_entities "MergeEntity1" "MergeEntity2" (null) "OredEntities")
  (print (retrieve_entity_root "OredEntities"))
  (map
    (lambda (seq
@@ -2071,7 +2087,7 @@
  (assign_to_entities "ComplexMergeEntity1" (assoc p (contained_entities "ComplexMergeEntity1")))
  (assign_to_entities "ComplexMergeEntity2" (assoc p (contained_entities "ComplexMergeEntity2")))
 
- (union_entities "ComplexMergeEntity1" "ComplexMergeEntity2" "ComplexOredEntities")
+ (union_entities "ComplexMergeEntity1" "ComplexMergeEntity2" (null) "ComplexOredEntities")
  (print (retrieve_entity_root "ComplexOredEntities"))
  (map
    (lambda (seq

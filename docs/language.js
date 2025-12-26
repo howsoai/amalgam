@@ -1155,18 +1155,18 @@ var data = [
 	},
 
 	{
-		"parameter" : "intersect * node1 * node2",
+		"parameter" : "intersect * node1 * node2 [bool recursive_matching]",
 		"output" : "*",
 		"new value" : "new",
-		"description" : "Evaluates to whatever is common between node1 and node2 exclusive.",
+		"description" : "Evaluates to whatever is common between node1 and node2 exclusive.  If recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.",
 		"example" : "(print (intersect\n  (list 1 (lambda (- 4 2)) (assoc \"a\" 3 \"b\" 4))\n  (list 1 (lambda (- 4 2)) (assoc \"c\" 3 \"b\" 4))\n))\n\n(print (intersect\n  (lambda (seq 2 (get_entity_comments) 1))\n  (lambda (seq 2 1 4 (get_entity_comments)))\n))\n  \n(print (intersect\n  (lambda (parallel 2 (get_entity_comments) 1))\n  (lambda (parallel 2 1 4 (get_entity_comments)))\n))\n\n(print (intersect\n  (list 1 2 3 (assoc \"a\" 3 \"b\" 4) (lambda (if true 1 (parallel (get_entity_comments) #label-not-1 1))) (list 5 6))\n  (list 1 2 3 (assoc \"c\" 3 \"b\" 4) (lambda (if true 1 (parallel #label-not-1 1 (get_entity_comments)))) (list 5 6))\n))\n  \n(print (intersect\n  (lambda (list 1 (assoc \"a\" 3 \"b\" 4)))\n  (lambda (list 1 (assoc \"c\" 3 \"b\" 4)))\n))\n\n(print (intersect\n  (lambda (replace 4 2 6 1 7))\n  (lambda (replace 4 1 7 2 6))\n))"
 	},
 
 	{
-		"parameter" : "union * node1 * node2",
+		"parameter" : "union * node1 * node2 [bool recursive_matching]",
 		"output" : "*",
 		"new value" : "new",
-		"description" : "Evaluates to whatever is inclusive when merging node1 and node2.",
+		"description" : "Evaluates to whatever is inclusive when merging node1 and node2.  If recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.",
 		"example" : "(print (union\n  (lambda (seq 2 (get_entity_comments) 1))\n  (lambda (seq 2 1 4 (get_entity_comments)))\n))\n\n(print (union\n  (list 1 (lambda (- 4 2)) (assoc \"a\" 3 \"b\" 4))\n  (list 1 (lambda (- 4 2)) (assoc \"c\" 3 \"b\" 4))\n))\n  \n(print (union\n  (lambda (parallel 2 (get_entity_comments) 1))\n  (lambda (parallel 2 1 4 (get_entity_comments)))\n))\n\n(print (union\n  (list 1 2 3 (assoc \"a\" 3 \"b\" 4) (lambda (if true 1 (parallel (get_entity_comments) #label-not-1 1))) (list 5 6))\n  (list 1 2 3 (assoc \"c\" 3 \"b\" 4) (lambda (if true 1 (parallel #label-not-1 1 (get_entity_comments)))) (list 5 6))\n))\n  \n(print (union\n  (lambda (list 1 (assoc \"a\" 3 \"b\" 4)))\n  (lambda (list 1 (assoc \"c\" 3 \"b\" 4)))\n))\n\n"
 	},
 
@@ -1232,20 +1232,20 @@ var data = [
 
 
 	{
-		"parameter" : "intersect_entities id_path entity1 id_path entity2 [id_path entity3]",
+		"parameter" : "intersect_entities id_path entity1 id_path entity2 [bool recursive_matching] [id_path entity3]",
 		"output" : "id_path",
 		"permissions" : "entity",
 		"new value" : "new",
-		"description" : "Creates an entity of whatever is common between the Entities represented by entity1 and entity2 exclusive.  Returns the id_path of a new entity created contained by the entity that ran it.  Uses entity3 as the optional destination via an internal call create_contained_entity. Any contained entities will be intersected either based on matching name or maximal similarity for nameless entities.",
+		"description" : "Creates an entity of whatever is common between the Entities represented by entity1 and entity2 exclusive.  If recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Returns the id_path of a new entity created contained by the entity that ran it.  Uses entity3 as the optional destination via an internal call create_contained_entity. Any contained entities will be intersected either based on matching name or maximal similarity for nameless entities.",
 		"example" : "(create_entities \"e1\" (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities \"e2\" (lambda (assoc \"c\" 3 \"b\" 4)) )\n(intersect_entities \"e1\" \"e2\" \"e3\"))\n(print (retrieve_entity_root \"e3\")))"
 	},
 
 	{
-		"parameter" : "union_entities id_path entity1 id_path entity2 [id_path entity3]",
+		"parameter" : "union_entities id_path entity1 id_path entity2 [bool recursive_matching] [id_path entity3]",
 		"output" : "id_path",
 		"permissions" : "entity",
 		"new value" : "new",
-		"description" : "Creates an entity of whatever is inclusive when merging the Entities represented by entity1 and entity2.  Returns the id_path of a new entity created contained by the entity that ran it.  Uses entity3 as the optional destination via an internal call to create_contained_entity.  Any contained entities will be unioned either based on matching name or maximal similarity for nameless entities.",
+		"description" : "Creates an entity of whatever is inclusive when merging the Entities represented by entity1 and entity2.  If recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Returns the id_path of a new entity created contained by the entity that ran it.  Uses entity3 as the optional destination via an internal call to create_contained_entity.  Any contained entities will be unioned either based on matching name or maximal similarity for nameless entities.",
 		"example" : "(create_entities \"e1\" (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities \"e2\" (lambda (assoc \"c\" 3 \"b\" 4)) )\n(union_entities \"e1\" \"e2\" \"e3\"))\n(print (retrieve_entity_root \"e3\")))"
 	},
 

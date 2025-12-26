@@ -208,25 +208,6 @@ EvaluableNodeTreeManipulation::StringsMixMethodUtf8::StringsMixMethodUtf8(Random
 	fractionAInsteadOfB = fractionA / (fractionA + fractionB);
 }
 
-EvaluableNode *EvaluableNodeTreeManipulation::IntersectTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2)
-{
-	NodesMergeMethod mm(enm, false, true, false);
-	return mm.MergeValues(tree1, tree2);
-}
-
-EvaluableNode *EvaluableNodeTreeManipulation::UnionTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2)
-{
-	NodesMergeMethod mm(enm, true, true, false);
-	return mm.MergeValues(tree1, tree2);
-}
-
-EvaluableNode *EvaluableNodeTreeManipulation::MixTrees(RandomStream random_stream, EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
-	double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching)
-{
-	NodesMixMethod mm(random_stream, enm, fraction_a, fraction_b, similar_mix_chance, recursive_matching);
-	return mm.MergeValues(tree1, tree2);
-}
-
 std::string EvaluableNodeTreeManipulation::MixStrings(const std::string &a, const std::string &b,
 	RandomStream random_stream, double fraction_a, double fraction_b)
 {
@@ -623,13 +604,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 	EvaluableNode *ret = MutateTree(mp, tree);
 
 	return ret;
-}
-
-void EvaluableNodeTreeManipulation::ReplaceStringsInTree(EvaluableNode *tree,
-	CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace)
-{
-	EvaluableNode::ReferenceSetType checked;
-	ReplaceStringsInTree(tree, to_replace, checked);
 }
 
 EvaluableNodeType EvaluableNodeTreeManipulation::GetRandomEvaluableNodeType(RandomStream *rs)

@@ -19,7 +19,6 @@ enum EvaluableNodeType : uint8_t
 	//core control
 	ENT_IF,
 	ENT_SEQUENCE,
-	ENT_PARALLEL,
 	ENT_LAMBDA,
 	ENT_CONCLUDE,
 	ENT_RETURN,
@@ -154,6 +153,7 @@ enum EvaluableNodeType : uint8_t
 
 	//data types
 	ENT_LIST,
+	ENT_UNORDERED_LIST,
 	ENT_ASSOC,
 	ENT_BOOL,
 	ENT_NUMBER,
@@ -317,13 +317,13 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 {
 	switch(t)
 	{
-	case ENT_PARALLEL:
 	case ENT_ADD:
 	case ENT_MULTIPLY:
 	case ENT_MAX:					case ENT_MIN:				case ENT_INDEX_MAX:	case ENT_INDEX_MIN:
 	case ENT_AND:					case ENT_OR:				case ENT_XOR:
 	case ENT_EQUAL:					case ENT_NEQUAL:
 	case ENT_NULL:
+	case ENT_UNORDERED_LIST:
 	case ENT_DESTROY_ENTITIES:
 		return OCNT_UNORDERED;
 
@@ -520,8 +520,8 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 	case ENT_MAP:	case ENT_FILTER:	case ENT_WEAVE:
 	case ENT_REVERSE:	case ENT_SORT:
 	case ENT_VALUES:
-	case ENT_REMOVE:	case ENT_KEEP:	case ENT_ASSOCIATE:	case ENT_ZIP:	case ENT_UNZIP:
-	case ENT_LIST:	case ENT_ASSOC:
+	case ENT_REMOVE:	case ENT_KEEP:				case ENT_ASSOCIATE:	case ENT_ZIP:	case ENT_UNZIP:
+	case ENT_LIST:		case ENT_UNORDERED_LIST:	case ENT_ASSOC:
 	case ENT_SET_TYPE:
 	case ENT_SET_LABELS:	case ENT_ZIP_LABELS:
 	case ENT_SET_COMMENTS:
@@ -564,8 +564,6 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 	case ENT_SYMBOL:
 		return ONVRT_EXISTING_VALUE;
 
-
-	case ENT_PARALLEL:
 	case ENT_ASSIGN:	case ENT_ACCUM:
 	case ENT_PRINT:
 		return ONVRT_NULL;

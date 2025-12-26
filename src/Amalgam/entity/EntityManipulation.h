@@ -196,8 +196,8 @@ public:
 			auto &cur_entity = (*all_contained_entities)[i];
 			if(parallel_create && i == start_index_of_next_group)
 			{
-				//insert another parallel for the this group of entities
-				EvaluableNode *parallel_create_node = enm->AllocNode(ENT_PARALLEL);
+				//insert a concurrent unordered list for the this group of entities
+				EvaluableNode *parallel_create_node = enm->AllocNode(ENT_UNORDERED_LIST);
 				parallel_create_node->SetConcurrency(true);
 
 				declare_flatten->AppendOrderedChildNode(parallel_create_node);

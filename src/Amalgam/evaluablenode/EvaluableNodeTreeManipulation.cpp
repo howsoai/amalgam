@@ -1232,13 +1232,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 	switch(n1_type)
 	{
 	case ENT_SEQUENCE:
-		if(n2_type == ENT_PARALLEL)				return std::make_pair(n1, 0.25);
-		if(n2_type == ENT_NULL)					return std::make_pair(n2, 0.125);
-		if(n2_type == ENT_LIST)					return std::make_pair(n2, 0.125);
-		break;
-
-	case ENT_PARALLEL:
-		if(n2_type == ENT_SEQUENCE)				return std::make_pair(n2, 0.25);
+		if(n2_type == ENT_UNORDERED_LIST)		return std::make_pair(n1, 0.125);
 		if(n2_type == ENT_NULL)					return std::make_pair(n2, 0.125);
 		if(n2_type == ENT_LIST)					return std::make_pair(n2, 0.125);
 		break;
@@ -1322,14 +1316,20 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 			return std::make_pair(n2, 0.125);
 		}
 		if(n2_type == ENT_SEQUENCE)			return std::make_pair(n1, 0.125);
-		if(n2_type == ENT_PARALLEL)			return std::make_pair(n1, 0.125);
+		if(n2_type == ENT_UNORDERED_LIST)	return std::make_pair(n1, 0.125);
 		if(n2_type == ENT_LIST)				return std::make_pair(n1, 0.125);
 		break;
 
 	case ENT_LIST:
 		if(n2_type == ENT_SEQUENCE)			return std::make_pair(n1, 0.125);
-		if(n2_type == ENT_PARALLEL)			return std::make_pair(n1, 0.125);
+		if(n2_type == ENT_UNORDERED_LIST)	return std::make_pair(n1, 0.5);
 		if(n2_type == ENT_NULL)				return std::make_pair(n1, 0.125);
+		break;
+
+	case ENT_UNORDERED_LIST:
+		if(n2_type == ENT_SEQUENCE)				return std::make_pair(n2, 0.125);
+		if(n2_type == ENT_NULL)					return std::make_pair(n2, 0.125);
+		if(n2_type == ENT_LIST)					return std::make_pair(n2, 0.5);
 		break;
 
 	case ENT_NUMBER:
@@ -1832,7 +1832,6 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	//core control
 	{ENT_IF,											1.0},
 	{ENT_SEQUENCE,										0.5},
-	{ENT_PARALLEL,										0.5},
 	{ENT_LAMBDA,										1.5},
 	{ENT_CONCLUDE,										0.05},
 	{ENT_RETURN,										0.05},
@@ -1966,6 +1965,7 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 
 	//data types
 	{ENT_LIST,											2.0},
+	{ENT_UNORDERED_LIST,								0.5},
 	{ENT_ASSOC,											3.0},
 	{ENT_BOOL,											3.0},
 	{ENT_NUMBER,										8.0},

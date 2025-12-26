@@ -65,14 +65,6 @@ var data = [
 	},
 
 	{
-		"parameter" : "parallel [code c1] [code c2] ... [code cN]",
-		"output" : "null",
-		"concurrency" : true,
-		"description" : "Runs each code block, possibly in any order. Evaluates to null",
-		"example" : "(parallel (assign (assoc foo 1)) (assign (assoc bar 2)))"
-	},
-
-	{
 		"parameter" : "lambda * function [bool evaluate_and_wrap]",
 		"output" : "*",
 		"description" : "Evaluates to the code specified without evaluating it.  Useful for referencing functions or handling data without evaluating it.  The parameter evaluate_and_wrap defaults to false, but if it is true, it will evaluate the function, but then return the result wrapped in a lambda opcode.",
@@ -903,6 +895,16 @@ var data = [
 		"concurrency" : true,
 		"new target scope": true,
 		"description" : "Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.  If []'s are used instead of parenthesis, the keyword list may be omitted.  [] are considered identical to (list).",
+		"example" : "(print (list \"a\" 1 \"b\"))\n(print [1 2 3])"
+	},
+	
+	{
+		"parameter" : "unordered_list [* node1] [* node2] ... [* nodeN]",
+		"output" : "list of *",
+		"new value" : "partial",
+		"concurrency" : true,
+		"new target scope": true,
+		"description" : "Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.  It operates like a list, except any operations that would normally consider a list's order, such as union, intersect, and mix, will consider the values unordered.",
 		"example" : "(print (list \"a\" 1 \"b\"))\n(print [1 2 3])"
 	},
 

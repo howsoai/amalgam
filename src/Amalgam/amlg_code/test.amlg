@@ -1,7 +1,7 @@
 ﻿(seq
 
  (create_entities "TestContainerExec"
-	(lambda (parallel
+	(lambda (unordered_list
     ##^a 3
 	##b (contained_entities)
 	##c (+ x 1)
@@ -12,7 +12,7 @@
 	))
  )
  (create_entities (list "TestContainerExec" "Child1")
-	(lambda (parallel
+	(lambda (unordered_list
 	##x 3
 	##y 4
 	##!e 7
@@ -21,7 +21,7 @@
 	))
  )
  (create_entities (list "TestContainerExec" "Child2")
-	(lambda (parallel
+	(lambda (unordered_list
 	##x -1
 	##y -1
 	##weight 0.45
@@ -29,7 +29,7 @@
 	))
  )
  (create_entities (list "TestContainerExec" "Child3")
-	(lambda (parallel
+	(lambda (unordered_list
 	##x 100
 	##y 100
 	##weight 0.02
@@ -37,7 +37,7 @@
 	))
  )
  (create_entities (list "TestContainerExec" "Child4")
-	(lambda (parallel
+	(lambda (unordered_list
 	##x 100
 	##y 100
 	##radius 400

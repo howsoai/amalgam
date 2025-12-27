@@ -1144,7 +1144,8 @@ protected:
 		}
 
 		default:
-			//RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING
+			//RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING,
+			//RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING,
 			//or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];

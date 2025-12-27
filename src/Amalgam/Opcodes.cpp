@@ -38,7 +38,6 @@ void StringInternPool::InitializeStaticStrings()
 	//core control
 	EmplaceNodeTypeString(ENT_IF, "if");
 	EmplaceNodeTypeString(ENT_SEQUENCE, "seq");
-	EmplaceNodeTypeString(ENT_PARALLEL, "parallel");
 	EmplaceNodeTypeString(ENT_LAMBDA, "lambda");
 	EmplaceNodeTypeString(ENT_CONCLUDE, "conclude");
 	EmplaceNodeTypeString(ENT_RETURN, "return");
@@ -173,6 +172,7 @@ void StringInternPool::InitializeStaticStrings()
 
 	//data types
 	EmplaceNodeTypeString(ENT_LIST, "list");
+	EmplaceNodeTypeString(ENT_UNORDERED_LIST, "unordered_list");
 	EmplaceNodeTypeString(ENT_ASSOC, "assoc");
 
 	//immediates - no associated keywords
@@ -393,6 +393,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_continuous_number, "continuous_number");
 	EmplaceStaticString(ENBISI_continuous_number_cyclic, "continuous_number_cyclic");
 	EmplaceStaticString(ENBISI_continuous_string, "continuous_string");
+	EmplaceStaticString(ENBISI_continuous_code_no_recursive_matching, "continuous_code_no_recursive_matching");
 	EmplaceStaticString(ENBISI_continuous_code, "continuous_code");
 
 	//distance parameter values

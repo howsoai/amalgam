@@ -19,13 +19,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NULL(EvaluableNode *en, bo
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(EvaluableNode *en, bool immediate_result)
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
 		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
-	EvaluableNodeReference new_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
+	EvaluableNodeReference new_list(evaluableNodeManager->AllocNode(en->GetType()), true);
 
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_nodes = ocn.size();

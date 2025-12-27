@@ -12,7 +12,7 @@ public:
 	{
 	public:
 		NodesMergeForDifferenceMethod(EvaluableNodeManager *_enm)
-			: NodesMergeMethod(_enm, false, true)
+			: NodesMergeMethod(_enm, false, true, false)
 		{	}
 
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false);

@@ -1919,6 +1919,8 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNod
 	if(a_size == 0)
 		return true;
 
+	//TODO 24890: if unordered_list, have special logic
+
 	for(size_t i = 0; i < a_ocn.size(); i++)
 	{
 		EvaluableNode *a_child = a_ocn[i];

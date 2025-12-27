@@ -348,15 +348,26 @@ namespace EntityQueryBuilder
 					if(found)
 					{
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
-						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_bool))						feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_number))				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_string))				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_code))					feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number))			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number_cyclic))		feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_string))			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code))				feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;
-						else																							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
+						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_bool))
+							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_number))
+							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_string))
+							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_code))
+							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number_cyclic))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_string))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code_no_recursive_matching))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;
+						else
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 					}
 					dist_eval.featureAttribs[i].featureType = feature_type;
 				}

@@ -50,6 +50,7 @@ struct MergeMetricResultsParams
 	EvaluableNode::ReferenceSetType *checked;
 	CompactHashMap<std::pair<EvaluableNode *, EvaluableNode *>, MergeMetricResults<EvaluableNode *>> memoizedNodeMergePairs;
 	bool requireExactMatches;
+	bool recursiveMatching;
 };
 
 //returns a commonality measure of difference between numbers a and b in [0,1]
@@ -120,14 +121,14 @@ public:
 	{
 	public:
 		NodesMergeMethod(EvaluableNodeManager *_enm,
-			bool keep_all_of_both, bool require_exact_matches)
+			bool keep_all_of_both, bool require_exact_matches, bool recursive_matching)
 			: enm(_enm), keepAllOfBoth(keep_all_of_both),
-			requireExactMatches(require_exact_matches)
+			requireExactMatches(require_exact_matches), recursiveMatching(recursive_matching)
 		{	}
 
 		virtual MergeMetricResults<EvaluableNode *> MergeMetric(EvaluableNode *a, EvaluableNode *b)
 		{
-			return NumberOfSharedNodes(a, b, requireExactMatches);
+			return NumberOfSharedNodes(a, b, requireExactMatches, recursiveMatching);
 		}
 
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false)
@@ -158,12 +159,16 @@ public:
 		constexpr bool RequireExactMatches()
 		{	return requireExactMatches;		}
 
+		constexpr bool RecursiveMatching()
+		{	return recursiveMatching;		}
+
 		//use for allocating
 		EvaluableNodeManager *enm;
 
 	protected:
 		bool keepAllOfBoth;
 		bool requireExactMatches;
+		bool recursiveMatching;
 		EvaluableNode::ReferenceAssocType references;
 	};
 
@@ -172,7 +177,7 @@ public:
 	{
 	public:
 		NodesMixMethod(RandomStream random_stream, EvaluableNodeManager *_enm,
-			double fraction_a, double fraction_b, double similar_mix_chance, size_t max_mix_depth);
+			double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching);
 
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false);
 
@@ -212,8 +217,6 @@ public:
 		double fractionAOrB;
 		double fractionAInsteadOfB;
 		double similarMixChance;
-		size_t maxMixDepth;
-		size_t curMixDepth;
 	};
 
 	//functionality to merge sequences of strings (e.g., for comments)
@@ -321,12 +324,26 @@ public:
 	};
 
 	//Tree and string merging functions
-	static EvaluableNode *IntersectTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2);
+	static inline EvaluableNode *IntersectTrees(EvaluableNodeManager *enm,
+		EvaluableNode *tree1, EvaluableNode *tree2, bool recursive_matching)
+	{
+		NodesMergeMethod mm(enm, false, true, recursive_matching);
+		return mm.MergeValues(tree1, tree2);
+	}
 
-	static EvaluableNode *UnionTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2);
+	static inline EvaluableNode *UnionTrees(EvaluableNodeManager *enm,
+		EvaluableNode *tree1, EvaluableNode *tree2, bool recursive_matching)
+	{
+		NodesMergeMethod mm(enm, true, true, recursive_matching);
+		return mm.MergeValues(tree1, tree2);
+	}
 
-	static EvaluableNode *MixTrees(RandomStream random_stream, EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
-		double fraction_a, double fraction_b, double similar_mix_chance, size_t max_mix_depth);
+	static inline EvaluableNode *MixTrees(RandomStream random_stream, EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
+		double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching)
+	{
+		NodesMixMethod mm(random_stream, enm, fraction_a, fraction_b, similar_mix_chance, recursive_matching);
+		return mm.MergeValues(tree1, tree2);
+	}
 
 	static std::string MixStrings(const std::string &a, const std::string &b, RandomStream random_stream, double fraction_a, double fraction_b);
 
@@ -418,9 +435,10 @@ public:
 
 	//computes the edit distance between the two trees
 	// If require_exact_matches is true, then it will only compare nodes that match exactly
-	static double EditDistance(EvaluableNode *tree1, EvaluableNode *tree2, bool require_exact_matches = false)
+	static double EditDistance(EvaluableNode *tree1, EvaluableNode *tree2,
+		bool require_exact_matches = false, bool recursive_matching = true)
 	{
-		auto shared_nodes = NumberOfSharedNodes(tree1, tree2, require_exact_matches);
+		auto shared_nodes = NumberOfSharedNodes(tree1, tree2, require_exact_matches, recursive_matching);
 		size_t tree_1_size = EvaluableNode::GetDeepSize(tree1);
 		size_t tree_2_size = EvaluableNode::GetDeepSize(tree2);
 
@@ -428,13 +446,18 @@ public:
 		return (tree_1_size - shared_nodes.commonality) + (tree_2_size - shared_nodes.commonality);
 	}
 
-	//Computes the total number of nodes in both trees that are equal
-	// If require_exact_matches is true, then it will only compare nodes that match exactly
+	//computes the total number of nodes in both trees that are equal
+	//if require_exact_matches is true, then it will only compare nodes that match exactly
+	//if recursive_matching is true, then it will attempt to recursively match any part of the data structure of tree1 to tree2
+	//if recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better
+	// results if the data structures are common, and additionally will be much faster
 	inline static MergeMetricResults<EvaluableNode *> NumberOfSharedNodes(
-		EvaluableNode *tree1, EvaluableNode *tree2, bool require_exact_matches = false)
+		EvaluableNode *tree1, EvaluableNode *tree2,
+		bool require_exact_matches = false, bool recursive_matching = true)
 	{
 		MergeMetricResultsParams mmrp;
 		mmrp.requireExactMatches = require_exact_matches;
+		mmrp.recursiveMatching = recursive_matching;
 		if((tree1 != nullptr && tree1->GetNeedCycleCheck()) || (tree2 != nullptr && tree2->GetNeedCycleCheck()))
 		{
 			EvaluableNode::ReferenceSetType checked;
@@ -509,7 +532,11 @@ public:
 		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace
-	static void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace);
+	static inline void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace)
+	{
+		EvaluableNode::ReferenceSetType checked;
+		ReplaceStringsInTree(tree, to_replace, checked);
+	}
 
 	//returns an EvaluableNodeType based on the probabilities specified by evaluableNodeTypeRandomStream
 	static EvaluableNodeType GetRandomEvaluableNodeType(RandomStream *rs);

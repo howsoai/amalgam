@@ -459,40 +459,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en, bool immediate_result)
-{
-	auto &ocn = en->GetOrderedChildNodesReference();
-
-#ifdef MULTITHREAD_SUPPORT
-	if(en->GetConcurrency() && ocn.size() > 1)
-	{
-		auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
-		if(Concurrency::threadPool.AreThreadsAvailable())
-		{
-			size_t num_elements = ocn.size();
-
-			ConcurrencyManager concurrency_manager(this, num_elements, enqueue_task_lock);
-
-			//kick off interpreters
-			for(size_t element_index = 0; element_index < num_elements; element_index++)
-				concurrency_manager.EnqueueTask<EvaluableNodeReference>(ocn[element_index]);
-
-			concurrency_manager.EndConcurrency();
-			return EvaluableNodeReference::Null();
-		}
-	}
-#endif
-
-	for(auto &cn :ocn)
-	{
-		//don't need the result, so can ask for an immediate
-		auto result = InterpretNodeForImmediateUse(cn, true);
-		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-	}
-
-	return EvaluableNodeReference::Null();
-}
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LAMBDA(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();

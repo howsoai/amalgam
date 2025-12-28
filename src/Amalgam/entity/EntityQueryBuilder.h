@@ -39,10 +39,10 @@ namespace EntityQueryBuilder
 	constexpr static bool IsEvaluableNodeTypeDistanceQuery(EvaluableNodeType t)
 	{
 		return (t == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || t == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
-			|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
-			|| t == ENT_QUERY_ENTITY_CONVICTIONS || t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
-			|| t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_KL_DIVERGENCES
-			|| t == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS || t == ENT_QUERY_ENTITY_CLUSTERS
+			|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_CONVICTIONS
+			|| t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+			|| t == ENT_QUERY_ENTITY_KL_DIVERGENCES || t == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+			|| t == ENT_QUERY_ENTITY_CLUSTERS
 			);
 	}
 
@@ -348,15 +348,26 @@ namespace EntityQueryBuilder
 					if(found)
 					{
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
-						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_bool))						feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_number))				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_string))				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_code))					feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number))			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number_cyclic))		feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_string))			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code))				feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;
-						else																							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
+						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_bool))
+							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_number))
+							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_string))
+							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_code))
+							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number_cyclic))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_string))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code_no_recursive_matching))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;
+						else
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 					}
 					dist_eval.featureAttribs[i].featureType = feature_type;
 				}
@@ -579,8 +590,7 @@ namespace EntityQueryBuilder
 					cur_condition->existLabels.push_back(EvaluableNode::ToStringIDIfExists(entity_en));
 			}
 		}
-		else if(condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
-			|| condition_type == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
+		else if(condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
 		{
 			EvaluableNode *positions = ocn[POSITION_OR_ENTITIES];
 			if(!EvaluableNode::IsOrderedArray(positions))
@@ -726,7 +736,6 @@ namespace EntityQueryBuilder
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 			|| condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 			|| condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
-			|| condition_type == ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
 			|| condition_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			|| condition_type == ENT_QUERY_ENTITY_CLUSTERS)

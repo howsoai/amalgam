@@ -866,6 +866,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest<compute_surprisal>(nonmatch_dist_term, query_feature_index);
 	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
+		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 	{
 		//compute partial sums for all code of matching size
@@ -886,7 +887,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch<compute_surprisal>(query_feature_index);
 			return nonmatch_dist_term;
 		}
-		else //GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE
+		else //GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING or GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE
 		{
 			//next most similar code must be at least a distance of 1 edit away
 			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular<compute_surprisal>(1.0, query_feature_index, high_accuracy);
@@ -1302,6 +1303,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 
 	bool complex_comparison = (feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
+		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE);
 
 	//consider computing interned values if appropriate
@@ -1355,6 +1357,8 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE;
 	}

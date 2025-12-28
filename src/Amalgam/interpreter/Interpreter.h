@@ -1296,7 +1296,6 @@ protected:
 	//core control
 	EvaluableNodeReference InterpretNode_ENT_IF(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_SEQUENCE(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_PARALLEL(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_LAMBDA(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CONCLUDE_and_RETURN(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CALL(EvaluableNode *en, bool immediate_result);
@@ -1425,7 +1424,7 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_NULL(EvaluableNode *en, bool immediate_result);
 
 	//data types
-	EvaluableNodeReference InterpretNode_ENT_LIST(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_LIST_and_UNORDERED_LIST(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_ASSOC(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_BOOL(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_NUMBER(EvaluableNode *en, bool immediate_result);

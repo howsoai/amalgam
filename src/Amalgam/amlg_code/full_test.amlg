@@ -1309,6 +1309,13 @@
  (print "--list--\n")
  (print (list "a" 1 "b"))
 
+ (print "--unordered_list--\n")
+ (print (= (unordered_list 4 4 5) (unordered_list 4 4 5) ) "\n")
+ (print (= (unordered_list 4 4 5) (unordered_list 4 4 6) ) "\n")
+ (print (= (unordered_list 4 4 5) (unordered_list 4 5 4) ) "\n")
+
+ (print (= (set_type (range 0 100) "unordered_list") (set_type (reverse (range 0 100)) "unordered_list")) "\n")
+
  (print "--associate--\n")
  (print (associate "a" 1 "b" 2 "c" 3 4 "d"))
 

@@ -236,11 +236,11 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{b 2 a 1 c ["alpha" "beta" "gamma"]}
+{c ["alpha" "beta" "gamma"] b 2 a 1}
 {
+	c ["alpha" "beta" "gamma"]
 	b 2
 	a 1
-	c ["alpha" "beta" "gamma"]
 }
 
 (apply "6")
@@ -723,14 +723,14 @@ a
 	b 2
 	c 3
 	d 4
-	e 5
+	f 6
 }
-{a 1 c 3}
+{a 1 d 4}
 {
 	a 1
 	b 2
-	c 3
-	e 5
+	d 4
+	f 6
 }
 {
 	a 1
@@ -774,14 +774,14 @@ c
 	b 2
 	c 3
 	d 4
-	e 5
+	f 6
 }
-{a 1 c 3}
+{a 1 d 4}
 {
 	a 1
 	b 2
-	c 3
-	e 5
+	d 4
+	f 6
 }
 {
 	a 1
@@ -1133,7 +1133,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["b" 4 "a" "c"]
+[4 "c" "b" "a"]
 [
 	0
 	1
@@ -1145,10 +1145,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[0 3 2 1]
-[0 3 2 1]
+[0 3 1 2]
+[0 3 1 2]
 --values--
-[2 "d" 1 3]
+["d" 3 2 1]
 [
 	"a"
 	1
@@ -1169,7 +1169,7 @@ abcdef
 	4
 	"d"
 ]
-[1 "d" 2 3]
+[1 "d" 3 2]
 [
 	1
 	2
@@ -1414,7 +1414,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1766795780.985176
+		start_time 1766882881.684758
 		www 1
 		x 12
 		zz 10
@@ -1460,7 +1460,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1766795780.985176
+	start_time 1766882881.684758
 	www 1
 	x 12
 	zz 10
@@ -1505,7 +1505,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1766795780.985176
+	start_time 1766882881.684758
 	www 1
 	x 12
 	zz 10
@@ -1613,11 +1613,11 @@ b
 	"a"
 ]
 
-infinity test c or d: ["c" "c" "d" "d"]
+infinity test c or d: ["d" "d" "c" "c"]
 
-{a 35 b 44 c 21}
+{a 21 b 63 c 16}
 
-[4 10 6]
+[6 10 2]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1645,6 +1645,11 @@ infinity test c or d: ["c" "c" "d" "d"]
 -.infinity
 --list--
 ["a" 1 "b"]
+--unordered_list--
+.true
+.false
+.true
+.true
 --associate--
 {
 	4 "d"
@@ -1712,17 +1717,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"b":4,"a":3},{"d":null,"c":"c"}]
+21: [{"b":4,"a":3},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: d: 4
-e:
+23: e:
   - a
   - b
   - 
   - .inf
-b: 2
-a: 1
 c: 3
+b: 2
+d: 4
+a: 1
 
 24: a: 1
 b: 2
@@ -1735,7 +1740,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-12-26-19.36.21.1179880
+current date-time in epoch: 2025-12-27-19.48.01.7333480
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1793,7 +1798,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB .true
 		)
@@ -1804,7 +1809,7 @@ domingo, jun. 07, 2020
 	labelQ @(target .true "labelA")
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB .true
 		)
@@ -2261,16 +2266,6 @@ decrypted: hello
 	{_ (null)}
 	(replace
 		_
-		["g"]
-		(lambda
-			[
-				(get
-					(current_value 1)
-					0
-				)
-				4
-			]
-		)
 		[]
 		(lambda
 			{
@@ -2280,6 +2275,16 @@ decrypted: hello
 						"g"
 					)
 			}
+		)
+		["g"]
+		(lambda
+			[
+				(get
+					(current_value 1)
+					0
+				)
+				4
+			]
 		)
 	)
 )
@@ -2538,7 +2543,7 @@ abcomxyz
 	b [1 2]
 	c [2 3]
 	w []
-	y [4 5]
+	x [3 4]
 }
 --total_entity_size--
 79
@@ -2844,18 +2849,16 @@ flatten restore with concurrency
 19.264241099357605
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild1
-(associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
+MergeEntityChild1
+(associate "x" 3 "y" 4)
 _1651806471
 (associate "e" 3 "f" 4)
 _3130331116
 (associate "E" 3 "F" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2869,6 +2872,8 @@ MergeEntityChild2
 	"w"
 	7
 )
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 _1651806471
 (associate
 	"e"
@@ -3245,14 +3250,8 @@ _3532185687
 						[]
 						(lambda
 							{
-								E (get
-										(current_value 1)
-										"E"
-									)
-								F (get
-										(current_value 1)
-										"F"
-									)
+								E 3
+								F 4
 								G 5
 								H 6
 							}
@@ -3277,16 +3276,7 @@ _3532185687
 						_
 						[]
 						(lambda
-							{
-								e (get
-										(current_value 1)
-										"e"
-									)
-								f (get
-										(current_value 1)
-										"f"
-									)
-							}
+							{e 3 f 4}
 						)
 					)
 				)
@@ -3318,89 +3308,7 @@ contained_entities new_entity: ["DiffEntityChild1" "OnlyIn2" "_3626604918" "_382
 difference between DiffEntity2 and new_entity:
 (declare
 	{_ (null) new_entity (null)}
-	(assign
-		"new_entity"
-		(first
-			(create_entities
-				new_entity
-				(call
-					(lambda
-						(declare
-							{_ (null)}
-							(replace _)
-						)
-					)
-					{
-						_ (retrieve_entity_root _)
-					}
-				)
-			)
-		)
-	)
-	(create_entities
-		(append new_entity "_3626604918")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{
-								E (null)
-								F (null)
-								G (get
-										(current_value 1)
-										"G"
-									)
-								H (get
-										(current_value 1)
-										"H"
-									)
-							}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_3626604918")
-					)
-			}
-		)
-	)
-	(create_entities
-		(append new_entity "_3823131681")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{e (null) f (null)}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_3823131681")
-					)
-			}
-		)
-	)
-	(clone_entities
-		(append _ "DiffEntityChild1")
-		(append new_entity "DiffEntityChild1")
-	)
-	(clone_entities
-		(append _ "OnlyIn2")
-		(append new_entity "OnlyIn2")
-	)
-	new_entity
+	(clone_entities _ new_entity)
 )
 (declare
 	{_ (null) new_entity (null)}
@@ -3468,8 +3376,14 @@ difference between DiffEntity2 and new_entity:
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3494,7 +3408,16 @@ difference between DiffEntity2 and new_entity:
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3520,14 +3443,96 @@ contained_entities new_entity: ["OnlyIn2" "_1985995361" "_2783372341" "DiffEntit
 difference between DiffContainer and DiffEntity2:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_1985995361")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_1985995361")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_2783372341")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_2783372341")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	new_entity
 )
 --mix_entities--
 (associate "b" 4 "a" 3)
+MergeEntityChild2
+(associate "p" 3 "q" 4 "w" 7)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
-MergeEntityChild2
-(associate "p" 3 "q" 4)
 _1651806471
 (associate "e" 3 "f" 4 "h" 6)
 _3130331116
@@ -3627,7 +3632,7 @@ deep sets
 
 --set_entity_permissions--
 RootTest
-1766795781.658495
+1766882882.117926
 {
 	alter_performance .true
 	environment .true
@@ -4518,11 +4523,11 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-190: 0.045454545454545456 (null
-	##deg 12
-)
 155: 0.1 (null
 	##deg 0
+)
+190: 0.045454545454545456 (null
+	##deg 12
 )
 200: 0.05555555555555555 (null
 	##deg 8
@@ -5086,4 +5091,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-2.1734719276428223
+2.301527976989746

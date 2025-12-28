@@ -1,55 +1,13 @@
 ﻿(seq
 
- (create_entities "TestContainerExec"
-	(lambda (unordered_list
-    ##^a 3
-	##b (contained_entities)
-	##c (+ x 1)
-	##d (call_entity "Child5" "q" (assoc x x))
-	##!e 12
-	##x 4
-	##y 5
-	))
- )
- (create_entities (list "TestContainerExec" "Child1")
-	(lambda (unordered_list
-	##x 3
-	##y 4
-	##!e 7
-	##weight 0.45
-	##weight_eq 1
-	))
- )
- (create_entities (list "TestContainerExec" "Child2")
-	(lambda (unordered_list
-	##x -1
-	##y -1
-	##weight 0.45
-	##weight_eq 1
-	))
- )
- (create_entities (list "TestContainerExec" "Child3")
-	(lambda (unordered_list
-	##x 100
-	##y 100
-	##weight 0.02
-	##weight_eq 1
-	))
- )
- (create_entities (list "TestContainerExec" "Child4")
-	(lambda (unordered_list
-	##x 100
-	##y 100
-	##radius 400
-	##weight 0.02
-	##weight_eq 1
-	))
- )
+(print (= (list 4 4 5) (list 4 4 5) ) "\n")
+(print (= (list 4 4 5) (list 4 4 6) ) "\n")
+(print (= (list 4 4 5) (list 4 5 4) ) "\n")
 
+(print (= (unordered_list 4 4 5) (unordered_list 4 4 5) ) "\n")
+(print (= (unordered_list 4 4 5) (unordered_list 4 4 6) ) "\n")
+(print (= (unordered_list 4 4 5) (unordered_list 4 5 4) ) "\n")
 
- (print "nearest existing entity: "
-	(contained_entities "TestContainerExec" (list
-		(query_nearest_generalized_distance 1 (list "x" "y") "Child3" 0.5)
-	))
- )
+(print (= (set_type (range 0 100) "unordered_list") (set_type (reverse (range 0 100)) "unordered_list")) "\n")
+
  )

@@ -1919,10 +1919,11 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNod
 	if(a_size == 0)
 		return true;
 
-	for(size_t i = 0; i < a_ocn.size(); i++)
+	size_t index = 0;
+	for(; index < a_size; index++)
 	{
-		EvaluableNode *a_child = a_ocn[i];
-		EvaluableNode *b_child = b_ocn[i];
+		EvaluableNode *a_child = a_ocn[index];
+		EvaluableNode *b_child = b_ocn[index];
 
 		//if pointers are the same, then they are the same
 		if(a_child == b_child)
@@ -1930,15 +1931,110 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNod
 
 		//first check if the immediate values are equal
 		if(!AreShallowEqual(a_child, b_child))
-			return false;
+			break;
 
 		//now check deep values
 		if(!EvaluableNode::AreDeepEqualGivenShallowEqual(a_child, b_child, checked))
-			return false;
+			break;
 	}
 
-	//all child nodes are equal
-	return true;
+	//all are equal
+	if(index == a_size)
+		return true;
+
+	if(a->GetType() != ENT_UNORDERED_LIST)
+		return false;
+
+	//if it's small with immediate types, then do a quick O(n^2) match,
+	//otherwise do an expensive hash-based O(n) match
+	bool use_immediate_method = false;
+	if(a_size - index < 4)
+	{
+		use_immediate_method = true;
+		for(size_t i = index; i < a_size; i++)
+		{
+			if((a_ocn[i] != nullptr && !a_ocn[i]->IsImmediate())
+				|| (b_ocn[i] != nullptr && !b_ocn[i]->IsImmediate()))
+			{
+				use_immediate_method = false;
+				break;
+			}
+		}
+	}
+
+	if(use_immediate_method)
+	{
+		std::vector<EvaluableNode *> b_unmatched;
+		b_unmatched.reserve(a_size - index);
+		for(size_t i = index; i < a_size; i++)
+			b_unmatched.push_back(b_ocn[i]);
+
+		//find a match for each remaining node
+		for(; index < a_size; index++)
+		{
+			EvaluableNode *a_child = a_ocn[index];
+
+			//look for a match among b's remaining unmatched
+			bool found = false;
+			for(size_t b_unmatched_index = 0; b_unmatched_index < b_unmatched.size(); b_unmatched_index++)
+			{
+				EvaluableNode *b_child = b_unmatched[b_unmatched_index];
+
+				//if pointers are the same, then they are the same
+				if(a_child == b_child)
+				{
+					found = true;
+					b_unmatched.erase(begin(b_unmatched) + b_unmatched_index);
+					break;
+				}
+
+				//because all nodes are immediate, just need shallow check
+				if(AreShallowEqual(a_child, b_child))
+				{
+					found = true;
+					b_unmatched.erase(begin(b_unmatched) + b_unmatched_index);
+					break;
+				}
+			}
+
+			//a's node of index did not have a match in b, so not equal
+			if(!found)
+				return false;
+		}
+
+		//all child nodes are equal
+		return true;
+	}
+	else //compare hashed unparse strings
+	{
+		FastHashMap<std::string, size_t> unmatched_a_children;
+		unmatched_a_children.reserve(a_size - index);
+		for(size_t i = index; i < a_size; i++)
+		{
+			std::string a_unparsed = Parser::Unparse(a_ocn[i], false, true, true);
+			auto entry = unmatched_a_children.emplace(std::move(a_unparsed), 1);
+			//if already exists, increment
+			if(!entry.second)
+				entry.first->second++;
+		}
+
+		//for each of b's nodes, remove 
+		for(size_t i = index; i < a_size; i++)
+		{
+			std::string b_unparsed = Parser::Unparse(b_ocn[i], false, true, true);
+			auto found = unmatched_a_children.find(b_unparsed);
+			if(found == end(unmatched_a_children))
+				return false;
+
+			if(found->second > 1)
+				found->second--;
+			else
+				unmatched_a_children.erase(found);
+		}
+
+		//all had a match
+		return true;
+	}
 }
 
 bool EvaluableNode::CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<EvaluableNode *> &stack)

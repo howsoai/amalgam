@@ -3398,12 +3398,6 @@
 	(query_entity_cumulative_nearest_entity_weights 2 (list "alpha" "b" "c") (null) 0.5 (null) (list 0 0 1) )
  )))
 
- (print "--query_cumulative_nearest_entity_weights--\n")
-
- (print "neighbor entity weights:\n" (compute_on_contained_entities (list
- (query_cumulative_nearest_entity_weights 2 (list "alpha" "b" "c") [ [3 0.18 1] ] 0.5 (null) (list 0 0 1) )
- )))
-
 (print "--query_entity_convictions--\n")
 
  (print "case convictions:\n" (compute_on_contained_entities (list

@@ -284,7 +284,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE, "query_within_generalized_distance");
 	EmplaceNodeTypeString(ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, "query_nearest_generalized_distance");
 	EmplaceNodeTypeString(ENT_QUERY_DISTANCE_CONTRIBUTIONS, "query_distance_contributions");
-	EmplaceNodeTypeString(ENT_QUERY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS, "query_cumulative_nearest_entity_weights");
 	EmplaceNodeTypeString(ENT_QUERY_ENTITY_CONVICTIONS, "query_entity_convictions");
 	EmplaceNodeTypeString(ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE, "query_entity_group_kl_divergence");
 	EmplaceNodeTypeString(ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS, "query_entity_distance_contributions");

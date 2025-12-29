@@ -17,7 +17,7 @@ namespace EntityQueryBuilder
 	{
 		MAX_TO_FIND_OR_MAX_DISTANCE,
 		POSITION_LABELS,
-		POSITION_OR_ENTITIES,
+		POSITION_OR_ENTITIES_OR_MIN_CLUSTER_SIZE,
 
 		//optional params
 		MINKOWSKI_PARAMETER,
@@ -474,7 +474,7 @@ namespace EntityQueryBuilder
 		auto &ocn = cn->GetOrderedChildNodes();
 
 		//need to at least have position, otherwise not valid query
-		if(ocn.size() <= POSITION_OR_ENTITIES)
+		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_SIZE)
 			return;
 
 		//if ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, see if excluding an entity in the previous query -- if so, exclude here
@@ -581,7 +581,7 @@ namespace EntityQueryBuilder
 			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES
 			|| condition_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
-			EvaluableNode *entities = ocn[POSITION_OR_ENTITIES];
+			EvaluableNode *entities = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_SIZE];
 			if(EvaluableNode::IsOrderedArray(entities))
 			{
 				auto &entities_ocn = entities->GetOrderedChildNodesReference();
@@ -592,7 +592,7 @@ namespace EntityQueryBuilder
 		}
 		else if(condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
 		{
-			EvaluableNode *positions = ocn[POSITION_OR_ENTITIES];
+			EvaluableNode *positions = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_SIZE];
 			if(!EvaluableNode::IsOrderedArray(positions))
 			{
 				cur_condition->queryType = ENT_NULL;
@@ -602,12 +602,13 @@ namespace EntityQueryBuilder
 		}
 		else if(condition_type == ENT_QUERY_ENTITY_CLUSTERS)
 		{
-			//TODO 24886: finish this
+			EvaluableNode *cluster_size = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_SIZE];
+			cur_condition->minClusterSize = std::max<double>(0.0, EvaluableNode::ToNumber(cluster_size, 1.0));
 		}
 		else //ENT_QUERY_NEAREST_GENERALIZED_DISTANCE or ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 		{
 			//set position
-			EvaluableNode *position = ocn[POSITION_OR_ENTITIES];
+			EvaluableNode *position = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_SIZE];
 			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == cur_condition->positionLabels.size()))
 			{
 				CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),

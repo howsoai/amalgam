@@ -483,7 +483,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 				else //ENT_QUERY_ENTITY_CLUSTERS
 				{
-					//TODO 24886: finish from here down
+					//TODO 24886: finish from here down, use minClusterSize
 					//TODO 24886: add documentation
 					//TODO 24886: add tests to full_test.amlg
 

@@ -1,13 +1,40 @@
 ﻿(seq
+	(create_entities
+		"g1c1" (zip_labels ["A" "B" "w"]  [1 1 	1])
+		"g1c2" (zip_labels ["A" "B" "w"]  [1 2 	1])
+		"g1c3" (zip_labels ["A" "B" "w"]  [2 1 	1])
+		"g1c4" (zip_labels ["A" "B" "w"]  [2 2 	1])
+		
+		"g2c1" (zip_labels ["A" "B" "w"]  [11 11 1])
+		"g2c2" (zip_labels ["A" "B" "w"]  [11 12 1])
+		"g2c3" (zip_labels ["A" "B" "w"]  [12 11 1])
+		"g2c4" (zip_labels ["A" "B" "w"]  [12 12 1])
+		
+		"g3c1" (zip_labels ["A" "B" "w"]  [100 100 	1])
+		"g3c2" (zip_labels ["A" "B" "w"]  [100 200 	1])
+		"g3c3" (zip_labels ["A" "B" "w"]  [200 100 	1])
+		"g3c4" (zip_labels ["A" "B" "w"]  [200 200 	1])
+	)
 
-(print (= (list 4 4 5) (list 4 4 5) ) "\n")
-(print (= (list 4 4 5) (list 4 4 6) ) "\n")
-(print (= (list 4 4 5) (list 4 5 4) ) "\n")
-
-(print (= (unordered_list 4 4 5) (unordered_list 4 4 5) ) "\n")
-(print (= (unordered_list 4 4 5) (unordered_list 4 4 6) ) "\n")
-(print (= (unordered_list 4 4 5) (unordered_list 4 5 4) ) "\n")
-
-(print (= (set_type (range 0 100) "unordered_list") (set_type (reverse (range 0 100)) "unordered_list")) "\n")
-
- )
+	(print
+		(compute_on_contained_entities
+			(query_entity_clusters
+				2 ;(get hyperparam_map "k")
+				["A" "B"] ;features
+				4 ;min cluster size
+				1 ;(get hyperparam_map "p")
+				(null) ;feature_weights
+				(zip ["A" "B"] "continuous_numeric") ; !queryDistanceTypeMap
+				(null) ;(get hyperparam_map "featureDomainAttributes")
+				{"A" 0.01 "B" 0.01 } ;feature_deviations
+				(null)
+				1 ; (if (= (get hyperparam_map "dt") "surprisal_to_prob") "surprisal" (get hyperparam_map "dt") )
+				distribute_weight_feature
+				;use a fixed random seed to guarantee deterministic behavior for reacts (named "fixed rand seed")
+				"fixed rand seed"
+				(null) ;radius
+				(null) ;!numericalPrecision
+			)
+		)
+	)
+)

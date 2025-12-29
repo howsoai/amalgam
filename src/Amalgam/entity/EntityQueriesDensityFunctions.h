@@ -52,8 +52,8 @@ inline double PartialKullbackLeiblerDivergenceFromIndices(const std::vector<Dist
 	return sum;
 }
 
-//manages all types of processing related to conviction
-class ConvictionProcessor
+//manages all types of processing related to probability density, such as conviction and clustering
+class EntityQueriesDensityProcessor
 {
 	using EntityReference = size_t;
 	using EntityReferenceSet = BitArrayIntegerSet;
@@ -70,11 +70,11 @@ public:
 	};
 
 #ifdef MULTITHREAD_SUPPORT
-	ConvictionProcessor(KnnCache &cache,
+	EntityQueriesDensityProcessor(KnnCache &cache,
 		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
 		StringInternPool::StringID radius_label, bool run_concurrently)
 #else
-	ConvictionProcessor(KnnCache &cache,
+	EntityQueriesDensityProcessor(KnnCache &cache,
 		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
 		StringInternPool::StringID radius_label)
 #endif

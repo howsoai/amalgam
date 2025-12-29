@@ -611,7 +611,6 @@
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="BinaryPacking.h" />
     <ClInclude Include="Concurrency.h" />
-    <ClInclude Include="Conviction.h" />
     <ClInclude Include="Cryptography.h" />
     <ClInclude Include="DateTimeFormat.h" />
     <ClInclude Include="DistanceReferencePair.h" />
@@ -619,6 +618,7 @@
     <ClInclude Include="entity\EntityExternalInterface.h" />
     <ClInclude Include="entity\EntityManipulation.h" />
     <ClInclude Include="entity\EntityQueries.h" />
+    <ClInclude Include="entity\EntityQueriesDensityFunctions.h" />
     <ClInclude Include="entity\EntityQueriesStatistics.h" />
     <ClInclude Include="entity\EntityQueryBuilder.h" />
     <ClInclude Include="entity\EntityQueryCaches.h" />

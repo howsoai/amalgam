@@ -203,9 +203,6 @@
     <ClInclude Include="FilenameEscapeProcessor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Conviction.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PartialSum.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -336,6 +333,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="importexport\FileSupportYAML.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="entity\EntityQueriesDensityFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

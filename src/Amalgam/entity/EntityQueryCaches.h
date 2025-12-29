@@ -1,8 +1,8 @@
 #pragma once
 
 //project headers:
-#include "Conviction.h"
 #include "DistanceReferencePair.h"
+#include "EntityQueriesDensityFunctions.h"
 #include "EvaluableNode.h"
 #include "IntegerSet.h"
 #include "KnnCache.h"

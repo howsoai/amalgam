@@ -1,8 +1,8 @@
 //project headers:
-#include "Conviction.h"
 #include "Entity.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
+#include "EntityQueriesDensityFunctions.h"
 #include "EntityQueryCaches.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "HashMaps.h"
@@ -20,7 +20,7 @@ EntityQueryCaches::QueryCachesBuffers EntityQueryCaches::buffers;
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
 #endif
-ConvictionProcessor::ConvictionProcessorBuffers ConvictionProcessor::buffers;
+EntityQueriesDensityProcessor::ConvictionProcessorBuffers EntityQueriesDensityProcessor::buffers;
 
 bool EntityQueryCaches::DoesCachedConditionMatch(EntityQueryCondition *cond, bool last_condition)
 {
@@ -430,10 +430,10 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 
 			#ifdef MULTITHREAD_SUPPORT
-				ConvictionProcessor conviction_processor(buffers.knnCache,
+				EntityQueriesDensityProcessor conviction_processor(buffers.knnCache,
 					distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->useConcurrency);
 			#else
-				ConvictionProcessor conviction_processor(buffers.knnCache,
+				EntityQueriesDensityProcessor conviction_processor(buffers.knnCache,
 					distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel);
 			#endif
 				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->positionLabels, cond->singleLabel);

@@ -2011,7 +2011,7 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNod
 		unmatched_a_children.reserve(a_size - index);
 		for(size_t i = index; i < a_size; i++)
 		{
-			std::string a_unparsed = Parser::Unparse(a_ocn[i], false, true, true);
+			std::string a_unparsed = Parser::Unparse(a_ocn[i], false, false, true);
 			auto entry = unmatched_a_children.emplace(std::move(a_unparsed), 1);
 			//if already exists, increment
 			if(!entry.second)
@@ -2021,7 +2021,7 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNod
 		//for each of b's nodes, remove 
 		for(size_t i = index; i < a_size; i++)
 		{
-			std::string b_unparsed = Parser::Unparse(b_ocn[i], false, true, true);
+			std::string b_unparsed = Parser::Unparse(b_ocn[i], false, false, true);
 			auto found = unmatched_a_children.find(b_unparsed);
 			if(found == end(unmatched_a_children))
 				return false;

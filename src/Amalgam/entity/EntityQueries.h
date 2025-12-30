@@ -116,7 +116,7 @@ public:
 	double qPercentage;
 
 	//min cluster for ENT_QUERY_ENTITY_CLUSTERS
-	double minClusterSize;
+	double minClusterWeight;
 
 	//for ENT_QUERY_GENERALIZED_MEAN
 	double center;

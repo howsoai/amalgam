@@ -637,6 +637,23 @@ public:
 			return KullbackLeiblerDivergence(scaled_base_distance_contribs, combined_model_distance_contribs);
 	}
 
+	inline void ComputeCaseClusters(EntityReferenceSet &entities_to_compute, std::vector<double> &clusters_out, double minimum_cluster_weight)
+	{
+		//prime the cache
+	#ifdef MULTITHREAD_SUPPORT
+		knnCache->PreCacheKnn(nullptr, numNearestNeighbors + 1, true, runConcurrently);
+	#else
+		knnCache->PreCacheKnn(nullptr, numNearestNeighbors + 1, true);
+	#endif
+
+		//TODO 24886: finish from here down
+		//TODO 24886: add documentation
+		//TODO 24886: add tests to full_test.amlg
+
+		for(auto e : entities_to_compute)
+			clusters_out.push_back(1.0);
+	}
+
 	protected:
 
 		KnnCache *knnCache;

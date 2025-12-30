@@ -388,11 +388,13 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			{
 				BitArrayIntegerSet *ents_to_compute_ptr = nullptr; //if nullptr, compute is done on all entities in the cache
 
+				//if anything that computes results for entities
 				if(cond->queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
 					|| cond->queryType == ENT_QUERY_ENTITY_CONVICTIONS
 					|| cond->queryType == ENT_QUERY_ENTITY_KL_DIVERGENCES
 					|| cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
-					|| cond->queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
+					|| cond->queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+					|| cond->queryType == ENT_QUERY_ENTITY_CLUSTERS)
 				{
 					if(cond->existLabels.size() != 0) //if subset is specified, set ents_to_compute_ptr to set of ents_to_compute
 					{
@@ -483,11 +485,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 				else //ENT_QUERY_ENTITY_CLUSTERS
 				{
-					//TODO 24886: finish from here down, use minClusterSize
-					//TODO 24886: add documentation
-					//TODO 24886: add tests to full_test.amlg
-
-					return;
+					conviction_processor.ComputeCaseClusters(*ents_to_compute_ptr, results_buffer, cond->minClusterWeight);
 				}
 
 				//clear compute_results as it may have been used for intermediate results

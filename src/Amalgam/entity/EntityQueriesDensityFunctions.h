@@ -639,8 +639,33 @@ public:
 
 	inline void ComputeCaseClusters(EntityReferenceSet &entities_to_compute, std::vector<double> &clusters_out, double minimum_cluster_weight)
 	{
-		std::vector<double> &combined_model_distance_contribs = buffers.baseDistanceContributions;
-		ComputeDistanceContributionsWithoutCache(&entities_to_compute, combined_model_distance_contribs);
+		//prime the cache
+	#ifdef MULTITHREAD_SUPPORT
+		knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true, runConcurrently);
+	#else
+		knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true);
+	#endif
+
+		//find distance contributions to use as core weights
+		auto &core_distances = buffers.baseDistanceContributions;
+		core_distances.clear();
+		core_distances.resize(knnCache->GetEndEntityIndex());
+
+		IterateOverConcurrentlyIfPossible(entities_to_compute,
+			[this, &core_distances](auto index, auto entity)
+		{
+			auto &neighbors = knnCache->GetKnnCache(entity);
+
+			double entity_weight = 0.0;
+			distanceTransform->getEntityWeightFunction(entity, entity_weight);
+			core_distances[index] = distanceTransform->ComputeDistanceContribution(neighbors, entity_weight);
+
+			distanceTransform->TransformDistances(neighbors, false);
+		}
+	#ifdef MULTITHREAD_SUPPORT
+			, runConcurrently
+	#endif
+		);
 
 		//TODO 24886: finish from here down
 		//TODO 24886: add documentation

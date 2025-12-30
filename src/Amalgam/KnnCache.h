@@ -151,6 +151,13 @@ public:
 			*positionLabelIds, index, top_k, radiusLabelId, from_indices, true, expand_to_first_nonzero_distance, out);
 	}
 
+	//returns the container for the knn cache for index
+	//note that this should only be called after PreCacheKnn has been called
+	std::vector<DistanceReferencePair<size_t>> &GetKnnCache(size_t index)
+	{
+		return cachedNeighbors[index];
+	}
+
 	//returns a pointer to the relevant indices of the cache
 	constexpr BitArrayIntegerSet *GetRelevantEntities()
 	{

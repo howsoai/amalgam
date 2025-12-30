@@ -420,7 +420,7 @@ public:
 	// if false, then will compute the conviction as if those entities were added or included
 	inline void ComputeCaseKLDivergences(EntityReferenceSet &entities_to_compute, std::vector<double> &convictions_out, bool normalize_convictions, bool conviction_of_removal)
 	{
-		//prime the cache
+		//prime the cache, including one extra case so each can be left out
 	#ifdef MULTITHREAD_SUPPORT
 		knnCache->PreCacheKnn(nullptr, numNearestNeighbors + 1, true, runConcurrently);
 	#else
@@ -639,12 +639,8 @@ public:
 
 	inline void ComputeCaseClusters(EntityReferenceSet &entities_to_compute, std::vector<double> &clusters_out, double minimum_cluster_weight)
 	{
-		//prime the cache
-	#ifdef MULTITHREAD_SUPPORT
-		knnCache->PreCacheKnn(nullptr, numNearestNeighbors + 1, true, runConcurrently);
-	#else
-		knnCache->PreCacheKnn(nullptr, numNearestNeighbors + 1, true);
-	#endif
+		std::vector<double> &combined_model_distance_contribs = buffers.baseDistanceContributions;
+		ComputeDistanceContributionsWithoutCache(&entities_to_compute, combined_model_distance_contribs);
 
 		//TODO 24886: finish from here down
 		//TODO 24886: add documentation

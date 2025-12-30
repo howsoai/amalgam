@@ -41,7 +41,7 @@ namespace EntityQueryBuilder
 		return (t == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || t == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 			|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_CONVICTIONS
 			|| t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
-			|| t == ENT_QUERY_ENTITY_KL_DIVERGENCES
+			|| t == ENT_QUERY_ENTITY_KL_DIVERGENCES || t == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			);
 	}
 
@@ -347,15 +347,26 @@ namespace EntityQueryBuilder
 					if(found)
 					{
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
-						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_bool))						feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_number))				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_string))				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_code))					feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number))			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number_cyclic))		feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_string))			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code))				feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;
-						else																							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
+						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_bool))
+							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_number))
+							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_string))
+							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_code))
+							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number_cyclic))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_string))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code_no_recursive_matching))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code))
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;
+						else
+							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 					}
 					dist_eval.featureAttribs[i].featureType = feature_type;
 				}
@@ -566,7 +577,8 @@ namespace EntityQueryBuilder
 		if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS
 			|| condition_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
 			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
-			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
+			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES
+			|| condition_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
 			EvaluableNode *entities = ocn[POSITION_OR_ENTITIES];
 			if(EvaluableNode::IsOrderedArray(entities))
@@ -719,7 +731,8 @@ namespace EntityQueryBuilder
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 			|| condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 			|| condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
-			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)
+			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+			|| condition_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{

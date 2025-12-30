@@ -19,7 +19,6 @@ enum EvaluableNodeType : uint8_t
 	//core control
 	ENT_IF,
 	ENT_SEQUENCE,
-	ENT_PARALLEL,
 	ENT_LAMBDA,
 	ENT_CONCLUDE,
 	ENT_RETURN,
@@ -154,6 +153,7 @@ enum EvaluableNodeType : uint8_t
 
 	//data types
 	ENT_LIST,
+	ENT_UNORDERED_LIST,
 	ENT_ASSOC,
 	ENT_BOOL,
 	ENT_NUMBER,
@@ -271,6 +271,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE,
 	ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS,
 	ENT_QUERY_ENTITY_KL_DIVERGENCES,
+	ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS,
 
 	//entity access
 	ENT_CONTAINS_LABEL,
@@ -315,13 +316,13 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 {
 	switch(t)
 	{
-	case ENT_PARALLEL:
 	case ENT_ADD:
 	case ENT_MULTIPLY:
 	case ENT_MAX:					case ENT_MIN:				case ENT_INDEX_MAX:	case ENT_INDEX_MIN:
 	case ENT_AND:					case ENT_OR:				case ENT_XOR:
 	case ENT_EQUAL:					case ENT_NEQUAL:
 	case ENT_NULL:
+	case ENT_UNORDERED_LIST:
 	case ENT_DESTROY_ENTITIES:
 		return OCNT_UNORDERED;
 
@@ -355,7 +356,8 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 	case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:		case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
 	case ENT_QUERY_DISTANCE_CONTRIBUTIONS:			case ENT_QUERY_ENTITY_CONVICTIONS:
 	case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
-	case ENT_QUERY_ENTITY_KL_DIVERGENCES:
+	case ENT_QUERY_ENTITY_KL_DIVERGENCES:			case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
+
 	case ENT_CONTAINS_LABEL:		case ENT_ASSIGN_TO_ENTITIES:							case ENT_DIRECT_ASSIGN_TO_ENTITIES:
 	case ENT_ACCUM_TO_ENTITIES:		case ENT_RETRIEVE_FROM_ENTITY:							case ENT_DIRECT_RETRIEVE_FROM_ENTITY:
 	case ENT_CALL_ENTITY:			case ENT_CALL_ENTITY_GET_CHANGES:						case ENT_CALL_CONTAINER:
@@ -516,8 +518,8 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 	case ENT_MAP:	case ENT_FILTER:	case ENT_WEAVE:
 	case ENT_REVERSE:	case ENT_SORT:
 	case ENT_VALUES:
-	case ENT_REMOVE:	case ENT_KEEP:	case ENT_ASSOCIATE:	case ENT_ZIP:	case ENT_UNZIP:
-	case ENT_LIST:	case ENT_ASSOC:
+	case ENT_REMOVE:	case ENT_KEEP:				case ENT_ASSOCIATE:	case ENT_ZIP:	case ENT_UNZIP:
+	case ENT_LIST:		case ENT_UNORDERED_LIST:	case ENT_ASSOC:
 	case ENT_SET_TYPE:
 	case ENT_SET_LABELS:	case ENT_ZIP_LABELS:
 	case ENT_SET_COMMENTS:
@@ -536,6 +538,7 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 	case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:	case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
 	case ENT_QUERY_ENTITY_CONVICTIONS:				case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
 	case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:	case ENT_QUERY_ENTITY_KL_DIVERGENCES:
+	case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 				return ONVRT_PARTIALLY_NEW_VALUE;
 
 	case ENT_RAND:
@@ -558,8 +561,6 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 	case ENT_SYMBOL:
 		return ONVRT_EXISTING_VALUE;
 
-
-	case ENT_PARALLEL:
 	case ENT_ASSIGN:	case ENT_ACCUM:
 	case ENT_PRINT:
 		return ONVRT_NULL;
@@ -621,8 +622,9 @@ constexpr bool DoesEvaluableNodeTypeCreateScope(EvaluableNodeType t)
 {
 	return (t == ENT_CALL || t == ENT_CALL_SANDBOXED || t == ENT_WHILE || t == ENT_LET || t == ENT_REPLACE
 		|| t == ENT_RANGE || t == ENT_REWRITE || t == ENT_MAP || t == ENT_FILTER || t == ENT_WEAVE
-		|| t == ENT_REDUCE || t == ENT_SORT || t == ENT_ASSOCIATE || t == ENT_ZIP || t == ENT_LIST
-		|| t == ENT_ASSOC || t == ENT_CALL_ENTITY || t == ENT_CALL_ENTITY_GET_CHANGES || t == ENT_CALL_CONTAINER
+		|| t == ENT_REDUCE || t == ENT_SORT || t == ENT_ASSOCIATE || t == ENT_ZIP
+		|| t == ENT_LIST || t == ENT_UNORDERED_LIST || t == ENT_ASSOC
+		|| t == ENT_CALL_ENTITY || t == ENT_CALL_ENTITY_GET_CHANGES || t == ENT_CALL_CONTAINER
 		);
 }
 
@@ -640,7 +642,7 @@ constexpr bool IsEvaluableNodeTypeQuery(EvaluableNodeType t)
 		|| t == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || t == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 		|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_CONVICTIONS
 		|| t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
-		|| t == ENT_QUERY_ENTITY_KL_DIVERGENCES
+		|| t == ENT_QUERY_ENTITY_KL_DIVERGENCES || t == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 		);
 }
 
@@ -648,7 +650,7 @@ constexpr bool IsEvaluableNodeTypeQuery(EvaluableNodeType t)
 constexpr bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType t)
 {
 	return (t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING
-		|| t == ENT_NULL || t == ENT_LIST || t == ENT_ASSOC
+		|| t == ENT_NULL || t == ENT_LIST || t == ENT_UNORDERED_LIST || t == ENT_ASSOC
 		|| t == ENT_CONCLUDE || t == ENT_RETURN
 		|| IsEvaluableNodeTypeQuery(t));
 }
@@ -755,6 +757,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_continuous_number,
 	ENBISI_continuous_number_cyclic,
 	ENBISI_continuous_string,
+	ENBISI_continuous_code_no_recursive_matching,
 	ENBISI_continuous_code,
 
 	//distance parameter values

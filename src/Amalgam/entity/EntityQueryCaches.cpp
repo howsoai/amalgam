@@ -28,7 +28,8 @@ bool EntityQueryCaches::DoesCachedConditionMatch(EntityQueryCondition *cond, boo
 
 	if(qt == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || qt == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 		|| qt == ENT_QUERY_DISTANCE_CONTRIBUTIONS || qt == ENT_QUERY_ENTITY_CONVICTIONS
-		|| qt == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || qt == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS || qt == ENT_QUERY_ENTITY_KL_DIVERGENCES)
+		|| qt == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || qt == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+		|| qt == ENT_QUERY_ENTITY_KL_DIVERGENCES || qt == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 	{
 		//accelerating a p of 0 with the current caches would be a large effort, as everything would have to be
 		// transformed via logarithms and then pValue = 1 applied
@@ -73,6 +74,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 		case ENT_QUERY_ENTITY_CONVICTIONS:
 		case ENT_QUERY_ENTITY_KL_DIVERGENCES:
 		case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
+		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		{
 			for(auto label : cond->positionLabels)
 			{
@@ -251,6 +253,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 		case ENT_QUERY_ENTITY_KL_DIVERGENCES:
 		case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
 		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
+		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		{
 			//get entity (case) weighting if applicable
 			bool use_entity_weights = (cond->weightLabel != StringInternPool::NOT_A_STRING_ID);
@@ -366,9 +369,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					}
 				}
 
-				size_t num_to_keep = distance_transform.TransformDistances(
-					begin(compute_results), end(compute_results), cond->returnSortedList);
-				compute_results.resize(num_to_keep);
+				distance_transform.TransformDistances(compute_results, cond->returnSortedList);
 
 				//populate matching_entities if needed
 				if(update_matching_entities)
@@ -379,14 +380,16 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 			}
 			else //cond->queryType in ENT_QUERY_DISTANCE_CONTRIBUTIONS, ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS,
-				//ENT_QUERY_ENTITY_CONVICTIONS, ENT_QUERY_ENTITY_KL_DIVERGENCES, ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+				//ENT_QUERY_ENTITY_CONVICTIONS, ENT_QUERY_ENTITY_KL_DIVERGENCES, ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE,
+				//ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 			{
 				BitArrayIntegerSet *ents_to_compute_ptr = nullptr; //if nullptr, compute is done on all entities in the cache
 
 				if(cond->queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
 					|| cond->queryType == ENT_QUERY_ENTITY_CONVICTIONS
 					|| cond->queryType == ENT_QUERY_ENTITY_KL_DIVERGENCES
-					|| cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
+					|| cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+					|| cond->queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 				{
 					if(cond->existLabels.size() != 0) //if subset is specified, set ents_to_compute_ptr to set of ents_to_compute
 					{
@@ -457,9 +460,23 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					//early exit because don't need to translate distances
 					return;
 				}
-				else //ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+				else if(cond->queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)
 				{
 					conviction_processor.ComputeDistanceContributionsWithoutCache(ents_to_compute_ptr, results_buffer);
+				}
+				else //ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+				{
+					conviction_processor.ComputeNeighborWeightsForEntities(ents_to_compute_ptr, compute_results);
+
+					if(cond->returnSortedList)
+					{
+						std::sort(begin(compute_results), end(compute_results),
+							[](auto a, auto b) {return a.distance > b.distance; }
+						);
+					}
+
+					//early exit because don't need to translate distances
+					return;
 				}
 
 				//clear compute_results as it may have been used for intermediate results
@@ -1015,6 +1032,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
 		case ENT_QUERY_ENTITY_CONVICTIONS:
 		case ENT_QUERY_ENTITY_KL_DIVERGENCES:
+		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
 		{
 			entity_caches->GetMatchingEntities(&cond, matching_ents, compute_results, is_first, !is_last || !return_query_value);
 			break;
@@ -1219,7 +1237,8 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			|| last_query_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 			|| last_query_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
 			|| last_query_type == ENT_QUERY_ENTITY_CONVICTIONS
-			|| last_query_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
+			|| last_query_type == ENT_QUERY_ENTITY_KL_DIVERGENCES
+			|| last_query_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
 			if(immediate_result.AnyImmediateType())
 				return EvaluableNodeReference(static_cast<double>(compute_results.size()));
@@ -1317,7 +1336,8 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			|| conditions[cond_index].queryType == ENT_QUERY_ENTITY_CONVICTIONS
 			|| conditions[cond_index].queryType == ENT_QUERY_ENTITY_KL_DIVERGENCES
 			|| conditions[cond_index].queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
-			|| conditions[cond_index].queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)
+			|| conditions[cond_index].queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+			|| conditions[cond_index].queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
 			if(!CanUseQueryCaches(conditions))
 				return EvaluableNodeReference::Null();

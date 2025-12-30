@@ -539,40 +539,42 @@ public:
 
 	public:
 		//transforms distances based on how this object has been parameterized, modifying the values in place
+		// and updating the length of entity_distance_pair_container
 		//selects the bandwidth from the transformed values and returns the number of entities to keep,
 		// which may be less than the total
-		template<typename EntityDistancePairIterator>
-		inline size_t TransformDistances(EntityDistancePairIterator entity_distance_pair_container_begin,
-			EntityDistancePairIterator entity_distance_pair_container_end, bool sort_results)
+		template<typename EntityDistancePairContainer>
+		inline void TransformDistances(EntityDistancePairContainer &entity_distance_pair_container,
+			bool sort_results)
 		{
 			size_t num_kept = TransformDistancesWithBandwidthSelectionAndResultFunction(
-				entity_distance_pair_container_begin, entity_distance_pair_container_end,
+				entity_distance_pair_container.begin(), entity_distance_pair_container.end(),
 				[](auto ed_pair, double weighted_value, double unweighted_value, double prob_mass, double weight)
 				{
 					ed_pair->distance = weighted_value;
 				});
 
+			entity_distance_pair_container.resize(num_kept);
+
 			if(sort_results)
 			{
 				//some compilers' interpretations of std::sort require a copy of the iterator that can be modified
-				auto begin_iter = entity_distance_pair_container_begin;
+				auto begin_iter = entity_distance_pair_container.begin();
+				auto end_iter = entity_distance_pair_container.end();
 				//if probability values or inverse distance, sort largest first
 				if((computeSurprisal && surprisalToProbability)
 					|| distanceWeightExponent <= 0)
 				{
-					std::sort(begin_iter, begin_iter + num_kept,
+					std::sort(begin_iter, end_iter,
 						[](auto a, auto b) {return a.distance > b.distance; }
 					);
 				}
 				else //surprisal or regular distance, sort by smallest first
 				{
-					std::sort(begin_iter, begin_iter + num_kept,
+					std::sort(begin_iter, end_iter,
 						[](auto a, auto b) {return a.distance < b.distance; }
 					);
 				}
 			}
-
-			return num_kept;
 		}
 
 		//like TransformDistances but returns the appropriate expected value

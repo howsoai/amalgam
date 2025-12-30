@@ -25,7 +25,6 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	//core control
 	&Interpreter::InterpretNode_ENT_IF,																// ENT_IF
 	&Interpreter::InterpretNode_ENT_SEQUENCE,														// ENT_SEQUENCE
-	&Interpreter::InterpretNode_ENT_PARALLEL,														// ENT_PARALLEL
 	&Interpreter::InterpretNode_ENT_LAMBDA,															// ENT_LAMBDA
 	&Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN,											// ENT_CONCLUDE
 	&Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN,											// ENT_RETURN
@@ -155,7 +154,8 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_NULL,															// ENT_NULL
 
 	//data types
-	&Interpreter::InterpretNode_ENT_LIST,															// ENT_LIST
+	&Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST,										// ENT_LIST
+	&Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST,										// ENT_UNORDERED_LIST
 	&Interpreter::InterpretNode_ENT_ASSOC,															// ENT_ASSOC
 	&Interpreter::InterpretNode_ENT_BOOL,															// ENT_BOOL
 	&Interpreter::InterpretNode_ENT_NUMBER,															// ENT_NUMBER
@@ -270,6 +270,7 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
 	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
 	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_ENTITY_KL_DIVERGENCES
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 
 	//entity access
 	&Interpreter::InterpretNode_ENT_CONTAINS_LABEL,													// ENT_CONTAINS_LABEL

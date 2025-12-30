@@ -1250,19 +1250,57 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		else if(tree->IsOrderedArray())
 		{
 			auto &tree_ocn = tree->GetOrderedChildNodesReference();
-			if(recurse_expanded_whitespace)
+			if(tree_type == ENT_UNORDERED_LIST && upd.sortKeys)
 			{
-				for(auto &e : tree_ocn)
-					Unparse(upd, e, tree, true, indentation_depth + 1, true);
-			}
-			else //expanded whitespace
-			{
+				std::vector<std::string> unordered_code;
+				unordered_code.reserve(tree_ocn.size());
+
+				//move current code out to reuse upd.result buffer
+				std::string previous_code;
+				std::swap(previous_code, upd.result);
+
 				for(size_t i = 0; i < tree_ocn.size(); i++)
 				{
-					//if not the first or if it's not a type with a special delimeter, insert a space
-					if(i > 0 || (tree_type != ENT_LIST && tree_type != ENT_ASSOC))
+					if(recurse_expanded_whitespace)
+					{
+						Unparse(upd, tree_ocn[i], tree, true, indentation_depth + 1, true);
+					}
+					else //not expanded whitespace
+					{
+						//always insert a space since there's a keyword for the opcode
 						upd.result.push_back(' ');
-					Unparse(upd, tree_ocn[i], tree, false, indentation_depth + 1, true);
+						Unparse(upd, tree_ocn[i], tree, false, indentation_depth + 1, true);
+					}
+
+					//move results into unordered_code
+					unordered_code.emplace_back(std::move(upd.result));
+				}
+
+				//move current code back in
+				std::swap(previous_code, upd.result);
+
+				std::sort(begin(unordered_code), end(unordered_code), StringManipulation::StringNaturalCompareSort);
+				for(auto &uc : unordered_code)
+					upd.result.append(uc);
+			}
+			else //normal ordered child nodes
+			{
+				bool type_with_special_delimiter = (tree_type != ENT_LIST && tree_type != ENT_ASSOC);
+
+				if(recurse_expanded_whitespace)
+				{
+					for(auto &e : tree_ocn)
+						Unparse(upd, e, tree, true, indentation_depth + 1, true);
+				}
+				else //not expanded whitespace
+				{
+					for(size_t i = 0; i < tree_ocn.size(); i++)
+					{
+						//if not the first or if it's not a type with a special delimeter, insert a space
+						if(i > 0 || type_with_special_delimiter)
+							upd.result.push_back(' ');
+						Unparse(upd, tree_ocn[i], tree, false, indentation_depth + 1, true);
+					}
 				}
 			}
 		}

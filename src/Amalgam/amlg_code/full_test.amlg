@@ -1310,6 +1310,9 @@
  (print (list "a" 1 "b"))
 
  (print "--unordered_list--\n")
+ (print (unordered_list 4 5 4))
+ (print (unordered_list (unordered_list 6 5 4) (unordered_list 4 5 4)))
+
  (print (= (unordered_list 4 4 5) (unordered_list 4 4 5) ) "\n")
  (print (= (unordered_list 4 4 5) (unordered_list 4 4 6) ) "\n")
  (print (= (unordered_list 4 4 5) (unordered_list 4 5 4) ) "\n")

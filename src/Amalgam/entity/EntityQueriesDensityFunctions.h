@@ -52,8 +52,8 @@ inline double PartialKullbackLeiblerDivergenceFromIndices(const std::vector<Dist
 	return sum;
 }
 
-//manages all types of processing related to conviction
-class ConvictionProcessor
+//manages all types of processing related to probability density, such as conviction and clustering
+class EntityQueriesDensityProcessor
 {
 	using EntityReference = size_t;
 	using EntityReferenceSet = BitArrayIntegerSet;
@@ -70,11 +70,11 @@ public:
 	};
 
 #ifdef MULTITHREAD_SUPPORT
-	ConvictionProcessor(KnnCache &cache,
+	EntityQueriesDensityProcessor(KnnCache &cache,
 		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
 		StringInternPool::StringID radius_label, bool run_concurrently)
 #else
-	ConvictionProcessor(KnnCache &cache,
+	EntityQueriesDensityProcessor(KnnCache &cache,
 		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
 		StringInternPool::StringID radius_label)
 #endif
@@ -420,7 +420,7 @@ public:
 	// if false, then will compute the conviction as if those entities were added or included
 	inline void ComputeCaseKLDivergences(EntityReferenceSet &entities_to_compute, std::vector<double> &convictions_out, bool normalize_convictions, bool conviction_of_removal)
 	{
-		//prime the cache
+		//prime the cache, including one extra case so each can be left out
 	#ifdef MULTITHREAD_SUPPORT
 		knnCache->PreCacheKnn(nullptr, numNearestNeighbors + 1, true, runConcurrently);
 	#else
@@ -635,6 +635,293 @@ public:
 			return KullbackLeiblerDivergence(combined_model_distance_contribs, scaled_base_distance_contribs);
 		else
 			return KullbackLeiblerDivergence(scaled_base_distance_contribs, combined_model_distance_contribs);
+	}
+
+	//builds the minimum spanning tree (MST) on the mutual reachability graph.
+	//The algorithm is a Prim‑like sweep over the entities sorted by core distance.
+	//Each point only considers relevant neighbors, and the smallest mutual reachability
+	// distance among those neighbours becomes the edge that connects the
+	// point to the growing tree.
+	//core_distances is the vector of core distances for each entity, infinity for entities not considered
+	//order is the list of entities sorted by descending core distance
+	//upon completion, edge_distances will contain the distance of the edge that link each entity to
+	//its parent in the MST (root gets distance = 0)
+	//parent_entities will contain the parent index for each entity (root points to itself)
+	//vector_bool_buffer is to reuse a buffer for booleans
+	void BuildMutualReachabilityMST(std::vector<double> &core_distances, std::vector<size_t> &order,
+		std::vector<double> &edge_distances, std::vector<size_t> &parent_entities,
+		std::vector<bool> &vector_bool_buffer)
+	{
+		size_t num_entity_ids = core_distances.size();
+		size_t num_entities = order.size();
+		edge_distances.clear();
+		edge_distances.resize(num_entity_ids, std::numeric_limits<double>::infinity());
+		parent_entities.clear();
+		parent_entities.resize(num_entity_ids, std::numeric_limits<size_t>::max());
+
+		//used to mark vertices (entities) as they are added to the tree
+		auto &processed_flags = vector_bool_buffer;
+		processed_flags.clear();
+		processed_flags.resize(num_entity_ids, false);
+
+		//initialize the first point, largest core distance, as the root
+		size_t root = order[0];
+		processed_flags[root] = true;
+		//root points to itself
+		parent_entities[root] = root;
+		//no edge weight
+		edge_distances[root] = 0.0;
+
+		for(size_t order_index = 1; order_index < num_entities; ++order_index)
+		{
+			size_t cur_entity_index = order[order_index];
+
+			size_t best_parent = std::numeric_limits<size_t>::max();
+			double best_dist = std::numeric_limits<double>::max();
+
+			auto &neighbors = knnCache->GetKnnCache(cur_entity_index);
+			for(auto &nb : neighbors)
+			{
+				size_t neighbor_entity_index = nb.reference;
+				//ignore neighbors that have not yet been processed
+				if(!processed_flags[neighbor_entity_index])
+					continue;
+
+				double mutual_reachability_distance = std::max({ core_distances[cur_entity_index],
+									   core_distances[neighbor_entity_index], nb.distance });
+
+				if(mutual_reachability_distance < best_dist)
+				{
+					best_dist = mutual_reachability_distance;
+					best_parent = neighbor_entity_index;
+				}
+			}
+
+			//it is possible but rare that none of the neighbours have not been processed yet,
+			// e.g., the graph is disconnected.  if so, fall back to a
+			// direct connection to the root using only core distances
+			if(best_parent == std::numeric_limits<size_t>::max())
+			{
+				best_dist = std::max(core_distances[cur_entity_index], core_distances[root]);
+				best_parent = root;
+			}
+
+			//record the procssed entity
+			parent_entities[cur_entity_index] = best_parent;
+			edge_distances[cur_entity_index] = best_dist;
+			processed_flags[cur_entity_index] = true;
+		}
+	}
+
+	//extracts clusters from the minimum spanning tree (MST)
+	//entities_to_compute is the set of entities to consider
+	//edge_distances is a vector of mutual-reachability of the edge that
+	// connects each entity to its parent in the MST, 0 if the entity is not included
+	//parent_entities contains the parent index for each entity (root points to itself)
+	//order is the set of entities sorted by descending core distance
+	//minimum_cluster_weight is the minimum total weight required for a cluster
+	//the method outputs cluster_ids output vector, where cluster 0 is noise/no cluster
+	//stabilities contains the stability score for each entity
+	//vector_bool_buffer is to reuse a buffer for booleans
+	void ExtractClustersFromMST(EntityReferenceSet &entities_to_compute,
+		std::vector<double> &core_distances,  std::vector<double> &edge_distances,
+		std::vector<size_t> &parent_entities, std::vector<size_t> &order, double minimum_cluster_weight,
+		std::vector<size_t> &cluster_ids, std::vector<double> &stabilities,
+		std::vector<bool> &vector_bool_buffer)
+	{
+		size_t num_entity_ids = edge_distances.size();
+
+		//density is 1 / mutual reachability distance
+		std::vector<double> densities(num_entity_ids, 0.0);
+		for(auto entity_index : entities_to_compute)
+		{
+			if(edge_distances[entity_index] > 0.0)
+				densities[entity_index] = 1.0 / edge_distances[entity_index];
+		}
+		//root has a 0 edge distance, so compute its density separately
+		size_t root_index = order.front();
+		densities[root_index] = 1.0 / core_distances[root_index];
+
+		//bottom-up pass to construct the total entity weights of the potential clusters
+		std::vector<double> subtree_cumulative_weights(num_entity_ids, 0.0);
+		stabilities.clear();
+		stabilities.resize(num_entity_ids, 0.0);
+
+		//accumulate the total distances up the MST
+		for(auto it = order.rbegin(); it != order.rend(); ++it)
+		{
+			size_t entity_index = *it;
+			size_t parent_index = parent_entities[entity_index];
+
+			//don't reaccumulate to the root
+			if(parent_index == entity_index)
+				continue;
+
+			double w = 1.0;
+			distanceTransform->getEntityWeightFunction(entity_index, w);
+			subtree_cumulative_weights[entity_index] += w;
+			subtree_cumulative_weights[parent_index] += subtree_cumulative_weights[entity_index];
+		}
+
+		//accumulate stabilities using differences in densities
+		for(auto it = order.rbegin(); it != order.rend(); ++it)
+		{
+			size_t entity_index = *it;
+			size_t parent_index = parent_entities[entity_index];
+
+			//don't reaccumulate to the root
+			if(parent_index == entity_index)
+				continue;
+
+			double delta_density = densities[entity_index] - densities[parent_index];
+			if(delta_density < 0.0)
+				delta_density = 0.0;
+
+			stabilities[parent_index] += delta_density * subtree_cumulative_weights[entity_index];
+		}
+
+		//select clusters for each point
+		auto &entity_clustered = vector_bool_buffer;
+		entity_clustered.clear();
+		entity_clustered.resize(num_entity_ids, false);
+
+		cluster_ids.clear();
+		cluster_ids.resize(num_entity_ids, 0);
+
+		//cluster id 0 is considered noise / not a cluster
+		size_t next_cluster_id = 1;
+
+		//minimum stability to avoid treating floating point noise as a cluster
+		constexpr double stability_eps = 1e-12;
+
+		//stack to search all descendents
+		std::vector<size_t> descendent_search_stack;
+
+		//walk the tree from leaves to root (reverse order)
+		for(auto it = order.rbegin(); it != order.rend(); ++it)
+		{
+			size_t entity_index = *it;
+
+			//skip if has already been assigned
+			if(cluster_ids[entity_index] != 0)
+				continue;
+
+			//decide whether entity_index is eligible to become a cluster
+			if(stabilities[entity_index] < stability_eps)
+				continue;
+
+			if(subtree_cumulative_weights[entity_index] < minimum_cluster_weight)
+				continue;
+
+			//ensure no ancestor is already a cluster
+			bool ancestor_clustered = false;
+			size_t ancestor_id = parent_entities[entity_index];
+			//walk up until hit the root
+			while(ancestor_id != entity_index)
+			{
+				if(entity_clustered[ancestor_id])
+				{
+					ancestor_clustered = true;
+					break;
+				}
+
+				//stop if hit root
+				if(ancestor_id == parent_entities[ancestor_id])
+					break;
+				ancestor_id = parent_entities[ancestor_id];
+			}
+			if(ancestor_clustered)
+				continue;
+
+			//mark this entity as a new cluster and propagate the id
+			entity_clustered[entity_index] = true;
+			cluster_ids[entity_index] = next_cluster_id;
+
+			//depth‑first walk to label all descendants that are still unassigned
+			descendent_search_stack.clear();
+			descendent_search_stack.emplace_back(entity_index);
+			while(!descendent_search_stack.empty())
+			{
+				size_t cur_id = descendent_search_stack.back();
+				descendent_search_stack.pop_back();
+
+				cluster_ids[cur_id] = next_cluster_id;
+
+				//push child entities that are not yet labelled
+				for(size_t i = 0; i < num_entity_ids; i++)
+				{
+					if(parent_entities[i] == cur_id && cluster_ids[i] == 0 && i != cur_id)
+						descendent_search_stack.push_back(i);
+				}
+			}
+
+			next_cluster_id++;
+		}
+	}
+
+	//TODO 24886: add documentation
+	//TODO 24886: add tests to full_test.amlg
+
+	//computes clusters for each entity and sets the corresponding index of clusters_out to the cluster id
+	//minimum_cluster_weight is the least amount of weight that can be used to constitute a cluster
+	inline void ComputeCaseClusters(EntityReferenceSet &entities_to_compute,
+		std::vector<double> &clusters_out, double minimum_cluster_weight)
+	{
+		//prime the cache
+	#ifdef MULTITHREAD_SUPPORT
+		knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true, runConcurrently);
+	#else
+		knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true);
+	#endif
+
+		//find distance contributions to use as core weights
+		size_t num_entity_indices = knnCache->GetEndEntityIndex();
+		size_t num_entities = entities_to_compute.size();
+		auto &core_distances = buffers.baseDistanceContributions;
+		core_distances.clear();
+		core_distances.resize(num_entity_indices, std::numeric_limits<double>::infinity());
+
+		IterateOverConcurrentlyIfPossible(entities_to_compute,
+			[this, &core_distances](auto /*unused index*/, auto entity)
+		{
+			auto &neighbors = knnCache->GetKnnCache(entity);
+
+			double entity_weight = 1.0;
+			distanceTransform->getEntityWeightFunction(entity, entity_weight);
+			core_distances[entity] = distanceTransform->ComputeDistanceContribution(neighbors, entity_weight);
+
+			distanceTransform->TransformDistances(neighbors, false);
+		}
+	#ifdef MULTITHREAD_SUPPORT
+			, runConcurrently
+	#endif
+		);
+
+		//entity indices, sorted descending by core distance
+		std::vector<size_t> order;
+		order.reserve(num_entities);
+		for(auto entity : entities_to_compute)
+			order.push_back(entity);
+		std::stable_sort(order.begin(), order.end(),
+			[&](size_t i, size_t j) { return core_distances[i] > core_distances[j]; });
+
+		//reuse baseDistanceProbabilities, but because clustering is not typically done repeatedly,
+		//don't reuse any of the other buffers
+		auto &edge_distances = buffers.baseDistanceProbabilities;
+		std::vector<size_t> parent_entities;
+		std::vector<bool> vector_bool_buffer;
+		BuildMutualReachabilityMST(core_distances, order, edge_distances, parent_entities, vector_bool_buffer);
+
+		std::vector<size_t> cluster_ids_tmp;
+		std::vector<double> node_stabilities;
+		ExtractClustersFromMST(entities_to_compute, core_distances, edge_distances, parent_entities, order,
+			minimum_cluster_weight, cluster_ids_tmp, node_stabilities, vector_bool_buffer);
+
+		//convert integer ids to double
+		clusters_out.clear();
+		clusters_out.reserve(num_entities);
+		for(auto entity_id : entities_to_compute)
+			clusters_out.emplace_back(static_cast<double>(cluster_ids_tmp[entity_id]));
 	}
 
 	protected:

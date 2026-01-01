@@ -114,7 +114,6 @@ set(COMMON_SOURCE
     src/Amalgam/AssetManager.h
     src/Amalgam/BinaryPacking.cpp
     src/Amalgam/BinaryPacking.h
-    src/Amalgam/Conviction.h
     src/Amalgam/Cryptography.cpp
     src/Amalgam/Cryptography.h
     src/Amalgam/DateTimeFormat.cpp
@@ -128,6 +127,7 @@ set(COMMON_SOURCE
     src/Amalgam/entity/EntityManipulation.h
     src/Amalgam/entity/EntityQueries.cpp
     src/Amalgam/entity/EntityQueries.h
+	src/Amalgam/entity/EntityQueriesDensityFunctions.h
     src/Amalgam/entity/EntityQueriesStatistics.h
     src/Amalgam/entity/EntityQueryBuilder.h
     src/Amalgam/entity/EntityQueryCaches.cpp

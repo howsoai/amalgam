@@ -115,6 +115,9 @@ public:
 	//quantile percentage, for ENT_QUERY_QUANTILE
 	double qPercentage;
 
+	//min cluster for ENT_QUERY_ENTITY_CLUSTERS
+	double minClusterWeight;
+
 	//for ENT_QUERY_GENERALIZED_MEAN
 	double center;
 	bool calculateMoment;

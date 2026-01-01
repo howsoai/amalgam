@@ -1,5 +1,7 @@
 ﻿(seq
 	(create_entities
+		"invalid" (zip_labels ["w"]  [1])
+
 		"g1c1" (zip_labels ["A" "B" "w"]  [1 1 	1])
 		"g1c2" (zip_labels ["A" "B" "w"]  [1 2 	1])
 		"g1c3" (zip_labels ["A" "B" "w"]  [2 1 	1])
@@ -12,23 +14,40 @@
 		
 		"g3c1" (zip_labels ["A" "B" "w"]  [100 100 	1])
 		"g3c2" (zip_labels ["A" "B" "w"]  [100 200 	1])
-		"g3c3" (zip_labels ["A" "B" "w"]  [200 100 	1])
-		"g3c4" (zip_labels ["A" "B" "w"]  [200 200 	1])
+		"g3c3" (zip_labels ["A" "B" "w"]  [100 300 	1])
+		"g3c4" (zip_labels ["A" "B" "w"]  [200 100 	1])
+		"g3c5" (zip_labels ["A" "B" "w"]  [200 200 	1])
+		"g3c6" (zip_labels ["A" "B" "w"]  [200 300 	1])
+		"g3c7" (zip_labels ["A" "B" "w"]  [300 100 	1])
+		"g3c8" (zip_labels ["A" "B" "w"]  [300 200 	1])
+		"g3c8" (zip_labels ["A" "B" "w"]  [300 300 	1])
+
+		"g4c1" (zip_labels ["A" "B" "w"]  [1010 1010 	1])
+		"g4c2" (zip_labels ["A" "B" "w"]  [1010 1020 	1])
+		"g4c3" (zip_labels ["A" "B" "w"]  [1010 1030 	1])
+		"g4c4" (zip_labels ["A" "B" "w"]  [1020 1010 	1])
+		"g4c5" (zip_labels ["A" "B" "w"]  [1020 1020 	1])
+		"g4c6" (zip_labels ["A" "B" "w"]  [1020 1030 	1])
+		"g4c7" (zip_labels ["A" "B" "w"]  [1030 1010 	1])
+		"g4c8" (zip_labels ["A" "B" "w"]  [1030 1020 	1])
+		"g4c8" (zip_labels ["A" "B" "w"]  [1030 1030 	1])
+
+		"g5c1" (zip_labels ["A" "B" "w"]  [10000 10000 	1])
 	)
 
 	(print
 		(compute_on_contained_entities
 			(query_entity_clusters
-				2 ;(get hyperparam_map "k")
+				(list 0.05 1 20) ;(get hyperparam_map "k")
 				["A" "B"] ;features
-				4 ;min cluster size
-				1 ;(get hyperparam_map "p")
+				2 ;min cluster size
+				1
 				(null) ;feature_weights
-				(zip ["A" "B"] "continuous_numeric") ; !queryDistanceTypeMap
-				(null) ;(get hyperparam_map "featureDomainAttributes")
-				{"A" 0.01 "B" 0.01 } ;feature_deviations
+				(zip ["A" "B"] "continuous_numeric")
 				(null)
-				1 ; (if (= (get hyperparam_map "dt") "surprisal_to_prob") "surprisal" (get hyperparam_map "dt") )
+				{"A" 0.5 "B" 0.5 } ;feature_deviations
+				(null)
+				"surprisal"
 				distribute_weight_feature
 				;use a fixed random seed to guarantee deterministic behavior for reacts (named "fixed rand seed")
 				"fixed rand seed"

@@ -396,7 +396,8 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					|| cond->queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
 					|| cond->queryType == ENT_QUERY_ENTITY_CLUSTERS)
 				{
-					if(cond->existLabels.size() != 0) //if subset is specified, set ents_to_compute_ptr to set of ents_to_compute
+					//if subset is specified, set ents_to_compute_ptr to set of ents_to_compute
+					if(cond->existLabels.size() != 0)
 					{
 						ents_to_compute_ptr = &buffers.tempMatchingEntityIndices;
 						ents_to_compute_ptr->clear();

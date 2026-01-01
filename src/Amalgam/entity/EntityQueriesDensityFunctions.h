@@ -730,7 +730,6 @@ public:
 		std::vector<bool> &vector_bool_buffer)
 	{
 		size_t num_entity_ids = edge_distances.size();
-		size_t num_entities = order.size();
 
 		//density is 1 / mutual reachability distance
 		std::vector<double> densities(num_entity_ids, 0.0);

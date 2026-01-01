@@ -55,6 +55,57 @@ public:
 		: value(string_intern_pool.CreateStringReference(str)), unique(true), uniqueUnreferencedTopNode(true)
 	{	}
 
+	//constructs an EvaluableNodeReference with an immediate type and true if possible to coerce node
+	//into one of the immediate request types, or returns a non-unique EvaluableNodeReference and false if not
+	static inline EvaluableNodeReference CoerceNonUniqueEvaluableNodeToImmediateIfPossible(EvaluableNode *en,
+		EvaluableNodeRequestedValueTypes immediate_result)
+	{
+		if(en == nullptr)
+			return EvaluableNodeReference::Null();
+
+		if(immediate_result.AnyImmediateType())
+		{
+			//first check for null, since it's not an immediate value
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
+			{
+				if(en->GetType() == ENT_NULL)
+					return EvaluableNodeReference::Null();
+			}
+
+			if(en->IsImmediate())
+			{
+				//first check for key strings
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
+					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en, true));
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::KEY_STRING_ID))
+					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en, true), true);
+
+				//if type matches the usable return type, then return that, otherwise fall back to returning
+				//the node as the caller will know the most appropriate type change to apply
+				auto type = en->GetType();
+				if(type == ENT_BOOL)
+				{
+					if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::BOOL))
+						return EvaluableNodeReference(en->GetBoolValueReference());
+				}
+				else if(type == ENT_NUMBER)
+				{
+					if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NUMBER))
+						return EvaluableNodeReference(en->GetNumberValueReference());
+				}
+				else if(type == ENT_STRING)
+				{
+					if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID)
+							|| immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::STRING_ID))
+						return EvaluableNodeReference(en->GetStringIDReference());
+				}
+			}
+		}
+
+		return EvaluableNodeReference(en, false);
+	}
+
 	//frees resources associated with immediate values
 	//note that this could be placed in a destructor, but this is such a rare use,
 	//i.e., only when an immediate value is requested, and the references are usually handled specially,
@@ -210,7 +261,7 @@ public:
 	//returns true if it is an immediate value stored in this EvaluableNodeReference
 	__forceinline bool IsImmediateValue()
 	{
-		return (value.nodeType != ENIVT_CODE);
+		return (value.nodeType != ENIVT_CODE || value.nodeValue.code == nullptr);
 	}
 
 	//returns true if the type of whatever is stored is an immediate type
@@ -617,9 +668,9 @@ public:
 
 	//returns an EvaluableNodeReference for value, allocating if necessary based on if immediate result is needed
 	template<typename T>
-	__forceinline EvaluableNodeReference AllocIfNotImmediate(T value, bool immediate_result)
+	__forceinline EvaluableNodeReference AllocIfNotImmediate(T value, EvaluableNodeRequestedValueTypes immediate_result)
 	{
-		if(immediate_result)
+		if(immediate_result.AnyImmediateType())
 			return EvaluableNodeReference(value);
 		return EvaluableNodeReference(AllocNode(value), true);
 	}

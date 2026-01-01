@@ -319,7 +319,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *scope_stack, EvaluableNode *opcode_stack, EvaluableNode *construction_stack,
 	bool manage_stack_references,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	bool immediate_result
+	EvaluableNodeRequestedValueTypes immediate_result
 #ifdef MULTITHREAD_SUPPORT
 	, bool new_scope_stack
 #endif
@@ -446,7 +446,7 @@ void Interpreter::SetSideEffectFlagsAndAccumulatePerformanceCounters(EvaluableNo
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	if(EvaluableNode::IsNull(en))
 		return EvaluableNodeReference::Null();
@@ -506,7 +506,7 @@ std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(Evaluable
 	if(n->GetType() == ENT_STRING)
 		return std::make_pair(true, n->GetStringValue());
 
-	auto result = InterpretNodeForImmediateUse(n, true);
+	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::REQUEST_STRING_ID);
 	auto &result_value = result.GetValue();
 
 	auto [valid, str] = result_value.GetValueAsString(key_string);
@@ -521,7 +521,7 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(E
 	if(n != nullptr && n->GetType() == ENT_STRING)
 		return n->GetStringID();
 
-	auto result = InterpretNodeForImmediateUse(n, true);
+	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::REQUEST_EXISTING_STRING_ID);
 	auto &result_value = result.GetValue();
 
 	auto sid = result_value.GetValueAsStringIDIfExists(key_string);
@@ -536,7 +536,7 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 	if(n != nullptr && n->GetType() == ENT_STRING)
 		return string_intern_pool.CreateStringReference(n->GetStringID());
 
-	auto result = InterpretNodeForImmediateUse(n, true);
+	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::REQUEST_STRING_ID);
 
 	if(result.IsImmediateValue())
 	{
@@ -571,7 +571,7 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 }
 
 EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluableNode(
-	EvaluableNode *n, bool immediate_result)
+	EvaluableNode *n, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//if can skip InterpretNode, then just allocate the string
 	if(n == nullptr || n->GetIsIdempotent()
@@ -579,7 +579,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluabl
 	{
 		auto sid = EvaluableNode::ToStringIDWithReference(n);
 
-		if(immediate_result)
+		if(immediate_result.AnyImmediateType())
 			return EvaluableNodeReference(sid, true);
 		else
 			return EvaluableNodeReference(evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
@@ -606,7 +606,7 @@ double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 	if(n != nullptr && n->GetType() == ENT_NUMBER)
 		return n->GetNumberValueReference();
 
-	auto result = InterpretNodeForImmediateUse(n, true);
+	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::REQUEST_NUMBER);
 	auto &result_value = result.GetValue();
 
 	double value = result_value.GetValueAsNumber();
@@ -639,7 +639,7 @@ bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_nul
 	if(n != nullptr && n->GetType() == ENT_BOOL)
 		return n->GetBoolValueReference();
 
-	auto result = InterpretNodeForImmediateUse(n, true);
+	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::REQUEST_BOOL);
 	auto &result_value = result.GetValue();
 
 	bool value = result_value.GetValueAsBoolean(value_if_null);
@@ -1032,7 +1032,7 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 
 bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
 	std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
-	bool immediate_results)
+	EvaluableNodeRequestedValueTypes immediate_results)
 {
 	if(!parent_node->GetConcurrency())
 		return false;

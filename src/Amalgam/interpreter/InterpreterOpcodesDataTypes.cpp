@@ -14,12 +14,12 @@
 #include <regex>
 #include <utility>
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_NULL(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_NULL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
@@ -83,7 +83,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(Ev
 	return new_list;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
@@ -148,39 +148,41 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 	return new_assoc;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_BOOL(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_BOOL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	bool value = en->GetBoolValueReference();
 	return AllocReturn(value, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_NUMBER(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_NUMBER(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	double value = en->GetNumberValueReference();
 	return AllocReturn(value, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	StringInternPool::StringID value = en->GetStringIDReference();
 	return AllocReturn(value, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	StringInternPool::StringID sid = en->GetStringIDReference();
 	if(sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 
-	auto [symbol_value, found] = GetScopeStackSymbol(sid, true);
+	//when retrieving symbol, only need to retain the node if it's not an immediate type
+	bool retain_node = !immediate_result.AnyImmediateType();
+	auto [symbol_value, found] = GetScopeStackSymbol(sid, retain_node);
 	if(found)
-		return EvaluableNodeReference(symbol_value, false);
+		return EvaluableNodeReference::CoerceNonUniqueEvaluableNodeToImmediateIfPossible(symbol_value, immediate_result);
 
 	// if didn't find it in the stack, try it in the labels
 	EntityReadReference cur_entity_ref(curEntity);
 	if(cur_entity_ref != nullptr)
 	{
-		auto [label_value, label_found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
+		auto [label_value, label_found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, immediate_result, true);
 		if(label_found)
 			return label_value;
 	}
@@ -224,7 +226,7 @@ void Interpreter::EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::St
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
@@ -239,7 +241,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(type), true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
@@ -255,7 +257,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableN
 	return AllocReturn(type_string, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 2)
@@ -300,7 +302,7 @@ constexpr DestinationType ExpandCharStorage(char &value)
 	return static_cast<DestinationType>(reinterpret_cast<SourceType &>(value));
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 3)
@@ -946,7 +948,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	return AllocReturn(string_value, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
@@ -972,7 +974,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	EvaluableNodeReference n = EvaluableNodeReference::Null();
 
@@ -995,7 +997,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNo
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 2)
@@ -1043,7 +1045,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *
 	return source;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 2)
@@ -1098,7 +1100,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 	return retval;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
@@ -1113,7 +1115,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode
 	return AllocReturn(comments_sid, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 2)
@@ -1131,7 +1133,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode
 	return source;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -1142,7 +1144,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableN
 	return AllocReturn(n != nullptr && n->GetConcurrency(), immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -1164,7 +1166,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableN
 	return source;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -1182,7 +1184,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *e
 	return n;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -1205,7 +1207,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *e
 	return source;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -1269,7 +1271,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en,
 	return EvaluableNodeReference(result, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -1403,7 +1405,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, b
 	return retval;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -1730,7 +1732,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//build string from all child nodes
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -1759,7 +1761,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, 
 	return AllocReturn(s, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 2)
@@ -1773,7 +1775,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN(EvaluableNode 
 	return AllocReturn(signature, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN_VERIFY(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN_VERIFY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 3)
@@ -1788,7 +1790,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN_VERIFY(Evaluab
 	return AllocReturn(valid_sig, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ENCRYPT(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ENCRYPT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 2)
@@ -1816,7 +1818,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENCRYPT(EvaluableNode *en,
 	return AllocReturn(cyphertext, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_DECRYPT(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_DECRYPT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 2)
@@ -1844,7 +1846,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECRYPT(EvaluableNode *en,
 	return AllocReturn(plaintext, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
 	if(!permissions.HasPermission(EntityPermissions::Permission::STD_OUT_AND_STD_ERR))
@@ -1888,7 +1890,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, b
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 

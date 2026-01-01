@@ -1531,6 +1531,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 		if(result.IsImmediateValue())
 		{
 			double value_number = result.GetValue().GetValueAsNumber();
+			evaluableNodeManager->FreeNodeIfPossible(result);
 
 			if(value_number >= 0)
 				depth = static_cast<size_t>(value_number);

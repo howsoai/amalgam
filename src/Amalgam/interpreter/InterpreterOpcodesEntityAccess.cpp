@@ -14,7 +14,7 @@
 //system headers:
 #include <utility>
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -29,7 +29,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableN
 	return AllocReturn(entity != nullptr, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//not allowed if don't have a Entity to work within
 	if(curEntity == nullptr)
@@ -142,7 +142,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		auto &contained_entities = source_entity->GetContainedEntities();
 
 		//if only looking for how many entities are contained, quickly exit
-		if(immediate_result)
+		if(immediate_result.AnyImmediateType())
 			return EvaluableNodeReference(static_cast<double>(contained_entities.size()));
 
 		//new list containing the contained entity ids to return
@@ -171,7 +171,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_opcodes(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_opcodes(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//use stack to lock it in place, but copy it back to temporary before returning
 	EvaluableNodeReference query_command(evaluableNodeManager->AllocNode(en->GetType()), true);
@@ -195,7 +195,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_opcodes(EvaluableNod
 	return query_command;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -231,7 +231,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNo
 	return AllocReturn(target_entity->DoesLabelExist(label_sid), immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIRECT_ASSIGN_TO_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIRECT_ASSIGN_TO_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//not allowed if don't have a Entity to work within
 	if(curEntity == nullptr)
@@ -335,7 +335,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 	return AllocReturn(all_assignments_successful, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_DIRECT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_DIRECT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -367,12 +367,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	if(to_lookup == nullptr || to_lookup->IsImmediate())
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
-		EvaluableNodeReference value;
-		if(immediate_result)
-			value.SetReference(
-				target_entity->GetValueAtLabelAsImmediateValue(label_sid, target_entity == curEntity, evaluableNodeManager).first, true);
-		else
-			value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity).first;
+		EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager,
+			direct, immediate_result, target_entity == curEntity).first;
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 
@@ -393,7 +389,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			auto [value, _] = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager, direct, target_entity == curEntity);
+			auto [value, _] = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager, direct,
+				EvaluableNodeRequestedValueTypes::Type::NONE, target_entity == curEntity);
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, first_node);
@@ -420,7 +417,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			auto [value, _] = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
+			auto [value, _] = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct,
+				EvaluableNodeRequestedValueTypes::Type::NONE, target_entity == curEntity);
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
@@ -430,7 +428,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -571,7 +569,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	return BundleResultWithWarningsIfNeeded(result, interpreter_constraints_ptr);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 

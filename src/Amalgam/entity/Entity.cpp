@@ -124,7 +124,9 @@ Entity::~Entity()
 	string_intern_pool.DestroyStringReferences(labelIndex, [](auto l) { return l.first; });
 }
 
-std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm, bool direct_get, bool on_self, bool batch_call)
+std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(
+	StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm,
+	bool direct_get, EvaluableNodeRequestedValueTypes immediate_result, bool on_self, bool batch_call)
 {
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 		return std::pair(EvaluableNodeReference::Null(), false);
@@ -137,10 +139,9 @@ std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(StringInternPool
 	if(label == end(labelIndex))
 		return std::pair(EvaluableNodeReference::Null(), false);
 
-	if(label->second == nullptr)
-		return std::pair(EvaluableNodeReference::Null(), true);
-
-	EvaluableNodeReference retval(label->second, false);
+	auto retval = EvaluableNodeReference::CoerceNonUniqueEvaluableNodeToImmediateIfPossible(label->second, immediate_result);
+	if(retval.IsImmediateValue())
+		return std::pair(retval, true);
 
 	//if didn't give a valid destination, just return what we have
 	if(destination_temp_enm == nullptr)
@@ -150,7 +151,8 @@ std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(StringInternPool
 	if(direct_get && destination_temp_enm == &evaluableNodeManager)
 		return std::pair(retval, true);
 
-	return std::pair(destination_temp_enm->DeepAllocCopy(retval, direct_get ? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL), true);
+	return std::pair(destination_temp_enm->DeepAllocCopy(retval,
+		direct_get ? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL), true);
 }
 
 std::pair<bool, bool> Entity::GetValueAtLabelAsBool(StringInternPool::StringID label_sid, bool on_self)
@@ -391,8 +393,8 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		{
 			//need to make a copy in case it is modified, so pass in evaluableNodeManager
 			EvaluableNodeReference value_destination_node(
-				GetValueAtLabel(variable_sid, &evaluableNodeManager, true, true, true).first,
-				true);
+				GetValueAtLabel(variable_sid, &evaluableNodeManager, true,
+					EvaluableNodeRequestedValueTypes::Type::NONE, true, true).first, true);
 			//can't assign to a label if it doesn't exist
 			if(value_destination_node == nullptr)
 				continue;

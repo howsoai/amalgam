@@ -21,8 +21,35 @@
 		</Expand>
 	</Type>
 
+	<Type Name="EvaluableNodeRequestedValueTypes">
+		<DisplayString Condition="requestedValueTypes == 0">NONE</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 1">NULL_VALUE</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 2">BOOL</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 4">NUMBER</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 8">EXISTING_STRING_ID</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 16">STRING_ID</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 64">CODE</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 3">REQUEST_BOOL</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 5">REQUEST_NUMBER</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 9">REQUEST_EXISTING_STRING_ID</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 17">REQUEST_STRING_ID</DisplayString>		
+		<DisplayString Condition="requestedValueTypes == 63">ALL</DisplayString>
+		<DisplayString>{requestedValueTypes}</DisplayString>
+
+		<Expand>
+			<Item Name="Raw Value">requestedValueTypes</Item>
+			<Item Name="NULL_VALUE">(requestedValueTypes &amp; 1) != 0</Item>
+			<Item Name="BOOL">(requestedValueTypes &amp; 2) != 0</Item>
+			<Item Name="NUMBER">(requestedValueTypes &amp; 4) != 0</Item>
+			<Item Name="EXISTING_STRING_ID">(requestedValueTypes &amp; 8) != 0</Item>
+			<Item Name="STRING_ID">(requestedValueTypes &amp; 16) != 0</Item>
+			<Item Name="STRING">(requestedValueTypes &amp; 32) != 0</Item>
+			<Item Name="CODE">(requestedValueTypes &amp; 64) != 0</Item>
+		</Expand>
+	</Type>
+
 	<Type Name="EntityPermissions">
-		<DisplayString Condition="allPermissions == 0">None</DisplayString>
+		<DisplayString Condition="allPermissions == 0">NONE</DisplayString>
 		<DisplayString Condition="allPermissions == 1">STD_OUT_AND_STD_ERR</DisplayString>
 		<DisplayString Condition="allPermissions == 2">STD_IN</DisplayString>
 		<DisplayString Condition="allPermissions == 4">LOAD</DisplayString>

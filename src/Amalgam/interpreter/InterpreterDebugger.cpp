@@ -143,7 +143,7 @@ void PrintStackNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t max_num
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	DebugCheckBreakpointsAndUpdateState(en, true);
 
@@ -507,7 +507,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 					}
 
 					bool found_value = false;
-					std::tie(node, found_value) = curEntity->GetValueAtLabel(sid, nullptr, true, true);
+					std::tie(node, found_value) = curEntity->GetValueAtLabel(sid, nullptr, true,
+						EvaluableNodeRequestedValueTypes::Type::NONE, true);
 					if(!found_value)
 					{
 						std::cout << "Variable " << input << " does not exist on the stack or as a label in the current entity." << std::endl;
@@ -798,7 +799,7 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool be
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_PROFILE(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_PROFILE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	std::string opcode_str = asset_manager.GetEvaluableNodeSourceFromComments(en);
 	opcode_str += GetStringFromEvaluableNodeType(en->GetType(), true);

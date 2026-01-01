@@ -647,8 +647,10 @@ public:
 	//upon completion, edge_distances will contain the distance of the edge that link each entity to
 	//its parent in the MST (root gets distance = 0)
 	//parent_entities will contain the parent index for each entity (root points to itself)
+	//vector_bool_buffer is to reuse a buffer for booleans
 	void BuildMutualReachabilityMST(std::vector<double> &core_distances, std::vector<size_t> &order,
-		std::vector<double> &edge_distances, std::vector<size_t> &parent_entities)
+		std::vector<double> &edge_distances, std::vector<size_t> &parent_entities,
+		std::vector<bool> &vector_bool_buffer)
 	{
 		size_t num_entity_ids = core_distances.size();
 		size_t num_entities = order.size();
@@ -658,7 +660,9 @@ public:
 		parent_entities.resize(num_entity_ids, std::numeric_limits<size_t>::max());
 
 		//used to mark vertices (entities) as they are added to the tree
-		std::vector<bool> processed_flags(num_entity_ids, false);
+		auto &processed_flags = vector_bool_buffer;
+		processed_flags.clear();
+		processed_flags.resize(num_entity_ids, false);
 
 		//initialize the first point, largest core distance, as the root
 		size_t root = order[0];
@@ -718,10 +722,12 @@ public:
 	//minimum_cluster_weight is the minimum total weight required for a cluster
 	//the method outputs cluster_ids output vector, where cluster 0 is noise/no cluster
 	//stabilities contains the stability score for each entity
+	//vector_bool_buffer is to reuse a buffer for booleans
 	void ExtractClustersFromMST(EntityReferenceSet &entities_to_compute,
 		std::vector<double> &core_distances,  std::vector<double> &edge_distances,
 		std::vector<size_t> &parent_entities, std::vector<size_t> &order, double minimum_cluster_weight,
-		std::vector<size_t> &cluster_ids, std::vector<double> &stabilities)
+		std::vector<size_t> &cluster_ids, std::vector<double> &stabilities,
+		std::vector<bool> &vector_bool_buffer)
 	{
 		size_t num_entity_ids = edge_distances.size();
 		size_t num_entities = order.size();
@@ -776,7 +782,10 @@ public:
 		}
 
 		//select clusters for each point
-		std::vector<bool> entity_clustered(num_entity_ids, false);
+		auto &entity_clustered = vector_bool_buffer;
+		entity_clustered.clear();
+		entity_clustered.resize(num_entity_ids, false);
+
 		cluster_ids.clear();
 		cluster_ids.resize(num_entity_ids, 0);
 
@@ -897,14 +906,17 @@ public:
 		std::stable_sort(order.begin(), order.end(),
 			[&](size_t i, size_t j) { return core_distances[i] > core_distances[j]; });
 
-		std::vector<double> edge_distances;
+		//reuse baseDistanceProbabilities, but because clustering is not typically done repeatedly,
+		//don't reuse any of the other buffers
+		auto &edge_distances = buffers.baseDistanceProbabilities;
 		std::vector<size_t> parent_entities;
-		BuildMutualReachabilityMST(core_distances, order, edge_distances, parent_entities);
+		std::vector<bool> vector_bool_buffer;
+		BuildMutualReachabilityMST(core_distances, order, edge_distances, parent_entities, vector_bool_buffer);
 
 		std::vector<size_t> cluster_ids_tmp;
 		std::vector<double> node_stabilities;
 		ExtractClustersFromMST(entities_to_compute, core_distances, edge_distances, parent_entities, order,
-			minimum_cluster_weight, cluster_ids_tmp, node_stabilities);
+			minimum_cluster_weight, cluster_ids_tmp, node_stabilities, vector_bool_buffer);
 
 		//convert integer ids to double
 		clusters_out.clear();

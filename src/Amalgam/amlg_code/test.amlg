@@ -1,46 +1,48 @@
 ﻿(seq
+	(print "--query_entity_clusters--\n")
+	(create_entities "ClusterTestEntity" (null))
 	(create_entities
-		"invalid" (zip_labels ["w"]  [1])
+		["ClusterTestEntity" "invalid"] (zip_labels ["w"]  [1])
 
-		"g1c1" (zip_labels ["A" "B" "w"]  [1 1 	1])
-		"g1c2" (zip_labels ["A" "B" "w"]  [1 2 	1])
-		"g1c3" (zip_labels ["A" "B" "w"]  [2 1 	1])
-		"g1c4" (zip_labels ["A" "B" "w"]  [2 2 	1])
-		
-		"g2c1" (zip_labels ["A" "B" "w"]  [11 11 1])
-		"g2c2" (zip_labels ["A" "B" "w"]  [11 12 1])
-		"g2c3" (zip_labels ["A" "B" "w"]  [12 11 1])
-		"g2c4" (zip_labels ["A" "B" "w"]  [12 12 1])
-		
-		"g3c1" (zip_labels ["A" "B" "w"]  [100 100 	1])
-		"g3c2" (zip_labels ["A" "B" "w"]  [100 200 	1])
-		"g3c3" (zip_labels ["A" "B" "w"]  [100 300 	1])
-		"g3c4" (zip_labels ["A" "B" "w"]  [200 100 	1])
-		"g3c5" (zip_labels ["A" "B" "w"]  [200 200 	1])
-		"g3c6" (zip_labels ["A" "B" "w"]  [200 300 	1])
-		"g3c7" (zip_labels ["A" "B" "w"]  [300 100 	1])
-		"g3c8" (zip_labels ["A" "B" "w"]  [300 200 	1])
-		"g3c8" (zip_labels ["A" "B" "w"]  [300 300 	1])
+		["ClusterTestEntity" "g1c1"] (zip_labels ["A" "B" "w"]  [1 1 	1])
+		["ClusterTestEntity" "g1c2"] (zip_labels ["A" "B" "w"]  [1 2 	1])
+		["ClusterTestEntity" "g1c3"] (zip_labels ["A" "B" "w"]  [2 1 	1])
+		["ClusterTestEntity" "g1c4"] (zip_labels ["A" "B" "w"]  [2 2 	1])
 
-		"g4c1" (zip_labels ["A" "B" "w"]  [1010 1010 	1])
-		"g4c2" (zip_labels ["A" "B" "w"]  [1010 1020 	1])
-		"g4c3" (zip_labels ["A" "B" "w"]  [1010 1030 	1])
-		"g4c4" (zip_labels ["A" "B" "w"]  [1020 1010 	1])
-		"g4c5" (zip_labels ["A" "B" "w"]  [1020 1020 	1])
-		"g4c6" (zip_labels ["A" "B" "w"]  [1020 1030 	1])
-		"g4c7" (zip_labels ["A" "B" "w"]  [1030 1010 	1])
-		"g4c8" (zip_labels ["A" "B" "w"]  [1030 1020 	1])
-		"g4c8" (zip_labels ["A" "B" "w"]  [1030 1030 	1])
+		["ClusterTestEntity" "g2c1"] (zip_labels ["A" "B" "w"]  [11 11 1])
+		["ClusterTestEntity" "g2c2"] (zip_labels ["A" "B" "w"]  [11 12 1])
+		["ClusterTestEntity" "g2c3"] (zip_labels ["A" "B" "w"]  [12 11 1])
+		["ClusterTestEntity" "g2c4"] (zip_labels ["A" "B" "w"]  [12 12 1])
 
-		"g5c1" (zip_labels ["A" "B" "w"]  [10000 10000 	1])
+		["ClusterTestEntity" "g3c1"] (zip_labels ["A" "B" "w"]  [100 100 	1])
+		["ClusterTestEntity" "g3c2"] (zip_labels ["A" "B" "w"]  [100 200 	1])
+		["ClusterTestEntity" "g3c3"] (zip_labels ["A" "B" "w"]  [100 300 	1])
+		["ClusterTestEntity" "g3c4"] (zip_labels ["A" "B" "w"]  [200 100 	1])
+		["ClusterTestEntity" "g3c5"] (zip_labels ["A" "B" "w"]  [200 200 	1])
+		["ClusterTestEntity" "g3c6"] (zip_labels ["A" "B" "w"]  [200 300 	1])
+		["ClusterTestEntity" "g3c7"] (zip_labels ["A" "B" "w"]  [300 100 	1])
+		["ClusterTestEntity" "g3c8"] (zip_labels ["A" "B" "w"]  [300 200 	1])
+		["ClusterTestEntity" "g3c8"] (zip_labels ["A" "B" "w"]  [300 300 	1])
+
+		["ClusterTestEntity" "g4c1"] (zip_labels ["A" "B" "w"]  [1010 1010 	1])
+		["ClusterTestEntity" "g4c2"] (zip_labels ["A" "B" "w"]  [1010 1020 	1])
+		["ClusterTestEntity" "g4c3"] (zip_labels ["A" "B" "w"]  [1010 1030 	1])
+		["ClusterTestEntity" "g4c4"] (zip_labels ["A" "B" "w"]  [1020 1010 	1])
+		["ClusterTestEntity" "g4c5"] (zip_labels ["A" "B" "w"]  [1020 1020 	1])
+		["ClusterTestEntity" "g4c6"] (zip_labels ["A" "B" "w"]  [1020 1030 	1])
+		["ClusterTestEntity" "g4c7"] (zip_labels ["A" "B" "w"]  [1030 1010 	1])
+		["ClusterTestEntity" "g4c8"] (zip_labels ["A" "B" "w"]  [1030 1020 	1])
+		["ClusterTestEntity" "g4c8"] (zip_labels ["A" "B" "w"]  [1030 1030 	1])
+
+		["ClusterTestEntity" "g5c1"] (zip_labels ["A" "B" "w"]  [10000 10000 	1])
 	)
 
 	(print
-		(compute_on_contained_entities
+		(compute_on_contained_entities "ClusterTestEntity"
 			(query_entity_clusters
 				(list 0.05 1 20) ;(get hyperparam_map "k")
 				["A" "B"] ;features
-				2 ;min cluster size
+				0 ;min cluster size
 				1
 				(null) ;feature_weights
 				(zip ["A" "B"] "continuous_numeric")

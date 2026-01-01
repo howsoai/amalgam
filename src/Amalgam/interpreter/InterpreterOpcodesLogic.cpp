@@ -43,7 +43,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, Eva
 		if(cur.IsImmediateValue())
 		{
 			if(!cur.GetValue().GetValueAsBoolean())
+			{
+				evaluableNodeManager->FreeNodeIfPossible(cur);
 				return AllocReturn(false, immediate_result);
+			}
 		}
 		else
 		{
@@ -153,6 +156,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, Eva
 	if(cur.IsImmediateValue())
 	{
 		bool is_true = cur.GetValue().GetValueAsBoolean();
+		evaluableNodeManager->FreeNodeIfPossible(cur);
 		return AllocReturn(!is_true, immediate_result);
 	}
 	else

@@ -1190,6 +1190,122 @@ enum EvaluableNodeImmediateValueType : uint8_t
 	ENIVT_STRING_ID_INDIRECTION_INDEX	//not a real EvaluableNode type, but an index to some data structure that has a stringID
 };
 
+//when an EvaluableNodeImmediateValue is requested, this class can indicate which types of values are allowed
+// EvaluableNodeRequestedValueTypes.h
+class EvaluableNodeRequestedValueTypes
+{
+public:
+	using StorageType = uint8_t;
+
+	enum class Type : StorageType
+	{
+		NONE = 0,
+		NULL_VALUE = 1 << 0,
+		BOOL = 1 << 1,
+		NUMBER = 1 << 2,
+		EXISTING_STRING_ID = 1 << 3,
+		STRING_ID = 1 << 4,
+		EXISTING_KEY_STRING_ID = 1 << 5,
+		KEY_STRING_ID = 1 << 6,
+		CODE = 1 << 7,
+
+		//composite types which can include NULL_VALUE
+		REQUEST_BOOL = BOOL | NULL_VALUE,
+		REQUEST_NUMBER = NUMBER | NULL_VALUE,
+		REQUEST_EXISTING_STRING_ID = EXISTING_STRING_ID | NULL_VALUE,
+		REQUEST_STRING_ID = STRING_ID | NULL_VALUE,
+		REQUEST_EXISTING_KEY_STRING_ID = EXISTING_KEY_STRING_ID | NULL_VALUE,
+		REQUEST_KEY_STRING_ID = KEY_STRING_ID | NULL_VALUE,
+
+		ALL = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID | STRING_ID | CODE
+	};
+
+	constexpr EvaluableNodeRequestedValueTypes() noexcept
+		: requestedValueTypes(Type::NONE)
+	{}
+
+	constexpr EvaluableNodeRequestedValueTypes(Type t) noexcept
+		: requestedValueTypes(t)
+	{}
+
+	constexpr EvaluableNodeRequestedValueTypes(StorageType raw) noexcept
+		: requestedValueTypes(static_cast<Type>(raw))
+	{}
+
+	//boolean implies all or none
+	constexpr EvaluableNodeRequestedValueTypes(bool all_or_none) noexcept
+		: requestedValueTypes(all_or_none ? Type::ALL : Type::NONE)
+	{}
+
+	//bit‑wise operators
+	constexpr EvaluableNodeRequestedValueTypes &operator|=(EvaluableNodeRequestedValueTypes rhs) noexcept
+	{
+		requestedValueTypes = static_cast<Type>(static_cast<StorageType>(requestedValueTypes) |
+								 static_cast<StorageType>(rhs.requestedValueTypes));
+		return *this;
+	}
+
+	constexpr EvaluableNodeRequestedValueTypes &operator&=(EvaluableNodeRequestedValueTypes rhs) noexcept
+	{
+		requestedValueTypes = static_cast<Type>(static_cast<StorageType>(requestedValueTypes) &
+								 static_cast<StorageType>(rhs.requestedValueTypes));
+		return *this;
+	}
+
+	constexpr friend EvaluableNodeRequestedValueTypes operator|(
+		EvaluableNodeRequestedValueTypes lhs,
+		EvaluableNodeRequestedValueTypes rhs) noexcept
+	{
+		return EvaluableNodeRequestedValueTypes(
+			static_cast<Type>(static_cast<StorageType>(lhs.requestedValueTypes) |
+				static_cast<StorageType>(rhs.requestedValueTypes)));
+	}
+
+	constexpr friend EvaluableNodeRequestedValueTypes operator&(
+		EvaluableNodeRequestedValueTypes lhs,
+		EvaluableNodeRequestedValueTypes rhs) noexcept
+	{
+		return EvaluableNodeRequestedValueTypes(
+			static_cast<Type>(static_cast<StorageType>(lhs.requestedValueTypes) &
+				static_cast<StorageType>(rhs.requestedValueTypes)));
+	}
+
+	constexpr friend EvaluableNodeRequestedValueTypes operator~(
+		EvaluableNodeRequestedValueTypes v) noexcept
+	{
+		return EvaluableNodeRequestedValueTypes(
+			static_cast<Type>(~static_cast<StorageType>(v.requestedValueTypes)));
+	}
+
+	constexpr bool Allows(Type flag) const noexcept
+	{
+		return (static_cast<StorageType>(requestedValueTypes) &
+				static_cast<StorageType>(flag)) != 0;
+	}
+
+	//returns true if any immediate is allowed
+	constexpr bool AnyImmediateType() const noexcept
+	{
+		return (static_cast<StorageType>(requestedValueTypes) & ~static_cast<StorageType>(Type::CODE)) != 0;
+	}
+
+	//returns true if an immediate is allowed
+	constexpr bool ImmediateValue() const noexcept
+	{
+		return requestedValueTypes != Type::NONE;
+	}
+
+	//returns true if an immediate value is allowed but immediate types are not allowed
+	constexpr bool ImmediateValueButNotImmediateType() const noexcept
+	{
+		return (static_cast<StorageType>(requestedValueTypes) & ~static_cast<StorageType>(Type::CODE)) == 0;
+	}
+
+private:
+	Type requestedValueTypes;
+};
+
+
 //structure that can hold the most immediate value type of an EvaluableNode
 // EvaluableNodeImmediateValueType can be used to communicate which type of data is being held
 union EvaluableNodeImmediateValue

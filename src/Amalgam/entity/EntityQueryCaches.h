@@ -121,13 +121,13 @@ public:
 	// if immediate_result is true, will return an immediate value as the result
 	static EvaluableNodeReference GetEntitiesMatchingQuery(EntityReadReference &container,
 		std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm,
-		bool return_query_value, bool immediate_result);
+		bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//returns the collection of entities (and optionally associated compute values) that satisfy the specified chain of query conditions
 	// uses efficient querying methods with a query database, one database per container
 	static EvaluableNodeReference GetMatchingEntitiesFromQueryCaches(Entity *container,
 		std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm,
-		bool return_query_value, bool immediate_result);
+		bool return_query_value, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//the container this is a cache for
 	Entity *container;

@@ -1048,8 +1048,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBe
 		return MergeMetricResults(1.0, n1, n2, false, true);
 
 	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(n1, n2, require_exact_matches);
-
-	return MergeMetricResults(commonality, n1, n2, must_match, commonality == 1.0);
+	return MergeMetricResults(commonality, n1, n2, require_exact_matches, commonality == 1.0);
 }
 
 std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBetweenNodeTypesAndValues(

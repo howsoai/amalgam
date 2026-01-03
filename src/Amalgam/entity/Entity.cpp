@@ -958,38 +958,18 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 
 	//attempt to insert the new labels as long as there's no collision
 	for(auto &[label, value] : new_labels)
-	{
-		auto [inserted, cur_value] = new_root->SetMappedChildNode(label, value);
-		if(!inserted)
-			no_label_collisions = false;
-	}
+		new_root->SetMappedChildNode(label, value);
 
 	EntityQueryCaches *container_caches = GetContainerQueryCaches();
 
-	//can do a much more straightforward update if there are no label collisions and the root has no labels
-	if(no_label_collisions)
-	{
-		if(node_flags_need_update)
-			EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);
+	if(node_flags_need_update)
+		EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);
 
-		rootNode = new_root;
-		evaluableNodeManager.ExchangeNodeReference(rootNode, prev_root);
+	rootNode = new_root;
+	evaluableNodeManager.ExchangeNodeReference(rootNode, prev_root);
 
-		if(container_caches != nullptr)
-			container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), new_labels);
-	}
-	else //either collisions or root node has at least one new label
-	{
-		//all new labels have already been inserted
-		auto [new_label_index, collision_free] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(
-			new_root);
-
-		rootNode = new_root;
-		evaluableNodeManager.ExchangeNodeReference(rootNode, prev_root);
-
-		if(container_caches != nullptr)
-			container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
-	}
+	if(container_caches != nullptr)
+		container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), new_labels);
 
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();

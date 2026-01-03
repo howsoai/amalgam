@@ -495,11 +495,6 @@ public:
 		return std::make_pair(index, collected_all_label_values);
 	}
 
-	//Recursively traverses tree, storing any nodes with labels into an index map, and returning the map,
-	// as well as a flag indicating true if it was able to just retrieve the labels, or false
-	// if the labels needed to be renormalized due to a collision and the node tree was modified
-	static std::pair<EvaluableNode::LabelsAssocType, bool> RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en);
-
 	//If the nodes, n1 and n2 can be generalized, then returns a new (allocated) node that is preferable to use (usually the more specific one)
 	// If the nodes are not equivalent, then returns null
 	// Only extra data (labels, comments, etc.) that is common to both is kept, unless KeepAllNonMergeableValues is true.  Then everything from both is kept. If 

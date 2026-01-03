@@ -188,10 +188,8 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_FORMAT, "format");
 
 	//labels and comments
-	EmplaceNodeTypeString(ENT_GET_LABELS, "get_labels");
-	EmplaceNodeTypeString(ENT_GET_ALL_LABELS, "get_all_labels");
-	EmplaceNodeTypeString(ENT_SET_LABELS, "set_labels");
-	EmplaceNodeTypeString(ENT_ZIP_LABELS, "zip_labels");
+	EmplaceNodeTypeString(ENT_GET_ANNOTATIONS, "get_annotations");
+	EmplaceNodeTypeString(ENT_SET_ANNOTATIONS, "set_annotations");
 	EmplaceNodeTypeString(ENT_GET_COMMENTS, "get_comments");
 	EmplaceNodeTypeString(ENT_SET_COMMENTS, "set_comments");
 	EmplaceNodeTypeString(ENT_GET_CONCURRENCY, "get_concurrency");

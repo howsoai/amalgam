@@ -1439,11 +1439,9 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_SET_TYPE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_FORMAT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
-	//EvaluableNode management: labels, comments, and concurrency
-	EvaluableNodeReference InterpretNode_ENT_GET_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_GET_ALL_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_SET_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_ZIP_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	//EvaluableNode management: annotations, comments, and concurrency
+	EvaluableNodeReference InterpretNode_ENT_GET_ANNOTATIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_ANNOTATIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
 	EvaluableNodeReference InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);

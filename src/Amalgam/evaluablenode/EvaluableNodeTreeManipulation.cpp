@@ -1944,11 +1944,9 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_SET_TYPE,										0.35},
 	{ENT_FORMAT,										0.05},
 
-	//labels and comments
-	{ENT_GET_LABELS,									0.1},
-	{ENT_GET_ALL_LABELS,								0.05},
-	{ENT_SET_LABELS,									0.1},
-	{ENT_ZIP_LABELS,									0.02},
+	//annotations and comments
+	{ENT_GET_ANNOTATIONS,								0.1},
+	{ENT_SET_ANNOTATIONS,								0.1},
 
 	{ENT_GET_COMMENTS,									0.05},
 	{ENT_SET_COMMENTS,									0.05},

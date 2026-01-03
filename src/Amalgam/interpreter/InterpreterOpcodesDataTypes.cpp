@@ -948,7 +948,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	return AllocReturn(string_value, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ANNOTATIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
@@ -957,6 +957,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *
 	EvaluableNodeReference n = InterpretNodeForImmediateUse(ocn[0]);
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
+
+	//TODO 24298: update this and update documentation
 
 	size_t num_labels = n->GetNumLabels();
 
@@ -974,34 +976,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
-{
-	EvaluableNodeReference n = EvaluableNodeReference::Null();
-
-	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() > 0)
-		n = InterpretNodeForImmediateUse(ocn[0]);
-
-	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_ASSOC), n.unique, true);
-
-	auto [label_sids_to_nodes, _] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(n);
-
-	result->ReserveMappedChildNodes(label_sids_to_nodes.size());
-	for(auto &[node_id, node] : label_sids_to_nodes)
-		result->SetMappedChildNode(node_id, node);
-
-	//can't guarantee there weren't any cycles if more than one label
-	if(label_sids_to_nodes.size() > 1)
-		result->SetNeedCycleCheck(true);
-
-	return result;
-}
-
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ANNOTATIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
+
+	//TODO 24298: update this and update documentation
 
 	auto source = InterpretNode(ocn[0]);
 	if(source == nullptr)
@@ -1043,61 +1024,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *
 	evaluableNodeManager->FreeNodeTreeIfPossible(label_list);
 
 	return source;
-}
-
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
-{
-	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
-		return EvaluableNodeReference::Null();
-
-	auto label_list = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateOpcodeStackStateSaver(label_list);
-
-	auto source = InterpretNode(ocn[1]);
-
-	//if no label list, or no source or source is immediate, then just return the source
-	if(EvaluableNode::IsNull(label_list) || !label_list->IsOrderedArray()
-			|| EvaluableNode::IsNull(source) || !source->IsOrderedArray())
-		return source;
-
-	node_stack.PopEvaluableNode();
-
-	//make copy to populate with copies of the child nodes
-	//start assuming that the copy will be unique, but set to not unique if any chance the assumption
-	// might not hold
-	EvaluableNodeReference retval = source;
-	evaluableNodeManager->EnsureNodeIsModifiable(source);
-
-	auto &label_list_ocn = label_list->GetOrderedChildNodesReference();
-
-	//copy over labels to each child node, allocating a new child node if needed
-	auto &retval_ocn = retval->GetOrderedChildNodesReference();
-	for(size_t i = 0; i < retval_ocn.size(); i++)
-	{
-		//no more labels to add, so just leave the existing nodes
-		if(i >= label_list_ocn.size())
-			break;
-
-		//make sure the child node can have a label appended
-		if(retval_ocn[i] == nullptr)
-			retval_ocn[i] = evaluableNodeManager->AllocNode(ENT_NULL);
-		else if(!source.unique)
-			retval_ocn[i] = evaluableNodeManager->AllocNode(retval_ocn[i]);
-
-		//obtain the label, reusing the sid reference if possible
-		StringInternPool::StringID label_sid = string_intern_pool.emptyStringId;
-		if(label_list.unique)
-			label_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(label_list_ocn[i]);
-		else
-			label_sid = EvaluableNode::ToStringIDWithReference(label_list_ocn[i]);
-
-		retval_ocn[i]->AppendLabelStringId(label_sid, true);
-	}
-
-	evaluableNodeManager->FreeNodeTreeIfPossible(label_list);
-
-	return retval;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)

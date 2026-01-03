@@ -169,10 +169,8 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_FORMAT,															// ENT_FORMAT
 
 	//EvaluableNode management: labels, comments, and concurrency
-	&Interpreter::InterpretNode_ENT_GET_LABELS,														// ENT_GET_LABELS
-	&Interpreter::InterpretNode_ENT_GET_ALL_LABELS,													// ENT_GET_ALL_LABELS
-	&Interpreter::InterpretNode_ENT_SET_LABELS,														// ENT_SET_LABELS
-	&Interpreter::InterpretNode_ENT_ZIP_LABELS,														// ENT_ZIP_LABELS
+	&Interpreter::InterpretNode_ENT_GET_ANNOTATIONS,												// ENT_GET_ANNOTATIONS
+	&Interpreter::InterpretNode_ENT_SET_ANNOTATIONS,												// ENT_SET_ANNOTATIONS
 	&Interpreter::InterpretNode_ENT_GET_COMMENTS,													// ENT_GET_COMMENTS
 	&Interpreter::InterpretNode_ENT_SET_COMMENTS,													// ENT_SET_COMMENTS
 	&Interpreter::InterpretNode_ENT_GET_CONCURRENCY,												// ENT_GET_CONCURRENCY

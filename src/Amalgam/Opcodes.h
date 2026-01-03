@@ -166,11 +166,9 @@ enum EvaluableNodeType : uint8_t
 	ENT_SET_TYPE,
 	ENT_FORMAT,
 
-	//EvaluableNode management: labels, comments, and concurrency
-	ENT_GET_LABELS,
-	ENT_GET_ALL_LABELS,
-	ENT_SET_LABELS,
-	ENT_ZIP_LABELS,
+	//EvaluableNode management: annotations, comments, and concurrency
+	ENT_GET_ANNOTATIONS,
+	ENT_SET_ANNOTATIONS,
 
 	ENT_GET_COMMENTS,
 	ENT_SET_COMMENTS,
@@ -406,7 +404,7 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 	case ENT_BOOL:						case ENT_NUMBER:			case ENT_STRING:
 	case ENT_SYMBOL:
 	case ENT_GET_TYPE:					case ENT_GET_TYPE_STRING:	case ENT_SET_TYPE:			case ENT_FORMAT:
-	case ENT_GET_LABELS:				case ENT_GET_ALL_LABELS:	case ENT_SET_LABELS:		case ENT_ZIP_LABELS:
+	case ENT_GET_ANNOTATIONS:			case ENT_SET_ANNOTATIONS:
 	case ENT_GET_COMMENTS:				case ENT_SET_COMMENTS:
 	case ENT_GET_CONCURRENCY:			case ENT_SET_CONCURRENCY:
 	case ENT_GET_VALUE:					case ENT_SET_VALUE:
@@ -489,7 +487,7 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 	case ENT_NUMBER:	case ENT_STRING:
 	case ENT_GET_TYPE:	case ENT_GET_TYPE_STRING:
 	case ENT_FORMAT:
-	case ENT_GET_LABELS:	case ENT_GET_ALL_LABELS:
+	case ENT_GET_ANNOTATIONS:
 	case ENT_GET_COMMENTS:
 	case ENT_GET_CONCURRENCY:
 	case ENT_GET_VALUE:
@@ -521,7 +519,7 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 	case ENT_REMOVE:	case ENT_KEEP:				case ENT_ASSOCIATE:	case ENT_ZIP:	case ENT_UNZIP:
 	case ENT_LIST:		case ENT_UNORDERED_LIST:	case ENT_ASSOC:
 	case ENT_SET_TYPE:
-	case ENT_SET_LABELS:	case ENT_ZIP_LABELS:
+	case ENT_SET_ANNOTATIONS:
 	case ENT_SET_COMMENTS:
 	case ENT_SET_CONCURRENCY:
 	case ENT_SET_VALUE:

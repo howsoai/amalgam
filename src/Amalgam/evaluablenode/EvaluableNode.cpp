@@ -25,49 +25,6 @@ FastHashSet<EvaluableNode *> EvaluableNode::debugWatch;
 Concurrency::SingleMutex EvaluableNode::debugWatchMutex;
 #endif
 
-std::pair<size_t, size_t> EvaluableNode::GetNodeCommonAndUniqueLabelCounts(EvaluableNode *n1, EvaluableNode *n2)
-{
-	if(n1 == nullptr)
-	{
-		if(n2 == nullptr)
-			return std::make_pair(0, 0);
-
-		return std::make_pair(0, n2->GetNumLabels());
-	}
-
-	if(n2 == nullptr)
-		return std::make_pair(0, n1->GetNumLabels());
-
-	size_t num_n1_labels = n1->GetNumLabels();
-	size_t num_n2_labels = n2->GetNumLabels();
-
-	//if no labels in one, just return the nonzero count as the total unique
-	if(num_n1_labels == 0 || num_n2_labels == 0)
-		return std::make_pair(0, std::max(num_n1_labels, num_n2_labels));
-
-	//if only have one label in each, compare immediately for speed
-	if(num_n1_labels == 1 && num_n2_labels == 1)
-	{
-		//if the same, only one common label, if unique, then two unique
-		if(n1->GetLabel(0) == n2->GetLabel(0))
-			return std::make_pair(1, 0);
-		else
-			return std::make_pair(0, 2);
-	}
-
-	//compare
-	size_t num_common_labels = 0;
-	for(auto s_id : n1->GetLabelsStringIds())
-	{
-		auto n2_label_sids = n2->GetLabelsStringIds();
-		if(std::find(begin(n2_label_sids), end(n2_label_sids), s_id) != end(n2_label_sids))
-			num_common_labels++;
-	}
-
-	//don't count the common labels in the uncommon
-	return std::make_pair(num_common_labels, num_n1_labels + num_n2_labels - 2 * num_common_labels);
-}
-
 bool EvaluableNode::AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
 {
 	//check if one is null, then make sure both are null

@@ -323,9 +323,6 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 
 		auto labels = destination->GetLabelsStringIds();
 		new_value->SetLabelsStringIds(labels);
-
-		if(!batch_call)
-			root_rebuilt = RebuildLabelIndex();
 	}
 
 	bool dest_new_value_need_cycle_check = (new_value != nullptr && new_value->GetNeedCycleCheck());
@@ -419,7 +416,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		if(direct_set)
 		{
 			//direct assignments need a rebuild of the index just in case a label collision occurs -- will update node flags if needed
-			RebuildLabelIndex();
 			if(container_caches != nullptr)
 				container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
 		}
@@ -529,32 +525,6 @@ size_t Entity::GetEstimatedUsedDeepSizeInBytes()
 		total_size += entity->GetEstimatedReservedDeepSizeInBytes();
 
 	return total_size;
-}
-
-bool Entity::RebuildLabelIndex()
-{
-	auto [new_labels, collision_free] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(rootNode);
-
-	//TODO 24298: remove this
-	assert(EvaluableNode::IsAssociativeArray(rootNode));
-
-	//set each value individually to append
-	bool any_inserted = false;
-	for(auto [key, value] : new_labels)
-	{
-		auto [inserted, new_value] = rootNode->SetMappedChildNode(key, value, true);
-		if(inserted)
-			any_inserted = true;
-	}
-
-	if(any_inserted)
-	{
-		rootNode->SetNeedCycleCheck(true);
-		rootNode->SetIsIdempotent(false);
-	}
-
-	//let the destructor of new_labels deallocate the old labelIndex
-	return !collision_free;
 }
 
 StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPool::StringID id_sid, std::vector<EntityWriteListener *> *write_listeners)
@@ -879,12 +849,6 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	}
 
 	evaluableNodeManager.ExchangeNodeReference(rootNode, cur_root);
-
-#ifdef AMALGAM_MEMORY_INTEGRITY
-	VerifyEvaluableNodeIntegrity();
-#endif
-
-	RebuildLabelIndex();
 
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();

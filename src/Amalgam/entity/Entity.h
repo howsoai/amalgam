@@ -495,10 +495,6 @@ public:
 	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values, bool direct_set,
 		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity);
 
-	//Rebuilds label index
-	//returns true if there was a change and cycle checks were updated across the entity
-	bool RebuildLabelIndex();
-
 	//Returns the id for this Entity
 	inline const std::string &GetId()
 	{
@@ -1061,7 +1057,7 @@ protected:
 
 	inline EvaluableNode::AssocType &GetLabelIndex()
 	{
-		//TODO 24298: remove this
+		//TODO 24298: remove this?
 		static EvaluableNode::AssocType emptyMappedChildNodes;
 		if(!EvaluableNode::IsAssociativeArray(rootNode))
 			return emptyMappedChildNodes;

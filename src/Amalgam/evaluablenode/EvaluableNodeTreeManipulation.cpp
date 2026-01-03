@@ -72,15 +72,6 @@ inline StringInternPool::StringID MixStringValues(StringInternPool::StringID a, 
 	return string_intern_pool.CreateStringReference(result);
 }
 
-bool EvaluableNodeTreeManipulation::NodesMergeMethod::AreMergeable(EvaluableNode *a, EvaluableNode *b)
-{
-	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b);
-
-	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b, true);
-
-	return (commonality == 1.0 && num_unique_labels == 0);
-}
-
 EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge)
 {
 	//early out
@@ -133,19 +124,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 
 bool EvaluableNodeTreeManipulation::NodesMixMethod::AreMergeable(EvaluableNode *a, EvaluableNode *b)
 {
-	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b);
-
 	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b);
 
 	//if the immediate nodes are in fact a match, then just merge them
-	if(commonality == 1.0 && num_unique_labels == 0)
+	if(commonality == 1.0)
 		return true;
 
-	//assess overall commonality between value commonality and label commonality
-	double overall_commonality = (commonality + num_common_labels)
-		/ (1 + num_common_labels + num_unique_labels);
-
-	double prob_of_match = overall_commonality;
+	double prob_of_match = commonality;
 	if(commonality > 0)
 	{
 		if(similarMixChance > 0.0)
@@ -153,13 +138,13 @@ bool EvaluableNodeTreeManipulation::NodesMixMethod::AreMergeable(EvaluableNode *
 			//probability of match is commonality OR similarMixChance
 			// however, these are not mutually exclusive, so need to remove the conjunction of the
 			// probability of both to prevent double-counting
-			prob_of_match = overall_commonality + similarMixChance - overall_commonality * similarMixChance;
+			prob_of_match = commonality + similarMixChance - commonality * similarMixChance;
 		}
 		else if(similarMixChance < 0)
 		{
 			//probability of match is commonality AND not (negative similarMixChance)
 			// because similarMixChance is negative, adding to 1 is the same as NOT
-			prob_of_match = overall_commonality * (1.0 + similarMixChance);
+			prob_of_match = commonality * (1.0 + similarMixChance);
 		}
 		//else 0.0 or NaN, just leave as overall_commonality
 	}
@@ -219,48 +204,6 @@ std::string EvaluableNodeTreeManipulation::MixStrings(const std::string &a, cons
 
 	std::string result = StringManipulation::ConcatUTF8Characters(destCharsBuffer);
 	return result;
-}
-
-std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en)
-{
-	EvaluableNode::LabelsAssocType index;
-	if(en == nullptr)
-		return std::make_pair(index, true);
-
-	//insert all label indices into index
-	//TODO 24298: remove this
-	assert(EvaluableNode::IsAssociativeArray(en));
-	for(auto [key, value] : en->GetMappedChildNodesReference())
-		index.emplace(key, value);
-
-	bool unmodified = true;
-
-	//if no collision, return
-	EvaluableNode::ReferenceSetType checked;
-	if(!CollectLabelIndexesFromTree(en, index, en->GetNeedCycleCheck() ? &checked : nullptr))
-	{
-		//keep replacing until don't need to replace anymore
-		EvaluableNode *to_replace = nullptr;
-		while(true)
-		{
-			index.clear();
-			checked.clear();
-
-			//insert all label indices into index
-			for(auto [key, value] : en->GetMappedChildNodesReference())
-				index.emplace(key, value);
-
-			if(CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(en, index, checked, to_replace))
-				break;
-		}
-
-		//things have been replaced, so anything might need to be updated
-		EvaluableNodeManager::UpdateFlagsForNodeTree(en);
-
-		unmodified = false;
-	}
-
-	return std::make_pair(index, unmodified);
 }
 
 EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMethod *mm, EvaluableNode *n1, EvaluableNode *n2)
@@ -1104,13 +1047,9 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBe
 	if(n1 == nullptr && n2 == nullptr)
 		return MergeMetricResults(1.0, n1, n2, false, true);
 
-	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(n1, n2);
-
 	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(n1, n2, require_exact_matches);
 
-	bool must_match = (num_unique_labels == 0 && num_common_labels > 0);
-	bool exact_match = (num_unique_labels == 0 && commonality == 1.0);
-	return MergeMetricResults(commonality + num_common_labels, n1, n2, must_match, exact_match);
+	return MergeMetricResults(commonality, n1, n2, must_match, commonality == 1.0);
 }
 
 std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBetweenNodeTypesAndValues(

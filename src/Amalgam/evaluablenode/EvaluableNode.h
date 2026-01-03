@@ -247,10 +247,6 @@ public:
 			|| GetConcurrency());
 	}
 
-	//Evaluates the fraction of the labels of nodes that are the same, 1.0 if no labels on either
-	//returns the number of followed by the number of unique labels if the two sets were merged
-	static std::pair<size_t, size_t> GetNodeCommonAndUniqueLabelCounts(EvaluableNode *n1, EvaluableNode *n2);
-
 	//Returns true if the immediate data structure of a is equal to b
 	static bool AreShallowEqual(EvaluableNode *a, EvaluableNode *b);
 

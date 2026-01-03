@@ -151,7 +151,11 @@ public:
 		virtual bool KeepNonMergeableB()
 		{	return keepAllOfBoth;	}
 
-		virtual bool AreMergeable(EvaluableNode *a, EvaluableNode *b);
+		virtual bool AreMergeable(EvaluableNode *a, EvaluableNode *b)
+		{
+			auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b, true);
+			return (commonality == 1.0);
+		}
 
 		virtual EvaluableNode::ReferenceAssocType &GetReferences()
 		{	return references;	}

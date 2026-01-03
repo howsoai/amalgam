@@ -161,8 +161,9 @@ std::pair<bool, bool> Entity::GetValueAtLabelAsBool(StringInternPool::StringID l
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(false, false);
 
-	const auto &label = labelIndex.find(label_sid);
-	if(label == end(labelIndex))
+	auto &label_index = GetLabelIndex();
+	const auto &label = label_index.find(label_sid);
+	if(label == end(label_index))
 		return std::pair(false, false);
 
 	return std::pair(EvaluableNode::ToBool(label->second), true);

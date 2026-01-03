@@ -1069,9 +1069,6 @@ protected:
 		return rootNode->GetMappedChildNodesReference();
 	}
 
-	//current list of all labels and where they are in the code
-	EvaluableNode::AssocType labelIndex;
-
 	//root of the entity
 	EvaluableNode *rootNode;
 

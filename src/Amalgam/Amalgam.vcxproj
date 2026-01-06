@@ -562,6 +562,7 @@
     <ClCompile Include="entity\EntityExternalInterface.cpp" />
     <ClCompile Include="entity\EntityManipulation.cpp" />
     <ClCompile Include="entity\EntityQueries.cpp" />
+    <ClCompile Include="entity\EntityQueriesDensityFunctions.cpp" />
     <ClCompile Include="entity\EntityQueryCaches.cpp" />
     <ClCompile Include="entity\EntityWriteListener.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNode.cpp" />

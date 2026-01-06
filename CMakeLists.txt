@@ -127,6 +127,7 @@ set(COMMON_SOURCE
     src/Amalgam/entity/EntityManipulation.h
     src/Amalgam/entity/EntityQueries.cpp
     src/Amalgam/entity/EntityQueries.h
+	src/Amalgam/entity/EntityQueriesDensityFunctions.cpp
 	src/Amalgam/entity/EntityQueriesDensityFunctions.h
     src/Amalgam/entity/EntityQueriesStatistics.h
     src/Amalgam/entity/EntityQueryBuilder.h

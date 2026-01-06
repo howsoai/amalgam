@@ -647,10 +647,8 @@ public:
 	//upon completion, edge_distances will contain the distance of the edge that link each entity to
 	//its parent in the MST (root gets distance = 0)
 	//parent_entities will contain the parent index for each entity (root points to itself)
-	//vector_bool_buffer is to reuse a buffer for booleans
 	void BuildMutualReachabilityMST(std::vector<double> &core_distances, std::vector<size_t> &order,
-		std::vector<double> &edge_distances, std::vector<size_t> &parent_entities,
-		std::vector<bool> &vector_bool_buffer);
+		std::vector<double> &edge_distances, std::vector<size_t> &parent_entities);
 
 	//extracts clusters from the minimum spanning tree (MST)
 	//entities_to_compute is the set of entities to consider
@@ -661,12 +659,10 @@ public:
 	//minimum_cluster_weight is the minimum total weight required for a cluster
 	//the method outputs cluster_ids output vector, where cluster 0 is noise/no cluster
 	//stabilities contains the stability score for each entity
-	//vector_bool_buffer is to reuse a buffer for booleans
 	void ExtractClustersFromMST(EntityReferenceSet &entities_to_compute,
 		std::vector<double> &core_distances, std::vector<double> &edge_distances,
 		std::vector<size_t> &parent_entities, std::vector<size_t> &order, double minimum_cluster_weight,
-		std::vector<size_t> &cluster_ids, std::vector<double> &stabilities,
-		std::vector<bool> &vector_bool_buffer);
+		std::vector<size_t> &cluster_ids, std::vector<double> &stabilities);
 
 	//TODO 24886: add documentation
 	//TODO 24886: add tests to full_test.amlg
@@ -718,13 +714,12 @@ public:
 		//don't reuse any of the other buffers
 		auto &edge_distances = buffers.baseDistanceProbabilities;
 		std::vector<size_t> parent_entities;
-		std::vector<bool> vector_bool_buffer;
-		BuildMutualReachabilityMST(core_distances, order, edge_distances, parent_entities, vector_bool_buffer);
+		BuildMutualReachabilityMST(core_distances, order, edge_distances, parent_entities);
 
 		std::vector<size_t> cluster_ids_tmp;
 		std::vector<double> node_stabilities;
 		ExtractClustersFromMST(entities_to_compute, core_distances, edge_distances, parent_entities, order,
-			minimum_cluster_weight, cluster_ids_tmp, node_stabilities, vector_bool_buffer);
+			minimum_cluster_weight, cluster_ids_tmp, node_stabilities);
 
 		//convert integer ids to double
 		clusters_out.clear();

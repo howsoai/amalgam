@@ -1,4 +1,6 @@
 ﻿(seq
+(if .true
+(seq
 	(print "--query_entity_clusters--\n")
 	(create_entities "ClusterTestEntity" (null))
 	(create_entities
@@ -42,7 +44,7 @@
 			(query_entity_clusters
 				(list 0.05 1 20) ;(get hyperparam_map "k")
 				["A" "B"] ;features
-				2 ;min cluster size
+				3 ;min cluster size
 				1
 				(null) ;feature_weights
 				(zip ["A" "B"] "continuous_numeric")
@@ -59,7 +61,6 @@
 		)
 	)
 )
-
 (seq
 
 	(map
@@ -152,4 +153,6 @@
 			(zip (values cluster_map))
 		)
 	)
+)
+)
 )

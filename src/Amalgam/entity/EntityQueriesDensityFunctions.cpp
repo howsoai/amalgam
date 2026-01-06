@@ -4,8 +4,7 @@
 #include "EntityQueriesDensityFunctions.h"
 
 void EntityQueriesDensityProcessor::BuildMutualReachabilityMST(std::vector<double> &core_distances, std::vector<size_t> &order,
-	std::vector<double> &edge_distances, std::vector<size_t> &parent_entities,
-	std::vector<bool> &vector_bool_buffer)
+	std::vector<double> &edge_distances, std::vector<size_t> &parent_entities)
 {
 	size_t num_entity_ids = core_distances.size();
 	size_t num_entities = order.size();
@@ -15,8 +14,7 @@ void EntityQueriesDensityProcessor::BuildMutualReachabilityMST(std::vector<doubl
 	parent_entities.resize(num_entity_ids, std::numeric_limits<size_t>::max());
 
 	//used to mark vertices (entities) as they are added to the tree
-	auto &processed_flags = vector_bool_buffer;
-	processed_flags.clear();
+	std::vector<bool> processed_flags;
 	processed_flags.resize(num_entity_ids, false);
 
 	//initialize the first point, largest core distance, as the root
@@ -69,10 +67,9 @@ void EntityQueriesDensityProcessor::BuildMutualReachabilityMST(std::vector<doubl
 }
 
 void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &entities_to_compute,
-	std::vector<double> &core_distances,  std::vector<double> &edge_distances,
+	std::vector<double> &core_distances, std::vector<double> &edge_distances,
 	std::vector<size_t> &parent_entities, std::vector<size_t> &order, double minimum_cluster_weight,
-	std::vector<size_t> &cluster_ids, std::vector<double> &stabilities,
-	std::vector<bool> &vector_bool_buffer)
+	std::vector<size_t> &cluster_ids, std::vector<double> &stabilities)
 {
 	size_t num_entity_ids = edge_distances.size();
 
@@ -104,6 +101,7 @@ void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &e
 
 		double w = 1.0;
 		distanceTransform->getEntityWeightFunction(entity_index, w);
+
 		subtree_cumulative_weights[entity_index] += w;
 		subtree_cumulative_weights[parent_index] += subtree_cumulative_weights[entity_index];
 	}
@@ -124,11 +122,6 @@ void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &e
 
 		stabilities[parent_index] += delta_density * subtree_cumulative_weights[entity_index];
 	}
-
-	//select clusters for each point
-	auto &entity_clustered = vector_bool_buffer;
-	entity_clustered.clear();
-	entity_clustered.resize(num_entity_ids, false);
 
 	cluster_ids.clear();
 	cluster_ids.resize(num_entity_ids, 0);
@@ -155,6 +148,7 @@ void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &e
 		if(stabilities[entity_index] < stability_eps)
 			continue;
 
+		//skip if not enough weight
 		if(subtree_cumulative_weights[entity_index] < minimum_cluster_weight)
 			continue;
 
@@ -164,7 +158,7 @@ void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &e
 		//walk up until hit the root
 		while(ancestor_id != entity_index)
 		{
-			if(entity_clustered[ancestor_id])
+			if(cluster_ids[ancestor_id] != 0)
 			{
 				ancestor_clustered = true;
 				break;
@@ -178,8 +172,7 @@ void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &e
 		if(ancestor_clustered)
 			continue;
 
-		//mark this entity as a new cluster and propagate the id
-		entity_clustered[entity_index] = true;
+		//mark this entity as a new cluster with an id
 		cluster_ids[entity_index] = next_cluster_id;
 
 		//depth‑first walk to label all descendants that are still unassigned

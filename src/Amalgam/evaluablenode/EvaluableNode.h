@@ -616,6 +616,27 @@ public:
 	void AppendLabelStringId(StringInternPool::StringID label_string_id, bool handoff_reference = false);
 	void AppendLabel(const std::string &label);
 
+	StringInternPool::StringID GetAnnotationStringId()
+	{
+		//TODO 24298: implement this
+		return string_intern_pool.NOT_A_STRING_ID;
+	}
+
+	inline const std::string &GetAnnotationString()
+	{
+		return string_intern_pool.GetStringFromID(GetAnnotationStringId());
+	}
+
+	void SetAnnotationStringId(StringInternPool::StringID &sid, bool handoff_reference = false)
+	{
+		//TODO 24298: implement this
+	}
+
+	void SetAnnotationString(std::string &s)
+	{
+		//TODO 24298: implement this
+	}
+
 	//functions for getting and setting node comments by string or by StringID
 	// all Comment functions perform any reference counting management necessary when setting and clearing
 	StringInternPool::StringID GetCommentsStringId();

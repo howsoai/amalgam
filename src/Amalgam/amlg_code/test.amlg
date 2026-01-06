@@ -42,7 +42,7 @@
 			(query_entity_clusters
 				(list 0.05 1 20) ;(get hyperparam_map "k")
 				["A" "B"] ;features
-				0 ;min cluster size
+				2 ;min cluster size
 				1
 				(null) ;feature_weights
 				(zip ["A" "B"] "continuous_numeric")
@@ -56,6 +56,100 @@
 				(null) ;radius
 				(null) ;!numericalPrecision
 			)
+		)
+	)
+)
+
+(seq
+
+	(map
+		(lambda
+			(create_entities (concat "case" (current_index)) (zip_labels ["A" "B" "C"] (current_value)) )
+		)
+		[
+			;cluster 1
+			[1 1 1]
+			[1 2 1]
+			[2 1 1]
+			[2 2 2]
+			[2 2 2]
+			[3.5 1 2]
+			[3.1 0 2]
+			[1.2 3 1.3]
+			[2 1.9 0.8]
+			[2.3 1.6 0.5]
+			[1.4 1.9 1.4]
+			[2 3 3]
+
+
+			;cluster 2
+			[16 19 19]
+			[15 17 10]
+			[17 17 19]
+			[17 15 19]
+			[19 16 15]
+			[18 16 17]
+			[16 17 17]
+			[19 15 17]
+			[15 18 16]
+			[15 17 17]
+			[16 19 18]
+			[16 15 19]
+
+
+			;cluster 3 though some may be unclustered
+			[7 9 10]
+			[13 12 7]
+			[11 11 12]
+			[13 8 12]
+			[13 10 6]
+			[9 8 12]
+			[8 9 12]
+			[10 11 11]
+			[9 12 7]
+			[9 7 10]
+			[8 8 9]
+			[9 14 10]
+
+			;questionables
+			[14 10 18]
+			[17 7 10]
+			[18 2 8]
+		]
+	)
+
+	(declare (assoc
+		cluster_map
+			(compute_on_contained_entities
+				(query_entity_clusters
+					[0.05 6 20]
+					["A" "B" "C"]
+					2 ;min cluster size
+					1 ;p
+					(null) ;{ "A" 0.5 "B" 0.5 } ;feature_weights
+					{ "A" "continuous_numeric" "B" "continuous_numeric" "C" "continuous_numeric" } ;!queryDistanceTypeMap
+					(null) ;(get !hyperparameterMetadataMap "featureDomainAttributes")
+					{"A" 0.05 "B" 0.05 "C" 0.05} ;feature_deviations
+					(null) ;"C" ; feature weight feature
+					"surprisal" ;(get hyperparam_map "dt")
+					(null) ; weight feature
+					"tie_break_random_seed"
+					(null) ;radius
+					(null) ; !numericalPrecision
+				)
+			)
+	))
+	(print
+		;for every cluster output the number of cases in that cluster
+		(map
+		  	(lambda
+				(size
+					;keep cases matching this cluster id
+					(filter (lambda (= (current_index 1) (current_value))) cluster_map)
+				)
+			)
+			;makes an assoc of cluster id
+			(zip (values cluster_map))
 		)
 	)
 )

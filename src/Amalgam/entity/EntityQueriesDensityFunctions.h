@@ -669,64 +669,8 @@ public:
 
 	//computes clusters for each entity and sets the corresponding index of clusters_out to the cluster id
 	//minimum_cluster_weight is the least amount of weight that can be used to constitute a cluster
-	inline void ComputeCaseClusters(EntityReferenceSet &entities_to_compute,
-		std::vector<double> &clusters_out, double minimum_cluster_weight)
-	{
-		//prime the cache
-	#ifdef MULTITHREAD_SUPPORT
-		knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true, runConcurrently);
-	#else
-		knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true);
-	#endif
-
-		//find distance contributions to use as core weights
-		size_t num_entity_indices = knnCache->GetEndEntityIndex();
-		size_t num_entities = entities_to_compute.size();
-		auto &core_distances = buffers.baseDistanceContributions;
-		core_distances.clear();
-		core_distances.resize(num_entity_indices, std::numeric_limits<double>::infinity());
-
-		IterateOverConcurrentlyIfPossible(entities_to_compute,
-			[this, &core_distances](auto /*unused index*/, auto entity)
-		{
-			auto &neighbors = knnCache->GetKnnCache(entity);
-
-			double entity_weight = 1.0;
-			distanceTransform->getEntityWeightFunction(entity, entity_weight);
-			core_distances[entity] = distanceTransform->ComputeDistanceContribution(neighbors, entity_weight);
-
-			distanceTransform->TransformDistances(neighbors, false);
-		}
-	#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently
-	#endif
-		);
-
-		//entity indices, sorted descending by core distance
-		std::vector<size_t> order;
-		order.reserve(num_entities);
-		for(auto entity : entities_to_compute)
-			order.push_back(entity);
-		std::stable_sort(order.begin(), order.end(),
-			[&](size_t i, size_t j) { return core_distances[i] > core_distances[j]; });
-
-		//reuse baseDistanceProbabilities, but because clustering is not typically done repeatedly,
-		//don't reuse any of the other buffers
-		auto &edge_distances = buffers.baseDistanceProbabilities;
-		std::vector<size_t> parent_entities;
-		BuildMutualReachabilityMST(core_distances, order, edge_distances, parent_entities);
-
-		std::vector<size_t> cluster_ids_tmp;
-		std::vector<double> node_stabilities;
-		ExtractClustersFromMST(entities_to_compute, core_distances, edge_distances, parent_entities, order,
-			minimum_cluster_weight, cluster_ids_tmp, node_stabilities);
-
-		//convert integer ids to double
-		clusters_out.clear();
-		clusters_out.reserve(num_entities);
-		for(auto entity_id : entities_to_compute)
-			clusters_out.emplace_back(static_cast<double>(cluster_ids_tmp[entity_id]));
-	}
+	void ComputeCaseClusters(EntityReferenceSet &entities_to_compute,
+		std::vector<double> &clusters_out, double minimum_cluster_weight);
 
 	protected:
 

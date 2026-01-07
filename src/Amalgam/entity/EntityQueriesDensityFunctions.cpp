@@ -55,6 +55,7 @@ void EntityQueriesDensityProcessor::BuildMutualReachabilityMST(std::vector<doubl
 		// direct connection to the root using only core distances
 		if(best_parent == std::numeric_limits<size_t>::max())
 		{
+			//TODO 24886: need a better way to connect disconnected cliques, maybe get nearest neighbor among spanning tree?
 			best_dist = std::max(core_distances[cur_entity_index], core_distances[root]);
 			best_parent = root;
 		}
@@ -110,17 +111,20 @@ void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &e
 	for(auto it = order.rbegin(); it != order.rend(); ++it)
 	{
 		size_t entity_index = *it;
-		size_t parent_index = parent_entities[entity_index];
 
-		//don't reaccumulate to the root
-		if(parent_index == entity_index)
-			continue;
+		//TODO 24886: use a different algorithm to make faster
+		//check all entities to find children of this node
+		for(size_t i = 0; i < num_entity_ids; i++)
+		{
+			if(parent_entities[i] == entity_index)
+			{
+				double delta_density = densities[i] - densities[entity_index];
+				if(delta_density < 0.0)
+					delta_density = 0.0;
 
-		double delta_density = densities[entity_index] - densities[parent_index];
-		if(delta_density < 0.0)
-			delta_density = 0.0;
-
-		stabilities[parent_index] += delta_density * subtree_cumulative_weights[entity_index];
+				stabilities[entity_index] += delta_density * subtree_cumulative_weights[i];
+			}
+		}
 	}
 
 	cluster_ids.clear();

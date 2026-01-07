@@ -1,5 +1,5 @@
 ﻿(seq
-(if .false
+(seq ;(if .true
 (seq
 	(print "--query_entity_clusters--\n")
 	(create_entities "ClusterTestEntity" (null))
@@ -125,7 +125,7 @@
 				(query_entity_clusters
 					[0.05 6 20]
 					["A" "B" "C"]
-					4 ;min cluster size
+					3 ;min cluster size
 					1 ;p
 					(null) ;{ "A" 0.333333 "B" 0.333333 "C" 0.333333} ;feature_weights
 					{ "A" "continuous_numeric" "B" "continuous_numeric" "C" "continuous_numeric" } ;!queryDistanceTypeMap

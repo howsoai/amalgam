@@ -154,7 +154,7 @@
 		)
 	)
 
-	;(print cluster_map)
+	(print cluster_map)
 )
 )
 )

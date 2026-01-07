@@ -3,6 +3,7 @@
 //project headers:
 #include "EntityQueriesDensityFunctions.h"
 
+#ifdef HDBSCAN
 void EntityQueriesDensityProcessor::BuildMutualReachabilityMST(std::vector<double> &core_distances, std::vector<size_t> &order,
 	std::vector<double> &edge_distances, std::vector<size_t> &parent_entities)
 {
@@ -270,6 +271,124 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	for(auto entity_id : entities_to_compute)
 		clusters_out.emplace_back(static_cast<double>(cluster_ids_tmp[entity_id]));
 }
+#else
+
+template <typename T>
+inline void RemoveDuplicates(std::vector<T> &v)
+{
+	std::sort(v.begin(), v.end());
+	auto last = std::unique(v.begin(), v.end());
+	v.erase(last, v.end());
+}
+
+void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &entities_to_compute,
+		std::vector<double> &clusters_out, double minimum_cluster_weight)
+{
+	//prime the cache
+#ifdef MULTITHREAD_SUPPORT
+	knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true, runConcurrently);
+#else
+	knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true);
+#endif
+
+	//find distance contributions to use as core weights
+	size_t num_entity_indices = knnCache->GetEndEntityIndex();
+	size_t num_entities = entities_to_compute.size();
+	auto &distance_contributions = buffers.baseDistanceContributions;
+	distance_contributions.clear();
+	distance_contributions.resize(num_entity_indices, std::numeric_limits<double>::infinity());
+
+	IterateOverConcurrentlyIfPossible(entities_to_compute,
+		[this, &distance_contributions](auto /*unused index*/, auto entity)
+	{
+		auto &neighbors = knnCache->GetKnnCache(entity);
+
+		double entity_weight = 1.0;
+		distanceTransform->getEntityWeightFunction(entity, entity_weight);
+		distance_contributions[entity] = distanceTransform->ComputeDistanceContribution(neighbors, entity_weight);
+
+		distanceTransform->TransformDistances(neighbors, false);
+	}
+#ifdef MULTITHREAD_SUPPORT
+		, runConcurrently
+#endif
+	);
+
+	//entity indices, sorted ascending by distance contribution
+	std::vector<size_t> order;
+	order.reserve(num_entities);
+	for(auto entity : entities_to_compute)
+		order.push_back(entity);
+	std::stable_sort(order.begin(), order.end(),
+		[&](size_t i, size_t j) { return distance_contributions[i] < distance_contributions[j]; });
+
+	std::vector<size_t> cluster_ids_tmp(num_entity_indices, 0);
+	size_t next_cluster_id = 1;
+	std::vector<size_t> cluster_ids_to_merge;
+	for(auto cur_entity_index : order)
+	{
+		auto &neighbors = knnCache->GetKnnCache(cur_entity_index);
+
+		bool found_mutual_neighbor = false;
+		cluster_ids_to_merge.clear();
+		for(auto &neighbor : neighbors)
+		{
+			auto &neighbors_neighbors = knnCache->GetKnnCache(neighbor.reference);
+			for(auto &neighbor_neighbor : neighbors_neighbors)
+			{
+				//mutual neighbor
+				if(neighbor_neighbor.reference == cur_entity_index)
+				{
+					found_mutual_neighbor = true;
+
+					if(cluster_ids_tmp[neighbor.reference] != 0)
+						cluster_ids_to_merge.emplace_back(cluster_ids_tmp[neighbor.reference]);
+
+					break;
+				}
+			}
+		}
+
+		//if nothing mutually reachable, leave out of clustering
+		if(!found_mutual_neighbor)
+			continue;
+
+		RemoveDuplicates(cluster_ids_to_merge);
+
+		if(cluster_ids_to_merge.size() > 0)
+		{
+			//use smallest cluster id and remove it from the list
+			size_t cur_cluster_id = cluster_ids_to_merge.front();
+			cluster_ids_to_merge.erase(begin(cluster_ids_to_merge));
+			cluster_ids_tmp[cur_entity_index] = cur_cluster_id;
+
+			for(auto updating_index : order)
+			{
+				auto found = std::find(begin(cluster_ids_to_merge), end(cluster_ids_to_merge), cluster_ids_tmp[updating_index]);
+				if(found != end(cluster_ids_to_merge))
+					cluster_ids_tmp[updating_index] = cur_cluster_id;
+			}
+
+		}
+		else //new cluster
+		{
+			size_t cur_cluster_id = next_cluster_id++;
+			cluster_ids_tmp[cur_entity_index] = cur_cluster_id;
+		}
+	}
+
+	//TODO 24886: filter out clusters that are too small
+	//TODO 24886: compact cluster ids
+	//TODO 24886: make algorithms more efficient
+
+	//convert integer ids to double
+	clusters_out.clear();
+	clusters_out.reserve(num_entities);
+	for(auto entity_id : entities_to_compute)
+		clusters_out.emplace_back(static_cast<double>(cluster_ids_tmp[entity_id]));
+}
+
+#endif
 
 //TODO 24886: add documentation
 //TODO 24886: add tests to full_test.amlg

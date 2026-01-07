@@ -1,5 +1,5 @@
 ﻿(seq
-(seq ;(if .true
+(seq ;(if .false
 (seq
 	(print "--query_entity_clusters--\n")
 	(create_entities "ClusterTestEntity" (null))
@@ -39,10 +39,11 @@
 		["ClusterTestEntity" "g5c1"] (zip_labels ["A" "B" "w"]  [10000 10000 	1])
 	)
 
+	(declare {effective_dimensions 2})
 	(print
 		(compute_on_contained_entities "ClusterTestEntity"
 			(query_entity_clusters
-				(list 0.05 1 20) ;(get hyperparam_map "k")
+				[0.05 (+ 3 effective_dimensions) (+ 3 (* 3 effective_dimensions)) 2]
 				["A" "B"] ;features
 				3 ;min cluster size
 				1
@@ -119,11 +120,13 @@
 		]
 	)
 
+	(declare {effective_dimensions 3})
+
 	(declare (assoc
 		cluster_map
 			(compute_on_contained_entities
 				(query_entity_clusters
-					[0.05 6 20]
+					[0.05 (+ 3 effective_dimensions) (+ 3 (* 3 effective_dimensions)) 2]
 					["A" "B" "C"]
 					3 ;min cluster size
 					1 ;p

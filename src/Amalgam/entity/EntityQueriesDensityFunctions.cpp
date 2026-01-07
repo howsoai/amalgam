@@ -154,20 +154,20 @@ void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &e
 
 		//ensure no ancestor is already a cluster
 		bool ancestor_clustered = false;
-		size_t ancestor_id = parent_entities[entity_index];
+		size_t ancestor_index = parent_entities[entity_index];
 		//walk up until hit the root
-		while(ancestor_id != entity_index)
+		while(ancestor_index != entity_index)
 		{
-			if(cluster_ids[ancestor_id] != 0)
+			if(cluster_ids[ancestor_index] != 0)
 			{
 				ancestor_clustered = true;
 				break;
 			}
 
 			//stop if hit root
-			if(ancestor_id == parent_entities[ancestor_id])
+			if(ancestor_index == parent_entities[ancestor_index])
 				break;
-			ancestor_id = parent_entities[ancestor_id];
+			ancestor_index = parent_entities[ancestor_index];
 		}
 		if(ancestor_clustered)
 			continue;

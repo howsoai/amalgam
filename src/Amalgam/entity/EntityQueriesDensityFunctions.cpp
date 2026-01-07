@@ -86,8 +86,6 @@ void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &e
 
 	//bottom-up pass to construct the total entity weights of the potential clusters
 	std::vector<double> subtree_cumulative_weights(num_entity_ids, 0.0);
-	stabilities.clear();
-	stabilities.resize(num_entity_ids, 0.0);
 
 	//accumulate the total distances up the MST
 	for(auto it = order.rbegin(); it != order.rend(); ++it)
@@ -105,6 +103,9 @@ void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &e
 		subtree_cumulative_weights[entity_index] += w;
 		subtree_cumulative_weights[parent_index] += subtree_cumulative_weights[entity_index];
 	}
+
+	stabilities.clear();
+	stabilities.resize(num_entity_ids, 0.0);
 
 	//accumulate stabilities using differences in densities
 	for(auto it = order.rbegin(); it != order.rend(); ++it)

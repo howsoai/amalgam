@@ -93,15 +93,14 @@ void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &e
 		size_t entity_index = *it;
 		size_t parent_index = parent_entities[entity_index];
 
-		//don't reaccumulate to the root
-		if(parent_index == entity_index)
-			continue;
-
 		double w = 1.0;
 		distanceTransform->getEntityWeightFunction(entity_index, w);
 
 		subtree_cumulative_weights[entity_index] += w;
-		subtree_cumulative_weights[parent_index] += subtree_cumulative_weights[entity_index];
+
+		//if root, doesn't have a different parent, so don't accumulate
+		if(parent_index != entity_index)
+			subtree_cumulative_weights[parent_index] += subtree_cumulative_weights[entity_index];
 	}
 
 	stabilities.clear();

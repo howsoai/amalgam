@@ -1,5 +1,5 @@
 ﻿(seq
-(seq ;if .false
+(if .false
 (seq
 	(print "--query_entity_clusters--\n")
 	(create_entities "ClusterTestEntity" (null))
@@ -112,7 +112,7 @@
 			[8 8 9]
 			[9 14 10]
 
-			;questionables
+			questionables
 			[14 10 18]
 			[17 7 10]
 			[18 2 8]
@@ -125,9 +125,9 @@
 				(query_entity_clusters
 					[0.05 6 20]
 					["A" "B" "C"]
-					3 ;min cluster size
+					4 ;min cluster size
 					1 ;p
-					(null) ;{ "A" 0.5 "B" 0.5 } ;feature_weights
+					(null) ;{ "A" 0.333333 "B" 0.333333 "C" 0.333333} ;feature_weights
 					{ "A" "continuous_numeric" "B" "continuous_numeric" "C" "continuous_numeric" } ;!queryDistanceTypeMap
 					(null) ;(get !hyperparameterMetadataMap "featureDomainAttributes")
 					{"A" 0.05 "B" 0.05 "C" 0.05} ;feature_deviations

@@ -193,6 +193,17 @@ void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &e
 			}
 		}
 
+		//given that the cluster was accepted, need to remove its weight from its parents
+		double consumed = subtree_cumulative_weights[entity_index];
+		size_t up = parent_entities[entity_index];
+		while(up != entity_index)
+		{
+			subtree_cumulative_weights[up] -= consumed;
+			if(up == parent_entities[up])
+				break;
+			up = parent_entities[up];
+		}
+
 		next_cluster_id++;
 	}
 }

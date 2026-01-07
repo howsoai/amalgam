@@ -43,7 +43,7 @@
 	(print
 		(compute_on_contained_entities "ClusterTestEntity"
 			(query_entity_clusters
-				[0.05 (+ 3 effective_dimensions) (+ 3 (* 3 effective_dimensions)) 2]
+				[0.05 effective_dimensions (* 3 effective_dimensions) 1]
 				["A" "B"] ;features
 				3 ;min cluster size
 				1
@@ -86,6 +86,7 @@
 
 			;cluster 2
 			[16 19 19]
+			;this case has a very low 3rd value
 			[15 17 10]
 			[17 17 19]
 			[17 15 19]
@@ -126,7 +127,7 @@
 		cluster_map
 			(compute_on_contained_entities
 				(query_entity_clusters
-					[0.05 (+ 3 effective_dimensions) (+ 3 (* 3 effective_dimensions)) 2]
+					[0.05 effective_dimensions (* 3 effective_dimensions) 1]
 					["A" "B" "C"]
 					3 ;min cluster size
 					1 ;p

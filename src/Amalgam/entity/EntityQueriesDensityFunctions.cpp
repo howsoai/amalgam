@@ -288,7 +288,7 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 #ifdef MULTITHREAD_SUPPORT
 	knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true, runConcurrently);
 #else
-	knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true);
+	knnCache->PreCacheKnn(&entities_to_compute, 3 * numNearestNeighbors, true);
 #endif
 
 	//find distance contributions to use as core weights
@@ -306,8 +306,6 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 		double entity_weight = 1.0;
 		distanceTransform->getEntityWeightFunction(entity, entity_weight);
 		distance_contributions[entity] = distanceTransform->ComputeDistanceContribution(neighbors, entity_weight);
-
-		distanceTransform->TransformDistances(neighbors, false);
 	}
 #ifdef MULTITHREAD_SUPPORT
 		, runConcurrently
@@ -327,7 +325,13 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	std::vector<size_t> cluster_ids_to_merge;
 	for(auto cur_entity_index : order)
 	{
-		auto &neighbors = knnCache->GetKnnCache(cur_entity_index);
+		double max_neighbor_dist_contrib = 0;
+
+		//make a copy of the neighbors and only consider actual neighbors
+		auto neighbors(knnCache->GetKnnCache(cur_entity_index));
+		distanceTransform->TransformDistances(neighbors, false);
+		for(auto &neighbor : neighbors)
+			max_neighbor_dist_contrib = std::max(max_neighbor_dist_contrib, distance_contributions[neighbor.reference]);
 
 		bool found_mutual_neighbor = false;
 		cluster_ids_to_merge.clear();
@@ -339,6 +343,12 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 				//mutual neighbor
 				if(neighbor_neighbor.reference == cur_entity_index)
 				{
+					//ensure closest enough mutual neighbor using both average distance contribution to assess reachability
+					//use 2x max neighbor dist contribution, as each point would have its own distance contribution
+					double dist_contrib_threshold = 2 * max_neighbor_dist_contrib;
+					if(neighbor.distance > dist_contrib_threshold || neighbor_neighbor.distance > dist_contrib_threshold)
+						continue;
+
 					found_mutual_neighbor = true;
 
 					if(cluster_ids_tmp[neighbor.reference] != 0)

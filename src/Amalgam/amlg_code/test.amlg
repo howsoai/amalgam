@@ -1,5 +1,5 @@
 ﻿(seq
-(if .false
+(seq ;if .false
 (seq
 	(print "--query_entity_clusters--\n")
 	(create_entities "ClusterTestEntity" (null))

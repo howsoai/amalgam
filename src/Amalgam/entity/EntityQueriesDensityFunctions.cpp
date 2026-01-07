@@ -59,7 +59,7 @@ void EntityQueriesDensityProcessor::BuildMutualReachabilityMST(std::vector<doubl
 			best_parent = root;
 		}
 
-		//record the procssed entity
+		//record the processed entity
 		parent_entities[cur_entity_index] = best_parent;
 		edge_distances[cur_entity_index] = best_dist;
 		processed_flags[cur_entity_index] = true;

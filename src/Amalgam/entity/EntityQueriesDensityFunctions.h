@@ -55,9 +55,10 @@ inline double PartialKullbackLeiblerDivergenceFromIndices(const std::vector<Dist
 //manages all types of processing related to probability density, such as conviction and clustering
 class EntityQueriesDensityProcessor
 {
+public:
 	using EntityReference = size_t;
 	using EntityReferenceSet = BitArrayIntegerSet;
-public:
+
 	//buffers to be reused for less memory churn
 	struct ConvictionProcessorBuffers
 	{

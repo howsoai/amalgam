@@ -272,19 +272,17 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 #else
 
 template <typename T>
-inline void RemoveDuplicates(std::vector<T> &v)
+static inline void RemoveDuplicates(std::vector<T> &v)
 {
 	std::sort(v.begin(), v.end());
 	auto last = std::unique(v.begin(), v.end());
 	v.erase(last, v.end());
 }
 
-using EntityReference = size_t;
-using EntityReferenceSet = BitArrayIntegerSet;
-
-static inline void PruneAndCompactClusterIds(EntityReferenceSet &entities_to_compute, std::vector<size_t> &cluster_ids,
-					   EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform,
-					   double min_weight, std::vector<double> &clusters_out)
+static inline void PruneAndCompactClusterIds(EntityQueriesDensityProcessor::EntityReferenceSet &entities_to_compute,
+	std::vector<size_t> &cluster_ids,
+	EntityQueriesStatistics::DistanceTransform<EntityQueriesDensityProcessor::EntityReference> &distance_transform,
+	double min_weight, std::vector<double> &clusters_out)
 {
 	FastHashMap<size_t, size_t> cluster_id_to_compact_cluster_id;
 	FastHashMap<size_t, double> total_weights_map;
@@ -302,7 +300,7 @@ static inline void PruneAndCompactClusterIds(EntityReferenceSet &entities_to_com
 	}
 
 	//determine cluster ids to erase
-	FastHashSet<std::size_t> cluster_ids_to_erase;
+	FastHashSet<size_t> cluster_ids_to_erase;
 	for(auto &[id, w] : total_weights_map)
 	{
 		if(w < min_weight)
@@ -320,27 +318,21 @@ static inline void PruneAndCompactClusterIds(EntityReferenceSet &entities_to_com
 	}
 
 	//build compact mapping for surviving ids
-	std::size_t next_id = 1;
+	size_t next_id = 1;
 	for(auto &cluster_mapping : cluster_id_to_compact_cluster_id)
-	{
 		cluster_mapping.second = next_id++;
-	}
 
-	//map ids
-	for(auto &id : cluster_ids)
-	{
-		if(id != 0)
-			id = cluster_id_to_compact_cluster_id[id];
-	}
-
-	//convert integer ids to double
+	//map ids and convert to double
 	clusters_out.clear();
 	clusters_out.reserve(entities_to_compute.size());
 	for(auto entity_index : entities_to_compute)
 	{
 		double id = 0.0;
 		if(cluster_ids[entity_index] != 0)
-			id = static_cast<double>(cluster_ids[entity_index]);
+		{
+			size_t cluster_id = cluster_ids[entity_index];
+			id = static_cast<double>(cluster_id_to_compact_cluster_id[cluster_id]);
+		}
 		clusters_out.emplace_back(id);
 	}
 }
@@ -391,12 +383,18 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	{
 		double max_neighbor_dist_contrib = 0;
 
-		//make a copy of the neighbors and only consider actual neighbors
+		//make a copy of the neighbors and only consider actual neighbors, because TransformDistances will
+		//reduce the number of neighbors in the vector, but we don't want to reduce the number of neighbors in the cache
+		//this is because we want to check if the neighbors' neighbors can mutually reach each other within
+		//2x distance contribution (one for each neighbor), but that requires having the cache maintain
+		//a longer list of neighbors
 		auto neighbors(knnCache->GetKnnCache(cur_entity_index));
 		distanceTransform->TransformDistances(neighbors, false);
 		for(auto &neighbor : neighbors)
 			max_neighbor_dist_contrib = std::max(max_neighbor_dist_contrib, distance_contributions[neighbor.reference]);
 
+		//accumulate all clusters that are potentially overlapping or touching this one
+		//that requires going through all neighbors, and looking to see if each one can reach back
 		bool found_mutual_neighbor = false;
 		cluster_ids_to_merge.clear();
 		for(auto &neighbor : neighbors)
@@ -451,12 +449,13 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 		}
 	}
 
-	//TODO 24886: make algorithms more efficient
-
 	PruneAndCompactClusterIds(entities_to_compute, cluster_ids_tmp, *distanceTransform, minimum_cluster_weight, clusters_out);
 }
 
 #endif
 
+//TODO 24886: make algorithms more efficient
 //TODO 24886: add documentation
 //TODO 24886: add tests to full_test.amlg
+//TODO 24886: remove HDBSCAN code
+

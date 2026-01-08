@@ -1,6 +1,4 @@
-﻿#pragma once
-
-//project headers:
+﻿//project headers:
 #include "EntityQueriesDensityFunctions.h"
 
 #ifdef HDBSCAN

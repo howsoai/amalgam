@@ -281,8 +281,74 @@ inline void RemoveDuplicates(std::vector<T> &v)
 	v.erase(last, v.end());
 }
 
+using EntityReference = size_t;
+using EntityReferenceSet = BitArrayIntegerSet;
+
+static inline void PruneAndCompactClusterIds(EntityReferenceSet &entities_to_compute, std::vector<size_t> &cluster_ids,
+					   EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform,
+					   double min_weight, std::vector<double> &clusters_out)
+{
+	FastHashMap<size_t, size_t> cluster_id_to_compact_cluster_id;
+	FastHashMap<size_t, double> total_weights_map;
+	for(auto entity_index : entities_to_compute)
+	{
+		size_t cluster_id = cluster_ids[entity_index];
+		if(cluster_id == 0)
+			continue;
+
+		double entity_weight = 1.0;
+		distance_transform.getEntityWeightFunction(entity_index, entity_weight);
+
+		cluster_id_to_compact_cluster_id.emplace(cluster_id, 0);
+		total_weights_map[cluster_id] += entity_weight;
+	}
+
+	//determine cluster ids to erase
+	FastHashSet<std::size_t> cluster_ids_to_erase;
+	for(auto &[id, w] : total_weights_map)
+	{
+		if(w < min_weight)
+		{
+			cluster_ids_to_erase.insert(id);
+			cluster_id_to_compact_cluster_id.erase(id);
+		}
+	}
+
+	//remove clusters that are too small
+	for(auto &id : cluster_ids)
+	{
+		if(cluster_ids_to_erase.find(id) != end(cluster_ids_to_erase))
+			id = 0;
+	}
+
+	//build compact mapping for surviving ids
+	std::size_t next_id = 1;
+	for(auto &cluster_mapping : cluster_id_to_compact_cluster_id)
+	{
+		cluster_mapping.second = next_id++;
+	}
+
+	//map ids
+	for(auto &id : cluster_ids)
+	{
+		if(id != 0)
+			id = cluster_id_to_compact_cluster_id[id];
+	}
+
+	//convert integer ids to double
+	clusters_out.clear();
+	clusters_out.reserve(entities_to_compute.size());
+	for(auto entity_index : entities_to_compute)
+	{
+		double id = 0.0;
+		if(cluster_ids[entity_index] != 0)
+			id = static_cast<double>(cluster_ids[entity_index]);
+		clusters_out.emplace_back(id);
+	}
+}
+
 void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &entities_to_compute,
-		std::vector<double> &clusters_out, double minimum_cluster_weight)
+	std::vector<double> &clusters_out, double minimum_cluster_weight)
 {
 	//prime the cache
 #ifdef MULTITHREAD_SUPPORT
@@ -387,15 +453,9 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 		}
 	}
 
-	//TODO 24886: filter out clusters that are too small
-	//TODO 24886: compact cluster ids
 	//TODO 24886: make algorithms more efficient
 
-	//convert integer ids to double
-	clusters_out.clear();
-	clusters_out.reserve(num_entities);
-	for(auto entity_id : entities_to_compute)
-		clusters_out.emplace_back(static_cast<double>(cluster_ids_tmp[entity_id]));
+	PruneAndCompactClusterIds(entities_to_compute, cluster_ids_tmp, *distanceTransform, minimum_cluster_weight, clusters_out);
 }
 
 #endif

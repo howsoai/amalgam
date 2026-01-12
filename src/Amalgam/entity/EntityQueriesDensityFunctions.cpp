@@ -340,9 +340,10 @@ static inline void PruneAndCompactClusterIds(EntityQueriesDensityProcessor::Enti
 void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &entities_to_compute,
 	std::vector<double> &clusters_out, double minimum_cluster_weight)
 {
-	//prime the cache
+	//prime the cache, grabbing many extra cases in case the distance contributions
+	//occasionally push past what is needed
 #ifdef MULTITHREAD_SUPPORT
-	knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true, runConcurrently);
+	knnCache->PreCacheKnn(&entities_to_compute, 3 * numNearestNeighbors, true, runConcurrently);
 #else
 	knnCache->PreCacheKnn(&entities_to_compute, 3 * numNearestNeighbors, true);
 #endif
@@ -379,9 +380,11 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	std::vector<size_t> cluster_ids_tmp(num_entity_indices, 0);
 	size_t next_cluster_id = 1;
 	std::vector<size_t> cluster_ids_to_merge;
+	std::vector<size_t> entities_to_add_to_cluster;
+
 	for(auto cur_entity_index : order)
 	{
-		double max_neighbor_dist_contrib = 0;
+		double dist_contrib_threshold = 0;
 
 		//make a copy of the neighbors and only consider actual neighbors, because TransformDistances will
 		//reduce the number of neighbors in the vector, but we don't want to reduce the number of neighbors in the cache
@@ -389,14 +392,40 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 		//2x distance contribution (one for each neighbor), but that requires having the cache maintain
 		//a longer list of neighbors
 		auto neighbors(knnCache->GetKnnCache(cur_entity_index));
-		distanceTransform->TransformDistances(neighbors, false);
+
+		//truncate nearest neighbors -- if don't need this, then don't need to make a copy above
+		//distanceTransform->TransformDistances(neighbors, false);
+
+		//max
+		//for(auto &neighbor : neighbors)
+		//	dist_contrib_threshold = std::max(dist_contrib_threshold, distance_contributions[neighbor.reference]);
+
+		//geomean
+		//dist_contrib_threshold = 1.0;
+		//for(auto &neighbor : neighbors)
+		//	dist_contrib_threshold *= distance_contributions[neighbor.reference];
+		//dist_contrib_threshold = std::pow(dist_contrib_threshold, 1.0 / neighbors.size());
+
+		//average
 		for(auto &neighbor : neighbors)
-			max_neighbor_dist_contrib = std::max(max_neighbor_dist_contrib, distance_contributions[neighbor.reference]);
+			dist_contrib_threshold += distance_contributions[neighbor.reference];
+		dist_contrib_threshold /= neighbors.size();
+
+		//rmse
+		//for(auto &neighbor : neighbors)
+		//	dist_contrib_threshold += distance_contributions[neighbor.reference] * distance_contributions[neighbor.reference];
+		//dist_contrib_threshold /= neighbors.size();
+		//dist_contrib_threshold = std::sqrt(dist_contrib_threshold);
+
+		//ensure closest enough mutual neighbor using both average distance contribution to assess reachability
+		//use 2x max neighbor dist contribution, as each point would have its own distance contribution
+		dist_contrib_threshold *= 2;
 
 		//accumulate all clusters that are potentially overlapping or touching this one
 		//that requires going through all neighbors, and looking to see if each one can reach back
 		bool found_mutual_neighbor = false;
 		cluster_ids_to_merge.clear();
+		entities_to_add_to_cluster.clear();
 		for(auto &neighbor : neighbors)
 		{
 			auto &neighbors_neighbors = knnCache->GetKnnCache(neighbor.reference);
@@ -405,16 +434,21 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 				//mutual neighbor
 				if(neighbor_neighbor.reference == cur_entity_index)
 				{
-					//ensure closest enough mutual neighbor using both average distance contribution to assess reachability
-					//use 2x max neighbor dist contribution, as each point would have its own distance contribution
-					double dist_contrib_threshold = 2 * max_neighbor_dist_contrib;
-					if(neighbor.distance > dist_contrib_threshold || neighbor_neighbor.distance > dist_contrib_threshold)
+					//candidate distance is the max of either distances, and the max of either distance contribution,
+					//as this makes sure sparse points do not connect; this is similar to core distance in the HDBSCAN algorithm
+					double max_distance = std::max(neighbor.distance, neighbor_neighbor.distance);
+					double max_distance_contrib = std::max(distance_contributions[neighbor.reference], distance_contributions[cur_entity_index]);
+					double candidate_distance = std::max(max_distance, max_distance_contrib);
+
+					if(candidate_distance > dist_contrib_threshold)
 						continue;
 
 					found_mutual_neighbor = true;
 
 					if(cluster_ids_tmp[neighbor.reference] != 0)
 						cluster_ids_to_merge.emplace_back(cluster_ids_tmp[neighbor.reference]);
+					else
+						entities_to_add_to_cluster.emplace_back(neighbor.reference);
 
 					break;
 				}
@@ -440,13 +474,15 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 				if(found != end(cluster_ids_to_merge))
 					cluster_ids_tmp[updating_index] = cur_cluster_id;
 			}
-
 		}
 		else //new cluster
 		{
 			size_t cur_cluster_id = next_cluster_id++;
 			cluster_ids_tmp[cur_entity_index] = cur_cluster_id;
 		}
+
+		for(auto &neighbor_entity_index : entities_to_add_to_cluster)
+			cluster_ids_tmp[neighbor_entity_index] = cluster_ids_tmp[cur_entity_index];
 	}
 
 	PruneAndCompactClusterIds(entities_to_compute, cluster_ids_tmp, *distanceTransform, minimum_cluster_weight, clusters_out);

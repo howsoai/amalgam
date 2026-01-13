@@ -39,11 +39,10 @@
 		["ClusterTestEntity" "g5c1"] (zip_labels ["A" "B" "w"]  [10000 10000 	1])
 	)
 
-	(declare {effective_dimensions 2})
 	(print
 		(compute_on_contained_entities "ClusterTestEntity"
 			(query_entity_clusters
-				[0.05 effective_dimensions (* 3 effective_dimensions) 1]
+				[0.05 3 20]
 				["A" "B"] ;features
 				3 ;min cluster size
 				1
@@ -121,13 +120,11 @@
 		]
 	)
 
-	(declare {effective_dimensions 3})
-
 	(declare (assoc
 		cluster_map
 			(compute_on_contained_entities
 				(query_entity_clusters
-					[0.05 effective_dimensions (* 3 effective_dimensions) 1]
+					[0.05 3 20 3]
 					["A" "B" "C"]
 					3 ;min cluster size
 					1 ;p

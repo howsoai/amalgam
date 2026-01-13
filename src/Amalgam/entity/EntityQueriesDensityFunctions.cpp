@@ -360,6 +360,8 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	{
 		auto &neighbors = knnCache->GetKnnCache(entity);
 
+		//TODO: instead of computing distance contribution here, try core distance below by averaging the number of records for each neighbor
+
 		double entity_weight = 1.0;
 		distanceTransform->getEntityWeightFunction(entity, entity_weight);
 		distance_contributions[entity] = distanceTransform->ComputeDistanceContribution(neighbors, entity_weight);
@@ -391,10 +393,11 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 		//this is because we want to check if the neighbors' neighbors can mutually reach each other within
 		//2x distance contribution (one for each neighbor), but that requires having the cache maintain
 		//a longer list of neighbors
-		auto neighbors(knnCache->GetKnnCache(cur_entity_index));
+		auto &extended_neighbors = knnCache->GetKnnCache(cur_entity_index);
 
 		//truncate nearest neighbors -- if don't need this, then don't need to make a copy above
-		//distanceTransform->TransformDistances(neighbors, false);
+		auto neighbors(extended_neighbors);
+		distanceTransform->TransformDistances(neighbors, false);
 
 		//max
 		//for(auto &neighbor : neighbors)
@@ -411,6 +414,17 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 			dist_contrib_threshold += distance_contributions[neighbor.reference];
 		dist_contrib_threshold /= neighbors.size();
 
+		//average to dist contrib
+		//size_t counted = 0;
+		//for(auto &neighbor : neighbors)
+		//{
+		//	if(neighbor.distance > distance_contributions[cur_entity_index])
+		//		break;
+		//	counted++;
+		//	dist_contrib_threshold += distance_contributions[neighbor.reference];
+		//}
+		//dist_contrib_threshold /= counted;
+
 		//rmse
 		//for(auto &neighbor : neighbors)
 		//	dist_contrib_threshold += distance_contributions[neighbor.reference] * distance_contributions[neighbor.reference];
@@ -421,12 +435,15 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 		//use 2x max neighbor dist contribution, as each point would have its own distance contribution
 		dist_contrib_threshold *= 2;
 
+		//auto dist_eval = knnCache->GetDistanceEvaluator();
+		//dist_contrib_threshold *= std::sqrt(dist_eval->featureAttribs.size());
+
 		//accumulate all clusters that are potentially overlapping or touching this one
 		//that requires going through all neighbors, and looking to see if each one can reach back
 		bool found_mutual_neighbor = false;
 		cluster_ids_to_merge.clear();
 		entities_to_add_to_cluster.clear();
-		for(auto &neighbor : neighbors)
+		for(auto &neighbor : extended_neighbors)
 		{
 			auto &neighbors_neighbors = knnCache->GetKnnCache(neighbor.reference);
 			for(auto &neighbor_neighbor : neighbors_neighbors)

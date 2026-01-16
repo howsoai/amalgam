@@ -421,9 +421,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 								if(entity_index != std::numeric_limits<size_t>::max())
 									ents_to_compute_ptr->insert(entity_index);
 							}
-
-							//make sure everything asked to be computed is in the base set of entities
-							ents_to_compute_ptr->Intersect(matching_entities);
 						}
 					}
 					else //compute on all

@@ -582,7 +582,12 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	for(auto entity : entities_to_compute)
 	{
 		auto &neighbors = knnCache->GetKnnCache(entity);
-		base_distances[entity] = neighbors[0].distance;
+
+		//use weight to influence the distance and distance ratios
+		double weight = 1.0;
+		distanceTransform->getEntityWeightFunction(entity, weight);
+
+		base_distances[entity] = neighbors[0].distance / weight;
 	}
 
 	EntityReferenceSet core_set;

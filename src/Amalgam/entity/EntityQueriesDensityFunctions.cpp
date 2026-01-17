@@ -587,7 +587,9 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 		double weight = 1.0;
 		distanceTransform->getEntityWeightFunction(entity, weight);
 
-		base_distances[entity] = neighbors[0].distance / weight;
+		//convert weight to surprisal and subtract; adding the surprisal is the
+		//same as multiplying a probability by a weight, but don't let it go negative
+		base_distances[entity] = std::max(0.0, neighbors[0].distance - std::log(weight));
 	}
 
 	EntityReferenceSet core_set;

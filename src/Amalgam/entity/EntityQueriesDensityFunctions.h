@@ -52,12 +52,13 @@ inline double PartialKullbackLeiblerDivergenceFromIndices(const std::vector<Dist
 	return sum;
 }
 
-//manages all types of processing related to conviction
-class ConvictionProcessor
+//manages all types of processing related to probability density, such as conviction and clustering
+class EntityQueriesDensityProcessor
 {
+public:
 	using EntityReference = size_t;
 	using EntityReferenceSet = BitArrayIntegerSet;
-public:
+
 	//buffers to be reused for less memory churn
 	struct ConvictionProcessorBuffers
 	{
@@ -70,11 +71,11 @@ public:
 	};
 
 #ifdef MULTITHREAD_SUPPORT
-	ConvictionProcessor(KnnCache &cache,
+	EntityQueriesDensityProcessor(KnnCache &cache,
 		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
 		StringInternPool::StringID radius_label, bool run_concurrently)
 #else
-	ConvictionProcessor(KnnCache &cache,
+	EntityQueriesDensityProcessor(KnnCache &cache,
 		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
 		StringInternPool::StringID radius_label)
 #endif
@@ -420,7 +421,7 @@ public:
 	// if false, then will compute the conviction as if those entities were added or included
 	inline void ComputeCaseKLDivergences(EntityReferenceSet &entities_to_compute, std::vector<double> &convictions_out, bool normalize_convictions, bool conviction_of_removal)
 	{
-		//prime the cache
+		//prime the cache, including one extra case so each can be left out
 	#ifdef MULTITHREAD_SUPPORT
 		knnCache->PreCacheKnn(nullptr, numNearestNeighbors + 1, true, runConcurrently);
 	#else
@@ -636,6 +637,41 @@ public:
 		else
 			return KullbackLeiblerDivergence(scaled_base_distance_contribs, combined_model_distance_contribs);
 	}
+
+	//builds the minimum spanning tree (MST) on the mutual reachability graph.
+	//The algorithm is a Prim‑like sweep over the entities sorted by core distance.
+	//Each point only considers relevant neighbors, and the smallest mutual reachability
+	// distance among those neighbours becomes the edge that connects the
+	// point to the growing tree.
+	//core_distances is the vector of core distances for each entity, infinity for entities not considered
+	//order is the list of entities sorted by descending core distance
+	//upon completion, edge_distances will contain the distance of the edge that link each entity to
+	//its parent in the MST (root gets distance = 0)
+	//parent_entities will contain the parent index for each entity (root points to itself)
+	void BuildMutualReachabilityMST(std::vector<double> &core_distances, std::vector<size_t> &order,
+		std::vector<double> &edge_distances, std::vector<size_t> &parent_entities);
+
+	//extracts clusters from the minimum spanning tree (MST)
+	//entities_to_compute is the set of entities to consider
+	//edge_distances is a vector of mutual-reachability of the edge that
+	// connects each entity to its parent in the MST, 0 if the entity is not included
+	//parent_entities contains the parent index for each entity (root points to itself)
+	//order is the set of entities sorted by descending core distance
+	//minimum_cluster_weight is the minimum total weight required for a cluster
+	//the method outputs cluster_ids output vector, where cluster 0 is noise/no cluster
+	//stabilities contains the stability score for each entity
+	void ExtractClustersFromMST(EntityReferenceSet &entities_to_compute,
+		std::vector<double> &core_distances, std::vector<double> &edge_distances,
+		std::vector<size_t> &parent_entities, std::vector<size_t> &order, double minimum_cluster_weight,
+		std::vector<size_t> &cluster_ids, std::vector<double> &stabilities);
+
+	//TODO 24886: add documentation
+	//TODO 24886: add tests to full_test.amlg
+
+	//computes clusters for each entity and sets the corresponding index of clusters_out to the cluster id
+	//minimum_cluster_weight is the least amount of weight that can be used to constitute a cluster
+	void ComputeCaseClusters(EntityReferenceSet &entities_to_compute,
+		std::vector<double> &clusters_out, double minimum_cluster_weight);
 
 	protected:
 

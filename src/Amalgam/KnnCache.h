@@ -85,6 +85,17 @@ public:
 			expand_to_first_nonzero_distance, out, additional_holdout_index);
 	}
 
+	//like the other form of GetKnnWithoutCache, but specify relevant_entities
+	void GetKnnWithoutCache(size_t index, size_t top_k, bool expand_to_first_nonzero_distance,
+		std::vector<DistanceReferencePair<size_t>> &out,
+		BitArrayIntegerSet &relevant_entities)
+	{
+		out.clear();
+		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
+			*positionLabelIds, index, top_k, radiusLabelId, relevant_entities, true,
+			expand_to_first_nonzero_distance, out);
+	}
+
 	//gets the top_k nearest neighbor results of entities for the given position, sets out to the results
 	//if expand_to_first_nonzero_distance is true, it will expand k so that at least one non-zero distance is returned
 	// or return until all entities are included

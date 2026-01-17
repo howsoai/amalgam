@@ -1,6 +1,8 @@
 ﻿//project headers:
 #include "EntityQueriesDensityFunctions.h"
 
+#define REDUCE
+
 #ifdef HDBSCAN
 void EntityQueriesDensityProcessor::BuildMutualReachabilityMST(std::vector<double> &core_distances, std::vector<size_t> &order,
 	std::vector<double> &edge_distances, std::vector<size_t> &parent_entities)
@@ -269,7 +271,7 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	for(auto entity_id : entities_to_compute)
 		clusters_out.emplace_back(static_cast<double>(cluster_ids_tmp[entity_id]));
 }
-#else
+#elif defined(CLUSTER)
 
 template <typename T>
 static inline void RemoveDuplicates(std::vector<T> &v)
@@ -555,6 +557,104 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	}
 
 	PruneAndCompactClusterIds(entities_to_compute, cluster_ids_tmp, *distanceTransform, minimum_cluster_weight, clusters_out);
+}
+
+#elif defined(REDUCE)
+
+void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &entities_to_compute,
+	std::vector<double> &clusters_out, double minimum_cluster_weight)
+{
+#ifdef MULTITHREAD_SUPPORT
+	knnCache->PreCacheKnn(&entities_to_compute, 1, true, runConcurrently);
+#else
+	knnCache->PreCacheKnn(&entities_to_compute, 1, true);
+#endif
+
+	//find distance contributions to use as core weights
+	size_t num_entity_indices = knnCache->GetEndEntityIndex();
+	size_t num_entities = entities_to_compute.size();
+
+	size_t reduce_to_num_entities = static_cast<size_t>(minimum_cluster_weight); //num_entities / 8;
+
+	auto &base_distances = buffers.baseDistanceContributions;
+	base_distances.clear();
+	base_distances.resize(num_entity_indices, std::numeric_limits<double>::infinity());
+	for(auto entity : entities_to_compute)
+	{
+		auto &neighbors = knnCache->GetKnnCache(entity);
+		base_distances[entity] = neighbors[0].distance;
+	}
+
+	EntityReferenceSet core_set;
+	EntityReferenceSet non_core_set = entities_to_compute;
+
+	//find smallest distance contribution and place in the core set
+	double smallest_distance = std::numeric_limits<double>::infinity();
+	size_t smallest_distance_entity = std::numeric_limits<size_t>::max();
+	for(auto entity : non_core_set)
+	{
+		if(base_distances[entity] < smallest_distance)
+		{
+			smallest_distance = base_distances[entity];
+			smallest_distance_entity = entity;
+		}
+	}
+	core_set.insert(smallest_distance_entity);
+	non_core_set.erase(smallest_distance_entity);
+
+	auto &core_distance_ratios = buffers.baseDistanceProbabilities;
+	core_distance_ratios.clear();
+	core_distance_ratios.resize(num_entity_indices, 0.0);
+
+	while(core_set.size() < reduce_to_num_entities)
+	{
+		IterateOverConcurrentlyIfPossible(non_core_set,
+			[this, &core_set, &core_distance_ratios, &base_distances](auto /*unused index*/, auto entity)
+		{
+			auto &neighbors = buffers.updatedDistanceContribs;
+			knnCache->GetKnnWithoutCache(entity, 1, false, neighbors, core_set);
+
+			double smallest_distance_to_core = neighbors[0].distance;
+			double ratio = smallest_distance_to_core / base_distances[entity];
+			//if both are zero, then set the ratio to infinity to be one of the first to merge
+			if(FastIsNaN(ratio))
+				ratio = std::numeric_limits<double>::infinity();
+			core_distance_ratios[entity] = ratio;
+		});
+
+		//find highest of core_distance_ratios
+		double highest_dist_ratio = 0.0;
+		size_t highest_dist_ratio_entity = std::numeric_limits<size_t>::max();
+		for(auto entity : non_core_set)
+		{
+			if(core_distance_ratios[entity] > highest_dist_ratio)
+			{
+				highest_dist_ratio = core_distance_ratios[entity];
+				highest_dist_ratio_entity = entity;
+			}
+		}
+
+		core_set.insert(highest_dist_ratio_entity);
+		non_core_set.erase(highest_dist_ratio_entity);
+	}
+
+	//entity indices, sorted ascending by shortest base distance
+	//std::vector<size_t> order;
+	//order.reserve(num_entities);
+	//for(auto entity : entities_to_compute)
+	//	order.push_back(entity);
+	//std::stable_sort(order.begin(), order.end(),
+	//	[&](size_t i, size_t j) { return base_distances[i] < base_distances[j]; });
+
+	clusters_out.clear();
+	clusters_out.reserve(entities_to_compute.size());
+	for(auto entity : entities_to_compute)
+	{
+		if(core_set.contains(entity))
+			clusters_out.emplace_back(1.0);
+		else
+			clusters_out.emplace_back(0.0);
+	}
 }
 
 #endif

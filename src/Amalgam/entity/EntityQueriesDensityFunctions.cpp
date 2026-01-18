@@ -621,7 +621,13 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 			auto &neighbors = buffers.updatedDistanceContribs;
 			knnCache->GetKnnWithoutCache(entity, 1, false, neighbors, core_set);
 
-			double smallest_distance_to_core = neighbors[0].distance;
+			//use weight to influence the distance and distance ratios
+			double weight = 1.0;
+			distanceTransform->getEntityWeightFunction(entity, weight);
+
+			//convert weight to surprisal and subtract; adding the surprisal is the
+			//same as multiplying a probability by a weight, but don't let it go negative
+			double smallest_distance_to_core = std::max(0.0, neighbors[0].distance - std::log(weight));
 			double ratio = smallest_distance_to_core / base_distances[entity];
 			//if both are zero, then set the ratio to infinity to be one of the first to merge
 			if(FastIsNaN(ratio))

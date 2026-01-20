@@ -378,6 +378,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 			{
 				auto [new_size_entry, inserted] = valueCodeSizeToIndices.emplace(new_code_size, nullptr);
 
+				//need to emplace above before searching to ensure new_size_entry does not become invalidated
 				auto old_size_entry = valueCodeSizeToIndices.find(old_code_size);
 				if(old_size_entry == end(valueCodeSizeToIndices))
 				{
@@ -387,7 +388,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 					//TODO 24298: ensure index size is always correct and updated so entities won't be missed, remove this code and assert false if not found
 					for(auto cur_id_entry = begin(valueCodeSizeToIndices); cur_id_entry != end(valueCodeSizeToIndices); ++cur_id_entry)
 					{
-						if(cur_id_entry->second->contains(index))
+						if(cur_id_entry->second != nullptr && cur_id_entry->second->contains(index))
 						{
 							old_size_entry = cur_id_entry;
 							break;

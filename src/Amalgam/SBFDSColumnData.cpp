@@ -379,34 +379,45 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 				auto [new_size_entry, inserted] = valueCodeSizeToIndices.emplace(new_code_size, nullptr);
 
 				auto old_size_entry = valueCodeSizeToIndices.find(old_code_size);
-				if(old_size_entry != end(valueCodeSizeToIndices))
+				if(old_size_entry == end(valueCodeSizeToIndices))
 				{
-					//if there are multiple entries for this string, just move the id
-					if(old_size_entry->second->size() > 1)
+					//value must have changed sizes, look in each size
+					//note that this is inefficient -- if this ends up being a bottleneck,
+					//an additional data structure will need to be built to maintain the previous size
+					//TODO 24298: ensure index size is always correct and updated so entities won't be missed, remove this code and assert false if not found
+					for(auto cur_id_entry = begin(valueCodeSizeToIndices); cur_id_entry != end(valueCodeSizeToIndices); ++cur_id_entry)
 					{
-						if(inserted)
-							new_size_entry->second = std::make_unique<SortedIntegerSet>();
-
-						new_size_entry->second->insert(index);
-						old_size_entry->second->erase(index);
+						if(cur_id_entry->second->contains(index))
+						{
+							old_size_entry = cur_id_entry;
+							break;
+						}
 					}
-					else //it's the last old_size_entry
-					{
-						//put the SortedIntegerSet in the new value or move the container
-						if(inserted)
-							new_size_entry->second = std::move(old_size_entry->second);
-						else
-							new_size_entry->second->insert(index);
 
-						//erase after no longer need inserted_size_entry, as it may be invalidated
-						valueCodeSizeToIndices.erase(old_size_entry);
-					}
+					//if not found anywhere, then there's index corruption
+					if(old_size_entry == end(valueCodeSizeToIndices))
+						assert(false);
 				}
-				else if(inserted) //shouldn't make it here, but ensure integrity just in case
+
+				//if there are multiple entries for this string, just move the id
+				if(old_size_entry->second->size() > 1)
 				{
-					assert(false);
-					new_size_entry->second = std::make_unique<SortedIntegerSet>();
+					if(inserted)
+						new_size_entry->second = std::make_unique<SortedIntegerSet>();
+
 					new_size_entry->second->insert(index);
+					old_size_entry->second->erase(index);
+				}
+				else //it's the last old_size_entry
+				{
+					//put the SortedIntegerSet in the new value or move the container
+					if(inserted)
+						new_size_entry->second = std::move(old_size_entry->second);
+					else
+						new_size_entry->second->insert(index);
+
+					//erase after no longer need inserted_size_entry, as it may be invalidated
+					valueCodeSizeToIndices.erase(old_size_entry);
 				}
 			}
 
@@ -518,6 +529,7 @@ void SBFDSColumnData::DeleteIndexValue(EvaluableNodeImmediateValueType value_typ
 			//value must have changed sizes, look in each size
 			//note that this is inefficient -- if this ends up being a bottleneck,
 			//an additional data structure will need to be built to maintain the previous size
+			//TODO 24298: ensure index size is always correct and updated so entities won't be missed, remove this code and assert false if not found
 			for(auto cur_id_entry = begin(valueCodeSizeToIndices); cur_id_entry != end(valueCodeSizeToIndices); ++cur_id_entry)
 			{
 				if(cur_id_entry->second->contains(index))
@@ -527,6 +539,7 @@ void SBFDSColumnData::DeleteIndexValue(EvaluableNodeImmediateValueType value_typ
 				}
 			}
 
+			//if not found anywhere, then there's index corruption
 			if(id_entry == end(valueCodeSizeToIndices))
 				assert(false);
 		}

@@ -1396,6 +1396,7 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_APPLY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_REVERSE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_SORT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SORT_INDICES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//associative list manipulation
 	EvaluableNodeReference InterpretNode_ENT_INDICES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);

@@ -139,6 +139,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_APPLY, "apply");
 	EmplaceNodeTypeString(ENT_REVERSE, "reverse");
 	EmplaceNodeTypeString(ENT_SORT, "sort");
+	EmplaceNodeTypeString(ENT_SORT_INDICES, "sort_indices");
 
 	//associative list manipulation
 	EmplaceNodeTypeString(ENT_INDICES, "indices");

@@ -1092,6 +1092,150 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 	}
 }
 
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT_INDICES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodesReference();
+
+	if(ocn.size() < 1)
+		return EvaluableNodeReference::Null();
+
+	size_t list_index = (ocn.size() == 1 ? 0 : 1);
+
+	EvaluableNodeReference function = EvaluableNodeReference::Null();
+	EvaluableNodeType function_type = ENT_BOOL;
+	bool ascending = true;
+
+	size_t highest_k = 0;
+	size_t lowest_k = 0;
+	if(ocn.size() > 2)
+	{
+		double k = InterpretNodeIntoNumberValue(ocn[2]);
+		if(k > 0)
+			lowest_k = static_cast<size_t>(k);
+		else if(k < 0)
+			highest_k = static_cast<size_t>(-k);
+		//else nan, leave both as zero
+	}
+	
+	if(ocn.size() >= 2)
+	{
+		function = InterpretNodeForImmediateUse(ocn[0]);
+
+		if(EvaluableNode::IsNull(function))
+		{
+			function_type = ENT_BOOL;
+		}
+		else
+		{
+			function_type = function->GetType();
+			if(function_type == ENT_BOOL)
+				ascending = EvaluableNode::ToBool(function);
+		}
+	}
+
+	//TODO 23779: finish this, add documentation, add tests
+	if(function_type == ENT_BOOL)
+	{
+		//get list
+		auto list = InterpretNode(ocn[list_index]);
+		if(EvaluableNode::IsNull(list))
+			return EvaluableNodeReference::Null();
+
+		//make sure it is a clean editable copy and all the data is in a list
+		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
+		list->ClearMetadata();
+		if(list->IsAssociativeArray())
+			list->ConvertAssocToList();
+
+		auto &list_ocn = list->GetOrderedChildNodes();
+
+		if(highest_k > 0 && highest_k < list_ocn.size())
+		{
+			if(ascending)
+				std::partial_sort(begin(list_ocn), begin(list_ocn) + highest_k,
+					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
+			else
+				std::partial_sort(begin(list_ocn), begin(list_ocn) + highest_k,
+					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+
+			if(list.unique && !list->GetNeedCycleCheck())
+			{
+				for(size_t i = highest_k; i < list_ocn.size(); i++)
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+			}
+
+			list_ocn.erase(begin(list_ocn) + highest_k, end(list_ocn));
+			std::reverse(begin(list_ocn), end(list_ocn));
+		}
+		else if(lowest_k > 0 && lowest_k < list_ocn.size())
+		{
+			if(ascending)
+				std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
+					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+			else
+				std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
+					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
+
+			if(list.unique && !list->GetNeedCycleCheck())
+			{
+				for(size_t i = lowest_k; i < list_ocn.size(); i++)
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+			}
+
+			list_ocn.erase(begin(list_ocn) + lowest_k, end(list_ocn));
+		}
+		else
+		{
+			if(ascending)
+				std::sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+			else
+				std::sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
+		}
+
+		return list;
+	}
+	else
+	{
+		auto node_stack = CreateOpcodeStackStateSaver(function);
+		
+		//get list
+		auto list = InterpretNode(ocn[list_index]);
+		if(EvaluableNode::IsNull(list))
+			return EvaluableNodeReference::Null();
+
+		//make sure it is an editable copy
+		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
+		list->ClearMetadata();
+		if(list->IsAssociativeArray())
+			list->ConvertAssocToList();
+
+		CustomEvaluableNodeComparator comparator(this, function, list);
+
+		//sort list; can't use the C++ sort function because it requires weak ordering and will crash otherwise
+		// the custom comparator does not guarantee this
+		std::vector<EvaluableNode *> sorted = CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodes(), comparator);
+
+		if(highest_k > 0 && highest_k < sorted.size())
+		{
+			sorted.erase(begin(sorted), begin(sorted) + (sorted.size() - highest_k));
+			std::reverse(begin(sorted), end(sorted));
+		}
+		else if(lowest_k > 0 && lowest_k < sorted.size())
+		{
+			sorted.erase(begin(sorted) + lowest_k, end(sorted));
+		}
+
+		list->SetOrderedChildNodes(std::move(sorted), list->GetNeedCycleCheck(), list->GetIsIdempotent());
+
+		if(comparator.DidAnyComparisonHaveExecutionSideEffects())
+		{
+			list.unique = false;
+			list.uniqueUnreferencedTopNode = false;
+		}
+
+		return list;
+	}
+}
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();

@@ -1932,6 +1932,7 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_APPLY,											0.5},
 	{ENT_REVERSE,										0.4},
 	{ENT_SORT,											0.5},
+	{ENT_SORT_INDICES,									0.4},
 
 	//associative list manipulation
 	{ENT_INDICES,										0.5},

@@ -122,6 +122,7 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_APPLY,															// ENT_APPLY
 	&Interpreter::InterpretNode_ENT_REVERSE,														// ENT_REVERSE
 	&Interpreter::InterpretNode_ENT_SORT,															// ENT_SORT
+	&Interpreter::InterpretNode_ENT_SORT_INDICES,													// ENT_SORT_INDICES
 
 	//associative list manipulation
 	&Interpreter::InterpretNode_ENT_INDICES,														// ENT_INDICES

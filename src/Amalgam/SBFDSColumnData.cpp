@@ -249,37 +249,45 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 			auto &new_value_entry = new_value_entry_iter->second;
 			auto old_value_entry = sortedNumberValueEntries.find(old_number_value);
 
-			size_t new_value_index = 0;
-			if(old_value_entry != end(sortedNumberValueEntries))
+			if(old_value_entry == end(sortedNumberValueEntries))
 			{
-				//if there are multiple entries for this number, just remove the id from the old value
-				if(old_value_entry->second.indicesWithValue.size() > 1)
+				//value must have changed sizes, look in each size
+				//note that this is inefficient -- if this ends up being a bottleneck,
+				//an additional data structure will need to be built to maintain the previous size
+				//TODO 24298: ensure index size is always correct and updated so entities won't be missed, remove this code and assert false if not found
+				for(auto cur_id_entry = begin(sortedNumberValueEntries); cur_id_entry != end(sortedNumberValueEntries); ++cur_id_entry)
 				{
-					old_value_entry->second.indicesWithValue.erase(index);
+					if(cur_id_entry->second.indicesWithValue.contains(index))
+					{
+						old_value_entry = cur_id_entry;
+						break;
+					}
 				}
-				else //it's the last old_number_entry
-				{
-					internedNumberValues.DeleteInternIndex(old_value_entry->second.valueInternIndex);
-					sortedNumberValueEntries.erase(old_value_entry);
-				}
 
-				new_value_entry.indicesWithValue.insert(index);
-
-				//if new value didn't exist exists, insert it properly
-				if(inserted)
-					internedNumberValues.InsertValueEntry(new_value_entry, sortedNumberValueEntries.size());
-
-				new_value_index = new_value_entry.valueInternIndex;
+				//if not found anywhere, then there's index corruption
+				if(old_value_entry == end(sortedNumberValueEntries))
+					assert(false);
 			}
-			else //shouldn't make it here, but ensure integrity just in case
+
+			//if there are multiple entries for this number, just remove the id from the old value
+			if(old_value_entry->second.indicesWithValue.size() > 1)
 			{
-				assert(false);
-				new_value_entry.indicesWithValue.insert(index);
+				old_value_entry->second.indicesWithValue.erase(index);
+			}
+			else //it's the last old_number_entry
+			{
+				internedNumberValues.DeleteInternIndex(old_value_entry->second.valueInternIndex);
+				sortedNumberValueEntries.erase(old_value_entry);
+			}
+
+			new_value_entry.indicesWithValue.insert(index);
+
+			//if new value didn't exist exists, insert it properly
+			if(inserted)
 				internedNumberValues.InsertValueEntry(new_value_entry, sortedNumberValueEntries.size());
-			}
 
 			if(internedNumberValues.valueInterningEnabled)
-				valueEntries[index] = EvaluableNodeImmediateValue(new_value_index);
+				valueEntries[index] = EvaluableNodeImmediateValue(new_value_entry.valueInternIndex);
 			else
 				valueEntries[index] = EvaluableNodeImmediateValue(new_value);
 
@@ -298,55 +306,65 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 
 			size_t new_value_index = 0;
 			auto old_id_entry = stringIdValueEntries.find(old_sid_value);
-			if(old_id_entry != end(stringIdValueEntries))
+			if(old_id_entry == end(stringIdValueEntries))
 			{
-				//if there are multiple entries for this string, just move the id
-				if(old_id_entry->second->indicesWithValue.size() > 1)
+				//value must have changed sizes, look in each size
+				//note that this is inefficient -- if this ends up being a bottleneck,
+				//an additional data structure will need to be built to maintain the previous size
+				//TODO 24298: ensure index size is always correct and updated so entities won't be missed, remove this code and assert false if not found
+				for(auto cur_id_entry = begin(stringIdValueEntries); cur_id_entry != end(stringIdValueEntries); ++cur_id_entry)
 				{
-					old_id_entry->second->indicesWithValue.erase(index);
-
-					//if it was inserted, then construct everything
-					if(inserted)
+					if(cur_id_entry->second != nullptr && cur_id_entry->second->indicesWithValue.contains(index))
 					{
-						new_id_entry->second = std::make_unique<ValueEntry>(new_sid_value);
-						InsertFirstIndexIntoStringIdValueEntry(index, new_id_entry);
-					}
-					else
-					{
-						new_id_entry->second->indicesWithValue.insert(index);
-					}
-
-					new_value_index = new_id_entry->second->valueInternIndex;
-				}
-				else //it's the last old_id_entry
-				{
-					//if newly inserted, then can just move the data structure
-					if(inserted)
-					{
-						new_id_entry->second = std::move(old_id_entry->second);
-						internedStringIdValues.UpdateInternIndexValue(*(new_id_entry->second.get()),
-							new_sid_value);
-						new_value_index = new_id_entry->second->valueInternIndex;
-						//perform erase at the end since the iterator may no longer be viable after
-						stringIdValueEntries.erase(old_id_entry);
-					}
-					else //need to clean up
-					{
-						new_id_entry->second->indicesWithValue.insert(index);
-						new_value_index = new_id_entry->second->valueInternIndex;
-
-						//erase after no longer need inserted_id_entry
-						internedStringIdValues.DeleteInternIndex(old_id_entry->second->valueInternIndex);
-						stringIdValueEntries.erase(old_id_entry);
+						old_id_entry = cur_id_entry;
+						break;
 					}
 				}
+
+				//if not found anywhere, then there's index corruption
+				if(old_id_entry == end(stringIdValueEntries))
+					assert(false);
 			}
-			else if(inserted) //shouldn't make it here, but ensure integrity just in case
+
+			//if there are multiple entries for this string, just move the id
+			if(old_id_entry->second->indicesWithValue.size() > 1)
 			{
-				assert(false);
-				new_id_entry->second = std::make_unique<ValueEntry>(new_sid_value);
-				InsertFirstIndexIntoStringIdValueEntry(index, new_id_entry);
+				old_id_entry->second->indicesWithValue.erase(index);
+
+				//if it was inserted, then construct everything
+				if(inserted)
+				{
+					new_id_entry->second = std::make_unique<ValueEntry>(new_sid_value);
+					InsertFirstIndexIntoStringIdValueEntry(index, new_id_entry);
+				}
+				else
+				{
+					new_id_entry->second->indicesWithValue.insert(index);
+				}
+
 				new_value_index = new_id_entry->second->valueInternIndex;
+			}
+			else //it's the last old_id_entry
+			{
+				//if newly inserted, then can just move the data structure
+				if(inserted)
+				{
+					new_id_entry->second = std::move(old_id_entry->second);
+					internedStringIdValues.UpdateInternIndexValue(*(new_id_entry->second.get()),
+						new_sid_value);
+					new_value_index = new_id_entry->second->valueInternIndex;
+					//perform erase at the end since the iterator may no longer be viable after
+					stringIdValueEntries.erase(old_id_entry);
+				}
+				else //need to clean up
+				{
+					new_id_entry->second->indicesWithValue.insert(index);
+					new_value_index = new_id_entry->second->valueInternIndex;
+
+					//erase after no longer need inserted_id_entry
+					internedStringIdValues.DeleteInternIndex(old_id_entry->second->valueInternIndex);
+					stringIdValueEntries.erase(old_id_entry);
+				}
 			}
 
 			//update longest string as appropriate
@@ -475,7 +493,24 @@ void SBFDSColumnData::DeleteIndexValue(EvaluableNodeImmediateValueType value_typ
 		//look up value
 		auto value_entry = sortedNumberValueEntries.find(resolved_value.number);
 		if(value_entry == end(sortedNumberValueEntries))
-			assert(false);
+		{
+			//value must have changed sizes, look in each size
+			//note that this is inefficient -- if this ends up being a bottleneck,
+			//an additional data structure will need to be built to maintain the previous size
+			//TODO 24298: ensure index size is always correct and updated so entities won't be missed, remove this code and assert false if not found
+			for(auto cur_value_entry = begin(sortedNumberValueEntries); cur_value_entry != end(sortedNumberValueEntries); ++cur_value_entry)
+			{
+				if(cur_value_entry->second.indicesWithValue.contains(index))
+				{
+					value_entry = cur_value_entry;
+					break;
+				}
+			}
+
+			//if not found anywhere, then there's index corruption
+			if(value_entry == end(sortedNumberValueEntries))
+				assert(false);
+		}
 
 		//if the bucket has only one entry, we must delete the entire bucket
 		if(value_entry->second.indicesWithValue.size() == 1)
@@ -500,7 +535,24 @@ void SBFDSColumnData::DeleteIndexValue(EvaluableNodeImmediateValueType value_typ
 
 		auto id_entry = stringIdValueEntries.find(resolved_value.stringID);
 		if(id_entry == end(stringIdValueEntries))
-			assert(false);
+		{
+			//value must have changed sizes, look in each size
+			//note that this is inefficient -- if this ends up being a bottleneck,
+			//an additional data structure will need to be built to maintain the previous size
+			//TODO 24298: ensure index size is always correct and updated so entities won't be missed, remove this code and assert false if not found
+			for(auto cur_id_entry = begin(stringIdValueEntries); cur_id_entry != end(stringIdValueEntries); ++cur_id_entry)
+			{
+				if(cur_id_entry->second->indicesWithValue.contains(index))
+				{
+					id_entry = cur_id_entry;
+					break;
+				}
+			}
+
+			//if not found anywhere, then there's index corruption
+			if(id_entry == end(stringIdValueEntries))
+				assert(false);
+		}
 
 		auto &entities = id_entry->second->indicesWithValue;
 		entities.erase(index);

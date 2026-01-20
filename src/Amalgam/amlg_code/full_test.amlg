@@ -4288,6 +4288,15 @@
   (print "weighted dc: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
   (query_entity_distance_contributions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise")
  )))
+
+ (print "surprisal contributions\n")
+  (print "dc: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
+  (query_entity_distance_contributions 2 (list "x" "y") (null) 3 (null) (null) (null) (list 0.25 0.25) (null) "surprisal" (null) "fixed_seed" (null) "recompute_precise" .true)
+ )))
+
+  (print "weighted surprisal contributions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
+  (query_entity_distance_contributions 2 (list "x" "y") (null) 3 (null) (null) (null) (list 0.25 0.25) (null) "surprisal" "weight" "fixed_seed" (null) "recompute_precise")
+ )))
  
  (print "removal conviction\n")
 

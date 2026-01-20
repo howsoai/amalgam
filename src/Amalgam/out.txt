@@ -235,11 +235,11 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{a 1 c ["alpha" "beta" "gamma"] b 2}
+{b 2 c ["alpha" "beta" "gamma"] a 1}
 {
-	a 1
-	c ["alpha" "beta" "gamma"]
 	b 2
+	c ["alpha" "beta" "gamma"]
+	a 1
 }
 
 (apply "6")
@@ -641,7 +641,7 @@ abcdef
 3
 3.3166247903554
 2.111111111111111
-2.111111111111111
+2.1111111111111116
 1.5714285714285714
 1.5714285714285714
 --generalized_distance--
@@ -702,7 +702,7 @@ abcdef
 0.14384103622589045
 --first--
 4
-1
+2
 1
 0
 a
@@ -721,14 +721,14 @@ a
 	a 1
 	b 2
 	c 3
-	d 4
 	e 5
+	f 6
 }
-{b 2 d 4}
+{a 1 e 5}
 {
+	a 1
 	b 2
 	c 3
-	d 4
 	e 5
 }
 {
@@ -753,7 +753,7 @@ abcdef
 
 --last--
 this
-1
+2
 1
 0
 c
@@ -772,14 +772,14 @@ c
 	a 1
 	b 2
 	c 3
-	d 4
 	e 5
+	f 6
 }
-{b 2 d 4}
+{a 1 e 5}
 {
+	a 1
 	b 2
 	c 3
-	d 4
 	e 5
 }
 {
@@ -1132,7 +1132,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["a" 4 "c" "b"]
+[4 "b" "c" "a"]
 [
 	0
 	1
@@ -1144,10 +1144,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[1 2 0 3]
-[1 2 0 3]
+[2 3 0 1]
+[2 3 0 1]
 --values--
-[1 "d" 3 2]
+["d" 2 3 1]
 [
 	"a"
 	1
@@ -1168,7 +1168,7 @@ abcdef
 	4
 	"d"
 ]
-[1 "d" 3 2]
+["d" 3 2 1]
 [
 	1
 	2
@@ -1297,10 +1297,10 @@ string
 list
 assoc
 [
+	{4 4}
+	4
 	[4]
 	"4"
-	4
-	{4 4}
 ]
 --set--
 {
@@ -1413,7 +1413,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1767108452.353487
+		start_time 1768846982.227555
 		www 1
 		x 12
 		zz 10
@@ -1459,7 +1459,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1767108452.353487
+	start_time 1768846982.227555
 	www 1
 	x 12
 	zz 10
@@ -1504,7 +1504,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1767108452.353487
+	start_time 1768846982.227555
 	www 1
 	x 12
 	zz 10
@@ -1595,14 +1595,6 @@ true
 b
 [
 	"b"
-	"b"
-	"b"
-	"a"
-	"a"
-	"b"
-	"b"
-	"a"
-	"b"
 	"a"
 	"b"
 	"b"
@@ -1610,13 +1602,21 @@ b
 	"b"
 	"b"
 	"b"
+	"b"
+	"b"
+	"b"
+	"a"
+	"a"
+	"a"
+	"b"
+	"a"
 ]
 
-infinity test c or d: ["d" "d" "c" "c"]
+infinity test c or d: ["c" "c" "d" "d"]
 
-{a 16 b 49 c 35}
+{a 21 b 44 c 35}
 
-[2 7 3]
+[1 9 6]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1671,8 +1671,8 @@ infinity test c or d: ["d" "d" "c" "c"]
 string
 --set_type--
 (- 3 4)
-["a" 4 "b" 3]
-["a" 4 "b" 3]
+["b" 3 "a" 4]
+["b" 3 "a" 4]
 {a 4 b 3}
 8.7
 (unordered_list
@@ -1721,17 +1721,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"c":"c","d":null}]
+21: [{"b":4,"a":3},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: a: 1
+23: d: 4
+c: 3
+b: 2
+a: 1
 e:
   - a
   - b
   - 
   - .inf
-c: 3
-b: 2
-d: 4
 
 24: a: 1
 b: 2
@@ -1744,7 +1744,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-12-30-10.27.32.3781140
+current date-time in epoch: 2026-01-19-13.23.02.2521500
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2289,16 +2289,6 @@ decrypted: hello
 	{_ (null)}
 	(replace
 		_
-		["g"]
-		(lambda
-			[
-				(get
-					(current_value 1)
-					0
-				)
-				4
-			]
-		)
 		[]
 		(lambda
 			{
@@ -2308,6 +2298,16 @@ decrypted: hello
 						"g"
 					)
 			}
+		)
+		["g"]
+		(lambda
+			[
+				(get
+					(current_value 1)
+					0
+				)
+				4
+			]
 		)
 	)
 )
@@ -2571,9 +2571,8 @@ abcdexyz
 {
 	a [0 1]
 	b [1 2]
-	c [3]
-	y []
-	z [5]
+	w [2]
+	z []
 }
 --total_entity_size--
 79
@@ -2883,10 +2882,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_3130331116
-(associate "E" 3 "F" 4)
 _1651806471
 (associate "e" 3 "f" 4)
+_3130331116
+(associate "E" 3 "F" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild1
@@ -2904,17 +2903,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-_3130331116
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
 _1651806471
 (associate
 	"e"
@@ -2924,6 +2912,17 @@ _1651806471
 	"g"
 	5
 	"h"
+	6
+)
+_3130331116
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 (unordered_list
@@ -3572,17 +3571,17 @@ MergeEntityChild2
 	"w"
 	7
 )
-_3130331116
-(associate "E" 3 "F" 4 "H" 6)
 _1651806471
+(associate "e" 3 "f" 4 "h" 6)
+_3130331116
 (associate
-	"e"
+	"E"
 	3
-	"f"
+	"F"
 	4
-	"g"
+	"G"
 	5
-	"h"
+	"H"
 	6
 )
 --get_entity_comments--
@@ -3671,7 +3670,7 @@ deep sets
 
 --set_entity_permissions--
 RootTest
-1767108452.43106
+1768846982.305228
 {
 	alter_performance .true
 	environment .true
@@ -4559,14 +4558,14 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-200: 0.05555555555555555 (null
-	##deg 8
-)
 190: 0.045454545454545456 (null
 	##deg 12
 )
 155: 0.1 (null
 	##deg 0
+)
+200: 0.05555555555555555 (null
+	##deg 8
 )
 --contains_label--
 .true
@@ -4936,6 +4935,17 @@ weighted dc: {
 	vert2 1
 	vert3 1.4142135623730951
 }
+surprisal contributions
+dc: [
+	["vert0" "vert1" "vert2" "vert3"]
+	[2.5641047361105693 2.878110254174434 2.878110254174434 4.58308438684479]
+]
+weighted surprisal contributions: {
+	vert0 5.128209472221139
+	vert1 2.4585073668909394
+	vert2 2.4585073668909394
+	vert3 4.58308438684479
+}
 removal conviction
 kl: {
 	vert0 0.012498962161828123
@@ -5061,12 +5071,12 @@ surprisals with dynamic selection: [
 ]
 surprisal contribution: [13.11386001178129]
 surprisal contribution: [10.500046081592652]
-weighted surprisal contribution: [13.11386001178129]
-weighted surprisal contribution: [10.500046081592652]
+weighted surprisal contribution: [13.804599789072752]
+weighted surprisal contribution: [9.806898901032707]
 surprisal contribution: {testvert 13.11386001178129}
 surprisal contribution: {testvert 10.500046081592652}
-weighted surprisal contribution: {testvert 13.11386001178129}
-weighted surprisal contribution: {testvert 10.500046081592652}
+weighted surprisal contribution: {testvert 13.804599789072752}
+weighted surprisal contribution: {testvert 9.806898901032707}
 --concurrency tests--
 hello
 hello
@@ -5127,4 +5137,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-0.7332229614257812
+0.9437699317932129

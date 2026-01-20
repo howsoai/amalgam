@@ -13,9 +13,9 @@
 //the geometric mean has been found to be the best combination of performance and mathematical defensibility
 // #define DIST_CONTRIBS_HARMONIC_MEAN
 #define DIST_CONTRIBS_GEOMETRIC_MEAN
-// #define DIST_CONTRIBS_ARITHMETIC_MEAN
-//#define DIST_CONTRIBS_PROBABILITY_MEAN
-//this last one is the default if none of the above are defined
+//#define DIST_CONTRIBS_ARITHMETIC_MEAN
+
+//if enabled, will extra weight the distance contributions using entropy; it is orthogonal with the options above
 //#define DIST_CONTRIBS_ENTROPY
 
 //the following parameter is independent of those above and if defined, will change to use inverse surprisal weighting
@@ -583,110 +583,95 @@ public:
 			EntityDistancePairIterator entity_distance_pair_container_begin,
 			EntityDistancePairIterator entity_distance_pair_container_end)
 		{
-		#if !defined(DIST_CONTRIBS_HARMONIC_MEAN) && !defined(DIST_CONTRIBS_GEOMETRIC_MEAN) && !defined(DIST_CONTRIBS_ARITHMETIC_MEAN) && !defined(DIST_CONTRIBS_PROBABILITY_MEAN)
+			double dwe = distanceWeightExponent;
 			if(computeSurprisal)
 			{
-				double total_entity_weight = 0.0;
+			#ifdef DIST_CONTRIBS_HARMONIC_MEAN
+				dwe = -1;
+			#elif defined(DIST_CONTRIBS_GEOMETRIC_MEAN)
+				dwe = 0;
+			#elif defined(DIST_CONTRIBS_ARITHMETIC_MEAN)
+				dwe = 1;
+			#endif
+			}
+
+			if(dwe != 0.0)
+			{
 				double total_probability = 0.0;
 				double accumulated_value = 0.0;
-				//collect smallest value in case of numeric underflow; can approximate by using the smallest value
-				double min_value = std::numeric_limits<double>::infinity();
-				
-				TransformDistancesWithBandwidthSelectionAndResultFunction(
-					entity_distance_pair_container_begin, entity_distance_pair_container_end,
-					[&total_entity_weight, &total_probability, &accumulated_value, &min_value](auto ed_pair,
-						double weighted_value, double unweighted_value, double prob_mass, double weight)
-					{
-						if(weight != 0.0)
-						{
-							total_entity_weight += weight;
 
-							//in information theory, zero weights cancel out infinities, so skip if zero
-							if(prob_mass != 0)
-							{
-								total_probability += prob_mass;
-								accumulated_value += prob_mass * unweighted_value;
-							}
-
-							//compare the unweighted value in case of underflow
-							if(unweighted_value < min_value)
-								min_value = unweighted_value;
-						}
-					});
-
-				//if no evidence, no information, thus infinite surprisal
-				if(total_entity_weight == 0.0)
-				{
-					if(surprisalToProbability)
-						return 0.0;
-					else
-						return std::numeric_limits<double>::infinity();
-				}	
-
-				//evidence, but underflow, use minimum surprisal, since the others have underflowed
-				if(total_probability == 0.0)
-				{
-					if(surprisalToProbability)
-						return 0.0;
-					else
-						return min_value;
-				}
-
-				return accumulated_value / total_probability;
-			}
-			else //distance transform
-		#endif
-			{
-				double dwe = distanceWeightExponent;
 				if(computeSurprisal)
-				{
-				#ifdef DIST_CONTRIBS_HARMONIC_MEAN
-					dwe = -1;
-				#elif defined(DIST_CONTRIBS_GEOMETRIC_MEAN)
-					dwe = 0;
-				#elif defined(DIST_CONTRIBS_ARITHMETIC_MEAN) || defined(DIST_CONTRIBS_PROBABILITY_MEAN)
-					dwe = 1;
-				#endif
-				}
-
-				if(dwe != 0.0)
-				{
-					double total_probability = 0.0;
-					double accumulated_value = 0.0;
-
 					TransformDistancesWithBandwidthSelectionAndResultFunction(
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[&total_probability, &accumulated_value](auto ed_pair,
 							double weighted_value, double unweighted_value, double prob_mass, double weight)
 						{
+							if(weight == 1.0)
+							{
+								accumulated_value += unweighted_value;
+								total_probability += 1.0;
+							}
+							else if(weight > 0.0)
+							{
+							#ifdef DIST_CONTRIBS_ENTROPY
+								total_probability += weight;
+								accumulated_value += weight * std::max(0.0, unweighted_value - std::log(weight));
+							#else
+								total_probability += 1.0;
+								accumulated_value += std::max(0.0, unweighted_value - std::log(weight));
+							#endif
+							}
+						});
+				else
+						TransformDistancesWithBandwidthSelectionAndResultFunction(
+						entity_distance_pair_container_begin, entity_distance_pair_container_end,
+						[&total_probability, &accumulated_value](auto ed_pair,
+							double weighted_value, double unweighted_value, double prob_mass, double weight)
+						{
 							total_probability += weight;
-						#ifdef DIST_CONTRIBS_PROBABILITY_MEAN
-							accumulated_value += weight * std::exp(-unweighted_value);
-						#else
 							accumulated_value += weight * unweighted_value;
-						#endif
 						});
 
-					//normalize
-					double ave = accumulated_value / total_probability;
-					if(dwe == 1)
-					#ifdef DIST_CONTRIBS_PROBABILITY_MEAN
-						return -std::log(ave);
-					#else
-						return ave;
-					#endif
+				//normalize
+				double ave = accumulated_value / total_probability;
+				if(dwe == 1)
+					return ave;
 
-					if(dwe == -1)
-						return 1 / ave;
+				if(dwe == -1)
+					return 1 / ave;
 
-					return std::pow(ave, 1 / dwe);
-				}
-				else //dwe == 0.0
-				{
-					double total_probability = 0.0;
-					double accumulated_value = 0.0;
+				return std::pow(ave, 1 / dwe);
+			}
+			else //dwe == 0.0
+			{
+				double total_probability = 0.0;
+				double accumulated_value = 0.0;
 
+				if(computeSurprisal)
 					TransformDistancesWithBandwidthSelectionAndResultFunction(
+						entity_distance_pair_container_begin, entity_distance_pair_container_end,
+						[&total_probability, &accumulated_value](auto ed_pair,
+							double weighted_value, double unweighted_value, double prob_mass, double weight)
+						{
+							if(weight == 1.0)
+							{
+								accumulated_value += std::log(unweighted_value);
+								total_probability += 1.0;
+							}
+							else if(weight > 0.0)
+							{
+								double surprisal = std::max(0.0, unweighted_value - std::log(weight));
+							#ifdef DIST_CONTRIBS_ENTROPY
+								total_probability += weight;
+								accumulated_value += weight * std::log(surprisal);
+							#else
+								total_probability += 1.0;
+								accumulated_value += std::log(surprisal);
+							#endif
+							}
+						});
+				else
+						TransformDistancesWithBandwidthSelectionAndResultFunction(
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[&total_probability, &accumulated_value](auto ed_pair,
 							double weighted_value, double unweighted_value, double prob_mass, double weight)
@@ -695,11 +680,10 @@ public:
 							accumulated_value += weight * std::log(unweighted_value);
 						});
 
-					//normalize
-					double ave_log = accumulated_value / total_probability;
+				//normalize
+				double ave_log = accumulated_value / total_probability;
 
-					return std::exp(ave_log);
-				}
+				return std::exp(ave_log);
 			}
 		}
 

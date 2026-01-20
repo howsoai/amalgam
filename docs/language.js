@@ -1120,6 +1120,7 @@ var data = [
 	{
 		"parameter" : "print [* node1] [* node2] ... [* nodeN]",
 		"output" : "null",
+		"permissions" : "std_out_and_std_err",
 		"description" : "Prints each of the parameters in order in a manner interpretable as if they were code. Output is pretty-printed. Printing a node which evaluates to a literal string or number will not be printed (the value will be printed directly) and not have a newline appended.",
 		"example" : "(print \"hello\")"
 	},
@@ -1327,7 +1328,7 @@ var data = [
 		"output" : "bool",
 		"new value" : "new",
 		"permissions" : "entity",
-		"description" : "Returns an assoc of the permissions of the specified entity, where each key is the permission and each value is either true or false.",
+		"description" : "Returns an assoc of the permissions of the specified entity, where each key is the permission and each value is either true or false.  Permission keys consist of std_out_and_std_err, std_in, load, store, environment, alter_performance, and system",
 		"example" : " (create_entities \"RootTest\" (lambda (print (system_time)) ))\n(print (get_entity_permissions \"RootTest\"))"
 	},
 
@@ -1336,7 +1337,7 @@ var data = [
 		"output" : "id_path",
 		"new value" : "new",
 		"permissions" : "entity",
-		"description" : "Sets the permissions on the entity specified by id_path.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  The parameter deep defaults to false, but if it is true, all contained entities have their permissions updated.  Returns the id_path of the entity.",
+		"description" : "Sets the permissions on the entity specified by id_path.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  Permission keys consist of std_out_and_std_err, std_in, load, store, environment, alter_performance, and system.  The parameter deep defaults to false, but if it is true, all contained entities have their permissions updated.  Returns the id_path of the entity.",
 		"example" : "(create_entities \"RootTest\" (lambda (print (system_time)) ))\n(set_entity_permissions \"RootTest\" .true)\n(call_entity \"RootTest\")"
 	},
 

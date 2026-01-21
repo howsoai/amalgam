@@ -140,6 +140,14 @@ public:
 		}
 	}
 
+	//removes the label specified by label_sid
+	inline void RemoveLabel(StringInternPool::StringID label_sid)
+	{
+		size_t column_index = GetColumnIndexFromLabelId(label_sid);
+		if(column_index < columnData.size())
+			RemoveColumnIndex(column_index);
+	}
+
 	//adds an entity to the database
 	void AddEntity(Entity *entity, size_t entity_index);
 

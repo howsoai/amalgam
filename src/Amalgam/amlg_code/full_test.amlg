@@ -3810,6 +3810,8 @@
 
 (print "--reclaim_resources--\n")
 
+(reclaim_resources (null) .true ["x"] .true .true )
+
 (reclaim_resources (null) .true .true .true .true )
 
  (print "--null equality tests--\n")

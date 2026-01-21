@@ -596,18 +596,26 @@ public:
 	//when calling this, must ensure that there is a write lock on the entity or that nothing can execute on it
 	inline void ClearQueryCaches()
 	{
-		if(hasContainedEntities && entityRelationships.relationships->queryCaches)
-		{
-		#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-			//obtain a write lock and immediately release it to make sure there aren't any operations
-			//waiting to complete. don't need to worry about new operations as they will not be able
-			//to start with a write lock on this entity
-			Concurrency::WriteLock write_lock(entityRelationships.relationships->queryCaches->mutex);
-			write_lock.release();
-		#endif
+		if(!HasQueryCaches())
+			return;
 
-			entityRelationships.relationships->queryCaches.reset();
-		}
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		//obtain a write lock and immediately release it to make sure there aren't any operations
+		//waiting to complete. don't need to worry about new operations as they will not be able
+		//to start with a write lock on this entity
+		Concurrency::WriteLock write_lock(entityRelationships.relationships->queryCaches->mutex);
+		write_lock.release();
+	#endif
+
+		entityRelationships.relationships->queryCaches.reset();
+	}
+
+	inline void ClearQueryCacheForLabel(StringInternPool::StringID label_sid)
+	{
+		if(!HasQueryCaches())
+			return;
+
+		entityRelationships.relationships->queryCaches->RemoveLabelFromCache(label_sid);
 	}
 
 	//creates a cache if it does not exist
@@ -617,9 +625,9 @@ public:
 	//returns a nullptr if does not have an active cache
 	inline EntityQueryCaches *GetQueryCaches()
 	{
-		if(hasContainedEntities && entityRelationships.relationships->queryCaches)
-			return entityRelationships.relationships->queryCaches.get();
-		return nullptr;
+		if(!HasQueryCaches())
+			return nullptr;
+		return entityRelationships.relationships->queryCaches.get();
 	}
 
 	//returns a pointer to the query caches for this entity's container
@@ -755,9 +763,15 @@ public:
 			if(this != exclude_entity)
 			{
 				if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
+				{
+					if(IsEntityCurrentlyBeingExecuted())
+						return erbr;
 					entityWriteReferenceBuffer.emplace_back(this);
+				}
 				else
+				{
 					entityReadReferenceBuffer.emplace_back(this);
+				}
 			}
 
 			erbr.maxEntityPathDepth++;
@@ -975,12 +989,6 @@ protected:
 		if(!hasContainedEntities)
 			return true;
 
-		if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
-		{
-			if(IsEntityCurrentlyBeingExecuted())
-				return false;
-		}
-
 		auto &contained_entities = GetContainedEntities();
 		for(Entity *e : contained_entities)
 		{
@@ -988,9 +996,16 @@ protected:
 				continue;
 
 			if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
+			{
+				if(e->IsEntityCurrentlyBeingExecuted())
+					return false;
+
 				entityWriteReferenceBuffer.emplace_back(e);
+			}
 			else
+			{
 				entityReadReferenceBuffer.emplace_back(e);
+			}
 		}
 
 		for(auto &ce : contained_entities)

@@ -104,6 +104,9 @@ public:
 	//removes label_sid from the cache
 	inline void RemoveLabelFromCache(StringInternPool::StringID label_sid)
 	{
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		Concurrency::WriteLock write_lock(mutex);
+	#endif
 		sbfds.RemoveLabel(label_sid);
 	}
 

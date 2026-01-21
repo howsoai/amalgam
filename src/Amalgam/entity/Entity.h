@@ -605,14 +605,6 @@ public:
 		if(!HasQueryCaches())
 			return;
 
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		//obtain a write lock and immediately release it to make sure there aren't any operations
-		//waiting to complete. don't need to worry about new operations as they will not be able
-		//to start with a write lock on this entity
-		Concurrency::WriteLock write_lock(entityRelationships.relationships->queryCaches->mutex);
-		write_lock.release();
-	#endif
-
 		entityRelationships.relationships->queryCaches->RemoveLabelFromCache(label_sid);
 	}
 
@@ -761,9 +753,15 @@ public:
 			if(this != exclude_entity)
 			{
 				if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
+				{
+					if(IsEntityCurrentlyBeingExecuted())
+						return erbr;
 					entityWriteReferenceBuffer.emplace_back(this);
+				}
 				else
+				{
 					entityReadReferenceBuffer.emplace_back(this);
+				}
 			}
 
 			erbr.maxEntityPathDepth++;
@@ -981,12 +979,6 @@ protected:
 		if(!hasContainedEntities)
 			return true;
 
-		if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
-		{
-			if(IsEntityCurrentlyBeingExecuted())
-				return false;
-		}
-
 		auto &contained_entities = GetContainedEntities();
 		for(Entity *e : contained_entities)
 		{
@@ -994,9 +986,16 @@ protected:
 				continue;
 
 			if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
+			{
+				if(e->IsEntityCurrentlyBeingExecuted())
+					return false;
+
 				entityWriteReferenceBuffer.emplace_back(e);
+			}
 			else
+			{
 				entityReadReferenceBuffer.emplace_back(e);
+			}
 		}
 
 		for(auto &ce : contained_entities)

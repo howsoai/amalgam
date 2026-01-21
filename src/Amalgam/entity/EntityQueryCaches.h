@@ -101,6 +101,12 @@ public:
 	void EnsureLabelsAreCached(EntityQueryCondition *cond);
 #endif
 
+	//removes label_sid from the cache
+	inline void RemoveLabelFromCache(StringInternPool::StringID label_sid)
+	{
+		sbfds.RemoveLabel(label_sid);
+	}
+
 	//returns the set matching_entities of entity ids in the cache that match the provided query condition cond, will fill compute_results with numeric results if KNN query
 	//if is_first is true, optimizes to skip unioning results with matching_entities (just overwrites instead).
 	void GetMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities, std::vector<DistanceReferencePair<size_t>> &compute_results, bool is_first, bool update_matching_entities);

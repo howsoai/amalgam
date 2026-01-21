@@ -311,9 +311,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(Evaluabl
 	if(ocn.size() > 1)
 		apply_to_all_contained_entities = InterpretNodeIntoBoolValue(ocn[1]);
 
-	bool clear_query_caches = true;
+	auto clear_query_caches_node = EvaluableNodeReference::Null();
+	auto node_stack = CreateOpcodeStackStateSaver();
 	if(ocn.size() > 2)
-		clear_query_caches = InterpretNodeIntoBoolValue(ocn[2]);
+	{
+		clear_query_caches_node = InterpretNode(ocn[2]);
+		node_stack.PushEvaluableNode(clear_query_caches_node);
+	}
 
 	bool collect_garbage = true;
 	if(ocn.size() > 3)
@@ -330,6 +334,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(Evaluabl
 	else
 		target_entity = EntityWriteReference(curEntity);
 
+	bool clear_all_query_caches = false;
+	bool clear_select_query_caches = false;
+	if(EvaluableNode::IsOrderedArray(clear_query_caches_node))
+		clear_select_query_caches = true;
+	else
+		clear_all_query_caches = EvaluableNode::ToBool(clear_query_caches_node);
+
 	if(apply_to_all_contained_entities)
 	{
 		//lock all entities
@@ -338,12 +349,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(Evaluabl
 			return EvaluableNodeReference::Null();
 
 		for(auto &e : *contained_entities)
-			e->ReclaimResources(clear_query_caches, collect_garbage, force_free_memory);
+		{
+			e->ReclaimResources(clear_all_query_caches, collect_garbage, force_free_memory);
+			if(clear_select_query_caches)
+			{
+				for(auto cn : clear_query_caches_node->GetOrderedChildNodesReference())
+					target_entity->ClearQueryCacheForLabel(EvaluableNode::ToStringIDIfExists(cn));
+			}
+		}
 	}
 	else
 	{
-		target_entity->ReclaimResources(clear_query_caches, collect_garbage, force_free_memory);
-	}	
+		target_entity->ReclaimResources(clear_all_query_caches, collect_garbage, force_free_memory);
+		if(clear_select_query_caches)
+		{
+			for(auto cn : clear_query_caches_node->GetOrderedChildNodesReference())
+				target_entity->ClearQueryCacheForLabel(EvaluableNode::ToStringIDIfExists(cn));
+		}
+	}
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(clear_query_caches_node);
 
 	return EvaluableNodeReference::Null();
 }

@@ -672,7 +672,7 @@ protected:
 	inline void VerifyAllEntitiesForAllColumns()
 	{
 		for(auto &column_data : columnData)
-			column_data->VerifyAllEntities();
+			column_data->VerifyAllEntities(numEntities);
 	}
 
 	//deletes the index and associated data

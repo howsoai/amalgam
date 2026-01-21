@@ -221,8 +221,10 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 
 	for(auto &column_data : columnData)
 	{
+		//TODO 24298: switch this to use ChangeIndexValue if possible
+		column_data->RemoveIndexFromCaches(entity_index);
 		auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
-		column_data->ChangeIndexValue(value.nodeType, value.nodeValue, entity_index);
+		column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);
 	}
 
 	//clean up any labels that aren't relevant
@@ -251,10 +253,10 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	VerifyAllEntitiesForColumn(column_index);
 #endif
 
-	//get the new value
+	//TODO 24298: switch this to use ChangeIndexValue if possible
+	column_data->RemoveIndexFromCaches(entity_index);
 	auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
-
-	column_data->ChangeIndexValue(value.nodeType, value.nodeValue, entity_index);
+	column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))
@@ -262,6 +264,9 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	else
 		OptimizeColumn(column_index);
 
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForColumn(column_index);
+#endif
 }
 
 //populates distances_out with all entities and their distances that have a distance to target less than max_dist

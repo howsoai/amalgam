@@ -1061,6 +1061,72 @@ public:
 
 protected:
 
+	class AnnotationAndComment
+	{
+	public:
+		AnnotationAndComment() = default;
+		AnnotationAndComment(std::string_view annotation, std::string_view comment)
+		{
+			SetAnnotationAndComment(annotation, comment);
+		}
+
+		//returns a view of the annotation
+		std::string_view GetAnnotation()
+		{
+			if(!buffer)
+				return {};
+			const char *p = buffer.get();
+			std::size_t len = std::strlen(p);
+			return std::string_view(p, len);
+		}
+
+		//returns a view of the comment
+		std::string_view GetComment()
+		{
+			if(!buffer)
+				return {};
+			const char *p = buffer.get();
+			//skip past annotation and its terminating '\0'
+			p += std::strlen(p) + 1;
+			std::size_t len = std::strlen(p);
+			return std::string_view(p, len);
+		}
+
+		//replace both strings
+		void SetAnnotationAndComment(std::string_view new_annotation, std::string_view new_comment)
+		{
+			//total size includes two null terminators
+			std::size_t total_size = new_annotation.size() + 1 + new_comment.size() + 1;
+			auto tmp = std::make_unique<char[]>(total_size);
+
+			char *dest = tmp.get();
+			//copy annotation
+			std::memcpy(dest, new_annotation.data(), new_annotation.size());
+			dest[new_annotation.size()] = '\0';
+			//copy comment
+			std::memcpy(dest + new_annotation.size() + 1, new_comment.data(), new_comment.size());
+			dest[total_size - 1] = '\0';
+
+			buffer = std::move(tmp);
+		}
+
+		//replace only the annotation
+		void SetAnnotation(std::string_view new_annotation)
+		{
+			SetAnnotationAndComment(new_annotation, GetComment());
+		}
+
+		//replace only the comment.
+		void SetComment(std::string_view new_comment)
+		{
+			SetAnnotationAndComment(GetAnnotation(), new_comment);
+		}
+
+	private:
+		std::unique_ptr<char[]> buffer;
+	};
+
+
 	//align to the nearest 2-bytes to minimize alignment issues but reduce the overall memory footprint
 	// while maintaining some alignment
 #pragma pack(push, 2)

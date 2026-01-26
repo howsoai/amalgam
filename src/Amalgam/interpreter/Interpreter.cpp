@@ -418,7 +418,7 @@ EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReferen
 	}
 	else if(!args.unique)
 	{
-		args.SetReference(enm.AllocNode(args, EvaluableNodeManager::ENMM_REMOVE_ALL));
+		args.SetReference(enm.AllocNode(args, false));
 		args.uniqueUnreferencedTopNode = true;
 	}
 	

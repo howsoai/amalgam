@@ -109,7 +109,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		auto &param_info_ocn = param_info->GetOrderedChildNodesReference();
 		param_info_ocn.resize(2);
 		param_info_ocn[0] = evaluableNodeManager->AllocNode(ENT_STRING, EvaluableNode::GetCommentsStringId(cn));
-		param_info_ocn[1] = evaluableNodeManager->DeepAllocCopy(cn, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		param_info_ocn[1] = evaluableNodeManager->DeepAllocCopy(cn, false);
 
 		//add to the params
 		params_list->SetMappedChildNode(cn_id, param_info);
@@ -148,7 +148,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 		return EvaluableNodeReference::Null();
 
 
-	return target_entity->GetRoot(evaluableNodeManager, label_escape_increment);
+	return target_entity->GetRoot(evaluableNodeManager);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_ACCUM_ENTITY_ROOTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
@@ -196,7 +196,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 
 		if(accum)
 		{
-			target_entity->AccumRoot(new_code, false, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT, writeListeners);
+			target_entity->AccumRoot(new_code, false, writeListeners);
 			
 			//accumulate new node usage
 			if(ConstrainedAllocatedNodes())
@@ -208,7 +208,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 			if(ConstrainedAllocatedNodes())
 				prev_size = target_entity->GetSizeInNodes();
 
-			target_entity->SetRoot(new_code, false, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT, writeListeners);
+			target_entity->SetRoot(new_code, false, writeListeners);
 
 			if(ConstrainedAllocatedNodes())
 			{
@@ -420,7 +420,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 		auto lab_pause = evaluableNodeManager->PauseLocalAllocationBuffer();
 
 		//create new entity
-		Entity *new_entity = new Entity(root, rand_state, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT);
+		Entity *new_entity = new Entity(root, rand_state);
 
 		lab_pause.Resume();
 

@@ -1077,7 +1077,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 		return EvaluableNodeReference::Null();
 
 	bool allocate_child_nodes = (!container.unique);
-	evaluableNodeManager->EnsureNodeIsModifiable(container, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
+	evaluableNodeManager->EnsureNodeIsModifiable(container, false, false);
 
 	//ensure it's a list
 	if(container->IsOrderedArray())

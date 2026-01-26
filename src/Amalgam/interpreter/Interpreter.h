@@ -268,7 +268,7 @@ public:
 			}
 			else
 			{
-				new_context.SetReference(evaluableNodeManager->AllocNode(new_context, EvaluableNodeManager::ENMM_REMOVE_ALL));
+				new_context.SetReference(evaluableNodeManager->AllocNode(new_context, false));
 			}
 		}
 		else //not assoc, make a new one

@@ -23,7 +23,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(Ev
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
-		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		return evaluableNodeManager->DeepAllocCopy(en, false);
 
 	EvaluableNodeReference new_list(evaluableNodeManager->AllocNode(en->GetType()), true);
 
@@ -87,10 +87,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, E
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
-		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		return evaluableNodeManager->DeepAllocCopy(en, false);
 
 	//create a new assoc from the previous
-	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(en, EvaluableNodeManager::ENMM_REMOVE_ALL), true);
+	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(en, false), true);
 
 	//copy of the original evaluable node's mcn
 	auto &new_mcn = new_assoc->GetMappedChildNodesReference();
@@ -1060,7 +1060,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *e
 	if(n.uniqueUnreferencedTopNode)
 		n->ClearMetadata();
 	else
-		evaluableNodeManager->EnsureNodeIsModifiable(n, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		evaluableNodeManager->EnsureNodeIsModifiable(n, false, false);
 
 	return n;
 }

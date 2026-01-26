@@ -565,11 +565,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 		{
 			std::string error_string = "Error, null returned from executing loaded code.";
 			if(result != nullptr)
-			{
-				auto comment_str = result->GetCommentsStringId();
-				if(comment_str != string_intern_pool.NOT_A_STRING_ID)
-					error_string = comment_str->string;
-			}
+				error_string = result->GetCommentsString();
 
 			status.SetStatus(false, error_string);
 			delete new_entity;

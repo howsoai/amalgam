@@ -523,7 +523,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN(Evalua
 
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
-		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		return evaluableNodeManager->DeepAllocCopy(en, false);
 
 	EvaluableNodeReference value = InterpretNode(ocn[0]);
 
@@ -558,7 +558,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 	{
 		//can keep constant, but need the top node to be unique in case assignments are made
 		new_context = InterpretNodeForImmediateUse(ocn[1]);
-		evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, false);
 	}
 
 	PushNewScopeStack(new_context);
@@ -801,7 +801,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 	//add new context
 	auto new_context = InterpretNodeForImmediateUse(ocn[0]);
 	//can keep constant, but need the top node to be unique in case assignments are made
-	evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
+	evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, false);
 	PushNewScopeStack(new_context);
 
 	//run code

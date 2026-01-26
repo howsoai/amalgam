@@ -1908,7 +1908,7 @@ void EvaluableNodeImmediateValueWithType::CopyValueFromEvaluableNode(EvaluableNo
 	if(enm == nullptr)
 		nodeValue = EvaluableNodeImmediateValue(en);
 	else
-		nodeValue.code = enm->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		nodeValue.code = enm->DeepAllocCopy(en, false);
 }
 
 bool EvaluableNodeImmediateValueWithType::GetValueAsBoolean(bool value_if_null)

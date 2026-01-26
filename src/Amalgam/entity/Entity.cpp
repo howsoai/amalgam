@@ -28,19 +28,19 @@ Entity::Entity()
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 }
 
-Entity::Entity(std::string &code_string, const std::string &rand_state, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier)
+Entity::Entity(std::string &code_string, const std::string &rand_state)
 	: randomStream(rand_state)
 {
 	hasContainedEntities = false;
 	entityRelationships.container = nullptr;
 	rootNode = nullptr;
 
-	SetRoot(code_string, metadata_modifier);
+	SetRoot(code_string);
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 }
 
-Entity::Entity(EvaluableNode *_root, const std::string &rand_state, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier)
+Entity::Entity(EvaluableNode *_root, const std::string &rand_state)
 	: randomStream(rand_state)
 {
 	hasContainedEntities = false;
@@ -48,7 +48,7 @@ Entity::Entity(EvaluableNode *_root, const std::string &rand_state, EvaluableNod
 	rootNode = nullptr;
 
 	//since this is the constructor, can't have had this entity's EntityNodeManager
-	SetRoot(_root, false, metadata_modifier);
+	SetRoot(_root, false);
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 }
@@ -306,7 +306,7 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 			}
 			else
 			{
-				new_value = evaluableNodeManager.DeepAllocCopy(new_value, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT);
+				new_value = evaluableNodeManager.DeepAllocCopy(new_value);
 				new_value.unique = false;
 				new_value.uniqueUnreferencedTopNode = false;
 			}
@@ -824,19 +824,41 @@ std::string Entity::CreateRandomStreamFromStringAndRand(const std::string &seed_
 	return randomStream.CreateOtherStreamStateViaString(seed_string);
 }
 
-void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetPermissions(EntityPermissions permissions_to_set, EntityPermissions permission_values,
+		bool deep_set_permissions, std::vector<EntityWriteListener *> *write_listeners,
+		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities)
+{
+	asset_manager.SetEntityPermissions(this, permissions_to_set, permission_values);
+
+	if(write_listeners != nullptr)
+	{
+		for(auto &wl : *write_listeners)
+			wl->LogSetEntityPermissions(this, permissions_to_set, permission_values, deep_set_permissions);
+
+		asset_manager.UpdateEntityPermissions(this, permissions_to_set, permission_values,
+			deep_set_permissions, all_contained_entities);
+	}
+
+	if(deep_set_permissions)
+	{
+		for(auto entity : GetContainedEntities())
+			entity->SetPermissions(permissions_to_set, permission_values, true,
+				write_listeners, all_contained_entities);
+	}
+}
+
+void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::vector<EntityWriteListener *> *write_listeners)
 {
 	EvaluableNode *cur_root = GetRoot();
 	bool entity_previously_empty = (cur_root == nullptr || cur_root->GetNumChildNodes() == 0);
 
-	if(_code == nullptr
-		|| (allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
-	{		
+	if(_code == nullptr || allocated_with_entity_enm)
+	{
 		rootNode = _code;
 	}
 	else
 	{
-		auto code_copy = evaluableNodeManager.DeepAllocCopy(_code, metadata_modifier);
+		auto code_copy = evaluableNodeManager.DeepAllocCopy(_code);
 		rootNode = code_copy;
 	}
 
@@ -872,46 +894,21 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	}
 }
 
-void Entity::SetPermissions(EntityPermissions permissions_to_set, EntityPermissions permission_values,
-		bool deep_set_permissions, std::vector<EntityWriteListener *> *write_listeners,
-		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities)
-{
-	asset_manager.SetEntityPermissions(this, permissions_to_set, permission_values);
-
-	if(write_listeners != nullptr)
-	{
-		for(auto &wl : *write_listeners)
-			wl->LogSetEntityPermissions(this, permissions_to_set, permission_values, deep_set_permissions);
-
-		asset_manager.UpdateEntityPermissions(this, permissions_to_set, permission_values,
-			deep_set_permissions, all_contained_entities);
-	}
-
-	if(deep_set_permissions)
-	{
-		for(auto entity : GetContainedEntities())
-			entity->SetPermissions(permissions_to_set, permission_values, true,
-				write_listeners, all_contained_entities);
-	}
-}
-
-void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
-	std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRoot(std::string &code_string, std::vector<EntityWriteListener *> *write_listeners)
 {
 	auto [node, warnings, char_with_error] = Parser::Parse(code_string, &evaluableNodeManager);
-	SetRoot(node, true, metadata_modifier, write_listeners);
+	SetRoot(node, true, write_listeners);
 }
 
 void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_entity_enm,
-	EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
 	std::vector<EntityWriteListener *> *write_listeners)
 {
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();
 #endif
 
-	if(!(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
-		accum_code = evaluableNodeManager.DeepAllocCopy(accum_code, metadata_modifier);
+	if(!allocated_with_entity_enm)
+		accum_code = evaluableNodeManager.DeepAllocCopy(accum_code);
 
 	auto [new_labels, no_label_collisions] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(accum_code);
 	if(EvaluableNode::IsAssociativeArray(accum_code))

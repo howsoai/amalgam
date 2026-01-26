@@ -136,7 +136,7 @@ void EntityWriteListener::LogWriteToEntityRoot(Entity *entity)
 	Concurrency::Lock lock(mutex);
 #endif
 	EvaluableNode *new_write = BuildNewWriteOperation(ENT_ASSIGN_ENTITY_ROOTS, entity);
-	EvaluableNode *new_root = entity->GetRoot(&listenerStorage, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
+	EvaluableNode *new_root = entity->GetRoot(&listenerStorage);
 	EvaluableNode *new_lambda = listenerStorage.AllocNode(EvaluableNodeType::ENT_LAMBDA);
 	new_lambda->AppendOrderedChildNode(new_root);
 	new_write->AppendOrderedChildNode(new_lambda);
@@ -272,8 +272,7 @@ void EntityWriteListener::LogCreateEntityRecurse(Entity *new_entity)
 	EvaluableNode *new_create = BuildNewWriteOperation(ENT_CREATE_ENTITIES, new_entity);
 
 	EvaluableNode *lambda_for_create = listenerStorage.AllocNode(ENT_LAMBDA);
-	EvaluableNodeReference new_entity_root_copy = new_entity->GetRoot(&listenerStorage,
-		EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
+	EvaluableNodeReference new_entity_root_copy = new_entity->GetRoot(&listenerStorage);
 	lambda_for_create->AppendOrderedChildNode(new_entity_root_copy);
 
 	//append to new_create last to make sure node flags are propagated up

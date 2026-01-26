@@ -816,7 +816,6 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_swap_elements,
 	ENBISI_deep_copy_elements,
 	ENBISI_delete_elements,
-	ENBISI_change_label,
 	
 	//enumeration of the first string that isn't static
 	ENBISI_FIRST_DYNAMIC_STRING

@@ -451,5 +451,4 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_swap_elements, "swap_elements");
 	EmplaceStaticString(ENBISI_deep_copy_elements, "deep_copy_elements");
 	EmplaceStaticString(ENBISI_delete_elements, "delete_elements");
-	EmplaceStaticString(ENBISI_change_label, "change_label");
 }

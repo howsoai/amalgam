@@ -274,11 +274,8 @@ public:
 	Entity();
 
 	//create Entity from existing code, rand_state is the current state of the random number generator,
-	// modifying labels as specified
-	Entity(std::string &code_string, const std::string &rand_state,
-		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
-	Entity(EvaluableNode *_root, const std::string &rand_state,
-		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
+	Entity(std::string &code_string, const std::string &rand_state);
+	Entity(EvaluableNode *_root, const std::string &rand_state);
 
 	//Creates a new Entity as a copy of the Entity passed in; everything is identical except for the time created and id
 	Entity(Entity *t);
@@ -372,14 +369,13 @@ public:
 	}
 
 	//returns the root of the entity
-	// if destination_temp_enm is specified, then it will perform a copy using that EvaluableNodeManager using metadata_modifier
-	EvaluableNodeReference GetRoot(EvaluableNodeManager *destination_temp_enm = nullptr,
-		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE)
+	// if destination_temp_enm is specified, then it will perform a copy
+	EvaluableNodeReference GetRoot(EvaluableNodeManager *destination_temp_enm = nullptr)
 	{
 		if(destination_temp_enm == nullptr)
 			return EvaluableNodeReference(rootNode, false);
 
-		return destination_temp_enm->DeepAllocCopy(rootNode, metadata_modifier);
+		return destination_temp_enm->DeepAllocCopy(rootNode);
 	}
 
 	//Returns the number of nodes in the entity
@@ -844,21 +840,18 @@ public:
 		return IsNamedEntity(id_name);
 	}
 
-	//Sets the code and recreates the index, modifying labels as specified
+	//Sets the code and recreates the index
 	//if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
 	//write_listeners is optional, and if specified, will log the event
 	void SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm,
-		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr);
 	void SetRoot(std::string &code_string,
-		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
-	//accumulates the code and recreates the index, modifying labels as specified
+	//accumulates the code and recreates the index
 	//if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
 	//write_listeners is optional, and if specified, will log the event
 	void AccumRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm,
-		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
 	//collects garbage on evaluableNodeManager, assuming it has a write reference

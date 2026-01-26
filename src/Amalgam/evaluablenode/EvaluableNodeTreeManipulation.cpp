@@ -39,7 +39,7 @@ EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream rando
 }
 
 //returns a mix of a and b based on their fractions
-inline double MixNumberValues(double a, double b, double fraction_a, double fraction_b)
+static inline double MixNumberValues(double a, double b, double fraction_a, double fraction_b)
 {
 	//quick exit for when they match
 	if(a == b)
@@ -51,7 +51,7 @@ inline double MixNumberValues(double a, double b, double fraction_a, double frac
 }
 
 //returns a mix of a and b based on their fractions
-inline StringInternPool::StringID MixStringValues(StringInternPool::StringID a, StringInternPool::StringID b,
+static inline StringInternPool::StringID MixStringValues(StringInternPool::StringID a, StringInternPool::StringID b,
 	RandomStream random_stream, double fraction_a, double fraction_b)
 {
 	//quick exit for when they match
@@ -1099,7 +1099,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 	return std::make_pair(nullptr, 0.0);
 }
 
-std::string GenerateRandomString(RandomStream &rs)
+static std::string GenerateRandomString(RandomStream &rs)
 {
 	//make the length between 1 and 32, with a mean of 6
 	int string_length = std::min(32, static_cast<int>(rs.ExponentialRand(3.0)) + 1 + static_cast<int>(rs.Rand() * 4));
@@ -1114,7 +1114,7 @@ std::string GenerateRandomString(RandomStream &rs)
 	return retval;
 }
 
-std::string GenerateRandomStringGivenStringSet(RandomStream &rs, std::vector<std::string> &strings, double novel_chance = 0.08)
+static std::string GenerateRandomStringGivenStringSet(RandomStream &rs, std::vector<std::string> &strings, double novel_chance = 0.08)
 {
 	if(strings.size() == 0 || rs.Rand() < novel_chance) //small but nontrivial chance of making a new string
 	{
@@ -1131,7 +1131,7 @@ std::string GenerateRandomStringGivenStringSet(RandomStream &rs, std::vector<std
 }
 
 //helper function for EvaluableNodeTreeManipulation::MutateNode to populate immediate data
-void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<std::string> &strings)
+static void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<std::string> &strings)
 {
 	auto node_type = n->GetType();
 	if(DoesEvaluableNodeTypeUseBoolData(node_type))
@@ -1192,7 +1192,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		mutation_type = ENBISI_delete;
 
 	//if immediate, can't perform most of the mutations, just mutate it
-	if(is_immediate && (mutation_type != ENBISI_change_label && mutation_type != ENBISI_change_type))
+	if(is_immediate && mutation_type != ENBISI_change_type)
 		mutation_type = ENBISI_change_type;
 
 	switch(mutation_type)
@@ -1340,24 +1340,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		case ENBISI_delete_elements:
 			n->ClearOrderedChildNodes();
 			n->ClearMappedChildNodes();
-			break;
-
-		case ENBISI_change_label:
-			//affect labels
-			if(n != nullptr)
-			{
-				//see if can delete a label, and delete all if the option is available and chosen to keep new label creation balanced
-				if(n->GetNumLabels() > 0 && mp.interpreter->randomStream.Rand() < 0.875)
-				{
-					n->ClearLabels();
-				}
-				else
-				{
-					//add new label
-					std::string new_label = GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings);
-					n->AppendLabel(new_label);
-				}
-			}
 			break;
 
 		default:
@@ -1528,13 +1510,12 @@ EvaluableNode EvaluableNodeTreeManipulation::nullEvaluableNode(ENT_NULL);
 
 CompactHashMap<EvaluableNodeBuiltInStringId, double> EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities
 {
-	{ ENBISI_change_type,		0.28 },
+	{ ENBISI_change_type,		0.29 },
 	{ ENBISI_delete,			0.12 },
-	{ ENBISI_insert,			0.23 },
+	{ ENBISI_insert,			0.25 },
 	{ ENBISI_swap_elements,		0.24 },
-	{ ENBISI_deep_copy_elements,0.05 },
-	{ ENBISI_delete_elements,	0.04 },
-	{ ENBISI_change_label,		0.04 }
+	{ ENBISI_deep_copy_elements,0.06 },
+	{ ENBISI_delete_elements,	0.04 }
 };
 
 EvaluableNodeTreeManipulation::MutationParameters::WeightedRandMutationType EvaluableNodeTreeManipulation::mutationOperationTypeRandomStream(mutationOperationTypeProbabilities, true);

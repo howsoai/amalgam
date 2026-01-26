@@ -129,7 +129,7 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 		//make a copy and make sure labels are escaped, then clear any child node lists
 		// which will make sure there is a lower chance of reallocation when adding child nodes
 		//mapped child nodes will be overwritten
-		EvaluableNode *replacement = enm->AllocNode(tree2_node, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
+		EvaluableNode *replacement = enm->AllocNode(tree2_node);
 		replacement->ClearOrderedChildNodes();
 
 		//make sure it is of a data containing type, otherwise need to convert and then set_type

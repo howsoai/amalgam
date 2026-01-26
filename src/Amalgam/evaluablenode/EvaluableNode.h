@@ -93,7 +93,7 @@ public:
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		SetIsIdempotent(true);
 		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
-		AnnotationAndComment::Construct(value.stringValueContainer.annotationAndComment);
+		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 	}
 
 	inline void InitializeType(EvaluableNodeType _type, StringInternPool::StringID string_id)
@@ -112,7 +112,7 @@ public:
 		{
 			type = _type;
 			value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_id);
-			AnnotationAndComment::Construct(value.stringValueContainer.annotationAndComment);
+			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 		}
 	}
 
@@ -133,7 +133,7 @@ public:
 		{
 			type = _type;
 			value.stringValueContainer.stringID = string_id;
-			AnnotationAndComment::Construct(value.stringValueContainer.annotationAndComment);
+			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 		}
 	}
 
@@ -150,7 +150,7 @@ public:
 			type = ENT_NUMBER;
 			SetIsIdempotent(true);
 			value.numberValueContainer.numberValue = number_value;
-			AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
+			AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
 		}
 	}
 
@@ -160,7 +160,7 @@ public:
 		type = ENT_BOOL;
 		SetIsIdempotent(true);
 		value.boolValueContainer.boolValue = bool_value;
-		AnnotationAndComment::Construct(value.boolValueContainer.annotationAndComment);
+		AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
 	}
 
 	//initializes to ENT_UNINITIALIZED
@@ -183,20 +183,20 @@ public:
 
 		if(DoesEvaluableNodeTypeUseBoolData(_type))
 		{
-			AnnotationAndComment::Construct(value.boolValueContainer.annotationAndComment);
+			AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
 			value.boolValueContainer.boolValue = false;
 			SetIsIdempotent(true);
 		}
 		else if(DoesEvaluableNodeTypeUseNumberData(_type))
 		{
-			AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
+			AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
 			value.numberValueContainer.numberValue = 0.0;
 			SetIsIdempotent(true);
 		}
 		else if(DoesEvaluableNodeTypeUseStringData(_type))
 		{
 			value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
-			AnnotationAndComment::Construct(value.stringValueContainer.annotationAndComment);
+			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 			SetIsIdempotent(_type == ENT_STRING);
 		}
 		else if(DoesEvaluableNodeTypeUseAssocData(_type))
@@ -214,7 +214,7 @@ public:
 			value.numberValueContainer.numberValue = 0;
 		#endif
 
-			AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
+			AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
 		}
 		else
 		{
@@ -234,14 +234,14 @@ public:
 	//clears the node's metadata
 	__forceinline void ClearMetadata()
 	{
-		GetAnnotationAndCommentStorage().Clear();
+		GetAnnotationsAndCommentsStorage().Clear();
 		SetConcurrency(false);
 	}
 
 	//returns true if the node has any metadata
 	__forceinline bool HasMetadata()
 	{
-		auto &a_and_c = GetAnnotationAndCommentStorage();
+		auto &a_and_c = GetAnnotationsAndCommentsStorage();
 		return (a_and_c.HasCommentOrAnnotation()  || GetConcurrency());
 	}
 
@@ -420,15 +420,18 @@ public:
 	//if key_string is true, then it will generate a string used for comparing in assoc keys
 	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e, bool key_string = false);
 
-	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not (if it did not exist, then it creates one)
+	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the
+	// string existed or not (if it did not exist, then it creates one)
 	//if key_string is true, then it will generate a string used for comparing in assoc keys
 	static StringInternPool::StringID ToStringIDWithReference(EvaluableNode *e, bool key_string = false);
 
-	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not
-	// if e is a string, it will clear it and hand the reference to the caller
+	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the
+	// string existed or not
+	//if e is a string, it will clear it and hand the reference to the caller
 	//if include_symbol is true, then it will also apply to ENT_SYMBOL
 	//if key_string is true, then it will generate a string used for comparing in assoc keys
-	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e, bool include_symbol = false, bool key_string = false);
+	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e,
+		bool include_symbol = false, bool key_string = false);
 
 	//converts the node to an ENT_ASSOC where the keys are the numbers of the indices
 	void ConvertListToNumberedAssoc();
@@ -591,49 +594,75 @@ public:
 	void SetStringIDWithReferenceHandoff(StringInternPool::StringID id);
 
 	//returns true if has annotation
-	inline bool HasAnnotation()
+	inline bool HasAnnotations()
 	{
-		return GetAnnotationAndCommentStorage().HasAnnotation();
+		return GetAnnotationsAndCommentsStorage().HasAnnotations();
 	}
 
 	//returns a string_view of the annotation string
-	inline std::string_view GetAnnotationString()
+	inline std::string_view GetAnnotationsString()
 	{
-		GetAnnotationAndCommentStorage().GetAnnotation();
+		GetAnnotationsAndCommentsStorage().GetAnnotations();
 	}
 
 	//sets the annotation_string
-	void SetAnnotationString(std::string_view s)
+	void SetAnnotationsString(std::string_view s)
 	{
-		GetAnnotationAndCommentStorage().SetAnnotation(s);
+		GetAnnotationsAndCommentsStorage().SetAnnotations(s);
+	}
+
+	//splits annotations lines and returns a vector of strings of the comment
+	std::vector<std::string> GetAnnotationsSeparateLines();
+
+	inline void ClearAnnotations()
+	{
+		GetAnnotationsAndCommentsStorage().SetAnnotations("");
+	}
+
+	//appends annotations to the node
+	void AppendAnnotations(std::string &annotations)
+	{
+		auto &a_and_c = GetAnnotationsAndCommentsStorage();
+		std::string combined(a_and_c.GetAnnotations());
+		combined.append(annotations);
+		a_and_c.SetAnnotations(combined);
 	}
 
 	//functions for getting and setting node comments by string
 	inline std::string_view GetCommentsString()
 	{
-		GetAnnotationAndCommentStorage().GetComment();
+		GetAnnotationsAndCommentsStorage().GetComments();
 	}
 
 	//returns true if has comments
 	inline bool HasComments()
 	{
-		return GetAnnotationAndCommentStorage().HasComment();
+		return GetAnnotationsAndCommentsStorage().HasComments();
 	}
 
-	//splits comment lines and returns a vector of strings of the comment
-	std::vector<std::string> GetCommentsSeparateLines();
 	//if handoff_reference is true, then it will not create a new reference but assume one has already been created
 	void SetCommentsStringId(StringInternPool::StringID comments_string_id, bool handoff_reference = false);
 	inline void SetComments(const std::string &comment)
 	{
-		GetAnnotationAndCommentStorage().SetComment(comment);
+		GetAnnotationsAndCommentsStorage().SetComments(comment);
 	}
+
+	//splits comment lines and returns a vector of strings of the comment
+	std::vector<std::string> GetCommentsSeparateLines();
+
 	inline void ClearComments()
 	{
-		GetAnnotationAndCommentStorage().SetComment("");
+		GetAnnotationsAndCommentsStorage().SetComments("");
 	}
-	void AppendCommentsStringId(StringInternPool::StringID comments_string_id);
-	void AppendComments(const std::string &comments);
+
+	//appends comments to the node
+	void AppendComments(std::string &comments)
+	{
+		auto &a_and_c = GetAnnotationsAndCommentsStorage();
+		std::string combined(a_and_c.GetComments());
+		combined.append(comments);
+		a_and_c.SetComments(combined);
+	}
 
 	__forceinline bool HasAttribute(Attribute attr) const
 	{
@@ -939,7 +968,7 @@ public:
 
 protected:
 	//defined since it is used as a pointer
-	class AnnotationAndComment;
+	class AnnotationsAndComments;
 public:
 
 	//assumes that the EvaluableNode is of type ENT_BOOL, and returns the value by reference
@@ -995,14 +1024,14 @@ public:
 
 	//returns a reference to the storage location for the annotation and comment storage
 	// will only return valid results if HasCompactSingleLabelStorage() is true, so that should be called first
-	__forceinline AnnotationAndComment &GetAnnotationAndCommentStorage()
+	__forceinline AnnotationsAndComments &GetAnnotationsAndCommentsStorage()
 	{
 		if(type == ENT_BOOL)
-			return value.boolValueContainer.annotationAndComment;
+			return value.boolValueContainer.annotationsAndComments;
 		if(type == ENT_NUMBER)
-			return value.numberValueContainer.annotationAndComment;
+			return value.numberValueContainer.annotationsAndComments;
 		//else assume type == ENT_STRING || type == ENT_SYMBOL
-		return value.stringValueContainer.annotationAndComment;
+		return value.stringValueContainer.annotationsAndComments;
 	}
 
 	//registers and unregisters an EvaluableNode for debug watching
@@ -1036,23 +1065,23 @@ public:
 
 protected:
 
-	class AnnotationAndComment
+	class AnnotationsAndComments
 	{
 	public:
-		__forceinline static void Construct(AnnotationAndComment &a_and_c)
+		__forceinline static void Construct(AnnotationsAndComments &a_and_c)
 		{
-			new (&a_and_c) AnnotationAndComment;
+			new (&a_and_c) AnnotationsAndComments;
 		}
 
-		__forceinline static void Destruct(AnnotationAndComment &a_and_c)
+		__forceinline static void Destruct(AnnotationsAndComments &a_and_c)
 		{
-			a_and_c.~AnnotationAndComment();
+			a_and_c.~AnnotationsAndComments();
 		}
 
-		AnnotationAndComment() = default;
-		AnnotationAndComment(std::string_view annotation, std::string_view comment)
+		AnnotationsAndComments() = default;
+		AnnotationsAndComments(std::string_view annotation, std::string_view comment)
 		{
-			SetAnnotationAndComment(annotation, comment);
+			SetAnnotationsAndComments(annotation, comment);
 		}
 
 		void Clear()
@@ -1060,8 +1089,8 @@ protected:
 			buffer.reset();
 		}
 
-		//returns a view of the annotation
-		std::string_view GetAnnotation()
+		//returns a view of the annotations
+		std::string_view GetAnnotations()
 		{
 			if(!buffer)
 				return {};
@@ -1070,8 +1099,8 @@ protected:
 			return std::string_view(p, len);
 		}
 
-		//returns a view of the comment
-		std::string_view GetComment()
+		//returns a view of the comments
+		std::string_view GetComments()
 		{
 			if(!buffer)
 				return {};
@@ -1083,7 +1112,7 @@ protected:
 		}
 
 		//replace both strings
-		void SetAnnotationAndComment(std::string_view new_annotation, std::string_view new_comment)
+		void SetAnnotationsAndComments(std::string_view new_annotation, std::string_view new_comment)
 		{
 			if(new_annotation.empty() && new_comment.empty())
 			{
@@ -1108,24 +1137,24 @@ protected:
 			buffer = std::move(tmp);
 		}
 
-		//replace only the annotation
-		void SetAnnotation(std::string_view new_annotation)
+		//replace only the annotations
+		void SetAnnotations(std::string_view new_annotations)
 		{
-			SetAnnotationAndComment(new_annotation, GetComment());
+			SetAnnotationsAndComments(new_annotations, GetComments());
 		}
 
-		//replace only the comment.
-		void SetComment(std::string_view new_comment)
+		//replace only the comments
+		void SetComments(std::string_view new_comments)
 		{
-			SetAnnotationAndComment(GetAnnotation(), new_comment);
+			SetAnnotationsAndComments(GetAnnotations(), new_comments);
 		}
 
-		bool HasAnnotation()
+		bool HasAnnotations()
 		{
 			return buffer && buffer[0] != '\0';
 		}
 
-		bool HasComment()
+		bool HasComments()
 		{
 			if(!buffer)
 				return false;
@@ -1134,7 +1163,7 @@ protected:
 			return *p != '\0';
 		}
 
-		//slightly more efficient than HasAnnotation() || HasComment()
+		//slightly more efficient than HasAnnotations() || HasComments()
 		bool HasCommentOrAnnotation() const noexcept
 		{
 			if(!buffer)
@@ -1188,7 +1217,7 @@ protected:
 			//string value
 			StringInternPool::StringID stringID;
 
-			AnnotationAndComment annotationAndComment;
+			AnnotationsAndComments annotationsAndComments;
 		} stringValueContainer;
 
 		//when type represents a number, holds the corresponding value
@@ -1197,7 +1226,7 @@ protected:
 			//number value
 			double numberValue;
 
-			AnnotationAndComment annotationAndComment;
+			AnnotationsAndComments annotationsAndComments;
 		} numberValueContainer;
 
 		//when type represents a bool, holds the corresponding value
@@ -1206,7 +1235,7 @@ protected:
 			//bool value
 			bool boolValue;
 
-			AnnotationAndComment annotationAndComment;
+			AnnotationsAndComments annotationsAndComments;
 		} boolValueContainer;
 
 		struct EvaluableNodeExtension
@@ -1214,7 +1243,7 @@ protected:
 			//pointer to store any extra data if EvaluableNode needs multiple fields
 			EvaluableNodeValue *extendedValue;
 
-			AnnotationAndComment annotationAndComment;
+			AnnotationsAndComments annotationsAndComments;
 		} extension;
 	};
 #pragma pack(pop)

@@ -378,20 +378,10 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 
 		auto cur_char = code[pos];
 
-		//if it's a label, grab the label
-		if(cur_char == '#')
+		//if it's a comment or annotation, grab everything until the end of line
+		if(cur_char == ';' || cur_char == '#')
 		{
-			pos++; //skip hash
-
-			//add to labels list
-			target->AppendLabel(GetNextIdentifier(true));
-
-			continue;
-		}
-
-		//if it's a comment, grab everything until the end of line
-		if(cur_char == ';')
-		{
+			bool annotation = (cur_char == '#');
 			pos++; //skip semicolon
 
 			//add on characters until end of line
@@ -405,13 +395,25 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 					break;
 			}
 
-			std::string cur_comment;
-			//prepend the comment with newlines if there is already a comment on the node
-			if(target->GetCommentsStringId() != StringInternPool::NOT_A_STRING_ID)
-				cur_comment = "\r\n";
-			cur_comment.append(code.substr(start_pos, pos - start_pos));
+			std::string cur_line;
+			if(annotation)
+			{
+				//prepend the annotation with newlines if there is already a comment
+				if(target->HasAnnotations())
+					cur_line = "\r\n";
+				cur_line.append(code.substr(start_pos, pos - start_pos));
 
-			target->AppendComments(cur_comment);
+				target->AppendAnnotations(cur_line);
+			}
+			else //comment
+			{
+				//prepend the comment with newlines if there is already a comment
+				if(target->HasComments())
+					cur_line = "\r\n";
+				cur_line.append(code.substr(start_pos, pos - start_pos));
+
+				target->AppendComments(cur_line);
+			}
 			continue;
 		}
 
@@ -794,17 +796,20 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 				{
 					if(key_node->HasComments())
 					{
-						std::string appended = key_node->GetCommentsString() + "\r\n" + n->GetCommentsString();
+						std::string appended(key_node->GetCommentsString());
+						appended.append("\r\n");
+						appended.append(n->GetCommentsString());
 						n->SetComments(appended);
 						key_node->ClearComments();
 					}
 
-					size_t num_key_node_labels = key_node->GetNumLabels();
-					if(num_key_node_labels > 0)
+					if(key_node->HasAnnotations())
 					{
-						for(size_t i = 0; i < num_key_node_labels; i++)
-							n->AppendLabelStringId(key_node->GetLabelStringId(i));
-						key_node->ClearLabels();
+						std::string appended(key_node->GetAnnotationsString());
+						appended.append("\r\n");
+						appended.append(n->GetAnnotationsString());
+						n->SetAnnotationsString(appended);
+						key_node->ClearAnnotations();
 					}
 				}
 
@@ -881,7 +886,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 
 void Parser::AppendComments(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append)
 {
-	const auto comment_lines = n->GetCommentsSeparateLines();
+	auto comment_lines = n->GetCommentsSeparateLines();
 
 #ifdef DEBUG_PARSER_PRINT_FLAGS
 	//prints out extra comments for debugging
@@ -924,68 +929,27 @@ void Parser::AppendComments(EvaluableNode *n, size_t indentation_depth, bool pre
 	}
 }
 
-//if the string contains a character that needs to be escaped for labels, then will convert
-std::string ConvertLabelToQuotedStringIfNecessary(const std::string &s)
+void Parser::AppendAnnotations(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append)
 {
-	if(s.empty())
-		return s;
+	auto annotations_lines = n->GetAnnotationsSeparateLines();
 
-	bool needs_escape = Parser::HasCharactersBeyondIdentifier(s, true);
+	if(annotations_lines.size() == 0)
+		return;
 
-	if(!needs_escape)
+	//if not start of file, make sure there's an extra newline before the comments
+	if(indentation_depth > 0 && pretty)
+		AppendNewlineWithIndentation(to_append, indentation_depth, pretty);
+
+	for(auto &annotation : annotations_lines)
 	{
-		//if the whole thing starts with #'s, then it's fine
-		// but if it has #'s and then something else, then another #, then it needs to be escaped
-		size_t last_hash_pos = s.find_last_of('#');
-		if(last_hash_pos != std::string::npos)
-		{
-			//get all #'s at the front
-			size_t num_starting_hashes = 0;
-			while(s[num_starting_hashes] == '#')
-				num_starting_hashes++;
+		//add annotation sign
+		to_append.push_back('#');
+		to_append.append(annotation);
 
-			//if the position after the last starting hash is the same as the last hash, then don't transform the string
-			if(num_starting_hashes - 1 != last_hash_pos)
-				needs_escape = true;
-		}
-	}
-
-	if(!needs_escape)
-		return s;
-
-	//need to quote and escape the string
-	std::string result;
-	result.push_back('"');
-
-	if(Parser::NeedsBackslashify(s))
-		result.append(Parser::Backslashify(s));
-	else
-		result.append(s);
-
-	result.push_back('"');
-	return result;
-}
-
-void Parser::AppendLabels(UnparseData &upd, EvaluableNode *n, size_t indentation_depth, bool pretty)
-{
-	size_t num_labels = n->GetNumLabels();
-	for(size_t i = 0; i < num_labels; i++)
-	{
-		//add label sign
-		upd.result.push_back('#');
-		upd.result.append(ConvertLabelToQuotedStringIfNecessary(n->GetLabel(i)));
-
-		//if not the last label, then separate via spaces
-		if(i + 1 < num_labels || !pretty)
-			upd.result.push_back(' ');
-		else //last label and pretty printing
-		{
-			//if just an immediate or no child nodes, then separate with space
-			if(IsEvaluableNodeTypeImmediate(n->GetType()) || n->GetNumChildNodes() == 0)
-				upd.result.push_back(' ');
-			else //something more elaborate, put newline and reindent
-				AppendNewlineWithIndentation(upd.result, indentation_depth, pretty);
-		}
+		if(pretty)
+			AppendNewlineWithIndentation(to_append, indentation_depth, pretty);
+		else //need to end a comment with a newline even if not pretty
+			to_append.append("\r\n");
 	}
 }
 
@@ -1090,7 +1054,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 	if(upd.emitAttributes)
 	{
 		AppendComments(tree, indentation_depth, expanded_whitespace, upd.result);
-		AppendLabels(upd, tree, indentation_depth, expanded_whitespace);
+		AppendAnnotations(tree, indentation_depth, expanded_whitespace, upd.result);
 
 		if(tree->GetConcurrency() == true)
 			upd.result.append("||");
@@ -1191,7 +1155,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				for(auto cn : ocn)
 				{
 					if(cn != nullptr && (cn->GetNumChildNodes() > 0
-						|| cn->GetCommentsStringId() != StringInternPool::NOT_A_STRING_ID || cn->GetNumLabels() > 0))
+						|| cn->HasComments() || cn->HasAnnotations()))
 					{
 						all_leaf_nodes = false;
 						break;
@@ -1202,7 +1166,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				{
 					//need to count the additional node for the string index
 					if(cn != nullptr && (cn->GetNumChildNodes() > 0
-						|| cn->GetCommentsStringId() != StringInternPool::NOT_A_STRING_ID || cn->GetNumLabels() > 0))
+						|| cn->HasComments() || cn->HasAnnotations()))
 					{
 						all_leaf_nodes = false;
 						break;

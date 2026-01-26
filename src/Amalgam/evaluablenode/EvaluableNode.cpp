@@ -336,12 +336,12 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 	if(n->HasExtendedValue())
 		total_size += sizeof(EvaluableNode::EvaluableNodeValue);
 
-	auto &a_and_c = n->GetAnnotationAndCommentStorage();
-	size_t annotation_size = a_and_c.GetAnnotation().size();
+	auto &a_and_c = n->GetAnnotationsAndCommentsStorage();
+	size_t annotation_size = a_and_c.GetAnnotations().size();
 	//count null terminator
 	if(annotation_size > 0)
 		annotation_size++;
-	size_t comment_size = a_and_c.GetComment().size();
+	size_t comment_size = a_and_c.GetComments().size();
 	//count null terminator
 	if(comment_size > 0)
 		comment_size++;
@@ -424,20 +424,20 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	}
 	else if(DoesEvaluableNodeTypeUseBoolData(type))
 	{
-		AnnotationAndComment::Construct(value.boolValueContainer.annotationAndComment);
+		AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
 		value.boolValueContainer.boolValue = n->GetBoolValueReference();
 		SetIsIdempotent(true);
 	}
 	else if(DoesEvaluableNodeTypeUseNumberData(type))
 	{
-		AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
+		AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
 		value.numberValueContainer.numberValue = n->GetNumberValueReference();
 		SetIsIdempotent(true);
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(type))
 	{
 		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(n->GetStringIDReference());
-		AnnotationAndComment::Construct(value.stringValueContainer.annotationAndComment);
+		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 		SetIsIdempotent(type == ENT_STRING);
 	}
 	else //ordered
@@ -758,7 +758,7 @@ void EvaluableNode::InitBoolValue()
 	}
 	else
 	{
-		AnnotationAndComment::Construct(value.boolValueContainer.annotationAndComment);
+		AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
 		value.boolValueContainer.boolValue = false;
 	}
 }
@@ -773,7 +773,7 @@ void EvaluableNode::InitNumberValue()
 	}
 	else
 	{
-		AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
+		AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
 		value.numberValueContainer.numberValue = 0.0;
 	}
 }
@@ -789,7 +789,7 @@ void EvaluableNode::InitStringValue()
 	else
 	{
 		value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
-		AnnotationAndComment::Construct(value.stringValueContainer.annotationAndComment);
+		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 	}
 }
 
@@ -909,33 +909,42 @@ void EvaluableNode::SetStringIDWithReferenceHandoff(StringInternPool::StringID i
 	}
 }
 
-std::vector<std::string> EvaluableNode::GetCommentsSeparateLines()
+static inline std::vector<std::string> BreakApartSeparateLines(std::string_view full_string)
 {
 	std::vector<std::string> comment_lines;
-	auto &full_comments = GetCommentsString();
 
 	//early exit
-	if(full_comments.empty())
+	if(full_string.empty())
 		return comment_lines;
 
 	size_t cur = 0;
 	size_t prev = 0;
-	while((cur = full_comments.find('\n', prev)) != std::string::npos)
+	while((cur = full_string.find('\n', prev)) != std::string::npos)
 	{
 		//skip carriage return if found prior to the newline
 		int carriage_return_offset = 0;
-		if(prev < cur && full_comments[cur - 1] == '\r')
+		if(prev < cur && full_string[cur - 1] == '\r')
 			carriage_return_offset = 1;
 
-		comment_lines.emplace_back(full_comments.substr(prev, cur - prev - carriage_return_offset));
+		comment_lines.emplace_back(full_string.substr(prev, cur - prev - carriage_return_offset));
 		prev = cur + 1;
 	}
 
 	//get whatever is left
-	if(prev < full_comments.size())
-		comment_lines.emplace_back(full_comments.substr(prev));
+	if(prev < full_string.size())
+		comment_lines.emplace_back(full_string.substr(prev));
 
 	return comment_lines;
+}
+
+std::vector<std::string> EvaluableNode::GetAnnotationsSeparateLines()
+{
+	return BreakApartSeparateLines(GetAnnotationsString());
+}
+
+std::vector<std::string> EvaluableNode::GetCommentsSeparateLines()
+{
+	return BreakApartSeparateLines(GetCommentsString());
 }
 
 void EvaluableNode::SetCommentsStringId(StringInternPool::StringID comments_string_id, bool handoff_reference)
@@ -956,42 +965,6 @@ void EvaluableNode::SetCommentsStringId(StringInternPool::StringID comments_stri
 	string_intern_pool.DestroyStringReference(value.extension.commentsStringId);
 
 	value.extension.commentsStringId = comments_string_id;
-}
-
-void EvaluableNode::AppendCommentsStringId(StringInternPool::StringID comments_string_id)
-{
-	if(!HasExtendedValue())
-		EnsureEvaluableNodeExtended();
-
-	if(GetCommentsStringId() == string_intern_pool.NOT_A_STRING_ID)
-	{
-		SetCommentsStringId(comments_string_id);
-	}
-	else //already has comments, so append more
-	{
-		std::string appended = GetCommentsString();
-		appended.append(string_intern_pool.GetStringFromID(comments_string_id));
-
-		SetComments(appended);
-	}
-}
-
-void EvaluableNode::AppendComments(const std::string &comment)
-{
-	if(!HasExtendedValue())
-		EnsureEvaluableNodeExtended();
-
-	if(GetCommentsStringId() == string_intern_pool.NOT_A_STRING_ID)
-	{
-		SetComments(comment);
-	}
-	else //already has comments, so append more
-	{
-		std::string appended(GetCommentsString());
-		appended.append(comment);
-
-		SetComments(appended);
-	}
 }
 
 size_t EvaluableNode::GetNumChildNodes()
@@ -1408,15 +1381,15 @@ void EvaluableNode::DestructValue()
 		switch(GetType())
 		{
 		case ENT_BOOL:
-			AnnotationAndComment::Destruct(value.boolValueContainer.annotationAndComment);
+			AnnotationsAndComments::Destruct(value.boolValueContainer.annotationsAndComments);
 			break;
 		case ENT_NUMBER:
-			AnnotationAndComment::Destruct(value.numberValueContainer.annotationAndComment);
+			AnnotationsAndComments::Destruct(value.numberValueContainer.annotationsAndComments);
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:
 			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
-			AnnotationAndComment::Destruct(value.stringValueContainer.annotationAndComment);
+			AnnotationsAndComments::Destruct(value.stringValueContainer.annotationsAndComments);
 			break;
 		case ENT_ASSOC:
 			value.DestructMappedChildNodes();
@@ -1462,15 +1435,15 @@ void EvaluableNode::Invalidate()
 		switch(GetType())
 		{
 		case ENT_BOOL:
-			AnnotationAndComment::Destruct(value.boolValueContainer.annotationAndComment);
+			AnnotationsAndComments::Destruct(value.boolValueContainer.annotationsAndComments);
 			break;
 		case ENT_NUMBER:
-			AnnotationAndComment::Destruct(value.numberValueContainer.annotationAndComment);
+			AnnotationsAndComments::Destruct(value.numberValueContainer.annotationsAndComments);
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:
 			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
-			AnnotationAndComment::Destruct(value.stringValueContainer.annotationAndComment);
+			AnnotationsAndComments::Destruct(value.stringValueContainer.annotationsAndComments);
 			break;
 		case ENT_ASSOC:
 			value.DestructMappedChildNodes();
@@ -1491,7 +1464,7 @@ void EvaluableNode::Invalidate()
 		value.numberValueContainer.numberValue = 0;
 	#endif
 
-		AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
+		AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
 		return;
 	}
 
@@ -1531,7 +1504,7 @@ void EvaluableNode::Invalidate()
 	value.numberValueContainer.numberValue = 0;
 #endif
 
-	AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
+	AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
 }
 
 bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNode *b, ReferenceAssocType *checked)
@@ -1778,9 +1751,6 @@ size_t EvaluableNode::GetDeepSizeRecurse(EvaluableNode *n, ReferenceSetType &che
 	//count this one
 	size_t size = 1;
 
-	//count any labels
-	size += n->GetNumLabels();
-
 	//check child nodes
 	if(n->IsAssociativeArray())
 	{
@@ -1806,9 +1776,6 @@ size_t EvaluableNode::GetDeepSizeNoCycleRecurse(EvaluableNode *n)
 {
 	//count this one
 	size_t size = 1;
-
-	//count any labels
-	size += n->GetNumLabels();
 
 	//check child nodes
 	if(n->IsAssociativeArray())

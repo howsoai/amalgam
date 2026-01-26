@@ -264,8 +264,8 @@ protected:
 	//Prints out all comments for the respective node
 	static void AppendComments(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append);
 
-	//Prints out all labels for the respective node. If omit_label is not null, it will not print any label that matches it
-	static void AppendLabels(UnparseData &upd, EvaluableNode *n, size_t indentation_depth, bool pretty);
+	//Prints out all annotations for the respective node
+	static void AppendAnnotations(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append);
 
 	//Prints out key and its associated node n
 	static void AppendAssocKeyValuePair(UnparseData &upd,

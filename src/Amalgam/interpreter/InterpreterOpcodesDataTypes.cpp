@@ -958,7 +958,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ANNOTATIONS(EvaluableN
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto &annotations = n->GetAnnotationString();
+	auto &annotations = n->GetAnnotationsString();
 	evaluableNodeManager->FreeNodeTreeIfPossible(n);
 	return AllocReturn(annotations, immediate_result);
 }

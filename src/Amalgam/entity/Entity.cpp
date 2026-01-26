@@ -149,8 +149,7 @@ std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(
 	if(destination_temp_enm == nullptr)
 		return std::pair(retval, true);
 
-	return std::pair(destination_temp_enm->DeepAllocCopy(retval,
-		direct_get ? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL), true);
+	return std::pair(destination_temp_enm->DeepAllocCopy(retval), true);
 }
 
 std::pair<bool, bool> Entity::GetValueAtLabelAsBool(StringInternPool::StringID label_sid, bool on_self)

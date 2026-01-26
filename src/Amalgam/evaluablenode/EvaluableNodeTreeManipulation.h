@@ -532,28 +532,6 @@ public:
 
 protected:
 
-	//recursive helper function for DoesTreeContainLabels
-	static bool NonCycleDoesTreeContainLabels(EvaluableNode *en);
-
-	//recursive helper function for DoesTreeContainLabels
-	static bool DoesTreeContainLabels(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked);
-
-	//Recursively traverses tree, storing any nodes with labels into index.
-	//assumes tree is not nullptr
-	//If checked is not nullptr, then it keeps track of previously visited nodes in checked, ignoring them if they are already in the set, and adds them to checked when they are traversed.
-	//  checked should only be nullptr when tree is known to be cycle free
-	//If there is any collision of labels, meaning the same label is used by more than one node, then it will return true
-	//Returns true if was able to collect all labels and no collision
-	static bool CollectLabelIndexesFromTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked);
-
-	//Recursively traverses tree, storing any nodes with labels into index.  Ignores any nodes already in checked, and adds them to checked when they are traversed.
-	// if the current top of the tree contains a label and should be replaced by something that exists in index, it will set replace_tree_by to the proper
-	// node that should replace the top of the tree.
-	//returns true if it was able to collect all labels, false if there was a label collision
-	// and the tree needs to be updated with regard to cycle checks
-	static bool CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index,
-		EvaluableNode::ReferenceSetType &checked, EvaluableNode *&replace_tree_by);
-
 	//Evaluates commonality metric between the two nodes passed in, including labels.  1.0 if identical, 0.0 if completely different, and some value between if similar
 	// If require_exact_matches is true, then it will only return 1.0 or 0.0
 	static MergeMetricResults<EvaluableNode *> CommonalityBetweenNodes(

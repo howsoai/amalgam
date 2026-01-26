@@ -640,28 +640,26 @@ public:
 		return n;
 	}
 
-	//ways that labels can be modified when a new node is allocated
-	enum EvaluableNodeMetadataModifier
+	//allocates a node identical to original
+	inline EvaluableNode *AllocNode(EvaluableNode *original, bool copy_metadata = true)
 	{
-		ENMM_NO_CHANGE,					//leave labels as they are
-		ENMM_LABEL_ESCAPE_INCREMENT,	//insert a # in front of each label
-		ENMM_LABEL_ESCAPE_DECREMENT,	//remove a # from the front of each label
-		ENMM_REMOVE_ALL					//remove all metadata
-	};
-	EvaluableNode *AllocNode(EvaluableNode *original, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
+		EvaluableNode *n = AllocUninitializedNode();
+		n->InitializeType(original, copy_metadata);
+		return n;
+	}
 
 	//ensures that the top node is modifiable -- will allocate the node if necessary,
 	// and if the result and any child nodes are all unique, then it will return an EvaluableNodeReference that is unique
 	//if ensure_copy_if_cycles, then it will also allocate a new node if there are cycles,
 	//in case the top node is referenced by any of its node tree and it needs to ensure that structure is maintained
 	inline void EnsureNodeIsModifiable(EvaluableNodeReference &original, bool ensure_copy_if_cycles = false,
-		EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
+		bool copy_metadata = true)
 	{
 		if(original.uniqueUnreferencedTopNode && original != nullptr
 				&& (!ensure_copy_if_cycles || !original.GetNeedCycleCheck()) )
 			return;
 
-		EvaluableNode *copy = AllocNode(original.GetReference(), metadata_modifier);
+		EvaluableNode *copy = AllocNode(original.GetReference(), copy_metadata);
 		//the copy will only be unique if there are no child nodes
 		original = EvaluableNodeReference(copy, (copy->GetNumChildNodes() == 0), true);
 	}
@@ -676,17 +674,17 @@ public:
 	}
 
 	//Copies the data structure and everything underneath it, modifying labels as specified
-	EvaluableNodeReference DeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
+	EvaluableNodeReference DeepAllocCopy(EvaluableNode *tree, bool copy_metadata = true);
 
 	//used to hold all of the references for DeepAllocCopy calls
 	struct DeepAllocCopyParams
 	{
-		inline DeepAllocCopyParams(EvaluableNodeMetadataModifier metadata_modifier)
-			: labelModifier(metadata_modifier)
+		inline DeepAllocCopyParams(bool copy_metadata = true)
+			: copyMetadata(copy_metadata)
 		{	}
 
 		EvaluableNode::ReferenceAssocType references;
-		EvaluableNodeMetadataModifier labelModifier;
+		bool copyMetadata;
 	};
 
 	//modifies the labels for the tree as described by metadata_modifier
@@ -1210,23 +1208,11 @@ protected:
 	//to stop spinlocks
 	void FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index);
 
-	//modifies the labels of n with regard to metadata_modifier
-	// assumes n is not nullptr
-	static void ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataModifier metadata_modifier);
-
 	//implemented as a recursive method because the extra complexity of an iterative implementation
 	// is not worth the very small performance benefit
 	//returns a pair of the copy and true if the copy needs cycle check
 	//assumes tree is not nullptr
 	std::pair<EvaluableNode *, bool> DeepAllocCopyRecurse(EvaluableNode *tree, DeepAllocCopyParams &dacp);
-
-	//recursive helper function for ModifyLabelsForNodeTree
-	//assumes tree is not nullptr
-	static void ModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNode::ReferenceSetType &checked, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
-
-	//recursive helper function for ModifyLabelsForNodeTree
-	//assumes tree is not nullptr
-	static void NonCycleModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
 
 	//sets all referenced nodes that are in use as such
 	void MarkAllReferencedNodesInUse(size_t estimated_nodes_in_use);

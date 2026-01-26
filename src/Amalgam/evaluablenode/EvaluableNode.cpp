@@ -334,8 +334,18 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 	size_t total_size = 0;
 	total_size += sizeof(EvaluableNode);
 	if(n->HasExtendedValue())
-		total_size += sizeof(EvaluableNode::EvaluableNodeExtendedValue);
-	total_size += n->GetNumLabels() * sizeof(StringInternPool::StringID);
+		total_size += sizeof(EvaluableNode::EvaluableNodeValue);
+
+	auto &a_and_c = n->GetAnnotationAndCommentStorage();
+	size_t annotation_size = a_and_c.GetAnnotation().size();
+	//count null terminator
+	if(annotation_size > 0)
+		annotation_size++;
+	size_t comment_size = a_and_c.GetComment().size();
+	//count null terminator
+	if(comment_size > 0)
+		comment_size++;
+	total_size += annotation_size + comment_size;
 
 	total_size += n->GetOrderedChildNodes().capacity() * sizeof(EvaluableNode *);
 	total_size += n->GetMappedChildNodes().size() * (sizeof(StringInternPool::StringID) + sizeof(EvaluableNode *));
@@ -383,7 +393,7 @@ bool EvaluableNode::IsNodeValid()
 	return false;
 }
 
-void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_labels, bool copy_comments_and_concurrency)
+void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 {
 	attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 	if(n == nullptr)
@@ -414,20 +424,20 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_labels, bool copy
 	}
 	else if(DoesEvaluableNodeTypeUseBoolData(type))
 	{
-		value.boolValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		AnnotationAndComment::Construct(value.boolValueContainer.annotationAndComment);
 		value.boolValueContainer.boolValue = n->GetBoolValueReference();
 		SetIsIdempotent(true);
 	}
 	else if(DoesEvaluableNodeTypeUseNumberData(type))
 	{
-		value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
 		value.numberValueContainer.numberValue = n->GetNumberValueReference();
 		SetIsIdempotent(true);
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(type))
 	{
 		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(n->GetStringIDReference());
-		value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		AnnotationAndComment::Construct(value.stringValueContainer.annotationAndComment);
 		SetIsIdempotent(type == ENT_STRING);
 	}
 	else //ordered
@@ -457,11 +467,10 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_labels, bool copy
 	//child nodes were copied, so propagate whether cycle free
 	SetNeedCycleCheck(n->GetNeedCycleCheck());
 
-	if(copy_comments_and_concurrency)
+	if(copy_metadata)
+	{
 		SetConcurrency(n->GetConcurrency());
 
-	if(copy_labels || copy_comments_and_concurrency)
-	{
 		if(n->HasExtendedValue())
 		{
 			EnsureEvaluableNodeExtended();
@@ -745,11 +754,11 @@ void EvaluableNode::InitBoolValue()
 
 	if(HasExtendedValue())
 	{
-		value.extension.extendedValue->value.boolValueContainer.boolValue = false;
+		value.extension.extendedValue->boolValueContainer.boolValue = false;
 	}
 	else
 	{
-		value.boolValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		AnnotationAndComment::Construct(value.boolValueContainer.annotationAndComment);
 		value.boolValueContainer.boolValue = false;
 	}
 }
@@ -760,11 +769,11 @@ void EvaluableNode::InitNumberValue()
 
 	if(HasExtendedValue())
 	{
-		value.extension.extendedValue->value.numberValueContainer.numberValue = 0.0;
+		value.extension.extendedValue->numberValueContainer.numberValue = 0.0;
 	}
 	else
 	{
-		value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
 		value.numberValueContainer.numberValue = 0.0;
 	}
 }
@@ -775,12 +784,12 @@ void EvaluableNode::InitStringValue()
 
 	if(HasExtendedValue())
 	{
-		value.extension.extendedValue->value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
+		value.extension.extendedValue->stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
 	}
 	else
 	{
 		value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
-		value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		AnnotationAndComment::Construct(value.stringValueContainer.annotationAndComment);
 	}
 }
 
@@ -805,11 +814,11 @@ void EvaluableNode::SetStringID(StringInternPool::StringID id)
 			}
 			else
 			{
-				StringInternPool::StringID cur_id = value.extension.extendedValue->value.stringValueContainer.stringID;
+				StringInternPool::StringID cur_id = value.extension.extendedValue->stringValueContainer.stringID;
 				if(id != cur_id)
 				{
 					string_intern_pool.DestroyStringReference(cur_id);
-					value.extension.extendedValue->value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(id);
+					value.extension.extendedValue->stringValueContainer.stringID = string_intern_pool.CreateStringReference(id);
 				}
 			}
 		}
@@ -823,7 +832,7 @@ const std::string &EvaluableNode::GetStringValue()
 		if(!HasExtendedValue())
 			return string_intern_pool.GetStringFromID(value.stringValueContainer.stringID);
 		else
-			return string_intern_pool.GetStringFromID(value.extension.extendedValue->value.stringValueContainer.stringID);
+			return string_intern_pool.GetStringFromID(value.extension.extendedValue->stringValueContainer.stringID);
 	}
 
 	//none of the above, return an empty one
@@ -847,8 +856,8 @@ void EvaluableNode::SetStringValue(const std::string &v)
 		else
 		{
 			//destroy anything that was already in there
-			string_intern_pool.DestroyStringReference(value.extension.extendedValue->value.stringValueContainer.stringID);
-			value.extension.extendedValue->value.stringValueContainer.stringID = new_id;
+			string_intern_pool.DestroyStringReference(value.extension.extendedValue->stringValueContainer.stringID);
+			value.extension.extendedValue->stringValueContainer.stringID = new_id;
 		}
 	}
 }
@@ -866,8 +875,8 @@ StringInternPool::StringID EvaluableNode::GetAndClearStringIDWithReference()
 		}
 		else
 		{
-			sid = value.extension.extendedValue->value.stringValueContainer.stringID;
-			value.extension.extendedValue->value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
+			sid = value.extension.extendedValue->stringValueContainer.stringID;
+			value.extension.extendedValue->stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
 		}
 	}
 
@@ -892,262 +901,18 @@ void EvaluableNode::SetStringIDWithReferenceHandoff(StringInternPool::StringID i
 			}
 			else
 			{
-				StringInternPool::StringID cur_id = value.extension.extendedValue->value.stringValueContainer.stringID;
+				StringInternPool::StringID cur_id = value.extension.extendedValue->stringValueContainer.stringID;
 				string_intern_pool.DestroyStringReference(cur_id);
-				value.extension.extendedValue->value.stringValueContainer.stringID = id;
+				value.extension.extendedValue->stringValueContainer.stringID = id;
 			}
 		}
 	}
-}
-
-std::vector<StringInternPool::StringID> EvaluableNode::GetLabelsStringIds()
-{
-	if(!HasExtendedValue())
-	{
-		if(HasCompactSingleLabelStorage())
-		{
-			if(GetCompactSingleLabelStorage() == StringInternPool::NOT_A_STRING_ID)
-				return emptyStringIdVector;
-
-			std::vector<StringInternPool::StringID> label_vec;
-			label_vec.push_back(GetCompactSingleLabelStorage());
-			return label_vec;
-		}
-
-		return emptyStringIdVector;
-	}
-
-	return value.extension.extendedValue->labelsStringIds;
-}
-
-std::vector<std::string> EvaluableNode::GetLabelsStrings()
-{
-	if(!HasExtendedValue())
-	{
-		if(HasCompactSingleLabelStorage())
-		{
-			if(GetCompactSingleLabelStorage() == StringInternPool::NOT_A_STRING_ID)
-				return emptyStringVector;
-
-			std::vector<std::string> label_vec;
-			label_vec.push_back(GetLabel(0));
-			return label_vec;
-		}
-
-		return emptyStringVector;
-	}
-
-	auto &sids = value.extension.extendedValue->labelsStringIds;
-	std::vector<std::string> label_vec(sids.size());
-	for(size_t i = 0; i < sids.size(); i++)
-		label_vec[i] = string_intern_pool.GetStringFromID(sids[i]);
-
-	return label_vec;
-}
-
-void EvaluableNode::SetLabelsStringIds(const std::vector<StringInternPool::StringID> &label_string_ids)
-{
-	if(label_string_ids.size() == 0)
-	{
-		ClearLabels();
-		return;
-	}
-
-	//can no longer be idempotent because it could be altered by something collecting labels
-	SetIsIdempotent(false);
-	
-	if(!HasExtendedValue())
-	{
-		if(label_string_ids.size() == 1 && HasCompactSingleLabelStorage())
-		{
-			StringInternPool::StringID cur_id = GetCompactSingleLabelStorage();
-			if(label_string_ids[0] != cur_id)
-			{
-				string_intern_pool.DestroyStringReference(GetCompactSingleLabelStorage());
-				GetCompactSingleLabelStorage() = string_intern_pool.CreateStringReference(label_string_ids[0]);
-			}
-			return;
-		}
-
-		//doesn't have enough storage, so extend and set below
-		EnsureEvaluableNodeExtended();
-	}
-
-	//create new references before destroying old (so don't need to recreate strings if they are freed and then released
-	string_intern_pool.CreateStringReferences(label_string_ids);
-
-	//clear references to anything existing
-	string_intern_pool.DestroyStringReferences(value.extension.extendedValue->labelsStringIds);
-
-	value.extension.extendedValue->labelsStringIds = label_string_ids;
-}
-
-size_t EvaluableNode::GetNumLabels()
-{
-	if(!HasExtendedValue())
-	{
-		if(HasCompactSingleLabelStorage() && GetCompactSingleLabelStorage() != StringInternPool::NOT_A_STRING_ID)
-			return 1;
-
-		return 0;
-	}
-
-	auto &sids = value.extension.extendedValue->labelsStringIds;
-	return sids.size();
-}
-
-std::string EvaluableNode::GetLabel(size_t label_index)
-{
-	if(!HasExtendedValue())
-	{
-		if(HasCompactSingleLabelStorage())
-		{
-			if(label_index != 0)
-				return StringInternPool::EMPTY_STRING;
-
-			return string_intern_pool.GetStringFromID(GetCompactSingleLabelStorage());
-		}
-
-		return StringInternPool::EMPTY_STRING;
-	}
-
-	auto &sids = value.extension.extendedValue->labelsStringIds;
-	if(label_index >= sids.size())
-		return StringInternPool::EMPTY_STRING;
-	else
-		return string_intern_pool.GetStringFromID(sids[label_index]);
-}
-
-const StringInternPool::StringID EvaluableNode::GetLabelStringId(size_t label_index)
-{
-	if(!HasExtendedValue())
-	{
-		if(HasCompactSingleLabelStorage())
-		{
-			if(label_index != 0)
-				return StringInternPool::NOT_A_STRING_ID;
-
-			return GetCompactSingleLabelStorage();
-		}
-
-		return StringInternPool::NOT_A_STRING_ID;
-	}
-
-	auto &sids = value.extension.extendedValue->labelsStringIds;
-	if(label_index >= sids.size())
-		return StringInternPool::NOT_A_STRING_ID;
-	else
-		return sids[label_index];
-}
-
-void EvaluableNode::RemoveLabel(size_t label_index)
-{
-	if(HasCompactSingleLabelStorage())
-	{
-		if(label_index == 0)
-		{
-			string_intern_pool.DestroyStringReference(GetCompactSingleLabelStorage());
-			GetCompactSingleLabelStorage() = StringInternPool::NOT_A_STRING_ID;
-		}
-
-		return;
-	}
-
-	if(!HasExtendedValue())
-		return;
-
-	if(label_index >= value.extension.extendedValue->labelsStringIds.size())
-		return;
-
-	string_intern_pool.DestroyStringReference(value.extension.extendedValue->labelsStringIds[label_index]);
-	value.extension.extendedValue->labelsStringIds.erase(begin(value.extension.extendedValue->labelsStringIds) + label_index);
-}
-
-void EvaluableNode::ClearLabels()
-{
-	if(HasCompactSingleLabelStorage())
-	{
-		string_intern_pool.DestroyStringReference(GetCompactSingleLabelStorage());
-		GetCompactSingleLabelStorage() = StringInternPool::NOT_A_STRING_ID;
-		return;
-	}
-
-	if(!HasExtendedValue())
-		return;
-
-	string_intern_pool.DestroyStringReferences(value.extension.extendedValue->labelsStringIds);
-	value.extension.extendedValue->labelsStringIds.clear();
-}
-
-void EvaluableNode::ReserveLabels(size_t num_labels)
-{
-	if(num_labels == 0)
-		return;
-
-	//see if compact storage is good enough
-	if(HasCompactSingleLabelStorage() && num_labels <= 1)
-		return;
-
-	if(!HasExtendedValue())
-		EnsureEvaluableNodeExtended();
-
-	value.extension.extendedValue->labelsStringIds.reserve(num_labels);
-}
-
-void EvaluableNode::AppendLabelStringId(StringInternPool::StringID label_string_id, bool handoff_reference)
-{
-	//can no longer be idempotent because it could be altered by something collecting labels
-	SetIsIdempotent(false);
-
-	if(!handoff_reference)
-		string_intern_pool.CreateStringReference(label_string_id);
-
-	if(HasCompactSingleLabelStorage() && GetCompactSingleLabelStorage() == StringInternPool::NOT_A_STRING_ID)
-	{
-		GetCompactSingleLabelStorage() = label_string_id;
-		return;
-	}
-
-	if(!HasExtendedValue())
-		EnsureEvaluableNodeExtended();
-
-	value.extension.extendedValue->labelsStringIds.push_back(label_string_id);
-}
-
-void EvaluableNode::AppendLabel(const std::string &label)
-{
-	//can no longer be idempotent because it could be altered by something collecting labels
-	SetIsIdempotent(false);
-
-	if(HasCompactSingleLabelStorage() && GetCompactSingleLabelStorage() == StringInternPool::NOT_A_STRING_ID)
-	{
-		GetCompactSingleLabelStorage() = string_intern_pool.CreateStringReference(label);
-		return;
-	}
-
-	if(!HasExtendedValue())
-		EnsureEvaluableNodeExtended();
-
-	value.extension.extendedValue->labelsStringIds.push_back(string_intern_pool.CreateStringReference(label));
-}
-
-StringInternPool::StringID EvaluableNode::GetCommentsStringId()
-{
-	if(!HasExtendedValue())
-		return StringInternPool::NOT_A_STRING_ID;
-
-	return value.extension.commentsStringId;
 }
 
 std::vector<std::string> EvaluableNode::GetCommentsSeparateLines()
 {
 	std::vector<std::string> comment_lines;
-
-	StringInternPool::StringID comment_sid = GetCommentsStringId();
-	if(comment_sid == string_intern_pool.NOT_A_STRING_ID || comment_sid == string_intern_pool.emptyStringId)
-		return comment_lines;
-
-	auto &full_comments = string_intern_pool.GetStringFromID(comment_sid);
+	auto &full_comments = GetCommentsString();
 
 	//early exit
 	if(full_comments.empty())
@@ -1252,7 +1017,7 @@ void EvaluableNode::AppendComments(const std::string &comment)
 	}
 	else //already has comments, so append more
 	{
-		std::string appended = GetCommentsString();
+		std::string appended(GetCommentsString());
 		appended.append(comment);
 
 		SetComments(appended);
@@ -1277,7 +1042,7 @@ void EvaluableNode::InitOrderedChildNodes()
 	DestructValue();
 
 	if(HasExtendedValue())
-		value.extension.extendedValue->value.ConstructOrderedChildNodes();
+		value.extension.extendedValue->ConstructOrderedChildNodes();
 	else
 		value.ConstructOrderedChildNodes();
 }
@@ -1385,7 +1150,7 @@ void EvaluableNode::InitMappedChildNodes()
 	if(!HasExtendedValue())
 		value.ConstructMappedChildNodes();
 	else
-		value.extension.extendedValue->value.ConstructMappedChildNodes();
+		value.extension.extendedValue->ConstructMappedChildNodes();
 }
 
 EvaluableNode **EvaluableNode::GetMappedChildNode(const StringInternPool::StringID sid)
@@ -1628,35 +1393,35 @@ void EvaluableNode::EnsureEvaluableNodeExtended()
 	if(HasExtendedValue())
 		return;
 
-	EvaluableNodeExtendedValue *ev = new EvaluableNodeExtendedValue;
+	EvaluableNodeValue *ev = new EvaluableNodeValue;
 
 	switch(GetType())
 	{
 	case ENT_BOOL:
-		ev->value.boolValueContainer.boolValue = value.boolValueContainer.boolValue;
+		ev->boolValueContainer.boolValue = value.boolValueContainer.boolValue;
 		if(value.boolValueContainer.labelStringID != StringInternPool::NOT_A_STRING_ID)
 			ev->labelsStringIds.push_back(value.boolValueContainer.labelStringID);
 		break;
 	case ENT_NUMBER:
-		ev->value.numberValueContainer.numberValue = value.numberValueContainer.numberValue;
+		ev->numberValueContainer.numberValue = value.numberValueContainer.numberValue;
 		if(value.numberValueContainer.labelStringID != StringInternPool::NOT_A_STRING_ID)
 			ev->labelsStringIds.push_back(value.numberValueContainer.labelStringID);
 		break;
 	case ENT_STRING:
 	case ENT_SYMBOL:
-		ev->value.stringValueContainer.stringID = value.stringValueContainer.stringID;
+		ev->stringValueContainer.stringID = value.stringValueContainer.stringID;
 		if(value.stringValueContainer.labelStringID != StringInternPool::NOT_A_STRING_ID)
 			ev->labelsStringIds.push_back(value.stringValueContainer.labelStringID);
 		break;
 	case ENT_ASSOC:
-		ev->value.ConstructMappedChildNodes();	//construct an empty mappedChildNodes to swap out
-		ev->value.mappedChildNodes = std::move(value.mappedChildNodes);
+		ev->ConstructMappedChildNodes();	//construct an empty mappedChildNodes to swap out
+		ev->mappedChildNodes = std::move(value.mappedChildNodes);
 		value.DestructMappedChildNodes();
 		break;
 	//otherwise it's uninitialized, so treat as ordered
 	default: //all other opcodes
-		ev->value.ConstructOrderedChildNodes();	//construct an empty orderedChildNodes to swap out
-		ev->value.orderedChildNodes = std::move(value.orderedChildNodes);
+		ev->ConstructOrderedChildNodes();	//construct an empty orderedChildNodes to swap out
+		ev->orderedChildNodes = std::move(value.orderedChildNodes);
 		value.DestructOrderedChildNodes();
 		break;
 	}
@@ -1673,15 +1438,15 @@ void EvaluableNode::DestructValue()
 		switch(GetType())
 		{
 		case ENT_BOOL:
-			string_intern_pool.DestroyStringReference(value.boolValueContainer.labelStringID);
+			AnnotationAndComment::Destruct(value.boolValueContainer.annotationAndComment);
 			break;
 		case ENT_NUMBER:
-			string_intern_pool.DestroyStringReference(value.numberValueContainer.labelStringID);
+			AnnotationAndComment::Destruct(value.numberValueContainer.annotationAndComment);
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:
 			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
-			string_intern_pool.DestroyStringReference(value.stringValueContainer.labelStringID);
+			AnnotationAndComment::Destruct(value.stringValueContainer.annotationAndComment);
 			break;
 		case ENT_ASSOC:
 			value.DestructMappedChildNodes();
@@ -1694,6 +1459,7 @@ void EvaluableNode::DestructValue()
 	}
 	else
 	{
+		//TODO 24298: can this be streamlined and/or merged with above above?
 		switch(GetType())
 		{
 		case ENT_BOOL:
@@ -1702,14 +1468,14 @@ void EvaluableNode::DestructValue()
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:
-			string_intern_pool.DestroyStringReference(value.extension.extendedValue->value.stringValueContainer.stringID);
+			string_intern_pool.DestroyStringReference(value.extension.extendedValue->stringValueContainer.stringID);
 			break;
 		case ENT_ASSOC:
-			value.extension.extendedValue->value.DestructMappedChildNodes();
+			value.extension.extendedValue->DestructMappedChildNodes();
 			break;
 		//otherwise it's uninitialized, so treat as ordered
 		default:
-			value.extension.extendedValue->value.DestructOrderedChildNodes();
+			value.extension.extendedValue->DestructOrderedChildNodes();
 			break;
 		}
 	}
@@ -1726,15 +1492,15 @@ void EvaluableNode::Invalidate()
 		switch(GetType())
 		{
 		case ENT_BOOL:
-			string_intern_pool.DestroyStringReference(value.boolValueContainer.labelStringID);
+			AnnotationAndComment::Destruct(value.boolValueContainer.annotationAndComment);
 			break;
 		case ENT_NUMBER:
-			string_intern_pool.DestroyStringReference(value.numberValueContainer.labelStringID);
+			AnnotationAndComment::Destruct(value.numberValueContainer.annotationAndComment);
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:
 			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
-			string_intern_pool.DestroyStringReference(value.stringValueContainer.labelStringID);
+			AnnotationAndComment::Destruct(value.stringValueContainer.annotationAndComment);
 			break;
 		case ENT_ASSOC:
 			value.DestructMappedChildNodes();
@@ -1755,7 +1521,7 @@ void EvaluableNode::Invalidate()
 		value.numberValueContainer.numberValue = 0;
 	#endif
 
-		value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
 		return;
 	}
 
@@ -1768,14 +1534,14 @@ void EvaluableNode::Invalidate()
 		break;
 	case ENT_STRING:
 	case ENT_SYMBOL:
-		string_intern_pool.DestroyStringReference(value.extension.extendedValue->value.stringValueContainer.stringID);
+		string_intern_pool.DestroyStringReference(value.extension.extendedValue->stringValueContainer.stringID);
 		break;
 	case ENT_ASSOC:
-		value.extension.extendedValue->value.DestructMappedChildNodes();
+		value.extension.extendedValue->DestructMappedChildNodes();
 		break;
 	//otherwise it's uninitialized, so treat as ordered
 	default:
-		value.extension.extendedValue->value.DestructOrderedChildNodes();
+		value.extension.extendedValue->DestructOrderedChildNodes();
 		break;
 	}
 
@@ -1795,7 +1561,7 @@ void EvaluableNode::Invalidate()
 	value.numberValueContainer.numberValue = 0;
 #endif
 
-	value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+	AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
 }
 
 bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNode *b, ReferenceAssocType *checked)

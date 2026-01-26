@@ -93,7 +93,7 @@ public:
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		SetIsIdempotent(true);
 		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
-		value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		AnnotationAndComment::Construct(value.stringValueContainer.annotationAndComment);
 	}
 
 	inline void InitializeType(EvaluableNodeType _type, StringInternPool::StringID string_id)
@@ -112,7 +112,7 @@ public:
 		{
 			type = _type;
 			value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_id);
-			value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+			AnnotationAndComment::Construct(value.stringValueContainer.annotationAndComment);
 		}
 	}
 
@@ -133,7 +133,7 @@ public:
 		{
 			type = _type;
 			value.stringValueContainer.stringID = string_id;
-			value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+			AnnotationAndComment::Construct(value.stringValueContainer.annotationAndComment);
 		}
 	}
 
@@ -149,8 +149,8 @@ public:
 		{
 			type = ENT_NUMBER;
 			SetIsIdempotent(true);
-			value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 			value.numberValueContainer.numberValue = number_value;
+			AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
 		}
 	}
 
@@ -159,8 +159,8 @@ public:
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		type = ENT_BOOL;
 		SetIsIdempotent(true);
-		value.boolValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 		value.boolValueContainer.boolValue = bool_value;
+		AnnotationAndComment::Construct(value.boolValueContainer.annotationAndComment);
 	}
 
 	//initializes to ENT_UNINITIALIZED
@@ -183,20 +183,20 @@ public:
 
 		if(DoesEvaluableNodeTypeUseBoolData(_type))
 		{
-			value.boolValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+			AnnotationAndComment::Construct(value.boolValueContainer.annotationAndComment);
 			value.boolValueContainer.boolValue = false;
 			SetIsIdempotent(true);
 		}
 		else if(DoesEvaluableNodeTypeUseNumberData(_type))
 		{
-			value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+			AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
 			value.numberValueContainer.numberValue = 0.0;
 			SetIsIdempotent(true);
 		}
 		else if(DoesEvaluableNodeTypeUseStringData(_type))
 		{
 			value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
-			value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+			AnnotationAndComment::Construct(value.stringValueContainer.annotationAndComment);
 			SetIsIdempotent(_type == ENT_STRING);
 		}
 		else if(DoesEvaluableNodeTypeUseAssocData(_type))
@@ -214,7 +214,7 @@ public:
 			value.numberValueContainer.numberValue = 0;
 		#endif
 
-			value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+			AnnotationAndComment::Construct(value.numberValueContainer.annotationAndComment);
 		}
 		else
 		{
@@ -222,8 +222,8 @@ public:
 		}
 	}
 
-	//sets the value of the node to that of n and the copy_* parameters indicate what metadata should be copied
-	void InitializeType(EvaluableNode *n, bool copy_labels = true, bool copy_comments_and_concurrency = true);
+	//sets the value of the node to that of n and coppies metadata if copy_metadata is true
+	void InitializeType(EvaluableNode *n, bool copy_metadata = true);
 
 	//copies the EvaluableNode n into this.  Does not overwrite labels or comments.
 	void CopyValueFrom(EvaluableNode *n);
@@ -242,9 +242,8 @@ public:
 	//returns true if the node has any metadata
 	__forceinline bool HasMetadata()
 	{
-		return (GetNumLabels() > 0
-			|| GetCommentsStringId() != StringInternPool::NOT_A_STRING_ID
-			|| GetConcurrency());
+		auto &a_and_c = GetAnnotationAndCommentStorage();
+		return (a_and_c.HasCommentOrAnnotation()  || GetConcurrency());
 	}
 
 	//Returns true if the immediate data structure of a is equal to b
@@ -600,55 +599,32 @@ public:
 	//sets the string but does not create a new reference because the reference has already been created
 	void SetStringIDWithReferenceHandoff(StringInternPool::StringID id);
 
-	//functions for getting and setting labels by string or by StringID
-	// all Label functions perform any reference counting management necessary when setting and clearing
-	std::vector<StringInternPool::StringID> GetLabelsStringIds();
-	std::vector<std::string> GetLabelsStrings();
-	void SetLabelsStringIds(const std::vector<StringInternPool::StringID> &label_string_ids);
-	size_t GetNumLabels();
-	std::string GetLabel(size_t label_index);
-	const StringInternPool::StringID GetLabelStringId(size_t label_index);
-	void RemoveLabel(size_t label_index);
-	void ClearLabels();
-	//reserves the specified number of labels
-	void ReserveLabels(size_t num_labels);
-	//if handoff_reference is true, then it will not create a new reference but assume one has already been created
-	void AppendLabelStringId(StringInternPool::StringID label_string_id, bool handoff_reference = false);
-	void AppendLabel(const std::string &label);
-
-	StringInternPool::StringID GetAnnotationStringId()
+	//returns a string_view of the annotation string
+	inline std::string_view GetAnnotationString()
 	{
-		//TODO 24298: implement this
-		return string_intern_pool.NOT_A_STRING_ID;
+		auto &a_and_c = GetAnnotationAndCommentStorage();
+		return a_and_c.GetAnnotation();
 	}
 
-	inline const std::string &GetAnnotationString()
+	//sets the annotation_string
+	void SetAnnotationString(std::string_view s)
 	{
-		return string_intern_pool.GetStringFromID(GetAnnotationStringId());
+		auto &a_and_c = GetAnnotationAndCommentStorage();
+		a_and_c.SetAnnotation(s);
 	}
 
-	void SetAnnotationStringId(StringInternPool::StringID &sid, bool handoff_reference = false)
+	//functions for getting and setting node comments by string
+	inline std::string_view GetCommentsString()
 	{
-		//TODO 24298: implement this
-	}
-
-	void SetAnnotationString(std::string &s)
-	{
-		//TODO 24298: implement this
-	}
-
-	//functions for getting and setting node comments by string or by StringID
-	// all Comment functions perform any reference counting management necessary when setting and clearing
-	StringInternPool::StringID GetCommentsStringId();
-	inline const std::string &GetCommentsString()
-	{
-		return string_intern_pool.GetStringFromID(GetCommentsStringId());
+		auto &a_and_c = GetAnnotationAndCommentStorage();
+		return a_and_c.GetComment();
 	}
 
 	//returns true if has comments
 	inline bool HasComments()
 	{
-		return GetCommentsStringId() != string_intern_pool.NOT_A_STRING_ID;
+		//TODO 24298: implement this, and implement HasAnnotations, use method in object to not have to get the full string length
+		return false;
 	}
 
 	//splits comment lines and returns a vector of strings of the comment
@@ -963,8 +939,8 @@ public:
 	}
 
 protected:
-	//defined since it is used as a pointer in EvaluableNodeValue
-	struct EvaluableNodeExtendedValue;
+	//defined since it is used as a pointer
+	class AnnotationAndComment;
 public:
 
 	//assumes that the EvaluableNode is of type ENT_BOOL, and returns the value by reference
@@ -973,7 +949,7 @@ public:
 		if(!HasExtendedValue())
 			return value.boolValueContainer.boolValue;
 		else
-			return value.extension.extendedValue->value.boolValueContainer.boolValue;
+			return value.extension.extendedValue->boolValueContainer.boolValue;
 	}
 
 	//assumes that the EvaluableNode is of type ENT_NUMBER, and returns the value by reference
@@ -982,7 +958,7 @@ public:
 		if(!HasExtendedValue())
 			return value.numberValueContainer.numberValue;
 		else
-			return value.extension.extendedValue->value.numberValueContainer.numberValue;
+			return value.extension.extendedValue->numberValueContainer.numberValue;
 	}
 
 	//assumes that the EvaluableNode is of type that holds a string, and returns the value by reference
@@ -991,7 +967,7 @@ public:
 		if(!HasExtendedValue())
 			return value.stringValueContainer.stringID;
 		else
-			return value.extension.extendedValue->value.stringValueContainer.stringID;
+			return value.extension.extendedValue->stringValueContainer.stringID;
 	}
 
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
@@ -1000,7 +976,7 @@ public:
 		if(!HasExtendedValue())
 			return value.orderedChildNodes;
 		else
-			return value.extension.extendedValue->value.orderedChildNodes;
+			return value.extension.extendedValue->orderedChildNodes;
 	}
 
 	//assumes that the EvaluableNode is has mapped child nodes, and returns the value by reference
@@ -1009,7 +985,7 @@ public:
 		if(!HasExtendedValue())
 			return value.mappedChildNodes;
 		else
-			return value.extension.extendedValue->value.mappedChildNodes;
+			return value.extension.extendedValue->mappedChildNodes;
 	}
 
 	//if it is storing an immediate value and has room to store a label
@@ -1018,16 +994,16 @@ public:
 		return ((type == ENT_BOOL || type == ENT_NUMBER || type == ENT_STRING || type == ENT_SYMBOL) && !HasExtendedValue());
 	}
 
-	//returns a reference to the storage location for a single label
+	//returns a reference to the storage location for the annotation and comment storage
 	// will only return valid results if HasCompactSingleLabelStorage() is true, so that should be called first
-	__forceinline StringInternPool::StringID &GetCompactSingleLabelStorage()
+	__forceinline AnnotationAndComment &GetAnnotationAndCommentStorage()
 	{
 		if(type == ENT_BOOL)
-			return value.boolValueContainer.labelStringID;
+			return value.boolValueContainer.annotationAndComment;
 		if(type == ENT_NUMBER)
-			return value.numberValueContainer.labelStringID;
+			return value.numberValueContainer.annotationAndComment;
 		//else assume type == ENT_STRING || type == ENT_SYMBOL
-		return value.stringValueContainer.labelStringID;
+		return value.stringValueContainer.annotationAndComment;
 	}
 
 	//registers and unregisters an EvaluableNode for debug watching
@@ -1064,6 +1040,16 @@ protected:
 	class AnnotationAndComment
 	{
 	public:
+		__forceinline static void Construct(AnnotationAndComment &a_and_c)
+		{
+			new (&a_and_c) AnnotationAndComment;
+		}
+
+		__forceinline static void Destruct(AnnotationAndComment &a_and_c)
+		{
+			a_and_c.~AnnotationAndComment();
+		}
+
 		AnnotationAndComment() = default;
 		AnnotationAndComment(std::string_view annotation, std::string_view comment)
 		{
@@ -1095,14 +1081,22 @@ protected:
 		//replace both strings
 		void SetAnnotationAndComment(std::string_view new_annotation, std::string_view new_comment)
 		{
+			if(new_annotation.empty() && new_comment.empty())
+			{
+				buffer.reset();
+				return;
+			}
+
 			//total size includes two null terminators
 			std::size_t total_size = new_annotation.size() + 1 + new_comment.size() + 1;
 			auto tmp = std::make_unique<char[]>(total_size);
 
 			char *dest = tmp.get();
+
 			//copy annotation
 			std::memcpy(dest, new_annotation.data(), new_annotation.size());
 			dest[new_annotation.size()] = '\0';
+
 			//copy comment
 			std::memcpy(dest + new_annotation.size() + 1, new_comment.data(), new_comment.size());
 			dest[total_size - 1] = '\0';
@@ -1122,10 +1116,36 @@ protected:
 			SetAnnotationAndComment(GetAnnotation(), new_comment);
 		}
 
+		bool HasAnnotation()
+		{
+			return buffer && buffer[0] != '\0';
+		}
+
+		bool HasComment()
+		{
+			if(!buffer)
+				return false;
+
+			const char *p = buffer.get() + std::strlen(buffer.get()) + 1;
+			return *p != '\0';
+		}
+
+		//slightly more efficient than HasAnnotation() || HasComment()
+		bool HasCommentOrAnnotation() const noexcept
+		{
+			if(!buffer)
+				return false;
+
+			const char *p = buffer.get();
+			if(*p != '\0') return true;
+
+			p += std::strlen(p) + 1;
+			return *p != '\0';
+		}
+
 	private:
 		std::unique_ptr<char[]> buffer;
 	};
-
 
 	//align to the nearest 2-bytes to minimize alignment issues but reduce the overall memory footprint
 	// while maintaining some alignment
@@ -1164,8 +1184,7 @@ protected:
 			//string value
 			StringInternPool::StringID stringID;
 
-			//allow up to one label -- only used when not part of an extended value
-			StringInternPool::StringID labelStringID;
+			AnnotationAndComment annotationAndComment;
 		} stringValueContainer;
 
 		//when type represents a number, holds the corresponding value
@@ -1174,8 +1193,7 @@ protected:
 			//number value
 			double numberValue;
 
-			//allow up to one label -- only used when not part of an extended value
-			StringInternPool::StringID labelStringID;
+			AnnotationAndComment annotationAndComment;
 		} numberValueContainer;
 
 		//when type represents a bool, holds the corresponding value
@@ -1184,29 +1202,18 @@ protected:
 			//bool value
 			bool boolValue;
 
-			//allow up to one label -- only used when not part of an extended value
-			StringInternPool::StringID labelStringID;
+			AnnotationAndComment annotationAndComment;
 		} boolValueContainer;
 
 		struct EvaluableNodeExtension
 		{
 			//pointer to store any extra data if EvaluableNode needs multiple fields
-			EvaluableNodeExtendedValue *extendedValue;
+			EvaluableNodeValue *extendedValue;
 
-			//comments that appear just above the code represented by this node
-			StringInternPool::StringID commentsStringId;
+			AnnotationAndComment annotationAndComment;
 		} extension;
 	};
 #pragma pack(pop)
-
-	struct EvaluableNodeExtendedValue
-	{
-		//value stored here
-		EvaluableNodeValue value;
-
-		//labels of the node for referencing and querying
-		std::vector<StringInternPool::StringID> labelsStringIds;
-	};
 
 	//makes sure that the extendedValue is set appropriately so that it can be used to hold additional data
 	void EnsureEvaluableNodeExtended();

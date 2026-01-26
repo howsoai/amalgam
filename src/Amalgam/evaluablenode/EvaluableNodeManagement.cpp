@@ -28,42 +28,6 @@ EvaluableNodeManager::~EvaluableNodeManager()
 		delete n;
 }
 
-EvaluableNode *EvaluableNodeManager::AllocNode(EvaluableNode *original, EvaluableNodeMetadataModifier metadata_modifier)
-{
-	EvaluableNode *n = AllocUninitializedNode();
-	n->InitializeType(original, metadata_modifier == ENMM_NO_CHANGE, metadata_modifier != ENMM_REMOVE_ALL);
-
-	if(metadata_modifier == ENMM_LABEL_ESCAPE_INCREMENT)
-	{
-		size_t num_labels = original->GetNumLabels();
-		n->ReserveLabels(num_labels);
-
-		//add # in front
-		for(size_t i = 0; i < num_labels; i++)
-		{
-			std::string label = "#" + original->GetLabel(i);
-			n->AppendLabel(label);
-		}
-	}
-	else if(metadata_modifier == ENMM_LABEL_ESCAPE_DECREMENT)
-	{
-		size_t num_labels = original->GetNumLabels();
-		n->ReserveLabels(num_labels);
-
-		//remove # in front
-		for(size_t i = 0; i < num_labels; i++)
-		{
-			std::string label = original->GetLabel(i);
-			if(label.size() > 0 && label[0] == '#')
-				label = label.substr(1);
-
-			n->AppendLabel(label);
-		} 
-	}
-
-	return n;
-}
-
 void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_nodes)
 {
 	//assume at least a factor larger than the base memory usage for the entity
@@ -443,67 +407,6 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
 }
 
-void EvaluableNodeManager::ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataModifier metadata_modifier)
-{
-	size_t num_labels = n->GetNumLabels();
-	if(num_labels == 0)
-		return;
-
-	if(metadata_modifier == ENMM_NO_CHANGE)
-		return;
-
-	if(metadata_modifier == ENMM_REMOVE_ALL)
-	{
-		n->ClearLabels();
-		n->ClearComments();
-		return;
-	}
-
-	if(num_labels == 1)
-	{
-		std::string label_string = n->GetLabel(0);
-		n->ClearLabels();
-
-		if(metadata_modifier == ENMM_LABEL_ESCAPE_INCREMENT)
-		{
-			label_string.insert(begin(label_string), '#');
-			n->AppendLabel(label_string);
-		}
-		else if(metadata_modifier == ENMM_LABEL_ESCAPE_DECREMENT)
-		{
-			//remove # in front
-			if(label_string.size() > 0 && label_string[0] == '#')
-				label_string.erase(begin(label_string));
-
-			n->AppendLabel(label_string);
-		}
-
-		return;
-	}
-
-	//remove all labels and turn into strings
-	auto string_labels = n->GetLabelsStrings();
-	n->ClearLabels();
-
-	if(metadata_modifier == ENMM_LABEL_ESCAPE_INCREMENT)
-	{
-		//add # in front
-		for(auto &label : string_labels)
-			n->AppendLabel("#" + label);
-	}
-	else if(metadata_modifier == ENMM_LABEL_ESCAPE_DECREMENT)
-	{
-		//remove # in front
-		for(auto &label : string_labels)
-		{
-			if(label.size() > 0 && label[0] == '#')
-				label = label.substr(1);
-
-			n->AppendLabel(label);
-		}
-	}
-}
-
 size_t EvaluableNodeManager::GetEstimatedTotalReservedSizeInBytes()
 {
 #ifdef MULTITHREAD_SUPPORT
@@ -557,8 +460,7 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNod
 	}
 }
 
-EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en,
-	EvaluableNodeMetadataModifier metadata_modifier)
+EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bool copy_metadata)
 {
 	if(en == nullptr)
 		return EvaluableNodeReference::Null();
@@ -568,7 +470,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en,
 	{
 		nodeMarkBuffer.clear();
 
-		EvaluableNode *root_copy = AllocNode(en, metadata_modifier);
+		EvaluableNode *root_copy = AllocNode(en, copy_metadata);
 		nodeMarkBuffer.push_back(root_copy);
 
 		//walk the tree depth‑first using the buffer as a stack
@@ -584,7 +486,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en,
 					if(child == nullptr)
 						continue;
 
-					EvaluableNode *child_copy = AllocNode(child, metadata_modifier);
+					EvaluableNode *child_copy = AllocNode(child, copy_metadata);
 					child = child_copy;
 					nodeMarkBuffer.push_back(child_copy);
 				}
@@ -596,7 +498,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en,
 					if(child == nullptr)
 						continue;
 
-					EvaluableNode *child_copy = AllocNode(child, metadata_modifier);
+					EvaluableNode *child_copy = AllocNode(child, copy_metadata);
 					child = child_copy;
 					nodeMarkBuffer.push_back(child_copy);
 				}
@@ -606,7 +508,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en,
 		return EvaluableNodeReference(root_copy, true);
 	}
 
-	DeepAllocCopyParams dacp(metadata_modifier);
+	DeepAllocCopyParams dacp(copy_metadata);
 	auto [copy, need_cycle_check] = DeepAllocCopyRecurse(en, dacp);
 	return EvaluableNodeReference(copy, true);
 }
@@ -622,7 +524,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 	if(!inserted)
 		return std::make_pair(inserted_copy->second, true);
 
-	EvaluableNode *copy = AllocNode(tree, dacp.labelModifier);
+	EvaluableNode *copy = AllocNode(tree, dacp.copyMetadata);
 
 	//shouldn't happen, but just to be safe
 	if(copy == nullptr)
@@ -675,66 +577,6 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 	}
 
 	return std::make_pair(copy, copy->GetNeedCycleCheck());
-}
-
-void EvaluableNodeManager::ModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNode::ReferenceSetType &checked, EvaluableNodeMetadataModifier metadata_modifier)
-{
-	//attempt to insert; if new, mark as not needing a cycle check yet
-	// though that may be changed when child nodes are evaluated below
-	auto [_, inserted] = checked.insert(tree);
-	if(inserted)
-		tree->SetNeedCycleCheck(false);
-	else //already exists, nothing to do
-		return;
-
-	ModifyLabels(tree, metadata_modifier);
-
-	if(tree->IsAssociativeArray())
-	{
-		for(auto &[cn_id, cn] : tree->GetMappedChildNodesReference())
-		{
-			if(cn == nullptr)
-				continue;
-
-			ModifyLabelsForNodeTree(cn, checked, metadata_modifier);
-		}
-	}
-	else if(!tree->IsImmediate())
-	{
-		for(auto cn : tree->GetOrderedChildNodesReference())
-		{
-			if(cn == nullptr)
-				continue;
-
-			ModifyLabelsForNodeTree(cn, checked, metadata_modifier);
-		}		
-	}
-}
-
-void EvaluableNodeManager::NonCycleModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier)
-{
-	ModifyLabels(tree, metadata_modifier);
-
-	if(tree->IsAssociativeArray())
-	{
-		for(auto &[_, cn] : tree->GetMappedChildNodesReference())
-		{
-			if(cn == nullptr)
-				continue;
-
-			NonCycleModifyLabelsForNodeTree(cn, metadata_modifier);
-		}
-	}
-	else if(!tree->IsImmediate())
-	{
-		for(auto cn : tree->GetOrderedChildNodesReference())
-		{
-			if(cn == nullptr)
-				continue;
-
-			NonCycleModifyLabelsForNodeTree(cn, metadata_modifier);
-		}
-	}
 }
 
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in_use)
@@ -823,7 +665,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 		return std::make_pair(true, tree->GetIsIdempotent());
 	}
 
-	bool is_idempotent = (IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType()) && (tree->GetNumLabels() == 0));
+	bool is_idempotent = IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType());
 	tree->SetIsIdempotent(is_idempotent);
 
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY

@@ -974,35 +974,19 @@ var data = [
 	},
 
 	{
-		"parameter" : "get_labels * node",
-		"output" : "list of string",
+		"parameter" : "get_annotations * node",
+		"output" : "string",
 		"new value" : "new",
-		"description" : "Returns a list of strings comprising all of the labels for the particular node of *.",
-		"example" : "(print (get_labels ( #labelA lambda #labelB .true)))"
+		"description" : "Returns a strings comprising all of the annotations for the input node.",
+		"example" : "(print (get_annotations\n  #this is an annotation\n  (lambda #annotation \n    .true)))"
 	},
 
 	{
-		"parameter" : "get_all_labels * node",
-		"output" : "assoc",
-		"new value" : "new",
-		"description" : "Returns an associative list of the labels for the node of code and everything underneath it, where the index is the label and the value is the reference to *.",
-		"example" : "(print (get_all_labels (lambda (#label21 print \"hello world: \" (* #label-number-22 3 4) #label23 \" and \" (* 1 2) )) ))\n(print (get_all_labels (lambda\n  ( #labelA #labelQ * #labelB\n    (+ 1 #labelA 3) 2))))"
-	},
-
-	{
-		"parameter" : "set_labels * node (list [string new_label1]...[string new_labelN])",
+		"parameter" : "set_annotations * node [string new_annotation]",
 		"output" : "*",
 		"new value" : "partial",
-		"description" : "Sets the labels for the node of code. Evaluates to the node represented by the input node.",
-		"example" : "(print (set_labels\n  ( lambda\n   (#labelC true)) (list \"labelD\" \"labelE\")))"
-	},
-
-	{
-		"parameter" : "zip_labels list labels * to_add_labels",
-		"output" : "*",
-		"new value" : "partial",
-		"description" : "For each of the values in to_add_labels, it takes respective value for labels and applies that string as a label to the respective value, and returns a new set of values with the labels.",
-		"example" : "(print (zip_labels (list \"l1\" \"l2\" \"l3\") (list 1 2 3)))"
+		"description" : "Sets the annotations for the node of code. Evaluates to an updated node.",
+		"example" : "(print (set_annotations\n  #this is an annotation\n  (lambda #annotation too\n    .true) \"new annotation\"))"
 	},
 
 	{
@@ -1017,7 +1001,7 @@ var data = [
 		"parameter" : "set_comments * node [string new_comment]",
 		"output" : "*",
 		"new value" : "partial",
-		"description" : "Sets the comments for the node of code. Evaluates to the node represented by new_comment.",
+		"description" : "Sets the comments for the node of code. Evaluates to an updated node.",
 		"example" : "(print (set_comments\n  ;this is a comment\n  (lambda ;comment too\n    .true) \"new comment\"))"
 	},
 
@@ -1041,15 +1025,15 @@ var data = [
 		"parameter" : "get_value * node",
 		"output" : "*",
 		"new value" : "new",
-		"description" : "Returns just the value portion of node (no labels or comments). Will evaluate to a copy of the value if it is not a unique reference, making it useful to ensure that the copy of the data is unique.",
-		"example" : "(print (get_value\n  ;this is a comment\n  (lambda ;comment too\n    #withalabel .true)))"
+		"description" : "Returns just the value portion of node (no annotations, comments, or concurrency). Will evaluate to a copy of the value if it is not a unique reference, making it useful to ensure that the copy of the data is unique.",
+		"example" : "(print (get_value\n  ;this is a comment\n  (lambda ;comment too\n .true)))"
 	},
 
 	{
 		"parameter" : "set_value * target * val",
 		"output" : "*",
 		"new value" : "partial",
-		"description" : "Sets target's value to the value of val, keeping existing labels, and comments).",
+		"description" : "Sets target's value to the value of val, keeping existing annotations, comments, and concurrency).",
 		"example" : "(print (set_value\n  ;this is a comment\n  (lambda ;comment too\n    .true) 3))"
 	},
 
@@ -1129,7 +1113,7 @@ var data = [
 		"parameter" : "total_size * node",
 		"output" : "number",
 		"new value" : "new",
-		"description" : "Evaluates to the total count of all of the nodes referenced within the input node. Each label on a node counts for an additional node.  The volume of data in an individual node (such as in a string) counts as an additional node for each 48 characters.",
+		"description" : "Evaluates to the total count of all of the nodes referenced within the input node. The volume of data in an individual node (such as in a string) counts as an additional node for each 48 characters.",
 		"example" : "(print (total_size (list 1 2 3 (assoc \"a\" 3 \"b\" 4) (list 5 6))))"
 	},
 
@@ -1211,7 +1195,7 @@ var data = [
 		"output" : "id_path",
 		"permissions" : "entity",
 		"new value" : "new",
-		"description" : "Creates a mutated version of the entity specified by entity1 like mutate. Returns the id_path of a new entity created contained by the entity that ran it.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses entity2 as the optional destination via an internal call to create_contained_entity. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, delete_elements, and change_label.",
+		"description" : "Creates a mutated version of the entity specified by entity1 like mutate. Returns the id_path of a new entity created contained by the entity that ran it.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses entity2 as the optional destination via an internal call to create_contained_entity. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, and delete_elements.",
 		"example" : "(create_entities\n    \"MutateEntity\"\n  (lambda (list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 (assoc \"a\" 1 \"b\" 2)))\n)\n(mutate_entity \"MutateEntity\" 0.4 \"MutatedEntity\")\n(print (retrieve_entity_root \"MutatedEntity\"))"
 	},
 

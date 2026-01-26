@@ -640,9 +640,7 @@ public:
 		return GetAnnotationsAndCommentsStorage().HasComments();
 	}
 
-	//if handoff_reference is true, then it will not create a new reference but assume one has already been created
-	void SetCommentsStringId(StringInternPool::StringID comments_string_id, bool handoff_reference = false);
-	inline void SetComments(const std::string &comment)
+	inline void SetCommentsString(const std::string &comment)
 	{
 		GetAnnotationsAndCommentsStorage().SetComments(comment);
 	}

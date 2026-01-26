@@ -200,7 +200,7 @@ void Interpreter::EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::St
 
 	if(asset_manager.debugSources && en->HasComments())
 	{
-		std::string comment_string = en->GetCommentsString();
+		std::string_view comment_string = en->GetCommentsString();
 		size_t newline_index = comment_string.find("\n");
 
 		std::string comment_string_first_line;
@@ -958,7 +958,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ANNOTATIONS(EvaluableN
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto &annotations = n->GetAnnotationsString();
+	std::string annotations(n->GetAnnotationsString());
 	evaluableNodeManager->FreeNodeTreeIfPossible(n);
 	return AllocReturn(annotations, immediate_result);
 }
@@ -974,10 +974,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ANNOTATIONS(EvaluableN
 
 	auto node_stack = CreateOpcodeStackStateSaver(source);
 
-	//get the comments
-	StringInternPool::StringID new_annotations_sid = InterpretNodeIntoStringIDValueWithReference(ocn[1]);
-	source->SetAnnotationStringId(new_annotations_sid, true);
-
+	//get the annotations
+	auto [valid, new_annotations] = InterpretNodeIntoStringValue(ocn[1]);
+	source->SetAnnotationsString(new_annotations);
 	return source;
 }
 
@@ -991,7 +990,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto &comment = n->GetCommentsString();
+	std::string comment(n->GetCommentsString());
 	evaluableNodeManager->FreeNodeTreeIfPossible(n);
 	return AllocReturn(comment, immediate_result);
 }
@@ -1008,9 +1007,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode
 	auto node_stack = CreateOpcodeStackStateSaver(source);
 
 	//get the comments
-	StringInternPool::StringID new_comments_sid = InterpretNodeIntoStringIDValueWithReference(ocn[1]);
-	source->SetCommentsStringId(new_comments_sid, true);
-
+	auto [valid, new_comments] = InterpretNodeIntoStringValue(ocn[1]);
+	source->SetCommentsString(new_comments);
 	return source;
 }
 

@@ -947,26 +947,6 @@ std::vector<std::string> EvaluableNode::GetCommentsSeparateLines()
 	return BreakApartSeparateLines(GetCommentsString());
 }
 
-void EvaluableNode::SetCommentsStringId(StringInternPool::StringID comments_string_id, bool handoff_reference)
-{
-	if(comments_string_id == StringInternPool::NOT_A_STRING_ID)
-	{
-		ClearComments();
-		return;
-	}
-
-	if(!HasExtendedValue())
-		EnsureEvaluableNodeExtended();
-
-	if(!handoff_reference)
-		string_intern_pool.CreateStringReference(comments_string_id);
-
-	//clear references to anything existing
-	string_intern_pool.DestroyStringReference(value.extension.commentsStringId);
-
-	value.extension.commentsStringId = comments_string_id;
-}
-
 size_t EvaluableNode::GetNumChildNodes()
 {
 	if(IsEvaluableNodeTypeImmediate(GetType()))

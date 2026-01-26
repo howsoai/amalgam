@@ -154,7 +154,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		std::string version_requested = InterpretNodeIntoStringValueEmptyNull(ocn[1]);
 		auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_requested, false);
 		EvaluableNode *result = evaluableNodeManager->AllocNode(success);
-		result->SetComments(error_message);
+		result->SetCommentsString(error_message);
 		return EvaluableNodeReference(result, true);
 	}
 	else if(command == "est_mem_reserved" && permissions.HasPermission(EntityPermissions::Permission::ENVIRONMENT))

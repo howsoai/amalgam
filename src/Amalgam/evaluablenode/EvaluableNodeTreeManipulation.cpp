@@ -291,7 +291,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMe
 			merged_comments.append(*line);
 		}
 
-		n->SetComments(merged_comments);
+		n->SetCommentsString(merged_comments);
 	}
 
 	return n;

@@ -451,7 +451,7 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 		new_comment += "\r\n";
 		if(target->HasComments())
 			new_comment += target->GetCommentsString();
-		target->SetComments(new_comment);
+		target->SetCommentsString(new_comment);
 	}
 }
 
@@ -799,7 +799,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 						std::string appended(key_node->GetCommentsString());
 						appended.append("\r\n");
 						appended.append(n->GetCommentsString());
-						n->SetComments(appended);
+						n->SetCommentsString(appended);
 						key_node->ClearComments();
 					}
 

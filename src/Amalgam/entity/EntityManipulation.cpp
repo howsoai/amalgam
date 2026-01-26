@@ -333,7 +333,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 		{
 			EvaluableNode *copy_lambda = enm->AllocNode(ENT_LAMBDA);
 			create_entity->AppendOrderedChildNode(copy_lambda);
-			copy_lambda->AppendOrderedChildNode(enm->DeepAllocCopy(entity_to_create->GetRoot(), EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT));
+			copy_lambda->AppendOrderedChildNode(enm->DeepAllocCopy(entity_to_create->GetRoot()));
 		}
 		else //need to difference
 		{
@@ -733,7 +733,7 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 	EvaluableNode *lambda_for_create_root = enm->AllocNode(ENT_LAMBDA);
 	let_assoc->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI__), lambda_for_create_root);
 
-	EvaluableNodeReference root_copy = entity->GetRoot(enm, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
+	EvaluableNodeReference root_copy = entity->GetRoot(enm);
 	lambda_for_create_root->AppendOrderedChildNode(root_copy);
 
 	//   (if create_new_entity
@@ -801,7 +801,7 @@ EvaluableNode *EntityManipulation::FlattenOnlyOneContainedEntity(EvaluableNodeMa
 	EvaluableNode *lambda_for_create = enm->AllocNode(ENT_LAMBDA);
 	create_entity->AppendOrderedChildNode(lambda_for_create);
 
-	EvaluableNodeReference contained_root_copy = entity->GetRoot(enm, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
+	EvaluableNodeReference contained_root_copy = entity->GetRoot(enm);
 	lambda_for_create->AppendOrderedChildNode(contained_root_copy);
 
 	if(include_rand_seeds)

@@ -1280,12 +1280,12 @@ var data = [
 	},
 
 	{
-		"parameter" : "retrieve_entity_root [id_path entity] [bool suppress_label_escapes]",
+		"parameter" : "retrieve_entity_root [id_path entity]",
 		"output" : "*",
 		"permissions" : "entity",
 		"new value" : "new",
-		"description" : "Evaluates to the entity's code, looking up the entity by the id_path. If suppress_label_escapes is false or omitted, will disable any labels obtained by inserting an extra # at the beginning of each.",
-		"example" : "(print (retrieve_entity_root))\n(print (retrieve_entity_root 1))"
+		"description" : "Evaluates to the entity's code, looking up the entity by the id_path.",
+		"example" : "(print (retrieve_entity_root))"
 	},
 
 	{

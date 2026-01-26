@@ -127,15 +127,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 		return EvaluableNodeReference::Null();
 	auto &ocn = en->GetOrderedChildNodesReference();
 
-	//get second parameter if exists
-	auto label_escape_increment = EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT;
-	if(ocn.size() > 1)
-	{
-		auto value = InterpretNodeIntoNumberValue(ocn[1]);
-		if(value)
-			label_escape_increment = EvaluableNodeManager::ENMM_NO_CHANGE;
-	}
-
 	//retrieve the entity after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
 	EntityReadReference target_entity;

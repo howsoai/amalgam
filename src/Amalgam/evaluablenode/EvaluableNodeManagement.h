@@ -687,22 +687,6 @@ public:
 		bool copyMetadata;
 	};
 
-	//modifies the labels for the tree as described by metadata_modifier
-	inline static void ModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
-	{
-		if(tree == nullptr || metadata_modifier == ENMM_NO_CHANGE)
-			return;
-
-		if(!tree->GetNeedCycleCheck())
-		{
-			NonCycleModifyLabelsForNodeTree(tree, metadata_modifier);
-			return;
-		}
-
-		EvaluableNode::ReferenceSetType checked;
-		ModifyLabelsForNodeTree(tree, checked, metadata_modifier);
-	}
-
 	//computes whether the code is cycle free and idempotent and updates all nodes appropriately
 	static inline void UpdateFlagsForNodeTree(EvaluableNode *tree)
 	{
@@ -717,7 +701,7 @@ public:
 	//assumes there are no cycles
 	static bool UpdateIdempotencyFlagsForNonCyclicNodeTree(EvaluableNode *tree)
 	{
-		bool is_idempotent = (IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType()) && (tree->GetNumLabels() == 0));
+		bool is_idempotent = IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType());
 
 		if(tree->IsAssociativeArray())
 		{

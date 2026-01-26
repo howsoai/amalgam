@@ -480,21 +480,6 @@ public:
 	static MergeMetricResults<EvaluableNode *> NumberOfSharedNodes(EvaluableNode *tree1, EvaluableNode *tree2,
 		MergeMetricResultsParams &mmrp);
 
-	//Recursively traverses tree, storing any nodes with labels into an index map, and returning the map,
-	// as well as a flag indicating true if it was able to just retrieve the labels, or false
-	// if a label collision occurred
-	inline static std::pair<EvaluableNode::LabelsAssocType, bool> RetrieveLabelIndexesFromTree(EvaluableNode *en)
-	{
-		EvaluableNode::LabelsAssocType index;
-		if(en == nullptr)
-			return std::make_pair(index, true);
-
-		//can check faster if don't need to check for cycles
-		EvaluableNode::ReferenceSetType checked;
-		bool collected_all_label_values = CollectLabelIndexesFromTree(en, index, en->GetNeedCycleCheck() ? &checked : nullptr);
-		return std::make_pair(index, collected_all_label_values);
-	}
-
 	//If the nodes, n1 and n2 can be generalized, then returns a new (allocated) node that is preferable to use (usually the more specific one)
 	// If the nodes are not equivalent, then returns null
 	// Only extra data (labels, comments, etc.) that is common to both is kept, unless KeepAllNonMergeableValues is true.  Then everything from both is kept. If 

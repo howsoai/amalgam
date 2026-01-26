@@ -975,8 +975,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ANNOTATIONS(EvaluableN
 	auto node_stack = CreateOpcodeStackStateSaver(source);
 
 	//get the comments
-	StringInternPool::StringID annotations_sid = InterpretNodeIntoStringIDValueWithReference(ocn[1]);
-	source->SetAnnotationStringId(annotations_sid, true);
+	StringInternPool::StringID new_annotations_sid = InterpretNodeIntoStringIDValueWithReference(ocn[1]);
+	source->SetAnnotationStringId(new_annotations_sid, true);
 
 	return source;
 }
@@ -991,9 +991,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
 
-	StringInternPool::StringID comments_sid = n->GetCommentsStringId();
+	auto &comment = n->GetCommentsString();
 	evaluableNodeManager->FreeNodeTreeIfPossible(n);
-	return AllocReturn(comments_sid, immediate_result);
+	return AllocReturn(comment, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)

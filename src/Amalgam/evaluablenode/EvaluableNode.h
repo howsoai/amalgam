@@ -234,8 +234,7 @@ public:
 	//clears the node's metadata
 	__forceinline void ClearMetadata()
 	{
-		ClearComments();
-		ClearLabels();
+		GetAnnotationAndCommentStorage().Clear();
 		SetConcurrency(false);
 	}
 
@@ -431,14 +430,6 @@ public:
 	//if key_string is true, then it will generate a string used for comparing in assoc keys
 	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e, bool include_symbol = false, bool key_string = false);
 
-	//returns the comments as a new string
-	static inline StringInternPool::StringID GetCommentsStringId(EvaluableNode *e)
-	{
-		if(e == nullptr)
-			return StringInternPool::NOT_A_STRING_ID;
-		return e->GetCommentsStringId();
-	}
-
 	//converts the node to an ENT_ASSOC where the keys are the numbers of the indices
 	void ConvertListToNumberedAssoc();
 
@@ -599,40 +590,48 @@ public:
 	//sets the string but does not create a new reference because the reference has already been created
 	void SetStringIDWithReferenceHandoff(StringInternPool::StringID id);
 
+	//returns true if has annotation
+	inline bool HasAnnotation()
+	{
+		return GetAnnotationAndCommentStorage().HasAnnotation();
+	}
+
 	//returns a string_view of the annotation string
 	inline std::string_view GetAnnotationString()
 	{
-		auto &a_and_c = GetAnnotationAndCommentStorage();
-		return a_and_c.GetAnnotation();
+		GetAnnotationAndCommentStorage().GetAnnotation();
 	}
 
 	//sets the annotation_string
 	void SetAnnotationString(std::string_view s)
 	{
-		auto &a_and_c = GetAnnotationAndCommentStorage();
-		a_and_c.SetAnnotation(s);
+		GetAnnotationAndCommentStorage().SetAnnotation(s);
 	}
 
 	//functions for getting and setting node comments by string
 	inline std::string_view GetCommentsString()
 	{
-		auto &a_and_c = GetAnnotationAndCommentStorage();
-		return a_and_c.GetComment();
+		GetAnnotationAndCommentStorage().GetComment();
 	}
 
 	//returns true if has comments
 	inline bool HasComments()
 	{
-		//TODO 24298: implement this, and implement HasAnnotations, use method in object to not have to get the full string length
-		return false;
+		return GetAnnotationAndCommentStorage().HasComment();
 	}
 
 	//splits comment lines and returns a vector of strings of the comment
 	std::vector<std::string> GetCommentsSeparateLines();
 	//if handoff_reference is true, then it will not create a new reference but assume one has already been created
 	void SetCommentsStringId(StringInternPool::StringID comments_string_id, bool handoff_reference = false);
-	void SetComments(const std::string &comments);
-	void ClearComments();
+	inline void SetComments(const std::string &comment)
+	{
+		GetAnnotationAndCommentStorage().SetComment(comment);
+	}
+	inline void ClearComments()
+	{
+		GetAnnotationAndCommentStorage().SetComment("");
+	}
 	void AppendCommentsStringId(StringInternPool::StringID comments_string_id);
 	void AppendComments(const std::string &comments);
 
@@ -1054,6 +1053,11 @@ protected:
 		AnnotationAndComment(std::string_view annotation, std::string_view comment)
 		{
 			SetAnnotationAndComment(annotation, comment);
+		}
+
+		void Clear()
+		{
+			buffer.reset();
 		}
 
 		//returns a view of the annotation

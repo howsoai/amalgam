@@ -958,36 +958,6 @@ void EvaluableNode::SetCommentsStringId(StringInternPool::StringID comments_stri
 	value.extension.commentsStringId = comments_string_id;
 }
 
-void EvaluableNode::SetComments(const std::string &comments)
-{
-	if(comments.empty())
-	{
-		ClearComments();
-		return;
-	}
-
-	if(!HasExtendedValue())
-		EnsureEvaluableNodeExtended();
-
-	//create new references before destroying old (so don't need to recreate strings if they are freed and then released)
-	StringInternPool::StringID new_reference = string_intern_pool.CreateStringReference(comments);
-
-	//clear references to anything existing
-	string_intern_pool.DestroyStringReference(value.extension.commentsStringId);
-
-	value.extension.commentsStringId = new_reference;
-}
-
-void EvaluableNode::ClearComments()
-{
-	if(!HasExtendedValue())
-		return;
-
-	string_intern_pool.DestroyStringReference(value.extension.commentsStringId);
-
-	value.extension.commentsStringId = StringInternPool::NOT_A_STRING_ID;
-}
-
 void EvaluableNode::AppendCommentsStringId(StringInternPool::StringID comments_string_id)
 {
 	if(!HasExtendedValue())

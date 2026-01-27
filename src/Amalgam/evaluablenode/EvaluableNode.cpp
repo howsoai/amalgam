@@ -980,7 +980,7 @@ void EvaluableNode::SetOrderedChildNodes(const std::vector<EvaluableNode *> &ocn
 
 	SetNeedCycleCheck(need_cycle_check);
 
-	if(is_idempotent && (GetNumLabels() > 0 || !IsEvaluableNodeTypePotentiallyIdempotent(type)))
+	if(is_idempotent && !IsEvaluableNodeTypePotentiallyIdempotent(type))
 		SetIsIdempotent(false);
 	else
 		SetIsIdempotent(is_idempotent);
@@ -996,7 +996,7 @@ void EvaluableNode::SetOrderedChildNodes(std::vector<EvaluableNode *> &&ocn,
 
 	SetNeedCycleCheck(need_cycle_check);
 
-	if(is_idempotent && (GetNumLabels() > 0 || !IsEvaluableNodeTypePotentiallyIdempotent(type)))
+	if(is_idempotent && !IsEvaluableNodeTypePotentiallyIdempotent(type))
 		SetIsIdempotent(false);
 	else
 		SetIsIdempotent(is_idempotent);
@@ -1011,8 +1011,7 @@ void EvaluableNode::ClearOrderedChildNodes()
 
 	SetNeedCycleCheck(false);
 
-	if(GetNumLabels() == 0)
-		SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(type));
+	SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(type));
 }
 
 void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
@@ -1137,7 +1136,7 @@ void EvaluableNode::SetMappedChildNodes(AssocType &new_mcn, bool copy, bool need
 
 	SetNeedCycleCheck(need_cycle_check);
 
-	if(is_idempotent && (GetNumLabels() > 0 || !IsEvaluableNodeTypePotentiallyIdempotent(type)))
+	if(is_idempotent && !IsEvaluableNodeTypePotentiallyIdempotent(type))
 		SetIsIdempotent(false);
 	else
 		SetIsIdempotent(is_idempotent);
@@ -1261,8 +1260,7 @@ void EvaluableNode::ClearMappedChildNodes()
 
 	SetNeedCycleCheck(false);
 
-	if(GetNumLabels() == 0)
-		SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(type));
+	SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(type));
 }
 
 EvaluableNode *EvaluableNode::EraseMappedChildNode(const StringInternPool::StringID sid)

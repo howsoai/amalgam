@@ -88,25 +88,25 @@ void EntityWriteListener::LogPrint(std::string &print_string)
 }
 
 void EntityWriteListener::LogWriteLabelValueToEntity(Entity *entity,
-	const StringInternPool::StringID label_name, EvaluableNode *value, bool direct_set)
+	const StringInternPool::StringID label_name, EvaluableNode *value)
 {
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::Lock lock(mutex);
 #endif
 
-	EvaluableNode *new_write = BuildNewWriteOperation(direct_set ? ENT_DIRECT_ASSIGN_TO_ENTITIES : ENT_ASSIGN_TO_ENTITIES, entity);
+	EvaluableNode *new_write = BuildNewWriteOperation(ENT_ASSIGN_TO_ENTITIES, entity);
 
 	EvaluableNode *assoc = listenerStorage.AllocNode(ENT_ASSOC);
 	new_write->AppendOrderedChildNode(assoc);
 
 	assoc->AppendOrderedChildNode(listenerStorage.AllocNode(ENT_STRING, label_name));
-	assoc->AppendOrderedChildNode(listenerStorage.DeepAllocCopy(value, direct_set ? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL));
+	assoc->AppendOrderedChildNode(listenerStorage.DeepAllocCopy(value));
 
 	LogNewEntry(new_write);
 }
 
 void EntityWriteListener::LogWriteLabelValuesToEntity(Entity *entity,
-	EvaluableNode *label_value_pairs, bool accum_values, bool direct_set)
+	EvaluableNode *label_value_pairs, bool accum_values)
 {
 	//can only work with assoc arrays
 	if(!EvaluableNode::IsAssociativeArray(label_value_pairs))
@@ -119,12 +119,10 @@ void EntityWriteListener::LogWriteLabelValuesToEntity(Entity *entity,
 	auto node_type = ENT_ASSIGN_TO_ENTITIES;
 	if(accum_values)
 		node_type = ENT_ACCUM_TO_ENTITIES;
-	else if(direct_set)
-		node_type = ENT_DIRECT_ASSIGN_TO_ENTITIES;
 
 	EvaluableNode *new_write = BuildNewWriteOperation(node_type, entity);
 
-	EvaluableNode *assoc = listenerStorage.DeepAllocCopy(label_value_pairs, direct_set ? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL);
+	EvaluableNode *assoc = listenerStorage.DeepAllocCopy(label_value_pairs);
 	new_write->AppendOrderedChildNode(assoc);
 
 	LogNewEntry(new_write);

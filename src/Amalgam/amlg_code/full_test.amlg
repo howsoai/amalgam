@@ -3597,9 +3597,9 @@
 
  (print "--direct_assign_to_entities--\n")
  (create_entities "DRFE" (lambda (unordered_list ##a 12)) )
- (print (unparse (direct_retrieve_from_entity "DRFE" "a") .true .true))
+ (print (unparse (retrieve_from_entity "DRFE" "a") .true .true))
  (print (unparse (direct_assign_to_entities "DRFE" (assoc a 7)) .true .true))
- (print (unparse (direct_retrieve_from_entity "DRFE" "a") .true .true))
+ (print (unparse (retrieve_from_entity "DRFE" "a") .true .true))
 
  (print "--accum_to_entities--\n")
 
@@ -3620,10 +3620,6 @@
  (print (unparse (retrieve_from_entity "RCT" "a") .true .true))
  (print (unparse (retrieve_from_entity "RCT" (list "a" "b") ) .true .true))
  (print (unparse (retrieve_from_entity "RCT" (zip (list "a" "b") null) ) .true .true))
-
- (print "--direct_retrieve_from_entity--\n")
- (print (unparse (retrieve_from_entity "DRFE" "a") .true .true))
- (print (unparse (direct_retrieve_from_entity "DRFE" "a") .true .true))
 
  (print "--call_entity--\n")
  (print (contained_entities "TestContainerExec"))

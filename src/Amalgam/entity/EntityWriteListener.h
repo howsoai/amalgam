@@ -13,7 +13,7 @@ class Entity;
 class EntityWriteListener
 {
 public:
-	//stores all writes to entities as a seq of direct_assigns
+	//stores all writes to entities as a seq of assignments
 	//listening_entity is the entity to store the relative ids to
 	//if retain_writes is true, then the listener will store the writes, and GetWrites() will return the list of all writes accumulated
 	//if _pretty is true, then the listener will pretty print to filename
@@ -34,12 +34,12 @@ public:
 	// LogPrint does not flush to allow bulk processing
 	void LogPrint(std::string &print_string);
 
-	void LogWriteLabelValueToEntity(Entity *entity, const StringInternPool::StringID label_name, EvaluableNode *value, bool direct_set);
+	void LogWriteLabelValueToEntity(Entity *entity, const StringInternPool::StringID label_name, EvaluableNode *value);
 
 	//like LogWriteLabelValueToEntity but where the keys are the labels and the values correspond
 	// in the assoc specified by label_value_pairs
 	void LogWriteLabelValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs,
-		bool accum_values, bool direct_set);
+		bool accum_values);
 
 	//logs the new entity root, assuming it has already been set
 	void LogWriteToEntityRoot(Entity *entity);

@@ -1732,15 +1732,6 @@ var data = [
 	},
 
 	{
-		"parameter" : "direct_retrieve_from_entity [id_path entity] [string|list|assoc label_names]",
-		"output" : "*",
-		"new value" : "conditional",
-		"permissions" : "entity",
-		"description" : "Like retrieve_from_entity, except retains labels.",
-		"example" : "(create_entities \"DRFE\" (lambda (null ##a 12)) )\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))\n(print (direct_assign_to_entities \"DRFE\" (assoc a 7)))\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))"
-	},
-
-	{
 		"parameter" : "call_entity id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [return_warnings]",
 		"output" : "*",
 		"new value" : "conditional",

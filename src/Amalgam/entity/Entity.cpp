@@ -127,7 +127,7 @@ Entity::~Entity()
 
 std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(
 	StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm,
-	bool direct_get, EvaluableNodeRequestedValueTypes immediate_result, bool on_self, bool batch_call)
+	EvaluableNodeRequestedValueTypes immediate_result, bool on_self, bool batch_call)
 {
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 		return std::pair(EvaluableNodeReference::Null(), false);
@@ -348,9 +348,9 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 		if(write_listeners != nullptr)
 		{
 			for(auto &wl : *write_listeners)
-				wl->LogWriteLabelValueToEntity(this, label_sid, new_value, direct_set);
+				wl->LogWriteLabelValueToEntity(this, label_sid, new_value);
 		}
-		asset_manager.UpdateEntityLabelValue(this, label_sid, new_value, direct_set);
+		asset_manager.UpdateEntityLabelValue(this, label_sid, new_value);
 	}
 
 	return true;
@@ -394,7 +394,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		{
 			//need to make a copy in case it is modified, so pass in evaluableNodeManager
 			EvaluableNodeReference value_destination_node(
-				GetValueAtLabel(variable_sid, &evaluableNodeManager, true,
+				GetValueAtLabel(variable_sid, &evaluableNodeManager,
 					EvaluableNodeRequestedValueTypes::Type::NONE, true, true).first, true);
 			//can't assign to a label if it doesn't exist
 			if(value_destination_node == nullptr)
@@ -411,28 +411,19 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 	if(any_successful_assignment)
 	{
-		EntityQueryCaches *container_caches = GetContainerQueryCaches();
-		if(direct_set)
-		{
-			//direct assignments need a rebuild of the index just in case a label collision occurs -- will update node flags if needed
-			if(container_caches != nullptr)
-				container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
-		}
-		else
-		{
-			if(need_node_flags_updated)
-				EvaluableNodeManager::UpdateFlagsForNodeTree(rootNode);
+		if(need_node_flags_updated)
+			EvaluableNodeManager::UpdateFlagsForNodeTree(rootNode);
 
-			if(container_caches != nullptr)
-				container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), new_label_values_mcn);
-		}
+		EntityQueryCaches *container_caches = GetContainerQueryCaches();
+		if(container_caches != nullptr)
+			container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), new_label_values_mcn);
 
 		if(write_listeners != nullptr)
 		{
 			for(auto &wl : *write_listeners)
-				wl->LogWriteLabelValuesToEntity(this, new_label_values, accum_values, direct_set);
+				wl->LogWriteLabelValuesToEntity(this, new_label_values, accum_values);
 		}
-		asset_manager.UpdateEntityLabelValues(this, new_label_values, accum_values, direct_set);
+		asset_manager.UpdateEntityLabelValues(this, new_label_values, accum_values);
 
 		if(num_new_nodes_allocated != nullptr)
 		{

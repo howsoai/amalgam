@@ -1266,7 +1266,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 					EvaluableNode *entity_values = enm->AllocNode(ENT_ASSOC);
 					entity_values->ReserveMappedChildNodes(exist_labels.size());
 					for(auto &label_sid : exist_labels)
-						entity_values->SetMappedChildNodeWithReferenceHandoff(label_sid, contained_entities[entity_index]->GetValueAtLabel(label_sid, enm, false).first);
+						entity_values->SetMappedChildNodeWithReferenceHandoff(label_sid, contained_entities[entity_index]->GetValueAtLabel(label_sid, enm).first);
 
 					//append to query_return after building to ensure all flags are propagated
 					query_return->SetMappedChildNode(contained_entities[entity_index]->GetIdStringId(), entity_values);

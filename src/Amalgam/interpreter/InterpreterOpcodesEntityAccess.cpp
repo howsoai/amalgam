@@ -233,6 +233,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIRECT_ASSIGN_TO_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
+	//TODO 24298: change direct assign to remove from entities
+
 	//not allowed if don't have a Entity to work within
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
@@ -329,7 +331,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 	return AllocReturn(all_assignments_successful, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_DIRECT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -344,8 +346,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	size_t lookup_param_index = (ocn.size() > 1 ? 1 : 0);
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[lookup_param_index]);
 	auto node_stack = CreateOpcodeStackStateSaver(to_lookup);
-
-	bool direct = (en->GetType() == ENT_DIRECT_RETRIEVE_FROM_ENTITY);
 
 	//get the id of the source to check
 	EntityReadReference target_entity;
@@ -362,7 +362,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
 		EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager,
-			direct, immediate_result, target_entity == curEntity).first;
+			immediate_result, target_entity == curEntity).first;
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 
@@ -383,7 +383,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			auto [value, _] = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager, direct,
+			auto [value, _] = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager,
 				EvaluableNodeRequestedValueTypes::Type::NONE, target_entity == curEntity);
 
 			cn = value;
@@ -411,7 +411,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			auto [value, _] = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct,
+			auto [value, _] = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager,
 				EvaluableNodeRequestedValueTypes::Type::NONE, target_entity == curEntity);
 
 			cn = value;

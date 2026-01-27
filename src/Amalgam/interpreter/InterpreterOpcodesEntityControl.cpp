@@ -68,7 +68,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		return retval;
 	}
 
-	auto label_value = target_entity->GetValueAtLabel(label_sid, nullptr, true).first;
+	auto label_value = target_entity->GetValueAtLabel(label_sid, nullptr).first;
 	if(label_value == nullptr)
 		return EvaluableNodeReference::Null();
 

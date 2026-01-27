@@ -436,7 +436,7 @@ public:
 	//indicates that the entity's label_name has been updated to value
 	template<typename EntityReferenceType = EntityReadReference>
 	inline void UpdateEntityLabelValue(Entity *entity,
-		StringInternPool::StringID label_name, EvaluableNode *value, bool direct_set,
+		StringInternPool::StringID label_name, EvaluableNode *value,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
 	#ifdef MULTITHREAD_INTERFACE
@@ -453,7 +453,7 @@ public:
 			if(asset_params->flatten)
 			{
 				if(asset_params->writeListener != nullptr)
-					asset_params->writeListener->LogWriteLabelValueToEntity(entity, label_name, value, direct_set);
+					asset_params->writeListener->LogWriteLabelValueToEntity(entity, label_name, value);
 			}
 			else //just update the individual entity
 			{
@@ -465,7 +465,7 @@ public:
 	//indicates that the entity's labels have been updated by the corresponding values
 	template<typename EntityReferenceType = EntityReadReference>
 	inline void UpdateEntityLabelValues(Entity *entity,
-		EvaluableNode *label_value_pairs, bool accum_values, bool direct_set,
+		EvaluableNode *label_value_pairs, bool accum_values,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
 	#ifdef MULTITHREAD_INTERFACE
@@ -482,8 +482,7 @@ public:
 			if(asset_params->flatten)
 			{
 				if(asset_params->writeListener != nullptr)
-					asset_params->writeListener->LogWriteLabelValuesToEntity(entity, label_value_pairs,
-						accum_values, direct_set);
+					asset_params->writeListener->LogWriteLabelValuesToEntity(entity, label_value_pairs, accum_values);
 			}
 			else //just update the individual entity
 			{

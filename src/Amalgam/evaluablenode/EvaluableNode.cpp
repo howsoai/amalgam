@@ -542,10 +542,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 			SetOrderedChildNodes(n_ocn, n->GetNeedCycleCheck(), n->GetIsIdempotent());
 	}
 
-	if(GetNumLabels() > 0)
-		SetIsIdempotent(false);
-	else
-		SetIsIdempotent(n->GetIsIdempotent());
+	SetIsIdempotent(n->GetIsIdempotent());
 }
 
 void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)

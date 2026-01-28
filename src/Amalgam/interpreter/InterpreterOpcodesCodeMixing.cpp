@@ -67,6 +67,36 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	return EvaluableNodeReference(result, true);
 }
 
+//TODO 24995: update unit tests
+//TODO 24995: update documentation
+//TODO 24995: update this method to be more generic
+//TODO 24995: update all of
+//InterpretNode_ENT_COMMONALITY
+//InterpretNode_ENT_EDIT_DISTANCE
+//InterpretNode_ENT_INTERSECT
+//InterpretNode_ENT_UNION
+//InterpretNode_ENT_MIX
+//
+//InterpretNode_ENT_COMMONALITY_ENTITIES
+//InterpretNode_ENT_EDIT_DISTANCE_ENTITIES
+//InterpretNode_ENT_INTERSECT_ENTITIES
+//InterpretNode_ENT_UNION_ENTITIES
+//InterpretNode_ENT_DIFFERENCE_ENTITIES
+//InterpretNode_ENT_MIX_ENTITIES
+static inline std::pair<bool, bool> GetNominalValuesAndRecursiveMatchingParams(EvaluableNode *params)
+{
+	bool nominal_values = true;
+	bool recursive_matching = true;
+	if(EvaluableNode::IsAssociativeArray(params))
+	{
+		auto &mcn = params->GetMappedChildNodesReference();
+		EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_values, nominal_values);
+		EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
+	}
+
+	return std::make_pair(nominal_values, recursive_matching);
+}
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -78,9 +108,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 	if(ocn.size() > 2)
 		use_string_edit_distance = InterpretNodeIntoBoolValue(ocn[2]);
 
-	bool recursive_matching = true;
+	auto params = EvaluableNodeReference::Null();
 	if(ocn.size() > 3)
-		recursive_matching = InterpretNodeIntoBoolValue(ocn[3]);
+		params = InterpretNodeForImmediateUse(ocn[3]);
+	auto [nominal_values, recursive_matching] = GetNominalValuesAndRecursiveMatchingParams(params);
+	evaluableNodeManager->FreeNodeTreeIfPossible(params);
 
 	//calculate edit distance based commonality if string edit distance true and both args are string literals
 	if(use_string_edit_distance && (ocn[0]->GetType() == ENT_STRING && ocn[1]->GetType() == ENT_STRING))
@@ -119,9 +151,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 	if(ocn.size() > 2)
 		use_string_edit_distance = InterpretNodeIntoBoolValue(ocn[2]);
 
-	bool recursive_matching = true;
+	auto params = EvaluableNodeReference::Null();
 	if(ocn.size() > 3)
-		recursive_matching = InterpretNodeIntoBoolValue(ocn[3]);
+		params = InterpretNodeForImmediateUse(ocn[3]);
+	auto [nominal_values, recursive_matching] = GetNominalValuesAndRecursiveMatchingParams(params);
+	evaluableNodeManager->FreeNodeTreeIfPossible(params);
 
 	//otherwise, treat both as nodes and calculate node edit distance
 	auto tree1 = InterpretNodeForImmediateUse(ocn[0]);
@@ -158,9 +192,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	bool recursive_matching = true;
-	if(ocn.size() > 2)
-		recursive_matching = InterpretNodeIntoBoolValue(ocn[2]);
+	auto params = EvaluableNodeReference::Null();
+	if(ocn.size() > 3)
+		params = InterpretNodeForImmediateUse(ocn[3]);
+	auto [nominal_values, recursive_matching] = GetNominalValuesAndRecursiveMatchingParams(params);
+	evaluableNodeManager->FreeNodeTreeIfPossible(params);
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(n1);
@@ -184,9 +220,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, E
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	bool recursive_matching = true;
-	if(ocn.size() > 2)
-		recursive_matching = InterpretNodeIntoBoolValue(ocn[2]);
+	auto params = EvaluableNodeReference::Null();
+	if(ocn.size() > 3)
+		params = InterpretNodeForImmediateUse(ocn[3]);
+	auto [nominal_values, recursive_matching] = GetNominalValuesAndRecursiveMatchingParams(params);
+	evaluableNodeManager->FreeNodeTreeIfPossible(params);
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(n1);
@@ -264,9 +302,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, Eva
 			similar_mix_chance = new_value;
 	}
 
-	bool recursive_matching = true;
-	if(ocn.size() > 5)
-		recursive_matching = InterpretNodeIntoBoolValue(ocn[5]);
+	//TODO 24995: update the index for this and also account for similar_mix_chance above
+	auto params = EvaluableNodeReference::Null();
+	if(ocn.size() > 3)
+		params = InterpretNodeForImmediateUse(ocn[3]);
+	auto [nominal_values, recursive_matching] = GetNominalValuesAndRecursiveMatchingParams(params);
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(params);
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(n1);

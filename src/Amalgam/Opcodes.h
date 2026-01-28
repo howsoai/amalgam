@@ -820,6 +820,12 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_delete_elements,
 	ENBISI_change_label,
 	
+	//mix parameters
+	ENBISI_nominal_values,
+	ENBISI_similar_mix_chance,
+	ENBISI_unnamed_entity_mix_chance,
+	ENBISI_recursive_matching,
+
 	//enumeration of the first string that isn't static
 	ENBISI_FIRST_DYNAMIC_STRING
 };

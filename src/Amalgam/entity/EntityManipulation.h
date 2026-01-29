@@ -119,16 +119,16 @@ public:
 
 	//Entity merging functions
 	static inline Entity *IntersectEntities(Interpreter *interpreter,
-		Entity *entity1, Entity *entity2, bool recursive_matching)
+		Entity *entity1, Entity *entity2, bool require_exact_matches, bool recursive_matching)
 	{
-		EntitiesMergeMethod mm(interpreter, false, true, recursive_matching);
+		EntitiesMergeMethod mm(interpreter, false, require_exact_matches, recursive_matching);
 		return mm.MergeValues(entity1, entity2);
 	}
 
 	static inline Entity *UnionEntities(Interpreter *interpreter,
-		Entity *entity1, Entity *entity2, bool recursive_matching)
+		Entity *entity1, Entity *entity2, bool require_exact_matches, bool recursive_matching)
 	{
-		EntitiesMergeMethod mm(interpreter, true, true, recursive_matching);
+		EntitiesMergeMethod mm(interpreter, true, require_exact_matches, recursive_matching);
 		return mm.MergeValues(entity1, entity2);
 	}
 

@@ -325,16 +325,16 @@ public:
 
 	//Tree and string merging functions
 	static inline EvaluableNode *IntersectTrees(EvaluableNodeManager *enm,
-		EvaluableNode *tree1, EvaluableNode *tree2, bool recursive_matching)
+		EvaluableNode *tree1, EvaluableNode *tree2, bool require_exact_matches, bool recursive_matching)
 	{
-		NodesMergeMethod mm(enm, false, true, recursive_matching);
+		NodesMergeMethod mm(enm, false, require_exact_matches, recursive_matching);
 		return mm.MergeValues(tree1, tree2);
 	}
 
 	static inline EvaluableNode *UnionTrees(EvaluableNodeManager *enm,
-		EvaluableNode *tree1, EvaluableNode *tree2, bool recursive_matching)
+		EvaluableNode *tree1, EvaluableNode *tree2, bool require_exact_matches, bool recursive_matching)
 	{
-		NodesMergeMethod mm(enm, true, true, recursive_matching);
+		NodesMergeMethod mm(enm, true, require_exact_matches, recursive_matching);
 		return mm.MergeValues(tree1, tree2);
 	}
 

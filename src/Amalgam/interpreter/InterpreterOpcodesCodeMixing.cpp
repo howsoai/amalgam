@@ -68,6 +68,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 }
 
 //TODO 24995: update unit tests
+//TODO 24995: add string_edit_distance option for non-entity versions, update docs, update unit tests
 //InterpretNode_ENT_COMMONALITY
 //InterpretNode_ENT_EDIT_DISTANCE
 //InterpretNode_ENT_INTERSECT

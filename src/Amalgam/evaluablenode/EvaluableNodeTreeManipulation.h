@@ -49,7 +49,9 @@ struct MergeMetricResultsParams
 {
 	EvaluableNode::ReferenceSetType *checked;
 	CompactHashMap<std::pair<EvaluableNode *, EvaluableNode *>, MergeMetricResults<EvaluableNode *>> memoizedNodeMergePairs;
-	bool requireExactMatches;
+	bool typesMustMatch;
+	bool nominalNumbers;
+	bool nominalStrings;
 	bool recursiveMatching;
 };
 
@@ -156,8 +158,14 @@ public:
 		virtual EvaluableNode::ReferenceAssocType &GetReferences()
 		{	return references;	}
 
-		constexpr bool RequireExactMatches()
-		{	return requireExactMatches;		}
+		constexpr bool TypesMustMatch()
+		{	return typesMustMatch;		}
+
+		constexpr bool NominalNumbers()
+		{	return nominalNumbers;		}
+
+		constexpr bool NominalStrings()
+		{	return nominalStrings;		}
 
 		constexpr bool RecursiveMatching()
 		{	return recursiveMatching;		}
@@ -167,7 +175,9 @@ public:
 
 	protected:
 		bool keepAllOfBoth;
-		bool requireExactMatches;
+		bool typesMustMatch;
+		bool nominalNumbers;
+		bool nominalStrings;
 		bool recursiveMatching;
 		EvaluableNode::ReferenceAssocType references;
 	};
@@ -434,11 +444,14 @@ public:
 	}
 
 	//computes the edit distance between the two trees
-	// If require_exact_matches is true, then it will only compare nodes that match exactly
+	//types_must_match, nominal_numbers, nominal_strings govern whether matches are exact based on type
+	//if recursive_matching is true, then it will attempt to recursively match any part of the data structure of tree1 to tree2
+	//if recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better
+	// results if the data structures are common, and additionally will be much faster
 	static double EditDistance(EvaluableNode *tree1, EvaluableNode *tree2,
-		bool require_exact_matches = false, bool recursive_matching = true)
+		bool types_must_match = true, bool nominal_numbers = true, bool nominal_strings = true, bool recursive_matching = true)
 	{
-		auto shared_nodes = NumberOfSharedNodes(tree1, tree2, require_exact_matches, recursive_matching);
+		auto shared_nodes = NumberOfSharedNodes(tree1, tree2, types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 		size_t tree_1_size = EvaluableNode::GetDeepSize(tree1);
 		size_t tree_2_size = EvaluableNode::GetDeepSize(tree2);
 
@@ -447,16 +460,18 @@ public:
 	}
 
 	//computes the total number of nodes in both trees that are equal
-	//if require_exact_matches is true, then it will only compare nodes that match exactly
+	//types_must_match, nominal_numbers, nominal_strings govern whether matches are exact based on type
 	//if recursive_matching is true, then it will attempt to recursively match any part of the data structure of tree1 to tree2
 	//if recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better
 	// results if the data structures are common, and additionally will be much faster
 	inline static MergeMetricResults<EvaluableNode *> NumberOfSharedNodes(
 		EvaluableNode *tree1, EvaluableNode *tree2,
-		bool require_exact_matches = false, bool recursive_matching = true)
+		bool types_must_match = true, bool nominal_numbers = true, bool nominal_strings = true, bool recursive_matching = true)
 	{
 		MergeMetricResultsParams mmrp;
-		mmrp.requireExactMatches = require_exact_matches;
+		mmrp.typesMustMatch = types_must_match;
+		mmrp.nominalNumbers = nominal_numbers;
+		mmrp.nominalStrings = nominal_strings;
 		mmrp.recursiveMatching = recursive_matching;
 		if((tree1 != nullptr && tree1->GetNeedCycleCheck()) || (tree2 != nullptr && tree2->GetNeedCycleCheck()))
 		{

@@ -822,7 +822,9 @@ enum EvaluableNodeBuiltInStringId
 	
 	//mix parameters
 	ENBISI_string_edit_distance,
-	ENBISI_nominal_values,
+	ENBISI_types_must_match,
+	ENBISI_nominal_numbers,
+	ENBISI_nominal_strings,
 	ENBISI_similar_mix_chance,
 	ENBISI_unnamed_entity_mix_chance,
 	ENBISI_recursive_matching,

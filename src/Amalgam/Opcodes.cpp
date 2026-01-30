@@ -457,7 +457,9 @@ void StringInternPool::InitializeStaticStrings()
 
 	//mix parameters
 	EmplaceStaticString(ENBISI_string_edit_distance, "string_edit_distance");
-	EmplaceStaticString(ENBISI_nominal_values, "nominal_values");
+	EmplaceStaticString(ENBISI_types_must_match, "types_must_match");
+	EmplaceStaticString(ENBISI_nominal_numbers, "nominal_numbers");
+	EmplaceStaticString(ENBISI_nominal_strings, "nominal_strings");
 	EmplaceStaticString(ENBISI_similar_mix_chance, "similar_mix_chance");
 	EmplaceStaticString(ENBISI_unnamed_entity_mix_chance, "unnamed_entity_mix_chance");
 	EmplaceStaticString(ENBISI_recursive_matching, "recursive_matching");

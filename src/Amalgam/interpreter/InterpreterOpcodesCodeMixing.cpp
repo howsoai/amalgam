@@ -68,7 +68,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 }
 
 //TODO 24995: update unit tests
-//TODO 24995: add string_edit_distance option to docs and unit tests for commonality & edit distance
+//TODO 24995: finish updating comparison options to docs and unit tests for commonality & edit distance
 //TODO 24995: update queries and generalized distance
 //InterpretNode_ENT_COMMONALITY
 //InterpretNode_ENT_EDIT_DISTANCE
@@ -91,7 +91,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 		return EvaluableNodeReference::Null();
 
 	bool string_edit_distance = false;
-	bool nominal_values = true;
+	bool types_must_match = true;
+	bool nominal_numbers = true;
+	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
@@ -100,7 +102,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_string_edit_distance, string_edit_distance);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_values, nominal_values);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
 		}
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
@@ -170,6 +174,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 	}
 	else
 	{
+		//TODO 24995: update this
 		edit_distance = EvaluableNodeTreeManipulation::EditDistance(tree1, tree2, nominal_values, recursive_matching);
 	}
 

@@ -45,8 +45,14 @@ public:
 		virtual bool AreMergeable(Entity *a, Entity *b)
 		{	return keepAllOfBoth;	}
 
-		constexpr bool RequireExactMatches()
-		{	return requireExactMatches;		}
+		constexpr bool TypesMustMatch()
+		{	return typesMustMatch;		}
+
+		constexpr bool NominalNumbers()
+		{	return nominalNumbers;		}
+
+		constexpr bool NominalStrings()
+		{	return nominalStrings;		}
 
 		constexpr bool RecursiveMatching()
 		{	return recursiveMatching;		}
@@ -55,7 +61,9 @@ public:
 
 	protected:
 		bool keepAllOfBoth;
-		bool requireExactMatches;
+		bool typesMustMatch;
+		bool nominalNumbers;
+		bool nominalStrings;
 		bool recursiveMatching;
 	};
 
@@ -146,11 +154,11 @@ public:
 
 	//Computes the total number of nodes in both trees that are equal
 	static MergeMetricResults<Entity *> NumberOfSharedNodes(Entity *entity1, Entity *entity2,
-		bool require_exact_matches = false, bool recursive_matching = true);
+		bool types_must_match = true, bool nominal_numbers = true, bool nominal_strings = true, bool recursive_matching = true);
 
 	//computes the edit distance between the two entities
 	static double EditDistance(Entity *entity1, Entity *entity2,
-		bool require_exact_matches = false, bool recursive_matching = true);
+		bool types_must_match = true, bool nominal_numbers = true, bool nominal_strings = true, bool recursive_matching = true);
 
 	static Entity *MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
 		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *operation_type);

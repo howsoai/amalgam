@@ -1019,6 +1019,7 @@ public:
 			if(b_type != ENIVT_CODE)
 				return std::max(1.0, static_cast<double>(EvaluableNode::GetDeepSize(a.code)));
 
+			//TODO 24995: update this
 			return EvaluableNodeTreeManipulation::EditDistance(a.code, b.code, false, feature_type == FDT_CONTINUOUS_CODE);
 		}
 

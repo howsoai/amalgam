@@ -67,7 +67,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	return EvaluableNodeReference(result, true);
 }
 
-//TODO 24995: update queries and generalized distance, including docs and unit tests
+//TODO 24995: update unit tests for queries
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
@@ -807,8 +807,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
 	StringRef new_entity_id;
-	if(ocn.size() > 7)
-		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[7]);
+	if(ocn.size() > 5)
+		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[5]);
 	else
 		destination_entity_parent = EntityWriteReference(curEntity);
 

@@ -40,7 +40,7 @@ EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream rando
 }
 
 //returns a mix of a and b based on their fractions
-inline double MixNumberValues(double a, double b, double fraction_a, double fraction_b)
+static inline double MixNumberValues(double a, double b, double fraction_a, double fraction_b)
 {
 	//quick exit for when they match
 	if(a == b)
@@ -52,7 +52,7 @@ inline double MixNumberValues(double a, double b, double fraction_a, double frac
 }
 
 //returns a mix of a and b based on their fractions
-inline StringInternPool::StringID MixStringValues(StringInternPool::StringID a, StringInternPool::StringID b,
+static inline StringInternPool::StringID MixStringValues(StringInternPool::StringID a, StringInternPool::StringID b,
 	RandomStream random_stream, double fraction_a, double fraction_b)
 {
 	//quick exit for when they match
@@ -1414,7 +1414,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 	return std::make_pair(nullptr, 0.0);
 }
 
-std::string GenerateRandomString(RandomStream &rs)
+static std::string GenerateRandomString(RandomStream &rs)
 {
 	//make the length between 1 and 32, with a mean of 6
 	int string_length = std::min(32, static_cast<int>(rs.ExponentialRand(3.0)) + 1 + static_cast<int>(rs.Rand() * 4));
@@ -1429,7 +1429,7 @@ std::string GenerateRandomString(RandomStream &rs)
 	return retval;
 }
 
-std::string GenerateRandomStringGivenStringSet(RandomStream &rs, std::vector<std::string> &strings, double novel_chance = 0.08)
+static std::string GenerateRandomStringGivenStringSet(RandomStream &rs, std::vector<std::string> &strings, double novel_chance = 0.08)
 {
 	if(strings.size() == 0 || rs.Rand() < novel_chance) //small but nontrivial chance of making a new string
 	{
@@ -1446,7 +1446,7 @@ std::string GenerateRandomStringGivenStringSet(RandomStream &rs, std::vector<std
 }
 
 //helper function for EvaluableNodeTreeManipulation::MutateNode to populate immediate data
-void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<std::string> &strings)
+static void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<std::string> &strings)
 {
 	auto node_type = n->GetType();
 	if(DoesEvaluableNodeTypeUseBoolData(node_type))

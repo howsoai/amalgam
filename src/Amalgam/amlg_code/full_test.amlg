@@ -2056,10 +2056,11 @@
  (print "--commonality_entities--\n")
 
  (print (commonality_entities "MergeEntity1" "MergeEntity2") "\n")
-
+ (print (commonality_entities "MergeEntity1" "MergeEntity2" {types_must_match .false nominal_strings .false}) "\n")
  (print "--edit_distance_entities--\n")
 
  (print (edit_distance_entities "MergeEntity1" "MergeEntity2") "\n")
+ (print (edit_distance_entities "MergeEntity1" "MergeEntity2" {types_must_match .false nominal_strings .false}) "\n")
 
  (print "--intersect_entities--\n")
 

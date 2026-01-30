@@ -1701,10 +1701,10 @@
  					) "\n")
 
  (print (edit_distance "hello" "hello") "\n")
- (print (edit_distance "hello" "hello" {recursive_matching .true}) "\n")
- (print (edit_distance "hello" "el") "\n")
- (print (edit_distance "hello" "el" {recursive_matching .true}) "\n")
- (print (edit_distance "el" "hello" {recursive_matching .true}) "\n")
+ (print (edit_distance "hello" "hello" {string_edit_distance .true}) "\n")
+ (print (edit_distance "hello" "el" {nominal_values .false}) "\n")
+ (print (edit_distance "hello" "el" {string_edit_distance .true}) "\n")
+ (print (edit_distance "el" "hello" {string_edit_distance .true}) "\n")
 
  (print (edit_distance
 			(list 1 2 3)

@@ -456,6 +456,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_change_label, "change_label");
 
 	//mix parameters
+	EmplaceStaticString(ENBISI_string_edit_distance, "string_edit_distance");
 	EmplaceStaticString(ENBISI_nominal_values, "nominal_values");
 	EmplaceStaticString(ENBISI_similar_mix_chance, "similar_mix_chance");
 	EmplaceStaticString(ENBISI_unnamed_entity_mix_chance, "unnamed_entity_mix_chance");

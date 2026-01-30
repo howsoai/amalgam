@@ -821,6 +821,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_change_label,
 	
 	//mix parameters
+	ENBISI_string_edit_distance,
 	ENBISI_nominal_values,
 	ENBISI_similar_mix_chance,
 	ENBISI_unnamed_entity_mix_chance,

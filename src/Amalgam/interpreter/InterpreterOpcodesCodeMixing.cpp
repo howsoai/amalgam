@@ -68,7 +68,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 }
 
 //TODO 24995: update unit tests
-//TODO 24995: add string_edit_distance option for non-entity versions, update docs, update unit tests
+//TODO 24995: add string_edit_distance option to docs and unit tests for commonality & edit distance
+//TODO 24995: update queries and generalized distance
 //InterpretNode_ENT_COMMONALITY
 //InterpretNode_ENT_EDIT_DISTANCE
 //InterpretNode_ENT_INTERSECT
@@ -89,31 +90,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	bool use_string_edit_distance = false;
-	if(ocn.size() > 2)
-		use_string_edit_distance = InterpretNodeIntoBoolValue(ocn[2]);
-
+	bool string_edit_distance = false;
 	bool nominal_values = true;
 	bool recursive_matching = true;
-	if(ocn.size() > 3)
+	if(ocn.size() > 2)
 	{
-		auto params = InterpretNodeForImmediateUse(ocn[3]);
+		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_string_edit_distance, string_edit_distance);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_values, nominal_values);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
 		}
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
 
-	//calculate edit distance based commonality if string edit distance true and both args are string literals
-	if(use_string_edit_distance && (ocn[0]->GetType() == ENT_STRING && ocn[1]->GetType() == ENT_STRING))
+	//calculate edit distance based commonality if string edit distance
+	if(string_edit_distance)
 	{
 		size_t s1_len = 0;
 		size_t s2_len = 0;
 		auto edit_distance = EvaluableNodeTreeManipulation::EditDistance(
-			ocn[0]->GetStringValue(), ocn[1]->GetStringValue(), s1_len, s2_len);
+			EvaluableNode::ToString(ocn[0]), EvaluableNode::ToString(ocn[1]), s1_len, s2_len);
 		auto commonality = static_cast<double>(std::max(s1_len, s2_len) - edit_distance);
 		return AllocReturn(commonality, immediate_result);
 	}
@@ -140,18 +139,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	bool use_string_edit_distance = false;
-	if(ocn.size() > 2)
-		use_string_edit_distance = InterpretNodeIntoBoolValue(ocn[2]);
-
+	bool string_edit_distance = false;
 	bool nominal_values = true;
 	bool recursive_matching = true;
-	if(ocn.size() > 3)
+	if(ocn.size() > 2)
 	{
-		auto params = InterpretNodeForImmediateUse(ocn[3]);
+		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_string_edit_distance, string_edit_distance);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_values, nominal_values);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
 		}
@@ -165,13 +162,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 	auto tree2 = InterpretNodeForImmediateUse(ocn[1]);
 
 	double edit_distance = 0.0;
-	//calculate string edit distance if string edit distance true and both args are string literals
-	if(use_string_edit_distance
-		&& tree1 != nullptr && tree2 != nullptr
-		&& (tree1->GetType() == ENT_STRING && tree2->GetType() == ENT_STRING))
+	//calculate string edit distance if string edit distance
+	if(string_edit_distance)
 	{
 		edit_distance = static_cast<double>(EvaluableNodeTreeManipulation::EditDistance(
-			tree1->GetStringValue(), tree2->GetStringValue()));
+			EvaluableNode::ToString(tree1), EvaluableNode::ToString(tree2)));
 	}
 	else
 	{
@@ -195,9 +190,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 
 	bool nominal_values = true;
 	bool recursive_matching = true;
-	if(ocn.size() > 3)
+	if(ocn.size() > 2)
 	{
-		auto params = InterpretNodeForImmediateUse(ocn[3]);
+		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
@@ -231,9 +226,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, E
 
 	bool nominal_values = true;
 	bool recursive_matching = true;
-	if(ocn.size() > 3)
+	if(ocn.size() > 2)
 	{
-		auto params = InterpretNodeForImmediateUse(ocn[3]);
+		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();

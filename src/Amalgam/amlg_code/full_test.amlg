@@ -1654,14 +1654,14 @@
  					) "\n")
 
  (print (commonality .infinity 3 {nominal_values .false}) "\n")
- (print (commonality (null) 3) "\n")
- (print (commonality .infinity .infinity) "\n")
- (print (commonality .infinity -.infinity) "\n")
+ (print (commonality (null) 3 {nominal_values .false}) "\n")
+ (print (commonality .infinity .infinity {nominal_values .false}) "\n")
+ (print (commonality .infinity -.infinity {nominal_values .false}) "\n")
  (print (commonality "hello" "hello") "\n")
- (print (commonality "hello" "hello" {nominal_values .false}) "\n")
- (print (commonality "hello" "el") "\n")
+ (print (commonality "hello" "hello" {string_edit_distance .true}) "\n")
  (print (commonality "hello" "el" {nominal_values .false}) "\n")
- (print (commonality "el" "hello" {nominal_values .false}) "\n")
+ (print (commonality "hello" "el" {string_edit_distance .true}) "\n")
+ (print (commonality "el" "hello" {string_edit_distance .true}) "\n")
 
  (print (commonality
 		(lambda
@@ -1685,6 +1685,7 @@
 	(print (commonality
 			(list 1 2 3)
 			(lambda (null 1 2 3))
+			{nominal_values .false}
 		) "\n"
 	)
 

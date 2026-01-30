@@ -25,7 +25,7 @@ Entity *EntityManipulation::EntitiesMergeMethod::MergeValues(Entity *a, Entity *
 	EvaluableNodeReference code_b = (b != nullptr ? b->GetRoot() : EvaluableNodeReference::Null());
 
 	EvaluableNodeTreeManipulation::NodesMergeMethod mm(&merged_entity->evaluableNodeManager, keepAllOfBoth,
-		RequireExactMatches(), RecursiveMatching());
+		TypesMustMatch(), NominalNumbers(), NominalStrings(), RecursiveMatching());
 	EvaluableNode *result = mm.MergeValues(code_a, code_b);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	merged_entity->SetRoot(result, true);
@@ -65,9 +65,10 @@ Entity *EntityManipulation::EntitiesMergeForDifferenceMethod::MergeValues(Entity
 //////////////////////////////
 
 EntityManipulation::EntitiesMixMethod::EntitiesMixMethod(Interpreter *_interpreter,
-	double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching,
+	double fraction_a, double fraction_b, double similar_mix_chance,
+	bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching,
 	double fraction_entities_to_mix)
-	: EntitiesMergeMethod(_interpreter, true, false, recursive_matching)
+	: EntitiesMergeMethod(_interpreter, true, types_must_match, nominal_numbers, nominal_strings, recursive_matching)
 {
 	interpreter = _interpreter;
 
@@ -132,7 +133,8 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 	EvaluableNodeReference code_b = (b != nullptr ? b->GetRoot() : EvaluableNodeReference::Null());
 
 	EvaluableNodeTreeManipulation::NodesMixMethod mm(interpreter->randomStream.CreateOtherStreamViaRand(),
-		&merged_entity->evaluableNodeManager, fractionA, fractionB, similarMixChance, RecursiveMatching());
+		&merged_entity->evaluableNodeManager, fractionA, fractionB, similarMixChance,
+		TypesMustMatch(), NominalNumbers(), NominalStrings(), RecursiveMatching());
 
 	EvaluableNode *result = mm.MergeValues(code_a, code_b);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
@@ -569,7 +571,7 @@ void EntityManipulation::MergeContainedEntities(EntitiesMergeMethod *mm, Entity 
 		for(auto &[e2_current_id, e2_current] : entity2_unmatched_unnamed)
 		{
 			auto match_value = NumberOfSharedNodes(e1_current, e2_current,
-				mm->RequireExactMatches(), mm->RecursiveMatching());
+				mm->TypesMustMatch(), mm->NominalNumbers(), mm->NominalStrings(), mm->RecursiveMatching());
 
 			if(match_value.IsNontrivialMatch()
 				&& (!best_match_found || match_value > best_match_value) )

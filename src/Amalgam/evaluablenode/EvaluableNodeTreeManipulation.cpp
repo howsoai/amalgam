@@ -10,8 +10,9 @@
 #include <cmath>
 
 EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream random_stream, EvaluableNodeManager *_enm,
-	double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching)
-	: NodesMergeMethod(_enm, true, false, recursive_matching)
+	double fraction_a, double fraction_b, double similar_mix_chance,
+	bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
+	: NodesMergeMethod(_enm, true, types_must_match, nominal_numbers, nominal_strings, recursive_matching)
 {
 	randomStream = random_stream;
 
@@ -76,7 +77,7 @@ bool EvaluableNodeTreeManipulation::NodesMergeMethod::AreMergeable(EvaluableNode
 {
 	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b);
 
-	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b, true);
+	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b, TypesMustMatch(), NominalNumbers(), NominalStrings());
 
 	return (commonality == 1.0 && num_unique_labels == 0);
 }
@@ -135,7 +136,7 @@ bool EvaluableNodeTreeManipulation::NodesMixMethod::AreMergeable(EvaluableNode *
 {
 	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b);
 
-	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b);
+	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b, TypesMustMatch(), NominalNumbers(), NominalStrings());
 
 	//if the immediate nodes are in fact a match, then just merge them
 	if(commonality == 1.0 && num_unique_labels == 0)
@@ -314,18 +315,34 @@ EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMe
 	}
 
 	auto [node, commonality] = EvaluableNodeTreeManipulation::CommonalityBetweenNodeTypesAndValues(n1, n2,
-		mm->RequireExactMatches());
+		mm->TypesMustMatch(), mm->NominalNumbers(), mm->NominalStrings());
 
 	//if both are nullptr, nothing more to do
 	if(node == nullptr)
 		return nullptr;
 
-	//see if need exact commonality
-	if(mm->RequireExactMatches() && commonality != 1.0)
-		return nullptr;
+	auto common_type = node->GetType();
+
+	//see if need exact commonality based on the type
+	if(mm->TypesMustMatch() && commonality != 1.0)
+	{
+		if(common_type == ENT_NUMBER)
+		{
+			if(mm->NominalNumbers())
+				return nullptr;
+		}
+		else if(common_type == ENT_STRING)
+		{
+			if(mm->NominalStrings())
+				return nullptr;
+		}
+		else //anything other type must match exactly
+		{
+			return nullptr;
+		}
+	}
 
 	//make a new copy of it
-	auto common_type = node->GetType();
 	EvaluableNode *n = enm->AllocNode(common_type);
 
 	//if immediate, copy value
@@ -641,7 +658,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	}
 
 	//check current top nodes
-	auto commonality = CommonalityBetweenNodes(tree1, tree2, mmrp.requireExactMatches);
+	auto commonality = CommonalityBetweenNodes(tree1, tree2, mmrp.typesMustMatch, mmrp.nominalNumbers, mmrp.nominalStrings);
 
 	//see if can exit early, before inserting the nodes into the checked list and then removing them
 	size_t tree1_ordered_nodes_size = 0;
@@ -1133,14 +1150,15 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNorma
 }
 
 MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBetweenNodes(
-	EvaluableNode *n1, EvaluableNode *n2, bool require_exact_matches)
+	EvaluableNode *n1, EvaluableNode *n2,
+	bool types_must_match, bool nominal_numbers, bool nominal_strings)
 {
 	if(n1 == nullptr && n2 == nullptr)
 		return MergeMetricResults(1.0, n1, n2, false, true);
 
 	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(n1, n2);
 
-	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(n1, n2, require_exact_matches);
+	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(n1, n2, types_must_match, nominal_numbers, nominal_strings);
 
 	bool must_match = (num_unique_labels == 0 && num_common_labels > 0);
 	bool exact_match = (num_unique_labels == 0 && commonality == 1.0);
@@ -1148,7 +1166,8 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBe
 }
 
 std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBetweenNodeTypesAndValues(
-	EvaluableNode *n1, EvaluableNode *n2, bool require_exact_matches)
+	EvaluableNode *n1, EvaluableNode *n2,
+	bool types_must_match, bool nominal_numbers, bool nominal_strings)
 {
 	//if either is nullptr, then use an actual EvaluableNode
 	if(n1 == nullptr)
@@ -1159,32 +1178,8 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 	auto n1_type = n1->GetType();
 	auto n2_type = n2->GetType();
 
-	//can have much faster and lighter computations if only checking for exact matches
-	if(require_exact_matches)
-	{
-		if(n1_type != n2_type)
-			return std::make_pair(n1, 0.0);
-
-		if(n1_type == ENT_BOOL)
-		{
-			bool n1_value = n1->GetBoolValueReference();
-			bool n2_value = n2->GetBoolValueReference();
-			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.0);
-		}
-		else if(n1_type == ENT_NUMBER)
-		{
-			double n1_value = n1->GetNumberValueReference();
-			double n2_value = n2->GetNumberValueReference();
-			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.0);
-		}
-		else if(n1_type == ENT_STRING || n1_type == ENT_SYMBOL)
-		{
-			auto n1_sid = n1->GetStringIDReference();
-			auto n2_sid = n2->GetStringIDReference();
-			return std::make_pair(n1, n1_sid == n2_sid ? 1.0 : 0.0);
-		}
-		return std::make_pair(n1, 1.0);
-	}
+	if(types_must_match && n1_type != n2_type)
+		return std::make_pair(n1, 0.0);
 
 	//if types are the same, need special handling for immediates, otherwise return true
 	if(n1_type == n2_type)
@@ -1193,36 +1188,45 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		{
 			bool n1_value = n1->GetBoolValueReference();
 			bool n2_value = n2->GetBoolValueReference();
-			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.375);
-		}
-
-		if(n1_type == ENT_STRING)
-		{
-			auto n1sid = n1->GetStringIDReference();
-			auto n2sid = n2->GetStringIDReference();
-			return std::make_pair(n1, CommonalityBetweenStrings(n1sid, n2sid));
+			return std::make_pair(n1, n1_value == n2_value ? 1.0 : types_must_match ? 0.0 : 0.125);
 		}
 
 		if(n1_type == ENT_NUMBER)
 		{
 			double n1_value = n1->GetNumberValueReference();
 			double n2_value = n2->GetNumberValueReference();
-			if(n1_value == n2_value)
-				return std::make_pair(n1, 1.0);
 
-			double commonality = CommonalityBetweenNumbers(n1_value, n2_value);
-			double commonality_including_type = std::max(0.25, commonality);
+			if(nominal_numbers)
+			{
+				return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.0);
+			}
+			else
+			{
+				double commonality = CommonalityBetweenNumbers(n1_value, n2_value);
+				double commonality_including_type = std::max(0.25, commonality);
 
-			return std::make_pair(n1, commonality_including_type);
+				return std::make_pair(n1, commonality_including_type);
+			}
+		}
+
+		if(n1_type == ENT_STRING)
+		{
+			if(nominal_strings)
+			{
+				auto n1_sid = n1->GetStringIDReference();
+				auto n2_sid = n2->GetStringIDReference();
+				return std::make_pair(n1, n1_sid == n2_sid ? 1.0 : 0.0);
+			}
+			else
+			{
+				auto n1sid = n1->GetStringIDReference();
+				auto n2sid = n2->GetStringIDReference();
+				return std::make_pair(n1, CommonalityBetweenStrings(n1sid, n2sid));
+			}
 		}
 
 		if(n1_type == ENT_SYMBOL)
-		{
-			if(n2->GetStringID() == n1->GetStringID())
-				return std::make_pair(n1, 1.0);
-			else
-				return std::make_pair(n1, 0.25);
-		}
+			return std::make_pair(n1, n2->GetStringIDReference() == n1->GetStringIDReference() ? 1.0 : 0.0);
 
 		return std::make_pair(n1, 1.0);
 	}

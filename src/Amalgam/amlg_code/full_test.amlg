@@ -1653,13 +1653,13 @@
  					(list 1 2 3 (associate "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6))
  					) "\n")
 
- (print (commonality .infinity 3 {nominal_values .false}) "\n")
- (print (commonality (null) 3 {nominal_values .false}) "\n")
- (print (commonality .infinity .infinity {nominal_values .false}) "\n")
- (print (commonality .infinity -.infinity {nominal_values .false}) "\n")
+ (print (commonality .infinity 3) "\n")
+ (print (commonality (null) 3 {types_must_match .false}) "\n")
+ (print (commonality .infinity .infinity) "\n")
+ (print (commonality .infinity -.infinity) "\n")
  (print (commonality "hello" "hello") "\n")
  (print (commonality "hello" "hello" {string_edit_distance .true}) "\n")
- (print (commonality "hello" "el" {nominal_values .false}) "\n")
+ (print (commonality "hello" "el" {nominal_strings .false}) "\n")
  (print (commonality "hello" "el" {string_edit_distance .true}) "\n")
  (print (commonality "el" "hello" {string_edit_distance .true}) "\n")
 
@@ -1685,7 +1685,7 @@
 	(print (commonality
 			(list 1 2 3)
 			(lambda (null 1 2 3))
-			{nominal_values .false}
+			{types_must_match .false}
 		) "\n"
 	)
 
@@ -1702,7 +1702,7 @@
 
  (print (edit_distance "hello" "hello") "\n")
  (print (edit_distance "hello" "hello" {string_edit_distance .true}) "\n")
- (print (edit_distance "hello" "el" {nominal_values .false}) "\n")
+ (print (edit_distance "hello" "el" {nominal_strings .false}) "\n")
  (print (edit_distance "hello" "el" {string_edit_distance .true}) "\n")
  (print (edit_distance "el" "hello" {string_edit_distance .true}) "\n")
 

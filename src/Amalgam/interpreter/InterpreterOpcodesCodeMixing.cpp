@@ -67,15 +67,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	return EvaluableNodeReference(result, true);
 }
 
-//TODO 24995: update unit tests
 //TODO 24995: finish updating comparison options to docs and unit tests for commonality & edit distance
 //TODO 24995: update queries and generalized distance
+//TODO 24995: update unit tests
 //InterpretNode_ENT_COMMONALITY
 //InterpretNode_ENT_EDIT_DISTANCE
 //InterpretNode_ENT_INTERSECT
 //InterpretNode_ENT_UNION
 //InterpretNode_ENT_MIX
-//
+
 //InterpretNode_ENT_COMMONALITY_ENTITIES
 //InterpretNode_ENT_EDIT_DISTANCE_ENTITIES
 //InterpretNode_ENT_INTERSECT_ENTITIES
@@ -92,7 +92,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 
 	bool string_edit_distance = false;
 	bool types_must_match = true;
-	bool nominal_numbers = true;
+	bool nominal_numbers = false;
 	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
@@ -126,7 +126,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 	auto node_stack = CreateOpcodeStackStateSaver(tree1);
 
 	auto tree2 = InterpretNodeForImmediateUse(ocn[1]);
-	auto results = EvaluableNodeTreeManipulation::NumberOfSharedNodes(tree1, tree2, nominal_values, recursive_matching);
+	auto results = EvaluableNodeTreeManipulation::NumberOfSharedNodes(tree1, tree2,
+		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 
 	node_stack.PopEvaluableNode();
 
@@ -144,7 +145,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 		return EvaluableNodeReference::Null();
 
 	bool string_edit_distance = false;
-	bool nominal_values = true;
+	bool types_must_match = true;
+	bool nominal_numbers = false;
+	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
@@ -153,7 +156,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_string_edit_distance, string_edit_distance);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_values, nominal_values);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
 		}
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
@@ -174,8 +179,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 	}
 	else
 	{
-		//TODO 24995: update this
-		edit_distance = EvaluableNodeTreeManipulation::EditDistance(tree1, tree2, nominal_values, recursive_matching);
+		edit_distance = EvaluableNodeTreeManipulation::EditDistance(tree1, tree2,
+			types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 	}
 
 	node_stack.PopEvaluableNode();
@@ -193,7 +198,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	bool nominal_values = true;
+	bool types_must_match = true;
+	bool nominal_numbers = false;
+	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
@@ -201,7 +208,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_values, nominal_values);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
 		}
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
@@ -212,8 +221,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
-	EvaluableNode *result = EvaluableNodeTreeManipulation::IntersectTrees(
-		evaluableNodeManager, n1, n2, nominal_values, recursive_matching);
+	EvaluableNode *result = EvaluableNodeTreeManipulation::IntersectTrees(evaluableNodeManager, n1, n2,
+		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(n1);
@@ -229,7 +238,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, E
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	bool nominal_values = true;
+	bool types_must_match = true;
+	bool nominal_numbers = false;
+	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
@@ -237,7 +248,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, E
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_values, nominal_values);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
 		}
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
@@ -248,8 +261,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, E
 	
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
-	EvaluableNode *result = EvaluableNodeTreeManipulation::UnionTrees(
-		evaluableNodeManager, n1, n2, nominal_values, recursive_matching);
+	EvaluableNode *result = EvaluableNodeTreeManipulation::UnionTrees(evaluableNodeManager, n1, n2,
+		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(n1);
@@ -311,6 +324,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, Eva
 	if(blend1 == 0.0 && blend2 == 0.0)
 		return EvaluableNodeReference::Null();
 
+	bool types_must_match = true;
+	bool nominal_numbers = false;
+	bool nominal_strings = true;
 	bool recursive_matching = true;
 	double similar_mix_chance = 0.0;
 	if(ocn.size() > 4)
@@ -319,6 +335,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, Eva
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_similar_mix_chance, similar_mix_chance);
 		}
@@ -331,7 +350,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, Eva
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::MixTrees(randomStream.CreateOtherStreamViaRand(),
-		evaluableNodeManager, n1, n2, blend1, blend2, similar_mix_chance, recursive_matching);
+		evaluableNodeManager, n1, n2, blend1, blend2, similar_mix_chance,
+		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(n1);
@@ -484,7 +504,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(Evalu
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	bool nominal_values = true;
+	bool types_must_match = true;
+	bool nominal_numbers = false;
+	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
@@ -492,7 +514,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(Evalu
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_values, nominal_values);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
 		}
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
@@ -502,7 +526,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(Evalu
 	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto commonality = EntityManipulation::NumberOfSharedNodes(source_entity_1, source_entity_2, nominal_values, recursive_matching);
+	auto commonality = EntityManipulation::NumberOfSharedNodes(source_entity_1, source_entity_2,
+		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 	return AllocReturn(commonality.commonality, immediate_result);
 }
 
@@ -513,7 +538,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(Eva
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	bool nominal_values = true;
+	bool types_must_match = true;
+	bool nominal_numbers = false;
+	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
@@ -521,7 +548,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(Eva
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_values, nominal_values);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
 		}
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
@@ -531,7 +560,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(Eva
 	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
-	double edit_distance = EntityManipulation::EditDistance(source_entity_1, source_entity_2, nominal_values, recursive_matching);
+	double edit_distance = EntityManipulation::EditDistance(source_entity_1, source_entity_2,
+		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 	return AllocReturn(edit_distance, immediate_result);
 }
 
@@ -542,7 +572,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	bool nominal_values = true;
+	bool types_must_match = true;
+	bool nominal_numbers = false;
+	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
@@ -550,7 +582,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_values, nominal_values);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
 		}
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
@@ -569,8 +603,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging
-	Entity *new_entity = EntityManipulation::IntersectEntities(this,
-		source_entity_1, source_entity_2, nominal_values, recursive_matching);
+	Entity *new_entity = EntityManipulation::IntersectEntities(this, source_entity_1, source_entity_2,
+		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 
 	//no longer need entity references
 	erbr.Clear();
@@ -617,7 +651,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	bool nominal_values = true;
+	bool types_must_match = true;
+	bool nominal_numbers = false;
+	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
@@ -625,7 +661,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_values, nominal_values);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
 		}
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
@@ -644,8 +682,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging
-	Entity *new_entity = EntityManipulation::UnionEntities(this,
-		source_entity_1, source_entity_2, nominal_values, recursive_matching);
+	Entity *new_entity = EntityManipulation::UnionEntities(this, source_entity_1, source_entity_2,
+		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 
 	//no longer need entity references
 	erbr.Clear();
@@ -741,6 +779,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	if(blend1 == 0.0 && blend2 == 0.0)
 		return EvaluableNodeReference::Null();
 
+	bool types_must_match = true;
+	bool nominal_numbers = false;
+	bool nominal_strings = true;
 	bool recursive_matching = true;
 	double similar_mix_chance = 0.0;
 	double unnamed_entity_mix_chance = 0.2;
@@ -750,6 +791,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, recursive_matching);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_similar_mix_chance, similar_mix_chance);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_unnamed_entity_mix_chance, unnamed_entity_mix_chance);
@@ -766,8 +810,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging
-	Entity *new_entity = EntityManipulation::MixEntities(this, source_entity_1, source_entity_2,
-		blend1, blend2, similar_mix_chance, recursive_matching, unnamed_entity_mix_chance);
+	Entity *new_entity = EntityManipulation::MixEntities(this, source_entity_1, source_entity_2, blend1, blend2,
+		similar_mix_chance, types_must_match, nominal_numbers, nominal_strings, recursive_matching, unnamed_entity_mix_chance);
 
 	//no longer need entity references
 	erbr.Clear();

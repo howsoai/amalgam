@@ -122,15 +122,16 @@ public:
 	class NodesMergeMethod : public Merger<EvaluableNode *, nullptr, EvaluableNode::AssocType>
 	{
 	public:
-		NodesMergeMethod(EvaluableNodeManager *_enm,
-			bool keep_all_of_both, bool require_exact_matches, bool recursive_matching)
+		NodesMergeMethod(EvaluableNodeManager *_enm, bool keep_all_of_both,
+			bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 			: enm(_enm), keepAllOfBoth(keep_all_of_both),
-			requireExactMatches(require_exact_matches), recursiveMatching(recursive_matching)
+			typesMustMatch(types_must_match), nominalNumbers(nominal_numbers), nominalStrings(nominal_strings),
+			recursiveMatching(recursive_matching)
 		{	}
 
 		virtual MergeMetricResults<EvaluableNode *> MergeMetric(EvaluableNode *a, EvaluableNode *b)
 		{
-			return NumberOfSharedNodes(a, b, requireExactMatches, recursiveMatching);
+			return NumberOfSharedNodes(a, b, typesMustMatch, nominalNumbers, nominalStrings, recursiveMatching);
 		}
 
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false)
@@ -187,7 +188,8 @@ public:
 	{
 	public:
 		NodesMixMethod(RandomStream random_stream, EvaluableNodeManager *_enm,
-			double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching);
+			double fraction_a, double fraction_b, double similar_mix_chance,
+			bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching);
 
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false);
 
@@ -334,24 +336,26 @@ public:
 	};
 
 	//Tree and string merging functions
-	static inline EvaluableNode *IntersectTrees(EvaluableNodeManager *enm,
-		EvaluableNode *tree1, EvaluableNode *tree2, bool require_exact_matches, bool recursive_matching)
+	static inline EvaluableNode *IntersectTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
+		bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 	{
-		NodesMergeMethod mm(enm, false, require_exact_matches, recursive_matching);
+		NodesMergeMethod mm(enm, false, types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 		return mm.MergeValues(tree1, tree2);
 	}
 
-	static inline EvaluableNode *UnionTrees(EvaluableNodeManager *enm,
-		EvaluableNode *tree1, EvaluableNode *tree2, bool require_exact_matches, bool recursive_matching)
+	static inline EvaluableNode *UnionTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
+		bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 	{
-		NodesMergeMethod mm(enm, true, require_exact_matches, recursive_matching);
+		NodesMergeMethod mm(enm, true, types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 		return mm.MergeValues(tree1, tree2);
 	}
 
 	static inline EvaluableNode *MixTrees(RandomStream random_stream, EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
-		double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching)
+		double fraction_a, double fraction_b, double similar_mix_chance,
+		bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 	{
-		NodesMixMethod mm(random_stream, enm, fraction_a, fraction_b, similar_mix_chance, recursive_matching);
+		NodesMixMethod mm(random_stream, enm, fraction_a, fraction_b, similar_mix_chance,
+			types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 		return mm.MergeValues(tree1, tree2);
 	}
 
@@ -585,18 +589,20 @@ protected:
 		EvaluableNode *replacement, EvaluableNode::ReferenceSetType &checked);
 
 	//Evaluates commonality metric between the two nodes passed in, including labels.  1.0 if identical, 0.0 if completely different, and some value between if similar
-	// If require_exact_matches is true, then it will only return 1.0 or 0.0
+	//appropriate type or value matching parameters apply, then it will only return 1.0 or 0.0
 	static MergeMetricResults<EvaluableNode *> CommonalityBetweenNodes(
-		EvaluableNode *n1, EvaluableNode *n2, bool require_exact_matches = false);
+		EvaluableNode *n1, EvaluableNode *n2,
+		bool types_must_match, bool nominal_numbers, bool nominal_strings);
 
 	//Evaluates the functional commonality between the types and immediate values of n1 and n2 (excluding labels, comments, etc.)
 	// Returns a pair: the first value is the more general of the two nodes and the second is a commonality value
 	// The more general of the two nodes will be the one whose type is more general
 	// The commonality metric will return 1.0 if identical, 0.0 if completely different, and some value between if similar
-	// If require_exact_matches is true, then it will only return 1.0 or 0.0
+	//appropriate type or value matching parameters apply, then it will only return 1.0 or 0.0
 	//The EvaluableNode * returned should not be modified, nor should it be included in any data outside the scope of the caller
 	static std::pair<EvaluableNode *, double> CommonalityBetweenNodeTypesAndValues(
-							EvaluableNode *n1, EvaluableNode *n2, bool require_exact_matches = false);
+							EvaluableNode *n1, EvaluableNode *n2,
+							bool types_must_match, bool nominal_numbers, bool nominal_strings);
 
 	//Mutates the current node n, changing its type or value, based on the mutation_rate
 	// strings contains a list of strings to likely choose from if mutating to a string value

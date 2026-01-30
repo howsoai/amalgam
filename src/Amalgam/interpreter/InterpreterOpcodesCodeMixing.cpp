@@ -67,21 +67,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	return EvaluableNodeReference(result, true);
 }
 
-//TODO 24995: finish updating comparison options to docs and unit tests for commonality & edit distance
-//TODO 24995: update queries and generalized distance
-//TODO 24995: update unit tests
-//InterpretNode_ENT_COMMONALITY
-//InterpretNode_ENT_EDIT_DISTANCE
-//InterpretNode_ENT_INTERSECT
-//InterpretNode_ENT_UNION
-//InterpretNode_ENT_MIX
-
-//InterpretNode_ENT_COMMONALITY_ENTITIES
-//InterpretNode_ENT_EDIT_DISTANCE_ENTITIES
-//InterpretNode_ENT_INTERSECT_ENTITIES
-//InterpretNode_ENT_UNION_ENTITIES
-//InterpretNode_ENT_DIFFERENCE_ENTITIES
-//InterpretNode_ENT_MIX_ENTITIES
+//TODO 24995: update queries and generalized distance, including docs and unit tests
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {

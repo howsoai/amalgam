@@ -105,11 +105,16 @@ template<typename ElementType>
 class FlatMatrix
 {
 public:
+	inline void Resize(size_t num_columns, size_t num_rows)
+	{
+		numColumns = num_columns;
+		flatMatrix.resize(num_columns * num_rows);
+	}
+
 	inline void ClearAndResize(size_t num_columns, size_t num_rows)
 	{
 		numColumns = num_columns;
-		flatMatrix.clear();
-		flatMatrix.resize(num_columns * num_rows);
+		flatMatrix.assign(num_columns * num_rows, ElementType());
 	}
 
 	//returns the matrix value at column, row
@@ -118,7 +123,6 @@ public:
 		return flatMatrix[numColumns * row + column];
 	}
 
-protected:
 	size_t numColumns;
 	std::vector<ElementType> flatMatrix;
 };
@@ -134,7 +138,7 @@ inline void ComputeSequenceCommonalityMatrix(FlatMatrix<MergeResultType> &sequen
 {
 	size_t a_size = a.size();
 	size_t b_size = b.size();
-	sequence_commonality.ClearAndResize(a_size + 1, b_size + 1);
+	sequence_commonality.Resize(a_size + 1, b_size + 1);
 
 	//start at second location so can compare to previous
 	starting_index++;

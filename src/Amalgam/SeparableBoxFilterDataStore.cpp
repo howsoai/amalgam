@@ -288,8 +288,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	
 	//initialize all distances to 0
 	auto &distances = parametersAndBuffers.entityDistances;
-	distances.clear();
-	distances.resize(GetNumInsertedEntities(), 0.0);
+	distances.assign(GetNumInsertedEntities(), 0.0);
 
 	//if there is a radius, then change the flow such that every distance starts out with the negative of the maximum
 	//distance, such that if the distance is greater than zero, it is too far away

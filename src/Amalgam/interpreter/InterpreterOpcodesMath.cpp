@@ -1552,10 +1552,8 @@ static inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std
 			//fill in with the node's value
 			EvaluableNodeImmediateValue value;
 			EvaluableNodeImmediateValueType value_type = value.CopyValueFromEvaluableNode(node);
-			out.clear();
-			out_types.clear();
-			out.resize(id_order.size(), value);
-			out_types.resize(id_order.size(), value_type);
+			out.assign(id_order.size(), value);
+			out_types.assign(id_order.size(), value_type);
 		}
 		else //must be ordered
 		{

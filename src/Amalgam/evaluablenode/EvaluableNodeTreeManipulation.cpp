@@ -1227,6 +1227,9 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 
 		if(n1_type == ENT_SYMBOL)
 			return std::make_pair(n1, n2->GetStringIDReference() == n1->GetStringIDReference() ? 1.0 : 0.0);
+
+		//same type but not immeditae
+		return std::make_pair(n1, 1.0);
 	}
 
 	//compare similar types that are not the same, or types that have immediate comparisons

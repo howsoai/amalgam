@@ -1969,9 +1969,9 @@
  (print (mix 1 4 0.5 0.5 {similar_mix_chance 0.5}) "\n")
  (print (mix 1 4 0.5 0.5 {similar_mix_chance 1}) "\n")
 
- (print (mix "abcdexyz" "abcomxyz" 0.5 0.5) "\n")
- (print (mix "abcdexyz" "abcomxyz" 0.5 0.5) "\n")
- (print (mix "abcdexyz" "abcomxyz" 0.5 0.5) "\n")
+ (print (mix "abcdexyz" "abcomxyz" 0.5 0.5 {nominal_strings .false similar_mix_chance 0.5}) "\n")
+ (print (mix "abcdexyz" "abcomxyz" 0.5 0.5 {nominal_strings .false similar_mix_chance 0.5}) "\n")
+ (print (mix "abcdexyz" "abcomxyz" 0.5 0.5 {nominal_strings .false similar_mix_chance 0.5}) "\n")
 
  (print (mix
 	{a [0 1] b [1 2] c [2 3]}

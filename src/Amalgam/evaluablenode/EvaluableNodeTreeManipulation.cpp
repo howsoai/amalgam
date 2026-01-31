@@ -1188,7 +1188,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		{
 			bool n1_value = n1->GetBoolValueReference();
 			bool n2_value = n2->GetBoolValueReference();
-			return std::make_pair(n1, n1_value == n2_value ? 1.0 : types_must_match ? 0.0 : 0.125);
+			return std::make_pair(n1, n1_value == n2_value ? 1.0 : (types_must_match ? 0.0 : 0.125));
 		}
 
 		if(n1_type == ENT_NUMBER)
@@ -1198,13 +1198,12 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 
 			if(nominal_numbers)
 			{
-				return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.0);
+				return std::make_pair(n1, n1_value == n2_value ? 1.0 : (types_must_match ? 0.0 : 0.125));
 			}
 			else
 			{
 				double commonality = CommonalityBetweenNumbers(n1_value, n2_value);
-				double commonality_including_type = std::max(0.25, commonality);
-
+				double commonality_including_type = std::min(0.125 + 0.875 * commonality, 1.0);
 				return std::make_pair(n1, commonality_including_type);
 			}
 		}
@@ -1215,19 +1214,23 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 			{
 				auto n1_sid = n1->GetStringIDReference();
 				auto n2_sid = n2->GetStringIDReference();
-				return std::make_pair(n1, n1_sid == n2_sid ? 1.0 : 0.0);
+				return std::make_pair(n1, n1_sid == n2_sid ? 1.0 : (types_must_match ? 0.0 : 0.125));
 			}
 			else
 			{
 				auto n1sid = n1->GetStringIDReference();
 				auto n2sid = n2->GetStringIDReference();
-				return std::make_pair(n1, CommonalityBetweenStrings(n1sid, n2sid));
+				double commonality = CommonalityBetweenStrings(n1sid, n2sid);
+				double commonality_including_type = std::min(0.125 + 0.875 * commonality, 1.0);
+				return std::make_pair(n1, commonality_including_type);
 			}
 		}
 
 		if(n1_type == ENT_SYMBOL)
-			return std::make_pair(n1, n2->GetStringIDReference() == n1->GetStringIDReference() ? 1.0 : 0.0);
-
+		{
+			bool match = (n1->GetStringIDReference() == n2->GetStringIDReference());
+			return std::make_pair(n1, match ? 1.0 : (types_must_match ? 0.0 : 0.125));
+		}
 		//same type but not immeditae
 		return std::make_pair(n1, 1.0);
 	}
@@ -1243,19 +1246,19 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		return std::make_pair(nullptr, 0.0);
 
 	case ENT_CALL:
-		if(n2_type == ENT_CALL_SANDBOXED)		return std::make_pair(n1, 0.25);
+		if(n2_type == ENT_CALL_SANDBOXED)		return std::make_pair(n1, 0.125);
 		return std::make_pair(nullptr, 0.0);
 
 	case ENT_CALL_SANDBOXED:
-		if(n2_type == ENT_CALL)					return std::make_pair(n2, 0.25);
+		if(n2_type == ENT_CALL)					return std::make_pair(n2, 0.125);
 		return std::make_pair(nullptr, 0.0);
 
 	case ENT_LET:
-		if(n2_type == ENT_DECLARE)				return std::make_pair(n2, 0.5);
+		if(n2_type == ENT_DECLARE)				return std::make_pair(n2, 0.25);
 		return std::make_pair(nullptr, 0.0);
 
 	case ENT_DECLARE:
-		if(n2_type == ENT_LET)					return std::make_pair(n1, 0.5);
+		if(n2_type == ENT_LET)					return std::make_pair(n1, 0.25);
 		return std::make_pair(nullptr, 0.0);
 
 	case ENT_REDUCE:
@@ -1362,7 +1365,9 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 				return std::make_pair(n2, 0.25);
 		}
 		else if(n2_type == ENT_RAND)
+		{
 			return std::make_pair(n1, 0.125);
+		}
 
 		return std::make_pair(nullptr, 0.0);
 	}

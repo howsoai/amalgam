@@ -55,19 +55,6 @@ struct MergeMetricResultsParams
 	bool recursiveMatching;
 };
 
-//returns a commonality measure of difference between numbers a and b in [0,1]
-//if the numbers are equal, returns 1, returns closer to 0 the less similar they are
-inline double NumberCommonality(double difference, double a, double b)
-{
-	double max_abs = std::max(std::fabs(a), std::fabs(b));
-	//since this is called frequently in comparing and merging, and perfect accuracy isn't required,
-	//cast to float before taking the exponent since it's faster than a double, and because if the
-	//difference divided by the range exceeds the single precision floating point range,
-	//it will just set the term to zero, which is appropriate
-	double difference_commonality = std::exp(static_cast<float>(-difference / max_abs));
-	return difference_commonality;
-}
-
 //for random streams that are based on an EvaluableNode MappedChildNodes
 typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeBuiltInStringId, EvaluableNode::AssocType, EvaluableNodeAsDouble>
 			EvaluableNodeMappedWeightedDiscreteRandomStreamTransform;
@@ -359,7 +346,8 @@ public:
 		return mm.MergeValues(tree1, tree2);
 	}
 
-	static std::string MixStrings(const std::string &a, const std::string &b, RandomStream random_stream, double fraction_a, double fraction_b);
+	static std::string MixStrings(const std::string &a, const std::string &b,
+		RandomStream random_stream, double fraction_a, double fraction_b);
 
 	//returns a number between 0 and 1, where 1 is exactly the same and 0 is maximally different
 	static inline double CommonalityBetweenNumbers(double n1, double n2)
@@ -367,8 +355,30 @@ public:
 		if(n1 == n2)
 			return 1.0;
 
-		double commonality = NumberCommonality(std::fabs(n1 - n2), n1, n2);
-		return commonality;
+		//if both were the same signed infinity, it would have been caught above
+		if(n1 == std::numeric_limits<double>::infinity() || n2 == std::numeric_limits<double>::infinity())
+			return 0.0;
+
+		const double a1 = std::fabs(n1);
+		const double a2 = std::fabs(n2);
+
+		const double max_abs = std::max(a1, a2);
+		const double min_abs = std::min(a1, a2);
+
+		//note that when both numbers are zero, the function will have already handled it
+		const double rel_diff = (max_abs == 0.0) ? 0.0 : (max_abs - min_abs) / max_abs;
+
+		//prevent the relative term from blowing up when max_abs is tiny
+		const double abs_diff = std::fabs(n1 - n2);
+		
+		//blend the two differences
+		const double blended = 0.875 * rel_diff + 0.125 * std::min(abs_diff, 1.0);
+
+		//smoothly decay
+		const double similarity = std::exp(-4 * blended);
+
+		//make sure floating point doesn't push outside of the bounds
+		return std::clamp(similarity, 0.0, 1.0);
 	}
 
 	//returns the commonality between two strings that are different
@@ -377,21 +387,22 @@ public:
 		if(sid1 == sid2)
 			return 1.0;
 
-		//if either is not a string, then maximal nonmatch
 		if(sid1 == string_intern_pool.NOT_A_STRING_ID || sid2 == string_intern_pool.NOT_A_STRING_ID)
-			return 0.125;
+			return 0.0;
 
-		auto &s1 = string_intern_pool.GetStringFromID(sid1);
-		auto &s2 = string_intern_pool.GetStringFromID(sid2);
+		const auto &s1 = string_intern_pool.GetStringFromID(sid1);
+		const auto &s2 = string_intern_pool.GetStringFromID(sid2);
 
-		size_t s1_len = 0;
-		size_t s2_len = 0;
-		size_t difference = EditDistance(s1, s2, s1_len, s2_len);
+		size_t len1 = s1.size();
+		size_t len2 = s2.size();
 
-		double commonality = NumberCommonality(static_cast<double>(difference),
-			static_cast<double>(s1_len), static_cast<double>(s2_len));
+		size_t diff = EditDistance(s1, s2, len1, len2);
 
-		return commonality;
+		double avg_len = (len1 + len2) * 0.5;
+		double length_ratio = std::min(len1, len2) / static_cast<double>(std::max(len1, len2));
+
+		double edit_score = std::exp(-static_cast<double>(diff) / avg_len);
+		return 0.75 * edit_score + 0.25 * length_ratio;
 	}
 
 	//returns the EditDistance between the sequences a and b using the specified sequence_commonality_buffer

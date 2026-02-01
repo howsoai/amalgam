@@ -96,6 +96,19 @@ public:
 		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 	}
 
+	inline void InitializeType(EvaluableNodeType _type, const std::string_view string_value)
+	{
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		assert(IsEvaluableNodeTypeValid(_type));
+	#endif
+
+		type = _type;
+		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+		SetIsIdempotent(true);
+		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
+		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
+	}
+
 	inline void InitializeType(EvaluableNodeType _type, StringInternPool::StringID string_id)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
@@ -631,7 +644,14 @@ public:
 	//functions for getting and setting node comments by string
 	inline std::string_view GetCommentsString()
 	{
-		GetAnnotationsAndCommentsStorage().GetComments();
+		return GetAnnotationsAndCommentsStorage().GetComments();
+	}
+
+	static inline std::string_view GetCommentsString(EvaluableNode *en)
+	{
+		if(en == nullptr)
+			return std::string_view();
+		return en->GetAnnotationsAndCommentsStorage().GetComments();
 	}
 
 	//returns true if has comments

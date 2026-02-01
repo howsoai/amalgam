@@ -460,7 +460,7 @@ public:
 	{
 		for(auto &[label_id, _] : GetLabelIndex())
 		{
-			EvaluableNode *node = GetValueAtLabel(label_id, destination_temp_enm, direct_get,
+			EvaluableNode *node = GetValueAtLabel(label_id, destination_temp_enm,
 				EvaluableNodeRequestedValueTypes::Type::NONE, on_self, true).first;
 			if(node != nullptr)
 				func(label_id, node);

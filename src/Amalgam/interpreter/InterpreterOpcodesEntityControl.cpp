@@ -38,18 +38,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		if(!deep_comments)
 		{
 			EvaluableNode *root = target_entity->GetRoot();
-			auto entity_description_sid = EvaluableNode::GetCommentsStringId(root);
+			auto entity_description = EvaluableNode::GetCommentsString(root);
 			//if the top node doesn't have a description, try to obtain from the node with the null key
-			if(entity_description_sid == string_intern_pool.NOT_A_STRING_ID)
+			if(entity_description.empty())
 			{
 				//TODO 24298: remove this
 				assert(EvaluableNode::IsAssociativeArray(root));
 
 				EvaluableNode **null_code = root->GetMappedChildNode(string_intern_pool.NOT_A_STRING_ID);
 				if(null_code != nullptr)
-					entity_description_sid = EvaluableNode::GetCommentsStringId(*null_code);
+					entity_description = EvaluableNode::GetCommentsString(*null_code);
 			}
-			return AllocReturn(entity_description_sid, immediate_result);
+			return AllocReturn(entity_description, immediate_result);
 		}
 
 		EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
@@ -61,7 +61,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 			{
 				//only include publicly facing labels
 				if(Entity::IsLabelValidAndPublic(label_sid))
-					retval->SetMappedChildNode(label_sid, evaluableNodeManager->AllocNode(ENT_STRING, EvaluableNode::GetCommentsStringId(node)));
+					retval->SetMappedChildNode(label_sid, evaluableNodeManager->AllocNode(EvaluableNode::GetCommentsString(node)));
 			}
 		);
 		
@@ -74,7 +74,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 
 	//has valid label
 	if(!deep_comments)
-		return AllocReturn(label_value->GetCommentsStringId(), immediate_result);
+		return AllocReturn(label_value->GetCommentsString(), immediate_result);
 
 	//make sure a function based on declare that has parameters
 	if(label_value->GetType() != ENT_DECLARE || label_value->GetOrderedChildNodes().size() < 1)
@@ -96,7 +96,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	retval_ocn[0] = params_list;
 
 	//get return comments
-	retval_ocn[1] = evaluableNodeManager->AllocNode(ENT_STRING, vars->GetCommentsStringId());
+	retval_ocn[1] = evaluableNodeManager->AllocNode(vars->GetCommentsString());
 
 	auto &mcn = vars->GetMappedChildNodesReference();
 	params_list->ReserveMappedChildNodes(mcn.size());
@@ -108,7 +108,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		EvaluableNodeReference param_info(evaluableNodeManager->AllocNode(ENT_LIST), true);
 		auto &param_info_ocn = param_info->GetOrderedChildNodesReference();
 		param_info_ocn.resize(2);
-		param_info_ocn[0] = evaluableNodeManager->AllocNode(ENT_STRING, EvaluableNode::GetCommentsStringId(cn));
+		param_info_ocn[0] = evaluableNodeManager->AllocNode(EvaluableNode::GetCommentsString(cn));
 		param_info_ocn[1] = evaluableNodeManager->DeepAllocCopy(cn, false);
 
 		//add to the params

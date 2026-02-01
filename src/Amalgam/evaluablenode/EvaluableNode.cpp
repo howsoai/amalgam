@@ -18,6 +18,7 @@ std::vector<std::string> EvaluableNode::emptyStringVector;
 std::vector<StringInternPool::StringID> EvaluableNode::emptyStringIdVector;
 std::vector<EvaluableNode *> EvaluableNode::emptyOrderedChildNodes;
 EvaluableNode::AssocType EvaluableNode::emptyMappedChildNodes;
+EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments;
 
 //field for watching EvaluableNodes for debugging
 FastHashSet<EvaluableNode *> EvaluableNode::debugWatch;
@@ -472,20 +473,10 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 		SetConcurrency(n->GetConcurrency());
 
 		if(n->HasExtendedValue())
-		{
 			EnsureEvaluableNodeExtended();
-			if(copy_labels)
-				SetLabelsStringIds(n->GetLabelsStringIds());
-			if(copy_comments_and_concurrency)
-				SetCommentsStringId(n->GetCommentsStringId());
-		}
-		//copy_comments doesn't matter because if made it here, there aren't any
-		else if(copy_labels && HasCompactSingleLabelStorage())
-		{
-			StringInternPool::StringID id = n->GetCompactSingleLabelStorage();
-			if(id != StringInternPool::NOT_A_STRING_ID)
-				GetCompactSingleLabelStorage() = string_intern_pool.CreateStringReference(id);
-		}
+
+		auto [annotations, comments] = n->GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
+		GetAnnotationsAndCommentsStorage().SetAnnotationsAndComments(annotations, comments);
 	}
 }
 
@@ -551,32 +542,15 @@ void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 	if(n == this)
 		return;
 
-	//copy labels (different ways based on type)
-	if(HasCompactSingleLabelStorage() && n->HasCompactSingleLabelStorage())
-	{
-		auto string_id = GetCompactSingleLabelStorage();
-		auto n_string_id = n->GetCompactSingleLabelStorage();
+	auto [annotations, comments] = n->GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
+	GetAnnotationsAndCommentsStorage().SetAnnotationsAndComments(annotations, comments);
 
-		if(string_id != n_string_id)
-		{
-			string_intern_pool.DestroyStringReference(string_id);
-			GetCompactSingleLabelStorage() = string_intern_pool.CreateStringReference(n_string_id);
-			SetIsIdempotent(false);
-		}
-	}
-	else
+	if(annotations.size() > 0 || comments.size() > 0)
 	{
-		auto label_sids = n->GetLabelsStringIds();
-		if(label_sids.size() > 0)
-		{
-			SetLabelsStringIds(label_sids);
-			SetIsIdempotent(false);
-		}
-		else
-			ClearLabels();
+		if(!HasCompactAnnotationsAndCommentsStorage() && !HasExtendedValue())
+			EnsureEvaluableNodeExtended();
 	}
 
-	SetCommentsStringId(n->GetCommentsStringId());
 	SetConcurrency(n->GetConcurrency());
 }
 
@@ -608,7 +582,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 
 	//need to preserve the extra label if it exists
 	StringInternPool::StringID extra_label = StringInternPool::NOT_A_STRING_ID;
-	if(HasCompactSingleLabelStorage())
+	if(HasCompactAnnotationsAndCommentsStorage())
 	{
 		extra_label = GetCompactSingleLabelStorage();
 		GetCompactSingleLabelStorage() = StringInternPool::NOT_A_STRING_ID;

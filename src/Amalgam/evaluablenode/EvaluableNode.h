@@ -621,6 +621,8 @@ public:
 	//sets the annotation_string
 	void SetAnnotationsString(std::string_view s)
 	{
+		if(!HasCompactAnnotationsAndCommentsStorage() && !HasExtendedValue())
+			EnsureEvaluableNodeExtended();
 		GetAnnotationsAndCommentsStorage().SetAnnotations(s);
 	}
 
@@ -635,6 +637,9 @@ public:
 	//appends annotations to the node
 	void AppendAnnotations(std::string &annotations)
 	{
+		if(!HasCompactAnnotationsAndCommentsStorage() && !HasExtendedValue())
+			EnsureEvaluableNodeExtended();
+
 		auto &a_and_c = GetAnnotationsAndCommentsStorage();
 		std::string combined(a_and_c.GetAnnotations());
 		combined.append(annotations);
@@ -662,6 +667,9 @@ public:
 
 	inline void SetCommentsString(const std::string &comment)
 	{
+		if(!HasCompactAnnotationsAndCommentsStorage() && !HasExtendedValue())
+			EnsureEvaluableNodeExtended();
+
 		GetAnnotationsAndCommentsStorage().SetComments(comment);
 	}
 
@@ -676,6 +684,9 @@ public:
 	//appends comments to the node
 	void AppendComments(std::string &comments)
 	{
+		if(!HasCompactAnnotationsAndCommentsStorage() && !HasExtendedValue())
+			EnsureEvaluableNodeExtended();
+
 		auto &a_and_c = GetAnnotationsAndCommentsStorage();
 		std::string combined(a_and_c.GetComments());
 		combined.append(comments);
@@ -1035,21 +1046,26 @@ public:
 	}
 
 	//if it is storing an immediate value and has room to store a label
-	bool HasCompactSingleLabelStorage()
+	bool HasCompactAnnotationsAndCommentsStorage()
 	{
-		return ((type == ENT_BOOL || type == ENT_NUMBER || type == ENT_STRING || type == ENT_SYMBOL) && !HasExtendedValue());
+		return (type == ENT_BOOL || type == ENT_NUMBER || type == ENT_STRING || type == ENT_SYMBOL);
 	}
 
 	//returns a reference to the storage location for the annotation and comment storage
-	// will only return valid results if HasCompactSingleLabelStorage() is true, so that should be called first
+	// will only return valid results if HasCompactAnnotationsAndCommentsStorage() is true, so that should be called first
 	__forceinline AnnotationsAndComments &GetAnnotationsAndCommentsStorage()
 	{
 		if(type == ENT_BOOL)
 			return value.boolValueContainer.annotationsAndComments;
 		if(type == ENT_NUMBER)
 			return value.numberValueContainer.annotationsAndComments;
-		//else assume type == ENT_STRING || type == ENT_SYMBOL
-		return value.stringValueContainer.annotationsAndComments;
+		if(type == ENT_STRING || type == ENT_SYMBOL)
+			return value.stringValueContainer.annotationsAndComments;
+
+		if(HasExtendedValue())
+			return value.extension.annotationsAndComments;
+
+		return emptyAnnotationsAndComments;
 	}
 
 	//registers and unregisters an EvaluableNode for debug watching
@@ -1127,6 +1143,22 @@ protected:
 			p += std::strlen(p) + 1;
 			std::size_t len = std::strlen(p);
 			return std::string_view(p, len);
+		}
+
+		//gets both annotations and comments more efficiently than getting separately
+		std::pair<std::string_view, std::string_view> GetAnnotationsAndComments()
+		{
+			if(!buffer)
+				return { {}, {} };
+
+			const char *p = buffer.get();
+			std::size_t ann_len = std::strlen(p);
+			const char *comment_ptr = p + ann_len + 1;
+			std::size_t com_len = std::strlen(comment_ptr);
+			return {
+				std::string_view(p, ann_len),
+				std::string_view(comment_ptr, com_len)
+			};
 		}
 
 		//replace both strings
@@ -1307,6 +1339,7 @@ protected:
 	static std::vector<StringInternPool::StringID> emptyStringIdVector;
 	static std::vector<EvaluableNode *> emptyOrderedChildNodes;
 	static AssocType emptyMappedChildNodes;
+	static AnnotationsAndComments emptyAnnotationsAndComments;
 
 	//field for watching EvaluableNodes for debugging
 	static FastHashSet<EvaluableNode *> debugWatch;

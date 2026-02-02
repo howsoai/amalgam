@@ -138,7 +138,7 @@ inline void ComputeSequenceCommonalityMatrix(FlatMatrix<MergeResultType> &sequen
 {
 	size_t a_size = a.size();
 	size_t b_size = b.size();
-	sequence_commonality.Resize(a_size + 1, b_size + 1);
+	sequence_commonality.ClearAndResize(a_size + 1, b_size + 1);
 
 	//start at second location so can compare to previous
 	starting_index++;

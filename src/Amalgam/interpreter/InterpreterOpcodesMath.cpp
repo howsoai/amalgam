@@ -184,7 +184,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en,
 //accepts infinities and NaNs and still sets them appropriately
 //first_digit is the first digit in the number (most significant), start_digit and end_digit are the digits selected
 //if first_digit does not need to be computed, then it will be left unchanged
-inline void NormalizeStartAndEndDigitToZerosPlace(double value, double base, bool relative_to_zero,
+static inline void NormalizeStartAndEndDigitToZerosPlace(double value, double base, bool relative_to_zero,
 	double &first_digit, double &start_digit, double &end_digit)
 {
 	//compute max_num_digits using data on how the numbers are stored
@@ -1523,7 +1523,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 
 //builds a vector of the values in the node, using ordered or mapped child nodes as appropriate
 // if node is mapped child nodes, it will use id_order to order populate out and use default_value if any given id is not found
-inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vector<StringInternPool::StringID> &id_order,
+static inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vector<StringInternPool::StringID> &id_order,
 	std::vector<EvaluableNodeImmediateValue> &out, std::vector<EvaluableNodeImmediateValueType> &out_types)
 {
 	if(node != nullptr)
@@ -1552,10 +1552,8 @@ inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vecto
 			//fill in with the node's value
 			EvaluableNodeImmediateValue value;
 			EvaluableNodeImmediateValueType value_type = value.CopyValueFromEvaluableNode(node);
-			out.clear();
-			out_types.clear();
-			out.resize(id_order.size(), value);
-			out_types.resize(id_order.size(), value_type);
+			out.assign(id_order.size(), value);
+			out_types.assign(id_order.size(), value_type);
 		}
 		else //must be ordered
 		{

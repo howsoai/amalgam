@@ -361,8 +361,6 @@ namespace EntityQueryBuilder
 							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC;
 						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_string))
 							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code_no_recursive_matching))
-							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING;
 						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code))
 							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;
 						else
@@ -394,6 +392,24 @@ namespace EntityQueryBuilder
 						else //can't be cyclic without a range
 							dist_eval.featureAttribs[i].featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 						break;
+
+					case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE:
+					{
+						auto &attribs = dist_eval.featureAttribs[i].typeAttributes.code;
+						attribs.typesMustMatch = true;
+						attribs.nominalNumbers = false;
+						attribs.nominalStrings = true;
+						attribs.recursiveMatching = true;
+						if(found && EvaluableNode::IsAssociativeArray(en))
+						{
+							auto &mcn = en->GetMappedChildNodesReference();
+							EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, attribs.typesMustMatch);
+							EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, attribs.nominalNumbers);
+							EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, attribs.nominalStrings);
+							EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, attribs.recursiveMatching);
+						}
+						break;
+					}
 
 					default:
 						break;

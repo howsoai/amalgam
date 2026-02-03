@@ -49,22 +49,11 @@ struct MergeMetricResultsParams
 {
 	EvaluableNode::ReferenceSetType *checked;
 	CompactHashMap<std::pair<EvaluableNode *, EvaluableNode *>, MergeMetricResults<EvaluableNode *>> memoizedNodeMergePairs;
-	bool requireExactMatches;
+	bool typesMustMatch;
+	bool nominalNumbers;
+	bool nominalStrings;
 	bool recursiveMatching;
 };
-
-//returns a commonality measure of difference between numbers a and b in [0,1]
-//if the numbers are equal, returns 1, returns closer to 0 the less similar they are
-inline double NumberCommonality(double difference, double a, double b)
-{
-	double max_abs = std::max(std::fabs(a), std::fabs(b));
-	//since this is called frequently in comparing and merging, and perfect accuracy isn't required,
-	//cast to float before taking the exponent since it's faster than a double, and because if the
-	//difference divided by the range exceeds the single precision floating point range,
-	//it will just set the term to zero, which is appropriate
-	double difference_commonality = std::exp(static_cast<float>(-difference / max_abs));
-	return difference_commonality;
-}
 
 //for random streams that are based on an EvaluableNode MappedChildNodes
 typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeBuiltInStringId, EvaluableNode::AssocType, EvaluableNodeAsDouble>
@@ -120,15 +109,16 @@ public:
 	class NodesMergeMethod : public Merger<EvaluableNode *, nullptr, EvaluableNode::AssocType>
 	{
 	public:
-		NodesMergeMethod(EvaluableNodeManager *_enm,
-			bool keep_all_of_both, bool require_exact_matches, bool recursive_matching)
+		NodesMergeMethod(EvaluableNodeManager *_enm, bool keep_all_of_both,
+			bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 			: enm(_enm), keepAllOfBoth(keep_all_of_both),
-			requireExactMatches(require_exact_matches), recursiveMatching(recursive_matching)
+			typesMustMatch(types_must_match), nominalNumbers(nominal_numbers), nominalStrings(nominal_strings),
+			recursiveMatching(recursive_matching)
 		{	}
 
 		virtual MergeMetricResults<EvaluableNode *> MergeMetric(EvaluableNode *a, EvaluableNode *b)
 		{
-			return NumberOfSharedNodes(a, b, requireExactMatches, recursiveMatching);
+			return NumberOfSharedNodes(a, b, typesMustMatch, nominalNumbers, nominalStrings, recursiveMatching);
 		}
 
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false)
@@ -156,8 +146,14 @@ public:
 		virtual EvaluableNode::ReferenceAssocType &GetReferences()
 		{	return references;	}
 
-		constexpr bool RequireExactMatches()
-		{	return requireExactMatches;		}
+		constexpr bool TypesMustMatch()
+		{	return typesMustMatch;		}
+
+		constexpr bool NominalNumbers()
+		{	return nominalNumbers;		}
+
+		constexpr bool NominalStrings()
+		{	return nominalStrings;		}
 
 		constexpr bool RecursiveMatching()
 		{	return recursiveMatching;		}
@@ -167,7 +163,9 @@ public:
 
 	protected:
 		bool keepAllOfBoth;
-		bool requireExactMatches;
+		bool typesMustMatch;
+		bool nominalNumbers;
+		bool nominalStrings;
 		bool recursiveMatching;
 		EvaluableNode::ReferenceAssocType references;
 	};
@@ -177,7 +175,8 @@ public:
 	{
 	public:
 		NodesMixMethod(RandomStream random_stream, EvaluableNodeManager *_enm,
-			double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching);
+			double fraction_a, double fraction_b, double similar_mix_chance,
+			bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching);
 
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false);
 
@@ -324,28 +323,31 @@ public:
 	};
 
 	//Tree and string merging functions
-	static inline EvaluableNode *IntersectTrees(EvaluableNodeManager *enm,
-		EvaluableNode *tree1, EvaluableNode *tree2, bool recursive_matching)
+	static inline EvaluableNode *IntersectTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
+		bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 	{
-		NodesMergeMethod mm(enm, false, true, recursive_matching);
+		NodesMergeMethod mm(enm, false, types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 		return mm.MergeValues(tree1, tree2);
 	}
 
-	static inline EvaluableNode *UnionTrees(EvaluableNodeManager *enm,
-		EvaluableNode *tree1, EvaluableNode *tree2, bool recursive_matching)
+	static inline EvaluableNode *UnionTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
+		bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 	{
-		NodesMergeMethod mm(enm, true, true, recursive_matching);
+		NodesMergeMethod mm(enm, true, types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 		return mm.MergeValues(tree1, tree2);
 	}
 
 	static inline EvaluableNode *MixTrees(RandomStream random_stream, EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
-		double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching)
+		double fraction_a, double fraction_b, double similar_mix_chance,
+		bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 	{
-		NodesMixMethod mm(random_stream, enm, fraction_a, fraction_b, similar_mix_chance, recursive_matching);
+		NodesMixMethod mm(random_stream, enm, fraction_a, fraction_b, similar_mix_chance,
+			types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 		return mm.MergeValues(tree1, tree2);
 	}
 
-	static std::string MixStrings(const std::string &a, const std::string &b, RandomStream random_stream, double fraction_a, double fraction_b);
+	static std::string MixStrings(const std::string &a, const std::string &b,
+		RandomStream random_stream, double fraction_a, double fraction_b);
 
 	//returns a number between 0 and 1, where 1 is exactly the same and 0 is maximally different
 	static inline double CommonalityBetweenNumbers(double n1, double n2)
@@ -353,8 +355,30 @@ public:
 		if(n1 == n2)
 			return 1.0;
 
-		double commonality = NumberCommonality(std::fabs(n1 - n2), n1, n2);
-		return commonality;
+		//if both were the same signed infinity, it would have been caught above
+		if(n1 == std::numeric_limits<double>::infinity() || n2 == std::numeric_limits<double>::infinity())
+			return 0.0;
+
+		const double a1 = std::fabs(n1);
+		const double a2 = std::fabs(n2);
+
+		const double max_abs = std::max(a1, a2);
+		const double min_abs = std::min(a1, a2);
+
+		//note that when both numbers are zero, the function will have already handled it
+		const double rel_diff = (max_abs == 0.0) ? 0.0 : (max_abs - min_abs) / max_abs;
+
+		//prevent the relative term from blowing up when max_abs is tiny
+		const double abs_diff = std::fabs(n1 - n2);
+		
+		//blend the two differences
+		const double blended = 0.875 * rel_diff + 0.125 * std::min(abs_diff, 1.0);
+
+		//smoothly decay
+		const double similarity = std::exp(-4 * blended);
+
+		//make sure floating point doesn't push outside of the bounds
+		return std::clamp(similarity, 0.0, 1.0);
 	}
 
 	//returns the commonality between two strings that are different
@@ -363,21 +387,22 @@ public:
 		if(sid1 == sid2)
 			return 1.0;
 
-		//if either is not a string, then maximal nonmatch
 		if(sid1 == string_intern_pool.NOT_A_STRING_ID || sid2 == string_intern_pool.NOT_A_STRING_ID)
-			return 0.125;
+			return 0.0;
 
-		auto &s1 = string_intern_pool.GetStringFromID(sid1);
-		auto &s2 = string_intern_pool.GetStringFromID(sid2);
+		const auto &s1 = string_intern_pool.GetStringFromID(sid1);
+		const auto &s2 = string_intern_pool.GetStringFromID(sid2);
 
-		size_t s1_len = 0;
-		size_t s2_len = 0;
-		size_t difference = EditDistance(s1, s2, s1_len, s2_len);
+		size_t len1 = s1.size();
+		size_t len2 = s2.size();
 
-		double commonality = NumberCommonality(static_cast<double>(difference),
-			static_cast<double>(s1_len), static_cast<double>(s2_len));
+		size_t diff = EditDistance(s1, s2, len1, len2);
 
-		return commonality;
+		double avg_len = (len1 + len2) * 0.5;
+		double length_ratio = std::min(len1, len2) / static_cast<double>(std::max(len1, len2));
+
+		double edit_score = std::exp(-static_cast<double>(diff) / avg_len);
+		return 0.75 * edit_score + 0.25 * length_ratio;
 	}
 
 	//returns the EditDistance between the sequences a and b using the specified sequence_commonality_buffer
@@ -434,11 +459,14 @@ public:
 	}
 
 	//computes the edit distance between the two trees
-	// If require_exact_matches is true, then it will only compare nodes that match exactly
+	//types_must_match, nominal_numbers, nominal_strings govern whether matches are exact based on type
+	//if recursive_matching is true, then it will attempt to recursively match any part of the data structure of tree1 to tree2
+	//if recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better
+	// results if the data structures are common, and additionally will be much faster
 	static double EditDistance(EvaluableNode *tree1, EvaluableNode *tree2,
-		bool require_exact_matches = false, bool recursive_matching = true)
+		bool types_must_match = true, bool nominal_numbers = true, bool nominal_strings = true, bool recursive_matching = true)
 	{
-		auto shared_nodes = NumberOfSharedNodes(tree1, tree2, require_exact_matches, recursive_matching);
+		auto shared_nodes = NumberOfSharedNodes(tree1, tree2, types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 		size_t tree_1_size = EvaluableNode::GetDeepSize(tree1);
 		size_t tree_2_size = EvaluableNode::GetDeepSize(tree2);
 
@@ -447,16 +475,18 @@ public:
 	}
 
 	//computes the total number of nodes in both trees that are equal
-	//if require_exact_matches is true, then it will only compare nodes that match exactly
+	//types_must_match, nominal_numbers, nominal_strings govern whether matches are exact based on type
 	//if recursive_matching is true, then it will attempt to recursively match any part of the data structure of tree1 to tree2
 	//if recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better
 	// results if the data structures are common, and additionally will be much faster
 	inline static MergeMetricResults<EvaluableNode *> NumberOfSharedNodes(
 		EvaluableNode *tree1, EvaluableNode *tree2,
-		bool require_exact_matches = false, bool recursive_matching = true)
+		bool types_must_match = true, bool nominal_numbers = true, bool nominal_strings = true, bool recursive_matching = true)
 	{
 		MergeMetricResultsParams mmrp;
-		mmrp.requireExactMatches = require_exact_matches;
+		mmrp.typesMustMatch = types_must_match;
+		mmrp.nominalNumbers = nominal_numbers;
+		mmrp.nominalStrings = nominal_strings;
 		mmrp.recursiveMatching = recursive_matching;
 		if((tree1 != nullptr && tree1->GetNeedCycleCheck()) || (tree2 != nullptr && tree2->GetNeedCycleCheck()))
 		{
@@ -570,18 +600,20 @@ protected:
 		EvaluableNode *replacement, EvaluableNode::ReferenceSetType &checked);
 
 	//Evaluates commonality metric between the two nodes passed in, including labels.  1.0 if identical, 0.0 if completely different, and some value between if similar
-	// If require_exact_matches is true, then it will only return 1.0 or 0.0
+	//appropriate type or value matching parameters apply, then it will only return 1.0 or 0.0
 	static MergeMetricResults<EvaluableNode *> CommonalityBetweenNodes(
-		EvaluableNode *n1, EvaluableNode *n2, bool require_exact_matches = false);
+		EvaluableNode *n1, EvaluableNode *n2,
+		bool types_must_match, bool nominal_numbers, bool nominal_strings);
 
 	//Evaluates the functional commonality between the types and immediate values of n1 and n2 (excluding labels, comments, etc.)
 	// Returns a pair: the first value is the more general of the two nodes and the second is a commonality value
 	// The more general of the two nodes will be the one whose type is more general
 	// The commonality metric will return 1.0 if identical, 0.0 if completely different, and some value between if similar
-	// If require_exact_matches is true, then it will only return 1.0 or 0.0
+	//appropriate type or value matching parameters apply, then it will only return 1.0 or 0.0
 	//The EvaluableNode * returned should not be modified, nor should it be included in any data outside the scope of the caller
 	static std::pair<EvaluableNode *, double> CommonalityBetweenNodeTypesAndValues(
-							EvaluableNode *n1, EvaluableNode *n2, bool require_exact_matches = false);
+							EvaluableNode *n1, EvaluableNode *n2,
+							bool types_must_match, bool nominal_numbers, bool nominal_strings);
 
 	//Mutates the current node n, changing its type or value, based on the mutation_rate
 	// strings contains a list of strings to likely choose from if mutating to a string value

@@ -393,7 +393,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_continuous_number, "continuous_number");
 	EmplaceStaticString(ENBISI_continuous_number_cyclic, "continuous_number_cyclic");
 	EmplaceStaticString(ENBISI_continuous_string, "continuous_string");
-	EmplaceStaticString(ENBISI_continuous_code_no_recursive_matching, "continuous_code_no_recursive_matching");
 	EmplaceStaticString(ENBISI_continuous_code, "continuous_code");
 
 	//distance parameter values
@@ -455,4 +454,13 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_deep_copy_elements, "deep_copy_elements");
 	EmplaceStaticString(ENBISI_delete_elements, "delete_elements");
 	EmplaceStaticString(ENBISI_change_label, "change_label");
+
+	//mix parameters
+	EmplaceStaticString(ENBISI_string_edit_distance, "string_edit_distance");
+	EmplaceStaticString(ENBISI_types_must_match, "types_must_match");
+	EmplaceStaticString(ENBISI_nominal_numbers, "nominal_numbers");
+	EmplaceStaticString(ENBISI_nominal_strings, "nominal_strings");
+	EmplaceStaticString(ENBISI_similar_mix_chance, "similar_mix_chance");
+	EmplaceStaticString(ENBISI_unnamed_entity_mix_chance, "unnamed_entity_mix_chance");
+	EmplaceStaticString(ENBISI_recursive_matching, "recursive_matching");
 }

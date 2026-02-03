@@ -35,10 +35,6 @@ public:
 		FDT_CONTINUOUS_NUMBER_CYCLIC,
 		//edit distance between strings
 		FDT_CONTINUOUS_STRING,
-		//continuous measures of the number of nodes different between two sets of code,
-		// but it will only attempt to merge the two at the same level, which yield better
-		// results if the data structures are common, and additionally will be much faster
-		FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING,
 		//continuous measures of the number of nodes different between two sets of code
 		FDT_CONTINUOUS_CODE,
 	};
@@ -176,6 +172,15 @@ public:
 
 			//maximum difference value of the feature for cyclic features (NaN if unknown)
 			double maxCyclicDifference;
+
+			//parameters for code matching
+			struct
+			{
+				bool typesMustMatch;
+				bool nominalNumbers;
+				bool nominalStrings;
+				bool recursiveMatching;
+			} code;
 
 		} typeAttributes;
 
@@ -860,7 +865,7 @@ public:
 		if(IsFeatureNominal(index))
 			return ComputeDistanceTermNominal(a, b, a_type, b_type, index);
 
-		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index].featureType);
+		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index]);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
 
@@ -877,7 +882,7 @@ public:
 		if(IsFeatureNominal(index))
 			return ComputeDistanceTermNominal(a, b, a_type, b_type, index);
 
-		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index].featureType);
+		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index]);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
 
@@ -922,7 +927,7 @@ public:
 		if(IsFeatureNominal(index))
 			return ComputeDistanceTermNominal(a, b, a_type, b_type, index);
 
-		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index].featureType);
+		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index]);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
 
@@ -947,8 +952,9 @@ public:
 	//computes the difference between a and b given their types and the distance_type and the feature difference type
 	__forceinline static double ComputeDifference(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type,
-		GeneralizedDistanceEvaluator::FeatureDifferenceType feature_type)
+		GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
 	{
+		auto feature_type = feature_attribs.featureType;
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC)
 		{
@@ -1019,7 +1025,10 @@ public:
 			if(b_type != ENIVT_CODE)
 				return std::max(1.0, static_cast<double>(EvaluableNode::GetDeepSize(a.code)));
 
-			return EvaluableNodeTreeManipulation::EditDistance(a.code, b.code, false, feature_type == FDT_CONTINUOUS_CODE);
+			auto &code_attribs = feature_attribs.typeAttributes.code;
+			return EvaluableNodeTreeManipulation::EditDistance(a.code, b.code,
+				code_attribs.typesMustMatch, code_attribs.nominalNumbers,
+				code_attribs.nominalStrings, code_attribs.recursiveMatching);
 		}
 
 		//different immediate types
@@ -1211,10 +1220,6 @@ public:
 		EFDT_NOMINAL_CODE,
 		//edit distance between strings
 		EFDT_CONTINUOUS_STRING,
-		//continuous measures of the number of nodes different between two sets of code,
-		// but it will only attempt to merge the two at the same level, which yield better
-		// results if the data structures are common, and additionally will be much faster
-		EFDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING,
 		//continuous measures of the number of nodes different between two sets of code
 		EFDT_CONTINUOUS_CODE,
 	};
@@ -1624,7 +1629,7 @@ public:
 			return ComputeDistanceTermNominal(other_value, other_type, index);
 
 		double diff = distEvaluator->ComputeDifference(feature_data.targetValue.nodeValue, other_value,
-			feature_data.targetValue.nodeType, other_type, distEvaluator->featureAttribs[index].featureType);
+			feature_data.targetValue.nodeType, other_type, distEvaluator->featureAttribs[index]);
 
 		if(FastIsNaN(diff))
 			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue.nodeValue, other_value,

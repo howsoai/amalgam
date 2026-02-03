@@ -759,29 +759,24 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool be
 			}
 		}
 
-		//if breaking on a label
-		if(!_interpreter_debug_data.runUntilLabel.empty() || _interpreter_debug_data.breakLabels.size() > 0)
+		//if breaking on a label and in a valid entity
+		if( (!_interpreter_debug_data.runUntilLabel.empty() || _interpreter_debug_data.breakLabels.size() > 0)
+			&& curEntity != nullptr && en != nullptr)
 		{
-			size_t num_labels = 0;
-			if(en != nullptr)
-				num_labels = en->GetNumLabels();
-
-			if(num_labels > 0)
+			auto [label_sid, found] = curEntity->GetLabelForNodeIfExists(en);
+			if(found)
 			{
 				//check each label to see if matches
 				auto run_until_label_sid = string_intern_pool.GetIDFromString(_interpreter_debug_data.runUntilLabel);
 
-				for(size_t i = 0; i < num_labels; i++)
+				if(label_sid == run_until_label_sid)
 				{
-					auto label_sid = en->GetLabelStringId(i);
-					if(label_sid == run_until_label_sid)
-					{
-						//re-enter interactiveMode and clear runUntilLabel
-						_interpreter_debug_data.runUntilLabel = "";
-						_interpreter_debug_data.EnableInteractiveMode();
-						break;
-					}
-
+					//re-enter interactiveMode and clear runUntilLabel
+					_interpreter_debug_data.runUntilLabel = "";
+					_interpreter_debug_data.EnableInteractiveMode();
+				}
+				else
+				{
 					//iterate over all break labels
 					for(auto &label : _interpreter_debug_data.breakLabels)
 					{

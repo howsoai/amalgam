@@ -549,8 +549,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
-	if(_label_profiling_enabled && function->GetNumLabels() > 0)
-		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
+	bool profiling_call = false;
+	if(_label_profiling_enabled && curEntity != nullptr)
+	{
+		auto [label_sid, found] = curEntity->GetLabelForNodeIfExists(function);
+		size_t num_nodes = evaluableNodeManager->GetNumberOfUsedNodes();
+		if(label_sid != string_intern_pool.NOT_A_STRING_ID)
+			PerformanceProfiler::StartOperation(label_sid->string, num_nodes);
+		else
+			PerformanceProfiler::StartOperation("", num_nodes);
+		profiling_call = true;
+	}
 
 	//if have an scope stack context of variables specified, then use it
 	EvaluableNodeReference new_context = EvaluableNodeReference::Null();
@@ -572,7 +581,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
 		result = RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
 
-	if(_label_profiling_enabled && function->GetNumLabels() > 0)
+	if(profiling_call)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
 	return result;
@@ -600,9 +609,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	//need to return a more complex data structure, can't return immediate
 	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->collectWarnings)
 		immediate_result = false;
-	
-	if(_label_profiling_enabled && function->GetNumLabels() > 0)
-		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
 
 	//if have a scope stack context of variables specified, then use it
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -652,9 +658,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
 		result = RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
-
-	if(_label_profiling_enabled && function->GetNumLabels() > 0)
-		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
 	if(interpreterConstraints != nullptr)
 		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);

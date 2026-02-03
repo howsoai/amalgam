@@ -414,12 +414,24 @@ public:
 		return GetValueAtLabel(label_sid, destination_temp_enm, immediate_result, on_self);
 	}
 
-	//Returns true if the label specified by label_sid exists
+	//returns true if the label specified by label_sid exists
 	bool DoesLabelExist(StringInternPool::StringID label_sid)
 	{
 		auto &label_index = GetLabelIndex();
 		auto cur_value_it = label_index.find(label_sid);
 		return (cur_value_it != end(label_index));
+	}
+
+	//returns the label for given code if it exists, followed by a boolean indicating its existance
+	std::pair<StringInternPool::StringID, bool> GetLabelForNodeIfExists(EvaluableNode *en)
+	{
+		for(auto &label : GetLabelIndex())
+		{
+			if(label.second == en)
+				return std::make_pair(label.first, true);
+		}
+
+		return std::make_pair(string_intern_pool.NOT_A_STRING_ID, false);
 	}
 
 	//Evaluates the specified label into a bool and returns the value

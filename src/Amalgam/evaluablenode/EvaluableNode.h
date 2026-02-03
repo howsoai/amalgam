@@ -1040,7 +1040,7 @@ public:
 	}
 
 	//if it is storing an immediate value and has room to store a label
-	bool HasCompactAnnotationsAndCommentsStorage()
+	inline bool HasCompactAnnotationsAndCommentsStorage()
 	{
 		return (type == ENT_BOOL || type == ENT_NUMBER || type == ENT_STRING || type == ENT_SYMBOL);
 	}

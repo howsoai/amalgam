@@ -105,11 +105,16 @@ template<typename ElementType>
 class FlatMatrix
 {
 public:
+	inline void Resize(size_t num_columns, size_t num_rows)
+	{
+		numColumns = num_columns;
+		flatMatrix.resize(num_columns * num_rows);
+	}
+
 	inline void ClearAndResize(size_t num_columns, size_t num_rows)
 	{
 		numColumns = num_columns;
-		flatMatrix.clear();
-		flatMatrix.resize(num_columns * num_rows);
+		flatMatrix.assign(num_columns * num_rows, ElementType());
 	}
 
 	//returns the matrix value at column, row
@@ -118,7 +123,6 @@ public:
 		return flatMatrix[numColumns * row + column];
 	}
 
-protected:
 	size_t numColumns;
 	std::vector<ElementType> flatMatrix;
 };

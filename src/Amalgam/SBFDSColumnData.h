@@ -234,7 +234,6 @@ public:
 			// and then adding back in another of equal size but different
 			return static_cast<double>(longestStringLength * 2);
 
-		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING:
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE:
 			//the max difference is the worst case edit distance, of removing all the characters
 			// and then adding back in another of equal size but different

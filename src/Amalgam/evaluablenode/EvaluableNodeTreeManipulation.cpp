@@ -207,6 +207,36 @@ std::string EvaluableNodeTreeManipulation::MixStrings(const std::string &a, cons
 	return result;
 }
 
+static std::string MergeMultilineStrings(EvaluableNodeTreeManipulation::NodesMergeMethod *mm,
+	std::string_view string_1, std::string_view string_2)
+{
+	//convert from vectors of strings to vectors of pointers to strings so can merge on them
+	auto n1_strings = StringManipulation::SplitByLines(string_1);
+	std::vector<std::string *> n1_comment_string_ptrs(n1_strings.size());
+	for(size_t i = 0; i < n1_strings.size(); i++)
+		n1_comment_string_ptrs[i] = &n1_strings[i];
+
+	auto n2_strings = StringManipulation::SplitByLines(string_2);
+	std::vector<std::string *> n2_comment_string_ptrs(n2_strings.size());
+	for(size_t i = 0; i < n2_strings.size(); i++)
+		n2_comment_string_ptrs[i] = &n2_strings[i];
+
+	EvaluableNodeTreeManipulation::StringSequenceMergeMetric ssmm(mm->KeepSomeNonMergeableValues());
+	auto merged_lines = ssmm.MergeSequences(n1_comment_string_ptrs, n2_comment_string_ptrs);
+
+	//append back to one string
+	std::string merged_string;
+	for(auto &line : merged_lines)
+	{
+		//if already have comments, append a newline
+		if(merged_string.size() > 0)
+			merged_string.append("\r\n");
+		merged_string.append(*line);
+	}
+
+	return merged_string;
+}
+
 EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMethod *mm, EvaluableNode *n1, EvaluableNode *n2)
 {
 	if(n1 == nullptr && n2 == nullptr)
@@ -267,49 +297,20 @@ EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMe
 	if(n2 == nullptr)
 		n2 = &null_merge_node;
 
-	//TODO 24298: remove this and genericize comment merging to include annotations
-	//merge labels
-	size_t n1_num_labels = n1->GetNumLabels();
-	size_t n2_num_labels = n2->GetNumLabels();
-	if(mm->KeepSomeNonMergeableValues())
+	auto [n1_annotations, n1_comments] = n1->GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
+	auto [n2_annotations, n2_comments] = n2->GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
+
+	//merge annotations and comments if they exist
+	if(!n1_annotations.empty() || !n2_annotations.empty())
 	{
-		if(n1_num_labels > 0 || n2_num_labels > 0)
-			n->SetLabelsStringIds(UnionStringIDVectors(n1->GetLabelsStringIds(), n2->GetLabelsStringIds()));
-	}
-	else
-	{
-		if(n1_num_labels > 0 && n2_num_labels > 0)
-			n->SetLabelsStringIds(IntersectStringIDVectors(n1->GetLabelsStringIds(), n2->GetLabelsStringIds()));
+		auto merged_string = MergeMultilineStrings(mm, n1_annotations, n2_annotations);
+		n->SetCommentsString(merged_string);
 	}
 
-	//merge comments if they exist
-	if(n1->HasComments() || n2->HasComments())
+	if(!n1_comments.empty() || !n2_comments.empty())
 	{
-		//convert from vectors of strings to vectors of pointers to strings so can merge on them
-		auto n1_comment_strings = StringManipulation::SplitByLines(n1->GetCommentsString());
-		std::vector<std::string *> n1_comment_string_ptrs(n1_comment_strings.size());
-		for(size_t i = 0; i < n1_comment_strings.size(); i++)
-			n1_comment_string_ptrs[i] = &n1_comment_strings[i];
-
-		auto n2_comment_strings = StringManipulation::SplitByLines(n2->GetCommentsString());
-		std::vector<std::string *> n2_comment_string_ptrs(n2_comment_strings.size());
-		for(size_t i = 0; i < n2_comment_strings.size(); i++)
-			n2_comment_string_ptrs[i] = &n2_comment_strings[i];
-
-		StringSequenceMergeMetric ssmm(mm->KeepSomeNonMergeableValues());
-		auto merged_comment_lines = ssmm.MergeSequences(n1_comment_string_ptrs, n2_comment_string_ptrs);
-		
-		//append back to one string
-		std::string merged_comments;
-		for(auto &line : merged_comment_lines)
-		{
-			//if already have comments, append a newline
-			if(merged_comments.size() > 0)
-				merged_comments.append("\r\n");
-			merged_comments.append(*line);
-		}
-
-		n->SetCommentsString(merged_comments);
+		auto merged_string = MergeMultilineStrings(mm, n1->GetCommentsString(), n2->GetCommentsString());
+		n->SetCommentsString(merged_string);
 	}
 
 	return n;

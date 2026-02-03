@@ -754,7 +754,6 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_continuous_number,
 	ENBISI_continuous_number_cyclic,
 	ENBISI_continuous_string,
-	ENBISI_continuous_code_no_recursive_matching,
 	ENBISI_continuous_code,
 
 	//distance parameter values
@@ -816,6 +815,15 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_deep_copy_elements,
 	ENBISI_delete_elements,
 	
+	//mix parameters
+	ENBISI_string_edit_distance,
+	ENBISI_types_must_match,
+	ENBISI_nominal_numbers,
+	ENBISI_nominal_strings,
+	ENBISI_similar_mix_chance,
+	ENBISI_unnamed_entity_mix_chance,
+	ENBISI_recursive_matching,
+
 	//enumeration of the first string that isn't static
 	ENBISI_FIRST_DYNAMIC_STRING
 };

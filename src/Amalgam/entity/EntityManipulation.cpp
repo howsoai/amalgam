@@ -25,7 +25,7 @@ Entity *EntityManipulation::EntitiesMergeMethod::MergeValues(Entity *a, Entity *
 	EvaluableNodeReference code_b = (b != nullptr ? b->GetRoot() : EvaluableNodeReference::Null());
 
 	EvaluableNodeTreeManipulation::NodesMergeMethod mm(&merged_entity->evaluableNodeManager, keepAllOfBoth,
-		RequireExactMatches(), RecursiveMatching());
+		TypesMustMatch(), NominalNumbers(), NominalStrings(), RecursiveMatching());
 	EvaluableNode *result = mm.MergeValues(code_a, code_b);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	merged_entity->SetRoot(result, true);
@@ -65,9 +65,10 @@ Entity *EntityManipulation::EntitiesMergeForDifferenceMethod::MergeValues(Entity
 //////////////////////////////
 
 EntityManipulation::EntitiesMixMethod::EntitiesMixMethod(Interpreter *_interpreter,
-	double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching,
+	double fraction_a, double fraction_b, double similar_mix_chance,
+	bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching,
 	double fraction_entities_to_mix)
-	: EntitiesMergeMethod(_interpreter, true, false, recursive_matching)
+	: EntitiesMergeMethod(_interpreter, true, types_must_match, nominal_numbers, nominal_strings, recursive_matching)
 {
 	interpreter = _interpreter;
 
@@ -132,7 +133,8 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 	EvaluableNodeReference code_b = (b != nullptr ? b->GetRoot() : EvaluableNodeReference::Null());
 
 	EvaluableNodeTreeManipulation::NodesMixMethod mm(interpreter->randomStream.CreateOtherStreamViaRand(),
-		&merged_entity->evaluableNodeManager, fractionA, fractionB, similarMixChance, RecursiveMatching());
+		&merged_entity->evaluableNodeManager, fractionA, fractionB, similarMixChance,
+		TypesMustMatch(), NominalNumbers(), NominalStrings(), RecursiveMatching());
 
 	EvaluableNode *result = mm.MergeValues(code_a, code_b);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
@@ -405,7 +407,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 }
 
 MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *entity1, Entity *entity2,
-	bool require_exact_matches, bool recursive_matching)
+	bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 {
 	if(entity1 == nullptr || entity2 == nullptr)
 		return MergeMetricResults(0.0, entity1, entity2, false, false);
@@ -413,13 +415,14 @@ MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *ent
 	//start the initial commonality as that required to create an entity
 	MergeMetricResults commonality(static_cast<double>(Entity::GetEntityCreationSizeInNodes()), entity1, entity2);
 	commonality += EvaluableNodeTreeManipulation::NumberOfSharedNodes(entity1->GetRoot(), entity2->GetRoot(),
-		require_exact_matches, recursive_matching);
+		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 
 	Entity::EntityLookupAssocType entity1_unmatched = CreateContainedEntityLookupByStringId(entity1);
 	Entity::EntityLookupAssocType entity2_unmatched = CreateContainedEntityLookupByStringId(entity2);
 
 	//find all contained entities that have the same name
-	std::vector<StringInternPool::StringID> matching_entities(entity1_unmatched.size());	//reserve enough in one block for all in entity1, as an upper bound
+	//reserve enough in one block for all in entity1, as an upper bound
+	std::vector<StringInternPool::StringID> matching_entities(entity1_unmatched.size());
 	for(auto &[e1c_id, _] : entity1_unmatched)
 	{
 		if(entity2_unmatched.find(e1c_id) != end(entity2_unmatched))
@@ -430,7 +433,7 @@ MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *ent
 	for(auto &entity_name : matching_entities)
 	{
 		commonality += NumberOfSharedNodes(entity1_unmatched[entity_name], entity2_unmatched[entity_name],
-			require_exact_matches, recursive_matching);
+			types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 		
 		entity1_unmatched.erase(entity_name);
 		entity2_unmatched.erase(entity_name);
@@ -445,8 +448,10 @@ MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *ent
 		MergeMetricResults<Entity *> best_match_value;
 		for(auto &[e2c_id, e2c] : entity2_unmatched)
 		{
-			auto match_value = NumberOfSharedNodes(e1c, e2c, require_exact_matches, recursive_matching);
-			//entities won't necessarily must-match even if the labels are the same; those are the matching_entities by name covered above
+			auto match_value = NumberOfSharedNodes(e1c, e2c,
+				types_must_match, nominal_numbers, nominal_strings, recursive_matching);
+			//entities won't necessarily must-match even if the labels are the same
+			//those are the matching_entities by name covered above
 			match_value.mustMatch = false;
 
 			if(match_value.IsNontrivialMatch()
@@ -473,9 +478,10 @@ MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *ent
 }
 
 double EntityManipulation::EditDistance(Entity *entity1, Entity *entity2,
-	bool require_exact_matches, bool recursive_matching)
+	bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 {
-	auto shared_nodes = NumberOfSharedNodes(entity1, entity2, require_exact_matches, recursive_matching);
+	auto shared_nodes = NumberOfSharedNodes(entity1, entity2,
+		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 
 	double entity_1_size = 0;
 	if(entity1 != nullptr)
@@ -565,7 +571,7 @@ void EntityManipulation::MergeContainedEntities(EntitiesMergeMethod *mm, Entity 
 		for(auto &[e2_current_id, e2_current] : entity2_unmatched_unnamed)
 		{
 			auto match_value = NumberOfSharedNodes(e1_current, e2_current,
-				mm->RequireExactMatches(), mm->RecursiveMatching());
+				mm->TypesMustMatch(), mm->NominalNumbers(), mm->NominalStrings(), mm->RecursiveMatching());
 
 			if(match_value.IsNontrivialMatch()
 				&& (!best_match_found || match_value > best_match_value) )

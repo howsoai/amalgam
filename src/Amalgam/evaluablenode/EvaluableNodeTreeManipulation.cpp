@@ -10,8 +10,9 @@
 #include <cmath>
 
 EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream random_stream, EvaluableNodeManager *_enm,
-	double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching)
-	: NodesMergeMethod(_enm, true, false, recursive_matching)
+	double fraction_a, double fraction_b, double similar_mix_chance,
+	bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
+	: NodesMergeMethod(_enm, true, types_must_match, nominal_numbers, nominal_strings, recursive_matching)
 {
 	randomStream = random_stream;
 
@@ -124,7 +125,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 
 bool EvaluableNodeTreeManipulation::NodesMixMethod::AreMergeable(EvaluableNode *a, EvaluableNode *b)
 {
-	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b);
+	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b, TypesMustMatch(), NominalNumbers(), NominalStrings());
 
 	//if the immediate nodes are in fact a match, then just merge them
 	if(commonality == 1.0)
@@ -223,18 +224,34 @@ EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMe
 	}
 
 	auto [node, commonality] = EvaluableNodeTreeManipulation::CommonalityBetweenNodeTypesAndValues(n1, n2,
-		mm->RequireExactMatches());
+		mm->TypesMustMatch(), mm->NominalNumbers(), mm->NominalStrings());
 
 	//if both are nullptr, nothing more to do
 	if(node == nullptr)
 		return nullptr;
 
-	//see if need exact commonality
-	if(mm->RequireExactMatches() && commonality != 1.0)
-		return nullptr;
+	auto common_type = node->GetType();
+
+	//see if need exact commonality based on the type
+	if(mm->TypesMustMatch() && commonality != 1.0)
+	{
+		if(common_type == ENT_NUMBER)
+		{
+			if(mm->NominalNumbers())
+				return nullptr;
+		}
+		else if(common_type == ENT_STRING)
+		{
+			if(mm->NominalStrings())
+				return nullptr;
+		}
+		else //anything other type must match exactly
+		{
+			return nullptr;
+		}
+	}
 
 	//make a new copy of it
-	auto common_type = node->GetType();
 	EvaluableNode *n = enm->AllocNode(common_type);
 
 	//if immediate, copy value
@@ -551,7 +568,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	}
 
 	//check current top nodes
-	auto commonality = CommonalityBetweenNodes(tree1, tree2, mmrp.requireExactMatches);
+	auto commonality = CommonalityBetweenNodes(tree1, tree2, mmrp.typesMustMatch, mmrp.nominalNumbers, mmrp.nominalStrings);
 
 	//see if can exit early, before inserting the nodes into the checked list and then removing them
 	size_t tree1_ordered_nodes_size = 0;
@@ -860,17 +877,19 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 }
 
 MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBetweenNodes(
-	EvaluableNode *n1, EvaluableNode *n2, bool require_exact_matches)
+	EvaluableNode *n1, EvaluableNode *n2,
+	bool types_must_match, bool nominal_numbers, bool nominal_strings)
 {
 	if(n1 == nullptr && n2 == nullptr)
 		return MergeMetricResults(1.0, n1, n2, false, true);
 
-	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(n1, n2, require_exact_matches);
-	return MergeMetricResults(commonality, n1, n2, require_exact_matches, commonality == 1.0);
+	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(n1, n2, types_must_match, nominal_numbers, nominal_strings);
+	return MergeMetricResults(commonality, n1, n2, types_must_match, commonality == 1.0);
 }
 
 std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBetweenNodeTypesAndValues(
-	EvaluableNode *n1, EvaluableNode *n2, bool require_exact_matches)
+	EvaluableNode *n1, EvaluableNode *n2,
+	bool types_must_match, bool nominal_numbers, bool nominal_strings)
 {
 	//if either is nullptr, then use an actual EvaluableNode
 	if(n1 == nullptr)
@@ -881,32 +900,8 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 	auto n1_type = n1->GetType();
 	auto n2_type = n2->GetType();
 
-	//can have much faster and lighter computations if only checking for exact matches
-	if(require_exact_matches)
-	{
-		if(n1_type != n2_type)
-			return std::make_pair(n1, 0.0);
-
-		if(n1_type == ENT_BOOL)
-		{
-			bool n1_value = n1->GetBoolValueReference();
-			bool n2_value = n2->GetBoolValueReference();
-			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.0);
-		}
-		else if(n1_type == ENT_NUMBER)
-		{
-			double n1_value = n1->GetNumberValueReference();
-			double n2_value = n2->GetNumberValueReference();
-			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.0);
-		}
-		else if(n1_type == ENT_STRING || n1_type == ENT_SYMBOL)
-		{
-			auto n1_sid = n1->GetStringID();
-			auto n2_sid = n2->GetStringID();
-			return std::make_pair(n1, n1_sid == n2_sid ? 1.0 : 0.0);
-		}
-		return std::make_pair(n1, 1.0);
-	}
+	if(types_must_match && n1_type != n2_type)
+		return std::make_pair(n1, 0.0);
 
 	//if types are the same, need special handling for immediates, otherwise return true
 	if(n1_type == n2_type)
@@ -915,37 +910,50 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		{
 			bool n1_value = n1->GetBoolValueReference();
 			bool n2_value = n2->GetBoolValueReference();
-			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.375);
-		}
-
-		if(n1_type == ENT_STRING)
-		{
-			auto n1sid = n1->GetStringID();
-			auto n2sid = n2->GetStringID();
-			return std::make_pair(n1, CommonalityBetweenStrings(n1sid, n2sid));
+			return std::make_pair(n1, n1_value == n2_value ? 1.0 : (types_must_match ? 0.0 : 0.125));
 		}
 
 		if(n1_type == ENT_NUMBER)
 		{
 			double n1_value = n1->GetNumberValueReference();
 			double n2_value = n2->GetNumberValueReference();
-			if(n1_value == n2_value)
-				return std::make_pair(n1, 1.0);
 
-			double commonality = CommonalityBetweenNumbers(n1_value, n2_value);
-			double commonality_including_type = std::max(0.25, commonality);
+			if(nominal_numbers)
+			{
+				return std::make_pair(n1, n1_value == n2_value ? 1.0 : (types_must_match ? 0.0 : 0.125));
+			}
+			else
+			{
+				double commonality = CommonalityBetweenNumbers(n1_value, n2_value);
+				double commonality_including_type = std::min(0.125 + 0.875 * commonality, 1.0);
+				return std::make_pair(n1, commonality_including_type);
+			}
+		}
 
-			return std::make_pair(n1, commonality_including_type);
+		if(n1_type == ENT_STRING)
+		{
+			if(nominal_strings)
+			{
+				auto n1_sid = n1->GetStringIDReference();
+				auto n2_sid = n2->GetStringIDReference();
+				return std::make_pair(n1, n1_sid == n2_sid ? 1.0 : (types_must_match ? 0.0 : 0.125));
+			}
+			else
+			{
+				auto n1sid = n1->GetStringIDReference();
+				auto n2sid = n2->GetStringIDReference();
+				double commonality = CommonalityBetweenStrings(n1sid, n2sid);
+				double commonality_including_type = std::min(0.125 + 0.875 * commonality, 1.0);
+				return std::make_pair(n1, commonality_including_type);
+			}
 		}
 
 		if(n1_type == ENT_SYMBOL)
 		{
-			if(n2->GetStringID() == n1->GetStringID())
-				return std::make_pair(n1, 1.0);
-			else
-				return std::make_pair(n1, 0.25);
+			bool match = (n1->GetStringIDReference() == n2->GetStringIDReference());
+			return std::make_pair(n1, match ? 1.0 : (types_must_match ? 0.0 : 0.125));
 		}
-
+		//same type but not immeditae
 		return std::make_pair(n1, 1.0);
 	}
 
@@ -957,69 +965,71 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		if(n2_type == ENT_UNORDERED_LIST)		return std::make_pair(n1, 0.125);
 		if(n2_type == ENT_NULL)					return std::make_pair(n2, 0.125);
 		if(n2_type == ENT_LIST)					return std::make_pair(n2, 0.125);
-		break;
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_CALL:
-		if(n2_type == ENT_CALL_SANDBOXED)		return std::make_pair(n1, 0.25);
-		break;
+		if(n2_type == ENT_CALL_SANDBOXED)		return std::make_pair(n1, 0.125);
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_CALL_SANDBOXED:
-		if(n2_type == ENT_CALL)					return std::make_pair(n2, 0.25);
-		break;
+		if(n2_type == ENT_CALL)					return std::make_pair(n2, 0.125);
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_LET:
-		if(n2_type == ENT_DECLARE)				return std::make_pair(n2, 0.5);
-		break;
+		if(n2_type == ENT_DECLARE)				return std::make_pair(n2, 0.25);
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_DECLARE:
-		if(n2_type == ENT_LET)					return std::make_pair(n1, 0.5);
-		break;
+		if(n2_type == ENT_LET)					return std::make_pair(n1, 0.25);
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_REDUCE:
 		if(n2_type == ENT_APPLY)				return std::make_pair(n1, 0.125);
-		break;
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_APPLY:
 		if(n2_type == ENT_REDUCE)				return std::make_pair(n2, 0.125);
-		break;
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_SET:
 		if(n2_type == ENT_REPLACE)				return std::make_pair(n2, 0.5);
-		break;
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_REPLACE:
 		if(n2_type == ENT_SET)					return std::make_pair(n1, 0.5);
-		break;
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_ASSOC:
 		if(n2_type == ENT_ASSOCIATE)			return std::make_pair(n1, 0.25);
-		break;
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_ASSOCIATE:
 		if(n2_type == ENT_ASSOC)				return std::make_pair(n2, 0.25);
-		break;
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_BOOL:
 	{
 		bool n1_value = n1->GetBoolValueReference();
 
 		if(n2_type == ENT_NULL)
-			return std::make_pair(n2, n1_value ? 0.25 : 0.5);
+			return std::make_pair(n2, n1_value ? 0.125 : 0.25);
 
 		if(n2_type == ENT_NUMBER)
 		{
 			double n2_value = n2->GetNumberValueReference();
-			bool n2_value_bool = (n2_value != 0);
-			return std::make_pair(n2, n1_value == n2_value_bool ? 0.875 : 0.125);
+			bool n2_as_bool = (n2_value != 0.0);
+			if(n1_value == n2_as_bool)
+				return std::make_pair(n2, 0.25);
 		}
-		if(n2_type == ENT_STRING)
+		else if(n2_type == ENT_STRING)
 		{
 			auto &n2_value = n2->GetStringValue();
-			bool n2_value_bool = (n2_value != "");
-			return std::make_pair(n2, n1_value == n2_value_bool ? 0.875 : 0.125);
+			bool n2_as_bool = (n2_value != "");
+			if(n1_value == n2_as_bool)
+				return std::make_pair(n2, 0.25);
 		}
 
-		break;
+		return std::make_pair(nullptr, 0.0);
 	}
 
 	case ENT_NULL:
@@ -1027,32 +1037,37 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		{
 			bool n2_value = n2->GetBoolValueReference();
 			if(n2_value)
-				return std::make_pair(n1, 0.25);
-			return std::make_pair(n1, 0.5);
+				return std::make_pair(n1, 0.125);
+			return std::make_pair(n1, 0.25);
 		}
 		if(n2_type == ENT_NUMBER)
 		{
 			double n2_value = n2->GetNumberValueReference();
 			if(n2_value == 0.0)
-				return std::make_pair(n2, 0.5);
+				return std::make_pair(n2, 0.25);
 			return std::make_pair(n2, 0.125);
+		}
+		if(n2_type == ENT_STRING)
+		{
+			auto &n2_value = n2->GetStringValue();
+			return std::make_pair(n2, n2_value == ""  ? 0.25 : 0.125);
 		}
 		if(n2_type == ENT_SEQUENCE)			return std::make_pair(n1, 0.125);
 		if(n2_type == ENT_UNORDERED_LIST)	return std::make_pair(n1, 0.125);
 		if(n2_type == ENT_LIST)				return std::make_pair(n1, 0.125);
-		break;
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_LIST:
 		if(n2_type == ENT_SEQUENCE)			return std::make_pair(n1, 0.125);
 		if(n2_type == ENT_UNORDERED_LIST)	return std::make_pair(n1, 0.5);
 		if(n2_type == ENT_NULL)				return std::make_pair(n1, 0.125);
-		break;
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_UNORDERED_LIST:
 		if(n2_type == ENT_SEQUENCE)				return std::make_pair(n2, 0.125);
 		if(n2_type == ENT_NULL)					return std::make_pair(n2, 0.125);
 		if(n2_type == ENT_LIST)					return std::make_pair(n2, 0.5);
-		break;
+		return std::make_pair(nullptr, 0.0);
 
 	case ENT_NUMBER:
 	{
@@ -1061,29 +1076,56 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		if(n2_type == ENT_NULL)
 		{
 			if(n1_value == 0.0)
-				return std::make_pair(n1, 0.5);
+				return std::make_pair(n1, 0.25);
+			return std::make_pair(n1, 0.125);
+		}
+		else if(n2_type == ENT_BOOL)
+		{
+			bool n1_as_bool = (n1_value != 0.0);
+			bool n2_value = n2->GetBoolValueReference();
+			if(n1_as_bool == n2_value)
+				return std::make_pair(n2, 0.25);
+		}
+		else if(n2_type == ENT_RAND)
+		{
+			return std::make_pair(n1, 0.125);
+		}
+
+		return std::make_pair(nullptr, 0.0);
+	}
+
+	case ENT_STRING:
+	{
+		auto &n1_value = n1->GetStringValue();
+
+		if(n2_type == ENT_NULL)
+		{
+			if(n1_value == "")
+				return std::make_pair(n1, 0.25);
 			return std::make_pair(n1, 0.125);
 		}
 
 		if(n2_type == ENT_BOOL)
 		{
+			bool n1_as_bool = (n1_value != "");
 			bool n2_value = n2->GetBoolValueReference();
-			if(n1_value && n2_value)
-				return std::make_pair(n2, 0.875);
-			return std::make_pair(n1, 0.125);
+			if(n1_as_bool == n2_value)
+				return std::make_pair(n2, 0.25);
 		}
-
-		if(n2_type == ENT_RAND)
-			return std::make_pair(n1, 0.125);
-
-		//can't match with any other type
+		else if(n2_type == ENT_NUMBER)
+		{
+			double n2_value = n2->GetNumberValueReference();
+			if(n1_value == "" && n2_value == 0.0)
+				return std::make_pair(n2, 0.25);
+		}
+		
 		return std::make_pair(nullptr, 0.0);
 	}
 
 	case ENT_RAND:
 		if(n2_type == ENT_NUMBER)						
 			return std::make_pair(n1, 0.125);
-		break;
+		return std::make_pair(nullptr, 0.0);
 
 	default:
 		break;

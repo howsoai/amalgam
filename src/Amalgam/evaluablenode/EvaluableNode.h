@@ -615,7 +615,7 @@ public:
 	//returns a string_view of the annotation string
 	inline std::string_view GetAnnotationsString()
 	{
-		GetAnnotationsAndCommentsStorage().GetAnnotations();
+		return GetAnnotationsAndCommentsStorage().GetAnnotations();
 	}
 
 	//sets the annotation_string
@@ -625,9 +625,6 @@ public:
 			EnsureEvaluableNodeExtended();
 		GetAnnotationsAndCommentsStorage().SetAnnotations(s);
 	}
-
-	//splits annotations lines and returns a vector of strings of the comment
-	std::vector<std::string> GetAnnotationsSeparateLines();
 
 	inline void ClearAnnotations()
 	{
@@ -672,9 +669,6 @@ public:
 
 		GetAnnotationsAndCommentsStorage().SetComments(comment);
 	}
-
-	//splits comment lines and returns a vector of strings of the comment
-	std::vector<std::string> GetCommentsSeparateLines();
 
 	inline void ClearComments()
 	{

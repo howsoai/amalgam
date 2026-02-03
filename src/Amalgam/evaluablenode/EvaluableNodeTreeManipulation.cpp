@@ -250,6 +250,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMe
 	if(n2 == nullptr)
 		n2 = &null_merge_node;
 
+	//TODO 24298: remove this and genericize comment merging to include annotations
 	//merge labels
 	size_t n1_num_labels = n1->GetNumLabels();
 	size_t n2_num_labels = n2->GetNumLabels();
@@ -268,12 +269,12 @@ EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMe
 	if(n1->HasComments() || n2->HasComments())
 	{
 		//convert from vectors of strings to vectors of pointers to strings so can merge on them
-		auto n1_comment_strings = n1->GetCommentsSeparateLines();
+		auto n1_comment_strings = StringManipulation::SplitByLines(n1->GetCommentsString());
 		std::vector<std::string *> n1_comment_string_ptrs(n1_comment_strings.size());
 		for(size_t i = 0; i < n1_comment_strings.size(); i++)
 			n1_comment_string_ptrs[i] = &n1_comment_strings[i];
 
-		auto n2_comment_strings = n2->GetCommentsSeparateLines();
+		auto n2_comment_strings = StringManipulation::SplitByLines(n2->GetCommentsString());
 		std::vector<std::string *> n2_comment_string_ptrs(n2_comment_strings.size());
 		for(size_t i = 0; i < n2_comment_strings.size(); i++)
 			n2_comment_string_ptrs[i] = &n2_comment_strings[i];

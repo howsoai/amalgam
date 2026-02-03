@@ -880,44 +880,6 @@ void EvaluableNode::SetStringIDWithReferenceHandoff(StringInternPool::StringID i
 	}
 }
 
-static inline std::vector<std::string> BreakApartSeparateLines(std::string_view full_string)
-{
-	std::vector<std::string> comment_lines;
-
-	//early exit
-	if(full_string.empty())
-		return comment_lines;
-
-	size_t cur = 0;
-	size_t prev = 0;
-	while((cur = full_string.find('\n', prev)) != std::string::npos)
-	{
-		//skip carriage return if found prior to the newline
-		int carriage_return_offset = 0;
-		if(prev < cur && full_string[cur - 1] == '\r')
-			carriage_return_offset = 1;
-
-		comment_lines.emplace_back(full_string.substr(prev, cur - prev - carriage_return_offset));
-		prev = cur + 1;
-	}
-
-	//get whatever is left
-	if(prev < full_string.size())
-		comment_lines.emplace_back(full_string.substr(prev));
-
-	return comment_lines;
-}
-
-std::vector<std::string> EvaluableNode::GetAnnotationsSeparateLines()
-{
-	return BreakApartSeparateLines(GetAnnotationsString());
-}
-
-std::vector<std::string> EvaluableNode::GetCommentsSeparateLines()
-{
-	return BreakApartSeparateLines(GetCommentsString());
-}
-
 size_t EvaluableNode::GetNumChildNodes()
 {
 	if(IsEvaluableNodeTypeImmediate(GetType()))

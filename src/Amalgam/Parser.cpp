@@ -886,7 +886,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 
 void Parser::AppendComments(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append)
 {
-	auto comment_lines = n->GetCommentsSeparateLines();
+	auto comment_lines = StringManipulation::SplitByLines(n->GetCommentsString());
 
 #ifdef DEBUG_PARSER_PRINT_FLAGS
 	//prints out extra comments for debugging
@@ -931,7 +931,7 @@ void Parser::AppendComments(EvaluableNode *n, size_t indentation_depth, bool pre
 
 void Parser::AppendAnnotations(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append)
 {
-	auto annotations_lines = n->GetAnnotationsSeparateLines();
+	auto annotations_lines = StringManipulation::SplitByLines(n->GetAnnotationsString());
 
 	if(annotations_lines.size() == 0)
 		return;

@@ -97,8 +97,7 @@ public:
 		//need one value for the sum and enough values to hold a bit per dimension
 		//round up number of dimensions used 
 		//unions are automatically defaulted to zero for all of their attributes
-		buffer.clear();
-		buffer.resize(bucketStride * num_instances);
+		buffer.assign(bucketStride * num_instances, SumOrMaskBucket());
 	}
 
 	//finds the bucket's bit for the specified index

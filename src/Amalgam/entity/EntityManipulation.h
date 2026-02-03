@@ -12,15 +12,16 @@ public:
 	class EntitiesMergeMethod : public Merger<Entity *>
 	{
 	public:
-		constexpr EntitiesMergeMethod(Interpreter *_interpreter,
-			bool keep_all_of_both, bool require_exact_matches, bool recursive_matching)
+		constexpr EntitiesMergeMethod(Interpreter *_interpreter, bool keep_all_of_both,
+			bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 			: interpreter(_interpreter), keepAllOfBoth(keep_all_of_both),
-			requireExactMatches(require_exact_matches), recursiveMatching(recursive_matching)
+			typesMustMatch(types_must_match), nominalNumbers(nominal_numbers), nominalStrings(nominal_strings),
+			recursiveMatching(recursive_matching)
 		{	}
 
 		virtual MergeMetricResults<Entity *> MergeMetric(Entity *a, Entity *b)
 		{
-			return NumberOfSharedNodes(a, b, requireExactMatches, recursiveMatching);
+			return NumberOfSharedNodes(a, b, typesMustMatch, nominalNumbers, nominalStrings, recursiveMatching);
 		}
 
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge = false);
@@ -45,8 +46,14 @@ public:
 		virtual bool AreMergeable(Entity *a, Entity *b)
 		{	return keepAllOfBoth;	}
 
-		constexpr bool RequireExactMatches()
-		{	return requireExactMatches;		}
+		constexpr bool TypesMustMatch()
+		{	return typesMustMatch;		}
+
+		constexpr bool NominalNumbers()
+		{	return nominalNumbers;		}
+
+		constexpr bool NominalStrings()
+		{	return nominalStrings;		}
 
 		constexpr bool RecursiveMatching()
 		{	return recursiveMatching;		}
@@ -55,7 +62,9 @@ public:
 
 	protected:
 		bool keepAllOfBoth;
-		bool requireExactMatches;
+		bool typesMustMatch;
+		bool nominalNumbers;
+		bool nominalStrings;
 		bool recursiveMatching;
 	};
 
@@ -65,7 +74,7 @@ public:
 	{
 	public:
 		inline EntitiesMergeForDifferenceMethod(Interpreter *_interpreter)
-			: EntitiesMergeMethod(_interpreter, false, true, false)
+			: EntitiesMergeMethod(_interpreter, false, true, true, true, false)
 		{	}
 
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge = false);
@@ -88,7 +97,8 @@ public:
 	{
 	public:
 		EntitiesMixMethod(Interpreter *_interpreter,
-			double fraction_a, double fraction_b, double similar_mix_chance, bool recursive_matching,
+			double fraction_a, double fraction_b, double similar_mix_chance,
+			bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching,
 			double fraction_entities_to_mix);
 
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge);
@@ -119,16 +129,16 @@ public:
 
 	//Entity merging functions
 	static inline Entity *IntersectEntities(Interpreter *interpreter,
-		Entity *entity1, Entity *entity2, bool recursive_matching)
+		Entity *entity1, Entity *entity2, bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 	{
-		EntitiesMergeMethod mm(interpreter, false, true, recursive_matching);
+		EntitiesMergeMethod mm(interpreter, false, types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 		return mm.MergeValues(entity1, entity2);
 	}
 
 	static inline Entity *UnionEntities(Interpreter *interpreter,
-		Entity *entity1, Entity *entity2, bool recursive_matching)
+		Entity *entity1, Entity *entity2, bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
 	{
-		EntitiesMergeMethod mm(interpreter, true, true, recursive_matching);
+		EntitiesMergeMethod mm(interpreter, true, types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 		return mm.MergeValues(entity1, entity2);
 	}
 
@@ -136,21 +146,23 @@ public:
 	static EvaluableNodeReference DifferenceEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2);
 
 	static inline Entity *MixEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2,
-		double fractionA, double fractionB, double similar_mix_chance, bool recursive_matching,
+		double fractionA, double fractionB, double similar_mix_chance,
+		bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching,
 		double fraction_entities_to_mix)
 	{
-		EntitiesMixMethod mm(interpreter, fractionA, fractionB, similar_mix_chance, recursive_matching,
+		EntitiesMixMethod mm(interpreter, fractionA, fractionB, similar_mix_chance,
+			types_must_match, nominal_numbers, nominal_strings, recursive_matching,
 			fraction_entities_to_mix);
 		return mm.MergeValues(entity1, entity2, true);
 	}
 
 	//Computes the total number of nodes in both trees that are equal
 	static MergeMetricResults<Entity *> NumberOfSharedNodes(Entity *entity1, Entity *entity2,
-		bool require_exact_matches = false, bool recursive_matching = true);
+		bool types_must_match = true, bool nominal_numbers = true, bool nominal_strings = true, bool recursive_matching = true);
 
 	//computes the edit distance between the two entities
 	static double EditDistance(Entity *entity1, Entity *entity2,
-		bool require_exact_matches = false, bool recursive_matching = true);
+		bool types_must_match = true, bool nominal_numbers = true, bool nominal_strings = true, bool recursive_matching = true);
 
 	static Entity *MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
 		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *operation_type);

@@ -237,8 +237,7 @@ public:
 		size_t end_entity_index = knnCache->GetEndEntityIndex();
 
 		auto &entity_probabilities = buffers.baseDistanceProbabilities;
-		entity_probabilities.clear();
-		entity_probabilities.resize(end_entity_index, 0.0);
+		entity_probabilities.assign(end_entity_index, 0.0);
 
 		IterateOverConcurrentlyIfPossible(*entities_to_compute,
 			[this, &entity_probabilities](auto index, auto entity)
@@ -286,8 +285,7 @@ public:
 		size_t end_entity_index = knnCache->GetEndEntityIndex();
 
 		auto &entity_probabilities = buffers.baseDistanceProbabilities;
-		entity_probabilities.clear();
-		entity_probabilities.resize(end_entity_index, 0.0);
+		entity_probabilities.assign(end_entity_index, 0.0);
 
 		IterateOverConcurrentlyIfPossible(positions_to_compare,
 			[this, &entity_probabilities](auto index, auto position)
@@ -457,8 +455,7 @@ public:
 		const double updated_contrib_to_contrib_scale_inverse = num_relevant_entities / (contrib_sum * (num_relevant_entities - 1));
 
 		//for measuring kl divergence, only need to measure those entities that have a value that is different
-		convictions_out.clear();
-		convictions_out.resize(entities_to_compute.size());
+		convictions_out.assign(entities_to_compute.size(), 0.0);
 
 		//compute the scaled distance contributions and sums when any 1 case is removed from the model
 		//note that the kl_divergence for every non-scaled set is 0, so the sum will not change except for when a case is actually removed from the model
@@ -560,8 +557,7 @@ public:
 		//compute convictions
 		if(kl_avg == 0.0) //if avg is zero, every conviction becomes one (even 0/0 as the kl denominator dominates)
 		{
-			convictions_out.clear();
-			convictions_out.resize(entities_to_compute.size(), 1.0);
+			convictions_out.assign(entities_to_compute.size(), 1.0);
 		}
 		else if(normalize_convictions)
 		{

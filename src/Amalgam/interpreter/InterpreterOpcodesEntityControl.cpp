@@ -38,13 +38,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		if(!deep_comments)
 		{
 			EvaluableNode *root = target_entity->GetRoot();
-			auto entity_description = EvaluableNode::GetCommentsString(root);
+			auto entity_description = root->GetCommentsString();
 			//if the top node doesn't have a description, try to obtain from the node with the null key
 			if(entity_description.empty())
 			{
-				//TODO 24298: remove this
-				assert(EvaluableNode::IsAssociativeArray(root));
-
 				EvaluableNode **null_code = root->GetMappedChildNode(string_intern_pool.NOT_A_STRING_ID);
 				if(null_code != nullptr)
 					entity_description = EvaluableNode::GetCommentsString(*null_code);

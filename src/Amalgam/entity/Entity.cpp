@@ -23,7 +23,7 @@ Entity::Entity()
 {
 	hasContainedEntities = false;
 	entityRelationships.container = nullptr;
-	rootNode = nullptr;
+	rootNode = evaluableNodeManager.AllocNode(ENT_ASSOC);
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 }
@@ -897,16 +897,12 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	VerifyEvaluableNodeIntegrity();
 #endif
 
+	if(!EvaluableNode::IsAssociativeArray(accum_code))
+		return;
+
 	if(!allocated_with_entity_enm)
 		accum_code = evaluableNodeManager.DeepAllocCopy(accum_code);
-
-	auto [new_labels, no_label_collisions] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(accum_code);
-	if(EvaluableNode::IsAssociativeArray(accum_code))
-	{
-		for(auto &[label, value] : accum_code->GetMappedChildNodesReference())
-			new_labels.emplace(label, value);
-	}
-
+	
 	EvaluableNode *prev_root = rootNode;
 
 	//before accumulating, check to see if flags will need to be updated
@@ -944,7 +940,8 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 		EvaluableNodeReference(prev_root, false), accum_code, &evaluableNodeManager);
 
 	//attempt to insert the new labels as long as there's no collision
-	for(auto &[label, value] : new_labels)
+	auto &accum_mcn = accum_code->GetMappedChildNodesReference();
+	for(auto &[label, value] : accum_mcn)
 		new_root->SetMappedChildNode(label, value);
 
 	EntityQueryCaches *container_caches = GetContainerQueryCaches();
@@ -956,7 +953,7 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	evaluableNodeManager.ExchangeNodeReference(rootNode, prev_root);
 
 	if(container_caches != nullptr)
-		container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), new_labels);
+		container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), accum_mcn);
 
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();

@@ -1076,11 +1076,6 @@ protected:
 
 	inline EvaluableNode::AssocType &GetLabelIndex()
 	{
-		//TODO 24298: remove this?
-		static EvaluableNode::AssocType emptyMappedChildNodes;
-		if(!EvaluableNode::IsAssociativeArray(rootNode))
-			return emptyMappedChildNodes;
-
 		return rootNode->GetMappedChildNodesReference();
 	}
 

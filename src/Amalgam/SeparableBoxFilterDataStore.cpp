@@ -221,8 +221,10 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 
 	for(auto &column_data : columnData)
 	{
+		//TODO 24298: switch this to use ChangeIndexValue if possible
+		column_data->RemoveIndexFromCaches(entity_index);
 		auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
-		column_data->ChangeIndexValue(value.nodeType, value.nodeValue, entity_index);
+		column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);
 	}
 
 	//clean up any labels that aren't relevant
@@ -251,10 +253,10 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	VerifyAllEntitiesForColumn(column_index);
 #endif
 
-	//get the new value
+	//TODO 24298: switch this to use ChangeIndexValue if possible
+	column_data->RemoveIndexFromCaches(entity_index);
 	auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
-
-	column_data->ChangeIndexValue(value.nodeType, value.nodeValue, entity_index);
+	column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))
@@ -262,6 +264,9 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	else
 		OptimizeColumn(column_index);
 
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForColumn(column_index);
+#endif
 }
 
 //populates distances_out with all entities and their distances that have a distance to target less than max_dist
@@ -283,8 +288,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	
 	//initialize all distances to 0
 	auto &distances = parametersAndBuffers.entityDistances;
-	distances.clear();
-	distances.resize(GetNumInsertedEntities(), 0.0);
+	distances.assign(GetNumInsertedEntities(), 0.0);
 
 	//if there is a radius, then change the flow such that every distance starts out with the negative of the maximum
 	//distance, such that if the distance is greater than zero, it is too far away
@@ -866,7 +870,6 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest<compute_surprisal>(nonmatch_dist_term, query_feature_index);
 	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
-		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 	{
 		//compute partial sums for all code of matching size
@@ -1303,7 +1306,6 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 
 	bool complex_comparison = (feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
-		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE);
 
 	//consider computing interned values if appropriate
@@ -1357,8 +1359,6 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
-		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING)
-			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE;
 	}

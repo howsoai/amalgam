@@ -52,7 +52,7 @@ function render() {
 	//... list CYCLIC_FEATURES number ENTITIES_RETURNED ..
 	var typeList = ["number", "string", "assoc", "list", "bool", "id", "null", "bstring", "code", "*" ];
 	
-	for(var i in langData) {
+	for(var i = 0; i < langData.length; i++) {
 		var param = langData[i].parameter;
 		var output = langData[i].output;
 		var permissions = langData[i].permissions;
@@ -71,7 +71,8 @@ function render() {
 		
 		commandChunks = remainingCommand.split(" ");
 		fullCommand = "";
-		for(var j in commandChunks) {
+		var individual_params = [];
+		for(var j = 0; j < commandChunks.length; j++) {
 			chunk = commandChunks[j];
 			if(chunk == "") {
 				fullCommand += " ";
@@ -86,6 +87,9 @@ function render() {
 				chunk = "<b>[</b>" + chunk.substr(1,chunk.length - 1);
 			}
 			else if(!typeList.includes(chunk) && "list|" != chunk.substr(0,5) && "string|" != chunk.substr(0,7) && "number|" != chunk.substr(0,7)) {
+				//store parameter without the closing bracket if it has one into individual_params
+				chunk.slice(-1) == "]" ? individual_params.push(chunk.slice(0,-1)) : individual_params.push(chunk);
+				//bold the parameter
 				chunk = "<b>" + chunk + "</b> ";
 			}
 			
@@ -98,7 +102,12 @@ function render() {
 			
 			fullCommand += chunk + spacing;
 		}
-		
+
+		//highlight each parameter in the description
+		for(var j = 0; j < individual_params.length; j++) {
+			regex = new RegExp("\\b" + RegExp.escape(individual_params[j]) + "\\b", "g"); 
+			description = description.replace(regex, "<span class='param'>"+individual_params[j]+"</span>");
+		}
 		
 		var commandAnchor = "";
 		if(!commandLookup[command])  { //only make anchors to new commands
@@ -206,7 +215,7 @@ function render() {
 		var counter = 0;
 		var found = false;
 		var patternStr = ".*";
-		for(var c in node.value){
+		for(var c = 0; c < node.value.length; c++){
 			console.log(node.value[c]);
 			patternStr += node.value[c] + ".*";
 		}
@@ -263,7 +272,7 @@ function render() {
 	.highlight { background-color: #ffeeee;}
 		
 	.code, .comment { font-family:"monospace, sans-serif"; font-size: 12pt;}
-	.param { color: #006600;}
+	.param { color: #008800; background-color: #fcfcf6; }
 	.comment { color: #99aa99; }
 	
 	pre { padding: 5px; margin-top: 5px; }

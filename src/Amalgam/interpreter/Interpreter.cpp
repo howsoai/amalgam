@@ -1023,7 +1023,7 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 			interpreter_constraints->maxEntityIdLength = std::min(interpreter_constraints->maxEntityIdLength,
 				interpreterConstraints->maxEntityIdLength);
 		else
-			interpreter_constraints->maxNumAllocatedNodes = interpreterConstraints->maxEntityIdLength;
+			interpreterConstraints->maxEntityIdLength = interpreter_constraints->maxNumAllocatedNodes;
 	}
 }
 

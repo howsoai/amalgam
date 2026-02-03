@@ -664,6 +664,9 @@
 				) "\n"
 	)
 
+ (print "47 " (generalized_distance (list (list 1.5 2 3 4 5 "s12") ) (list (list 1 2 3 "s21")) 1 (list 1) (list "continuous_code") (list {}) ) "\n")
+ (print "48 " (generalized_distance (list (list 1.5 2 3 4 5 "s12") ) (list (list 1 2 3 "s21")) 1 (list 1) (list "continuous_code") (list {types_must_match .false nominal_strings .false}) ) "\n")
+
  (print "--entropy--\n")
  (print (entropy (list 0.5 0.5)) "\n")
  (print (entropy (list 0.5 0.5) (list 0.25 0.75) -1 1) "\n")
@@ -1654,14 +1657,14 @@
  					) "\n")
 
  (print (commonality .infinity 3) "\n")
- (print (commonality (null) 3) "\n")
+ (print (commonality (null) 3 {types_must_match .false}) "\n")
  (print (commonality .infinity .infinity) "\n")
  (print (commonality .infinity -.infinity) "\n")
  (print (commonality "hello" "hello") "\n")
- (print (commonality "hello" "hello" .true) "\n")
- (print (commonality "hello" "el") "\n")
- (print (commonality "hello" "el" .true) "\n")
- (print (commonality "el" "hello" .true) "\n")
+ (print (commonality "hello" "hello" {string_edit_distance .true}) "\n")
+ (print (commonality "hello" "el" {nominal_strings .false}) "\n")
+ (print (commonality "hello" "el" {string_edit_distance .true}) "\n")
+ (print (commonality "el" "hello" {string_edit_distance .true}) "\n")
 
  (print (commonality
 		(lambda
@@ -1685,6 +1688,7 @@
 	(print (commonality
 			(list 1 2 3)
 			(lambda (null 1 2 3))
+			{types_must_match .false}
 		) "\n"
 	)
 
@@ -1700,10 +1704,10 @@
  					) "\n")
 
  (print (edit_distance "hello" "hello") "\n")
- (print (edit_distance "hello" "hello" .true) "\n")
- (print (edit_distance "hello" "el") "\n")
- (print (edit_distance "hello" "el" .true) "\n")
- (print (edit_distance "el" "hello" .true) "\n")
+ (print (edit_distance "hello" "hello" {string_edit_distance .true}) "\n")
+ (print (edit_distance "hello" "el" {nominal_strings .false}) "\n")
+ (print (edit_distance "hello" "el" {string_edit_distance .true}) "\n")
+ (print (edit_distance "el" "hello" {string_edit_distance .true}) "\n")
 
  (print (edit_distance
 			(list 1 2 3)
@@ -1768,7 +1772,7 @@
  (print (intersect
 			(list 1 2 3)
 			(list (list 1 2 3))
-			.false
+			{recursive_matching .false}
 		) "\n"
 	)
 
@@ -1844,7 +1848,7 @@
 			(lambda (list
 				(list 1 2 3)
 			))
-			.false
+			{recursive_matching .false}
 		) "\n"
 	)
 
@@ -1938,42 +1942,41 @@
 								;comment 4
 								1
 								4 6 8 10 12 14))
- 			0.5 0.5 0))
+ 			0.5 0.5 {similar_mix_chance 0}))
 
  (print (mix
  				(lambda (list 1 2 (associate "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6)) )
  				(lambda (list 1 5 3 (associate "a" 3 "b" 4) (lambda (if false 1 (unordered_list (get_entity_comments) (lambda (print (list 2 9))) ))) ) )
- 			0.8 0.8 0.5))
+ 			0.8 0.8 {similar_mix_chance 0.5}))
 
  (print (mix
  				(lambda (list 1 2 (associate "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6)) )
  				(lambda (list 1 5 3 (assoc a 3 b 4) (lambda (if false 1 (seq (get_entity_comments) (lambda (print (list 2 9))) ))) ) )
- 			0.8 0.8 1.0))
+ 			0.8 0.8 {similar_mix_chance 1}))
 
  (print (mix
 				(lambda (list .true 3 5 7 9 11 13))
 				(lambda (list 2 4 6 8 10 12 14))
- 			0.5 0.5 1.0))
+ 			0.5 0.5 {similar_mix_chance 1}))
 
  (print (mix
 				(lambda (list .true 3 5 7 9 11 13))
 				(lambda (list 2 4 6 8 10 12 14))
- 			0.5 0.5 -1))
+ 			0.5 0.5 {similar_mix_chance -1}))
 
- (print (mix 1 4 0.5 0.5 -1) "\n")
- (print (mix 1 4 0.5 0.5 -0.8) "\n")
- (print (mix 1 4 0.5 0.5 0.5) "\n")
- (print (mix 1 4 0.5 0.5 1) "\n")
+ (print (mix 1 4 0.5 0.5 {similar_mix_chance -1}) "\n")
+ (print (mix 1 4 0.5 0.5 {similar_mix_chance -0.8}) "\n")
+ (print (mix 1 4 0.5 0.5 {similar_mix_chance 0.5}) "\n")
+ (print (mix 1 4 0.5 0.5 {similar_mix_chance 1}) "\n")
 
- (print (mix "abcdexyz" "abcomxyz" 0.5 0.5) "\n")
- (print (mix "abcdexyz" "abcomxyz" 0.5 0.5) "\n")
- (print (mix "abcdexyz" "abcomxyz" 0.5 0.5) "\n")
+ (print (mix "abcdexyz" "abcomxyz" 0.5 0.5 {nominal_strings .false similar_mix_chance 0.5}) "\n")
+ (print (mix "abcdexyz" "abcomxyz" 0.5 0.5 {nominal_strings .false similar_mix_chance 0.5}) "\n")
+ (print (mix "abcdexyz" "abcomxyz" 0.5 0.5 {nominal_strings .false similar_mix_chance 0.5}) "\n")
 
- ;max depth of 1
  (print (mix
 	{a [0 1] b [1 2] c [2 3]}
 	{a [0 1] b [1 2] w [2 3] x [3 4] y [4 5] z [5 6]}
-	0.5 0.5 (null) 1
+	0.5 0.5 {recursive_matching .false}
  ))
 
  (print "--total_entity_size--\n")
@@ -2056,10 +2059,11 @@
  (print "--commonality_entities--\n")
 
  (print (commonality_entities "MergeEntity1" "MergeEntity2") "\n")
-
+ (print (commonality_entities "MergeEntity1" "MergeEntity2" {types_must_match .false nominal_strings .false}) "\n")
  (print "--edit_distance_entities--\n")
 
  (print (edit_distance_entities "MergeEntity1" "MergeEntity2") "\n")
+ (print (edit_distance_entities "MergeEntity1" "MergeEntity2" {types_must_match .false nominal_strings .false}) "\n")
 
  (print "--intersect_entities--\n")
 
@@ -2172,7 +2176,7 @@
  )
 
  (print "--mix_entities--\n")
- (mix_entities "MergeEntity1" "MergeEntity2" 0.5 0.5 0.5 (null) 0.2 "MixedEntities")
+ (mix_entities "MergeEntity1" "MergeEntity2" 0.5 0.5 {similar_mix_chance 0.5 unnamed_entity_mix_chance 0.2} "MixedEntities")
  (print (retrieve_entity_root "MixedEntities"))
  (map
    (lambda (seq
@@ -2969,7 +2973,7 @@
 
   (print "6: "
 	(contained_entities "TestContainerSimilarCode" (list
-		(query_nearest_generalized_distance 4 (list "x" "y" ) (list 1 (list (list 1 2))) 1 (list 1 1) (list "continuous_number" "continuous_code_no_recursive_matching") (null) (null) (null) 1)
+		(query_nearest_generalized_distance 4 (list "x" "y" ) (list 1 (list (list 1 2))) 1 (list 1 1) (list "continuous_number" "continuous_code") (list (null) {recursive_matching .false} ) (null) (null) 1)
 	))
   )
 
@@ -3826,6 +3830,8 @@
 	(print mymap)
 
 (print "--reclaim_resources--\n")
+
+(reclaim_resources (null) .true ["x"] .true .true )
 
 (reclaim_resources (null) .true .true .true .true )
 

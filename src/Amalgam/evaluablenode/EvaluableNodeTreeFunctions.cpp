@@ -25,7 +25,7 @@ bool CustomEvaluableNodeComparator::operator()(EvaluableNode *a, EvaluableNode *
 
 //performs a top-down stable merge on the sub-lists from start_index to middle_index and middle_index to _end_index
 //  from source into destination using cenc
-void CustomEvaluableNodeOrderedChildNodesTopDownMerge(std::vector<EvaluableNode *> &source,
+static void CustomEvaluableNodeOrderedChildNodesTopDownMerge(std::vector<EvaluableNode *> &source,
 	size_t start_index, size_t middle_index, size_t end_index, std::vector<EvaluableNode *> &destination, CustomEvaluableNodeComparator &cenc)
 {
 	size_t left_pos = start_index;
@@ -50,7 +50,7 @@ void CustomEvaluableNodeOrderedChildNodesTopDownMerge(std::vector<EvaluableNode 
 
 //performs a stable merge sort of source (which *will* be modified and is not constant)
 // from start_index to end_index into destination; uses cenc for comparison
-void CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &source,
+static void CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &source,
 	size_t start_index, size_t end_index, std::vector<EvaluableNode *> &destination, CustomEvaluableNodeComparator &cenc)
 {
 	//if one element, then sorted

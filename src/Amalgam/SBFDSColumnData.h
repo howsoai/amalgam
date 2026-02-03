@@ -167,6 +167,12 @@ public:
 	void DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
 		size_t index, bool remove_last_entity);
 
+	//removes all of an index's data from the caches regardless of type
+	// it should be followed up with an appropriate insert operation with the new value
+	// to maintain cache consistency
+	//TODO 24298: attempt to remove this and pass in the previous value for every label change
+	void RemoveIndexFromCaches(size_t index);
+
 	//changes column to/from interning as would yield best performance
 	void Optimize();
 
@@ -228,7 +234,6 @@ public:
 			// and then adding back in another of equal size but different
 			return static_cast<double>(longestStringLength * 2);
 
-		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING:
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE:
 			//the max difference is the worst case edit distance, of removing all the characters
 			// and then adding back in another of equal size but different
@@ -443,6 +448,12 @@ public:
 	//used for debugging to make sure all entities are valid
 	inline void VerifyAllEntities(size_t max_num_entities = std::numeric_limits<size_t>::max())
 	{
+		size_t num_entities = invalidIndices.size() + nullIndices.size() + falseBoolIndices.size() + trueBoolIndices.size()
+			+ numberIndices.size() + stringIdIndices.size() + codeIndices.size();
+
+		if(max_num_entities < std::numeric_limits<size_t>::max())
+			assert(num_entities == max_num_entities);
+
 		for(auto &value_entry : sortedNumberValueEntries)
 		{
 			//ensure all interned values are valid

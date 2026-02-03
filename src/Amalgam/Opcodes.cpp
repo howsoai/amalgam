@@ -291,7 +291,7 @@ void StringInternPool::InitializeStaticStrings()
 	//entity access
 	EmplaceNodeTypeString(ENT_CONTAINS_LABEL, "contains_label");
 	EmplaceNodeTypeString(ENT_ASSIGN_TO_ENTITIES, "assign_to_entities");
-	EmplaceNodeTypeString(ENT_DIRECT_ASSIGN_TO_ENTITIES, "direct_assign_to_entities");
+	EmplaceNodeTypeString(ENT_REMOVE_FROM_ENTITIES, "remove_from_entities");
 	EmplaceNodeTypeString(ENT_ACCUM_TO_ENTITIES, "accum_to_entities");
 	EmplaceNodeTypeString(ENT_RETRIEVE_FROM_ENTITY, "retrieve_from_entity");
 	EmplaceNodeTypeString(ENT_CALL_ENTITY, "call_entity");

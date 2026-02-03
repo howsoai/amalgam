@@ -467,8 +467,7 @@ public:
 	// and passing the label sid and the node to the user specified function func
 	template<typename LabelFunc>
 	inline void IterateFunctionOverLabels(LabelFunc func,
-		EvaluableNodeManager *destination_temp_enm = nullptr,
-		bool direct_get = false, bool on_self = false)
+		EvaluableNodeManager *destination_temp_enm = nullptr, bool on_self = false)
 	{
 		for(auto &[label_id, _] : GetLabelIndex())
 		{
@@ -482,13 +481,12 @@ public:
 	//Sets the node at label_name to new_value.
 	// If new_value is unique (EvaluableNodeReference property) and on_self is true, then it will take ownership of new_value
 	//Retains true if the value (or modification thereof) was able to be set, false if the label does not exist or it fails for other reasons
-	// If direct_get is true, then it will return values with all labels
 	// If on_self is true, then it will be allowed to access private variables
 	// If batch_call is true, then it assumes it will be called in a batch of updates and will not perform any cleanup
 	// need_node_flags_updated is used when batch_call = true.  if need_node_flags_updated is not null, then it set the value to true
 	// if the Entity needs to have its node flags updated at the end of this batch update, because a cycle free flag has changed
 	//note that this cannot be called concurrently on the same entity
-	bool SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value, bool direct_set,
+	bool SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value,
 		std::vector<EntityWriteListener *> *write_listeners, bool on_self = false, bool batch_call = false,
 		bool *need_node_flags_updated = nullptr);
 
@@ -499,7 +497,7 @@ public:
 	// if num_new_nodes_allocated is not null, then it will be set to the total amount of new memory taken up by the entity at the end of the call
 	// other parameters match those of SetValueAtLabel, and will call SetValueAtLabel with batch_call = true
 	// if copy_entity is true, then it will make a full copy of the entity before setting the labels in a copy-on-write fashion (for concurrent access)
-	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values, bool direct_set,
+	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values,
 		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity);
 
 	//Returns the id for this Entity

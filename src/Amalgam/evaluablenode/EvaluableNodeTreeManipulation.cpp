@@ -1832,7 +1832,7 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	//entity access
 	{ENT_CONTAINS_LABEL,								0.5},
 	{ENT_ASSIGN_TO_ENTITIES,							0.5},
-	{ENT_DIRECT_ASSIGN_TO_ENTITIES,						0.01},
+	{ENT_REMOVE_FROM_ENTITIES,							0.01},
 	{ENT_ACCUM_TO_ENTITIES,								0.5},
 	{ENT_RETRIEVE_FROM_ENTITY,							0.5},
 	{ENT_CALL_ENTITY,									0.5},

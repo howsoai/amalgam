@@ -252,8 +252,8 @@ void EntityWriteListener::FlushLogFile()
 
 EvaluableNode *EntityWriteListener::BuildNewWriteOperation(EvaluableNodeType assign_type, Entity *target_entity)
 {
-	//create this code:
-	// (direct_assign_to_entity *id list* (assoc *label name* *value*))
+	//create this code, though change assign_type as appropriate
+	// (assign_to_entity *id list* (assoc *label name* *value*))
 	EvaluableNode *new_write = listenerStorage.AllocNode(assign_type);
 
 	if(target_entity != listeningEntity)

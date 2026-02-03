@@ -231,9 +231,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNo
 	return AllocReturn(target_entity->DoesLabelExist(label_sid), immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIRECT_ASSIGN_TO_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_ENT_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	//TODO 24298: change direct assign to remove_from_entities reflecting documentation, update unit tests
+	//TODO 24298: update code below for remove_from_entities, and update unit tests to change direct_assign_to_entity tests to remove_from_entity tests
 
 	//not allowed if don't have a Entity to work within
 	if(curEntity == nullptr)
@@ -241,7 +241,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 
 	auto &ocn = en->GetOrderedChildNodesReference();
 
-	bool direct = (en->GetType() == ENT_DIRECT_ASSIGN_TO_ENTITIES);
+	bool remove_from_entities = (en->GetType() == ENT_REMOVE_FROM_ENTITIES);
 	bool accum_assignment = (en->GetType() == ENT_ACCUM_TO_ENTITIES);
 
 	bool all_assignments_successful = true;
@@ -281,7 +281,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			lab_pause = evaluableNodeManager->PauseLocalAllocationBuffer();
 
 		auto [any_success, all_success] = target_entity->SetValuesAtLabels(
-										assigned_vars, accum_assignment, direct, writeListeners,
+										assigned_vars, accum_assignment, writeListeners,
 										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity, false);
 
 		lab_pause.Resume();

@@ -467,7 +467,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				(StringInternPool::StringID label_sid, EvaluableNode *node)
 					{
 						std::cout << "  " << string_intern_pool.GetStringFromID(label_sid) << std::endl;
-					}, nullptr, true, true);
+					}, nullptr, true);
 			}
 		}
 		else if(command == "vars")

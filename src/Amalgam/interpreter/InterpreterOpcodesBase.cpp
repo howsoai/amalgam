@@ -20,7 +20,7 @@
 #include <utility>
 
 //Used only for deep debugging of entity memory and garbage collection
-std::string GetEntityMemorySizeDiagnostics(Entity *e)
+static std::string GetEntityMemorySizeDiagnostics(Entity *e)
 {
 	if(e == nullptr)
 		return "";
@@ -1888,7 +1888,7 @@ static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType 
 
 //Generates an EvaluableNode containing a random value based on the random parameter param, using enm and random_stream
 // if any part of param is preserved in the return value, then can_free_param will be set to false, otherwise it will be left alone
-EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReference param, Interpreter *interpreter,
+static EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReference param, Interpreter *interpreter,
 	RandomStream &random_stream, bool &can_free_param, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	if(EvaluableNode::IsNull(param))

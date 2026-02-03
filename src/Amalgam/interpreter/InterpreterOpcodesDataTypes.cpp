@@ -182,7 +182,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	//don't need to lock the entity since it's already executing on it
 	if(curEntity != nullptr)
 	{
-		auto [label_value, label_found] = curEntity->GetValueAtLabel(sid, nullptr, true, immediate_result, true);
+		auto [label_value, label_found] = curEntity->GetValueAtLabel(sid, evaluableNodeManager, immediate_result, true);
 		if(label_found)
 			return label_value;
 	}
@@ -1449,7 +1449,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 				auto out = std::back_inserter(updated_string);
 				auto iter = std::sregex_iterator(begin(string_to_substr), end(string_to_substr), rx);
 				auto end = std::sregex_iterator();
-				auto last_iter = iter;
+				auto last_iter(iter);
 
 				for(size_t n = static_cast<size_t>(max_match_count); n > 0 && iter != end; ++iter, n--)
 				{

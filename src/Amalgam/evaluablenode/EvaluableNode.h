@@ -70,7 +70,7 @@ public:
 	__forceinline EvaluableNode(EvaluableNodeType type, const std::string &string_value) { InitializeType(type, string_value); }
 	__forceinline EvaluableNode(double value) { InitializeType(value); }
 	__forceinline EvaluableNode(EvaluableNodeType type) { InitializeType(type); }
-	__forceinline EvaluableNode(EvaluableNode *n) { InitializeType(n); }
+	__forceinline EvaluableNode(EvaluableNode *n, bool copy_metadata = true) { InitializeType(n, copy_metadata); }
 
 	__forceinline ~EvaluableNode()
 	{
@@ -1193,12 +1193,12 @@ protected:
 			SetAnnotationsAndComments(GetAnnotations(), new_comments);
 		}
 
-		bool HasAnnotations()
+		inline bool HasAnnotations()
 		{
 			return buffer && buffer[0] != '\0';
 		}
 
-		bool HasComments()
+		inline bool HasComments()
 		{
 			if(!buffer)
 				return false;

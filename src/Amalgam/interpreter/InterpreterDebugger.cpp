@@ -99,8 +99,8 @@ void ClampSingleLineStringLength(std::string &s, size_t max_num_chars, std::stri
 //prints the node and its comment both truncated to max_num_chars or newline
 std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t max_num_chars = 100)
 {
-	//if no comments, then can just print
-	if(en == nullptr || en->GetCommentsStringId() == string_intern_pool.NOT_A_STRING_ID)
+	//if no annotations or comments, then can just print
+	if(en == nullptr || (!en->HasAnnotations() && !en->HasComments()))
 	{
 		std::string code_str = Parser::Unparse(en, false, true, true);
 		ClampSingleLineStringLength(code_str, max_num_chars);
@@ -118,9 +118,9 @@ std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, EvaluableNo
 
 		ClampSingleLineStringLength(comment_str, max_num_chars);
 
-		//append with code
-		EvaluableNode en_without_comment(en);
-		en_without_comment.ClearComments();
+		//append with code by making a copy without metadata and only copying concurrency
+		EvaluableNode en_without_comment(en, false);
+		en_without_comment.SetConcurrency(en->GetConcurrency());
 		std::string code_str = Parser::Unparse(&en_without_comment, false, true, true);
 		ClampSingleLineStringLength(code_str, max_num_chars);
 
@@ -507,7 +507,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 					}
 
 					bool found_value = false;
-					std::tie(node, found_value) = curEntity->GetValueAtLabel(sid, nullptr, true,
+					std::tie(node, found_value) = curEntity->GetValueAtLabel(sid, nullptr,
 						EvaluableNodeRequestedValueTypes::Type::NONE, true);
 					if(!found_value)
 					{

@@ -233,7 +233,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIRECT_ASSIGN_TO_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	//TODO 24298: change direct assign to remove from entities
+	//TODO 24298: change direct assign to remove_from_entities reflecting documentation, update unit tests
 
 	//not allowed if don't have a Entity to work within
 	if(curEntity == nullptr)

@@ -79,7 +79,22 @@ public:
 	}
 
 	//clears out all data and makes the unusable in the ENT_DEALLOCATED state
-	void Invalidate();
+	inline void Invalidate()
+	{
+		DestructValue();
+
+		type = ENT_DEALLOCATED;
+		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
+
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		//use a value that is more apparent that something went wrong
+		value.numberValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+	#else
+		value.numberValueContainer.numberValue = 0;
+	#endif
+
+		AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
+	}
 
 	///////////////////////////////////////////
 	//Each InitializeType* sets up a given type with appropriate data
@@ -514,7 +529,12 @@ public:
 		bool attempt_to_preserve_immediate_value);
 
 	//sets up boolean value
-	void InitBoolValue();
+	inline void InitBoolValue()
+	{
+		DestructValue();
+		value.boolValueContainer.boolValue = false;
+		AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
+	}
 
 	//gets the value by reference
 	__forceinline bool &GetBoolValue()
@@ -534,7 +554,12 @@ public:
 	}
 
 	//sets up number value
-	void InitNumberValue();
+	inline void InitNumberValue()
+	{
+		DestructValue();
+		value.numberValueContainer.numberValue = 0.0;
+		AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
+	}
 
 	//gets the value by reference
 	__forceinline double &GetNumberValue()
@@ -589,7 +614,13 @@ public:
 	}
 
 	//sets up the ability to contain a string
-	void InitStringValue();
+	inline void InitStringValue()
+	{
+		DestructValue();
+		value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
+		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
+	}
+
 	__forceinline StringInternPool::StringID GetStringID()
 	{
 		if(DoesEvaluableNodeTypeUseStringData(GetType()))
@@ -597,6 +628,7 @@ public:
 
 		return StringInternPool::NOT_A_STRING_ID;
 	}
+
 	void SetStringID(StringInternPool::StringID id);
 	const std::string &GetStringValue();
 	void SetStringValue(const std::string &v);
@@ -845,7 +877,16 @@ public:
 	//returns the number of child nodes regardless of mapped or ordered
 	size_t GetNumChildNodes();
 
-	void InitOrderedChildNodes();
+	inline void InitOrderedChildNodes()
+	{
+		DestructValue();
+
+		if(!HasExtendedValue())
+			value.ConstructOrderedChildNodes();
+		else
+			value.extendedOrderedChildNodes.orderedChildNodes = std::make_unique<std::vector<EvaluableNode *>>();
+	}
+
 	//preallocates to_reserve for appending, etc.
 	inline void ReserveOrderedChildNodes(size_t to_reserve)
 	{
@@ -925,7 +966,16 @@ public:
 			GetOrderedChildNodesReference().shrink_to_fit();
 	}
 
-	void InitMappedChildNodes();
+	inline void InitMappedChildNodes()
+	{
+		DestructValue();
+
+		if(!HasExtendedValue())
+			value.ConstructMappedChildNodes();
+		else
+			value.extendedMappedChildNodes.mappedChildNodes = std::make_unique<AssocType>();
+	}
+
 	//preallocates to_reserve for appending, etc.
 	inline void ReserveMappedChildNodes(size_t to_reserve)
 	{
@@ -997,28 +1047,19 @@ public:
 	//assumes that the EvaluableNode is of type ENT_BOOL, and returns the value by reference
 	__forceinline bool &GetBoolValueReference()
 	{
-		if(!HasExtendedValue())
-			return value.boolValueContainer.boolValue;
-		else
-			return value.extension.extendedValue->boolValueContainer.boolValue;
+		return value.boolValueContainer.boolValue;
 	}
 
 	//assumes that the EvaluableNode is of type ENT_NUMBER, and returns the value by reference
 	__forceinline double &GetNumberValueReference()
 	{
-		if(!HasExtendedValue())
-			return value.numberValueContainer.numberValue;
-		else
-			return value.extension.extendedValue->numberValueContainer.numberValue;
+		return value.numberValueContainer.numberValue;
 	}
 
 	//assumes that the EvaluableNode is of type that holds a string, and returns the value by reference
 	__forceinline StringInternPool::StringID &GetStringIDReference()
 	{
-		if(!HasExtendedValue())
-			return value.stringValueContainer.stringID;
-		else
-			return value.extension.extendedValue->stringValueContainer.stringID;
+		return value.stringValueContainer.stringID;
 	}
 
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
@@ -1027,7 +1068,7 @@ public:
 		if(!HasExtendedValue())
 			return value.orderedChildNodes;
 		else
-			return value.extension.extendedValue->orderedChildNodes;
+			return *value.extendedOrderedChildNodes.orderedChildNodes.get();
 	}
 
 	//assumes that the EvaluableNode is has mapped child nodes, and returns the value by reference
@@ -1036,7 +1077,7 @@ public:
 		if(!HasExtendedValue())
 			return value.mappedChildNodes;
 		else
-			return value.extension.extendedValue->mappedChildNodes;
+			return *value.extendedMappedChildNodes.mappedChildNodes.get();
 	}
 
 	//if it is storing an immediate value and has room to store a label
@@ -1049,17 +1090,27 @@ public:
 	// will only return valid results if HasCompactAnnotationsAndCommentsStorage() is true, so that should be called first
 	__forceinline AnnotationsAndComments &GetAnnotationsAndCommentsStorage()
 	{
-		if(type == ENT_BOOL)
+		switch(GetType())
+		{
+		case ENT_BOOL:
 			return value.boolValueContainer.annotationsAndComments;
-		if(type == ENT_NUMBER)
+		case ENT_NUMBER:
 			return value.numberValueContainer.annotationsAndComments;
-		if(type == ENT_STRING || type == ENT_SYMBOL)
+		case ENT_STRING:
+		case ENT_SYMBOL:
 			return value.stringValueContainer.annotationsAndComments;
-
-		if(HasExtendedValue())
-			return value.extension.annotationsAndComments;
-
-		return emptyAnnotationsAndComments;
+		case ENT_ASSOC:
+			if(!HasExtendedValue())
+				return emptyAnnotationsAndComments;
+			else
+				return value.extendedMappedChildNodes.annotationsAndComments;
+		//otherwise ordered
+		default:
+			if(!HasExtendedValue())
+				return emptyAnnotationsAndComments;
+			else
+				return value.extendedOrderedChildNodes.annotationsAndComments;
+		}
 	}
 
 	//registers and unregisters an EvaluableNode for debug watching
@@ -1282,13 +1333,21 @@ protected:
 			AnnotationsAndComments annotationsAndComments;
 		} boolValueContainer;
 
-		struct EvaluableNodeExtension
+		struct EvaluableNodeValueOrderedChildNodesWithAnnotationsAndComments
 		{
-			//pointer to store any extra data if EvaluableNode needs multiple fields
-			EvaluableNodeValue *extendedValue;
+			//external orderedChildNodes
+			std::unique_ptr<std::vector<EvaluableNode *>> orderedChildNodes;
 
 			AnnotationsAndComments annotationsAndComments;
-		} extension;
+		} extendedOrderedChildNodes;
+
+		struct EvaluableNodeValueMappedChildNodesWithAnnotationsAndComments
+		{
+			//external orderedChildNodes
+			std::unique_ptr<AssocType> mappedChildNodes;
+
+			AnnotationsAndComments annotationsAndComments;
+		} extendedMappedChildNodes;
 	};
 #pragma pack(pop)
 
@@ -1297,7 +1356,46 @@ protected:
 
 	//destructs the value so that the node can be reused
 	// note that the value should be considered uninitialized
-	void DestructValue();
+	inline void DestructValue()
+	{
+		switch(GetType())
+		{
+		case ENT_BOOL:
+			AnnotationsAndComments::Destruct(value.boolValueContainer.annotationsAndComments);
+			break;
+		case ENT_NUMBER:
+			AnnotationsAndComments::Destruct(value.numberValueContainer.annotationsAndComments);
+			break;
+		case ENT_STRING:
+		case ENT_SYMBOL:
+			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
+			AnnotationsAndComments::Destruct(value.stringValueContainer.annotationsAndComments);
+			break;
+		case ENT_ASSOC:
+			if(!HasExtendedValue())
+			{
+				value.DestructMappedChildNodes();
+			}
+			else
+			{
+				value.extendedMappedChildNodes.mappedChildNodes.reset();
+				AnnotationsAndComments::Destruct(value.extendedMappedChildNodes.annotationsAndComments);
+			}
+			break;
+			//otherwise ordered
+		default:
+			if(!HasExtendedValue())
+			{
+				value.DestructOrderedChildNodes();
+			}
+			else
+			{
+				value.extendedOrderedChildNodes.orderedChildNodes.reset();
+				AnnotationsAndComments::Destruct(value.extendedOrderedChildNodes.annotationsAndComments);
+			}
+			break;
+		}
+	}
 
 	//Returns true if the entire data structure of a is equal in value to the data structure of b
 	// but does not check the immediate nodes a and b to see if they are shallow equal (this is assumed to be done by the caller for performance)

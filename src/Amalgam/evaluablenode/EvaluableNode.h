@@ -262,6 +262,7 @@ public:
 	//clears the node's metadata
 	__forceinline void ClearMetadata()
 	{
+		//TODO 24298: remove extended value if exists
 		GetAnnotationsAndCommentsStorage().Clear();
 		SetConcurrency(false);
 	}

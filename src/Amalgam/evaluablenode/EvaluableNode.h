@@ -651,10 +651,9 @@ public:
 	}
 
 	//sets the annotation_string
-	void SetAnnotationsString(std::string_view s)
+	inline void SetAnnotationsString(std::string_view s)
 	{
-		if(!HasCompactAnnotationsAndCommentsStorage() && !HasExtendedValue())
-			EnsureEvaluableNodeExtended();
+		EnsureHasAnnotationsAndCommentsStorage();
 		GetAnnotationsAndCommentsStorage().SetAnnotations(s);
 	}
 
@@ -666,8 +665,7 @@ public:
 	//appends annotations to the node
 	void AppendAnnotations(std::string &annotations)
 	{
-		if(!HasCompactAnnotationsAndCommentsStorage() && !HasExtendedValue())
-			EnsureEvaluableNodeExtended();
+		EnsureHasAnnotationsAndCommentsStorage();
 
 		auto &a_and_c = GetAnnotationsAndCommentsStorage();
 		std::string combined(a_and_c.GetAnnotations());
@@ -696,9 +694,7 @@ public:
 
 	inline void SetCommentsString(const std::string &comment)
 	{
-		if(!HasCompactAnnotationsAndCommentsStorage() && !HasExtendedValue())
-			EnsureEvaluableNodeExtended();
-
+		EnsureHasAnnotationsAndCommentsStorage();
 		GetAnnotationsAndCommentsStorage().SetComments(comment);
 	}
 
@@ -711,7 +707,7 @@ public:
 	void AppendComments(std::string &comments)
 	{
 		if(!HasCompactAnnotationsAndCommentsStorage() && !HasExtendedValue())
-			EnsureEvaluableNodeExtended();
+			EnsureHasAnnotationsAndCommentsStorage();
 
 		auto &a_and_c = GetAnnotationsAndCommentsStorage();
 		std::string combined(a_and_c.GetComments());
@@ -1352,7 +1348,7 @@ protected:
 #pragma pack(pop)
 
 	//makes sure that the extendedValue is set appropriately so that it can be used to hold additional data
-	void EnsureEvaluableNodeExtended();
+	void EnsureHasAnnotationsAndCommentsStorage();
 
 	//destructs the value so that the node can be reused
 	// note that the value should be considered uninitialized

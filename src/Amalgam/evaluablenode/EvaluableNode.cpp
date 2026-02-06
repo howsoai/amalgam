@@ -469,15 +469,7 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	SetNeedCycleCheck(n->GetNeedCycleCheck());
 
 	if(copy_metadata)
-	{
-		SetConcurrency(n->GetConcurrency());
-
-		if(n->HasExtendedValue())
-			EnsureEvaluableNodeExtended();
-
-		auto [annotations, comments] = n->GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
-		GetAnnotationsAndCommentsStorage().SetAnnotationsAndComments(annotations, comments);
-	}
+		CopyMetadataFrom(n);
 }
 
 void EvaluableNode::CopyValueFrom(EvaluableNode *n)
@@ -543,12 +535,15 @@ void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 		return;
 
 	auto [annotations, comments] = n->GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
-	GetAnnotationsAndCommentsStorage().SetAnnotationsAndComments(annotations, comments);
 
-	if(annotations.size() > 0 || comments.size() > 0)
+	if(annotations.size() == 0 && comments.size() == 0)
 	{
-		if(!HasCompactAnnotationsAndCommentsStorage() && !HasExtendedValue())
-			EnsureEvaluableNodeExtended();
+		GetAnnotationsAndCommentsStorage().Clear();
+	}
+	else
+	{
+		EnsureHasAnnotationsAndCommentsStorage();
+		GetAnnotationsAndCommentsStorage().SetAnnotationsAndComments(annotations, comments);
 	}
 
 	SetConcurrency(n->GetConcurrency());
@@ -1132,47 +1127,30 @@ void EvaluableNode::AppendMappedChildNodes(AssocType &mcn_to_append)
 	}
 }
 
-void EvaluableNode::EnsureEvaluableNodeExtended()
+void EvaluableNode::EnsureHasAnnotationsAndCommentsStorage()
 {
+	if(HasCompactAnnotationsAndCommentsStorage())
+		return;
+
 	if(HasExtendedValue())
 		return;
 
 	EvaluableNodeValue *ev = new EvaluableNodeValue;
 
-	switch(GetType())
+	if(GetType() == ENT_ASSOC)
 	{
-	case ENT_BOOL:
-		ev->boolValueContainer.boolValue = value.boolValueContainer.boolValue;
-		if(value.boolValueContainer.labelStringID != StringInternPool::NOT_A_STRING_ID)
-			ev->labelsStringIds.push_back(value.boolValueContainer.labelStringID);
-		break;
-	case ENT_NUMBER:
-		ev->numberValueContainer.numberValue = value.numberValueContainer.numberValue;
-		if(value.numberValueContainer.labelStringID != StringInternPool::NOT_A_STRING_ID)
-			ev->labelsStringIds.push_back(value.numberValueContainer.labelStringID);
-		break;
-	case ENT_STRING:
-	case ENT_SYMBOL:
-		ev->stringValueContainer.stringID = value.stringValueContainer.stringID;
-		if(value.stringValueContainer.labelStringID != StringInternPool::NOT_A_STRING_ID)
-			ev->labelsStringIds.push_back(value.stringValueContainer.labelStringID);
-		break;
-	case ENT_ASSOC:
-		ev->ConstructMappedChildNodes();	//construct an empty mappedChildNodes to swap out
-		ev->mappedChildNodes = std::move(value.mappedChildNodes);
-		value.DestructMappedChildNodes();
-		break;
-	//otherwise it's uninitialized, so treat as ordered
-	default: //all other opcodes
-		ev->ConstructOrderedChildNodes();	//construct an empty orderedChildNodes to swap out
-		ev->orderedChildNodes = std::move(value.orderedChildNodes);
-		value.DestructOrderedChildNodes();
-		break;
+		auto new_mcn = std::make_unique<AssocType>(std::move(value.mappedChildNodes));
+		value.extendedMappedChildNodes.mappedChildNodes = std::move(new_mcn);
+		AnnotationsAndComments::Construct(value.extendedMappedChildNodes.annotationsAndComments);
+	}
+	else //ordered
+	{
+		auto new_ocn = std::make_unique<std::vector<EvaluableNode *>>(std::move(value.orderedChildNodes));
+		value.extendedOrderedChildNodes.orderedChildNodes = std::move(new_ocn);
+		AnnotationsAndComments::Construct(value.extendedOrderedChildNodes.annotationsAndComments);
 	}
 
 	SetExtendedValue(true);
-	value.extension.extendedValue = ev;
-	value.extension.commentsStringId = StringInternPool::NOT_A_STRING_ID;
 }
 
 bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNode *b, ReferenceAssocType *checked)

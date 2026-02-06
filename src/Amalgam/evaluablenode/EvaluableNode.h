@@ -262,8 +262,32 @@ public:
 	//clears the node's metadata
 	__forceinline void ClearMetadata()
 	{
-		//TODO 24298: remove extended value if exists
-		GetAnnotationsAndCommentsStorage().Clear();
+		if(HasExtendedValue())
+		{
+			if(GetType() == ENT_ASSOC)
+			{
+				auto *mcn_ptr = value.extendedMappedChildNodes.mappedChildNodes.get();
+				auto mcn(std::move(*mcn_ptr));
+				value.extendedMappedChildNodes.mappedChildNodes.reset();
+
+				value.mappedChildNodes = std::move(mcn);
+			}
+			else //ordered
+			{
+				auto *ocn_ptr = value.extendedOrderedChildNodes.orderedChildNodes.get();
+				auto ocn(std::move(*ocn_ptr));
+				value.extendedOrderedChildNodes.orderedChildNodes.reset();
+
+				value.orderedChildNodes = std::move(ocn);
+			}
+
+			SetExtendedValue(false);
+		}
+		else
+		{
+			GetAnnotationsAndCommentsStorage().Clear();
+		}
+
 		SetConcurrency(false);
 	}
 

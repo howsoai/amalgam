@@ -499,6 +499,11 @@ public:
 	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values,
 		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self);
 
+	//for each label in the ordered child nodes of labels_to_remove, attempts to remove each label
+	// returns a pair of values; the first is true if any assignment was successful, the second is only true if all assignments were successful
+	std::pair<bool, bool> RemoveLabels(EvaluableNodeReference labels_to_remove,
+		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self);
+
 	//Returns the id for this Entity
 	inline const std::string &GetId()
 	{

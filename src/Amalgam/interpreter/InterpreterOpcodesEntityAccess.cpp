@@ -239,9 +239,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REM
 
 	auto &ocn = en->GetOrderedChildNodesReference();
 
-	//TODO 24298: update code below for remove_from_entities, and update unit tests to change direct_assign_to_entity tests to remove_from_entity tests
 	bool remove_from_entities = (en->GetType() == ENT_REMOVE_FROM_ENTITIES);
-	bool accum_assignment = (en->GetType() == ENT_ACCUM_TO_ENTITIES);
+	bool accum_to_entities = (en->GetType() == ENT_ACCUM_TO_ENTITIES);
 
 	bool all_assignments_successful = true;
 	for(size_t i = 0; i < ocn.size(); i += 2)
@@ -279,8 +278,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REM
 		if(target_entity != curEntity)
 			lab_pause = evaluableNodeManager->PauseLocalAllocationBuffer();
 
-		auto [any_success, all_success] = target_entity->SetValuesAtLabels(
-										assigned_vars, accum_assignment, writeListeners,
+		bool any_success = false;
+		bool all_success = false;
+
+		if(remove_from_entities)
+			std::tie(any_success, all_success) = target_entity->RemoveLabels(
+										assigned_vars, writeListeners,
+										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity);
+		else
+			std::tie(any_success, all_success) = target_entity->SetValuesAtLabels(
+										assigned_vars, accum_to_entities, writeListeners,
 										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity);
 
 		lab_pause.Resume();

@@ -434,6 +434,12 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	return std::make_pair(any_successful_assignment, all_successful_assignments);
 }
 
+std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remove,
+		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self)
+{
+	//TODO 24298: implement this
+}
+
 EvaluableNodeReference Entity::ExecuteCodeAsEntity(EvaluableNode *code,
 	EvaluableNode *scope_stack, Interpreter *calling_interpreter,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,

@@ -536,7 +536,7 @@ void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 
 	auto [annotations, comments] = n->GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
 
-	if(annotations.size() == 0 && comments.size() == 0)
+	if(annotations.empty() && comments.empty())
 	{
 		GetAnnotationsAndCommentsStorage().Clear();
 	}
@@ -575,13 +575,11 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 		return;
 	}
 
-	//need to preserve the extra label if it exists
-	StringInternPool::StringID extra_label = StringInternPool::NOT_A_STRING_ID;
-	if(HasCompactAnnotationsAndCommentsStorage())
-	{
-		extra_label = GetCompactSingleLabelStorage();
-		GetCompactSingleLabelStorage() = StringInternPool::NOT_A_STRING_ID;
-	}
+	//preserve non-flag metadata if exists
+	auto [annotations_view, comments_view] = GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
+	//make copies of metadata because it will be distructed if changing storage location
+	std::string annotations(annotations_view);
+	std::string comments(comments_view);
 
 	//transform as appropriate
 	if(DoesEvaluableNodeTypeUseBoolData(new_type))
@@ -699,19 +697,19 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 
 	type = new_type;
 
-	//put the extra label back on if exists (already have the reference)
-	if(extra_label != StringInternPool::NOT_A_STRING_ID)
-		AppendLabelStringId(extra_label, true);
-
-	//reset idempotency if applicable
-	// can only go one way with idempotency, because if it's not idempotent
-	if(GetNumLabels() == 0)
+	ClearAnnotationsAndComments();
+	if(annotations.empty() && comments.empty())
 	{
-		if(GetIsIdempotent())
-			SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(new_type));
+		GetAnnotationsAndCommentsStorage().Clear();
 	}
 	else
-		SetIsIdempotent(false);
+	{
+		EnsureHasAnnotationsAndCommentsStorage();
+		GetAnnotationsAndCommentsStorage().SetAnnotationsAndComments(annotations, comments);
+	}
+
+	if(GetIsIdempotent())
+		SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(new_type));
 }
 
 void EvaluableNode::SetStringID(StringInternPool::StringID id)

@@ -259,8 +259,8 @@ public:
 	//copies the metadata of the node n into this
 	void CopyMetadataFrom(EvaluableNode *n);
 
-	//clears the node's metadata
-	__forceinline void ClearMetadata()
+	//clears annotations and comments
+	__forceinline void ClearAnnotationsAndComments()
 	{
 		if(HasExtendedValue())
 		{
@@ -287,7 +287,12 @@ public:
 		{
 			GetAnnotationsAndCommentsStorage().Clear();
 		}
+	}
 
+	//clears the node's metadata
+	__forceinline void ClearMetadata()
+	{
+		ClearAnnotationsAndComments();
 		SetConcurrency(false);
 	}
 

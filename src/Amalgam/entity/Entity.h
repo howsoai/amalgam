@@ -496,9 +496,8 @@ public:
 	// if accum_values is true, then it will accumulate the values to the labels rather than setting them
 	// if num_new_nodes_allocated is not null, then it will be set to the total amount of new memory taken up by the entity at the end of the call
 	// other parameters match those of SetValueAtLabel, and will call SetValueAtLabel with batch_call = true
-	// if copy_entity is true, then it will make a full copy of the entity before setting the labels in a copy-on-write fashion (for concurrent access)
 	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values,
-		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity);
+		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self);
 
 	//Returns the id for this Entity
 	inline const std::string &GetId()

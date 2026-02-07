@@ -281,7 +281,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REM
 
 		auto [any_success, all_success] = target_entity->SetValuesAtLabels(
 										assigned_vars, accum_assignment, writeListeners,
-										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity, false);
+										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity);
 
 		lab_pause.Resume();
 

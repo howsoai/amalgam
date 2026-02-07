@@ -358,7 +358,7 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 
 //like SetValuesAtLabels, except accumulates each value at each label instead
 std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values,
-	std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity)
+	std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self)
 {
 	//can only work with assoc arrays
 	if(!EvaluableNode::IsAssociativeArray(new_label_values))
@@ -370,10 +370,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		new_label_values.unique = false;
 		new_label_values.uniqueUnreferencedTopNode = false;
 	}
-
-	//TODO 24298: investigate whether copy_entity is still needed as a parameter
-	if(copy_entity)
-		SetRoot(GetRoot(), false);
 
 	//if relevant, keep track of new memory allocated to the entity
 	size_t prev_size = 0;

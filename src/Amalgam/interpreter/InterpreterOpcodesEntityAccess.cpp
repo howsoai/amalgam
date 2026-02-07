@@ -233,14 +233,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	//TODO 24298: update code below for remove_from_entities, and update unit tests to change direct_assign_to_entity tests to remove_from_entity tests
-
 	//not allowed if don't have a Entity to work within
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
 
+	//TODO 24298: update code below for remove_from_entities, and update unit tests to change direct_assign_to_entity tests to remove_from_entity tests
 	bool remove_from_entities = (en->GetType() == ENT_REMOVE_FROM_ENTITIES);
 	bool accum_assignment = (en->GetType() == ENT_ACCUM_TO_ENTITIES);
 

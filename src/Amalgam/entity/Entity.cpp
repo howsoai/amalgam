@@ -236,7 +236,7 @@ std::pair<EvaluableNodeImmediateValueWithType, bool> Entity::GetValueAtLabelAsIm
 	return std::pair(retval, true);
 }
 
-bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value, bool direct_set,
+bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value,
 	std::vector<EntityWriteListener *> *write_listeners, bool on_self, bool batch_call, bool *need_node_flags_updated)
 {
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
@@ -371,6 +371,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		new_label_values.uniqueUnreferencedTopNode = false;
 	}
 
+	//TODO 24298: investigate whether copy_entity is still needed as a parameter
 	if(copy_entity)
 		SetRoot(GetRoot(), false);
 
@@ -403,7 +404,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, &evaluableNodeManager);
 		}
 
-		if(SetValueAtLabel(variable_sid, variable_value_node, direct_set, write_listeners, on_self, true, &need_node_flags_updated))
+		if(SetValueAtLabel(variable_sid, variable_value_node, write_listeners, on_self, true, &need_node_flags_updated))
 			any_successful_assignment = true;
 		else
 			all_successful_assignments = false;

@@ -376,7 +376,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	if(num_new_nodes_allocated != nullptr)
 		prev_size = GetDeepSizeInNodes();
 
-	//make assignments
 	bool any_successful_assignment = false;
 	bool all_successful_assignments = true;
 	bool need_node_flags_updated = false;
@@ -437,7 +436,40 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remove,
 		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self)
 {
-	//TODO 24298: implement this
+	//can only work with ordered child nodes
+	if(!EvaluableNode::IsOrderedArray(labels_to_remove))
+		return std::make_pair(false, false);
+
+	bool any_successful_remove = false;
+	bool all_successful_removes = true;
+	auto &labels_to_remove_ocn = labels_to_remove->GetOrderedChildNodesReference();
+
+	for(auto label_node : labels_to_remove_ocn)
+	{
+		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(label_node, true);
+		//TODO 24298: implement this
+	}
+
+	if(any_successful_remove)
+	{
+		//TODO 24298: change updates to removes
+		EntityQueryCaches *container_caches = GetContainerQueryCaches();
+		if(container_caches != nullptr)
+			container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), labels_to_remove_ocn);
+
+		if(write_listeners != nullptr)
+		{
+			for(auto &wl : *write_listeners)
+				wl->LogRemoveLabesFromEntity(this, labels_to_remove);
+		}
+		asset_manager.UpdateEntityLabelValues(this, labels_to_remove_ocn);
+
+		//needed to allocate new top node
+		if(num_new_nodes_allocated != nullptr)
+			(*num_new_nodes_allocated)++;
+	}
+
+	return std::make_pair(any_successful_remove, all_successful_removes);
 }
 
 EvaluableNodeReference Entity::ExecuteCodeAsEntity(EvaluableNode *code,

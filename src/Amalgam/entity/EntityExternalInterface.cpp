@@ -474,8 +474,6 @@ bool EntityExternalInterface::EntityListenerBundle::SetEntityValueAtLabel(std::s
 	return success;
 }
 
-//TODO 24298: add RemoveEntityLabel, as well as in Amalgam.h
-
 EntityExternalInterface::EntityListenerBundle::~EntityListenerBundle()
 {
 	if(entity != nullptr)

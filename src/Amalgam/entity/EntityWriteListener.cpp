@@ -128,6 +128,24 @@ void EntityWriteListener::LogWriteLabelValuesToEntity(Entity *entity,
 	LogNewEntry(new_write);
 }
 
+void EntityWriteListener::LogRemoveLabesFromEntity(Entity *entity, EvaluableNode *labels)
+{
+	//can only work with ordered child nodes
+	if(!EvaluableNode::IsOrderedArray(labels))
+		return;
+
+#ifdef MULTITHREAD_SUPPORT
+	Concurrency::Lock lock(mutex);
+#endif
+
+	EvaluableNode *new_write = BuildNewWriteOperation(ENT_REMOVE_FROM_ENTITIES, entity);
+
+	EvaluableNode *list = listenerStorage.DeepAllocCopy(labels);
+	new_write->AppendOrderedChildNode(list);
+
+	LogNewEntry(new_write);
+}
+
 void EntityWriteListener::LogWriteToEntityRoot(Entity *entity)
 {
 #ifdef MULTITHREAD_SUPPORT

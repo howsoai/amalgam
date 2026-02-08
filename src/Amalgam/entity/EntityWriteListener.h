@@ -24,8 +24,8 @@ public:
 
 	//stores all writes, appending them to transaction_file
 	//if huffman_tree is not null, the write listener will assume ownership of the memory and use it to compress output
-	EntityWriteListener(Entity *listening_entity,
-		bool _pretty, bool sort_keys, std::unique_ptr<std::ostream> &&transaction_file, HuffmanTree<uint8_t> *huffman_tree = nullptr);
+	EntityWriteListener(Entity *listening_entity, bool _pretty, bool sort_keys,
+		std::unique_ptr<std::ostream> &&transaction_file, HuffmanTree<uint8_t> *huffman_tree = nullptr);
 
 	~EntityWriteListener();
 
@@ -38,8 +38,9 @@ public:
 
 	//like LogWriteLabelValueToEntity but where the keys are the labels and the values correspond
 	// in the assoc specified by label_value_pairs
-	void LogWriteLabelValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs,
-		bool accum_values);
+	void LogWriteLabelValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool accum_values);
+
+	void LogRemoveLabesFromEntity(Entity *entity, EvaluableNode *labels);
 
 	//logs the new entity root, assuming it has already been set
 	void LogWriteToEntityRoot(Entity *entity);

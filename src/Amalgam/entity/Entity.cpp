@@ -239,6 +239,7 @@ std::pair<EvaluableNodeImmediateValueWithType, bool> Entity::GetValueAtLabelAsIm
 bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value,
 	std::vector<EntityWriteListener *> *write_listeners, bool on_self, bool batch_call, bool *need_node_flags_updated)
 {
+	//TODO 24298: is this method still needed given that setting multiple values will be made more efficient?
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 		return false;
 
@@ -270,59 +271,14 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 	bool dest_prev_value_idempotent = destination->GetIsIdempotent();
 	bool root_rebuilt = false;
 
-	if(!direct_set)
-	{
-		//remove all labels and allocate if needed
-		if(new_value.unique)
-		{
-			EvaluableNodeManager::ModifyLabelsForNodeTree(new_value, EvaluableNodeManager::ENMM_REMOVE_ALL);
-		}
-		else
-		{
-			new_value = evaluableNodeManager.DeepAllocCopy(new_value, EvaluableNodeManager::ENMM_REMOVE_ALL);
-			new_value.unique = false;
-			new_value.uniqueUnreferencedTopNode = false;
-		}
+	//ensure it's from the right evaluableNodeManager
+	if(!on_self)
+		new_value = evaluableNodeManager.DeepAllocCopy(new_value);
 
-		if(new_value == nullptr)
-			new_value = EvaluableNodeReference(evaluableNodeManager.AllocNode(ENT_NULL), false);
+	if(new_value == nullptr)
+		new_value = EvaluableNodeReference(evaluableNodeManager.AllocNode(ENT_NULL), false);
 
-		rootNode->SetMappedChildNode(label_sid, new_value);
-
-		auto labels = destination->GetLabelsStringIds();
-		new_value->SetLabelsStringIds(labels);
-	}
-	else //direct set
-	{
-		//allocate and remove any extra label indirections
-		//if replacement is null, create a new null node because will want to retain the fact that an addressable
-		// node exists in case it is reused in multiple places
-		if(new_value != nullptr)
-		{
-			if(new_value.unique)
-			{
-				EvaluableNodeManager::ModifyLabelsForNodeTree(new_value, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT);
-			}
-			else
-			{
-				new_value = evaluableNodeManager.DeepAllocCopy(new_value);
-				new_value.unique = false;
-				new_value.uniqueUnreferencedTopNode = false;
-			}
-		}
-		else
-		{
-			new_value = EvaluableNodeReference(evaluableNodeManager.AllocNode(ENT_NULL), false);
-		}
-
-		if(new_value == nullptr)
-			new_value = EvaluableNodeReference(evaluableNodeManager.AllocNode(ENT_NULL), false);
-
-		rootNode->SetMappedChildNode(label_sid, new_value);
-
-		auto labels = destination->GetLabelsStringIds();
-		new_value->SetLabelsStringIds(labels);
-	}
+	rootNode->SetMappedChildNode(label_sid, new_value);
 
 	bool dest_new_value_need_cycle_check = (new_value != nullptr && new_value->GetNeedCycleCheck());
 	bool dest_new_value_idempotent = (new_value != nullptr && new_value->GetIsIdempotent());
@@ -399,6 +355,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, &evaluableNodeManager);
 		}
 
+		//TODO 24298: investigate setting locally so only need to allocate one new node for root and update
 		if(SetValueAtLabel(variable_sid, variable_value_node, write_listeners, on_self, true, &need_node_flags_updated))
 			any_successful_assignment = true;
 		else
@@ -444,14 +401,26 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 	bool all_successful_removes = true;
 	auto &labels_to_remove_ocn = labels_to_remove->GetOrderedChildNodesReference();
 
+	EvaluableNodeReference new_root = evaluableNodeManager.AllocNode(GetRoot());
+	auto &new_root_mcn = new_root->GetMappedChildNodesReference();
+
 	for(auto label_node : labels_to_remove_ocn)
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(label_node, true);
-		//TODO 24298: implement this
+		if(!on_self && IsLabelPrivate(label_sid))
+		{
+			all_successful_removes = false;
+			continue;
+		}
+
+		new_root_mcn.erase(label_sid);
+		any_successful_remove = true;
 	}
 
 	if(any_successful_remove)
 	{
+		rootNode = new_root;
+
 		//TODO 24298: change updates to removes
 		EntityQueryCaches *container_caches = GetContainerQueryCaches();
 		if(container_caches != nullptr)
@@ -462,11 +431,15 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 			for(auto &wl : *write_listeners)
 				wl->LogRemoveLabesFromEntity(this, labels_to_remove);
 		}
-		asset_manager.UpdateEntityLabelValues(this, labels_to_remove_ocn);
+		asset_manager.RemoveEntityLabelValues(this, labels_to_remove);
 
 		//needed to allocate new top node
 		if(num_new_nodes_allocated != nullptr)
 			(*num_new_nodes_allocated)++;
+	}
+	else //keep current root
+	{
+		evaluableNodeManager.FreeNode(new_root);
 	}
 
 	return std::make_pair(any_successful_remove, all_successful_removes);

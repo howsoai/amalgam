@@ -239,7 +239,7 @@ std::pair<EvaluableNodeImmediateValueWithType, bool> Entity::GetValueAtLabelAsIm
 bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value,
 	std::vector<EntityWriteListener *> *write_listeners, bool on_self, bool batch_call, bool *need_node_flags_updated)
 {
-	//TODO 24298: is this method still needed given that setting multiple values will be made more efficient?
+	//TODO 24298: fold this into SetValuesAtLabels
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 		return false;
 

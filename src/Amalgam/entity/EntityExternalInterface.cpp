@@ -338,10 +338,15 @@ bool EntityExternalInterface::SetJSONToLabel(std::string &handle, std::string &l
 	if(bundle == nullptr)
 		return false;
 
-	EvaluableNode *node = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&bundle->entity->evaluableNodeManager, json);
-	EvaluableNodeReference node_reference(node, true);
-	bool success = bundle->SetEntityValueAtLabel(label, node_reference);
-	return success;
+	EntityWriteReference entity(bundle->entity);
+
+	EvaluableNode *node = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&entity->evaluableNodeManager, json);
+	EvaluableNodeReference new_values = entity->evaluableNodeManager.AllocNode(ENT_ASSOC);
+	new_values->SetMappedChildNode(label, node);
+
+	auto [any_success, all_success] = entity->SetValuesAtLabels(new_values, false, &bundle->writeListeners, nullptr, true);
+
+	return all_success;
 }
 
 std::string EntityExternalInterface::GetJSONFromLabel(std::string &handle, std::string &label)
@@ -455,23 +460,6 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
 	enm.FreeNodeTreeIfPossible(returned_value);
 	return (converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
-}
-
-bool EntityExternalInterface::EntityListenerBundle::SetEntityValueAtLabel(std::string &label_name, EvaluableNodeReference new_value)
-{
-	StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
-
-	EntityWriteReference entity_wr(entity);
-#ifdef MULTITHREAD_INTERFACE
-	//make a full copy of the entity in case any other threads are operating on it
-	entity->SetRoot(entity->GetRoot(), false);
-#endif
-
-	bool success = entity->SetValueAtLabel(label_sid, new_value, false, &writeListeners);
-
-	entity->evaluableNodeManager.FreeNodeTreeIfPossible(new_value);
-
-	return success;
 }
 
 EntityExternalInterface::EntityListenerBundle::~EntityListenerBundle()

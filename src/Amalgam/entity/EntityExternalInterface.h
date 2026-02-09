@@ -106,9 +106,6 @@ protected:
 
 		~EntityListenerBundle();
 
-		//Wraps around Entity::SetValueAtLabel but accepts a string for label name
-		bool SetEntityValueAtLabel(std::string &label_name, EvaluableNodeReference new_value);
-
 		//the type of mutex is dependent on whether individual entities can be accessed concurrently
 	#ifdef MULTITHREAD_INTERFACE
 	#ifdef MULTITHREAD_ENTITY_CALL_MUTEX

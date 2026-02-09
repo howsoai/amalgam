@@ -147,7 +147,7 @@ namespace EntityQueryBuilder
 	{
 		feature_attribs.deviation = std::numeric_limits<double>::quiet_NaN();
 
-		if(deviation_node == nullptr)
+		if(EvaluableNode::IsNull(deviation_node))
 			return;
 
 		auto dnt = deviation_node->GetType();
@@ -327,14 +327,18 @@ namespace EntityQueryBuilder
 		else
 		{
 			//get weights
+			double default_weight = 1.0;
+			if(dist_eval.computeSurprisal)
+				default_weight = 1.0 / dist_eval.featureAttribs.size();
+
 			EvaluableNode::ConvertChildNodesAndStoreValue(weights_node, element_names, num_elements,
-				[&dist_eval](size_t i, bool found, EvaluableNode *en) {
+				[&dist_eval, default_weight](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_eval.featureAttribs.size())
 				{
 					if(found)
-						dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en, 1.0);
+						dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en, default_weight);
 					else
-						dist_eval.featureAttribs[i].weight = 1.0;
+						dist_eval.featureAttribs[i].weight = default_weight;
 				}
 			});
 		}
@@ -680,12 +684,9 @@ namespace EntityQueryBuilder
 		StringInternPool::StringID weights_selection_feature = string_intern_pool.NOT_A_STRING_ID;
 		if(ocn.size() > WEIGHTS_SELECTION_FEATURE)
 			weights_selection_feature = EvaluableNode::ToStringIDIfExists(ocn[WEIGHTS_SELECTION_FEATURE]);
-
-		PopulateDistanceFeatureParameters(cur_condition->distEvaluator,
-			cur_condition->positionLabels.size(), cur_condition->positionLabels,
-			weights_node, weights_selection_feature, distance_types_node, attributes_node, deviations_node);
 		
 		//value transforms for whatever is measured as "distance"
+		//need to populate distance transform BEFORE populating feature attributes
 		cur_condition->distanceWeightExponent = 1.0;
 		cur_condition->distEvaluator.computeSurprisal = false;
 		cur_condition->distEvaluator.transformSurprisalToProb = false;
@@ -711,6 +712,10 @@ namespace EntityQueryBuilder
 				}
 			}
 		}
+
+		PopulateDistanceFeatureParameters(cur_condition->distEvaluator,
+			cur_condition->positionLabels.size(), cur_condition->positionLabels,
+			weights_node, weights_selection_feature, distance_types_node, attributes_node, deviations_node);
 
 		cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
 		if(ocn.size() > ENTITY_WEIGHT_LABEL_NAME)

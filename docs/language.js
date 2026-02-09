@@ -1700,7 +1700,7 @@ var data = [
 		"output" : "bool",
 		"new value" : "new",
 		"permissions" : "entity",
-		"description" : "For each index-value pair of label_value_pairs, assigns the value to the labeled variable on the contained entity represented by the respective entity, itself if no id_path specified, while retaining the original labels. If none found, it will not cause an assignment. When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label. Will perform an assignment for each of the entities referenced, returning .true if all assignments were successful, .false if not.",
+		"description" : "For each index-value pair of label_value_pairs, assigns the value to the labeled variable on the contained entity represented by the respective entity, itself if no id_path specified, while retaining the original labels. If the label is not found, it will create it.  When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Will perform an assignment for each of the entities referenced, returning .true if all assignments were successful, .false if not.",
 		"example" : "(null #asgn_test1 12)\n(assign_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n"
 	},
 
@@ -1709,7 +1709,7 @@ var data = [
 		"output" : "bool",
 		"new value" : "new",
 		"permissions" : "entity",
-		"description" : "For each index-value pair of assoc, retrieves the labeled variable from the respective entity, accumulates it by the corresponding value in label_value_pairs, then assigns the value to the labeled variable on the contained entity represented by the id_path, itself if no id_path specified, while retaining the original labels. If none found, it will not cause an assignment. When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. Will perform an accum for each of the entities referenced, returning .true if all assignments were successful, .false if not.",
+		"description" : "For each index-value pair of assoc, retrieves the labeled variable from the respective entity, accumulates it by the corresponding value in label_value_pairs, then assigns the value to the labeled variable on the contained entity represented by the id_path, itself if no id_path specified, while retaining the original labels.  If none found, it will not cause an assignment.  When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. Will perform an accum for each of the entities referenced, returning .true if all assignments were successful, .false if not.",
 		"example" : "(null #asgn_test1 12)\n(accum_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n"
 	},
 

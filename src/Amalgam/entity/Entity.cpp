@@ -236,82 +236,6 @@ std::pair<EvaluableNodeImmediateValueWithType, bool> Entity::GetValueAtLabelAsIm
 	return std::pair(retval, true);
 }
 
-bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value,
-	std::vector<EntityWriteListener *> *write_listeners, bool on_self, bool batch_call, bool *need_node_flags_updated)
-{
-	//TODO 24298: fold this into SetValuesAtLabels
-	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
-		return false;
-
-	if(!on_self)
-	{
-		if(IsLabelPrivate(label_sid))
-			return EvaluableNodeReference::Null();
-
-		//since it's not setting on self, another entity owns the data so it isn't unique to this entity
-		new_value.unique = false;
-		new_value.uniqueUnreferencedTopNode = false;
-	}
-
-	auto &label_index = GetLabelIndex();
-	auto current_node = label_index.find(label_sid);
-
-	//if the label is not in the system, then can't do anything
-	if(current_node == end(label_index))
-		return false;
-
-	EvaluableNode *destination = current_node->second;
-
-	//can't replace if the label points to null - shouldn't happen
-	if(destination == nullptr)
-		return false;
-
-	//determine whether this label is cycle free -- if the value changes, then need to update the entity
-	bool dest_prev_value_need_cycle_check = destination->GetNeedCycleCheck();
-	bool dest_prev_value_idempotent = destination->GetIsIdempotent();
-	bool root_rebuilt = false;
-
-	//ensure it's from the right evaluableNodeManager
-	if(!on_self)
-		new_value = evaluableNodeManager.DeepAllocCopy(new_value);
-
-	if(new_value == nullptr)
-		new_value = EvaluableNodeReference(evaluableNodeManager.AllocNode(ENT_NULL), false);
-
-	rootNode->SetMappedChildNode(label_sid, new_value);
-
-	bool dest_new_value_need_cycle_check = (new_value != nullptr && new_value->GetNeedCycleCheck());
-	bool dest_new_value_idempotent = (new_value != nullptr && new_value->GetIsIdempotent());
-
-	if(batch_call)
-	{
-		//if any cycle check has changed, notify caller that flags need to be updated
-		if(need_node_flags_updated != nullptr && dest_prev_value_need_cycle_check != dest_new_value_need_cycle_check)
-			*need_node_flags_updated = true;
-	}
-	else
-	{
-		//if cycle check was changed, and wasn't rebuilt, then need to do so now
-		if(!root_rebuilt && (
-				dest_prev_value_need_cycle_check != dest_new_value_need_cycle_check
-				|| dest_prev_value_idempotent != dest_new_value_idempotent))
-			EvaluableNodeManager::UpdateFlagsForNodeTree(rootNode);
-
-		EntityQueryCaches *container_caches = GetContainerQueryCaches();
-		if(container_caches != nullptr)
-			container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
-
-		if(write_listeners != nullptr)
-		{
-			for(auto &wl : *write_listeners)
-				wl->LogWriteLabelValueToEntity(this, label_sid, new_value);
-		}
-		asset_manager.UpdateEntityLabelValue(this, label_sid, new_value);
-	}
-
-	return true;
-}
-
 //like SetValuesAtLabels, except accumulates each value at each label instead
 std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values,
 	std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self)
@@ -337,29 +261,50 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	bool need_node_flags_updated = false;
 	auto &new_label_values_mcn = new_label_values->GetMappedChildNodesReference();
 
-	for(auto &[assignment_id, assignment] : new_label_values_mcn)
+	for(auto &[label_sid, variable_location] : new_label_values_mcn)
 	{
-		StringInternPool::StringID variable_sid = assignment_id;
-		EvaluableNodeReference variable_value_node(assignment, false);
+		if(!on_self && IsLabelPrivate(label_sid))
+		{
+			all_successful_assignments = false;
+			continue;
+		}
+
+		//re-retrieve label_index each iteration in case root changes
+		auto &label_index = GetLabelIndex();
+		const auto &label = label_index.find(label_sid);
+
+		EvaluableNodeReference variable_value_node(variable_location, false);
 
 		if(accum_values)
 		{
-			//need to make a copy in case it is modified, so pass in evaluableNodeManager
-			EvaluableNodeReference value_destination_node(
-				GetValueAtLabel(variable_sid, &evaluableNodeManager,
-					EvaluableNodeRequestedValueTypes::Type::NONE, true, true).first, true);
-			//can't assign to a label if it doesn't exist
-			if(value_destination_node == nullptr)
+			//can't accum into an empty location
+			if(label == end(label_index))
+			{
+				all_successful_assignments = false;
 				continue;
+			}
 
+			//need to make a copy in case it is modified, so pass in evaluableNodeManager
+			EvaluableNodeReference value_destination_node(variable_location, false);
 			variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, &evaluableNodeManager);
 		}
-
-		//TODO 24298: investigate setting locally so only need to allocate one new node for root and update
-		if(SetValueAtLabel(variable_sid, variable_value_node, write_listeners, on_self, true, &need_node_flags_updated))
-			any_successful_assignment = true;
 		else
-			all_successful_assignments = false;
+		{
+			//TODO 24298: finish this
+
+			//if label doesn't exist, create new root to contain it
+			if(label == end(label_index))
+			{
+
+
+			}
+			else
+			{
+
+			}
+		}
+
+		any_successful_assignment = true;
 	}
 
 	if(any_successful_assignment)

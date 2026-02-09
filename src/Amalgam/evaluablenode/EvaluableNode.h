@@ -936,7 +936,7 @@ public:
 	static inline void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
 		size_t num_expected_elements, StoreValueFunction store_value)
 	{
-		if(node == nullptr || node->IsImmediate())
+		if(EvaluableNode::IsNull(node) || node->IsImmediate())
 		{
 			//fill in with the node's value
 			for(size_t i = 0; i < num_expected_elements; i++)

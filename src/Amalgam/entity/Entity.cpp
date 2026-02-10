@@ -386,10 +386,12 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 	{
 		rootNode = new_root;
 
-		//TODO 24298: change updates to removes
 		EntityQueryCaches *container_caches = GetContainerQueryCaches();
 		if(container_caches != nullptr)
-			container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), labels_to_remove_ocn);
+		{
+			//TODO 24298: iterate over all labels, use old values from old rootNode -- need to refactor
+			container_caches->RemoveEntityIndexValueFromColumn(this, GetEntityIndexOfContainer(), labels_to_remove_ocn);
+		}
 
 		if(write_listeners != nullptr)
 		{

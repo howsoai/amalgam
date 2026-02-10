@@ -683,9 +683,18 @@ protected:
 			column_data->VerifyAllEntities(numEntities);
 	}
 
-	//deletes the index and associated data
+	//removes the index and associated data
 	//if it is the last entity and remove_last_entity is true, then it will truncate storage
-	void DeleteEntityIndexFromColumns(size_t entity_index, bool remove_last_entity = false);
+	void RemoveEntityIndexFromColumns(size_t entity_index, bool remove_last_entity = false);
+
+	//removes the entity's value from the specified column
+	void RemoveEntityIndexValueFromColumn(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
+		size_t entity_index, size_t column_index)
+	{
+		//TODO 24298: check if the entity has any more columns, if not, remove entirely
+		auto &column_data = columnData[column_index];
+		column_data->RemoveIndexValue(value_type, value, entity_index, false);
+	}
 
 	//adds a new labels to the database
 	// assumes label_ids is not empty

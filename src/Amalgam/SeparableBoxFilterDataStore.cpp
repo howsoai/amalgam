@@ -221,7 +221,7 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 
 	for(auto &column_data : columnData)
 	{
-		//TODO 24298: switch this to use ChangeIndexValue if possible
+		//TODO 24298: switch this to use ChangeIndexValue and add new parameters for old vs new value
 		column_data->RemoveIndexFromCaches(entity_index);
 		auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
 		column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);
@@ -253,7 +253,7 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	VerifyAllEntitiesForColumn(column_index);
 #endif
 
-	//TODO 24298: switch this to use ChangeIndexValue if possible
+	//TODO 24298: switch this to use ChangeIndexValue and add new parameters for old vs new value
 	column_data->RemoveIndexFromCaches(entity_index);
 	auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
 	column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);

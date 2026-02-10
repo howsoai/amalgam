@@ -167,12 +167,6 @@ public:
 	void RemoveIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
 		size_t index, bool remove_last_entity);
 
-	//removes all of an index's data from the caches regardless of type
-	// it should be followed up with an appropriate insert operation with the new value
-	// to maintain cache consistency
-	//TODO 24298: attempt to remove this and pass in the previous value for every label change
-	void RemoveIndexFromCaches(size_t index);
-
 	//changes column to/from interning as would yield best performance
 	void Optimize();
 

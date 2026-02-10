@@ -903,6 +903,22 @@ public:
 	//returns the number of child nodes regardless of mapped or ordered
 	size_t GetNumChildNodes();
 
+	//updates all flags as appropriate given that a newly allocated
+	// child_node is being added as a child to this node
+	__forceinline void UpdateFlagsBasedOnNewChildNode(EvaluableNode *new_child)
+	{
+		if(new_child == nullptr)
+			return;
+
+		//if cycles, propagate upward
+		if(new_child->GetNeedCycleCheck())
+			SetNeedCycleCheck(true);
+
+		//propagate idempotency
+		if(!new_child->GetIsIdempotent())
+			SetIsIdempotent(false);
+	}
+
 	inline void InitOrderedChildNodes()
 	{
 		DestructValue();

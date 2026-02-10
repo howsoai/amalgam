@@ -260,6 +260,8 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	bool all_successful_assignments = true;
 	bool need_node_flags_updated = false;
 	auto &new_label_values_mcn = new_label_values->GetMappedChildNodesReference();
+	EvaluableNode::AssocType prev_label_values;
+	prev_label_values.reserve(new_label_values_mcn.size());
 
 	for(auto &[label_sid, variable_location] : new_label_values_mcn)
 	{
@@ -271,36 +273,53 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 		//re-retrieve label_index each iteration in case root changes
 		auto &label_index = GetLabelIndex();
-		const auto &label = label_index.find(label_sid);
+		const auto &label_iterator = label_index.find(label_sid);
 
 		EvaluableNodeReference variable_value_node(variable_location, false);
 
 		if(accum_values)
 		{
 			//can't accum into an empty location
-			if(label == end(label_index))
+			if(label_iterator == end(label_index))
 			{
 				all_successful_assignments = false;
 				continue;
 			}
 
+			//keep old value
+			prev_label_values.emplace(label_sid, variable_location);
+
 			//need to make a copy in case it is modified, so pass in evaluableNodeManager
 			EvaluableNodeReference value_destination_node(variable_location, false);
 			variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, &evaluableNodeManager);
+
+			//overwrite the root's flags and value at the location
+			rootNode->UpdateFlagsBasedOnNewChildNode(variable_value_node);
+			variable_location = variable_value_node;
 		}
 		else
 		{
-			//TODO 24298: finish this
+			//make copy if needed
+			if(!on_self)
+				variable_value_node = evaluableNodeManager.DeepAllocCopy(variable_location);
 
 			//if label doesn't exist, create new root to contain it
-			if(label == end(label_index))
+			if(label_iterator == end(label_index))
 			{
-
-
+				EvaluableNode *new_root = evaluableNodeManager.AllocNode(rootNode);
+				new_root->UpdateFlagsBasedOnNewChildNode(variable_value_node);
+				auto &new_root_mcn = new_root->GetMappedChildNodesReference();
+				new_root_mcn.emplace(label_sid, variable_value_node);
+				string_intern_pool.CreateStringReference(label_sid);
 			}
 			else
 			{
+				//keep old value
+				prev_label_values.emplace(label_sid, variable_location);
 
+				//overwrite the root's flags and value at the location
+				rootNode->UpdateFlagsBasedOnNewChildNode(variable_value_node);
+				variable_location = variable_value_node;
 			}
 		}
 
@@ -309,6 +328,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 	if(any_successful_assignment)
 	{
+		//TODO 24298: finish this
 		if(need_node_flags_updated)
 			EvaluableNodeManager::UpdateFlagsForNodeTree(rootNode);
 

@@ -847,16 +847,7 @@ void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 
 	GetOrderedChildNodesReference().push_back(cn);
 
-	if(cn != nullptr)
-	{
-		//if cycles, propagate upward
-		if(cn->GetNeedCycleCheck())
-			SetNeedCycleCheck(true);
-
-		//propagate idempotency
-		if(!cn->GetIsIdempotent())
-			SetIsIdempotent(false);
-	}
+	UpdateFlagsBasedOnNewChildNode(cn);
 }
 
 void EvaluableNode::AppendOrderedChildNodes(const std::vector<EvaluableNode *> &ocn_to_append)
@@ -978,17 +969,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::s
 
 	//set node regardless of whether it was added
 	inserted_node->second = node;
-
-	if(node != nullptr)
-	{
-		//if cycles, propagate upward
-		if(node->GetNeedCycleCheck())
-			SetNeedCycleCheck(true);
-
-		//propagate idempotency
-		if(!node->GetIsIdempotent())
-			SetIsIdempotent(false);
-	}
+	UpdateFlagsBasedOnNewChildNode(node);
 
 	return std::make_pair(true, &inserted_node->second);
 }
@@ -1003,7 +984,9 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const String
 	auto [inserted_node, inserted] = mcn.emplace(sid, node);
 
 	if(inserted)
+	{
 		string_intern_pool.CreateStringReference(sid); //create string reference if pair was successfully set/added
+	}
 	else
 	{
 		//if not overwriting, return if sid is already found
@@ -1014,16 +997,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const String
 		inserted_node->second = node;
 	}
 
-	if(node != nullptr)
-	{
-		//if cycles, propagate upward
-		if(node->GetNeedCycleCheck())
-			SetNeedCycleCheck(true);
-
-		//propagate idempotency
-		if(!node->GetIsIdempotent())
-			SetIsIdempotent(false);
-	}
+	UpdateFlagsBasedOnNewChildNode(node);
 
 	return std::make_pair(true, &inserted_node->second);
 }
@@ -1051,16 +1025,7 @@ bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPoo
 		inserted_node->second = node;
 	}
 
-	if(node != nullptr)
-	{
-		//if cycles, propagate upward
-		if(node->GetNeedCycleCheck())
-			SetNeedCycleCheck(true);
-
-		//propagate idempotency
-		if(!node->GetIsIdempotent())
-			SetIsIdempotent(false);
-	}
+	UpdateFlagsBasedOnNewChildNode(node);
 
 	return true;
 }
@@ -1112,16 +1077,7 @@ void EvaluableNode::AppendMappedChildNodes(AssocType &mcn_to_append)
 		else //overwrite
 			inserted_node->second = n;
 
-		if(n != nullptr)
-		{
-			//if cycles, propagate upward
-			if(n->GetNeedCycleCheck())
-				SetNeedCycleCheck(true);
-
-			//propagate idempotency
-			if(!n->GetIsIdempotent())
-				SetIsIdempotent(false);
-		}
+		UpdateFlagsBasedOnNewChildNode(n);
 	}
 }
 

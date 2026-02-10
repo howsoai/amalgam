@@ -269,6 +269,35 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 #endif
 }
 
+//removes the entity's value for the specified label
+void SeparableBoxFilterDataStore::RemoveEntityIndexValueFromLabelId(
+	EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
+	size_t entity_index, StringInternPool::StringID label_id)
+{
+	if(entity_index >= numEntities)
+		return;
+
+	//find the column
+	auto column = labelIdToColumnIndex.find(label_id);
+	if(column == end(labelIdToColumnIndex))
+		return;
+	size_t column_index = column->second;
+	auto column_data = columnData[column_index].get();
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForAllColumns();
+#endif
+
+	column_data->RemoveIndexValue(value_type, value, entity_index, false);
+
+	//clean up any labels that aren't relevant
+	RemoveAnyUnusedLabels();
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForAllColumns();
+#endif
+}
+
 //populates distances_out with all entities and their distances that have a distance to target less than max_dist
 // and sets distances_out to the found entities.  Infinity is allowed to compute all distances.
 //if enabled_indices is not nullptr, it will only find distances to those entities, and it will modify enabled_indices in-place

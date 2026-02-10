@@ -365,10 +365,13 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 	bool any_successful_remove = false;
 	bool all_successful_removes = true;
 	auto &labels_to_remove_ocn = labels_to_remove->GetOrderedChildNodesReference();
+	std::vector<std::pair<StringInternPool::StringID, EvaluableNode *>> label_sids_and_values_to_remove;
+	label_sids_and_values_to_remove.reserve(labels_to_remove_ocn.size());
 
 	EvaluableNodeReference new_root = evaluableNodeManager.AllocNode(GetRoot());
 	auto &new_root_mcn = new_root->GetMappedChildNodesReference();
 
+	//captures all of the label data to remove and remove from new_root
 	for(auto label_node : labels_to_remove_ocn)
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(label_node, true);
@@ -382,37 +385,20 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		if(found == end(new_root_mcn))
 			continue;
 
+		label_sids_and_values_to_remove.emplace_back(label_sid, found->second);
+
 		new_root_mcn.erase(found);
 		string_intern_pool.DestroyStringReference(label_sid);
 		any_successful_remove = true;
 	}
 
-	//update flags
-	bool is_idempotent = true;
-	bool is_cycle_free = true;
 	new_root->UpdateAllFlagsBasedOnNoReferencingChildNodes();
 
 	if(any_successful_remove)
 	{
 		EntityQueryCaches *container_caches = GetContainerQueryCaches();
 		if(container_caches != nullptr)
-		{
-			auto &prev_root_mcn = rootNode->GetMappedChildNodesReference();
-
-			for(auto label_node : labels_to_remove_ocn)
-			{
-				StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(label_node, true);
-				if(!on_self && IsLabelPrivate(label_sid))
-					continue;
-
-				auto found = prev_root_mcn.find(label_sid);
-				if(found == end(prev_root_mcn))
-					continue;
-
-				//TODO 24298: iterate over all labels, use old values from old rootNode -- need to refactor
-				container_caches->RemoveEntityIndexValueFromColumn(GetEntityIndexOfContainer(), labels_to_remove_ocn);
-			}
-		}
+			container_caches->RemoveEntityLabels(this, GetEntityIndexOfContainer(), label_sids_and_values_to_remove);
 
 		rootNode = new_root;
 

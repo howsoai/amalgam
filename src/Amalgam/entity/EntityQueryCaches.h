@@ -85,6 +85,22 @@ public:
 		sbfds.UpdateEntityLabel(entity, entity_index, label_updated);
 	}
 
+	//removes all entity labels specified
+	inline void RemoveEntityLabels(Entity *entity, size_t entity_index,
+		std::vector<std::pair<StringInternPool::StringID, EvaluableNode *>> &label_sids_and_values_to_remove)
+	{
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		Concurrency::WriteLock write_lock(mutex);
+	#endif
+
+		for(auto &[label_sid, prev_node] : label_sids_and_values_to_remove)
+		{
+			EvaluableNodeImmediateValue imm_val;
+			auto value_type = imm_val.CopyValueFromEvaluableNode(prev_node);
+			sbfds.RemoveEntityIndexValueFromLabelId(value_type, imm_val, entity_index, label_sid);
+		}
+	}
+
 	//specifies that this cache can be used for the input condition
 	static bool DoesCachedConditionMatch(EntityQueryCondition *cond, bool last_condition);
 

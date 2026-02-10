@@ -160,6 +160,10 @@ public:
 	//like UpdateAllEntityLabels, but only updates labels for label_updated
 	void UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated);
 
+	//removes the entity's value for the specified label
+	void RemoveEntityIndexValueFromLabelId(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
+		size_t entity_index, StringInternPool::StringID label_id);
+
 	constexpr size_t GetNumInsertedEntities()
 	{
 		return numEntities;
@@ -686,15 +690,6 @@ protected:
 	//removes the index and associated data
 	//if it is the last entity and remove_last_entity is true, then it will truncate storage
 	void RemoveEntityIndexFromColumns(size_t entity_index, bool remove_last_entity = false);
-
-	//removes the entity's value from the specified column
-	void RemoveEntityIndexValueFromColumn(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
-		size_t entity_index, size_t column_index)
-	{
-		//TODO 24298: check if the entity has any more columns, if not, remove entirely
-		auto &column_data = columnData[column_index];
-		column_data->RemoveIndexValue(value_type, value, entity_index, false);
-	}
 
 	//adds a new labels to the database
 	// assumes label_ids is not empty

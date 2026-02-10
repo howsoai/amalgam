@@ -1069,6 +1069,20 @@ protected:
 		return rootNode->GetMappedChildNodesReference();
 	}
 
+	//sets the root node ensuring that the memory has been flushed so it is ready for reading
+	__forceinline void SetRootNode(EvaluableNode *new_root)
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		//fence memory flushing by using an atomic store
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		std::atomic<EvaluableNode *> *atomic_ref
+			= reinterpret_cast<std::atomic<EvaluableNode *> *>(&rootNode);
+		atomic_ref->store(new_root, std::memory_order_release);
+	#else
+		rootNode = new_root;
+	#endif
+	}
+
 	//root of the entity
 	EvaluableNode *rootNode;
 

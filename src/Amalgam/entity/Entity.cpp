@@ -295,6 +295,8 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 			//overwrite the root's flags and value at the location
 			rootNode->UpdateFlagsBasedOnNewChildNode(variable_value_node);
+
+			//TODO 24298: add atomic store for this like SetRoot
 			variable_location = variable_value_node;
 		}
 		else
@@ -307,18 +309,27 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			if(label_iterator == end(label_index))
 			{
 				EvaluableNode *new_root = evaluableNodeManager.AllocNode(rootNode);
+				//ensure flags are updated before new_root is exposed
 				new_root->UpdateFlagsBasedOnNewChildNode(variable_value_node);
 				auto &new_root_mcn = new_root->GetMappedChildNodesReference();
 				new_root_mcn.emplace(label_sid, variable_value_node);
 				string_intern_pool.CreateStringReference(label_sid);
+
+				//can only free the root if nothing is running on this entity
+				if(!evaluableNodeManager.AreAnyInterpretersRunning())
+					evaluableNodeManager.FreeNode(rootNode);
+
+				SetRootNode(new_root);
 			}
 			else
 			{
 				//keep old value
 				prev_label_values.emplace(label_sid, variable_location);
 
-				//overwrite the root's flags and value at the location
+				//overwrite the root's flags before value at the location
 				rootNode->UpdateFlagsBasedOnNewChildNode(variable_value_node);
+
+				//TODO 24298: add atomic store for this like SetRoot
 				variable_location = variable_value_node;
 			}
 		}
@@ -329,8 +340,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	if(any_successful_assignment)
 	{
 		//TODO 24298: finish this
-		if(need_node_flags_updated)
-			EvaluableNodeManager::UpdateFlagsForNodeTree(rootNode);
 
 		EntityQueryCaches *container_caches = GetContainerQueryCaches();
 		if(container_caches != nullptr)
@@ -400,7 +409,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		if(container_caches != nullptr)
 			container_caches->RemoveEntityLabels(this, GetEntityIndexOfContainer(), label_sids_and_values_to_remove);
 
-		rootNode = new_root;
+		SetRootNode(new_root);
 
 		if(write_listeners != nullptr)
 		{
@@ -828,12 +837,12 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::
 
 	if(_code == nullptr || allocated_with_entity_enm)
 	{
-		rootNode = _code;
+		SetRootNode(_code);
 	}
 	else
 	{
 		auto code_copy = evaluableNodeManager.DeepAllocCopy(_code);
-		rootNode = code_copy;
+		SetRootNode(code_copy);
 	}
 
 	//ensure the top node is an assoc
@@ -841,7 +850,7 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::
 	{
 		EvaluableNode *new_root = evaluableNodeManager.AllocNode(ENT_ASSOC);
 		new_root->SetMappedChildNode(string_intern_pool.NOT_A_STRING_ID, rootNode);
-		rootNode = new_root;
+		SetRootNode(new_root);
 	}
 
 	evaluableNodeManager.ExchangeNodeReference(rootNode, cur_root);
@@ -933,7 +942,7 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	if(node_flags_need_update)
 		EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);
 
-	rootNode = new_root;
+	SetRootNode(new_root);
 	evaluableNodeManager.ExchangeNodeReference(rootNode, prev_root);
 
 	if(container_caches != nullptr)

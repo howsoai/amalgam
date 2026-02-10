@@ -919,6 +919,56 @@ public:
 			SetIsIdempotent(false);
 	}
 
+	//assumes all child nodes (if any) do not reference this node and all their
+	//flags are correct and updates this node's flags
+	__forceinline void UpdateAllFlagsBasedOnNoReferencingChildNodes()
+	{
+		bool is_idempotent = IsEvaluableNodeTypePotentiallyIdempotent(GetType());
+		bool need_cycle_check = false;
+
+		if(IsAssociativeArray())
+		{
+			for(auto &[cn_id, cn] : GetMappedChildNodesReference())
+			{
+				if(cn == nullptr)
+					continue;
+
+				//update flags for tree
+				if(cn->GetNeedCycleCheck())
+					need_cycle_check = true;
+
+				if(!cn->GetIsIdempotent())
+					is_idempotent = false;
+
+				//if both are triggered, no need to continue
+				if(!is_idempotent && need_cycle_check)
+					break;
+			}
+		}
+		else if(!IsImmediate())
+		{
+			for(auto cn : GetOrderedChildNodesReference())
+			{
+				if(cn == nullptr)
+					continue;
+
+				//update flags for tree
+				if(cn->GetNeedCycleCheck())
+					need_cycle_check = true;
+
+				if(!cn->GetIsIdempotent())
+					is_idempotent = false;
+
+				//if both are triggered, no need to continue
+				if(!is_idempotent && need_cycle_check)
+					break;
+			}
+		}
+
+		SetNeedCycleCheck(need_cycle_check);
+		SetIsIdempotent(is_idempotent);
+	}
+
 	inline void InitOrderedChildNodes()
 	{
 		DestructValue();

@@ -390,12 +390,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 	//update flags
 	bool is_idempotent = true;
 	bool is_cycle_free = true;
-	for(auto [label_sid, en] : new_root_mcn)
-	{
-		//TODO 24298: update flags for new_root?
-
-
-	}
+	new_root->UpdateAllFlagsBasedOnNoReferencingChildNodes();
 
 	if(any_successful_remove)
 	{

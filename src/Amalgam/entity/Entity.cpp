@@ -378,20 +378,48 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 			continue;
 		}
 
-		new_root_mcn.erase(label_sid);
+		auto found = new_root_mcn.find(label_sid);
+		if(found == end(new_root_mcn))
+			continue;
+
+		new_root_mcn.erase(found);
+		string_intern_pool.DestroyStringReference(label_sid);
 		any_successful_remove = true;
+	}
+
+	//update flags
+	bool is_idempotent = true;
+	bool is_cycle_free = true;
+	for(auto [label_sid, en] : new_root_mcn)
+	{
+		//TODO 24298: update flags for new_root?
+
+
 	}
 
 	if(any_successful_remove)
 	{
-		rootNode = new_root;
-
 		EntityQueryCaches *container_caches = GetContainerQueryCaches();
 		if(container_caches != nullptr)
 		{
-			//TODO 24298: iterate over all labels, use old values from old rootNode -- need to refactor
-			container_caches->RemoveEntityIndexValueFromColumn(this, GetEntityIndexOfContainer(), labels_to_remove_ocn);
+			auto &prev_root_mcn = rootNode->GetMappedChildNodesReference();
+
+			for(auto label_node : labels_to_remove_ocn)
+			{
+				StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(label_node, true);
+				if(!on_self && IsLabelPrivate(label_sid))
+					continue;
+
+				auto found = prev_root_mcn.find(label_sid);
+				if(found == end(prev_root_mcn))
+					continue;
+
+				//TODO 24298: iterate over all labels, use old values from old rootNode -- need to refactor
+				container_caches->RemoveEntityIndexValueFromColumn(GetEntityIndexOfContainer(), labels_to_remove_ocn);
+			}
 		}
+
+		rootNode = new_root;
 
 		if(write_listeners != nullptr)
 		{

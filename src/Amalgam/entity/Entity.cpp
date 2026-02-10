@@ -296,8 +296,15 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			//overwrite the root's flags and value at the location
 			rootNode->UpdateFlagsBasedOnNewChildNode(variable_value_node);
 
-			//TODO 24298: add atomic store for this like SetRoot
+		#ifdef MULTITHREAD_SUPPORT
+			//fence memory to ensure flags are up to date by flushing by using an atomic store
+			//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+			std::atomic<EvaluableNode *> *atomic_ref
+				= reinterpret_cast<std::atomic<EvaluableNode *> *>(&variable_location);
+			atomic_ref->store(variable_value_node, std::memory_order_release);
+		#else
 			variable_location = variable_value_node;
+		#endif
 		}
 		else
 		{
@@ -329,8 +336,15 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 				//overwrite the root's flags before value at the location
 				rootNode->UpdateFlagsBasedOnNewChildNode(variable_value_node);
 
-				//TODO 24298: add atomic store for this like SetRoot
+			#ifdef MULTITHREAD_SUPPORT
+				//fence memory to ensure flags are up to date by flushing by using an atomic store
+				//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+				std::atomic<EvaluableNode *> *atomic_ref
+					= reinterpret_cast<std::atomic<EvaluableNode *> *>(&variable_location);
+				atomic_ref->store(variable_value_node, std::memory_order_release);
+			#else
 				variable_location = variable_value_node;
+			#endif
 			}
 		}
 

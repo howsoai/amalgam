@@ -595,6 +595,7 @@ public:
 
 		return StringInternPool::NOT_A_STRING_ID;
 	}
+
 	void SetStringID(StringInternPool::StringID id);
 	const std::string &GetStringValue();
 	void SetStringValue(const std::string &v);
@@ -801,6 +802,72 @@ public:
 	//returns the number of child nodes regardless of mapped or ordered
 	size_t GetNumChildNodes();
 
+	//updates all flags as appropriate given that a newly allocated
+	// child_node is being added as a child to this node
+	__forceinline void UpdateFlagsBasedOnNewChildNode(EvaluableNode *new_child)
+	{
+		if(new_child == nullptr)
+			return;
+
+		//if cycles, propagate upward
+		if(new_child->GetNeedCycleCheck())
+			SetNeedCycleCheck(true);
+
+		//propagate idempotency
+		if(!new_child->GetIsIdempotent())
+			SetIsIdempotent(false);
+	}
+
+	//assumes all child nodes (if any) do not reference this node and all their
+	//flags are correct and updates this node's flags
+	__forceinline void UpdateAllFlagsBasedOnNoReferencingChildNodes()
+	{
+		bool is_idempotent = IsEvaluableNodeTypePotentiallyIdempotent(GetType());
+		bool need_cycle_check = false;
+
+		if(IsAssociativeArray())
+		{
+			for(auto &[cn_id, cn] : GetMappedChildNodesReference())
+			{
+				if(cn == nullptr)
+					continue;
+
+				//update flags for tree
+				if(cn->GetNeedCycleCheck())
+					need_cycle_check = true;
+
+				if(!cn->GetIsIdempotent())
+					is_idempotent = false;
+
+				//if both are triggered, no need to continue
+				if(!is_idempotent && need_cycle_check)
+					break;
+			}
+		}
+		else if(!IsImmediate())
+		{
+			for(auto cn : GetOrderedChildNodesReference())
+			{
+				if(cn == nullptr)
+					continue;
+
+				//update flags for tree
+				if(cn->GetNeedCycleCheck())
+					need_cycle_check = true;
+
+				if(!cn->GetIsIdempotent())
+					is_idempotent = false;
+
+				//if both are triggered, no need to continue
+				if(!is_idempotent && need_cycle_check)
+					break;
+			}
+		}
+
+		SetNeedCycleCheck(need_cycle_check);
+		SetIsIdempotent(is_idempotent);
+	}
+
 	void InitOrderedChildNodes();
 	//preallocates to_reserve for appending, etc.
 	inline void ReserveOrderedChildNodes(size_t to_reserve)
@@ -825,7 +892,7 @@ public:
 	static inline void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
 		size_t num_expected_elements, StoreValueFunction store_value)
 	{
-		if(node == nullptr || node->IsImmediate())
+		if(EvaluableNode::IsNull(node) || node->IsImmediate())
 		{
 			//fill in with the node's value
 			for(size_t i = 0; i < num_expected_elements; i++)

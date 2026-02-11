@@ -309,7 +309,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				EvaluableNodeReference element_result = InterpretNode(function);
 				std::string index_string = EvaluableNode::NumberToString(index, true);
 				result->SetMappedChildNode(index_string, element_result);
-
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 
 				//remove from keys so it isn't clobbered when checking assoc keys

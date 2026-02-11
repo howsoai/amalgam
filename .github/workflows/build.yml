@@ -163,10 +163,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - arch: amd64
-            type: release
-            platform: macos
-            os: macos-15-intel   # Intel runner
           - arch: arm64
             type: release
             platform: macos
@@ -398,79 +394,6 @@ jobs:
           echo -n "$f: " && "./$f" --version
         done
 
-  # Uses GitHub default macos runner (amd64)
-  # Note: these runners have the potential to not have AVX+ instructions so only run NoAVX binaries
-  smoke-test-macos-amd64:
-    needs: ["build-macos"]
-    runs-on: macos-latest
-    steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: amalgam-${{ inputs.version }}-release-darwin-amd64
-
-      - name: Extract Amalgam
-        run: |
-          mkdir ./amalgam
-          tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
-
-      - name: Smoke test
-        run: |
-          set -e
-          cd ./amalgam/bin
-          for f in *noavx*; do
-            echo -n "$f: " && "./$f" --version
-          done
-
-  # Uses GitHub large macos runner (amd64)
-  smoke-test-macos-amd64-large:
-    needs: ["build-macos"]
-    runs-on: macos-latest-large
-    steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: amalgam-${{ inputs.version }}-release-darwin-amd64
-
-      - name: Extract Amalgam
-        run: |
-          mkdir ./amalgam
-          tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
-
-      - name: Smoke test
-        run: |
-          set -e
-          cd ./amalgam/bin
-          for f in *; do
-            echo -n "$f: " && "./$f" --version
-          done
-
-  # Uses macOS arm64 xlarge runner (arm64) but execute amd64 binaries
-  # Notes:
-  #   1) this is supported by Apple through emulator Rossetta 2
-  #   2) Rossetta 2 does support AVX+ instructions so only run noavx binaries
-  smoke-test-macos-amd64-on-arm64:
-    needs: ["build-macos"]
-    runs-on: macos-latest-xlarge
-    steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: amalgam-${{ inputs.version }}-release-darwin-amd64
-
-      - name: Extract Amalgam
-        run: |
-          mkdir ./amalgam
-          tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
-
-      - name: Smoke test
-        run: |
-          set -e
-          cd ./amalgam/bin
-          for f in *noavx*; do
-            echo -n "$f: " && "./$f" --version
-          done
-
   # Uses macOS arm64 xlarge runner (arm64)
   smoke-test-macos-arm64:
     needs: ["build-macos"]
@@ -549,9 +472,6 @@ jobs:
       - smoke-test-linux-amd64-228
       - smoke-test-linux-arm64
       - smoke-test-linux-arm64_8a
-      - smoke-test-macos-amd64
-      - smoke-test-macos-amd64-large
-      - smoke-test-macos-amd64-on-arm64
       - smoke-test-macos-arm64
       - smoke-test-windows-amd64
       - smoke-test-wasm64
@@ -564,9 +484,6 @@ jobs:
       - smoke-test-linux-amd64-228
       - smoke-test-linux-arm64
       - smoke-test-linux-arm64_8a
-      - smoke-test-macos-amd64
-      - smoke-test-macos-amd64-large
-      - smoke-test-macos-amd64-on-arm64
       - smoke-test-macos-arm64
       - smoke-test-windows-amd64
       - smoke-test-wasm64

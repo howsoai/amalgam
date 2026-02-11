@@ -740,7 +740,9 @@ std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const s
 	auto sem_ver = StringManipulation::Split(version, '-'); //split on postfix
 	auto version_split = StringManipulation::Split(sem_ver[0], '.'); //ignore postfix
 	if(version_split.size() != 3)
-		return std::make_pair("Invalid version number", false);
+		return std::make_pair("Error: Invalid version number", false);
+
+	std::string message;
 
 	uint32_t major = atoi(version_split[0].c_str());
 	uint32_t minor = atoi(version_split[1].c_str());
@@ -753,29 +755,24 @@ std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const s
 	}
 	else if(major == 0 && minor == 0 && patch == 0)
 	{
-		std::string warn_msg = "Warning: parsing Amalgam generated from an unversioned debug build";
-		if(print_warnings)
-			std::cerr << warn_msg << ", version=" << version << std::endl;
+		message = "Warning: Parsing Amalgam generated from an unversioned debug build";
 	}
 	else if(
 		(major > AMALGAM_VERSION_MAJOR) ||
 		(major == AMALGAM_VERSION_MAJOR && minor > AMALGAM_VERSION_MINOR) ||
 		(major == AMALGAM_VERSION_MAJOR && minor == AMALGAM_VERSION_MINOR && patch > AMALGAM_VERSION_PATCH))
 	{
-		std::string err_msg = "Parsing Amalgam that is more recent than the current version is not supported";
-		if(print_warnings)
-			std::cerr << err_msg << ", version=" << version << std::endl;
-		return std::make_pair(err_msg, false);
+		message = "Warning: Parsing an Amalgam file that is more recent than the current version may not function properly unless performing a downgrade migration";
 	}
 	else if(AMALGAM_VERSION_MAJOR > major)
 	{
-		std::string err_msg = "Parsing Amalgam that is older than the current major version is not supported";
-		if(print_warnings)
-			std::cerr << err_msg << ", version=" << version << std::endl;
-		return std::make_pair(err_msg, false);
+		message = "Warning: Parsing an Amalgam file that is older than the current major version may not function properly unless performing an upgrade migration";
 	}
 
-	return std::make_pair("", true);
+	if(print_warnings)
+		std::cerr << message << ", version=" << version << std::endl;
+
+	return std::make_pair(message, true);
 }
 
 std::string AssetManager::GetEvaluableNodeSourceFromComments(EvaluableNode *en)

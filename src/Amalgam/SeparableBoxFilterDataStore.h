@@ -683,9 +683,9 @@ protected:
 			column_data->VerifyAllEntities(numEntities);
 	}
 
-	//deletes the index and associated data
+	//removes the index and associated data
 	//if it is the last entity and remove_last_entity is true, then it will truncate storage
-	void DeleteEntityIndexFromColumns(size_t entity_index, bool remove_last_entity = false);
+	void RemoveEntityIndexFromColumns(size_t entity_index, bool remove_last_entity = false);
 
 	//adds a new labels to the database
 	// assumes label_ids is not empty

@@ -155,7 +155,7 @@ Running the pre-built interpreter has specific runtime requirements per platform
 ##### macOS (Darwin)
 
 * macOS 12 or higher
-* Arch: amd64 or arm64
+* Arch: arm64
     * Specific arm64 builds: `armv8.4-a+simd` (M1 or later)
 
 ##### WASM

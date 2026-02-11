@@ -605,7 +605,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 
 	size_t num_nodes = static_cast<size_t>((range_end - range_start) / range_step_size) + 1;
 
-	//make sure not eating up too much memory
+	//make sure continuing would not use too much memory
 	if(ConstrainedAllocatedNodes())
 	{
 		if(interpreterConstraints->WouldNewAllocatedNodesExceedConstraint(

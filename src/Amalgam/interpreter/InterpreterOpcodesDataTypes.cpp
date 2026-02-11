@@ -1570,7 +1570,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 				auto out = std::back_inserter(updated_string);
 				auto iter = std::sregex_iterator(begin(string_to_substr), end(string_to_substr), rx);
 				auto end = std::sregex_iterator();
-				auto last_iter = iter;
+				auto last_iter(iter);
 
 				for(size_t n = static_cast<size_t>(max_match_count); n > 0 && iter != end; ++iter, n--)
 				{

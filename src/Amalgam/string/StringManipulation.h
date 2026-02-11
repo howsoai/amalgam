@@ -17,6 +17,8 @@ namespace StringManipulation
 	//splits a string by given delimiter
 	std::vector<std::string> Split(const std::string &s, char delim = ' ');
 
+	std::vector<std::string> SplitByLines(std::string_view s);
+
 	//separates the argument string and returns an appropriate vector of strings
 	//if greedy is true, the returned vector contains the full list of arguments and arg_string is unmodified
 	//if greedy is false, the returned vector only contains a single string, and arg_string is modified

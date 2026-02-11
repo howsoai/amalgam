@@ -1282,15 +1282,6 @@ var data = [
 	},
 
 	{
-		"parameter" : "accum_entity_roots [id_path entity_1] * root_1 [id_path entity_2] [* root_2] [...]",
-		"output" : "bool",
-		"permissions" : "entity",
-		"new value" : "new",
-		"description" : "Accumulates the code of the entity specified by id_path to node. If no id_path specified, then uses the current entity, otherwise accesses a contained entity. On assigning the code to the new entity, it will enable any labels obtained by removing any extra #s from the beginning of each.  If all accumulations were successful, then returns true, otherwise returns false.",
-		"example" : "(create_entities \"AER_test\" (lambda (null ##a 1 ##b 2)))\n(accum_entity_roots \"AER_test\" (list ##c 3))\n(print (retrieve_entity_root \"AER_test\" 1))"
-	},
-
-	{
 		"parameter" : "get_entity_rand_seed [id_path entity]",
 		"output" : "string",
 		"permissions" : "entity",

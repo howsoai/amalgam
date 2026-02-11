@@ -849,12 +849,6 @@ public:
 	void SetRoot(std::string &code_string,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
-	//accumulates the code and recreates the index
-	//if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
-	//write_listeners is optional, and if specified, will log the event
-	void AccumRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm,
-		std::vector<EntityWriteListener *> *write_listeners = nullptr);
-
 	//collects garbage on evaluableNodeManager, assuming it has a write reference
 #ifdef MULTITHREAD_SUPPORT
 	__forceinline void CollectGarbageWithEntityWriteReference()

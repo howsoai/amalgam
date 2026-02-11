@@ -2240,15 +2240,6 @@
  (assign_entity_roots "SetGetCodeTest" (list 4 5 6))
  (print (retrieve_entity_root "SetGetCodeTest"))
 
- (print "--accum_entity_roots--\n")
- (create_entities "AER_test" (lambda (null ##a 1 ##b 2)))
- (accum_entity_roots "AER_test" (lambda (list ##c 3)))
- (print (retrieve_entity_root "AER_test" 1))
-
- (create_entities "AER_test_2" (lambda (null)))
- (accum_entity_roots "AER_test_2" (lambda (list ##c 3)))
- (print (retrieve_entity_root "AER_test_2" 1))
-
  (print "--get_entity_rand_seed--\n")
  (print (get_entity_rand_seed) "\n")
  (create_entities "RandTest" (lambda
@@ -3664,7 +3655,6 @@
 		  (print (unparse (retrieve_from_entity "Contained" "a") .true .true))
 		  (set_entity_rand_seed "Contained" "bbbb")
 		  (accum_to_entities "Contained" (assoc b 12) )
-		  (accum_entity_roots "Contained" (list (set_annotations 14 (list "a"))))
 		  (destroy_entities "Contained")
 	  )
 	)

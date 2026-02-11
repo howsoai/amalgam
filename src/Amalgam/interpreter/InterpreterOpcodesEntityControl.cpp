@@ -139,14 +139,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 	return target_entity->GetRoot(evaluableNodeManager);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_ACCUM_ENTITY_ROOTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
 
-	bool accum = (en->GetType() == ENT_ACCUM_ENTITY_ROOTS);
 	bool all_assignments_successful = true;
 
 	for(size_t i = 0; i < ocn.size(); i += 2)
@@ -182,29 +181,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 		if(target_entity != curEntity)
 			lab_pause = evaluableNodeManager->PauseLocalAllocationBuffer();
 
-		if(accum)
-		{
-			target_entity->AccumRoot(new_code, false, writeListeners);
-			
-			//accumulate new node usage
-			if(ConstrainedAllocatedNodes())
-				interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += EvaluableNode::GetDeepSize(new_code);
-		}
-		else
-		{
-			size_t prev_size = 0;
-			if(ConstrainedAllocatedNodes())
-				prev_size = target_entity->GetSizeInNodes();
+		size_t prev_size = 0;
+		if(ConstrainedAllocatedNodes())
+			prev_size = target_entity->GetSizeInNodes();
 
-			target_entity->SetRoot(new_code, false, writeListeners);
+		target_entity->SetRoot(new_code, false, writeListeners);
 
-			if(ConstrainedAllocatedNodes())
-			{
-				size_t cur_size = target_entity->GetSizeInNodes();
-				//don't get credit for freeing memory, but do count toward memory consumed
-				if(cur_size > prev_size)
-					interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += cur_size - prev_size;
-			}
+		if(ConstrainedAllocatedNodes())
+		{
+			size_t cur_size = target_entity->GetSizeInNodes();
+			//don't get credit for freeing memory, but do count toward memory consumed
+			if(cur_size > prev_size)
+				interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += cur_size - prev_size;
 		}
 
 		lab_pause.Resume();

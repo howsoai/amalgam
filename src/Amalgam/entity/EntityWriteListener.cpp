@@ -160,19 +160,6 @@ void EntityWriteListener::LogWriteToEntityRoot(Entity *entity)
 	LogNewEntry(new_write);
 }
 
-void EntityWriteListener::LogEntityAccumRoot(Entity *entity, EvaluableNodeReference accum_code)
-{
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::Lock lock(mutex);
-#endif
-	EvaluableNode *new_write = BuildNewWriteOperation(ENT_ACCUM_ENTITY_ROOTS, entity);
-	EvaluableNode *new_lambda = listenerStorage.AllocNode(EvaluableNodeType::ENT_LAMBDA);
-	new_lambda->AppendOrderedChildNode(listenerStorage.DeepAllocCopy(accum_code));
-	new_write->AppendOrderedChildNode(new_lambda);
-
-	LogNewEntry(new_write);
-}
-
 void EntityWriteListener::LogCreateEntity(Entity *new_entity)
 {
 	if(new_entity == nullptr)

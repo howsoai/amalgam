@@ -236,7 +236,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_GET_ENTITY_COMMENTS, "get_entity_comments");
 	EmplaceNodeTypeString(ENT_RETRIEVE_ENTITY_ROOT, "retrieve_entity_root");
 	EmplaceNodeTypeString(ENT_ASSIGN_ENTITY_ROOTS, "assign_entity_roots");
-	EmplaceNodeTypeString(ENT_ACCUM_ENTITY_ROOTS, "accum_entity_roots");
 	EmplaceNodeTypeString(ENT_GET_ENTITY_RAND_SEED, "get_entity_rand_seed");
 	EmplaceNodeTypeString(ENT_SET_ENTITY_RAND_SEED, "set_entity_rand_seed");
 	EmplaceNodeTypeString(ENT_GET_ENTITY_PERMISSIONS, "get_entity_permissions");

@@ -80,7 +80,7 @@ struct InterpreterDebugData
 
 //if s is longer than max_num_chars, it modifies the string, clamping it
 // at the length or newline and adding an ellipsis
-void ClampSingleLineStringLength(std::string &s, size_t max_num_chars, std::string ellipsis = "...")
+static void ClampSingleLineStringLength(std::string &s, size_t max_num_chars, std::string ellipsis = "...")
 {
 	if(max_num_chars < ellipsis.size())
 		max_num_chars = ellipsis.size();
@@ -97,7 +97,7 @@ void ClampSingleLineStringLength(std::string &s, size_t max_num_chars, std::stri
 }
 
 //prints the node and its comment both truncated to max_num_chars or newline
-std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t max_num_chars = 100)
+static std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t max_num_chars = 100)
 {
 	//if no comments, then can just print
 	if(en == nullptr || en->GetCommentsStringId() == string_intern_pool.NOT_A_STRING_ID)
@@ -129,7 +129,7 @@ std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, EvaluableNo
 }
 
 //prints the current node for a stack trace
-void PrintStackNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t max_num_chars = 100)
+static void PrintStackNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t max_num_chars = 100)
 {
 	auto [comment_str, node_str] = StringifyNode(en, enm);
 	if(!asset_manager.debugSources || comment_str.empty())

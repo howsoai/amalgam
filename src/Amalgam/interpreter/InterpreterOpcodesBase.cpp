@@ -20,7 +20,7 @@
 #include <utility>
 
 //Used only for deep debugging of entity memory and garbage collection
-std::string GetEntityMemorySizeDiagnostics(Entity *e)
+static std::string GetEntityMemorySizeDiagnostics(Entity *e)
 {
 	if(e == nullptr)
 		return "";

@@ -53,7 +53,7 @@ FastHashMap<std::string, size_t> _side_effect_total_memory_write_counters;
 FastHashMap<std::string, size_t> _side_effect_initial_memory_write_counters;
 
 //gets the current time with nanosecond resolution cast to a double measured in seconds
-inline double GetCurTime()
+static inline double GetCurTime()
 {
 	typedef std::chrono::steady_clock clk;
 	auto cur_time = std::chrono::duration_cast<std::chrono::nanoseconds>(clk::now().time_since_epoch()).count();

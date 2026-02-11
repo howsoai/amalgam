@@ -162,9 +162,9 @@ public:
 	void ChangeIndexValue(EvaluableNodeImmediateValueType new_value_type,
 		EvaluableNodeImmediateValue new_value, size_t index);
 
-	//deletes everything involving the value at the index
+	//removes everything involving the value at the index
 	//if remove_last_entity is true, then it will remove the last entry (assumes index is the last entry)
-	void DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
+	void RemoveIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
 		size_t index, bool remove_last_entity);
 
 	//removes all of an index's data from the caches regardless of type

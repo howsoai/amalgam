@@ -9,6 +9,8 @@
 //system headers:
 #include <memory>
 #include <string>
+#include <string_view>
+#include <type_traits>
 #include <vector>
 
 //if STRING_INTERN_POOL_VALIDATION is defined, it will validate
@@ -21,9 +23,11 @@ public:
 		: refCount(0), string()
 	{	}
 
-	inline StringInternStringData(const std::string &string)
-		: refCount(1), string(string)
-	{	}
+	//forwarding constructor – works for std::string, std::string_view, const char*, char array, etc.
+	template<class T, class = std::enable_if_t<std::is_constructible_v<std::string, T>>>
+	StringInternStringData(T &&s)
+		: refCount(1), string(std::forward<T>(s))
+	{}
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	std::atomic<size_t> refCount;
@@ -93,6 +97,27 @@ public:
 
 		//try to insert it as a new string
 		auto inserted = stringToID.emplace(str, nullptr);
+		if(inserted.second)
+			inserted.first->second = std::make_unique<StringInternStringData>(str);
+		else
+			inserted.first->second->refCount++;
+
+		StringID id = inserted.first->second.get();
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		ValidateStringIdExistenceUnderLock(id);
+	#endif
+		return id;
+	}
+
+	//makes a new reference to the string specified, returning the ID
+	inline StringID CreateStringReference(const std::string_view str)
+	{
+		if(str.size() == 0)
+			return emptyStringId;
+
+		//try to insert it as a new string
+		//make a copy which will be forwarded
+		auto inserted = stringToID.emplace(std::string(str), nullptr);
 		if(inserted.second)
 			inserted.first->second = std::make_unique<StringInternStringData>(str);
 		else

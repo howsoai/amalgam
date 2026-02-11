@@ -187,7 +187,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 	{
 		if(!invalidIndices.contains(index))
 		{
-			DeleteIndexValue(old_value_type, old_value, index, false);
+			RemoveIndexValue(old_value_type, old_value, index, false);
 			invalidIndices.insert(index);
 		}
 
@@ -408,13 +408,13 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 	}
 
 	//delete index at old value
-	DeleteIndexValue(old_value_type_resolved, old_value_resolved, index, false);
+	RemoveIndexValue(old_value_type_resolved, old_value_resolved, index, false);
 
 	//add index at new value bucket
 	InsertIndexValue(new_value_type_resolved, new_value_resolved, index);
 }
 
-void SBFDSColumnData::DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
+void SBFDSColumnData::RemoveIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
 	size_t index, bool remove_last_entity)
 {
 	switch(value_type)

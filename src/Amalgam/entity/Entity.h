@@ -235,14 +235,11 @@ public:
 
 
 	//clears the lock in a manner that is safe across operating systems
-	inline void Clear()
+	inline void ReleaseReference()
 	{
 		if(lock.owns_lock())
 			lock.unlock();
 		lock = LockType();
-
-		//need to use this to resolve to the base class
-		this->entity = nullptr;
 	}
 
 	LockType lock;
@@ -270,10 +267,9 @@ class EntityReadReference : public EntityReference<Entity>
 public:
 	using EntityReference<Entity>::EntityReference;
 
-	void Clear()
+	void ReleaseReference()
 	{
-		//need to use this to resolve to the base class
-		this->entity = nullptr;
+
 	}
 };
 
@@ -283,10 +279,9 @@ class EntityWriteReference : public EntityReference<Entity>
 public:
 	using EntityReference<Entity>::EntityReference;
 
-	void Clear()
+	void ReleaseReference()
 	{
-		//need to use this to resolve to the base class
-		this->entity = nullptr;
+
 	}
 };
 

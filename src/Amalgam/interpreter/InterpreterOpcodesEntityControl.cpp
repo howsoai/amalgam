@@ -543,7 +543,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 		source_entity_parent->RemoveContainedEntity(source_entity->GetIdStringId(), writeListeners);
 
 		//clear lock if applicable
-		source_entity_parent = EntityWriteReference();
+		source_entity_parent.ReleaseReference();
 
 		//get destination if applicable
 		EntityWriteReference destination_entity_parent;
@@ -556,6 +556,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 		if(destination_entity_parent == nullptr)
 		{
 			new_entity_ids_list->AppendOrderedChildNode(nullptr);
+			source_entity.ReleaseReference();
 			delete source_entity;
 			continue;
 		}
@@ -565,6 +566,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 
 		if(new_entity_id == StringInternPool::NOT_A_STRING_ID)
 		{
+			source_entity.ReleaseReference();
 			delete source_entity;
 			new_entity_ids_list->AppendOrderedChildNode(nullptr);
 			continue;
@@ -614,15 +616,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 
 		contained_entities.Clear();
 
-	#ifdef MULTITHREAD_SUPPORT
-		//free entity write lock before calling delete
-		entity.lock.unlock();
-	#endif
-
 		//accumulate usage -- gain back freed resources
 		if(ConstrainedAllocatedNodes())
 			interpreterConstraints->curNumAllocatedNodesAllocatedToEntities -= entity->GetDeepSizeInNodes();
 
+		entity.ReleaseReference();
 		delete entity;
 	}
 

@@ -271,16 +271,7 @@ public:
 				{
 					Entity *entity = get_entity(results[i].reference);
 					list_ocn[i] = entity->GetValueAtLabel(label, enm, false).first;
-
-					//update cycle checks and idempotency
-					if(list_ocn[i] != nullptr)
-					{
-						if(list_ocn[i]->GetNeedCycleCheck())
-							query_return->SetNeedCycleCheck(true);
-
-						if(!list_ocn[i]->GetIsIdempotent())
-							query_return->SetIsIdempotent(false);
-					}
+					query_return->UpdateFlagsBasedOnNewChildNode(list_ocn[i]);
 				}
 			}
 

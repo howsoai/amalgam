@@ -55,6 +55,10 @@ public:
 		: value(string_intern_pool.CreateStringReference(str)), unique(true), uniqueUnreferencedTopNode(true)
 	{	}
 
+	__forceinline EvaluableNodeReference(std::string_view str)
+		: value(string_intern_pool.CreateStringReference(str)), unique(true), uniqueUnreferencedTopNode(true)
+	{}
+
 	//constructs an EvaluableNodeReference with an immediate type and true if possible to coerce node
 	//into one of the immediate request types, or returns a non-unique EvaluableNodeReference and false if not
 	static inline EvaluableNodeReference CoerceNonUniqueEvaluableNodeToImmediateIfPossible(EvaluableNode *en,

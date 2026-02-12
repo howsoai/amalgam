@@ -701,6 +701,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 		}
 	}
 
+	//make sure that continuing would not use too much memory
+	if(ConstrainedAllocatedNodes())
+	{
+		if(interpreterConstraints->WouldNewAllocatedNodesExceedConstraint(
+				evaluableNodeManager->GetNumberOfUsedNodes() + total_num_elements))
+			return EvaluableNodeReference::Null();
+	}
+
 	//the result
 	EvaluableNodeReference woven_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 

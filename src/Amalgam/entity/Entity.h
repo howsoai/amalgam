@@ -224,6 +224,24 @@ public:
 			lock = LockType();
 	}
 
+	//some lock implementations require unlock before assignment and do not explicitly unlock,
+	// so don't allow overwrites
+	EntityReferenceWithLock(const EntityReferenceWithLock &) = delete;
+	EntityReferenceWithLock &operator=(const EntityReferenceWithLock &) = delete;
+
+	//explicitly allow moves
+	EntityReferenceWithLock(EntityReferenceWithLock &&) = default;
+	EntityReferenceWithLock &operator=(EntityReferenceWithLock &&) = default;
+
+
+	//clears the lock in a manner that is safe across operating systems
+	inline void ReleaseReference()
+	{
+		if(lock.owns_lock())
+			lock.unlock();
+		lock = LockType();
+	}
+
 	LockType lock;
 };
 
@@ -248,6 +266,11 @@ class EntityReadReference : public EntityReference<Entity>
 {
 public:
 	using EntityReference<Entity>::EntityReference;
+
+	void ReleaseReference()
+	{
+
+	}
 };
 
 //primary reference to be used when writing to an entity
@@ -255,6 +278,11 @@ class EntityWriteReference : public EntityReference<Entity>
 {
 public:
 	using EntityReference<Entity>::EntityReference;
+
+	void ReleaseReference()
+	{
+
+	}
 };
 
 #endif

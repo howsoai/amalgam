@@ -258,7 +258,7 @@ protected:
 	#ifdef MULTITHREAD_INTERFACE
 		//obtain a write lock and release it -- just make sure nothing else has the entity locked
 		EntityWriteReference ewr(elb->entity);
-		ewr.ClearLock();
+		ewr.Clear();
 	#endif
 
 		delete elb;

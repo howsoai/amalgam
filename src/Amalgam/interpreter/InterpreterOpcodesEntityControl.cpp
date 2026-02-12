@@ -543,7 +543,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 		source_entity_parent->RemoveContainedEntity(source_entity->GetIdStringId(), writeListeners);
 
 		//clear lock if applicable
-		source_entity_parent.ClearLock();
+		source_entity_parent.Clear();
 
 		//get destination if applicable
 		EntityWriteReference destination_entity_parent;

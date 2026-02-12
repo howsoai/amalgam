@@ -234,12 +234,14 @@ public:
 	EntityReferenceWithLock &operator=(EntityReferenceWithLock &&) = default;
 
 
-	//clears the lock safely across operating systems
-	inline void ClearLock()
+	//clears the lock in a manner that is safe across operating systems
+	inline void Clear()
 	{
 		if(lock.owns_lock())
 			lock.unlock();
 		lock = LockType();
+
+		entity = nullptr;
 	}
 
 	LockType lock;
@@ -266,6 +268,11 @@ class EntityReadReference : public EntityReference<Entity>
 {
 public:
 	using EntityReference<Entity>::EntityReference;
+
+	void Clear()
+	{
+		entity = nullptr;
+	}
 };
 
 //primary reference to be used when writing to an entity
@@ -273,6 +280,11 @@ class EntityWriteReference : public EntityReference<Entity>
 {
 public:
 	using EntityReference<Entity>::EntityReference;
+
+	void Clear()
+	{
+		entity = nullptr;
+	}
 };
 
 #endif

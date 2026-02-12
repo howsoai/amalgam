@@ -241,7 +241,8 @@ public:
 			lock.unlock();
 		lock = LockType();
 
-		entity = nullptr;
+		//need to use this to resolve to the base class
+		this->entity = nullptr;
 	}
 
 	LockType lock;
@@ -271,7 +272,8 @@ public:
 
 	void Clear()
 	{
-		entity = nullptr;
+		//need to use this to resolve to the base class
+		this->entity = nullptr;
 	}
 };
 
@@ -283,7 +285,8 @@ public:
 
 	void Clear()
 	{
-		entity = nullptr;
+		//need to use this to resolve to the base class
+		this->entity = nullptr;
 	}
 };
 

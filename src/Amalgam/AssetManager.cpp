@@ -769,7 +769,7 @@ std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const s
 		message = "Warning: Parsing an Amalgam file that is older than the current major version may not function properly unless performing an upgrade migration";
 	}
 
-	if(print_warnings)
+	if(print_warnings && !message.empty())
 		std::cerr << message << ", version=" << version << std::endl;
 
 	return std::make_pair(message, true);

@@ -224,6 +224,24 @@ public:
 			lock = LockType();
 	}
 
+	//some lock implementations require unlock before assignment and do not explicitly unlock,
+	// so don't allow overwrites
+	EntityReferenceWithLock(const EntityReferenceWithLock &) = delete;
+	EntityReferenceWithLock &operator=(const EntityReferenceWithLock &) = delete;
+
+	//explicitly allow moves
+	EntityReferenceWithLock(EntityReferenceWithLock &&) = default;
+	EntityReferenceWithLock &operator=(EntityReferenceWithLock &&) = default;
+
+
+	//clears the lock safely across operating systems
+	inline void ClearLock()
+	{
+		if(lock.owns_lock())
+			lock.unlock();
+		lock = LockType();
+	}
+
 	LockType lock;
 };
 

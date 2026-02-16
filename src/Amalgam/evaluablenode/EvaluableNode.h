@@ -288,8 +288,6 @@ public:
 		if(!AreShallowEqual(a, b))
 			return false;
 
-		bool need_cycle_checks = false;
-
 		//since they are shallow equal, check for quick exit
 		if(a == nullptr || b == nullptr || IsEvaluableNodeTypeImmediate(a->GetType()))
 			return true;

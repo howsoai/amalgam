@@ -12,24 +12,27 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, Eva
 	EvaluableNodeReference cur = EvaluableNodeReference::Null();
 
 #ifdef MULTITHREAD_SUPPORT
-	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(en->GetConcurrency())
 	{
-		for(auto &cn : interpreted_nodes)
+		std::vector<EvaluableNodeReference> interpreted_nodes;
+		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 		{
-			//free the previous node if applicable
-			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
-
-			cur = cn;
-
-			if(!EvaluableNode::ToBool(cur))
+			for(auto &cn : interpreted_nodes)
 			{
+				//free the previous node if applicable
 				evaluableNodeManager->FreeNodeTreeIfPossible(cur);
-				return AllocReturn(false, immediate_result);
-			}
-		}
 
-		return cur;
+				cur = cn;
+
+				if(!EvaluableNode::ToBool(cur))
+				{
+					evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+					return AllocReturn(false, immediate_result);
+				}
+			}
+
+			return cur;
+		}
 	}
 #endif
 
@@ -70,23 +73,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OR(EvaluableNode *en, Eval
 	EvaluableNodeReference cur = EvaluableNodeReference::Null();
 
 #ifdef MULTITHREAD_SUPPORT
-	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(en->GetConcurrency())
 	{
-		for(auto &cn : interpreted_nodes)
+		std::vector<EvaluableNodeReference> interpreted_nodes;
+		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 		{
-			//free the previous node if applicable
+			for(auto &cn : interpreted_nodes)
+			{
+				//free the previous node if applicable
+				evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+
+				cur = cn;
+
+				//if it is a valid node and it is not zero, then return it
+				if(EvaluableNode::ToBool(cur))
+					return cur;
+			}
+
 			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
-
-			cur = cn;
-
-			//if it is a valid node and it is not zero, then return it
-			if(EvaluableNode::ToBool(cur))
-				return cur;
+			return AllocReturn(false, immediate_result);
 		}
-
-		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
-		return AllocReturn(false, immediate_result);
 	}
 #endif
 
@@ -115,21 +121,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_XOR(EvaluableNode *en, Eva
 	size_t num_true = 0;
 
 #ifdef MULTITHREAD_SUPPORT
-	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(en->GetConcurrency())
 	{
-		for(auto &cur : interpreted_nodes)
+		std::vector<EvaluableNodeReference> interpreted_nodes;
+		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 		{
-			//if it's true, count it
-			if(EvaluableNode::ToBool(cur))
-				num_true++;
+			for(auto &cur : interpreted_nodes)
+			{
+				//if it's true, count it
+				if(EvaluableNode::ToBool(cur))
+					num_true++;
 
-			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+				evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+			}
+
+			//if an odd number of true arguments, then return true
+			bool result = (num_true % 2 == 1);
+			return AllocReturn(result, immediate_result);
 		}
-
-		//if an odd number of true arguments, then return true
-		bool result = (num_true % 2 == 1);
-		return AllocReturn(result, immediate_result);
 	}
 #endif
 
@@ -178,31 +187,34 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EQUAL(EvaluableNode *en, E
 	EvaluableNodeReference to_match = EvaluableNodeReference::Null();
 
 #ifdef MULTITHREAD_SUPPORT
-	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(en->GetConcurrency())
 	{
-		for(auto &cur : interpreted_nodes)
+		std::vector<EvaluableNodeReference> interpreted_nodes;
+		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 		{
-			//if haven't gotten a value yet, then use this as the first data
-			if(!processed_first_value)
+			bool return_value = true;
+
+			for(auto &cur : interpreted_nodes)
 			{
-				to_match = cur;
-				processed_first_value = true;
-				continue;
+				//if haven't gotten a value yet, then use this as the first data
+				if(!processed_first_value)
+				{
+					to_match = cur;
+					processed_first_value = true;
+					continue;
+				}
+
+				if(!EvaluableNode::AreDeepEqual(to_match, cur))
+				{
+					return_value = false;
+					break;
+				}
 			}
 
-			if(!EvaluableNode::AreDeepEqual(to_match, cur))
-			{
-				evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
+			for(auto &cur : interpreted_nodes)
 				evaluableNodeManager->FreeNodeTreeIfPossible(cur);
-				return AllocReturn(false, immediate_result);
-			}
-
-			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+			return AllocReturn(return_value, immediate_result);
 		}
-
-		evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
-		return AllocReturn(false, immediate_result);
 	}
 #endif
 
@@ -243,31 +255,34 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NEQUAL(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 #ifdef MULTITHREAD_SUPPORT
-	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(en->GetConcurrency())
 	{
-		bool all_not_equal = true;
-		for(size_t i = 0; i < interpreted_nodes.size(); i++)
+		std::vector<EvaluableNodeReference> interpreted_nodes;
+		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 		{
-			//don't compare versus self, and skip any previously compared against
-			for(size_t j = i + 1; j < interpreted_nodes.size(); j++)
+			bool all_not_equal = true;
+			for(size_t i = 0; i < interpreted_nodes.size(); i++)
 			{
-				//if they're equal, then it fails
-				if(EvaluableNode::AreDeepEqual(interpreted_nodes[i], interpreted_nodes[j]))
+				//don't compare versus self, and skip any previously compared against
+				for(size_t j = i + 1; j < interpreted_nodes.size(); j++)
 				{
-					all_not_equal = false;
+					//if they're equal, then it fails
+					if(EvaluableNode::AreDeepEqual(interpreted_nodes[i], interpreted_nodes[j]))
+					{
+						all_not_equal = false;
 
-					//break out of loop
-					i = interpreted_nodes.size();
-					break;
+						//break out of loop
+						i = interpreted_nodes.size();
+						break;
+					}
 				}
 			}
+
+			for(size_t i = 0; i < interpreted_nodes.size(); i++)
+				evaluableNodeManager->FreeNodeTreeIfPossible(interpreted_nodes[i]);
+
+			return AllocReturn(all_not_equal, immediate_result);
 		}
-
-		for(size_t i = 0; i < interpreted_nodes.size(); i++)
-			evaluableNodeManager->FreeNodeTreeIfPossible(interpreted_nodes[i]);
-
-		return AllocReturn(all_not_equal, immediate_result);
 	}
 #endif
 
@@ -332,41 +347,44 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 		return AllocReturn(false, immediate_result);
 
 #ifdef MULTITHREAD_SUPPORT
-	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(en->GetConcurrency())
 	{
-		EvaluableNodeReference prev = interpreted_nodes[0];
-		if(EvaluableNode::IsNull(prev))
+		std::vector<EvaluableNodeReference> interpreted_nodes;
+		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 		{
+			EvaluableNodeReference prev = interpreted_nodes[0];
+			if(EvaluableNode::IsNull(prev))
+			{
+				for(auto &n : interpreted_nodes)
+					evaluableNodeManager->FreeNodeTreeIfPossible(n);
+
+				return AllocReturn(false, immediate_result);
+			}
+
+			bool result = true;
+			for(size_t i = 1; i < interpreted_nodes.size(); i++)
+			{
+				//if not in strict increasing order, return false
+				auto &cur = interpreted_nodes[i];
+
+				if(EvaluableNode::IsNull(cur))
+				{
+					result = false;
+					break;
+				}
+
+				if(!EvaluableNode::IsLessThan(prev, cur, en->GetType() == ENT_LEQUAL))
+				{
+					result = false;
+					break;
+				}
+			}
+
 			for(auto &n : interpreted_nodes)
 				evaluableNodeManager->FreeNodeTreeIfPossible(n);
 
-			return AllocReturn(false, immediate_result);
+			return AllocReturn(result, immediate_result);
 		}
-
-		bool result = true;
-		for(size_t i = 1; i < interpreted_nodes.size(); i++)
-		{
-			//if not in strict increasing order, return false
-			auto &cur = interpreted_nodes[i];
-
-			if(EvaluableNode::IsNull(cur))
-			{
-				result = false;
-				break;
-			}
-
-			if(!EvaluableNode::IsLessThan(prev, cur, en->GetType() == ENT_LEQUAL))
-			{
-				result = false;
-				break;
-			}
-		}
-
-		for(auto &n : interpreted_nodes)
-			evaluableNodeManager->FreeNodeTreeIfPossible(n);
-
-		return AllocReturn(result, immediate_result);
 	}
 #endif
 
@@ -416,41 +434,44 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 		return AllocReturn(false, immediate_result);
 
 #ifdef MULTITHREAD_SUPPORT
-	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(en->GetConcurrency())
 	{
-		EvaluableNodeReference prev = interpreted_nodes[0];
-		if(EvaluableNode::IsNull(prev))
+		std::vector<EvaluableNodeReference> interpreted_nodes;
+		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 		{
+			EvaluableNodeReference prev = interpreted_nodes[0];
+			if(EvaluableNode::IsNull(prev))
+			{
+				for(auto &n : interpreted_nodes)
+					evaluableNodeManager->FreeNodeTreeIfPossible(n);
+
+				return AllocReturn(false, immediate_result);
+			}
+
+			bool result = true;
+			for(size_t i = 1; i < interpreted_nodes.size(); i++)
+			{
+				//if not in strict increasing order, return false
+				auto &cur = interpreted_nodes[i];
+
+				if(EvaluableNode::IsNull(cur))
+				{
+					result = false;
+					break;
+				}
+
+				if(!EvaluableNode::IsLessThan(cur, prev, en->GetType() == ENT_GEQUAL))
+				{
+					result = false;
+					break;
+				}
+			}
+
 			for(auto &n : interpreted_nodes)
 				evaluableNodeManager->FreeNodeTreeIfPossible(n);
 
-			return AllocReturn(false, immediate_result);
+			return AllocReturn(result, immediate_result);
 		}
-
-		bool result = true;
-		for(size_t i = 1; i < interpreted_nodes.size(); i++)
-		{
-			//if not in strict increasing order, return false
-			auto &cur = interpreted_nodes[i];
-
-			if(EvaluableNode::IsNull(cur))
-			{
-				result = false;
-				break;
-			}
-
-			if(!EvaluableNode::IsLessThan(cur, prev, en->GetType() == ENT_GEQUAL))
-			{
-				result = false;
-				break;
-			}
-		}
-
-		for(auto &n : interpreted_nodes)
-			evaluableNodeManager->FreeNodeTreeIfPossible(n);
-
-		return AllocReturn(result, immediate_result);
 	}
 #endif
 
@@ -500,37 +521,40 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode 
 	EvaluableNodeType to_match_type = ENT_NULL;
 
 #ifdef MULTITHREAD_SUPPORT
-	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(en->GetConcurrency())
 	{
-		for(auto &cur : interpreted_nodes)
+		std::vector<EvaluableNodeReference> interpreted_nodes;
+		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 		{
-			//if haven't gotten a value yet, then use this as the first data
-			if(!processed_first_value)
+			for(auto &cur : interpreted_nodes)
 			{
-				to_match = cur;
-				if(to_match != nullptr)
-					to_match_type = to_match->GetType();
-				processed_first_value = true;
-				continue;
-			}
+				//if haven't gotten a value yet, then use this as the first data
+				if(!processed_first_value)
+				{
+					to_match = cur;
+					if(to_match != nullptr)
+						to_match_type = to_match->GetType();
+					processed_first_value = true;
+					continue;
+				}
 
-			EvaluableNodeType cur_type = ENT_NULL;
-			if(cur != nullptr)
-				cur_type = cur->GetType();
+				EvaluableNodeType cur_type = ENT_NULL;
+				if(cur != nullptr)
+					cur_type = cur->GetType();
 
-			if(cur_type != to_match_type)
-			{
-				evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
+				if(cur_type != to_match_type)
+				{
+					evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
+					evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+					return AllocReturn(false, immediate_result);
+				}
+
 				evaluableNodeManager->FreeNodeTreeIfPossible(cur);
-				return AllocReturn(false, immediate_result);
 			}
 
-			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+			evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
+			return AllocReturn(true, immediate_result);
 		}
-
-		evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
-		return AllocReturn(true, immediate_result);
 	}
 #endif
 

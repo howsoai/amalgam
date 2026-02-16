@@ -252,7 +252,30 @@ public:
 	static std::pair<size_t, size_t> GetNodeCommonAndUniqueLabelCounts(EvaluableNode *n1, EvaluableNode *n2);
 
 	//Returns true if the immediate data structure of a is equal to b
-	static bool AreShallowEqual(EvaluableNode *a, EvaluableNode *b);
+	static inline bool AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
+	{
+		EvaluableNodeType a_type = (a == nullptr ? ENT_NULL : a->GetType());
+		EvaluableNodeType b_type = (b == nullptr ? ENT_NULL : b->GetType());
+
+		//check both types are the same
+		if(a_type != b_type)
+			return false;
+
+		//since both types are the same, only need to check one for the type of data
+		//check string equality
+		if(DoesEvaluableNodeTypeUseStringData(a_type))
+			return a->GetStringIDReference() == b->GetStringIDReference();
+
+		//check numeric equality
+		if(DoesEvaluableNodeTypeUseNumberData(a_type))
+			return a->GetNumberValueReference() == b->GetNumberValueReference();
+
+		if(DoesEvaluableNodeTypeUseBoolData(a_type))
+			return a->GetBoolValueReference() == b->GetBoolValueReference();
+
+		//if made it here, then it's an instruction, and they're of equal type
+		return true;
+	}
 
 	//Returns true if the entire data structure of a is equal in value to the data structure of b
 	static inline bool AreDeepEqual(EvaluableNode *a, EvaluableNode *b)
@@ -265,29 +288,20 @@ public:
 		if(!AreShallowEqual(a, b))
 			return false;
 
-		bool need_cycle_checks = false;
-
 		//since they are shallow equal, check for quick exit
-		if(a != nullptr && b != nullptr)
-		{
-			if(IsEvaluableNodeTypeImmediate(a->GetType())
-					&& IsEvaluableNodeTypeImmediate(b->GetType()))
-				return true;
+		if(a == nullptr || b == nullptr || IsEvaluableNodeTypeImmediate(a->GetType()))
+			return true;
 
-			//only need cycle checks if both a and b need cycle checks,
-			// otherwise, one will become exhausted and end the comparison
-			if(a->GetNeedCycleCheck() && b->GetNeedCycleCheck())
-				need_cycle_checks = true;
-		}
-
-		if(need_cycle_checks)
+		//only need cycle checks if both a and b need cycle checks,
+		// otherwise, one will become exhausted and end the comparison
+		if(a->GetNeedCycleCheck() && b->GetNeedCycleCheck())
 		{
 			ReferenceAssocType checked;
-			return AreDeepEqualGivenShallowEqual(a, b, &checked);
+			return AreDeepEqualGivenShallowEqualAndNotImmediate(a, b, &checked);
 		}
 		else
 		{
-			return AreDeepEqualGivenShallowEqual(a, b, nullptr);
+			return AreDeepEqualGivenShallowEqualAndNotImmediate(a, b, nullptr);
 		}
 	}
 
@@ -1199,11 +1213,11 @@ protected:
 	// note that the value should be considered uninitialized
 	void DestructValue();
 
-	//Returns true if the entire data structure of a is equal in value to the data structure of b
-	// but does not check the immediate nodes a and b to see if they are shallow equal (this is assumed to be done by the caller for performance)
-	// Assists the public function AreDeepEqual
-	// if checked is nullptr, then it won't check for cycles
-	static bool AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNode *b, ReferenceAssocType *checked);
+	//assists the public function AreDeepEqual
+	//returns true if the entire data structure of a is equal in value to the data structure of b
+	// but does not check if nodes a and b are not null or immediate and are shallow equal (this is assumed to be done by the caller for performance)
+	//if checked is nullptr, then it won't check for cycles
+	static bool AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *a, EvaluableNode *b, ReferenceAssocType *checked);
 
 	//recursive helper function for CanNodeTreeBeFlattened
 	// assumes n is not nullptr

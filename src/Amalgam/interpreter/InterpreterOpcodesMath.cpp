@@ -1457,7 +1457,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	{
 		auto &values_mcn = values->GetMappedChildNodesReference();
 
-		if(EvaluableNode::IsNull(weights))
+		if(EvaluableNode::IsNull(weights) || weights->IsImmediate())
 		{
 			result = GeneralizedMean(begin(values_mcn), end(values_mcn),
 				[](auto iter, auto &value) { return GetValueFromIter(iter, value);},
@@ -1488,7 +1488,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	{
 		auto &values_ocn = values->GetOrderedChildNodesReference();
 
-		if(EvaluableNode::IsNull(weights))
+		if(EvaluableNode::IsNull(weights) || weights->IsImmediate())
 		{
 			result = GeneralizedMean(size_t{ 0 }, values_ocn.size(),
 				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },

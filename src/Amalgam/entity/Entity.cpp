@@ -353,7 +353,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 	if(any_successful_assignment)
 	{
-		//TODO 24298: finish this
+		//TODO 24298: ensure new_label_values_mcn has all of the new values even if accum'd
 
 		EntityQueryCaches *container_caches = GetContainerQueryCaches();
 		if(container_caches != nullptr)

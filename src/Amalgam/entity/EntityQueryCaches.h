@@ -64,25 +64,19 @@ public:
 		sbfds.UpdateAllEntityLabels(entity, entity_index);
 	}
 
-	//like UpdateAllEntityLabels, but only updates labels for the keys of labels_updated
-	inline void UpdateEntityLabels(Entity *entity, size_t entity_index, EvaluableNode::AssocType &labels_updated)
+	//updates the labels for the entity to the new_values specified
+	inline void UpdateEntityLabels(Entity *entity, size_t entity_index, EvaluableNode::AssocType &new_values)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::WriteLock write_lock(mutex);
 	#endif
 
-		for(auto &[label_id, _] : labels_updated)
-			sbfds.UpdateEntityLabel(entity, entity_index, label_id);
-	}
-
-	//like UpdateAllEntityLabels, but only updates labels for label_updated
-	inline void UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated)
-	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::WriteLock write_lock(mutex);
-	#endif
-
-		sbfds.UpdateEntityLabel(entity, entity_index, label_updated);
+		for(auto &[label_id, new_value] : new_values)
+		{
+			EvaluableNodeImmediateValue imm_val;
+			auto value_type = imm_val.CopyValueFromEvaluableNode(new_value);
+			sbfds.UpdateEntityLabel(value_type, imm_val, entity_index, label_id);
+		}
 	}
 
 	//removes all entity labels specified

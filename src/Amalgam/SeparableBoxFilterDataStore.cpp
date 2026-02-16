@@ -237,7 +237,9 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 #endif
 }
 
-void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated)
+void SeparableBoxFilterDataStore::UpdateEntityLabel(
+	EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
+	size_t entity_index, StringInternPool::StringID label_updated)
 {
 	if(entity_index >= numEntities)
 		return;
@@ -253,10 +255,7 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	VerifyAllEntitiesForColumn(column_index);
 #endif
 
-	//TODO 24298: switch this to use ChangeIndexValue and add new parameters for old vs new value
-	column_data->RemoveIndexFromCaches(entity_index);
-	auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
-	column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);
+	column_data->ChangeIndexValue(value_type, value, entity_index);
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))

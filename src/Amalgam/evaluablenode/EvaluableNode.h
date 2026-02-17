@@ -750,8 +750,7 @@ public:
 	//appends comments to the node
 	void AppendComments(std::string &comments)
 	{
-		if(!HasCompactAnnotationsAndCommentsStorage() && !HasExtendedValue())
-			EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasAnnotationsAndCommentsStorage();
 
 		auto &a_and_c = GetAnnotationsAndCommentsStorage();
 		std::string combined(a_and_c.GetComments());

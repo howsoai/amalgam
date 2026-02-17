@@ -1052,8 +1052,6 @@ void EvaluableNode::EnsureHasAnnotationsAndCommentsStorage()
 	if(HasExtendedValue())
 		return;
 
-	EvaluableNodeValue *ev = new EvaluableNodeValue;
-
 	if(GetType() == ENT_ASSOC)
 	{
 		auto new_mcn = std::make_unique<AssocType>(std::move(value.mappedChildNodes));

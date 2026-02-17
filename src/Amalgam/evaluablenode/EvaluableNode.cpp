@@ -523,10 +523,10 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	if(new_type == cur_type)
 		return;
 
-	if(    (DoesEvaluableNodeTypeUseBoolData(cur_type) && DoesEvaluableNodeTypeUseBoolData(new_type))
-		|| (DoesEvaluableNodeTypeUseNumberData(cur_type) && DoesEvaluableNodeTypeUseNumberData(new_type))
-		|| (DoesEvaluableNodeTypeUseStringData(cur_type) && DoesEvaluableNodeTypeUseStringData(new_type))
-		|| (DoesEvaluableNodeTypeUseAssocData(cur_type)  && DoesEvaluableNodeTypeUseAssocData(new_type))
+	if(    (DoesEvaluableNodeTypeUseBoolData(cur_type)    && DoesEvaluableNodeTypeUseBoolData(new_type))
+		|| (DoesEvaluableNodeTypeUseNumberData(cur_type)  && DoesEvaluableNodeTypeUseNumberData(new_type))
+		|| (DoesEvaluableNodeTypeUseStringData(cur_type)  && DoesEvaluableNodeTypeUseStringData(new_type))
+		|| (DoesEvaluableNodeTypeUseAssocData(cur_type)   && DoesEvaluableNodeTypeUseAssocData(new_type))
 		|| (DoesEvaluableNodeTypeUseOrderedData(cur_type) && DoesEvaluableNodeTypeUseOrderedData(new_type)) )
 	{
 		type = new_type;
@@ -1054,14 +1054,22 @@ void EvaluableNode::EnsureHasAnnotationsAndCommentsStorage()
 
 	if(GetType() == ENT_ASSOC)
 	{
-		auto new_mcn = std::make_unique<AssocType>(std::move(value.mappedChildNodes));
-		value.extendedMappedChildNodes.mappedChildNodes = std::move(new_mcn);
+		AssocType temp_mcn = std::move(value.mappedChildNodes);
+		value.DestructMappedChildNodes();
+		new (&value.extendedMappedChildNodes.mappedChildNodes) std::unique_ptr<AssocType>(
+			std::make_unique<AssocType>(std::move(temp_mcn))
+		);
+
 		AnnotationsAndComments::Construct(value.extendedMappedChildNodes.annotationsAndComments);
 	}
 	else //ordered
 	{
-		auto new_ocn = std::make_unique<std::vector<EvaluableNode *>>(std::move(value.orderedChildNodes));
-		value.extendedOrderedChildNodes.orderedChildNodes = std::move(new_ocn);
+		std::vector<EvaluableNode *> temp_ocn = std::move(value.orderedChildNodes);
+		value.DestructOrderedChildNodes();
+		new (&value.extendedOrderedChildNodes.orderedChildNodes) std::unique_ptr<std::vector<EvaluableNode *>>(
+			std::make_unique<std::vector<EvaluableNode *>>(std::move(temp_ocn))
+		);
+
 		AnnotationsAndComments::Construct(value.extendedOrderedChildNodes.annotationsAndComments);
 	}
 

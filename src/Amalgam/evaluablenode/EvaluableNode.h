@@ -266,19 +266,15 @@ public:
 		{
 			if(GetType() == ENT_ASSOC)
 			{
-				auto *mcn_ptr = value.extendedMappedChildNodes.mappedChildNodes.get();
-				auto mcn(std::move(*mcn_ptr));
-				value.extendedMappedChildNodes.mappedChildNodes.reset();
-
-				value.mappedChildNodes = std::move(mcn);
+				AssocType temp_mcn = std::move(*value.extendedMappedChildNodes.mappedChildNodes);
+				value.extendedMappedChildNodes.mappedChildNodes.~unique_ptr<AssocType>();
+				new (&value.mappedChildNodes) AssocType(std::move(temp_mcn));
 			}
 			else //ordered
 			{
-				auto *ocn_ptr = value.extendedOrderedChildNodes.orderedChildNodes.get();
-				auto ocn(std::move(*ocn_ptr));
-				value.extendedOrderedChildNodes.orderedChildNodes.reset();
-
-				value.orderedChildNodes = std::move(ocn);
+				std::vector<EvaluableNode *> temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
+				value.extendedOrderedChildNodes.orderedChildNodes.~unique_ptr<std::vector<EvaluableNode *>>();
+				new (&value.orderedChildNodes) std::vector<EvaluableNode *>(std::move(temp_ocn));
 			}
 
 			SetExtendedValue(false);
@@ -989,7 +985,7 @@ public:
 		if(!HasExtendedValue())
 			value.ConstructOrderedChildNodes();
 		else
-			value.extendedOrderedChildNodes.orderedChildNodes = std::make_unique<std::vector<EvaluableNode *>>();
+			value.extendedOrderedChildNodes.Construct();
 	}
 
 	//preallocates to_reserve for appending, etc.
@@ -1078,7 +1074,7 @@ public:
 		if(!HasExtendedValue())
 			value.ConstructMappedChildNodes();
 		else
-			value.extendedMappedChildNodes.mappedChildNodes = std::make_unique<AssocType>();
+			value.extendedMappedChildNodes.Construct();
 	}
 
 	//preallocates to_reserve for appending, etc.
@@ -1440,6 +1436,20 @@ protected:
 
 		struct EvaluableNodeValueOrderedChildNodesWithAnnotationsAndComments
 		{
+			__forceinline void Construct()
+			{
+				new (&orderedChildNodes) std::unique_ptr<std::vector<EvaluableNode *>>(
+					std::make_unique<std::vector<EvaluableNode *>>());
+
+				AnnotationsAndComments::Construct(annotationsAndComments);
+			}
+
+			__forceinline void Destruct()
+			{
+				orderedChildNodes.~unique_ptr<std::vector<EvaluableNode *>>();
+				AnnotationsAndComments::Destruct(annotationsAndComments);
+			}
+
 			//external orderedChildNodes
 			std::unique_ptr<std::vector<EvaluableNode *>> orderedChildNodes;
 
@@ -1448,6 +1458,19 @@ protected:
 
 		struct EvaluableNodeValueMappedChildNodesWithAnnotationsAndComments
 		{
+			__forceinline void Construct()
+			{
+				new (&mappedChildNodes) std::unique_ptr<AssocType>(std::make_unique<AssocType>());
+
+				AnnotationsAndComments::Construct(annotationsAndComments);
+			}
+
+			__forceinline void Destruct()
+			{
+				mappedChildNodes.~unique_ptr<AssocType>();
+				AnnotationsAndComments::Destruct(annotationsAndComments);
+			}
+
 			//external orderedChildNodes
 			std::unique_ptr<AssocType> mappedChildNodes;
 
@@ -1483,8 +1506,8 @@ protected:
 			}
 			else
 			{
-				value.extendedMappedChildNodes.mappedChildNodes.reset();
-				AnnotationsAndComments::Destruct(value.extendedMappedChildNodes.annotationsAndComments);
+				value.extendedMappedChildNodes.Destruct();
+				SetExtendedValue(false);
 			}
 			break;
 			//otherwise ordered
@@ -1495,8 +1518,8 @@ protected:
 			}
 			else
 			{
-				value.extendedOrderedChildNodes.orderedChildNodes.reset();
-				AnnotationsAndComments::Destruct(value.extendedOrderedChildNodes.annotationsAndComments);
+				value.extendedOrderedChildNodes.Destruct();
+				SetExtendedValue(false);
 			}
 			break;
 		}

@@ -244,12 +244,8 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	if(!EvaluableNode::IsAssociativeArray(new_label_values))
 		return std::make_pair(false, false);
 
-	//if it's not setting on self, another entity owns the data so it isn't unique to this entity
-	if(!on_self)
-	{
-		new_label_values.unique = false;
-		new_label_values.uniqueUnreferencedTopNode = false;
-	}
+	//use this node to store the updated values for writing to the caches
+	evaluableNodeManager.EnsureNodeIsModifiable(new_label_values, false, false);
 
 	//if relevant, keep track of new memory allocated to the entity
 	size_t prev_size = 0;
@@ -260,8 +256,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	bool all_successful_assignments = true;
 	bool need_node_flags_updated = false;
 	auto &new_label_values_mcn = new_label_values->GetMappedChildNodesReference();
-	EvaluableNode::AssocType prev_label_values;
-	prev_label_values.reserve(new_label_values_mcn.size());
 
 	for(auto &[label_sid, variable_location] : new_label_values_mcn)
 	{
@@ -285,9 +279,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 				all_successful_assignments = false;
 				continue;
 			}
-
-			//keep old value
-			prev_label_values.emplace(label_sid, variable_location);
 
 			//need to make a copy in case it is modified, so pass in evaluableNodeManager
 			EvaluableNodeReference value_destination_node(variable_location, false);
@@ -330,9 +321,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			}
 			else
 			{
-				//keep old value
-				prev_label_values.emplace(label_sid, variable_location);
-
 				//overwrite the root's flags before value at the location
 				rootNode->UpdateFlagsBasedOnNewChildNode(variable_value_node);
 
@@ -353,8 +341,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 	if(any_successful_assignment)
 	{
-		//TODO 24298: ensure new_label_values_mcn has all of the new values even if accum'd
-
 		EntityQueryCaches *container_caches = GetContainerQueryCaches();
 		if(container_caches != nullptr)
 			container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), new_label_values_mcn);

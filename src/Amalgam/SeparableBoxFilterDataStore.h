@@ -157,8 +157,8 @@ public:
 	//updates all of the label values for entity with index entity_index
 	void UpdateAllEntityLabels(Entity *entity, size_t entity_index);
 
-	//like UpdateAllEntityLabels, but only updates labels for label_updated
-	void UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated);
+	//updates the given label for the given entity
+	void UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_id);
 
 	//removes the entity's value for the specified label
 	void RemoveEntityIndexValueFromLabelId(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,

@@ -219,33 +219,46 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 	VerifyAllEntitiesForAllColumns();
 #endif
 
-	for(auto &column_data : columnData)
+	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
 	{
-		//TODO 24298: switch this to use ChangeIndexValue and add new parameters for old vs new value
-		column_data->RemoveIndexFromCaches(entity_index);
-		auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
-		column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);
+		auto &column_data = columnData[column_index];
+
+		auto [reference, found] = entity->GetValueAtLabel(column_data->stringId, nullptr, EvaluableNodeRequestedValueTypes::Type::ALL);
+		if(!found)
+			return;
+		auto &value_with_type = reference.GetValue();
+
+	#ifdef SBFDS_VERIFICATION
+		VerifyAllEntitiesForColumn(column_index);
+	#endif
+
+		column_data->ChangeIndexValue(value_with_type.nodeType, value_with_type.nodeValue, entity_index);
+
+		//remove the label if no longer relevant
+		if(IsColumnIndexRemovable(column_index))
+			RemoveColumnIndex(column_index);
+		else
+			OptimizeColumn(column_index);
+
+	#ifdef SBFDS_VERIFICATION
+		VerifyAllEntitiesForColumn(column_index);
+	#endif
 	}
-
-	//clean up any labels that aren't relevant
-	RemoveAnyUnusedLabels();
-
-	OptimizeAllColumns();
-
-#ifdef SBFDS_VERIFICATION
-	VerifyAllEntitiesForAllColumns();
-#endif
 }
 
-void SeparableBoxFilterDataStore::UpdateEntityLabel(
-	EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
-	size_t entity_index, StringInternPool::StringID label_updated)
+void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity,
+	size_t entity_index, StringInternPool::StringID label_id)
 {
 	if(entity_index >= numEntities)
 		return;
 
+	auto [reference, found] = entity->GetValueAtLabel(label_id, nullptr, EvaluableNodeRequestedValueTypes::Type::ALL);
+	if(!found)
+		return;
+	auto &value_with_type = reference.GetValue();
+
 	//find the column
-	auto column = labelIdToColumnIndex.find(label_updated);
+	auto column = labelIdToColumnIndex.find(label_id);
 	if(column == end(labelIdToColumnIndex))
 		return;
 	size_t column_index = column->second;
@@ -255,7 +268,7 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(
 	VerifyAllEntitiesForColumn(column_index);
 #endif
 
-	column_data->ChangeIndexValue(value_type, value, entity_index);
+	column_data->ChangeIndexValue(value_with_type.nodeType, value_with_type.nodeValue, entity_index);
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))

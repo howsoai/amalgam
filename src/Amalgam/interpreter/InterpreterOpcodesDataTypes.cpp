@@ -1737,17 +1737,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 
 		std::string s;
 		if(cur == nullptr)
+		{
 			s = "(null)";
-		else if(DoesEvaluableNodeTypeUseBoolData(cur->GetType()))
-			s = EvaluableNode::BoolToString(cur->GetBoolValueReference());
-		else if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
-			s = cur->GetStringValue();
-		else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
-			s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
+		}
 		else
-			s = Parser::Unparse(cur, true, true, true);
+		{
+			bool has_metadata = cur->HasMetadata();
+			if(!has_metadata && DoesEvaluableNodeTypeUseBoolData(cur->GetType()))
+				s = EvaluableNode::BoolToString(cur->GetBoolValueReference());
+			else if(!has_metadata && DoesEvaluableNodeTypeUseStringData(cur->GetType()))
+				s = cur->GetStringValue();
+			else if(!has_metadata && DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
+				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
+			else
+				s = Parser::Unparse(cur, true, true, true);
 
-		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+		}
 
 		if(writeListeners != nullptr)
 		{

@@ -11,7 +11,8 @@
 			<Item Name="value.stringValueContainer">value.stringValueContainer</Item>
 			<Item Name="value.numberValueContainer">value.numberValueContainer</Item>
 			<Item Name="value.boolValueContainer">value.boolValueContainer</Item>
-			<Item Name="value.extension">value.extension</Item>
+			<Item Name="value.extendedOrderedChildNodes">value.extendedOrderedChildNodes</Item>
+			<Item Name="value.extendedMappedChildNodes">value.extendedMappedChildNodes</Item>
 			<Item Name="NEED_CYCLE_CHECK">(attributes &amp; 2) != 0</Item>
 			<Item Name="IDEMPOTENT">(attributes &amp; 4) != 0</Item>
 			<Item Name="CONCURRENT">(attributes &amp; 8) != 0</Item>

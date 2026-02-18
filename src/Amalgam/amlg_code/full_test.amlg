@@ -1464,7 +1464,6 @@
 	   .true))
 	   "\n")
 
-;TODO 24298: test and update from here down
  (print "--set_annotations--\n")
  (print (set_annotations
   (lambda
@@ -1504,7 +1503,8 @@
  (print (set_concurrency
 				(lambda 
 					;complex test
-					#somelabel (assoc a "hello" b 4)
+					#some annotation
+					(assoc a "hello" b 4)
 				)
 				.true
  ) "\n")
@@ -1513,7 +1513,9 @@
  (print (get_value
    ;this is a comment
   (lambda ;comment too
-   #withalabel .true)) "\n")
+   #and an annotation part 1
+   #and annotation part 2
+   .true)) "\n")
 
  (print "--set_value--\n")
  (print (set_value
@@ -1679,6 +1681,8 @@
  					(lambda (seq 2 1 4 (get_entity_comments)))
  					) "\n")
 
+;TODO 24298: test and update from here down
+
  (print (edit_distance
  					(list 1 2 3 (associate "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6))
  					(list 1 2 3 (associate "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6))
@@ -1715,8 +1719,8 @@
  					))
 
  (print (intersect
- 					(list 1 2 3 (associate "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) #label-not-1 1))) (list 5 6))
- 					(list 1 2 3 (associate "c" 3 "b" 4) (lambda (if true 1 (unordered_list #label-not-1 1 (get_entity_comments)))) (list 5 6))
+ 					(list 1 2 3 (associate "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6))
+ 					(list 1 2 3 (associate "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6))
  					))
 
  (print (intersect
@@ -1775,8 +1779,8 @@
  					))
 
  (print (union
- 					(list 1 2 3 (associate "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) #label-not-1 1))) (list 5 6))
- 					(list 1 2 3 (associate "c" 3 "b" 4) (lambda (if true 1 (unordered_list #label-not-1 1 (get_entity_comments)))) (list 5 6))
+ 					(list 1 2 3 (associate "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6))
+ 					(list 1 2 3 (associate "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6))
  					))
 
  (print (union
@@ -1980,13 +1984,13 @@
  (print "--flatten_entity--\n")
 
  (create_entities "FlattenTest" (lambda
- 							(unordered_list ##a (rand) )
+ 							{ a (rand) }
  							) )
   (print (call_entity "FlattenTest" "a") "\n")
   (print (get_entity_rand_seed "FlattenTest") "\n")
 
   (create_entities (list "FlattenTest" "DeepRand") (lambda
-  							(unordered_list ##a (rand) )
+  							{ a (rand) }
   							) )
  (declare (assoc seed (get_entity_rand_seed "FlattenTest")))
  (print (call_entity "FlattenTest" "a") "\n")
@@ -2071,11 +2075,11 @@
    (contained_entities "OredEntities")
  )
 
- (create_entities "ComplexMergeEntity1" (lambda (unordered_list #p (null))) )
+ (create_entities "ComplexMergeEntity1" (lambda { p (null) } ) )
  (create_entities (list "ComplexMergeEntity1") (lambda (associate "E" 3 "F" 4)) )
  (create_entities (list "ComplexMergeEntity1") (lambda (associate "e" 3 "f" 4 "g" 5 "h" 6)) )
 
- (create_entities "ComplexMergeEntity2" (lambda (unordered_list #p (null))) )
+ (create_entities "ComplexMergeEntity2" (lambda { p (null) } ) )
  (create_entities (list "ComplexMergeEntity2") (lambda (associate "E" 3 "F" 4 "G" 5 "H" 6)) )
  (create_entities (list "ComplexMergeEntity2") (lambda (associate "e" 3 "f" 4)) )
 
@@ -2241,14 +2245,14 @@
  (print "--get_entity_rand_seed--\n")
  (print (get_entity_rand_seed) "\n")
  (create_entities "RandTest" (lambda
- 							(unordered_list ##a (rand) )
+ 							{ a (rand) }
  							) )
  (print (call_entity "RandTest" "a") "\n")
  (print (get_entity_rand_seed "RandTest") "\n")
 
  (print "--set_entity_rand_seed--\n")
  (create_entities (list "RandTest" "DeepRand") (lambda
- 							(unordered_list ##a (rand) )
+ 							{ a (rand) }
  							) )
 (assign (assoc seed (get_entity_rand_seed "RandTest")))
 (print (call_entity "RandTest" "a") "\n")
@@ -4249,19 +4253,35 @@
  (create_entities "BoxConvictionTestContainer" (null) )
 
  (create_entities (list "BoxConvictionTestContainer" "vert0") (lambda
-  (null ##x 0 ##y 0 ##weight 2)
+	{
+		x 0
+		y 0
+		weight 2
+	}
  ) )
 
  (create_entities (list "BoxConvictionTestContainer" "vert1") (lambda
-  (null ##x 0 ##y 1 ##weight 1)
+	{
+		x 0
+		y 1
+		weight 1
+	}
  ) )
 
  (create_entities (list "BoxConvictionTestContainer" "vert2") (lambda
-  (null ##x 1 ##y 0 ##weight 1)
+	{
+		x 1
+		y 0
+		weight 1
+	}
  ) )
 
  (create_entities (list "BoxConvictionTestContainer" "vert3") (lambda
-  (null ##x 2 ##y 1 ##weight 1)
+	{
+		x 2
+		y 1
+		weight 1
+	}
  ) )
 
   (print "distance contributions\n")
@@ -4345,7 +4365,10 @@
  (print "adding a case\n")
 
  (create_entities (list "BoxConvictionTestContainer" "vert4") (lambda
-  (null ##x 3 ##y 0)
+  {
+	x 3
+	y 0
+  }
  ) )
  
    (print "noncyclic KL: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
@@ -4373,19 +4396,31 @@
 	(create_entities "SurprisalTransformContainer" (null) )
 
 	(create_entities (list "SurprisalTransformContainer" "vert0") (lambda
-	(null ##x 3 ##weight 2)
+		{
+			x 3
+			weight 2
+		}
 	) )
 
 	(create_entities (list "SurprisalTransformContainer" "vert1") (lambda
-	(null ##x 3 ##weight 0)
+		{
+			x 3
+			weight 0
+		}
 	) )
 
 	(create_entities (list "SurprisalTransformContainer" "vert2") (lambda
-	(null ##x 4 ##weight 1)
+		{
+			x 4
+			weight 1
+		}
 	) )
 
 	(create_entities (list "SurprisalTransformContainer" "vert3") (lambda
-	(null ##x 5 ##weight 1)
+		{
+			x 5
+			weight 1
+		}
 	) )
 
 	;should be:
@@ -4570,7 +4605,10 @@
   )))
 
   (create_entities (list "SurprisalTransformContainer" "testvert") (lambda
-	(null ##x 0 ##weight 1)
+	{
+		x 0
+		weight 1
+	}
 	) )
 
   (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list

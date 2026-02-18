@@ -1467,6 +1467,7 @@ protected:
 
 			__forceinline void Destruct()
 			{
+				string_intern_pool.DestroyStringReferences(*mappedChildNodes, [](auto n) { return n.first; });
 				mappedChildNodes.~unique_ptr<AssocType>();
 				AnnotationsAndComments::Destruct(annotationsAndComments);
 			}

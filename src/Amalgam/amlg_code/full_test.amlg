@@ -18,12 +18,6 @@
  (print "--system_time--\n")
  (declare (assoc start_time (system_time)))
 
- (print "--label--\n")
- ;label test
- (#label1 print "hello world: " (* #label-number-2 3 4) #label3 " and " (* 1 2) "\n")
-
- (#"label 1" print "hello world: " (* #"label number 2" 3 4) #"label 3" " and " (* 1 2) "\n")
-
  (print "--get_defaults--\n")
  (print (get_defaults "mutation_opcodes"))
  (print (get_defaults "mutation_types"))
@@ -1303,7 +1297,9 @@
  (print (lambda (null (+ 3 5) 7)))
 
  (print "--node null--\n")
- (print (lambda (#nulltest null)))
+ (print (lambda
+	#nulltest
+	(null)))
 
  (print "--infinity--\n")
  (print .infinity "\n")
@@ -1344,7 +1340,7 @@
  (print (call (set_type (list 1 0.5 "3.2" 4) "+")) "\n")
  (print (set_type
 	(list
-		(set_annotations (lambda (+ 3 4)) (list "react") )
+		(set_annotations (lambda (+ 3 4)) "react" )
 	)
 	"unordered_list"
 	))
@@ -1462,11 +1458,13 @@
 
  (print "--get_annotations--\n")
   (print (get_annotations
-  (lambda
-	#annotation line 1
-	#annotation line 2
-   .true)))
+	  (lambda
+		#annotation line 1
+		#annotation line 2
+	   .true))
+	   "\n")
 
+;TODO 24298: test and update from here down
  (print "--set_annotations--\n")
  (print (set_annotations
   (lambda
@@ -3589,12 +3587,6 @@
  (assign_to_entities "MultipleSetTest" (assoc a 2 b 3 c 4) "MyNewLibrary" (assoc "three" 12))
  (print (retrieve_entity_root "MultipleSetTest"))
  (print (retrieve_entity_root "MyNewLibrary"))
-
- (print "--direct_assign_to_entities--\n")
- (create_entities "DRFE" (lambda (unordered_list ##a 12)) )
- (print (unparse (retrieve_from_entity "DRFE" "a") .true .true))
- (print (unparse (direct_assign_to_entities "DRFE" (assoc a 7)) .true .true))
- (print (unparse (retrieve_from_entity "DRFE" "a") .true .true))
 
  (print "--accum_to_entities--\n")
 

@@ -1963,18 +1963,18 @@
  ))
 
  (print "--total_entity_size--\n")
+ ;TODO 24298: test and update from here down
+ (create_entities "MergeEntity1" { "a" 3 "b" 4} )
+ (create_entities (list "MergeEntity1" "MergeEntityChild1") { "x" 3 "y" 4} )
+ (create_entities (list "MergeEntity1" "MergeEntityChild2") { "p" 3 "q" 4} )
+ (create_entities (list "MergeEntity1") { "E" 3 "F" 4} )
+ (create_entities (list "MergeEntity1") { "e" 3 "f" 4 "g" 5 "h" 6} )
 
- (create_entities "MergeEntity1" (lambda (associate "a" 3 "b" 4)) )
- (create_entities (list "MergeEntity1" "MergeEntityChild1") (lambda (associate "x" 3 "y" 4)) )
- (create_entities (list "MergeEntity1" "MergeEntityChild2") (lambda (associate "p" 3 "q" 4)) )
- (create_entities (list "MergeEntity1") (lambda (associate "E" 3 "F" 4)) )
- (create_entities (list "MergeEntity1") (lambda (associate "e" 3 "f" 4 "g" 5 "h" 6)) )
-
- (create_entities "MergeEntity2" (lambda (associate "c" 3 "b" 4)) )
- (create_entities (list "MergeEntity2" "MergeEntityChild1") (lambda (associate "x" 3 "y" 4 "z" 5)) )
- (create_entities (list "MergeEntity2" "MergeEntityChild2") (lambda (associate "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) )
- (create_entities (list "MergeEntity2") (lambda (associate "E" 3 "F" 4 "G" 5 "H" 6)) )
- (create_entities (list "MergeEntity2") (lambda (associate "e" 3 "f" 4)) )
+ (create_entities "MergeEntity2" { "c" 3 "b" 4} )
+ (create_entities (list "MergeEntity2" "MergeEntityChild1") { "x" 3 "y" 4 "z" 5} )
+ (create_entities (list "MergeEntity2" "MergeEntityChild2") { "p" 3 "q" 4 "u" 5 "v" 6 "w" 7} )
+ (create_entities (list "MergeEntity2") { "E" 3 "F" 4 "G" 5 "H" 6} )
+ (create_entities (list "MergeEntity2") { "e" 3 "f" 4} )
 
  (print (total_entity_size "MergeEntity1") "\n")
  (print (total_entity_size "MergeEntity2") "\n")
@@ -2022,10 +2022,10 @@
  )
 
  (print "--mutate_entity--\n")
- ;TODO 24298: test and update from here down
+
  (create_entities
     "MutateEntity"
-	(lambda (list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 (associate "a" 1 "b" 2)))
+	(lambda { 1 2 3 4 5 6 7 8 9 10 11 12 13 14 (associate "a" 1 "b" 2) } )
 	)
  (mutate_entity "MutateEntity" 0.4 "MutatedEntity")
  (mutate_entity "MutateEntity" 0.5 "MutatedEntity2")
@@ -2043,6 +2043,7 @@
 
  (print (commonality_entities "MergeEntity1" "MergeEntity2") "\n")
  (print (commonality_entities "MergeEntity1" "MergeEntity2" {types_must_match .false nominal_strings .false}) "\n")
+
  (print "--edit_distance_entities--\n")
 
  (print (edit_distance_entities "MergeEntity1" "MergeEntity2") "\n")
@@ -2074,12 +2075,12 @@
  )
 
  (create_entities "ComplexMergeEntity1" (lambda { p (null) } ) )
- (create_entities (list "ComplexMergeEntity1") (lambda (associate "E" 3 "F" 4)) )
- (create_entities (list "ComplexMergeEntity1") (lambda (associate "e" 3 "f" 4 "g" 5 "h" 6)) )
+ (create_entities (list "ComplexMergeEntity1") { "E" 3 "F" 4 } )
+ (create_entities (list "ComplexMergeEntity1") { "e" 3 "f" 4 "g" 5 "h" 6 } )
 
  (create_entities "ComplexMergeEntity2" (lambda { p (null) } ) )
- (create_entities (list "ComplexMergeEntity2") (lambda (associate "E" 3 "F" 4 "G" 5 "H" 6)) )
- (create_entities (list "ComplexMergeEntity2") (lambda (associate "e" 3 "f" 4)) )
+ (create_entities (list "ComplexMergeEntity2") { "E" 3 "F" 4 "G" 5 "H" 6 } )
+ (create_entities (list "ComplexMergeEntity2") { "e" 3 "f" 4 } )
 
  (assign_to_entities "ComplexMergeEntity1" (assoc p (contained_entities "ComplexMergeEntity1")))
  (assign_to_entities "ComplexMergeEntity2" (assoc p (contained_entities "ComplexMergeEntity2")))
@@ -2168,6 +2169,8 @@
    ))
    (contained_entities "MixedEntities")
  )
+
+  ;TODO 24298: test and update from here down
 
  (print "--get_entity_comments--\n")
  (print (get_entity_comments) "\n")
@@ -2281,9 +2284,9 @@
  (print (create_entities "MyLibrary" (lambda (+ #three 3 4)) ) "\n")
 
  (print "--nested create_entities--\n")
- (create_entities "EntityWithChildren" (lambda (associate "a" 3 "b" 4)) )
- (create_entities (list "EntityWithChildren" "Child1") (lambda (associate "x" 3 "y" 4)) )
- (create_entities (list "EntityWithChildren" "Child2") (lambda (associate "p" 3 "q" 4)) )
+ (create_entities "EntityWithChildren" { "a" 3 "b" 4} )
+ (create_entities (list "EntityWithChildren" "Child1") { "x" 3 "y" 4} )
+ (create_entities (list "EntityWithChildren" "Child2") { "p" 3 "q" 4} )
  (print (contained_entities "EntityWithChildren"))
 
  (print (create_entities "MultipleTest1" (null)) "\n")
@@ -2324,7 +2327,7 @@
  (load_entity "amlg_code/persist_module_test.amlg" "PersistModuleTest" (null) .true)
  (assign_to_entities "PersistModuleTest" (assoc a 8))
  (assign_to_entities (list "PersistModuleTest" "psm") (assoc a 5))
- (create_entities (list "PersistModuleTest" "NewModule") (lambda (associate "a" 1 "b" 2)) )
+ (create_entities (list "PersistModuleTest" "NewModule") { "a" 1 "b" 2 } )
  (load_entity "amlg_code/persist_module_test.amlg" "PersistModuleTestResults")
  (print (flatten_entity "PersistModuleTestResults"))
  (assign_to_entities "PersistModuleTest" (assoc a 1))

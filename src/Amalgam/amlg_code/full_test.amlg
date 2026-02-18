@@ -2221,9 +2221,7 @@
 						)
 					)
 					(get_entity_comments (null) (null) .true)
-				)
-	
-	
+				)	
 			)
 
 		)

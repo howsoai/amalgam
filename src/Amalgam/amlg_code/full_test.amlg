@@ -2170,22 +2170,26 @@
    (contained_entities "MixedEntities")
  )
 
-  ;TODO 24298: test and update from here down
-
+ ;TODO 24298: test and update from here down
+ ;TODO 24298: make sure newlines are not on comments and annotations
  (print "--get_entity_comments--\n")
  (print (get_entity_comments) "\n")
 
   (create_entities "descriptive_entity" (lambda
 	;this is a fully described entity
-	(null
+	{
 		;some public variable
-		##publicvar 1
+		publicvar
+		1
 		;some private variable
-		##!privatevar 2
+		!privatevar
+		2
 		;a variable accessible to contained entities
-		##^containervar 3
+		^containervar
+		3
 		;the function foo
-		##foo (declare
+		foo
+		(declare
 					;a number representing the sum
 					(assoc
 						;the value of x
@@ -2200,7 +2204,8 @@
 				)
 
 		;returns the api details
-		##get_api (seq
+		get_api
+		(seq
 
 			(assoc
 				"description"
@@ -2222,7 +2227,7 @@
 			)
 
 		)
-	)
+	}
 
 
  ))

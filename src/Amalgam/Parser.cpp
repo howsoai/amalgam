@@ -797,7 +797,8 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 					if(key_node->HasComments())
 					{
 						std::string appended(key_node->GetCommentsString());
-						appended.append("\r\n");
+						if(n->HasComments())
+							appended.append("\r\n");
 						appended.append(n->GetCommentsString());
 						n->SetCommentsString(appended);
 						key_node->ClearComments();
@@ -806,7 +807,8 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 					if(key_node->HasAnnotations())
 					{
 						std::string appended(key_node->GetAnnotationsString());
-						appended.append("\r\n");
+						if(n->HasAnnotations())
+							appended.append("\r\n");
 						appended.append(n->GetAnnotationsString());
 						n->SetAnnotationsString(appended);
 						key_node->ClearAnnotations();

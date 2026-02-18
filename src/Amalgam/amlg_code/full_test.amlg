@@ -1681,8 +1681,6 @@
  					(lambda (seq 2 1 4 (get_entity_comments)))
  					) "\n")
 
-;TODO 24298: test and update from here down
-
  (print (edit_distance
  					(list 1 2 3 (associate "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6))
  					(list 1 2 3 (associate "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6))
@@ -2024,7 +2022,7 @@
  )
 
  (print "--mutate_entity--\n")
-
+ ;TODO 24298: test and update from here down
  (create_entities
     "MutateEntity"
 	(lambda (list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 (associate "a" 1 "b" 2)))

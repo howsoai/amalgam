@@ -626,13 +626,16 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 				for(size_t match_index = 0; match_index < a2.size(); match_index++)
 				{
 					auto match_value = NumberOfSharedNodes(a1_current, a2[match_index], mmrp);
-					if(!best_match_found || match_value > best_match_value)
+					//if either an exact match
+					// or it doesn't need an exact match and it's a better match than previously found
+					if(match_value.exactMatch
+						|| (!match_value.mustMatch && (!best_match_found || match_value > best_match_value)) )
 					{
 						best_match_found = true;
 						best_match_value = match_value;
 						best_match_index = match_index;
 
-						if(best_match_value.mustMatch || best_match_value.exactMatch)
+						if(best_match_value.exactMatch)
 							break;
 					}
 				}

@@ -509,6 +509,51 @@ size_t Entity::GetEstimatedUsedDeepSizeInBytes()
 	return total_size;
 }
 
+//digits for 62-base encoding
+static constexpr std::array<char, 62> _base_62_digits = [] {
+	std::array<char, 62> a{};
+	std::size_t i = 0;
+	for(char c = '0'; c <= '9'; c++)
+		a[i++] = c;
+	for(char c = 'a'; c <= 'z'; c++)
+		a[i++] = c;
+	for(char c = 'A'; c <= 'Z'; c++)
+		a[i++] = c;
+	return a;
+}();
+
+//powers of 62 for 62-base encoding
+static constexpr std::array<uint64_t, 11> _powers_of_62 = [] {
+	std::array<uint64_t, 11> powers{};
+	powers[0] = 1;
+	for(std::size_t i = 1; i < powers.size(); i++)
+		powers[i] = powers[i - 1] * 62ULL;
+	return powers;
+}();
+
+//encodes high_and low into a base 62 string starting with an underscore
+//this encoding uses only characters that are available across all major file systems and thus do not need escaping
+static std::string EncodeBase62(uint32_t high, uint32_t low)
+{
+	uint64_t combined_value = (static_cast<uint64_t>(high) << 32) | static_cast<uint64_t>(low);
+
+	std::string buffer(12, _base_62_digits[0]);
+	//begin with leading underscore
+	buffer[0] = '_';
+
+	//convert to digits from most significant to least significant, starting with highest power of 62
+	for(int i = 10; i >= 0; i--)
+	{
+		uint64_t divisor = _powers_of_62[i];
+		uint64_t digit = combined_value / divisor;
+		//skip over leading underscore
+		buffer[1 + (10 - i)] = _base_62_digits[static_cast<std::size_t>(digit)];
+		combined_value -= digit * divisor;
+	}
+
+	return buffer;
+}
+
 StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPool::StringID id_sid, std::vector<EntityWriteListener *> *write_listeners)
 {
 	if(t == nullptr)
@@ -530,8 +575,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 		std::string new_id;
 		for(;;)
 		{
-			//add a _ in front to differentiate from numbers
-			new_id = "_" + EvaluableNode::NumberToString(static_cast<size_t>(randomStream.RandUInt32()));
+			new_id = EncodeBase62(randomStream.RandUInt32(), randomStream.RandUInt32());
 
 			t->idStringId = string_intern_pool.CreateStringReference(new_id);
 			
@@ -594,8 +638,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 	{
 		for(;;)
 		{
-			//add a _ in front to differentiate from numbers
-			id_string = "_" + EvaluableNode::NumberToString(static_cast<size_t>(randomStream.RandUInt32()));
+			id_string = EncodeBase62(randomStream.RandUInt32(), randomStream.RandUInt32());
 
 			t->idStringId = string_intern_pool.CreateStringReference(id_string);
 

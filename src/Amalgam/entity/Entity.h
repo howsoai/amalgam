@@ -857,8 +857,7 @@ public:
 	// An identity is considered named if the string represents anything other than an integer
 	inline static bool IsNamedEntity(const std::string &id)
 	{
-		auto position_non_integer_underscore = id.find_first_not_of("_0123456789");
-		return position_non_integer_underscore != std::string::npos;
+		return (id.size() > 0 && id[0] != '_');
 	}
 
 	inline static bool IsNamedEntity(StringInternPool::StringID id)

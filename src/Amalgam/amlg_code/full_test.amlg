@@ -2862,58 +2862,57 @@
 
  (print "test code and string distances\n")
  
- ;TODO 24298: test and update from here down
  (create_entities "TestContainerSimilarCode"
 	(null)
  )
 
  (create_entities (list "TestContainerSimilarCode" "Child1")
-	(lambda (null
-	##x 1
-	##y 1
-	##s "s1"
-	##weight 0.45
-	))
+	(lambda { 
+	x 1
+	y 1
+	s "s1"
+	weight 0.45
+	})
  )
  (create_entities (list "TestContainerSimilarCode" "Child2")
-	(lambda (null
-	##x 1
-	##y (list 1 2)
-	##s "s2"
-	##weight 0.45
-	))
+	(lambda { 
+	x 1
+	y (list 1 2)
+	s "s2"
+	weight 0.45
+	})
  )
  (create_entities (list "TestContainerSimilarCode" "Child3")
-	(lambda (null
-	##x 1
-	##y (null 1 2)
-	##s "s333"
-	##weight 0.02
-	))
+	(lambda { 
+	x 1
+	y (null 1 2)
+	s "s333"
+	weight 0.02
+	})
  )
  (create_entities (list "TestContainerSimilarCode" "Child4")
-	(lambda (null
-	##x 1
-	##y 100
-	##s "4s1"
-	##weight 0.02
-	))
+	(lambda { 
+	x 1
+	y 100
+	s "4s1"
+	weight 0.02
+	})
  )
  (create_entities (list "TestContainerSimilarCode" "Child5")
-	(lambda (null
-	##x 1
-	##y (list (list 1 2) 2)
-	##s "5s5"
-	##weight 0.02
-	))
+	(lambda { 
+	x 1
+	y (list (list 1 2) 2)
+	s "5s5"
+	weight 0.02
+	})
  )
  (create_entities (list "TestContainerSimilarCode" "Child6")
-	(lambda (null
-	##x 1
-	##y (list "a")
-	##s "s6"
-	##weight 0.02
-	))
+	(lambda { 
+	x 1
+	y (list "a")
+	s "s6"
+	weight 0.02
+	})
  )
 
   (print "1: "
@@ -3170,7 +3169,8 @@
  )))
 
  (print "--contained_entities caching and permissions--\n")
-
+ 
+ ;TODO 24298: test and update from here down
  (print (assign_to_entities "TestContainerExec" (assoc !e 19)) "\n")
  (print (retrieve_from_entity "TestContainerExec" "!e") "\n")
  (print (retrieve_entity_root "TestContainerExec") "\n")

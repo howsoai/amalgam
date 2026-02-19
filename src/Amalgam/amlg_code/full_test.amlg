@@ -2826,18 +2826,16 @@
 	))
  )
 
- ;TODO 24298: test and update from here down
-
  (create_entities "OverflowQueryContainer" (null) )
- (create_entities (list "OverflowQueryContainer" "sess") (lambda (null ##.steps (list 1 2))))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 2)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 2)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 2)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 1.92)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 1.82)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 1.2)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 2.2)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 2.1)))
+ (create_entities (list "OverflowQueryContainer" "sess") (lambda { .steps (list 1 2) } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 2 } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 2 } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 2} ))
+ (create_entities "OverflowQueryContainer" (lambda { a 1.92 } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 1.82 } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 1.2 } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 2.2 } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 2.1 } ))
  (print
      (compute_on_contained_entities "OverflowQueryContainer"
          (append
@@ -2863,7 +2861,8 @@
  )
 
  (print "test code and string distances\n")
-
+ 
+ ;TODO 24298: test and update from here down
  (create_entities "TestContainerSimilarCode"
 	(null)
  )

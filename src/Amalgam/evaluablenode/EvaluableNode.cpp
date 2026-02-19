@@ -68,43 +68,6 @@ std::pair<size_t, size_t> EvaluableNode::GetNodeCommonAndUniqueLabelCounts(Evalu
 	return std::make_pair(num_common_labels, num_n1_labels + num_n2_labels - 2 * num_common_labels);
 }
 
-bool EvaluableNode::AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
-{
-	//check if one is null, then make sure both are null
-	bool a_is_null = EvaluableNode::IsNull(a);
-	bool b_is_null = EvaluableNode::IsNull(b);
-	if(a_is_null || b_is_null)
-	{
-		if(a_is_null == b_is_null)
-			return true;
-
-		//one is null and the other isn't
-		return false;
-	}
-
-	EvaluableNodeType a_type = a->GetType();
-	EvaluableNodeType b_type = b->GetType();
-
-	//check both types are the same
-	if(a_type != b_type)
-		return false;
-
-	//since both types are the same, only need to check one for the type of data
-	//check string equality
-	if(DoesEvaluableNodeTypeUseStringData(a_type))
-		return a->GetStringIDReference() == b->GetStringIDReference();
-
-	//check numeric equality
-	if(DoesEvaluableNodeTypeUseNumberData(a_type))
-		return a->GetNumberValueReference() == b->GetNumberValueReference();
-	
-	if(DoesEvaluableNodeTypeUseBoolData(a_type))
-		return a->GetBoolValueReference() == b->GetBoolValueReference();
-
-	//if made it here, then it's an instruction, and they're of equal type
-	return true;
-}
-
 int EvaluableNode::Compare(EvaluableNode *a, EvaluableNode *b)
 {
 	//try numerical comparison first
@@ -1797,12 +1760,8 @@ void EvaluableNode::Invalidate()
 	value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 }
 
-bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNode *b, ReferenceAssocType *checked)
+bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *a, EvaluableNode *b, ReferenceAssocType *checked)
 {
-	//if either is a null and have same number of child nodes, then equal
-	if(a == nullptr || b == nullptr)
-		return true;
-
 	if(checked != nullptr)
 	{
 		//try to record this as a new pair that is checked
@@ -1819,10 +1778,6 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNod
 			return true;
 		}
 	}
-
-	//immediate values have no child nodes, so since shallow equal, they're equal
-	if(a->IsImmediate())
-		return true;
 
 	if(a->IsAssociativeArray())
 	{
@@ -1855,8 +1810,12 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNod
 			if(!AreShallowEqual(a_child, b_child))
 				return false;
 
+			//since they are shallow equal, check for quick exit
+			if(a_child == nullptr || b_child == nullptr || IsEvaluableNodeTypeImmediate(a_child->GetType()))
+				continue;
+
 			//now check deep values
-			if(!EvaluableNode::AreDeepEqualGivenShallowEqual(a_child, b_child, checked))
+			if(!EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(a_child, b_child, checked))
 				return false;
 		}
 
@@ -1864,7 +1823,7 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNod
 		return true;
 	}
 
-	//if made it here, then both types are ordered
+	//if made it here, then both types are ordered, since immediates and nulls are not passed in
 	auto &a_ocn = a->GetOrderedChildNodesReference();
 	auto &b_ocn = b->GetOrderedChildNodesReference();
 	size_t a_size = a_ocn.size();
@@ -1889,8 +1848,12 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNod
 		if(!AreShallowEqual(a_child, b_child))
 			break;
 
+		//since they are shallow equal, check for quick exit
+		if(a_child == nullptr || b_child == nullptr || IsEvaluableNodeTypeImmediate(a_child->GetType()))
+			continue;
+
 		//now check deep values
-		if(!EvaluableNode::AreDeepEqualGivenShallowEqual(a_child, b_child, checked))
+		if(!EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(a_child, b_child, checked))
 			break;
 	}
 

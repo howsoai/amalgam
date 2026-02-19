@@ -79,7 +79,6 @@ An interpreter application and shared library (dll/so/dylib) are built for each 
 | Linux amd64                  | MT, ST, OMP, MT-NoAVX, ST-PGC, AFMI | :heavy_check_mark: | ST-PGC and AFMI are for testing only, not packaged for release |
 | Linux arm64: 8.2-a+simd+rcpc | MT, ST, OMP                         | :heavy_check_mark: | Tested with [qemu](https://www.qemu.org/) |
 | Linux arm64: 8-a+simd        | ST                                  | :heavy_check_mark: | Tested with [qemu](https://www.qemu.org/) |
-| macOS amd64                  | MT, ST, OMP, MT-NoAVX               | :heavy_check_mark: | |
 | macOS arm64: 8.4-a+simd      | MT, ST, OMP                         | :heavy_check_mark: | M1 and newer supported (amd64 NoAVX also tested w/ emulation) |
 | WASM 64-bit                  | ST                                  | :heavy_check_mark: | Built on linux using emscripten, headless test with node:18 + jest |
 
@@ -107,6 +106,9 @@ An interpreter application and shared library (dll/so/dylib) are built for each 
         * Binary postfix: '-st-pgc'
         * Interpreter does not use any threads and performs garbage collection at every operation
         * Very slow by nature, intended only be used for verification during testing or debugging
+    * AFMI
+        * Stands for Amalgam fast memory integrity, which performs memory instrumentation to catch a variety of potential bugs
+        * Incurs a small performance penalty so can be used in realistic workflows for debugging
 
 #### Build Tools
 

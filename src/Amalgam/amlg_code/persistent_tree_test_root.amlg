@@ -1,12 +1,6 @@
-(unordered_list
-  #b 2
-  (#yello print
-    "yello\n"
-  )
-  
-  #kill_inter
-    (destroy_entities "PersistTreeInter")
-	
-  #clean_backup
-    (destroy_entities "leaf_backup")
+{
+  b 2
+  yello (print "yello\n")
+  kill_inter (destroy_entities "PersistTreeInter")
+  clean_backup (destroy_entities "leaf_backup")
 )

@@ -1,6 +1,4 @@
-(unordered_list
- #a 7
- (#hello print
-  "sub hello\n"
- )
-)
+{
+ a 7
+ hello (print "sub hello\n")
+}

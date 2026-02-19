@@ -2481,78 +2481,76 @@
 
  (print "--contained_entities--\n")
 
-  ;TODO 24298: test and update from here down
-
  (create_entities "TestContainerExec"
-	(lambda (unordered_list
-    ##^a 3
-	##b (contained_entities)
-	##c (+ x 1)
-	##d (call_entity "Child5" "q" (assoc x x))
-	##!e 12
-	##x 4
-	##y 5
-	))
+	(lambda {
+    ^a 3
+	b (contained_entities)
+	c (+ x 1)
+	d (call_entity "Child5" "q" (assoc x x))
+	!e 12
+	x 4
+	y 5
+	})
  )
  (create_entities (list "TestContainerExec" "Child1")
-	(lambda (unordered_list
-	##x 3
-	##y 4
-	##!e 7
-	##weight 0.45
-	##weight_eq 1
-	))
+	(lambda {
+	x 3
+	y 4
+	!e 7
+	weight 0.45
+	weight_eq 1
+	})
  )
  (create_entities (list "TestContainerExec" "Child2")
-	(lambda (unordered_list
-	##x -1
-	##y -1
-	##weight 0.45
-	##weight_eq 1
-	))
+	(lambda {
+	x -1
+	y -1
+	weight 0.45
+	weight_eq 1
+	})
  )
  (create_entities (list "TestContainerExec" "Child3")
-	(lambda (unordered_list
-	##x 100
-	##y 100
-	##weight 0.02
-	##weight_eq 1
-	))
+	(lambda {
+	x 100
+	y 100
+	weight 0.02
+	weight_eq 1
+	})
  )
  (create_entities (list "TestContainerExec" "Child4")
-	(lambda (unordered_list
-	##x 100
-	##y 100
-	##radius 400
-	##weight 0.02
-	##weight_eq 1
-	))
+	(lambda {
+	x 100
+	y 100
+	radius 400
+	weight 0.02
+	weight_eq 1
+	})
  )
  (create_entities (list "TestContainerExec" "Child5")
-	(lambda (unordered_list
-	##p 3
-	##q (+ x (call_container "^a"))
-	##bar "crunchy"
-	##weight 0.02
-	##weight_eq 1
-	))
+	(lambda {
+	p 3
+	q (+ x (call_container "^a"))
+	bar "crunchy"
+	weight 0.02
+	weight_eq 1
+	})
 	)
  (create_entities (list "TestContainerExec" "Child6")
-	(lambda (unordered_list
-	##x 1
-	##y 2
-	##bar "not crunchy"
-	##weight 0.02
-	##weight_eq 1
-	))
+	(lambda {
+	x 1
+	y 2
+	bar "not crunchy"
+	weight 0.02
+	weight_eq 1
+	})
  )
  (create_entities (list "TestContainerExec" "Child7")
-	(lambda (unordered_list
-	##x 0
-	##y 10
-	##weight 0.02
-	##weight_eq 1
-	))
+	(lambda {
+	x 0
+	y 10
+	weight 0.02
+	weight_eq 1
+	})
  )
 
  (print (contained_entities "TestContainerExec"))
@@ -2827,6 +2825,8 @@
 		(query_nearest_generalized_distance 5 (list "y" ) (list 0) 1 (null) (null) (null) (null) (null) 1 (null) (null) (null) (null) (list "y" "x"))
 	))
  )
+
+ ;TODO 24298: test and update from here down
 
  (create_entities "OverflowQueryContainer" (null) )
  (create_entities (list "OverflowQueryContainer" "sess") (lambda (null ##.steps (list 1 2))))

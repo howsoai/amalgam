@@ -2366,30 +2366,24 @@
 
  (print "--store--\n")
  (store "amlg_code/test_output/store_test.amlg" (list 1 2 3 4))
-
- ;TODO 24298: test and update from here down
- ;TODO 24298: make sure direct load doesn't encapsulate as an entity 
  (print (load "amlg_code/test_output/store_test.amlg"))
 
- ;test escaped labels
+ ;test annotations
  (declare (assoc
 	entity
 		(first (create_entities
-			(set_type
-				(list (set_annotations 1 (list ".#blah")))
-				(lambda (unordered_list))
-			)
+				(set_annotations {a 1} "blah")
 		))
  ))
 
  (print (retrieve_entity_root entity 1))
- (print "retrieved: " (retrieve_from_entity entity ".#blah") "\n\n")
+ (print "retrieved: " (retrieve_from_entity entity "a") "\n\n")
 
  (store_entity "amlg_code/test_output/escaped_label.amlg" entity)
  (load_entity "amlg_code/test_output/escaped_label.amlg" "escaped_label")
 
  (print "loaded from file:\n" (retrieve_entity_root "escaped_label" 1))
- (print "retrieved: " (retrieve_from_entity "escaped_label" ".#blah") "\n")
+ (print "retrieved: " (retrieve_from_entity "escaped_label" "a") "\n")
 
  (print "Complex persistent store with amlg file")
 
@@ -2486,6 +2480,8 @@
  (print (contains_entity (list "MyNewLibrary" "foo")) "\n")
 
  (print "--contained_entities--\n")
+
+  ;TODO 24298: test and update from here down
 
  (create_entities "TestContainerExec"
 	(lambda (unordered_list

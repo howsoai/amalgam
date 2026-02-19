@@ -2281,9 +2281,7 @@
 
  (print "--create_entities--\n")
 
- ;TODO 24298: test and update from here down
- ;TODO 24298: this creates too deep
- (print (create_entities "MyLibrary" (lambda { a (+ 3 4) } ) "\n")
+ (print (create_entities "MyLibrary" (lambda { a (+ 3 4) } )) "\n")
 
  (print "--nested create_entities--\n")
  (create_entities "EntityWithChildren" { "a" 3 "b" 4} )
@@ -2308,6 +2306,7 @@
  (destroy_entities "MultipleTest1" "MultipleTest2")
  (print (contained_entities))
 
+ ;TODO 24298: test and update from here down
  (print "--load--\n")
  (print (load "amlg_code/module_test.amlg"))
 

@@ -24,6 +24,7 @@ Entity::Entity()
 	hasContainedEntities = false;
 	entityRelationships.container = nullptr;
 	rootNode = evaluableNodeManager.AllocNode(ENT_ASSOC);
+	evaluableNodeManager.KeepNodeReferences(rootNode);
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 }
@@ -244,9 +245,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	if(!EvaluableNode::IsAssociativeArray(new_label_values))
 		return std::make_pair(false, false);
 
-	//use this node to store the updated values for writing to the caches
-	evaluableNodeManager.EnsureNodeIsModifiable(new_label_values, false, false);
-
 	//if relevant, keep track of new memory allocated to the entity
 	size_t prev_size = 0;
 	if(num_new_nodes_allocated != nullptr)
@@ -257,7 +255,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	bool need_node_flags_updated = false;
 	auto &new_label_values_mcn = new_label_values->GetMappedChildNodesReference();
 
-	for(auto &[label_sid, variable_location] : new_label_values_mcn)
+	for(auto &[label_sid, new_value_node] : new_label_values_mcn)
 	{
 		if(!on_self && IsLabelPrivate(label_sid))
 		{
@@ -269,7 +267,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		auto &label_index = GetLabelIndex();
 		const auto &label_iterator = label_index.find(label_sid);
 
-		EvaluableNodeReference variable_value_node(variable_location, false);
+		EvaluableNodeReference new_value_reference(new_value_node, false);
 
 		if(accum_values)
 		{
@@ -281,36 +279,37 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			}
 
 			//need to make a copy in case it is modified, so pass in evaluableNodeManager
-			EvaluableNodeReference value_destination_node(variable_location, false);
-			variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, &evaluableNodeManager);
+			EvaluableNodeReference value_destination_node(label_iterator->second, false);
+			EvaluableNodeReference accumulated_value = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node,
+				new_value_reference, &evaluableNodeManager);
 
 			//overwrite the root's flags and value at the location
-			rootNode->UpdateFlagsBasedOnNewChildNode(variable_value_node);
+			rootNode->UpdateFlagsBasedOnNewChildNode(accumulated_value);
 
 		#ifdef MULTITHREAD_SUPPORT
 			//fence memory to ensure flags are up to date by flushing by using an atomic store
 			//TODO 15993: once C++20 is widely supported, change type to atomic_ref
 			std::atomic<EvaluableNode *> *atomic_ref
 				= reinterpret_cast<std::atomic<EvaluableNode *> *>(&variable_location);
-			atomic_ref->store(variable_value_node, std::memory_order_release);
+			atomic_ref->store(label_iterator->second, std::memory_order_release);
 		#else
-			variable_location = variable_value_node;
+			label_iterator->second = accumulated_value;
 		#endif
 		}
 		else
 		{
 			//make copy if needed
 			if(!on_self)
-				variable_value_node = evaluableNodeManager.DeepAllocCopy(variable_location);
+				new_value_reference = evaluableNodeManager.DeepAllocCopy(new_value_reference);
 
 			//if label doesn't exist, create new root to contain it
 			if(label_iterator == end(label_index))
 			{
 				EvaluableNode *new_root = evaluableNodeManager.AllocNode(rootNode);
 				//ensure flags are updated before new_root is exposed
-				new_root->UpdateFlagsBasedOnNewChildNode(variable_value_node);
+				new_root->UpdateFlagsBasedOnNewChildNode(new_value_reference);
 				auto &new_root_mcn = new_root->GetMappedChildNodesReference();
-				new_root_mcn.emplace(label_sid, variable_value_node);
+				new_root_mcn.emplace(label_sid, new_value_reference);
 				string_intern_pool.CreateStringReference(label_sid);
 
 				//can only free the root if nothing is running on this entity
@@ -322,16 +321,16 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			else
 			{
 				//overwrite the root's flags before value at the location
-				rootNode->UpdateFlagsBasedOnNewChildNode(variable_value_node);
+				rootNode->UpdateFlagsBasedOnNewChildNode(new_value_reference);
 
 			#ifdef MULTITHREAD_SUPPORT
 				//fence memory to ensure flags are up to date by flushing by using an atomic store
 				//TODO 15993: once C++20 is widely supported, change type to atomic_ref
 				std::atomic<EvaluableNode *> *atomic_ref
 					= reinterpret_cast<std::atomic<EvaluableNode *> *>(&variable_location);
-				atomic_ref->store(variable_value_node, std::memory_order_release);
+				atomic_ref->store(label_iterator->second, std::memory_order_release);
 			#else
-				variable_location = variable_value_node;
+				label_iterator->second = new_value_reference;
 			#endif
 			}
 		}

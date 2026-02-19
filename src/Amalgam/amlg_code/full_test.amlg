@@ -2306,7 +2306,6 @@
  (destroy_entities "MultipleTest1" "MultipleTest2")
  (print (contained_entities))
 
- ;TODO 24298: test and update from here down
  (print "--load--\n")
  (print (load "amlg_code/module_test.amlg"))
 
@@ -2367,6 +2366,9 @@
 
  (print "--store--\n")
  (store "amlg_code/test_output/store_test.amlg" (list 1 2 3 4))
+
+ ;TODO 24298: test and update from here down
+ ;TODO 24298: make sure direct load doesn't encapsulate as an entity 
  (print (load "amlg_code/test_output/store_test.amlg"))
 
  ;test escaped labels
@@ -2393,7 +2395,7 @@
 
  (create_entities "persist_transactions" (list 1 2 3 4))
  (create_entities (list "persist_transactions" "child") (list 5 6 7))
- (create_entities (list "persist_transactions" "child" "doublechild1") (lambda (list ##eight 8 ##nine 9)))
+ (create_entities (list "persist_transactions" "child" "doublechild1") { eight 8 nine 9} )
  (create_entities (list "persist_transactions" "child" "doublechild3") (list 12 13))
  (store_entity "amlg_code/test_output/persist_transactions.amlg" "persist_transactions" (null) .true {flatten .true transactional .true})
  (create_entities (list "persist_transactions" "child" "doublechild2") (list 10 11))
@@ -2408,7 +2410,7 @@
 
  (create_entities "persist_transactions" (list 1 2 3 4))
  (create_entities (list "persist_transactions" "child") (list 5 6 7))
- (create_entities (list "persist_transactions" "child" "doublechild1") (lambda (list ##eight 8 ##nine 9)))
+ (create_entities (list "persist_transactions" "child" "doublechild1") { eight 8 nine 9} )
  (create_entities (list "persist_transactions" "child" "doublechild3") (list 12 13))
  (store_entity "amlg_code/test_output/persist_transactions.caml" "persist_transactions" (null) .true {flatten .true transactional .true})
  (create_entities (list "persist_transactions" "child" "doublechild2") (list 10 11))
@@ -2428,7 +2430,7 @@
 
  ;test escaping contained entity filenames
  (create_entities "quackerz?" "test")
- (create_entities (list "quackerz?" "!@#$%^&*)(_+=-\'][{}.marbles") (lambda ##blah1 12))
+ (create_entities (list "quackerz?" "!@#$%^&*)(_+=-\'][{}.marbles") {blah1 12} )
  (create_entities (list "quackerz?" "buklulu is good.amlg") "hello world!")
 
  (print "contained entities in quackers before file: " (contained_entities "quackerz?") "\n")

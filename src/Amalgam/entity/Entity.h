@@ -1094,6 +1094,8 @@ protected:
 	//sets the root node ensuring that the memory has been flushed so it is ready for reading
 	__forceinline void SetRootNode(EvaluableNode *new_root)
 	{
+		evaluableNodeManager.ExchangeNodeReference(new_root, rootNode);
+
 	#ifdef MULTITHREAD_SUPPORT
 		//fence memory flushing by using an atomic store
 		//TODO 15993: once C++20 is widely supported, change type to atomic_ref

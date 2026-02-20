@@ -3170,13 +3170,12 @@
 
  (print "--contained_entities caching and permissions--\n")
  
- ;TODO 24298: test and update from here down
  (print (assign_to_entities "TestContainerExec" (assoc !e 19)) "\n")
  (print (retrieve_from_entity "TestContainerExec" "!e") "\n")
  (print (retrieve_entity_root "TestContainerExec") "\n")
 
  (create_entities "QueryCacheTest1" (lambda
-   (unordered_list ##a 3 )
+   { a 3 }
  ) )
 
  (print (size (contained_entities (list
@@ -3198,7 +3197,7 @@
  ))) "\n")
 
  (create_entities "QueryCacheTest2" (lambda
-   (unordered_list ##a 3 )
+   { a 3 }
  ) )
 
  (print (size (contained_entities (list
@@ -3208,52 +3207,52 @@
  (create_entities "eq_distance_test" (null))
 
   (create_entities (list "eq_distance_test")
-	(lambda (unordered_list
-	##x 0
-	##y 0
-	))
+	{
+		x 0
+		y 0
+	}
   )
 
   (create_entities  (list "eq_distance_test" "to_delete1")
-	(lambda (unordered_list
-	##x 1
-	##y 0
-	))
+	{
+		x 1
+		y 0
+	}
   )
 
   (create_entities (list "eq_distance_test")
-	(lambda (unordered_list
-	##x 2
-	##y 0
-	))
+	{
+		x 2
+		y 0
+	}
   )
 
   (create_entities (list "eq_distance_test")
-	(lambda (unordered_list
-	##x 3
-	##y 0
-	))
+	{
+		x 3
+		y 0
+	}
   )
 
   (create_entities (list "eq_distance_test")
-	(lambda (unordered_list
-	##x 0
-	##y 1
-	))
+	{
+		x 0
+		y 1
+	}
   )
 
   (create_entities (list "eq_distance_test")
-	(lambda (unordered_list
-	##x 0
-	##y 2
-	))
+	{
+		x 0
+		y 2
+	}
   )
 
   (create_entities (list "eq_distance_test")
-	(lambda (unordered_list
-	##x 1
-	##y 1
-	))
+	{
+		x 1
+		y 1
+	}
   )
 
  (print
@@ -3267,10 +3266,10 @@
  )
 
   (create_entities (list "eq_distance_test" "to_delete2")
-	(lambda (unordered_list
-	##x 0
-	##y 0.5
-	))
+	{
+		x 0
+		y 0.5
+	}
   )
 
   (print
@@ -3294,7 +3293,7 @@
      ) )
     )
  )
-
+ ;TODO 24298: test and update from here down
  (print "--compute_on_contained_entities--\n")
 
   (print (compute_on_contained_entities "TestContainerExec" (list

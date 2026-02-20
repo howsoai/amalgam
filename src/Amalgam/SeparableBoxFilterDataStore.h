@@ -138,6 +138,10 @@ public:
 			if(IsColumnIndexRemovable(column_index - 1))
 				RemoveColumnIndex(column_index - 1);
 		}
+
+		//if removed all columns, then no entities left
+		if(columnData.size() == 0)
+			numEntities = 0;
 	}
 
 	//removes the label specified by label_sid

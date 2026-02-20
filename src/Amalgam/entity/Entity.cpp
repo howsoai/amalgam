@@ -312,8 +312,8 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 				new_root_mcn.emplace(label_sid, new_value_reference);
 				string_intern_pool.CreateStringReference(label_sid);
 
-				//can only free the root if nothing is running on this entity
-				if(!evaluableNodeManager.AreAnyInterpretersRunning())
+				//can only free the root if nothing is running on this entity and nothing references it
+				if(!evaluableNodeManager.AreAnyInterpretersRunning() && !rootNode->GetNeedCycleCheck())
 					evaluableNodeManager.FreeNode(rootNode);
 
 				SetRootNode(new_root);
@@ -877,25 +877,18 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::
 	EvaluableNode *cur_root = GetRoot();
 	bool entity_previously_empty = (cur_root == nullptr || cur_root->GetNumChildNodes() == 0);
 
-	if(_code == nullptr || allocated_with_entity_enm)
-	{
-		SetRootNode(_code);
-	}
-	else
-	{
-		auto code_copy = evaluableNodeManager.DeepAllocCopy(_code);
-		SetRootNode(code_copy);
-	}
+	if(_code != nullptr && !allocated_with_entity_enm)
+		_code = evaluableNodeManager.DeepAllocCopy(_code);
 
 	//ensure the top node is an assoc
-	if(!EvaluableNode::IsAssociativeArray(rootNode))
+	if(!EvaluableNode::IsAssociativeArray(_code))
 	{
 		EvaluableNode *new_root = evaluableNodeManager.AllocNode(ENT_ASSOC);
-		new_root->SetMappedChildNode(string_intern_pool.NOT_A_STRING_ID, rootNode);
-		SetRootNode(new_root);
+		new_root->SetMappedChildNode(string_intern_pool.NOT_A_STRING_ID, _code);
+		_code = new_root;
 	}
 
-	evaluableNodeManager.ExchangeNodeReference(rootNode, cur_root);
+	SetRootNode(_code);
 
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();

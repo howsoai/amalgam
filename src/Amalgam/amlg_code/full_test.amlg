@@ -3293,7 +3293,7 @@
      ) )
     )
  )
- ;TODO 24298: test and update from here down
+
  (print "--compute_on_contained_entities--\n")
 
   (print (compute_on_contained_entities "TestContainerExec" (list
@@ -3327,53 +3327,52 @@
 (print (compute_on_contained_entities (list
   (query_distance_contributions 2 (list "x" "y") [[1 2]] 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234")
  )))
- 
+
  (print "--query_entity_cumulative_nearest_entity_weights--\n")
 
- (create_entities "entity1" (lambda
- 	(unordered_list ##alpha 3 ##b 0.17 ##c 1)
- ) )
+ (create_entities "entity1"
+ 	{ alpha 3 b 0.17 c 1 }
+ )
 
- (create_entities "entity2" (lambda
- 	(unordered_list ##alpha 4 ##b 0.12 ##c 0)
- ) )
+ (create_entities "entity2"
+ 	{ alpha 4 b 0.12 c 0 }
+ )
 
- (create_entities "entity3" (lambda
- 	(unordered_list ##alpha 5 ##b 0.1 ##c 0 ##x 16)
- ) )
+ (create_entities "entity3"
+ 	{ alpha 5 b 0.1 c 0 x 16 }
+ )
 
- (create_entities "entity4" (lambda
-  (unordered_list ##alpha 1 ##b 0.14 ##c 1 ##x 8)
- ) )
+ (create_entities "entity4"
+  { alpha 1 b 0.14 c 1 x 8 }
+ )
 
- (create_entities "entity5" (lambda
-  (unordered_list ##alpha 9 ##b 0.11 ##c 1 ##x 32)
- ) )
+ (create_entities "entity5"
+  { alpha 9 b 0.11 c 1 x 32 }
+ )
 
- (create_entities "vert0" (lambda
-  (unordered_list ##x 0 ##y 0 ##object 1)
- ) )
+ (create_entities "vert0"
+  { x 0 y 0 object 1 }
+ )
 
- (create_entities "vert1" (lambda
-  (unordered_list ##x 1 ##y 0 ##object 1)
- ) )
+ (create_entities "vert1"
+  { x 1 y 0 object 1 }
+ )
 
- (create_entities "vert3" (lambda
-  (unordered_list ##x 0 ##y 1 ##object 1)
- ) )
+ (create_entities "vert3"
+  { x 0 y 1 object 1 }
+ )
 
- (create_entities "vert2" (lambda
-  (unordered_list ##x 1 ##y 1 ##object 1 ##vert_to_remove 1)
- ) )
+ (create_entities "vert2"
+  { x 1 y 1 object 1 vert_to_remove 1 }
+ )
 
+ (create_entities "vert4"
+  { x 0.5 y 0.5 object 2 }
+ )
 
- (create_entities "vert4" (lambda
-  (unordered_list ##x 0.5 ##y 0.5 ##object 2)
- ) )
-
- (create_entities "vert5" (lambda
-  (unordered_list ##x 2 ##y 1 ##object 2)
- ) )
+ (create_entities "vert5"
+  { x 2 y 1 object 2 }
+ )
 
  (print "neighbor entity weights:\n" (compute_on_contained_entities (list
 	(query_entity_cumulative_nearest_entity_weights 2 (list "alpha" "b" "c") (null) 0.5 (null) (list 0 0 1) )
@@ -3490,6 +3489,7 @@
   (query_entity_convictions 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234")
  )))
 
+ ;TODO 24298: test and update from here down
  (print "cyclic feature nearest neighbors: " )
 
  (create_entities "cyclic1" (lambda

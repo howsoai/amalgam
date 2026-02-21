@@ -3569,40 +3569,25 @@
 
  (print "--assign_to_entities--\n")
 
- ;TODO 24298: test and update from here down
- ;TODO 24298: need to update tests to assign/accum to entities
- (print (unparse (retrieve_from_entity "MyNewLibrary" "three") .true .true))
- (print (unparse (assign_to_entities "MyNewLibrary" (associate "three" 5)) .true .true))
- (print (unparse (retrieve_from_entity "MyNewLibrary" "three") .true .true))
-
- (print (unparse { asgn_test 12 } ) "\n")
- (print (unparse (assign_to_entities (assoc "asgn_test" 4)) .true .true))
- (print (unparse (retrieve_from_entity "asgn_test") .true .true))
-
- (create_entities "MultipleSetTest" { a 1 b 2 c 3 } )
- (assign_to_entities "MultipleSetTest" (assoc a 2 b 3 c 4) "MyNewLibrary" (assoc "three" 12))
- (print (retrieve_entity_root "MultipleSetTest"))
- (print (retrieve_entity_root "MyNewLibrary"))
+ (create_entities "AssignToEntitiesTest" { a 1 b 2 c 3 } )
+ (assign_to_entities "AssignToEntitiesTest" (assoc a 2 b 3 c 4) "AssignToEntitiesTest" (assoc "three" 12))
+ (print (retrieve_entity_root "AssignToEntitiesTest"))
+ (destroy_entities "AssignToEntitiesTest")
 
  (print "--accum_to_entities--\n")
 
-  #i2e 4
- (accum_to_entities (assoc i2e 3))
- (print i2e "\n")
-
- #i2e2 (list 1 2 3)
- (accum_to_entities (assoc i2e2 4))
- (print i2e2 "\n")
+ (create_entities "AccumToEntitiesTest" { a 1 b 2 c 3 } )
+ (accum_to_entities "AccumToEntitiesTest" (assoc a 2 b 3 c 4) "AssignToEntitiesTest" (assoc "three" 12))
+ (print (retrieve_entity_root "AccumToEntitiesTest"))
+ (destroy_entities "AccumToEntitiesTest")
 
  (print "--retrieve_from_entity--\n")
- (assign_to_entities (assoc label3 " and "))
- (print (unparse (retrieve_from_entity "label3") .true .true))
- (print (unparse (retrieve_from_entity "MyNewLibrary" "three") .true .true))
 
- (create_entities "RCT" { a 12 b 13 } )
- (print (unparse (retrieve_from_entity "RCT" "a") .true .true))
- (print (unparse (retrieve_from_entity "RCT" (list "a" "b") ) .true .true))
- (print (unparse (retrieve_from_entity "RCT" (zip (list "a" "b") null) ) .true .true))
+ (create_entities "RetrieveFromEntityTest" { a 12 b 13 } )
+ (print (retrieve_from_entity "RetrieveFromEntityTest" "a") "\n" )
+ (print (retrieve_from_entity "RetrieveFromEntityTest" (list "a" "b") ) )
+ (print (retrieve_from_entity "RetrieveFromEntityTest" (zip (list "a" "b") null) ) )
+ (destroy_entities "RetrieveFromEntityTest")
 
  (print "--call_entity--\n")
  (print (contained_entities "TestContainerExec"))
@@ -3630,6 +3615,8 @@
  (call_entity "ExecLimitsTest" "load" (null) 100)
  (call_entity "ExecLimitsTest" "copy_entity" (null) 1000 1000 100 10 3 20)
  (print (total_size (flatten_entity "ExecLimitsTest")) "\n")
+
+ ;TODO 24298: test and update from here down
 
  (print "--call_entity_get_changes--\n")
  (create_entities "CEGCTest"

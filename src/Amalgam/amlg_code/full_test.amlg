@@ -3817,8 +3817,6 @@
  	))
  )
 
- ;TODO 24298: test and update from here down
-
  (print "--combo tests--\n")
  
  (print (call (set_type
@@ -4628,7 +4626,9 @@
 
 		(print "Expecting 1000: " (size x) "\n")
  )
- 
+
+ ;TODO 24298: test and update from here down
+
  (print "--concurrent entity writes--\n")
  #concurrent_ent_writes (list)
  ||(map (lambda

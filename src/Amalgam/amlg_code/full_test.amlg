@@ -4630,14 +4630,25 @@
  ;TODO 24298: test and update from here down
 
  (print "--concurrent entity writes--\n")
- #concurrent_ent_writes (list)
+
+ (create_entities "ConcurrentWritesTest"
+	(lambda {
+		concurrent_writes []
+	} )
+  )
+  (set_entity_permissions "ConcurrentWritesTest" .true )
+
  ||(map (lambda
-		(accum_to_entities (assoc concurrent_ent_writes (list (current_value 2))))
+		(accum_to_entities "ConcurrentWritesTest" (assoc concurrent_writes (list (current_value 2))))
 	)
 	(range 1 1000)
  )
+
+ (print (retrieve_from_entity "ConcurrentWritesTest" "concurrent_writes"))
  ;make sure the lists match up and none were lost
  (print "concurrent entity writes successful: " (= (range 1 1000) (sort concurrent_ent_writes)) "\n")
+
+ (destroy_entities "ConcurrentWritesTest")
 
  (print "--clean-up test files--\n")
  ;use variables from the start

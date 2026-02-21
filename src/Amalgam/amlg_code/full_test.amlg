@@ -3616,18 +3616,15 @@
  (call_entity "ExecLimitsTest" "copy_entity" (null) 1000 1000 100 10 3 20)
  (print (total_size (flatten_entity "ExecLimitsTest")) "\n")
 
- ;TODO 24298: test and update from here down
-
  (print "--call_entity_get_changes--\n")
  (create_entities "CEGCTest"
 	(lambda {
 		a_assign
 		(seq
-			(create_entities "Contained" { a 4 b 6 }
- 								) )
-			(print (unparse (retrieve_from_entity "Contained" "a") .true .true))
+			(create_entities "Contained" { a 4 b 6 } )
+			(print (retrieve_from_entity "Contained" "a") "\n" )
 			(assign_to_entities "Contained" (assoc a 6 b 10) )
-			(print (unparse (retrieve_from_entity "Contained" "a") .true .true))
+			(print (retrieve_from_entity "Contained" "a") "\n" )
 			(set_entity_rand_seed "Contained" "bbbb")
 			(accum_to_entities "Contained" (assoc b 12) )
 			(destroy_entities "Contained")
@@ -3698,8 +3695,10 @@
  				(get (target) [0 "a"])
  		)
  	"\n")
- 
-  (print "entity cyclic test:\n")
+
+ ;TODO 24298: test and update from here down
+
+ (print "entity cyclic test:\n")
  (create_entities "test"
  		(set_annotations
  			(list

@@ -3696,25 +3696,22 @@
  		)
  	"\n")
 
- ;TODO 24298: test and update from here down
-
  (print "entity cyclic test:\n")
- (create_entities "test"
- 		(set_annotations
- 			(list
- 					{"a" 3}
- 					(get (target) [0 "a"])
- 			)
- 			["label_target"]
- 		)
+
+  (create_entities "test"
+ 		{
+			a { a 3}
+			b @(get (target 2) "a")
+ 		}
  )
- 
+
+ (print (retrieve_entity_root "test"))
  (print (flatten_entity "test"))
  
  (print
  	(get
- 		(retrieve_from_entity "test" "label_target")
- 		(list 0 "a")
+ 		(retrieve_from_entity "test" "b")
+ 		(list "a")
  	)
  "\n")
  
@@ -3819,6 +3816,8 @@
  		(query_nearest_generalized_distance 3 (list "label1") 1 (list 0.0))
  	))
  )
+
+ ;TODO 24298: test and update from here down
 
  (print "--combo tests--\n")
  

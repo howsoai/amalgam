@@ -268,6 +268,9 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		const auto &label_iterator = label_index.find(label_sid);
 
 		EvaluableNodeReference new_value_reference(new_value_node, false);
+		//make copy if needed
+		if(!on_self)
+			new_value_reference = evaluableNodeManager.DeepAllocCopy(new_value_reference);
 
 		if(accum_values)
 		{
@@ -290,18 +293,14 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			//fence memory to ensure flags are up to date by flushing by using an atomic store
 			//TODO 15993: once C++20 is widely supported, change type to atomic_ref
 			std::atomic<EvaluableNode *> *atomic_ref
-				= reinterpret_cast<std::atomic<EvaluableNode *> *>(&variable_location);
-			atomic_ref->store(label_iterator->second, std::memory_order_release);
+				= reinterpret_cast<std::atomic<EvaluableNode *> *>(&label_iterator->second);
+			atomic_ref->store(accumulated_value, std::memory_order_release);
 		#else
 			label_iterator->second = accumulated_value;
 		#endif
 		}
 		else
 		{
-			//make copy if needed
-			if(!on_self)
-				new_value_reference = evaluableNodeManager.DeepAllocCopy(new_value_reference);
-
 			//if label doesn't exist, create new root to contain it
 			if(label_iterator == end(label_index))
 			{
@@ -327,8 +326,8 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 				//fence memory to ensure flags are up to date by flushing by using an atomic store
 				//TODO 15993: once C++20 is widely supported, change type to atomic_ref
 				std::atomic<EvaluableNode *> *atomic_ref
-					= reinterpret_cast<std::atomic<EvaluableNode *> *>(&variable_location);
-				atomic_ref->store(label_iterator->second, std::memory_order_release);
+					= reinterpret_cast<std::atomic<EvaluableNode *> *>(&label_iterator->second);
+				atomic_ref->store(new_value_reference, std::memory_order_release);
 			#else
 				label_iterator->second = new_value_reference;
 			#endif

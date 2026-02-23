@@ -274,7 +274,7 @@ public:
 		else //not assoc, make a new one
 		{
 			evaluableNodeManager->FreeNodeTreeIfPossible(new_context);
-			new_context.SetReference(evaluableNodeManager->AllocNode(ENT_ASSOC));
+			new_context = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 		}
 
 		//just in case a variable is added which needs cycle checks

@@ -608,7 +608,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 	//need to return a more complex data structure, can't return immediate
 	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->collectWarnings)
-		immediate_result = false;
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
 
 	//if have a scope stack context of variables specified, then use it
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -662,10 +662,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	if(interpreterConstraints != nullptr)
 		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
 
-	if(interpreter_constraints.constraintsExceeded && interpreter_constraints.collectWarnings)
+	//if only want results, return them
+	if(!interpreter_constraints.collectWarnings)
+	{
+		if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
+			return EvaluableNodeReference::Null();
+		return result;
+	}
+
+	if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
 		return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
 
-	return BundleResultWithWarningsIfNeeded(result, interpreter_constraints_ptr);
+	return BundleResultWithWarningsIfNeeded(result,
+		interpreter_constraints_ptr != nullptr ? interpreter_constraints_ptr : &interpreter_constraints);
 }
 
 static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints::ViolationType violation, EvaluableNodeManager *evaluable_node_manager)
@@ -1943,7 +1952,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 		number_to_generate = static_cast<size_t>(num_value);
 		generate_list = true;
 		//because generating a list, can no longer return an immediate
-		immediate_result = false;
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
 	}
 	//make sure not eating up too much memory
 	if(ConstrainedAllocatedNodes())

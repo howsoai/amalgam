@@ -150,7 +150,7 @@ public:
 	//If 0, then unlimited
 	size_t maxEntityIdLength;
 
-	//If true, collectWarnings
+	//if true, collect warnings, and return them with any constraint violations
 	bool collectWarnings;
 
 	ViolationType constraintViolation;

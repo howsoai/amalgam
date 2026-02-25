@@ -630,6 +630,8 @@ Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entit
 	if(entity == nullptr)
 		return nullptr;
 
+	//TODO 24298: need to reduce mutation types for the top node to keep it an assoc
+
 	//make a new entity with mutated code
 	Entity *new_entity = new Entity();
 	EvaluableNode *mutated_code = EvaluableNodeTreeManipulation::MutateTree(interpreter, &new_entity->evaluableNodeManager, entity->GetRoot(), mutation_rate, mutation_weights, operation_type);

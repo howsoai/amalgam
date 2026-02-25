@@ -252,7 +252,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 	bool any_successful_assignment = false;
 	bool all_successful_assignments = true;
-	bool need_node_flags_updated = false;
 	auto &new_label_values_mcn = new_label_values->GetMappedChildNodesReference();
 
 	for(auto &[label_sid, new_value_node] : new_label_values_mcn)

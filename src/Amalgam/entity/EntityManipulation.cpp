@@ -625,23 +625,26 @@ void EntityManipulation::MergeContainedEntities(EntitiesMergeMethod *mm, Entity 
 }
 
 Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
-	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *operation_type)
+	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
+	CompactHashMap<EvaluableNodeType, double> *operation_type,
+	size_t preserve_type_depth)
 {
 	if(entity == nullptr)
 		return nullptr;
 
-	//TODO 24298: need to reduce mutation types for the top node to keep it an assoc, make available to mix opcode too
-
 	//make a new entity with mutated code
 	Entity *new_entity = new Entity();
-	EvaluableNode *mutated_code = EvaluableNodeTreeManipulation::MutateTree(interpreter, &new_entity->evaluableNodeManager, entity->GetRoot(), mutation_rate, mutation_weights, operation_type);
+	EvaluableNode *mutated_code = EvaluableNodeTreeManipulation::MutateTree(interpreter,
+		&new_entity->evaluableNodeManager, entity->GetRoot(),
+		mutation_rate, mutation_weights, operation_type, preserve_type_depth);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(mutated_code);
 	new_entity->SetRoot(mutated_code, true);
 	new_entity->SetRandomStream(entity->GetRandomStream());
 
 	//make mutated copies of all contained entities
 	for(auto e : entity->GetContainedEntities())
-		new_entity->AddContainedEntity(MutateEntity(interpreter, e, mutation_rate, mutation_weights, operation_type), entity->GetIdStringId());
+		new_entity->AddContainedEntity(MutateEntity(interpreter,
+			e, mutation_rate, mutation_weights, operation_type, preserve_type_depth), entity->GetIdStringId());
 
 	return new_entity;
 }

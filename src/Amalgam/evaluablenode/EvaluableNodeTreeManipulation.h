@@ -72,27 +72,20 @@ public:
 		typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeBuiltInStringId,
 			CompactHashMap<EvaluableNodeBuiltInStringId, double>> WeightedRandMutationType;
 
-		Interpreter *interpreter;
-		EvaluableNodeManager *enm;
-		double mutation_rate;
-		std::vector<std::string> *strings;
-		EvaluableNode::ReferenceAssocType references;
-		WeightedRandEvaluableNodeType *randEvaluableNodeType;
-		WeightedRandMutationType *randMutationType;
-
 		MutationParameters(Interpreter *interpreter,
 			EvaluableNodeManager *enm,
 			double mutation_rate,
 			std::vector<std::string> *strings,
 			WeightedRandEvaluableNodeType *rand_operation,
-			WeightedRandMutationType *rand_operation_type) :
-			interpreter(nullptr),
-			enm(nullptr),
-			mutation_rate(0),
-			strings(nullptr),
-			references(EvaluableNode::ReferenceAssocType()),
-			randEvaluableNodeType(&evaluableNodeTypeRandomStream),
-			randMutationType(&mutationOperationTypeRandomStream)
+			WeightedRandMutationType *rand_operation_type,
+			size_t preserve_type_depth) :
+				interpreter(nullptr),
+				enm(nullptr),
+				mutation_rate(0),
+				strings(nullptr),
+				references(EvaluableNode::ReferenceAssocType()),
+				randEvaluableNodeType(&evaluableNodeTypeRandomStream),
+				randMutationType(&mutationOperationTypeRandomStream)
 		{
 			this->interpreter = interpreter;
 			this->enm = enm;
@@ -100,7 +93,17 @@ public:
 			this->strings = strings;
 			this->randEvaluableNodeType = rand_operation;
 			this->randMutationType = rand_operation_type;
+			this->preserveTypeDepth = preserve_type_depth;
 		}
+
+		Interpreter *interpreter;
+		EvaluableNodeManager *enm;
+		double mutation_rate;
+		std::vector<std::string> *strings;
+		EvaluableNode::ReferenceAssocType references;
+		WeightedRandEvaluableNodeType *randEvaluableNodeType;
+		WeightedRandMutationType *randMutationType;
+		size_t preserveTypeDepth;
 	};
 
 	static CompactHashMap<EvaluableNodeBuiltInStringId, double> mutationOperationTypeProbabilities;
@@ -525,16 +528,17 @@ public:
 	static std::vector<StringInternPool::StringID> IntersectStringIDVectors(
 		const std::vector<StringInternPool::StringID> &label_list_a, const std::vector<StringInternPool::StringID> &label_list_b);
 
-	//Returns a tree that consists of only nodes that are common across all of the trees specified,
+	//returns a tree that consists of only nodes that are common across all of the trees specified,
 	// where all returned values are newly allocated and modifiable
 	//Note that MergeTrees does not guarantee that EvaluableNodeFlags will be set appropriately
 	static EvaluableNode *MergeTrees(NodesMergeMethod *mm, EvaluableNode *tree1, EvaluableNode *tree2);
 
-	//Returns a tree that is a copy of tree but mutated based on mutation_rate
+	//returns a tree that is a copy of tree but mutated based on mutation_rate
 	// will create the new tree with interpreter's evaluableNodeManager and will use interpreter's RandomStream
-	//Note that MutateTree does not guarantee that EvaluableNodeFlags will be set appropriately
-	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, EvaluableNode *tree, double mutation_rate,
-		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights);
+	//note that MutateTree does not guarantee that EvaluableNodeFlags will be set appropriately
+	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, EvaluableNode *tree,
+		double mutation_rate, CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
+		CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace
 	static inline void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace)
@@ -548,7 +552,8 @@ public:
 
 protected:
 
-	//Evaluates commonality metric between the two nodes passed in, including labels.  1.0 if identical, 0.0 if completely different, and some value between if similar
+	//Evaluates commonality metric between the two nodes passed in, including labels.
+	//  1.0 if identical, 0.0 if completely different, and some value between if similar
 	//appropriate type or value matching parameters apply, then it will only return 1.0 or 0.0
 	static MergeMetricResults<EvaluableNode *> CommonalityBetweenNodes(
 		EvaluableNode *n1, EvaluableNode *n2,
@@ -567,7 +572,8 @@ protected:
 	//Mutates the current node n, changing its type or value, based on the mutation_rate
 	// strings contains a list of strings to likely choose from if mutating to a string value
 	// returns the new value, which may be n, a modification of n, or an entirely different node
-	static EvaluableNode *MutateNode(EvaluableNode *n, MutationParameters &mp);
+	//depth is the depth in the tree
+	static EvaluableNode *MutateNode(EvaluableNode *n, MutationParameters &mp, size_t depth);
 
 	//random stream for EvaluableNodeType, so can obtain a random type from a useful distribution
 	static MutationParameters::WeightedRandEvaluableNodeType evaluableNodeTypeRandomStream;
@@ -575,10 +581,13 @@ protected:
 	//Recursively creates a new tree using enm which is a copy of tree, but given a mutation_rate
 	// will create the new tree with interpreter's evaluableNodeManager
 	// strings is a list of strings to choose from when mutating and adding new strings
-	static EvaluableNode *MutateTree(MutationParameters &mp, EvaluableNode *tree);
+	//depth is the depth in the tree
+	static EvaluableNode *MutateTree(MutationParameters &mp, EvaluableNode *tree, size_t depth);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace
-	static void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace, EvaluableNode::ReferenceSetType &checked);
+	static void ReplaceStringsInTree(EvaluableNode *tree,
+		CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace,
+		EvaluableNode::ReferenceSetType &checked);
 
 	//returns a set of strings that have appeared at least once in the given tree
 	static void GetStringsFromTree(EvaluableNode *tree, std::vector<std::string> &strings, EvaluableNode::ReferenceSetType &checked);

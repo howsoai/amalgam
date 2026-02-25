@@ -1118,10 +1118,10 @@ var data = [
 	},
 
 	{
-		"parameter" : "mutate * node [number mutation_rate] [assoc mutation_weights] [assoc operation_type]",
+		"parameter" : "mutate * node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth]",
 		"output" : "*",
 		"new value" : "new",
-		"description" : "Evaluates to a mutated version of the input node.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, and delete_elements.",
+		"description" : "Evaluates to a mutated version of the input node.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, and delete_elements.  If preserve_type_depth is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.",
 		"example" : "(print (mutate\n  (lambda (list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 (assoc \"a\" 1 \"b\" 2)))\n0.4))\n"
 	},
 
@@ -1191,11 +1191,11 @@ var data = [
 	},
 
 	{
-		"parameter" : "mutate_entity id_path entity1 [number mutaton_rate] [id_path entity2] [assoc mutation_weights] [assoc operation_type]",
+		"parameter" : "mutate_entity id_path entity1 [number mutaton_rate] [id_path entity2] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth]",
 		"output" : "id_path",
 		"permissions" : "entity",
 		"new value" : "new",
-		"description" : "Creates a mutated version of the entity specified by entity1 like mutate. Returns the id_path of a new entity created contained by the entity that ran it.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses entity2 as the optional destination via an internal call to create_contained_entity. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, and delete_elements.",
+		"description" : "Creates a mutated version of the entity specified by entity1 like mutate. Returns the id_path of a new entity created contained by the entity that ran it.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses entity2 as the optional destination via an internal call to create_contained_entity. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, and delete_elements.  If preserve_type_depth is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.",
 		"example" : "(create_entities\n    \"MutateEntity\"\n  (lambda (list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 (assoc \"a\" 1 \"b\" 2)))\n)\n(mutate_entity \"MutateEntity\" 0.4 \"MutatedEntity\")\n(print (retrieve_entity_root \"MutatedEntity\"))"
 	},
 

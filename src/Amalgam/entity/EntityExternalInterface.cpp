@@ -341,7 +341,7 @@ bool EntityExternalInterface::SetJSONToLabel(std::string &handle, std::string &l
 	EntityWriteReference entity(bundle->entity);
 
 	EvaluableNode *node = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&entity->evaluableNodeManager, json);
-	EvaluableNodeReference new_values = entity->evaluableNodeManager.AllocNode(ENT_ASSOC);
+	EvaluableNodeReference new_values(entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 	new_values->SetMappedChildNode(label, node);
 
 	auto [any_success, all_success] = entity->SetValuesAtLabels(new_values, false, &bundle->writeListeners, nullptr, true);

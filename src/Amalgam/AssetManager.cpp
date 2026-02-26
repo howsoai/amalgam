@@ -383,7 +383,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 	if(EvaluableNode::IsNull(first_node) || !first_node->IsOrderedArray())
 		return EntityExternalInterface::LoadEntityStatus(false, "No data found in file", "");
 
-	EvaluableNodeReference args = EvaluableNodeReference(entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
+	EvaluableNodeReference args(entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 	args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), entity->evaluableNodeManager.AllocNode(false));
 	args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_require_version_compatibility),
 		entity->evaluableNodeManager.AllocNode(asset_params->requireVersionCompatibility));
@@ -552,7 +552,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 	{
 		asset_params->topEntity = new_entity;
 
-		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
+		EvaluableNodeReference args(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(false));
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_require_version_compatibility),
 			new_entity->evaluableNodeManager.AllocNode(asset_params->requireVersionCompatibility));

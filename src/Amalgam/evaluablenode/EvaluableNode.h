@@ -373,18 +373,26 @@ public:
 		return IsEvaluableNodeTypeImmediate(GetType());
 	}
 
-	//Returns true if the node is some form of ordered array
+	//returns true if the node is some form of ordered array
 	__forceinline bool IsOrderedArray()
 	{
 		return DoesEvaluableNodeTypeUseOrderedData(GetType());
 	}
 
-	//Returns true if the node is some form of ordered array
+	//returns true if the node is some form of ordered array
 	static __forceinline bool IsOrderedArray(EvaluableNode *n)
 	{
 		if(n == nullptr)
 			return false;
 		return n->IsOrderedArray();
+	}
+
+	//returns true if the node is a string
+	static __forceinline bool IsString(EvaluableNode *n)
+	{
+		if(n == nullptr)
+			return false;
+		return n->GetType() == ENT_STRING;
 	}
 
 	//returns true if the EvaluableNode is of a query type

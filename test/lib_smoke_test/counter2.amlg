@@ -32,4 +32,4 @@
 		)
 		(retrieve_from_entity id counter)
 	)
-)
+}

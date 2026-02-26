@@ -28,7 +28,7 @@
 		)
 		(if (contains_label id counter)
 			(accum_to_entities id (associate counter count))
-			(accum_entity_roots id (list (set_labels count (list counter))))
+			(assign_to_entities id { count (list counter) } )
 		)
 		(retrieve_from_entity id counter)
 	)

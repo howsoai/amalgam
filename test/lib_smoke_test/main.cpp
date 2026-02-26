@@ -324,7 +324,7 @@ static void ExecuteCounter2Logged(TestResult &test_result)
 
 static void TestLoadEntityFromMemory(TestResult &test_result)
 {
-	std::string amlg("(null #get_value \"hello\")");
+	std::string amlg("{ get_value \"hello\" }");
 	LoadEntityStatus status = LoadEntityFromMemory(handle.data(), amlg.data(), amlg.size(), amlgSuffix.data(), false, empty.data(), empty.data(), empty.data(), nullptr, 0);
 	test_result.Require("LoadEntityFromMemory", status.loaded);
 	test_result.Require("LoadEntityFromMemory null entity_path", status.entity_path == nullptr);
@@ -346,7 +346,7 @@ static void LoadSubEntityFromMemory(TestResult &test_result)
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
-		std::string amlg("(list #x 17)");
+		std::string amlg("{ x 17 }");
 		const char *entityPaths[] = { "test" };
 		status = LoadEntityFromMemory(handle.data(), amlg.data(), amlg.size(), amlgSuffix.data(), false, empty.data(), empty.data(), empty.data(), entityPaths, 1);
 		test_result.Require("LoadEntityFromMemory", status.loaded);
@@ -365,7 +365,7 @@ static void LoadSubEntityFromMemory(TestResult &test_result)
 }
 
 static void LoadSubSubEntityFromMemory(TestResult &test_result) {
-	std::string amlg("(list #x 17)");
+	std::string amlg("{ x 17 }");
 	LoadEntityStatus status = LoadEntityFromMemory(handle.data(), amlg.data(), amlg.size(), amlg.data(), false, empty.data(), empty.data(), empty.data(), nullptr, 0);
 	test_result.Require("LoadEntityFromMemory root", status.loaded);
 	if (test_result) {
@@ -402,7 +402,7 @@ static void LoadSubSubEntityFromMemory(TestResult &test_result) {
 static void TestStoreEntityToMemory(TestResult &test_result)
 {
 	// round-trip the trivial entity from TestLoadEntityFromMemory()
-	std::string amlg("(null #get_value \"hello\")");
+	std::string amlg("{ get_value \"hello\" }");
 	LoadEntityStatus status = LoadEntityFromMemory(handle.data(), amlg.data(), amlg.size(), amlgSuffix.data(), false, empty.data(), empty.data(), empty.data(), nullptr, 0);
 	test_result.Require("LoadEntityFromMemory", status.loaded);
 	if(test_result)
@@ -448,10 +448,10 @@ static void StoreSubEntityToMemory(TestResult &test_result)
 		char *cdata = reinterpret_cast<char *>(data);
 		std::string stored(cdata, cdata + len);
 		// This is worth inspecting if you're unsure about it, but at the very center it contains only
-		// (lambda [##x 1])
+		// (lambda { x 1 })
 		// Some things we can check for
 		test_result.Check("StoreEntityToMemory (prolog)", stored.substr(0, declare.size()), declare);
-		test_result.Require("contain the entity contents", stored.find("##x 1") != std::string::npos);
+		test_result.Require("contain the entity contents", stored.find("x 1") != std::string::npos);
 		test_result.Require("does not contain the parent entity contents", stored.find("get_value") == std::string::npos);
 	}
 }

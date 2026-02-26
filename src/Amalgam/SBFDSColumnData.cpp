@@ -187,7 +187,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 	{
 		if(!invalidIndices.contains(index))
 		{
-			RemoveIndexValue(old_value_type, old_value, index, false);
+			RemoveIndexValue(old_value_type, old_value, index, false, false);
 			invalidIndices.insert(index);
 		}
 
@@ -408,14 +408,14 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 	}
 
 	//delete index at old value
-	RemoveIndexValue(old_value_type_resolved, old_value_resolved, index, false);
+	RemoveIndexValue(old_value_type_resolved, old_value_resolved, index, false, false);
 
 	//add index at new value bucket
 	InsertIndexValue(new_value_type_resolved, new_value_resolved, index);
 }
 
 void SBFDSColumnData::RemoveIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
-	size_t index, bool remove_last_entity)
+	size_t index, bool remove_last_entity, bool set_not_exist)
 {
 	switch(value_type)
 	{
@@ -513,9 +513,16 @@ void SBFDSColumnData::RemoveIndexValue(EvaluableNodeImmediateValueType value_typ
 	}
 
 	if(remove_last_entity)
+	{
 		valueEntries.pop_back();
+	}
 	else
+	{
 		valueEntries[index] = std::numeric_limits<double>::quiet_NaN();
+
+		if(set_not_exist)
+			invalidIndices.insert(index);
+	}
 }
 
 void SBFDSColumnData::Optimize()

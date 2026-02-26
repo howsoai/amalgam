@@ -148,7 +148,7 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	// simply delete from column data, delete last row, and return
 	if(entity_index + 1 == GetNumInsertedEntities() && entity_index_to_reassign >= entity_index)
 	{
-		RemoveEntityIndexFromColumns(entity_index, true);
+		RemoveEntityIndexFromColumns(entity_index, true, false);
 
 	#ifdef SBFDS_VERIFICATION
 		VerifyAllEntitiesForAllColumns();
@@ -169,7 +169,7 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	//if deleting a row and not replacing it, just fill as if it has no data
 	if(entity_index == entity_index_to_reassign)
 	{
-		RemoveEntityIndexFromColumns(entity_index);
+		RemoveEntityIndexFromColumns(entity_index, false, true);
 
 	#ifdef SBFDS_VERIFICATION
 		VerifyAllEntitiesForAllColumns();
@@ -194,7 +194,7 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 
 		//remove the value where it is
 		columnData[column_index]->RemoveIndexValue(value_type_to_reassign, value_to_reassign,
-			entity_index_to_reassign, remove_last_entity);
+			entity_index_to_reassign, remove_last_entity, true);
 	}
 
 	if(remove_last_entity)
@@ -300,7 +300,7 @@ void SeparableBoxFilterDataStore::RemoveEntityIndexValueFromLabelId(
 	VerifyAllEntitiesForAllColumns();
 #endif
 
-	column_data->RemoveIndexValue(value_type, value, entity_index, false);
+	column_data->RemoveIndexValue(value_type, value, entity_index, false, true);
 
 	//clean up any labels that aren't relevant
 	RemoveAnyUnusedLabels();
@@ -677,14 +677,14 @@ template void SeparableBoxFilterDataStore::FindNearestEntities<false, false>(Rep
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
 
-void SeparableBoxFilterDataStore::RemoveEntityIndexFromColumns(size_t entity_index, bool remove_last_entity)
+void SeparableBoxFilterDataStore::RemoveEntityIndexFromColumns(size_t entity_index, bool remove_last_entity, bool set_not_exist)
 {
 	for(size_t i = 0; i < columnData.size(); i++)
 	{
 		auto &column_data = columnData[i];
 		auto &feature_value = GetValue(entity_index, i);
 		auto feature_type = column_data->GetIndexValueType(entity_index);
-		column_data->RemoveIndexValue(feature_type, feature_value, entity_index, remove_last_entity);
+		column_data->RemoveIndexValue(feature_type, feature_value, entity_index, remove_last_entity, set_not_exist);
 	}
 
 	if(remove_last_entity)

@@ -978,7 +978,7 @@ var data = [
 		"output" : "string",
 		"new value" : "new",
 		"description" : "Returns a strings comprising all of the annotations for the input node.",
-		"example" : "(print (get_annotations\n  #this is an annotation\n  (lambda #annotation \n    .true)))"
+		"example" : "(print (get_annotations\n  #this is an annotation\n  (lambda #annotation that will be printed\n    .true)))"
 	},
 
 	{

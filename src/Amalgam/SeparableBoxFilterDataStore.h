@@ -693,7 +693,9 @@ protected:
 
 	//removes the index and associated data
 	//if it is the last entity and remove_last_entity is true, then it will truncate storage
-	void RemoveEntityIndexFromColumns(size_t entity_index, bool remove_last_entity = false);
+	//if set_not_exist is true, then it will set in the internal indices that the value is nonexistent
+	// set_not_exist should be true if the value is being removed, false if it will be immediately reinserted
+	void RemoveEntityIndexFromColumns(size_t entity_index, bool remove_last_entity, bool set_not_exist);
 
 	//adds a new labels to the database
 	// assumes label_ids is not empty

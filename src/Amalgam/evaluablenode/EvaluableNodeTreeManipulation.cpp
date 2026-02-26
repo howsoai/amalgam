@@ -512,7 +512,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm,
 	EvaluableNode *tree, double mutation_rate,
 	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
-	CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights)
+	CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth)
 {
 	std::vector<std::string> strings;
 	EvaluableNode::ReferenceSetType checked;
@@ -528,8 +528,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 
 	MutationParameters mp(interpreter, enm, mutation_rate, &strings,
 		operation_type_wrs.IsInitialized() ? &operation_type_wrs : &evaluableNodeTypeRandomStream,
-		rand_mutation_type.IsInitialized() ? &rand_mutation_type : &mutationOperationTypeRandomStream);
-	EvaluableNode *ret = MutateTree(mp, tree);
+		rand_mutation_type.IsInitialized() ? &rand_mutation_type : &mutationOperationTypeRandomStream,
+		preserve_type_depth);
+	EvaluableNode *ret = MutateTree(mp, tree, 0);
 
 	return ret;
 }
@@ -1220,7 +1221,7 @@ static void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<
 	}
 }
 
-EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, MutationParameters &mp)
+EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, MutationParameters &mp, size_t depth)
 {
 	if(n == nullptr)
 		n = mp.enm->AllocNode(ENT_NULL);
@@ -1241,6 +1242,22 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	//if immediate, can't perform most of the mutations, just mutate it
 	if(is_immediate && mutation_type != ENBISI_change_type)
 		mutation_type = ENBISI_change_type;
+
+	//don't change type if less than preserveTypeDepth
+	if(mutation_type == ENBISI_change_type && depth < mp.preserveTypeDepth)
+	{
+		//try to find another mutation or give up
+		size_t i = 8;
+		do
+		{
+			mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
+			i--;
+		} while(i > 0 && mutation_type != ENBISI_change_type);
+
+		//if couldn't find an alternative, just return
+		if(mutation_type == ENBISI_change_type)
+			return n;
+	}
 
 	switch(mutation_type)
 	{
@@ -1414,7 +1431,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	return n;	
 }
 
-EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp, EvaluableNode *tree)
+EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
+	EvaluableNode *tree, size_t depth)
 {
 	//if it's nullptr, then move on to making a copy, otherwise see if it's already been copied
 	if(tree != nullptr)
@@ -1434,7 +1452,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 
 	if(mp.interpreter->randomStream.Rand() < mp.mutation_rate)
 	{
-		EvaluableNode *new_node = MutateNode(copy, mp);
+		EvaluableNode *new_node = MutateNode(copy, mp, depth);
 		//make sure have the right node to reference if it's a new node
 		if(new_node != copy)
 		{
@@ -1459,7 +1477,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 			EvaluableNode *n = s;
 
 			//turn into a copy and mutate
-			n = MutateTree(mp, n);
+			n = MutateTree(mp, n, depth + 1);
 
 			//replace current item in list with copy
 			s = n;
@@ -1475,7 +1493,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 			EvaluableNode *n = ocn[i];
 
 			//turn into a copy and mutate
-			n = MutateTree(mp, n);
+			n = MutateTree(mp, n, depth + 1);
 
 			//replace current item in list with copy
 			ocn[i] = n;

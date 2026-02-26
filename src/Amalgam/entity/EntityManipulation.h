@@ -165,7 +165,8 @@ public:
 		bool types_must_match = true, bool nominal_numbers = true, bool nominal_strings = true, bool recursive_matching = true);
 
 	static Entity *MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
-		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *operation_type);
+		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType,
+		double> *operation_type, size_t preserve_type_depth);
 
 	//flattens only the top entity using enm to allocate code that can recreate it;
 	// this is the first step of flattening an entity, and contained entities can be concatenated

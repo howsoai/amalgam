@@ -3574,6 +3574,13 @@
  (print (retrieve_entity_root "AssignToEntitiesTest"))
  (destroy_entities "AssignToEntitiesTest")
 
+ (print "--remove_from_entities--\n")
+
+ (create_entities "RemoveFromEntitiesTest" { a 1 b 2 c 3 d 4} )
+ (remove_from_entities "RemoveFromEntitiesTest" "a" "RemoveFromEntitiesTest" ["b" "c"])
+ (print (retrieve_entity_root "RemoveFromEntitiesTest"))
+ (destroy_entities "RemoveFromEntitiesTest")
+
  (print "--accum_to_entities--\n")
 
  (create_entities "AccumToEntitiesTest" { a 1 b 2 c 3 } )

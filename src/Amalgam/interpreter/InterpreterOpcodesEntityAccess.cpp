@@ -249,7 +249,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REM
 		size_t assoc_param_index = (i + 1 < ocn.size() ? i + 1 : i);
 		auto assigned_vars = InterpretNode(ocn[assoc_param_index]);
 
-		if(assigned_vars == nullptr || assigned_vars->GetType() != ENT_ASSOC)
+		if( (!remove_from_entities && !EvaluableNode::IsAssociativeArray(assigned_vars))
+			|| (remove_from_entities
+				&& !EvaluableNode::IsOrderedArray(assigned_vars)
+				&& !EvaluableNode::IsString(assigned_vars) ) )
 		{
 			all_assignments_successful = false;
 			evaluableNodeManager->FreeNodeTreeIfPossible(assigned_vars);

@@ -365,17 +365,22 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remove,
 		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self)
 {
-	//can only work with ordered child nodes
-	if(!EvaluableNode::IsOrderedArray(labels_to_remove))
-		return std::make_pair(false, false);
-
 	bool any_successful_remove = false;
 	bool all_successful_removes = true;
-	auto &labels_to_remove_ocn = labels_to_remove->GetOrderedChildNodesReference();
+
+	std::vector<EvaluableNode *> labels_to_remove_vector;
+	auto &labels_to_remove_ocn = labels_to_remove_vector;
+	if(EvaluableNode::IsString(labels_to_remove))
+		labels_to_remove_ocn.emplace_back(labels_to_remove);
+	else if(EvaluableNode::IsOrderedArray(labels_to_remove))
+		labels_to_remove_ocn = labels_to_remove->GetOrderedChildNodesReference();
+	else
+		return std::make_pair(false, false);
+
 	std::vector<std::pair<StringInternPool::StringID, EvaluableNode *>> label_sids_and_values_to_remove;
 	label_sids_and_values_to_remove.reserve(labels_to_remove_ocn.size());
 
-	EvaluableNodeReference new_root = evaluableNodeManager.AllocNode(GetRoot());
+	EvaluableNodeReference new_root(evaluableNodeManager.AllocNode(GetRoot()), false, true);
 	auto &new_root_mcn = new_root->GetMappedChildNodesReference();
 
 	//captures all of the label data to remove and remove from new_root

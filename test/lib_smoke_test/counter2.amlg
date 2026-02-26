@@ -6,7 +6,7 @@
 	initialize
 	(assign_to_entities
 		(assoc
-			!id (first (create_entities (lambda (list))))
+			!id (first (create_entities (lambda {})))
 		)
 	)
 
@@ -28,7 +28,7 @@
 		)
 		(if (contains_label id counter)
 			(accum_to_entities id (associate counter count))
-			(assign_to_entities id { count (list counter) } )
+			(assign_to_entities id (associate counter count ) )
 		)
 		(retrieve_from_entity id counter)
 	)

@@ -1749,8 +1749,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 				s = cur->GetStringValue();
 			else if(!has_metadata && DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
 				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
-			else
-				s = Parser::Unparse(cur, true, true, true);
+			else //only print attributes if not debugSources
+				s = Parser::Unparse(cur, true, !asset_manager.debugSources, true);
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 		}

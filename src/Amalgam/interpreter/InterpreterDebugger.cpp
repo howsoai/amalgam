@@ -100,28 +100,25 @@ static void ClampSingleLineStringLength(std::string &s, size_t max_num_chars, st
 static std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t max_num_chars = 100)
 {
 	//if no annotations or comments, then can just print
-	if(en == nullptr || (!en->HasAnnotations() && !en->HasComments()))
+	if(en == nullptr || !en->HasComments())
 	{
-		std::string code_str = Parser::Unparse(en, false, true, true);
+		std::string code_str = Parser::Unparse(en, false, false, true);
 		ClampSingleLineStringLength(code_str, max_num_chars);
 		return std::make_pair(std::string(), code_str);
 	}
 	else //has comments, so need to thoughtfully handle showing first line of comments and appropriate amount of code
 	{
-		//get comment, and make it look like a comment
-		std::string comment_str;
-		comment_str += en->GetCommentsString();
-
+		std::string comment_str(en->GetCommentsString());
 		//if debug sources enabled, don't clamp the line, make sure it prints out the whole filename
 		if(asset_manager.debugSources)
-			max_num_chars = std::numeric_limits<size_t>::max();
-
-		ClampSingleLineStringLength(comment_str, max_num_chars);
+			ClampSingleLineStringLength(comment_str, std::numeric_limits<size_t>::max());
+		else
+			ClampSingleLineStringLength(comment_str, max_num_chars);
 
 		//append with code by making a copy without metadata and only copying concurrency
 		EvaluableNode en_without_comment(en, false);
 		en_without_comment.SetConcurrency(en->GetConcurrency());
-		std::string code_str = Parser::Unparse(&en_without_comment, false, true, true);
+		std::string code_str = Parser::Unparse(&en_without_comment, false, false, true);
 		ClampSingleLineStringLength(code_str, max_num_chars);
 
 		return std::make_pair(comment_str, code_str);

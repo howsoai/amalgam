@@ -252,11 +252,6 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity,
 	if(entity_index >= numEntities)
 		return;
 
-	auto [reference, found] = entity->GetValueAtLabel(label_id, nullptr, EvaluableNodeRequestedValueTypes::Type::ALL);
-	if(!found)
-		return;
-	auto &value_with_type = reference.GetValue();
-
 	//find the column
 	auto column = labelIdToColumnIndex.find(label_id);
 	if(column == end(labelIdToColumnIndex))
@@ -268,7 +263,17 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity,
 	VerifyAllEntitiesForColumn(column_index);
 #endif
 
-	column_data->ChangeIndexValue(value_with_type.nodeType, value_with_type.nodeValue, entity_index);
+	auto [reference, found] = entity->GetValueAtLabel(label_id, nullptr, EvaluableNodeRequestedValueTypes::Type::ALL);
+
+	if(found)
+	{
+		auto &value_with_type = reference.GetValue();
+		column_data->ChangeIndexValue(value_with_type.nodeType, value_with_type.nodeValue, entity_index);
+	}
+	else
+	{
+		column_data->ChangeIndexValue(ENIVT_NOT_EXIST, EvaluableNodeImmediateValue(), entity_index);
+	}
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))

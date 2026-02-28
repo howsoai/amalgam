@@ -59,13 +59,21 @@ public:
 		: value(string_intern_pool.CreateStringReference(str)), unique(true), uniqueUnreferencedTopNode(true)
 	{}
 
+	__forceinline EvaluableNodeReference(EvaluableNodeImmediateValueWithType enivwt, bool _unique)
+		: value(enivwt), unique(_unique), uniqueUnreferencedTopNode(_unique)
+	{}
+
 	//constructs an EvaluableNodeReference with an immediate type and true if possible to coerce node
 	//into one of the immediate request types, or returns a non-unique EvaluableNodeReference and false if not
 	static inline EvaluableNodeReference CoerceNonUniqueEvaluableNodeToImmediateIfPossible(EvaluableNode *en,
 		EvaluableNodeRequestedValueTypes immediate_result)
 	{
 		if(en == nullptr)
+		{
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
+				return EvaluableNodeReference(EvaluableNodeImmediateValueWithType(), true);
 			return EvaluableNodeReference::Null();
+		}
 
 		if(immediate_result.AnyImmediateType())
 		{
@@ -73,7 +81,11 @@ public:
 			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
 			{
 				if(en->GetType() == ENT_NULL)
+				{
+					if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
+						return EvaluableNodeReference(EvaluableNodeImmediateValueWithType(), true);
 					return EvaluableNodeReference::Null();
+				}
 			}
 
 			if(en->IsImmediate())

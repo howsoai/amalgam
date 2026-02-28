@@ -147,7 +147,7 @@ std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(
 		return std::pair(retval, true);
 
 	//if didn't give a valid destination, just return what we have
-	if(destination_temp_enm == nullptr)
+	if(on_self || destination_temp_enm == nullptr)
 		return std::pair(retval, true);
 
 	return std::pair(destination_temp_enm->DeepAllocCopy(retval), true);

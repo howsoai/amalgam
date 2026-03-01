@@ -117,6 +117,31 @@ public:
 						return EvaluableNodeReference(en->GetStringIDReference());
 				}
 			}
+
+			//if it doesn't allow code, then coerce into the the most general type
+			if(!immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::CODE))
+			{
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
+					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en, true));
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::KEY_STRING_ID))
+					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en, true), true);
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID))
+					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en));
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::STRING_ID))
+					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en), true);
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NUMBER))
+					return EvaluableNodeReference(EvaluableNode::ToNumber(en), true);
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::BOOL))
+					return EvaluableNodeReference(EvaluableNode::ToBool(en), true);
+
+				//otherwise EvaluableNodeRequestedValueTypes::Type::NULL_VALUE
+				return EvaluableNodeReference::Null();
+			}
 		}
 
 		return EvaluableNodeReference(en, false);

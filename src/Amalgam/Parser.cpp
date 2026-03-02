@@ -1426,7 +1426,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 				result = found->second;
 			}
 		}
-		else if(step_node_type == ENT_BOOL && result->GetBoolValueReference())
+		else if(step_node_type == ENT_BOOL && step_node->GetBoolValueReference())
 		{
 			//climb up to the top
 			while(true)

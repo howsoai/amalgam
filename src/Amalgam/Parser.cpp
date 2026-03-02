@@ -1470,6 +1470,8 @@ void Parser::PreevaluateNodes(EvaluableNode *top_node)
 			continue;
 
 		EvaluableNode *target = GetNodeFromRelativeCodePath(n);
+		if(target == nullptr)
+			EmitWarning("Could not resolve location, using null instead");
 
 		//find the node's parent in order to set it to target
 		EvaluableNode *parent = nullptr;

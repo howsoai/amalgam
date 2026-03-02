@@ -1467,7 +1467,10 @@ void Parser::PreevaluateNodes(EvaluableNode *top_node)
 
 		auto node_type = n->GetType();
 		if(node_type != ENT_GET && node_type != ENT_TARGET)
+		{
+			EmitWarning("Opcode cannot be evaluated at load time");
 			continue;
+		}
 
 		EvaluableNode *target = GetNodeFromRelativeCodePath(n);
 		if(target == nullptr)

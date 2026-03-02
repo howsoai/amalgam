@@ -1507,6 +1507,9 @@ void Parser::PreevaluateNodes(EvaluableNode *top_node)
 				}
 			}
 		}
+
+		if(!any_nodes_changed)
+			EmitWarning("Could not find code to preevaluate, check to see if it has been overwritten");
 	}
 
 	if(any_nodes_changed)

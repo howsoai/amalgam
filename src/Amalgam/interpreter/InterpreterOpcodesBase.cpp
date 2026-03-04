@@ -422,16 +422,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en,
 	if(ocn.size() > 1)
 		pretty = InterpretNodeIntoBoolValue(ocn[1]);
 
-	bool deterministic_order = false;
+	bool deterministic_order = true;
 	if(ocn.size() > 2)
-		deterministic_order = InterpretNodeIntoBoolValue(ocn[2]);
+		deterministic_order = InterpretNodeIntoBoolValue(ocn[2], true);
+
+	bool include_attributes = false;
+	if(ocn.size() > 3)
+		include_attributes = InterpretNodeIntoBoolValue(ocn[3]);
 
 	size_t max_length = std::numeric_limits<size_t>::max();
 	if(interpreterConstraints != nullptr)
 		max_length = interpreterConstraints->maxNumAllocatedNodes;
 
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);
-	std::string s = Parser::Unparse(tree, pretty, true, deterministic_order, false, false, max_length);
+	std::string s = Parser::Unparse(tree, pretty, include_attributes, deterministic_order, false, false, max_length);
 	evaluableNodeManager->FreeNodeTreeIfPossible(tree);
 
 	return AllocReturn(s, immediate_result);

@@ -1465,17 +1465,19 @@
 	   "\n")
 
  (print "--set_annotations--\n")
- (print (set_annotations
+ (print (unparse (set_annotations
   (lambda
 	#labelC
 	.true)
-	(list "labelD" "labelE")))
+	(list "labelD" "labelE"))
+   .true .true .true)
+ )
 
  (print "--set_comments--\n")
  (print (unparse (set_comments
    ;this is a comment
   (lambda ;comment too
-   .true) "new comment")) "\n")
+   .true) "new comment")  .true .true .true ) "\n")
 
  (print "--get_concurrency--\n")
  (print (get_concurrency
@@ -1495,19 +1497,19 @@
 
  (print "--set_concurrency--\n")
 
- (print (set_concurrency
+ (print (unparse (set_concurrency
 				(lambda (print "hello"))
 				.true
- ) "\n")
+ ) .true .true .true) "\n")
 
- (print (set_concurrency
+ (print (unparse (set_concurrency
 				(lambda 
 					;complex test
 					#some annotation
 					(assoc a "hello" b 4)
 				)
 				.true
- ) "\n")
+ )  .true .true .true) "\n")
 
  (print "--get_value--\n")
  (print (get_value
@@ -1731,7 +1733,7 @@
  					(lambda (replace 4 1 7 2 6))
  					))
 
- (print (intersect
+ (print (unparse (intersect
 				(lambda (list
 								;comment 1
 								;comment 2
@@ -1744,7 +1746,7 @@
 								;comment 4
 								1
 								4 6 8 10 12 14))
- 				))
+ 				)  .true .true .true) )
 
   (print (intersect
 			(list 1 2 3)
@@ -1789,7 +1791,7 @@
  (print (union (list 3 2) (list 3 4) ) )
  (print (union (list 2 3) (list 3 2 4) ) )
 
- (print (union
+ (print (unparse (union
 				(lambda (list
 								;comment 1
 								;comment 2
@@ -1805,7 +1807,7 @@
 								;comment x
 								2
 								4 6 8 10 12 14))
- 				))
+ 				)  .true .true .true) )
 
   (print (union
 			(list 1 2 3)

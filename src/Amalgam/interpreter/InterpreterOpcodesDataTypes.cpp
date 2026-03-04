@@ -1743,11 +1743,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 		else
 		{
 			bool has_metadata = cur->HasMetadata();
-			if(!has_metadata && DoesEvaluableNodeTypeUseBoolData(cur->GetType()))
+			if(DoesEvaluableNodeTypeUseBoolData(cur->GetType()))
 				s = EvaluableNode::BoolToString(cur->GetBoolValueReference());
-			else if(!has_metadata && DoesEvaluableNodeTypeUseStringData(cur->GetType()))
+			else if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
 				s = cur->GetStringValue();
-			else if(!has_metadata && DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
+			else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
 				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
 			else //only print attributes if not debugSources
 				s = Parser::Unparse(cur, true, false, true);

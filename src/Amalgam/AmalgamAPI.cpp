@@ -119,7 +119,7 @@ extern "C"
 		const char **entity_path, size_t entity_path_len)
 	{
 		std::string h(handle);
-		std::string d(reinterpret_cast<char *>(data), len);
+		std::string d(static_cast<const char *>(data), len);
 		std::string ft(file_type);
 		std::string_view params(json_file_params);
 		std::string wlfname(write_log_filename);

@@ -68,28 +68,52 @@ void RandomStream::SetState(const std::string &new_state)
 
 std::string RandomStream::CreateOtherStreamStateViaString(const std::string &seed_string)
 {
-	char s[randStateStringifiedSizeInBytes];
-	std::memset(&s[0], 0, randStateStringifiedSizeInBytes);
-	MurmurHash3_x64_128(seed_string.c_str(), static_cast<int>(seed_string.size()), static_cast<uint32_t>(state & 0xFFFFFFFF), &s[0]);
+	//initialized to zeros
+	std::array<char, randStateStringifiedSizeInBytes> buffer{};
+
+	MurmurHash3_x64_128(seed_string.c_str(),
+		static_cast<int>(seed_string.size()),
+		static_cast<uint32_t>(state & 0xFFFFFFFF), buffer.data());
 
 	//randomize the hash based on the current random state
-	*(reinterpret_cast<uint64_t *>(&s[0])) ^= state;
-	*(reinterpret_cast<uint64_t *>(&s[sizeof(uint64_t)])) ^= increment;
+	//use temporary variables to reinterpret without causing pointer aliasing problems
+	uint64_t state_initializer{};
+	uint64_t increment_initializer{};
 
-	return std::string(&s[0], randStateStringifiedSizeInBytes);
+	std::memcpy(&state_initializer, buffer.data(), sizeof(state_initializer));
+	std::memcpy(&increment_initializer, buffer.data() + sizeof(state_initializer), sizeof(increment_initializer));
+
+	state_initializer ^= state;
+	increment_initializer ^= increment;
+
+	std::memcpy(buffer.data(), &state_initializer, sizeof(state_initializer));
+	std::memcpy(buffer.data() + sizeof(state_initializer), &increment_initializer, sizeof(increment_initializer));
+
+	return std::string(buffer.data(), buffer.size());
 }
 
 RandomStream RandomStream::CreateOtherStreamViaString(const std::string &seed_string)
 {
 	RandomStream new_stream;
 
-	char s[randStateStringifiedSizeInBytes];
-	std::memset(&s[0], 0, randStateStringifiedSizeInBytes);
-	MurmurHash3_x64_128(seed_string.c_str(), static_cast<int>(seed_string.size()), static_cast<uint32_t>(state & 0xFFFFFFFF), &s[0]);
+	//initialized to zeros
+	std::array<char, randStateStringifiedSizeInBytes> buffer{};
+
+	MurmurHash3_x64_128(seed_string.c_str(),
+						static_cast<int>(seed_string.size()),
+						static_cast<std::uint32_t>(state & 0xFFFFFFFF),
+						buffer.data());
 
 	//randomize the hash based on the current random state
-	new_stream.state = ( *(reinterpret_cast<uint64_t *>(&s[0])) ^ state );
-	new_stream.increment = ( *(reinterpret_cast<uint64_t *>(&s[sizeof(uint64_t)])) ^ increment );
+	//use temporary variables to reinterpret without causing pointer aliasing problems
+	std::uint64_t state_initializer{};
+	std::uint64_t increment_initializer{};
+
+	std::memcpy(&state_initializer, buffer.data(), sizeof(state_initializer));
+	std::memcpy(&increment_initializer, buffer.data() + sizeof(state_initializer), sizeof(increment_initializer));
+
+	new_stream.state = (state_initializer ^ state);
+	new_stream.increment = (increment_initializer ^ increment);
 
 	new_stream.BurnIn();
 

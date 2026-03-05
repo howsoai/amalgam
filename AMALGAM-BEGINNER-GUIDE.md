@@ -42,7 +42,7 @@ you can simply use the Amalgam binary to run a script, for example if your scrip
 
 `/path/to/bin/amalgam my_script.amlg`
 
-Due to the syntax of `#!` being a private labeled variable, the traditional unix [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) with the Amalgam interpreter works as expected.
+Due to the syntax of `#!` being an annotation (special type of comment), the traditional unix [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) with the Amalgam interpreter works as expected.
 
 The first outermost operation will be executed in the script, thus most standalone script code should be in
 a `(seq` block, since that is a single function that executes everything in it sequentially.
@@ -87,7 +87,10 @@ specific index from either of them, you'd get the same result:
 Data Structures:
 ---------------
 
-The data types of amalgam consist of immediate values, which are string and number, lists, which are ordered sets of elements and have an opcode associated with it (which may be list), and assoc, which is an associative array of key-value pairs.  Code is just a list with a different opcode. 
+The data types of amalgam consist of immediate values, which are string and number, lists, which are ordered sets of elements and have an opcode associated with it (which may be list), and assoc, which is an associative array of key-value pairs.  Code is just a list with a different opcode.
+
+lists can use bracket notation as syntactic sugar instead of the **(list)** opcode, and assocs may use curly braces instead of the **(assoc)** opcode,
+such that `(list 1 2 3)` is same as `[1 2 3]` and `(assoc "a" 1 "b" 2)` is same as `{"a" 1 "b" 2}`. They are fully interchangable.
 
 Indices of lists are 0-based, and keys of an assoc are referred to as
 the indices of an assoc.  This concept unifies assocs and lists so that
@@ -96,15 +99,20 @@ value in a list.  The order of items in an assoc is never guaranteed.
 
     (declare (assoc
 
-        indices_of_my_list (indices (list 10 20 30 40))         ;returns (list 0 1 2 3)
-        indices_of_my_assoc (indices (assoc "x" 2 "y" 3 "z" 4)) ;returns just the 'keys', (list "x" "z" "y"), NOTE: order of indices in an assoc is not guaranteed
-        values_of_my_list (values (list 10 20 30 40))           ;return the exact same list (list 10 20 30 40) since the values of a list are the list itself
-        values_of_my_assoc (values (assoc "x" 2 "y" 3 "z" 4))   ;returns just the values (list 4 3 2)  NOTE: order of values in an assoc is not guaranteed
+        indices_of_my_list (indices [10 20 30 40])          ;returns [0 1 2 3]
+
+        indices_of_my_assoc (indices { "x" 2 "y" 3 "z" 4})  ;returns just the 'keys', ["x" "z" "y"],
+                                                            ;NOTE: order of indices in an assoc is not guaranteed
+
+        values_of_my_list (values [10 20 30 40])            ;returns the same list [10 20 30 40] since the values
+                                                            ;of a list are the list itself
+
+        values_of_my_assoc (values { "x" 2 "y" 3 "z" 4})    ;returns just the values [4 3 2]
+                                                            ;NOTE: order of values in an assoc is not guaranteed
 
     ))
 
-lists can use bracket notation as syntactic sugar instead of the **(list)** opcode, and assocs may use curly braces instead of the **(assoc)** opcode,
-such that (list 1 2 3) is same as [1 2 3] and (assoc "a" 1 "b" 2) is same as {"a" 1 "b" 2}. They are fully interchangable.
+
 
 Also note that `(assoc foo 3 bar 5)` is same as `(assoc "foo" 3 "bar" 5)`, the quotes around
 the indices (keys) are *optional*. This means that **(assoc** uses the literal string value of the
@@ -114,18 +122,15 @@ of that variable instead of it being "foo", you need to use the opcode **(associ
 either variables or output of some code. The values of an assoc are always evaluated.
 
     (declare (assoc foo "my_key" bar 5)) ; create a 'variable' named "foo" that has the value of "my_key"
-    (print (assoc foo bar))          ;prints (assoc foo 5) - the key was not evaluated
-    (print (associate foo bar)       ;prints (assoc my_key 5) - the key was evaluated
+    (print (assoc foo bar))          ;prints {foo 5} - the key was not evaluated
+    (print (associate foo bar)       ;prints {my_key 5} - the key was evaluated
 
     ;use (associate if the key is the result of output of some method:
-    (print (associate (call GenerateUUID) "hello"))  ;prints (assoc "UUID_KEY_GOES_HERE" "hello")
+    (print (associate (call GenerateUUID) "hello"))  ;prints {"UUID_KEY_GOES_HERE" "hello"}
 
-Because of this, **(associate** is not the same as the curly braces notation since **{ }** is the same as **(assoc)**
+Because of this, **(associate** is not the same as the curly braces notation, since **{ }** is the same as **(assoc)**
 
-Also note that once you declare a variable and it exists in the context
-you cannot use **(declare** to overwrite it. Since variables are actually
-just keys of an assoc that are on the stack, and those key already exist,
-if you want to change their values, you need to use the **(assign** opcode:
+Once a variable is declared in the context, you cannot use **(declare** to overwrite it. Since variables are actually just keys of an assoc that are on the stack, and those key already exist, if you want to change their values, you need to use the **(assign** opcode:
 
     (assign (assoc x 4 y 8)) ; overwrites the values of x and y accordingly
 
@@ -245,8 +250,8 @@ Use `(assign` to set previously declared variables.
 >
 >     ;Amalgam
 >     (declare (assoc x 5)) ;declare and set variable x to 5
->     (declare (assoc x (list "a" "b" "c") )) ;does nothing because x has already been declared
->     (assign (assoc x (list "a" "b" "c") )) ;sets variable x to a list of letters instead
+>     (declare (assoc x ["a" "b" "c"] )) ;does nothing because x has already been declared
+>     (assign (assoc x ["a" "b" "c"] )) ;sets variable x to a list of letters instead
 
 Order of declaring matters:
 
@@ -254,18 +259,18 @@ Order of declaring matters:
 >         ;a (declare (assoc will create an assoc of key -> value pairs where the values can be code itself.
 >         ;note: the declaration can be treated as though it's done in parallel, so you CANNOT use values
 >         ;in the same declare to calculate subsequent values like so:
->         (declare (assoc 
->             x 3 
->             y 2 
+>         (declare (assoc
+>             x 3
+>             y 2
 >             foo (* x y)
 >         ))
 >         (print foo "\n") ;outputs (null) because when foo was evaluated, x and y were still undefined nulls
 >     )
->     
+>
 >     (seq
 >         ;if you want to use declared values to make new values, you have to chain the declare statements like so:
->         (declare (assoc 
->             x 3 
+>         (declare (assoc
+>             x 3
 >             y 2
 >         ))
 >         (declare (assoc foo (* x y) )) ;the multiplication is evaluated right here so the result is stored into foo
@@ -306,8 +311,8 @@ but the overall idea is the same.  However, functional programming is strongly r
 as while loops containing an accum can be considerably slower and consume notably more memory.
 
 >     //Java
->     // print values 1-10
->     for(int i = 0; i < 10; i++){
+>     // print multiples of 10 up to 100
+>     for(int i = 0; i <= 100; i=i+10){
 >         System.out.print(i);
 >     }
 >
@@ -316,9 +321,9 @@ as while loops containing an accum can be considerably slower and consume notabl
 >     ; Loops:
 >     (let
 >         (assoc i 0)
->         (while (< i 10)
+>         (while (<= i 100)
 >             (print i) ; do stuff here
->             (accum (assoc i 1)) ;increment i by 1
+>             (accum (assoc i 10)) ;increment i by 10
 >         )
 >     )
 >
@@ -327,12 +332,12 @@ as while loops containing an accum can be considerably slower and consume notabl
 >     ;Maps serve the same purpose as loops, but in a more functional way.  Maps are also an easy and efficient
 >     ;way to iterate over a series of values that may not be a sequence but are not guaranteed to execute in order
 >     ;(i.e., map may utilize parallel processing, especially if preceeded by ||), but do guarantee ordered output.
->     ; Print values from 1 to 10
+>     ; Print multiples of 10 up to to 100
 >     (map
 >         (lambda
 >             (print (current_value)) ;run this on each item from the list
 >         )
->         (range 0 9) ;generate a list from 0 through 9
+>         (range 0 100 10) ;generate a list from 0 through 100, going up by 10
 >     )
 
 
@@ -341,28 +346,25 @@ as while loops containing an accum can be considerably slower and consume notabl
 >     ;if we want 'foo' to be a function, we need to make sure the code is not evaluated right away,
 >     ;to do that we wrap it in a (lambda)
 >     (seq
->         (declare (assoc 
->             x 3 
+>         (declare (assoc
+>             x 3
 >             y 2
 >         ))
 >         (declare (assoc foo (lambda (* x y)) )) ;the multiplication is stored as the code itself, WITHOUT being evaluated
->     
+>
 >         (print "foo: " foo "\n") ;thus this returns the unevaluated code for the multiplication that's stored into foo
->     
+>
 >         ;now that the code in foo is not evaluated, to evaluate it we can 'call' it:
 >         (print "calling foo: "
 >             (call foo) ; this calls/runs/evaluates 'foo', which uses x and y in the scope and thus returns a 6
 >         )
->     
+>
 >         ;since the code in foo is not evaluated until it is called it, we can pass in parameters for x and y
 >         (print "calling foo w/ params: "
 >             (call foo (assoc x 4 y 8))  ;and now we have what most developers would consider a 'function' or 'method'
 >         )
 >     )
-
-Functions in Amalgam *should* be implemented using labels to follow
-coding standards, but can be unlabeled variables as well.
-
+>
 >     //Javascript
 >     function mul(x, y){
 >         return x * y;
@@ -371,22 +373,20 @@ coding standards, but can be unlabeled variables as well.
 >     //outputs: 8
 >
 >     ;Amalgam
->     #mul (* x y)
+>     (declare (assoc mul (lambda (* x y)) ))
 >     (print (call mul (assoc x 4 y 2)))
 >     ;outputs: 8
->
->     ;unlabeled function definition:
->     (declare (assoc mul (lambda (* x y)) ))
+
 
 Notes:
 
-`(lambda` means we're going to define a function (or any code) but we are not going to evaluate it. 
-In this example, it stores the function/code itself into the variable. 
+`(lambda` means we're going to define a function (or any code) but we are not going to evaluate it.
+In this example, it stores the function/code itself into the variable.
 We pass in parameters to a function as an `(assoc` with the variables as the keys of that assoc.
 `(call` evaluates/executes/runs the code inside the lambda.
 
-When declaring functions via labels (labels are explained in more detail below), wrap them in a 
-`(null` opcode to have the code declared but not evaluated:
+When declaring functions via labels (labels are explained in more detail below), wrap them in a
+`(lambda` opcode to have the code declared but not evaluated:
 
 Functions with default parameters:
 
@@ -404,17 +404,17 @@ Functions with default parameters:
 >
 >     ;Amalgam
 >     ;method to multiply all the values in a list by themselves and some provided factor
->     ;wrapped in a (null) to prevent this code from being evaluated during script execution but available to be call'ed.
->     (null 
->         #multiplyValuesInList
->         (declare
->             (assoc
->                 my_list [1]  ;specify the parameters and what the default values are
->                 factor 2
->             )
->             (* (apply "*" my_list) factor)
->         )
->     )
+>     ;wrapped in a (lambda) to prevent this code from being evaluated during script execution but available to be call'ed.
+>     (declare (assoc
+>         multiplyValuesInList
+>             (lambda (declare
+>                 (assoc
+>                     my_list [1]  ;specify the parameters and what the default values are
+>                     factor 2
+>                 )
+>                 (* (apply "*" my_list) factor)
+>             ))
+>     ))
 >
 >     (call multiplyValuesInList)
 >     ;;outputs: 2
@@ -435,7 +435,7 @@ via `(retrieve_from_entity`.
 The 'parent' container entity has full access to its full hierarchy of
 contained entities (all its children entities and grand children, etc.)
 Child entities, however only have access to their parent container
-entity's labels that are marked with a **\#^**.
+entity's labels that are marked with a **\^**.
 
 >     //Java
 >     public class Car {
@@ -459,21 +459,20 @@ entity's labels that are marked with a **\#^**.
 >
 >     ;;Amalgam
 >     ;creating a named entity will "instantiate" so that you can refer to it by name, in this example we name it "car"
->     (create_entities "car"
->         (lambda (null
->             #color "white"
+>     (create_entities "car" {
+>         color "white"
 >
->             #drive
->                 (declare
->                     (assoc speed 0) ;parameter, default to 0
->                     (if (< speed 35)
->                         (print "slow " color "\n")
->                         ;else
->                         (print "vroom " color "\n")
->                     )
+>         drive
+>             (lambda (declare
+>                 (assoc speed 0) ;parameter, default to 0
+>                 (if (< speed 35)
+>                     (print "slow " color "\n")
+>                     ;else
+>                     (print "vroom " color "\n")
 >                 )
->         ))
->     )
+>             ))
+>     })
+>
 >     (assign_to_entities "car" (assoc color "blue")) ;set color
 >     (call_entity "car" "drive" (assoc speed 67))  ;drive fast
 >
@@ -481,64 +480,28 @@ entity's labels that are marked with a **\#^**.
 >     ;...alternatively you could create an entity and assign it to a variable and then refer to it using the variable:
 >     (declare (assoc
 >         myCar
->             (create_entities
->                 (null
->                     ;todo: copy-pasta code from the above (null
->                 )
->             )
+>             (create_entities {
+>                 ;todo: copy-pasta code from the above 'car' entity
+>             })
 >     ))
 >     (assign_to_entities myCar (assoc color "blue")) ;set color
 >     (call_entity myCar "drive" (assoc speed 67))  ;drive fast
 
 # Labels
 
-Entity attributes are denoted by "labels". To label an operator, just place a
-label in front or above the referenced opcode. Labels are petty much
-annotations and references to code and data; in object oriented programming,
-they are for denoting creating methods and attributes, though an operator can have multiple labels.
-
-    #foo
-    #bar
-        5
-
-This will attach the labels **foo** and **bar** to the immediate number 5 as
-instantiated in the current location of the current entity,
-allowing you to use either of them in code as variables, checked after all other lexical scopes:
-
-    (print foo " toes and " bar " fingers\n")
-
-or you can label more complex code:
-
-    (seq
-        (null
-            #code_block
-            (list "a" "b" #third_value "c")
-        )
-
-        (print (get code_block 1)) ;gets the value at index=1, prints b
-
-        (print third_value) ;prints c since that's what this label is referencing
-
-)
-
-The explanation for this code above is that **\#code\_block** is in
-front of the list, therefore it references the entire list, whereas
-**\#third\_value** is in front of the literal string "c" so it
-references just that value.
-According to the style guide you should put labels on their own lines above the code you want to attach them to.
-In the above example, the label **\#third\_value** is not on its own line, but it still references whatever code is immediately after it.
-Additionally, **\#code\_block** is placed in a null so that it won't be executed by the seq.
+If an entity's code is an assoc (as in the above example), its top level keys can be referred to as "labels".
+Thus in the example above, **color** and **drive** are labels of the entity 'car'.
 
 
-There are 4 types of labels in Amalgam:
-  - `#regular_label` labels accessible by this entity and all 'parent'
+There are 3 types of labels in Amalgam:
+  - `regular_label` labels accessible by this entity and all 'parent'
 container entities, but not 'child' contained entities
-  - `#^public_label` labels accessible by everyone, contained and container
+  - `^public_label` labels accessible by everyone, contained and container
 entities
-  - `#!private_label` labels accessible only by this entity, not contained
+  - `!private_label` labels accessible only by this entity, not contained
 and not container entities
-  - `##inaccessible_label` multiple-\# means the label, whether its regular,
-public or private, are innaccessible by anyone until they are evaluated
+
+
 
 
 # More Advanced Operations
@@ -911,34 +874,34 @@ The 'root' of an entity is its top-most function, thus a script calling `(retrie
 
 Entities can contain other entities, aka *child* entities. The 'parent' container entity has full access to its full hierarchy of
 contained entities (all its children entities and grand children, etc.) Child entities, however only have access to their parent container
-entity's labels that are marked with a `#^`
+entity's labels that are marked with a `^`
 
 To create contained entities use `(create_entities`, optionally specifying a name for each one. If you don't specify one, the system will
 create one for youin the format of 10 digit number preceded by a _, e.g., "_2364810274".
 
 
 ```
-(create_entities (lambda (null)) )
-(create_entities "bob" (lambda (null)) )
+(create_entities (lambda { }) )
+(create_entities "bob" (lambda { }) )
 ```
 
 The above code creates one empty entity with a system-generated name and one named *bob*.
 To see the full list of contained entities use `(contained_entities)`.
 
 You can create entities contained by other entities by specifying the hierarchy traversal path, for example, to create an entity contained by *bob* named *food* we would do this:
-`(create_entities (list "bob" "food") (lambda (null)) )`
+`(create_entities ["bob" "food"] (lambda { }) )`
 And to see all contained entities in *bob* we would do this:
-`(contained_entities "bob")` or `(contained_entities (list "bob"))`
+`(contained_entities "bob")` or `(contained_entities ["bob"])`
 
 Since methods/functions are referenced via labels (see User Guide for details), we can call functions on child entities like so:
 
 ```
 ;create an entity named 'foo' with a method and a static value
 (create_entities "foo" (lambda
-    (null
-        ##add_five (+ x 5) ;create a method that adds 5 to x
-        ##static_value "STATIC"
-    )
+    {
+        add_five (+ x 5) ;create a method that adds 5 to x
+        static_value "STATIC"
+    }
 ))
 (print
     ;execute the method 'add_five' on entity 'foo' passing in 10 as the variable x
@@ -963,8 +926,7 @@ You now have a contained entity named *blah* that you can access via regular ent
 Directly into your file:
 
 ```
-#load_label (null)
-(direct_assign_to_entities (assoc load_label (load "filename.amlg")) )
+(assign_to_entities (assoc load_label (load "filename.amlg")) )
 ```
 
 The entire contents of your *filename.amlg* will be loaded into *load_label* and accessible directly in the rest of the script.
@@ -1033,9 +995,9 @@ or
 
 
 ;dynamically set parallelism (concurrency) based on some logic
-(null
-    #mymap (map (lambda (print (current_value) "\n")) (range 1 30))
-)
+(declare (assoc
+    mymap (lambda (map (lambda (print (current_value) "\n")) (range 1 30)) )
+))
 (if run_mt
     (call (set_concurrency mymap .true))
     (call mymap)

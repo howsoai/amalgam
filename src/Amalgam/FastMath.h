@@ -57,9 +57,18 @@ __forceinline double FastPowIntegerNonNegativeExp(double base, int64_t exponent)
 
 __forceinline double FastPowApplyFractionalPartOfExponent(double value_raised_to_integer_power, double base, double fraction_part_of_exponent)
 {
-	int64_t base_as_raw_int = *(reinterpret_cast<int64_t *>(&base));
-	int64_t result_as_raw_int = static_cast<int64_t>((fraction_part_of_exponent * (base_as_raw_int - 4606921280493453312LL)) + 4606921280493453312LL);
-	return value_raised_to_integer_power * (*reinterpret_cast<double *>(&result_as_raw_int));
+	//exponent bias
+	constexpr int64_t bias = int64_t{ 1023 } << 52;
+
+	int64_t base_bits;
+	std::memcpy(&base_bits, &base, sizeof(base_bits));
+
+	int64_t result_bits = static_cast<int64_t>(fraction_part_of_exponent * (base_bits - bias) + bias);
+
+	//safer than a reinterpret cast, compiler should optimize it out
+	double result;
+	std::memcpy(&result, &result_bits, sizeof(result));
+	return value_raised_to_integer_power * result;
 }
 
 //Same as FastPow() but assumes the exponent is not zero 
@@ -147,6 +156,10 @@ public:
 		
 		absoluteIntegerExponent = static_cast<int64_t>(abs_exponent);
 		fractionPartOfExponent = abs_exponent - absoluteIntegerExponent;
+
+		//cache checks to avoid repeated computation
+		nonnegativeExponent = (exponent >= 0.0);
+		negativeInfinityExponent = (exponent == -std::numeric_limits<double>::infinity());
 	}
 
 	inline double FastPow(double base)
@@ -162,7 +175,7 @@ public:
 	}
 
 	//FastPow but when the exponent is known to be nonzero and the base is nonnegative
-	inline double FastPowNonZeroExpNonnegativeBase(double base)
+	__forceinline double FastPowNonZeroExpNonnegativeBase(double base)
 	{
 		if(base == 0.0)
 			return 0.0;
@@ -172,9 +185,9 @@ public:
 
 protected:
 
-	inline double FastPowNonZeroExpNonzeroBase(double base)
+	__forceinline double FastPowNonZeroExpNonzeroBase(double base)
 	{
-		if(exponent >= 0)
+		if(nonnegativeExponent)
 		{
 			double r = FastPowIntegerNonNegativeExp(base, absoluteIntegerExponent);
 			if(fractionPartOfExponent == 0.0)
@@ -185,7 +198,7 @@ protected:
 		else //negative exponent
 		{
 			//not a common value, so only check if we already know the exponent is negative
-			if(exponent == -std::numeric_limits<double>::infinity())
+			if(negativeInfinityExponent)
 				return 0;
 
 			double r = FastPowIntegerNonNegativeExp(base, absoluteIntegerExponent);
@@ -196,9 +209,13 @@ protected:
 		}
 	}
 
-	double exponent;
+	//deliberate order of attributes for cache purposes; the first boolean selects the path (and will be padded),
+	//and aside from the second boolean, the others are ordered by use
+	bool nonnegativeExponent;
+	bool negativeInfinityExponent;
 	int64_t absoluteIntegerExponent;
 	double fractionPartOfExponent;
+	double exponent;
 };
 
 //Normalizes the vector; if any are infinity, it will equally uniformly normalize over just the infinite values

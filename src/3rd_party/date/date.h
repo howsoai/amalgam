@@ -7187,6 +7187,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                         int tp = not_a_ampm;
 #if !ONLY_C_LOCALE
                         tm = std::tm{};
+                        tm.tm_isdst = -1;
                         tm.tm_hour = 1;
                         ios::iostate err = ios::goodbit;
                         f.get(is, nullptr, is, err, &tm, command, fmt+1);

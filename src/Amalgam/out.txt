@@ -713,15 +713,15 @@ a
 {
 	a 1
 	b 2
-	d 4
+	c 3
 	e 5
 	f 6
 }
-{b 2 f 6}
+{b 2 c 3}
 {
-	a 1
 	b 2
-	d 4
+	c 3
+	e 5
 	f 6
 }
 {
@@ -764,15 +764,15 @@ c
 {
 	a 1
 	b 2
-	d 4
+	c 3
 	e 5
 	f 6
 }
-{b 2 f 6}
+{b 2 c 3}
 {
-	a 1
 	b 2
-	d 4
+	c 3
+	e 5
 	f 6
 }
 {
@@ -1125,7 +1125,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["c" "a" 4 "b"]
+["a" 4 "c" "b"]
 [
 	0
 	1
@@ -1137,10 +1137,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[2 0 1 3]
-[2 0 1 3]
+[2 1 3 0]
+[2 1 3 0]
 --values--
-[3 1 "d" 2]
+[1 "d" 3 2]
 [
 	"a"
 	1
@@ -1161,7 +1161,7 @@ abcdef
 	4
 	"d"
 ]
-["d" 3 1 2]
+[1 "d" 3 2]
 [
 	1
 	2
@@ -1290,10 +1290,10 @@ string
 list
 assoc
 [
+	"4"
+	[4]
 	4
 	{4 4}
-	[4]
-	"4"
 ]
 --set--
 {
@@ -1384,7 +1384,7 @@ current_index: 2
 				8
 			]
 		accum_string "abcdef"
-		argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+		argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 		bar (declare
 				{x 6}
 				(+ x 2)
@@ -1397,13 +1397,13 @@ current_index: 2
 				A {B 2}
 				B 2
 			}
-		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rmdir "rmdir /s /q "
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1772648202.845152
+		start_time 1772745175.662883
 		www 1
 		x 12
 		zz 10
@@ -1430,7 +1430,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1443,13 +1443,13 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rmdir "rmdir /s /q "
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1772648202.845152
+	start_time 1772745175.662883
 	www 1
 	x 12
 	zz 10
@@ -1475,7 +1475,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1488,13 +1488,13 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rmdir "rmdir /s /q "
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1772648202.845152
+	start_time 1772745175.662883
 	www 1
 	x 12
 	zz 10
@@ -1602,11 +1602,11 @@ b
 	"b"
 ]
 
-infinity test c or d: ["d" "d" "c" "c"]
+infinity test c or d: ["c" "c" "d" "d"]
 
-{a 35 b 49 c 16}
+{a 16 b 49 c 35}
 
-[1 7 3]
+[3 7 5]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1710,16 +1710,16 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"c":"c","d":null}]
+21: [{"a":3,"b":4},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: c: 3
+23: d: 4
+a: 1
 e:
   - a
   - b
   - 
   - .inf
-d: 4
-a: 1
+c: 3
 b: 2
 
 24: a: 1
@@ -1733,7 +1733,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2026-03-04-13.16.42.8723280
+current date-time in epoch: 2026-03-05-16.12.55.7283650
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2226,16 +2226,6 @@ decrypted: hello
 	{_ (null)}
 	(replace
 		_
-		[]
-		(lambda
-			{
-				a 2
-				g (get
-						(current_value 1)
-						"g"
-					)
-			}
-		)
 		["g"]
 		(lambda
 			[
@@ -2245,6 +2235,16 @@ decrypted: hello
 				)
 				4
 			]
+		)
+		[]
+		(lambda
+			{
+				a 2
+				g (get
+						(current_value 1)
+						"g"
+					)
+			}
 		)
 	)
 )
@@ -2493,7 +2493,9 @@ abcexyz
 {
 	a [0 1]
 	b [1 2]
-	y []
+	c [2]
+	w [3]
+	z []
 }
 --total_entity_size--
 67
@@ -2717,57 +2719,56 @@ flatten restore with concurrency
 --mutate_entity--
 {
 	a 1
-	b 2
-	c 3
-	d (filter)
+	b b
+	c 7
+	d 4
 	e 5
-	f (indices)
-	g 7
-	h b
+	f (filter)
+	g b
+	h 8
 	i 9
-	j b
-	k (associate "a" 1 (abs) 2)
-	l (declare)
+	j a
+	k (abs)
+	l b
 	m 13
-	n "a"
-	o 11
+	n 14
+	o (associate)
 }
 
 {
 	a 1
 	b 2
 	c 3
-	d 4
+	d (call_entity)
 	e 5
 	f 6
-	g (lambda)
-	h (get)
-	i (!~)
+	g (call)
+	h .true
+	i (get)
+	j 9
+	k {}
+	l (get_value)
+	m (floor)
+	n 14
+	o (associate (lambda) (!~) "b" 2)
+}
+
+{
+	a (-)
+	b (-)
+	c 3
+	d 4
+	e (*)
+	f 6
+	g 7
+	h 8
+	i (+)
 	j 10
 	k 11
 	l 12
-	m (range)
-	n 16
-	o 2
-}
-
-{
-	a 1
-	b (+)
-	c (-)
-	d 4
-	e 5
-	f (-)
-	g 7
-	h 8
-	i 9
-	j (-)
-	k (+)
-	l (+)
-	m 13
+	m (-)
 	n (+)
-	o (associate "a" (*) "b" 2)
-	qWz2 (*)
+	o (associate "a" 1 (*) (-))
 }
 
 --commonality_entities--
@@ -2783,9 +2784,9 @@ MergeEntityChild1
 MergeEntityChild2
 {p 3 q 4}
 _8UI2tTy3IAs
-{}
+{E 3 F 4}
 _gJhKHCMZG0h
-{}
+{e 3 f 4}
 --union_entities--
 {a 3 b 4 c 3}
 MergeEntityChild1
@@ -2802,29 +2803,21 @@ _8UI2tTy3IAs
 {
 	E 3
 	F 4
-	e 3
-	f 4
+	G 5
+	H 6
 }
 _gJhKHCMZG0h
 {
-	E 3
-	F 4
-	G 5
-	H 6
 	e 3
 	f 4
 	g 5
 	h 6
 }
 {
-	p ["_8WU0oPCIl3T" "_5UKVG66rWeO" "_5UKVG66rWeO" "_8WU0oPCIl3T"]
+	p ["_8WU0oPCIl3T" "_5UKVG66rWeO" "_8WU0oPCIl3T" "_5UKVG66rWeO"]
 }
 _5UKVG66rWeO
 {
-	E 3
-	F 4
-	G 5
-	H 6
 	e 3
 	f 4
 	g 5
@@ -2834,8 +2827,8 @@ _8WU0oPCIl3T
 {
 	E 3
 	F 4
-	e 3
-	f 4
+	G 5
+	H 6
 }
 --difference_entities--
 (declare
@@ -2952,8 +2945,14 @@ _8WU0oPCIl3T
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -2978,7 +2977,16 @@ _8WU0oPCIl3T
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3092,8 +3100,14 @@ _gIXHjGgMfy6
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3118,7 +3132,16 @@ _gIXHjGgMfy6
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3150,7 +3173,89 @@ contained_entities new_entity: ["DiffEntityChild1" "OnlyIn2" "_2NDTM3d7wqW" "_1K
 difference between DiffEntity2 and new_entity:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_2NDTM3d7wqW")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_2NDTM3d7wqW")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_1KAQphU7Fir")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_1KAQphU7Fir")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	new_entity
 )
 (declare
 	{_ (null) new_entity (null)}
@@ -3273,24 +3378,25 @@ difference between DiffContainer and DiffEntity2:
 	(clone_entities _ new_entity)
 )
 --mix_entities--
-{b 4 c 3}
+{a 3 b 4}
 MergeEntityChild1
 {x 3 y 4}
 MergeEntityChild2
-{p 3 q 4 w 7}
+{
+	p 3
+	q 4
+	u 5
+	v 6
+}
 _8UI2tTy3IAs
-{E 3 F 4}
-_gJhKHCMZG0h
 {
 	E 3
 	F 4
 	G 5
 	H 6
-	e 3
-	f 4
-	g 5
-	h 6
 }
+_gJhKHCMZG0h
+{e 3 f 4}
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3356,7 +3462,7 @@ deep sets
 
 --set_entity_permissions--
 RootTest
-1772648202.922456
+1772745176.217697
 {
 	alter_performance .true
 	environment .true
@@ -3770,74 +3876,74 @@ store to .json normally
 ["Child1" "Child5"]
 ["Child3" "Child4"]
 ["Child6" "Child7"]
-["Child1" "Child2" "Child4" "Child7"]
-["Child1" "Child4" "Child5" "Child6"]
+["Child3" "Child4" "Child5" "Child7"]
+["Child1" "Child2" "Child5" "Child7"]
 ["Child4" "Child6"]
 --query_sample--
-["Child7"]
-["Child1" "Child2"]
 ["Child3"]
+["Child4" "Child4"]
+["Child1"]
 ["Child7"]
 with weights
-["Child2"]
+["Child1"]
 ["Child1"]
 [
+	"Child1"
+	"Child2"
 	"Child2"
 	"Child1"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child3"
+	"Child4"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child1"
+]
+[
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child5"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child2"
 	"Child1"
 	"Child4"
 	"Child2"
-	"Child5"
-	"Child2"
-	"Child5"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child2"
+	"Child4"
 	"Child1"
 	"Child2"
 	"Child1"
 	"Child2"
 ]
 [
-	"Child1"
 	"Child2"
 	"Child2"
 	"Child2"
 	"Child2"
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child7"
-	"Child1"
 	"Child2"
 	"Child7"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child1"
-]
-[
-	"Child4"
-	"Child2"
-	"Child5"
-	"Child2"
-	"Child2"
-	"Child2"
 	"Child2"
 	"Child2"
 	"Child2"
 	"Child2"
 ]
-["Child2"]
+["Child2" "Child3" "Child7"]
 --query_in_entity_list--
 ["Child6" "Child7"]
 --query_not_in_entity_list--
@@ -3895,7 +4001,7 @@ weighted query: {
 	Child7 10
 }
 weighted query list of lists: [
-	["Child2" "Child6" "Child1" "Child7" "Child4"]
+	["Child2" "Child6" "Child1" "Child7" "Child3"]
 	[1 2 4 10 100]
 ]
 weighted query list of lists: [
@@ -3904,7 +4010,7 @@ weighted query list of lists: [
 	[-1 2 4 10 100]
 ]
 weighted query list of lists with multiple values: [
-	["Child2" "Child6" "Child1" "Child7" "Child3"]
+	["Child2" "Child6" "Child1" "Child7" "Child4"]
 	[1 2 4 10 100]
 	[-1 2 4 10 100]
 	[-1 1 3 0 100]
@@ -3934,7 +4040,7 @@ weighted query list of lists with multiple values: [
 test code and string distances
 1: ["Child1" "Child4"]
 2: ["Child1" "Child2" "Child4" "Child5"]
-3: ["Child2" "Child4" "Child5" "Child6"]
+3: ["Child1" "Child2" "Child5" "Child6"]
 4: ["Child1" "Child2" "Child5" "Child6"]
 5: ["Child1" "Child2" "Child6"]
 6: ["Child1" "Child4" "Child5" "Child6"]
@@ -4029,10 +4135,10 @@ assoc-based: ["Child2" "Child4" "Child7"]
 	y 5
 }
 
+6
 5
-4
-4
 5
+6
 [
 	{x 0 y 0}
 	{x 1 y 0}
@@ -4109,11 +4215,11 @@ case convictions:
 }
 case convictions unweighted:
 {
-	entity1 2.2695667753739017
-	entity2 0.6731896181878543
-	entity3 1.1557765434908727
-	entity4 38.384973496395396
-	entity5 0.45815851485891435
+	entity1 2.245763949766465
+	entity2 0.6727808337544585
+	entity3 1.168024570420962
+	entity4 41.859541729099234
+	entity5 0.4569729588544418
 }
 case convictions weighted by object (with erroneously long nominal):
 {
@@ -4466,11 +4572,11 @@ distance symmetry tests
 [
 	[
 		"B"
-		"C"
-		"D"
-		"F"
 		"I"
 		"A"
+		"D"
+		"F"
+		"C"
 		"G"
 		"H"
 	]
@@ -4488,13 +4594,13 @@ distance symmetry tests
 [
 	[
 		"B"
+		"I"
 		"F"
 		"A"
 		"D"
-		"I"
 		"C"
 		"J"
-		"G"
+		"H"
 	]
 	[
 		0
@@ -4720,4 +4826,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-0.537574052810669
+1.6097559928894043

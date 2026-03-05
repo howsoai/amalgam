@@ -1253,6 +1253,10 @@ public:
 
 protected:
 
+	//combines annotations and comments into a single string to minimize storage overhead rather
+	// than minimize compute time; each retrieval time is linear in the length of the strings
+	//the two strings are separated by a null terminator and end with a null terminator,
+	// so it is faster to retrieve both together than one and then the other
 	class AnnotationsAndComments
 	{
 	public:
@@ -1374,7 +1378,8 @@ protected:
 				return false;
 
 			const char *p = buffer.get();
-			if(*p != '\0') return true;
+			if(*p != '\0')
+				return true;
 
 			p += std::strlen(p) + 1;
 			return *p != '\0';

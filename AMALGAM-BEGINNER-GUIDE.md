@@ -89,7 +89,7 @@ Data Structures:
 
 The data types of amalgam consist of immediate values, which are string and number, lists, which are ordered sets of elements and have an opcode associated with it (which may be list), and assoc, which is an associative array of key-value pairs.  Code is just a list with a different opcode.
 
-lists can use bracket notation as syntactic sugar instead of the **(list)** opcode, and assocs may use curly braces instead of the **(assoc)** opcode,
+Lists can use bracket notation as syntactic sugar instead of the **(list)** opcode, and assocs may use curly braces instead of the **(assoc)** opcode,
 such that `(list 1 2 3)` is same as `[1 2 3]` and `(assoc "a" 1 "b" 2)` is same as `{"a" 1 "b" 2}`. They are fully interchangable.
 
 Indices of lists are 0-based, and keys of an assoc are referred to as

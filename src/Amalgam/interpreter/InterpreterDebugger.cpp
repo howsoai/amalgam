@@ -99,7 +99,7 @@ static void ClampSingleLineStringLength(std::string &s, size_t max_num_chars, st
 //prints the node and its comment both truncated to max_num_chars or newline
 static std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t max_num_chars = 100)
 {
-	//if no annotations or comments, then can just print
+	//comments are used for determining location; if no comments, then just print the value
 	if(en == nullptr || !en->HasComments())
 	{
 		std::string code_str = Parser::Unparse(en, false, false, true);

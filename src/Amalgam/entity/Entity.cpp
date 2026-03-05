@@ -416,7 +416,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		if(write_listeners != nullptr)
 		{
 			for(auto &wl : *write_listeners)
-				wl->LogRemoveLabesFromEntity(this, labels_to_remove);
+				wl->LogRemoveLabelsFromEntity(this, labels_to_remove);
 		}
 		asset_manager.RemoveEntityLabelValues(this, labels_to_remove);
 

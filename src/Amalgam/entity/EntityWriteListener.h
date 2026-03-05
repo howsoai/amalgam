@@ -40,7 +40,7 @@ public:
 	// in the assoc specified by label_value_pairs
 	void LogWriteLabelValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool accum_values);
 
-	void LogRemoveLabesFromEntity(Entity *entity, EvaluableNode *labels);
+	void LogRemoveLabelsFromEntity(Entity *entity, EvaluableNode *labels);
 
 	//logs the new entity root, assuming it has already been set
 	void LogWriteToEntityRoot(Entity *entity);

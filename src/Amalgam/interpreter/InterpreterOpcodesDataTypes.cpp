@@ -976,7 +976,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ANNOTATIONS(EvaluableN
 
 	//get the annotations
 	auto [valid, new_annotations] = InterpretNodeIntoStringValue(ocn[1]);
-	source->SetAnnotationsString(new_annotations);
+	if(valid)
+		source->SetAnnotationsString(new_annotations);
+	else
+		source->ClearAnnotations();
+
 	return source;
 }
 
@@ -1008,7 +1012,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode
 
 	//get the comments
 	auto [valid, new_comments] = InterpretNodeIntoStringValue(ocn[1]);
-	source->SetCommentsString(new_comments);
+	if(valid)
+		source->SetCommentsString(new_comments);
+	else
+		source->ClearComments();
+
 	return source;
 }
 
@@ -1742,7 +1750,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 		}
 		else
 		{
-			bool has_metadata = cur->HasMetadata();
 			if(DoesEvaluableNodeTypeUseBoolData(cur->GetType()))
 				s = EvaluableNode::BoolToString(cur->GetBoolValueReference());
 			else if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))

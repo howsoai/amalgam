@@ -128,7 +128,7 @@ void EntityWriteListener::LogWriteLabelValuesToEntity(Entity *entity,
 	LogNewEntry(new_write);
 }
 
-void EntityWriteListener::LogRemoveLabesFromEntity(Entity *entity, EvaluableNode *labels)
+void EntityWriteListener::LogRemoveLabelsFromEntity(Entity *entity, EvaluableNode *labels)
 {
 	//can only work with ordered child nodes
 	if(!EvaluableNode::IsOrderedArray(labels))

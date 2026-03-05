@@ -511,7 +511,7 @@ public:
 			if(asset_params->flatten)
 			{
 				if(asset_params->writeListener != nullptr)
-					asset_params->writeListener->LogRemoveLabesFromEntity(entity, labels);
+					asset_params->writeListener->LogRemoveLabelsFromEntity(entity, labels);
 			}
 			else //just update the individual entity
 			{

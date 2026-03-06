@@ -27,7 +27,7 @@ public:
 	//iterator for walking along which partial sums have been filled in
 	struct Iterator
 	{
-		__forceinline Iterator(size_t _index, size_t _bit, SumOrMaskBucket *value_location)
+		__forceinline Iterator(size_t _index, SumOrMaskBucket *value_location)
 			: index(_index), valueLocation(value_location)
 		{	}
 
@@ -182,7 +182,7 @@ public:
 	__forceinline Iterator BeginPartialSumIndex(size_t partial_sum_index)
 	{
 		size_t offset = bucketStride * partial_sum_index + 1;
-		return Iterator(0, 0, &buffer[offset]);
+		return Iterator(0, &buffer[offset]);
 	}
 
 	//returns true if the term of the sum at partial_sum_index and term_index has been accumulated yet, else false

@@ -154,7 +154,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		std::string version_requested = InterpretNodeIntoStringValueEmptyNull(ocn[1]);
 		auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_requested, false);
 		EvaluableNode *result = evaluableNodeManager->AllocNode(success);
-		result->SetComments(error_message);
+		result->SetCommentsString(error_message);
 		return EvaluableNodeReference(result, true);
 	}
 	else if(command == "est_mem_reserved" && permissions.HasPermission(EntityPermissions::Permission::ENVIRONMENT))
@@ -422,16 +422,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en,
 	if(ocn.size() > 1)
 		pretty = InterpretNodeIntoBoolValue(ocn[1]);
 
-	bool deterministic_order = false;
+	bool deterministic_order = true;
 	if(ocn.size() > 2)
-		deterministic_order = InterpretNodeIntoBoolValue(ocn[2]);
+		deterministic_order = InterpretNodeIntoBoolValue(ocn[2], true);
+
+	bool include_attributes = false;
+	if(ocn.size() > 3)
+		include_attributes = InterpretNodeIntoBoolValue(ocn[3]);
 
 	size_t max_length = std::numeric_limits<size_t>::max();
 	if(interpreterConstraints != nullptr)
 		max_length = interpreterConstraints->maxNumAllocatedNodes;
 
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);
-	std::string s = Parser::Unparse(tree, pretty, true, deterministic_order, false, false, max_length);
+	std::string s = Parser::Unparse(tree, pretty, include_attributes, deterministic_order, false, false, max_length);
 	evaluableNodeManager->FreeNodeTreeIfPossible(tree);
 
 	return AllocReturn(s, immediate_result);
@@ -523,7 +527,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN(Evalua
 
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
-		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		return evaluableNodeManager->DeepAllocCopy(en, false);
 
 	EvaluableNodeReference value = InterpretNode(ocn[0]);
 
@@ -549,8 +553,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
-	if(_label_profiling_enabled && function->GetNumLabels() > 0)
-		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
+	bool profiling_call = false;
+	if(_label_profiling_enabled && curEntity != nullptr)
+	{
+		auto [label_sid, found] = curEntity->GetLabelForNodeIfExists(function);
+		size_t num_nodes = evaluableNodeManager->GetNumberOfUsedNodes();
+		if(label_sid != string_intern_pool.NOT_A_STRING_ID)
+			PerformanceProfiler::StartOperation(label_sid->string, num_nodes);
+		else
+			PerformanceProfiler::StartOperation("", num_nodes);
+		profiling_call = true;
+	}
 
 	//if have an scope stack context of variables specified, then use it
 	EvaluableNodeReference new_context = EvaluableNodeReference::Null();
@@ -558,7 +571,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 	{
 		//can keep constant, but need the top node to be unique in case assignments are made
 		new_context = InterpretNodeForImmediateUse(ocn[1]);
-		evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, false);
 	}
 
 	PushNewScopeStack(new_context);
@@ -572,7 +585,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
 		result = RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
 
-	if(_label_profiling_enabled && function->GetNumLabels() > 0)
+	if(profiling_call)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
 	return result;
@@ -599,10 +612,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 	//need to return a more complex data structure, can't return immediate
 	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->collectWarnings)
-		immediate_result = false;
-	
-	if(_label_profiling_enabled && function->GetNumLabels() > 0)
-		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
 
 	//if have a scope stack context of variables specified, then use it
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -653,16 +663,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
 		result = RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
 
-	if(_label_profiling_enabled && function->GetNumLabels() > 0)
-		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
-
 	if(interpreterConstraints != nullptr)
 		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
 
-	if(interpreter_constraints.constraintsExceeded && interpreter_constraints.collectWarnings)
+	//if only want results, return them
+	if(!interpreter_constraints.collectWarnings)
+	{
+		if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
+			return EvaluableNodeReference::Null();
+		return result;
+	}
+
+	if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
 		return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
 
-	return BundleResultWithWarningsIfNeeded(result, interpreter_constraints_ptr);
+	return BundleResultWithWarningsIfNeeded(result,
+		interpreter_constraints_ptr != nullptr ? interpreter_constraints_ptr : &interpreter_constraints);
 }
 
 static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints::ViolationType violation, EvaluableNodeManager *evaluable_node_manager)
@@ -801,7 +817,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 	//add new context
 	auto new_context = InterpretNodeForImmediateUse(ocn[0]);
 	//can keep constant, but need the top node to be unique in case assignments are made
-	evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
+	evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, false);
 	PushNewScopeStack(new_context);
 
 	//run code
@@ -1888,7 +1904,7 @@ static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType 
 
 //Generates an EvaluableNode containing a random value based on the random parameter param, using enm and random_stream
 // if any part of param is preserved in the return value, then can_free_param will be set to false, otherwise it will be left alone
-EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReference param, Interpreter *interpreter,
+static EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReference param, Interpreter *interpreter,
 	RandomStream &random_stream, bool &can_free_param, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	if(EvaluableNode::IsNull(param))
@@ -1940,7 +1956,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 		number_to_generate = static_cast<size_t>(num_value);
 		generate_list = true;
 		//because generating a list, can no longer return an immediate
-		immediate_result = false;
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
 	}
 	//make sure not eating up too much memory
 	if(ConstrainedAllocatedNodes())

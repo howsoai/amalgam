@@ -18,12 +18,6 @@
  (print "--system_time--\n")
  (declare (assoc start_time (system_time)))
 
- (print "--label--\n")
- ;label test
- (#label1 print "hello world: " (* #label-number-2 3 4) #label3 " and " (* 1 2) "\n")
-
- (#"label 1" print "hello world: " (* #"label number 2" 3 4) #"label 3" " and " (* 1 2) "\n")
-
  (print "--get_defaults--\n")
  (print (get_defaults "mutation_opcodes"))
  (print (get_defaults "mutation_types"))
@@ -1303,7 +1297,9 @@
  (print (lambda (null (+ 3 5) 7)))
 
  (print "--node null--\n")
- (print (lambda (#nulltest null)))
+ (print (lambda
+	#nulltest annotation
+	(null)))
 
  (print "--infinity--\n")
  (print .infinity "\n")
@@ -1344,7 +1340,7 @@
  (print (call (set_type (list 1 0.5 "3.2" 4) "+")) "\n")
  (print (set_type
 	(list
-		(set_labels (lambda (+ 3 4)) (list "react") )
+		(set_annotations (lambda (+ 3 4)) "react" )
 	)
 	"unordered_list"
 	))
@@ -1460,42 +1456,28 @@
   (print (format (null) "number" "time:%I:%M:%S%p") "\n")
   (print (format .infinity "number" "time:%I:%M:%S%p") "\n")
 
- (print "--get_labels--\n")
-  (print (get_labels
-  ( #labelA lambda #labelB
-   .true)))
+ (print "--get_annotations--\n")
+  (print (get_annotations
+	  (lambda
+		#annotation line 1
+		#annotation line 2
+	   .true))
+	   "\n")
 
-  (print "--get_all_labels--\n")
-  (print (get_all_labels
-	(lambda (#label21 print "hello world: " (* #label-number-22 3 4) #label23 " and " (* 1 2) )) ))
-
-  (print (get_all_labels (lambda
-  ( #labelA #labelQ * #labelB
-   (+ 1 3) 2))))
-
-  (print (get_all_labels (lambda
-  ( #labelA #labelQ * #labelB
-   (+ 1 #labelA 3) 2))))
-
- (print "--set_labels--\n")
- (print (set_labels
-  ( lambda
-   (#labelC true)) (list "labelD" "labelE")))
-
- (print "--zip_labels--\n")
- (print (zip_labels (list "l1" "l2" "l3") (list 1 2 3)))
-
- (print "--get_comments--\n")
- (print (get_comments
-   ;this is a comment
-  (lambda ;comment too
-   .true)) "\n")
+ (print "--set_annotations--\n")
+ (print (unparse (set_annotations
+  (lambda
+	#labelC
+	.true)
+	(list "labelD" "labelE"))
+   .true .true .true)
+ )
 
  (print "--set_comments--\n")
  (print (unparse (set_comments
    ;this is a comment
   (lambda ;comment too
-   .true) "new comment")) "\n")
+   .true) "new comment")  .true .true .true ) "\n")
 
  (print "--get_concurrency--\n")
  (print (get_concurrency
@@ -1515,24 +1497,27 @@
 
  (print "--set_concurrency--\n")
 
- (print (set_concurrency
+ (print (unparse (set_concurrency
 				(lambda (print "hello"))
 				.true
- ) "\n")
+ ) .true .true .true) "\n")
 
- (print (set_concurrency
+ (print (unparse (set_concurrency
 				(lambda 
 					;complex test
-					#somelabel (assoc a "hello" b 4)
+					#some annotation
+					(assoc a "hello" b 4)
 				)
 				.true
- ) "\n")
+ )  .true .true .true) "\n")
 
  (print "--get_value--\n")
  (print (get_value
    ;this is a comment
   (lambda ;comment too
-   #withalabel .true)) "\n")
+   #and an annotation part 1
+   #and annotation part 2
+   .true)) "\n")
 
  (print "--set_value--\n")
  (print (set_value
@@ -1734,8 +1719,8 @@
  					))
 
  (print (intersect
- 					(list 1 2 3 (associate "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) #label-not-1 1))) (list 5 6))
- 					(list 1 2 3 (associate "c" 3 "b" 4) (lambda (if true 1 (unordered_list #label-not-1 1 (get_entity_comments)))) (list 5 6))
+ 					(list 1 2 3 (associate "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6))
+ 					(list 1 2 3 (associate "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6))
  					))
 
  (print (intersect
@@ -1748,7 +1733,7 @@
  					(lambda (replace 4 1 7 2 6))
  					))
 
- (print (intersect
+ (print (unparse (intersect
 				(lambda (list
 								;comment 1
 								;comment 2
@@ -1761,7 +1746,7 @@
 								;comment 4
 								1
 								4 6 8 10 12 14))
- 				))
+ 				)  .true .true .true) )
 
   (print (intersect
 			(list 1 2 3)
@@ -1794,8 +1779,8 @@
  					))
 
  (print (union
- 					(list 1 2 3 (associate "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) #label-not-1 1))) (list 5 6))
- 					(list 1 2 3 (associate "c" 3 "b" 4) (lambda (if true 1 (unordered_list #label-not-1 1 (get_entity_comments)))) (list 5 6))
+ 					(list 1 2 3 (associate "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6))
+ 					(list 1 2 3 (associate "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6))
  					))
 
  (print (union
@@ -1806,7 +1791,7 @@
  (print (union (list 3 2) (list 3 4) ) )
  (print (union (list 2 3) (list 3 2 4) ) )
 
- (print (union
+ (print (unparse (union
 				(lambda (list
 								;comment 1
 								;comment 2
@@ -1822,7 +1807,7 @@
 								;comment x
 								2
 								4 6 8 10 12 14))
- 				))
+ 				)  .true .true .true) )
 
   (print (union
 			(list 1 2 3)
@@ -1980,18 +1965,18 @@
  ))
 
  (print "--total_entity_size--\n")
+ 
+ (create_entities "MergeEntity1" { "a" 3 "b" 4} )
+ (create_entities (list "MergeEntity1" "MergeEntityChild1") { "x" 3 "y" 4} )
+ (create_entities (list "MergeEntity1" "MergeEntityChild2") { "p" 3 "q" 4} )
+ (create_entities (list "MergeEntity1") { "E" 3 "F" 4} )
+ (create_entities (list "MergeEntity1") { "e" 3 "f" 4 "g" 5 "h" 6} )
 
- (create_entities "MergeEntity1" (lambda (associate "a" 3 "b" 4)) )
- (create_entities (list "MergeEntity1" "MergeEntityChild1") (lambda (associate "x" 3 "y" 4)) )
- (create_entities (list "MergeEntity1" "MergeEntityChild2") (lambda (associate "p" 3 "q" 4)) )
- (create_entities (list "MergeEntity1") (lambda (associate "E" 3 "F" 4)) )
- (create_entities (list "MergeEntity1") (lambda (associate "e" 3 "f" 4 "g" 5 "h" 6)) )
-
- (create_entities "MergeEntity2" (lambda (associate "c" 3 "b" 4)) )
- (create_entities (list "MergeEntity2" "MergeEntityChild1") (lambda (associate "x" 3 "y" 4 "z" 5)) )
- (create_entities (list "MergeEntity2" "MergeEntityChild2") (lambda (associate "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) )
- (create_entities (list "MergeEntity2") (lambda (associate "E" 3 "F" 4 "G" 5 "H" 6)) )
- (create_entities (list "MergeEntity2") (lambda (associate "e" 3 "f" 4)) )
+ (create_entities "MergeEntity2" { "c" 3 "b" 4} )
+ (create_entities (list "MergeEntity2" "MergeEntityChild1") { "x" 3 "y" 4 "z" 5} )
+ (create_entities (list "MergeEntity2" "MergeEntityChild2") { "p" 3 "q" 4 "u" 5 "v" 6 "w" 7} )
+ (create_entities (list "MergeEntity2") { "E" 3 "F" 4 "G" 5 "H" 6} )
+ (create_entities (list "MergeEntity2") { "e" 3 "f" 4} )
 
  (print (total_entity_size "MergeEntity1") "\n")
  (print (total_entity_size "MergeEntity2") "\n")
@@ -1999,13 +1984,13 @@
  (print "--flatten_entity--\n")
 
  (create_entities "FlattenTest" (lambda
- 							(unordered_list ##a (rand) )
+ 							{ a (rand) }
  							) )
   (print (call_entity "FlattenTest" "a") "\n")
   (print (get_entity_rand_seed "FlattenTest") "\n")
 
   (create_entities (list "FlattenTest" "DeepRand") (lambda
-  							(unordered_list ##a (rand) )
+  							{ a (rand) }
   							) )
  (declare (assoc seed (get_entity_rand_seed "FlattenTest")))
  (print (call_entity "FlattenTest" "a") "\n")
@@ -2042,7 +2027,7 @@
 
  (create_entities
     "MutateEntity"
-	(lambda (list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 (associate "a" 1 "b" 2)))
+	(lambda { a 1 b 2 c 3 d 4 e 5 f 6 g 7 h 8 i 9 j 10 k 11 l 12 m 13 n 14 o (associate "a" 1 "b" 2) } )
 	)
  (mutate_entity "MutateEntity" 0.4 "MutatedEntity")
  (mutate_entity "MutateEntity" 0.5 "MutatedEntity2")
@@ -2060,6 +2045,7 @@
 
  (print (commonality_entities "MergeEntity1" "MergeEntity2") "\n")
  (print (commonality_entities "MergeEntity1" "MergeEntity2" {types_must_match .false nominal_strings .false}) "\n")
+
  (print "--edit_distance_entities--\n")
 
  (print (edit_distance_entities "MergeEntity1" "MergeEntity2") "\n")
@@ -2090,13 +2076,13 @@
    (contained_entities "OredEntities")
  )
 
- (create_entities "ComplexMergeEntity1" (lambda (unordered_list #p (null))) )
- (create_entities (list "ComplexMergeEntity1") (lambda (associate "E" 3 "F" 4)) )
- (create_entities (list "ComplexMergeEntity1") (lambda (associate "e" 3 "f" 4 "g" 5 "h" 6)) )
+ (create_entities "ComplexMergeEntity1" (lambda { p (null) } ) )
+ (create_entities (list "ComplexMergeEntity1") { "E" 3 "F" 4 } )
+ (create_entities (list "ComplexMergeEntity1") { "e" 3 "f" 4 "g" 5 "h" 6 } )
 
- (create_entities "ComplexMergeEntity2" (lambda (unordered_list #p (null))) )
- (create_entities (list "ComplexMergeEntity2") (lambda (associate "E" 3 "F" 4 "G" 5 "H" 6)) )
- (create_entities (list "ComplexMergeEntity2") (lambda (associate "e" 3 "f" 4)) )
+ (create_entities "ComplexMergeEntity2" (lambda { p (null) } ) )
+ (create_entities (list "ComplexMergeEntity2") { "E" 3 "F" 4 "G" 5 "H" 6 } )
+ (create_entities (list "ComplexMergeEntity2") { "e" 3 "f" 4 } )
 
  (assign_to_entities "ComplexMergeEntity1" (assoc p (contained_entities "ComplexMergeEntity1")))
  (assign_to_entities "ComplexMergeEntity2" (assoc p (contained_entities "ComplexMergeEntity2")))
@@ -2191,15 +2177,19 @@
 
   (create_entities "descriptive_entity" (lambda
 	;this is a fully described entity
-	(null
+	{
 		;some public variable
-		##publicvar 1
+		publicvar
+		1
 		;some private variable
-		##!privatevar 2
+		!privatevar
+		2
 		;a variable accessible to contained entities
-		##^containervar 3
+		^containervar
+		3
 		;the function foo
-		##foo (declare
+		foo
+		(declare
 					;a number representing the sum
 					(assoc
 						;the value of x
@@ -2214,7 +2204,8 @@
 				)
 
 		;returns the api details
-		##get_api (seq
+		get_api
+		(seq
 
 			(assoc
 				"description"
@@ -2230,15 +2221,11 @@
 						)
 					)
 					(get_entity_comments (null) (null) .true)
-				)
-	
-	
+				)	
 			)
 
 		)
-	)
-
-
+	}
  ))
 
  (print (get_entity_comments "descriptive_entity") "\n")
@@ -2248,35 +2235,26 @@
  (print (call_entity "descriptive_entity" "get_api"))
 
  (print "--retrieve_entity_root--\n")
- (create_entities "SetGetCodeTest" (lambda (list 1 2 ##three 3)))
+ (create_entities "SetGetCodeTest" (lambda { 1 2 three 3 }))
  (print (retrieve_entity_root "SetGetCodeTest"))
  (print (retrieve_entity_root "SetGetCodeTest" .true))
  (print (retrieve_entity_root (list (null) (null) "SetGetCodeTest" (null))  ))
 
  (print "--assign_entity_roots--\n")
- (assign_entity_roots "SetGetCodeTest" (list 4 5 6))
+ (assign_entity_roots "SetGetCodeTest" { a 4 b 5 c 6 })
  (print (retrieve_entity_root "SetGetCodeTest"))
-
- (print "--accum_entity_roots--\n")
- (create_entities "AER_test" (lambda (null ##a 1 ##b 2)))
- (accum_entity_roots "AER_test" (lambda (list ##c 3)))
- (print (retrieve_entity_root "AER_test" 1))
-
- (create_entities "AER_test_2" (lambda (null)))
- (accum_entity_roots "AER_test_2" (lambda (list ##c 3)))
- (print (retrieve_entity_root "AER_test_2" 1))
 
  (print "--get_entity_rand_seed--\n")
  (print (get_entity_rand_seed) "\n")
  (create_entities "RandTest" (lambda
- 							(unordered_list ##a (rand) )
+ 							{ a (rand) }
  							) )
  (print (call_entity "RandTest" "a") "\n")
  (print (get_entity_rand_seed "RandTest") "\n")
 
  (print "--set_entity_rand_seed--\n")
  (create_entities (list "RandTest" "DeepRand") (lambda
- 							(unordered_list ##a (rand) )
+ 							{ a (rand) }
  							) )
 (assign (assoc seed (get_entity_rand_seed "RandTest")))
 (print (call_entity "RandTest" "a") "\n")
@@ -2304,12 +2282,13 @@
  (print (get_entity_permissions "RootTest") "\n")
 
  (print "--create_entities--\n")
- (print (create_entities "MyLibrary" (lambda (+ #three 3 4)) ) "\n")
+
+ (print (create_entities "MyLibrary" (lambda { a (+ 3 4) } )) "\n")
 
  (print "--nested create_entities--\n")
- (create_entities "EntityWithChildren" (lambda (associate "a" 3 "b" 4)) )
- (create_entities (list "EntityWithChildren" "Child1") (lambda (associate "x" 3 "y" 4)) )
- (create_entities (list "EntityWithChildren" "Child2") (lambda (associate "p" 3 "q" 4)) )
+ (create_entities "EntityWithChildren" { "a" 3 "b" 4} )
+ (create_entities (list "EntityWithChildren" "Child1") { "x" 3 "y" 4} )
+ (create_entities (list "EntityWithChildren" "Child2") { "p" 3 "q" 4} )
  (print (contained_entities "EntityWithChildren"))
 
  (print (create_entities "MultipleTest1" (null)) "\n")
@@ -2350,7 +2329,7 @@
  (load_entity "amlg_code/persist_module_test.amlg" "PersistModuleTest" (null) .true)
  (assign_to_entities "PersistModuleTest" (assoc a 8))
  (assign_to_entities (list "PersistModuleTest" "psm") (assoc a 5))
- (create_entities (list "PersistModuleTest" "NewModule") (lambda (associate "a" 1 "b" 2)) )
+ (create_entities (list "PersistModuleTest" "NewModule") { "a" 1 "b" 2 } )
  (load_entity "amlg_code/persist_module_test.amlg" "PersistModuleTestResults")
  (print (flatten_entity "PersistModuleTestResults"))
  (assign_to_entities "PersistModuleTest" (assoc a 1))
@@ -2391,31 +2370,28 @@
  (store "amlg_code/test_output/store_test.amlg" (list 1 2 3 4))
  (print (load "amlg_code/test_output/store_test.amlg"))
 
- ;test escaped labels
+ ;test annotations
  (declare (assoc
 	entity
 		(first (create_entities
-			(set_type
-				(list (set_labels 1 (list ".#blah")))
-				(lambda (unordered_list))
-			)
+				(set_annotations {a 1} "blah")
 		))
  ))
 
  (print (retrieve_entity_root entity 1))
- (print "retrieved: " (retrieve_from_entity entity ".#blah") "\n\n")
+ (print "retrieved: " (retrieve_from_entity entity "a") "\n\n")
 
  (store_entity "amlg_code/test_output/escaped_label.amlg" entity)
  (load_entity "amlg_code/test_output/escaped_label.amlg" "escaped_label")
 
  (print "loaded from file:\n" (retrieve_entity_root "escaped_label" 1))
- (print "retrieved: " (retrieve_from_entity "escaped_label" ".#blah") "\n")
+ (print "retrieved: " (retrieve_from_entity "escaped_label" "a") "\n")
 
  (print "Complex persistent store with amlg file")
 
  (create_entities "persist_transactions" (list 1 2 3 4))
  (create_entities (list "persist_transactions" "child") (list 5 6 7))
- (create_entities (list "persist_transactions" "child" "doublechild1") (lambda (list ##eight 8 ##nine 9)))
+ (create_entities (list "persist_transactions" "child" "doublechild1") { eight 8 nine 9} )
  (create_entities (list "persist_transactions" "child" "doublechild3") (list 12 13))
  (store_entity "amlg_code/test_output/persist_transactions.amlg" "persist_transactions" (null) .true {flatten .true transactional .true})
  (create_entities (list "persist_transactions" "child" "doublechild2") (list 10 11))
@@ -2430,7 +2406,7 @@
 
  (create_entities "persist_transactions" (list 1 2 3 4))
  (create_entities (list "persist_transactions" "child") (list 5 6 7))
- (create_entities (list "persist_transactions" "child" "doublechild1") (lambda (list ##eight 8 ##nine 9)))
+ (create_entities (list "persist_transactions" "child" "doublechild1") { eight 8 nine 9} )
  (create_entities (list "persist_transactions" "child" "doublechild3") (list 12 13))
  (store_entity "amlg_code/test_output/persist_transactions.caml" "persist_transactions" (null) .true {flatten .true transactional .true})
  (create_entities (list "persist_transactions" "child" "doublechild2") (list 10 11))
@@ -2450,7 +2426,7 @@
 
  ;test escaping contained entity filenames
  (create_entities "quackerz?" "test")
- (create_entities (list "quackerz?" "!@#$%^&*)(_+=-\'][{}.marbles") (lambda ##blah1 12))
+ (create_entities (list "quackerz?" "!@#$%^&*)(_+=-\'][{}.marbles") {blah1 12} )
  (create_entities (list "quackerz?" "buklulu is good.amlg") "hello world!")
 
  (print "contained entities in quackers before file: " (contained_entities "quackerz?") "\n")
@@ -2508,75 +2484,75 @@
  (print "--contained_entities--\n")
 
  (create_entities "TestContainerExec"
-	(lambda (unordered_list
-    ##^a 3
-	##b (contained_entities)
-	##c (+ x 1)
-	##d (call_entity "Child5" "q" (assoc x x))
-	##!e 12
-	##x 4
-	##y 5
-	))
+	(lambda {
+    ^a 3
+	b (contained_entities)
+	c (+ x 1)
+	d (call_entity "Child5" "q" (assoc x x))
+	!e 12
+	x 4
+	y 5
+	})
  )
  (create_entities (list "TestContainerExec" "Child1")
-	(lambda (unordered_list
-	##x 3
-	##y 4
-	##!e 7
-	##weight 0.45
-	##weight_eq 1
-	))
+	(lambda {
+	x 3
+	y 4
+	!e 7
+	weight 0.45
+	weight_eq 1
+	})
  )
  (create_entities (list "TestContainerExec" "Child2")
-	(lambda (unordered_list
-	##x -1
-	##y -1
-	##weight 0.45
-	##weight_eq 1
-	))
+	(lambda {
+	x -1
+	y -1
+	weight 0.45
+	weight_eq 1
+	})
  )
  (create_entities (list "TestContainerExec" "Child3")
-	(lambda (unordered_list
-	##x 100
-	##y 100
-	##weight 0.02
-	##weight_eq 1
-	))
+	(lambda {
+	x 100
+	y 100
+	weight 0.02
+	weight_eq 1
+	})
  )
  (create_entities (list "TestContainerExec" "Child4")
-	(lambda (unordered_list
-	##x 100
-	##y 100
-	##radius 400
-	##weight 0.02
-	##weight_eq 1
-	))
+	(lambda {
+	x 100
+	y 100
+	radius 400
+	weight 0.02
+	weight_eq 1
+	})
  )
  (create_entities (list "TestContainerExec" "Child5")
-	(lambda (unordered_list
-	##p 3
-	##q (+ x (call_container "^a"))
-	##bar "crunchy"
-	##weight 0.02
-	##weight_eq 1
-	))
+	(lambda {
+	p 3
+	q (+ x (call_container "^a"))
+	bar "crunchy"
+	weight 0.02
+	weight_eq 1
+	})
 	)
  (create_entities (list "TestContainerExec" "Child6")
-	(lambda (unordered_list
-	##x 1
-	##y 2
-	##bar "not crunchy"
-	##weight 0.02
-	##weight_eq 1
-	))
+	(lambda {
+	x 1
+	y 2
+	bar "not crunchy"
+	weight 0.02
+	weight_eq 1
+	})
  )
  (create_entities (list "TestContainerExec" "Child7")
-	(lambda (unordered_list
-	##x 0
-	##y 10
-	##weight 0.02
-	##weight_eq 1
-	))
+	(lambda {
+	x 0
+	y 10
+	weight 0.02
+	weight_eq 1
+	})
  )
 
  (print (contained_entities "TestContainerExec"))
@@ -2853,15 +2829,15 @@
  )
 
  (create_entities "OverflowQueryContainer" (null) )
- (create_entities (list "OverflowQueryContainer" "sess") (lambda (null ##.steps (list 1 2))))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 2)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 2)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 2)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 1.92)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 1.82)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 1.2)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 2.2)))
- (create_entities "OverflowQueryContainer" (lambda (null ##a 2.1)))
+ (create_entities (list "OverflowQueryContainer" "sess") (lambda { .steps (list 1 2) } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 2 } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 2 } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 2} ))
+ (create_entities "OverflowQueryContainer" (lambda { a 1.92 } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 1.82 } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 1.2 } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 2.2 } ))
+ (create_entities "OverflowQueryContainer" (lambda { a 2.1 } ))
  (print
      (compute_on_contained_entities "OverflowQueryContainer"
          (append
@@ -2887,58 +2863,58 @@
  )
 
  (print "test code and string distances\n")
-
+ 
  (create_entities "TestContainerSimilarCode"
 	(null)
  )
 
  (create_entities (list "TestContainerSimilarCode" "Child1")
-	(lambda (null
-	##x 1
-	##y 1
-	##s "s1"
-	##weight 0.45
-	))
+	(lambda { 
+	x 1
+	y 1
+	s "s1"
+	weight 0.45
+	})
  )
  (create_entities (list "TestContainerSimilarCode" "Child2")
-	(lambda (null
-	##x 1
-	##y (list 1 2)
-	##s "s2"
-	##weight 0.45
-	))
+	(lambda { 
+	x 1
+	y (list 1 2)
+	s "s2"
+	weight 0.45
+	})
  )
  (create_entities (list "TestContainerSimilarCode" "Child3")
-	(lambda (null
-	##x 1
-	##y (null 1 2)
-	##s "s333"
-	##weight 0.02
-	))
+	(lambda { 
+	x 1
+	y (null 1 2)
+	s "s333"
+	weight 0.02
+	})
  )
  (create_entities (list "TestContainerSimilarCode" "Child4")
-	(lambda (null
-	##x 1
-	##y 100
-	##s "4s1"
-	##weight 0.02
-	))
+	(lambda { 
+	x 1
+	y 100
+	s "4s1"
+	weight 0.02
+	})
  )
  (create_entities (list "TestContainerSimilarCode" "Child5")
-	(lambda (null
-	##x 1
-	##y (list (list 1 2) 2)
-	##s "5s5"
-	##weight 0.02
-	))
+	(lambda { 
+	x 1
+	y (list (list 1 2) 2)
+	s "5s5"
+	weight 0.02
+	})
  )
  (create_entities (list "TestContainerSimilarCode" "Child6")
-	(lambda (null
-	##x 1
-	##y (list "a")
-	##s "s6"
-	##weight 0.02
-	))
+	(lambda { 
+	x 1
+	y (list "a")
+	s "s6"
+	weight 0.02
+	})
  )
 
   (print "1: "
@@ -3195,13 +3171,13 @@
  )))
 
  (print "--contained_entities caching and permissions--\n")
-
+ 
  (print (assign_to_entities "TestContainerExec" (assoc !e 19)) "\n")
  (print (retrieve_from_entity "TestContainerExec" "!e") "\n")
  (print (retrieve_entity_root "TestContainerExec") "\n")
 
  (create_entities "QueryCacheTest1" (lambda
-   (unordered_list ##a 3 )
+   { a 3 }
  ) )
 
  (print (size (contained_entities (list
@@ -3223,7 +3199,7 @@
  ))) "\n")
 
  (create_entities "QueryCacheTest2" (lambda
-   (unordered_list ##a 3 )
+   { a 3 }
  ) )
 
  (print (size (contained_entities (list
@@ -3233,52 +3209,52 @@
  (create_entities "eq_distance_test" (null))
 
   (create_entities (list "eq_distance_test")
-	(lambda (unordered_list
-	##x 0
-	##y 0
-	))
+	{
+		x 0
+		y 0
+	}
   )
 
   (create_entities  (list "eq_distance_test" "to_delete1")
-	(lambda (unordered_list
-	##x 1
-	##y 0
-	))
+	{
+		x 1
+		y 0
+	}
   )
 
   (create_entities (list "eq_distance_test")
-	(lambda (unordered_list
-	##x 2
-	##y 0
-	))
+	{
+		x 2
+		y 0
+	}
   )
 
   (create_entities (list "eq_distance_test")
-	(lambda (unordered_list
-	##x 3
-	##y 0
-	))
+	{
+		x 3
+		y 0
+	}
   )
 
   (create_entities (list "eq_distance_test")
-	(lambda (unordered_list
-	##x 0
-	##y 1
-	))
+	{
+		x 0
+		y 1
+	}
   )
 
   (create_entities (list "eq_distance_test")
-	(lambda (unordered_list
-	##x 0
-	##y 2
-	))
+	{
+		x 0
+		y 2
+	}
   )
 
   (create_entities (list "eq_distance_test")
-	(lambda (unordered_list
-	##x 1
-	##y 1
-	))
+	{
+		x 1
+		y 1
+	}
   )
 
  (print
@@ -3292,10 +3268,10 @@
  )
 
   (create_entities (list "eq_distance_test" "to_delete2")
-	(lambda (unordered_list
-	##x 0
-	##y 0.5
-	))
+	{
+		x 0
+		y 0.5
+	}
   )
 
   (print
@@ -3353,53 +3329,52 @@
 (print (compute_on_contained_entities (list
   (query_distance_contributions 2 (list "x" "y") [[1 2]] 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234")
  )))
- 
+
  (print "--query_entity_cumulative_nearest_entity_weights--\n")
 
- (create_entities "entity1" (lambda
- 	(unordered_list ##alpha 3 ##b 0.17 ##c 1)
- ) )
+ (create_entities "entity1"
+ 	{ alpha 3 b 0.17 c 1 }
+ )
 
- (create_entities "entity2" (lambda
- 	(unordered_list ##alpha 4 ##b 0.12 ##c 0)
- ) )
+ (create_entities "entity2"
+ 	{ alpha 4 b 0.12 c 0 }
+ )
 
- (create_entities "entity3" (lambda
- 	(unordered_list ##alpha 5 ##b 0.1 ##c 0 ##x 16)
- ) )
+ (create_entities "entity3"
+ 	{ alpha 5 b 0.1 c 0 x 16 }
+ )
 
- (create_entities "entity4" (lambda
-  (unordered_list ##alpha 1 ##b 0.14 ##c 1 ##x 8)
- ) )
+ (create_entities "entity4"
+  { alpha 1 b 0.14 c 1 x 8 }
+ )
 
- (create_entities "entity5" (lambda
-  (unordered_list ##alpha 9 ##b 0.11 ##c 1 ##x 32)
- ) )
+ (create_entities "entity5"
+  { alpha 9 b 0.11 c 1 x 32 }
+ )
 
- (create_entities "vert0" (lambda
-  (unordered_list ##x 0 ##y 0 ##object 1)
- ) )
+ (create_entities "vert0"
+  { x 0 y 0 object 1 }
+ )
 
- (create_entities "vert1" (lambda
-  (unordered_list ##x 1 ##y 0 ##object 1)
- ) )
+ (create_entities "vert1"
+  { x 1 y 0 object 1 }
+ )
 
- (create_entities "vert3" (lambda
-  (unordered_list ##x 0 ##y 1 ##object 1)
- ) )
+ (create_entities "vert3"
+  { x 0 y 1 object 1 }
+ )
 
- (create_entities "vert2" (lambda
-  (unordered_list ##x 1 ##y 1 ##object 1 ##vert_to_remove 1)
- ) )
+ (create_entities "vert2"
+  { x 1 y 1 object 1 vert_to_remove 1 }
+ )
 
+ (create_entities "vert4"
+  { x 0.5 y 0.5 object 2 }
+ )
 
- (create_entities "vert4" (lambda
-  (unordered_list ##x 0.5 ##y 0.5 ##object 2)
- ) )
-
- (create_entities "vert5" (lambda
-  (unordered_list ##x 2 ##y 1 ##object 2)
- ) )
+ (create_entities "vert5"
+  { x 2 y 1 object 2 }
+ )
 
  (print "neighbor entity weights:\n" (compute_on_contained_entities (list
 	(query_entity_cumulative_nearest_entity_weights 2 (list "alpha" "b" "c") (null) 0.5 (null) (list 0 0 1) )
@@ -3518,25 +3493,25 @@
 
  (print "cyclic feature nearest neighbors: " )
 
- (create_entities "cyclic1" (lambda
- (unordered_list ##is_cyclic 1 ##rank_c 5 ##degree_c 0)
-    ) )
+ (create_entities "cyclic1"
+	{ is_cyclic 1 rank_c 5 degree_c 0 }
+ )
 
- (create_entities "cyclic2" (lambda
-  (unordered_list ##is_cyclic 1 ##rank_c 4 ##degree_c 90)
- ) )
+ (create_entities "cyclic2"
+	{ is_cyclic 1 rank_c 4 degree_c 90 }
+ )
 
- (create_entities "cyclic3" (lambda
-  (unordered_list ##is_cyclic 1 ##rank_c 3 ##degree_c 180)
- ) )
+ (create_entities "cyclic3"
+	{ is_cyclic 1 rank_c 3 degree_c 180 }
+ )
 
- (create_entities "cyclic4" (lambda
-  (unordered_list ##is_cyclic 1 ##rank_c 6 ##degree_c 270)
- ) )
+ (create_entities "cyclic4"
+	{ is_cyclic 1 rank_c 6 degree_c 270 }
+ )
 
- (create_entities "cyclic5" (lambda
-  (unordered_list ##is_cyclic 1 ##rank_c 4.5 ##degree_c 360)
- ) )
+ (create_entities "cyclic5"
+	{ is_cyclic 1 rank_c 4.5 degree_c 360 }
+ )
 
  (print (compute_on_contained_entities (list
   (query_exists "is_cyclic")
@@ -3544,27 +3519,27 @@
  )))
 
   (create_entities "CyclicTestEntity" (null))
-  (create_entities (list "CyclicTestEntity" "10" ) (lambda (null ##deg 177)))
-  (create_entities (list "CyclicTestEntity" "20" ) (lambda (null ##deg 103)))
-  (create_entities (list "CyclicTestEntity" "30" ) (lambda (null ##deg 83)))
-  (create_entities (list "CyclicTestEntity" "40" ) (lambda (null ##deg 294)))
-  (create_entities (list "CyclicTestEntity" "50" ) (lambda (null ##deg 80)))
-  (create_entities (list "CyclicTestEntity" "60" ) (lambda (null ##deg 320)))
-  (create_entities (list "CyclicTestEntity" "70" ) (lambda (null ##deg 90)))
-  (create_entities (list "CyclicTestEntity" "80" ) (lambda (null ##deg 300)))
-  (create_entities (list "CyclicTestEntity" "90" ) (lambda (null ##deg 40)))
-  (create_entities (list "CyclicTestEntity" "100") (lambda (null ##deg 15)))
-  (create_entities (list "CyclicTestEntity" "110") (lambda (null ##deg 50)))
-  (create_entities (list "CyclicTestEntity" "120") (lambda (null ##deg 170)))
-  (create_entities (list "CyclicTestEntity" "130") (lambda (null ##deg 175)))
-  (create_entities (list "CyclicTestEntity" "140") (lambda (null ##deg 165)))
-  (create_entities (list "CyclicTestEntity" "150") (lambda (null ##deg 270)))
-  (create_entities (list "CyclicTestEntity" "155") (lambda (null ##deg 0)))
-  (create_entities (list "CyclicTestEntity" "160") (lambda (null ##deg 313)))
-  (create_entities (list "CyclicTestEntity" "170") (lambda (null ##deg 120)))
-  (create_entities (list "CyclicTestEntity" "180") (lambda (null ##deg 213)))
-  (create_entities (list "CyclicTestEntity" "190") (lambda (null ##deg 12)))
-  (create_entities (list "CyclicTestEntity" "200") (lambda (null ##deg 8)))
+  (create_entities (list "CyclicTestEntity" "10" ) { deg 177} )
+  (create_entities (list "CyclicTestEntity" "20" ) { deg 103} )
+  (create_entities (list "CyclicTestEntity" "30" ) { deg 83} )
+  (create_entities (list "CyclicTestEntity" "40" ) { deg 294} )
+  (create_entities (list "CyclicTestEntity" "50" ) { deg 80} )
+  (create_entities (list "CyclicTestEntity" "60" ) { deg 320} )
+  (create_entities (list "CyclicTestEntity" "70" ) { deg 90} )
+  (create_entities (list "CyclicTestEntity" "80" ) { deg 300} )
+  (create_entities (list "CyclicTestEntity" "90" ) { deg 40} )
+  (create_entities (list "CyclicTestEntity" "100") { deg 15} )
+  (create_entities (list "CyclicTestEntity" "110") { deg 50} )
+  (create_entities (list "CyclicTestEntity" "120") { deg 170} )
+  (create_entities (list "CyclicTestEntity" "130") { deg 175} )
+  (create_entities (list "CyclicTestEntity" "140") { deg 165} )
+  (create_entities (list "CyclicTestEntity" "150") { deg 270} )
+  (create_entities (list "CyclicTestEntity" "155") { deg 0} )
+  (create_entities (list "CyclicTestEntity" "160") { deg 313} )
+  (create_entities (list "CyclicTestEntity" "170") { deg 120} )
+  (create_entities (list "CyclicTestEntity" "180") { deg 213} )
+  (create_entities (list "CyclicTestEntity" "190") { deg 12} )
+  (create_entities (list "CyclicTestEntity" "200") { deg 8} )
 
   (declare (assoc
    buds
@@ -3590,61 +3565,38 @@
   (map (lambda (print (current_index) ": " (current_value) " " (retrieve_entity_root (list "CyclicTestEntity" (current_index 1))))) buds)
 
  (print "--contains_label--\n")
- (print (contains_label "label3") "\n")
  (print (contains_label "hhccc") "\n")
  (print (contains_label (list "TestContainerExec" "Child1") "y") "\n")
  (print (contains_label (list "TestContainerExec" "Child1") "qq") "\n")
 
  (print "--assign_to_entities--\n")
 
- #a2e (null)
- (assign_to_entities (assoc a2e (null)))
- (print a2e)
+ (create_entities "AssignToEntitiesTest" { a 1 b 2 c 3 } )
+ (assign_to_entities "AssignToEntitiesTest" (assoc a 2 b 3 c 4) "AssignToEntitiesTest" (assoc "three" 12))
+ (print (retrieve_entity_root "AssignToEntitiesTest"))
+ (destroy_entities "AssignToEntitiesTest")
 
- (assign_to_entities (assoc label3 " or "))
- (print (unparse (retrieve_from_entity "label3") .true .true))
- (print (unparse (retrieve_from_entity "MyNewLibrary" "three") .true .true))
- (print (unparse (assign_to_entities "MyNewLibrary" (associate "three" 5)) .true .true))
- (print (unparse (retrieve_from_entity "MyNewLibrary" "three") .true .true))
+ (print "--remove_from_entities--\n")
 
- (print (unparse (lambda (unordered_list #asgn_test 12) ) ) "\n")
- (print (unparse (assign_to_entities (assoc "asgn_test" 4)) .true .true))
- (print (unparse (retrieve_from_entity "asgn_test") .true .true))
-
- (create_entities "MultipleSetTest" (lambda (unordered_list ##a 1 ##b 2 ##c 3)))
- (assign_to_entities "MultipleSetTest" (assoc a 2 b 3 c 4) "MyNewLibrary" (assoc "three" 12))
- (print (retrieve_entity_root "MultipleSetTest"))
- (print (retrieve_entity_root "MyNewLibrary"))
-
- (print "--direct_assign_to_entities--\n")
- (create_entities "DRFE" (lambda (unordered_list ##a 12)) )
- (print (unparse (direct_retrieve_from_entity "DRFE" "a") .true .true))
- (print (unparse (direct_assign_to_entities "DRFE" (assoc a 7)) .true .true))
- (print (unparse (direct_retrieve_from_entity "DRFE" "a") .true .true))
+ (create_entities "RemoveFromEntitiesTest" { a 1 b 2 c 3 d 4} )
+ (remove_from_entities "RemoveFromEntitiesTest" "a" "RemoveFromEntitiesTest" ["b" "c"])
+ (print (retrieve_entity_root "RemoveFromEntitiesTest"))
+ (destroy_entities "RemoveFromEntitiesTest")
 
  (print "--accum_to_entities--\n")
 
-  #i2e 4
- (accum_to_entities (assoc i2e 3))
- (print i2e "\n")
-
- #i2e2 (list 1 2 3)
- (accum_to_entities (assoc i2e2 4))
- (print i2e2 "\n")
+ (create_entities "AccumToEntitiesTest" { a 1 b 2 c 3 } )
+ (accum_to_entities "AccumToEntitiesTest" (assoc a 2 b 3 c 4) "AssignToEntitiesTest" (assoc "three" 12))
+ (print (retrieve_entity_root "AccumToEntitiesTest"))
+ (destroy_entities "AccumToEntitiesTest")
 
  (print "--retrieve_from_entity--\n")
- (assign_to_entities (assoc label3 " and "))
- (print (unparse (retrieve_from_entity "label3") .true .true))
- (print (unparse (retrieve_from_entity "MyNewLibrary" "three") .true .true))
 
- (create_entities "RCT" (lambda (unordered_list ##a 12 ##b 13)) )
- (print (unparse (retrieve_from_entity "RCT" "a") .true .true))
- (print (unparse (retrieve_from_entity "RCT" (list "a" "b") ) .true .true))
- (print (unparse (retrieve_from_entity "RCT" (zip (list "a" "b") null) ) .true .true))
-
- (print "--direct_retrieve_from_entity--\n")
- (print (unparse (retrieve_from_entity "DRFE" "a") .true .true))
- (print (unparse (direct_retrieve_from_entity "DRFE" "a") .true .true))
+ (create_entities "RetrieveFromEntityTest" { a 12 b 13 } )
+ (print (retrieve_from_entity "RetrieveFromEntityTest" "a") "\n" )
+ (print (retrieve_from_entity "RetrieveFromEntityTest" (list "a" "b") ) )
+ (print (retrieve_from_entity "RetrieveFromEntityTest" (zip (list "a" "b") null) ) )
+ (destroy_entities "RetrieveFromEntityTest")
 
  (print "--call_entity--\n")
  (print (contained_entities "TestContainerExec"))
@@ -3655,18 +3607,18 @@
  (print (unparse (call_entity "TestContainerExec" "c" (assoc x 5)) .true .true))
 
   (print "execution limits tests\n")
-  (create_entities "ExecLimitsTest" (lambda
-	(null
-	#copy_entity
-		(while .true
-			(clone_entities (null) (null))
-		)
+  (create_entities "ExecLimitsTest"
+	(lambda {
+		copy_entity
+			(while .true
+				(clone_entities (null) (null))
+			)
 
-	#load
-		(while
-			.true
-		)
-	))
+		load
+			(while
+				.true
+			)
+	})
  )
 
  (call_entity "ExecLimitsTest" "load" (null) 100)
@@ -3674,22 +3626,20 @@
  (print (total_size (flatten_entity "ExecLimitsTest")) "\n")
 
  (print "--call_entity_get_changes--\n")
- (create_entities "CEGCTest" (lambda
-    (unordered_list ##a_assign
-	  (seq
-		  (create_entities "Contained" (lambda
- 								(null ##a 4 ##b 6 )
- 								) )
-		  (print (unparse (retrieve_from_entity "Contained" "a") .true .true))
-		  (assign_to_entities "Contained" (assoc a 6 b 10) )
-		  (print (unparse (retrieve_from_entity "Contained" "a") .true .true))
-		  (set_entity_rand_seed "Contained" "bbbb")
-		  (accum_to_entities "Contained" (assoc b 12) )
-		  (accum_entity_roots "Contained" (list (set_labels 14 (list "a"))))
-		  (destroy_entities "Contained")
-	  )
-	)
-  ) )
+ (create_entities "CEGCTest"
+	(lambda {
+		a_assign
+		(seq
+			(create_entities "Contained" { a 4 b 6 } )
+			(print (retrieve_from_entity "Contained" "a") "\n" )
+			(assign_to_entities "Contained" (assoc a 6 b 10) )
+			(print (retrieve_from_entity "Contained" "a") "\n" )
+			(set_entity_rand_seed "Contained" "bbbb")
+			(accum_to_entities "Contained" (assoc b 12) )
+			(destroy_entities "Contained")
+		)
+	} )
+  )
   (set_entity_permissions "CEGCTest" .true )
 
  (print (call_entity_get_changes "CEGCTest" "a_assign"))
@@ -3754,24 +3704,23 @@
  				(get (target) [0 "a"])
  		)
  	"\n")
- 
-  (print "entity cyclic test:\n")
- (create_entities "test"
- 		(set_labels
- 			(list
- 					{"a" 3}
- 					(get (target) [0 "a"])
- 			)
- 			["label_target"]
- 		)
+
+ (print "entity cyclic test:\n")
+
+  (create_entities "test"
+ 		{
+			a { a 3}
+			b @(get (target 2) "a")
+ 		}
  )
- 
+
+ (print (retrieve_entity_root "test"))
  (print (flatten_entity "test"))
  
  (print
  	(get
- 		(retrieve_from_entity "test" "label_target")
- 		(list 0 "a")
+ 		(retrieve_from_entity "test" "b")
+ 		(list "a")
  	)
  "\n")
  
@@ -3843,30 +3792,15 @@
  (create_entities (list "NaNTest") (null))
  
  (create_entities (list "NaNTest" "Entity3")
- 	(lambda
- 		(null
- 			##label1 3
- 			##label2 1
- 		)
- 	)
+ 	{ label1 3 label2 1 }
  )
  
  (create_entities (list "NaNTest" "EntityNull")
- 	(lambda
- 		(null
- 			##label1 (null)
- 			##label2 1
- 		)
- 	)
+ 	{ label1 (null) label2 1 }
  )
  
  (create_entities (list "NaNTest" "EntityNaN")
- 	(lambda
- 		(null
- 			##label1 (null)
- 			##label2 1
- 		)
- 	)
+ 	{ label1 (null) label2 1 }
  )
  
  (print (contained_entities "NaNTest" (list
@@ -3927,27 +3861,12 @@
 	"\n"
   )
 
-  ;label combining
-  (create_entities "dummy_container2" (lambda (null ##A 10 ##duped (list "b"))))
-
-   (assign_entity_roots "dummy_container2"
-      (set_type
-         (append
-            (values (retrieve_entity_root "dummy_container2" 1))
-            (list (set_labels (list "a") (list "duped")))
-         )
-         (null)
-      )
-   )
-
-  (print (retrieve_entity_root "dummy_container2" 1) "\n")
-  
   ;combo query
 
   (create_entities "combo_query" (null))
-  (create_entities  (list "combo_query" "world") (lambda (null ##A 6 ##B 7 ##C 9 ##D 1)))
-  (create_entities  (list "combo_query" "hello") (lambda (null  ##A 6 ##B 7 ##C 19 ##D 1 ##E 2 ##F 3)))
-  (create_entities  (list "combo_query" "!")     (lambda (null  ##A 6 ##B 7 ##C 19 ##D 1 ##E 2 ##F 3)))
+  (create_entities  (list "combo_query" "world") { A 6 B 7 C  9 D 1} )
+  (create_entities  (list "combo_query" "hello") { A 6 B 7 C 19 D 1 E 2 F 3} )
+  (create_entities  (list "combo_query" "!")     { A 6 B 7 C 19 D 1 E 2 F 3} )
   
   (print
   	(contained_entities "combo_query"
@@ -3958,9 +3877,9 @@
   )
 
    (create_entities "nan_queries" (null))
-   (create_entities (list "nan_queries" "a1") (lambda (null ##A 10 ##B (null))))
-   (create_entities (list "nan_queries" "a2") (lambda (null ##A 11 ##B 2)))
-   (create_entities (list "nan_queries" "a3") (lambda (null ##A (null) ##B 1)))
+   (create_entities (list "nan_queries" "a1") {A 10 B (null) } )
+   (create_entities (list "nan_queries" "a2") {A 11 B 2} )
+   (create_entities (list "nan_queries" "a3") {A (null) B 1} )
 
    ;expected output is 3 neighbors in order: a1, a2, a3
    (print
@@ -4014,7 +3933,7 @@
       ))
    )
 
-  (create_entities (list "nan_queries" "a4") (lambda (null ##A (null) ##B (null))))
+  (create_entities (list "nan_queries" "a4") { A (null) B (null) } )
 
   ;expected output is 3 neighbors in order: a4, a1/a3
    (print
@@ -4033,9 +3952,9 @@
    )
 
    (create_entities "bool_test" (null))
-  (create_entities ["bool_test" "case1"] (zip_labels ["A" "B"] [.true 1]))
-  (create_entities ["bool_test" "case2"] (zip_labels ["A" "B"] [.true 2]))
-  (create_entities ["bool_test" "case3"] (zip_labels ["A" "B"] [.false 1]))
+  (create_entities ["bool_test" "case1"] (zip ["A" "B"] [.true 1]))
+  (create_entities ["bool_test" "case2"] (zip ["A" "B"] [.true 2]))
+  (create_entities ["bool_test" "case3"] (zip ["A" "B"] [.false 1]))
 
   (print
     "should print case1 and case2: "
@@ -4104,70 +4023,70 @@
 	)
 
 	(create_entities (list "DistanceTestContainer" "point1")
-		(lambda (null
-			##a 1
-			##b 1
-			##c 1
-			##d 120
-			##e 1
-			##f 50.1
-		))
+		{
+			a 1
+			b 1
+			c 1
+			d 120
+			e 1
+			f 50.1
+		}
 	)
 
 	(create_entities (list "DistanceTestContainer" "point2")
-		(lambda (null
-			##a 2
-			##b 1
-			##c 1
-			##d 120
-			##e 1
-			##f 50.1
-		))
+		{
+			a 2
+			b 1
+			c 1
+			d 120
+			e 1
+			f 50.1
+		}
 	)
 
 	(create_entities (list "DistanceTestContainer" "point3")
-		(lambda (null
-			##a 1
-			##b 1
-			##c 1
-			##d 120
-			##e 1
-			##f 50.1
-		))
+		{
+			a 1
+			b 1
+			c 1
+			d 120
+			e 1
+			f 50.1
+		}
 	)
 
 	(create_entities (list "DistanceTestContainer" "point4")
-		(lambda (null
-			##a 2
-			##b 1
-			##c 2
-			##d 160
-			##e 2
-			##f 51
-		))
+		{
+			a 2
+			b 1
+			c 2
+			d 160
+			e 2
+			f 51
+		}
 	)
 
 	(create_entities (list "DistanceTestContainer" "point5")
-		(lambda (null
-			##a 1
-			##b 1
-			##c 1
-			##d 119
-			##e 1
-			##f 49.8
-		))
+		{
+			a 1
+			b 1
+			c 1
+			d 119
+			e 1
+			f 49.8
+		}
 	)
 
 	(map (lambda
 			(create_entities (list "DistanceTestContainer")
-				(lambda (null
-					##a 1
-					##b 1
-					##c 1
-					##d 119
-					##e 1
-					##f 49.8
-				))
+				{
+					a 1
+					b 1
+					c 1
+					d 119
+					e 1
+					f 49.8
+				}
 			)
 		)
 		(range 0 1000)
@@ -4203,46 +4122,46 @@
   (print "distance symmetry tests\n")
   (create_entities "DistanceSymmetryContainer" (null) )
     
-    (create_entities (list "DistanceSymmetryContainer" "A") (lambda (null 
-            ##A 4
-            ##B 8
-    ) ))
-    (create_entities (list "DistanceSymmetryContainer" "B") (lambda (null
-            ##A 4
-            ##B 9
-    ) ))
-    (create_entities (list "DistanceSymmetryContainer" "C") (lambda (null
-            ##A 4
-            ##B 7
-    ) ))
-    (create_entities (list "DistanceSymmetryContainer" "D") (lambda (null
-            ##A 4
-            ##B 10
-    ) ))
-    (create_entities (list "DistanceSymmetryContainer" "E") (lambda (null
-            ##A 7
-            ##B 8
-    ) ))
-    (create_entities (list "DistanceSymmetryContainer" "F") (lambda (null
-            ##A 7
-            ##B 9
-    ) ))
-    (create_entities (list "DistanceSymmetryContainer" "G") (lambda (null
-            ##A 7
-            ##B 7
-    ) ))
-    (create_entities (list "DistanceSymmetryContainer" "H") (lambda (null
-            ##A 10
-            ##B 8
-    ) ))
-    (create_entities (list "DistanceSymmetryContainer" "I") (lambda (null
-            ##A 10
-            ##B 9
-    ) ))
-    (create_entities (list "DistanceSymmetryContainer" "J") (lambda (null
-            ##A 10
-            ##B 10
-    ) ))
+    (create_entities (list "DistanceSymmetryContainer" "A") { 
+            A 4
+            B 8
+    } )
+    (create_entities (list "DistanceSymmetryContainer" "B") {
+            A 4
+            B 9
+    } )
+    (create_entities (list "DistanceSymmetryContainer" "C") {
+            A 4
+            B 7
+    } )
+    (create_entities (list "DistanceSymmetryContainer" "D") {
+            A 4
+            B 10
+    } )
+    (create_entities (list "DistanceSymmetryContainer" "E") {
+            A 7
+            B 8
+    } )
+    (create_entities (list "DistanceSymmetryContainer" "F") {
+            A 7
+            B 9
+    } )
+    (create_entities (list "DistanceSymmetryContainer" "G") {
+            A 7
+            B 7
+    } )
+    (create_entities (list "DistanceSymmetryContainer" "H") {
+            A 10
+            B 8
+    } )
+    (create_entities (list "DistanceSymmetryContainer" "I") {
+            A 10
+            B 9
+    } )
+    (create_entities (list "DistanceSymmetryContainer" "J") {
+            A 10
+            B 10
+    } )
     (print
         
         (compute_on_contained_entities "DistanceSymmetryContainer" (list
@@ -4288,19 +4207,35 @@
  (create_entities "BoxConvictionTestContainer" (null) )
 
  (create_entities (list "BoxConvictionTestContainer" "vert0") (lambda
-  (null ##x 0 ##y 0 ##weight 2)
+	{
+		x 0
+		y 0
+		weight 2
+	}
  ) )
 
  (create_entities (list "BoxConvictionTestContainer" "vert1") (lambda
-  (null ##x 0 ##y 1 ##weight 1)
+	{
+		x 0
+		y 1
+		weight 1
+	}
  ) )
 
  (create_entities (list "BoxConvictionTestContainer" "vert2") (lambda
-  (null ##x 1 ##y 0 ##weight 1)
+	{
+		x 1
+		y 0
+		weight 1
+	}
  ) )
 
  (create_entities (list "BoxConvictionTestContainer" "vert3") (lambda
-  (null ##x 2 ##y 1 ##weight 1)
+	{
+		x 2
+		y 1
+		weight 1
+	}
  ) )
 
   (print "distance contributions\n")
@@ -4384,7 +4319,10 @@
  (print "adding a case\n")
 
  (create_entities (list "BoxConvictionTestContainer" "vert4") (lambda
-  (null ##x 3 ##y 0)
+  {
+	x 3
+	y 0
+  }
  ) )
  
    (print "noncyclic KL: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
@@ -4412,19 +4350,31 @@
 	(create_entities "SurprisalTransformContainer" (null) )
 
 	(create_entities (list "SurprisalTransformContainer" "vert0") (lambda
-	(null ##x 3 ##weight 2)
+		{
+			x 3
+			weight 2
+		}
 	) )
 
 	(create_entities (list "SurprisalTransformContainer" "vert1") (lambda
-	(null ##x 3 ##weight 0)
+		{
+			x 3
+			weight 0
+		}
 	) )
 
 	(create_entities (list "SurprisalTransformContainer" "vert2") (lambda
-	(null ##x 4 ##weight 1)
+		{
+			x 4
+			weight 1
+		}
 	) )
 
 	(create_entities (list "SurprisalTransformContainer" "vert3") (lambda
-	(null ##x 5 ##weight 1)
+		{
+			x 5
+			weight 1
+		}
 	) )
 
 	;should be:
@@ -4609,7 +4559,10 @@
   )))
 
   (create_entities (list "SurprisalTransformContainer" "testvert") (lambda
-	(null ##x 0 ##weight 1)
+	{
+		x 0
+		weight 1
+	}
 	) )
 
   (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
@@ -4682,16 +4635,30 @@
 
 		(print "Expecting 1000: " (size x) "\n")
  )
- 
+
  (print "--concurrent entity writes--\n")
- #concurrent_ent_writes (list)
+
+ (create_entities "ConcurrentWritesTest"
+	(lambda {
+		concurrent_writes (unordered_list)
+	} )
+  )
+  (set_entity_permissions "ConcurrentWritesTest" .true )
+
  ||(map (lambda
-		(accum_to_entities (assoc concurrent_ent_writes (list (current_value 2))))
+		(accum_to_entities "ConcurrentWritesTest" (assoc concurrent_writes (unordered_list (current_value 2))))
 	)
 	(range 1 1000)
  )
+
  ;make sure the lists match up and none were lost
- (print "concurrent entity writes successful: " (= (range 1 1000) (sort concurrent_ent_writes)) "\n")
+ (print "concurrent entity writes successful: "
+	(=
+		(set_type (range 1 1000) "unordered_list")
+		(retrieve_from_entity "ConcurrentWritesTest" "concurrent_writes")
+	) "\n")
+
+ (destroy_entities "ConcurrentWritesTest")
 
  (print "--clean-up test files--\n")
  ;use variables from the start

@@ -8,6 +8,7 @@
 #include "WeightedDiscreteRandomStream.h"
 
 //system headers:
+#include <algorithm>
 #include <cmath>
 #include <string>
 #include <vector>
@@ -71,27 +72,20 @@ public:
 		typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeBuiltInStringId,
 			CompactHashMap<EvaluableNodeBuiltInStringId, double>> WeightedRandMutationType;
 
-		Interpreter *interpreter;
-		EvaluableNodeManager *enm;
-		double mutation_rate;
-		std::vector<std::string> *strings;
-		EvaluableNode::ReferenceAssocType references;
-		WeightedRandEvaluableNodeType *randEvaluableNodeType;
-		WeightedRandMutationType *randMutationType;
-
 		MutationParameters(Interpreter *interpreter,
 			EvaluableNodeManager *enm,
 			double mutation_rate,
 			std::vector<std::string> *strings,
 			WeightedRandEvaluableNodeType *rand_operation,
-			WeightedRandMutationType *rand_operation_type) :
-			interpreter(nullptr),
-			enm(nullptr),
-			mutation_rate(0),
-			strings(nullptr),
-			references(EvaluableNode::ReferenceAssocType()),
-			randEvaluableNodeType(&evaluableNodeTypeRandomStream),
-			randMutationType(&mutationOperationTypeRandomStream)
+			WeightedRandMutationType *rand_operation_type,
+			size_t preserve_type_depth) :
+				interpreter(nullptr),
+				enm(nullptr),
+				mutation_rate(0),
+				strings(nullptr),
+				references(EvaluableNode::ReferenceAssocType()),
+				randEvaluableNodeType(&evaluableNodeTypeRandomStream),
+				randMutationType(&mutationOperationTypeRandomStream)
 		{
 			this->interpreter = interpreter;
 			this->enm = enm;
@@ -99,7 +93,17 @@ public:
 			this->strings = strings;
 			this->randEvaluableNodeType = rand_operation;
 			this->randMutationType = rand_operation_type;
+			this->preserveTypeDepth = preserve_type_depth;
 		}
+
+		Interpreter *interpreter;
+		EvaluableNodeManager *enm;
+		double mutation_rate;
+		std::vector<std::string> *strings;
+		EvaluableNode::ReferenceAssocType references;
+		WeightedRandEvaluableNodeType *randEvaluableNodeType;
+		WeightedRandMutationType *randMutationType;
+		size_t preserveTypeDepth;
 	};
 
 	static CompactHashMap<EvaluableNodeBuiltInStringId, double> mutationOperationTypeProbabilities;
@@ -141,7 +145,11 @@ public:
 		virtual bool KeepNonMergeableB()
 		{	return keepAllOfBoth;	}
 
-		virtual bool AreMergeable(EvaluableNode *a, EvaluableNode *b);
+		virtual bool AreMergeable(EvaluableNode *a, EvaluableNode *b)
+		{
+			auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b, TypesMustMatch(), NominalNumbers(), NominalStrings());
+			return (commonality == 1.0);
+		}
 
 		virtual EvaluableNode::ReferenceAssocType &GetReferences()
 		{	return references;	}
@@ -506,36 +514,6 @@ public:
 	static MergeMetricResults<EvaluableNode *> NumberOfSharedNodes(EvaluableNode *tree1, EvaluableNode *tree2,
 		MergeMetricResultsParams &mmrp);
 
-	//Recursively traverses tree, storing any nodes with labels into an index map, and returning the map,
-	// as well as a flag indicating true if it was able to just retrieve the labels, or false
-	// if a label collision occurred
-	inline static std::pair<EvaluableNode::LabelsAssocType, bool> RetrieveLabelIndexesFromTree(EvaluableNode *en)
-	{
-		EvaluableNode::LabelsAssocType index;
-		if(en == nullptr)
-			return std::make_pair(index, true);
-
-		//can check faster if don't need to check for cycles
-		EvaluableNode::ReferenceSetType checked;
-		bool collected_all_label_values = CollectLabelIndexesFromTree(en, index, en->GetNeedCycleCheck() ? &checked : nullptr);
-		return std::make_pair(index, collected_all_label_values);
-	}
-
-	//Recursively traverses tree, storing any nodes with labels into an index map, and returning the map,
-	// as well as a flag indicating true if it was able to just retrieve the labels, or false
-	// if the labels needed to be renormalized due to a collision and the node tree was modified
-	static std::pair<EvaluableNode::LabelsAssocType, bool> RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en);
-
-	//Directly replaces all occurrences of code under label in tree (including potentially the root node) with replacement.
-	// replacement should be allocated by the appropriate allocator and may be modified if necessary
-	// for combining labels, etc.
-	static inline void ReplaceLabelInTree(EvaluableNode *&tree, StringInternPool::StringID label_id, EvaluableNode *replacement)
-	{
-		EvaluableNode::ReferenceSetType checked;
-		ReplaceLabelInTreeRecurse(tree, label_id, replacement, checked);
-		EvaluableNodeManager::UpdateFlagsForNodeTree(tree);
-	}
-
 	//If the nodes, n1 and n2 can be generalized, then returns a new (allocated) node that is preferable to use (usually the more specific one)
 	// If the nodes are not equivalent, then returns null
 	// Only extra data (labels, comments, etc.) that is common to both is kept, unless KeepAllNonMergeableValues is true.  Then everything from both is kept. If 
@@ -550,16 +528,17 @@ public:
 	static std::vector<StringInternPool::StringID> IntersectStringIDVectors(
 		const std::vector<StringInternPool::StringID> &label_list_a, const std::vector<StringInternPool::StringID> &label_list_b);
 
-	//Returns a tree that consists of only nodes that are common across all of the trees specified,
+	//returns a tree that consists of only nodes that are common across all of the trees specified,
 	// where all returned values are newly allocated and modifiable
 	//Note that MergeTrees does not guarantee that EvaluableNodeFlags will be set appropriately
 	static EvaluableNode *MergeTrees(NodesMergeMethod *mm, EvaluableNode *tree1, EvaluableNode *tree2);
 
-	//Returns a tree that is a copy of tree but mutated based on mutation_rate
+	//returns a tree that is a copy of tree but mutated based on mutation_rate
 	// will create the new tree with interpreter's evaluableNodeManager and will use interpreter's RandomStream
-	//Note that MutateTree does not guarantee that EvaluableNodeFlags will be set appropriately
-	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, EvaluableNode *tree, double mutation_rate,
-		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights);
+	//note that MutateTree does not guarantee that EvaluableNodeFlags will be set appropriately
+	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, EvaluableNode *tree,
+		double mutation_rate, CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
+		CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace
 	static inline void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace)
@@ -573,33 +552,8 @@ public:
 
 protected:
 
-	//recursive helper function for DoesTreeContainLabels
-	static bool NonCycleDoesTreeContainLabels(EvaluableNode *en);
-
-	//recursive helper function for DoesTreeContainLabels
-	static bool DoesTreeContainLabels(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked);
-
-	//Recursively traverses tree, storing any nodes with labels into index.
-	//assumes tree is not nullptr
-	//If checked is not nullptr, then it keeps track of previously visited nodes in checked, ignoring them if they are already in the set, and adds them to checked when they are traversed.
-	//  checked should only be nullptr when tree is known to be cycle free
-	//If there is any collision of labels, meaning the same label is used by more than one node, then it will return true
-	//Returns true if was able to collect all labels and no collision
-	static bool CollectLabelIndexesFromTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked);
-
-	//Recursively traverses tree, storing any nodes with labels into index.  Ignores any nodes already in checked, and adds them to checked when they are traversed.
-	// if the current top of the tree contains a label and should be replaced by something that exists in index, it will set replace_tree_by to the proper
-	// node that should replace the top of the tree.
-	//returns true if it was able to collect all labels, false if there was a label collision
-	// and the tree needs to be updated with regard to cycle checks
-	static bool CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index,
-		EvaluableNode::ReferenceSetType &checked, EvaluableNode *&replace_tree_by);
-
-	//recursive helper function for ReplaceLabelInTree
-	static void ReplaceLabelInTreeRecurse(EvaluableNode *&tree, StringInternPool::StringID label_id,
-		EvaluableNode *replacement, EvaluableNode::ReferenceSetType &checked);
-
-	//Evaluates commonality metric between the two nodes passed in, including labels.  1.0 if identical, 0.0 if completely different, and some value between if similar
+	//Evaluates commonality metric between the two nodes passed in, including labels.
+	//  1.0 if identical, 0.0 if completely different, and some value between if similar
 	//appropriate type or value matching parameters apply, then it will only return 1.0 or 0.0
 	static MergeMetricResults<EvaluableNode *> CommonalityBetweenNodes(
 		EvaluableNode *n1, EvaluableNode *n2,
@@ -618,7 +572,8 @@ protected:
 	//Mutates the current node n, changing its type or value, based on the mutation_rate
 	// strings contains a list of strings to likely choose from if mutating to a string value
 	// returns the new value, which may be n, a modification of n, or an entirely different node
-	static EvaluableNode *MutateNode(EvaluableNode *n, MutationParameters &mp);
+	//depth is the depth in the tree
+	static EvaluableNode *MutateNode(EvaluableNode *n, MutationParameters &mp, size_t depth);
 
 	//random stream for EvaluableNodeType, so can obtain a random type from a useful distribution
 	static MutationParameters::WeightedRandEvaluableNodeType evaluableNodeTypeRandomStream;
@@ -626,10 +581,13 @@ protected:
 	//Recursively creates a new tree using enm which is a copy of tree, but given a mutation_rate
 	// will create the new tree with interpreter's evaluableNodeManager
 	// strings is a list of strings to choose from when mutating and adding new strings
-	static EvaluableNode *MutateTree(MutationParameters &mp, EvaluableNode *tree);
+	//depth is the depth in the tree
+	static EvaluableNode *MutateTree(MutationParameters &mp, EvaluableNode *tree, size_t depth);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace
-	static void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace, EvaluableNode::ReferenceSetType &checked);
+	static void ReplaceStringsInTree(EvaluableNode *tree,
+		CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace,
+		EvaluableNode::ReferenceSetType &checked);
 
 	//returns a set of strings that have appeared at least once in the given tree
 	static void GetStringsFromTree(EvaluableNode *tree, std::vector<std::string> &strings, EvaluableNode::ReferenceSetType &checked);

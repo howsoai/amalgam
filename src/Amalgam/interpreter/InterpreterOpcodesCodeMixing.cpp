@@ -60,9 +60,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 		}
 	}
 
+	size_t preserve_type_depth = 0;
+	if(ocn.size() > 4)
+		preserve_type_depth = static_cast<size_t>(std::max(0.0, InterpretNodeIntoNumberValue(ocn[4])));
+
 	//result contains the copied result which may incur replacements
 	EvaluableNode *result = EvaluableNodeTreeManipulation::MutateTree(this, evaluableNodeManager,
-		to_mutate, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
+		to_mutate, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr,
+		ow_exists ? &opcode_weights : nullptr, preserve_type_depth);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	return EvaluableNodeReference(result, true);
 }
@@ -437,6 +442,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 		}
 	}
 
+	size_t preserve_type_depth = 1;
+	if(ocn.size() > 5)
+		preserve_type_depth = static_cast<size_t>(std::max(0.0, InterpretNodeIntoNumberValue(ocn[5])));
+
 	//retrieve the entities after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
 	//get the id of the first source entity
@@ -447,7 +456,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 
 	//create new entity by mutating
 	Entity *new_entity = EntityManipulation::MutateEntity(this, source_entity, mutation_rate,
-		mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
+		mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr, preserve_type_depth);
 	
 	//accumulate usage
 	if(ConstrainedAllocatedNodes())

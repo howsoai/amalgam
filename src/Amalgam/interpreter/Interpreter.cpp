@@ -169,10 +169,8 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_FORMAT,															// ENT_FORMAT
 
 	//EvaluableNode management: labels, comments, and concurrency
-	&Interpreter::InterpretNode_ENT_GET_LABELS,														// ENT_GET_LABELS
-	&Interpreter::InterpretNode_ENT_GET_ALL_LABELS,													// ENT_GET_ALL_LABELS
-	&Interpreter::InterpretNode_ENT_SET_LABELS,														// ENT_SET_LABELS
-	&Interpreter::InterpretNode_ENT_ZIP_LABELS,														// ENT_ZIP_LABELS
+	&Interpreter::InterpretNode_ENT_GET_ANNOTATIONS,												// ENT_GET_ANNOTATIONS
+	&Interpreter::InterpretNode_ENT_SET_ANNOTATIONS,												// ENT_SET_ANNOTATIONS
 	&Interpreter::InterpretNode_ENT_GET_COMMENTS,													// ENT_GET_COMMENTS
 	&Interpreter::InterpretNode_ENT_SET_COMMENTS,													// ENT_SET_COMMENTS
 	&Interpreter::InterpretNode_ENT_GET_CONCURRENCY,												// ENT_GET_CONCURRENCY
@@ -219,8 +217,7 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	//entity details
 	&Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS,											// ENT_GET_ENTITY_COMMENTS
 	&Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT,											// ENT_RETRIEVE_ENTITY_ROOT
-	&Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_ACCUM_ENTITY_ROOTS,						// ENT_ASSIGN_ENTITY_ROOTS
-	&Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_ACCUM_ENTITY_ROOTS,						// ENT_ACCUM_ENTITY_ROOTS
+	&Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS,											// ENT_ASSIGN_ENTITY_ROOTS
 	&Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED,											// ENT_GET_ENTITY_RAND_SEED
 	&Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED,											// ENT_SET_ENTITY_RAND_SEED
 	&Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS,											// ENT_GET_ENTITY_PERMISSIONS
@@ -274,11 +271,10 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 
 	//entity access
 	&Interpreter::InterpretNode_ENT_CONTAINS_LABEL,													// ENT_CONTAINS_LABEL
-	&Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIRECT_ASSIGN_TO_ENTITIES_and_ACCUM_TO_ENTITIES,	// ENT_ASSIGN_TO_ENTITIES
-	&Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIRECT_ASSIGN_TO_ENTITIES_and_ACCUM_TO_ENTITIES,	// ENT_DIRECT_ASSIGN_TO_ENTITIES
-	&Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIRECT_ASSIGN_TO_ENTITIES_and_ACCUM_TO_ENTITIES,	// ENT_ACCUM_TO_ENTITIES
-	&Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_DIRECT_RETRIEVE_FROM_ENTITY,			// ENT_RETRIEVE_FROM_ENTITY
-	&Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_DIRECT_RETRIEVE_FROM_ENTITY,			// ENT_DIRECT_RETRIEVE_FROM_ENTITY
+	&Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES,	// ENT_ASSIGN_TO_ENTITIES
+	&Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES,	// ENT_REMOVE_FROM_ENTITIES
+	&Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES,	// ENT_ACCUM_TO_ENTITIES
+	&Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY,											// ENT_RETRIEVE_FROM_ENTITY
 	&Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES,						// ENT_CALL_ENTITY
 	&Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES,						// ENT_CALL_ENTITY_GET_CHANGES
 	&Interpreter::InterpretNode_ENT_CALL_CONTAINER,													// ENT_CALL_CONTAINER
@@ -420,7 +416,7 @@ EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReferen
 	}
 	else if(!args.unique)
 	{
-		args.SetReference(enm.AllocNode(args, EvaluableNodeManager::ENMM_REMOVE_ALL));
+		args.SetReference(enm.AllocNode(args, false));
 		args.uniqueUnreferencedTopNode = true;
 	}
 	

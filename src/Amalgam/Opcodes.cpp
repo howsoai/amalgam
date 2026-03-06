@@ -188,10 +188,8 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_FORMAT, "format");
 
 	//labels and comments
-	EmplaceNodeTypeString(ENT_GET_LABELS, "get_labels");
-	EmplaceNodeTypeString(ENT_GET_ALL_LABELS, "get_all_labels");
-	EmplaceNodeTypeString(ENT_SET_LABELS, "set_labels");
-	EmplaceNodeTypeString(ENT_ZIP_LABELS, "zip_labels");
+	EmplaceNodeTypeString(ENT_GET_ANNOTATIONS, "get_annotations");
+	EmplaceNodeTypeString(ENT_SET_ANNOTATIONS, "set_annotations");
 	EmplaceNodeTypeString(ENT_GET_COMMENTS, "get_comments");
 	EmplaceNodeTypeString(ENT_SET_COMMENTS, "set_comments");
 	EmplaceNodeTypeString(ENT_GET_CONCURRENCY, "get_concurrency");
@@ -238,7 +236,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_GET_ENTITY_COMMENTS, "get_entity_comments");
 	EmplaceNodeTypeString(ENT_RETRIEVE_ENTITY_ROOT, "retrieve_entity_root");
 	EmplaceNodeTypeString(ENT_ASSIGN_ENTITY_ROOTS, "assign_entity_roots");
-	EmplaceNodeTypeString(ENT_ACCUM_ENTITY_ROOTS, "accum_entity_roots");
 	EmplaceNodeTypeString(ENT_GET_ENTITY_RAND_SEED, "get_entity_rand_seed");
 	EmplaceNodeTypeString(ENT_SET_ENTITY_RAND_SEED, "set_entity_rand_seed");
 	EmplaceNodeTypeString(ENT_GET_ENTITY_PERMISSIONS, "get_entity_permissions");
@@ -293,10 +290,9 @@ void StringInternPool::InitializeStaticStrings()
 	//entity access
 	EmplaceNodeTypeString(ENT_CONTAINS_LABEL, "contains_label");
 	EmplaceNodeTypeString(ENT_ASSIGN_TO_ENTITIES, "assign_to_entities");
-	EmplaceNodeTypeString(ENT_DIRECT_ASSIGN_TO_ENTITIES, "direct_assign_to_entities");
+	EmplaceNodeTypeString(ENT_REMOVE_FROM_ENTITIES, "remove_from_entities");
 	EmplaceNodeTypeString(ENT_ACCUM_TO_ENTITIES, "accum_to_entities");
 	EmplaceNodeTypeString(ENT_RETRIEVE_FROM_ENTITY, "retrieve_from_entity");
-	EmplaceNodeTypeString(ENT_DIRECT_RETRIEVE_FROM_ENTITY, "direct_retrieve_from_entity");
 	EmplaceNodeTypeString(ENT_CALL_ENTITY, "call_entity");
 	EmplaceNodeTypeString(ENT_CALL_ENTITY_GET_CHANGES, "call_entity_get_changes");
 	EmplaceNodeTypeString(ENT_CALL_CONTAINER, "call_container");
@@ -452,7 +448,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_swap_elements, "swap_elements");
 	EmplaceStaticString(ENBISI_deep_copy_elements, "deep_copy_elements");
 	EmplaceStaticString(ENBISI_delete_elements, "delete_elements");
-	EmplaceStaticString(ENBISI_change_label, "change_label");
 
 	//mix parameters
 	EmplaceStaticString(ENBISI_string_edit_distance, "string_edit_distance");

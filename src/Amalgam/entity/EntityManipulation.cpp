@@ -335,7 +335,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 		{
 			EvaluableNode *copy_lambda = enm->AllocNode(ENT_LAMBDA);
 			create_entity->AppendOrderedChildNode(copy_lambda);
-			copy_lambda->AppendOrderedChildNode(enm->DeepAllocCopy(entity_to_create->GetRoot(), EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT));
+			copy_lambda->AppendOrderedChildNode(enm->DeepAllocCopy(entity_to_create->GetRoot()));
 		}
 		else //need to difference
 		{
@@ -625,21 +625,26 @@ void EntityManipulation::MergeContainedEntities(EntitiesMergeMethod *mm, Entity 
 }
 
 Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
-	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *operation_type)
+	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
+	CompactHashMap<EvaluableNodeType, double> *operation_type,
+	size_t preserve_type_depth)
 {
 	if(entity == nullptr)
 		return nullptr;
 
 	//make a new entity with mutated code
 	Entity *new_entity = new Entity();
-	EvaluableNode *mutated_code = EvaluableNodeTreeManipulation::MutateTree(interpreter, &new_entity->evaluableNodeManager, entity->GetRoot(), mutation_rate, mutation_weights, operation_type);
+	EvaluableNode *mutated_code = EvaluableNodeTreeManipulation::MutateTree(interpreter,
+		&new_entity->evaluableNodeManager, entity->GetRoot(),
+		mutation_rate, mutation_weights, operation_type, preserve_type_depth);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(mutated_code);
 	new_entity->SetRoot(mutated_code, true);
 	new_entity->SetRandomStream(entity->GetRandomStream());
 
 	//make mutated copies of all contained entities
 	for(auto e : entity->GetContainedEntities())
-		new_entity->AddContainedEntity(MutateEntity(interpreter, e, mutation_rate, mutation_weights, operation_type), entity->GetIdStringId());
+		new_entity->AddContainedEntity(MutateEntity(interpreter,
+			e, mutation_rate, mutation_weights, operation_type, preserve_type_depth), entity->GetIdStringId());
 
 	return new_entity;
 }
@@ -739,7 +744,7 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 	EvaluableNode *lambda_for_create_root = enm->AllocNode(ENT_LAMBDA);
 	let_assoc->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI__), lambda_for_create_root);
 
-	EvaluableNodeReference root_copy = entity->GetRoot(enm, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
+	EvaluableNodeReference root_copy = entity->GetRoot(enm);
 	lambda_for_create_root->AppendOrderedChildNode(root_copy);
 
 	//   (if create_new_entity
@@ -807,7 +812,7 @@ EvaluableNode *EntityManipulation::FlattenOnlyOneContainedEntity(EvaluableNodeMa
 	EvaluableNode *lambda_for_create = enm->AllocNode(ENT_LAMBDA);
 	create_entity->AppendOrderedChildNode(lambda_for_create);
 
-	EvaluableNodeReference contained_root_copy = entity->GetRoot(enm, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
+	EvaluableNodeReference contained_root_copy = entity->GetRoot(enm);
 	lambda_for_create->AppendOrderedChildNode(contained_root_copy);
 
 	if(include_rand_seeds)

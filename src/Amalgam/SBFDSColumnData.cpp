@@ -187,7 +187,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 	{
 		if(!invalidIndices.contains(index))
 		{
-			RemoveIndexValue(old_value_type, old_value, index, false);
+			RemoveIndexValue(old_value_type, old_value, index, false, false);
 			invalidIndices.insert(index);
 		}
 
@@ -408,14 +408,14 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 	}
 
 	//delete index at old value
-	RemoveIndexValue(old_value_type_resolved, old_value_resolved, index, false);
+	RemoveIndexValue(old_value_type_resolved, old_value_resolved, index, false, false);
 
 	//add index at new value bucket
 	InsertIndexValue(new_value_type_resolved, new_value_resolved, index);
 }
 
 void SBFDSColumnData::RemoveIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
-	size_t index, bool remove_last_entity)
+	size_t index, bool remove_last_entity, bool set_not_exist)
 {
 	switch(value_type)
 	{
@@ -513,81 +513,15 @@ void SBFDSColumnData::RemoveIndexValue(EvaluableNodeImmediateValueType value_typ
 	}
 
 	if(remove_last_entity)
+	{
 		valueEntries.pop_back();
+	}
 	else
+	{
 		valueEntries[index] = std::numeric_limits<double>::quiet_NaN();
-}
 
-void SBFDSColumnData::RemoveIndexFromCaches(size_t index)
-{
-	if(invalidIndices.EraseAndRetrieve(index))
-		return;
-	if(nullIndices.EraseAndRetrieve(index))
-		return;
-	if(falseBoolIndices.EraseAndRetrieve(index))
-		return;
-	if(trueBoolIndices.EraseAndRetrieve(index))
-		return;
-
-	for(auto cur_value_entry = begin(sortedNumberValueEntries); cur_value_entry != end(sortedNumberValueEntries); ++cur_value_entry)
-	{
-		if(cur_value_entry->second.indicesWithValue.contains(index))
-		{
-			if(cur_value_entry->second.indicesWithValue.size() == 1)
-			{
-				internedNumberValues.DeleteInternIndex(cur_value_entry->second.valueInternIndex);
-				sortedNumberValueEntries.erase(cur_value_entry);
-			}
-			else //else we can just remove the id from the bucket
-			{
-				cur_value_entry->second.indicesWithValue.erase(index);
-			}
-
-			numberIndices.erase(index);
-			return;
-		}
-	}
-
-	for(auto cur_id_entry = begin(stringIdValueEntries); cur_id_entry != end(stringIdValueEntries); ++cur_id_entry)
-	{
-		if(cur_id_entry->second->indicesWithValue.contains(index))
-		{
-			auto &entities = cur_id_entry->second->indicesWithValue;
-			entities.erase(index);
-
-			//if no more entries have the value, remove it
-			if(entities.size() == 0)
-			{
-				internedStringIdValues.DeleteInternIndex(cur_id_entry->second->valueInternIndex);
-				stringIdValueEntries.erase(cur_id_entry);
-			}
-
-			//see if need to compute new longest string
-			if(index == indexWithLongestString)
-				RecomputeLongestString();
-
-			stringIdIndices.erase(index);
-			return;
-		}
-	}
-
-	for(auto cur_id_entry = begin(valueCodeSizeToIndices); cur_id_entry != end(valueCodeSizeToIndices); ++cur_id_entry)
-	{
-		if(cur_id_entry->second->contains(index))
-		{
-			auto &entities = *(cur_id_entry->second);
-			entities.erase(index);
-
-			if(entities.size() == 0)
-				valueCodeSizeToIndices.erase(cur_id_entry);
-
-			//see if need to update largest code
-			if(index == indexWithLargestCode)
-				RecomputeLargestCode();
-
-			codeIndices.erase(index);
-			return;
-		}
+		if(set_not_exist)
+			invalidIndices.insert(index);
 	}
 }
 

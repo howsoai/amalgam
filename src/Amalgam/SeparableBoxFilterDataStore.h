@@ -138,6 +138,10 @@ public:
 			if(IsColumnIndexRemovable(column_index - 1))
 				RemoveColumnIndex(column_index - 1);
 		}
+
+		//if removed all columns, then no entities left
+		if(columnData.size() == 0)
+			numEntities = 0;
 	}
 
 	//removes the label specified by label_sid
@@ -157,8 +161,12 @@ public:
 	//updates all of the label values for entity with index entity_index
 	void UpdateAllEntityLabels(Entity *entity, size_t entity_index);
 
-	//like UpdateAllEntityLabels, but only updates labels for label_updated
-	void UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated);
+	//updates the given label for the given entity
+	void UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_id);
+
+	//removes the entity's value for the specified label
+	void RemoveEntityIndexValueFromLabelId(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
+		size_t entity_index, StringInternPool::StringID label_id);
 
 	constexpr size_t GetNumInsertedEntities()
 	{
@@ -685,7 +693,9 @@ protected:
 
 	//removes the index and associated data
 	//if it is the last entity and remove_last_entity is true, then it will truncate storage
-	void RemoveEntityIndexFromColumns(size_t entity_index, bool remove_last_entity = false);
+	//if set_not_exist is true, then it will set in the internal indices that the value is nonexistent
+	// set_not_exist should be true if the value is being removed, false if it will be immediately reinserted
+	void RemoveEntityIndexFromColumns(size_t entity_index, bool remove_last_entity, bool set_not_exist);
 
 	//adds a new labels to the database
 	// assumes label_ids is not empty

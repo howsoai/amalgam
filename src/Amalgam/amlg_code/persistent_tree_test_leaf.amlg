@@ -1,5 +1,4 @@
-(unordered_list
-	#f 6
-	#jello
-	(print "jello\n")
-)
+{
+	f 6
+	jello (print "jello\n")
+}

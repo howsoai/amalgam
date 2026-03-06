@@ -110,7 +110,7 @@ public:
 	}
 
 	//inserts id into hash set, does nothing if id already exists
-	void insert(size_t id)
+	inline void insert(size_t id)
 	{
 		auto location = std::lower_bound(std::begin(integers), std::end(integers), id);
 

@@ -383,7 +383,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 	if(EvaluableNode::IsNull(first_node) || !first_node->IsOrderedArray())
 		return EntityExternalInterface::LoadEntityStatus(false, "No data found in file", "");
 
-	EvaluableNodeReference args = EvaluableNodeReference(entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
+	EvaluableNodeReference args(entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 	args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), entity->evaluableNodeManager.AllocNode(false));
 	args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_require_version_compatibility),
 		entity->evaluableNodeManager.AllocNode(asset_params->requireVersionCompatibility));
@@ -552,7 +552,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 	{
 		asset_params->topEntity = new_entity;
 
-		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
+		EvaluableNodeReference args(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(false));
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_require_version_compatibility),
 			new_entity->evaluableNodeManager.AllocNode(asset_params->requireVersionCompatibility));
@@ -565,11 +565,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 		{
 			std::string error_string = "Error, null returned from executing loaded code.";
 			if(result != nullptr)
-			{
-				auto comment_str = result->GetCommentsStringId();
-				if(comment_str != string_intern_pool.NOT_A_STRING_ID)
-					error_string = comment_str->string;
-			}
+				error_string = result->GetCommentsString();
 
 			status.SetStatus(false, error_string);
 			delete new_entity;
@@ -782,7 +778,7 @@ std::string AssetManager::GetEvaluableNodeSourceFromComments(EvaluableNode *en)
 	{
 		if(en->HasComments())
 		{
-			auto &comment = en->GetCommentsString();
+			auto comment = en->GetCommentsString();
 			auto first_line_end = comment.find('\n');
 			if(first_line_end == std::string::npos)
 				source = comment;

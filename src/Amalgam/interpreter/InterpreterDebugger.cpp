@@ -99,29 +99,26 @@ static void ClampSingleLineStringLength(std::string &s, size_t max_num_chars, st
 //prints the node and its comment both truncated to max_num_chars or newline
 static std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t max_num_chars = 100)
 {
-	//if no comments, then can just print
-	if(en == nullptr || en->GetCommentsStringId() == string_intern_pool.NOT_A_STRING_ID)
+	//comments are used for determining location; if no comments, then just print the value
+	if(en == nullptr || !en->HasComments())
 	{
-		std::string code_str = Parser::Unparse(en, false, true, true);
+		std::string code_str = Parser::Unparse(en, false, false, true);
 		ClampSingleLineStringLength(code_str, max_num_chars);
 		return std::make_pair(std::string(), code_str);
 	}
 	else //has comments, so need to thoughtfully handle showing first line of comments and appropriate amount of code
 	{
-		//get comment, and make it look like a comment
-		std::string comment_str;
-		comment_str += en->GetCommentsString();
-
+		std::string comment_str(en->GetCommentsString());
 		//if debug sources enabled, don't clamp the line, make sure it prints out the whole filename
 		if(asset_manager.debugSources)
-			max_num_chars = std::numeric_limits<size_t>::max();
+			ClampSingleLineStringLength(comment_str, std::numeric_limits<size_t>::max());
+		else
+			ClampSingleLineStringLength(comment_str, max_num_chars);
 
-		ClampSingleLineStringLength(comment_str, max_num_chars);
-
-		//append with code
-		EvaluableNode en_without_comment(en);
-		en_without_comment.ClearComments();
-		std::string code_str = Parser::Unparse(&en_without_comment, false, true, true);
+		//append with code by making a copy without metadata and only copying concurrency
+		EvaluableNode en_without_comment(en, false);
+		en_without_comment.SetConcurrency(en->GetConcurrency());
+		std::string code_str = Parser::Unparse(&en_without_comment, false, false, true);
 		ClampSingleLineStringLength(code_str, max_num_chars);
 
 		return std::make_pair(comment_str, code_str);
@@ -467,7 +464,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				(StringInternPool::StringID label_sid, EvaluableNode *node)
 					{
 						std::cout << "  " << string_intern_pool.GetStringFromID(label_sid) << std::endl;
-					}, nullptr, true, true);
+					}, nullptr, true);
 			}
 		}
 		else if(command == "vars")
@@ -507,7 +504,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 					}
 
 					bool found_value = false;
-					std::tie(node, found_value) = curEntity->GetValueAtLabel(sid, nullptr, true,
+					std::tie(node, found_value) = curEntity->GetValueAtLabel(sid, nullptr,
 						EvaluableNodeRequestedValueTypes::Type::NONE, true);
 					if(!found_value)
 					{
@@ -673,7 +670,7 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool be
 			&& _interpreter_debug_data.breakLineFile.size() > 0)
 		{
 			//if it has a source, check against all of the source break points
-			auto &comment_str = en->GetCommentsString();
+			auto comment_str = en->GetCommentsString();
 			if(comment_str.rfind(Parser::sourceCommentPrefix, 0) != std::string::npos)
 			{
 				for(auto &breakpoint_str : _interpreter_debug_data.breakLineFile)
@@ -759,29 +756,24 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool be
 			}
 		}
 
-		//if breaking on a label
-		if(!_interpreter_debug_data.runUntilLabel.empty() || _interpreter_debug_data.breakLabels.size() > 0)
+		//if breaking on a label and in a valid entity
+		if( (!_interpreter_debug_data.runUntilLabel.empty() || _interpreter_debug_data.breakLabels.size() > 0)
+			&& curEntity != nullptr && en != nullptr)
 		{
-			size_t num_labels = 0;
-			if(en != nullptr)
-				num_labels = en->GetNumLabels();
-
-			if(num_labels > 0)
+			auto [label_sid, found] = curEntity->GetLabelForNodeIfExists(en);
+			if(found)
 			{
 				//check each label to see if matches
 				auto run_until_label_sid = string_intern_pool.GetIDFromString(_interpreter_debug_data.runUntilLabel);
 
-				for(size_t i = 0; i < num_labels; i++)
+				if(label_sid == run_until_label_sid)
 				{
-					auto label_sid = en->GetLabelStringId(i);
-					if(label_sid == run_until_label_sid)
-					{
-						//re-enter interactiveMode and clear runUntilLabel
-						_interpreter_debug_data.runUntilLabel = "";
-						_interpreter_debug_data.EnableInteractiveMode();
-						break;
-					}
-
+					//re-enter interactiveMode and clear runUntilLabel
+					_interpreter_debug_data.runUntilLabel = "";
+					_interpreter_debug_data.EnableInteractiveMode();
+				}
+				else
+				{
 					//iterate over all break labels
 					for(auto &label : _interpreter_debug_data.breakLabels)
 					{

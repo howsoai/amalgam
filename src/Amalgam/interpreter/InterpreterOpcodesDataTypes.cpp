@@ -23,7 +23,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(Ev
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
-		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		return evaluableNodeManager->DeepAllocCopy(en, false);
 
 	EvaluableNodeReference new_list(evaluableNodeManager->AllocNode(en->GetType()), true);
 
@@ -87,10 +87,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, E
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
-		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		return evaluableNodeManager->DeepAllocCopy(en, false);
 
 	//create a new assoc from the previous
-	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(en, EvaluableNodeManager::ENMM_REMOVE_ALL), true);
+	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(en, false), true);
 
 	//copy of the original evaluable node's mcn
 	auto &new_mcn = new_assoc->GetMappedChildNodesReference();
@@ -178,11 +178,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	if(found)
 		return EvaluableNodeReference::CoerceNonUniqueEvaluableNodeToImmediateIfPossible(symbol_value, immediate_result);
 
-	// if didn't find it in the stack, try it in the labels
-	EntityReadReference cur_entity_ref(curEntity);
-	if(cur_entity_ref != nullptr)
+	//if didn't find it in the stack, try it in the labels
+	//don't need to lock the entity since it's already executing on it
+	if(curEntity != nullptr)
 	{
-		auto [label_value, label_found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, immediate_result, true);
+		auto [label_value, label_found] = curEntity->GetValueAtLabel(sid, evaluableNodeManager, immediate_result, true);
 		if(label_found)
 			return label_value;
 	}
@@ -200,7 +200,7 @@ void Interpreter::EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::St
 
 	if(asset_manager.debugSources && en->HasComments())
 	{
-		std::string comment_string = en->GetCommentsString();
+		std::string_view comment_string = en->GetCommentsString();
 		size_t newline_index = comment_string.find("\n");
 
 		std::string comment_string_first_line;
@@ -948,156 +948,40 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	return AllocReturn(string_value, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ANNOTATIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference n = InterpretNodeForImmediateUse(ocn[0]);
+	auto n = InterpretNodeForImmediateUse(ocn[0]);
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
 
-	size_t num_labels = n->GetNumLabels();
-
-	//make list of labels
-	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto &result_ocn = result->GetOrderedChildNodesReference();
-	result_ocn.resize(num_labels);
-
-	//because labels can be stored in different ways, it is just easiest to iterate
-	// rather than to get a reference to each string id
-	for(size_t i = 0; i < num_labels; i++)
-		result_ocn[i] = evaluableNodeManager->AllocNode(ENT_STRING, n->GetLabelStringId(i));
-
+	std::string annotations(n->GetAnnotationsString());
 	evaluableNodeManager->FreeNodeTreeIfPossible(n);
-	return result;
+	return AllocReturn(annotations, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
-{
-	EvaluableNodeReference n = EvaluableNodeReference::Null();
-
-	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() > 0)
-		n = InterpretNodeForImmediateUse(ocn[0]);
-
-	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_ASSOC), n.unique, true);
-
-	auto [label_sids_to_nodes, _] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(n);
-
-	result->ReserveMappedChildNodes(label_sids_to_nodes.size());
-	for(auto &[node_id, node] : label_sids_to_nodes)
-		result->SetMappedChildNode(node_id, node);
-
-	//can't guarantee there weren't any cycles if more than one label
-	if(label_sids_to_nodes.size() > 1)
-		result->SetNeedCycleCheck(true);
-
-	return result;
-}
-
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ANNOTATIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
 	auto source = InterpretNode(ocn[0]);
-	if(source == nullptr)
-		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
-
 	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateOpcodeStackStateSaver(source);
 
-	//get the labels
-	auto label_list = InterpretNodeForImmediateUse(ocn[1]);
-	if(label_list != nullptr && label_list->GetType() != ENT_LIST)
-	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(label_list);
-		return source;
-	}
-
-	source->ClearLabels();
-
-	//if adding labels, then grab from the provided list
-	if(label_list != nullptr)
-	{
-		for(auto &e : label_list->GetOrderedChildNodes())
-		{
-			if(e != nullptr)
-			{
-				//obtain the label, reusing the sid reference if possible
-				StringInternPool::StringID label_sid = string_intern_pool.emptyStringId;
-				if(label_list.unique)
-					label_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(e);
-				else
-					label_sid = EvaluableNode::ToStringIDWithReference(e);
-
-				if(label_sid != string_intern_pool.NOT_A_STRING_ID)
-					source->AppendLabelStringId(label_sid, true);
-			}
-		}
-	}
-	evaluableNodeManager->FreeNodeTreeIfPossible(label_list);
+	//get the annotations
+	auto [valid, new_annotations] = InterpretNodeIntoStringValue(ocn[1]);
+	if(valid)
+		source->SetAnnotationsString(new_annotations);
+	else
+		source->ClearAnnotations();
 
 	return source;
-}
-
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
-{
-	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
-		return EvaluableNodeReference::Null();
-
-	auto label_list = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateOpcodeStackStateSaver(label_list);
-
-	auto source = InterpretNode(ocn[1]);
-
-	//if no label list, or no source or source is immediate, then just return the source
-	if(EvaluableNode::IsNull(label_list) || !label_list->IsOrderedArray()
-			|| EvaluableNode::IsNull(source) || !source->IsOrderedArray())
-		return source;
-
-	node_stack.PopEvaluableNode();
-
-	//make copy to populate with copies of the child nodes
-	//start assuming that the copy will be unique, but set to not unique if any chance the assumption
-	// might not hold
-	EvaluableNodeReference retval = source;
-	evaluableNodeManager->EnsureNodeIsModifiable(source);
-
-	auto &label_list_ocn = label_list->GetOrderedChildNodesReference();
-
-	//copy over labels to each child node, allocating a new child node if needed
-	auto &retval_ocn = retval->GetOrderedChildNodesReference();
-	for(size_t i = 0; i < retval_ocn.size(); i++)
-	{
-		//no more labels to add, so just leave the existing nodes
-		if(i >= label_list_ocn.size())
-			break;
-
-		//make sure the child node can have a label appended
-		if(retval_ocn[i] == nullptr)
-			retval_ocn[i] = evaluableNodeManager->AllocNode(ENT_NULL);
-		else if(!source.unique)
-			retval_ocn[i] = evaluableNodeManager->AllocNode(retval_ocn[i]);
-
-		//obtain the label, reusing the sid reference if possible
-		StringInternPool::StringID label_sid = string_intern_pool.emptyStringId;
-		if(label_list.unique)
-			label_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(label_list_ocn[i]);
-		else
-			label_sid = EvaluableNode::ToStringIDWithReference(label_list_ocn[i]);
-
-		retval_ocn[i]->AppendLabelStringId(label_sid, true);
-	}
-
-	evaluableNodeManager->FreeNodeTreeIfPossible(label_list);
-
-	return retval;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
@@ -1110,9 +994,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
 
-	StringInternPool::StringID comments_sid = n->GetCommentsStringId();
+	std::string comment(n->GetCommentsString());
 	evaluableNodeManager->FreeNodeTreeIfPossible(n);
-	return AllocReturn(comments_sid, immediate_result);
+	return AllocReturn(comment, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
@@ -1127,8 +1011,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode
 	auto node_stack = CreateOpcodeStackStateSaver(source);
 
 	//get the comments
-	StringInternPool::StringID new_comments_sid = InterpretNodeIntoStringIDValueWithReference(ocn[1]);
-	source->SetCommentsStringId(new_comments_sid, true);
+	auto [valid, new_comments] = InterpretNodeIntoStringValue(ocn[1]);
+	if(valid)
+		source->SetCommentsString(new_comments);
+	else
+		source->ClearComments();
 
 	return source;
 }
@@ -1179,7 +1066,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *e
 	if(n.uniqueUnreferencedTopNode)
 		n->ClearMetadata();
 	else
-		evaluableNodeManager->EnsureNodeIsModifiable(n, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		evaluableNodeManager->EnsureNodeIsModifiable(n, false, false);
 
 	return n;
 }
@@ -1858,17 +1745,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 
 		std::string s;
 		if(cur == nullptr)
+		{
 			s = "(null)";
-		else if(DoesEvaluableNodeTypeUseBoolData(cur->GetType()))
-			s = EvaluableNode::BoolToString(cur->GetBoolValueReference());
-		else if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
-			s = cur->GetStringValue();
-		else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
-			s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
+		}
 		else
-			s = Parser::Unparse(cur, true, true, true);
+		{
+			if(DoesEvaluableNodeTypeUseBoolData(cur->GetType()))
+				s = EvaluableNode::BoolToString(cur->GetBoolValueReference());
+			else if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
+				s = cur->GetStringValue();
+			else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
+				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
+			else //only print attributes if not debugSources
+				s = Parser::Unparse(cur, true, false, true);
 
-		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+		}
 
 		if(writeListeners != nullptr)
 		{

@@ -66,8 +66,8 @@
 	;any live cell with two or three live neighbours survives.
 	;any dead cell with three live neighbours becomes a live cell.
 	;all other live cells die in the next generation. Similarly, all other dead cells stay dead.
-	(null
-		#CountNeighbors
+	(declare (assoc
+		CountNeighbors
 			(declare
 				(assoc
 					row_index 0
@@ -98,6 +98,7 @@
 					(get board_map (list bottom_index right_index))
 				)
 			)
+		)
 	)
 
 	(while (!= "q" done)

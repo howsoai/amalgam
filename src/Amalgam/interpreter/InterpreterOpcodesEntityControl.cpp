@@ -36,7 +36,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	if(label_sid == StringInternPool::NOT_A_STRING_ID)
 	{
 		if(!deep_comments)
-			return AllocReturn(EvaluableNode::GetCommentsStringId(target_entity->GetRoot()), immediate_result);
+		{
+			EvaluableNode *root = target_entity->GetRoot();
+			auto entity_description = root->GetCommentsString();
+			//if the top node doesn't have a description, try to obtain from the node with the null key
+			if(entity_description.empty())
+			{
+				EvaluableNode **null_code = root->GetMappedChildNode(string_intern_pool.NOT_A_STRING_ID);
+				if(null_code != nullptr)
+					entity_description = EvaluableNode::GetCommentsString(*null_code);
+			}
+			return AllocReturn(entity_description, immediate_result);
+		}
 
 		EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 
@@ -47,20 +58,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 			{
 				//only include publicly facing labels
 				if(Entity::IsLabelValidAndPublic(label_sid))
-					retval->SetMappedChildNode(label_sid, evaluableNodeManager->AllocNode(ENT_STRING, EvaluableNode::GetCommentsStringId(node)));
+					retval->SetMappedChildNode(label_sid, evaluableNodeManager->AllocNode(EvaluableNode::GetCommentsString(node)));
 			}
 		);
 		
 		return retval;
 	}
 
-	auto label_value = target_entity->GetValueAtLabel(label_sid, nullptr, true).first;
+	auto label_value = target_entity->GetValueAtLabel(label_sid, nullptr).first;
 	if(label_value == nullptr)
 		return EvaluableNodeReference::Null();
 
 	//has valid label
 	if(!deep_comments)
-		return AllocReturn(label_value->GetCommentsStringId(), immediate_result);
+		return AllocReturn(label_value->GetCommentsString(), immediate_result);
 
 	//make sure a function based on declare that has parameters
 	if(label_value->GetType() != ENT_DECLARE || label_value->GetOrderedChildNodes().size() < 1)
@@ -82,7 +93,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	retval_ocn[0] = params_list;
 
 	//get return comments
-	retval_ocn[1] = evaluableNodeManager->AllocNode(ENT_STRING, vars->GetCommentsStringId());
+	retval_ocn[1] = evaluableNodeManager->AllocNode(vars->GetCommentsString());
 
 	auto &mcn = vars->GetMappedChildNodesReference();
 	params_list->ReserveMappedChildNodes(mcn.size());
@@ -94,8 +105,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		EvaluableNodeReference param_info(evaluableNodeManager->AllocNode(ENT_LIST), true);
 		auto &param_info_ocn = param_info->GetOrderedChildNodesReference();
 		param_info_ocn.resize(2);
-		param_info_ocn[0] = evaluableNodeManager->AllocNode(ENT_STRING, EvaluableNode::GetCommentsStringId(cn));
-		param_info_ocn[1] = evaluableNodeManager->DeepAllocCopy(cn, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		param_info_ocn[0] = evaluableNodeManager->AllocNode(EvaluableNode::GetCommentsString(cn));
+		param_info_ocn[1] = evaluableNodeManager->DeepAllocCopy(cn, false);
 
 		//add to the params
 		params_list->SetMappedChildNode(cn_id, param_info);
@@ -113,15 +124,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 		return EvaluableNodeReference::Null();
 	auto &ocn = en->GetOrderedChildNodesReference();
 
-	//get second parameter if exists
-	auto label_escape_increment = EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT;
-	if(ocn.size() > 1)
-	{
-		auto value = InterpretNodeIntoNumberValue(ocn[1]);
-		if(value)
-			label_escape_increment = EvaluableNodeManager::ENMM_NO_CHANGE;
-	}
-
 	//retrieve the entity after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
 	EntityReadReference target_entity;
@@ -134,17 +136,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 		return EvaluableNodeReference::Null();
 
 
-	return target_entity->GetRoot(evaluableNodeManager, label_escape_increment);
+	return target_entity->GetRoot(evaluableNodeManager);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_ACCUM_ENTITY_ROOTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
 
-	bool accum = (en->GetType() == ENT_ACCUM_ENTITY_ROOTS);
 	bool all_assignments_successful = true;
 
 	for(size_t i = 0; i < ocn.size(); i += 2)
@@ -180,29 +181,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 		if(target_entity != curEntity)
 			lab_pause = evaluableNodeManager->PauseLocalAllocationBuffer();
 
-		if(accum)
-		{
-			target_entity->AccumRoot(new_code, false, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT, writeListeners);
-			
-			//accumulate new node usage
-			if(ConstrainedAllocatedNodes())
-				interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += EvaluableNode::GetDeepSize(new_code);
-		}
-		else
-		{
-			size_t prev_size = 0;
-			if(ConstrainedAllocatedNodes())
-				prev_size = target_entity->GetSizeInNodes();
+		size_t prev_size = 0;
+		if(ConstrainedAllocatedNodes())
+			prev_size = target_entity->GetSizeInNodes();
 
-			target_entity->SetRoot(new_code, false, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT, writeListeners);
+		target_entity->SetRoot(new_code, false, writeListeners);
 
-			if(ConstrainedAllocatedNodes())
-			{
-				size_t cur_size = target_entity->GetSizeInNodes();
-				//don't get credit for freeing memory, but do count toward memory consumed
-				if(cur_size > prev_size)
-					interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += cur_size - prev_size;
-			}
+		if(ConstrainedAllocatedNodes())
+		{
+			size_t cur_size = target_entity->GetSizeInNodes();
+			//don't get credit for freeing memory, but do count toward memory consumed
+			if(cur_size > prev_size)
+				interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += cur_size - prev_size;
 		}
 
 		lab_pause.Resume();
@@ -406,7 +396,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 		auto lab_pause = evaluableNodeManager->PauseLocalAllocationBuffer();
 
 		//create new entity
-		Entity *new_entity = new Entity(root, rand_state, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT);
+		Entity *new_entity = new Entity(root, rand_state);
 
 		lab_pause.Resume();
 

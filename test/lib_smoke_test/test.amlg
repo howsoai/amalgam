@@ -6,7 +6,7 @@
 	 (map
 		 (lambda (create_entities
 			 (concat "case_" (current_index))
-			 (zip_labels (list "A" "B" "N") (current_value))
+			 (zip (list "A" "B" "N") (current_value))
 		 ))
 		 (list
 			(list 	1 	.7  "A")

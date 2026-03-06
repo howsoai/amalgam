@@ -64,25 +64,32 @@ public:
 		sbfds.UpdateAllEntityLabels(entity, entity_index);
 	}
 
-	//like UpdateAllEntityLabels, but only updates labels for the keys of labels_updated
-	inline void UpdateEntityLabels(Entity *entity, size_t entity_index, EvaluableNode::AssocType &labels_updated)
+	//updates the labels for the entity to the new_values specified based on the keys in new_values
+	//note that it obtains the entity's labels directly rather than using what is in new_values
+	inline void UpdateEntityLabels(Entity *entity, size_t entity_index, EvaluableNode::AssocType &new_values)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::WriteLock write_lock(mutex);
 	#endif
 
-		for(auto &[label_id, _] : labels_updated)
+		for(auto &[label_id, _] : new_values)
 			sbfds.UpdateEntityLabel(entity, entity_index, label_id);
 	}
 
-	//like UpdateAllEntityLabels, but only updates labels for label_updated
-	inline void UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated)
+	//removes all entity labels specified
+	inline void RemoveEntityLabels(Entity *entity, size_t entity_index,
+		std::vector<std::pair<StringInternPool::StringID, EvaluableNode *>> &label_sids_and_values_to_remove)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::WriteLock write_lock(mutex);
 	#endif
 
-		sbfds.UpdateEntityLabel(entity, entity_index, label_updated);
+		for(auto &[label_sid, prev_node] : label_sids_and_values_to_remove)
+		{
+			EvaluableNodeImmediateValue imm_val;
+			auto value_type = imm_val.CopyValueFromEvaluableNode(prev_node);
+			sbfds.RemoveEntityIndexValueFromLabelId(value_type, imm_val, entity_index, label_sid);
+		}
 	}
 
 	//specifies that this cache can be used for the input condition

@@ -302,11 +302,8 @@ public:
 	Entity();
 
 	//create Entity from existing code, rand_state is the current state of the random number generator,
-	// modifying labels as specified
-	Entity(std::string &code_string, const std::string &rand_state,
-		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
-	Entity(EvaluableNode *_root, const std::string &rand_state,
-		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
+	Entity(std::string &code_string, const std::string &rand_state);
+	Entity(EvaluableNode *_root, const std::string &rand_state);
 
 	//Creates a new Entity as a copy of the Entity passed in; everything is identical except for the time created and id
 	Entity(Entity *t);
@@ -328,7 +325,8 @@ public:
 #endif
 	);
 
-	//executes the entity on label_name (if empty string, then evaluates root node)
+	//executes the entity on label_name,
+	// if NOT_A_STRING_ID, then attempts to find corresponding label name or executes the root node
 	// returns the result from the execution
 	// if on_self is true, then it will be allowed to access private labels
 	//see ExecuteCodeAsEntity for further parameter details
@@ -345,13 +343,18 @@ public:
 			return EvaluableNodeReference::Null();
 
 		EvaluableNode *node_to_execute = nullptr;
-		if(label_sid == string_intern_pool.NOT_A_STRING_ID)	//if not specified, then use root
-			node_to_execute = evaluableNodeManager.GetRootNode();
+		//if label is not specified, then check type to see if it has keys
+		if(label_sid == string_intern_pool.NOT_A_STRING_ID
+			&& !EvaluableNode::IsAssociativeArray(rootNode))
+		{
+			node_to_execute = rootNode;
+		}
 		else //get code at label
 		{
-			const auto &label = labelIndex.find(label_sid);
+			auto &label_index = GetLabelIndex();
+			const auto &label = label_index.find(label_sid);
 
-			if(label != end(labelIndex))
+			if(label != end(label_index))
 				node_to_execute = label->second;
 		}
 
@@ -390,17 +393,23 @@ public:
 	//Returns the code for the Entity in string form
 	inline std::string GetCodeAsString()
 	{
-		return Parser::Unparse(evaluableNodeManager.GetRootNode());
+		return Parser::Unparse(rootNode);
 	}
 
-	//Returns the root of the entity
-	// if destination_temp_enm is specified, then it will perform a copy using that EvaluableNodeManager using metadata_modifier
-	EvaluableNodeReference GetRoot(EvaluableNodeManager *destination_temp_enm = nullptr, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
+	//returns the root of the entity
+	// if destination_temp_enm is specified, then it will perform a copy
+	EvaluableNodeReference GetRoot(EvaluableNodeManager *destination_temp_enm = nullptr)
+	{
+		if(destination_temp_enm == nullptr)
+			return EvaluableNodeReference(rootNode, false);
+
+		return destination_temp_enm->DeepAllocCopy(rootNode);
+	}
 
 	//Returns the number of nodes in the entity
 	inline size_t GetSizeInNodes()
 	{
-		return EvaluableNode::GetDeepSize(evaluableNodeManager.GetRootNode());
+		return EvaluableNode::GetDeepSize(rootNode);
 	}
 
 	//Returns the number of nodes in the entity and all contained entities
@@ -416,29 +425,41 @@ public:
 	// Returns nullptr and false if the label does not exist
 	// Uses the EvaluableNodeManager destination_temp_enm to make a deep copy of the value.
 	// If destination_temp_enm is nullptr, it will return the node reference directly.
-	// If direct_get is true, then it will return values with all labels
 	// If on_self is true, then it will be allowed to access private variables
 	// If batch_call is true, then it assumes it will be called in a batch of updates and will
 	//  not perform any cleanup or synchronization
 	std::pair<EvaluableNodeReference, bool> GetValueAtLabel(StringInternPool::StringID label_sid,
-		EvaluableNodeManager *destination_temp_enm, bool direct_get,
+		EvaluableNodeManager *destination_temp_enm,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes(),
 		bool on_self = false, bool batch_call = false);
 
 	//same as GetValueAtLabel but accepts a string for label_name
 	inline std::pair<EvaluableNodeReference, bool> GetValueAtLabel(const std::string &label_name,
-		EvaluableNodeManager *destination_temp_enm, bool direct_get,
+		EvaluableNodeManager *destination_temp_enm,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes(), bool on_self = false)
 	{
 		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
-		return GetValueAtLabel(label_sid, destination_temp_enm, direct_get, immediate_result, on_self);
+		return GetValueAtLabel(label_sid, destination_temp_enm, immediate_result, on_self);
 	}
 
-	//Returns true if the label specified by label_sid exists
+	//returns true if the label specified by label_sid exists
 	bool DoesLabelExist(StringInternPool::StringID label_sid)
 	{
-		auto cur_value_it = labelIndex.find(label_sid);
-		return (cur_value_it != end(labelIndex));
+		auto &label_index = GetLabelIndex();
+		auto cur_value_it = label_index.find(label_sid);
+		return (cur_value_it != end(label_index));
+	}
+
+	//returns the label for given code if it exists, followed by a boolean indicating its existance
+	std::pair<StringInternPool::StringID, bool> GetLabelForNodeIfExists(EvaluableNode *en)
+	{
+		for(auto &label : GetLabelIndex())
+		{
+			if(label.second == en)
+				return std::make_pair(label.first, true);
+		}
+
+		return std::make_pair(string_intern_pool.NOT_A_STRING_ID, false);
 	}
 
 	//Evaluates the specified label into a bool and returns the value
@@ -474,30 +495,16 @@ public:
 	// and passing the label sid and the node to the user specified function func
 	template<typename LabelFunc>
 	inline void IterateFunctionOverLabels(LabelFunc func,
-		EvaluableNodeManager *destination_temp_enm = nullptr,
-		bool direct_get = false, bool on_self = false)
+		EvaluableNodeManager *destination_temp_enm = nullptr, bool on_self = false)
 	{
-		for(auto &[label_id, _] : labelIndex)
+		for(auto &[label_id, _] : GetLabelIndex())
 		{
-			EvaluableNode *node = GetValueAtLabel(label_id, destination_temp_enm, direct_get,
+			EvaluableNode *node = GetValueAtLabel(label_id, destination_temp_enm,
 				EvaluableNodeRequestedValueTypes::Type::NONE, on_self, true).first;
 			if(node != nullptr)
 				func(label_id, node);
 		}
 	}
-
-	//Sets the node at label_name to new_value.
-	// If new_value is unique (EvaluableNodeReference property) and on_self is true, then it will take ownership of new_value
-	//Retains true if the value (or modification thereof) was able to be set, false if the label does not exist or it fails for other reasons
-	// If direct_get is true, then it will return values with all labels
-	// If on_self is true, then it will be allowed to access private variables
-	// If batch_call is true, then it assumes it will be called in a batch of updates and will not perform any cleanup
-	// need_node_flags_updated is used when batch_call = true.  if need_node_flags_updated is not null, then it set the value to true
-	// if the Entity needs to have its node flags updated at the end of this batch update, because a cycle free flag has changed
-	//note that this cannot be called concurrently on the same entity
-	bool SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value, bool direct_set,
-		std::vector<EntityWriteListener *> *write_listeners, bool on_self = false, bool batch_call = false,
-		bool *need_node_flags_updated = nullptr);
 
 	//For each label-value pair in an associative array new_label_values, attempts to set the value at the label
 	// If new_value is unique (EvaluableNodeReference property) and on_self is true, then it will take ownership of new_value
@@ -505,13 +512,13 @@ public:
 	// if accum_values is true, then it will accumulate the values to the labels rather than setting them
 	// if num_new_nodes_allocated is not null, then it will be set to the total amount of new memory taken up by the entity at the end of the call
 	// other parameters match those of SetValueAtLabel, and will call SetValueAtLabel with batch_call = true
-	// if copy_entity is true, then it will make a full copy of the entity before setting the labels in a copy-on-write fashion (for concurrent access)
-	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values, bool direct_set,
-		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity);
+	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values,
+		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self);
 
-	//Rebuilds label index
-	//returns true if there was a change and cycle checks were updated across the entity
-	bool RebuildLabelIndex();
+	//for each label in the ordered child nodes of labels_to_remove, attempts to remove each label
+	// returns a pair of values; the first is true if any assignment was successful, the second is only true if all assignments were successful
+	std::pair<bool, bool> RemoveLabels(EvaluableNodeReference labels_to_remove,
+		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self);
 
 	//Returns the id for this Entity
 	inline const std::string &GetId()
@@ -861,21 +868,12 @@ public:
 		return IsNamedEntity(id_name);
 	}
 
-	//Sets the code and recreates the index, modifying labels as specified
+	//Sets the code and recreates the index
 	//if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
 	//write_listeners is optional, and if specified, will log the event
 	void SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm,
-		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr);
 	void SetRoot(std::string &code_string,
-		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
-		std::vector<EntityWriteListener *> *write_listeners = nullptr);
-
-	//accumulates the code and recreates the index, modifying labels as specified
-	//if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
-	//write_listeners is optional, and if specified, will log the event
-	void AccumRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm,
-		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
 	//collects garbage on evaluableNodeManager, assuming it has a write reference
@@ -883,7 +881,7 @@ public:
 	__forceinline void CollectGarbageWithEntityWriteReference()
 	{
 		if(evaluableNodeManager.RecommendGarbageCollection()
-				&& !evaluableNodeManager.IsAnyNodeReferencedOtherThanRoot())
+				&& !evaluableNodeManager.AreAnyInterpretersRunning())
 			evaluableNodeManager.CollectGarbage();
 	}
 #else
@@ -1087,8 +1085,29 @@ protected:
 	Concurrency::ReadWriteMutex mutex;
 #endif
 
-	//current list of all labels and where they are in the code
-	EvaluableNode::AssocType labelIndex;
+	inline EvaluableNode::AssocType &GetLabelIndex()
+	{
+		return rootNode->GetMappedChildNodesReference();
+	}
+
+	//sets the root node ensuring that the memory has been flushed so it is ready for reading
+	__forceinline void SetRootNode(EvaluableNode *new_root)
+	{
+		evaluableNodeManager.ExchangeNodeReference(new_root, rootNode);
+
+	#ifdef MULTITHREAD_SUPPORT
+		//fence memory flushing by using an atomic store
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		std::atomic<EvaluableNode *> *atomic_ref
+			= reinterpret_cast<std::atomic<EvaluableNode *> *>(&rootNode);
+		atomic_ref->store(new_root, std::memory_order_release);
+	#else
+		rootNode = new_root;
+	#endif
+	}
+
+	//root of the entity
+	EvaluableNode *rootNode;
 
 	//if true, then the entity has contained entities and will use the relationships reference of entityRelationships
 	//note this is located after labelIndex because labelIndex is of a size that does not align tightly

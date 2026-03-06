@@ -13,7 +13,7 @@ class Entity;
 class EntityWriteListener
 {
 public:
-	//stores all writes to entities as a seq of direct_assigns
+	//stores all writes to entities as a seq of assignments
 	//listening_entity is the entity to store the relative ids to
 	//if retain_writes is true, then the listener will store the writes, and GetWrites() will return the list of all writes accumulated
 	//if _pretty is true, then the listener will pretty print to filename
@@ -24,8 +24,8 @@ public:
 
 	//stores all writes, appending them to transaction_file
 	//if huffman_tree is not null, the write listener will assume ownership of the memory and use it to compress output
-	EntityWriteListener(Entity *listening_entity,
-		bool _pretty, bool sort_keys, std::unique_ptr<std::ostream> &&transaction_file, HuffmanTree<uint8_t> *huffman_tree = nullptr);
+	EntityWriteListener(Entity *listening_entity, bool _pretty, bool sort_keys,
+		std::unique_ptr<std::ostream> &&transaction_file, HuffmanTree<uint8_t> *huffman_tree = nullptr);
 
 	~EntityWriteListener();
 
@@ -34,18 +34,16 @@ public:
 	// LogPrint does not flush to allow bulk processing
 	void LogPrint(std::string &print_string);
 
-	void LogWriteLabelValueToEntity(Entity *entity, const StringInternPool::StringID label_name, EvaluableNode *value, bool direct_set);
+	void LogWriteLabelValueToEntity(Entity *entity, const StringInternPool::StringID label_name, EvaluableNode *value);
 
 	//like LogWriteLabelValueToEntity but where the keys are the labels and the values correspond
 	// in the assoc specified by label_value_pairs
-	void LogWriteLabelValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs,
-		bool accum_values, bool direct_set);
+	void LogWriteLabelValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool accum_values);
+
+	void LogRemoveLabelsFromEntity(Entity *entity, EvaluableNode *labels);
 
 	//logs the new entity root, assuming it has already been set
 	void LogWriteToEntityRoot(Entity *entity);
-
-	//logs accum to the entity root
-	void LogEntityAccumRoot(Entity *entity, EvaluableNodeReference accum_code);
 
 	void LogCreateEntity(Entity *new_entity);
 

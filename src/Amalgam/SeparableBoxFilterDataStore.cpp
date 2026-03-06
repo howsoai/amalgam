@@ -148,7 +148,7 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	// simply delete from column data, delete last row, and return
 	if(entity_index + 1 == GetNumInsertedEntities() && entity_index_to_reassign >= entity_index)
 	{
-		RemoveEntityIndexFromColumns(entity_index, true);
+		RemoveEntityIndexFromColumns(entity_index, true, false);
 
 	#ifdef SBFDS_VERIFICATION
 		VerifyAllEntitiesForAllColumns();
@@ -169,7 +169,7 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	//if deleting a row and not replacing it, just fill as if it has no data
 	if(entity_index == entity_index_to_reassign)
 	{
-		RemoveEntityIndexFromColumns(entity_index);
+		RemoveEntityIndexFromColumns(entity_index, false, true);
 
 	#ifdef SBFDS_VERIFICATION
 		VerifyAllEntitiesForAllColumns();
@@ -194,7 +194,7 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 
 		//remove the value where it is
 		columnData[column_index]->RemoveIndexValue(value_type_to_reassign, value_to_reassign,
-			entity_index_to_reassign, remove_last_entity);
+			entity_index_to_reassign, remove_last_entity, true);
 	}
 
 	if(remove_last_entity)
@@ -219,31 +219,52 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 	VerifyAllEntitiesForAllColumns();
 #endif
 
-	for(auto &column_data : columnData)
+	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
 	{
-		//TODO 24298: switch this to use ChangeIndexValue if possible
-		column_data->RemoveIndexFromCaches(entity_index);
-		auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
-		column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);
+		auto &column_data = columnData[column_index];
+
+	#ifdef SBFDS_VERIFICATION
+		VerifyAllEntitiesForColumn(column_index);
+	#endif
+
+		auto [reference, found] = entity->GetValueAtLabel(column_data->stringId, nullptr, EvaluableNodeRequestedValueTypes::Type::ALL);
+
+		if(found)
+		{
+			auto &value_with_type = reference.GetValue();
+			column_data->ChangeIndexValue(value_with_type.nodeType, value_with_type.nodeValue, entity_index);
+		}
+		else
+		{
+			column_data->ChangeIndexValue(ENIVT_NOT_EXIST, EvaluableNodeImmediateValue(), entity_index);
+		}
+
+		//remove the label if no longer relevant
+		if(IsColumnIndexRemovable(column_index))
+		{
+			RemoveColumnIndex(column_index);
+			//removed the column, so need to examine the new one in its place
+			column_index--;
+		}
+		else
+		{
+			OptimizeColumn(column_index);
+		}
+
+	#ifdef SBFDS_VERIFICATION
+		VerifyAllEntitiesForColumn(column_index);
+	#endif
 	}
-
-	//clean up any labels that aren't relevant
-	RemoveAnyUnusedLabels();
-
-	OptimizeAllColumns();
-
-#ifdef SBFDS_VERIFICATION
-	VerifyAllEntitiesForAllColumns();
-#endif
 }
 
-void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated)
+void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity,
+	size_t entity_index, StringInternPool::StringID label_id)
 {
 	if(entity_index >= numEntities)
 		return;
 
 	//find the column
-	auto column = labelIdToColumnIndex.find(label_updated);
+	auto column = labelIdToColumnIndex.find(label_id);
 	if(column == end(labelIdToColumnIndex))
 		return;
 	size_t column_index = column->second;
@@ -253,10 +274,17 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	VerifyAllEntitiesForColumn(column_index);
 #endif
 
-	//TODO 24298: switch this to use ChangeIndexValue if possible
-	column_data->RemoveIndexFromCaches(entity_index);
-	auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
-	column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);
+	auto [reference, found] = entity->GetValueAtLabel(label_id, nullptr, EvaluableNodeRequestedValueTypes::Type::ALL);
+
+	if(found)
+	{
+		auto &value_with_type = reference.GetValue();
+		column_data->ChangeIndexValue(value_with_type.nodeType, value_with_type.nodeValue, entity_index);
+	}
+	else
+	{
+		column_data->ChangeIndexValue(ENIVT_NOT_EXIST, EvaluableNodeImmediateValue(), entity_index);
+	}
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))
@@ -266,6 +294,35 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 
 #ifdef SBFDS_VERIFICATION
 	VerifyAllEntitiesForColumn(column_index);
+#endif
+}
+
+//removes the entity's value for the specified label
+void SeparableBoxFilterDataStore::RemoveEntityIndexValueFromLabelId(
+	EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
+	size_t entity_index, StringInternPool::StringID label_id)
+{
+	if(entity_index >= numEntities)
+		return;
+
+	//find the column
+	auto column = labelIdToColumnIndex.find(label_id);
+	if(column == end(labelIdToColumnIndex))
+		return;
+	size_t column_index = column->second;
+	auto column_data = columnData[column_index].get();
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForAllColumns();
+#endif
+
+	column_data->RemoveIndexValue(value_type, value, entity_index, false, true);
+
+	//clean up any labels that aren't relevant
+	RemoveAnyUnusedLabels();
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForAllColumns();
 #endif
 }
 
@@ -636,14 +693,14 @@ template void SeparableBoxFilterDataStore::FindNearestEntities<false, false>(Rep
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
 
-void SeparableBoxFilterDataStore::RemoveEntityIndexFromColumns(size_t entity_index, bool remove_last_entity)
+void SeparableBoxFilterDataStore::RemoveEntityIndexFromColumns(size_t entity_index, bool remove_last_entity, bool set_not_exist)
 {
 	for(size_t i = 0; i < columnData.size(); i++)
 	{
 		auto &column_data = columnData[i];
 		auto &feature_value = GetValue(entity_index, i);
 		auto feature_type = column_data->GetIndexValueType(entity_index);
-		column_data->RemoveIndexValue(feature_type, feature_value, entity_index, remove_last_entity);
+		column_data->RemoveIndexValue(feature_type, feature_value, entity_index, remove_last_entity, set_not_exist);
 	}
 
 	if(remove_last_entity)

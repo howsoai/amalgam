@@ -475,6 +475,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		}
 
 		//TODO 25156: incorporate call_on_entity here on downward, check all branches
+		//TODO 25156: change main function to enter repl, add options to eval on entity for file and update help
 	}
 
 	//current pointer to write listeners

@@ -446,7 +446,7 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
 	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
-	EvaluableNodeReference returned_value = bundle->entity->ExecuteCodeAsEntity(code, scope_stack, nullptr,
+	EvaluableNodeReference returned_value = bundle->entity->ExecuteOnEntity(code, scope_stack, nullptr,
 		&bundle->writeListeners, bundle->printListener, nullptr
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock

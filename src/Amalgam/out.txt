@@ -37,6 +37,7 @@
 	call_container 0.5
 	call_entity 0.5
 	call_entity_get_changes 0.05
+	call_on_entity 0.05
 	call_sandboxed 0.25
 	ceil 0.6
 	clone_entities 0.1
@@ -713,15 +714,15 @@ a
 {
 	a 1
 	b 2
+	c 3
 	d 4
-	e 5
 	f 6
 }
-{a 1 e 5}
+{d 4 f 6}
 {
 	a 1
+	c 3
 	d 4
-	e 5
 	f 6
 }
 {
@@ -764,15 +765,15 @@ c
 {
 	a 1
 	b 2
+	c 3
 	d 4
-	e 5
 	f 6
 }
-{a 1 e 5}
+{d 4 f 6}
 {
 	a 1
+	c 3
 	d 4
-	e 5
 	f 6
 }
 {
@@ -1125,7 +1126,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-[4 "b" "c" "a"]
+["b" "c" "a" 4]
 [
 	0
 	1
@@ -1137,10 +1138,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[0 1 3 2]
-[0 1 3 2]
+[1 2 0 3]
+[1 2 0 3]
 --values--
-["d" 2 3 1]
+[2 3 1 "d"]
 [
 	"a"
 	1
@@ -1161,7 +1162,7 @@ abcdef
 	4
 	"d"
 ]
-["d" 3 2 1]
+[1 2 3 "d"]
 [
 	1
 	2
@@ -1290,10 +1291,10 @@ string
 list
 assoc
 [
-	4
+	"4"
 	{4 4}
 	[4]
-	"4"
+	4
 ]
 --set--
 {
@@ -1403,7 +1404,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1772749633.87276
+		start_time 1772991184.390286
 		www 1
 		x 12
 		zz 10
@@ -1449,7 +1450,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1772749633.87276
+	start_time 1772991184.390286
 	www 1
 	x 12
 	zz 10
@@ -1494,7 +1495,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1772749633.87276
+	start_time 1772991184.390286
 	www 1
 	x 12
 	zz 10
@@ -1604,9 +1605,9 @@ b
 
 infinity test c or d: ["d" "d" "c" "c"]
 
-{a 21 b 63 c 16}
+{a 21 b 44 c 35}
 
-[6 9 5]
+[2 10 4]
 
 --get_rand_seed--
 ò×c``¦!šc”lÿ
@@ -1712,15 +1713,15 @@ string
 ]
 21: [{"b":4,"a":3},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: c: 3
-b: 2
-d: 4
-e:
+23: e:
   - a
   - b
   - 
   - .inf
+b: 2
+c: 3
 a: 1
+d: 4
 
 24: a: 1
 b: 2
@@ -1733,7 +1734,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2026-03-05-17.27.13.9221680
+current date-time in epoch: 2026-03-08-13.33.04.4514870
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1957,32 +1958,30 @@ decrypted: hello
 	2
 	3
 	4
-	"a"
-	(query_quantile)
+	(tan)
+	(call_sandboxed)
 	7
-	(associate "a" 1 "b" (query_exists))
-	9
-	3.0173192241528195
-	11
+	(assign_to_entities)
+	(query_distance_contributions)
+	10
+	(or)
 	12
-	(edit_distance)
-	14
-	(~)
+	b
+	"a"
+	(get_type_string "a" (first) "b" 2)
+	(commonality)
 ]
 [
 	1
 	2
-	(*)
+	3
 	4
-	(associate "alpha" 5 "beta" 6)
+	(associate "alpha" 5 (-) (+))
 	(associate
-		(-)
-		(associate
-			"count"
-			[7 8 9]
-		)
+		"nest"
+		(associate (+) [])
 		"end"
-		[(+) (+) 12]
+		[10 11 12]
 	)
 ]
 --commonality--
@@ -2420,17 +2419,28 @@ decrypted: hello
 	]
 ]
 --mix--
-[1 6 7 9 12]
 [
-	1
+	3
 	5
-	8
+	4
+	6
+	7
 	9
+	11
 	14
 ]
 [
 	1
+	4
+	3
 	5
+	8
+	9
+	12
+	13
+]
+[
+	1
 	2
 	(associate "a" 3 "b" 4)
 	(lambda
@@ -2441,31 +2451,33 @@ decrypted: hello
 				(get_entity_comments)
 				(lambda
 					(print
-						[2]
+						[2 9]
 					)
 				)
+			)
+		)
+	)
+	[6]
+]
+[
+	1
+	2.5
+	{a 3 b 4}
+	(associate "a" 3 "b" 4)
+	(lambda
+		(if
+			false
+			1
+			(seq
+				(lambda (print))
 			)
 		)
 	)
 	[5 6]
 ]
 [
-	1
-	5
-	2.5
-	(associate "a" 3)
-	(lambda
-		(if
-			true
-			1
-			(unordered_list (get_entity_comments) 1)
-		)
-	)
-	[5]
-]
-[
 	.true
-	2
+	3
 	4
 	7.5
 	9.5
@@ -2474,9 +2486,8 @@ decrypted: hello
 ]
 [
 	.true
-	5
-	2
-	6
+	4
+	10
 	9
 	12
 	11
@@ -2484,16 +2495,20 @@ decrypted: hello
 	13
 ]
 4
-1
 4
+2.5
 2.5
 abcdexyz
 abcexyz
-abcexyz
+abcoxyz
 {
 	a [0 1]
 	b [1 2]
-	w []
+	c [3]
+	w [2]
+	x []
+	y []
+	z [5]
 }
 --total_entity_size--
 67
@@ -2716,57 +2731,57 @@ flatten restore with concurrency
 )
 --mutate_entity--
 {
-	a 1
-	b (declare)
-	c 3
-	d (filter)
+	a (+)
+	b 2
+	c (unordered_list)
+	d (retrieve_from_entity)
 	e 5
-	f 11
+	f 6
 	g 7
-	h 8
-	i "a"
-	j (indices)
-	k (abs)
-	l b
+	h a
+	i 9
+	j 10
+	k (weave)
+	l (lambda)
 	m 13
 	n 14
-	o (associate "a" "b" 1 b)
+	o (associate [] 1 "b" .false)
+}
+
+{
+	a (exp)
+	b 2
+	c (assign_to_entities)
+	d 4
+	e (>)
+	f (range)
+	g (contained_entities)
+	h 8
+	i 9
+	j 10
+	k (~)
+	l 12
+	m 13
+	n 14
+	o qWz2
 }
 
 {
 	a 1
-	b 2
-	c (!~)
-	d 4
-	e (call)
-	f (floor)
+	b (*)
+	c 3
+	d (+)
+	e 5
+	f 6
 	g 7
 	h 8
-	i 10
-	j 10
-	k 11
-	l 12
-	m (lambda)
-	n 14
-	o (associate)
-}
-
-{
-	a (*)
-	b (*)
-	c (*)
-	d 4
-	e 5
-	f (*)
-	g 7
-	h (-)
 	i 9
 	j (+)
 	k 11
-	l 12
-	m 13
-	n (+)
-	o (associate "a" 1 (+) 2)
+	l (+)
+	m (*)
+	n 14
+	o (associate (+) (-) "b" (+))
 }
 
 --commonality_entities--
@@ -2781,10 +2796,10 @@ MergeEntityChild2
 {p 3 q 4}
 MergeEntityChild1
 {x 3 y 4}
-_gJhKHCMZG0h
-{}
 _8UI2tTy3IAs
-{}
+{E 3 F 4}
+_gJhKHCMZG0h
+{e 3 f 4}
 --union_entities--
 {a 3 b 4 c 3}
 MergeEntityChild2
@@ -2797,44 +2812,36 @@ MergeEntityChild2
 }
 MergeEntityChild1
 {x 3 y 4 z 5}
-_gJhKHCMZG0h
-{
-	E 3
-	F 4
-	G 5
-	H 6
-	e 3
-	f 4
-	g 5
-	h 6
-}
 _8UI2tTy3IAs
 {
 	E 3
 	F 4
-	e 3
-	f 4
-}
-{
-	p ["_8WU0oPCIl3T" "_5UKVG66rWeO" "_5UKVG66rWeO" "_8WU0oPCIl3T"]
-}
-_5UKVG66rWeO
-{
-	E 3
-	F 4
 	G 5
 	H 6
+}
+_gJhKHCMZG0h
+{
 	e 3
 	f 4
 	g 5
 	h 6
+}
+{
+	p ["_8WU0oPCIl3T" "_5UKVG66rWeO" "_8WU0oPCIl3T" "_5UKVG66rWeO"]
 }
 _8WU0oPCIl3T
 {
 	E 3
 	F 4
+	G 5
+	H 6
+}
+_5UKVG66rWeO
+{
 	e 3
 	f 4
+	g 5
+	h 6
 }
 --difference_entities--
 (declare
@@ -2951,8 +2958,14 @@ _8WU0oPCIl3T
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -2977,7 +2990,16 @@ _8WU0oPCIl3T
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3274,18 +3296,24 @@ difference between DiffContainer and DiffEntity2:
 --mix_entities--
 {a 3 b 4}
 MergeEntityChild2
-{p 3 q 4}
+{
+	p 3
+	q 4
+	u 5
+	v 6
+	w 7
+}
 MergeEntityChild1
 {x 3 y 4 z 5}
-_gJhKHCMZG0h
+_8UI2tTy3IAs
 {
 	E 3
 	F 4
-	e 3
-	h 6
+	G 5
+	H 6
 }
-_8UI2tTy3IAs
-{E 3 F 4 f 4}
+_gJhKHCMZG0h
+{e 3 f 4 g 5}
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3351,7 +3379,7 @@ deep sets
 
 --set_entity_permissions--
 RootTest
-1772749634.267609
+1772991185.1168
 {
 	alter_performance .true
 	environment .true
@@ -3765,51 +3793,22 @@ store to .json normally
 ["Child1" "Child5"]
 ["Child3" "Child4"]
 ["Child6" "Child7"]
-["Child2" "Child3" "Child5" "Child7"]
-["Child1" "Child2" "Child3" "Child7"]
+["Child1" "Child2" "Child4" "Child6"]
+["Child1" "Child2" "Child4" "Child6"]
 ["Child4" "Child6"]
 --query_sample--
-["Child6"]
-["Child6" "Child4"]
 ["Child2"]
+["Child2" "Child1"]
+["Child7"]
 ["Child6"]
 with weights
-["Child1"]
 ["Child2"]
+["Child1"]
 [
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child2"
+	"Child6"
 	"Child1"
 	"Child2"
 	"Child2"
-	"Child5"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child4"
-	"Child1"
-	"Child2"
-	"Child1"
-]
-[
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child3"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child2"
-	"Child1"
 	"Child1"
 	"Child2"
 	"Child2"
@@ -3819,20 +3818,49 @@ with weights
 	"Child2"
 	"Child2"
 	"Child1"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child2"
+	"Child2"
 ]
 [
 	"Child2"
 	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child1"
 	"Child2"
 	"Child2"
-	"Child3"
+	"Child1"
 	"Child2"
-	"Child5"
+	"Child1"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child1"
+]
+[
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
 	"Child2"
 	"Child2"
 	"Child2"
 ]
-["Child2" "Child3" "Child6" "Child7"]
+["Child2"]
 --query_in_entity_list--
 ["Child6" "Child7"]
 --query_not_in_entity_list--
@@ -3885,12 +3913,12 @@ unweighted query: {
 weighted query: {
 	Child1 4
 	Child2 1
-	Child4 100
+	Child3 100
 	Child6 2
 	Child7 10
 }
 weighted query list of lists: [
-	["Child2" "Child6" "Child1" "Child7" "Child3"]
+	["Child2" "Child6" "Child1" "Child7" "Child4"]
 	[1 2 4 10 100]
 ]
 weighted query list of lists: [
@@ -3928,8 +3956,8 @@ weighted query list of lists with multiple values: [
 ]
 test code and string distances
 1: ["Child1" "Child4"]
-2: ["Child1" "Child2" "Child4" "Child5"]
-3: ["Child2" "Child4" "Child5" "Child6"]
+2: ["Child1" "Child2" "Child5" "Child6"]
+3: ["Child1" "Child2" "Child5" "Child6"]
 4: ["Child2" "Child4" "Child5" "Child6"]
 5: ["Child1" "Child2" "Child6"]
 6: ["Child1" "Child4" "Child5" "Child6"]
@@ -4187,8 +4215,8 @@ case conviction:{
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
 155: 0.1 {deg 0}
-200: 0.05555555555555555 {deg 8}
 190: 0.045454545454545456 {deg 12}
+200: 0.05555555555555555 {deg 8}
 --contains_label--
 .false
 .true
@@ -4278,6 +4306,8 @@ execution limits tests
 		)
 	)
 ]
+--call_on_entity--
+123
 --call_container--
 8
 [
@@ -4382,7 +4412,7 @@ entity cyclic test:
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "?K™,°Ü¾3ø§2Ë¡Ûÿ")
+	(set_entity_rand_seed new_entity "ðÕñ>Œªo…‹¦êÏmx)³ÿ")
 	new_entity
 )
 3
@@ -4408,7 +4438,7 @@ entity cyclic test:
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "?K™,°Ü¾3ø§2Ë¡Ûÿ")
+	(set_entity_rand_seed new_entity "ðÕñ>Œªo…‹¦êÏmx)³ÿ")
 	new_entity
 )
 cyclic lookup test:
@@ -4461,12 +4491,12 @@ distance symmetry tests
 [
 	[
 		"B"
-		"A"
 		"F"
+		"A"
 		"D"
-		"I"
 		"C"
-		"H"
+		"I"
+		"J"
 		"G"
 	]
 	[
@@ -4488,8 +4518,8 @@ distance symmetry tests
 		"D"
 		"F"
 		"I"
-		"J"
-		"E"
+		"H"
+		"G"
 	]
 	[
 		0
@@ -4715,4 +4745,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-2.04933500289917
+1.8791170120239258

@@ -3644,6 +3644,18 @@
 
  (print (call_entity_get_changes "CEGCTest" "a_assign"))
 
+ (print "--call_on_entity--\n")
+ (create_entities "CallOnEntityTest" { a 1 b 2} )
+ (set_entity_permissions "CallOnEntityTest" .true )
+ (call_on_entity "CallOnEntityTest"
+	(lambda
+		(print a b c "\n")
+	)
+	{c 3}
+ )
+
+ (destroy_entities "CallOnEntityTest")
+
  (print "--call_container--\n")
  (print (call_entity "TestContainerExec" "d" (assoc x 5)) "\n")
  (print (call_entity "TestContainerExec" "d" (assoc x 5) 30 30) "\n")

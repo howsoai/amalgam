@@ -431,7 +431,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY(
+	EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -441,14 +442,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	//not allowed if don't have a Entity to check within
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
-
-	StringRef entity_label_sid;
-	if(ocn.size() > 1)
-		entity_label_sid.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[1]));
-
-	if(_label_profiling_enabled)
-		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
-			evaluableNodeManager->GetNumberOfUsedNodes());
 
 	InterpreterConstraints interpreter_constraints;
 	InterpreterConstraints *interpreter_constraints_ptr = nullptr;
@@ -466,11 +459,27 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	auto node_stack = CreateOpcodeStackStateSaver(args);
 
+	auto call_type = en->GetType();
+	StringRef entity_label_sid;
+	EvaluableNodeReference function = EvaluableNodeReference::Null();
+	if(ocn.size() > 1)
+	{
+		if(call_type == ENT_CALL_ON_ENTITY)
+		{
+			function = InterpretNodeForImmediateUse(ocn[1]);
+			node_stack.PushEvaluableNode(function);
+		}
+		else
+		{
+			entity_label_sid.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[1]));
+		}
+	}
+
 	//current pointer to write listeners
 	std::vector<EntityWriteListener *> *cur_write_listeners = writeListeners;
 	//another storage container in case getting entity changes
 	std::vector<EntityWriteListener *> get_changes_write_listeners;
-	if(en->GetType() == ENT_CALL_ENTITY_GET_CHANGES)
+	if(call_type == ENT_CALL_ENTITY_GET_CHANGES)
 	{
 		//add on extra listener and set pointer to this buffer
 		// keep the copying here in this if statement so don't need to make copies when not calling ENT_CALL_ENTITY_GET_CHANGES
@@ -485,6 +494,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	if(called_entity == nullptr)
 		return EvaluableNodeReference::Null();
+
+	if(_label_profiling_enabled)
+		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
+			evaluableNodeManager->GetNumberOfUsedNodes());
 
 	auto &ce_enm = called_entity->evaluableNodeManager;
 
@@ -502,6 +515,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	}
 	else
 	{
+		if(call_type == ENT_CALL_ON_ENTITY)
+		{
+			//copy function to called_entity, free function from this entity
+			EvaluableNodeReference called_entity_function = ce_enm.DeepAllocCopy(function);
+			node_stack.PopEvaluableNode();
+			//don't put freed nodes in local allocation buffer, because that will increase memory churn
+			evaluableNodeManager->FreeNodeTreeIfPossible(function, false);
+			function = called_entity_function;
+		}
+
 		//copy arguments to called_entity, free args from this entity
 		EvaluableNodeReference called_entity_args = ce_enm.DeepAllocCopy(args);
 		node_stack.PopEvaluableNode();
@@ -519,12 +542,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	memoryModificationLock.unlock();
 #endif
 
-	EvaluableNodeReference result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
-		scope_stack, called_entity == curEntity, this, cur_write_listeners, printListener, interpreter_constraints_ptr
-	#ifdef MULTITHREAD_SUPPORT
-		, &enm_lock
-	#endif
-		);
+	EvaluableNodeReference result;
+	if(call_type != ENT_CALL_ON_ENTITY)
+		result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
+			scope_stack, called_entity == curEntity, this, cur_write_listeners, printListener,
+			interpreter_constraints_ptr
+		#ifdef MULTITHREAD_SUPPORT
+			, &enm_lock
+		#endif
+			);
+	else
+		result = called_entity->ExecuteOnEntity(function, scope_stack, this, cur_write_listeners, printListener,
+			interpreter_constraints_ptr
+		#ifdef MULTITHREAD_SUPPORT
+			, &enm_lock
+		#endif
+			);
 
 	ce_enm.FreeNode(args);
 	ce_enm.FreeNode(scope_stack);
@@ -543,6 +576,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(result);
 		//don't put freed nodes in local allocation buffer, because that will increase memory churn
 		ce_enm.FreeNodeTreeIfPossible(result, false);
+		//function will be null if not ENT_CALL_ON_ENTITY
+		ce_enm.FreeNodeTree(function, false);
 		result = copied_result;
 	}
 

@@ -405,7 +405,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 			else //first_node_type == ENT_DECLARE
 			{
 				first_node->AppendOrderedChildNode(assoc_node);
-				entity->ExecuteCodeAsEntity(first_node, scope_stack, calling_interpreter);
+				entity->ExecuteOnEntity(first_node, scope_stack, calling_interpreter);
 			}
 		}
 	}
@@ -418,7 +418,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 
-		entity->ExecuteCodeAsEntity(node, scope_stack, calling_interpreter);
+		entity->ExecuteOnEntity(node, scope_stack, calling_interpreter);
 	}
 
 	//check the version from the stack rather than return, since transactional files may be missing the last return
@@ -558,7 +558,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 			new_entity->evaluableNodeManager.AllocNode(asset_params->requireVersionCompatibility));
 		auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, new_entity->evaluableNodeManager);
 
-		EvaluableNodeReference result = new_entity->ExecuteCodeAsEntity(code, scope_stack, calling_interpreter);
+		EvaluableNodeReference result = new_entity->ExecuteOnEntity(code, scope_stack, calling_interpreter);
 
 		//if returned null, return comment as the error
 		if(EvaluableNode::IsNull(result))

@@ -554,7 +554,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		#endif
 			);
 	else
-		result = called_entity->ExecuteCodeAsEntity(function, scope_stack, this, cur_write_listeners, printListener,
+		result = called_entity->ExecuteOnEntity(function, scope_stack, this, cur_write_listeners, printListener,
 			interpreter_constraints_ptr
 		#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock

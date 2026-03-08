@@ -47,6 +47,10 @@ Options:
 
     -t [file]        Specify a code-based transaction log file
 
+    --repl           Execute with a run-eval-print loop. Default mode if file is not specified,
+                     but --repl can be used with a file and will run the loop on the entity loaded
+                     from the file.
+
     --p-opcodes      Display engine profiling information for opcodes upon completion (one profiling
                      type allowed at a time); when used with --debug-sources, reports line numbers
 
@@ -85,7 +89,7 @@ Options:
     --warn-on-undefined
                      When specified, amalgam will emit warnings for undefined variables
 
-    --nosbfds        Disables the sbfds acceleration, which is generally preferred in the heuristics
+    --nosbfds        Disables the Seperable Box Filter Data Store acceleration (only for debugging)
 
     --trace          Uses commands via stdio to act as if it were being called as a library
 
@@ -150,12 +154,6 @@ PLATFORM_MAIN_CONSOLE
 {
 	PLATFORM_ARGS_CONSOLE;
 
-	if(args.size() == 1)
-	{
-		std::cout << GetUsage() << std::endl;
-		return 0;
-	}
-
 	//run options
 	bool debug_state = false;
 	bool debug_minimal = false;
@@ -163,6 +161,7 @@ PLATFORM_MAIN_CONSOLE
 	bool warn_on_undefined = false;
 	bool profile_opcodes = false;
 	bool profile_labels = false;
+	bool run_as_repl = false;
 	size_t profile_count = 0;
 	std::string profile_out_file;
 	bool run_trace = false;
@@ -207,6 +206,8 @@ PLATFORM_MAIN_CONSOLE
 			rand_seed = args[++i];
 		else if(args[i] == "-t" && i + 1 < args.size())
 			write_log_filename = args[++i];
+		else if(args[i] == "--repl")
+			run_as_repl = true;
 		else if(args[i] == "--p-opcodes")
 			profile_opcodes = true;
 		else if(args[i] == "--p-labels")
@@ -278,6 +279,10 @@ PLATFORM_MAIN_CONSOLE
 	if(debug_minimal)
 		asset_manager.debugMinimal = true;
 
+	//use repl flow if no file specified
+	if(amlg_file_to_run == "")
+		run_as_repl = true;
+
 	if(profile_opcodes)
 		Interpreter::SetOpcodeProfilingState(true);
 
@@ -304,16 +309,26 @@ PLATFORM_MAIN_CONSOLE
 
 		return return_val;
 	}
-	else
+	else //run the standard amlg command line interface
 	{
-		//run the standard amlg command line interface
-		EntityExternalInterface::LoadEntityStatus status;
-		AssetManager::AssetParametersRef asset_params
-			= std::make_shared<AssetManager::AssetParameters>(amlg_file_to_run, "", true);
+		Entity *entity = nullptr;
+		if(amlg_file_to_run != "")
+		{
+			EntityExternalInterface::LoadEntityStatus status;
+			AssetManager::AssetParametersRef asset_params
+				= std::make_shared<AssetManager::AssetParameters>(amlg_file_to_run, "", true);
 
-		Entity *entity = asset_manager.LoadEntityFromResource(asset_params, false, rand_seed, nullptr, status);
+			entity = asset_manager.LoadEntityFromResource(asset_params, false, rand_seed, nullptr, status);
 
-		if(!status.loaded)
+			if(!status.loaded)
+				return 1;
+		}
+		else
+		{
+			entity = new Entity();
+		}
+
+		if(entity == nullptr)
 			return 1;
 
 		entity->SetPermissions(EntityPermissions::AllPermissions(), entity_permissions, true);
@@ -356,8 +371,59 @@ PLATFORM_MAIN_CONSOLE
 		args_node->SetMappedChildNode("interpreter", interpreter_node);
 
 		//execute the entity
-		entity->Execute(StringInternPool::NOT_A_STRING_ID, scope_stack, false, nullptr,
-			&write_listeners, print_listener);
+		if(!run_as_repl)
+		{
+			entity->Execute(StringInternPool::NOT_A_STRING_ID, scope_stack, false, nullptr,
+				&write_listeners, print_listener);
+		}
+		else //repl
+		{
+			std::cout << "Amalgam " << AMALGAM_VERSION_STRING << " - " << GetConcurrencyTypeString() << std::endl;
+			std::cout << "Running with read-execute-print loop.  Run the executable with --help for command-line options" << std::endl;
+
+			std::string input;
+			std::string line;
+			while(true)
+			{
+				std::cout << ">>> ";
+				input.clear();
+
+				//if EOF, exit
+				if(!std::getline(std::cin, line))
+					break;
+				input = line;
+
+				while(!input.empty())
+				{
+					//find last non‑space character
+					std::size_t last = input.find_last_not_of(" \t\r\n");
+					if(last == std::string::npos)
+						break;
+
+					if(input[last] == '\\')
+					{
+						input.erase(last);
+						std::cout << "... ";
+						if(!std::getline(std::cin, line))
+							break;
+
+						input += '\n' + line;
+					}
+					else //no trailing backslash
+					{
+						break;
+					}
+				}
+
+				auto [code, warnings, char_with_error] = Parser::Parse(input, &entity->evaluableNodeManager, false);
+				for(auto &w : warnings)
+					std::cerr << w << std::endl;
+
+				auto result = entity->ExecuteOnEntity(code, nullptr, nullptr, &write_listeners, print_listener);
+				std::cout << Parser::Unparse(result, true, true, true) << std::endl;
+				entity->evaluableNodeManager.FreeNodeTreeIfPossible(result);
+			}
+		}
 
 		int return_val = 0;
 

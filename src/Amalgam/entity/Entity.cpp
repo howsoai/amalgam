@@ -432,7 +432,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 	return std::make_pair(any_successful_remove, all_successful_removes);
 }
 
-EvaluableNodeReference Entity::ExecuteCodeAsEntity(EvaluableNode *code,
+EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
 	EvaluableNode *scope_stack, Interpreter *calling_interpreter,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
 	InterpreterConstraints *interpreter_constraints

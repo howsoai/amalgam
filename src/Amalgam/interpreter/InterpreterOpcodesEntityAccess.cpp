@@ -473,8 +473,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		{
 			entity_label_sid.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[1]));
 		}
-
-		//TODO 25156: change main function to enter repl, add options to eval on entity for file and update help
 	}
 
 	//current pointer to write listeners

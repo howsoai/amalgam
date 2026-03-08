@@ -378,12 +378,13 @@ PLATFORM_MAIN_CONSOLE
 		}
 		else //repl
 		{
-			std::cout << "Amalgam " << AMALGAM_VERSION_STRING << " - " << GetConcurrencyTypeString() << std::endl;
-			std::cout << "Running with read-execute-print loop.  Run the executable with --help for command-line options" << std::endl;
+			std::cout << "Amalgam " << AMALGAM_VERSION_STRING << " - " << GetConcurrencyTypeString() << " read-execute-print loop" << std::endl;
+			std::cout << "End a line with \\ for multiline commands.  (conclude) will exit.  Run the executable with --help for command-line options." << std::endl;
 
 			std::string input;
 			std::string line;
-			while(true)
+			bool running = true;
+			while(running)
 			{
 				std::cout << ">>> ";
 				input.clear();
@@ -420,7 +421,8 @@ PLATFORM_MAIN_CONSOLE
 					std::cerr << w << std::endl;
 
 				auto result = entity->ExecuteOnEntity(code, nullptr, nullptr, &write_listeners, print_listener);
-				std::cout << Parser::Unparse(result, true, true, true) << std::endl;
+				std::cout << Parser::Unparse(result, true, true, true);
+				running = !(result != nullptr && result->GetType() == ENT_CONCLUDE);
 				entity->evaluableNodeManager.FreeNodeTreeIfPossible(result);
 			}
 		}

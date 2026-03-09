@@ -502,7 +502,9 @@ std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(Evaluable
 	if(n->GetType() == ENT_STRING)
 		return std::make_pair(true, n->GetStringValue());
 
-	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::REQUEST_STRING_ID);
+	auto result = InterpretNodeForImmediateUse(n,
+		key_string ? EvaluableNodeRequestedValueTypes::Type::REQUEST_KEY_STRING_ID
+		: EvaluableNodeRequestedValueTypes::Type::REQUEST_STRING_ID);
 	auto &result_value = result.GetValue();
 
 	auto [valid, str] = result_value.GetValueAsString(key_string);
@@ -532,7 +534,9 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 	if(n != nullptr && n->GetType() == ENT_STRING)
 		return string_intern_pool.CreateStringReference(n->GetStringID());
 
-	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::REQUEST_STRING_ID);
+	auto result = InterpretNodeForImmediateUse(n,
+		key_string ? EvaluableNodeRequestedValueTypes::Type::REQUEST_KEY_STRING_ID
+		: EvaluableNodeRequestedValueTypes::Type::REQUEST_STRING_ID);
 
 	if(result.IsImmediateValue())
 	{

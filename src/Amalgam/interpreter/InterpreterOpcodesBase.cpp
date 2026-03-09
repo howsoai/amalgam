@@ -270,6 +270,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 		return AllocReturn(_help_overview, immediate_result);
 
 	//TODO 25157: finish this
+	StringInternPool::StringID help_command_sid = EvaluableNode::ToStringIDIfExists(ocn[0]);
+	if(help_command_sid == GetStringIdFromBuiltInStringId(ENBISI_overview))
+	{
+
+	}
+	else if(help_command_sid == GetStringIdFromBuiltInStringId(ENBISI_syntax))
+	{
+
+	}
+	else if(help_command_sid == GetStringIdFromBuiltInStringId(ENBISI_opcodes))
+	{
+
+	}
+	else //opcode or error
+	{
+
+	}
+
 	return EvaluableNodeReference::Null();
 }
 

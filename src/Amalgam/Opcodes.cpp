@@ -348,6 +348,11 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_rand_seed, "rand_seed");
 	EmplaceStaticString(ENBISI_version, "version");
 
+	//help options
+	EmplaceStaticString(ENBISI_overview,"overview");
+	EmplaceStaticString(ENBISI_syntax,"syntax");
+	EmplaceStaticString(ENBISI_opcodes, "opcodes");
+
 	//file storage options
 	EmplaceStaticString(ENBISI_include_rand_seeds, "include_rand_seeds");
 	EmplaceStaticString(ENBISI_parallel_create, "parallel_create");

@@ -296,7 +296,8 @@ enum EvaluableNodeType : uint8_t
 constexpr size_t NUM_ENT_OPCODES = ENT_NOT_A_BUILT_IN_TYPE;
 //total number of valid opcodes
 constexpr size_t NUM_VALID_ENT_OPCODES = ENT_DEALLOCATED;
-
+//value of first opcode
+constexpr size_t FIRST_OPCODE = ENT_SYSTEM;
 
 //different arrangements of ordered parameters
 enum OrderedChildNodeType
@@ -711,6 +712,11 @@ enum EvaluableNodeBuiltInStringId
 	//config file parameters
 	ENBISI_rand_seed,
 	ENBISI_version,
+
+	//help options
+	ENBISI_overview,
+	ENBISI_syntax,
+	ENBISI_opcodes,
 
 	//file storage options
 	ENBISI_include_rand_seeds,

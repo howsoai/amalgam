@@ -296,6 +296,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_RETRIEVE_FROM_ENTITY, "retrieve_from_entity");
 	EmplaceNodeTypeString(ENT_CALL_ENTITY, "call_entity");
 	EmplaceNodeTypeString(ENT_CALL_ENTITY_GET_CHANGES, "call_entity_get_changes");
+	EmplaceNodeTypeString(ENT_CALL_ON_ENTITY, "call_on_entity");
 	EmplaceNodeTypeString(ENT_CALL_CONTAINER, "call_container");
 
 	//end opcodes

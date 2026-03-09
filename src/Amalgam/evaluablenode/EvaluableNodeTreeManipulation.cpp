@@ -1588,9 +1588,10 @@ EvaluableNodeTreeManipulation::MutationParameters::WeightedRandMutationType Eval
 CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluableNodeTypeProbabilities
 {
 	//built-in / system specific
-	{ENT_SYSTEM,										0.05},
-	{ENT_GET_DEFAULTS,									0.01},
-	{ENT_RECLAIM_RESOURCES,								0.01},
+	{ENT_SYSTEM,										0.01},
+	{ENT_HELP,											0.001},
+	{ENT_GET_DEFAULTS,									0.001},
+	{ENT_RECLAIM_RESOURCES,								0.001},
 
 	//parsing
 	{ENT_PARSE,											0.05},

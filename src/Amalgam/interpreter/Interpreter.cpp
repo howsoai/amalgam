@@ -15,6 +15,7 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	
 	//built-in / system specific
 	&Interpreter::InterpretNode_ENT_SYSTEM,															// ENT_SYSTEM
+	&Interpreter::InterpretNode_ENT_HELP,															// ENT_HELP
 	&Interpreter::InterpretNode_ENT_GET_DEFAULTS,													// ENT_GET_DEFAULTS
 	&Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES,												// ENT_RECLAIM_RESOURCES
 

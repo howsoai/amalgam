@@ -256,6 +256,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	return EvaluableNodeReference::Null();
 }
 
+static std::string_view _help_overview(R"(
+Pass either an opcode keyword or one of the following strings as the first parameter for help on the topic.
+overview
+syntax
+opcodes
+)");
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodesReference();
+	if(ocn.size() == 0 || EvaluableNode::IsNull(ocn[0]))
+		return AllocReturn(_help_overview, immediate_result);
+
+	//TODO 25157: finish this
+	return EvaluableNodeReference::Null();
+}
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DEFAULTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();

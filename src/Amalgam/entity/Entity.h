@@ -316,7 +316,7 @@ public:
 	// write_listeners and print_listener will listen for any modifications to the entity and output as applicable
 	// if interpreter_constraints is not nullptr, then it will constrain performance and update interpreter_constraints
 	// if enm_lock is specified, it should be a lock on this entity's evaluableNodeManager.memoryModificationMutex
-	EvaluableNodeReference ExecuteCodeAsEntity(EvaluableNode *code,
+	EvaluableNodeReference ExecuteOnEntity(EvaluableNode *code,
 		EvaluableNode *scope_stack, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		InterpreterConstraints *interpreter_constraints = nullptr
@@ -329,7 +329,7 @@ public:
 	// if NOT_A_STRING_ID, then attempts to find corresponding label name or executes the root node
 	// returns the result from the execution
 	// if on_self is true, then it will be allowed to access private labels
-	//see ExecuteCodeAsEntity for further parameter details
+	//see ExecuteOnEntity for further parameter details
 	EvaluableNodeReference Execute(StringInternPool::StringID label_sid,
 		EvaluableNode *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
@@ -358,7 +358,7 @@ public:
 				node_to_execute = label->second;
 		}
 
-		return ExecuteCodeAsEntity(node_to_execute, scope_stack, calling_interpreter,
+		return ExecuteOnEntity(node_to_execute, scope_stack, calling_interpreter,
 			write_listeners, print_listener, interpreter_constraints
 		#ifdef MULTITHREAD_SUPPORT
 			, enm_lock

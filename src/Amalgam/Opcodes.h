@@ -279,6 +279,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_RETRIEVE_FROM_ENTITY,
 	ENT_CALL_ENTITY,
 	ENT_CALL_ENTITY_GET_CHANGES,
+	ENT_CALL_ON_ENTITY,
 	ENT_CALL_CONTAINER,
 
 	//not in active memory
@@ -358,7 +359,8 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 
 	case ENT_CONTAINS_LABEL:		case ENT_ASSIGN_TO_ENTITIES:			case ENT_REMOVE_FROM_ENTITIES:
 	case ENT_ACCUM_TO_ENTITIES:		case ENT_RETRIEVE_FROM_ENTITY:
-	case ENT_CALL_ENTITY:			case ENT_CALL_ENTITY_GET_CHANGES:		case ENT_CALL_CONTAINER:
+	case ENT_CALL_ENTITY:			case ENT_CALL_ENTITY_GET_CHANGES:		case ENT_CALL_ON_ENTITY:
+	case ENT_CALL_CONTAINER:
 		return OCNT_ORDERED;
 
 	case ENT_WHILE:					case ENT_LET:				case ENT_DECLARE:			case ENT_SUBTRACT:
@@ -444,7 +446,7 @@ constexpr bool DoesOpcodeHaveSideEffects(EvaluableNodeType t)
 		|| t == ENT_MOVE_ENTITIES || t == ENT_DESTROY_ENTITIES || t == ENT_LOAD_ENTITY || t == ENT_STORE
 		|| t == ENT_STORE_ENTITY || t == ENT_ASSIGN_TO_ENTITIES || t == ENT_REMOVE_FROM_ENTITIES
 		|| t == ENT_ACCUM_TO_ENTITIES || t == ENT_CALL_ENTITY || t == ENT_CALL_ENTITY_GET_CHANGES
-		|| t == ENT_CALL_CONTAINER);
+		|| t == ENT_CALL_ON_ENTITY || t == ENT_CALL_CONTAINER);
 }
 
 //different characterizations of whether opcodes return new values
@@ -546,7 +548,7 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 	case ENT_APPLY:
 	case ENT_AND:	case ENT_OR:
 	case ENT_RETRIEVE_FROM_ENTITY:
-	case ENT_CALL_ENTITY:	case ENT_CALL_ENTITY_GET_CHANGES:
+	case ENT_CALL_ENTITY:	case ENT_CALL_ENTITY_GET_CHANGES:	case ENT_CALL_ON_ENTITY:
 		return ONVRT_CONDITIONALLY_NEW_VALUE;
 
 
@@ -623,7 +625,8 @@ constexpr bool DoesEvaluableNodeTypeCreateScope(EvaluableNodeType t)
 		|| t == ENT_RANGE || t == ENT_REWRITE || t == ENT_MAP || t == ENT_FILTER || t == ENT_WEAVE
 		|| t == ENT_REDUCE || t == ENT_SORT || t == ENT_ASSOCIATE || t == ENT_ZIP
 		|| t == ENT_LIST || t == ENT_UNORDERED_LIST || t == ENT_ASSOC
-		|| t == ENT_CALL_ENTITY || t == ENT_CALL_ENTITY_GET_CHANGES || t == ENT_CALL_CONTAINER
+		|| t == ENT_CALL_ENTITY || t == ENT_CALL_ENTITY_GET_CHANGES || t == ENT_CALL_ON_ENTITY
+		|| t == ENT_CALL_CONTAINER
 		);
 }
 

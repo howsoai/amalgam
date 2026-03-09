@@ -1858,6 +1858,7 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_RETRIEVE_FROM_ENTITY,							0.5},
 	{ENT_CALL_ENTITY,									0.5},
 	{ENT_CALL_ENTITY_GET_CHANGES,						0.05},
+	{ENT_CALL_ON_ENTITY,								0.05},
 	{ENT_CALL_CONTAINER,								0.5}
 };
 

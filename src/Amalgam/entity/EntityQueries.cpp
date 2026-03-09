@@ -449,7 +449,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			//get values
 			auto &exist_labels = existLabels;
 			for(auto label_sid : exist_labels)
-				entity_values->SetMappedChildNode(label_sid, matching_entities[i]->GetValueAtLabel(label_sid, enm, false).first);
+				entity_values->SetMappedChildNode(label_sid, matching_entities[i]->GetValueAtLabel(label_sid, enm).first);
 		}
 
 		return EvaluableNodeReference(query_return, true);

@@ -43,10 +43,10 @@ var data = [
 	},
 
 	{
-		"parameter" : "unparse code c [bool pretty_print] [bool sort_keys]",
+		"parameter" : "unparse code c [bool pretty_print] [bool sort_keys] [bool include_attributes]",
 		"output" : "string",
 		"new value" : "new",
-		"description" : "Code is unparsed and the representative string is returned. If the pretty-print boolean is passed as true, output will be in pretty-print format, otherwise by default it will be inlined.  If sort_keys is true, then in will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to whatever order it is stored in memory.",
+		"description" : "Code is unparsed and the representative string is returned. If pretty_print is true, the output will be in pretty-print format, otherwise by default it will be inlined.  If sort_keys is true, the default, then it will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to whatever order it is stored in memory.  If include_attributes is true, it will print out attributes like comments, but by default it will not.",
 		"example" : "(unparse (lambda (+ 4 3)) .true)"
 	},
 
@@ -97,7 +97,7 @@ var data = [
 		"parameter" : "call_sandboxed * function assoc arguments [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [bool return_warnings]",
 		"output" : "*",
 		"new scope" : true,
-		"description" : "Evaluates the code specified by *, isolating it from everything except for arguments, which is used as a single layer of the scope stack.  This is useful when evaluating code passed by other entities that may or may not be trusted.  Opcodes run from within call_sandboxed that require any form of permissions will not perform any action and will evaluate to null.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted, up to the limits of the current calling context. If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If max_node_allocations is 0 or infinite and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if max_node_allocations is specified while call_sandboxed is being called in a multithreaded environment, if the collective memory from all the related threads exceeds the average memory specified by call_sandboxed, that may trigger a memory limit for the call_sandboxed.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called. If any performance constraints are given or return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or (null) if none)), unless return_warnings is false, in which case just the value will be returned.",
+		"description" : "Evaluates the code specified by *, isolating it from everything except for arguments, which is used as a single layer of the scope stack.  This is useful when evaluating code passed by other entities that may or may not be trusted.  Opcodes run from within call_sandboxed that require any form of permissions will not perform any action and will evaluate to null.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted, up to the limits of the current calling context. If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If max_node_allocations is 0 or infinite and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if max_node_allocations is specified while call_sandboxed is being called in a multithreaded environment, if the collective memory from all the related threads exceeds the average memory specified by call_sandboxed, that may trigger a memory limit for the call_sandboxed.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or (null) if none)).  If return_warnings is false, just the value will be returned.",
 		"example" : ";x will be null because it cannot be accessed\n(call_sandboxed (lambda (+ y x 4)) (assoc y 3))"
 	},
 
@@ -885,7 +885,7 @@ var data = [
 		"parameter" : "null",
 		"output" : "immediate null",
 		"description" : "Evaluates to the immediate null value.",
-		"example" : "(print (null))\n(print (lambda (null (+ 3 5) 7)) )\n(print (lambda (#nulltest null)))"
+		"example" : "(print (null))\n(print (lambda (null (+ 3 5) 7)) )\n(print (lambda (null)))"
 	},
 
 	{
@@ -974,35 +974,19 @@ var data = [
 	},
 
 	{
-		"parameter" : "get_labels * node",
-		"output" : "list of string",
+		"parameter" : "get_annotations * node",
+		"output" : "string",
 		"new value" : "new",
-		"description" : "Returns a list of strings comprising all of the labels for the particular node of *.",
-		"example" : "(print (get_labels ( #labelA lambda #labelB .true)))"
+		"description" : "Returns a strings comprising all of the annotations for the input node.",
+		"example" : "(print (get_annotations\n  #this is an annotation\n  (lambda #annotation that will be printed\n    .true)))"
 	},
 
 	{
-		"parameter" : "get_all_labels * node",
-		"output" : "assoc",
-		"new value" : "new",
-		"description" : "Returns an associative list of the labels for the node of code and everything underneath it, where the index is the label and the value is the reference to *.",
-		"example" : "(print (get_all_labels (lambda (#label21 print \"hello world: \" (* #label-number-22 3 4) #label23 \" and \" (* 1 2) )) ))\n(print (get_all_labels (lambda\n  ( #labelA #labelQ * #labelB\n    (+ 1 #labelA 3) 2))))"
-	},
-
-	{
-		"parameter" : "set_labels * node (list [string new_label1]...[string new_labelN])",
+		"parameter" : "set_annotations * node [string new_annotation]",
 		"output" : "*",
 		"new value" : "partial",
-		"description" : "Sets the labels for the node of code. Evaluates to the node represented by the input node.",
-		"example" : "(print (set_labels\n  ( lambda\n   (#labelC true)) (list \"labelD\" \"labelE\")))"
-	},
-
-	{
-		"parameter" : "zip_labels list labels * to_add_labels",
-		"output" : "*",
-		"new value" : "partial",
-		"description" : "For each of the values in to_add_labels, it takes respective value for labels and applies that string as a label to the respective value, and returns a new set of values with the labels.",
-		"example" : "(print (zip_labels (list \"l1\" \"l2\" \"l3\") (list 1 2 3)))"
+		"description" : "Sets the annotations for the node of code. Evaluates to an updated node.",
+		"example" : "(print (set_annotations\n  #this is an annotation\n  (lambda #annotation too\n    .true) \"new annotation\"))"
 	},
 
 	{
@@ -1017,7 +1001,7 @@ var data = [
 		"parameter" : "set_comments * node [string new_comment]",
 		"output" : "*",
 		"new value" : "partial",
-		"description" : "Sets the comments for the node of code. Evaluates to the node represented by new_comment.",
+		"description" : "Sets the comments for the node of code. Evaluates to an updated node.",
 		"example" : "(print (set_comments\n  ;this is a comment\n  (lambda ;comment too\n    .true) \"new comment\"))"
 	},
 
@@ -1041,15 +1025,15 @@ var data = [
 		"parameter" : "get_value * node",
 		"output" : "*",
 		"new value" : "new",
-		"description" : "Returns just the value portion of node (no labels or comments). Will evaluate to a copy of the value if it is not a unique reference, making it useful to ensure that the copy of the data is unique.",
-		"example" : "(print (get_value\n  ;this is a comment\n  (lambda ;comment too\n    #withalabel .true)))"
+		"description" : "Returns just the value portion of node (no annotations, comments, or concurrency). Will evaluate to a copy of the value if it is not a unique reference, making it useful to ensure that the copy of the data is unique.",
+		"example" : "(print (get_value\n  ;this is a comment\n  (lambda ;comment too\n .true)))"
 	},
 
 	{
 		"parameter" : "set_value * target * val",
 		"output" : "*",
 		"new value" : "partial",
-		"description" : "Sets target's value to the value of val, keeping existing labels, and comments).",
+		"description" : "Sets target's value to the value of val, keeping existing annotations, comments, and concurrency).",
 		"example" : "(print (set_value\n  ;this is a comment\n  (lambda ;comment too\n    .true) 3))"
 	},
 
@@ -1129,15 +1113,15 @@ var data = [
 		"parameter" : "total_size * node",
 		"output" : "number",
 		"new value" : "new",
-		"description" : "Evaluates to the total count of all of the nodes referenced within the input node. Each label on a node counts for an additional node.  The volume of data in an individual node (such as in a string) counts as an additional node for each 48 characters.",
+		"description" : "Evaluates to the total count of all of the nodes referenced within the input node. The volume of data in an individual node (such as in a string) counts as an additional node for each 48 characters.",
 		"example" : "(print (total_size (list 1 2 3 (assoc \"a\" 3 \"b\" 4) (list 5 6))))"
 	},
 
 	{
-		"parameter" : "mutate * node [number mutation_rate] [assoc mutation_weights] [assoc operation_type]",
+		"parameter" : "mutate * node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth]",
 		"output" : "*",
 		"new value" : "new",
-		"description" : "Evaluates to a mutated version of the input node.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, delete_elements, and change_label.",
+		"description" : "Evaluates to a mutated version of the input node.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, and delete_elements.  If preserve_type_depth is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.",
 		"example" : "(print (mutate\n  (lambda (list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 (assoc \"a\" 1 \"b\" 2)))\n0.4))\n"
 	},
 
@@ -1162,7 +1146,7 @@ var data = [
 		"output" : "*",
 		"new value" : "new",
 		"description" : "Evaluates to whatever is common between node1 and node2 exclusive.  The assoc params can contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.",
-		"example" : "(print (intersect\n  (list 1 (lambda (- 4 2)) (assoc \"a\" 3 \"b\" 4))\n  (list 1 (lambda (- 4 2)) (assoc \"c\" 3 \"b\" 4))\n))\n\n(print (intersect\n  (lambda (seq 2 (get_entity_comments) 1))\n  (lambda (seq 2 1 4 (get_entity_comments)))\n))\n  \n(print (intersect\n  (lambda (unordered_list 2 (get_entity_comments) 1))\n  (lambda (unordered_list 2 1 4 (get_entity_comments)))\n))\n\n(print (intersect\n  (list 1 2 3 (assoc \"a\" 3 \"b\" 4) (lambda (if true 1 (unordered_list (get_entity_comments) #label-not-1 1))) (list 5 6))\n  (list 1 2 3 (assoc \"c\" 3 \"b\" 4) (lambda (if true 1 (unordered_list #label-not-1 1 (get_entity_comments)))) (list 5 6))\n))\n  \n(print (intersect\n  (lambda (list 1 (assoc \"a\" 3 \"b\" 4)))\n  (lambda (list 1 (assoc \"c\" 3 \"b\" 4)))\n))\n\n(print (intersect\n  (lambda (replace 4 2 6 1 7))\n  (lambda (replace 4 1 7 2 6))\n))"
+		"example" : "(print (intersect\n  (list 1 (lambda (- 4 2)) (assoc \"a\" 3 \"b\" 4))\n  (list 1 (lambda (- 4 2)) (assoc \"c\" 3 \"b\" 4))\n))\n\n(print (intersect\n  (lambda (seq 2 (get_entity_comments) 1))\n  (lambda (seq 2 1 4 (get_entity_comments)))\n))\n  \n(print (intersect\n  (lambda (unordered_list 2 (get_entity_comments) 1))\n  (lambda (unordered_list 2 1 4 (get_entity_comments)))\n))\n\n(print (intersect\n  (list 1 2 3 (assoc \"a\" 3 \"b\" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6))\n  (list 1 2 3 (assoc \"c\" 3 \"b\" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6))\n))\n  \n(print (intersect\n  (lambda (list 1 (assoc \"a\" 3 \"b\" 4)))\n  (lambda (list 1 (assoc \"c\" 3 \"b\" 4)))\n))\n\n(print (intersect\n  (lambda (replace 4 2 6 1 7))\n  (lambda (replace 4 1 7 2 6))\n))"
 	},
 
 	{
@@ -1170,7 +1154,7 @@ var data = [
 		"output" : "*",
 		"new value" : "new",
 		"description" : "Evaluates to whatever is inclusive when merging node1 and node2.  The assoc params can contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.",
-		"example" : "(print (union\n  (lambda (seq 2 (get_entity_comments) 1))\n  (lambda (seq 2 1 4 (get_entity_comments)))\n))\n\n(print (union\n  (list 1 (lambda (- 4 2)) (assoc \"a\" 3 \"b\" 4))\n  (list 1 (lambda (- 4 2)) (assoc \"c\" 3 \"b\" 4))\n))\n  \n(print (union\n  (lambda (unordered_list 2 (get_entity_comments) 1))\n  (lambda (unordered_list 2 1 4 (get_entity_comments)))\n))\n\n(print (union\n  (list 1 2 3 (assoc \"a\" 3 \"b\" 4) (lambda (if true 1 (unordered_list (get_entity_comments) #label-not-1 1))) (list 5 6))\n  (list 1 2 3 (assoc \"c\" 3 \"b\" 4) (lambda (if true 1 (unordered_list #label-not-1 1 (get_entity_comments)))) (list 5 6))\n))\n  \n(print (union\n  (lambda (list 1 (assoc \"a\" 3 \"b\" 4)))\n  (lambda (list 1 (assoc \"c\" 3 \"b\" 4)))\n))\n\n"
+		"example" : "(print (union\n  (lambda (seq 2 (get_entity_comments) 1))\n  (lambda (seq 2 1 4 (get_entity_comments)))\n))\n\n(print (union\n  (list 1 (lambda (- 4 2)) (assoc \"a\" 3 \"b\" 4))\n  (list 1 (lambda (- 4 2)) (assoc \"c\" 3 \"b\" 4))\n))\n  \n(print (union\n  (lambda (unordered_list 2 (get_entity_comments) 1))\n  (lambda (unordered_list 2 1 4 (get_entity_comments)))\n))\n\n(print (union\n  (list 1 2 3 (assoc \"a\" 3 \"b\" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6))\n  (list 1 2 3 (assoc \"c\" 3 \"b\" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6))\n))\n  \n(print (union\n  (lambda (list 1 (assoc \"a\" 3 \"b\" 4)))\n  (lambda (list 1 (assoc \"c\" 3 \"b\" 4)))\n))\n\n"
 	},
 
 	{
@@ -1203,15 +1187,15 @@ var data = [
 		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Evaluates to code that, if called, would completely reproduce the entity specified by id_path, as well as all contained entities.  If include_rand_seeds is true, its default, it will include all entities' random seeds.  If parallel_create is true, then the creates will be performed with parallel markers as appropriate for each group of contained entities.  If include_version is true, it will include a comment on the top node that is the current version of the Amalgam interpreter, which can be used for validating interoperability when loading code.  The code returned accepts two parameters, create_new_entity, which defaults to true, and new_entity, which defaults to null.  If create_new_entity is true, then it will create a new entity with id_path specified by new_entity, where null will create an unnamed entity.  If create_new_entity is false, then it will overwrite the current entity's code and create all contained entities.",
-		"example" : "(create_entities \"FlattenTest\" (lambda\n  (unordered_list ##a (rand) )\n))\n(let (assoc fe (flatten_entity \"FlattenTest\"))\n  (print fe)\n  (print (flatten_entity (call fe)))\n  (print (difference_entities \"FlattenTest\" (call fe)))\n (call fe (assoc create_new_entity .false new_entity \"new_entity_name\")) \n)"
+		"example" : "(create_entities \"FlattenTest\" (lambda\n  { a (rand) }\n))\n(let (assoc fe (flatten_entity \"FlattenTest\"))\n  (print fe)\n  (print (flatten_entity (call fe)))\n  (print (difference_entities \"FlattenTest\" (call fe)))\n (call fe (assoc create_new_entity .false new_entity \"new_entity_name\")) \n)"
 	},
 
 	{
-		"parameter" : "mutate_entity id_path entity1 [number mutaton_rate] [id_path entity2] [assoc mutation_weights] [assoc operation_type]",
+		"parameter" : "mutate_entity id_path entity1 [number mutaton_rate] [id_path entity2] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth]",
 		"output" : "id_path",
 		"permissions" : "entity",
 		"new value" : "new",
-		"description" : "Creates a mutated version of the entity specified by entity1 like mutate. Returns the id_path of a new entity created contained by the entity that ran it.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses entity2 as the optional destination via an internal call to create_contained_entity. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, delete_elements, and change_label.",
+		"description" : "Creates a mutated version of the entity specified by entity1 like mutate. Returns the id_path of a new entity created contained by the entity that ran it.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses entity2 as the optional destination via an internal call to create_contained_entity. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, and delete_elements.  If preserve_type_depth is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.",
 		"example" : "(create_entities\n    \"MutateEntity\"\n  (lambda (list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 (assoc \"a\" 1 \"b\" 2)))\n)\n(mutate_entity \"MutateEntity\" 0.4 \"MutatedEntity\")\n(print (retrieve_entity_root \"MutatedEntity\"))"
 	},
 
@@ -1280,12 +1264,12 @@ var data = [
 	},
 
 	{
-		"parameter" : "retrieve_entity_root [id_path entity] [bool suppress_label_escapes]",
+		"parameter" : "retrieve_entity_root [id_path entity]",
 		"output" : "*",
 		"permissions" : "entity",
 		"new value" : "new",
-		"description" : "Evaluates to the entity's code, looking up the entity by the id_path. If suppress_label_escapes is false or omitted, will disable any labels obtained by inserting an extra # at the beginning of each.",
-		"example" : "(print (retrieve_entity_root))\n(print (retrieve_entity_root 1))"
+		"description" : "Evaluates to the entity's code, looking up the entity by the id_path.",
+		"example" : "(print (retrieve_entity_root))"
 	},
 
 	{
@@ -1293,17 +1277,8 @@ var data = [
 		"output" : "bool",
 		"permissions" : "entity",
 		"new value" : "new",
-		"description" : "Sets the code of the entity specified by id_path to node.  If no id_path specified, then uses the current entity, otherwise accesses a contained entity. On assigning the code to the new entity, it will enable any labels obtained by removing any extra #s from the beginning of each.  If all assignments were successful, then returns true, otherwise returns false.",
-		"example" : "(print (assign_entity_roots (list)))"
-	},
-
-	{
-		"parameter" : "accum_entity_roots [id_path entity_1] * root_1 [id_path entity_2] [* root_2] [...]",
-		"output" : "bool",
-		"permissions" : "entity",
-		"new value" : "new",
-		"description" : "Accumulates the code of the entity specified by id_path to node. If no id_path specified, then uses the current entity, otherwise accesses a contained entity. On assigning the code to the new entity, it will enable any labels obtained by removing any extra #s from the beginning of each.  If all accumulations were successful, then returns true, otherwise returns false.",
-		"example" : "(create_entities \"AER_test\" (lambda (null ##a 1 ##b 2)))\n(accum_entity_roots \"AER_test\" (list ##c 3))\n(print (retrieve_entity_root \"AER_test\" 1))"
+		"description" : "Sets the code of the entity specified by id_path to node.  If no id_path specified, then uses the current entity, otherwise accesses a contained entity. On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.",
+		"example" : "(print (assign_entity_roots {}))"
 	},
 
 	{
@@ -1312,7 +1287,7 @@ var data = [
 		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Evaluates to a string representing the current state of the random number generator for the entity specified by id_path used for seeding the random streams of any calls to the entity.",
-		"example" : "(create_entities \"RandTest\" (lambda\n  (null ##a (rand) )\n  ))\n(print (call_entity \"RandTest\" \"a\"))\n(print (get_entity_rand_seed \"RandTest\"))\n"
+		"example" : "(create_entities \"RandTest\" (lambda\n  {a (rand) )\n  })\n(print (call_entity \"RandTest\" \"a\"))\n(print (get_entity_rand_seed \"RandTest\"))\n"
 	},
 
 	{
@@ -1320,7 +1295,7 @@ var data = [
 		"output" : "string",
 		"permissions" : "entity",
 		"description" : "Sets the random number seed and state for the random number generator of the specified entity, or the current entity if not specified, to the state specified by node.  If node is already a string in the proper format output by get_entity_rand_seed, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by the entity for new calls.  The parameter deep defaults to false, but if it is true, all contained entities are recursively set with random seeds based on the specified random seed and a hash of their relative id_path path to the entity being set.",
-		"example" : "(create_entities \"RandTest\" (lambda\n  (null ##a (rand) )\n  ) )\n(create_entities (list \"RandTest\" \"DeepRand\") (lambda\n  (null ##a (rand) )\n  ) )\n(declare (assoc seed (get_entity_rand_seed \"RandTest\")))\n(print (call_entity \"RandTest\" \"a\"))\n(set_entity_rand_seed \"RandTest\" 1234)\n(print (call_entity \"RandTest\" \"a\"))"
+		"example" : "(create_entities \"RandTest\" (lambda\n  {a (rand) )\n  } )\n(create_entities (list \"RandTest\" \"DeepRand\") (lambda\n  {a (rand) )\n  } )\n(declare (assoc seed (get_entity_rand_seed \"RandTest\")))\n(print (call_entity \"RandTest\" \"a\"))\n(set_entity_rand_seed \"RandTest\" 1234)\n(print (call_entity \"RandTest\" \"a\"))"
 	},
 
 	{
@@ -1346,8 +1321,8 @@ var data = [
 		"output" : "list of id_path",
 		"permissions" : "entity",
 		"new value" : "new",
-		"description" : "Creates a new entity with code specified by node, returning the list of id_path paths for each of the entities created.  Uses the optional entity location specified by the id_path, ignored if null or invalid.  Evaluates to a list of all of the new entities ids, null in place of each id_path if it was unable to create the id_path.  If the entity does not have permission to create the entities, it will evaluate to null.  If the id_path is omitted, then it will create the new entity in the calling entity.  If id_path specifies an existing entity, then it will create the new entity within that existing entity.  If the last id_path in the string is not an existing entity, then it will attempt to create that entity (returning null if it cannot).  Can only be performed by an entity that contains to the destination specified by id_path. Will automatically remove a # from the beginning of each label in case the label had been disabled.  Unlike the rest of the entity creation commands, create_entities specifies the optional id_path first to make it easy to read entity definitions.  If more than 2 parameters are specified, create_entities will iterate through all of the pairs of parameters, treating them like the first two as it creates new entities.",
-		"example" : "(print (create_entities \"MyLibrary\" (lambda (+ #three 3 4)) ) )\n\n(create_entities \"EntityWithChildren\" (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities (list \"EntityWithChildren\" \"Child1\") (lambda (assoc \"x\" 3 \"y\" 4)) )\n(create_entities (list \"EntityWithChildren\" \"Child2\") (lambda (assoc \"p\" 3 \"q\" 4)) )\n(print (contained_entities \"EntityWithChildren\"))"
+		"description" : "Creates a new entity with code specified by node, returning the list of id_path paths for each of the entities created.  Uses the optional entity location specified by the id_path, ignored if null or invalid.  Evaluates to a list of all of the new entities ids, null in place of each id_path if it was unable to create the id_path.  If the entity does not have permission to create the entities, it will evaluate to null.  If the id_path is omitted, then it will create the new entity in the calling entity.  If id_path specifies an existing entity, then it will create the new entity within that existing entity.  If the last id_path in the string is not an existing entity, then it will attempt to create that entity (returning null if it cannot).  Can only be performed by an entity that contains to the destination specified by id_path.  If the node is of any other type than assoc, it will create an assoc as the top node and place the node under the null key.  Unlike the rest of the entity creation commands, create_entities specifies the optional id_path first to make it easy to read entity definitions.  If more than 2 parameters are specified, create_entities will iterate through all of the pairs of parameters, treating them like the first two as it creates new entities.",
+		"example" : "(print (create_entities \"MyLibrary\" (lambda { three 3 four 4}) ) )\n\n(create_entities \"EntityWithChildren\" (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities (list \"EntityWithChildren\" \"Child1\") (lambda (assoc \"x\" 3 \"y\" 4)) )\n(create_entities (list \"EntityWithChildren\" \"Child2\") (lambda (assoc \"p\" 3 \"q\" 4)) )\n(print (contained_entities \"EntityWithChildren\"))"
 	},
 
 	{
@@ -1356,7 +1331,7 @@ var data = [
 		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Creates a clone of source_entity_1.  If destination_entity_1 is not specified, then it clones the entity into the current entity.  If destination_entity_1 is specified, then it clones it into the location specified by destination_entity_1; if destination_entity_1 is an existing entity, then it will create it within that entity, if not, it will attempt to create it with the given id_path.  Evaluates to the id_path of the new entity.  Can only be performed by an entity that contains both source_entity_1 and the specified path of destination_entity_1. If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.",
-		"example" : "(print (create_entities \"MyLibrary\" (lambda (+ #three 3 4)) ) )\n(print (clone_entities \"MyLibrary\" \"MyNewLibrary\"))"
+		"example" : "(print (create_entities \"MyLibrary\" (lambda {three 3 four 4}) ) )\n(print (clone_entities \"MyLibrary\" \"MyNewLibrary\"))"
 	},
 
 	{
@@ -1365,7 +1340,7 @@ var data = [
 		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Moves the entity from location specified by source_entity_1 to destination destination_entity_1.  If destination_entity_1 exists, it will move source_entity_1 using source_entity_1's current id_path into destination_entity_1.  If destination_entity_1 does not exist, then it will move source_entity_1 and rename it to the end of the id_path specified in destination_entity_1. Can only be performed by a containing entity relative to both ids.  If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.",
-		"example" : "(print (create_entities \"MyLibrary\" (lambda (+ #three 3 4)) ) )\n(print (move_entities \"MyLibrary\" \"MyLibrary2\"))"
+		"example" : "(print (create_entities \"MyLibrary\" (lambda {three 3 four 4}) ) )\n(print (move_entities \"MyLibrary\" \"MyLibrary2\"))"
 	},
 
 	{
@@ -1374,7 +1349,7 @@ var data = [
 		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Destroys the entities specified by the ids entity_1, entity_2, etc. Can only be performed by containing entity.  Returns true if all entities were successfully destroyed, false if not due to not existing in the first place or due to code being currently run in it.",
-		"example" : "(print (create_entities \"MyLibrary\" (lambda (+ #three 3 4)) ) )\n(print (contained_entities))\n(destroy_entities \"MyLibrary\")\n(print (contained_entities))"
+		"example" : "(print (create_entities \"MyLibrary\" (lambda { three 3 four 4} ) ) )\n(print (contained_entities))\n(destroy_entities \"MyLibrary\")\n(print (contained_entities))"
 	},
 
 	{
@@ -1419,7 +1394,7 @@ var data = [
 		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Returns true if the referred to entity specified by id_path exists.",
-		"example" : "(print (create_entities \"MyLibrary\" (lambda (+ #three 3 4)) ) )\n(print (contains_entity \"MyLibrary\"))\n(print (contains_entity (list \"MyLibrary\")))"
+		"example" : "(print (create_entities \"MyLibrary\" (lambda { three 3 four 4 } ) ) )\n(print (contains_entity \"MyLibrary\"))\n(print (contains_entity (list \"MyLibrary\")))"
 	},
 
 	{
@@ -1428,7 +1403,7 @@ var data = [
 		"permissions" : "entity",
 		"new value" : "conditional",
 		"description" : "Returns a list of strings of ids of entities contained in the entity specified by id_path or current entity if containing_entity is omitted.  The parameters of condition1 through conditionN are query conditions, and they may be any of the query opcodes or may be a list of query opcodes (beginning with query_), where each condition will be executed in order.",
-		"example" : "(create_entities (list \"TestEntity\" \"Child\")\n  (lambda (null ##TargetLabel 3))\n) \n\n (contained_entities \"TestEntity\" (list\n  (query_exists \"TargetLabel\")\n)) \n\n ; For more examples see the individual entries for each query."
+		"example" : "(create_entities (list \"TestEntity\" \"Child\")\n  (lambda { TargetLabel 3 })\n) \n\n (contained_entities \"TestEntity\" (list\n  (query_exists \"TargetLabel\")\n)) \n\n ; For more examples see the individual entries for each query."
 	},
 
 	{
@@ -1437,7 +1412,7 @@ var data = [
 		"permissions" : "entity",
 		"new value" : "conditional",
 		"description" : "Performs queries like contained_entities but returns a value or set of values appropriate for the last query in conditions.  The parameters of condition1 through conditionN are query conditions, and they may be any of the query opcodes or may be a list of query opcodes (beginning with query_), where each condition will be executed in order.  If the last query does not return anything, then it will just return the matching entities.",
-		"example" : "(create_entities (list \"TestEntity\" \"Child\")\n  (lambda (null ##TargetLabel 3))\n) \n\n (compute_on_contained_entities \"TestEntity\" (list\n  (query_exists \"TargetLabel\")\n)) \n\n ; For more examples see the individual entries for each query."
+		"example" : "(create_entities (list \"TestEntity\" \"Child\")\n  (lambda { TargetLabel 3 } )\n) \n\n (compute_on_contained_entities \"TestEntity\" (list\n  (query_exists \"TargetLabel\")\n)) \n\n ; For more examples see the individual entries for each query."
 	},
 
 	{
@@ -1712,30 +1687,30 @@ var data = [
 	},
 
 	{
-		"parameter" : "assign_to_entities [id_path entity_1] assoc variable_value_pairs_1 [id_path entity_2] [assoc variable_value_pairs_2] [...]",
+		"parameter" : "assign_to_entities [id_path entity_1] assoc label_value_pairs_1 [id_path entity_2] [assoc label_value_pairs_2] [...]",
 		"output" : "bool",
 		"new value" : "new",
 		"permissions" : "entity",
-		"description" : "For each index-value pair of variable_value_pairs, assigns the value to the labeled variable on the contained entity represented by the respective entity, itself if no id_path specified, while retaining the original labels. If none found, it will not cause an assignment. When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label. Will perform an assignment for each of the entities referenced, returning .true if all assignments were successful, .false if not.",
-		"example" : "(null #asgn_test1 12)\n(assign_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n"
+		"description" : "For each index-value pair of label_value_pairs, assigns the value to the labeled variable on the contained entity represented by the respective entity, itself if no id_path specified, while retaining the original labels. If the label is not found, it will create it.  When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Will perform an assignment for each of the entities referenced, returning .true if all assignments were successful, .false if not.",
+		"example" : "(assign_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n"
 	},
 
 	{
-		"parameter" : "accum_to_entities [id_path entity_1] assoc variable_value_pairs_1 [id_path entity_2] [assoc variable_value_pairs_2] [...]",
+		"parameter" : "accum_to_entities [id_path entity_1] assoc label_value_pairs_1 [id_path entity_2] [assoc label_value_pairs_2] [...]",
 		"output" : "bool",
 		"new value" : "new",
 		"permissions" : "entity",
-		"description" : "For each index-value pair of assoc, retrieves the labeled variable from the respective entity, accumulates it by the corresponding value in variable_value_pairs, then assigns the value to the labeled variable on the contained entity represented by the id_path, itself if no id_path specified, while retaining the original labels. If none found, it will not cause an assignment. When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. Will perform an accum for each of the entities referenced, returning .true if all assignments were successful, .false if not.",
-		"example" : "(null #asgn_test1 12)\n(accum_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n"
+		"description" : "For each index-value pair of assoc, retrieves the labeled variable from the respective entity, accumulates it by the corresponding value in label_value_pairs, then assigns the value to the labeled variable on the contained entity represented by the id_path, itself if no id_path specified, while retaining the original labels.  If none found, it will not cause an assignment.  When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. Will perform an accum for each of the entities referenced, returning .true if all assignments were successful, .false if not.",
+		"example" : "(accum_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n"
 	},
 
 	{
-		"parameter" : "direct_assign_to_entities [id_path entity_1] assoc variable_value_pairs_1 [id_path entity_2] [assoc variable_value_pairs_2] [...]",
+		"parameter" : "remove_from_entities [id_path entity_1] string|list label_names_1 [id_path entity_2] [list string|label_names_2] [...]",
 		"output" : "bool",
 		"new value" : "new",
 		"permissions" : "entity",
-		"description" : "Like assign_to_entities, except retains any/all labels, comments, etc.",
-		"example" : "(create_entities \"DRFE\" (lambda (null ##a 12)) )\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))\n(print (direct_assign_to_entities \"DRFE\" (assoc a 7)))\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))"
+		"description" : "Removes all labels from the list label_names_1 from entity_1, and so on for each respective entity and label list.  Returns true if removes were successful, false otherwise.",
+		"example" : "(create_entities \"DRFE\" (lambda { a 12 } ) )\n(print (remove_from_entities \"DRFE\" \"a\"))\n(print (retrieve_from_entity \"DRFE\" \"a\"))"
 	},
 
 	{
@@ -1744,26 +1719,17 @@ var data = [
 		"new value" : "conditional",
 		"permissions" : "entity",
 		"description" : "If string specified, returns the value of the contained entity id_path, itself if no id_path specified, at the label specified by the string. If list specified, returns the value of the contained entity id_path, itself if no id_path specified, returns a list of the values on the stack specified by each element of the list interpreted as a string label. If assoc specified, returns the value of the contained entity id_path, itself if no id_path specified, returns an assoc with the indices of the assoc passed in with the values being the appropriate values of the label represented by each index.",
-		"example" : "(null #asgn_test1 12)\n(assign_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n(null #asgn_test2 12)\n(assign_to_entities (assoc asgn_test2 4))\n(print (retrieve_from_entity \"asgn_test2\"))\n(create_entities \"RCT\" (lambda (null ##a 12 ##b 13)) )\n(print (retrieve_from_entity \"RCT\" \"a\"))\n(print (retrieve_from_entity \"RCT\" (list \"a\" \"b\") ))\n(print (retrieve_from_entity \"RCT\" (zip (list \"a\" \"b\") null) ))\n"
+		"example" : "(assign_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n(assign_to_entities (assoc asgn_test2 4))\n(print (retrieve_from_entity \"asgn_test2\"))\n(create_entities \"RCT\" (lambda {a 12 b 13}) )\n(print (retrieve_from_entity \"RCT\" \"a\"))\n(print (retrieve_from_entity \"RCT\" (list \"a\" \"b\") ))\n(print (retrieve_from_entity \"RCT\" (zip (list \"a\" \"b\") null) ))\n"
 	},
 
 	{
-		"parameter" : "direct_retrieve_from_entity [id_path entity] [string|list|assoc label_names]",
-		"output" : "*",
-		"new value" : "conditional",
-		"permissions" : "entity",
-		"description" : "Like retrieve_from_entity, except retains labels.",
-		"example" : "(create_entities \"DRFE\" (lambda (null ##a 12)) )\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))\n(print (direct_assign_to_entities \"DRFE\" (assoc a 7)))\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))"
-	},
-
-	{
-		"parameter" : "call_entity id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [return_warnings]",
+		"parameter" : "call_entity id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings]",
 		"output" : "*",
 		"new value" : "conditional",
 		"permissions" : "entity",
 		"new scope" : true,
-		"description" : "Calls the contained entity specified by id_path, using the entity as the new entity context.  It will evaluate to the return value of the call, null if not found.  If string is specified, then it will call the label specified by string.  If assoc is specified, then it will pass assoc as the arguments on the scope stack.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The parameters max_contained_entities, max_contained_entity_depth, and max_entity_id_length constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream. If any performance constraints are given or return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless return_warnings is false, in which case just the value will be returned.",
-		"example" : "(create_entities \"TestContainerExec\"\n  (lambda (unordered_list\n  ##d (print \"hello \" x)\n  )) \n)\n\n(print (call_entity \"TestContainerExec\" \"d\" (assoc x \"goodbye\")))"
+		"description" : "Calls the contained entity specified by id_path, using the entity as the new entity context.  It will evaluate to the return value of the call, null if not found.  If label_name is specified, then it will call the label specified by string.  If arguments is specified, then it will pass those as the arguments on the scope stack.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The parameters max_contained_entities, max_contained_entity_depth, and max_entity_id_length constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)).  If return_warnings is false just the value will be returned.",
+		"example" : "(create_entities \"TestContainerExec\"\n  (lambda {d (print \"hello \" x)\n  }) \n)\n\n(print (call_entity \"TestContainerExec\" \"d\" (assoc x \"goodbye\")))"
 	},
 
 	{
@@ -1772,8 +1738,18 @@ var data = [
 		"new value" : "conditional",
 		"permissions" : "entity",
 		"new scope" : true,
-		"description" : "Like call_entity returning the value in *1.  However, it also returns a list of direct_assign_to_entities calls with respective data in *2, holding a log of all of the changes that have elapsed.  The log may be evaluated to apply or re-apply the changes to any id_path passed in to the log as _. If any performance constraints are given or return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless return_warnings is false, in which case just the value will be returned.",
-		"example" : "(create_entities \"CEGCTest\" (lambda\n    (null ##a_assign\n    (seq \n      (create_entities \"Contained\" (lambda\n        (null ##a 4 )\n      ))\n      (print (retrieve_from_entity \"Contained\" \"a\") )\n      (assign_to_entities \"Contained\" (assoc a 6) )\n      (print (retrieve_from_entity \"Contained\" \"a\") )\n      (set_entity_rand_seed \"Contained\" \"bbbb\")\n      (destroy_entities \"Contained\")\n    )\n  )\n))\n\n(print (call_entity_get_changes \"CEGCTest\" \"a_assign\"))\n"
+		"description" : "Like call_entity returning the value in *1.  However, it also returns a list of direct_assign_to_entities calls with respective data in *2, holding a log of all of the changes that have elapsed.  The log may be evaluated to apply or re-apply the changes to any id_path passed in to the log as _. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)).  If return_warnings is false, just the value will be returned.",
+		"example" : "(create_entities \"CEGCTest\" (lambda\n    (assoc a_assign\n    (seq \n      (create_entities \"Contained\" (lambda\n        {a 4 }\n      ))\n      (print (retrieve_from_entity \"Contained\" \"a\") )\n      (assign_to_entities \"Contained\" (assoc a 6) )\n      (print (retrieve_from_entity \"Contained\" \"a\") )\n      (set_entity_rand_seed \"Contained\" \"bbbb\")\n      (destroy_entities \"Contained\")\n    )\n  )\n))\n\n(print (call_entity_get_changes \"CEGCTest\" \"a_assign\"))\n"
+	},
+	
+	{
+		"parameter" : "call_on_entity id_path entity * code [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings]",
+		"output" : "*",
+		"new value" : "new",
+		"permissions" : "entity",
+		"new scope" : true,
+		"description" : "Calls code to be run on the contained entity specified by id_path, using the entity as the new entity context.  It will evaluate to the return value of the call of code, run as if it were a label on the specified entity.  If arguments is specified, then it will pass those as the arguments on the scope stack.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The parameters max_contained_entities, max_contained_entity_depth, and max_entity_id_length constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)).  If return_warnings is false just the value will be returned.",
+		"example" : "(create_entities \"CallOnEntity\"\n  { a 1 b 2 } \n)\n\n(print (call_on_entity \"CallOnEntity\" (lambda [a b])))"
 	},
 
 	{
@@ -1781,9 +1757,9 @@ var data = [
 		"output" : "*",
 		"new value" : "new",
 		"new scope" : true,
-		"description" : "Attempts to call the container associated with the label that begins with a caret (^); the caret indicates that the label is allowed to be accessed by contained entities.  It will evaluate to the return value of the call, null if not found.  The call is made on the label specified by string.  If assoc is specified, then it will pass assoc as the arguments on the scope stack.  The parameter accessing_entity will automatically be set to the id of the caller, regardless of the arguments.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The execution performed will use a random number stream created from the entity's random number stream. If any performance constraints are given or return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless return_warnings is false, in which case just the value will be returned.",
+		"description" : "Attempts to call the container associated with the label that begins with a caret (^); the caret indicates that the label is allowed to be accessed by contained entities.  It will evaluate to the return value of the call, null if not found.  The call is made on the label specified by string.  If assoc is specified, then it will pass assoc as the arguments on the scope stack.  The parameter accessing_entity will automatically be set to the id of the caller, regardless of the arguments.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The execution performed will use a random number stream created from the entity's random number stream. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)).  If return_warnings is false, just the value will be returned.",
 		"permissions" : "entity",
-		"example" : "(create_entities \"TestContainerExec\"\n  (lambda (unordered_list\n  ##^a 3\n  ##b (contained_entities)\n  ##c (+ x 1)\n  ##d (call_entity \"TCEc\" \"q\" (assoc x x))\n  ##x 4\n  ##y 5\n  )) \n)\n(create_entities (list \"TestContainerExec\" \"TCEc\")\n  (lambda (unordered_list\n  ##p 3\n  ##q (+ x (call_container \"a\"))\n  ##bar \"foo\"\n  ))\n)\n\n(print (call_entity \"TestContainerExec\" \"d\" (assoc x 4)))"
+		"example" : "(create_entities \"TestContainerExec\"\n  (lambda (assoc\n  ^a 3\n  b (contained_entities)\n  c (+ x 1)\n  d (call_entity \"TCEc\" \"q\" (assoc x x))\n  x 4\n  y 5\n  )) \n)\n(create_entities (list \"TestContainerExec\" \"TCEc\")\n  (lambda (assoc\n  p 3\n  q (+ x (call_container \"a\"))\n  bar \"foo\"\n  ))\n)\n\n(print (call_entity \"TestContainerExec\" \"d\" (assoc x 4)))"
 	}
 ];
 

@@ -59,13 +59,21 @@ public:
 		: value(string_intern_pool.CreateStringReference(str)), unique(true), uniqueUnreferencedTopNode(true)
 	{}
 
+	__forceinline EvaluableNodeReference(EvaluableNodeImmediateValueWithType enivwt, bool _unique)
+		: value(enivwt), unique(_unique), uniqueUnreferencedTopNode(_unique)
+	{}
+
 	//constructs an EvaluableNodeReference with an immediate type and true if possible to coerce node
 	//into one of the immediate request types, or returns a non-unique EvaluableNodeReference and false if not
 	static inline EvaluableNodeReference CoerceNonUniqueEvaluableNodeToImmediateIfPossible(EvaluableNode *en,
 		EvaluableNodeRequestedValueTypes immediate_result)
 	{
 		if(en == nullptr)
+		{
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
+				return EvaluableNodeReference(EvaluableNodeImmediateValueWithType(), true);
 			return EvaluableNodeReference::Null();
+		}
 
 		if(immediate_result.AnyImmediateType())
 		{
@@ -73,7 +81,11 @@ public:
 			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
 			{
 				if(en->GetType() == ENT_NULL)
+				{
+					if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
+						return EvaluableNodeReference(EvaluableNodeImmediateValueWithType(), true);
 					return EvaluableNodeReference::Null();
+				}
 			}
 
 			if(en->IsImmediate())
@@ -104,6 +116,31 @@ public:
 							|| immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::STRING_ID))
 						return EvaluableNodeReference(en->GetStringIDReference());
 				}
+			}
+
+			//if it doesn't allow code, then coerce into the the most general type
+			if(!immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::CODE))
+			{
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
+					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en, true));
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::KEY_STRING_ID))
+					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en, true), true);
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID))
+					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en));
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::STRING_ID))
+					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en), true);
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NUMBER))
+					return EvaluableNodeReference(EvaluableNode::ToNumber(en), true);
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::BOOL))
+					return EvaluableNodeReference(EvaluableNode::ToBool(en), true);
+
+				//otherwise EvaluableNodeRequestedValueTypes::Type::NULL_VALUE
+				return EvaluableNodeReference::Null();
 			}
 		}
 
@@ -577,6 +614,13 @@ public:
 		return n;
 	}
 
+	inline EvaluableNode *AllocNode(const std::string_view string_value)
+	{
+		EvaluableNode *n = AllocUninitializedNode();
+		n->InitializeType(ENT_STRING, string_value);
+		return n;
+	}
+
 	inline EvaluableNode *AllocNode(EvaluableNodeType type, StringInternPool::StringID string_id)
 	{
 		EvaluableNode *n = AllocUninitializedNode();
@@ -644,28 +688,26 @@ public:
 		return n;
 	}
 
-	//ways that labels can be modified when a new node is allocated
-	enum EvaluableNodeMetadataModifier
+	//allocates a node identical to original
+	inline EvaluableNode *AllocNode(EvaluableNode *original, bool copy_metadata = true)
 	{
-		ENMM_NO_CHANGE,					//leave labels as they are
-		ENMM_LABEL_ESCAPE_INCREMENT,	//insert a # in front of each label
-		ENMM_LABEL_ESCAPE_DECREMENT,	//remove a # from the front of each label
-		ENMM_REMOVE_ALL					//remove all metadata
-	};
-	EvaluableNode *AllocNode(EvaluableNode *original, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
+		EvaluableNode *n = AllocUninitializedNode();
+		n->InitializeType(original, copy_metadata);
+		return n;
+	}
 
 	//ensures that the top node is modifiable -- will allocate the node if necessary,
 	// and if the result and any child nodes are all unique, then it will return an EvaluableNodeReference that is unique
 	//if ensure_copy_if_cycles, then it will also allocate a new node if there are cycles,
 	//in case the top node is referenced by any of its node tree and it needs to ensure that structure is maintained
 	inline void EnsureNodeIsModifiable(EvaluableNodeReference &original, bool ensure_copy_if_cycles = false,
-		EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
+		bool copy_metadata = true)
 	{
 		if(original.uniqueUnreferencedTopNode && original != nullptr
 				&& (!ensure_copy_if_cycles || !original.GetNeedCycleCheck()) )
 			return;
 
-		EvaluableNode *copy = AllocNode(original.GetReference(), metadata_modifier);
+		EvaluableNode *copy = AllocNode(original.GetReference(), copy_metadata);
 		//the copy will only be unique if there are no child nodes
 		original = EvaluableNodeReference(copy, (copy->GetNumChildNodes() == 0), true);
 	}
@@ -680,34 +722,18 @@ public:
 	}
 
 	//Copies the data structure and everything underneath it, modifying labels as specified
-	EvaluableNodeReference DeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
+	EvaluableNodeReference DeepAllocCopy(EvaluableNode *tree, bool copy_metadata = true);
 
 	//used to hold all of the references for DeepAllocCopy calls
 	struct DeepAllocCopyParams
 	{
-		inline DeepAllocCopyParams(EvaluableNodeMetadataModifier metadata_modifier)
-			: labelModifier(metadata_modifier)
+		inline DeepAllocCopyParams(bool copy_metadata = true)
+			: copyMetadata(copy_metadata)
 		{	}
 
 		EvaluableNode::ReferenceAssocType references;
-		EvaluableNodeMetadataModifier labelModifier;
+		bool copyMetadata;
 	};
-
-	//modifies the labels for the tree as described by metadata_modifier
-	inline static void ModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
-	{
-		if(tree == nullptr || metadata_modifier == ENMM_NO_CHANGE)
-			return;
-
-		if(!tree->GetNeedCycleCheck())
-		{
-			NonCycleModifyLabelsForNodeTree(tree, metadata_modifier);
-			return;
-		}
-
-		EvaluableNode::ReferenceSetType checked;
-		ModifyLabelsForNodeTree(tree, checked, metadata_modifier);
-	}
 
 	//computes whether the code is cycle free and idempotent and updates all nodes appropriately
 	static inline void UpdateFlagsForNodeTree(EvaluableNode *tree)
@@ -723,7 +749,7 @@ public:
 	//assumes there are no cycles
 	static bool UpdateIdempotencyFlagsForNonCyclicNodeTree(EvaluableNode *tree)
 	{
-		bool is_idempotent = (IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType()) && (tree->GetNumLabels() == 0));
+		bool is_idempotent = IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType());
 
 		if(tree->IsAssociativeArray())
 		{
@@ -1070,19 +1096,19 @@ public:
 			nr.FreeNodeReference(en);
 	}
 
-	//removes the node from nodes referenced
-	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
-	//to obtain a lock around all calls to this method
-	template<typename NodeType>
-	void FreeNodeReferences(std::vector<NodeType> &nodes)
+	//a combo of KeepNodeReferences and FreeNodeReferences but for one node
+	void ExchangeNodeReference(EvaluableNode *node_reference_to_keep, EvaluableNode *node_reference_to_free)
 	{
+		if(node_reference_to_keep == node_reference_to_free)
+			return;
+
 		NodesReferenced &nr = GetNodesReferenced();
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::Lock lock(nr.mutex);
 	#endif
 
-		for(EvaluableNode *en : nodes)
-			nr.FreeNodeReference(en);
+		nr.FreeNodeReference(node_reference_to_free);
+		nr.KeepNodeReference(node_reference_to_keep);
 	}
 
 	//returns the number of nodes currently being used that have not been freed yet
@@ -1102,51 +1128,8 @@ public:
 		return nr.nodesReferenced.size();
 	}
 
-	//returns the root node, implicitly defined as the first node in memory
-	// note that this means there should be at least one node allocated and SetRootNode called before this function is called
-	inline EvaluableNode *GetRootNode()
-	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock lock(managerAttributesMutex);
-	#endif
-
-		if(firstUnusedNodeIndex == 0)
-			return nullptr;
-
-		return nodes[0];
-	}
-
-	//sets the root node, implicitly defined as the first node in memory, to new_root
-	// note that new_root MUST have been allocated by this EvaluableNodeManager
-	//ensures that the new root node is kept and the old is released
-	//if new_root is nullptr, then it allocates its own ENT_NULL node
-	inline void SetRootNode(EvaluableNode *new_root)
-	{
-		if(new_root == nullptr)
-			new_root = AllocNode(ENT_NULL);
-
-	#ifdef MULTITHREAD_SUPPORT
-		//use WriteLock to be safe
-		Concurrency::WriteLock lock(managerAttributesMutex);
-	#endif
-
-		//iteratively search forward; this will be fast for newly created entities but potentially slow for those that are not
-		// however, this should be rarely called on those entities since it's basically clearing them out, so it should not generally be a performance issue
-		auto location = std::find(begin(nodes), begin(nodes) + firstUnusedNodeIndex, new_root);
-
-		if(location == end(nodes))
-		{
-			assert(false);
-			return;
-		}
-
-		//put the new root in the proper place
-		std::swap(*begin(nodes), *location);
-	}
-
-	//returns true if any node is referenced other than root, which is an indication if there are
-	// any interpreters operating on the nodes managed by this instance
-	inline bool IsAnyNodeReferencedOtherThanRoot()
+	//returns true if any interpreters are operating on the nodes managed by this instance
+	inline bool AreAnyInterpretersRunning()
 	{
 		NodesReferenced &nr = GetNodesReferenced();
 
@@ -1154,8 +1137,9 @@ public:
 		Concurrency::Lock lock(nr.mutex);
 	#endif
 
+		//interpreters use 3 nodes, so if more than one is referenced, there's an interpreter
 		size_t num_nodes_currently_referenced = nr.nodesReferenced.size();
-		return (num_nodes_currently_referenced > 0);
+		return (num_nodes_currently_referenced > 1);
 	}
 
 	//returns all nodes still in use.  For debugging purposes
@@ -1256,23 +1240,11 @@ protected:
 	//to stop spinlocks
 	void FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index);
 
-	//modifies the labels of n with regard to metadata_modifier
-	// assumes n is not nullptr
-	static void ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataModifier metadata_modifier);
-
 	//implemented as a recursive method because the extra complexity of an iterative implementation
 	// is not worth the very small performance benefit
 	//returns a pair of the copy and true if the copy needs cycle check
 	//assumes tree is not nullptr
 	std::pair<EvaluableNode *, bool> DeepAllocCopyRecurse(EvaluableNode *tree, DeepAllocCopyParams &dacp);
-
-	//recursive helper function for ModifyLabelsForNodeTree
-	//assumes tree is not nullptr
-	static void ModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNode::ReferenceSetType &checked, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
-
-	//recursive helper function for ModifyLabelsForNodeTree
-	//assumes tree is not nullptr
-	static void NonCycleModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
 
 	//sets all referenced nodes that are in use as such
 	void MarkAllReferencedNodesInUse(size_t estimated_nodes_in_use);

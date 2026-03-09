@@ -231,7 +231,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNo
 	return AllocReturn(target_entity->DoesLabelExist(label_sid), immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIRECT_ASSIGN_TO_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//not allowed if don't have a Entity to work within
 	if(curEntity == nullptr)
@@ -239,8 +239,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 
 	auto &ocn = en->GetOrderedChildNodesReference();
 
-	bool direct = (en->GetType() == ENT_DIRECT_ASSIGN_TO_ENTITIES);
-	bool accum_assignment = (en->GetType() == ENT_ACCUM_TO_ENTITIES);
+	bool remove_from_entities = (en->GetType() == ENT_REMOVE_FROM_ENTITIES);
+	bool accum_to_entities = (en->GetType() == ENT_ACCUM_TO_ENTITIES);
 
 	bool all_assignments_successful = true;
 	for(size_t i = 0; i < ocn.size(); i += 2)
@@ -249,7 +249,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 		size_t assoc_param_index = (i + 1 < ocn.size() ? i + 1 : i);
 		auto assigned_vars = InterpretNode(ocn[assoc_param_index]);
 
-		if(assigned_vars == nullptr || assigned_vars->GetType() != ENT_ASSOC)
+		if( (!remove_from_entities && !EvaluableNode::IsAssociativeArray(assigned_vars))
+			|| (remove_from_entities
+				&& !EvaluableNode::IsOrderedArray(assigned_vars)
+				&& !EvaluableNode::IsString(assigned_vars) ) )
 		{
 			all_assignments_successful = false;
 			evaluableNodeManager->FreeNodeTreeIfPossible(assigned_vars);
@@ -273,18 +276,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 
 		size_t num_new_nodes_allocated = 0;
 
-		//TODO 21546: change this from false to the following line once entity writes can be modifed lock-free
-		// IsEntitySafeForModification(target_entity);
-		bool copy_entity = false;
-
 		//pause if allocating to another entity
 		EvaluableNodeManager::LocalAllocationBufferPause lab_pause;
 		if(target_entity != curEntity)
 			lab_pause = evaluableNodeManager->PauseLocalAllocationBuffer();
 
-		auto [any_success, all_success] = target_entity->SetValuesAtLabels(
-										assigned_vars, accum_assignment, direct, writeListeners,
-										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity, copy_entity);
+		bool any_success = false;
+		bool all_success = false;
+
+		if(remove_from_entities)
+			std::tie(any_success, all_success) = target_entity->RemoveLabels(
+										assigned_vars, writeListeners,
+										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity);
+		else
+			std::tie(any_success, all_success) = target_entity->SetValuesAtLabels(
+										assigned_vars, accum_to_entities, writeListeners,
+										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity);
 
 		lab_pause.Resume();
 
@@ -333,7 +340,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 	return AllocReturn(all_assignments_successful, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_DIRECT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -348,8 +355,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	size_t lookup_param_index = (ocn.size() > 1 ? 1 : 0);
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[lookup_param_index]);
 	auto node_stack = CreateOpcodeStackStateSaver(to_lookup);
-
-	bool direct = (en->GetType() == ENT_DIRECT_RETRIEVE_FROM_ENTITY);
 
 	//get the id of the source to check
 	EntityReadReference target_entity;
@@ -366,7 +371,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
 		EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager,
-			direct, immediate_result, target_entity == curEntity).first;
+			immediate_result, target_entity == curEntity).first;
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 
@@ -387,7 +392,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			auto [value, _] = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager, direct,
+			auto [value, _] = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager,
 				EvaluableNodeRequestedValueTypes::Type::NONE, target_entity == curEntity);
 
 			cn = value;
@@ -415,7 +420,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			auto [value, _] = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct,
+			auto [value, _] = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager,
 				EvaluableNodeRequestedValueTypes::Type::NONE, target_entity == curEntity);
 
 			cn = value;
@@ -426,7 +431,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY(
+	EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -437,18 +443,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	StringRef entity_label_sid;
-	if(ocn.size() > 1)
-		entity_label_sid.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[1]));
-
-	if(_label_profiling_enabled)
-		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
-			evaluableNodeManager->GetNumberOfUsedNodes());
-
 	InterpreterConstraints interpreter_constraints;
 	InterpreterConstraints *interpreter_constraints_ptr = nullptr;
 	if(PopulateInterpreterConstraintsFromParams(ocn, 3, interpreter_constraints, true))
 		interpreter_constraints_ptr = &interpreter_constraints;
+
+	//need to return a more complex data structure, can't return immediate
+	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->collectWarnings)
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -457,11 +459,27 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	auto node_stack = CreateOpcodeStackStateSaver(args);
 
+	auto call_type = en->GetType();
+	StringRef entity_label_sid;
+	EvaluableNodeReference function = EvaluableNodeReference::Null();
+	if(ocn.size() > 1)
+	{
+		if(call_type == ENT_CALL_ON_ENTITY)
+		{
+			function = InterpretNodeForImmediateUse(ocn[1]);
+			node_stack.PushEvaluableNode(function);
+		}
+		else
+		{
+			entity_label_sid.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[1]));
+		}
+	}
+
 	//current pointer to write listeners
 	std::vector<EntityWriteListener *> *cur_write_listeners = writeListeners;
 	//another storage container in case getting entity changes
 	std::vector<EntityWriteListener *> get_changes_write_listeners;
-	if(en->GetType() == ENT_CALL_ENTITY_GET_CHANGES)
+	if(call_type == ENT_CALL_ENTITY_GET_CHANGES)
 	{
 		//add on extra listener and set pointer to this buffer
 		// keep the copying here in this if statement so don't need to make copies when not calling ENT_CALL_ENTITY_GET_CHANGES
@@ -476,6 +494,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	if(called_entity == nullptr)
 		return EvaluableNodeReference::Null();
+
+	if(_label_profiling_enabled)
+		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
+			evaluableNodeManager->GetNumberOfUsedNodes());
 
 	auto &ce_enm = called_entity->evaluableNodeManager;
 
@@ -493,6 +515,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	}
 	else
 	{
+		if(call_type == ENT_CALL_ON_ENTITY)
+		{
+			//copy function to called_entity, free function from this entity
+			EvaluableNodeReference called_entity_function = ce_enm.DeepAllocCopy(function);
+			node_stack.PopEvaluableNode();
+			//don't put freed nodes in local allocation buffer, because that will increase memory churn
+			evaluableNodeManager->FreeNodeTreeIfPossible(function, false);
+			function = called_entity_function;
+		}
+
 		//copy arguments to called_entity, free args from this entity
 		EvaluableNodeReference called_entity_args = ce_enm.DeepAllocCopy(args);
 		node_stack.PopEvaluableNode();
@@ -510,12 +542,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	memoryModificationLock.unlock();
 #endif
 
-	EvaluableNodeReference result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
-		scope_stack, called_entity == curEntity, this, cur_write_listeners, printListener, interpreter_constraints_ptr
-	#ifdef MULTITHREAD_SUPPORT
-		, &enm_lock
-	#endif
-		);
+	EvaluableNodeReference result;
+	if(call_type != ENT_CALL_ON_ENTITY)
+		result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
+			scope_stack, called_entity == curEntity, this, cur_write_listeners, printListener,
+			interpreter_constraints_ptr
+		#ifdef MULTITHREAD_SUPPORT
+			, &enm_lock
+		#endif
+			);
+	else
+		result = called_entity->ExecuteOnEntity(function, scope_stack, this, cur_write_listeners, printListener,
+			interpreter_constraints_ptr
+		#ifdef MULTITHREAD_SUPPORT
+			, &enm_lock
+		#endif
+			);
 
 	ce_enm.FreeNode(args);
 	ce_enm.FreeNode(scope_stack);
@@ -534,6 +576,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(result);
 		//don't put freed nodes in local allocation buffer, because that will increase memory churn
 		ce_enm.FreeNodeTreeIfPossible(result, false);
+		//function will be null if not ENT_CALL_ON_ENTITY
+		ce_enm.FreeNodeTree(function, false);
 		result = copied_result;
 	}
 
@@ -561,10 +605,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(interpreterConstraints != nullptr)
 		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
 
-	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->constraintsExceeded)
+	//if only want results, return them
+	if(!interpreter_constraints.collectWarnings)
+	{
+		if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
+			return EvaluableNodeReference::Null();
+		return result;
+	}
+
+	if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
 		return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
 
-	return BundleResultWithWarningsIfNeeded(result, interpreter_constraints_ptr);
+	return BundleResultWithWarningsIfNeeded(result,
+		interpreter_constraints_ptr != nullptr ? interpreter_constraints_ptr : &interpreter_constraints);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
@@ -591,6 +644,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	InterpreterConstraints *interpreter_constraints_ptr = nullptr;
 	if(PopulateInterpreterConstraintsFromParams(ocn, 2, interpreter_constraints))
 		interpreter_constraints_ptr = &interpreter_constraints;
+
+	//need to return a more complex data structure, can't return immediate
+	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->collectWarnings)
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -660,8 +717,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	if(interpreterConstraints != nullptr)
 		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
 
-	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->constraintsExceeded)
+	//if only want results, return them
+	if(!interpreter_constraints.collectWarnings)
+	{
+		if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
+			return EvaluableNodeReference::Null();
+		return copied_result;
+	}
+
+	if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
 		return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
 
-	return BundleResultWithWarningsIfNeeded(copied_result, interpreter_constraints_ptr);
+	return BundleResultWithWarningsIfNeeded(copied_result,
+		interpreter_constraints_ptr != nullptr ? interpreter_constraints_ptr : &interpreter_constraints);
 }

@@ -73,15 +73,6 @@ static inline StringInternPool::StringID MixStringValues(StringInternPool::Strin
 	return string_intern_pool.CreateStringReference(result);
 }
 
-bool EvaluableNodeTreeManipulation::NodesMergeMethod::AreMergeable(EvaluableNode *a, EvaluableNode *b)
-{
-	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b);
-
-	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b, TypesMustMatch(), NominalNumbers(), NominalStrings());
-
-	return (commonality == 1.0 && num_unique_labels == 0);
-}
-
 EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge)
 {
 	//early out
@@ -134,19 +125,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 
 bool EvaluableNodeTreeManipulation::NodesMixMethod::AreMergeable(EvaluableNode *a, EvaluableNode *b)
 {
-	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b);
-
 	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b, TypesMustMatch(), NominalNumbers(), NominalStrings());
 
 	//if the immediate nodes are in fact a match, then just merge them
-	if(commonality == 1.0 && num_unique_labels == 0)
+	if(commonality == 1.0)
 		return true;
 
-	//assess overall commonality between value commonality and label commonality
-	double overall_commonality = (commonality + num_common_labels)
-		/ (1 + num_common_labels + num_unique_labels);
-
-	double prob_of_match = overall_commonality;
+	double prob_of_match = commonality;
 	if(commonality > 0)
 	{
 		if(similarMixChance > 0.0)
@@ -154,13 +139,13 @@ bool EvaluableNodeTreeManipulation::NodesMixMethod::AreMergeable(EvaluableNode *
 			//probability of match is commonality OR similarMixChance
 			// however, these are not mutually exclusive, so need to remove the conjunction of the
 			// probability of both to prevent double-counting
-			prob_of_match = overall_commonality + similarMixChance - overall_commonality * similarMixChance;
+			prob_of_match = commonality + similarMixChance - commonality * similarMixChance;
 		}
 		else if(similarMixChance < 0)
 		{
 			//probability of match is commonality AND not (negative similarMixChance)
 			// because similarMixChance is negative, adding to 1 is the same as NOT
-			prob_of_match = overall_commonality * (1.0 + similarMixChance);
+			prob_of_match = commonality * (1.0 + similarMixChance);
 		}
 		//else 0.0 or NaN, just leave as overall_commonality
 	}
@@ -222,80 +207,34 @@ std::string EvaluableNodeTreeManipulation::MixStrings(const std::string &a, cons
 	return result;
 }
 
-std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en)
+static std::string MergeMultilineStrings(EvaluableNodeTreeManipulation::NodesMergeMethod *mm,
+	std::string_view string_1, std::string_view string_2)
 {
-	EvaluableNode::LabelsAssocType index;
-	if(en == nullptr)
-		return std::make_pair(index, true);
+	//convert from vectors of strings to vectors of pointers to strings so can merge on them
+	auto n1_strings = StringManipulation::SplitByLines(string_1);
+	std::vector<std::string *> n1_comment_string_ptrs(n1_strings.size());
+	for(size_t i = 0; i < n1_strings.size(); i++)
+		n1_comment_string_ptrs[i] = &n1_strings[i];
 
-	//if no collision, return
-	EvaluableNode::ReferenceSetType checked;
-	if(CollectLabelIndexesFromTree(en, index, en->GetNeedCycleCheck() ? &checked : nullptr))
-		return std::make_pair(index, true);
+	auto n2_strings = StringManipulation::SplitByLines(string_2);
+	std::vector<std::string *> n2_comment_string_ptrs(n2_strings.size());
+	for(size_t i = 0; i < n2_strings.size(); i++)
+		n2_comment_string_ptrs[i] = &n2_strings[i];
 
-	//keep replacing until don't need to replace anymore
-	EvaluableNode *to_replace = nullptr;
-	while(true)
+	EvaluableNodeTreeManipulation::StringSequenceMergeMetric ssmm(mm->KeepSomeNonMergeableValues());
+	auto merged_lines = ssmm.MergeSequences(n1_comment_string_ptrs, n2_comment_string_ptrs);
+
+	//append back to one string
+	std::string merged_string;
+	for(auto &line : merged_lines)
 	{
-		index.clear();
-		checked.clear();
-
-		if(CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(en, index, checked, to_replace))
-			break;
+		//if already have comments, append a newline
+		if(merged_string.size() > 0)
+			merged_string.append("\r\n");
+		merged_string.append(*line);
 	}
 
-	//things have been replaced, so anything might need to be updated
-	EvaluableNodeManager::UpdateFlagsForNodeTree(en);
-
-	return std::make_pair(index, false);
-}
-
-void EvaluableNodeTreeManipulation::ReplaceLabelInTreeRecurse(EvaluableNode *&tree, StringInternPool::StringID label_id,
-	EvaluableNode *replacement, EvaluableNode::ReferenceSetType &checked)
-{
-	//validate input
-	if(tree == nullptr || label_id == StringInternPool::NOT_A_STRING_ID)
-		return;
-
-	//try to insert. if fails, then it has already been inserted, so ignore
-	if(checked.insert(tree).second == false)
-		return;
-
-	size_t num_node_labels = tree->GetNumLabels();
-	if(num_node_labels > 0)
-	{
-		//see if this node either has multiple labels or is a match; if so, need to replace it
-		if(num_node_labels > 1 || tree->GetLabelStringId(0) == label_id)
-		{
-			//get the labels in case we'll need to merge them
-			const auto &tree_node_label_sids = tree->GetLabelsStringIds();
-			if(std::find(begin(tree_node_label_sids), end(tree_node_label_sids), label_id) != end(tree_node_label_sids))
-			{
-				EvaluableNode *result = replacement;
-				if(result != nullptr)
-				{
-					//copy over relevant labels to the new node
-					std::vector<StringInternPool::StringID> new_labels;
-					if(replacement != nullptr)
-						new_labels = replacement->GetLabelsStringIds();
-
-					result->SetLabelsStringIds(UnionStringIDVectors(tree_node_label_sids, new_labels));
-				}
-
-				//don't free anything, because it could be referred to by other locations
-				tree = result;
-				return;
-			}
-		}
-	}
-
-	//update all ordered child nodes
-	for(auto &cn : tree->GetOrderedChildNodes())
-		ReplaceLabelInTreeRecurse(cn, label_id, replacement, checked);
-
-	//update all mapped child nodes
-	for(auto &[_, cn] : tree->GetMappedChildNodes())
-		ReplaceLabelInTreeRecurse(cn, label_id, replacement, checked);
+	return merged_string;
 }
 
 EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMethod *mm, EvaluableNode *n1, EvaluableNode *n2)
@@ -358,48 +297,20 @@ EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMe
 	if(n2 == nullptr)
 		n2 = &null_merge_node;
 
-	//merge labels
-	size_t n1_num_labels = n1->GetNumLabels();
-	size_t n2_num_labels = n2->GetNumLabels();
-	if(mm->KeepSomeNonMergeableValues())
+	auto [n1_annotations, n1_comments] = n1->GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
+	auto [n2_annotations, n2_comments] = n2->GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
+
+	//merge annotations and comments if they exist
+	if(!n1_annotations.empty() || !n2_annotations.empty())
 	{
-		if(n1_num_labels > 0 || n2_num_labels > 0)
-			n->SetLabelsStringIds(UnionStringIDVectors(n1->GetLabelsStringIds(), n2->GetLabelsStringIds()));
-	}
-	else
-	{
-		if(n1_num_labels > 0 && n2_num_labels > 0)
-			n->SetLabelsStringIds(IntersectStringIDVectors(n1->GetLabelsStringIds(), n2->GetLabelsStringIds()));
+		auto merged_string = MergeMultilineStrings(mm, n1_annotations, n2_annotations);
+		n->SetCommentsString(merged_string);
 	}
 
-	//merge comments if they exist
-	if(n1->GetCommentsStringId() != StringInternPool::NOT_A_STRING_ID || n2->GetCommentsStringId() != StringInternPool::NOT_A_STRING_ID)
+	if(!n1_comments.empty() || !n2_comments.empty())
 	{
-		//convert from vectors of strings to vectors of pointers to strings so can merge on them
-		auto n1_comment_strings = n1->GetCommentsSeparateLines();
-		std::vector<std::string *> n1_comment_string_ptrs(n1_comment_strings.size());
-		for(size_t i = 0; i < n1_comment_strings.size(); i++)
-			n1_comment_string_ptrs[i] = &n1_comment_strings[i];
-
-		auto n2_comment_strings = n2->GetCommentsSeparateLines();
-		std::vector<std::string *> n2_comment_string_ptrs(n2_comment_strings.size());
-		for(size_t i = 0; i < n2_comment_strings.size(); i++)
-			n2_comment_string_ptrs[i] = &n2_comment_strings[i];
-
-		StringSequenceMergeMetric ssmm(mm->KeepSomeNonMergeableValues());
-		auto merged_comment_lines = ssmm.MergeSequences(n1_comment_string_ptrs, n2_comment_string_ptrs);
-		
-		//append back to one string
-		std::string merged_comments;
-		for(auto &line : merged_comment_lines)
-		{
-			//if already have comments, append a newline
-			if(merged_comments.size() > 0)
-				merged_comments.append("\r\n");
-			merged_comments.append(*line);
-		}
-
-		n->SetComments(merged_comments);
+		auto merged_string = MergeMultilineStrings(mm, n1->GetCommentsString(), n2->GetCommentsString());
+		n->SetCommentsString(merged_string);
 	}
 
 	return n;
@@ -601,7 +512,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm,
 	EvaluableNode *tree, double mutation_rate,
 	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
-	CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights)
+	CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth)
 {
 	std::vector<std::string> strings;
 	EvaluableNode::ReferenceSetType checked;
@@ -617,8 +528,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 
 	MutationParameters mp(interpreter, enm, mutation_rate, &strings,
 		operation_type_wrs.IsInitialized() ? &operation_type_wrs : &evaluableNodeTypeRandomStream,
-		rand_mutation_type.IsInitialized() ? &rand_mutation_type : &mutationOperationTypeRandomStream);
-	EvaluableNode *ret = MutateTree(mp, tree);
+		rand_mutation_type.IsInitialized() ? &rand_mutation_type : &mutationOperationTypeRandomStream,
+		preserve_type_depth);
+	EvaluableNode *ret = MutateTree(mp, tree, 0);
 
 	return ret;
 }
@@ -715,13 +627,16 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 				for(size_t match_index = 0; match_index < a2.size(); match_index++)
 				{
 					auto match_value = NumberOfSharedNodes(a1_current, a2[match_index], mmrp);
-					if(!best_match_found || match_value > best_match_value)
+					//if either an exact match
+					// or it doesn't need an exact match and it's a better match than previously found
+					if(match_value.exactMatch
+						|| (!match_value.mustMatch && (!best_match_found || match_value > best_match_value)) )
 					{
 						best_match_found = true;
 						best_match_value = match_value;
 						best_match_index = match_index;
 
-						if(best_match_value.mustMatch || best_match_value.exactMatch)
+						if(best_match_value.exactMatch)
 							break;
 					}
 				}
@@ -966,189 +881,6 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	return commonality;
 }
 
-bool EvaluableNodeTreeManipulation::NonCycleDoesTreeContainLabels(EvaluableNode *en)
-{
-	if(en->GetNumLabels() > 0)
-		return true;
-
-	for(auto cn : en->GetOrderedChildNodes())
-	{
-		if(cn == nullptr)
-			continue;
-
-		if(NonCycleDoesTreeContainLabels(cn))
-			return true;
-	}
-
-	for(auto &[_, cn] : en->GetMappedChildNodes())
-	{
-		if(cn == nullptr)
-			continue;
-
-		if(NonCycleDoesTreeContainLabels(cn))
-			return true;
-	}
-
-	return false;
-}
-
-bool EvaluableNodeTreeManipulation::DoesTreeContainLabels(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked)
-{
-	auto [_, inserted] = checked.insert(en);
-	if(!inserted)
-		return false;
-
-	if(en->GetNumLabels() > 0)
-		return true;
-
-	for(auto cn : en->GetOrderedChildNodes())
-	{
-		if(cn == nullptr)
-			continue;
-
-		if(DoesTreeContainLabels(cn, checked))
-			return true;
-	}
-
-	for(auto &[_2, cn] : en->GetMappedChildNodes())
-	{
-		if(cn == nullptr)
-			continue;
-
-		if(DoesTreeContainLabels(cn, checked))
-			return true;
-	}
-
-	return false;
-}
-
-bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked)
-{
-	//attempt to insert, but if has already been checked and in checked list (circular code), then return false
-	if(checked != nullptr && checked->emplace(tree).second == false)
-		return false;
-
-	bool collected_all_label_values = true;
-
-	size_t num_labels = tree->GetNumLabels();
-	for(size_t i = 0; i < num_labels; i++)
-	{
-		auto label_sid = tree->GetLabelStringId(i);
-		auto &label_name = string_intern_pool.GetStringFromID(label_sid);
-
-		if(label_name.size() == 0)
-			continue;
-
-		//ignore labels that have a # in the beginning
-		if(label_name[0] == '#')
-			continue;
-
-		//attempt to put the label in the index
-		auto [_, inserted] = index.emplace(label_sid, tree);
-		if(!inserted)
-			collected_all_label_values = false;
-	}
-
-	if(tree->IsAssociativeArray())
-	{
-		for(auto &[_, e] : tree->GetMappedChildNodesReference())
-		{
-			if(e != nullptr)
-			{
-				if(!CollectLabelIndexesFromTree(e, index, checked))
-					collected_all_label_values = false;
-			}
-		}
-	}
-	else if(tree->IsOrderedArray())
-	{
-		for(auto &e : tree->GetOrderedChildNodesReference())
-		{
-			if(e != nullptr)
-			{
-				if(!CollectLabelIndexesFromTree(e, index, checked))
-					collected_all_label_values = false;
-			}
-		}
-	}
-
-	return collected_all_label_values;
-}
-
-bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index,
-	EvaluableNode::ReferenceSetType &checked, EvaluableNode *&replace_tree_by)
-{
-	if(tree == nullptr)
-		return true;
-	
-	//attempt to insert, but if has already been checked and in checked list (circular code), then return false
-	if(checked.insert(tree).second == false)
-		return true;
-
-	//if this node has any labels, insert them and check for collisions
-	size_t num_labels = tree->GetNumLabels();
-	for(size_t i = 0; i < num_labels; i++)
-	{
-		auto label_sid = tree->GetLabelStringId(i);
-		auto &label_name = string_intern_pool.GetStringFromID(label_sid);
-
-		if(label_name.size() == 0)
-			continue;
-
-		//ignore labels that have a # in the beginning
-		if(label_name[0] == '#')
-			continue;
-
-		//attempt to put the label in the index
-		const auto &[inserted_value, inserted] = index.emplace(label_sid, tree);
-		
-		//if label already exists and it doesn't match
-		if(!inserted && tree != inserted_value->second)
-		{
-			replace_tree_by = inserted_value->second;
-
-			//add any labels from this tree if they are not on the existing node that has the label
-			if(replace_tree_by != nullptr)
-				replace_tree_by->SetLabelsStringIds(EvaluableNodeTreeManipulation::UnionStringIDVectors(tree->GetLabelsStringIds(), replace_tree_by->GetLabelsStringIds()));
-
-			//more than one thing points to this label
-			return false;
-		}
-	}
-
-	//traverse child nodes. If find a replacement, then mark as such to return, and if need immediate replacement of a node, then do so
-	// continue to iterate over all children even if have a replacement, to reduce the total number of passes needed over the tree
-	bool collected_all_label_values = true;
-	if(tree->IsAssociativeArray())
-	{
-		for(auto &[_, e] : tree->GetMappedChildNodesReference())
-		{
-			EvaluableNode *replace_node_by = nullptr;
-			if(!CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(e, index, checked, replace_node_by))
-			{
-				collected_all_label_values = false;
-				if(replace_node_by != nullptr)
-					e = replace_node_by;
-			}
-		}
-	}
-	else if(tree->IsOrderedArray())
-	{
-		for(auto &e : tree->GetOrderedChildNodesReference())
-		{
-			EvaluableNode *replace_node_by = nullptr;
-			if(!CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(e, index, checked, replace_node_by))
-			{
-				collected_all_label_values = false;
-				if(replace_node_by != nullptr)
-					e = replace_node_by;
-			}
-		}
-	}
-
-	return collected_all_label_values;
-}
-
 MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBetweenNodes(
 	EvaluableNode *n1, EvaluableNode *n2,
 	bool types_must_match, bool nominal_numbers, bool nominal_strings)
@@ -1156,13 +888,8 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBe
 	if(n1 == nullptr && n2 == nullptr)
 		return MergeMetricResults(1.0, n1, n2, false, true);
 
-	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(n1, n2);
-
 	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(n1, n2, types_must_match, nominal_numbers, nominal_strings);
-
-	bool must_match = (num_unique_labels == 0 && num_common_labels > 0);
-	bool exact_match = (num_unique_labels == 0 && commonality == 1.0);
-	return MergeMetricResults(commonality + num_common_labels, n1, n2, must_match, exact_match);
+	return MergeMetricResults(commonality, n1, n2, types_must_match, commonality == 1.0);
 }
 
 std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBetweenNodeTypesAndValues(
@@ -1494,7 +1221,7 @@ static void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<
 	}
 }
 
-EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, MutationParameters &mp)
+EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, MutationParameters &mp, size_t depth)
 {
 	if(n == nullptr)
 		n = mp.enm->AllocNode(ENT_NULL);
@@ -1513,8 +1240,24 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		mutation_type = ENBISI_delete;
 
 	//if immediate, can't perform most of the mutations, just mutate it
-	if(is_immediate && (mutation_type != ENBISI_change_label && mutation_type != ENBISI_change_type))
+	if(is_immediate && mutation_type != ENBISI_change_type)
 		mutation_type = ENBISI_change_type;
+
+	//don't change type if less than preserveTypeDepth
+	if(mutation_type == ENBISI_change_type && depth < mp.preserveTypeDepth)
+	{
+		//try to find another mutation or give up
+		size_t i = 8;
+		do
+		{
+			mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
+			i--;
+		} while(i > 0 && mutation_type != ENBISI_change_type);
+
+		//if couldn't find an alternative, just return
+		if(mutation_type == ENBISI_change_type)
+			return n;
+	}
 
 	switch(mutation_type)
 	{
@@ -1663,24 +1406,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			n->ClearMappedChildNodes();
 			break;
 
-		case ENBISI_change_label:
-			//affect labels
-			if(n != nullptr)
-			{
-				//see if can delete a label, and delete all if the option is available and chosen to keep new label creation balanced
-				if(n->GetNumLabels() > 0 && mp.interpreter->randomStream.Rand() < 0.875)
-				{
-					n->ClearLabels();
-				}
-				else
-				{
-					//add new label
-					std::string new_label = GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings);
-					n->AppendLabel(new_label);
-				}
-			}
-			break;
-
 		default:
 			//error, don't do anything
 			break;
@@ -1706,7 +1431,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	return n;	
 }
 
-EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp, EvaluableNode *tree)
+EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
+	EvaluableNode *tree, size_t depth)
 {
 	//if it's nullptr, then move on to making a copy, otherwise see if it's already been copied
 	if(tree != nullptr)
@@ -1726,7 +1452,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 
 	if(mp.interpreter->randomStream.Rand() < mp.mutation_rate)
 	{
-		EvaluableNode *new_node = MutateNode(copy, mp);
+		EvaluableNode *new_node = MutateNode(copy, mp, depth);
 		//make sure have the right node to reference if it's a new node
 		if(new_node != copy)
 		{
@@ -1751,7 +1477,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 			EvaluableNode *n = s;
 
 			//turn into a copy and mutate
-			n = MutateTree(mp, n);
+			n = MutateTree(mp, n, depth + 1);
 
 			//replace current item in list with copy
 			s = n;
@@ -1767,7 +1493,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 			EvaluableNode *n = ocn[i];
 
 			//turn into a copy and mutate
-			n = MutateTree(mp, n);
+			n = MutateTree(mp, n, depth + 1);
 
 			//replace current item in list with copy
 			ocn[i] = n;
@@ -1849,13 +1575,12 @@ EvaluableNode EvaluableNodeTreeManipulation::nullEvaluableNode(ENT_NULL);
 
 CompactHashMap<EvaluableNodeBuiltInStringId, double> EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities
 {
-	{ ENBISI_change_type,		0.28 },
+	{ ENBISI_change_type,		0.29 },
 	{ ENBISI_delete,			0.12 },
-	{ ENBISI_insert,			0.23 },
+	{ ENBISI_insert,			0.25 },
 	{ ENBISI_swap_elements,		0.24 },
-	{ ENBISI_deep_copy_elements,0.05 },
-	{ ENBISI_delete_elements,	0.04 },
-	{ ENBISI_change_label,		0.04 }
+	{ ENBISI_deep_copy_elements,0.06 },
+	{ ENBISI_delete_elements,	0.04 }
 };
 
 EvaluableNodeTreeManipulation::MutationParameters::WeightedRandMutationType EvaluableNodeTreeManipulation::mutationOperationTypeRandomStream(mutationOperationTypeProbabilities, true);
@@ -2021,11 +1746,9 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_SET_TYPE,										0.35},
 	{ENT_FORMAT,										0.05},
 
-	//labels and comments
-	{ENT_GET_LABELS,									0.1},
-	{ENT_GET_ALL_LABELS,								0.05},
-	{ENT_SET_LABELS,									0.1},
-	{ENT_ZIP_LABELS,									0.02},
+	//annotations and comments
+	{ENT_GET_ANNOTATIONS,								0.1},
+	{ENT_SET_ANNOTATIONS,								0.1},
 
 	{ENT_GET_COMMENTS,									0.05},
 	{ENT_SET_COMMENTS,									0.05},
@@ -2076,7 +1799,6 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_GET_ENTITY_COMMENTS,							0.01},
 	{ENT_RETRIEVE_ENTITY_ROOT,							0.01},
 	{ENT_ASSIGN_ENTITY_ROOTS,							0.01},
-	{ENT_ACCUM_ENTITY_ROOTS,							0.01},
 	{ENT_GET_ENTITY_RAND_SEED,							0.01},
 	{ENT_SET_ENTITY_RAND_SEED,							0.01},
 	{ENT_GET_ENTITY_PERMISSIONS,						0.01},
@@ -2131,12 +1853,12 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	//entity access
 	{ENT_CONTAINS_LABEL,								0.5},
 	{ENT_ASSIGN_TO_ENTITIES,							0.5},
-	{ENT_DIRECT_ASSIGN_TO_ENTITIES,						0.01},
+	{ENT_REMOVE_FROM_ENTITIES,							0.01},
 	{ENT_ACCUM_TO_ENTITIES,								0.5},
 	{ENT_RETRIEVE_FROM_ENTITY,							0.5},
-	{ENT_DIRECT_RETRIEVE_FROM_ENTITY,					0.01},
 	{ENT_CALL_ENTITY,									0.5},
 	{ENT_CALL_ENTITY_GET_CHANGES,						0.05},
+	{ENT_CALL_ON_ENTITY,								0.05},
 	{ENT_CALL_CONTAINER,								0.5}
 };
 

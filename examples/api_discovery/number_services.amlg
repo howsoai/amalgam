@@ -1,22 +1,22 @@
 ;
 ;a simple Amalgam API with a demo for API spec generation using "get_api"
 ;
-(null
+{
 
 	;concatenated version
-	#version (get (load "version.json") "version")
+	version (get (load "version.json") "version")
 
 	;major version
-	#major_version 0
+	major_version 0
 
 	;minor version
-	#minor_version 1
+	minor_version 1
 
 	;patch version
-	#patch_version 0
+	patch_version 0
 
 	;returns a structure containing all of the API details for this module
-	#get_api
+	get_api
 		(seq
 			(assoc
 				"description"
@@ -44,7 +44,7 @@
 	;if null is passed in, it will return a list of true and false to represent
 	; the superposition
 	;please avoid passing in the number 42...
-	#is_even
+	is_even
 		(declare (assoc
 				; number to be passed in.  if none is passed in, defaults to 0
 				number 0
@@ -75,7 +75,7 @@
 
 	;given the list of numbers, returns an associative array with each key
 	; being the number and the value being the result of is_even
-	#are_even
+	are_even
 		(declare (assoc
 				;list of numbers
 				numbers (list)
@@ -87,7 +87,7 @@
 
 	;given a and b, adds the numbers and returns the result of is_even
 	; if either a or b is null, then it will return null
-	#is_sum_even
+	is_sum_even
 		(declare (assoc
 				;the first number. also, here's a test of different utf-8 and special characters: ! ; < > & ^ اَلْعَرَبِيَّةُ 日本語 -- ` ~ ‽ ü " " ' ' '' \n\r\n\r\n
 				; and a second line!
@@ -100,4 +100,4 @@
 				(call is_even (assoc number (+ a b)))
 			)
 		)
-)
+}

@@ -164,14 +164,10 @@ public:
 
 	//removes everything involving the value at the index
 	//if remove_last_entity is true, then it will remove the last entry (assumes index is the last entry)
+	//if set_not_exist is true, then it will set in the internal indices that the value is nonexistent
+	// set_not_exist should be true if the value is being removed, false if it will be immediately reinserted
 	void RemoveIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
-		size_t index, bool remove_last_entity);
-
-	//removes all of an index's data from the caches regardless of type
-	// it should be followed up with an appropriate insert operation with the new value
-	// to maintain cache consistency
-	//TODO 24298: attempt to remove this and pass in the previous value for every label change
-	void RemoveIndexFromCaches(size_t index);
+		size_t index, bool remove_last_entity, bool set_not_exist);
 
 	//changes column to/from interning as would yield best performance
 	void Optimize();

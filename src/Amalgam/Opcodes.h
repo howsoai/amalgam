@@ -297,8 +297,6 @@ enum EvaluableNodeType : uint8_t
 constexpr size_t NUM_ENT_OPCODES = ENT_NOT_A_BUILT_IN_TYPE;
 //total number of valid opcodes
 constexpr size_t NUM_VALID_ENT_OPCODES = ENT_DEALLOCATED;
-//value of first opcode
-constexpr size_t FIRST_OPCODE = ENT_SYSTEM;
 
 //different arrangements of ordered parameters
 enum OrderedChildNodeType

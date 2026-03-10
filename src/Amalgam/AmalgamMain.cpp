@@ -31,8 +31,7 @@ static std::string GetUsage()
 	usage
 		<< "Amalgam Interpreter (" << AMALGAM_VERSION_STRING << ") - " << GetConcurrencyTypeString() << std::endl
 		<<
-R"(
-Usage: amalgam [options] [file]
+R"(Usage: amalgam [options] [file]
 
 Options:
     -h, --help       Show help
@@ -378,8 +377,12 @@ PLATFORM_MAIN_CONSOLE
 		}
 		else //repl
 		{
-			std::cout << "Amalgam " << AMALGAM_VERSION_STRING << " - " << GetConcurrencyTypeString() << " read-execute-print loop" << std::endl;
-			std::cout << "End a line with \\ for multiline commands.  (conclude) will exit.  Run the executable with --help for command-line options." << std::endl;
+			std::cout << "Amalgam " << AMALGAM_VERSION_STRING << " - " << GetConcurrencyTypeString()
+				<< " build running read-execute-print loop" << std::endl;
+			std::cout << "Incomplete lines will be prompted for completed code with ...,"
+				<< " and ending a line with \\ will expect a multiline command."
+				<< "  (conclude) will exit, and (print (help)) will offer help information."
+				<< "  Run the executable with --help for command-line options." << std::endl;
 
 			std::string input;
 			std::string line;

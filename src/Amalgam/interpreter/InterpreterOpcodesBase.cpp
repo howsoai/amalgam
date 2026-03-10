@@ -256,39 +256,98 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	return EvaluableNodeReference::Null();
 }
 
-static std::string_view _help_overview(R"(
-Pass either an opcode keyword or one of the following strings as the first parameter for help on the topic.
+static std::string_view _help_options(R"(Pass either an opcode keyword or one of the following strings as the first parameter for help on the topic.
 overview
 syntax
 opcodes
+For example, try: (print (help "overview"))
+Or type (conculde) and press enter to exit.
+)");
+
+static std::string_view _help_overview(R"(Amalgam is a domain specific language (DSL) developed primarily for genetic programming and instance based machine learning, but also for simulation, agent based modeling, data storage and retrieval, the mathematics of probability theory and information theory, and game content and AI. The language format is somewhat LISP-like in that it uses parenthesized list format with prefix notation and is geared toward functional programming, where there is a one-to-one mapping between the code and the corresponding parse tree.
+
+Whereas virtually all practical programming languages are primarily designed for some combination of programmer productivity and computational performance, Amalgam prioritizes code matching and merging, as well as a deep equivalence of code and data. Amalgam uses entities to store code and data, with a rich query system to find entities by their labels. The language uses a variable stack, but all attributes and methods are stored directly as labels in entities. There is no separate class versus instance, but entities can be used as prototypes to be copied and modified. Though code and data are represented as trees from the root of each entity, graphs in code and data structures are permitted and are flattened to code using special references. Further, instead of failing early when there is an error, Amalgam supports genetic programming and code mixing by being extremely weakly typed, and attempts to find a way to execute code no matter whether types match or not.
+
+Amalgam takes inspiration from many programming languages, but those with the largest influence are LISP, Scheme, Haskell, Perl, Smalltalk, and Python. Despite being much like LISP, there is deliberately no macro system. This is to make sure that code is semantically similar whenever the code is similar, regardless of context. It makes it easy to find the difference between x and y as an executable patch, and then apply that patch to z as (call (difference x y) {_ z}), or semantically mix blocks of code a and b as (mix a b). Amalgam is not a purely functional language. It has imperative and object oriented capabilities, but is primarily optimized for functional programming with relatively few opcodes that are functionally flexible based on parameters to maximize flexibility with code mixing and matching.
+
+Genetic programming can create arbitrary code, so there is always a chance that an evolved program ends up consuming more CPU or memory resources than desired, or may attempt to affect the system outside of the interpreter. For these reasons, there are many strict sandboxing aspects of the language with optional constraints on access, CPU, and memory. Amalgam also has a rich permissions system, which controls what entities and code are able to do, whether writing to the console or executing system commands.
+
+The Amalgam interpreter was designed to be used a standalone interpreter and to build functionality for other programming languages and environments. It does not currently have rich support for linking C libraries into the language, but that is planned for future functionality.
+
+Initial development on Amalgam began in 2011. It was first offered as a commercial product in 2014 at Hazardous Software Inc. and was open sourced in September 2023 by Howso Incorporated (formerly known as Diveplane Corporation, a company spun out of Hazardous Software Inc.).
+
+When referencing the language: 'Amalgam', 'amalgam', 'amalgam-lang', and 'amalgam language' are used interchangeably with Amalgam being preferred. When referencing the interpreter: 'Amalgam interpreter', 'interpreter', 'Amalgam app', and 'Amalgam lib' are used interchangeably.
+)");
+
+static std::string_view _help_syntax(R"(Using <>'s to enclose optional elments, the general syntax is:
+#annotation line 1...
+#annotation line N
+;comments until the end of the line
+;and can continue on to additional lines
+<||><@>(opcode <parameter1> <parameter2> ...)
+
+The language generally follows a parse tree in a manner similar to Lisp and Scheme, with opcodes surrounded by parenthesis and including parameters in a recursive fashion.  The exceptions are that the opcodes list and assoc (associative array, sometimes referred to as a hashmap or dict) may use [] and {} respectively and ommit the opcode, though are still considered identical to (list) and (assoc).
+
+Entities always have a top level data element which is an assoc.  These assoc elements at the top of an entity are handled specially and their keys are called labels.  Labels are how entities can be accessed from outside the entity.  If a label starts with a caret (^), e.g. ^method_for_contained_entities, then it can be accessed by contained entities, and they do not need to specify the caret.  Parent entities do need to specify the caret (^). For example, if ^foo is a label of a container, a contained entity within could call the label "foo".  This adds a layer of security and prevents contained entities from affecting parts of the container that are exposed for its own container's access.  Labels starting with an exclamation point (!), e.g. !private_method, are not accessible by the container and can only be accessed by the entity itself except for by the contained entity getting all of the code, acting as a private label. A label cannot be simultaneously private to its container and accessible to contained entities.  If an entity's root node is set to be something other than an assoc, it is set to the null key, indicating the main method.  If an entity is executed directly, the value at its null key is what is executed.
+
+Variables are accessed in from the closest immediate scope, which means if there is a global variable named x and a function parameter named x, the function parameter will be used.  Entity labels are considered the global-most scope.  If a variable name cannot be found, then it will look at the entity's labels instead.  Scope is handled as a stack, and some opcodes may modify the scope.
+
+In addition to the stack scope, there is a target scope, which can be accessed via the target opcodes to access the data being iterated over.  Some opcodes will add one or more layers to the target stack, so care must be taken to count back up the target stack an appropriate number of levels if the target is being used directly as opposed to being accessed via a variable.
+
+If an operator is preceeded by an @ symbol, then it will be evaluated with regard to data format on load, useful for storing self-referential or graph data structures.  In particular, the target and get opcodes are primarily used with the @ symbol, and can reference locally or from the top of the stack.  For example, @(target .true "inlined_referenced_method") will point directly to the top level inlined_reference_method for an inline-like method.
+
+Comments nor annotations do not affect execution directly, but can be read by code and thus influence execution.  They can also be used to store metadata.  An entity's root node's comment specifies the name and description of the Entity.  The first line of the comment is its name, the remainder of the lines of the comment are the description.  Annotations and comments are almost identical in how they are handled, but are accessed with different opcodes and annotations are intended for code-like metadata.  Annotations will always be printed before comments, enabling the classic Unix shebang #! operation for amalgam scripts as the first line.
+
+In-order evaluation of parameters of most opcodes are not guaranteed to execute in order, or be executed at all if not necessary, unless otherwise specified in the opcode (e.g., seq, declare, let, etc. all execute in order).  It is generally not recommended practice to have side effects (variable or entity writes) in opcodes whose parameters are not guaranteed to be sequential.
+
+If the concurrent/parallel symbol, ||, is specified then the opcode's computations will be executed concurrently if possible.  The concurrent execution will be interpreted with regard to the specific opcode, but any function calls may be executed in any order and possibly concurrently.
+
+Each entity contains code and/or data via a root node that is executed every call to the entity.  An entity has complete abilities to perform reads and writes to any other Entity contained within it; it is also allowed to create, destroy, access, or modify other entities.  Entities have a set of permissions which include std_out_and_std_err, std_in, load (from filesystem), store (to filesystem), environment, alter_performance, system (run system commands), and entity (create and manage contained entities).
+
+Entities may be explicitly named and may be used as code libraries.  For example, a library named MyLibrary with function MyFunction can be called as (call_entity "MyLibrary" "MyFunction" { parameter_a 1 parameter_b 2 }).  Entity names are called entity ids, and nested entities can be accessed via an entity walk path, which is a list of ids.  When using null as the entity name, it will refer to the current entity.  Entities that begin with an underscore are unnamed, and when entities are merged, unnamed entities are compared to other unnamed entities to potentially merge.
+
+Numbers are represented via numbers, as well as ".", "-", and "e" for base-ten exponents.  Further, infinity and negative infinity are represented as ".infinity" and "-.infinity" respectively.  Not-a-number and non-string results are represented via the opcode (null).  The type of number is the string "number".
+
+Strings begin and end with double quotes.  Certain characters can be encoded by preceding with a backslash, which are backslash, null represented as 0, double quote, tab represented as t, newline represented as n, and carriage return represented as r.  The type of string is the string "string".  Comparisons and sorting on any strings are done in "natural order", meaning that 1x comes before 10, and m20x comes after m2a.  Bare strings, that is, strings that do not need to be surrounded by quotes, are only allowed with a couple operators, such as assoc, and standalone bare strings are interpreted as symbols.  
+
+Boolean values can be represented as immediate values ".true" and ".false" respectively.  The type of a bool is the string "bool".
+
+All regular expressions are EMCA-standard regular expressions.  See https://en.cppreference.com/w/cpp/regex/ecmascript or https://262.ecma-international.org/5.1/#sec-15.10 for further details on the regular expression syntax allowed.
 )");
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0 || EvaluableNode::IsNull(ocn[0]))
-		return AllocReturn(_help_overview, immediate_result);
+		return AllocReturn(_help_options, immediate_result);
 
-	//TODO 25157: finish this
-	StringInternPool::StringID help_command_sid = EvaluableNode::ToStringIDIfExists(ocn[0]);
+	StringInternPool::StringID help_command_sid = InterpretNodeIntoStringIDValueIfExists(ocn[0]);
 	if(help_command_sid == GetStringIdFromBuiltInStringId(ENBISI_overview))
 	{
-
+		return AllocReturn(_help_overview, immediate_result);
 	}
 	else if(help_command_sid == GetStringIdFromBuiltInStringId(ENBISI_syntax))
 	{
-
+		return AllocReturn(_help_syntax, immediate_result);
 	}
 	else if(help_command_sid == GetStringIdFromBuiltInStringId(ENBISI_opcodes))
 	{
+		EvaluableNodeReference opcode_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
+		auto &opcode_ocn = opcode_list->GetOrderedChildNodesReference();
+		opcode_ocn.resize(NUM_VALID_ENT_OPCODES);
 
+		for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
+			opcode_ocn[opcode_index] = evaluableNodeManager->AllocNode(ENT_STRING, GetStringIdFromNodeType(
+				static_cast<EvaluableNodeType>(opcode_index)));
+
+		return opcode_list;
 	}
-	else //opcode or error
+	else //check if opcode
 	{
-
+		//TODO 25157: finish this
 	}
 
-	return EvaluableNodeReference::Null();
+	return AllocReturn(_help_options, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DEFAULTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
@@ -429,7 +488,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, E
 
 	auto [node, warnings, char_with_error, code_complete]
 		= Parser::Parse(to_parse, evaluableNodeManager, transactional_parse);
-	
+
 	if(!return_warnings)
 		return node;
 
@@ -746,13 +805,13 @@ EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNo
 {
 	if(interpreter_constraints == nullptr || !interpreter_constraints->collectWarnings)
 		return result;
-	
+
 	EvaluableNodeReference warning_assoc = CreateAssocOfNumbersFromIteratorAndFunctions(
 		interpreter_constraints->warnings, [](std::pair<std::string, size_t> warning_count)
-		{ return warning_count.first; }, [](std::pair<std::string, size_t> warning_count)
-		{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);
+	{ return warning_count.first; }, [](std::pair<std::string, size_t> warning_count)
+	{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);
 
-	EvaluableNodeReference constraint_violation_string = ConstraintViolationToString(interpreter_constraints->constraintViolation, evaluableNodeManager);												
+	EvaluableNodeReference constraint_violation_string = ConstraintViolationToString(interpreter_constraints->constraintViolation, evaluableNodeManager);
 
 	EvaluableNodeReference result_tuple(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
@@ -1024,13 +1083,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						if(need_write_lock)
 							LockScopeStackTop(write_lock, required_vars);
 						else
-					#endif
-						//only set unread if writing to parts of the stack that aren't shared
-						if(value.unique && value != nullptr)
-						{
-							value->SetIsFreeable(true);
-							scope->SetIsFreeable(true);
-						}
+						#endif
+							//only set unread if writing to parts of the stack that aren't shared
+							if(value.unique && value != nullptr)
+							{
+								value->SetIsFreeable(true);
+								scope->SetIsFreeable(true);
+							}
 						scope->SetMappedChildNode(cn_id, value, false);
 					}
 				}
@@ -1373,7 +1432,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 	if(any_nonunique_assignments)
 		SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
-	
+
 	return EvaluableNodeReference::Null();
 }
 
@@ -1658,7 +1717,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 		return EvaluableNodeReference(*target, false);
 	}
 
-	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
+	return EvaluableNodeReference((*constructionStackNodes)[offset], false);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
@@ -1723,7 +1782,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNod
 		return EvaluableNodeReference::Null();
 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetCurrentValue;
-	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
+	return EvaluableNodeReference((*constructionStackNodes)[offset], false);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
@@ -1770,7 +1829,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 			depth = static_cast<int64_t>(value);
 		}
 	}
-	
+
 	bool no_child_nodes = false;
 	if(ocn.size() > 1)
 		no_child_nodes = InterpretNodeIntoBoolValue(ocn[1], false);
@@ -1811,7 +1870,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 			actual_offset = opcodeStackNodes->size() + depth;
 		else
 			actual_offset = depth;
-			
+
 		if(actual_offset < 0 || actual_offset >= static_cast<int64_t>(opcodeStackNodes->size()))
 		{
 			return EvaluableNodeReference::Null();
@@ -1998,7 +2057,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 	if(ConstrainedAllocatedNodes())
 	{
 		if(interpreterConstraints->WouldNewAllocatedNodesExceedConstraint(
-				evaluableNodeManager->GetNumberOfUsedNodes() + number_to_generate))
+			evaluableNodeManager->GetNumberOfUsedNodes() + number_to_generate))
 			return EvaluableNodeReference::Null();
 	}
 

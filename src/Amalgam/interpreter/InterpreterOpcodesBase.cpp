@@ -342,9 +342,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 
 		return opcode_list;
 	}
-	else //check if opcode
+	else if(auto opcode_type = GetEvaluableNodeTypeFromStringId(help_command_sid);
+		opcode_type != ENT_NOT_A_BUILT_IN_TYPE)
 	{
 		//TODO 25157: finish this
+		return EvaluableNodeReference::Null();
 	}
 
 	return AllocReturn(_help_options, immediate_result);

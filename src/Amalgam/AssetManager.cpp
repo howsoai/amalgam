@@ -248,7 +248,8 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters *asset_params,
 
 		StringManipulation::RemoveBOMFromUTF8String(code);
 
-		auto [node, warnings, char_with_error] = Parser::Parse(code, enm, asset_params->transactional, &asset_params->resourcePath, debugSources);
+		auto [node, warnings, char_with_error, code_complete]
+			= Parser::Parse(code, enm, asset_params->transactional, &asset_params->resourcePath, debugSources);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 		return node;
@@ -306,7 +307,8 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters *asset_params,
 
 		std::string code_string = DecompressString(compressed_data);
 
-		auto [node, warnings, char_with_error] = Parser::Parse(code_string, enm, asset_params->transactional,
+		auto [node, warnings, char_with_error, code_complete]
+			= Parser::Parse(code_string, enm, asset_params->transactional,
 			&asset_params->resourcePath, debugSources);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;

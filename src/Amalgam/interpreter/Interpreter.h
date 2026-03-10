@@ -1489,7 +1489,7 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_MIX_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//entity details
-	EvaluableNodeReference InterpretNode_ENT_GET_ENTITY_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GET_ENTITY_ANNOTATIONS_and_GET_ENTITY_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_ASSIGN_ENTITY_ROOTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_GET_ENTITY_RAND_SEED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);

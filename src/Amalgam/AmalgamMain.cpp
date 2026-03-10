@@ -416,7 +416,22 @@ PLATFORM_MAIN_CONSOLE
 					}
 				}
 
-				auto [code, warnings, char_with_error] = Parser::Parse(input, &entity->evaluableNodeManager, false);
+				auto [code, warnings, char_with_error, code_complete]
+					= Parser::Parse(input, &entity->evaluableNodeManager, false);
+
+				//if the parser reports the code is incomplete, keep prompting
+				while(!code_complete)
+				{
+					std::cout << "... ";
+					//break if EOF
+					if(!std::getline(std::cin, line))
+						break;
+					input += '\n' + line;
+
+					std::tie(code, warnings, char_with_error, code_complete)
+						= Parser::Parse(input, &entity->evaluableNodeManager, false);
+				}
+
 				for(auto &w : warnings)
 					std::cerr << w << std::endl;
 

@@ -171,6 +171,7 @@ set(COMMON_SOURCE
     src/Amalgam/interpreter/InterpreterOpcodesTransformations.cpp
     src/Amalgam/KnnCache.h
     src/Amalgam/Merger.h
+    src/Amalgam/OpcodeDetails.cpp
     src/Amalgam/Opcodes.cpp
     src/Amalgam/Opcodes.h
     src/Amalgam/Parser.cpp

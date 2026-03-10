@@ -584,6 +584,7 @@
     <ClCompile Include="interpreter\InterpreterOpcodesLogic.cpp" />
     <ClCompile Include="interpreter\InterpreterOpcodesMath.cpp" />
     <ClCompile Include="interpreter\InterpreterOpcodesTransformations.cpp" />
+    <ClCompile Include="OpcodeDetails.cpp" />
     <ClCompile Include="Opcodes.cpp" />
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="PerformanceProfiler.cpp" />

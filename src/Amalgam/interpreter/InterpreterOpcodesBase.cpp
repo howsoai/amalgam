@@ -427,7 +427,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, E
 	if(!valid_string)
 		return EvaluableNodeReference::Null();
 
-	auto [node, warnings, char_with_error] = Parser::Parse(to_parse, evaluableNodeManager, transactional_parse);
+	auto [node, warnings, char_with_error, code_complete]
+		= Parser::Parse(to_parse, evaluableNodeManager, transactional_parse);
 	
 	if(!return_warnings)
 		return node;

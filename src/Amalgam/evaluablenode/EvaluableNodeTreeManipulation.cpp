@@ -1796,6 +1796,7 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_MIX_ENTITIES,									0.02},
 
 	//entity details
+	{ENT_GET_ENTITY_ANNOTATIONS,						0.01},
 	{ENT_GET_ENTITY_COMMENTS,							0.01},
 	{ENT_RETRIEVE_ENTITY_ROOT,							0.01},
 	{ENT_ASSIGN_ENTITY_ROOTS,							0.01},

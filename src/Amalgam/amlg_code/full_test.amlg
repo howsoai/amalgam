@@ -2172,31 +2172,39 @@
    (contained_entities "MixedEntities")
  )
 
- (print "--get_entity_comments--\n")
- (print (get_entity_comments) "\n")
+ (print "--get_entity_annotations--\n")
 
   (create_entities "descriptive_entity" (lambda
 	;this is a fully described entity
+	#entity annotations
 	{
 		;some public variable
+		#publicvar annotation
 		publicvar
 		1
 		;some private variable
+		#privatevar annotation
 		!privatevar
 		2
 		;a variable accessible to contained entities
+		#containervar annotation
 		^containervar
 		3
 		;the function foo
+		#foo annotation
 		foo
 		(declare
 					;a number representing the sum
+					#return annotation
 					(assoc
 						;the value of x
+						#x annotation
 						x 
 						;the default value of x
+						#x value annotation
 						1
 						;the value of y
+						#y value annotation
 						y 2
 					)
 					( + x y)
@@ -2204,6 +2212,7 @@
 				)
 
 		;returns the api details
+		#get_api annotation
 		get_api
 		(seq
 
@@ -2227,6 +2236,13 @@
 		)
 	}
  ))
+
+ 
+ (print (get_entity_annotations "descriptive_entity") "\n")
+ (print (get_entity_annotations "descriptive_entity" (null) .true))
+ (print (get_entity_annotations "descriptive_entity" "foo" .true))
+
+  (print "--get_entity_comments--\n")
 
  (print (get_entity_comments "descriptive_entity") "\n")
  (print (get_entity_comments "descriptive_entity" (null) .true))

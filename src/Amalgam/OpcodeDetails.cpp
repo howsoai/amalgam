@@ -1,10 +1,10 @@
 ﻿#include "OpcodeDetails.h"
 
-//helper that builds a vector of OpcodeExampleOutputPair from a list of example and output pairs supplied by the generator
-static std::vector<OpcodeExampleOutputPair> make_examples(
+//helper that builds a vector of OpcodeDetails::OpcodeExampleOutputPair from a list of example and output pairs supplied by the generator
+static std::vector<OpcodeDetails::OpcodeExampleOutputPair> make_examples(
 	const std::vector<std::pair<std::string, std::string>> &pairs)
 {
-	std::vector<OpcodeExampleOutputPair> out;
+	std::vector<OpcodeDetails::OpcodeExampleOutputPair> out;
 	out.reserve(pairs.size());
 	for(const auto &p : pairs)
 		out.emplace_back(p.first, p.second);
@@ -26,7 +26,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_DEFAULTS)] = []() {
@@ -40,7 +40,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_RECLAIM_RESOURCES)] = []() {
@@ -54,7 +54,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_PARSE)] = []() {
@@ -68,7 +68,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_UNPARSE)] = []() {
@@ -82,7 +82,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_IF)] = []() {
@@ -96,7 +96,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SEQUENCE)] = []() {
@@ -110,7 +110,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LAMBDA)] = []() {
@@ -124,7 +124,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CONCLUDE)] = []() {
@@ -138,7 +138,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_RETURN)] = []() {
@@ -152,7 +152,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CALL)] = []() {
@@ -166,7 +166,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = true;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CALL_SANDBOXED)] = []() {
@@ -180,7 +180,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = true;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_WHILE)] = []() {
@@ -194,7 +194,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LET)] = []() {
@@ -208,7 +208,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = true;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_DECLARE)] = []() {
@@ -222,7 +222,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ASSIGN)] = []() {
@@ -236,7 +236,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ACCUM)] = []() {
@@ -250,7 +250,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_RETRIEVE)] = []() {
@@ -264,7 +264,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET)] = []() {
@@ -278,7 +278,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SET)] = []() {
@@ -292,7 +292,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_REPLACE)] = []() {
@@ -306,7 +306,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TARGET)] = []() {
@@ -320,7 +320,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CURRENT_INDEX)] = []() {
@@ -334,7 +334,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CURRENT_VALUE)] = []() {
@@ -348,7 +348,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_PREVIOUS_RESULT)] = []() {
@@ -362,7 +362,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_OPCODE_STACK)] = []() {
@@ -376,7 +376,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_STACK)] = []() {
@@ -390,7 +390,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ARGS)] = []() {
@@ -404,7 +404,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_RAND)] = []() {
@@ -418,7 +418,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::CONDITIONAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_RAND_SEED)] = []() {
@@ -432,7 +432,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SET_RAND_SEED)] = []() {
@@ -446,7 +446,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SYSTEM_TIME)] = []() {
@@ -460,7 +460,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ADD)] = []() {
@@ -474,7 +474,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SUBTRACT)] = []() {
@@ -488,7 +488,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MULTIPLY)] = []() {
@@ -502,7 +502,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_DIVIDE)] = []() {
@@ -516,7 +516,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MODULUS)] = []() {
@@ -530,7 +530,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_DIGITS)] = []() {
@@ -544,7 +544,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SET_DIGITS)] = []() {
@@ -558,7 +558,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_FLOOR)] = []() {
@@ -572,7 +572,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CEILING)] = []() {
@@ -586,7 +586,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ROUND)] = []() {
@@ -600,7 +600,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_EXPONENT)] = []() {
@@ -614,7 +614,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LOG)] = []() {
@@ -628,7 +628,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SIN)] = []() {
@@ -642,7 +642,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ASIN)] = []() {
@@ -656,7 +656,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_COS)] = []() {
@@ -670,7 +670,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ACOS)] = []() {
@@ -684,7 +684,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TAN)] = []() {
@@ -698,7 +698,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ATAN)] = []() {
@@ -712,7 +712,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SINH)] = []() {
@@ -726,7 +726,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ASINH)] = []() {
@@ -740,7 +740,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_COSH)] = []() {
@@ -754,7 +754,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ACOSH)] = []() {
@@ -768,7 +768,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TANH)] = []() {
@@ -782,7 +782,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ATANH)] = []() {
@@ -796,7 +796,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ERF)] = []() {
@@ -810,7 +810,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TGAMMA)] = []() {
@@ -824,7 +824,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LGAMMA)] = []() {
@@ -838,7 +838,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SQRT)] = []() {
@@ -852,7 +852,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_POW)] = []() {
@@ -866,7 +866,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ABS)] = []() {
@@ -880,7 +880,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MAX)] = []() {
@@ -894,7 +894,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MIN)] = []() {
@@ -908,7 +908,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_INDEX_MAX)] = []() {
@@ -922,7 +922,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_INDEX_MIN)] = []() {
@@ -936,7 +936,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_DOT_PRODUCT)] = []() {
@@ -950,7 +950,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_NORMALIZE)] = []() {
@@ -964,7 +964,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MODE)] = []() {
@@ -978,7 +978,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUANTILE)] = []() {
@@ -992,7 +992,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GENERALIZED_MEAN)] = []() {
@@ -1006,7 +1006,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GENERALIZED_DISTANCE)] = []() {
@@ -1022,7 +1022,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ENTROPY)] = []() {
@@ -1036,7 +1036,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_FIRST)] = []() {
@@ -1050,7 +1050,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TAIL)] = []() {
@@ -1064,7 +1064,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LAST)] = []() {
@@ -1078,7 +1078,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TRUNC)] = []() {
@@ -1092,7 +1092,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_APPEND)] = []() {
@@ -1106,7 +1106,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SIZE)] = []() {
@@ -1120,7 +1120,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_RANGE)] = []() {
@@ -1134,7 +1134,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::CONDITIONAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_REWRITE)] = []() {
@@ -1148,7 +1148,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MAP)] = []() {
@@ -1162,7 +1162,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_FILTER)] = []() {
@@ -1176,7 +1176,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_WEAVE)] = []() {
@@ -1190,7 +1190,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_REDUCE)] = []() {
@@ -1204,7 +1204,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_APPLY)] = []() {
@@ -1218,7 +1218,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::CONDITIONAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_REVERSE)] = []() {
@@ -1232,7 +1232,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SORT)] = []() {
@@ -1246,7 +1246,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_INDICES)] = []() {
@@ -1260,7 +1260,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_VALUES)] = []() {
@@ -1274,7 +1274,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CONTAINS_INDEX)] = []() {
@@ -1288,7 +1288,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CONTAINS_VALUE)] = []() {
@@ -1302,7 +1302,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_REMOVE)] = []() {
@@ -1316,7 +1316,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_KEEP)] = []() {
@@ -1330,7 +1330,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ASSOCIATE)] = []() {
@@ -1344,7 +1344,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ZIP)] = []() {
@@ -1358,7 +1358,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_UNZIP)] = []() {
@@ -1372,7 +1372,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_AND)] = []() {
@@ -1386,7 +1386,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::CONDITIONAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_OR)] = []() {
@@ -1400,7 +1400,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::CONDITIONAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_XOR)] = []() {
@@ -1414,7 +1414,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_NOT)] = []() {
@@ -1428,7 +1428,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_EQUAL)] = []() {
@@ -1442,7 +1442,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_NEQUAL)] = []() {
@@ -1456,7 +1456,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LESS)] = []() {
@@ -1470,7 +1470,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LEQUAL)] = []() {
@@ -1484,7 +1484,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GREATER)] = []() {
@@ -1498,7 +1498,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GEQUAL)] = []() {
@@ -1512,7 +1512,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TYPE_EQUALS)] = []() {
@@ -1526,7 +1526,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TYPE_NEQUALS)] = []() {
@@ -1540,7 +1540,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_NULL)] = []() {
@@ -1554,7 +1554,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LIST)] = []() {
@@ -1568,7 +1568,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_UNORDERED_LIST)] = []() {
@@ -1582,7 +1582,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ASSOC)] = []() {
@@ -1596,7 +1596,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = true;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_BOOL)] = []() {
@@ -1610,7 +1610,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_NUMBER)] = []() {
@@ -1624,7 +1624,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_STRING)] = []() {
@@ -1638,7 +1638,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SYMBOL)] = []() {
@@ -1652,7 +1652,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_TYPE)] = []() {
@@ -1666,7 +1666,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_TYPE_STRING)] = []() {
@@ -1680,7 +1680,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SET_TYPE)] = []() {
@@ -1694,7 +1694,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_FORMAT)] = []() {
@@ -1708,7 +1708,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_ANNOTATIONS)] = []() {
@@ -1722,7 +1722,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SET_ANNOTATIONS)] = []() {
@@ -1736,7 +1736,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_COMMENTS)] = []() {
@@ -1750,7 +1750,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SET_COMMENTS)] = []() {
@@ -1764,7 +1764,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_CONCURRENCY)] = []() {
@@ -1778,7 +1778,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SET_CONCURRENCY)] = []() {
@@ -1792,7 +1792,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_VALUE)] = []() {
@@ -1806,7 +1806,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SET_VALUE)] = []() {
@@ -1820,7 +1820,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_EXPLODE)] = []() {
@@ -1834,7 +1834,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SPLIT)] = []() {
@@ -1848,7 +1848,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SUBSTR)] = []() {
@@ -1862,7 +1862,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CONCAT)] = []() {
@@ -1876,7 +1876,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CRYPTO_SIGN)] = []() {
@@ -1890,7 +1890,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CRYPTO_SIGN_VERIFY)] = []() {
@@ -1904,7 +1904,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ENCRYPT)] = []() {
@@ -1918,7 +1918,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_DECRYPT)] = []() {
@@ -1932,7 +1932,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_PRINT)] = []() {
@@ -1946,7 +1946,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TOTAL_SIZE)] = []() {
@@ -1960,7 +1960,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MUTATE)] = []() {
@@ -1974,7 +1974,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_COMMONALITY)] = []() {
@@ -1988,7 +1988,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_EDIT_DISTANCE)] = []() {
@@ -2002,7 +2002,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_INTERSECT)] = []() {
@@ -2016,7 +2016,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_UNION)] = []() {
@@ -2030,7 +2030,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_DIFFERENCE)] = []() {
@@ -2044,7 +2044,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MIX)] = []() {
@@ -2058,7 +2058,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TOTAL_ENTITY_SIZE)] = []() {
@@ -2072,7 +2072,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_FLATTEN_ENTITY)] = []() {
@@ -2086,7 +2086,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MUTATE_ENTITY)] = []() {
@@ -2100,7 +2100,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_COMMONALITY_ENTITIES)] = []() {
@@ -2114,7 +2114,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_EDIT_DISTANCE_ENTITIES)] = []() {
@@ -2128,7 +2128,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_INTERSECT_ENTITIES)] = []() {
@@ -2142,7 +2142,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_UNION_ENTITIES)] = []() {
@@ -2156,7 +2156,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_DIFFERENCE_ENTITIES)] = []() {
@@ -2170,7 +2170,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MIX_ENTITIES)] = []() {
@@ -2184,7 +2184,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_ENTITY_ANNOTATIONS)] = []() {
@@ -2198,7 +2198,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_ENTITY_COMMENTS)] = []() {
@@ -2212,7 +2212,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_RETRIEVE_ENTITY_ROOT)] = []() {
@@ -2226,7 +2226,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ASSIGN_ENTITY_ROOTS)] = []() {
@@ -2240,7 +2240,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_ENTITY_RAND_SEED)] = []() {
@@ -2254,7 +2254,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SET_ENTITY_RAND_SEED)] = []() {
@@ -2268,7 +2268,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::EXISTING;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_ENTITY_PERMISSIONS)] = []() {
@@ -2282,7 +2282,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SET_ENTITY_PERMISSIONS)] = []() {
@@ -2296,7 +2296,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CREATE_ENTITIES)] = []() {
@@ -2310,7 +2310,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CLONE_ENTITIES)] = []() {
@@ -2324,7 +2324,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MOVE_ENTITIES)] = []() {
@@ -2338,7 +2338,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_DESTROY_ENTITIES)] = []() {
@@ -2352,7 +2352,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LOAD)] = []() {
@@ -2366,7 +2366,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LOAD_ENTITY)] = []() {
@@ -2380,7 +2380,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_STORE)] = []() {
@@ -2394,7 +2394,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_STORE_ENTITY)] = []() {
@@ -2408,7 +2408,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CONTAINS_ENTITY)] = []() {
@@ -2422,7 +2422,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CONTAINED_ENTITIES)] = []() {
@@ -2436,7 +2436,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::CONDITIONAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_COMPUTE_ON_CONTAINED_ENTITIES)] = []() {
@@ -2450,7 +2450,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::CONDITIONAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_SELECT)] = []() {
@@ -2464,7 +2464,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_SAMPLE)] = []() {
@@ -2478,7 +2478,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_IN_ENTITY_LIST)] = []() {
@@ -2492,7 +2492,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_IN_ENTITY_LIST)] = []() {
@@ -2506,7 +2506,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_EXISTS)] = []() {
@@ -2520,7 +2520,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_EXISTS)] = []() {
@@ -2534,7 +2534,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_EQUALS)] = []() {
@@ -2548,7 +2548,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_EQUALS)] = []() {
@@ -2562,7 +2562,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_BETWEEN)] = []() {
@@ -2576,7 +2576,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_BETWEEN)] = []() {
@@ -2590,7 +2590,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_AMONG)] = []() {
@@ -2604,7 +2604,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_AMONG)] = []() {
@@ -2618,7 +2618,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX)] = []() {
@@ -2632,7 +2632,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MIN)] = []() {
@@ -2646,7 +2646,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_SUM)] = []() {
@@ -2660,7 +2660,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MODE)] = []() {
@@ -2674,7 +2674,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_QUANTILE)] = []() {
@@ -2688,7 +2688,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_GENERALIZED_MEAN)] = []() {
@@ -2702,7 +2702,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MIN_DIFFERENCE)] = []() {
@@ -2716,7 +2716,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX_DIFFERENCE)] = []() {
@@ -2730,7 +2730,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_VALUE_MASSES)] = []() {
@@ -2744,7 +2744,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_LESS_OR_EQUAL_TO)] = []() {
@@ -2758,7 +2758,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_GREATER_OR_EQUAL_TO)] = []() {
@@ -2772,7 +2772,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)] = []() {
@@ -2786,7 +2786,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)] = []() {
@@ -2802,7 +2802,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_DISTANCE_CONTRIBUTIONS)] = []() {
@@ -2818,7 +2818,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)] = []() {
@@ -2834,7 +2834,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CONVICTIONS)] = []() {
@@ -2850,7 +2850,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)] = []() {
@@ -2866,7 +2866,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)] = []() {
@@ -2882,7 +2882,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_KL_DIVERGENCES)] = []() {
@@ -2898,7 +2898,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)] = []() {
@@ -2914,7 +2914,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::PARTIAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CONTAINS_LABEL)] = []() {
@@ -2928,7 +2928,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = false;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ASSIGN_TO_ENTITIES)] = []() {
@@ -2942,7 +2942,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ACCUM_TO_ENTITIES)] = []() {
@@ -2956,7 +2956,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_REMOVE_FROM_ENTITIES)] = []() {
@@ -2970,7 +2970,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_RETRIEVE_FROM_ENTITY)] = []() {
@@ -2984,7 +2984,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = false;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::CONDITIONAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CALL_ENTITY)] = []() {
@@ -2998,7 +2998,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = true;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::CONDITIONAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CALL_ENTITY_GET_CHANGES)] = []() {
@@ -3012,7 +3012,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = true;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::CONDITIONAL;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CALL_ON_ENTITY)] = []() {
@@ -3026,7 +3026,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = true;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CALL_CONTAINER)] = []() {
@@ -3040,7 +3040,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = true;
 		d.newTargetScope = false;
-		d.newValue = OpcodeReturnNewnessType::NEW;
+		d.newValue = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 

@@ -350,7 +350,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 
 		EvaluableNodeReference opcode_attribs(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 
+		opcode_attribs->SetMappedChildNode("description", evaluableNodeManager->AllocNode(od.description));
 		opcode_attribs->SetMappedChildNode("parameters", evaluableNodeManager->AllocNode(od.parameters));
+		opcode_attribs->SetMappedChildNode("output", evaluableNodeManager->AllocNode(od.output));
 		//TODO 25157: finish this
 		return opcode_attribs;
 	}

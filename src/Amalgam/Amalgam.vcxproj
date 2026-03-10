@@ -641,6 +641,7 @@
     <ClInclude Include="interpreter\Interpreter.h" />
     <ClInclude Include="KnnCache.h" />
     <ClInclude Include="Merger.h" />
+    <ClInclude Include="OpcodeDetails.h" />
     <ClInclude Include="Opcodes.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="PartialSum.h" />

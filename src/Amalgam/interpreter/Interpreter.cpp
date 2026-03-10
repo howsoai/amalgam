@@ -11,6 +11,7 @@
 //system headers:
 #include <utility>
 
+//this array MUST be in the same order as the opcodes are enumerated in EvaluableNodeType in Opcodes.h
 std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter::_opcodes = {
 	
 	//built-in / system specific

@@ -9,6 +9,7 @@
 #include "EntityWriteListener.h"
 #include "EvaluableNodeManagement.h"
 #include "EvaluableNodeTreeFunctions.h"
+#include "OpcodeDetails.h"
 #include "PerformanceProfiler.h"
 
 //system headers:
@@ -345,8 +346,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 	else if(auto opcode_type = GetEvaluableNodeTypeFromStringId(help_command_sid);
 		opcode_type != ENT_NOT_A_BUILT_IN_TYPE)
 	{
+		auto &od = _opcode_details[opcode_type];
+
+		EvaluableNodeReference opcode_attribs(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
+
+		opcode_attribs->SetMappedChildNode("parameters", evaluableNodeManager->AllocNode(od.parameters));
 		//TODO 25157: finish this
-		return EvaluableNodeReference::Null();
+		return opcode_attribs;
 	}
 
 	return AllocReturn(_help_options, immediate_result);

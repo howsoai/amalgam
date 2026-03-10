@@ -4,6 +4,9 @@
 #include "FastMath.h"
 #include "StringInternPool.h"
 
+//system headers:
+#include <unordered_map>
+
 //opcodes / commands / operations in Amalgam
 enum EvaluableNodeType : uint8_t
 {

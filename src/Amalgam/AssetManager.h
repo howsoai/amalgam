@@ -406,7 +406,7 @@ public:
 	//indicates that the entity's permissions have been updated
 	template<typename EntityReferenceType = EntityReadReference>
 	inline void UpdateEntityPermissions(Entity *entity,
-		EntityPermissions permissions_to_set, EntityPermissions permission_values, bool deep_set_permissions,
+		ExecutionPermissions permissions_to_set, ExecutionPermissions permission_values, bool deep_set_permissions,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
 	#ifdef MULTITHREAD_INTERFACE
@@ -565,7 +565,7 @@ public:
 	//any permissions in permissions_to_set will be set to the values specified by the corresponding
 	//permission_values
 	void SetEntityPermissions(Entity *entity,
-		EntityPermissions permissions_to_set, EntityPermissions permission_values);
+		ExecutionPermissions permissions_to_set, ExecutionPermissions permission_values);
 
 	// Checks if this entity specifically has been loaded as persistent
 	inline bool IsEntityDirectlyPersistent(Entity *entity)
@@ -573,10 +573,10 @@ public:
 		return persistentEntities.find(entity) != end(persistentEntities);
 	}
 
-	inline EntityPermissions GetEntityPermissions(Entity *entity)
+	inline ExecutionPermissions GetEntityPermissions(Entity *entity)
 	{
 		if(entity == nullptr)
-			return EntityPermissions();
+			return ExecutionPermissions();
 
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::ReadLock lock(entityPermissionsMutex);
@@ -584,7 +584,7 @@ public:
 
 		auto found = entityPermissions.find(entity);
 		if(found == end(entityPermissions))
-			return EntityPermissions();
+			return ExecutionPermissions();
 
 		return found->second;
 	}
@@ -713,7 +713,7 @@ private:
 	FastHashMap<Entity *, AssetParametersRef> persistentEntities;
 
 	//entities that have root permissions
-	FastHashMap<Entity *, EntityPermissions> entityPermissions;
+	FastHashMap<Entity *, ExecutionPermissions> entityPermissions;
 
 #ifdef MULTITHREAD_INTERFACE
 	//mutexes for global data

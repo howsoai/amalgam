@@ -703,7 +703,7 @@ void AssetManager::CreateEntity(Entity *entity)
 }
 
 void AssetManager::SetEntityPermissions(Entity *entity,
-	EntityPermissions permissions_to_set, EntityPermissions permission_values)
+	ExecutionPermissions permissions_to_set, ExecutionPermissions permission_values)
 {
 	if(entity == nullptr)
 		return;
@@ -849,5 +849,5 @@ void AssetManager::RemoveAllPermissions(Entity *entity)
 	for(auto contained_entity : entity->GetContainedEntities())
 		RemoveAllPermissions(contained_entity);
 
-	SetEntityPermissions(entity, EntityPermissions(), EntityPermissions());
+	SetEntityPermissions(entity, ExecutionPermissions(), ExecutionPermissions());
 }

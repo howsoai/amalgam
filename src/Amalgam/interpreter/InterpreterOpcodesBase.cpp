@@ -69,11 +69,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 			wl->LogSystemCall(ocn[0]);
 	}
 
-	if(command == "exit" && permissions.HasPermission(EntityPermissions::Permission::SYSTEM))
+	if(command == "exit" && permissions.HasPermission(ExecutionPermissions::Permission::SYSTEM))
 	{
 		exit(0);
 	}
-	else if(command == "readline" && permissions.HasPermission(EntityPermissions::Permission::STD_IN))
+	else if(command == "readline" && permissions.HasPermission(ExecutionPermissions::Permission::STD_IN))
 	{
 		std::string input;
 		std::getline(std::cin, input);
@@ -84,14 +84,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 		return AllocReturn(input, immediate_result);
 	}
-	else if(command == "printline" && ocn.size() > 1 && permissions.HasPermission(EntityPermissions::Permission::STD_OUT_AND_STD_ERR))
+	else if(command == "printline" && ocn.size() > 1 && permissions.HasPermission(ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR))
 	{
 		std::string output = InterpretNodeIntoStringValueEmptyNull(ocn[1]);
 		printListener->LogPrint(output);
 		printListener->FlushLogFile();
 		return EvaluableNodeReference::Null();
 	}
-	else if(command == "cwd" && permissions.HasPermission(EntityPermissions::Permission::ENVIRONMENT))
+	else if(command == "cwd" && permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 	{
 		//if no parameter specified, return the directory
 		if(ocn.size() == 1)
@@ -109,7 +109,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		bool error_value = static_cast<bool>(error);
 		return AllocReturn(error_value, immediate_result);
 	}
-	else if(command == "system" && ocn.size() > 1 && permissions.HasPermission(EntityPermissions::Permission::SYSTEM))
+	else if(command == "system" && ocn.size() > 1 && permissions.HasPermission(ExecutionPermissions::Permission::SYSTEM))
 	{
 		std::string sys_command = InterpretNodeIntoStringValueEmptyNull(ocn[1]);
 
@@ -126,12 +126,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 		return EvaluableNodeReference(list, true);
 	}
-	else if(command == "os" && permissions.HasPermission(EntityPermissions::Permission::ENVIRONMENT))
+	else if(command == "os" && permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 	{
 		std::string os = Platform_GetOperatingSystemName();
 		return AllocReturn(os, immediate_result);
 	}
-	else if(command == "sleep" && permissions.HasPermission(EntityPermissions::Permission::SYSTEM))
+	else if(command == "sleep" && permissions.HasPermission(ExecutionPermissions::Permission::SYSTEM))
 	{
 		std::chrono::microseconds sleep_time_usec(1);
 		if(ocn.size() > 1)
@@ -158,15 +158,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		result->SetCommentsString(error_message);
 		return EvaluableNodeReference(result, true);
 	}
-	else if(command == "est_mem_reserved" && permissions.HasPermission(EntityPermissions::Permission::ENVIRONMENT))
+	else if(command == "est_mem_reserved" && permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 	{
 		return AllocReturn(static_cast<double>(curEntity->GetEstimatedReservedDeepSizeInBytes()), immediate_result);
 	}
-	else if(command == "est_mem_used" && permissions.HasPermission(EntityPermissions::Permission::ENVIRONMENT))
+	else if(command == "est_mem_used" && permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 	{
 		return AllocReturn(static_cast<double>(curEntity->GetEstimatedUsedDeepSizeInBytes()), immediate_result);
 	}
-	else if(command == "mem_diagnostics" && permissions.HasPermission(EntityPermissions::Permission::ENVIRONMENT))
+	else if(command == "mem_diagnostics" && permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 	{
 
 	#ifdef MULTITHREAD_SUPPORT
@@ -175,12 +175,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 		return AllocReturn(GetEntityMemorySizeDiagnostics(curEntity), immediate_result);
 	}
-	else if(command == "validate" && permissions.HasPermission(EntityPermissions::Permission::SYSTEM))
+	else if(command == "validate" && permissions.HasPermission(ExecutionPermissions::Permission::SYSTEM))
 	{
 		VerifyEvaluableNodeIntegrity();
 		return AllocReturn(true, immediate_result);
 	}
-	else if(command == "rand" && ocn.size() > 1 && permissions.HasPermission(EntityPermissions::Permission::SYSTEM))
+	else if(command == "rand" && ocn.size() > 1 && permissions.HasPermission(ExecutionPermissions::Permission::SYSTEM))
 	{
 		double num_bytes_raw = InterpretNodeIntoNumberValue(ocn[1]);
 		size_t num_bytes = 0;
@@ -192,7 +192,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 		return AllocReturn(rand_data, immediate_result);
 	}
-	else if(command == "sign_key_pair" && permissions.HasPermission(EntityPermissions::Permission::SYSTEM))
+	else if(command == "sign_key_pair" && permissions.HasPermission(ExecutionPermissions::Permission::SYSTEM))
 	{
 		auto [public_key, secret_key] = GenerateSignatureKeyPair();
 		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);
@@ -204,7 +204,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		return EvaluableNodeReference(list, true);
 
 	}
-	else if(command == "encrypt_key_pair" && permissions.HasPermission(EntityPermissions::Permission::SYSTEM))
+	else if(command == "encrypt_key_pair" && permissions.HasPermission(ExecutionPermissions::Permission::SYSTEM))
 	{
 		auto [public_key, secret_key] = GenerateEncryptionKeyPair();
 		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);
@@ -215,7 +215,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 		return EvaluableNodeReference(list, true);
 	}
-	else if(command == "debugging_info" && permissions.HasPermission(EntityPermissions::Permission::ENVIRONMENT))
+	else if(command == "debugging_info" && permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 	{
 		EvaluableNode *debugger_info = evaluableNodeManager->AllocNode(ENT_LIST);
 		auto &list_ocn = debugger_info->GetOrderedChildNodesReference();
@@ -226,12 +226,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		return EvaluableNodeReference(debugger_info, true);
 	}
 #if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
-	else if(command == "get_max_num_threads" && permissions.HasPermission(EntityPermissions::Permission::ENVIRONMENT))
+	else if(command == "get_max_num_threads" && permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 	{
 		double max_num_threads = static_cast<double>(Concurrency::GetMaxNumThreads());
 		return AllocReturn(max_num_threads, immediate_result);
 	}
-	else if(command == "set_max_num_threads" && ocn.size() > 1 && permissions.HasPermission(EntityPermissions::Permission::ALTER_PERFORMANCE))
+	else if(command == "set_max_num_threads" && ocn.size() > 1 && permissions.HasPermission(ExecutionPermissions::Permission::ALTER_PERFORMANCE))
 	{
 		double max_num_threads_raw = InterpretNodeIntoNumberValue(ocn[1]);
 		size_t max_num_threads = 0;
@@ -243,13 +243,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		return AllocReturn(max_num_threads_raw, immediate_result);
 	}
 #endif
-	else if(command == "built_in_data" && permissions.HasPermission(EntityPermissions::Permission::ENVIRONMENT))
+	else if(command == "built_in_data" && permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 	{
 		uint8_t built_in_data[] = AMALGAM_BUILT_IN_DATA;
 		std::string built_in_data_s(reinterpret_cast<char *>(&built_in_data[0]), sizeof(built_in_data));
 		return AllocReturn(built_in_data_s, immediate_result);
 	}
-	else if(permissions.HasPermission(EntityPermissions::Permission::STD_OUT_AND_STD_ERR))
+	else if(permissions.HasPermission(ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR))
 	{
 		std::cerr << "Invalid system opcode command \"" << command << "\" invoked" << std::endl;
 	}
@@ -435,7 +435,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(Evaluabl
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(EntityPermissions::Permission::ALTER_PERFORMANCE))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::ALTER_PERFORMANCE))
 		return EvaluableNodeReference::Null();
 
 	bool apply_to_all_contained_entities = false;
@@ -2269,7 +2269,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNod
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM_TIME(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(EntityPermissions::Permission::ENVIRONMENT))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 		return EvaluableNodeReference::Null();
 
 	std::chrono::time_point tp = std::chrono::system_clock::now();

@@ -3,6 +3,7 @@
 //project headers:
 #include "FastMath.h"
 #include "HashMaps.h"
+#include "OpcodeDetails.h"
 #include "Opcodes.h"
 #include "PlatformSpecific.h"
 #include "StringInternPool.h"

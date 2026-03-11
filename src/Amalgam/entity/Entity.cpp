@@ -852,7 +852,7 @@ std::string Entity::CreateRandomStreamFromStringAndRand(const std::string &seed_
 	return randomStream.CreateOtherStreamStateViaString(seed_string);
 }
 
-void Entity::SetPermissions(EntityPermissions permissions_to_set, EntityPermissions permission_values,
+void Entity::SetPermissions(ExecutionPermissions permissions_to_set, ExecutionPermissions permission_values,
 		bool deep_set_permissions, std::vector<EntityWriteListener *> *write_listeners,
 		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities)
 {

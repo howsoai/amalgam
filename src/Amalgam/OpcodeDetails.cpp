@@ -1,4 +1,85 @@
-﻿#include "OpcodeDetails.h"
+﻿//project headers:
+#include "EvaluableNode.h"
+#include "EvaluableNodeManagement.h"
+#include "OpcodeDetails.h"
+
+EvaluableNode *ExecutionPermissions::GetPermissionsAsEvaluableNode(EvaluableNodeManager *enm)
+{
+	EvaluableNode *permissions_en = enm->AllocNode(ENT_ASSOC);
+	permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err),
+		enm->AllocNode(HasPermission(Permission::STD_OUT_AND_STD_ERR)));
+	permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_in),
+		enm->AllocNode(HasPermission(Permission::STD_IN)));
+	permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_load),
+		enm->AllocNode(HasPermission(Permission::LOAD)));
+	permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_store),
+		enm->AllocNode(HasPermission(Permission::STORE)));
+	permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_environment),
+		enm->AllocNode(HasPermission(Permission::ENVIRONMENT)));
+	permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_alter_performance),
+		enm->AllocNode(HasPermission(Permission::ALTER_PERFORMANCE)));
+	permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_system),
+		enm->AllocNode(HasPermission(Permission::SYSTEM)));
+
+	return permissions_en;
+}
+
+std::pair<ExecutionPermissions, ExecutionPermissions> ExecutionPermissions::EvaluableNodeToPermissions(EvaluableNode *en)
+{
+	ExecutionPermissions permissions_to_set;
+	ExecutionPermissions permission_values;
+
+	if(EvaluableNode::IsAssociativeArray(en))
+	{
+		for(auto [permission_type, allow_en] : en->GetMappedChildNodesReference())
+		{
+			bool allow = EvaluableNode::ToBool(allow_en);
+
+			if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err))
+			{
+				permissions_to_set.SetPermission(Permission::STD_OUT_AND_STD_ERR, true);
+				permission_values.SetPermission(Permission::STD_OUT_AND_STD_ERR, allow);
+			}
+			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_in))
+			{
+				permissions_to_set.SetPermission(Permission::STD_IN, true);
+				permission_values.SetPermission(Permission::STD_IN, allow);
+			}
+			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_load))
+			{
+				permissions_to_set.SetPermission(Permission::LOAD, true);
+				permission_values.SetPermission(Permission::LOAD, allow);
+			}
+			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_store))
+			{
+				permissions_to_set.SetPermission(Permission::STORE, true);
+				permission_values.SetPermission(Permission::STORE, allow);
+			}
+			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_environment))
+			{
+				permissions_to_set.SetPermission(Permission::ENVIRONMENT, true);
+				permission_values.SetPermission(Permission::ENVIRONMENT, allow);
+			}
+			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_alter_performance))
+			{
+				permissions_to_set.SetPermission(Permission::ALTER_PERFORMANCE, true);
+				permission_values.SetPermission(Permission::ALTER_PERFORMANCE, allow);
+			}
+			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_system))
+			{
+				permissions_to_set.SetPermission(Permission::SYSTEM, true);
+				permission_values.SetPermission(Permission::SYSTEM, allow);
+			}
+		}
+	}
+	else if(EvaluableNode::ToBool(en))
+	{
+		permissions_to_set = AllPermissions();
+		permission_values = AllPermissions();
+	}
+
+	return std::make_pair(permissions_to_set, permission_values);
+}
 
 //helper that builds a vector of OpcodeDetails::OpcodeExampleOutputPair from a list of example and output pairs supplied by the generator
 static std::vector<OpcodeDetails::OpcodeExampleOutputPair> make_examples(
@@ -21,7 +102,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(any)";
 		d.description = R"(Executes system command specified by command.  See the system commands table for further information.)";
 		d.exampleOutputPairs = make_examples({ {R"((system "exit"))", R"()"} });
-		d.permissions = EntityPermissions::Permission::ALL;
+		d.permissions = ExecutionPermissions::Permission::ALL;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -40,7 +121,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(any)";
 		d.description = R"(Frees resources of the specified types on entity, which is the current entity if null, and will include all contained entities if apply_to_all_contained_entities is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter clear_query_caches will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  If clear_query_caches is a boolean, then it will either clear all the caches or none.  If clear_query_caches is a list of strings, then it will only clear caches for the labels corresponding to the strings in the list.  The parameter collect_garbage will perform garbage collection on the entity, and if force_free_memory is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.)";
 		d.exampleOutputPairs = make_examples({ {R"((reclaim_resources (null) .true .false .true .false))", R"()"} });
-		d.permissions = EntityPermissions::Permission::ALTER_PERFORMANCE;
+		d.permissions = ExecutionPermissions::Permission::ALTER_PERFORMANCE;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
@@ -307,7 +388,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(number)";
 		d.description = R"(Evaluates to the current system time since epoch in seconds (including fractions of seconds).)";
 		d.exampleOutputPairs = make_examples({ {R"((print (system_time)))", R"()"} });
-		d.permissions = EntityPermissions::Permission::ENVIRONMENT;
+		d.permissions = ExecutionPermissions::Permission::ENVIRONMENT;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
@@ -1302,7 +1383,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(null)";
 		d.description = R"(Prints each of the parameters in order in a manner interpretable as if they were code. Output is pretty-printed. Printing a node which evaluates to a literal string or number will not be printed (the value will be printed directly) and not have a newline appended.)";
 		d.exampleOutputPairs = make_examples({ {R"((print "hello"))", R"()"} });
-		d.permissions = EntityPermissions::Permission::STD_OUT_AND_STD_ERR;
+		d.permissions = ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
@@ -1593,7 +1674,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(any)";
 		d.description = R"(Loads the data specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and evaluate to the corresponding code. The parameter escape_filename defaults to false, but if it is true, it will aggressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (load "my_directory/MyModule.amlg")))", R"()"} });
-		d.permissions = EntityPermissions::Permission::LOAD;
+		d.permissions = ExecutionPermissions::Permission::LOAD;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1603,7 +1684,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(id_path)";
 		d.description = R"(Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id_path, following the same id_path creation rules as create_entities, except that if no id_path is specified, it may default to a name based on the resource if available.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.)";
 		d.exampleOutputPairs = make_examples({ {R"((load_entity "my_directory/MyModule.amlg" "MyModule"))", R"()"} });
-		d.permissions = EntityPermissions::Permission::LOAD;
+		d.permissions = ExecutionPermissions::Permission::LOAD;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1613,7 +1694,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(bool)";
 		d.description = R"(Stores the code specified by * to the resource in string. Returns true if successful, false if not. If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.    Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.)";
 		d.exampleOutputPairs = make_examples({ {R"((store "my_directory/MyData.amlg" (list 1 2 3)))", R"()"} });
-		d.permissions = EntityPermissions::Permission::STORE;
+		d.permissions = ExecutionPermissions::Permission::STORE;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1623,7 +1704,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(bool)";
 		d.description = R"(Stores the entity specified by the id_path to the resource in string. Returns true if successful, false if not. If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.)";
 		d.exampleOutputPairs = make_examples({ {R"((store_entity "my_directory/MyData.amlg" "MyData"))", R"()"} });
-		d.permissions = EntityPermissions::Permission::STORE;
+		d.permissions = ExecutionPermissions::Permission::STORE;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1664,6 +1745,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects num_to_select entities sorted by entity id.  If start_offset is specified, then it will return num_to_select starting that far in, and subsequent calls can be used to get all entities in batches.  If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed.  If random_seed is specified and start_offset is null, then it will not guarantee a position in the order for subsequent calls that specify start_offset, and will execute more quickly.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_select 4 (null) (rand)))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_SAMPLE)] = []() {
@@ -1673,6 +1755,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects a random sample of num_to_select entities sorted by entity_id with replacement. If weight_label_name is specified and not null, it will use weight_label_name as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values for weights will be ignored, and if there are any infinite values, those will be selected from uniformly.  If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed. If random_seed is not specified then the subsequent calls will return the same sample of entities.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 (rand)))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 "weight" (rand)))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_IN_ENTITY_LIST)] = []() {
@@ -1682,6 +1765,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects only the entities in list_of_entity_ids.  It can be used to filter results before doing subsequent queries.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_in_entity_list (list "Entity1" "Entity2")))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_IN_ENTITY_LIST)] = []() {
@@ -1691,6 +1775,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, filters out the entities in list_of_entity_ids.  It can be used to filter results before doing subsequent queries.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_in_entity_list (list "Entity1" "Entity2")))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_EXISTS)] = []() {
@@ -1700,6 +1785,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects entities which have the named label.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding label names and values.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_EXISTS)] = []() {
@@ -1709,6 +1795,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects entities which do not have the named label.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_exists "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_EQUALS)] = []() {
@@ -1718,6 +1805,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects entities for which the specified label is equal to the specified *.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_equals "TargetLabel" 3))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_EQUALS)] = []() {
@@ -1727,6 +1815,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects entities for which the specified label is not equal to the specified *.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_equals "TargetLabel" 3))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_BETWEEN)] = []() {
@@ -1736,6 +1825,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects entities for which the specified label has a value between the specified lower_bound an upper_bound.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_between "TargetLabel" 2 5))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_between "x" -4 5))", R"()"}, {R"((query_between "y" -4 0))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_BETWEEN)] = []() {
@@ -1745,6 +1835,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects entities for which the specified label has a value outside the specified lower_bound an upper_bound.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "TargetLabel" 2 5))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "x" -4 5))", R"()"}, {R"((query_not_between "y" -4 0))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_AMONG)] = []() {
@@ -1754,6 +1845,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects entities for which the specified label has one of the values specified in values.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "TargetLabel" (2 5)))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "x" (list -4 5)))", R"()"}, {R"((query_among "y" (list -4 0)))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_AMONG)] = []() {
@@ -1763,6 +1855,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects entities for which the specified label does not have one of the values specified in values.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "TargetLabel" (2 5)))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "x" (list -4 5)))", R"()"}, {R"((query_not_among "y" (list -4 0)))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX)] = []() {
@@ -1772,6 +1865,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects a number of entities with the highest values in the specified label.  If entities_returned is specified, it will return that many entities, otherwise will return 1.  If numeric is true, its default value, then it only considers numeric values; if false, will consider all types.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_max "TargetLabel" 3))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MIN)] = []() {
@@ -1781,6 +1875,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects a number of entities with the lowest values in the specified label.  If entities_returned is specified, it will return that many entities, otherwise will return 1.  If numeric is true, its default value, then it only considers numeric values; if false, will consider all types.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_min "TargetLabel" 3))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_SUM)] = []() {
@@ -1790,6 +1885,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, returns the sum of all entities over the specified label.  If weight_label_name is specified, it will find the weighted sum, which is the same as a dot product.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_sum "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MODE)] = []() {
@@ -1799,6 +1895,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, finds the statistical mode of label_name for numerical data.  If weight_label_name is specified, it will find the weighted mode.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_mode "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_QUANTILE)] = []() {
@@ -1808,6 +1905,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, finds the statistical quantile of label_name for numerical data, using q as the parameter to the quantile (default 0.5, median).  If weight_label_name is specified, it will find the weighted quantile, otherwise weight is 1.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_quantile "TargetLabel" 0.75))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_GENERALIZED_MEAN)] = []() {
@@ -1817,6 +1915,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, computes the generalized mean over the label_name for numeric data.  If p is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity) to harmonic mean (-1) to geometric mean (0) to arithmetic mean (1) to maximum (infinity).  If weight_label_name is specified, it will normalize the weights and compute a weighted mean.  If center is specified, calculations will use that as central point, default is 0.0.  If calculate_moment is true, results will not be raised to 1/p.  If absolute_value is true, the differences will take the absolute value.  Various parameterizations of generalized_mean can be used to compute moments about the mean, especially setting the calculate_moment parameter to true and using the mean as the center.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_generalized_mean "TargetLabel" 0.5))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MIN_DIFFERENCE)] = []() {
@@ -1826,6 +1925,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, finds the smallest difference between any two values for the specified label. If cyclic_range is null, the default value, then it will assume the values are not cyclic; if it is a number, then it will assume the range is from 0 to cyclic_range.  If include_zero_difference is true, its default value, then it will return 0 if the smallest gap between any two numbers is 0; if false, it will return the smallest nonzero value.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_min_difference "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX_DIFFERENCE)] = []() {
@@ -1835,6 +1935,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, finds the largest difference between any two values for the specified label. If cyclic_range is null, the default value, then it will assume the values are not cyclic; if it is a number, then it will assume the range is from 0 to cyclic_range.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_max_difference "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_VALUE_MASSES)] = []() {
@@ -1844,6 +1945,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, computes the counts for each value of the label and returns an assoc with the keys being the label values and the values being the counts or weights of the values.  If weight_label_name is specified, then it will accumulate that weight for each value, otherwise it will use a weight of 1 for each yielding a count.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_value_masses "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_LESS_OR_EQUAL_TO)] = []() {
@@ -1853,6 +1955,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects entities with a value in the specified label less than or equal to the specified *.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_less_or_equal_to "TargetLabel" 3))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_GREATER_OR_EQUAL_TO)] = []() {
@@ -1862,6 +1965,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects entities with a value in the specified label greater than or equal to the specified *.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_greater_or_equal_to "TargetLabel" 3))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)] = []() {
@@ -1871,6 +1975,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, selects entities which represent a point within a certain generalized norm to a given point. axis_labels specifies the names of the coordinate axes (as labels on the target entity), and axis_values_or_entity_id specifies the corresponding values for the point to test from or if a string the entity to collect the labels from.  The parameter p_value is the generalized norm parameter, where the value of 1 is probability space and Manhattan distance, the default, 2 being Euclidean distance, etc.  The weights parameter specifies how to weight the different dimensions.  If weights is a list, each value maps to its respective element in the vectors.  If weights is null, then it will assume the weights to be 1 / number of features if distance_transform is probability space or surprisal space, or otherwise 1.  If weights is an assoc, then the parameter value_names will select the weights from the assoc.  If weights is an assoc of assocs, then the parameter weights_selection_feature will select which set of weights to use and redistribute and normalize any probability masses for unused features to features that are used.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", "continuous_code_no_recursive_matching", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  For attributes, the particular distance_types specifies what is expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values available.  For continuous, a null means unbounded where distance for a null will be computed automatically from the relevant data; a single number indicates the difference between a value and a null, a specified uncertainty.  Cyclic requires either a single value or a list of two values; a list of two values indicates that the first value, the lower bound, will wrap around to the upper bound, the second value specified; if only a single number is provided instead of a list, then it will assume that number for the upper bound and 0 for the lower bound.  For the string distance type, the value specified can be a number indicating the maximum possible string length, inferred if null is provided.   If the feature type is continous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Deviations contains numbers that are used during the distance calculation, per-element, prior to exponentiation.  Specifying null as deviations is equivalent to setting each deviation to 0. max_distance is the maximum distance allowed. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision. If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their distances.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be treated as a distance weight exponent, and will be applied to each distance as distance^distance_weight_exponent, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively). If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestContainerExec" (list (query_within_generalized_distance 3 (list "x" "y") (list 0.0 0.0) 0.01 (list 2 1) (list "nominal_number" "continuous_number_cyclic") (list 1 360) (null) (null) 1 (null) "random seed 1234" "radius") ) ))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)] = []() {
@@ -1882,6 +1987,7 @@ For attributes, the particular distance_types specifies what particular attribut
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their distances.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be treated as a distance weight exponent, and will be applied to each distance as distance^distance_weight_exponent, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestContainerExec" (list (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) 0.01 (list 2 1) (list "nominal_number" "continuous_number_cyclic") (list 1 360) (null) (null) 1 (null) "random seed 1234" "radius") ) ))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_DISTANCE_CONTRIBUTIONS)] = []() {
@@ -1894,6 +2000,7 @@ For attributes, the particular distance_types specifies what particular attribut
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "SurprisalTransformContainer" (list (query_distance_contributions 4 (list "x") [[0]] 1 (null) (null) (null) (list 0.25) (null) "surprisal" (null) "fixed_seed" (null) "precise") )))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)] = []() {
@@ -1906,6 +2013,7 @@ For attributes, the particular distance_types specifies what particular attribut
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "SurprisalTransformContainer" (list (query_entity_cumulative_nearest_entity_weights 4 (list "x") [[0]] 1 (null) (null) (null) (list 0.25) (null) "surprisal" (null) "fixed_seed" (null) "precise") )))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CONVICTIONS)] = []() {
@@ -1918,6 +2026,7 @@ For attributes, the particular distance_types specifies what particular attribut
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If conviction_of_removal is true, then it will compute the conviction as if the entities specified by entity_ids_to_compute were removed; if false (the default), then will compute the conviction as if those entities were added or included. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities (list (query_entity_convictions 2 (list "alpha" "b" "c") (null) 0.1 (null) (list 0 0 1) ) )))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)] = []() {
@@ -1930,6 +2039,7 @@ For attributes, the particular distance_types specifies what particular attribut
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If conviction_of_removal is true, then it will compute the conviction as if the entities specified by entity_ids_to_compute were removed; if false (the default), then will compute the conviction as if those entities were added or included.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities (list (query_entity_group_kl_divergence 2 (list "x" "y") obj2_verts 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234") )))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)] = []() {
@@ -1942,6 +2052,7 @@ For attributes, the particular distance_types specifies what particular attribut
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities (list (query_entity_distance_contributions 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234") )))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_KL_DIVERGENCES)] = []() {
@@ -1954,6 +2065,7 @@ For attributes, the particular distance_types specifies what particular attribut
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If conviction_of_removal is true, then it will compute the conviction as if the entities specified by entity_ids_to_compute were removed; if false (the default), then will compute the conviction as if those entities were added or included. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities (list (query_entity_kl_divergences 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234"))))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)] = []() {
@@ -1966,6 +2078,7 @@ For attributes, the particular distance_types specifies what particular attribut
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities (list (query_entity_cumulative_nearest_entity_weights 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234") )))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.isQuery = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CONTAINS_LABEL)] = []() {

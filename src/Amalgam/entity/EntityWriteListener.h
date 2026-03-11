@@ -52,7 +52,7 @@ public:
 	void LogSetEntityRandomSeed(Entity *entity, const std::string &rand_seed, bool deep_set);
 
 	void LogSetEntityPermissions(Entity *entity,
-		EntityPermissions permissions_to_set, EntityPermissions permission_values, bool deep_set);
+		ExecutionPermissions permissions_to_set, ExecutionPermissions permission_values, bool deep_set);
 
 	void FlushLogFile();
 

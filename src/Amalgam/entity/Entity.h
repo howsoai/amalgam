@@ -71,140 +71,6 @@ public:
 	EntityType *entity;
 };
 
-class EntityPermissions
-{
-public:
-	using StorageType = uint8_t;
-	enum class Permission : StorageType
-	{
-		NONE = 0,
-		STD_OUT_AND_STD_ERR = 1 << 0,
-		STD_IN = 1 << 1,
-		LOAD = 1 << 2,
-		STORE = 1 << 3,
-		ENVIRONMENT = 1 << 4,
-		ALTER_PERFORMANCE = 1 << 5,
-		SYSTEM = 1 << 6,
-		ALL = STD_OUT_AND_STD_ERR | STD_IN | LOAD | STORE | ENVIRONMENT | ALTER_PERFORMANCE | SYSTEM
-	};
-
-	EntityPermissions() = default;
-
-	explicit inline EntityPermissions(Permission initial_permissions)
-		: allPermissions(static_cast<StorageType>(initial_permissions))
-	{}
-
-	inline bool HasPermission(Permission permission) const
-	{
-		return (allPermissions & static_cast<StorageType>(permission)) != 0;
-	}
-
-	inline void SetPermission(Permission permission, bool enable = true)
-	{
-		if(enable)
-			allPermissions |= static_cast<StorageType>(permission);
-		else
-			allPermissions &= ~static_cast<StorageType>(permission);
-	}
-
-	static inline EntityPermissions AllPermissions()
-	{
-		return EntityPermissions(Permission::ALL);
-	}
-
-	//builds a new assoc from enm and returns it populated with
-	//the permissions
-	inline EvaluableNode *GetPermissionsAsEvaluableNode(EvaluableNodeManager *enm)
-	{
-		EvaluableNode *permissions_en = enm->AllocNode(ENT_ASSOC);
-		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err),
-			enm->AllocNode(HasPermission(Permission::STD_OUT_AND_STD_ERR)));
-		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_in),
-			enm->AllocNode(HasPermission(Permission::STD_IN)));
-		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_load),
-			enm->AllocNode(HasPermission(Permission::LOAD)));
-		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_store),
-			enm->AllocNode(HasPermission(Permission::STORE)));
-		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_environment),
-			enm->AllocNode(HasPermission(Permission::ENVIRONMENT)));
-		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_alter_performance),
-			enm->AllocNode(HasPermission(Permission::ALTER_PERFORMANCE)));
-		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_system),
-			enm->AllocNode(HasPermission(Permission::SYSTEM)));
-
-		return permissions_en;
-	}
-
-	//returns a pair of [permissions_to_set, permission_values] corresponding to en
-	//if en is an assoc, it will use key-value pairs to obtain the permissions and their values
-	//otherwise it will set all permissions based on whether en is true
-	static inline std::pair<EntityPermissions, EntityPermissions> EvaluableNodeToPermissions(EvaluableNode *en)
-	{
-		EntityPermissions permissions_to_set;
-		EntityPermissions permission_values;
-
-		if(EvaluableNode::IsAssociativeArray(en))
-		{
-			for(auto [permission_type, allow_en] : en->GetMappedChildNodesReference())
-			{
-				bool allow = EvaluableNode::ToBool(allow_en);
-
-				if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err))
-				{
-					permissions_to_set.SetPermission(Permission::STD_OUT_AND_STD_ERR, true);
-					permission_values.SetPermission(Permission::STD_OUT_AND_STD_ERR, allow);
-				}
-				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_in))
-				{
-					permissions_to_set.SetPermission(Permission::STD_IN, true);
-					permission_values.SetPermission(Permission::STD_IN, allow);
-				}
-				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_load))
-				{
-					permissions_to_set.SetPermission(Permission::LOAD, true);
-					permission_values.SetPermission(Permission::LOAD, allow);
-				}
-				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_store))
-				{
-					permissions_to_set.SetPermission(Permission::STORE, true);
-					permission_values.SetPermission(Permission::STORE, allow);
-				}
-				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_environment))
-				{
-					permissions_to_set.SetPermission(Permission::ENVIRONMENT, true);
-					permission_values.SetPermission(Permission::ENVIRONMENT, allow);
-				}
-				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_alter_performance))
-				{
-					permissions_to_set.SetPermission(Permission::ALTER_PERFORMANCE, true);
-					permission_values.SetPermission(Permission::ALTER_PERFORMANCE, allow);
-				}
-				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_system))
-				{
-					permissions_to_set.SetPermission(Permission::SYSTEM, true);
-					permission_values.SetPermission(Permission::SYSTEM, allow);
-				}
-			}
-		}
-		else if(EvaluableNode::ToBool(en))
-		{
-			permissions_to_set = AllPermissions();
-			permission_values = AllPermissions();
-		}
-
-		return std::make_pair(permissions_to_set, permission_values);
-	}
-
-	//method to get the type into a basic permissions type easily
-	Permission permissions() const noexcept
-	{
-		return static_cast<Permission>(allPermissions);
-	}
-
-	//permissions as a bit field for use with bitwise operations
-	StorageType allPermissions = static_cast<StorageType>(Permission::NONE);
-};
-
 #ifdef MULTITHREAD_SUPPORT
 
 //encapsulates EntityReference with a lock type
@@ -849,7 +715,7 @@ public:
 	// if deep_set_permissions is true, it will recursively set all contained entities with appropriate seeds
 	// write_listeners is optional, and if specified, will log the event
 	// all_contained_entities, if specified, may be used for updating entities
-	void SetPermissions(EntityPermissions permissions_to_set, EntityPermissions permission_values,
+	void SetPermissions(ExecutionPermissions permissions_to_set, ExecutionPermissions permission_values,
 		bool deep_set_permissions, std::vector<EntityWriteListener *> *write_listeners = nullptr,
 		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities = nullptr);
 

@@ -109,13 +109,13 @@ Options:
 }
 
 //parses the permissions string and returns the permissions parsed
-static EntityPermissions ParsePermissionsCommandLineParam(std::string_view permissions_str)
+static ExecutionPermissions ParsePermissionsCommandLineParam(std::string_view permissions_str)
 {
 	if(permissions_str.empty())
-		return EntityPermissions::AllPermissions();
+		return ExecutionPermissions::AllPermissions();
 
 	//start with no permissions, but if removing permissions, then start with all
-	EntityPermissions permissions;
+	ExecutionPermissions permissions;
 	bool add_permissions = true;
 	size_t permission_letters_start = 0;
 	if(permissions_str[0] == '+')
@@ -124,7 +124,7 @@ static EntityPermissions ParsePermissionsCommandLineParam(std::string_view permi
 	}
 	else if(permissions_str[0] == '-')
 	{
-		permissions = EntityPermissions::AllPermissions();
+		permissions = ExecutionPermissions::AllPermissions();
 		add_permissions = false;
 		permission_letters_start++;
 	}
@@ -134,13 +134,13 @@ static EntityPermissions ParsePermissionsCommandLineParam(std::string_view permi
 	{
 		switch(permissions_str[i])
 		{
-		case 'o': permissions.SetPermission(EntityPermissions::Permission::STD_OUT_AND_STD_ERR, add_permissions);	break;
-		case 'i': permissions.SetPermission(EntityPermissions::Permission::STD_IN, add_permissions);	break;
-		case 'l': permissions.SetPermission(EntityPermissions::Permission::LOAD, add_permissions);	break;
-		case 's': permissions.SetPermission(EntityPermissions::Permission::STORE, add_permissions);	break;
-		case 'e': permissions.SetPermission(EntityPermissions::Permission::ENVIRONMENT, add_permissions);	break;
-		case 'a': permissions.SetPermission(EntityPermissions::Permission::ALTER_PERFORMANCE, add_permissions);	break;
-		case 'x': permissions.SetPermission(EntityPermissions::Permission::SYSTEM, add_permissions);	break;
+		case 'o': permissions.SetPermission(ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR, add_permissions);	break;
+		case 'i': permissions.SetPermission(ExecutionPermissions::Permission::STD_IN, add_permissions);	break;
+		case 'l': permissions.SetPermission(ExecutionPermissions::Permission::LOAD, add_permissions);	break;
+		case 's': permissions.SetPermission(ExecutionPermissions::Permission::STORE, add_permissions);	break;
+		case 'e': permissions.SetPermission(ExecutionPermissions::Permission::ENVIRONMENT, add_permissions);	break;
+		case 'a': permissions.SetPermission(ExecutionPermissions::Permission::ALTER_PERFORMANCE, add_permissions);	break;
+		case 'x': permissions.SetPermission(ExecutionPermissions::Permission::SYSTEM, add_permissions);	break;
 		default:  std::cerr << "Invalid permission character: '" << permissions_str[i] << "'" << std::endl;
 		}
 	}
@@ -174,7 +174,7 @@ PLATFORM_MAIN_CONSOLE
 	size_t num_threads = 0;
 #endif
 	bool debug_internal_memory = Platform_IsDebuggerPresent();
-	EntityPermissions entity_permissions = EntityPermissions::AllPermissions();
+	ExecutionPermissions entity_permissions = ExecutionPermissions::AllPermissions();
 
 	std::string rand_seed;
 	if(Platform_IsDebuggerPresent())
@@ -330,7 +330,7 @@ PLATFORM_MAIN_CONSOLE
 		if(entity == nullptr)
 			return 1;
 
-		entity->SetPermissions(EntityPermissions::AllPermissions(), entity_permissions, true);
+		entity->SetPermissions(ExecutionPermissions::AllPermissions(), entity_permissions, true);
 
 		PrintListener *print_listener = nullptr;
 		std::vector<EntityWriteListener *> write_listeners;

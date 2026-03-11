@@ -323,7 +323,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(Eva
 
 	EvaluableNodeReference permissions_en = InterpretNodeForImmediateUse(ocn[1]);
 
-	auto [permissions_to_set, permission_values] = EntityPermissions::EvaluableNodeToPermissions(permissions_en);
+	auto [permissions_to_set, permission_values] = ExecutionPermissions::EvaluableNodeToPermissions(permissions_en);
 
 	//any permissions set by this entity need to be filtered by the current entity's permissions
 	auto current_entity_permissions = asset_manager.GetEntityPermissions(curEntity);
@@ -630,7 +630,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, Ev
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(EntityPermissions::Permission::LOAD))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::LOAD))
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -670,7 +670,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(EntityPermissions::Permission::LOAD))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::LOAD))
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -752,7 +752,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, E
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(EntityPermissions::Permission::STORE))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::STORE))
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -796,7 +796,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(EntityPermissions::Permission::STORE))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::STORE))
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);

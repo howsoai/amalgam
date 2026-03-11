@@ -102,7 +102,25 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		OpcodeDetails d;
 		d.parameters = R"(string command)";
 		d.output = R"(any)";
-		d.description = R"(Executes system command specified by command.  See the system commands table for further information.)";
+		d.description = R"(Executes system command specified by command.  The available system commands are as follows:
+exit:                Exits the application.
+readline:            Reads a line of input from the terminal and returns the string.
+printline:           Prints a line of string output of the 2nd argument directly to the terminal and returns null.
+cwd:                 If no additional parameter is specified, returns the current working directory. If an additional parameter is specified, it attempts to change the current working directory to that parameter, returning true on success and false on failure.
+system:              Runs the system command (i.e., a string that would normally be run on the command line) specified by the 2nd argument. Returns null if the command was not found. If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.
+os:                  Returns a string describing the operating system.
+sleep:               Sleeps for the amount of seconds specified by the 2nd argument.
+version:             Returns a string representing the current Amalgam version.
+est_mem_reserved:    Returns data involving the estimated memory reserved.
+est_mem_used:        Returns data involving the estimated memory used (excluding memory management overhead, caching, etc.).
+mem_diagnostics:     Returns data involving memory diagnostics.
+rand:                Returns the number of bytes specified by the additional parameter of secure random data intended for cryptographic use.
+sign_key_pair:       Returns a list of two values, first a public key and second a secret key, for use with cryptographic signatures using the Ed25519 algorithm, generated via securely generated random numbers.
+encrypt_key_pair:    Returns a list of two values, first a public key and second a secret key, for use with cryptographic encryption using the XSalsa20 and Curve25519 algorithms, generated via securely generated random numbers.
+debugging_info:      Returns a list of two values. The first is true if a debugger is present, false if it is not. The second is true if debugging sources is enabled, which means that source code location information is prepended to opcodes comments for any opcodes loaded from a file.
+get_max_num_threads: Returns the current maximum number of threads.
+set_max_num_threads: Attempts to set the current maximum number of threads, where 0 means to use the number of processor cores reported by the operating system. Returns the maximum number of threads after it has been set.
+built_in_data:       Returns built-in data compiled along with the version information.)";
 		d.exampleOutputPairs = make_examples({
 			{R"((system "exit"))", R"()"}
 			});

@@ -277,8 +277,7 @@ The Amalgam interpreter was designed to be used a standalone interpreter and to 
 
 Initial development on Amalgam began in 2011. It was first offered as a commercial product in 2014 at Hazardous Software Inc. and was open sourced in September 2023 by Howso Incorporated (formerly known as Diveplane Corporation, a company spun out of Hazardous Software Inc.).
 
-When referencing the language: 'Amalgam', 'amalgam', 'amalgam-lang', and 'amalgam language' are used interchangeably with Amalgam being preferred. When referencing the interpreter: 'Amalgam interpreter', 'interpreter', 'Amalgam app', and 'Amalgam lib' are used interchangeably.
-)");
+When referencing the language: 'Amalgam', 'amalgam', 'amalgam-lang', and 'amalgam language' are used interchangeably with Amalgam being preferred. When referencing the interpreter: 'Amalgam interpreter', 'interpreter', 'Amalgam app', and 'Amalgam lib' are used interchangeably.)");
 
 static std::string_view _help_syntax(R"(Using <>'s to enclose optional elments, the general syntax is:
 #annotation line 1...
@@ -314,7 +313,23 @@ Strings begin and end with double quotes.  Certain characters can be encoded by 
 Boolean values can be represented as immediate values ".true" and ".false" respectively.  The type of a bool is the string "bool".
 
 All regular expressions are EMCA-standard regular expressions.  See https://en.cppreference.com/w/cpp/regex/ecmascript or https://262.ecma-international.org/5.1/#sec-15.10 for further details on the regular expression syntax allowed.
-)");
+
+The argument vector passed in on the command line is passed in as the variable argv, with any arguments consumed by the interpreter removed. This includes the standard 0th argument which is the Amalgam script being run. The interpreter path and name are passed in as the variable interpreter.
+
+When attempting to load an asset, whether a .amlg file or another type, the interpreter will look for a file of the same name but with the extension .madm. The .mdam extension stands for metadata of Amalgam. This file consists of simple code of an associative array where the data within is immediate values representing the metadata.
+
+File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string. Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings. 
+For file I/O, the following parameters apply to load and store opcodes and API calls:
+include_rand_seeds:              If true, attempts to include random seeds when storing and loading.
+escape_resource_name:            If true, will escape any characters in the resource or file name that are not universally supported across platforms.
+escape_contained_resource_names: If true, then for any contained entities and their resource or file paths that extend the base file path, it will escape any characters in the names that are not universally supported across platforms. This only applies to file formats where the entities are not flattened into one file.
+transactional:                   If true, attempts to load and store files in a transactional manner, such that any interruption will not corrupt the file. Not applicable to all file types.
+pretty_print:                    If true, then any code stored will be pretty printed.
+sort_keys:                       If true, then any associative arrays will be sorted by keys.
+flatten:                         If true, then will attempt to flatten all contained entities into one executable object and thus one file.
+parallel_create:                 If true, will attempt use concurrency to store and load entities in parallel.
+execute_on_load:                 If true, will execute the code upon load, which is required when entities are stored using flatten in order to create all of the entity structures.
+require_version_compatibility:   If true, will fail on a load if the version of Amalgam is not compatible with the file version.)");
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {

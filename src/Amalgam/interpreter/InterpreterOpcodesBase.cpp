@@ -369,6 +369,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 
 		EvaluableNode *example_output_pairs = evaluableNodeManager->AllocNode(ENT_LIST);
 		auto &examples_output_pairs_ocn = example_output_pairs->GetOrderedChildNodesReference();
+		examples_output_pairs_ocn.reserve(od.exampleOutputPairs.size());
+		for(auto &[example_str, output_str] : od.exampleOutputPairs)
+		{
+			EvaluableNode *example_with_output = evaluableNodeManager->AllocNode(ENT_ASSOC);
+			example_with_output->SetMappedChildNode("example", evaluableNodeManager->AllocNode(example_str));
+			example_with_output->SetMappedChildNode("output", evaluableNodeManager->AllocNode(output_str));
+			example_output_pairs->AppendOrderedChildNode(example_with_output);
+		}
 
 		opcode_attribs->SetMappedChildNode("examples", example_output_pairs);
 

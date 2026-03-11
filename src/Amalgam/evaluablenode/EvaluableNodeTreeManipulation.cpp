@@ -1576,11 +1576,11 @@ EvaluableNode EvaluableNodeTreeManipulation::nullEvaluableNode(ENT_NULL);
 CompactHashMap<EvaluableNodeBuiltInStringId, double> EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities
 {
 	{ ENBISI_change_type,		0.29 },
-	{ ENBISI_delete,			0.12 },
+	{ ENBISI_delete,			0.10 },
 	{ ENBISI_insert,			0.25 },
 	{ ENBISI_swap_elements,		0.24 },
-	{ ENBISI_deep_copy_elements,0.06 },
-	{ ENBISI_delete_elements,	0.04 }
+	{ ENBISI_deep_copy_elements,0.07 },
+	{ ENBISI_delete_elements,	0.05 }
 };
 
 EvaluableNodeTreeManipulation::MutationParameters::WeightedRandMutationType EvaluableNodeTreeManipulation::mutationOperationTypeRandomStream(mutationOperationTypeProbabilities, true);

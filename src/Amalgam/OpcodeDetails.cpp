@@ -159,6 +159,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(any)";
 		d.description = R"(Runs each code block sequentially. Evaluates to the result of the last code block run, unless it encounters a conclude or return in an earlier step, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return. Note that the last step will not consume a concluded value.)";
 		d.exampleOutputPairs = make_examples({ {R"((seq (print 1) (print 2) (print 3)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
@@ -218,6 +219,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(any)";
 		d.description = R"(Each time the condition evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the condition was initially false or if it encounters a conclude or return, it will halt processing and evaluate to the value returned by conclude or propagate the return.  For iteration of the loop, pushes a new target scope onto the target stack, with current_index being the iteration count, and previous_result being the last evaluated codeN of the previous loop.)";
 		d.exampleOutputPairs = make_examples({ {R"((let (assoc zz 1))", R"()"}, {R"((while (< zz 10))", R"()"}, {R"((print zz))", R"()"}, {R"((assign (assoc zz (+ zz 1))))", R"()"}, {R"())", R"()"}, {R"())", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
@@ -228,6 +230,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(any)";
 		d.description = R"(Pushes the key-value pairs of data onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude or return, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value.)";
 		d.exampleOutputPairs = make_examples({ {R"((let (assoc x 4 y 6) (print (+ x y))))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
@@ -238,6 +241,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(any)";
 		d.description = R"(For each key-value pair of data, if not already in the current context in the scope stack, it will define them.  Then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude or return, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value.)";
 		d.exampleOutputPairs = make_examples({ {R"((let (assoc x 4 y 6))", R"()"}, {R"((declare (assoc x 5 z 1))", R"()"}, {R"((print (+ x y z)) ))", R"()"}, {R"())", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		return d;
@@ -248,6 +252,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(null)";
 		d.description = R"(If the assoc data is specified, then for each key-value pair of data, assigns the value to the variable represented by the key found by tracing upward on the stack. If none found, it will create a variable on the top of the stack. If the string variable_name is specified, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to assign new_value to that part of the variable's structure.  If there are only two parameters, then it will assign the second parameter to the variable represented by the first.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (assign (assoc x 10))))", R"()"}, {R"((print x))", R"()"}, {R"((print (assign "x" 10))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		return d;
@@ -258,6 +263,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(null)";
 		d.description = R"(If the assoc data is specified, then for each key-value pair of data, assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the sum in the variable.  It searches for the variable name tracing up the stack to find the variable. If none found, it will create a variable on the top of the stack. Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. If the string variable_name is specified, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to accum accum_value to that part of the variable's structure.  If there are only two parameters, then it will accum the second parameter to the variable represented by the first.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (assign (assoc x 10))))", R"()"}, {R"((print x))", R"()"}, {R"((print (accum (assoc x 1))))", R"()"}, {R"((print x))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		return d;
@@ -286,6 +292,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(any)";
 		d.description = R"(Performs a deep copy on data (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values as a walk path of indices. new_value1 to new_valueN represent a value that will be used to replace  whatever is in the location the preceding location parameter specifies. If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc); however, it will not change the type of immediate values to an assoc or list. Note that the target operation will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (set (list 1 2 3 4) 2 7)))", R"()"}, {R"((print (set)", R"()"}, {R"((list (assoc "a" 1)))", R"()"}, {R"((list 2) 1)", R"()"}, {R"((list 1) (get (target) 0))))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -295,6 +302,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(any)";
 		d.description = R"(Performs a deep copy on data (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. function1 to functionN represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function does not need to be a function and can just be a constant (which it will be evaluated as).  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the target operation will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (replace (list (assoc "a" 13)) ))\n(print (replace\n    (list (assoc "a" 1))\n       (list 2) 1\n       (list 0) (list 4 5 6)))\n\n(print (replace\n    (list (assoc "a" 1))\n       (list 0) (lambda (set (current_value) "b" 2))\n )))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
@@ -409,6 +417,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.allowsConcurrency = true;
 		d.description = R"(Sums all numbers.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (+ 1 2 3 4)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -419,6 +428,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to x1 - x2 - ... - xN. If only one parameter is passed, then it is treated as negative)";
 		d.exampleOutputPairs = make_examples({ {R"((print (- 1 2 3 4)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -429,6 +439,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to the product of all numbers.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (* 1 2 3 4)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -439,6 +450,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to x1 / x2 / ... / xN.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (/ 1.0 2 3 4)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -449,6 +461,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates the modulus of x1 % x2 % ... % xN.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (mod 1 2 3 4)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -684,6 +697,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.allowsConcurrency = true;
 		d.description = R"(maximum of all of the numbers)";
 		d.exampleOutputPairs = make_examples({ {R"((print (max 0.5 1 7 9 -5)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -694,6 +708,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.allowsConcurrency = true;
 		d.description = R"(minimum of all of the numbers)";
 		d.exampleOutputPairs = make_examples({ {R"((print (min 0.5 1 7 9 -5)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -704,6 +719,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.allowsConcurrency = true;
 		d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the maximum value.  If given a single argument that is an assoc returns the a list of keys associated with the maximum values.  If given a single argument that is a list, returns a list of list indices with the maximum value.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (index_max 0.5 1 7 9 -5)))", R"()"}, {R"((print (index_max (list 0.5 1 7 9 -5) )))", R"()"}, {R"((print (index_max (assoc 1 0.5 2 1 3 7))))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
@@ -714,6 +730,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.allowsConcurrency = true;
 		d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the minimum value.  If given a single argument that is an assoc returns the a list of keys associated with the minimum values.  If given a single argument that is a list, returns a list of list indices with the minimum value.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (index_min 0.5 1 7 9 -5)))", R"()"}, {R"((print (index_min (list 0.5 1 7 9 -5) )))", R"()"}, {R"((print (index_min (assoc 1 0.5 2 1 3 7))))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
@@ -824,6 +841,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(list|assoc)";
 		d.description = R"(Evaluates to a new list or assoc which merges all lists (collection1 through collectionN) based on parameter order. If any assoc is passed in, then returns an assoc (lists will be automatically converted to an assoc with the indices as keys and the list elements as values). If a non-list and non-assoc is specified, then it just adds that one element to the list)";
 		d.exampleOutputPairs = make_examples({ {R"((print (append (list 1 2 3) (list 4 5 6) (list 7 8 9))))", R"()"}, {R"((print (append (list 1 2 3) (assoc "a" 4 "b" 5 "c" 6) (list 7 8 9) (assoc d 10 e 11))))", R"()"}, {R"((print (append (list 4 9.2 "this") "end")))", R"()"}, {R"((print (append (assoc 0 4 1 9.2 2 "this") "end")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
@@ -875,6 +893,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(For each element in the collection, pushes a new target scope onto the stack, so that current_value accesses the element in the list and current_index accesses the list or assoc index, with target representing the original list or assoc, and evaluates the function.  If function evaluates to true, then the element is put in a new list or assoc (matching the input type) that is returned.  If function is omitted, then it will remove any elements in the collection that are null.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (filter (lambda (> (current_value) 2)) (list 1 2 3 4))))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
@@ -923,6 +942,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(list)";
 		d.description = "Returns a new list containing the list with its values sorted in increasing order, regardless of whether l is an assoc or list.  Numerical values come before strings, and code will be evaluated as the representative strings.  If function is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with (current_value) and (current_value 1) accessing a pair of elements from the list, and evaluates function.  The function should return a number, positive if \"(current_value)\" is greater, negative if \"(current_value 1)\" is greater, 0 if equal.  If k is specified in addition to function and not null, then it will only return the k smallest values sorted in order, or, if k is negative, it will ignore the negative sign and return the highest k values.";
 		d.exampleOutputPairs = make_examples({ {R"((print (sort (list 4 9 3 5 1))))", R"()"}, {R"((print (sort (list "n" "b" "hello" 4 1 3.2 (list 1 2 3)))))", R"()"}, {R"((print (sort (list 1 "1x" "10" 20 "z2" "z10" "z100"))))", R"()"}, {R"((print (sort (lambda (- (current_value) (current_value 1))) (list 4 9 3 5 1))))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
@@ -988,6 +1008,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to the assoc, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (current_index), and (current_value) access the assoc, the current index, and the current value.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (assoc "a" 1 "b" 2 "c" 3 4 "d")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
@@ -999,6 +1020,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(Evaluates to a new assoc where the indices are the keys and the values are the values, with corresponding positions in the list matched. If the values is omitted, then it will use nulls for each of the values.  If values is not a list, then all of the values in the assoc returned are set to the same value.  When one parameter is specified, it is the list of indices.  When two parameters are specified, it is the indices and values.  When three values are specified, it is the function, indices and values.  Values defaults to (null) and function defaults to (lambda (current_value)).  When there is a collision of indices, the function is called, it pushes a pair of new target scope onto the stack, so that current_value accesses a list of elements from the list, current_index accesses the list or assoc index if it is not already reduced, with target representing the original list or assoc, evaluates function if one exists, and (current_value) is the new value attempted to be inserted over (current_value 1).)";
 		d.exampleOutputPairs = make_examples({ {R"((print (zip (list "a" "b" "c" "d") (list 1 2 3 4))))", R"()"} });
 		d.newTargetScope = true;
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
@@ -1008,6 +1030,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(list)";
 		d.description = R"(Evaluates to a new list, using the indices list to look up each value from the values list or assoc, in the same order as each index is specified in indices.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (unzip (assoc "a" 1 "b" 2 "c" 3) (list "a" "b"))))", R"()"}, {R"((print (unzip (list 1 2 3) (list 0 -1 1))))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
@@ -1018,6 +1041,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(If all condition expressions are true, evaluates to conditionN. Otherwise evaluates to false.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (and 1 4.8 "true")))", R"()"}, {R"((print (and 1 0.0 "true")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
@@ -1028,6 +1052,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(If all condition expressions are false, evaluates to false. Otherwise evaluates to the first condition that is true.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (or 1 4.8 "true")))", R"()"}, {R"((print (or 1 0.0 "true")))", R"()"}, {R"((print (or 0 0.0 "")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
@@ -1038,6 +1063,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(If an even number of condition expressions are true, evaluates to false. Otherwise evaluates to true.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (xor 1 4.8 "true")))", R"()"}, {R"((print (xor 1 0.0 "true")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1057,6 +1083,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are equal (will recurse into data structures), false otherwise. Values of null are considered equal.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (= 4 4 5)))", R"()"}, {R"((print (= 4 4 4)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1067,6 +1094,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if no two values are equal (will recurse into data structures), false otherwise.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (!= 4 4)))", R"()"}, {R"((print (!= 4 5)))", R"()"}, {R"((print (!= 4 4 5)))", R"()"}, {R"((print (!= 4 4 4)))", R"()"}, {R"((print (!= 4 4 "hello" 4)))", R"()"}, {R"((print (!= 4 4 4 1 3.0 "hello")))", R"()"}, {R"((print (!= 1 2 3 4 5 6 "hello")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1077,6 +1105,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are in strict increasing order, false otherwise.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (< 4 5)))", R"()"}, {R"((print (< 4 4)))", R"()"}, {R"((print (< 4 5 6)))", R"()"}, {R"((print (< 4 5 6 5)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1087,6 +1116,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are in nondecreasing order, false otherwise.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (<= 4 5)))", R"()"}, {R"((print (<= 4 4)))", R"()"}, {R"((print (<= 4 5 6)))", R"()"}, {R"((print (<= 4 5 6 5)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1097,6 +1127,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are in strict decreasing order, false otherwise.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (> 6 5)))", R"()"}, {R"((print (> 4 4)))", R"()"}, {R"((print (> 6 5 4)))", R"()"}, {R"((print (> 6 5 4 5)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1107,6 +1138,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are in nonincreasing order, false otherwise.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (>= 6 5)))", R"()"}, {R"((print (>= 4 4)))", R"()"}, {R"((print (>= 6 5 4)))", R"()"}, {R"((print (>= 6 5 4 5)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1117,6 +1149,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are of the same data type, false otherwise.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (~ 1 4 5)))", R"()"}, {R"((print (~ 1 4 "a")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1126,6 +1159,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(bool)";
 		d.description = R"(Evaluates to true if no two values are of the same data types, false otherwise.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (!~ "true" "false" (list 3 2))))", R"()"}, {R"((print (!~ "true" 1 (list 3 2))))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1135,6 +1169,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(immediate null)";
 		d.description = R"(Evaluates to the immediate null value.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (null)))", R"()"}, {R"((print (lambda (null (+ 3 5) 7)) ))", R"()"}, {R"((print (lambda (null))))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.potentiallyIdempotent = true;
 		return d;
@@ -1146,6 +1181,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.  If []'s are used instead of parenthesis, the keyword list may be omitted.  [] are considered identical to (list).)";
 		d.exampleOutputPairs = make_examples({ {R"((print (list "a" 1 "b")))", R"()"}, {R"((print [1 2 3]))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.potentiallyIdempotent = true;
@@ -1158,6 +1194,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.  It operates like a list, except any operations that would normally consider a list's order, such as union, intersect, and mix, will consider the values unordered.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (list "a" 1 "b")))", R"()"}, {R"((print [1 2 3]))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.potentiallyIdempotent = true;
@@ -1170,6 +1207,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to the associative list, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (current_index), and (current_value) access the assoc, the current index, and the current value.  If any of the bstrings do not have reserved characters or spaces, then quotes are optional; if spaces or reserved characters are present, then quotes are required.  If {}'s are used instead of parenthesis, the keyword assoc may be omitted.  {} are considered identical to (assoc))";
 		d.exampleOutputPairs = make_examples({ {R"((print (assoc b 2 c 3)))", R"()"}, {R"((print (assoc a 1 "b\ttab" 2 c 3 4 "d")))", R"()"}, {R"((print {a 1 b 2}))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.potentiallyIdempotent = true;
@@ -1355,6 +1393,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(string)";
 		d.description = R"(Concatenates all strings and evaluates to the single string that is the result.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (concat "hello" " " "world")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -1400,6 +1439,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(null)";
 		d.description = R"(Prints each of the parameters in order in a manner interpretable as if they were code. Output is pretty-printed. Printing a node which evaluates to a literal string or number will not be printed (the value will be printed directly) and not have a newline appended.)";
 		d.exampleOutputPairs = make_examples({ {R"((print "hello"))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.permissions = ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
@@ -1605,6 +1645,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(bool)";
 		d.description = R"(Sets the code of the entity specified by id_path to node.  If no id_path specified, then uses the current entity, otherwise accesses a contained entity. On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (assign_entity_roots {})))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
@@ -1626,6 +1667,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(string)";
 		d.description = R"(Sets the random number seed and state for the random number generator of the specified entity, or the current entity if not specified, to the state specified by node.  If node is already a string in the proper format output by get_entity_rand_seed, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by the entity for new calls.  The parameter deep defaults to false, but if it is true, all contained entities are recursively set with random seeds based on the specified random seed and a hash of their relative id_path path to the entity being set.)";
 		d.exampleOutputPairs = make_examples({ {R"((create_entities "RandTest" (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(} ))", R"()"}, {R"((create_entities (list "RandTest" "DeepRand") (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(} ))", R"()"}, {R"((declare (assoc seed (get_entity_rand_seed "RandTest"))))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"}, {R"((set_entity_rand_seed "RandTest" 1234))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
@@ -1658,6 +1700,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(list of id_path)";
 		d.description = R"(Creates a new entity with code specified by node, returning the list of id_path paths for each of the entities created.  Uses the optional entity location specified by the id_path, ignored if null or invalid.  Evaluates to a list of all of the new entities ids, null in place of each id_path if it was unable to create the id_path.  If the entity does not have permission to create the entities, it will evaluate to null.  If the id_path is omitted, then it will create the new entity in the calling entity.  If id_path specifies an existing entity, then it will create the new entity within that existing entity.  If the last id_path in the string is not an existing entity, then it will attempt to create that entity (returning null if it cannot).  Can only be performed by an entity that contains to the destination specified by id_path.  If the node is of any other type than assoc, it will create an assoc as the top node and place the node under the null key.  Unlike the rest of the entity creation commands, create_entities specifies the optional id_path first to make it easy to read entity definitions.  If more than 2 parameters are specified, create_entities will iterate through all of the pairs of parameters, treating them like the first two as it creates new entities.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (create_entities "MyLibrary" (lambda { three 3 four 4}) ) ))", R"()"}, {R"((create_entities "EntityWithChildren" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "EntityWithChildren" "Child1") (lambda (assoc "x" 3 "y" 4)) ))", R"()"}, {R"((create_entities (list "EntityWithChildren" "Child2") (lambda (assoc "p" 3 "q" 4)) ))", R"()"}, {R"((print (contained_entities "EntityWithChildren")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
@@ -1691,6 +1734,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(bool)";
 		d.description = R"(Destroys the entities specified by the ids entity_1, entity_2, etc. Can only be performed by containing entity.  Returns true if all entities were successfully destroyed, false if not due to not existing in the first place or due to code being currently run in it.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (create_entities "MyLibrary" (lambda { three 3 four 4} ) ) ))", R"()"}, {R"((print (contained_entities)))", R"()"}, {R"((destroy_entities "MyLibrary"))", R"()"}, {R"((print (contained_entities)))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
@@ -1755,6 +1799,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(list of string)";
 		d.description = R"(Returns a list of strings of ids of entities contained in the entity specified by id_path or current entity if containing_entity is omitted.  The parameters of condition1 through conditionN are query conditions, and they may be any of the query opcodes or may be a list of query opcodes (beginning with query_), where each condition will be executed in order.)";
 		d.exampleOutputPairs = make_examples({ {R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 }))", R"()"}, {R"())", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"()))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
@@ -1765,6 +1810,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(any)";
 		d.description = R"(Performs queries like contained_entities but returns a value or set of values appropriate for the last query in conditions.  The parameters of condition1 through conditionN are query conditions, and they may be any of the query opcodes or may be a list of query opcodes (beginning with query_), where each condition will be executed in order.  If the last query does not return anything, then it will just return the matching entities.)";
 		d.exampleOutputPairs = make_examples({ {R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 } ))", R"()"}, {R"())", R"()"}, {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"()))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
@@ -2150,6 +2196,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(bool)";
 		d.description = R"(Evaluates to true if the label represented by string exists for the entity specified by id_path for a contained entity.  If id_path is omitted, then it uses the current entity.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (contains_label "MyEntity" "some_label")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
@@ -2159,6 +2206,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(bool)";
 		d.description = R"(For each index-value pair of label_value_pairs, assigns the value to the labeled variable on the contained entity represented by the respective entity, itself if no id_path specified, while retaining the original labels. If the label is not found, it will create it.  When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Will perform an assignment for each of the entities referenced, returning .true if all assignments were successful, .false if not.)";
 		d.exampleOutputPairs = make_examples({ {R"((assign_to_entities (assoc asgn_test1 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test1")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
@@ -2170,6 +2218,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(bool)";
 		d.description = R"(For each index-value pair of assoc, retrieves the labeled variable from the respective entity, accumulates it by the corresponding value in label_value_pairs, then assigns the value to the labeled variable on the contained entity represented by the id_path, itself if no id_path specified, while retaining the original labels.  If none found, it will not cause an assignment.  When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. Will perform an accum for each of the entities referenced, returning .true if all assignments were successful, .false if not.)";
 		d.exampleOutputPairs = make_examples({ {R"((accum_to_entities (assoc asgn_test1 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test1")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
@@ -2181,6 +2230,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(bool)";
 		d.description = R"(Removes all labels from the list label_names_1 from entity_1, and so on for each respective entity and label list.  Returns true if removes were successful, false otherwise.)";
 		d.exampleOutputPairs = make_examples({ {R"((create_entities "DRFE" (lambda { a 12 } ) ))", R"()"}, {R"((print (remove_from_entities "DRFE" "a")))", R"()"}, {R"((print (retrieve_from_entity "DRFE" "a")))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
@@ -2192,6 +2242,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(any)";
 		d.description = R"(If string specified, returns the value of the contained entity id_path, itself if no id_path specified, at the label specified by the string. If list specified, returns the value of the contained entity id_path, itself if no id_path specified, returns a list of the values on the stack specified by each element of the list interpreted as a string label. If assoc specified, returns the value of the contained entity id_path, itself if no id_path specified, returns an assoc with the indices of the assoc passed in with the values being the appropriate values of the label represented by each index.)";
 		d.exampleOutputPairs = make_examples({ {R"((assign_to_entities (assoc asgn_test1 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test1")))", R"()"}, {R"((assign_to_entities (assoc asgn_test2 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test2")))", R"()"}, {R"((create_entities "RCT" (lambda {a 12 b 13}) ))", R"()"}, {R"((print (retrieve_from_entity "RCT" "a")))", R"()"}, {R"((print (retrieve_from_entity "RCT" (list "a" "b") )))", R"()"}, {R"((print (retrieve_from_entity "RCT" (zip (list "a" "b") null) )))", R"()"} });
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;

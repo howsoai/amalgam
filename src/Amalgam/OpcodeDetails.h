@@ -109,6 +109,7 @@ public:
 	std::string output;
 	std::string description;
 	std::vector<OpcodeExampleOutputPair> exampleOutputPairs;
+	OrderedChildNodeType orderedChildNodeType = OrderedChildNodeType::POSITION;
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 	bool potentiallyIdempotent = false;
@@ -123,126 +124,9 @@ public:
 extern const std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
 
 //returns the type of structure that the ordered child nodes have for a given t
-constexpr OpcodeDetails::OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t)
+__forceinline OpcodeDetails::OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t)
 {
-	switch(t)
-	{
-	case ENT_ADD:
-	case ENT_MULTIPLY:
-	case ENT_MAX:					case ENT_MIN:				case ENT_INDEX_MAX:	case ENT_INDEX_MIN:
-	case ENT_AND:					case ENT_OR:				case ENT_XOR:
-	case ENT_EQUAL:					case ENT_NEQUAL:
-	case ENT_NULL:
-	case ENT_UNORDERED_LIST:
-	case ENT_DESTROY_ENTITIES:
-		return OpcodeDetails::OrderedChildNodeType::UNORDERED;
-
-	case ENT_SYSTEM:				case ENT_HELP:
-	case ENT_GET_DEFAULTS:			case ENT_RECLAIM_RESOURCES:
-	case ENT_SEQUENCE:
-	case ENT_APPEND:				case ENT_FILTER:			case ENT_SORT:
-	case ENT_ZIP:					case ENT_UNZIP:
-	case ENT_LESS:					case ENT_LEQUAL:
-	case ENT_GREATER:				case ENT_GEQUAL:			case ENT_TYPE_EQUALS:		case ENT_TYPE_NEQUALS:
-	case ENT_LIST:
-	case ENT_CONCAT:
-	case ENT_PRINT:
-	case ENT_ASSIGN_ENTITY_ROOTS:
-	case ENT_SET_ENTITY_RAND_SEED:
-	case ENT_CREATE_ENTITIES:
-	case ENT_CONTAINED_ENTITIES:	case ENT_COMPUTE_ON_CONTAINED_ENTITIES:
-	case ENT_QUERY_SELECT:			case ENT_QUERY_SAMPLE:
-	case ENT_QUERY_IN_ENTITY_LIST:	case ENT_QUERY_NOT_IN_ENTITY_LIST:
-	case ENT_QUERY_EXISTS:			case ENT_QUERY_NOT_EXISTS:
-	case ENT_QUERY_EQUALS:			case ENT_QUERY_NOT_EQUALS:
-	case ENT_QUERY_BETWEEN:			case ENT_QUERY_NOT_BETWEEN:
-	case ENT_QUERY_AMONG:			case ENT_QUERY_NOT_AMONG:
-	case ENT_QUERY_MAX:				case ENT_QUERY_MIN:
-	case ENT_QUERY_SUM:				case ENT_QUERY_MODE:
-	case ENT_QUERY_QUANTILE:		case ENT_QUERY_GENERALIZED_MEAN:
-	case ENT_QUERY_MIN_DIFFERENCE:	case ENT_QUERY_MAX_DIFFERENCE:
-	case ENT_QUERY_VALUE_MASSES:
-	case ENT_QUERY_GREATER_OR_EQUAL_TO:				case ENT_QUERY_LESS_OR_EQUAL_TO:
-	case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:		case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
-	case ENT_QUERY_DISTANCE_CONTRIBUTIONS:			case ENT_QUERY_ENTITY_CONVICTIONS:
-	case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
-	case ENT_QUERY_ENTITY_KL_DIVERGENCES:			case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
-	case ENT_CONTAINS_LABEL:		case ENT_ASSIGN_TO_ENTITIES:			case ENT_REMOVE_FROM_ENTITIES:
-	case ENT_ACCUM_TO_ENTITIES:		case ENT_RETRIEVE_FROM_ENTITY:
-	case ENT_CALL_ENTITY:			case ENT_CALL_ENTITY_GET_CHANGES:		case ENT_CALL_ON_ENTITY:
-	case ENT_CALL_CONTAINER:
-		return OpcodeDetails::OrderedChildNodeType::ORDERED;
-
-	case ENT_WHILE:					case ENT_LET:				case ENT_DECLARE:			case ENT_SUBTRACT:
-	case ENT_DIVIDE:				case ENT_MODULUS:
-		return OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
-
-	case ENT_ASSOC:		case ENT_ASSOCIATE:
-		return OpcodeDetails::OrderedChildNodeType::PAIRED;
-
-	case ENT_ASSIGN:				case ENT_ACCUM:
-	case ENT_SET:					case ENT_REPLACE:
-		return OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
-
-	case ENT_PARSE:						case ENT_UNPARSE:			case ENT_IF:				case ENT_LAMBDA:
-	case ENT_CONCLUDE:					case ENT_RETURN:
-	case ENT_CALL:						case ENT_CALL_SANDBOXED:
-	case ENT_RETRIEVE:
-	case ENT_GET:
-	case ENT_TARGET:					case ENT_CURRENT_INDEX:		case ENT_CURRENT_VALUE:		case ENT_PREVIOUS_RESULT:
-	case ENT_OPCODE_STACK:				case ENT_STACK:				case ENT_ARGS:
-	case ENT_RAND:						case ENT_GET_RAND_SEED:		case ENT_SET_RAND_SEED:
-	case ENT_SYSTEM_TIME:
-	case ENT_GET_DIGITS:				case ENT_SET_DIGITS:
-	case ENT_FLOOR:						case ENT_CEILING:			case ENT_ROUND:
-	case ENT_SIN:						case ENT_ASIN:				case ENT_COS:				case ENT_ACOS:
-	case ENT_EXPONENT:					case ENT_LOG:				case ENT_TAN:
-	case ENT_ATAN:
-	case ENT_SINH:						case ENT_ASINH:				case ENT_COSH:				case ENT_ACOSH:
-	case ENT_TANH:						case ENT_ATANH:
-	case ENT_ERF:						case ENT_TGAMMA:			case ENT_LGAMMA:
-	case ENT_SQRT:						case ENT_POW:				case ENT_ABS:
-	case ENT_DOT_PRODUCT:				case ENT_NORMALIZE:
-	case ENT_MODE:						case ENT_QUANTILE:			case ENT_GENERALIZED_MEAN:
-	case ENT_GENERALIZED_DISTANCE:		case ENT_ENTROPY:
-	case ENT_FIRST:						case ENT_TAIL:				case ENT_LAST:				case ENT_TRUNC:
-	case ENT_SIZE:						case ENT_RANGE:
-	case ENT_REWRITE:					case ENT_MAP:				case ENT_WEAVE:
-	case ENT_REDUCE:					case ENT_APPLY:				case ENT_REVERSE:
-	case ENT_INDICES:
-	case ENT_VALUES:					case ENT_CONTAINS_INDEX:	case ENT_CONTAINS_VALUE:
-	case ENT_REMOVE:					case ENT_KEEP:
-	case ENT_NOT:
-	case ENT_BOOL:						case ENT_NUMBER:			case ENT_STRING:
-	case ENT_SYMBOL:
-	case ENT_GET_TYPE:					case ENT_GET_TYPE_STRING:	case ENT_SET_TYPE:			case ENT_FORMAT:
-	case ENT_GET_ANNOTATIONS:			case ENT_SET_ANNOTATIONS:
-	case ENT_GET_COMMENTS:				case ENT_SET_COMMENTS:
-	case ENT_GET_CONCURRENCY:			case ENT_SET_CONCURRENCY:
-	case ENT_GET_VALUE:					case ENT_SET_VALUE:
-	case ENT_EXPLODE:					case ENT_SPLIT:				case ENT_SUBSTR:
-	case ENT_CRYPTO_SIGN:				case ENT_CRYPTO_SIGN_VERIFY:
-	case ENT_ENCRYPT:					case ENT_DECRYPT:
-	case ENT_TOTAL_SIZE:				case ENT_COMMONALITY:		case ENT_EDIT_DISTANCE:		case ENT_MUTATE:
-	case ENT_INTERSECT:					case ENT_UNION:				case ENT_DIFFERENCE:
-	case ENT_MIX:
-	case ENT_TOTAL_ENTITY_SIZE:			case ENT_FLATTEN_ENTITY:	case ENT_MUTATE_ENTITY:
-	case ENT_COMMONALITY_ENTITIES:
-	case ENT_INTERSECT_ENTITIES:		case ENT_UNION_ENTITIES:	case ENT_DIFFERENCE_ENTITIES:
-	case ENT_MIX_ENTITIES:
-	case ENT_GET_ENTITY_ANNOTATIONS:	case ENT_GET_ENTITY_COMMENTS:
-	case ENT_RETRIEVE_ENTITY_ROOT:
-	case ENT_GET_ENTITY_RAND_SEED:
-	case ENT_GET_ENTITY_PERMISSIONS:								case ENT_SET_ENTITY_PERMISSIONS:
-	case ENT_CLONE_ENTITIES:			case ENT_MOVE_ENTITIES:
-	case ENT_LOAD:						case ENT_LOAD_ENTITY:
-	case ENT_STORE_ENTITY:				case ENT_STORE:
-	case ENT_CONTAINS_ENTITY:
-		return OpcodeDetails::OrderedChildNodeType::POSITION;
-
-	default:
-		return OpcodeDetails::OrderedChildNodeType::POSITION;
-	}
+	return _opcode_details[t].orderedChildNodeType;
 }
 
 //returns true if the opcode modifies things outside of its return
@@ -373,7 +257,7 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 }
 
 //returns true if the opcode uses an associative array as parameters. If false, then a regular kind of list
-__forceinline constexpr bool DoesOpcodeUseAssocParameters(EvaluableNodeType t)
+__forceinline bool DoesOpcodeUseAssocParameters(EvaluableNodeType t)
 {
 	return GetOpcodeOrderedChildNodeType(t) == OpcodeDetails::OrderedChildNodeType::PAIRED;
 }

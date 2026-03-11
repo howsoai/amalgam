@@ -353,6 +353,25 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 		opcode_attribs->SetMappedChildNode("description", evaluableNodeManager->AllocNode(od.description));
 		opcode_attribs->SetMappedChildNode("parameters", evaluableNodeManager->AllocNode(od.parameters));
 		opcode_attribs->SetMappedChildNode("output", evaluableNodeManager->AllocNode(od.output));
+		opcode_attribs->SetMappedChildNode("allows_Concurrency", evaluableNodeManager->AllocNode(od.allowsConcurrency));
+		opcode_attribs->SetMappedChildNode("requires_entity", evaluableNodeManager->AllocNode(od.requiresEntity));
+		opcode_attribs->SetMappedChildNode("new_scope", evaluableNodeManager->AllocNode(od.newScope));
+		opcode_attribs->SetMappedChildNode("new_target_scope", evaluableNodeManager->AllocNode(od.newTargetScope));
+		std::string_view new_value;
+		switch(od.valueNewness)
+		{
+		case OpcodeDetails::OpcodeReturnNewnessType::NEW:			new_value = "new";			break;
+		case OpcodeDetails::OpcodeReturnNewnessType::PARTIAL:		new_value = "partial";		break;
+		case OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL:	new_value = "conditional";	break;
+		case OpcodeDetails::OpcodeReturnNewnessType::EXISTING:		new_value = "existing";		break;
+		}
+		opcode_attribs->SetMappedChildNode("value_newness", evaluableNodeManager->AllocNode(new_value));
+
+		EvaluableNode *example_output_pairs = evaluableNodeManager->AllocNode(ENT_LIST);
+		auto &examples_output_pairs_ocn = example_output_pairs->GetOrderedChildNodesReference();
+
+		opcode_attribs->SetMappedChildNode("examples", example_output_pairs);
+
 		//TODO 25157: finish this
 		return opcode_attribs;
 	}

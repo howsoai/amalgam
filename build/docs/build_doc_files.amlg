@@ -1,4 +1,4 @@
-﻿(seq
+(seq
 	(store "./intro.txt" (concat
 		(help "overview") (help "syntax"))
 	)

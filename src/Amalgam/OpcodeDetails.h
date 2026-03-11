@@ -76,6 +76,8 @@ public:
 class OpcodeDetails
 {
 public:
+
+	//combination of example and its expected output
 	struct OpcodeExampleOutputPair
 	{
 		OpcodeExampleOutputPair(std::string e, std::string o) :
@@ -86,7 +88,7 @@ public:
 		std::string output;
 	};
 
-	//different arrangements of ordered parameters
+	//arrangements of ordered parameters
 	enum class OrderedChildNodeType
 	{
 		UNORDERED,
@@ -97,12 +99,12 @@ public:
 		POSITION
 	};
 
+	//whether an opcode returns a newly allocated value
 	enum class OpcodeReturnNewnessType
 	{
 		NEW, PARTIAL, CONDITIONAL, EXISTING, NULL_VALUE
 	};
 
-	//TODO 25157: comment and organize this and cpp file better
 	std::string parameters;
 	std::string output;
 	std::string description;

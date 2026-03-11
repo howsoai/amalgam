@@ -113,7 +113,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(any)";
 		d.description = R"(Retrieves the default values of the named field, either "mutation_opcodes" or "mutation_types")";
 		d.exampleOutputPairs = make_examples({ {R"((get_defaults mutation_opcodes))", R"()"} });
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_RECLAIM_RESOURCES)] = []() {
@@ -123,7 +123,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(Frees resources of the specified types on entity, which is the current entity if null, and will include all contained entities if apply_to_all_contained_entities is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter clear_query_caches will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  If clear_query_caches is a boolean, then it will either clear all the caches or none.  If clear_query_caches is a list of strings, then it will only clear caches for the labels corresponding to the strings in the list.  The parameter collect_garbage will perform garbage collection on the entity, and if force_free_memory is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.)";
 		d.exampleOutputPairs = make_examples({ {R"((reclaim_resources (null) .true .false .true .false))", R"()"} });
 		d.permissions = ExecutionPermissions::Permission::ALTER_PERFORMANCE;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_PARSE)] = []() {
@@ -253,7 +253,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(If the assoc data is specified, then for each key-value pair of data, assigns the value to the variable represented by the key found by tracing upward on the stack. If none found, it will create a variable on the top of the stack. If the string variable_name is specified, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to assign new_value to that part of the variable's structure.  If there are only two parameters, then it will assign the second parameter to the variable represented by the first.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (assign (assoc x 10))))", R"()"}, {R"((print x))", R"()"}, {R"((print (assign "x" 10))", R"()"} });
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.hasSideEffects = true;
 		return d;
 	}();
@@ -264,7 +264,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(If the assoc data is specified, then for each key-value pair of data, assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the sum in the variable.  It searches for the variable name tracing up the stack to find the variable. If none found, it will create a variable on the top of the stack. Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. If the string variable_name is specified, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to accum accum_value to that part of the variable's structure.  If there are only two parameters, then it will accum the second parameter to the variable represented by the first.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (assign (assoc x 10))))", R"()"}, {R"((print x))", R"()"}, {R"((print (accum (assoc x 1))))", R"()"}, {R"((print x))", R"()"} });
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.hasSideEffects = true;
 		return d;
 	}();
@@ -350,7 +350,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(list of any)";
 		d.description = R"(Evaluates to the list of opcodes that make up the call stack or a single opcode within the call stack. If stack_distance is specified, then a copy of the node at that specified depth is returned, otherwise the list of all opcodes in opcode stack are returned. Negative values for stack_distance specify the depth from the top of the stack and positive values specify the depth from the bottom. If no_child_nodes is true, then only the root node(s) are returned, otherwise the returned node(s) are deep-copied.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (opcode_stack)))", R"()"} });
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_STACK)] = []() {
@@ -359,7 +359,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(list of assoc)";
 		d.description = R"(Evaluates to the current execution context, also known as the scope stack, containing all of the variables for each layer of the stack.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (stack)))", R"()"} });
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ARGS)] = []() {
@@ -368,7 +368,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(assoc)";
 		d.description = R"(Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments. If number is specified, then it evaluates to the context that many layers up the stack.)";
 		d.exampleOutputPairs = make_examples({ {R"((let (assoc "bbb" 3))", R"()"}, {R"((print (args)))", R"()"}, {R"())", R"()"} });
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_RAND)] = []() {
@@ -698,7 +698,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(maximum of all of the numbers)";
 		d.exampleOutputPairs = make_examples({ {R"((print (max 0.5 1 7 9 -5)))", R"()"} });
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MIN)] = []() {
@@ -709,7 +709,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(minimum of all of the numbers)";
 		d.exampleOutputPairs = make_examples({ {R"((print (min 0.5 1 7 9 -5)))", R"()"} });
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_INDEX_MAX)] = []() {
@@ -720,7 +720,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the maximum value.  If given a single argument that is an assoc returns the a list of keys associated with the maximum values.  If given a single argument that is a list, returns a list of list indices with the maximum value.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (index_max 0.5 1 7 9 -5)))", R"()"}, {R"((print (index_max (list 0.5 1 7 9 -5) )))", R"()"}, {R"((print (index_max (assoc 1 0.5 2 1 3 7))))", R"()"} });
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_INDEX_MIN)] = []() {
@@ -731,7 +731,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the minimum value.  If given a single argument that is an assoc returns the a list of keys associated with the minimum values.  If given a single argument that is a list, returns a list of list indices with the minimum value.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (index_min 0.5 1 7 9 -5)))", R"()"}, {R"((print (index_min (list 0.5 1 7 9 -5) )))", R"()"}, {R"((print (index_min (assoc 1 0.5 2 1 3 7))))", R"()"} });
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_DOT_PRODUCT)] = []() {
@@ -805,7 +805,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(any)";
 		d.description = R"(Evaluates to the first element.  If data is a list, it will be the first element.  If data is an assoc, it will evaluate to the first element by assoc storage, but order does not matter. If data is a string, it will be the first character. If data is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (first (list 4 9.2 "this"))))", R"()"}, {R"((print (first (assoc a 1 b 2))))", R"()"}, {R"((print (first 3)))", R"()"}, {R"((print (first 0)))", R"()"}, {R"((print (first "abc")))", R"()"}, {R"((print (first "")))", R"()"} });
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TAIL)] = []() {
@@ -814,7 +814,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(list)";
 		d.description = R"(Evaluates to everything but the first element.  If data is a list, it will be a list of all but the first element.  If data is an assoc, it will evaluate to the assoc without the first element by assoc storage order, but order does not matter. If data is a string, it will be all but the first character. If data is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If a retain_count is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first).)";
 		d.exampleOutputPairs = make_examples({ {R"((print (tail (list 4 9.2 "this"))))", R"()"}, {R"((print (tail (assoc a 1 b 2))))", R"()"}, {R"((print (tail 3)))", R"()"}, {R"((print (tail 0)))", R"()"}, {R"((print (tail "abc")))", R"()"}, {R"((print (tail "")))", R"()"}, {R"((print (tail (list 1 2 3 4 5 6) 2)))", R"()"} });
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LAST)] = []() {
@@ -823,7 +823,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(any)";
 		d.description = R"(Evaluates to the last element.  If it is a list, it will be the last element.  If assoc, it will evaluate to the first element by assoc storage, because order does not matter. If it is a string, it will be the last character. If it is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (last (list 4 9.2 "this"))))", R"()"}, {R"((print (last (assoc a 1 b 2))))", R"()"}, {R"((print (last 3)))", R"()"}, {R"((print (last 0)))", R"()"}, {R"((print (last "abc")))", R"()"}, {R"((print (last "")))", R"()"} });
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TRUNC)] = []() {
@@ -832,7 +832,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.output = R"(list)";
 		d.description = R"(Truncates, evaluates to everything but the last element. If data is a list, it will be a list of all but the last element.  If data is an assoc, it will evaluate to the assoc without the first element by assoc storage order, because order does not matter. If data is a string, it will be all but the last character. If data is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If truncate_count is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1 (all but the last).)";
 		d.exampleOutputPairs = make_examples({ {R"((print (trunc (list 4 9.2 "this"))))", R"()"}, {R"((print (trunc (assoc "a" 1 "b" 2))))", R"()"}, {R"((print (trunc 3)))", R"()"}, {R"((print (trunc 0)))", R"()"}, {R"((print (trunc "abc")))", R"()"}, {R"((print (trunc "")))", R"()"}, {R"((print (trunc (list 1 2 3 4 5 6) -2)))", R"()"} });
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_APPEND)] = []() {
@@ -872,7 +872,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(Rewrites target by applying the function in a bottom-up manner.  For each node in the target tree, pushes a new target scope onto the target stack, with current_value being the current node and current_index being to the index to the current node relative to the node passed into rewrite accessed via target, and evaluates function.  Returns the resulting tree, after have been rewritten by function.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (rewrite)", R"()"}, {R"((lambda (if (~ (current_value) 0) (+ (current_value) 1) (current_value)) ))", R"()"}, {R"((list (assoc "a" 13))  ) ))", R"()"}, {R"(;rewrite all integer additions into multiplies and then fold constants)", R"()"}, {R"((print (rewrite)", R"()"}, {R"((lambda)", R"()"}, {R"(;find any nodes with a + and where its list is filled to its size with integers)", R"()"}, {R"((if (and)", R"()"}, {R"((= (get_type (current_value)) "+"))", R"()"}, {R"((= (size (current_value)) (size (filter (lambda (~ (current_value) 0)) (current_value))) ))", R"()"}, {R"())", R"()"}, {R"((reduce (lambda (* (previous_result) (current_value)) ) (current_value)))", R"()"}, {R"((current_value)))", R"()"}, {R"())", R"()"}, {R"(;original code with additions to be rewritten)", R"()"}, {R"((lambda)", R"()"}, {R"((list (assoc "a" (+ 3 (+ 13 4 2)) ))  ))", R"()"}, {R"() ))", R"()"}, {R"((print (rewrite)", R"()"}, {R"((lambda)", R"()"}, {R"((if (and)", R"()"}, {R"((= (get_type (current_value)) "+"))", R"()"}, {R"((= (size (current_value)) (size (filter (lambda (~ (current_value) 0)) (current_value))) ))", R"()"}, {R"())", R"()"}, {R"((reduce (lambda (+ (previous_result) (current_value)) ) (current_value)))", R"()"}, {R"((current_value)))", R"()"}, {R"())", R"()"}, {R"((lambda)", R"()"}, {R"((+ (+ 13 4) (current_value 1)) ))", R"()"}, {R"() ))", R"()"} });
 		d.newTargetScope = true;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MAP)] = []() {
@@ -905,7 +905,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(Interleaves the values lists optionally by applying a function.  If only values1 is passed in, then it evaluates to values1. If values1 and values2 are passed in, or, if more values are passed in but function is null, it interleaves the two lists out to whichever list is longer, filling in the remainder with null, and if any value is an immediate, then it will repeat the immediate value.  If the function is specified and not nulll, it pushes a new target scope onto the stack, so that current_value accesses a list of elements to be woven together from the list, and current_index accesses the list or assoc index, with target representing the resulting list or assoc.  The function should evaluate to a list, and weave will evaluate to a concatenated list of all of the lists that the function evaluated to.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (weave (list 1 3 5) (list 2 4 6)) "\n"))", R"()"}, {"(print (weave (lambda (list (apply \"min\" (current_value) ) ) (list 1 3 4 5 5 6) (list 2 2 3 4 6 7) )\"\\n\")", R"()"}, {"(print (weave (lambda (if (<= (get (current_value) 0) 4) (list (apply \"min\" (current_value 1)) ) (current_value)) ) (list 1 3 4 5 5 6) (list 2 2 3 4 6 7) )\"\\n\")", R"()"}, {R"((print (weave (null) (list 2 4 6) (null) ) "\n"))", R"()"} });
 		d.newTargetScope = true;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_REDUCE)] = []() {
@@ -1170,7 +1170,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(Evaluates to the immediate null value.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (null)))", R"()"}, {R"((print (lambda (null (+ 3 5) 7)) ))", R"()"}, {R"((print (lambda (null))))", R"()"} });
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
@@ -1441,7 +1441,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((print "hello"))", R"()"} });
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.permissions = ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.hasSideEffects = true;
 		return d;
 	}();
@@ -1801,7 +1801,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 }))", R"()"}, {R"())", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"()))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"} });
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_COMPUTE_ON_CONTAINED_ENTITIES)] = []() {
@@ -1812,7 +1812,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 } ))", R"()"}, {R"())", R"()"}, {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"()))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"} });
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_SELECT)] = []() {

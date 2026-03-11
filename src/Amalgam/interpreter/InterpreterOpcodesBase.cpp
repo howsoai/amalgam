@@ -364,6 +364,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 		case OpcodeDetails::OpcodeReturnNewnessType::PARTIAL:		new_value = "partial";		break;
 		case OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL:	new_value = "conditional";	break;
 		case OpcodeDetails::OpcodeReturnNewnessType::EXISTING:		new_value = "existing";		break;
+		case OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE:	new_value = "null";			break;
 		}
 		opcode_attribs->SetMappedChildNode("value_newness", evaluableNodeManager->AllocNode(new_value));
 

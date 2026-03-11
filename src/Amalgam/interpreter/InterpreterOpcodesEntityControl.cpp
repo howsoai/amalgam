@@ -257,7 +257,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 		deep_set = InterpretNodeIntoBoolValue(ocn[2], true);
 
 	//the opcode parameter index of the seed
-	auto seed_node = InterpretNodeForImmediateUse(ocn[num_params > 1 ? 1 : 0]);
+	auto seed_node = InterpretNode(ocn[num_params > 1 ? 1 : 0]);
 	std::string seed_string;
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
 		seed_string = seed_node->GetStringValue();

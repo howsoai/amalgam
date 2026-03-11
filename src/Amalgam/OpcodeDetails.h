@@ -100,6 +100,7 @@ public:
 	std::vector<OpcodeExampleOutputPair> exampleOutputPairs;
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
+	bool potentiallyIdempotent = false;
 	bool allowsConcurrency = false;
 	bool requiresEntity = false;
 	bool newScope = false;
@@ -442,12 +443,8 @@ constexpr bool DoesEvaluableNodeTypeCreateScope(EvaluableNodeType t)
 //returns true if t could potentially be idempotent
 inline bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType t)
 {
-	return (t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING
-		|| t == ENT_NULL || t == ENT_LIST || t == ENT_UNORDERED_LIST || t == ENT_ASSOC
-		|| t == ENT_CONCLUDE || t == ENT_RETURN
-		|| IsEvaluableNodeTypeQuery(t));
+	return _opcode_details[t].potentiallyIdempotent;
 }
-
 
 //returns the string id representing EvaluableNodeBuiltInStringId t
 inline StringInternPool::StringID GetStringIdFromBuiltInStringId(EvaluableNodeBuiltInStringId t)

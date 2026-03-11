@@ -177,6 +177,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(Evaluates to the conclusion wrapped in a conclude opcode.  If a step in a seq, let, declare, or while evaluates to a conclude (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the value conclusion.  Note that conclude opcodes may be nested to break out of outer opcodes.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (seq (print "seq1 ") (conclude "success") (print "seq2") ) ))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_RETURN)] = []() {
@@ -186,6 +187,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(Evaluates to return_value wrapped in a return opcode.  If a step in a seq, let, declare, or while evaluates to a return (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the return opcode with its return_value.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including call, call_sandboxed, call_entity, call_entity_get_changes, or call_container, at which point it will evaluate to return_value.  Note that return opcodes may be nested to break out of multiple calls.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (call (seq 1 2 (seq (return 3) 4) 5)) "\n"))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CALL)] = []() {
@@ -1126,6 +1128,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(Evaluates to the immediate null value.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (null)))", R"()"}, {R"((print (lambda (null (+ 3 5) 7)) ))", R"()"}, {R"((print (lambda (null))))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LIST)] = []() {
@@ -1137,6 +1140,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((print (list "a" 1 "b")))", R"()"}, {R"((print [1 2 3]))", R"()"} });
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_UNORDERED_LIST)] = []() {
@@ -1148,6 +1152,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((print (list "a" 1 "b")))", R"()"}, {R"((print [1 2 3]))", R"()"} });
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ASSOC)] = []() {
@@ -1159,6 +1164,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((print (assoc b 2 c 3)))", R"()"}, {R"((print (assoc a 1 "b\ttab" 2 c 3 4 "d")))", R"()"}, {R"((print {a 1 b 2}))", R"()"} });
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_BOOL)] = []() {
@@ -1168,6 +1174,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(A 64-bit floating point value)";
 		d.exampleOutputPairs = make_examples({ {R"(4)", R"()"}, {R"(2.22228)", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_NUMBER)] = []() {
@@ -1177,6 +1184,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(A 64-bit floating point value)";
 		d.exampleOutputPairs = make_examples({ {R"(4)", R"()"}, {R"(2.22228)", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_STRING)] = []() {
@@ -1186,6 +1194,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(A string.)";
 		d.exampleOutputPairs = make_examples({ {R"("hello")", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SYMBOL)] = []() {
@@ -1746,6 +1755,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_select 4 (null) (rand)))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_SAMPLE)] = []() {
@@ -1756,6 +1766,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 (rand)))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 "weight" (rand)))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_IN_ENTITY_LIST)] = []() {
@@ -1766,6 +1777,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_in_entity_list (list "Entity1" "Entity2")))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_IN_ENTITY_LIST)] = []() {
@@ -1776,6 +1788,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_in_entity_list (list "Entity1" "Entity2")))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_EXISTS)] = []() {
@@ -1786,6 +1799,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_EXISTS)] = []() {
@@ -1796,6 +1810,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_exists "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_EQUALS)] = []() {
@@ -1806,6 +1821,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_equals "TargetLabel" 3))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_EQUALS)] = []() {
@@ -1816,6 +1832,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_equals "TargetLabel" 3))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_BETWEEN)] = []() {
@@ -1826,6 +1843,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_between "TargetLabel" 2 5))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_between "x" -4 5))", R"()"}, {R"((query_between "y" -4 0))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_BETWEEN)] = []() {
@@ -1836,6 +1854,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "TargetLabel" 2 5))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "x" -4 5))", R"()"}, {R"((query_not_between "y" -4 0))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_AMONG)] = []() {
@@ -1846,6 +1865,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "TargetLabel" (2 5)))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "x" (list -4 5)))", R"()"}, {R"((query_among "y" (list -4 0)))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_AMONG)] = []() {
@@ -1856,6 +1876,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "TargetLabel" (2 5)))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "x" (list -4 5)))", R"()"}, {R"((query_not_among "y" (list -4 0)))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX)] = []() {
@@ -1866,6 +1887,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_max "TargetLabel" 3))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MIN)] = []() {
@@ -1876,6 +1898,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_min "TargetLabel" 3))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_SUM)] = []() {
@@ -1886,6 +1909,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_sum "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MODE)] = []() {
@@ -1896,6 +1920,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_mode "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_QUANTILE)] = []() {
@@ -1906,6 +1931,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_quantile "TargetLabel" 0.75))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_GENERALIZED_MEAN)] = []() {
@@ -1916,6 +1942,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_generalized_mean "TargetLabel" 0.5))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MIN_DIFFERENCE)] = []() {
@@ -1926,6 +1953,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_min_difference "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX_DIFFERENCE)] = []() {
@@ -1936,6 +1964,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_max_difference "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_VALUE_MASSES)] = []() {
@@ -1946,6 +1975,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_value_masses "TargetLabel"))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_LESS_OR_EQUAL_TO)] = []() {
@@ -1956,6 +1986,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_less_or_equal_to "TargetLabel" 3))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_GREATER_OR_EQUAL_TO)] = []() {
@@ -1966,6 +1997,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_greater_or_equal_to "TargetLabel" 3))", R"()"}, {R"()))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)] = []() {
@@ -1976,6 +2008,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestContainerExec" (list (query_within_generalized_distance 3 (list "x" "y") (list 0.0 0.0) 0.01 (list 2 1) (list "nominal_number" "continuous_number_cyclic") (list 1 360) (null) (null) 1 (null) "random seed 1234" "radius") ) ))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)] = []() {
@@ -1988,6 +2021,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((contained_entities "TestContainerExec" (list (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) 0.01 (list 2 1) (list "nominal_number" "continuous_number_cyclic") (list 1 360) (null) (null) 1 (null) "random seed 1234" "radius") ) ))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_DISTANCE_CONTRIBUTIONS)] = []() {
@@ -2001,6 +2035,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "SurprisalTransformContainer" (list (query_distance_contributions 4 (list "x") [[0]] 1 (null) (null) (null) (list 0.25) (null) "surprisal" (null) "fixed_seed" (null) "precise") )))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)] = []() {
@@ -2014,6 +2049,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities "SurprisalTransformContainer" (list (query_entity_cumulative_nearest_entity_weights 4 (list "x") [[0]] 1 (null) (null) (null) (list 0.25) (null) "surprisal" (null) "fixed_seed" (null) "precise") )))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CONVICTIONS)] = []() {
@@ -2027,6 +2063,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities (list (query_entity_convictions 2 (list "alpha" "b" "c") (null) 0.1 (null) (list 0 0 1) ) )))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)] = []() {
@@ -2040,6 +2077,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities (list (query_entity_group_kl_divergence 2 (list "x" "y") obj2_verts 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234") )))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)] = []() {
@@ -2053,6 +2091,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities (list (query_entity_distance_contributions 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234") )))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_KL_DIVERGENCES)] = []() {
@@ -2066,6 +2105,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities (list (query_entity_kl_divergences 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234"))))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)] = []() {
@@ -2079,6 +2119,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((compute_on_contained_entities (list (query_entity_cumulative_nearest_entity_weights 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234") )))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
+		d.potentiallyIdempotent = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CONTAINS_LABEL)] = []() {

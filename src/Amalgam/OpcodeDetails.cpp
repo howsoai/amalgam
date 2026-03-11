@@ -104,6 +104,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.exampleOutputPairs = make_examples({ {R"((system "exit"))", R"()"} });
 		d.permissions = ExecutionPermissions::Permission::ALL;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_DEFAULTS)] = []() {
@@ -196,8 +197,9 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(any)";
 		d.description = R"(Evaluates the code after pushing the arguments assoc onto the scope stack.)";
 		d.exampleOutputPairs = make_examples({ {R"((call foo (assoc x 3)))", R"()"} });
-		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.hasSideEffects = true;
+		d.newScope = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CALL_SANDBOXED)] = []() {
@@ -206,8 +208,8 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.output = R"(any)";
 		d.description = R"(Evaluates the code specified by *, isolating it from everything except for arguments, which is used as a single layer of the scope stack.  This is useful when evaluating code passed by other entities that may or may not be trusted.  Opcodes run from within call_sandboxed that require any form of permissions will not perform any action and will evaluate to null.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted, up to the limits of the current calling context. If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If max_node_allocations is 0 or infinite and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if max_node_allocations is specified while call_sandboxed is being called in a multithreaded environment, if the collective memory from all the related threads exceeds the average memory specified by call_sandboxed, that may trigger a memory limit for the call_sandboxed.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or (null) if none)).  If return_warnings is false, just the value will be returned.)";
 		d.exampleOutputPairs = make_examples({ {R"(;x will be null because it cannot be accessed)", R"()"}, {R"((call_sandboxed (lambda (+ y x 4)) (assoc y 3)))", R"()"} });
-		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.newScope = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_WHILE)] = []() {
@@ -237,6 +239,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(For each key-value pair of data, if not already in the current context in the scope stack, it will define them.  Then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude or return, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value.)";
 		d.exampleOutputPairs = make_examples({ {R"((let (assoc x 4 y 6))", R"()"}, {R"((declare (assoc x 5 z 1))", R"()"}, {R"((print (+ x y z)) ))", R"()"}, {R"())", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ASSIGN)] = []() {
@@ -246,6 +249,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(If the assoc data is specified, then for each key-value pair of data, assigns the value to the variable represented by the key found by tracing upward on the stack. If none found, it will create a variable on the top of the stack. If the string variable_name is specified, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to assign new_value to that part of the variable's structure.  If there are only two parameters, then it will assign the second parameter to the variable represented by the first.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (assign (assoc x 10))))", R"()"}, {R"((print x))", R"()"}, {R"((print (assign "x" 10))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ACCUM)] = []() {
@@ -255,6 +259,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(If the assoc data is specified, then for each key-value pair of data, assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the sum in the variable.  It searches for the variable name tracing up the stack to find the variable. If none found, it will create a variable on the top of the stack. Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. If the string variable_name is specified, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to accum accum_value to that part of the variable's structure.  If there are only two parameters, then it will accum the second parameter to the variable represented by the first.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (assign (assoc x 10))))", R"()"}, {R"((print x))", R"()"}, {R"((print (accum (assoc x 1))))", R"()"}, {R"((print x))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_RETRIEVE)] = []() {
@@ -328,6 +333,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(Evaluates to the resulting node of the previous iteration for applicable opcodes. If stack_distance is specified, it climbs back up the target stack that many levels.  If copy is true, then a copy of the resulting node of the previous iteration is returned, otherwise the result of the previous iteration is returned directly and consumed.)";
 		d.exampleOutputPairs = make_examples({ {R"((while (< (target_index) 3) (print (previous_result)) (target_index)))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_OPCODE_STACK)] = []() {
@@ -364,6 +370,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(Generates random values based on its parameters.  The random values are drawn from a random stream specific to each execution flow for each entity.  With no range, evaluates to a random number between 0.0 and 1.0.  If range is a list, it will uniformly randomly choose and evaluate to one element of the list.  If range is a number, it will evaluate to a value greater than or equal to zero and less than the number specified.  If range is an assoc, then it will randomly evaluate to one of the keys using the values as the weights for the probabilities.  If  number_to_generate is specified, it will generate a list of multiple values (even if number_to_generate is 1).  If unique is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.  Note that if unique only applies to list and assoc ranges.  If unique is true and there are not enough values in a list or assoc, it will only generate the number of elements in range.)";
 		d.exampleOutputPairs = make_examples({ {R"((print (rand)))", R"()"}, {R"((print (rand 50)))", R"()"}, {R"((print (rand (list 1 2 4 5 7))))", R"()"}, {R"((print (rand (range 0 10) 10 .true) "\n"))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_RAND_SEED)] = []() {
@@ -382,6 +389,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(Sets the random number seed and state for the current random number stream without affecting any entity.  If node is already a string in the proper format output by get_entity_rand_seed, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the generator.)";
 		d.exampleOutputPairs = make_examples({ {R"((declare (assoc cur_seed (get_rand_seed))))", R"()"}, {R"((print (rand) "\n"))", R"()"}, {R"((set_rand_seed cur_seed))", R"()"}, {R"((print (rand) "\n"))", R"()"} });
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_SYSTEM_TIME)] = []() {
@@ -1394,6 +1402,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((print "hello"))", R"()"} });
 		d.permissions = ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_TOTAL_SIZE)] = []() {
@@ -1525,6 +1534,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((create_entities "e1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities "e2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((intersect_entities "e1" "e2" "e3")))", R"()"}, {R"((print (retrieve_entity_root "e3"))))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_UNION_ENTITIES)] = []() {
@@ -1535,6 +1545,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((create_entities "e1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities "e2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((union_entities "e1" "e2" "e3")))", R"()"}, {R"((print (retrieve_entity_root "e3"))))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_DIFFERENCE_ENTITIES)] = []() {
@@ -1555,6 +1566,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((create_entities "e1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities "e2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((mix_entities "e1" "e2" 0.5 0.5 "e3"))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_ENTITY_ANNOTATIONS)] = []() {
@@ -1595,6 +1607,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((print (assign_entity_roots {})))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_ENTITY_RAND_SEED)] = []() {
@@ -1615,6 +1628,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((create_entities "RandTest" (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(} ))", R"()"}, {R"((create_entities (list "RandTest" "DeepRand") (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(} ))", R"()"}, {R"((declare (assoc seed (get_entity_rand_seed "RandTest"))))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"}, {R"((set_entity_rand_seed "RandTest" 1234))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_GET_ENTITY_PERMISSIONS)] = []() {
@@ -1635,6 +1649,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((create_entities "RootTest" (lambda (print (system_time)) )))", R"()"}, {R"((set_entity_permissions "RootTest" .true))", R"()"}, {R"((call_entity "RootTest"))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CREATE_ENTITIES)] = []() {
@@ -1645,6 +1660,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((print (create_entities "MyLibrary" (lambda { three 3 four 4}) ) ))", R"()"}, {R"((create_entities "EntityWithChildren" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "EntityWithChildren" "Child1") (lambda (assoc "x" 3 "y" 4)) ))", R"()"}, {R"((create_entities (list "EntityWithChildren" "Child2") (lambda (assoc "p" 3 "q" 4)) ))", R"()"}, {R"((print (contained_entities "EntityWithChildren")))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CLONE_ENTITIES)] = []() {
@@ -1655,6 +1671,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((print (create_entities "MyLibrary" (lambda {three 3 four 4}) ) ))", R"()"}, {R"((print (clone_entities "MyLibrary" "MyNewLibrary")))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_MOVE_ENTITIES)] = []() {
@@ -1665,6 +1682,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((print (create_entities "MyLibrary" (lambda {three 3 four 4}) ) ))", R"()"}, {R"((print (move_entities "MyLibrary" "MyLibrary2")))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_DESTROY_ENTITIES)] = []() {
@@ -1675,6 +1693,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((print (create_entities "MyLibrary" (lambda { three 3 four 4} ) ) ))", R"()"}, {R"((print (contained_entities)))", R"()"}, {R"((destroy_entities "MyLibrary"))", R"()"}, {R"((print (contained_entities)))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_LOAD)] = []() {
@@ -1695,6 +1714,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((load_entity "my_directory/MyModule.amlg" "MyModule"))", R"()"} });
 		d.permissions = ExecutionPermissions::Permission::LOAD;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_STORE)] = []() {
@@ -1705,6 +1725,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((store "my_directory/MyData.amlg" (list 1 2 3)))", R"()"} });
 		d.permissions = ExecutionPermissions::Permission::STORE;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_STORE_ENTITY)] = []() {
@@ -1715,6 +1736,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((store_entity "my_directory/MyData.amlg" "MyData"))", R"()"} });
 		d.permissions = ExecutionPermissions::Permission::STORE;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CONTAINS_ENTITY)] = []() {
@@ -2139,6 +2161,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((assign_to_entities (assoc asgn_test1 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test1")))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_ACCUM_TO_ENTITIES)] = []() {
@@ -2149,6 +2172,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((accum_to_entities (assoc asgn_test1 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test1")))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_REMOVE_FROM_ENTITIES)] = []() {
@@ -2159,6 +2183,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.exampleOutputPairs = make_examples({ {R"((create_entities "DRFE" (lambda { a 12 } ) ))", R"()"}, {R"((print (remove_from_entities "DRFE" "a")))", R"()"}, {R"((print (retrieve_from_entity "DRFE" "a")))", R"()"} });
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_RETRIEVE_FROM_ENTITY)] = []() {
@@ -2180,6 +2205,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CALL_ENTITY_GET_CHANGES)] = []() {
@@ -2191,6 +2217,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CALL_ON_ENTITY)] = []() {
@@ -2202,6 +2229,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 	arr[static_cast<std::size_t>(ENT_CALL_CONTAINER)] = []() {
@@ -2213,6 +2241,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.requiresEntity = true;
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
 		return d;
 	}();
 

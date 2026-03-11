@@ -101,6 +101,7 @@ public:
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 	bool potentiallyIdempotent = false;
+	bool hasSideEffects = false;
 	bool allowsConcurrency = false;
 	bool requiresEntity = false;
 	bool newScope = false;
@@ -246,17 +247,9 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 }
 
 //returns true if the opcode modifies things outside of its return
-constexpr bool DoesOpcodeHaveSideEffects(EvaluableNodeType t)
+__forceinline bool DoesOpcodeHaveSideEffects(EvaluableNodeType t)
 {
-	return (t == ENT_SYSTEM || t == ENT_CALL || t == ENT_DECLARE || t == ENT_ASSIGN || t == ENT_ACCUM
-		|| t == ENT_PREVIOUS_RESULT || t == ENT_RAND || t == ENT_SET_RAND_SEED || t == ENT_PRINT
-		|| t == ENT_INTERSECT_ENTITIES || t == ENT_UNION_ENTITIES || t == ENT_MIX_ENTITIES
-		|| t == ENT_ASSIGN_ENTITY_ROOTS || t == ENT_SET_ENTITY_RAND_SEED
-		|| t == ENT_SET_ENTITY_PERMISSIONS || t == ENT_CREATE_ENTITIES || t == ENT_CLONE_ENTITIES
-		|| t == ENT_MOVE_ENTITIES || t == ENT_DESTROY_ENTITIES || t == ENT_LOAD_ENTITY || t == ENT_STORE
-		|| t == ENT_STORE_ENTITY || t == ENT_ASSIGN_TO_ENTITIES || t == ENT_REMOVE_FROM_ENTITIES
-		|| t == ENT_ACCUM_TO_ENTITIES || t == ENT_CALL_ENTITY || t == ENT_CALL_ENTITY_GET_CHANGES
-		|| t == ENT_CALL_ON_ENTITY || t == ENT_CALL_CONTAINER);
+	return _opcode_details[t].hasSideEffects;
 }
 
 //different characterizations of whether opcodes return new values

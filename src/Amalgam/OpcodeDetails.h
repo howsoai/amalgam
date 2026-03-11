@@ -86,6 +86,17 @@ public:
 		std::string output;
 	};
 
+	//different arrangements of ordered parameters
+	enum class OrderedChildNodeType
+	{
+		UNORDERED,
+		ORDERED,
+		ONE_POSITION_THEN_ORDERED,
+		PAIRED,
+		ONE_POSITION_THEN_PAIRED,
+		POSITION
+	};
+
 	enum class OpcodeReturnNewnessType
 	{
 		NEW, PARTIAL, CONDITIONAL, EXISTING
@@ -111,20 +122,8 @@ public:
 
 extern const std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
 
-
-//different arrangements of ordered parameters
-enum OrderedChildNodeType
-{
-	OCNT_UNORDERED,
-	OCNT_ORDERED,
-	OCNT_ONE_POSITION_THEN_ORDERED,
-	OCNT_PAIRED,
-	OCNT_ONE_POSITION_THEN_PAIRED,
-	OCNT_POSITION
-};
-
 //returns the type of structure that the ordered child nodes have for a given t
-constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t)
+constexpr OpcodeDetails::OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t)
 {
 	switch(t)
 	{
@@ -136,7 +135,7 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 	case ENT_NULL:
 	case ENT_UNORDERED_LIST:
 	case ENT_DESTROY_ENTITIES:
-		return OCNT_UNORDERED;
+		return OpcodeDetails::OrderedChildNodeType::UNORDERED;
 
 	case ENT_SYSTEM:				case ENT_HELP:
 	case ENT_GET_DEFAULTS:			case ENT_RECLAIM_RESOURCES:
@@ -172,18 +171,18 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 	case ENT_ACCUM_TO_ENTITIES:		case ENT_RETRIEVE_FROM_ENTITY:
 	case ENT_CALL_ENTITY:			case ENT_CALL_ENTITY_GET_CHANGES:		case ENT_CALL_ON_ENTITY:
 	case ENT_CALL_CONTAINER:
-		return OCNT_ORDERED;
+		return OpcodeDetails::OrderedChildNodeType::ORDERED;
 
 	case ENT_WHILE:					case ENT_LET:				case ENT_DECLARE:			case ENT_SUBTRACT:
 	case ENT_DIVIDE:				case ENT_MODULUS:
-		return OCNT_ONE_POSITION_THEN_ORDERED;
+		return OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 
 	case ENT_ASSOC:		case ENT_ASSOCIATE:
-		return OCNT_PAIRED;
+		return OpcodeDetails::OrderedChildNodeType::PAIRED;
 
 	case ENT_ASSIGN:				case ENT_ACCUM:
 	case ENT_SET:					case ENT_REPLACE:
-		return OCNT_ONE_POSITION_THEN_PAIRED;
+		return OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 
 	case ENT_PARSE:						case ENT_UNPARSE:			case ENT_IF:				case ENT_LAMBDA:
 	case ENT_CONCLUDE:					case ENT_RETURN:
@@ -239,10 +238,10 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 	case ENT_LOAD:						case ENT_LOAD_ENTITY:
 	case ENT_STORE_ENTITY:				case ENT_STORE:
 	case ENT_CONTAINS_ENTITY:
-		return OCNT_POSITION;
+		return OpcodeDetails::OrderedChildNodeType::POSITION;
 
 	default:
-		return OCNT_POSITION;
+		return OpcodeDetails::OrderedChildNodeType::POSITION;
 	}
 }
 
@@ -376,7 +375,7 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 //returns true if the opcode uses an associative array as parameters. If false, then a regular kind of list
 __forceinline constexpr bool DoesOpcodeUseAssocParameters(EvaluableNodeType t)
 {
-	return GetOpcodeOrderedChildNodeType(t) == OCNT_PAIRED;
+	return GetOpcodeOrderedChildNodeType(t) == OpcodeDetails::OrderedChildNodeType::PAIRED;
 }
 
 //returns true if t is an immediate value

@@ -135,10 +135,10 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(If no parameter is specified it returns a string of the topics that can be used.  For given a `topic`, returns a string or relevant data that describes the given topic.)";
 		d.exampleOutputPairs = make_examples({
 			{R"((help "+"))", R"&({
-        allows_concurrency .true
-        description "Sums all numbers."
-        examples [
-                        {example "(+ 1 2 3 4)" output "10"}
+		allows_concurrency .true
+		description "Sums all numbers."
+		examples [
+						{example "(+ 1 2 3 4)" output "10"}
 				]
 		new_scope .false
 		new_target_scope .false
@@ -162,12 +162,12 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(Retrieves the default values of `value_type`, either "mutation_opcodes" or "mutation_types")";
 		d.exampleOutputPairs = make_examples({
 			{R"((get_defaults "mutation_types"))", R"({
-        change_type 0.29
-        deep_copy_elements 0.07
-        delete 0.1
-        delete_elements 0.05
-        insert 0.25
-        swap_elements 0.24
+		change_type 0.29
+		deep_copy_elements 0.07
+		delete 0.1
+		delete_elements 0.05
+		insert 0.25
+		swap_elements 0.24
 })"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -195,29 +195,29 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(String `str` is parsed into code, and the result is returned.  If `transactional` is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If `transactional` is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If any performance constraints are given or `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless `return_warnings` is false, in which case just the value will be returned.)";
 		d.exampleOutputPairs = make_examples({
 			{R"&((parse "(seq (+ 1 2))" .true)))&", R"&((seq
-        (+ 1 2)
+		(+ 1 2)
 ))&"},
 			{R"&((parse "(seq (+ 1 2) (+ " .true)))&", R"&((seq
-        (+ 1 2)
+		(+ 1 2)
 ))&"},
 			{R"&((parse "(seq (+ 1 2) (+ " .false .true))")&", R"([
-        (seq
-                (+ 1 2)
-                (+)
-        )
-        ["Warning: 2 missing closing parenthesis at line 1, column 17"]
+		(seq
+				(+ 1 2)
+				(+)
+		)
+		["Warning: 2 missing closing parenthesis at line 1, column 17"]
 ])"},
 			{R"&((parse "(seq (+ 1 2) (+ " .true .true))")&", R"([
-        (seq
-                (+ 1 2)
-        )
-        ["Warning: 1 missing closing parenthesis at line 1, column 17"]
+		(seq
+				(+ 1 2)
+		)
+		["Warning: 1 missing closing parenthesis at line 1, column 17"]
 ])"},
 			{R"&((parse "(seq (+ 1 2) (+ (a ) 3) " .true .true))")&", R"([
-        (seq
-                (+ 1 2)
-        )
-        ["Warning: Invalid opcode \"a\"; transforming to apply opcode using the invalid opcode type at line 1, column 19"]
+		(seq
+				(+ 1 2)
+		)
+		["Warning: Invalid opcode \"a\"; transforming to apply opcode using the invalid opcode type at line 1, column 19"]
 ])"},
 			{R"&((parse "(6)")))&", R"((apply "6"))"},
 			{R"&((parse "(not_an_opcode)")))&", R"((apply "not_an_opcode"))"}

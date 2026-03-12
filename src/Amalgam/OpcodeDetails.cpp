@@ -299,7 +299,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		OpcodeDetails d;
 		d.parameters = R"(* conclusion)";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to `conclusion` wrapped in a conclude opcode.  If a step in a seq, let, declare, or while evaluates to a conclude (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the value `conclusion`.  Note that conclude opcodes may be nested to break out of outer opcodes.)";
+		d.description = R"(Evaluates to `conclusion` wrapped in a `conclude` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a `conclude` (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to the value `conclusion`.  Note that conclude opcodes may be nested to break out of outer opcodes.)";
 		d.exampleOutputPairs = make_examples({
 			{R"&((seq
         "seq1"
@@ -346,7 +346,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		OpcodeDetails d;
 		d.parameters = R"(* return_value)";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to return_value wrapped in a return opcode.  If a step in a seq, let, declare, or while evaluates to a return (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the return opcode with its return_value.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including call, call_sandboxed, call_entity, call_entity_get_changes, or call_container, at which point it will evaluate to return_value.  Note that return opcodes may be nested to break out of multiple calls.)";
+		d.description = R"(Evaluates to `return_value` wrapped in a `return` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a return (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to the `return` opcode with its `return_value`.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including `call`, `call_sandboxed`, `call_entity`, `call_entity_get_changes`, or `call_container`, at which point it will evaluate to `return_value`.  Note that return opcodes may be nested to break out of multiple calls.)";
 		d.exampleOutputPairs = make_examples({
 						{R"&((call
         (seq
@@ -364,45 +364,119 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_CALL)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(* function assoc arguments)";
+		d.parameters = R"(* function [assoc arguments])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates the code after pushing the arguments assoc onto the scope stack.)";
+		d.description = R"(Evaluates `function` after pushing the `arguments` assoc onto the scope stack.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((call foo (assoc x 3)))", R"()"}
+						{R"&((let
+        {
+                foo (lambda
+                                (declare
+                                        {x 6}
+                                        (+ x 2)
+                                )
+                        )
+        }
+        (call
+                foo
+                {x 3}
+        )
+))&", R"(5)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		d.newScope = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CALL_SANDBOXED)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* function assoc arguments [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [bool return_warnings])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates the code specified by function, isolating it from everything except for arguments, which is used as a single layer of the scope stack.  This is useful when evaluating code passed by other entities that may or may not be trusted.  Opcodes run from within call_sandboxed that require any form of permissions will not perform any action and will evaluate to null.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted, up to the limits of the current calling context. If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If max_node_allocations is 0 or infinite and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if max_node_allocations is specified while call_sandboxed is being called in a multithreaded environment, if the collective memory from all the related threads exceeds the average memory specified by call_sandboxed, that may trigger a memory limit for the call_sandboxed.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or (null) if none)).  If return_warnings is false, just the value will be returned.)";
+		d.description = R"(Evaluates the code specified by function, isolating it from everything except for arguments, which is used as a single layer of the scope stack.  This is useful when evaluating code passed by other entities that may or may not be trusted.  Opcodes run from within call_sandboxed that require any form of permissions will not perform any action and will evaluate to null.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed. If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted, up to the limits of the current calling context. If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If `max_node_allocations` is 0 or infinite and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if `max_node_allocations` is specified while call_sandboxed is being called in a multithreaded environment, if the collective memory from all the related threads exceeds the average memory specified by call_sandboxed, that may trigger a memory limit for the call_sandboxed.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called. If `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or (null) if none)).  If `return_warnings` is false, just the value will be returned.)";
 		d.exampleOutputPairs = make_examples({
-			{R"(;x will be null because it cannot be accessed)", R"()"}, {R"((call_sandboxed (lambda (+ y x 4)) (assoc y 3)))", R"()"}
+						{R"&((call_sandboxed
+        (lambda
+                (+
+                        (+ y 4)
+                        4
+                )
+        )
+        {y 3}
+        (null)
+        (null)
+        50
+))&", R"([11 {} (null)])"},
+						{R"&((call_sandboxed
+        (lambda
+                (+
+                        (+ y 4)
+                        4
+                )
+        )
+        {y 3}
+        (null)
+        (null)
+        1
+))&", R"([(null) {} "Execution depth exceeded"])"},
+						{R"&((call_sandboxed
+        (lambda
+                (call_sandboxed
+                        (lambda
+                                (+
+                                        (+ y 4)
+                                        4
+                                )
+                        )
+                        {y 3}
+                        (null)
+                        (null)
+                        50
+                )
+        )
+        {y 3}
+        (null)
+        (null)
+        3
+))&", R"([
+        [(null) {} "Execution depth exceeded"]
+        {}
+        (null)
+])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.newScope = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_WHILE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(bool condition [code code1] [code code2] ... [code codeN])";
 		d.returns = R"(any)";
-		d.description = R"(Each time the condition evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the condition was initially false or if it encounters a conclude or return, it will halt processing and evaluate to the value returned by conclude or propagate the return.  For iteration of the loop, pushes a new target scope onto the target stack, with current_index being the iteration count, and previous_result being the last evaluated codeN of the previous loop.)";
+		d.description = R"(Each time the `condition` evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the `condition` was initially false or if it encounters a conclude or return, it will halt processing and evaluate to the value returned by conclude or propagate the return.  For iteration of the loop, pushes a new target scope onto the target stack, with current_index being the iteration count, and previous_result being the last evaluated codeN of the previous loop.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((let (assoc zz 1))", R"()"}, {R"((while (< zz 10))", R"()"}, {R"((print zz))", R"()"}, {R"((assign (assoc zz (+ zz 1))))", R"()"}, {R"())", R"()"}, {R"())", R"()"}
+						{R"&((seq
+        (assign
+                {i 1}
+        )
+        (while
+                (< i 10)
+                (accum
+                        {i 1}
+                )
+        )
+        i
+))&", R"(10)"},
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_LET)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(assoc data [code function1] [code function2] ... [code functionN])";

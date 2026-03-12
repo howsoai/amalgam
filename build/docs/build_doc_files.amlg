@@ -1,6 +1,6 @@
 (seq
 	(store "./amalgam_overview.md" (concat
-		(help "overview") "\n" (help "syntax") "\n")
+		(help "overview") "\n" (help "syntax") "\n" "# Amalgam Opcodes\n")
 		;TODO 25157: include opcodes
 	)
 	

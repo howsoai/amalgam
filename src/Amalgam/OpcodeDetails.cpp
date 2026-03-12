@@ -294,31 +294,77 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_CONCLUDE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* conclusion)";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to `conclusion` wrapped in a conclude opcode.  If a step in a seq, let, declare, or while evaluates to a conclude (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the value `conclusion`.  Note that conclude opcodes may be nested to break out of outer opcodes.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (seq (print "seq1 ") (conclude "success") (print "seq2") ) ))", R"()"}
+			{R"&((seq
+        "seq1"
+        (conclude "success")
+        "seq2"
+))&", R"("success")"},
+			{R"&((while
+        (< 1 100)
+        "while1"
+        (conclude "success")
+        "while2"
+))&", R"("success")"},
+			{R"&((let
+        {a 1}
+        "let1"
+        (conclude "success")
+        "let2"
+))&", R"("success")"},
+			{R"&((declare
+        {abcd 1}
+        "declare1"
+        (conclude "success")
+        "declare2"
+))&", R"("success")"},
+			{R"&((seq
+        1
+        (declare
+                {}
+                (while
+                        1
+                        (if .true (conclude))
+                )
+                4
+        )
+        2
+))&", R"(2)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_RETURN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* return_value)";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to return_value wrapped in a return opcode.  If a step in a seq, let, declare, or while evaluates to a return (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the return opcode with its return_value.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including call, call_sandboxed, call_entity, call_entity_get_changes, or call_container, at which point it will evaluate to return_value.  Note that return opcodes may be nested to break out of multiple calls.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (call (seq 1 2 (seq (return 3) 4) 5)) "\n"))", R"()"}
+						{R"&((call
+        (seq
+                1
+                2
+                (seq
+                        (return 3)
+                        4
+                )
+                5
+        )
+))&", R"(3)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_CALL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* function assoc arguments)";

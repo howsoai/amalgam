@@ -1,17 +1,41 @@
-﻿(seq
+﻿;prints the code followed by its output for inclusion in the documentation
+(seq
 	(map
 		(lambda
-			(print (unparse (call (current_value))) "\n")
-		)	
+			(let {code (current_value 1)}
+
+				(print "\t\t\t{R\"&(")
+				(print
+					(substr
+						;eat remaining newline
+						(unparse code .true .true .true)
+						"[\r\n]$" (null) ""
+					)
+				)
+				
+				(print ")&\", R\"(")
+
+				;result
+				(print
+					(substr
+						;eat remaining newline
+						(unparse (call code) .true .true .true)
+						"[\r\n]$" (null) ""
+					)
+				)
+				
+				(print ")\"},\n")
+			)
+		)
+		;code goes in this list below
 		(lambda (list
-(if 1 "if 1")
-(if 0 "not this one" "if 2")
-(if
-	(null) 1
-	0 2
-	0 3
-	4
+		
+		
+ (call
+	(seq 1 2 (seq (return 3) 4) 5)
  )
+		
+		
 		))
 	)
  )

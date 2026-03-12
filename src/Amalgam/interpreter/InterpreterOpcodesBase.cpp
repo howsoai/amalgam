@@ -262,7 +262,7 @@ overview
 syntax
 opcodes
 For example, try: (print (help "overview"))
-Or type (conculde) and press enter to exit.
+Or type (conclude) and press enter to exit.
 )");
 
 static std::string_view _help_overview(R"(# Amalgam Overview
@@ -281,7 +281,7 @@ Initial development on Amalgam began in 2011. It was first offered as a commerci
 When referencing the language: "Amalgam", "amalgam", "amalgam-lang", and "amalgam language" are used interchangeably with Amalgam being preferred. When referencing the interpreter: "Amalgam interpreter", "interpreter", "Amalgam app", and "Amalgam lib" are used interchangeably.)");
 
 static std::string_view _help_syntax(R"(# Amalgam Syntax
-Using <>'s to enclose optional elments, the general syntax is:
+Using <>'s to enclose optional elements, the general syntax is:
 ```amalgam
 #annotation line 1...
 #annotation line N
@@ -290,7 +290,7 @@ Using <>'s to enclose optional elments, the general syntax is:
 <||><@>(opcode <parameter1> <parameter2> ...)
 ```
 
-The language generally follows a parse tree in a manner similar to Lisp and Scheme, with opcodes surrounded by parenthesis and including parameters in a recursive fashion.  The exceptions are that the opcodes list and assoc (associative array, sometimes referred to as a hashmap or dict) may use [] and {} respectively and ommit the opcode, though are still considered identical to (list) and (assoc).
+The language generally follows a parse tree in a manner similar to Lisp and Scheme, with opcodes surrounded by parenthesis and including parameters in a recursive fashion.  The exceptions are that the opcodes list and assoc (associative array, sometimes referred to as a hashmap or dict) may use `[]` and `{}` respectively and omit the opcode, though are still considered identical to `(list)` and `(assoc)`.
 
 Entities always have a top level data element which is an assoc.  These assoc elements at the top of an entity are handled specially and their keys are called labels.  Labels are how entities can be accessed from outside the entity.  If a label starts with a caret, e.g. `^method_for_contained_entities`, then it can be accessed by contained entities, and they do not need to specify the caret.  Parent entities do need to specify the caret. For example, if `^foo` is a label of a container, a contained entity within could call the label `"foo"`.  This adds a layer of security and prevents contained entities from affecting parts of the container that are exposed for its own container's access.  Labels starting with an exclamation point, e.g. `!private_method`, are not accessible by the container and can only be accessed by the entity itself except for by the contained entity getting all of the code, acting as a private label. A label cannot be simultaneously private to its container and accessible to contained entities.  If an entity's root node is set to be something other than an assoc, it is set to the null key, indicating the main method.  If an entity is executed directly, the value at its null key is what is executed.
 

@@ -1,14 +1,17 @@
 ﻿(seq
-	(store "./intro.txt" (concat
-		(help "overview") (help "syntax"))
-	)
-	
-	(store "./opcodes.json"
-		(map
-			(lambda
-				(set (help (current_value)) "opcode" (current_value))
-			)
-			(help "opcodes")
-		)
+	(map
+		(lambda
+			(print (unparse (call (current_value))) "\n")
+		)	
+		(lambda (list
+(if 1 "if 1")
+(if 0 "not this one" "if 2")
+(if
+	(null) 1
+	0 2
+	0 3
+	4
+ )
+		))
 	)
  )

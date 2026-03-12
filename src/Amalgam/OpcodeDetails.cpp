@@ -96,20 +96,18 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 {
 	std::array<OpcodeDetails, NUM_ENT_OPCODES> arr{};
 
-	//TODO 25157: update examples, consider adding validation type to OpcodeExampleOutputPair (e.g., exact match, regex, etc.)
-
 	arr[static_cast<std::size_t>(ENT_SYSTEM)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string command [* optional1] ... [* optionalN])";
 		d.returns = R"(any)";
-		d.description = R"(Executes system command specified by command.  The available system commands are as follows:
+		d.description = R"(Executes system command specified by `command`.  The available system commands are as follows:
  - exit:                Exits the application.
  - readline:            Reads a line of input from the terminal and returns the string.
- - printline:           Prints a line of string output of the 2nd argument directly to the terminal and returns null.
+ - printline:           Prints a line of string output of the second argument directly to the terminal and returns null.
  - cwd:                 If no additional parameter is specified, returns the current working directory. If an additional parameter is specified, it attempts to change the current working directory to that parameter, returning true on success and false on failure.
- - system:              Runs the system command (i.e., a string that would normally be run on the command line) specified by the 2nd argument. Returns null if the command was not found. If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.
+ - system:              Executes the the second argument as a system command (i.e., a string that would normally be run on the command line). Returns `(null)` if the command was not found. If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.
  - os:                  Returns a string describing the operating system.
- - sleep:               Sleeps for the amount of seconds specified by the 2nd argument.
+ - sleep:               Sleeps for the amount of seconds specified by the second argument.
  - version:             Returns a string representing the current Amalgam version.
  - est_mem_reserved:    Returns data involving the estimated memory reserved.
  - est_mem_used:        Returns data involving the estimated memory used (excluding memory management overhead, caching, etc.).
@@ -122,82 +120,146 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
  - set_max_num_threads: Attempts to set the current maximum number of threads, where 0 means to use the number of processor cores reported by the operating system. Returns the maximum number of threads after it has been set.
  - built_in_data:       Returns built-in data compiled along with the version information.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((system "exit"))", R"()"}
+			{R"((system "debugging_info"))", R"([.false .false])"}
 			});
 		d.permissions = ExecutionPermissions::Permission::ALL;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_HELP)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([string topic])";
 		d.returns = R"(any)";
-		d.description = R"(If no parameter is specified it returns a string of the topics that can be used.  If given a topic, returns a string or relevant data that describes the given topic.)";
+		d.description = R"(If no parameter is specified it returns a string of the topics that can be used.  For given a `topic`, returns a string or relevant data that describes the given topic.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((help "overview"))", R"()"}
+			{R"((help "+"))", R"&({
+        allows_concurrency .true
+        description "Sums all numbers."
+        examples [
+                        {example "(+ 1 2 3 4)" output "10"}
+				]
+		new_scope .false
+		new_target_scope .false
+		parameters "[number x1] [number x2] ... [number xN]"
+		permissions "none"
+		requires_entity .false
+		returns "number"
+		value_newness "new"
+})&"}
 			});
 		d.permissions = ExecutionPermissions::Permission::ALL;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_GET_DEFAULTS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string value_type)";
 		d.returns = R"(any)";
-		d.description = R"(Retrieves the default values of the named field, either "mutation_opcodes" or "mutation_types")";
+		d.description = R"(Retrieves the default values of `value_type`, either "mutation_opcodes" or "mutation_types")";
 		d.exampleOutputPairs = make_examples({
-			{R"((get_defaults mutation_opcodes))", R"()"}
+			{R"((get_defaults "mutation_types"))", R"({
+        change_type 0.29
+        deep_copy_elements 0.07
+        delete 0.1
+        delete_elements 0.05
+        insert 0.25
+        swap_elements 0.24
+})"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	
 	arr[static_cast<std::size_t>(ENT_RECLAIM_RESOURCES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity] [bool apply_to_all_contained_entities] [bool|list clear_query_caches] [bool collect_garbage] [bool force_free_memory])";
 		d.returns = R"(any)";
-		d.description = R"(Frees resources of the specified types on entity, which is the current entity if null.  Will include all contained entities if apply_to_all_contained_entities is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter clear_query_caches will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  If clear_query_caches is a boolean, then it will either clear all the caches or none.  If clear_query_caches is a list of strings, then it will only clear caches for the labels corresponding to the strings in the list.  The parameter collect_garbage will perform garbage collection on the entity, and if force_free_memory is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.)";
+		d.description = R"(Frees resources of the specified types on `entity`, which is the current entity if null.  Will include all contained entities if `apply_to_all_contained_entities` is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter `clear_query_caches` will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  If `clear_query_caches` is a boolean, then it will either clear all the caches or none.  If `clear_query_caches` is a list of strings, then it will only clear caches for the labels corresponding to the strings in the list.  The parameter `collect_garbage` will perform garbage collection on the entity, and if `force_free_memory` is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((reclaim_resources (null) .true .false .true .false))", R"()"}
+			{R"((reclaim_resources (null) .true ["x"] .true .true ))", R"((null))"},
+			{R"((reclaim_resources (null) .true .true .true .true ))", R"((null))"}
 			});
 		d.permissions = ExecutionPermissions::Permission::ALTER_PERFORMANCE;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_PARSE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string str [bool transactional] [bool return_warnings])";
 		d.returns = R"(any)";
-		d.description = R"(String is parsed into code, and the result is returned.  If transactional is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If transactional is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If any performance constraints are given or return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless return_warnings is false, in which case just the value will be returned.)";
+		d.description = R"(String `str` is parsed into code, and the result is returned.  If `transactional` is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If `transactional` is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If any performance constraints are given or `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless `return_warnings` is false, in which case just the value will be returned.)";
 		d.exampleOutputPairs = make_examples({
-			{"(parse \"(list 1 2 3 4 5)\")", R"()"}
+			{R"&((parse "(seq (+ 1 2))" .true)))&", R"&((seq
+        (+ 1 2)
+))&"},
+			{R"&((parse "(seq (+ 1 2) (+ " .true)))&", R"&((seq
+        (+ 1 2)
+))&"},
+			{R"&((parse "(seq (+ 1 2) (+ " .false .true))")&", R"([
+        (seq
+                (+ 1 2)
+                (+)
+        )
+        ["Warning: 2 missing closing parenthesis at line 1, column 17"]
+])"},
+			{R"&((parse "(seq (+ 1 2) (+ " .true .true))")&", R"([
+        (seq
+                (+ 1 2)
+        )
+        ["Warning: 1 missing closing parenthesis at line 1, column 17"]
+])"},
+			{R"&((parse "(seq (+ 1 2) (+ (a ) 3) " .true .true))")&", R"([
+        (seq
+                (+ 1 2)
+        )
+        ["Warning: Invalid opcode \"a\"; transforming to apply opcode using the invalid opcode type at line 1, column 19"]
+])"},
+			{R"&((parse "(6)")))&", R"((apply "6"))"},
+			{R"&((parse "(not_an_opcode)")))&", R"((apply "not_an_opcode"))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_UNPARSE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(code c [bool pretty_print] [bool sort_keys] [bool include_attributes])";
 		d.returns = R"(string)";
-		d.description = R"(Code is unparsed and the representative string is returned. If pretty_print is true, the output will be in pretty-print format, otherwise by default it will be inlined.  If sort_keys is true, the default, then it will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to whatever order it is stored in memory.  If include_attributes is true, it will print out attributes like comments, but by default it will not.)";
+		d.description = R"(Code is unparsed and the representative string is returned. If `pretty_print` is true, the output will be in pretty-print format, otherwise by default it will be inlined.  If `sort_keys` is true, the default, then it will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to whatever order it is stored in memory.  If `include_attributes` is true, it will print out attributes like comments, but by default it will not.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((unparse (lambda (+ 4 3)) .true))", R"()"}
+			{R"&((unparse (parse "(print \"hello\")")))&", R"&("(print \"hello\")")&"},
+			{R"&((parse (unparse (list (sqrt -1) (null) .infinity -.infinity))))&", R"&([(null) (null) .infinity -.infinity])&"},
+			{R"&((unparse (associate "a" 1 "b" 2 "c" (list "alpha" "beta" "gamma"))))&", R"&("{a 1 b 2 c [\"alpha\" \"beta\" \"gamma\"]}")&"},
+			{R"&((unparse (associate "a" 1 "b" 2 "c" (list "alpha" "beta" "gamma")) .true))&", R"&("{\r\n\ta 1\r\n\tb 2\r\n\tc [\"alpha\" \"beta\" \"gamma\"]\r\n}\r\n")&"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_IF)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([bool condition1] [code then1] [bool condition2] [code then2] ... [bool conditionN] [code thenN] [code else])";
 		d.returns = R"(any)";
-		d.description = R"(If the condition1 bool is true, then it will evaluate to the then1 argument.  Otherwise condition2 will be checked, repeating for every pair.  If there is an odd number of parameters, the last is the final 'else', and will be evaluated as that if all conditions are false.  If there is an even number of parameters and none are true, then evaluates to null.)";
+		d.description = R"(If `condition1` is true, then it will evaluate to the then1 argument.  Otherwise `condition2` will be checked, repeating for every pair.  If there is an odd number of parameters, the last is the final 'else', and will be evaluated as that if all conditions are false.  If there is an even number of parameters and none are true, then evaluates to null.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((if (null) (print "nothing") 0 (print "nothing") (print "hello") ))", R"()"}
+			{R"&((if 1 "if 1"))&", R"("if 1")"},
+			{R"&((if 0 "not this one" "if 2"))&", R"("if 2")"},
+			{R"&((if
+	(null) 1
+	0 2
+	0 3
+	4
+ ))&", R"(4)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_SEQUENCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([code c1] [code c2] ... [code cN])";
@@ -514,7 +576,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.allowsConcurrency = true;
 		d.description = R"(Sums all numbers.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (+ 1 2 3 4)))", R"()"}
+			{R"((+ 1 2 3 4))", R"(10)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;

@@ -259,19 +259,25 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_SEQUENCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([code c1] [code c2] ... [code cN])";
 		d.returns = R"(any)";
-		d.description = R"(Runs each code block sequentially. Evaluates to the result of the last code block run, unless it encounters a conclude or return in an earlier step, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return. Note that the last step will not consume a concluded value.)";
+		d.description = R"(Runs each code block sequentially.  Evaluates to the result of the last code block run, unless it encounters a conclude or return in an earlier step, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value (see conclude opcode).)";
 		d.exampleOutputPairs = make_examples({
-			{R"((seq (print 1) (print 2) (print 3)))", R"()"}
+			{R"((seq 1 2 3))", R"(3)"},
+			{R"((seq
+	(declare {a 1})
+	(accum "a" 1)
+	a
+))", R"(2)"},
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_LAMBDA)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* function [bool evaluate_and_wrap])";

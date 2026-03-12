@@ -277,23 +277,29 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_LAMBDA)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* function [bool evaluate_and_wrap])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to the code specified without evaluating it.  Useful for referencing functions or handling data without evaluating it.  The parameter evaluate_and_wrap defaults to false, but if it is true, it will evaluate the function, but then return the result wrapped in a lambda opcode.)";
+		d.description = R"(Evaluates to the code specified without evaluating it.  Useful for referencing functions or handling data without evaluating it.  The parameter `evaluate_and_wrap` defaults to false, but if it is true, it will evaluate the function, but then return the result wrapped in a lambda opcode.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((declare (assoc foo (lambda)", R"()"}, {R"((declare (assoc x 6))", R"()"}, {R"((+ x 2))", R"()"}, {R"())))", R"()"}
+			{R"((lambda (+ 1 2)))", R"((+ 1 2))"},
+			{R"((seq
+	(declare {foo (lambda (+ y 1))})
+	(call foo {y 1})
+))", R"(2)"},
+			{R"((lambda (+ 1 2) .true ))", R"((lambda 3))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_CONCLUDE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* conclusion)";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to the conclusion wrapped in a conclude opcode.  If a step in a seq, let, declare, or while evaluates to a conclude (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the value conclusion.  Note that conclude opcodes may be nested to break out of outer opcodes.)";
+		d.description = R"(Evaluates to `conclusion` wrapped in a conclude opcode.  If a step in a seq, let, declare, or while evaluates to a conclude (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the value `conclusion`.  Note that conclude opcodes may be nested to break out of outer opcodes.)";
 		d.exampleOutputPairs = make_examples({
 			{R"((print (seq (print "seq1 ") (conclude "success") (print "seq2") ) ))", R"()"}
 			});

@@ -1,6 +1,7 @@
 (seq
-	(store "./intro.txt" (concat
-		(help "overview") (help "syntax"))
+	(store "./amalgam_overview.md" (concat
+		(help "overview") "\n" (help "syntax"))
+		;TODO 25157: include opcodes
 	)
 	
 	(store "./opcodes.json"

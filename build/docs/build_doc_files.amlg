@@ -10,7 +10,7 @@
 						)
 				
 						(concat
-							"### "opcode "\n"
+							"### Opcode: "opcode "\n"
 							"#### Parameters\n"
 							(get details "parameters") "\n"
 							"#### Description\n"
@@ -22,6 +22,21 @@
 							" - Creates new scope: " (if (get details "new_scope") "true" "false") "\n"
 							" - Creates new target scope: " (if (get details "new_target_scope") "true" "false") "\n"
 							" - Value newness (whether references existing node): " (get details "value_newness") "\n"
+							"#### Examples\n"
+							(apply "concat"
+								(map
+									(lambda
+										(concat
+											"Example:\n```amalgam\n"
+											(get (current_value) "example")
+											"\n```\nOutput:\n```amalgam\n"
+											(get (current_value) "output")
+											"\n```\n"
+										)
+									)
+									(get details "examples")
+								)
+							)
 
 							"\n"
 						)

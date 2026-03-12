@@ -15,7 +15,7 @@
 						(concat
 							"### Opcode: `" opcode "`\n"
 							"#### Parameters\n"
-							(get details "parameters") "\n"
+							"`" (get details "parameters") "`\n"
 							"#### Description\n"
 							(get details "description") "\n"
 							"#### Details\n"

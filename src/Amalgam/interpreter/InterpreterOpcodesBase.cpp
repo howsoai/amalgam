@@ -278,7 +278,7 @@ The Amalgam interpreter was designed to be used a standalone interpreter and to 
 
 Initial development on Amalgam began in 2011. It was first offered as a commercial product in 2014 at Hazardous Software Inc. and was open sourced in September 2023 by Howso Incorporated (formerly known as Diveplane Corporation, a company spun out of Hazardous Software Inc.).
 
-When referencing the language: 'Amalgam', 'amalgam', 'amalgam-lang', and 'amalgam language' are used interchangeably with Amalgam being preferred. When referencing the interpreter: 'Amalgam interpreter', 'interpreter', 'Amalgam app', and 'Amalgam lib' are used interchangeably.)");
+When referencing the language: "Amalgam", "amalgam", "amalgam-lang", and "amalgam language" are used interchangeably with Amalgam being preferred. When referencing the interpreter: "Amalgam interpreter", "interpreter", "Amalgam app", and "Amalgam lib" are used interchangeably.)");
 
 static std::string_view _help_syntax(R"(# Amalgam Syntax
 Using <>'s to enclose optional elments, the general syntax is:
@@ -310,11 +310,11 @@ Each entity contains code and/or data via a root node that is executed every cal
 
 Entities may be explicitly named and may be used as code libraries.  For example, a library named MyLibrary with function MyFunction can be called as `(call_entity "MyLibrary" "MyFunction" { parameter_a 1 parameter_b 2 })`.  Entity names are called entity ids, and nested entities can be accessed via an entity walk path, which is a list of ids.  When using null as the entity name, it will refer to the current entity.  Entities that begin with an underscore are unnamed, and when entities are merged, unnamed entities are compared to other unnamed entities to potentially merge.
 
-Numbers are represented via numbers, as well as '.', '-', and 'e' for base-ten exponents.  Further, infinity and negative infinity are represented as '.infinity' and '-.infinity' respectively.  Not-a-number and non-string results are represented via the opcode `(null)`.  The type of number is the string "number".
+Numbers are represented via numeric characters, as well as `.`, `-`, and `e` for base-ten exponents, and are stored and processed as double precision floating point format.  Further, infinity and negative infinity are represented as `.infinity` and `-.infinity` respectively.  Not-a-number and non-string results are represented via the opcode `(null)`.  The type of number is the string "number".
 
 Strings begin and end with double quotes.  Certain characters can be encoded by preceding with a backslash, which are backslash, null represented as 0, double quote, tab represented as t, newline represented as n, and carriage return represented as r.  The type of string is the string "string".  Comparisons and sorting on any strings are done in "natural order", meaning that 1x comes before 10, and m20x comes after m2a.  Bare strings, that is, strings that do not need to be surrounded by quotes, are only allowed with a couple operators, such as assoc, and standalone bare strings are interpreted as symbols.  
 
-Boolean values can be represented as immediate values '.true' and '.false' respectively.  The type of a bool is the string "bool".
+Boolean values can be represented as immediate values `.true` and `.false` respectively.  The type of a bool is the string "bool".
 
 All regular expressions are EMCA-standard regular expressions.  See https://en.cppreference.com/w/cpp/regex/ecmascript or https://262.ecma-international.org/5.1/#sec-15.10 for further details on the regular expression syntax allowed.
 

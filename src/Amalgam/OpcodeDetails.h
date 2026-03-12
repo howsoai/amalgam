@@ -106,7 +106,7 @@ public:
 	};
 
 	std::string parameters;
-	std::string output;
+	std::string returns;
 	std::string description;
 	std::vector<OpcodeExampleOutputPair> exampleOutputPairs;
 	OrderedChildNodeType orderedChildNodeType = OrderedChildNodeType::POSITION;

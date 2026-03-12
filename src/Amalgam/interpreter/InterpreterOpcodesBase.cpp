@@ -371,21 +371,38 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 
 		opcode_attribs->SetMappedChildNode("description", evaluableNodeManager->AllocNode(od.description));
 		opcode_attribs->SetMappedChildNode("parameters", evaluableNodeManager->AllocNode(od.parameters));
-		opcode_attribs->SetMappedChildNode("output", evaluableNodeManager->AllocNode(od.output));
-		opcode_attribs->SetMappedChildNode("allows_Concurrency", evaluableNodeManager->AllocNode(od.allowsConcurrency));
+		opcode_attribs->SetMappedChildNode("returns", evaluableNodeManager->AllocNode(od.returns));
+		opcode_attribs->SetMappedChildNode("allows_concurrency", evaluableNodeManager->AllocNode(od.allowsConcurrency));
 		opcode_attribs->SetMappedChildNode("requires_entity", evaluableNodeManager->AllocNode(od.requiresEntity));
 		opcode_attribs->SetMappedChildNode("new_scope", evaluableNodeManager->AllocNode(od.newScope));
 		opcode_attribs->SetMappedChildNode("new_target_scope", evaluableNodeManager->AllocNode(od.newTargetScope));
-		std::string_view new_value;
+
+		std::string_view permissions_str;
+		switch(od.permissions)
+		{
+		case ExecutionPermissions::Permission::NONE:				permissions_str = "none";					break;
+		case ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR:	permissions_str = "std_out_and_std_err";	break;
+		case ExecutionPermissions::Permission::STD_IN:				permissions_str = "std_in";					break;
+		case ExecutionPermissions::Permission::LOAD:				permissions_str = "load";					break;
+		case ExecutionPermissions::Permission::STORE:				permissions_str = "store";					break;
+		case ExecutionPermissions::Permission::ENVIRONMENT:			permissions_str = "environment";			break;
+		case ExecutionPermissions::Permission::ALTER_PERFORMANCE:	permissions_str = "alter_performance";		break;
+		case ExecutionPermissions::Permission::SYSTEM:				permissions_str = "system";					break;
+		case ExecutionPermissions::Permission::ALL:					permissions_str = "all";					break;
+		default:													permissions_str = "other";					break;
+		}
+		opcode_attribs->SetMappedChildNode("permissions", evaluableNodeManager->AllocNode(permissions_str));
+
+		std::string_view new_value_str;
 		switch(od.valueNewness)
 		{
-		case OpcodeDetails::OpcodeReturnNewnessType::NEW:			new_value = "new";			break;
-		case OpcodeDetails::OpcodeReturnNewnessType::PARTIAL:		new_value = "partial";		break;
-		case OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL:	new_value = "conditional";	break;
-		case OpcodeDetails::OpcodeReturnNewnessType::EXISTING:		new_value = "existing";		break;
-		case OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE:	new_value = "null";			break;
+		case OpcodeDetails::OpcodeReturnNewnessType::NEW:			new_value_str = "new";			break;
+		case OpcodeDetails::OpcodeReturnNewnessType::PARTIAL:		new_value_str = "partial";		break;
+		case OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL:	new_value_str = "conditional";	break;
+		case OpcodeDetails::OpcodeReturnNewnessType::EXISTING:		new_value_str = "existing";		break;
+		case OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE:	new_value_str = "null";			break;
 		}
-		opcode_attribs->SetMappedChildNode("value_newness", evaluableNodeManager->AllocNode(new_value));
+		opcode_attribs->SetMappedChildNode("value_newness", evaluableNodeManager->AllocNode(new_value_str));
 
 		EvaluableNode *example_output_pairs = evaluableNodeManager->AllocNode(ENT_LIST);
 		auto &examples_output_pairs_ocn = example_output_pairs->GetOrderedChildNodesReference();

@@ -1,6 +1,9 @@
 (seq
-;TODO 25157: combine opcodes here with storing below
-	(print
+	(store "./amalgam_overview.md" (concat
+		(help "overview") "\n"
+		(help "syntax") "\n"
+
+		"## Amalgam Opcodes\n"
 		(apply "concat"
 			(map
 				(lambda
@@ -45,12 +48,7 @@
 				(help "opcodes")
 			)
 		)
-	)
-
-(conclude)
-	(store "./amalgam_overview.md" (concat
-		(help "overview") "\n" (help "syntax") "\n" "## Amalgam Opcodes\n")
-	)
+	))
 	
 	(store "./opcodes.json"
 		(map

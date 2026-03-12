@@ -1077,7 +1077,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.allowsConcurrency = true;
 		d.description = R"(For each element in the collection, pushes a new target scope onto the stack, so that current_value accesses the element or elements in the list and current_index accesses the list or assoc index, with target representing the outer set of lists or assocs, and evaluates the function.  Returns the list of results, mapping the list via the specified function. If multiple lists or assocs are specified, then it pulls from each list or assoc simultaneously (null if overrun or index does not exist) and (current_value) contains an array of the values in parameter order.  Note that concurrency is only available when one collection is specified.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (map (lambda (* (current_value) 2)) (list 1 2 3 4))))", R"()"}, {R"((print (map (lambda (+ (current_value) (current_index))) (assoc 10 1 20 2 30 3 40 4))))", R"()"}, {R"((print (map)", R"()"}, {R"((lambda)", R"()"}, {R"((+ (get (current_value) 0) (get (current_value) 1) (get (current_value) 2)))", R"()"}, {R"())", R"()"}, {R"((assoc "0" 0 "1" 1 "a" 3))", R"()"}, {R"((assoc "a" 1 "b" 4))", R"()"}, {R"((list 2 2 2 2))", R"()"}, {R"()))", R"()"}
+			{R"((print (map (lambda (* (current_value) 2)) (list 1 2 3 4))))", R"()"}, {R"((print (map (lambda (+ (current_value) (current_index))) (assoc 10 1 20 2 30 3 40 4))))", R"()"}, {R"((print (map)", R"()"}, {R"((lambda)", R"()"}, {R"((+ (get (current_value) 0) (get (current_value) 1) (get (current_value) 2)))", R"()"}, {R"())", R"()"}, {R"((assoc "0" 0 "1" 1 "a" 3))", R"()"}, {R"((assoc "a" 1 "b" 4))", R"()"}, {R"((list 2 2 2 2))", R"()"}
 			});
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -1782,7 +1782,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the total count of all of the nodes referenced within node1 and node2 that are equivalent, using fractions to represent somewhat similar nodes.  The assoc params can contain the keys string_edit_distance, types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key use_string_edit_distance is true (default is false), it will assume node1 and node2 as string literals and compute via string edit distance.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (commonality)", R"()"}, {R"((lambda (seq 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (seq 2 1 4 (get_entity_comments))))", R"()"}, {R"()))", R"()"}, {R"((print (commonality)", R"()"}, {R"((list 1 2 3 (assoc "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6)))", R"()"}, {R"((list 1 2 3 (assoc "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6)))", R"()"}, {R"()))", R"()"}
+			{R"((print (commonality)", R"()"}, {R"((lambda (seq 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (seq 2 1 4 (get_entity_comments))))", R"()"}, {R"((print (commonality)", R"()"}, {R"((list 1 2 3 (assoc "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6)))", R"()"}, {R"((list 1 2 3 (assoc "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6)))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
@@ -1793,7 +1793,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the number of nodes that are different between 1 and 2, using fractions to represent somewhat similar nodes. The assoc params can contain the keys string_edit_distance, types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key use_string_edit_distance is true (default is false), it will assume node1 and node2 as string literals and compute via string edit distance.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (edit_distance)", R"()"}, {R"((lambda (seq 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (seq 2 1 4 (get_entity_comments))))", R"()"}, {R"()))", R"()"}, {R"((print (edit_distance)", R"()"}, {R"((list 1 2 3 (assoc "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6)))", R"()"}, {R"((list 1 2 3 (assoc "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6)))", R"()"}, {R"()))", R"()"}
+			{R"((print (edit_distance)", R"()"}, {R"((lambda (seq 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (seq 2 1 4 (get_entity_comments))))", R"()"}, {R"((print (edit_distance)", R"()"}, {R"((list 1 2 3 (assoc "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6)))", R"()"}, {R"((list 1 2 3 (assoc "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6)))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
@@ -1804,7 +1804,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to whatever is common between node1 and node2 exclusive.  The assoc params can contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (intersect)", R"()"}, {R"((list 1 (lambda (- 4 2)) (assoc "a" 3 "b" 4)))", R"()"}, {R"((list 1 (lambda (- 4 2)) (assoc "c" 3 "b" 4)))", R"()"}, {R"()))", R"()"}, {R"((print (intersect)", R"()"}, {R"((lambda (seq 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (seq 2 1 4 (get_entity_comments))))", R"()"}, {R"()))", R"()"}, {R"((print (intersect)", R"()"}, {R"((lambda (unordered_list 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (unordered_list 2 1 4 (get_entity_comments))))", R"()"}, {R"()))", R"()"}, {R"((print (intersect)", R"()"}, {R"((list 1 2 3 (assoc "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6)))", R"()"}, {R"((list 1 2 3 (assoc "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6)))", R"()"}, {R"()))", R"()"}, {R"((print (intersect)", R"()"}, {R"((lambda (list 1 (assoc "a" 3 "b" 4))))", R"()"}, {R"((lambda (list 1 (assoc "c" 3 "b" 4))))", R"()"}, {R"()))", R"()"}, {R"((print (intersect)", R"()"}, {R"((lambda (replace 4 2 6 1 7)))", R"()"}, {R"((lambda (replace 4 1 7 2 6)))", R"()"}, {R"()))", R"()"}
+			{R"((print (intersect)", R"()"}, {R"((list 1 (lambda (- 4 2)) (assoc "a" 3 "b" 4)))", R"()"}, {R"((list 1 (lambda (- 4 2)) (assoc "c" 3 "b" 4)))", R"()"}, {R"((print (intersect)", R"()"}, {R"((lambda (seq 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (seq 2 1 4 (get_entity_comments))))", R"()"}, {R"((print (intersect)", R"()"}, {R"((lambda (unordered_list 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (unordered_list 2 1 4 (get_entity_comments))))", R"()"}, {R"((print (intersect)", R"()"}, {R"((list 1 2 3 (assoc "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6)))", R"()"}, {R"((list 1 2 3 (assoc "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6)))", R"()"}, {R"((print (intersect)", R"()"}, {R"((lambda (list 1 (assoc "a" 3 "b" 4))))", R"()"}, {R"((lambda (list 1 (assoc "c" 3 "b" 4))))", R"()"}, {R"((print (intersect)", R"()"}, {R"((lambda (replace 4 2 6 1 7)))", R"()"}, {R"((lambda (replace 4 1 7 2 6)))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
@@ -1815,7 +1815,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to whatever is inclusive when merging node1 and node2.  The assoc params can contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (union)", R"()"}, {R"((lambda (seq 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (seq 2 1 4 (get_entity_comments))))", R"()"}, {R"()))", R"()"}, {R"((print (union)", R"()"}, {R"((list 1 (lambda (- 4 2)) (assoc "a" 3 "b" 4)))", R"()"}, {R"((list 1 (lambda (- 4 2)) (assoc "c" 3 "b" 4)))", R"()"}, {R"()))", R"()"}, {R"((print (union)", R"()"}, {R"((lambda (unordered_list 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (unordered_list 2 1 4 (get_entity_comments))))", R"()"}, {R"()))", R"()"}, {R"((print (union)", R"()"}, {R"((list 1 2 3 (assoc "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6)))", R"()"}, {R"((list 1 2 3 (assoc "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6)))", R"()"}, {R"()))", R"()"}, {R"((print (union)", R"()"}, {R"((lambda (list 1 (assoc "a" 3 "b" 4))))", R"()"}, {R"((lambda (list 1 (assoc "c" 3 "b" 4))))", R"()"}, {R"()))", R"()"}
+			{R"((print (union)", R"()"}, {R"((lambda (seq 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (seq 2 1 4 (get_entity_comments))))", R"()"}, {R"((print (union)", R"()"}, {R"((list 1 (lambda (- 4 2)) (assoc "a" 3 "b" 4)))", R"()"}, {R"((list 1 (lambda (- 4 2)) (assoc "c" 3 "b" 4)))", R"()"}, {R"((print (union)", R"()"}, {R"((lambda (unordered_list 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (unordered_list 2 1 4 (get_entity_comments))))", R"()"}, {R"((print (union)", R"()"}, {R"((list 1 2 3 (assoc "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6)))", R"()"}, {R"((list 1 2 3 (assoc "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6)))", R"()"}, {R"((print (union)", R"()"}, {R"((lambda (list 1 (assoc "a" 3 "b" 4))))", R"()"}, {R"((lambda (list 1 (assoc "c" 3 "b" 4))))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
@@ -1826,7 +1826,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(any)";
 		d.description = R"(Finds the difference between node1 and node2, and generates code that, if evaluated passing node1 as its parameter "_", would turn it into node2.  Useful for finding the smallest set of what needs to be changed to apply it to new (and possibly slightly different) data or code.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (difference)", R"()"}, {R"((lambda (assoc a 1 b 2 c 4 d 7 e 10 f 12 g 13)))", R"()"}, {R"((lambda (list a 2 c 4 d 6 q 8 e 10 f 12 g 14)))", R"()"}, {R"()))", R"()"}, {R"((print (difference)", R"()"}, {R"((assoc a 1 b 2 c 4 d 7 e 10 f 12 g 13))", R"()"}, {R"((assoc a 2 c 4 d 6 q 8 e 10 f 12 g 14))", R"()"}, {R"()))", R"()"}, {R"((print (difference)", R"()"}, {R"((lambda (list 1 2 4 7 10 12 13)))", R"()"}, {R"((lambda (list 2 4 6 8 10 12 14)))", R"()"}, {R"()))", R"()"}, {R"((print (difference)", R"()"}, {R"((lambda (assoc a 1 b 2 c 4 d 7 e 10 f 12 g 13)))", R"()"}, {R"((lambda (assoc a 2 c 4 d 6 q 8 e 10 f 12 g 14)))", R"()"}, {R"()))", R"()"}, {R"((print (difference)", R"()"}, {R"((lambda (assoc a 1 g (list 1 2))))", R"()"}, {R"((lambda (assoc a 2 g (list 1 4))))", R"()"}, {R"()))", R"()"}, {R"((print (difference)", R"()"}, {R"((lambda (assoc a 1 g (list 1 2))))", R"()"}, {R"((lambda (assoc a 2 g (list 1 4))))", R"()"}, {R"()))", R"()"}, {R"((let (assoc)", R"()"}, {R"(x (lambda (list 6 (list 1 2))))", R"()"}, {R"(y (lambda (list 7 (list 1 4))))", R"()"}, {R"())", R"()"}, {R"((print (difference x y) ))", R"()"}, {R"((print (call (difference x y) (assoc _ x)) ))", R"()"}, {R"())", R"()"}, {R"((let (assoc)", R"()"}, {R"(x (lambda (list 6 (list (list "a" "b") 1 2))))", R"()"}, {R"(y (lambda (list 7 (list (list "a" "x") 1 4))))", R"()"}, {R"())", R"()"}, {R"((print (difference x y) ))", R"()"}, {R"((print (call (difference x y) (assoc _ x)) ))", R"()"}, {R"())", R"()"}
+			{R"((print (difference)", R"()"}, {R"((lambda (assoc a 1 b 2 c 4 d 7 e 10 f 12 g 13)))", R"()"}, {R"((lambda (list a 2 c 4 d 6 q 8 e 10 f 12 g 14)))", R"()"}, {R"((print (difference)", R"()"}, {R"((assoc a 1 b 2 c 4 d 7 e 10 f 12 g 13))", R"()"}, {R"((assoc a 2 c 4 d 6 q 8 e 10 f 12 g 14))", R"()"}, {R"((print (difference)", R"()"}, {R"((lambda (list 1 2 4 7 10 12 13)))", R"()"}, {R"((lambda (list 2 4 6 8 10 12 14)))", R"()"}, {R"((print (difference)", R"()"}, {R"((lambda (assoc a 1 b 2 c 4 d 7 e 10 f 12 g 13)))", R"()"}, {R"((lambda (assoc a 2 c 4 d 6 q 8 e 10 f 12 g 14)))", R"()"}, {R"((print (difference)", R"()"}, {R"((lambda (assoc a 1 g (list 1 2))))", R"()"}, {R"((lambda (assoc a 2 g (list 1 4))))", R"()"}, {R"((print (difference)", R"()"}, {R"((lambda (assoc a 1 g (list 1 2))))", R"()"}, {R"((lambda (assoc a 2 g (list 1 4))))", R"()"}, {R"((let (assoc)", R"()"}, {R"(x (lambda (list 6 (list 1 2))))", R"()"}, {R"(y (lambda (list 7 (list 1 4))))", R"()"}, {R"())", R"()"}, {R"((print (difference x y) ))", R"()"}, {R"((print (call (difference x y) (assoc _ x)) ))", R"()"}, {R"())", R"()"}, {R"((let (assoc)", R"()"}, {R"(x (lambda (list 6 (list (list "a" "b") 1 2))))", R"()"}, {R"(y (lambda (list 7 (list (list "a" "x") 1 4))))", R"()"}, {R"())", R"()"}, {R"((print (difference x y) ))", R"()"}, {R"((print (call (difference x y) (assoc _ x)) ))", R"()"}, {R"())", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
@@ -1859,7 +1859,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to code that, if called, would completely reproduce the entity specified by id_path, as well as all contained entities.  If include_rand_seeds is true, its default, it will include all entities' random seeds.  If parallel_create is true, then the creates will be performed with parallel markers as appropriate for each group of contained entities.  If include_version is true, it will include a comment on the top node that is the current version of the Amalgam interpreter, which can be used for validating interoperability when loading code.  The code returned accepts two parameters, create_new_entity, which defaults to true, and new_entity, which defaults to null.  If create_new_entity is true, then it will create a new entity with id_path specified by new_entity, where null will create an unnamed entity.  If create_new_entity is false, then it will overwrite the current entity's code and create all contained entities.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((create_entities "FlattenTest" (lambda)", R"()"}, {R"({ a (rand) })", R"()"}, {R"()))", R"()"}, {R"((let (assoc fe (flatten_entity "FlattenTest")))", R"()"}, {R"((print fe))", R"()"}, {R"((print (flatten_entity (call fe))))", R"()"}, {R"((print (difference_entities "FlattenTest" (call fe))))", R"()"}, {R"((call fe (assoc create_new_entity .false new_entity "new_entity_name")))", R"()"}, {R"())", R"()"}
+			{R"((create_entities "FlattenTest" (lambda)", R"()"}, {R"({ a (rand) })", R"()"}, {R"((let (assoc fe (flatten_entity "FlattenTest")))", R"()"}, {R"((print fe))", R"()"}, {R"((print (flatten_entity (call fe))))", R"()"}, {R"((print (difference_entities "FlattenTest" (call fe))))", R"()"}, {R"((call fe (assoc create_new_entity .false new_entity "new_entity_name")))", R"()"}, {R"())", R"()"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -2176,7 +2176,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(list of string)";
 		d.description = R"(Returns a list of strings of ids of entities contained in the entity specified by id_path or current entity if containing_entity is omitted.  The parameters of condition1 through conditionN are query conditions, and they may be any of the query opcodes or may be a list of query opcodes (beginning with query_), where each condition will be executed in order.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 }))", R"()"}, {R"())", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"()))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"}
+			{R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 }))", R"()"}, {R"())", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
@@ -2189,7 +2189,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(any)";
 		d.description = R"(Performs queries like contained_entities but returns a value or set of values appropriate for the last query in conditions.  The parameters of condition1 through conditionN are query conditions, and they may be any of the query opcodes or may be a list of query opcodes (beginning with query_), where each condition will be executed in order.  If the last query does not return anything, then it will just return the matching entities.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 } ))", R"()"}, {R"())", R"()"}, {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"()))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"}
+			{R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 } ))", R"()"}, {R"())", R"()"}, {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
@@ -2202,7 +2202,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects num_to_select entities sorted by entity id.  If start_offset is specified, then it will return num_to_select starting that far in, and subsequent calls can be used to get all entities in batches.  If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed.  If random_seed is specified and start_offset is null, then it will not guarantee a position in the order for subsequent calls that specify start_offset, and will execute more quickly.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_select 4 (null) (rand)))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_select 4 (null) (rand)))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2215,7 +2215,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects a random sample of num_to_select entities sorted by entity_id with replacement. If weight_label_name is specified and not null, it will use weight_label_name as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values for weights will be ignored, and if there are any infinite values, those will be selected from uniformly.  If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed. If random_seed is not specified then the subsequent calls will return the same sample of entities.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 (rand)))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 "weight" (rand)))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 (rand)))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 "weight" (rand)))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2228,7 +2228,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects only the entities in list_of_entity_ids.  It can be used to filter results before doing subsequent queries.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_in_entity_list (list "Entity1" "Entity2")))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_in_entity_list (list "Entity1" "Entity2")))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2241,7 +2241,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, filters out the entities in list_of_entity_ids.  It can be used to filter results before doing subsequent queries.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_in_entity_list (list "Entity1" "Entity2")))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_in_entity_list (list "Entity1" "Entity2")))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2254,7 +2254,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities which have the named label.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding label names and values.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2267,7 +2267,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities which do not have the named label.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_exists "TargetLabel"))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_exists "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2280,7 +2280,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the specified label is equal to the specified *.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_equals "TargetLabel" 3))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_equals "TargetLabel" 3))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2293,7 +2293,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the specified label is not equal to the specified *.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_equals "TargetLabel" 3))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_equals "TargetLabel" 3))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2306,7 +2306,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the specified label has a value between the specified lower_bound an upper_bound.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_between "TargetLabel" 2 5))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_between "x" -4 5))", R"()"}, {R"((query_between "y" -4 0))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_between "TargetLabel" 2 5))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_between "x" -4 5))", R"()"}, {R"((query_between "y" -4 0))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2319,7 +2319,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the specified label has a value outside the specified lower_bound an upper_bound.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "TargetLabel" 2 5))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "x" -4 5))", R"()"}, {R"((query_not_between "y" -4 0))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "TargetLabel" 2 5))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "x" -4 5))", R"()"}, {R"((query_not_between "y" -4 0))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2332,7 +2332,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the specified label has one of the values specified in values.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "TargetLabel" (2 5)))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "x" (list -4 5)))", R"()"}, {R"((query_among "y" (list -4 0)))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "TargetLabel" (2 5)))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "x" (list -4 5)))", R"()"}, {R"((query_among "y" (list -4 0)))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2345,7 +2345,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the specified label does not have one of the values specified in values.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "TargetLabel" (2 5)))", R"()"}, {R"()))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "x" (list -4 5)))", R"()"}, {R"((query_not_among "y" (list -4 0)))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "TargetLabel" (2 5)))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "x" (list -4 5)))", R"()"}, {R"((query_not_among "y" (list -4 0)))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2358,7 +2358,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects a number of entities with the highest values in the specified label.  If entities_returned is specified, it will return that many entities, otherwise will return 1.  If numeric is true, its default value, then it only considers numeric values; if false, will consider all types.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_max "TargetLabel" 3))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_max "TargetLabel" 3))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2371,7 +2371,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects a number of entities with the lowest values in the specified label.  If entities_returned is specified, it will return that many entities, otherwise will return 1.  If numeric is true, its default value, then it only considers numeric values; if false, will consider all types.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_min "TargetLabel" 3))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_min "TargetLabel" 3))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2384,7 +2384,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, returns the sum of all entities over the specified label.  If weight_label_name is specified, it will find the weighted sum, which is the same as a dot product.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_sum "TargetLabel"))", R"()"}, {R"()))", R"()"}
+			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_sum "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2397,7 +2397,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, finds the statistical mode of label_name for numerical data.  If weight_label_name is specified, it will find the weighted mode.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_mode "TargetLabel"))", R"()"}, {R"()))", R"()"}
+			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_mode "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2410,7 +2410,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, finds the statistical quantile of label_name for numerical data, using q as the parameter to the quantile (default 0.5, median).  If weight_label_name is specified, it will find the weighted quantile, otherwise weight is 1.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_quantile "TargetLabel" 0.75))", R"()"}, {R"()))", R"()"}
+			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_quantile "TargetLabel" 0.75))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2423,7 +2423,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, computes the generalized mean over the label_name for numeric data.  If p is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity) to harmonic mean (-1) to geometric mean (0) to arithmetic mean (1) to maximum (infinity).  If weight_label_name is specified, it will normalize the weights and compute a weighted mean.  If center is specified, calculations will use that as central point, default is 0.0.  If calculate_moment is true, results will not be raised to 1/p.  If absolute_value is true, the differences will take the absolute value.  Various parameterizations of generalized_mean can be used to compute moments about the mean, especially setting the calculate_moment parameter to true and using the mean as the center.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_generalized_mean "TargetLabel" 0.5))", R"()"}, {R"()))", R"()"}
+			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_generalized_mean "TargetLabel" 0.5))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2436,7 +2436,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, finds the smallest difference between any two values for the specified label. If cyclic_range is null, the default value, then it will assume the values are not cyclic; if it is a number, then it will assume the range is from 0 to cyclic_range.  If include_zero_difference is true, its default value, then it will return 0 if the smallest gap between any two numbers is 0; if false, it will return the smallest nonzero value.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_min_difference "TargetLabel"))", R"()"}, {R"()))", R"()"}
+			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_min_difference "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2449,7 +2449,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, finds the largest difference between any two values for the specified label. If cyclic_range is null, the default value, then it will assume the values are not cyclic; if it is a number, then it will assume the range is from 0 to cyclic_range.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_max_difference "TargetLabel"))", R"()"}, {R"()))", R"()"}
+			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_max_difference "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2462,7 +2462,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, computes the counts for each value of the label and returns an assoc with the keys being the label values and the values being the counts or weights of the values.  If weight_label_name is specified, then it will accumulate that weight for each value, otherwise it will use a weight of 1 for each yielding a count.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_value_masses "TargetLabel"))", R"()"}, {R"()))", R"()"}
+			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_value_masses "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2475,7 +2475,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities with a value in the specified label less than or equal to the specified *.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_less_or_equal_to "TargetLabel" 3))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_less_or_equal_to "TargetLabel" 3))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2488,7 +2488,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities with a value in the specified label greater than or equal to the specified *.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_greater_or_equal_to "TargetLabel" 3))", R"()"}, {R"()))", R"()"}
+			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_greater_or_equal_to "TargetLabel" 3))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -2722,7 +2722,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(list of any1 any2)";
 		d.description = R"(Like call_entity returning the value in *1.  However, it also returns a list of direct_assign_to_entities calls with respective data in *2, holding a log of all of the changes that have elapsed.  The log may be evaluated to apply or re-apply the changes to any id_path passed in to the log as _. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)).  If return_warnings is false, just the value will be returned.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((create_entities "CEGCTest" (lambda)", R"()"}, {R"((assoc a_assign)", R"()"}, {R"((seq)", R"()"}, {R"((create_entities "Contained" (lambda)", R"()"}, {R"({a 4 })", R"()"}, {R"()))", R"()"}, {R"((print (retrieve_from_entity "Contained" "a") ))", R"()"}, {R"((assign_to_entities "Contained" (assoc a 6) ))", R"()"}, {R"((print (retrieve_from_entity "Contained" "a") ))", R"()"}, {R"((set_entity_rand_seed "Contained" "bbbb"))", R"()"}, {R"((destroy_entities "Contained"))", R"()"}, {R"())", R"()"}, {R"())", R"()"}, {R"()))", R"()"}, {R"((print (call_entity_get_changes "CEGCTest" "a_assign")))", R"()"}
+			{R"((create_entities "CEGCTest" (lambda)", R"()"}, {R"((assoc a_assign)", R"()"}, {R"((seq)", R"()"}, {R"((create_entities "Contained" (lambda)", R"()"}, {R"({a 4 })", R"()"}, {R"((print (retrieve_from_entity "Contained" "a") ))", R"()"}, {R"((assign_to_entities "Contained" (assoc a 6) ))", R"()"}, {R"((print (retrieve_from_entity "Contained" "a") ))", R"()"}, {R"((set_entity_rand_seed "Contained" "bbbb"))", R"()"}, {R"((destroy_entities "Contained"))", R"()"}, {R"())", R"()"}, {R"())", R"()"}, {R"((print (call_entity_get_changes "CEGCTest" "a_assign")))", R"()"}
 			});
 		d.requiresEntity = true;
 		d.newScope = true;
@@ -2750,7 +2750,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.returns = R"(any)";
 		d.description = R"(Attempts to call the container associated with the label that begins with a caret; the caret indicates that the label is allowed to be accessed by contained entities.  It will evaluate to the return value of the call, null if not found.  The call is made on the label specified by string.  If assoc is specified, then it will pass assoc as the arguments on the scope stack.  The parameter accessing_entity will automatically be set to the id of the caller, regardless of the arguments.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The execution performed will use a random number stream created from the entity's random number stream. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)).  If return_warnings is false, just the value will be returned.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((create_entities "TestContainerExec")", R"()"}, {R"((lambda (assoc)", R"()"}, {R"(^a 3)", R"()"}, {R"(b (contained_entities))", R"()"}, {R"(c (+ x 1))", R"()"}, {R"(d (call_entity "TCEc" "q" (assoc x x)))", R"()"}, {R"(x 4)", R"()"}, {R"(y 5)", R"()"}, {R"()))", R"()"}, {R"())", R"()"}, {R"((create_entities (list "TestContainerExec" "TCEc"))", R"()"}, {R"((lambda (assoc)", R"()"}, {R"(p 3)", R"()"}, {R"(q (+ x (call_container "a")))", R"()"}, {R"(bar "foo")", R"()"}, {R"()))", R"()"}, {R"())", R"()"}, {R"((print (call_entity "TestContainerExec" "d" (assoc x 4))))", R"()"}
+			{R"((create_entities "TestContainerExec")", R"()"}, {R"((lambda (assoc)", R"()"}, {R"(^a 3)", R"()"}, {R"(b (contained_entities))", R"()"}, {R"(c (+ x 1))", R"()"}, {R"(d (call_entity "TCEc" "q" (assoc x x)))", R"()"}, {R"(x 4)", R"()"}, {R"(y 5)", R"()"}, {R"())", R"()"}, {R"((create_entities (list "TestContainerExec" "TCEc"))", R"()"}, {R"((lambda (assoc)", R"()"}, {R"(p 3)", R"()"}, {R"(q (+ x (call_container "a")))", R"()"}, {R"(bar "foo")", R"()"}, {R"())", R"()"}, {R"((print (call_entity "TestContainerExec" "d" (assoc x 4))))", R"()"}
 			});
 		d.requiresEntity = true;
 		d.newScope = true;

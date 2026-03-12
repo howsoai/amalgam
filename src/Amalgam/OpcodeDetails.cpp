@@ -456,7 +456,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		OpcodeDetails d;
 		d.parameters = R"(bool condition [code code1] [code code2] ... [code codeN])";
 		d.returns = R"(any)";
-		d.description = R"(Each time the `condition` evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the `condition` was initially false or if it encounters a conclude or return, it will halt processing and evaluate to the value returned by conclude or propagate the return.  For iteration of the loop, pushes a new target scope onto the target stack, with current_index being the iteration count, and previous_result being the last evaluated codeN of the previous loop.)";
+		d.description = R"(Each time the `condition` evaluates to true, it runs each of code sequentially, looping. Evaluates to the last `codeN` or null if the `condition` was initially false or if it encounters a `conclude` or `return`, it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  For each iteration of the loop, it pushes a new target scope onto the target stack, with `(current_index)` being the iteration count, and `(previous_result)` being the last evaluated `codeN` of the previous loop.)";
 		d.exampleOutputPairs = make_examples({
 						{R"&((seq
         (assign

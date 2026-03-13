@@ -479,30 +479,51 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_LET)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(assoc data [code function1] [code function2] ... [code functionN])";
+		d.parameters = R"(assoc variables [code code1] [code code2] ... [code codeN])";
 		d.returns = R"(any)";
-		d.description = R"(Pushes the key-value pairs of data onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude or return, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value.)";
+		d.description = R"(Pushes the key-value pairs of `variables` onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((let (assoc x 4 y 6) (print (+ x y))))", R"()"}
+						{R"&((let
+        {x 4 y 6}
+        (+ x y)
+))&", R"(10)"},
+						{R"&((let
+        {x 4 y 6}
+        (declare
+                {x 5 z 1}
+                (+ x y z)
+        )
+))&", R"(11)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_DECLARE)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(assoc data [code function1] [code function2] ... [code functionN])";
+		d.parameters = R"(assoc variables [code code1] [code code2] ... [code codeN])";
 		d.returns = R"(any)";
-		d.description = R"(For each key-value pair of data, if not already in the current context in the scope stack, it will define them.  Then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude or return, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value.)";
+		d.description = R"(For each key-value pair of `variables`, if not already in the current context in the scope stack, it will define them.  Then it runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((let (assoc x 4 y 6))", R"()"}, {R"((declare (assoc x 5 z 1))", R"()"}, {R"((print (+ x y z)) ))", R"()"}, {R"())", R"()"}
+						{R"&((seq
+        (declare
+                {x 7}
+                (accum "x" 1)
+        )
+        (declare
+                {x 4}
+        )
+        x
+))&", R"(8)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_ASSIGN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(assoc data|string variable_name [number index1|string index1|list walk_path1|* new_value1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...)";

@@ -523,44 +523,217 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.hasSideEffects = true;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_ASSIGN)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(assoc data|string variable_name [number index1|string index1|list walk_path1|* new_value1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...)";
+		d.parameters = R"(assoc|string variables [number index1|string index1|list walk_path1|* new_value1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...)";
 		d.returns = R"(null)";
-		d.description = R"(If the assoc data is specified, then for each key-value pair of data, assigns the value to the variable represented by the key found by tracing upward on the stack. If none found, it will create a variable on the top of the stack. If the string variable_name is specified, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to assign new_value to that part of the variable's structure.  If there are only two parameters, then it will assign the second parameter to the variable represented by the first.)";
+		d.description = R"(If `variables` is an assoc, then for each key-value pair it assigns the value to the variable represented by the key found by tracing upward on the stack.  If a variable is not found, it will create a variable on the top of the stack with that name.  If `variables` is a string and there are two parameters, it will assign the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to assign new_value to that part of the variable's structure.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (assign (assoc x 10))))", R"()"}, {R"((print x))", R"()"}, {R"((print (assign "x" 10))", R"()"}
+						{R"&((let
+        {x 0}
+        (assign
+                {x 10}
+        )
+        x
+))&", R"(10)"},
+						{R"&((seq
+        (assign "x" 20)
+        x
+))&", R"(20)"},
+						{R"&((seq
+        (assign
+                "x"
+                [
+                        0
+                        1
+                        2
+                        (associate "a" 1 "b" 2 "c" 3)
+                ]
+        )
+        (assign
+                "x"
+                [1]
+                "not 1"
+        )
+        x
+))&", R"([
+        0
+        "not 1"
+        2
+        {a 1 b 2 c 3}
+])"},
+						{R"&((seq
+        (assign
+                "x"
+                [
+                        0
+                        1
+                        2
+                        (associate "a" 1 "b" 2 "c" 3)
+                ]
+        )
+        (assign
+                "x"
+                [3 "c"]
+                ["c attribute"]
+                [3 "a"]
+                ["a attribute"]
+        )
+        x
+))&", R"([
+        0
+        1
+        2
+        {
+                a ["a attribute"]
+                b 2
+                c ["c attribute"]
+        }
+])"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ACCUM)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(assoc data|string variable_name [number index1|string index1|list walk_path1] [* accum_value1] [number index2|string index2|list walk_path2] [* accum_value2] ...)";
+		d.parameters = R"(assoc|string variables [number index1|string index1|list walk_path1] [* accum_value1] [number index2|string index2|list walk_path2] [* accum_value2] ...)";
 		d.returns = R"(null)";
-		d.description = R"(If the assoc data is specified, then for each key-value pair of data, assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the sum in the variable.  It searches for the variable name tracing up the stack to find the variable. If none found, it will create a variable on the top of the stack. Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. If the string variable_name is specified, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to accum accum_value to that part of the variable's structure.  If there are only two parameters, then it will accum the second parameter to the variable represented by the first.)";
+		d.description = R"(If `variables` is an assoc, then for each key-value pair of data, it assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the result in the variable.  It searches for the variable name tracing up the stack to find the variable. If the variable is not found, it will create a variable on the top of the stack.  Accumulation is performed differently based on the type.  For numeric values it adds, for strings it concatenates, for lists and assocs it appends.  If `variables` is a string and there are two parameters, then it will accum the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to accum accum_value to that part of the variable's structure.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (assign (assoc x 10))))", R"()"}, {R"((print x))", R"()"}, {R"((print (accum (assoc x 1))))", R"()"}, {R"((print x))", R"()"}
+						{R"&((seq
+        (assign
+                {x 10}
+        )
+        (accum
+                {x 1}
+        )
+        x
+))&", R"(11)"},
+						{R"&((declare
+        {
+                accum_assoc (associate "a" 1 "b" 2)
+                accum_list [1 2 3]
+                accum_string "abc"
+        }
+        (accum
+                {accum_string "def"}
+        )
+        (accum
+                {
+                        accum_list [4 5 6]
+                }
+        )
+        (accum
+                {
+                        accum_list (associate "7" 8)
+                }
+        )
+        (accum
+                {
+                        accum_assoc (associate "c" 3 "d" 4)
+                }
+        )
+        (accum
+                {
+                        accum_assoc ["e" 5]
+                }
+        )
+        [accum_string accum_list accum_assoc]
+))&", R"([
+        "abcdef"
+        [
+                1
+                2
+                3
+                4
+                5
+                6
+                "7"
+                8
+        ]
+        {
+                a 1
+                b 2
+                c 3
+                d 4
+                e 5
+        }
+])"},
+						{R"&((seq
+        (assign "x" 1)
+        (accum "x" [] 4)
+        x
+))&", R"(5)"},
+						{R"&((seq
+        (assign
+                "x"
+                [
+                        0
+                        1
+                        2
+                        (associate "a" 1 "b" 2 "c" 3)
+                ]
+        )
+        (accum
+                "x"
+                [1]
+                1
+        )
+        x
+))&", R"([
+        0
+        2
+        2
+        {a 1 b 2 c 3}
+])"},
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_RETRIEVE)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([string variable_name|list variable_names|assoc index_set])";
+		d.parameters = R"([string|list|assoc variables])";
 		d.returns = R"(any)";
-		d.description = R"(If string specified, gets the value on the stack specified by the string. If list specified, returns a list of the values on the stack specified by each element of the list interpreted as a string. If assoc specified, returns an assoc with the indices of the assoc which was passed in with the values being the appropriate values on the stack for each index.)";
+		d.description = R"(If `variables` is a string, then it gets the value on the stack specified by the string.  If `variables` is a list, it returns a list of the values on the stack specified by each element of the list interpreted as a string.  If `variables` is an assoc, it returns an assoc with the indices of the assoc which was passed in with the values being the appropriate values on the stack for each index.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((retrieve "my_variable"))", R"()"}, {R"((assign (assoc rwww 1 raaa 2)))", R"()"}, {R"((print (retrieve "rwww")))", R"()"}, {R"((print (retrieve (list "rwww" "raaa"))))", R"()"}, {R"((print (retrieve (zip (list "rwww" "raaa") null))))", R"()"}
+						{R"&((seq
+        (assign
+                {a 1}
+        )
+        (retrieve "a")
+))&", R"(1)"},
+						{R"&((seq
+        (assign
+                {a 1 b 2}
+        )
+        [
+                (retrieve "a")
+                (retrieve
+                        ["a" "b"]
+                )
+                (retrieve
+                        (zip
+                                ["a" "b"]
+                        )
+                )
+        ]
+))&", R"([
+        1
+        [@(target .true 0) 2]
+        {a @(target .true 0) b @(target .true [1 1])}
+])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_GET)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* data [number index|string index|list walk_path_1] [number index|string index|list walk_path_2] ...)";

@@ -127,7 +127,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.hasSideEffects = true;
 		return d;
 	}();
-
+	//TODO 25157: fix extra indentation
 	arr[static_cast<std::size_t>(ENT_HELP)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([string topic])";

@@ -127,7 +127,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.hasSideEffects = true;
 		return d;
 	}();
-	//TODO 25157: fix extra indentation
+
 	arr[static_cast<std::size_t>(ENT_HELP)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([string topic])";
@@ -135,18 +135,18 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(If no parameter is specified it returns a string of the topics that can be used.  For given a `topic`, returns a string or relevant data that describes the given topic.)";
 		d.exampleOutputPairs = make_examples({
 			{R"((help "+"))", R"&({
-		allows_concurrency .true
-		description "Sums all numbers."
-		examples [
-						{example "(+ 1 2 3 4)" output "10"}
-				]
-		new_scope .false
-		new_target_scope .false
-		parameters "[number x1] [number x2] ... [number xN]"
-		permissions "none"
-		requires_entity .false
-		returns "number"
-		value_newness "new"
+	allows_concurrency .true
+	description "Sums all numbers."
+	examples [
+					{example "(+ 1 2 3 4)" output "10"}
+			]
+	new_scope .false
+	new_target_scope .false
+	parameters "[number x1] [number x2] ... [number xN]"
+	permissions "none"
+	requires_entity .false
+	returns "number"
+	value_newness "new"
 })&"}
 			});
 		d.permissions = ExecutionPermissions::Permission::ALL;
@@ -162,12 +162,12 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(Retrieves the default values of `value_type`, either "mutation_opcodes" or "mutation_types")";
 		d.exampleOutputPairs = make_examples({
 			{R"((get_defaults "mutation_types"))", R"({
-		change_type 0.29
-		deep_copy_elements 0.07
-		delete 0.1
-		delete_elements 0.05
-		insert 0.25
-		swap_elements 0.24
+	change_type 0.29
+	deep_copy_elements 0.07
+	delete 0.1
+	delete_elements 0.05
+	insert 0.25
+	swap_elements 0.24
 })"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -195,29 +195,29 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(String `str` is parsed into code, and the result is returned.  If `transactional` is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If `transactional` is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If any performance constraints are given or `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless `return_warnings` is false, in which case just the value will be returned.)";
 		d.exampleOutputPairs = make_examples({
 			{R"&((parse "(seq (+ 1 2))" .true)))&", R"&((seq
-		(+ 1 2)
+	(+ 1 2)
 ))&"},
 			{R"&((parse "(seq (+ 1 2) (+ " .true)))&", R"&((seq
-		(+ 1 2)
+	(+ 1 2)
 ))&"},
 			{R"&((parse "(seq (+ 1 2) (+ " .false .true))")&", R"([
-		(seq
-				(+ 1 2)
-				(+)
-		)
-		["Warning: 2 missing closing parenthesis at line 1, column 17"]
+	(seq
+		(+ 1 2)
+		(+)
+	)
+	["Warning: 2 missing closing parenthesis at line 1, column 17"]
 ])"},
 			{R"&((parse "(seq (+ 1 2) (+ " .true .true))")&", R"([
-		(seq
-				(+ 1 2)
-		)
-		["Warning: 1 missing closing parenthesis at line 1, column 17"]
+	(seq
+		(+ 1 2)
+	)
+	["Warning: 1 missing closing parenthesis at line 1, column 17"]
 ])"},
 			{R"&((parse "(seq (+ 1 2) (+ (a ) 3) " .true .true))")&", R"([
-		(seq
-				(+ 1 2)
-		)
-		["Warning: Invalid opcode \"a\"; transforming to apply opcode using the invalid opcode type at line 1, column 19"]
+	(seq
+		(+ 1 2)
+	)
+	["Warning: Invalid opcode \"a\"; transforming to apply opcode using the invalid opcode type at line 1, column 19"]
 ])"},
 			{R"&((parse "(6)")))&", R"((apply "6"))"},
 			{R"&((parse "(not_an_opcode)")))&", R"((apply "not_an_opcode"))"}
@@ -302,39 +302,39 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.description = R"(Evaluates to `conclusion` wrapped in a `conclude` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a `conclude` (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to the value `conclusion`.  Note that conclude opcodes may be nested to break out of outer opcodes.)";
 		d.exampleOutputPairs = make_examples({
 			{R"&((seq
-		"seq1"
-		(conclude "success")
-		"seq2"
+	"seq1"
+	(conclude "success")
+	"seq2"
 ))&", R"("success")"},
 			{R"&((while
-		(< 1 100)
-		"while1"
-		(conclude "success")
-		"while2"
+	(< 1 100)
+	"while1"
+	(conclude "success")
+	"while2"
 ))&", R"("success")"},
 			{R"&((let
-		{a 1}
-		"let1"
-		(conclude "success")
-		"let2"
+	{a 1}
+	"let1"
+	(conclude "success")
+	"let2"
 ))&", R"("success")"},
 			{R"&((declare
-		{abcd 1}
-		"declare1"
-		(conclude "success")
-		"declare2"
+	{abcd 1}
+	"declare1"
+	(conclude "success")
+	"declare2"
 ))&", R"("success")"},
 			{R"&((seq
-		1
-		(declare
-				{}
-				(while
-						1
-						(if .true (conclude))
-				)
-				4
+	1
+	(declare
+		{}
+		(while
+			1
+			(if .true (conclude))
 		)
-		2
+		4
+	)
+	2
 ))&", R"(2)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
@@ -348,16 +348,16 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to `return_value` wrapped in a `return` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a return (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to the `return` opcode with its `return_value`.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including `call`, `call_sandboxed`, `call_entity`, `call_entity_get_changes`, or `call_container`, at which point it will evaluate to `return_value`.  Note that return opcodes may be nested to break out of multiple calls.)";
 		d.exampleOutputPairs = make_examples({
-						{R"&((call
+			{R"&((call
+	(seq
+		1
+		2
 		(seq
-				1
-				2
-				(seq
-						(return 3)
-						4
-				)
-				5
+			(return 3)
+			4
 		)
+		5
+	)
 ))&", R"(3)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
@@ -371,19 +371,19 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.returns = R"(any)";
 		d.description = R"(Evaluates `function` after pushing the `arguments` assoc onto the scope stack.)";
 		d.exampleOutputPairs = make_examples({
-						{R"&((let
-		{
-				foo (lambda
-								(declare
-										{x 6}
-										(+ x 2)
-								)
-						)
-		}
-		(call
-				foo
-				{x 3}
-		)
+			{R"&((let
+	{
+		foo (lambda
+				(declare
+					{x 6}
+					(+ x 2)
+				)
+			)
+	}
+	(call
+		foo
+		{x 3}
+	)
 ))&", R"(5)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
@@ -398,53 +398,53 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.returns = R"(any)";
 		d.description = R"(Evaluates the code specified by function, isolating it from everything except for arguments, which is used as a single layer of the scope stack.  This is useful when evaluating code passed by other entities that may or may not be trusted.  Opcodes run from within call_sandboxed that require any form of permissions will not perform any action and will evaluate to null.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed. If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted, up to the limits of the current calling context. If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If `max_node_allocations` is 0 or infinite and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if `max_node_allocations` is specified while call_sandboxed is being called in a multithreaded environment, if the collective memory from all the related threads exceeds the average memory specified by call_sandboxed, that may trigger a memory limit for the call_sandboxed.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called. If `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or (null) if none)).  If `return_warnings` is false, just the value will be returned.)";
 		d.exampleOutputPairs = make_examples({
-						{R"&((call_sandboxed
-		(lambda
-				(+
-						(+ y 4)
-						4
-				)
+			{R"&((call_sandboxed
+	(lambda
+		(+
+			(+ y 4)
+			4
 		)
-		{y 3}
-		(null)
-		(null)
-		50
+	)
+	{y 3}
+	(null)
+	(null)
+	50
 ))&", R"([11 {} (null)])"},
-						{R"&((call_sandboxed
-		(lambda
-				(+
-						(+ y 4)
-						4
-				)
+			{R"&((call_sandboxed
+	(lambda
+		(+
+			(+ y 4)
+			4
 		)
-		{y 3}
-		(null)
-		(null)
-		1
+	)
+	{y 3}
+	(null)
+	(null)
+	1
 ))&", R"([(null) {} "Execution depth exceeded"])"},
-						{R"&((call_sandboxed
-		(lambda
-				(call_sandboxed
-						(lambda
-								(+
-										(+ y 4)
-										4
-								)
-						)
-						{y 3}
-						(null)
-						(null)
-						50
+			{R"&((call_sandboxed
+	(lambda
+		(call_sandboxed
+			(lambda
+				(+
+					(+ y 4)
+					4
 				)
+			)
+			{y 3}
+			(null)
+			(null)
+			50
 		)
-		{y 3}
-		(null)
-		(null)
-		3
+	)
+	{y 3}
+	(null)
+	(null)
+	3
 ))&", R"([
-		[(null) {} "Execution depth exceeded"]
-		{}
-		(null)
+	[(null) {} "Execution depth exceeded"]
+	{}
+	(null)
 ])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
@@ -458,17 +458,17 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.returns = R"(any)";
 		d.description = R"(Each time the `condition` evaluates to true, it runs each of code sequentially, looping. Evaluates to the last `codeN` or null if the `condition` was initially false or if it encounters a `conclude` or `return`, it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  For each iteration of the loop, it pushes a new target scope onto the target stack, with `(current_index)` being the iteration count, and `(previous_result)` being the last evaluated `codeN` of the previous loop.)";
 		d.exampleOutputPairs = make_examples({
-						{R"&((seq
-		(assign
-				{i 1}
+			{R"&((seq
+	(assign
+		{i 1}
+	)
+	(while
+		(< i 10)
+		(accum
+			{i 1}
 		)
-		(while
-				(< i 10)
-				(accum
-						{i 1}
-				)
-		)
-		i
+	)
+	i
 ))&", R"(10)"},
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
@@ -476,23 +476,23 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_LET)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(assoc variables [code code1] [code code2] ... [code codeN])";
 		d.returns = R"(any)";
 		d.description = R"(Pushes the key-value pairs of `variables` onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
 		d.exampleOutputPairs = make_examples({
-						{R"&((let
-		{x 4 y 6}
-		(+ x y)
+			{R"&((let
+	{x 4 y 6}
+	(+ x y)
 ))&", R"(10)"},
-						{R"&((let
-		{x 4 y 6}
-		(declare
-				{x 5 z 1}
-				(+ x y z)
-		)
+			{R"&((let
+	{x 4 y 6}
+	(declare
+		{x 5 z 1}
+		(+ x y z)
+	)
 ))&", R"(11)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
@@ -507,15 +507,15 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.returns = R"(any)";
 		d.description = R"(For each key-value pair of `variables`, if not already in the current context in the scope stack, it will define them.  Then it runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
 		d.exampleOutputPairs = make_examples({
-						{R"&((seq
-		(declare
-				{x 7}
-				(accum "x" 1)
-		)
-		(declare
-				{x 4}
-		)
-		x
+			{R"&((seq
+	(declare
+		{x 7}
+		(accum "x" 1)
+	)
+	(declare
+		{x 4}
+	)
+	x
 ))&", R"(8)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
@@ -530,66 +530,64 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.returns = R"(null)";
 		d.description = R"(If `variables` is an assoc, then for each key-value pair it assigns the value to the variable represented by the key found by tracing upward on the stack.  If a variable is not found, it will create a variable on the top of the stack with that name.  If `variables` is a string and there are two parameters, it will assign the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to assign new_value to that part of the variable's structure.)";
 		d.exampleOutputPairs = make_examples({
-						{R"&((let
-		{x 0}
-		(assign
-				{x 10}
-		)
-		x
+			{R"&((let
+	{x 0}
+	(assign {x 10} )
+	x
 ))&", R"(10)"},
-						{R"&((seq
-		(assign "x" 20)
-		x
+			{R"&((seq
+	(assign "x" 20)
+	x
 ))&", R"(20)"},
-						{R"&((seq
-		(assign
-				"x"
-				[
-						0
-						1
-						2
-						(associate "a" 1 "b" 2 "c" 3)
-				]
-		)
-		(assign
-				"x"
-				[1]
-				"not 1"
-		)
-		x
-))&", R"([
-		0
+			{R"&((seq
+	(assign
+		"x"
+		[
+			0
+			1
+			2
+			(associate "a" 1 "b" 2 "c" 3)
+		]
+	)
+	(assign
+		"x"
+		[1]
 		"not 1"
-		2
-		{a 1 b 2 c 3}
-])"},
-						{R"&((seq
-		(assign
-				"x"
-				[
-						0
-						1
-						2
-						(associate "a" 1 "b" 2 "c" 3)
-				]
-		)
-		(assign
-				"x"
-				[3 "c"]
-				["c attribute"]
-				[3 "a"]
-				["a attribute"]
-		)
-		x
+	)
+	x
 ))&", R"([
-		0
-		1
-		2
-		{
-				a ["a attribute"]
-				b 2
-				c ["c attribute"]
-		}
+	0
+	"not 1"
+	2
+	{a 1 b 2 c 3}
+])"},
+			{R"&((seq
+	(assign
+		"x"
+		[
+			0
+			1
+			2
+			(associate "a" 1 "b" 2 "c" 3)
+		]
+	)
+	(assign
+		"x"
+		[3 "c"]
+		["c attribute"]
+		[3 "a"]
+		["a attribute"]
+	)
+	x
+))&", R"([
+	0
+	1
+	2
+	{
+		a ["a attribute"]
+		b 2
+		c ["c attribute"]
+	}
 ])"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
@@ -604,91 +602,91 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.returns = R"(null)";
 		d.description = R"(If `variables` is an assoc, then for each key-value pair of data, it assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the result in the variable.  It searches for the variable name tracing up the stack to find the variable. If the variable is not found, it will create a variable on the top of the stack.  Accumulation is performed differently based on the type.  For numeric values it adds, for strings it concatenates, for lists and assocs it appends.  If `variables` is a string and there are two parameters, then it will accum the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to accum accum_value to that part of the variable's structure.)";
 		d.exampleOutputPairs = make_examples({
-						{R"&((seq
-		(assign
-				{x 10}
-		)
-		(accum
-				{x 1}
-		)
-		x
+			{R"&((seq
+	(assign
+		{x 10}
+	)
+	(accum
+		{x 1}
+	)
+	x
 ))&", R"(11)"},
-						{R"&((declare
+			{R"&((declare
+	{
+		accum_assoc (associate "a" 1 "b" 2)
+		accum_list [1 2 3]
+		accum_string "abc"
+	}
+	(accum
+		{accum_string "def"}
+	)
+	(accum
 		{
-				accum_assoc (associate "a" 1 "b" 2)
-				accum_list [1 2 3]
-				accum_string "abc"
+			accum_list [4 5 6]
 		}
-		(accum
-				{accum_string "def"}
-		)
-		(accum
-				{
-						accum_list [4 5 6]
-				}
-		)
-		(accum
-				{
-						accum_list (associate "7" 8)
-				}
-		)
-		(accum
-				{
-						accum_assoc (associate "c" 3 "d" 4)
-				}
-		)
-		(accum
-				{
-						accum_assoc ["e" 5]
-				}
-		)
-		[accum_string accum_list accum_assoc]
+	)
+	(accum
+		{
+			accum_list (associate "7" 8)
+		}
+	)
+	(accum
+		{
+			accum_assoc (associate "c" 3 "d" 4)
+		}
+	)
+	(accum
+		{
+			accum_assoc ["e" 5]
+		}
+	)
+	[accum_string accum_list accum_assoc]
 ))&", R"([
-		"abcdef"
-		[
-				1
-				2
-				3
-				4
-				5
-				6
-				"7"
-				8
-		]
-		{
-				a 1
-				b 2
-				c 3
-				d 4
-				e 5
-		}
+	"abcdef"
+	[
+		1
+		2
+		3
+		4
+		5
+		6
+		"7"
+		8
+	]
+	{
+		a 1
+		b 2
+		c 3
+		d 4
+		e 5
+	}
 ])"},
-						{R"&((seq
+			{R"&((seq
 		(assign "x" 1)
 		(accum "x" [] 4)
 		x
 ))&", R"(5)"},
-						{R"&((seq
-		(assign
-				"x"
-				[
-						0
-						1
-						2
-						(associate "a" 1 "b" 2 "c" 3)
-				]
-		)
-		(accum
-				"x"
-				[1]
-				1
-		)
-		x
+			{R"&((seq
+	(assign
+		"x"
+		[
+			0
+			1
+			2
+			(associate "a" 1 "b" 2 "c" 3)
+		]
+	)
+	(accum
+		"x"
+		[1]
+		1
+	)
+	x
 ))&", R"([
-		0
-		2
-		2
-		{a 1 b 2 c 3}
+	0
+	2
+	2
+	{a 1 b 2 c 3}
 ])"},
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
@@ -703,31 +701,31 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.returns = R"(any)";
 		d.description = R"(If `variables` is a string, then it gets the value on the stack specified by the string.  If `variables` is a list, it returns a list of the values on the stack specified by each element of the list interpreted as a string.  If `variables` is an assoc, it returns an assoc with the indices of the assoc which was passed in with the values being the appropriate values on the stack for each index.)";
 		d.exampleOutputPairs = make_examples({
-						{R"&((seq
-		(assign
-				{a 1}
-		)
-		(retrieve "a")
+			{R"&((seq
+	(assign
+		{a 1}
+	)
+	(retrieve "a")
 ))&", R"(1)"},
-						{R"&((seq
-		(assign
-				{a 1 b 2}
+			{R"&((seq
+	(assign
+		{a 1 b 2}
+	)
+	[
+		(retrieve "a")
+		(retrieve
+			["a" "b"]
 		)
-		[
-				(retrieve "a")
-				(retrieve
-						["a" "b"]
-				)
-				(retrieve
-						(zip
-								["a" "b"]
-						)
-				)
-		]
+		(retrieve
+			(zip
+				["a" "b"]
+			)
+		)
+	]
 ))&", R"([
-		1
-		[@(target .true 0) 2]
-		{a @(target .true 0) b @(target .true [1 1])}
+	1
+	[@(target .true 0) 2]
+	{a @(target .true 0) b @(target .true [1 1])}
 ])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;

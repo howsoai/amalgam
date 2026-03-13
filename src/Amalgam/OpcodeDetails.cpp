@@ -731,18 +731,122 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_GET)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(* data [number index|string index|list walk_path_1] [number index|string index|list walk_path_2] ...)";
+		d.parameters = R"(* data [number|index|list walk_path_1] [number|string|list walk_path_2] ...)";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to data as traversed by the set of values specified by the second parameter, which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then get returns a list, where each element in the list is the respective element retrieved by the respective walk path. If the walk path continues past the data structure, it will return a (null).)";
+		d.description = R"(Evaluates to data as traversed by the set of values specified by `walk_path_1', which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then `get` returns a list, where each element in the list is the respective element retrieved by the respective walk path.  If the walk path continues past the data structure, it will return a null.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (get (list 1 2 3))))", R"()"}, {R"((print (get (list 4 9.2 "this") 1)))", R"()"}, {R"((print (get (assoc "a" 1 "b" 2 "c" 3 4 "d") "c")))", R"()"}, {R"((print (get (list 0 1 2 3 (list 0 1 2 (assoc "a" 1))) (list 4 3 "a"))))", R"()"}, {R"((print (get (list 4 9.2 "this") 1 2) "\n"))", R"()"}
+			{R"&((get
+	[4 9.2 "this"]
+))&", R"([4 9.2 "this"])"},
+			{R"&((get
+	[4 9.2 "this"]
+	1
+))&", R"(9.2)"},
+			{R"&((get
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	)
+	"c"
+))&", R"(3)"},
+			{R"&((get
+	[
+		0
+		1
+		2
+		3
+		[
+			0
+			1
+			2
+			(associate "a" 1)
+		]
+	]
+	[4 3 "a"]
+))&", R"(1)"},
+			{R"&((get
+	[4 9.2 "this"]
+	1
+	2
+))&", R"([9.2 "this"])"},
+			{R"&((seq
+	(declare
+		{
+			get_test_assoc {
+					A (associate "B" 2)
+					B 2
+				}
+		}
+	)
+	[
+		(get
+			get_test_assoc
+			["A" "B"]
+		)
+		(get
+			get_test_assoc
+			["A" "C"]
+		)
+		(get
+			get_test_assoc
+			["B" "C"]
+		)
+	]
+))&", R"([2 (null) (null)])"},
+			{R"&((get
+	{(null) 3}
+	(null)
+))&", R"(3)"},
+			{R"&((let
+	{
+		complex_assoc {
+				4 "number"
+				[4] "list"
+				{4 4} "assoc"
+				"4" "string"
+			}
+	}
+	[
+		(get complex_assoc 4)
+		(get complex_assoc "4")
+		(get
+			complex_assoc
+			[
+				[4]
+			]
+		)
+		(get
+			complex_assoc
+			{4 4}
+		)
+		(indices complex_assoc)
+	]
+))&", R"([
+	"number"
+	"string"
+	"list"
+	"assoc"
+	[
+		[4]
+		"4"
+		4
+		{4 4}
+	]
+])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_SET)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* data [number index1|string index1|list walk_path1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...)";

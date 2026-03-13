@@ -736,7 +736,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		OpcodeDetails d;
 		d.parameters = R"(* data [number|index|list walk_path_1] [number|string|list walk_path_2] ...)";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to data as traversed by the set of values specified by `walk_path_1', which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then `get` returns a list, where each element in the list is the respective element retrieved by the respective walk path.  If the walk path continues past the data structure, it will return a null.)";
+		d.description = R"(Evaluates to `data` as traversed by the set of values specified by `walk_path_1', which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then `get` returns a list, where each element in the list is the respective element retrieved by the respective walk path.  If the walk path continues past the data structure, it will return a null.)";
 		d.exampleOutputPairs = make_examples({
 			{R"&((get
 	[4 9.2 "this"]
@@ -846,32 +846,106 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_SET)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(* data [number index1|string index1|list walk_path1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...)";
+		d.parameters = R"(* data [number|string|list walk_path1] [* new_value1] [number|string|list walk_path2] [* new_value2] ... [number|string|list walk_pathN] [* new_valueN])";
 		d.returns = R"(any)";
-		d.description = R"(Performs a deep copy on data (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values as a walk path of indices. new_value1 to new_valueN represent a value that will be used to replace  whatever is in the location the preceding location parameter specifies. If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc); however, it will not change the type of immediate values to an assoc or list. Note that the target operation will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
+		d.description = R"(Performs a deep copy on `data` (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values as a walk path of indices. `new_value1` to `new_valueN` represent a value that will be used to replace  whatever is in the location the preceding location parameter specifies.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc); however, it will not change the type of immediate values to an assoc or list. Note that `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (set (list 1 2 3 4) 2 7)))", R"()"}, {R"((print (set)", R"()"}, {R"((list (assoc "a" 1)))", R"()"}, {R"((list 2) 1)", R"()"}, {R"((list 1) (get (target) 0))))", R"()"}
+			{R"&((set
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	)
+	"e"
+	5
+))&", R"({
+	4 "d"
+	a 1
+	b 2
+	c 3
+	e 5
+})"},
+			{R"&((set
+	[0 1 2 3 4]
+	2
+	10
+))&", R"([0 1 10 3 4])"},
+			{R"&((set
+	(associate "a" 1 "b" 2)
+	"a"
+	3
+))&", R"({a 3 b 2})"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_REPLACE)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(* data [number index1|string index1|list walk_path1] [* function1] [number index2|string index2|list walk_path2] [* function2] ...)";
+		d.parameters = R"(* data [number|string|list walk_path1] [* function1] [number|string|list walk_path2] [* function2] ... [number|string|list walk_pathN] [* functionN])";
 		d.returns = R"(any)";
-		d.description = R"(Performs a deep copy on data (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. function1 to functionN represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function does not need to be a function and can just be a constant (which it will be evaluated as).  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the target operation will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
+		d.description = R"(Performs a deep copy on `data` (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (replace (list (assoc "a" 13)) ))\n(print (replace\n    (list (assoc "a" 1))\n       (list 2) 1\n       (list 0) (list 4 5 6)))\n\n(print (replace\n    (list (assoc "a" 1))\n       (list 0) (lambda (set (current_value) "b" 2))\n )))", R"()"}
+			{R"&((replace
+	[
+		(associate "a" 13)
+	]
+))&", R"([
+	{a 13}
+])"},
+			{R"&((replace
+	[
+		(associate "a" 1)
+	]
+	[2]
+	1
+	[0]
+	[4 5 6]
+))&", R"([
+	[4 5 6]
+	(null)
+	1
+])"},
+			{R"&((replace
+	[
+		(associate "a" 1)
+	]
+	2
+	1
+	0
+	[4 5 6]
+))&", R"([
+	[4 5 6]
+	(null)
+	1
+])"},
+			{R"&((replace
+	[
+		(associate "a" 1)
+	]
+	[0]
+	(lambda
+		(set (current_value) "b" 2)
+	)
+))&", R"([
+	{a 1 b 2}
+])"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_TARGET)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number stack_distance|bool top_of_stack] [number index|string index|list walk_path])";

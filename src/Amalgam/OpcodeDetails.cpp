@@ -138,8 +138,8 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 	allows_concurrency .true
 	description "Sums all numbers."
 	examples [
-					{example "(+ 1 2 3 4)" output "10"}
-			]
+			{example "(+ 1 2 3 4)" output "10"}
+		]
 	new_scope .false
 	new_target_scope .false
 	parameters "[number x1] [number x2] ... [number xN]"

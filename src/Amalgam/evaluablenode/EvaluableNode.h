@@ -12,6 +12,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+//TODO 25158: remove this
 #define AMALGAM_FAST_MEMORY_INTEGRITY
 //if the macro AMALGAM_MEMORY_INTEGRITY is defined, then it will continuously verify memory, at a high cost of performance
 //this is useful for diagnosing and debugging memory issues

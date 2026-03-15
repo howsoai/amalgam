@@ -1088,19 +1088,43 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_PREVIOUS_RESULT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number stack_distance] [bool copy])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to the resulting node of the previous iteration for applicable opcodes. If stack_distance is specified, it climbs back up the target stack that many levels.  If copy is true, then a copy of the resulting node of the previous iteration is returned, otherwise the result of the previous iteration is returned directly and consumed.)";
+		d.description = R"(Evaluates to the resulting node of the previous iteration for applicable opcodes. If `stack_distance` is specified, it climbs back up the target stack that many levels.  If `copy` is true, which is false by default, then a copy of the resulting node of the previous iteration is returned, otherwise the result of the previous iteration is returned directly and consumed.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((while (< (target_index) 3) (print (previous_result)) (target_index)))", R"()"}
+			{R"&((while
+	(< (current_index) 3)
+	(append (previous_result) (current_index))
+))&", R"([(null) 0 1 2])"},
+			{R"&((while
+	(< (current_index) 3)
+	(if
+		(= (current_index) 0)
+		3
+		(append
+			(previous_result 0 .true)
+			(previous_result 0)
+			(previous_result 0)
+		)
+	)
+))&", R"([
+	3
+	3
+	(null)
+	3
+	3
+	(null)
+	(null)
+])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_OPCODE_STACK)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number stack_distance] [bool no_child_nodes])";

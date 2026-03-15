@@ -357,6 +357,12 @@ public:
 	std::pair<EvaluableNodeImmediateValueWithType, bool> GetValueAtLabelAsImmediateValue(
 		StringInternPool::StringID label_sid, bool on_self = false, EvaluableNodeManager *destination_temp_enm = nullptr);
 
+	//returns an assoc of the labels
+	inline EvaluableNode::AssocType &GetLabelIndex()
+	{
+		return rootNode->GetMappedChildNodesReference();
+	}
+
 	//Iterates over all of the labels, calling GetValueAtLabel for each,
 	// and passing the label sid and the node to the user specified function func
 	template<typename LabelFunc>
@@ -950,11 +956,6 @@ protected:
 	//mutex for operations that may edit or modify the entity's properties and attributes
 	Concurrency::ReadWriteMutex mutex;
 #endif
-
-	inline EvaluableNode::AssocType &GetLabelIndex()
-	{
-		return rootNode->GetMappedChildNodesReference();
-	}
 
 	//sets the root node ensuring that the memory has been flushed so it is ready for reading
 	__forceinline void SetRootNode(EvaluableNode *new_root)

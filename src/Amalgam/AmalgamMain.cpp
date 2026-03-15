@@ -20,8 +20,9 @@
 #include <fstream>
 #include <string>
 
-//function prototypes:
+//function prototypes for alternative main functions in respective files
 int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &rand_seed);
+int32_t RunAmalgamLanguageValidation();
 
 //usage:
 // Note: spaces in raw string are correct, do not replace with tabs
@@ -94,6 +95,10 @@ Options:
 
     --tracefile [file]
                      Like trace, but pulls the data from the file specified
+
+    --validate-opcodes
+                     Runs a test suite, validating all of the opcodes based on examples in documentation
+                     as well as additional stress tests.  Will report any issues found.
 )";
 
 	//additional compiler defined options
@@ -165,6 +170,7 @@ PLATFORM_MAIN_CONSOLE
 	std::string profile_out_file;
 	bool run_trace = false;
 	bool run_tracefile = false;
+	bool run_validate_opcodes = false;
 	std::string tracefile;
 	std::string amlg_file_to_run;
 	bool print_to_stdio = true;
@@ -235,6 +241,8 @@ PLATFORM_MAIN_CONSOLE
 			run_tracefile = true;
 			tracefile = args[++i];
 		}
+		else if(args[i] == "--validate-opcodes")
+			run_validate_opcodes = true;
 	#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 		else if(args[i] == "--numthreads")
 			num_threads = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
@@ -307,6 +315,10 @@ PLATFORM_MAIN_CONSOLE
 			PerformanceProfiler::PrintProfilingInformation(profile_out_file, profile_count);
 
 		return return_val;
+	}
+	else if(run_validate_opcodes)
+	{
+		return RunAmalgamLanguageValidation();
 	}
 	else //run the standard amlg command line interface
 	{

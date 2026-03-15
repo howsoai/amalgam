@@ -551,6 +551,7 @@
     <ClCompile Include="..\3rd_party\swiftdtoa\SwiftDtoa.cpp" />
     <ClCompile Include="..\3rd_party\tweetnacl\tweetnacl.cpp" />
     <ClCompile Include="AmalgamAPI.cpp" />
+    <ClCompile Include="AmalgamLanguageValidation.cpp" />
     <ClCompile Include="AmalgamMain.cpp" />
     <ClCompile Include="AmalgamTrace.cpp" />
     <ClCompile Include="AssetManager.cpp" />

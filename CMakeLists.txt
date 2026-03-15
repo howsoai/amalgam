@@ -211,6 +211,7 @@ if(IS_MSVC)
     )
 endif()
 set(AMALGAM_APP_ONLY_SOURCE
+    src/Amalgam/AmalgamLanguageValidation.cpp
     src/Amalgam/AmalgamMain.cpp
     src/Amalgam/AmalgamTrace.cpp
     ${RESOURCE_SOURCE}

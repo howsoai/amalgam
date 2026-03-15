@@ -23,8 +23,11 @@ int32_t RunAmalgamLanguageValidation()
 		size_t num_examples = _opcode_details[opcode_index].exampleOutputPairs.size();
 		for(size_t test_number = 0; test_number < num_examples; test_number++)
 		{
+			bool test_succeeded = true;
 			auto &example_output_pair = _opcode_details[opcode_index].exampleOutputPairs[test_number];
 			std::cout << "Test " << (test_number + 1) << " of " << num_examples << ": ";
+
+			entity->SetRandomState("12345", true);
 
 			//TODO 25158: implement test
 
@@ -32,10 +35,19 @@ int32_t RunAmalgamLanguageValidation()
 			if(entity->GetLabelIndex().size() != 0)
 			{
 				std::cerr << "Failed: Labels remain in entity after test" << std::endl;
-				any_failures = true;
+				test_succeeded = false;
 			}
 
-			std::cout << "Passed" << std::endl;
+			if(entity->GetContainedEntities().size() > 0)
+			{
+				std::cerr << "Failed: Labels remain in entity after test" << std::endl;
+				test_succeeded = false;
+			}
+
+			if(test_succeeded)
+				std::cout << "Passed" << std::endl;
+			else
+				any_failures = true;
 		}
 	}
 

@@ -1,5 +1,6 @@
 ﻿;prints the code followed by its output for inclusion in the documentation
 (seq
+	(create_entities "TestEntity")
 	(map
 		(lambda
 			(let {code (current_value 1)}
@@ -14,12 +15,14 @@
 				)
 				
 				(print ")&\", R\"(")
+				
+				(set_entity_rand_seed "TestEntity" "12345" .true)
 
 				;result
 				(print
 					(substr
 						;eat remaining newline
-						(unparse (call code) .true .true .true)
+						(unparse (call_on_entity "TestEntity" code) .true .true .true)
 						"[\r\n]$" (null) ""
 					)
 				)
@@ -30,11 +33,26 @@
 		;code goes in this list below
 		(lambda (list
 		
-		
- (call
-	(seq 1 2 (seq (return 3) 4) 5)
+
+
+ (while (< (current_index) 3)
+	(append (previous_result) (current_index))
  )
-		
+ 
+ (while (< (current_index) 3)
+	(if (= (current_index) 0)
+		3
+
+		(append
+			(previous_result 0 .true)
+			(previous_result 0)
+			(previous_result 0)
+		)
+	)
+)
+
+
+
 		
 		))
 	)

@@ -945,40 +945,150 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_TARGET)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([number stack_distance|bool top_of_stack] [number index|string index|list walk_path])";
+		d.parameters = R"([number|bool stack_distance] [number|string|list walk_path])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to the current node that is being iterated over, or the base code of a set or replace that is being created.  Useful for serializing graph data structures or looking up data during iteration.  If stack_distance is specified, it climbs back up the target stack that many levels, but if the parameter is a boolean, then true indicates the top of the stack and false indicates the bottom.  If walk_path is specified, it will walk up the index path from the corresponding target stack.  If building an object, specifying top_of_stack to true can be useful for accessing or traversing the top level elements.)";
+		d.description = R"(Evaluates to the node being created, referenced by the parameters by target.  Useful for serializing graph data structures or looking up data during iteration.  If `stack_distance` is a number, it climbs back up the target stack that many levels.  If `stack_distance` is a boolean, then `.true` indicates the top of the stack and `.false` indicates the bottom.  If `walk_path` is specified, it will walk from the node at `stack_distance` to the corresponding target.  If building an object, specifying `stack_distance` to true is often useful for accessing or traversing the top-level elements.)";
 		d.exampleOutputPairs = make_examples({
-			{R"(;prints the list of what has been created before its return value is included in the list)", R"()"}, {R"((list 1 2 3 (print (target)) 4))", R"()"}, {R"((let (assoc moveref (list 0 (list 7 8) (get (target 0) 1) ) ))", R"()"}, {R"((assign (assoc moveref (set moveref 1 1))))", R"()"}, {R"((print moveref))", R"()"}, {R"())", R"()"}
+			{R"&([
+	1
+	2
+	3
+	(target 0 1)
+	4
+])&", R"([1 2 3 @(target .true 1) 4])"},
+			{R"&([
+	0
+	1
+	2
+	3
+	(+
+		(target 0 1)
+	)
+	4
+])&", R"([0 1 2 3 1 4])"},
+			{R"&([
+	0
+	1
+	2
+	3
+	[
+		0
+		1
+		2
+		3
+		(+
+			(target 1 1)
+		)
+		4
+	]
+])&", R"([
+	0
+	1
+	2
+	3
+	[0 1 2 3 1 4]
+])"},
+			{R"&({
+	a 0
+	b 1
+	c 2
+	d 3
+	e [
+			0
+			1
+			2
+			3
+			(+
+				(target 1 "a")
+			)
+			4
+		]
+})&", R"({
+	a 0
+	b 1
+	c 2
+	d 3
+	e [0 1 2 3 0 4]
+})"},
+			{R"&({
+	a 0
+	b 1
+	c 2
+	d 3
+	e [
+			[
+				0
+				1
+				2
+				3
+				(+
+					(target .true "a")
+				)
+				4
+			]
+		]
+})&", R"({
+	a 0
+	b 1
+	c 2
+	d 3
+	e [
+			[0 1 2 3 (null) 4]
+		]
+})"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CURRENT_INDEX)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number stack_distance])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to the index of the current node being iterated on within the current target.  If stack_distance is specified, it climbs back up the target stack that many levels.)";
+		d.description = R"(Evaluates to the index of the current node being iterated on within the current target.  If `stack_distance` is specified, it climbs back up the target stack that many levels.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((list 1 2 3 (print (current_index)) 4))", R"()"}
+			{R"&([0 1 2 3 (current_index) 5])&", R"([0 1 2 3 4 5])"},
+			{R"&([
+	0
+	1
+	[
+		0
+		1
+		2
+		3
+		(current_index 1)
+		4
+	]
+])&", R"([
+	0
+	1
+	[0 1 2 3 2 4]
+])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CURRENT_VALUE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number stack_distance])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to the current node being iterated on within the current target.  If stack_distance is specified, it climbs back up the target stack that many levels.)";
+		d.description = R"(Evaluates to the current node being iterated on within the current target.  If `stack_distance` is specified, it climbs back up the target stack that many levels.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((list 1 2 3 (print (current_value)) 4))", R"()"}
+			{R"&((map
+	(lambda
+		(* 2 (current_value))
+	)
+	(range 0 4)
+))&", R"([0 2 4 6 8])"},
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_PREVIOUS_RESULT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number stack_distance] [bool copy])";

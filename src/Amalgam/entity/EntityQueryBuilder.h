@@ -328,7 +328,8 @@ namespace EntityQueryBuilder
 			PopulateWeightsFromSelectionFeature(dist_eval,
 				weights_node, num_elements, element_names, weights_selection_feature_sid);
 		}
-		else if(EvaluableNode::IsOrderedArray(weights_selection_features))
+		else if(!EvaluableNode::IsNull(weights_selection_features)
+			&& weights_selection_features->IsOrderedArray())
 		{
 			//accumulate the weights for all of the features listed
 			//calling PopulateWeightsFromSelectionFeature will populate dist_eval.featureAttribs[i].weight,
@@ -336,7 +337,7 @@ namespace EntityQueryBuilder
 			std::vector<double> accumulated_feature_weights(dist_eval.featureAttribs.size(), 0.0);
 			for(EvaluableNode *feature_id_node : weights_selection_features->GetOrderedChildNodesReference())
 			{
-				weights_selection_feature_sid = EvaluableNode::ToStringIDIfExists(weights_selection_features);
+				weights_selection_feature_sid = EvaluableNode::ToStringIDIfExists(feature_id_node);
 
 				PopulateWeightsFromSelectionFeature(dist_eval,
 					weights_node, num_elements, element_names, weights_selection_feature_sid);
@@ -707,7 +708,7 @@ namespace EntityQueryBuilder
 		if(ocn.size() > DEVIATIONS)
 			deviations_node = ocn[DEVIATIONS];
 
-		EvaluableNodeReference weights_selection_features_node = EvaluableNodeReference::Null();
+		EvaluableNode *weights_selection_features_node = nullptr;
 		if(ocn.size() > WEIGHTS_SELECTION_FEATURE)
 			weights_selection_features_node = ocn[WEIGHTS_SELECTION_FEATURE];
 		

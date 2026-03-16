@@ -89,7 +89,7 @@ int32_t RunAmalgamLanguageValidation()
 				test_succeeded = false;
 			}
 
-			//TODO 25158: implement test
+			//TODO 25158: implement tests that are not exact matches
 
 			entity->ReclaimResources(false, true, false);
 
@@ -116,10 +116,17 @@ int32_t RunAmalgamLanguageValidation()
 		}
 	}
 
+	//TODO 25158: implement tests beyond opcode tests, should genericize loop above
+
 	delete entity;
 
 	if(failed_test_names_and_numbers.size() == 0)
+	{
+		std::cout << "All Tests Passed" << std::endl;
 		return 0;
+	}
+
+	std::cout << "Not All Tests Passed:" << std::endl;
 
 	for(auto &[test_name, test_number] : failed_test_names_and_numbers)
 		std::cerr << "Failed " << test_name << " test number " << test_number << std::endl;

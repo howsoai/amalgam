@@ -828,7 +828,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 			complex_assoc
 			{4 4}
 		)
-		(indices complex_assoc)
+		(sort (indices complex_assoc))
 	]
 ))&", R"([
 	"number"
@@ -836,10 +836,10 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 	"list"
 	"assoc"
 	[
-		[4]
-		"4"
 		4
+		[4]
 		{4 4}
+		"4"
 	]
 ])"}
 			});
@@ -1013,7 +1013,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 	d 3
 	e [0 1 2 3 0 4]
 })"},
-			{R"&({
+			{R"&((call_sandboxed {
 	a 0
 	b 1
 	c 2
@@ -1030,13 +1030,13 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 				4
 			]
 		]
-})&", R"({
+}))&", R"({
 	a 0
 	b 1
 	c 2
 	d 3
 	e [
-			[0 1 2 3 (null) 4]
+			[0 1 2 3 0 4]
 		]
 })"}
 			});

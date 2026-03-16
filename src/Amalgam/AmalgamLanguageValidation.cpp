@@ -56,6 +56,7 @@ int32_t RunAmalgamLanguageValidation()
 	Entity *entity = new Entity();
 	entity->SetPermissions(ExecutionPermissions::AllPermissions(), ExecutionPermissions::AllPermissions(), true);
 
+	std::vector<std::pair<std::string, size_t>> failed_test_names_and_numbers;
 	bool any_failures = false;
 
 	for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
@@ -79,9 +80,7 @@ int32_t RunAmalgamLanguageValidation()
 			auto result = entity->ExecuteOnEntity(code, nullptr);
 			std::string result_str = Parser::Unparse(result, true, true, true);
 
-			//TODO 25158: put this line back in once fix the bug
-			//if(!EqualIgnoringWhitespace(result_str, example_output_pair.output))
-			if(result_str != example_output_pair.output)
+			if(!EqualIgnoringWhitespace(result_str, example_output_pair.output))
 			{
 				std::cerr << "Failed, expected:" << std::endl;
 				std::cerr << example_output_pair.output << std::endl;
@@ -93,6 +92,11 @@ int32_t RunAmalgamLanguageValidation()
 			//TODO 25158: implement test
 
 			entity->ReclaimResources(false, true, false);
+
+			auto query_caches = entity->GetQueryCaches();
+			if(query_caches != nullptr)
+				query_caches->sbfds.VerifyAllEntitiesForAllColumns();
+
 			if(entity->GetLabelIndex().size() != 0)
 			{
 				std::cerr << "Failed: Labels remain in entity after test" << std::endl;
@@ -108,11 +112,17 @@ int32_t RunAmalgamLanguageValidation()
 			if(test_succeeded)
 				std::cout << "Passed" << std::endl;
 			else
-				any_failures = true;
+				failed_test_names_and_numbers.emplace_back(cur_opcode_str, test_number);
 		}
 	}
 
 	delete entity;
 
-	return (any_failures ? -1 : 0);
+	if(failed_test_names_and_numbers.size() == 0)
+		return 0;
+
+	for(auto &[test_name, test_number] : failed_test_names_and_numbers)
+		std::cerr << "Failed " << test_name << " test number " << test_number << std::endl;
+
+	return -1;
 }

@@ -781,7 +781,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 			{R"&((seq
 	(declare
 		{
-			get_test_assoc {
+			var {
 					A (associate "B" 2)
 					B 2
 				}
@@ -789,15 +789,15 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 	)
 	[
 		(get
-			get_test_assoc
+			var
 			["A" "B"]
 		)
 		(get
-			get_test_assoc
+			var
 			["A" "C"]
 		)
 		(get
-			get_test_assoc
+			var
 			["B" "C"]
 		)
 	]

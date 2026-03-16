@@ -80,6 +80,9 @@ void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::String
 
 	for(size_t i = num_previous_columns; i < num_columns; i++)
 		BuildLabel(i, entities);
+
+	//remove any that have no values in case an invalid query was done
+	RemoveAnyUnusedLabels();
 }
 
 void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remove)

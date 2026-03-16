@@ -394,7 +394,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, E
 
 	auto [node, warnings, char_with_error, code_complete]
 		= Parser::Parse(to_parse, evaluableNodeManager, transactional_parse);
-	
+
 	if(!return_warnings)
 		return node;
 
@@ -711,11 +711,11 @@ EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNo
 {
 	if(interpreter_constraints == nullptr || !interpreter_constraints->collectWarnings)
 		return result;
-	
+
 	EvaluableNodeReference warning_assoc = CreateAssocOfNumbersFromIteratorAndFunctions(
 		interpreter_constraints->warnings, [](std::pair<std::string, size_t> warning_count)
-		{ return warning_count.first; }, [](std::pair<std::string, size_t> warning_count)
-		{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);
+	{ return warning_count.first; }, [](std::pair<std::string, size_t> warning_count)
+	{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);
 
 	EvaluableNodeReference constraint_violation_string = ConstraintViolationToString(interpreter_constraints->constraintViolation, evaluableNodeManager);												
 
@@ -989,13 +989,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						if(need_write_lock)
 							LockScopeStackTop(write_lock, required_vars);
 						else
-					#endif
-						//only set unread if writing to parts of the stack that aren't shared
-						if(value.unique && value != nullptr)
-						{
-							value->SetIsFreeable(true);
-							scope->SetIsFreeable(true);
-						}
+						#endif
+							//only set unread if writing to parts of the stack that aren't shared
+							if(value.unique && value != nullptr)
+							{
+								value->SetIsFreeable(true);
+								scope->SetIsFreeable(true);
+							}
 						scope->SetMappedChildNode(cn_id, value, false);
 					}
 				}
@@ -1338,7 +1338,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 	if(any_nonunique_assignments)
 		SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
-	
+
 	return EvaluableNodeReference::Null();
 }
 
@@ -1623,7 +1623,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 		return EvaluableNodeReference(*target, false);
 	}
 
-	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
+	return EvaluableNodeReference((*constructionStackNodes)[offset], false);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
@@ -1688,7 +1688,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNod
 		return EvaluableNodeReference::Null();
 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetCurrentValue;
-	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
+	return EvaluableNodeReference((*constructionStackNodes)[offset], false);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)

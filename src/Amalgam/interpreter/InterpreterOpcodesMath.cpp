@@ -1677,15 +1677,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 		evaluableNodeManager->FreeNodeTreeIfPossible(value_names_node);
 	}
 
-	EvaluableNodeReference weights_selection_feature_node;
-	StringInternPool::StringID weights_selection_feature = string_intern_pool.NOT_A_STRING_ID;
+	EvaluableNodeReference weights_selection_features_node = EvaluableNodeReference::Null();
 	if(ocn.size() > 8)
 	{
-		weights_selection_feature_node = InterpretNodeForImmediateUse(ocn[8]);
-		if(weights_selection_feature_node != nullptr)
-			node_stack.PushEvaluableNode(weights_selection_feature_node);
-
-		weights_selection_feature = EvaluableNode::ToStringIDIfExists(weights_selection_feature_node);
+		weights_selection_features_node = InterpretNodeForImmediateUse(ocn[8]);
+		if(weights_selection_features_node != nullptr)
+			node_stack.PushEvaluableNode(weights_selection_features_node);
 	}
 
 	dist_eval.computeSurprisal = false;
@@ -1709,14 +1706,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	origin_types.resize(num_elements, ENIVT_NUMBER);
 
 	EntityQueryBuilder::PopulateDistanceFeatureParameters(dist_eval, num_elements, value_names,
-		weights_node, weights_selection_feature, distance_types_node, attributes_node, deviations_node);
+		weights_node, weights_selection_features_node, distance_types_node, attributes_node, deviations_node);
 
 	//done with all values
 	evaluableNodeManager->FreeNodeTreeIfPossible(weights_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(distance_types_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(attributes_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(deviations_node);
-	evaluableNodeManager->FreeNodeTreeIfPossible(weights_selection_feature_node);
+	evaluableNodeManager->FreeNodeTreeIfPossible(weights_selection_features_node);
 
 	//convert unknown differences into unknown distance terms
 	for(size_t i = 0; i < num_elements; i++)

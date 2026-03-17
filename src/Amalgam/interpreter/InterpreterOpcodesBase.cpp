@@ -644,7 +644,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 	//improve performance by managing the stacks here
 	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack,
-		false, nullptr, immediate_result);
+		nullptr, immediate_result);
 
 #ifdef MULTITHREAD_SUPPORT
 	//hand lock back to this interpreter
@@ -717,7 +717,7 @@ EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNo
 	{ return warning_count.first; }, [](std::pair<std::string, size_t> warning_count)
 	{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);
 
-	EvaluableNodeReference constraint_violation_string = ConstraintViolationToString(interpreter_constraints->constraintViolation, evaluableNodeManager);												
+	EvaluableNodeReference constraint_violation_string = ConstraintViolationToString(interpreter_constraints->constraintViolation, evaluableNodeManager);
 
 	EvaluableNodeReference result_tuple(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
@@ -1735,7 +1735,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 			depth = static_cast<int64_t>(value);
 		}
 	}
-	
+
 	bool no_child_nodes = false;
 	if(ocn.size() > 1)
 		no_child_nodes = InterpretNodeIntoBoolValue(ocn[1], false);
@@ -1776,7 +1776,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 			actual_offset = opcodeStackNodes->size() + depth;
 		else
 			actual_offset = depth;
-			
+
 		if(actual_offset < 0 || actual_offset >= static_cast<int64_t>(opcodeStackNodes->size()))
 		{
 			return EvaluableNodeReference::Null();

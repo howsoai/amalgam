@@ -314,8 +314,8 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 }
 
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	EvaluableNode *scope_stack, EvaluableNode *opcode_stack, EvaluableNode *construction_stack,
-	bool manage_stack_references,
+	EvaluableNode *scope_stack,
+	EvaluableNode *opcode_stack, EvaluableNode *construction_stack,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
 	EvaluableNodeRequestedValueTypes immediate_result
 #ifdef MULTITHREAD_SUPPORT
@@ -354,30 +354,41 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	if(construction_stack_indices != nullptr)
 		constructionStackIndicesAndUniqueness = *construction_stack_indices;
 	
-	if(manage_stack_references)
-		evaluableNodeManager->KeepNodeReferences(scope_stack, opcode_stack, construction_stack);
-
+	evaluableNodeManager->KeepNodeReferences(scope_stack, opcode_stack, construction_stack);
 	auto retval = InterpretNode(en, immediate_result);
-
-	if(manage_stack_references)
-		evaluableNodeManager->FreeNodeReferences(scope_stack, opcode_stack, construction_stack);
+	evaluableNodeManager->FreeNodeReferences(scope_stack, opcode_stack, construction_stack);
 
 	return retval;
 }
 
-EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth)
+EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
+#ifdef MULTITHREAD_SUPPORT
+	, bool use_atomic_when_setting_access_flag
+#endif
+)
 {
+	EvaluableNode *scope_stack = nullptr;
 	size_t ss_size = scopeStackNodes->size();
 	if(ss_size > depth)
-		return (*scopeStackNodes)[ss_size - (depth + 1)];
+		scope_stack = (*scopeStackNodes)[ss_size - (depth + 1)];
 
 #ifdef MULTITHREAD_SUPPORT
 	//need to search further down the stack if appropriate
 	if(!bottomOfScopeStack && callingInterpreter != nullptr)
-		return callingInterpreter->GetScopeStackGivenDepth(depth - ss_size);
+		scope_stack = callingInterpreter->GetScopeStackGivenDepth(depth - ss_size, true);
 #endif
 
-	return nullptr;
+	if(scope_stack != nullptr)
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		if(use_atomic_when_setting_access_flag)
+			scope_stack->SetIsFreeableAtomic(false);
+		else
+	#endif
+			scope_stack->SetIsFreeable(false);
+	}
+
+	return scope_stack;
 }
 
 EvaluableNode *Interpreter::MakeCopyOfScopeStack()

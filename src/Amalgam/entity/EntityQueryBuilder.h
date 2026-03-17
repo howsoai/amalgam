@@ -320,44 +320,55 @@ namespace EntityQueryBuilder
 	{
 		dist_eval.featureAttribs.resize(num_elements);
 
-		StringInternPool::StringID weights_selection_feature_sid
-			= EvaluableNode::ToStringIDIfExists(weights_selection_features);
-		if(EvaluableNode::IsAssociativeArray(weights_node)
-			&& weights_selection_feature_sid != string_intern_pool.NOT_A_STRING_ID)
+		bool weights_populated = false;
+		if(EvaluableNode::IsAssociativeArray(weights_node) && !EvaluableNode::IsNull(weights_selection_features))
 		{
-			PopulateWeightsFromSelectionFeature(dist_eval,
-				weights_node, num_elements, element_names, weights_selection_feature_sid);
-		}
-		else if(EvaluableNode::IsAssociativeArray(weights_node)
-			&& !EvaluableNode::IsNull(weights_selection_features)
-			&& weights_selection_features->IsOrderedArray())
-		{
-			//accumulate the weights for all of the features listed
-			//calling PopulateWeightsFromSelectionFeature will populate dist_eval.featureAttribs[i].weight,
-			//which will be accumulated into accumulated_feature_weights and then normalized
-			std::vector<double> accumulated_feature_weights(dist_eval.featureAttribs.size(), 0.0);
-			for(EvaluableNode *feature_id_node : weights_selection_features->GetOrderedChildNodesReference())
+			if(weights_selection_features->GetType() == ENT_STRING)
 			{
-				weights_selection_feature_sid = EvaluableNode::ToStringIDIfExists(feature_id_node);
+				StringInternPool::StringID weights_selection_feature_sid
+					= EvaluableNode::ToStringIDIfExists(weights_selection_features);
 
-				PopulateWeightsFromSelectionFeature(dist_eval,
-					weights_node, num_elements, element_names, weights_selection_feature_sid);
+				if(weights_selection_feature_sid != string_intern_pool.NOT_A_STRING_ID)
+				{
+					PopulateWeightsFromSelectionFeature(dist_eval,
+						weights_node, num_elements, element_names, weights_selection_feature_sid);
 
-				for(size_t i = 0; i < dist_eval.featureAttribs.size(); i++)
-					accumulated_feature_weights[i] += dist_eval.featureAttribs[i].weight;
+					weights_populated = true;
+				}
 			}
-
-			//normalize the weights
-			double total_accumulated = std::accumulate(begin(accumulated_feature_weights),
-				end(accumulated_feature_weights), 0.0);
-			if(total_accumulated != 0.0)
+			else if(weights_selection_features->IsOrderedArray())
 			{
-				const double inverse_total = 1.0 / total_accumulated;
-				for(size_t i = 0; i < dist_eval.featureAttribs.size(); i++)
-					dist_eval.featureAttribs[i].weight = inverse_total * accumulated_feature_weights[i];
+				//accumulate the weights for all of the features listed
+				//calling PopulateWeightsFromSelectionFeature will populate dist_eval.featureAttribs[i].weight,
+				//which will be accumulated into accumulated_feature_weights and then normalized
+				std::vector<double> accumulated_feature_weights(dist_eval.featureAttribs.size(), 0.0);
+				for(EvaluableNode *feature_id_node : weights_selection_features->GetOrderedChildNodesReference())
+				{
+					StringInternPool::StringID weights_selection_feature_sid = EvaluableNode::ToStringIDIfExists(feature_id_node);
+
+					PopulateWeightsFromSelectionFeature(dist_eval,
+						weights_node, num_elements, element_names, weights_selection_feature_sid);
+
+					for(size_t i = 0; i < dist_eval.featureAttribs.size(); i++)
+						accumulated_feature_weights[i] += dist_eval.featureAttribs[i].weight;
+				}
+
+				//normalize the weights
+				double total_accumulated = std::accumulate(begin(accumulated_feature_weights),
+					end(accumulated_feature_weights), 0.0);
+				if(total_accumulated != 0.0)
+				{
+					const double inverse_total = 1.0 / total_accumulated;
+					for(size_t i = 0; i < dist_eval.featureAttribs.size(); i++)
+						dist_eval.featureAttribs[i].weight = inverse_total * accumulated_feature_weights[i];
+				}
+
+				weights_populated = true;
 			}
 		}
-		else //don't use weights_selection_feature
+
+		//if weights haven't been populated yet, do so now
+		if(!weights_populated)
 		{
 			//get weights
 			double default_weight = 1.0;

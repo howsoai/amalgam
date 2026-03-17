@@ -439,7 +439,7 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	Concurrency::ReadLock enm_lock(enm.memoryModificationMutex);
 #endif
 
-	auto [code, warnings, offset] = Parser::Parse(amlg, &enm);
+	auto [code, warnings, offset, code_complete] = Parser::Parse(amlg, &enm);
 	if(code == nullptr)
 		return "";
 

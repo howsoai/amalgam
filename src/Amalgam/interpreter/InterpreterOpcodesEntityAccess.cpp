@@ -518,7 +518,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		if(call_type == ENT_CALL_ON_ENTITY)
 		{
 			//copy function to called_entity, free function from this entity
-			EvaluableNodeReference called_entity_function = ce_enm.DeepAllocCopy(function);
+			EvaluableNodeReference called_entity_function(ce_enm.DeepAllocCopy(function), true);
 			node_stack.PopEvaluableNode();
 			//don't put freed nodes in local allocation buffer, because that will increase memory churn
 			evaluableNodeManager->FreeNodeTreeIfPossible(function, false);
@@ -526,7 +526,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		}
 
 		//copy arguments to called_entity, free args from this entity
-		EvaluableNodeReference called_entity_args = ce_enm.DeepAllocCopy(args);
+		EvaluableNodeReference called_entity_args(ce_enm.DeepAllocCopy(args), true);
 		node_stack.PopEvaluableNode();
 		//don't put freed nodes in local allocation buffer, because that will increase memory churn
 		evaluableNodeManager->FreeNodeTreeIfPossible(args, false);
@@ -559,7 +559,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		#endif
 			);
 
-	ce_enm.FreeNode(args);
+	//can't free args if the result might contain them
+	if(result.unique)
+		ce_enm.FreeNode(args);
 	ce_enm.FreeNode(scope_stack);
 
 #ifdef MULTITHREAD_SUPPORT

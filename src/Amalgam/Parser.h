@@ -104,12 +104,14 @@ public:
 			s.push_back(' ');
 	}
 
-	//Parses the code string and returns a tree of EvaluableNodeReference that represents the code,
-	// as well as the offset of any error, or larger than the length of code_string if no errors
+	//Parses the code string and returns:
+	// 1) a tree of EvaluableNodeReference that represents the code,
+	// 2) warning strings,
+	// 3) the offset of any error, or larger than the length of code_string if no errors
 	//if transactional_parse is true, then it will ignore any incomplete or erroneous opcodes except the outermost one
 	//if original_source is a valid string, it will emit any warnings to stderr
 	//if debug_sources is true, it will prepend each node with a comment indicating original source
-	static std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
+	static std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t, bool>
 		Parse(std::string_view code_string, EvaluableNodeManager *enm,
 		bool transactional_parse = false, std::string *original_source = nullptr, bool debug_sources = false);
 
@@ -347,6 +349,9 @@ protected:
 
 	//offset of the last code that was properly completed
 	size_t charOffsetStartOfLastCompletedCode;
+
+	//set to true if the code is complete, that is, all parenthesis match
+	bool codeComplete;
 
 	//character used for indentation
 	static const char indentationCharacter = '\t';

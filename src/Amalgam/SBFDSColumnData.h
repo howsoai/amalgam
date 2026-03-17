@@ -444,6 +444,14 @@ public:
 	//used for debugging to make sure all entities are valid
 	inline void VerifyAllEntities(size_t max_num_entities = std::numeric_limits<size_t>::max())
 	{
+		//ensure valid column name
+		if(stringId != string_intern_pool.NOT_A_STRING_ID)
+		{
+			//make sure not extreme values
+			assert(stringId->string.size() < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
+			assert(stringId->refCount < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
+		}
+
 		size_t num_entities = invalidIndices.size() + nullIndices.size() + falseBoolIndices.size() + trueBoolIndices.size()
 			+ numberIndices.size() + stringIdIndices.size() + codeIndices.size();
 

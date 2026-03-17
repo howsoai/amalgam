@@ -7,6 +7,7 @@
 #include "StringInternPool.h"
 
 //system headers:
+#include <numeric>
 #include <type_traits>
 
 //Constructs a query engine query condition from Amalgam evaluable nodes
@@ -315,16 +316,60 @@ namespace EntityQueryBuilder
 	// four different attribute parameters based on its type (using num_elements if list or immediate, element_names if assoc)
 	inline void PopulateDistanceFeatureParameters(GeneralizedDistanceEvaluator &dist_eval,
 		size_t num_elements, std::vector<StringInternPool::StringID> &element_names,
-		EvaluableNode *weights_node, StringInternPool::StringID weights_selection_feature,
+		EvaluableNode *weights_node, EvaluableNode *weights_selection_features,
 		EvaluableNode *distance_types_node, EvaluableNode *attributes_node, EvaluableNode *deviations_node)
 	{
 		dist_eval.featureAttribs.resize(num_elements);
 
-		if(weights_selection_feature != string_intern_pool.NOT_A_STRING_ID && EvaluableNode::IsAssociativeArray(weights_node))
+		bool weights_populated = false;
+		if(EvaluableNode::IsAssociativeArray(weights_node) && !EvaluableNode::IsNull(weights_selection_features))
 		{
-			PopulateWeightsFromSelectionFeature(dist_eval, weights_node, num_elements, element_names, weights_selection_feature);
+			if(weights_selection_features->GetType() == ENT_STRING)
+			{
+				StringInternPool::StringID weights_selection_feature_sid
+					= EvaluableNode::ToStringIDIfExists(weights_selection_features);
+
+				if(weights_selection_feature_sid != string_intern_pool.NOT_A_STRING_ID)
+				{
+					PopulateWeightsFromSelectionFeature(dist_eval,
+						weights_node, num_elements, element_names, weights_selection_feature_sid);
+
+					weights_populated = true;
+				}
+			}
+			else if(weights_selection_features->IsOrderedArray())
+			{
+				//accumulate the weights for all of the features listed
+				//calling PopulateWeightsFromSelectionFeature will populate dist_eval.featureAttribs[i].weight,
+				//which will be accumulated into accumulated_feature_weights and then normalized
+				std::vector<double> accumulated_feature_weights(dist_eval.featureAttribs.size(), 0.0);
+				for(EvaluableNode *feature_id_node : weights_selection_features->GetOrderedChildNodesReference())
+				{
+					StringInternPool::StringID weights_selection_feature_sid = EvaluableNode::ToStringIDIfExists(feature_id_node);
+
+					PopulateWeightsFromSelectionFeature(dist_eval,
+						weights_node, num_elements, element_names, weights_selection_feature_sid);
+
+					for(size_t i = 0; i < dist_eval.featureAttribs.size(); i++)
+						accumulated_feature_weights[i] += dist_eval.featureAttribs[i].weight;
+				}
+
+				//normalize the weights
+				double total_accumulated = std::accumulate(begin(accumulated_feature_weights),
+					end(accumulated_feature_weights), 0.0);
+				if(total_accumulated != 0.0)
+				{
+					const double inverse_total = 1.0 / total_accumulated;
+					for(size_t i = 0; i < dist_eval.featureAttribs.size(); i++)
+						dist_eval.featureAttribs[i].weight = inverse_total * accumulated_feature_weights[i];
+				}
+
+				weights_populated = true;
+			}
 		}
-		else
+
+		//if weights haven't been populated yet, do so now
+		if(!weights_populated)
 		{
 			//get weights
 			double default_weight = 1.0;
@@ -681,9 +726,9 @@ namespace EntityQueryBuilder
 		if(ocn.size() > DEVIATIONS)
 			deviations_node = ocn[DEVIATIONS];
 
-		StringInternPool::StringID weights_selection_feature = string_intern_pool.NOT_A_STRING_ID;
+		EvaluableNode *weights_selection_features_node = nullptr;
 		if(ocn.size() > WEIGHTS_SELECTION_FEATURE)
-			weights_selection_feature = EvaluableNode::ToStringIDIfExists(ocn[WEIGHTS_SELECTION_FEATURE]);
+			weights_selection_features_node = ocn[WEIGHTS_SELECTION_FEATURE];
 		
 		//value transforms for whatever is measured as "distance"
 		//need to populate distance transform BEFORE populating feature attributes
@@ -715,7 +760,7 @@ namespace EntityQueryBuilder
 
 		PopulateDistanceFeatureParameters(cur_condition->distEvaluator,
 			cur_condition->positionLabels.size(), cur_condition->positionLabels,
-			weights_node, weights_selection_feature, distance_types_node, attributes_node, deviations_node);
+			weights_node, weights_selection_features_node, distance_types_node, attributes_node, deviations_node);
 
 		cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
 		if(ocn.size() > ENTITY_WEIGHT_LABEL_NAME)

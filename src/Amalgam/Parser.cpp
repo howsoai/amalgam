@@ -15,6 +15,7 @@ Parser::Parser()
 	numOpenParenthesis = 0;
 	originalSource = "";
 	charOffsetStartOfLastCompletedCode = std::numeric_limits<size_t>::max();
+	codeComplete = false;
 }
 
 Parser::Parser(std::string_view code_string, EvaluableNodeManager *enm,
@@ -45,6 +46,7 @@ Parser::Parser(std::string_view code_string, EvaluableNodeManager *enm,
 	evaluableNodeManager = enm;
 	transactionalParse = transactional_parse;
 	charOffsetStartOfLastCompletedCode = std::numeric_limits<size_t>::max();
+	codeComplete = false;
 }
 
 std::string Parser::Backslashify(const std::string &s)
@@ -93,7 +95,7 @@ std::string Parser::Backslashify(const std::string &s)
 	return b;
 }
 
-std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
+std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t, bool>
 	Parser::Parse(std::string_view code_string,
 		EvaluableNodeManager *enm, bool transactional_parse,  std::string *original_source, bool debug_sources)
 {
@@ -104,8 +106,7 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
 	pt.PreevaluateNodes(top_node);
 
 	return std::make_tuple(EvaluableNodeReference(top_node, true),
-		std::move(pt.warnings),
-		pt.charOffsetStartOfLastCompletedCode);
+		std::move(pt.warnings), pt.charOffsetStartOfLastCompletedCode, pt.codeComplete);
 }
 
 std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::ParseFirstNode()
@@ -159,7 +160,7 @@ EvaluableNodeReference Parser::ParseFromKeyString(std::string &code_string, Eval
 		return EvaluableNodeReference(enm->AllocNode(ENT_STRING, code_string), true);
 
 	std::string_view escaped_string(&code_string[1], code_string.size() - 1);
-	auto [node, warnings, char_with_error] = Parser::Parse(escaped_string, enm);
+	auto [node, warnings, char_with_error, code_complete] = Parser::Parse(escaped_string, enm);
 	return node;
 }
 
@@ -174,7 +175,7 @@ EvaluableNodeReference Parser::ParseFromKeyStringId(StringInternPool::StringID c
 		return EvaluableNodeReference(enm->AllocNode(ENT_STRING, code_string_id), true);
 
 	std::string_view escaped_string(&code_string[1], code_string.size() - 1);
-	auto [node, warnings, char_with_error] = Parser::Parse(escaped_string, enm);
+	auto [node, warnings, char_with_error, code_complete] = Parser::Parse(escaped_string, enm);
 	return node;
 }
 
@@ -876,11 +877,20 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 	if(!parsing_assoc_key)
 	{
 		if(numOpenParenthesis > num_allowed_open_parens)
+		{
 			EmitWarning(StringManipulation::NumberToString(
 				static_cast<size_t>(numOpenParenthesis - num_allowed_open_parens)) + " missing closing parenthesis");
+		}
 		else if(numOpenParenthesis < 0)
+		{
 			EmitWarning(StringManipulation::NumberToString(static_cast<size_t>(-numOpenParenthesis))
 				+ " extra closing parenthesis");
+			codeComplete = true;
+		}
+		else
+		{
+			codeComplete = true;
+		}
 	}
 
 	return top_node;

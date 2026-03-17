@@ -7,20 +7,22 @@
 
 //system headers:
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ANNOTATIONS_and_GET_ENTITY_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
 
+	bool get_entity_comments = (en->GetType() == ENT_GET_ENTITY_COMMENTS);
+
 	StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID;
 	if(ocn.size() > 1)
 		label_sid = InterpretNodeIntoStringIDValueIfExists(ocn[1]);
 
-	bool deep_comments = false;
+	bool deep_comments_or_annotations = false;
 	if(ocn.size() > 2)
-		deep_comments = InterpretNodeIntoBoolValue(ocn[2]);
+		deep_comments_or_annotations = InterpretNodeIntoBoolValue(ocn[2]);
 
 	//retrieve the entity after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
@@ -35,30 +37,31 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 
 	if(label_sid == StringInternPool::NOT_A_STRING_ID)
 	{
-		if(!deep_comments)
+		if(!deep_comments_or_annotations)
 		{
 			EvaluableNode *root = target_entity->GetRoot();
-			auto entity_description = root->GetCommentsString();
+			auto entity_description = (get_entity_comments ? root->GetCommentsString() : root->GetAnnotationsString());
 			//if the top node doesn't have a description, try to obtain from the node with the null key
 			if(entity_description.empty())
 			{
 				EvaluableNode **null_code = root->GetMappedChildNode(string_intern_pool.NOT_A_STRING_ID);
 				if(null_code != nullptr)
-					entity_description = EvaluableNode::GetCommentsString(*null_code);
+					entity_description = (get_entity_comments ? EvaluableNode::GetCommentsString(*null_code) : EvaluableNode::GetAnnotationsString(*null_code));
 			}
 			return AllocReturn(entity_description, immediate_result);
 		}
 
 		EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 
-		//collect comments of each label
+		//collect comments or annotations of each label
 		target_entity->IterateFunctionOverLabels(
-			[this, &retval]
+			[this, &retval, get_entity_comments]
 			(StringInternPool::StringID label_sid, EvaluableNode *node)
 			{
 				//only include publicly facing labels
 				if(Entity::IsLabelValidAndPublic(label_sid))
-					retval->SetMappedChildNode(label_sid, evaluableNodeManager->AllocNode(EvaluableNode::GetCommentsString(node)));
+					retval->SetMappedChildNode(label_sid,
+						evaluableNodeManager->AllocNode(get_entity_comments ? EvaluableNode::GetCommentsString(node) : EvaluableNode::GetAnnotationsString(node)));
 			}
 		);
 		
@@ -70,8 +73,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		return EvaluableNodeReference::Null();
 
 	//has valid label
-	if(!deep_comments)
-		return AllocReturn(label_value->GetCommentsString(), immediate_result);
+	if(!deep_comments_or_annotations)
+		return AllocReturn(get_entity_comments ? label_value->GetCommentsString() : label_value->GetAnnotationsString(), immediate_result);
 
 	//make sure a function based on declare that has parameters
 	if(label_value->GetType() != ENT_DECLARE || label_value->GetOrderedChildNodes().size() < 1)
@@ -80,7 +83,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	//the first element is an assoc of the parameters, the second element is the return value
 	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	
-	//if the vars are already initialized, then pull the comments from their values
+	//if the vars are already initialized, then pull the comments or annotations from their values
 	EvaluableNode *vars = label_value->GetOrderedChildNodes()[0];
 	if(!EvaluableNode::IsAssociativeArray(vars))
 		return retval;
@@ -88,12 +91,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	auto &retval_ocn = retval->GetOrderedChildNodesReference();
 	retval_ocn.resize(2);
 
-	//deep_comments of label, so get the parameters and their respective labels
+	//deep_comments_or_annotations of label, so get the parameters and their respective labels
 	EvaluableNodeReference params_list(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 	retval_ocn[0] = params_list;
 
-	//get return comments
-	retval_ocn[1] = evaluableNodeManager->AllocNode(vars->GetCommentsString());
+	//get return comments or annotations
+	retval_ocn[1] = evaluableNodeManager->AllocNode(
+		get_entity_comments ? vars->GetCommentsString() : vars->GetAnnotationsString());
 
 	auto &mcn = vars->GetMappedChildNodesReference();
 	params_list->ReserveMappedChildNodes(mcn.size());
@@ -105,7 +109,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		EvaluableNodeReference param_info(evaluableNodeManager->AllocNode(ENT_LIST), true);
 		auto &param_info_ocn = param_info->GetOrderedChildNodesReference();
 		param_info_ocn.resize(2);
-		param_info_ocn[0] = evaluableNodeManager->AllocNode(EvaluableNode::GetCommentsString(cn));
+		param_info_ocn[0] = evaluableNodeManager->AllocNode(
+			get_entity_comments ? EvaluableNode::GetCommentsString(cn) : EvaluableNode::GetAnnotationsString(cn));
 		param_info_ocn[1] = evaluableNodeManager->DeepAllocCopy(cn, false);
 
 		//add to the params
@@ -252,7 +257,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 		deep_set = InterpretNodeIntoBoolValue(ocn[2], true);
 
 	//the opcode parameter index of the seed
-	auto seed_node = InterpretNodeForImmediateUse(ocn[num_params > 1 ? 1 : 0]);
+	auto seed_node = InterpretNode(ocn[num_params > 1 ? 1 : 0]);
 	std::string seed_string;
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
 		seed_string = seed_node->GetStringValue();

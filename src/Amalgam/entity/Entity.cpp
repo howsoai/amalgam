@@ -917,7 +917,8 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::
 
 void Entity::SetRoot(std::string &code_string, std::vector<EntityWriteListener *> *write_listeners)
 {
-	auto [node, warnings, char_with_error] = Parser::Parse(code_string, &evaluableNodeManager);
+	auto [node, warnings, char_with_error, code_complete]
+		= Parser::Parse(code_string, &evaluableNodeManager);
 	SetRoot(node, true, write_listeners);
 }
 

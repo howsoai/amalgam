@@ -1175,18 +1175,33 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_ARGS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number stack_distance])";
 		d.returns = R"(assoc)";
-		d.description = R"(Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments. If number is specified, then it evaluates to the context that many layers up the stack.)";
+		d.description = R"(Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments.  If `stack_distance` is specified, then it evaluates to the context that many layers up the stack.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((let (assoc "bbb" 3))", R"()"}, {R"((print (args)))", R"()"}, {R"())", R"()"}
+			{R"&((call
+	(lambda
+		(let
+			(associate "bbb" 3)
+			[
+				(args)
+				(args 1)
+			]
+		)
+	)
+	{x 1}
+))&", R"([
+	{bbb 3}
+	{x 1}
+])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_RAND)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|number range] [number number_to_generate] [bool unique])";

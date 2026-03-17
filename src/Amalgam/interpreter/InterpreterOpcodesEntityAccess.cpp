@@ -559,7 +559,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		#endif
 			);
 
-	ce_enm.FreeNode(args);
+	//can't free args if the result might contain them
+	if(result.unique)
+		ce_enm.FreeNode(args);
 	ce_enm.FreeNode(scope_stack);
 
 #ifdef MULTITHREAD_SUPPORT

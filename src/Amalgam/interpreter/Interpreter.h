@@ -199,16 +199,12 @@ public:
 	//Executes the current Entity that this Interpreter is contained by
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
 	//if scope_stack, opcode_stack, or construction_stack are nullptr, it will start with a new one
-	//if manage_stack_references is true, then it will create the references and create stacks if necessary
-	// if manage_stack_references is false, it will skip that process, avoiding locks,
-	// and assumes the caller has created references for all of the stacks
 	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
 	//if immediate_result is true, then the returned value may be immediate
 	//if new_scope_stack is true, it will mark that it is the bottom of the scope stack
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *scope_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
-		bool manage_stack_references = true,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes()
 	#ifdef MULTITHREAD_SUPPORT
@@ -311,7 +307,12 @@ public:
 	}
 
 	//returns the node from scopeStackNodes given the depth, nullptr if it doesn't exist
-	EvaluableNode *GetScopeStackGivenDepth(size_t depth);
+	//use_atomic_when_setting_access_flag is used for recursion and should not be modified by the caller
+	EvaluableNode *GetScopeStackGivenDepth(size_t depth
+	#ifdef MULTITHREAD_SUPPORT
+		, bool use_atomic_when_setting_access_flag = false
+	#endif
+	);
 
 	//returns a copy of the scope stack
 	EvaluableNode *MakeCopyOfScopeStack();
@@ -928,7 +929,7 @@ protected:
 					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute,
-						nullptr, opcode_stack, construction_stack, true, &csiau, false, false);
+						nullptr, opcode_stack, construction_stack, &csiau, false, false);
 
 					if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 					{
@@ -991,7 +992,7 @@ protected:
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute, nullptr, opcode_stack,
-						construction_stack, true, &csiau, immediate_results, false);
+						construction_stack, &csiau, immediate_results, false);
 
 					if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
 						resultsSideEffect = true;

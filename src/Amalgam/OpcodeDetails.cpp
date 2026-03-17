@@ -1150,18 +1150,32 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_STACK)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"()";
+		d.parameters = R"( )";
 		d.returns = R"(list of assoc)";
 		d.description = R"(Evaluates to the current execution context, also known as the scope stack, containing all of the variables for each layer of the stack.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (stack)))", R"()"}
+			{R"&((stack))&", R"([{}])"},
+			{R"&((call
+	(lambda
+		(let
+			{a 1}
+			(stack)
+		)
+	)
+	{x 1}
+))&", R"([
+	{}
+	{x 1}
+	{a 1}
+])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_ARGS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number stack_distance])";

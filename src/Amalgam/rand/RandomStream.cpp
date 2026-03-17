@@ -4,6 +4,7 @@
 #include "murmurhash3/MurmurHash3.h"
 
 //system headers:
+#include <array>
 #include <cstring>
 
 RandomStream::RandomStream(const std::string initial_state)

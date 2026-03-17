@@ -1124,18 +1124,33 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> build_array()
 		d.hasSideEffects = true;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_OPCODE_STACK)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number stack_distance] [bool no_child_nodes])";
 		d.returns = R"(list of any)";
-		d.description = R"(Evaluates to the list of opcodes that make up the call stack or a single opcode within the call stack. If stack_distance is specified, then a copy of the node at that specified depth is returned, otherwise the list of all opcodes in opcode stack are returned. Negative values for stack_distance specify the depth from the top of the stack and positive values specify the depth from the bottom. If no_child_nodes is true, then only the root node(s) are returned, otherwise the returned node(s) are deep-copied.)";
+		d.description = R"(Evaluates to the list of opcodes that make up the call stack or a single opcode within the call stack.  If `stack_distance` is specified, then a copy of the node at that specified depth is returned, otherwise the list of all opcodes in opcode stack are returned. Negative values for `stack_distance` specify the depth from the top of the stack and positive values specify the depth from the bottom.  If `no_child_nodes` is true, then only the root node(s) are returned, otherwise the returned node(s) are deep-copied.)";
 		d.exampleOutputPairs = make_examples({
-			{R"((print (opcode_stack)))", R"()"}
+			{R"&((size (opcode_stack)))&", R"(2)"},
+			{R"&((seq
+	(seq
+		(opcode_stack 2)
+	)
+))&", R"((seq
+	(seq
+		(opcode_stack 2)
+	)
+))"},
+			{R"&((seq
+	(seq
+		(opcode_stack -1 .true)
+	)
+))&", R"((seq))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_STACK)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"()";

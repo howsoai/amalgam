@@ -322,13 +322,14 @@ namespace EntityQueryBuilder
 
 		StringInternPool::StringID weights_selection_feature_sid
 			= EvaluableNode::ToStringIDIfExists(weights_selection_features);
-		if(weights_selection_feature_sid != string_intern_pool.NOT_A_STRING_ID
-			&& EvaluableNode::IsAssociativeArray(weights_node))
+		if(EvaluableNode::IsAssociativeArray(weights_node)
+			&& weights_selection_feature_sid != string_intern_pool.NOT_A_STRING_ID)
 		{
 			PopulateWeightsFromSelectionFeature(dist_eval,
 				weights_node, num_elements, element_names, weights_selection_feature_sid);
 		}
-		else if(!EvaluableNode::IsNull(weights_selection_features)
+		else if(EvaluableNode::IsAssociativeArray(weights_node)
+			&& !EvaluableNode::IsNull(weights_selection_features)
 			&& weights_selection_features->IsOrderedArray())
 		{
 			//accumulate the weights for all of the features listed

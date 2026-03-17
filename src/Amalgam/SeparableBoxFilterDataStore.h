@@ -656,6 +656,13 @@ public:
 		}
 	}
 
+	//used for debugging to make sure all entities are valid
+	inline void VerifyAllEntitiesForAllColumns()
+	{
+		for(auto &column_data : columnData)
+			column_data->VerifyAllEntities(numEntities);
+	}
+
 protected:
 
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
@@ -682,13 +689,6 @@ protected:
 	{
 		auto &column_data = columnData[column_index];
 		column_data->VerifyAllEntities(numEntities);
-	}
-
-	//used for debugging to make sure all entities are valid
-	inline void VerifyAllEntitiesForAllColumns()
-	{
-		for(auto &column_data : columnData)
-			column_data->VerifyAllEntities(numEntities);
 	}
 
 	//removes the index and associated data

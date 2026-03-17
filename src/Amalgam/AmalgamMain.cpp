@@ -31,8 +31,7 @@ static std::string GetUsage()
 	usage
 		<< "Amalgam Interpreter (" << AMALGAM_VERSION_STRING << ") - " << GetConcurrencyTypeString() << std::endl
 		<<
-R"(
-Usage: amalgam [options] [file]
+R"(Usage: amalgam [options] [file]
 
 Options:
     -h, --help       Show help

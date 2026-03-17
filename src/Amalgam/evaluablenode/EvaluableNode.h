@@ -698,6 +698,13 @@ public:
 		return GetAnnotationsAndCommentsStorage().GetAnnotations();
 	}
 
+	static inline std::string_view GetAnnotationsString(EvaluableNode *en)
+	{
+		if(en == nullptr)
+			return std::string_view();
+		return en->GetAnnotationsAndCommentsStorage().GetAnnotations();
+	}
+
 	//sets the annotation_string
 	inline void SetAnnotationsString(std::string_view s)
 	{

@@ -337,7 +337,19 @@ public:
 	__forceinline EvaluableNode *operator->()
 	{	return value.nodeValue.code;	}
 
+	//forbid implicit assignment from a raw pointer, since things can go wrong
+	EvaluableNodeReference &operator=(EvaluableNode *) = delete;
+
 	__forceinline EvaluableNodeReference &operator =(const EvaluableNodeReference &enr)
+	{
+		//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
+		value = enr.value;
+		unique = enr.unique;
+		uniqueUnreferencedTopNode = enr.uniqueUnreferencedTopNode;
+		return *this;
+	}
+
+	EvaluableNodeReference &operator=(EvaluableNodeReference &&enr)
 	{
 		//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
 		value = enr.value;

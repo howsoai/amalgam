@@ -233,6 +233,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_MIX_ENTITIES, "mix_entities");
 
 	//entity details
+	EmplaceNodeTypeString(ENT_GET_ENTITY_ANNOTATIONS, "get_entity_annotations");
 	EmplaceNodeTypeString(ENT_GET_ENTITY_COMMENTS, "get_entity_comments");
 	EmplaceNodeTypeString(ENT_RETRIEVE_ENTITY_ROOT, "retrieve_entity_root");
 	EmplaceNodeTypeString(ENT_ASSIGN_ENTITY_ROOTS, "assign_entity_roots");

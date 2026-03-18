@@ -62,7 +62,9 @@ int32_t RunAmalgamLanguageValidation()
 	std::vector<std::pair<std::string, size_t>> failed_test_names_and_numbers;
 	bool any_failures = false;
 
-	for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
+	//TODO 25158: replace with the top for loop when all are implemented
+	//for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
+	for(size_t opcode_index = 0; opcode_index < ENT_GET_RAND_SEED; opcode_index++)
 	{
 		EvaluableNodeType cur_opcode = static_cast<EvaluableNodeType>(opcode_index);
 		std::string cur_opcode_str = GetStringFromEvaluableNodeType(cur_opcode, true);
@@ -87,9 +89,11 @@ int32_t RunAmalgamLanguageValidation()
 			{
 				if(!EqualIgnoringWhitespace(result_str, example.output))
 				{
-					std::cerr << "Failed, expected:" << std::endl;
+					std::cerr << "Failed, ran code:" << std::endl;
+					std::cerr << example.example << std::endl;
+					std::cerr << "Expected result:" << std::endl;
 					std::cerr << example.output << std::endl;
-					std::cerr << "Observed:" << std::endl;
+					std::cerr << "Observed result:" << std::endl;
 					std::cerr << result_str << std::endl;
 					test_succeeded = false;
 				}
@@ -99,7 +103,9 @@ int32_t RunAmalgamLanguageValidation()
 				std::regex pattern(example.regexMatch, std::regex::ECMAScript);
 				if(std::regex_match(result_str, pattern))
 				{
-					std::cerr << "Failed, expecting something to match:" << std::endl;
+					std::cerr << "Failed, ran code:" << std::endl;
+					std::cerr << example.example << std::endl;
+					std::cerr << "Expected to match:" << std::endl;
 					std::cerr << example.regexMatch << std::endl;
 					std::cerr << "Observed:" << std::endl;
 					std::cerr << result_str << std::endl;

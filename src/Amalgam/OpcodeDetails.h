@@ -80,8 +80,10 @@ public:
 	//combination of example and its expected output
 	struct OpcodeExample
 	{
-		OpcodeExample(std::string e, std::string o) :
-			example(std::move(e)), output(std::move(o))
+		OpcodeExample(std::string e, std::string o,
+			std::string r = std::string(), std::string c = std::string())
+			: example(std::move(e)), output(std::move(o)),
+			regexMatch(std::move(r)), cleanup(std::move(c))
 		{}
 
 		//the code example

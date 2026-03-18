@@ -1771,227 +1771,248 @@ R"&(\[\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_EXPONENT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number x)";
 		d.returns = R"(number)";
 		d.description = R"(e^x)";
 		d.examples = MakeExamples({
-			{R"((print (exp 0.5)))", R"()"}
+			{R"((exp 0.5))", R"(1.6487212707001282)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_LOG)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number x [number base])";
 		d.returns = R"(number)";
-		d.description = R"(Log of x.  If a base is specified, uses that base, otherwise defaults to natural log.)";
+		d.description = R"(Evaluates to the logarithm of `x`.  If `base` is specified, uses that base, otherwise defaults to natural log.)";
 		d.examples = MakeExamples({
-			{R"((print (log 0.5)))", R"()"}
+			{R"((log 0.5))", R"(-0.6931471805599453)"},
+			{R"((log 0.5 2))", R"(-1)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SIN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number theta)";
 		d.returns = R"(number)";
-		d.description = R"(sine)";
+		d.description = R"(Evaluates to the sine of `theta`.)";
 		d.examples = MakeExamples({
-			{R"((print (sin 0.5)))", R"()"}
+			{R"((sin 0.5))", R"(0.479425538604203)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ASIN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number length)";
 		d.returns = R"(number)";
-		d.description = R"(Arc sine (inverse sine))";
+		d.description = R"(Evaluates to the arc sine (inverse sine) of `length`.)";
 		d.examples = MakeExamples({
-			{R"((print (sin 0.5)))", R"()"}
+			{R"((sin 0.5))", R"(0.479425538604203)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_COS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number theta)";
 		d.returns = R"(number)";
-		d.description = R"(cosine)";
+		d.description = R"(Evaluates to the cosine of `theta`.)";
 		d.examples = MakeExamples({
-			{R"((print (cos 0.5)))", R"()"}
+			{R"((cos 0.5))", R"(0.8775825618903728)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ACOS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number length)";
 		d.returns = R"(number)";
-		d.description = R"(Arc cosine (inverse cosine))";
+		d.description = R"(Evaluates to the arc cosine (inverse cosine) of `length`.)";
 		d.examples = MakeExamples({
-			{R"((print (acos 0.5)))", R"()"}
+			{R"((acos 0.5))", R"(1.0471975511965979)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_TAN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number theta)";
 		d.returns = R"(number)";
-		d.description = R"(tangent)";
+		d.description = R"(Evaluates to the tangent of `theta`.)";
 		d.examples = MakeExamples({
-			{R"((print (tan 0.5)))", R"()"}
+			{R"((tan 0.5))", R"(0.5463024898437905)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ATAN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number num [number divisor])";
 		d.returns = R"(number)";
-		d.description = R"(Arc tangent (inverse tangent).  If two numbers are provided, then it evaluates atan num/divisor.)";
+		d.description = R"(Evaluates to the arc tangent (inverse tangent) of `num`.  If two numbers are provided, then it evaluates to the arc tangent of `num` / `divisor`.)";
 		d.examples = MakeExamples({
-			{R"((print (atan 0.5)))", R"()"}, {R"((print (atan 0.5 0.5)))", R"()"}
+			{R"((atan 0.5))", R"(0.4636476090008061)"}, {R"((atan 0.5 0.5))", R"(0.7853981633974483)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SINH)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number z)";
 		d.returns = R"(number)";
-		d.description = R"(hyperbolic sine)";
+		d.description = R"(Evaluates to the hyperbolic sine of `z`.)";
 		d.examples = MakeExamples({
-			{R"((print (sinh 0.5)))", R"()"}
+			{R"((sinh 0.5))", R"(0.5210953054937474)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ASINH)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number x)";
 		d.returns = R"(number)";
-		d.description = R"(area hyperbolic sine)";
+		d.description = R"(Evaluates to the hyperbolic arc sine of `x`.)";
 		d.examples = MakeExamples({
-			{R"((print (asinh 0.5)))", R"()"}
+			{R"((asinh 0.5))", R"(0.48121182505960347)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_COSH)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number z)";
 		d.returns = R"(number)";
-		d.description = R"(hyperbolic cosine)";
+		d.description = R"(Evaluates to the hyperbolic cosine of `z`.)";
 		d.examples = MakeExamples({
-			{R"((print (cosh 0.5)))", R"()"}
+			{R"((cosh 0.5))", R"(1.1276259652063807)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ACOSH)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number x)";
 		d.returns = R"(number)";
-		d.description = R"(area hyperbolic cosine)";
+		d.description = R"(Evaluates to the hyperbolic arc cosine of `x`.)";
 		d.examples = MakeExamples({
-			{R"((print (acosh 0.5)))", R"()"}
+			{R"((acosh 1.5))", R"(0.9624236501192069)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_TANH)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number z)";
 		d.returns = R"(number)";
-		d.description = R"(hyperbolic tangent)";
+		d.description = R"(Evaluates to the hyperbolic tangent on `z`.)";
 		d.examples = MakeExamples({
-			{R"((print (tanh 0.5)))", R"()"}
+			{R"((tanh 0.5))", R"(0.46211715726000974)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ATANH)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number x)";
 		d.returns = R"(number)";
-		d.description = R"(area hyperbolic tanh)";
+		d.description = R"(Evaluates to the hyperbolic arc tangent on `x`.)";
 		d.examples = MakeExamples({
-			{R"((print (atanh 0.5)))", R"()"}
+			{R"((atanh 0.5))", R"(0.5493061443340549)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ERF)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number errno)";
 		d.returns = R"(number)";
-		d.description = R"(error function)";
+		d.description = R"(Evaluates to the error function on `errno`.)";
 		d.examples = MakeExamples({
-			{R"((print (erf 0.5)))", R"()"}
+			{R"((erf 0.5))", R"(0.5204998778130465)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_TGAMMA)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number z)";
 		d.returns = R"(number)";
-		d.description = R"(true (complete) gamma function)";
+		d.description = R"(Evaluates the true (complete) gamma function on `z`.)";
 		d.examples = MakeExamples({
-			{R"((print (tgamma 0.5)))", R"()"}
+			{R"((tgamma 0.5))", R"(1.772453850905516)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_LGAMMA)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number z)";
 		d.returns = R"(number)";
-		d.description = R"(log-gamma function)";
+		d.description = R"(Evaluates the log-gamma function function on `z`.)";
 		d.examples = MakeExamples({
-			{R"((print (l-gamma 0.5)))", R"()"}
+			{R"((lgamma 0.5))", R"(0.5723649429247001)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SQRT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number x)";
 		d.returns = R"(number)";
-		d.description = R"(Returns the square root of x.)";
+		d.description = R"(Returns the square root of `x`.)";
 		d.examples = MakeExamples({
-			{R"((print (sqrt 0.5)))", R"()"}
+			{R"((sqrt 0.5))", R"(0.7071067811865476)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_POW)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number base number exponent)";
 		d.returns = R"(number)";
-		d.description = R"(Returns the base raised to the exponent)";
+		d.description = R"(Returns `base` raised to the `exponent` power.)";
 		d.examples = MakeExamples({
-			{R"((print (pow 0.5 2)))", R"()"}
+			{R"((pow 0.5 2))", R"(0.25)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ABS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number x)";
 		d.returns = R"(number)";
-		d.description = R"(absolute value of x)";
+		d.description = R"(Evaluates to absolute value of `x`)";
 		d.examples = MakeExamples({
-			{R"((print (abs -0.5)))", R"()"}
+			{R"((abs -0.5))", R"(0.5)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_MAX)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number x1] [number x2] ... [number xN])";

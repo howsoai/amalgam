@@ -1403,7 +1403,7 @@ R"&(\[\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_ADD)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number x1] [number x2] ... [number xN])";
@@ -1417,19 +1417,22 @@ R"&(\[\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SUBTRACT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number x1] [number x2] ... [number xN])";
 		d.returns = R"(number)";
 		d.allowsConcurrency = true;
-		d.description = R"(Evaluates to x1 - x2 - ... - xN. If only one parameter is passed, then it is treated as negative)";
+		d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as negative)";
 		d.examples = MakeExamples({
-			{R"((print (- 1 2 3 4)))", R"()"}
+			{R"((- 1 2 3 4))", R"(-8)"},
+			{R"((- 3))", R"(-3)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_MULTIPLY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number x1] [number x2] ... [number xN])";
@@ -1437,38 +1440,42 @@ R"&(\[\s*
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to the product of all numbers.)";
 		d.examples = MakeExamples({
-			{R"((print (* 1 2 3 4)))", R"()"}
+			{R"((* 1 2 3 4))", R"(24)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_DIVIDE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number x1] [number x2] ... [number xN])";
 		d.returns = R"(number)";
 		d.allowsConcurrency = true;
-		d.description = R"(Evaluates to x1 / x2 / ... / xN.)";
+		d.description = R"(Evaluates to `x1` / `x2` / ... / `xN`.)";
 		d.examples = MakeExamples({
-			{R"((print (/ 1.0 2 3 4)))", R"()"}
+			{R"((/ 1.0 2 3 4))", R"(0.041666666666666664)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_MODULUS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number x1] [number x2] ... [number xN])";
 		d.returns = R"(number)";
 		d.allowsConcurrency = true;
-		d.description = R"(Evaluates the modulus of x1 % x2 % ... % xN.)";
+		d.description = R"(Evaluates the modulus of `x1` % `x2` % ... % `xN`.)";
 		d.examples = MakeExamples({
-			{R"((print (mod 1 2 3 4)))", R"()"}
+			{R"((mod 1 2 3 4))", R"(1)"},
+			{R"((mod 5 3))", R"(2)"},
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_GET_DIGITS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number value [number base] [number start_digit] [number end_digit] [bool relative_to_zero])";

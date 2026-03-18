@@ -3,6 +3,9 @@
 #include "EvaluableNodeManagement.h"
 #include "OpcodeDetails.h"
 
+//system headers:
+#include <initializer_list>
+
 EvaluableNode *ExecutionPermissions::GetPermissionsAsEvaluableNode(EvaluableNodeManager *enm)
 {
 	EvaluableNode *permissions_en = enm->AllocNode(ENT_ASSOC);
@@ -82,13 +85,14 @@ std::pair<ExecutionPermissions, ExecutionPermissions> ExecutionPermissions::Eval
 }
 
 //helper that builds a vector of OpcodeDetails::OpcodeExample from a list of example and output pairs supplied by the generator
-static std::vector<OpcodeDetails::OpcodeExample> MakeExamples(
-	const std::vector<std::pair<std::string, std::string>> &pairs)
+static inline std::vector<OpcodeDetails::OpcodeExample> MakeExamples(
+		std::initializer_list<OpcodeDetails::OpcodeExample> list)
 {
 	std::vector<OpcodeDetails::OpcodeExample> out;
-	out.reserve(pairs.size());
-	for(const auto &p : pairs)
-		out.emplace_back(p.first, p.second);
+	out.reserve(list.size());
+
+	for(const auto &e : list)
+		out.emplace_back(e.example, e.output, e.regexMatch, e.cleanup);
 	return out;
 }
 
@@ -1201,19 +1205,140 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_RAND)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|number range] [number number_to_generate] [bool unique])";
 		d.returns = R"(any)";
 		d.description = R"(Generates random values based on its parameters.  The random values are drawn from a random stream specific to each execution flow for each entity.  With no range, evaluates to a random number between 0.0 and 1.0.  If range is a list, it will uniformly randomly choose and evaluate to one element of the list.  If range is a number, it will evaluate to a value greater than or equal to zero and less than the number specified.  If range is an assoc, then it will randomly evaluate to one of the keys using the values as the weights for the probabilities.  If  number_to_generate is specified, it will generate a list of multiple values (even if number_to_generate is 1).  If unique is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.  Note that if unique only applies to list and assoc ranges.  If unique is true and there are not enough values in a list or assoc, it will only generate the number of elements in range.)";
 		d.examples = MakeExamples({
-			{R"((print (rand)))", R"()"}, {R"((print (rand 50)))", R"()"}, {R"((print (rand (list 1 2 4 5 7))))", R"()"}, {R"((print (rand (range 0 10) 10 .true) "\n"))", R"()"}
+			{R"&((rand))&", R"(0.4153759082605256)"},
+			{R"&((rand 50))&", R"(20.768795413026282)"},
+			{R"&((rand
+	[1 2 4 5 7]
+))&", R"(1)"},
+			{R"&((rand
+	(range 0 10)
+))&", R"(4)"},
+			{R"&((rand
+	(range 0 10)
+	0
+))&", R"([])"},
+			{R"&((rand
+	(range 0 10)
+	1
+))&", R"([4])"},
+			{R"&((rand
+	(range 0 10)
+	10
+	.true
+))&", R"([
+	4
+	0
+	5
+	9
+	10
+	1
+	2
+	7
+	6
+	8
+])"},
+			{R"&((rand 50 4))&", R"([20.768795413026282 23.51742714184096 6.034392211178502 29.777315548569128])"},
+			{R"&((rand
+	(associate "a" 0.25 "b" 0.75)
+))&", R"("b")"},
+			{R"&((rand
+	(associate "a" 0.25 "b" 0.75)
+	16
+))&", "", R"&(\[\s*
+    "(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+	"(?:a|b)"\s *
+\])&"
+},
+			{R"&((rand
+	(associate
+		"a"
+		0.25
+		"b"
+		0.75
+		"c"
+		.infinity
+		"d"
+		.infinity
+	)
+	4
+))&", R"(["c" "c" "c" "d"])",
+R"&(\[\s*
+    "(?:c|d)"\s*
+    "(?:c|d)"\s*
+    "(?:c|d)"\s*
+    "(?:c|d)"\s*
+\])&"
+},
+			{R"&(;should come out somewhere near the correct proportion
+(zip
+	(lambda
+		(+
+			(current_value 1)
+			(current_value)
+		)
+	)
+	(rand
+		(associate "a" 0.25 "b" 0.5 "c" 0.25)
+		100
+	)
+	1
+))&", R"({a 30 b 50 c 20})",
+			R"&(\{\s*
+    a\s+(\d+)\s+
+    b\s+(\d+)\s+
+    c\s+(\d+)\s*
+\})&"
+},
+			{R"&(;these should be weighted toward smaller numbers
+(rand
+	(zip
+		(range 1 10)
+		(map
+			(lambda
+				(/
+					(/ 1 (current_value))
+					2
+				)
+			)
+			(range 1 10)
+		)
+	)
+	3
+	.true
+))&", R"([2 6 1])",
+			R"&(\[\s*
+    (\d+)\s*
+    (\d+)\s*
+    (\d+)\s*
+\])&"
+}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.hasSideEffects = true;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_GET_RAND_SEED)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"()";

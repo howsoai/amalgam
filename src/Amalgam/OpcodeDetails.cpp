@@ -3138,39 +3138,202 @@ The values in the parameter `deviations` are used during distance calculation to
 		return d;
 	}();
 	//TODO 25157: update examples from here down
+	//TODO 25157: up to ENT_APPEND, all of these need special handling for assoc tests
 	arr[static_cast<std::size_t>(ENT_FIRST)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|number|string data])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to the first element.  If data is a list, it will be the first element.  If data is an assoc, it will evaluate to the first element by assoc storage, but order does not matter. If data is a string, it will be the first character. If data is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
+		d.description = R"(Evaluates to the first element of `data`.  If `data` is a list, it will be the first element.  If `data` is an assoc, it will evaluate to the first element by assoc storage, but order does not matter.  If `data` is a string, it will be the first character.  If `data` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
 		d.examples = MakeExamples({
-			{R"((print (first (list 4 9.2 "this"))))", R"()"}, {R"((print (first (assoc a 1 b 2))))", R"()"}, {R"((print (first 3)))", R"()"}, {R"((print (first 0)))", R"()"}, {R"((print (first "abc")))", R"()"}, {R"((print (first "")))", R"()"}
+			{R"&((first
+	[4 9.2 "this"]
+))&", R"(4)"},
+			{R"&((first
+	(associate "a" 1 "b" 2)
+))&", R"(2)"},
+			{R"&((first 3))&", R"(1)"},
+			{R"&((first 0))&", R"(0)"},
+			{R"&((first "abc"))&", R"("a")"},
+			{R"&((first ""))&", R"((null))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_TAIL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|number|string data] [number retain_count])";
 		d.returns = R"(list)";
-		d.description = R"(Evaluates to everything but the first element.  If data is a list, it will be a list of all but the first element.  If data is an assoc, it will evaluate to the assoc without the first element by assoc storage order, but order does not matter. If data is a string, it will be all but the first character. If data is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If a retain_count is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first).)";
+		d.description = R"(Evaluates to everything but the first element.  If `data` is a list, it will be a list of all but the first element.  If `data` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, but order does not matter.  If `data` is a string, it will be all but the first character.  If `data` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero.  If a `retain_count` is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first element).)";
 		d.examples = MakeExamples({
-			{R"((print (tail (list 4 9.2 "this"))))", R"()"}, {R"((print (tail (assoc a 1 b 2))))", R"()"}, {R"((print (tail 3)))", R"()"}, {R"((print (tail 0)))", R"()"}, {R"((print (tail "abc")))", R"()"}, {R"((print (tail "")))", R"()"}, {R"((print (tail (list 1 2 3 4 5 6) 2)))", R"()"}
+			{R"&((tail
+	[4 9.2 "this"]
+))&", R"([9.2 "this"])"},
+			{R"&((tail
+	[1 2 3 4 5 6]
+))&", R"([2 3 4 5 6])"},
+			{R"&((tail
+	[1 2 3 4 5 6]
+	2
+))&", R"([5 6])"},
+			{R"&((tail
+	[1 2 3 4 5 6]
+	-2
+))&", R"([3 4 5 6])"},
+			{R"&((tail
+	[1 2 3 4 5 6]
+	-6
+))&", R"([])"},
+			{R"&((tail
+	[1 2 3 4 5 6]
+	6
+))&", R"([1 2 3 4 5 6])"},
+			{R"&((tail
+	[1 2 3 4 5 6]
+	10
+))&", R"([1 2 3 4 5 6])"},
+			{R"&((tail
+	[1 2 3 4 5 6]
+	-10
+))&", R"([])"},
+			{R"&((tail
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		"d"
+		4
+		"e"
+		5
+		"f"
+		6
+	)
+))&", R"({
+	a 1
+	b 2
+	c 3
+	d 4
+	f 6
+})"},
+			{R"&((tail
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		"d"
+		4
+		"e"
+		5
+		"f"
+		6
+	)
+	2
+))&", R"({b 2 c 3})"},
+			{R"&((tail
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		"d"
+		4
+		"e"
+		5
+		"f"
+		6
+	)
+	-2
+))&", R"({
+	a 1
+	b 2
+	c 3
+	d 4
+})"},
+			{R"&((tail
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		"d"
+		4
+		"e"
+		5
+		"f"
+		6
+	)
+	10
+))&", R"({
+	a 1
+	b 2
+	c 3
+	d 4
+	e 5
+	f 6
+})"},
+			{R"&((tail
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		"d"
+		4
+		"e"
+		5
+		"f"
+		6
+	)
+	-10
+))&", R"({})"},
+			{R"&((tail 3))&", R"(2)"},
+			{R"&((tail 0))&", R"(0)"},
+			{R"&((tail "abcdef"))&", R"("bcdef")"},
+			{R"&((tail "abcdef" 2))&", R"("ef")"},
+			{R"&((tail "abcdef" -2))&", R"("cdef")"},
+			{R"&((tail "abcdef" 6))&", R"("abcdef")"},
+			{R"&((tail "abcdef" -6))&", R"("")"},
+			{R"&((tail "abcdef" 10))&", R"("abcdef")"},
+			{R"&((tail "abcdef" -10))&", R"("")"},
+			{R"&((tail ""))&", R"((null))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_LAST)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|number|string data])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to the last element.  If it is a list, it will be the last element.  If assoc, it will evaluate to the first element by assoc storage, because order does not matter. If it is a string, it will be the last character. If it is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
+		d.description = R"(Evaluates to the last element of `data`.  If `data` is a list, it will be the last element.  If `data` is an assoc, it will evaluate to the first element by assoc storage, because order does not matter.  If `data` is a string, it will be the last character.  If `data` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
 		d.examples = MakeExamples({
-			{R"((print (last (list 4 9.2 "this"))))", R"()"}, {R"((print (last (assoc a 1 b 2))))", R"()"}, {R"((print (last 3)))", R"()"}, {R"((print (last 0)))", R"()"}, {R"((print (last "abc")))", R"()"}, {R"((print (last "")))", R"()"}
+			{R"&((last
+	[4 9.2 "this"]
+))&", R"("this")"},
+			{R"&((last
+	(associate "a" 1 "b" 2)
+))&", R"(2)"},
+			{R"&((last 3))&", R"(1)"},
+			{R"&((last 0))&", R"(0)"},
+			{R"&((last "abc"))&", R"("c")"},
+			{R"&((last ""))&", R"((null))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_TRUNC)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|number|string data] [number retain_count])";

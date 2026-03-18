@@ -2043,44 +2043,73 @@ R"&(\[\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_INDEX_MAX)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([[number x1] [number x2] [number x3] ... [number xN]] | assoc values | list values)";
+		d.parameters = R"([[number x1] [number x2] [number x3] ... [number xN]] | assoc|list values)";
 		d.returns = R"([any])";
 		d.allowsConcurrency = true;
-		d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the maximum value.  If given a single argument that is an assoc returns the a list of keys associated with the maximum values.  If given a single argument that is a list, returns a list of list indices with the maximum value.)";
+		d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the maximum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the maximum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the maximum value.)";
 		d.examples = MakeExamples({
-			{R"((print (index_max 0.5 1 7 9 -5)))", R"()"}, {R"((print (index_max (list 0.5 1 7 9 -5) )))", R"()"}, {R"((print (index_max (assoc 1 0.5 2 1 3 7))))", R"()"}
+			{R"&((index_max 0.5 -12 3 5 7))&", R"([4])"},
+			{R"&((index_max
+	[1 1 3 2 1 3]
+))&", R"([2 5])"},
+			{R"&((index_max (null) 34 -66))&", R"([1])"},
+			{R"&((index_max (null) (null) (null)))&", R"((null))"},
+			{R"&((index_max
+	{1 2 3 5 tomato 4444}
+))&", R"(["tomato"])"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_INDEX_MIN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([[number x1] [number x2] [number x3] ... [number xN]] | assoc values | list values)";
 		d.returns = R"([any])";
 		d.allowsConcurrency = true;
-		d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the minimum value.  If given a single argument that is an assoc returns the a list of keys associated with the minimum values.  If given a single argument that is a list, returns a list of list indices with the minimum value.)";
+		d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the minimum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the minimum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the minimum value.)";
 		d.examples = MakeExamples({
-			{R"((print (index_min 0.5 1 7 9 -5)))", R"()"}, {R"((print (index_min (list 0.5 1 7 9 -5) )))", R"()"}, {R"((print (index_min (assoc 1 0.5 2 1 3 7))))", R"()"}
+			{R"&((index_min 0.5 -12 3 5 7))&", R"([1])"},
+			{R"&((index_min
+	[1 1 3 2 1 3]
+))&", R"([0 1 4])"},
+			{R"&((index_min (null) 34 -66))&", R"([2])"},
+			{R"&((index_min
+	{1 2 3 5 tomato 4444}
+))&", R"([1])"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_DOT_PRODUCT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|assoc x1 list|assoc x2)";
 		d.returns = R"(number)";
-		d.description = R"(Evaluates to the sum of all element-wise products of x1 and x2.)";
+		d.description = R"(Evaluates to the sum of all corresponding element-wise products of `x1` and `x2`.)";
 		d.examples = MakeExamples({
-			{R"((print (dot_product (list 0.5 0.25 0.25) (list 4 8 8))))", R"()"}
+			{R"&((dot_product
+	[0.5 0.25 0.25]
+	[4 8 8]
+))&", R"(6)"},
+			{R"&((dot_product
+	(associate "a" 0.5 "b" 0.25 "c" 0.25)
+	(associate "a" 4 "b" 8 "c" 8)
+))&", R"(6)"},
+			{R"&((dot_product
+	(associate 0 0.5 1 0.25 2 0.25)
+	[4 8 8]
+))&", R"(6)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_NORMALIZE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|assoc values [number p_value])";

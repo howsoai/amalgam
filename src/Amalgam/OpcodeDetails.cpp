@@ -2012,33 +2012,38 @@ R"&(\[\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_MAX)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number x1] [number x2] ... [number xN])";
 		d.returns = R"(number)";
 		d.allowsConcurrency = true;
-		d.description = R"(maximum of all of the numbers)";
+		d.description = R"(Evaluates to the maximum of all of parameters.)";
 		d.examples = MakeExamples({
-			{R"((print (max 0.5 1 7 9 -5)))", R"()"}
+			{R"&((max 0.5 1 7 9 -5))&", R"(9)"},
+			{R"&((max (null) 4 8))&", R"(8)"},
+			{R"&((max (null)))&", R"((null))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_MIN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number x1] [number x2] ... [number xN])";
 		d.returns = R"(number)";
 		d.allowsConcurrency = true;
-		d.description = R"(minimum of all of the numbers)";
+		d.description = R"(Evaluates to the minimum of all of the numbers.)";
 		d.examples = MakeExamples({
-			{R"((print (min 0.5 1 7 9 -5)))", R"()"}
+			{R"&((min 0.5 1 7 9 -5))&", R"(-5)"},
+			{R"&((min (null) 4 8))&", R"(4)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_INDEX_MAX)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([[number x1] [number x2] [number x3] ... [number xN]] | assoc values | list values)";

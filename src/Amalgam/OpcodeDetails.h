@@ -78,14 +78,26 @@ class OpcodeDetails
 public:
 
 	//combination of example and its expected output
-	struct OpcodeExampleOutputPair
+	struct OpcodeExample
 	{
-		OpcodeExampleOutputPair(std::string e, std::string o) :
+		OpcodeExample(std::string e, std::string o) :
 			example(std::move(e)), output(std::move(o))
 		{}
 
+		//the code example
 		std::string example;
+		//example output
 		std::string output;
+
+		//if regexMatch is anything other than the empty string,
+		//it will verify the example's output based on the regexMatch
+		//if regexMatch is empty string, then it will compare example's output
+		//to output except for amount of white space
+		std::string regexMatch;
+
+		//if there is code in cleanup, it will run that after example has been run
+		//and verified
+		std::string cleanup;
 	};
 
 	//arrangements of ordered parameters
@@ -108,7 +120,7 @@ public:
 	std::string parameters;
 	std::string returns;
 	std::string description;
-	std::vector<OpcodeExampleOutputPair> exampleOutputPairs;
+	std::vector<OpcodeExample> examples;
 	OrderedChildNodeType orderedChildNodeType = OrderedChildNodeType::POSITION;
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;

@@ -406,13 +406,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 
 		EvaluableNode *example_output_pairs = evaluableNodeManager->AllocNode(ENT_LIST);
 		auto &examples_output_pairs_ocn = example_output_pairs->GetOrderedChildNodesReference();
-		examples_output_pairs_ocn.reserve(od.exampleOutputPairs.size());
-		for(auto &[example_str, output_str] : od.exampleOutputPairs)
+		examples_output_pairs_ocn.reserve(od.examples.size());
+		for(auto &example : od.examples)
 		{
-			EvaluableNode *example_with_output = evaluableNodeManager->AllocNode(ENT_ASSOC);
-			example_with_output->SetMappedChildNode("example", evaluableNodeManager->AllocNode(example_str));
-			example_with_output->SetMappedChildNode("output", evaluableNodeManager->AllocNode(output_str));
-			example_output_pairs->AppendOrderedChildNode(example_with_output);
+			EvaluableNode *example_with_output_node = evaluableNodeManager->AllocNode(ENT_ASSOC);
+			example_with_output_node->SetMappedChildNode("example",
+				evaluableNodeManager->AllocNode(example.example));
+			example_with_output_node->SetMappedChildNode("output",
+				evaluableNodeManager->AllocNode(example.output));
+			example_output_pairs->AppendOrderedChildNode(example_with_output_node);
 		}
 
 		opcode_attribs->SetMappedChildNode("examples", example_output_pairs);

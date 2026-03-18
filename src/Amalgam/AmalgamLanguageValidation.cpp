@@ -7,6 +7,9 @@
 #include "PerformanceProfiler.h"
 #include "PlatformSpecific.h"
 
+//system headers:
+#include <regex>
+
 //returns a copy of s where each consecutive whitespace block is replaced
 //by a single space and any leading and trailing spaces are removed
 static std::string NormalizeWhitespace(const std::string &s)
@@ -65,31 +68,54 @@ int32_t RunAmalgamLanguageValidation()
 		std::string cur_opcode_str = GetStringFromEvaluableNodeType(cur_opcode, true);
 		std::cout << "Validating opcode " << cur_opcode_str << std::endl;
 
-		size_t num_examples = _opcode_details[opcode_index].exampleOutputPairs.size();
+		size_t num_examples = _opcode_details[opcode_index].examples.size();
 		for(size_t test_number = 0; test_number < num_examples; test_number++)
 		{
 			bool test_succeeded = true;
-			auto &example_output_pair = _opcode_details[opcode_index].exampleOutputPairs[test_number];
+			auto &example = _opcode_details[opcode_index].examples[test_number];
 			std::cout << "Test " << (test_number + 1) << " of " << num_examples << ": ";
 
 			entity->SetRandomState("12345", true);
 
 			auto [code, warnings, char_with_error, code_complete]
-				= Parser::Parse(example_output_pair.example, &entity->evaluableNodeManager);
+				= Parser::Parse(example.example, &entity->evaluableNodeManager);
 
 			auto result = entity->ExecuteOnEntity(code, nullptr);
 			std::string result_str = Parser::Unparse(result, true, true, true);
 
-			if(!EqualIgnoringWhitespace(result_str, example_output_pair.output))
+			if(example.regexMatch.empty())
 			{
-				std::cerr << "Failed, expected:" << std::endl;
-				std::cerr << example_output_pair.output << std::endl;
-				std::cerr << "Observed:" << std::endl;
-				std::cerr << result_str << std::endl;
-				test_succeeded = false;
+				if(!EqualIgnoringWhitespace(result_str, example.output))
+				{
+					std::cerr << "Failed, expected:" << std::endl;
+					std::cerr << example.output << std::endl;
+					std::cerr << "Observed:" << std::endl;
+					std::cerr << result_str << std::endl;
+					test_succeeded = false;
+				}
+			}
+			else //match with regular expression
+			{
+				std::regex pattern(example.regexMatch, std::regex::ECMAScript);
+				if(std::regex_match(result_str, pattern))
+				{
+					std::cerr << "Failed, expecting something to match:" << std::endl;
+					std::cerr << example.regexMatch << std::endl;
+					std::cerr << "Observed:" << std::endl;
+					std::cerr << result_str << std::endl;
+					test_succeeded = false;
+				}
 			}
 
-			//TODO 25158: implement tests that are not exact matches
+			//if the test needs to be cleaned up, do so
+			if(!example.cleanup.empty())
+			{
+				std::cout << "Cleaning up test." << std::endl;
+				auto [cleanup_code, cleanup_warnings, cleanup_char_with_error, cleanup_code_complete]
+					= Parser::Parse(example.example, &entity->evaluableNodeManager);
+
+				entity->ExecuteOnEntity(cleanup_code, nullptr);
+			}
 
 			entity->ReclaimResources(false, true, false);
 

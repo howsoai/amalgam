@@ -1,6 +1,8 @@
 ﻿;prints the code followed by its output for inclusion in the documentation
 (seq
 	(create_entities "TestEntity" {})
+	(set_entity_permissions "TestEntity" .true)
+
 	(map
 		(lambda
 			(let {code (current_value 1)}

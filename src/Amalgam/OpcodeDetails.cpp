@@ -1338,42 +1338,72 @@ R"&(\[\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_GET_RAND_SEED)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"()";
 		d.returns = R"(string)";
-		d.description = R"(Evaluates to a string representing the current state of the random number generator.)";
+		d.description = R"(Evaluates to a string representing the current state of the random number generator.  Note that the string will be a string of bytes that may not be valid as UTF-8.)";
 		d.examples = MakeExamples({
-			{R"((print (get_rand_seed) "\n"))", R"()"}
+			{R"&((format (get_rand_seed) "string" "base64"))&", R"("X6f8e5JTT5kuHHGZUu7r6/8=")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SET_RAND_SEED)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(* node)";
+		d.parameters = R"(string seed)";
 		d.returns = R"(string)";
-		d.description = R"(Sets the random number seed and state for the current random number stream without affecting any entity.  If node is already a string in the proper format output by get_entity_rand_seed, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the generator.)";
+		d.description = R"(Initializes the random number stream for the given `seed` without affecting any entity.  If the seed is already a string in the proper format output by `get_entity_rand_seed` or `get_rand_seed`, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the generator.)";
 		d.examples = MakeExamples({
-			{R"((declare (assoc cur_seed (get_rand_seed))))", R"()"}, {R"((print (rand) "\n"))", R"()"}, {R"((set_rand_seed cur_seed))", R"()"}, {R"((print (rand) "\n"))", R"()"}
+			{R"&((seq
+	(declare
+		{cur_seed (get_rand_seed)}
+	)
+	(declare
+		{
+			first_pair [(rand) (rand)]
+		}
+	)
+	(set_rand_seed cur_seed)
+	(declare
+		{
+			second_pair [(rand) (rand)]
+		}
+	)
+	(append first_pair second_pair)
+))&", R"([0.4153759082605256 0.47034854283681926 0.4153759082605256 0.47034854283681926])"},
+			{R"&((seq
+	(set_rand_seed "12345")
+	(rand)
+))&", R"(0.5507987428849511)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SYSTEM_TIME)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"()";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the current system time since epoch in seconds (including fractions of seconds).)";
 		d.examples = MakeExamples({
-			{R"((print (system_time)))", R"()"}
+			{R"&((system_time))&", R"(1773855306.4474)",
+			R"&(^\s*
+    (                                   # start of the number
+        (?:\d+\.\d*|\.\d+|\d+)          # integer part with optional fraction
+        (?:[eE][+-]?\d+)?               # optional exponent
+    )
+    \s*$)&"
+}
 			});
 		d.permissions = ExecutionPermissions::Permission::ENVIRONMENT;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_ADD)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([number x1] [number x2] ... [number xN])";

@@ -2348,31 +2348,796 @@ R"&(\[\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_GENERALIZED_DISTANCE)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(list|assoc|* vector1 [list|assoc|* vector2] [number p_value] [list|assoc|assoc of assoc|number weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc|number deviations] [list value_names] [list|string weights_selection_features] [bool surprisal_space])";
+		d.parameters = R"(list|assoc|* vector1 [list|assoc|* vector2] [number p] [list|assoc|assoc of assoc|number weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc|number deviations] [list value_names] [list|string weights_selection_features] [bool surprisal_space])";
 		d.returns = R"(number)";
-		d.description = R"(Computes the generalized norm between vector1 and vector2 (or an equivalent zero vector if unspecified) with parameter specified by the p_value (1 being probability space and Manhattan distance, the default, and e.g., 2 being Euclidean distance), using the numerical distance or edit distance as appropriate.  The parameter value_names, if specified as a list of the names of the values, will transform via unzipping any assoc into a list for the respective parameter in the order of the value_names, or if a number will use the number repeatedly for every element.  The weights parameter specifies how to weight the different dimensions.  If weights is a list, each value maps to its respective element in the vectors.  If weights is null, then it will assume that the weights are 1 and additionally will ignore null values for the vectors instead of treating them as unknown differences.  If weights is an assoc, then the parameter value_names will select the weights from the assoc.  If weights is an assoc of assocs, additionally the parameter weights_selection_features will select which set of weights to use.  If weights_selection_features is a string, then it will select weights for the given feature and rebalance any weights for unused features.  If weights_selection_features is a list, then it will select and rebalance the weights as best suited for predicting the combination of features in the list.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  
-For attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).  If the feature type is continuous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
-Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.   If any vector value is null or any of the differences between vector1 and vector2 evaluate to null, then it will compute a corresponding maximum distance value based on the properties of the feature.  If surprisal space is true, which defaults to false, it will perform all computations in surprisal space.)";
+		d.description = R"(Computes the generalized norm between `vector1` and `vector2` (or an equivalent zero vector if unspecified) with parameter specified by `p` (1 being probability space and Manhattan distance, the default, and e.g., 2 being Euclidean distance), using the numerical distance or edit distance as appropriate.  The parameter `value_names`, if specified as a list of the names of the values, will transform via unzipping any assoc into a list for the respective parameter in the order of the `value_names`, or if a number will use the number repeatedly for every element.  The `weights` parameter specifies how to weight the different dimensions.  If `weights` is a list, each value maps to its respective element in the vectors.  If `weights` is null, then it will assume that the `weights` are 1 and additionally will ignore null values for the vectors instead of treating them as unknown differences.  If `weights` is an assoc, then the parameter `value_names` will select the `weights` from the assoc.  If `weights` is an assoc of assocs, additionally the parameter `weights_selection_features` will select which set of `weights` to use.  If `weights_selection_features` is a string, then it will select `weights` for the given feature and rebalance any `weights` for unused features.  If `weights_selection_features` is a list, then it will select and rebalance the `weights` as best suited for predicting the combination of features in the list.  The parameter `distance_types` is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  
+For `attributes`, the particular `distance_types` specifies what particular `attributes` are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).  If the feature type is continuous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
+The values in the parameter `deviations` are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.   If any vector value is null or any of the differences between `vector1` and `vector2` evaluate to null, then it will compute a corresponding maximum distance value based on the properties of the feature.  If `surprisal_space` is true, which defaults to false, it will perform all computations in surprisal space.)";
 		d.examples = MakeExamples({
-			{R"((generalized_distance (list 1 2 3) (list 10 2 4)  1 (null) (list "nominal_number") (list 1)))", R"()"}, {R"((generalized_distance (list 3 4) (null) 2))", R"()"}, {R"((generalized_distance (list 1 1) (list 1 1) 1 (list 1 1) (list "continuous_number" "continuous_number") (null) (list 0.5 0.5) (null) (null) .true ))", R"()"}
+			{R"&((generalized_distance
+	(map
+		10000
+		(range 0 200)
+	)
+	(null)
+	0.01
+))&", R"(2.0874003024080013e+234)"},
+			{R"&((generalized_distance
+	[1 2 3]
+	[0 2 3]
+	0.01
+))&", R"(1)"},
+			{R"&((generalized_distance
+	[3 4]
+	(null)
+	2
+))&", R"(5)"},
+			{R"&((generalized_distance
+	[3 4]
+	(null)
+	-.infinity
+))&", R"(3)"},
+			{R"&((generalized_distance
+	[1 2 3]
+	[0 2 3]
+	0.01
+	[0.3333 0.3333 0.3333]
+))&", R"(1.9210176984148622e-48)"},
+			{R"&((generalized_distance
+	[3 4]
+	(null)
+	2
+	[1 1]
+))&", R"(5)"},
+			{R"&((generalized_distance
+	[3 4]
+	(null)
+	2
+	[0.5 0.5]
+))&", R"(3.5355339059327378)"},
+			{R"&((generalized_distance
+	[3 4]
+	(null)
+	1
+	[0.5 0.5]
+))&", R"(3.5)"},
+			{R"&((generalized_distance
+	[3 4]
+	(null)
+	0.5
+	[0.5 0.5]
+))&", R"(3.482050807568877)"},
+			{R"&((generalized_distance
+	[3 4]
+	(null)
+	0.1
+	[0.5 0.5]
+))&", R"(3.467687001077147)"},
+			{R"&((generalized_distance
+	[3 4]
+	(null)
+	0.01
+	[0.5 0.5]
+))&", R"(3.4644599990846436)"},
+			{R"&((generalized_distance
+	[3 4]
+	(null)
+	0.001
+	[0.5 0.5]
+))&", R"(3.4641374518767565)"},
+			{R"&((generalized_distance
+	[3 4]
+	(null)
+	0
+	[0.5 0.5]
+))&", R"(3.4641016151377544)"},
+			{R"&((generalized_distance
+	[(null) 4]
+	(null)
+	2
+	[1 1]
+))&", R"(.infinity)"},
+			{R"&((generalized_distance
+	[(null) 4]
+	(null)
+	0
+	[1 1]
+))&", R"(.infinity)"},
+			{R"&((generalized_distance
+	[(null) 4]
+	(null)
+	2
+	[0.5 0.5]
+))&", R"(.infinity)"},
+			{R"&((generalized_distance
+	[(null) 4]
+	(null)
+	0
+	[0.5 0.5]
+))&", R"(.infinity)"},
+			{R"&((generalized_distance
+	[1 2 3]
+	[10 2 4]
+	1
+	(null)
+	["nominal_number"]
+	[1]
+))&", R"(2)"},
+			{R"&((generalized_distance
+	[1 2 3]
+	[10 2 10]
+	1
+	(null)
+	["nominal_number"]
+	[1]
+))&", R"(8)"},
+			{R"&((generalized_distance
+	[1 2 3]
+	[10 2 10]
+	1
+	(null)
+	["nominal_number"]
+	[1]
+))&", R"(8)"},
+			{R"&((generalized_distance
+	[1 2 3]
+	[10 2 4]
+	1
+	[0.3333 0.3333 0.3333]
+	["nominal_number"]
+	[1]
+))&", R"(0.6666)"},
+			{R"&((generalized_distance
+	[1 2 3]
+	[10 2 10]
+	1
+	[0.3333 0.3333 0.3333]
+	["nominal_number"]
+	[1]
+))&", R"(2.6664)"},
+			{R"&((generalized_distance
+	[1 2 3]
+	[10 2 10]
+	1
+	[0.3333 0.3333 0.3333]
+	["nominal_number"]
+	[1]
+))&", R"(2.6664)"},
+			{R"&((generalized_distance
+	[1 2 3]
+	[10 2 10]
+	1
+	[0.3333 0.3333 0.3333]
+	["nominal_number" "continuous_number_cyclic" "continuous_number_cyclic"]
+	[1 360 12]
+))&", R"(1.9997999999999998)"},
+			{R"&((generalized_distance
+	[1 2 3]
+	[10 2 10]
+	1
+	[0.3333 0.3333 0.3333]
+	["nominal_number"]
+	[1.1]
+	[0.25 180 -12]
+))&", R"(92.57407500000001)"},
+			{R"&((generalized_distance
+	[4 4 (null)]
+	[2 (null) (null)]
+	2
+	[1 0 1]
+	["continuous_number" "nominal_number" "nominal_number"]
+	[(null) 5 5]
+	[0.1 0.1 0.1]
+))&", R"(2.227195548101088)"},
+			{R"&((generalized_distance
+	[4 4 (null)]
+	[2 (null) (null)]
+	2
+	[1 0 1]
+	["continuous_number" "nominal_number" "nominal_number"]
+	[(null) 5 5]
+))&", R"(2.23606797749979)"},
+			{R"&((generalized_distance
+	[4 4 (null) 4]
+	[2 (null) (null) 2]
+	2
+	[1 0 1 1]
+	["continuous_number" "nominal_number" "nominal_number"]
+	[(null) 5 5]
+	[0.1 0.1 0.1 0.1]
+))&", R"(2.9933927271513525)"},
+			{R"&((generalized_distance
+	[4 4 (null) 4]
+	[2 (null) (null) 2]
+	2
+	[1 0 1 1]
+	["continuous_number" "nominal_number" "nominal_number"]
+	[(null) 5 5]
+))&", R"(3)"},
+			{R"&((generalized_distance
+	[4 4 4 4 4]
+	[2 (null) 2 2 2]
+	1
+	[1 0 1 1 1]
+))&", R"((null))"},
+			{R"&((generalized_distance
+	[4 4 4]
+	[2 2 2]
+	1
+	{x 1 y 1 z 1}
+	{x "nominal_number" y "continuous_number" z "continuous_number"}
+	{z 5}
+	(null)
+	(null)
+	(null)
+	["x" "y" "z"]
+))&", R"(6)"},
+			{R"&((generalized_distance
+	[4 4 (null)]
+	[2 2 (null)]
+	1
+	[1 1 1]
+	["continuous_number" "nominal_number" "nominal_number"]
+	[(null) 5 5]
+))&", R"(4)"},
+			{R"&((generalized_distance
+	[4 4 4 4]
+	[2 2 2 (null)]
+	0
+	[1 1 1 1]
+	["continuous_number" "nominal_number" "nominal_number" "continuous_number"]
+	[(null) 5 5 (null)]
+	[
+		[0 2]
+		(null)
+		(null)
+		[0 2]
+	]
+))&", R"(4)"},
+			{R"&((generalized_distance
+	[4 "s" "s" 4]
+	[2 "s" 2 (null)]
+	1
+	[1 1 1 1]
+	["continuous_number" "nominal_string" "nominal_string" "continuous_number"]
+	[(null) 5 5 (null)]
+	[
+		[0 1]
+		(null)
+		(null)
+		[0 1]
+	]
+))&", R"(4)"},
+			{R"&((generalized_distance
+	[
+		[1 2 3 4 5]
+		"s"
+	]
+	[
+		[1 2 3]
+		"s"
+	]
+	1
+	[1 1]
+	["continuous_code" "nominal_string"]
+	[0 5]
+))&", R"(2)"},
+			{R"&((generalized_distance
+	[
+		[1.5 2 3 4 5]
+		"s"
+	]
+	[
+		[1 2 3]
+		"s"
+	]
+	1
+	[1 1]
+	["continuous_code" "nominal_string"]
+	[0 5]
+))&", R"(3.3255881193876142)"},
+			{R"&((generalized_distance
+	[1 1]
+	[1 1]
+	1
+	[1 1]
+	["continuous_number" "continuous_number"]
+	(null)
+	[0.5 0.5]
+	(null)
+	(null)
+	.true
+))&", R"(0)"},
+			{R"&((generalized_distance
+	[1 1]
+	[1 1]
+	1
+	[1 1]
+	["nominal_number" "nominal_number"]
+	(null)
+	[0.5 0.5]
+	(null)
+	(null)
+	.true
+))&", R"(0)"},
+			{R"&((generalized_distance
+	[1 1]
+	[2 2]
+	1
+	[1 1]
+	["continuous_number" "continuous_number"]
+	(null)
+	[0.5 0.5]
+	(null)
+	(null)
+	.true
+))&", R"(1.6766764161830636)"},
+			{R"&((generalized_distance
+	[1 1]
+	[2 2]
+	1
+	[1 1]
+	["nominal_number" "nominal_number"]
+	[2 2]
+	[0.25 0.25]
+	(null)
+	(null)
+	.true
+))&", R"(2.197224577336219)"},
+			{R"&((generalized_distance
+	["b"]
+	
+	;vector 1
+	["c"]
+	
+	;vector 2
+	1
+	
+	;p
+	[1 1]
+	
+	;weights
+	["nominal_string"]
+	
+	;types
+	[4]
+	
+	;attributes
+	[
+		{
+			a {a 0.00744879 b 0.996275605 c 0.996275605}
+			b {a 0.501736111 b 0.501736111 c 0.996527778}
+			c {a 0.996539792 b 0.996539792 c 0.006920415}
+		}
+	]
+	
+	;deviations
+	(null)
+	
+	;names
+	(null)
+	
+	;weights_selection_feature
+	.true
+))&", R"(4.966335099422683)"},
+			{R"&((generalized_distance
+	["b"]
+	
+	;vector 1
+	["a"]
+	
+	;vector 2
+	1
+	
+	;p
+	[1 1]
+	
+	;weights
+	["nominal_string"]
+	
+	;types
+	[4]
+	
+	;attributes
+	[
+		{
+			a {a 0.00744879 b 0.996275605 c 0.996275605}
+			b {a 0.501736111 b 0.501736111 c 0.996527778}
+			c {a 0.996539792 b 0.996539792 c 0.006920415}
+		}
+	]
+	
+	;deviations
+	(null)
+	
+	;names
+	(null)
+	
+	;weights_selection_feature
+	.true
+))&", R"(0)"},
+			{R"&((generalized_distance
+	["b"]
+	
+	;vector 1
+	["q"]
+	
+	;vector 2
+	1
+	
+	;p
+	[1 1]
+	
+	;weights
+	["nominal_string"]
+	
+	;types
+	[4]
+	
+	;attributes
+	[
+		{
+			a {a 0.00744879 b 0.996275605 c 0.996275605}
+			b [
+					{a 0.501736111 b 0.501736111 c 0.996527778}
+					0.8
+				]
+			c {a 0.996539792 b 0.996539792 c 0.006920415}
+		}
+	]
+	
+	;deviations
+	(null)
+	
+	;names
+	(null)
+	
+	;weights_selection_feature
+	.true
+))&", R"(0.9128124677208268)"},
+			{R"&((generalized_distance
+	["q"]
+	
+	;vector 1
+	["u"]
+	
+	;vector 2
+	1
+	
+	;p
+	[1 1]
+	
+	;weights
+	["nominal_string"]
+	
+	;types
+	[2 2]
+	
+	;attributes
+	[0.2]
+	
+	;deviations
+	(null)
+	
+	;names
+	(null)
+	
+	;weights_selection_feature
+	.true
+))&", R"(1.3862943611198906)"},
+			{R"&((generalized_distance
+	["q"]
+	
+	;vector 1
+	["u"]
+	
+	;vector 2
+	1
+	
+	;p
+	[1 1]
+	
+	;weights
+	["nominal_string"]
+	
+	;types
+	[4]
+	
+	;attributes
+	[
+		[
+			{
+				a {a 0.00744879 b 0.996275605 c 0.996275605}
+				b [
+						{a 0.501736111 b 0.501736111 c 0.996527778}
+						0.8
+					]
+				c {a 0.996539792 b 0.996539792 c 0.006920415}
+			}
+			0.2
+		]
+	]
+	
+	;deviations
+	(null)
+	
+	;names
+	(null)
+	
+	;weights_selection_feature
+	.true
+))&", R"(1.3862943611198906)"},
+			{R"&((generalized_distance
+	["q"]
+	
+	;vector 1
+	["u"]
+	
+	;vector 2
+	1
+	
+	;p
+	[1 1]
+	
+	;weights
+	["nominal_string"]
+	
+	;types
+	[4]
+	
+	;attributes
+	[
+		[
+			[
+				{
+					a {a 0.00744879 b 0.996275605 c 0.996275605}
+					b [
+							{a 0.501736111 b 0.501736111 c 0.996527778}
+							0.8
+						]
+					c {a 0.996539792 b 0.996539792 c 0.006920415}
+				}
+				0.2
+			]
+			0.2
+		]
+	]
+	
+	;deviations
+	(null)
+	
+	;names
+	(null)
+	
+	;weights_selection_feature
+	.true
+))&", R"(1.3862943611198906)"},
+			{R"&((generalized_distance
+	{
+		A1 1
+		A2 1
+		A3 1
+		B 1
+	}
+	
+	;vector 1
+	{
+		A1 2
+		A2 2
+		A3 2
+		B 2
+	}
+	
+	;vector 2
+	1
+	
+	;p
+	{
+		A1 {
+				A1 0
+				A2 0.372145984
+				A3 0.370497589
+				B 0.082723928
+				sum 0.174632499
+			}
+		A2 {
+				A1 0.371518433
+				A2 0
+				A3 0.370520996
+				B 0.082668725
+				sum 0.175291846
+			}
+		A3 {
+				A1 0.370319458
+				A2 0.370968492
+				A3 0
+				B 0.085480882
+				sum 0.173231167
+			}
+		B {
+				A1 0.061363751
+				A2 0.049512288
+				A3 0.05628626
+				B 0
+				sum 0.832837701
+			}
+		sum {
+				A1 0.114003407
+				A2 0.106173002
+				A3 0.100958636
+				B 0.678864956
+				sum 0
+			}
+	}
+	
+	;weights
+	["continuous_number"]
+	
+	;types
+	(null)
+	
+	;attributes
+	0.5
+	
+	;deviations
+	["A2" "A3" "B"]
+	
+	;names
+	"sum"
+	
+	;weights_selection_feature
+	.true
+))&", R"(0.8383382080915319)"},
+			{R"&((generalized_distance
+	[
+		[1.5 2 3 4 5 "s12"]
+	]
+	[
+		[1 2 3 "s21"]
+	]
+	1
+	[1]
+	["continuous_code"]
+	[{}]
+))&", R"(5.325588119387614)"},
+			{R"&((generalized_distance
+	[
+		[1.5 2 3 4 5 "s12"]
+	]
+	[
+		[1 2 3 "s21"]
+	]
+	1
+	[1]
+	["continuous_code"]
+	[
+		{nominal_strings .false types_must_match .false}
+	]
+))&", R"(3.697640774259515)"},
+			{R"&((generalized_distance
+	{
+		A1 1
+		A2 1
+		A3 1
+		B 1
+	}
+	
+	;vector 1
+	{
+		A1 2
+		A2 2
+		A3 2
+		B 2
+	}
+	
+	;vector 2
+	1
+	
+	;p
+	{
+		A1 {
+				A1 0
+				A2 0.372145984
+				A3 0.370497589
+				B 0.082723928
+				sum 0.174632499
+			}
+		A2 {
+				A1 0.371518433
+				A2 0
+				A3 0.370520996
+				B 0.082668725
+				sum 0.175291846
+			}
+		A3 {
+				A1 0.370319458
+				A2 0.370968492
+				A3 0
+				B 0.085480882
+				sum 0.173231167
+			}
+		B {
+				A1 0.061363751
+				A2 0.049512288
+				A3 0.05628626
+				B 0
+				sum 0.832837701
+			}
+		sum {
+				A1 0.114003407
+				A2 0.106173002
+				A3 0.100958636
+				B 0.678864956
+				sum 0
+			}
+	}
+	
+	;weights
+	["continuous_number"]
+	
+	;types
+	(null)
+	
+	;attributes
+	0.5
+	
+	;deviations
+	["A2" "A3"]
+	
+	;names
+	["sum" "A1" "B"]
+	
+	;weights_selection_feature
+	.true
+))&", R"(0.8383382080915318)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ENTROPY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|assoc|number p [list|assoc|number q] [number p_exponent] [number q_exponent])";
 		d.returns = R"(number)";
-		d.description = R"(Computes a form of entropy on the specified vectors using nats (natural log, not bits) in the form of -sum p_i ln (p_i^p_exponent * q_i^q_exponent).  For both p and q, if p or q is a list of numbers, then it will treat each entry as being the probability of that element.  If it is an associative array, then elements with matching keys will be matched.  If p or q a number then it will use that value in place of each element.  If p or q is null or not specified, it will be calculated as the reciprocal of the size of the other element (p_i would be 1/|q| or q_i would be 1/|p|).  If either p_exponent or q_exponent is 0, then that exponent will be ignored.  Shannon entropy can be computed by ignoring the q parameters, setting p_exponent to 1 and q_exponent to 0. KL-divergence can be computed by providing both p and q and setting p_exponent to -1 and q_exponent to 1.  Cross-entropy can be computed by setting p_exponent to 0 and q_exponent to 1.)";
+		d.description = R"(Computes a form of entropy on the specified vectors `p` and `q` using nats (natural log, not bits) in the form of -sum p_i ln (p_i^p_exponent * q_i^q_exponent).  For both `p` and `q`, if `p` or `q` is a list of numbers, then it will treat each entry as being the probability of that element.  If it is an associative array, then elements with matching keys will be matched.  If `p` or `q` is a number then it will use that value in place of each element.  If `p` or `q` is null or not specified, it will be calculated as the reciprocal of the size of the other element (p_i would be 1/|q| or q_i would be 1/|p|).  If either `p_exponent` or `q_exponent` is 0, then that exponent will be ignored.  Shannon entropy can be computed by ignoring the q parameters by specifying it as null, setting `p_exponent` to 1 and `q_exponent` to 0. KL-divergence can be computed by providing both `p` and `q` and setting `p_exponent` to -1 and `q_exponent` to 1.  Cross-entropy can be computed by setting `p_exponent` to 0 and `q_exponent` to 1.)";
 		d.examples = MakeExamples({
-			{R"((entropy (list 0.5 0.5)))", R"()"}, {R"((entropy (list 0.5 0.5) (list 0.25 0.75) 1 -1))", R"()"}, {R"((entropy 0.5 (list 0.25 0.75) 1 -1))", R"()"}, {R"((entropy 0.5 (list 0.25 0.75) 0 1))", R"()"}
+			{R"&((entropy
+	[0.5 0.5]
+))&", R"(0.6931471805599453)"},
+			{R"&((entropy
+	[0.5 0.5]
+	[0.25 0.75]
+	-1
+	1
+))&", R"(0.14384103622589045)"},
+			{R"&((entropy
+	[0.5 0.5]
+	[0.25 0.75]
+))&", R"(0.14384103622589045)"},
+			{R"&((entropy
+	0.5
+	[0.25 0.75]
+	-1
+	1
+))&", R"(0.14384103622589045)"},
+			{R"&((entropy
+	0.5
+	[0.25 0.75]
+	0
+	1
+))&", R"(1.6739764335716716)"},
+			{R"&((entropy
+	{A 0.5 B 0.5}
+	{A 0.75 B 0.25}
+))&", R"(0.14384103622589045)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_FIRST)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|number|string data])";

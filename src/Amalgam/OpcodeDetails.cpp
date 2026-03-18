@@ -1475,62 +1475,303 @@ R"&(\[\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_GET_DIGITS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number value [number base] [number start_digit] [number end_digit] [bool relative_to_zero])";
 		d.returns = R"(list of number)";
-		d.description = R"(Evaluates to a list of the number of each digit of value for the given base.  If base is omitted, 10 is the default.  The parameters start_digit and end_digit can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of start_digit and end_digit are with respect to relative_to_zero, which defaults to true.  If relative_to_zero is true, then the digits are indexed from their distance to zero, such as "5 4 3 2 1 0 . -1 -2".  If relative_to_zero is false, then the digits are indexed from their most significant digit, such as "0 1 2 3 4 5 . 6  7".  The default values of start_digit and end_digit are the most and least significant digits respectively.)";
+		d.description = R"(Evaluates to a list of the number of each digit of `value` for the given `base`.  If `base` is omitted, 10 is the default.  The parameters `start_digit` and `end_digit` can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of `start_digit` and `end_digit` are with respect to relative_to_zero, which defaults to true.  If relative_to_zero is true, then the digits are indexed from their distance to zero, such as "5 4 3 2 1 0 . -1 -2".  If relative_to_zero is false, then the digits are indexed from their most significant digit, such as "0 1 2 3 4 5 . 6  7".  The default values of `start_digit` and `end_digit` are the most and least significant digits respectively.)";
 		d.examples = MakeExamples({
-			{R"((print (get_digits 16 8 .infinity 0)))", R"()"}, {R"((print (get_digits 3 2 5 0)))", R"()"}, {R"((print (get_digits 1.5 1.5 .infinity 0)))", R"()"}
+			{R"&((get_digits 1234567.8 10))&", R"([
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+	8
+	0
+	0
+	0
+])"},
+			{R"&((get_digits 1234567.89 10))&", R"([
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+	8
+	8
+	9
+	9
+])"},
+			{R"&((get_digits 1234.5678 10 -1 -.infinity))&", R"([
+	5
+	6
+	7
+	8
+	0
+	0
+	0
+	0
+	0
+	0
+	0
+])"},
+			{R"&((get_digits 7 2 .infinity 0))&", R"([1 1 1])"},
+			{R"&((get_digits 16 2 .infinity 0))&", R"([1 0 0 0 0])"},
+			{R"&((get_digits 24 4 .infinity 0))&", R"([1 2 0])"},
+			{R"&((get_digits 40 3 .infinity 0))&", R"([1 1 1 1])"},
+			{R"&((get_digits 16 2 .infinity 0))&", R"([1 0 0 0 0])"},
+			{R"&((get_digits 16 8 .infinity 0))&", R"([2 0])"},
+			{R"&((get_digits 3 2 5 0))&", R"([0 0 0 0 1 1])"},
+			{R"&((get_digits 1.5 1.5 .infinity 0))&", R"([1 0])"},
+			{R"&((get_digits 3.75 1.5 .infinity -7))&", R"([
+	1
+	0
+	0
+	0
+	0
+	0
+	1
+	0
+	0
+	0
+	1
+])"},
+			{R"&((get_digits 1234567.8 10 0 4 .false))&", R"([1 2 3 4 5])"},
+			{R"&((get_digits 1234567.8 10 4 8 .false))&", R"([5 6 7 8 0])"},
+			{R"&((get_digits 1.2345678e+100 10 0 4 .false))&", R"([1 2 3 4 5])"},
+			{R"&((get_digits 1.2345678e+100 10 4 8 .false))&", R"([5 6 7 8 0])"},
+			{R"&(;should print empty list for these
+(get_digits 0 2.714 1 3 .false))&", R"([])"},
+			{R"&((get_digits 0 2.714 1 3 .true))&", R"([])"},
+			{R"&((get_digits 0 10 0 10 .false))&", R"([])"},
+			{R"&(;4 followed by zeros
+(get_digits 0.4 10 0 10 .false))&", R"([
+	4
+	0
+	0
+	0
+	0
+	0
+	0
+	0
+	0
+	0
+	0
+])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SET_DIGITS)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(number value [number base] [list of number or null digits] [number start_digit] [number end_digit] [bool relative_to_zero])";
+		d.parameters = R"(number value [number base] [list|number|null digits] [number start_digit] [number end_digit] [bool relative_to_zero])";
 		d.returns = R"(number)";
-		d.description = R"(Evaluates to a number having each of the values in the list of digits replace each of the relative digits in value for the given base.  If a digit is null in digits, then that digit is not set.  If base is omitted, 10 is the default.  The parameters start_digit and end_digit can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of start_digit and end_digit are with respect to relative_to_zero, which defaults to true.  If relative_to_zero is true, then the digits are indexed from their distance to zero, such as "5 4 3 2 1 0 . -1 -2".  If relative_to_zero is false, then the digits are indexed from their most significant digit, such as "0 1 2 3 4 5 . 6  7".  The default values of start_digit and end_digit are the most and least significant digits respectively.)";
+		d.description = R"(Evaluates to `value` having each of the values in the list of `digits` replace each of the relative digits in `value` for the given base.  If a digit is null in `digits`, then that digit is not set.  If `base` is omitted, 10 is the default.  The parameters `start_digit` and `end_digit` can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of `start_digit` and `end_digit` are with respect to `relative_to_zero`, which defaults to true.  If `relative_to_zero` is true, then the digits are indexed from their distance to zero, such as "5 4 3 2 1 0 . -1 -2".  If `relative_to_zer`o is false, then the digits are indexed from their most significant digit, such as "0 1 2 3 4 5 . 6  7".  The default values of `start_digit` and `end_digit` are the most and least significant digits respectively.)";
 		d.examples = MakeExamples({
-			{R"((print (set_digits 16 8 (list 1 1))))", R"()"}, {R"((print (get_digits (set_digits 1234567.8 10 (list 1 0 1 0) 2 5 .false) 10 2 5 .false)))", R"()"}
+			{R"&((set_digits
+	1234567.8
+	10
+	[5 5 5]
+))&", R"(5554567.8)"},
+			{R"&((set_digits
+	1234567.8
+	10
+	[5 5 5]
+	-1
+	-.infinity
+))&", R"(1234567.555)"},
+			{R"&((set_digits
+	7
+	2
+	[1 0 0]
+	.infinity
+	0
+))&", R"(4)"},
+			{R"&((set_digits
+	1.5
+	1.5
+	[1]
+	.infinity
+	0
+))&", R"(1.5)"},
+			{R"&((set_digits
+	1.5
+	1.5
+	[2]
+	.infinity
+	0
+))&", R"(3)"},
+			{R"&((set_digits
+	1.5
+	1.5
+	[1 0]
+	1
+	0
+))&", R"(1.5)"},
+			{R"&((set_digits
+	1234567.8
+	10
+	[5 5 5]
+	10
+))&", R"(55501234567.8)"},
+			{R"&((set_digits
+	1.5
+	1.5
+	[1 0 0]
+	2
+	0
+))&", R"(2.25)"},
+			{R"&((set_digits
+	1234567.8
+	10
+	[5 5 5 5 5]
+	0
+	4
+	.false
+))&", R"(5555567.8)"},
+			{R"&((set_digits
+	1234567.8
+	10
+	[5 5 5 5 5]
+	4
+	8
+	.false
+))&", R"(1234555.55)"},
+			{R"&((set_digits
+	1.2345678e+100
+	10
+	[5 5 5 5 5]
+	0
+	4
+	.false
+))&", R"(5.555567800000001e+100)"},
+			{R"&((set_digits
+	1.2345678e+100
+	10
+	[5 5 5 5 5]
+	4
+	8
+	.false
+))&", R"(1.2345555499999999e+100)"},
+			{R"&((set_digits
+	1.2345678e+100
+	10
+	[5 (null) 5 (null) 5]
+	4
+	8
+	.false
+))&", R"(1.23456585e+100)"},
+			{R"&(;these should all print (list 1 0 1)
+(get_digits
+	(set_digits
+		1234567.8
+		10
+		[1 0 1 0]
+		2
+		5
+		.false
+	)
+	10
+	2
+	5
+	.false
+))&", R"([1 0 1 0])"},
+			{R"&((get_digits
+	(set_digits
+		1234567.8
+		2
+		[1 0 1 0]
+		2
+		5
+		.false
+	)
+	2
+	2
+	5
+	.false
+))&", R"([1 0 1 0])"},
+			{R"&((get_digits
+	(set_digits
+		1234567.8
+		3.1
+		[1 0 1 0]
+		2
+		5
+		.false
+	)
+	3.1
+	2
+	5
+	.false
+))&", R"([1 0 1 0])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_FLOOR)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number x)";
 		d.returns = R"(int)";
 		d.description = R"(Evaluates to the mathematical floor of x.)";
 		d.examples = MakeExamples({
-			{R"((print (floor 1.5)))", R"()"}
+			{R"((floor 1.5))", R"(1)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CEILING)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number x)";
 		d.returns = R"(int)";
 		d.description = R"(Evaluates to the mathematical ceiling of x.)";
 		d.examples = MakeExamples({
-			{R"((print (ceil 1.5)))", R"()"}
+			{R"((ceil 1.5))", R"(2)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ROUND)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number x [number significant_digits] [number significant_digits_after_decimal])";
 		d.returns = R"(int)";
-		d.description = R"(Rounds the value x and evaluates to the new value.  If only one parameter is specified, it rounds to the nearest integer.  If significant_digits is specified, then it rounds to the specified number of significant digits.  If significant_digits_after_decimal is specified, then it ensures that x will be rounded at least to the number of decimal points past the integer as specified, and takes priority over the significant_digits.)";
+		d.description = R"(Rounds the value `x` and evaluates to the new value.  If only one parameter is specified, it rounds to the nearest integer.  If `significant_digits` is specified, then it rounds to the specified number of significant digits.  If `significant_digits_after_decimal` is specified, then it ensures that `x` will be rounded at least to the number of decimal points past the integer as specified, and takes priority over `significant_digits`.)";
 		d.examples = MakeExamples({
-			{R"((print (round 12.7) "\n"))", R"()"}, {R"((print (round 12.7 1) "\n"))", R"()"}, {R"((print (round 123.45678 5) "\n"))", R"()"}, {R"((print (round 123.45678 2) "\n"))", R"()"}, {R"((print (round 123.45678 2 2) "\n"))", R"()"}
+			{R"&((round 12.7))&", R"(13)"},
+			{R"&((round 12.7 1))&", R"(10)"},
+			{R"&((round 123.45678 5))&", R"(123.46)"},
+			{R"&((round 123.45678 2))&", R"(120)"},
+			{R"&((round 123.45678 2 2))&", R"(120)"},
+			{R"&((round 123.45678 6 2))&", R"(123.46)"},
+			{R"&((round 123.45678 4 0))&", R"(123)"},
+			{R"&((round 123.45678 0 0))&", R"(0)"},
+			{R"&((round 1.2345678 2 4))&", R"(1.2)"},
+			{R"&((round 1.2345678 0 4))&", R"(0)"},
+			{R"&((round 0.012345678 2 4))&", R"(0.012)"},
+			{R"&((round 0.012345678 4 2))&", R"(0.01)"},
+			{R"&((round 0.012345678 0 0))&", R"(0)"},
+			{R"&((round 0.012345678 100 100))&", R"(0.012345678)"},
+			{R"&((round 0.6 2))&", R"(0.6)"},
+			{R"&((round 0.6 32 2))&", R"(0.6)"},
+			{R"&((round
+	(/ 1 3)
+	32
+	1
+))&", R"(0.3)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_EXPONENT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number x)";

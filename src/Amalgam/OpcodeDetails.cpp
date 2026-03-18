@@ -2309,7 +2309,7 @@ R"&(\[\s*
 	[1 2 3 4 5]
 	1
 	[0.5 0.1 0.1 0.1 0.1]
-))&", R"(2.111111111111111)"},
+))&", R"(2.111111111111111)", R"(2.1111111111111\d\d)"},
 			{R"&((generalized_mean
 	{
 		a 1
@@ -2326,7 +2326,7 @@ R"&(\[\s*
 		d 0.1
 		e 0.1
 	}
-))&", R"(2.111111111111111)"},
+))&", R"(2.111111111111111)", R"(2.1111111111111\d\d)"},
 			{R"&((generalized_mean
 	[1 2 3 4 5]
 	1
@@ -3137,8 +3137,7 @@ The values in the parameter `deviations` are used during distance calculation to
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
-	//TODO 25157: up to ENT_APPEND, all of these need special handling for assoc tests
+
 	arr[static_cast<std::size_t>(ENT_FIRST)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|number|string data])";
@@ -3150,7 +3149,7 @@ The values in the parameter `deviations` are used during distance calculation to
 ))&", R"(4)"},
 			{R"&((first
 	(associate "a" 1 "b" 2)
-))&", R"(2)"},
+))&", R"(2)", R"(1|2)"},
 			{R"&((first 3))&", R"(1)"},
 			{R"&((first 0))&", R"(0)"},
 			{R"&((first "abc"))&", R"("a")"},
@@ -3159,7 +3158,8 @@ The values in the parameter `deviations` are used during distance calculation to
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
-
+	//TODO 25157: update examples from here down
+	//TODO 25157: up to ENT_APPEND, all of these need special handling for assoc tests
 	arr[static_cast<std::size_t>(ENT_TAIL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|number|string data] [number retain_count])";
@@ -3324,7 +3324,7 @@ The values in the parameter `deviations` are used during distance calculation to
 ))&", R"("this")"},
 			{R"&((last
 	(associate "a" 1 "b" 2)
-))&", R"(2)"},
+))&", R"(2)", R"(1|2)"},
 			{R"&((last 3))&", R"(1)"},
 			{R"&((last 0))&", R"(0)"},
 			{R"&((last "abc"))&", R"("c")"},

@@ -2109,51 +2109,246 @@ R"&(\[\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_NORMALIZE)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(list|assoc values [number p_value])";
+		d.parameters = R"(list|assoc values [number p])";
 		d.returns = R"(list|assoc)";
-		d.description = R"(Evaluates to the values but with the elements normalized by p_value, representing the order of the Lebesgue space to normalize the vector (e.g., 1 is Manhattan / probability, 2 is Euclidean).)";
+		d.description = R"(Evaluates to a container of the values with the elements normalized, where `p` represents the order of the Lebesgue space to normalize the vector (e.g., 1 is Manhattan or surprisal space, 2 is Euclidean) and defaults to 1.)";
 		d.examples = MakeExamples({
-			{R"((print (normalize [ 0.5 0.5 0.5 0.5 ]))", R"()"}, {R"((print (normalize { a 0.5 b 0.5 c 0.5 d 0.5 })))", R"()"}
+			{R"&((normalize
+	[0.5 0.5 0.5 0.5]
+))&", R"([0.25 0.25 0.25 0.25])"},
+			{R"&((normalize
+	[0.5 0.5 0.5 .infinity]
+))&", R"([0 0 0 1])"},
+			{R"&((normalize
+	{
+		a 1
+		b 1
+		c 1
+		d 1
+	}
+	2
+))&", R"({
+	a 0.5
+	b 0.5
+	c 0.5
+	d 0.5
+})"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_MODE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|assoc values [list|assoc weights])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to mode of the values; if values is an assoc, it will return the key.  If weights is specified and both values and weights are lists, then the corresponding elements will be weighted by weights.  If weights is specified and is an assoc, then each value will be looked up in the weights.)";
+		d.description = R"(Evaluates to mode of the `values`.  If `values` is an assoc, it will return the key.  If `weights` is specified and both `values` and `weights` are lists, then the corresponding elements will be weighted by `weights`.  If weights is specified and is an assoc, then each value will be looked up in the `weights`.)";
 		d.examples = MakeExamples({
-			{R"((print (mode [ 1 2 3 3 4 4 4 4]))", R"()"}, {R"((print (mode { a 0.7 b 0.5 }))", R"()"}, {R"()(print (mode ["a" "b"] {a 1 b 100})))", R"()"}
+			{R"&((mode
+	[1 1 2 3 4 5]
+))&", R"(1)"},
+			{R"&((mode
+	[
+		1
+		1
+		2
+		3
+		4
+		5
+		5
+		5
+	]
+))&", R"(5)"},
+			{R"&((mode
+	[
+		1
+		1
+		[]
+		[]
+		[]
+		{}
+		{}
+	]
+))&", R"([])"},
+			{R"&((mode
+	[
+		1
+		1
+		2
+		3
+		4
+		5
+		(null)
+	]
+))&", R"(1)"},
+			{R"&((mode
+	[1 1 2 3 4 5]
+))&", R"(1)"},
+			{R"&((mode
+	[1 1 2 3 4 5]
+	[0.5 0.1 0.1 0.1 0.1]
+))&", R"(1)"},
+			{R"&((mode
+	{
+		a 1
+		b 1
+		c 3
+		d 4
+		e 5
+	}
+	{
+		a 0.5
+		b 0.1
+		c 0.1
+		d 0.1
+		e 0.1
+	}
+))&", R"(1)"},
+			{R"&((mode
+	[1 1 2 3 4 5]
+	{0 0.75 4 0.125}
+))&", R"(1)"},
+			{R"&((mode
+	{
+		0 1
+		1 1
+		2 2
+		3 3
+		4 4
+		5 5
+	}
+	[0.75 0 0 0 0.125]
+))&", R"(1)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUANTILE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|assoc values number quantile [list|assoc weights])";
 		d.returns = R"(number)";
-		d.description = R"(Evaluates to the quantile of the values specified by quantile ranging from 0 to 1.  If weights is specified and both values and weights are lists, then the corresponding elements will be weighted by weights.  If weights is specified and is an assoc, then each value will be looked up in the weights.)";
+		d.description = R"(Evaluates to the quantile of the `values` specified by `quantile` ranging from 0 to 1.  If `weights` is specified and both `values` and `weights` are lists, then the corresponding elements will be weighted by `weights`.  If `weights` is specified and is an assoc, then each value will be looked up in the `weights`.)";
 		d.examples = MakeExamples({
-			{R"((print (quantile [ 1 2 3 4 5 ] 0.5))", R"()"}, {R"((print (quantile { a 1 b 2 c 3 d 4 } 0.5))", R"()"}, {R"((print (quantile [ 1 2 3 4 ] 0.5 [0.5 0.5 1 1])))", R"()"}
+			{R"&((quantile
+	[1 2 3 4 5]
+	0.5
+))&", R"(3)"},
+			{R"&((quantile
+	[1 2 3 4 5 (null)]
+	0.5
+))&", R"(3)"},
+			{R"&((quantile
+	[1 2 3 4 5]
+	0.5
+))&", R"(3)"},
+			{R"&((quantile
+	[1 2 3 4 5]
+	0.5
+	[0.5 0.1 0.1 0.1 0.1]
+))&", R"(1.6666666666666667)"},
+			{R"&((quantile
+	{
+		a 1
+		b 2
+		c 3
+		d 4
+		e 5
+	}
+	0.5
+	{
+		a 0.5
+		b 0.1
+		c 0.1
+		d 0.1
+		e 0.1
+	}
+))&", R"(1.6666666666666667)"},
+			{R"&((quantile
+	[1 2 3 4 5]
+	0.5
+	{0 0.75 4 0.125}
+))&", R"(1.5714285714285716)"},
+			{R"&((quantile
+	{
+		0 1
+		1 2
+		2 3
+		3 4
+		4 5
+		5 (null)
+	}
+	0.5
+	[0.75 0 0 0 0.125]
+))&", R"(1.1666666666666667)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_GENERALIZED_MEAN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|assoc values [number p] [list|assoc weights] [number center] [bool calculate_moment] [bool absolute_value])";
 		d.returns = R"(number)";
-		d.description = R"(Evaluates to the generalized mean of the values.  If p is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity) to harmonic mean (-1) to geometric mean (0) to arithmetic mean (1) to maximum (infinity).  If weights are specified, it normalizes and uses those to weight the corresponding values.  If center is specified, calculations will use that as central point, default is 0.0.  If calculate_moment is true, which defaults to false, results will not be raised to 1/p.  If absolute_value is true, which defaults to false, the differences will take the absolute value.  Various parameterizations of generalized_mean can be used to compute moments about the mean, especially setting the calculate_moment parameter to true and using the mean as the center.)";
+		d.description = R"(Evaluates to the generalized mean of the `values`.  If `p` is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity) to harmonic mean (-1) to geometric mean (0) to arithmetic mean (1) to maximum (infinity).  If `weights` are specified, it uses those when calculating the corresponding values for the generalized mean.  If `center` is specified, calculations will use that as central point, and the default center is is 0.0.  If `calculate_moment` is true, which defaults to false, then the results will not be raised to 1/`p` at the end.  If `absolute_value` is true, which defaults to false, the differences will take the absolute value.  Various parameterizations of generalized_mean can be used to compute moments about the mean, especially setting the calculate_moment parameter to true and using the mean as the center.)";
 		d.examples = MakeExamples({
-			{R"((print (generalized_mean [ 1 2 3 4 5 ]))", R"()"}, {R"((print (generalized_mean { a 0.5 b 0.5 c 0.5 d 0.5 } -1))", R"()"}, {R"((print (generalized_mean [ 1 2 3 4 5 ] 1 [0.5 0.5 1 1 1 1)))", R"()"}
+			{R"&((generalized_mean
+	[1 2 3 4 5]
+))&", R"(3)"},
+			{R"&((generalized_mean
+	[1 2 3 4 5 (null)]
+))&", R"(3)"},
+			{R"&((generalized_mean
+	[1 2 3 4 5]
+	2
+))&", R"(3.3166247903554)"},
+			{R"&((generalized_mean
+	[1 2 3 4 5]
+	1
+	[0.5 0.1 0.1 0.1 0.1]
+))&", R"(2.111111111111111)"},
+			{R"&((generalized_mean
+	{
+		a 1
+		b 2
+		c 3
+		d 4
+		e 5
+	}
+	1
+	{
+		a 0.5
+		b 0.1
+		c 0.1
+		d 0.1
+		e 0.1
+	}
+))&", R"(2.111111111111111)"},
+			{R"&((generalized_mean
+	[1 2 3 4 5]
+	1
+	{0 0.75 4 0.125}
+))&", R"(1.5714285714285714)"},
+			{R"&((generalized_mean
+	{
+		0 1
+		1 2
+		2 3
+		3 4
+		4 5
+		5 (null)
+	}
+	1
+	[0.75 0 0 0 0.125]
+))&", R"(1.5714285714285714)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_GENERALIZED_DISTANCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|assoc|* vector1 [list|assoc|* vector2] [number p_value] [list|assoc|assoc of assoc|number weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc|number deviations] [list value_names] [list|string weights_selection_features] [bool surprisal_space])";

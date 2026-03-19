@@ -5129,57 +5129,72 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_AND)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([bool condition1] [bool condition2] ... [bool conditionN])";
 		d.returns = R"(any)";
 		d.allowsConcurrency = true;
-		d.description = R"(If all condition expressions are true, evaluates to conditionN. Otherwise evaluates to false.)";
+		d.description = R"(If all condition expressions are true, evaluates to `conditionN`.  Otherwise evaluates to false.)";
 		d.examples = MakeExamples({
-			{R"((print (and 1 4.8 "true")))", R"()"}, {R"((print (and 1 0.0 "true")))", R"()"}
+			{R"&((and 1 4.8 "true" .true))&", R"(.true)"},
+			{R"&((and 1 0 "true" .true))&", R"(.false)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_OR)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([bool condition1] [bool condition2] ... [bool conditionN])";
 		d.returns = R"(any)";
 		d.allowsConcurrency = true;
-		d.description = R"(If all condition expressions are false, evaluates to false. Otherwise evaluates to the first condition that is true.)";
+		d.description = R"(If all condition expressions are false, evaluates to false.  Otherwise evaluates to the first condition that is true.)";
 		d.examples = MakeExamples({
-			{R"((print (or 1 4.8 "true")))", R"()"}, {R"((print (or 1 0.0 "true")))", R"()"}, {R"((print (or 0 0.0 "")))", R"()"}
+			{R"&((or .true .false))&", R"(.true)"},
+			{R"&((or .false .false .false))&", R"(.false)"},
+			{R"&((or 1 0 "true"))&", R"(1)"},
+			{R"&((or 1 4.8 "true"))&", R"(1)"},
+			{R"&((or 0 0 ""))&", R"(.false)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_XOR)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([bool condition1] [bool condition2] ... [bool conditionN])";
 		d.returns = R"(any)";
 		d.allowsConcurrency = true;
-		d.description = R"(If an even number of condition expressions are true, evaluates to false. Otherwise evaluates to true.)";
+		d.description = R"(If an even number of condition expressions are true, evaluates to false.  Otherwise evaluates to true.)";
 		d.examples = MakeExamples({
-			{R"((print (xor 1 4.8 "true")))", R"()"}, {R"((print (xor 1 0.0 "true")))", R"()"}
+			{R"&((xor .true .true))&", R"(.false)"},
+			{R"&((xor .true .false))&", R"(.true)"},
+			{R"&((xor 1 4.8 "true"))&", R"(.true)"},
+			{R"&((xor 1 0 "true"))&", R"(.false)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_NOT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(bool condition)";
 		d.returns = R"(bool)";
-		d.description = R"(Evaluates to false if condition is true, true if false.)";
+		d.description = R"(Evaluates to false if `condition` is true, true if false.)";
 		d.examples = MakeExamples({
-			{R"((print (not 1)))", R"()"}, {R"((print (not "")))", R"()"}
+			{R"&((not .true))&", R"(.false)"},
+			{R"&((not .false))&", R"(.true)"},
+			{R"&((not 1))&", R"(.false)"},
+			{R"&((not ""))&", R"(.true)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_EQUAL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";

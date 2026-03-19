@@ -4509,51 +4509,316 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_INDICES)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(list|assoc a)";
+		d.parameters = R"(list|assoc collection)";
 		d.returns = R"(list of string|number)";
-		d.description = R"(Evaluates to the list of strings or numbers that comprise the indices for the list or associative list.  It is guaranteed that the opcodes indices and values (assuming the parameter only_unique_values is not true) will evaluate and return elements in the same order when given the same node.)";
+		d.description = R"(Evaluates to the list of strings or numbers that comprise the indices for the list or associative parameter `collection`.  It is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.)";
 		d.examples = MakeExamples({
-			{R"((print (indices (assoc "a" 1 "b" 2 "c" 3 4 "d"))))", R"()"}, {R"((print (indices (list "a" 1 "b" 2 "c" 3 4 "d"))))", R"()"}
+			{R"&((sort
+	(indices
+		(associate
+			"a"
+			1
+			"b"
+			2
+			"c"
+			3
+			4
+			"d"
+		)
+	)
+))&", R"([4 "a" "b" "c"])"},
+			{R"&((indices
+	[
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	]
+))&", R"([
+	0
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+])"},
+			{R"&((indices
+	(range 0 3)
+))&", R"([0 1 2 3])"},
+			{R"&((sort
+	(indices
+		(zip
+			(range 0 3)
+		)
+	)
+))&", R"([0 1 2 3])"},
+			{R"&((sort
+	(indices
+		(zip
+			[0 1 2 3]
+		)
+	)
+))&", R"([0 1 2 3])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_VALUES)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(list|assoc a [bool only_unique_values])";
+		d.parameters = R"(list|assoc collection [bool only_unique_values])";
 		d.returns = R"(list of any)";
-		d.description = R"(Evaluates to the list of entities that comprise the values for the list or associative list. For a list, it evaluates to itself.  If only_unique_values is true (defaults to false), then it will filter out any duplicate values and only return those that are unique (preserving order of first appearance).  If only_unique_values is not true, then it is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.)";
+		d.description = R"(Evaluates to the list of entities that comprise the values for the list or associative list `collection`.  If `only_unique_values` is true (defaults to false), then it will filter out any duplicate values and only return those that are unique, preserving their order of first appearance.  If `only_unique_values` is not true, then it is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.)";
 		d.examples = MakeExamples({
-			{R"((print (values (assoc "a" 1 "b" 2 "c" 3 4 "d"))))", R"()"}, {R"((print (values (list "a" 1 "b" 2 "c" 3 4 "d"))))", R"()"}
+			{R"&((sort
+	(values
+		(associate
+			"a"
+			1
+			"b"
+			2
+			"c"
+			3
+			4
+			"d"
+		)
+	)
+))&", R"([1 2 3 "d"])"},
+			{R"&((values
+	[
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	]
+))&", R"([
+	"a"
+	1
+	"b"
+	2
+	"c"
+	3
+	4
+	"d"
+])"},
+			{R"&((values
+	[
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+		1
+		2
+		3
+		4
+		"a"
+		"b"
+		"c"
+	]
+	.true
+))&", R"([
+	"a"
+	1
+	"b"
+	2
+	"c"
+	3
+	4
+	"d"
+])"},
+			{R"&((sort
+	(values
+		(associate
+			"a"
+			1
+			"b"
+			2
+			"c"
+			3
+			4
+			"d"
+			"e"
+			1
+		)
+		.true
+	)
+))&", R"([1 2 3 "d"])"},
+			{R"&((values
+	(append
+		(range 1 20)
+		(range 1 20)
+	)
+	.true
+))&", R"([
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+	8
+	9
+	10
+	11
+	12
+	13
+	14
+	15
+	16
+	17
+	18
+	19
+	20
+])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CONTAINS_INDEX)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(list|assoc a string|number|list index)";
+		d.parameters = R"(list|assoc collection string|number|list index)";
 		d.returns = R"(bool)";
-		d.description = R"(Evaluates to true if the index is in the list or associative list.  If index is a string, it will attempt to look at a as an assoc, if number, it will look at a as a list.  If index is a list, it will traverse a via the elements in the list.)";
+		d.description = R"(Evaluates to true if the index is in the `collection`.  If index is a string, it will attempt to look at `collection` as an assoc, if number, it will look at `collection` as a list.  If index is a list, it will traverse a via the elements in the list as a walk path, with each element .)";
 		d.examples = MakeExamples({
-			{R"((print (contains_index (assoc "a" 1 "b" 2 "c" 3 4 "d") "c")))", R"()"}, {R"(print (contains_index (list "a" 1 2 3 4 "d") 2)))", R"()"}
+			{R"&((contains_index
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	)
+	"c"
+))&", R"(.true)"},
+			{R"&((contains_index
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	)
+	"m"
+))&", R"(.false)"},
+			{R"&((contains_index
+	[
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	]
+	2
+))&", R"(.true)"},
+			{R"&((contains_index
+	[
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	]
+	100
+))&", R"(.false)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CONTAINS_VALUE)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(list|assoc|string a string|number value)";
+		d.parameters = R"(list|assoc|string collection_or_string string|number value)";
 		d.returns = R"(bool)";
-		d.description = R"(Evaluates to true if the value is a value in the list or associative list.  If a is a string, then it uses value as a regular expression and evaluates to true if the regular expression matches.)";
+		d.description = R"(Evaluates to true if the `value` is contained in `collection_or_string`.  If `collection_or_string` is a string, then it uses `value` as a regular expression and evaluates to true if the regular expression matches.)";
 		d.examples = MakeExamples({
-			{R"((print (contains_value (assoc "a" 1 "b" 2 "c" 3 4 "d") 1)))", R"()"}, {R"((print (contains_value (list "a" 1 2 3 4 "d") 2)))", R"()"}
+			{R"&((contains_index
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	)
+	"c"
+))&", R"(.true)"},
+			{R"&((contains_index
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	)
+	"m"
+))&", R"(.false)"},
+			{R"&((contains_index
+	[
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	]
+	2
+))&", R"(.true)"},
+			{R"&((contains_index
+	[
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	]
+	100
+))&", R"(.false)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_REMOVE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|assoc a number|string|list index)";

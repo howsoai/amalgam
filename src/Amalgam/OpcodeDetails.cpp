@@ -7259,9 +7259,361 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(* node1 * node2 [number keep_chance_node1] [number keep_chance_node2] [assoc params])";
 		d.returns = R"(any)";
-		d.description = R"(Performs a union operation on node1 and node2, but randomly ignores nodes from one or the other if the node is not equal.  If only keep_chance_node1 is specified, keep_chance_node2 defaults to 1-keep_chance_node1. keep_chance_node1 specifies the probability that a node from node1 will be kept, and keep_chance_node2 the probability that a node from node2 will be kept.  keep_chance_node1 + keep_chance_node2 should be between 1 and 2, otherwise it will be normalized.  The assoc params can contain the keys types_must_match, nominal_numbers, nominal_strings, recursive_matching, and similar_mix_chance.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  similar_mix_chance is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on keep_chance_node1 and keep_chance_node2, and defaults to 0.0.  If similar_mix_chance is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.)";
+		d.description = R"(Performs a union operation on `node1` and `node2`, but randomly ignores nodes from one or the other if the nodes are not equal.  If only `keep_chance_node1` is specified, `keep_chance_node2` defaults to 1 - `keep_chance_node1`. `keep_chance_node1` specifies the probability that a node from `node1` will be kept, and `keep_chance_node2` the probability that a node from `node2` will be kept.  `keep_chance_node1` + `keep_chance_node2` should be between 1 and 2, as there are two objects being merged, otherwise the values will be normalized.  `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", "recursive_matching", and "similar_mix_chance".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  "similar_mix_chance" is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on `keep_chance_node1` and `keep_chance_node2`, and defaults to 0.0.  If "similar_mix_chance" is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.)";
 		d.examples = MakeExamples({
-			{R"((print (mix)", R"()"}, {R"((lambda (list 1 3 5 7 9 11 13)))", R"()"}, {R"((lambda (list 2 4 6 8 10 12 14)))", R"()"}, {R"(0.5 0.5)))", R"()"}, {R"((print (mix)", R"()"}, {R"((lambda (list 1 2 (assoc "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6)) ))", R"()"}, {R"((lambda (list 1 5 3 (assoc "a" 3 "b" 4) (lambda (if false 1 (unordered_list (get_entity_comments) (lambda (print (list 2 9))) ))) ) ))", R"()"}, {R"(0.8 0.8)))", R"()"}
+			{R"&((mix
+	(lambda
+		[
+			1
+			3
+			5
+			7
+			9
+			11
+			13
+		]
+	)
+	(lambda
+		[
+			2
+			4
+			6
+			8
+			10
+			12
+			14
+		]
+	)
+	0.5
+	0.5
+	0
+))&", R"([1 3 4 9 11 14])",
+			//accept anything since mutation can do anything
+			".*"},
+			{R"&((mix
+	(lambda
+		[
+	
+			;comment 1
+			;comment 2
+			;comment 3
+			1
+			3
+			5
+			7
+			9
+			11
+			13
+		]
+	)
+	(lambda
+		[
+			
+			;comment 2
+			;comment 3
+			;comment 4
+			1
+			4
+			6
+			8
+			10
+			12
+			14
+		]
+	)
+	0.5
+	0.5
+	{similar_mix_chance 0}
+))&", R"([
+	
+	;comment 1
+	;comment 2
+	;comment 3
+	;comment 4
+	1
+	4
+	3
+	5
+	9
+	11
+	14
+])",
+			//accept anything since mutation can do anything
+			".*"},
+			{R"&((mix
+	(lambda
+		[
+			1
+			2
+			(associate "a" 3 "b" 4)
+			(lambda
+				(if
+					true
+					1
+					(unordered_list (get_entity_comments) 1)
+				)
+			)
+			[5 6]
+		]
+	)
+	(lambda
+		[
+			1
+			5
+			3
+			(associate "a" 3 "b" 4)
+			(lambda
+				(if
+					false
+					1
+					(unordered_list
+						(get_entity_comments)
+						(lambda
+							[2 9]
+						)
+					)
+				)
+			)
+		]
+	)
+	0.8
+	0.8
+	{similar_mix_chance 0.5}
+))&", R"([
+	1
+	5
+	3
+	(associate "a" 3 "b" 4)
+	(lambda
+		(if
+			true
+			1
+			(unordered_list
+				(get_entity_comments)
+				(lambda
+					[2 9]
+				)
+			)
+		)
+	)
+	[5]
+])",
+			//accept anything since mutation can do anything
+			".*" },
+			{R"&((mix
+	(lambda
+		[
+			1
+			2
+			(associate "a" 3 "b" 4)
+			(lambda
+				(if
+					true
+					1
+					(unordered_list (get_entity_comments) 1)
+				)
+			)
+			[5 6]
+		]
+	)
+	(lambda
+		[
+			1
+			5
+			3
+			{a 3 b 4}
+			(lambda
+				(if
+					false
+					1
+					(seq
+						(get_entity_comments)
+						(lambda
+							[2 9]
+						)
+					)
+				)
+			)
+		]
+	)
+	0.8
+	0.8
+	{similar_mix_chance 1}
+))&", R"([
+	1
+	2.5
+	{a 3 b 4}
+	(associate "a" 3 "b" 4)
+	(lambda
+		(if
+			true
+			1
+			(seq
+				(get_entity_comments)
+				(lambda
+					[2 9]
+				)
+			)
+		)
+	)
+	[5]
+])",
+			//accept anything since mutation can do anything
+			".*"},
+			{R"&((mix
+	(lambda
+		[
+			.true
+			3
+			5
+			7
+			9
+			11
+			13
+		]
+	)
+	(lambda
+		[
+			2
+			4
+			6
+			8
+			10
+			12
+			14
+		]
+	)
+	0.5
+	0.5
+	{similar_mix_chance 1}
+))&", R"([
+	.true
+	3
+	5
+	7.5
+	9.5
+	11.5
+	13.5
+])",
+			//accept anything since mutation can do anything
+			".*" },
+			{R"&((mix
+	(lambda
+		[
+			.true
+			3
+			5
+			7
+			9
+			11
+			13
+		]
+	)
+	(lambda
+		[
+			2
+			4
+			6
+			8
+			10
+			12
+			14
+		]
+	)
+	0.5
+	0.5
+	{similar_mix_chance -1}
+))&", R"([3 5 2 4 12 11])",
+			//accept anything since mutation can do anything
+			".*" },
+			{R"&((mix
+	1
+	4
+	0.5
+	0.5
+	{similar_mix_chance -1}
+))&", R"(4)",
+			//accept anything since mutation can do anything
+			".*" },
+			{R"&((mix
+	1
+	4
+	0.5
+	0.5
+	{similar_mix_chance -0.8}
+))&", R"(4)",
+			//accept anything since mutation can do anything
+			".*" },
+			{R"&((mix
+	1
+	4
+	0.5
+	0.5
+	{similar_mix_chance 0.5}
+))&", R"(1)",
+			//accept anything since mutation can do anything
+			".*" },
+			{R"&((mix
+	1
+	4
+	0.5
+	0.5
+	{similar_mix_chance 1}
+))&", R"(2.5)",
+			//accept anything since mutation can do anything
+			".*" },
+			{R"&((mix
+	"abcdexyz"
+	"abcomxyz"
+	0.5
+	0.5
+	{nominal_strings .false similar_mix_chance 0.5}
+))&", R"("abcdexyz")",
+			//accept anything since mutation can do anything
+			".*" },
+			{R"&((mix
+	"abcdexyz"
+	"abcomxyz"
+	0.5
+	0.5
+	{nominal_strings .false similar_mix_chance 0.5}
+))&", R"("abcdexyz")",
+			//accept anything since mutation can do anything
+			".*" },
+			{R"&((mix
+	"abcdexyz"
+	"abcomxyz"
+	0.5
+	0.5
+	{nominal_strings .false similar_mix_chance 0.5}
+))&", R"("abcdexyz")",
+			//accept anything since mutation can do anything
+			".*" },
+			{R"&((mix
+	{
+		a [0 1]
+		b [1 2]
+		c [2 3]
+	}
+	{
+		a [0 1]
+		b [1 2]
+		w [2 3]
+		x [3 4]
+		y [4 5]
+		z [5 6]
+	}
+	0.5
+	0.5
+	{recursive_matching .false}
+))&", R"({
+	a [0 1]
+	b [1 2]
+	w [2]
+	z [5]
+})",
+			//accept anything since mutation can do anything
+			".*" }
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;

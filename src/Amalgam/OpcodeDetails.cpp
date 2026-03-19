@@ -4762,7 +4762,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.description = R"(Evaluates to true if the `value` is contained in `collection_or_string`.  If `collection_or_string` is a string, then it uses `value` as a regular expression and evaluates to true if the regular expression matches.)";
 		d.examples = MakeExamples({
-			{R"&((contains_index
+			{R"&((contains_value
 	(associate
 		"a"
 		1
@@ -4773,9 +4773,9 @@ R"&(^\s*\{\s*
 		4
 		"d"
 	)
-	"c"
+	1
 ))&", R"(.true)"},
-			{R"&((contains_index
+			{R"&((contains_value
 	(associate
 		"a"
 		1
@@ -4786,9 +4786,9 @@ R"&(^\s*\{\s*
 		4
 		"d"
 	)
-	"m"
+	44
 ))&", R"(.false)"},
-			{R"&((contains_index
+			{R"&((contains_value
 	[
 		"a"
 		1
@@ -4799,9 +4799,9 @@ R"&(^\s*\{\s*
 		4
 		"d"
 	]
-	2
+	"d"
 ))&", R"(.true)"},
-			{R"&((contains_index
+			{R"&((contains_value
 	[
 		"a"
 		1

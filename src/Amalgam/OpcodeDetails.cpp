@@ -5531,40 +5531,95 @@ R"&(^\s*\{\s*
 		return d;
 	}();
 
-	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_GET_TYPE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node)";
 		d.returns = R"(any)";
 		d.description = R"(Returns a node of the type corresponding to the node.)";
 		d.examples = MakeExamples({
-			{R"((print (get_type (lambda (+ 3 4)))))", R"()"}
+			{R"&((get_type
+	(lambda
+		(+ 3 4)
+	)
+))&", R"((+))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_GET_TYPE_STRING)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node)";
 		d.returns = R"(string)";
 		d.description = R"(Returns a string that represents the type corresponding to the node.)";
 		d.examples = MakeExamples({
-			{R"((print (get_type_string (lambda (+ 3 4)))))", R"()"}
+			{R"&((get_type_string
+	(lambda
+		(+ 3 4)
+	)
+))&", R"("+")"},
+			{R"&((get_type_string "hello"))&", R"("string")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SET_TYPE)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(* node1 [string|* type])";
+		d.parameters = R"(* node [string|* type])";
 		d.returns = R"(any)";
-		d.description = R"(Creates a copy of node1, setting the type of the node of to whatever node type is specified by string or to the same type as the top node of type.  It will convert the parameters to or from assoc if necessary.)";
+		d.description = R"(Creates a copy of `node`, setting the type of the node of to `type`.  If `type` is a string, it will look that up as the type, or if `type` is a node that is not a string, it will set the type to match the top node of `type`.  It will convert opcode parameters as necessary.)";
 		d.examples = MakeExamples({
-			{R"((print (set_type (lambda (+ 3 4)) "-")))", R"()"}, {R"((print (set_type (assoc "a" 4 "b" 3) "list")))", R"()"}, {R"((print (set_type (assoc "a" 4 "b" 3) (list))))", R"()"}, {R"((print (set_type (list "a" 4 "b" 3) "assoc")))", R"()"}, {R"((print (call (set_type (list 1 0.5 "3.2" 4) "+"))))", R"()"}
+			{R"&((set_type
+	(lambda
+		(+ 3 4)
+	)
+	"-"
+))&", R"((- 3 4))"},
+			{R"&((sort
+	(set_type
+		(associate "a" 4 "b" 3)
+		"list"
+	)
+))&", R"([3 4 "a" "b"])"},
+			{R"&((sort
+	(set_type
+		(associate "a" 4 "b" 3)
+		[]
+	)
+))&", R"([3 4 "a" "b"])"},
+			{R"&((unparse
+	(set_type
+		["a" 4 "b" 3]
+		"assoc"
+	)
+))&", R"("{a 4 b 3}")"},
+			{R"&((call
+	(set_type
+		[1 0.5 "3.2" 4]
+		"+"
+	)
+))&", R"(8.7)"},
+			{R"&((set_type
+	[
+		(set_annotations
+			(lambda
+				(+ 3 4)
+			)
+			"react"
+		)
+	]
+	"unordered_list"
+))&", R"((unordered_list
+	
+	#react
+	(+ 3 4)
+))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_FORMAT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* data string from_format string to_format [assoc from_params] [assoc to_params])";

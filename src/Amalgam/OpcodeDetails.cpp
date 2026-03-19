@@ -5194,33 +5194,57 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_EQUAL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
 		d.returns = R"(bool)";
 		d.allowsConcurrency = true;
-		d.description = R"(Evaluates to true if all values are equal (will recurse into data structures), false otherwise. Values of null are considered equal.)";
+		d.description = R"(Evaluates to true if the value of all nodes are equal, false otherwise. Values of null are considered equal, and any complex data structures will be traversed evaluated for deep equality.)";
 		d.examples = MakeExamples({
-			{R"((print (= 4 4 5)))", R"()"}, {R"((print (= 4 4 4)))", R"()"}
+			{R"&((= 4 4 5))&", R"(.false)"},
+			{R"&((= 4 4 4))&", R"(.true)"},
+			{R"&((=
+	(sqrt -1)
+	(null)
+))&", R"(.true)"},
+			{R"&((= (null) (null)))&", R"(.true)"},
+			{R"&((= .infinity .infinity))&", R"(.true)"},
+			{R"&((= .infinity -.infinity))&", R"(.false)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_NEQUAL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
 		d.returns = R"(bool)";
 		d.allowsConcurrency = true;
-		d.description = R"(Evaluates to true if no two values are equal (will recurse into data structures), false otherwise.)";
+		d.description = R"(Evaluates to true if no two values are equal, false otherwise.  Values of null are considered equal, and any complex data structures will be traversed evaluated for deep equality.)";
 		d.examples = MakeExamples({
-			{R"((print (!= 4 4)))", R"()"}, {R"((print (!= 4 5)))", R"()"}, {R"((print (!= 4 4 5)))", R"()"}, {R"((print (!= 4 4 4)))", R"()"}, {R"((print (!= 4 4 "hello" 4)))", R"()"}, {R"((print (!= 4 4 4 1 3.0 "hello")))", R"()"}, {R"((print (!= 1 2 3 4 5 6 "hello")))", R"()"}
+			{R"&((!= 4 4))&", R"(.false)"},
+			{R"&((!= 4 5))&", R"(.true)"},
+			{R"&((!= 4 4 5))&", R"(.false)"},
+			{R"&((!= 4 4 4))&", R"(.false)"},
+			{R"&((!= 4 4 "hello" 4))&", R"(.false)"},
+			{R"&((!= 4 4 4 1 3 "hello"))&", R"(.false)"},
+			{R"&((!=
+	1
+	2
+	3
+	4
+	5
+	6
+	"hello"
+))&", R"(.true)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_LESS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
@@ -5228,12 +5252,16 @@ R"&(^\s*\{\s*
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are in strict increasing order, false otherwise.)";
 		d.examples = MakeExamples({
-			{R"((print (< 4 5)))", R"()"}, {R"((print (< 4 4)))", R"()"}, {R"((print (< 4 5 6)))", R"()"}, {R"((print (< 4 5 6 5)))", R"()"}
+			{R"&((< 4 5))&", R"(.true)"},
+			{R"&((< 4 4))&", R"(.false)"},
+			{R"&((< 4 5 6))&", R"(.true)"},
+			{R"&((< 4 5 6 5))&", R"(.false)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_LEQUAL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
@@ -5241,12 +5269,18 @@ R"&(^\s*\{\s*
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are in nondecreasing order, false otherwise.)";
 		d.examples = MakeExamples({
-			{R"((print (<= 4 5)))", R"()"}, {R"((print (<= 4 4)))", R"()"}, {R"((print (<= 4 5 6)))", R"()"}, {R"((print (<= 4 5 6 5)))", R"()"}
+			{R"&((<= 4 5))&", R"(.true)"},
+			{R"&((<= 4 4))&", R"(.true)"},
+			{R"&((<= 4 5 6))&", R"(.true)"},
+			{R"&((<= 4 5 6 5))&", R"(.false)"},
+			{R"&((<= (null) 2))&", R"(.false)"},
+			{R"&((<= 2 (null)))&", R"(.false)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_GREATER)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
@@ -5254,12 +5288,16 @@ R"&(^\s*\{\s*
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are in strict decreasing order, false otherwise.)";
 		d.examples = MakeExamples({
-			{R"((print (> 6 5)))", R"()"}, {R"((print (> 4 4)))", R"()"}, {R"((print (> 6 5 4)))", R"()"}, {R"((print (> 6 5 4 5)))", R"()"}
+			{R"&((> 6 5))&", R"(.true)"},
+			{R"&((> 4 4))&", R"(.false)"},
+			{R"&((> 6 5 4))&", R"(.true)"},
+			{R"&((> 6 5 4 5))&", R"(.false)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_GEQUAL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
@@ -5267,12 +5305,18 @@ R"&(^\s*\{\s*
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are in nonincreasing order, false otherwise.)";
 		d.examples = MakeExamples({
-			{R"((print (>= 6 5)))", R"()"}, {R"((print (>= 4 4)))", R"()"}, {R"((print (>= 6 5 4)))", R"()"}, {R"((print (>= 6 5 4 5)))", R"()"}
+			{R"&((>= 6 5))&", R"(.true)"},
+			{R"&((>= 4 4))&", R"(.true)"},
+			{R"&((>= 6 5 4))&", R"(.true)"},
+			{R"&((>= 6 5 4 5))&", R"(.false)"},
+			{R"&((>= (null) 2))&", R"(.false)"},
+			{R"&((>= 2 (null)))&", R"(.false)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_TYPE_EQUALS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
@@ -5280,24 +5324,36 @@ R"&(^\s*\{\s*
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are of the same data type, false otherwise.)";
 		d.examples = MakeExamples({
-			{R"((print (~ 1 4 5)))", R"()"}, {R"((print (~ 1 4 "a")))", R"()"}
+			{R"&((~ 1 4 5))&", R"(.true)"},
+			{R"&((~ 1 4 "a"))&", R"(.false)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_TYPE_NEQUALS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
 		d.returns = R"(bool)";
 		d.description = R"(Evaluates to true if no two values are of the same data types, false otherwise.)";
 		d.examples = MakeExamples({
-			{R"((print (!~ "true" "false" (list 3 2))))", R"()"}, {R"((print (!~ "true" 1 (list 3 2))))", R"()"}
+			{R"&((!~
+	"true"
+	"false"
+	[3 2]
+))&", R"(.false)"},
+			{R"&((!~
+	"true"
+	1
+	[3 2]
+))&", R"(.true)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_NULL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"()";

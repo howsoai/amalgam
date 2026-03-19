@@ -6285,29 +6285,201 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_MUTATE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to a mutated version of the input node.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, and delete_elements.  If preserve_type_depth is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.)";
+		d.description = R"(Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.00001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "delete", "insert", "swap_elements", "deep_copy_elements", and "delete_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.)";
 		d.examples = MakeExamples({
-			{R"((print (mutate)", R"()"}, {R"((lambda (list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 (assoc "a" 1 "b" 2))))", R"()"}, {R"(0.4)))", R"()"}
+			{R"&((mutate
+	(lambda
+		[
+			1
+			2
+			3
+			4
+			5
+			6
+			7
+			8
+			9
+			10
+			11
+			12
+			13
+			14
+			(associate "a" 1 "b" 2)
+		]
+	)
+	0.4
+))&", R"([
+	1
+	(and)
+	3
+	{}
+	5
+	6
+	(tail)
+	(get)
+	(acos)
+	(floor)
+	(let)
+	12
+	zbiqZH
+	14
+	(associate (null))
+])",
+			//accept anything since mutation can do anything
+			".*"},
+			{R"&((mutate
+	(lambda
+		[
+			1
+			2
+			3
+			4
+			(associate "alpha" 5 "beta" 6)
+			(associate
+				"nest"
+				(associate
+					"count"
+					[7 8 9]
+				)
+				"end"
+				[10 11 12]
+			)
+		]
+	)
+	0.2
+	(associate "+" 0.5 "-" 0.3 "*" 0.2)
+	(associate "change_type" 0.08 "delete" 0.02 "insert" 0.9)
+))&", R"([
+	1
+	(-)
+	3
+	(-)
+	(associate "alpha" 5 (+) 6)
+	(associate
+		"nest"
+		(associate
+			"count"
+			[(*) 8 9]
+		)
+		"end"
+		[(*) 11 12]
+	)
+])",
+			//accept anything since mutation can do anything
+			".*"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_COMMONALITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node1 * node2 [assoc params])";
 		d.returns = R"(number)";
-		d.description = R"(Evaluates to the total count of all of the nodes referenced within node1 and node2 that are equivalent, using fractions to represent somewhat similar nodes.  The assoc params can contain the keys string_edit_distance, types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key use_string_edit_distance is true (default is false), it will assume node1 and node2 as string literals and compute via string edit distance.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
+		d.description = R"(Evaluates to the total count of all of the nodes referenced within `node1` and `node2` that are equivalent.  The assoc params can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "use_string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 		d.examples = MakeExamples({
-			{R"((print (commonality)", R"()"}, {R"((lambda (seq 2 (get_entity_comments) 1)))", R"()"}, {R"((lambda (seq 2 1 4 (get_entity_comments))))", R"()"}, {R"((print (commonality)", R"()"}, {R"((list 1 2 3 (assoc "a" 3 "b" 4) (lambda (if true 1 (unordered_list (get_entity_comments) 1))) (list 5 6)))", R"()"}, {R"((list 1 2 3 (assoc "c" 3 "b" 4) (lambda (if true 1 (unordered_list 1 (get_entity_comments)))) (list 5 6)))", R"()"}
+			{R"&((commonality
+	(lambda
+		(seq 2 (get_entity_comments) 1)
+	)
+	(lambda
+		(seq 2 1 4 (get_entity_comments))
+	)
+))&", R"(3)"},
+			{R"&((commonality
+	[
+		1
+		2
+		3
+		(associate "a" 3 "b" 4)
+		(lambda
+			(if
+				true
+				1
+				(unordered_list (get_entity_comments) 1)
+			)
+		)
+		[5 6]
+	]
+	[
+		1
+		2
+		3
+		(associate "c" 3 "b" 4)
+		(lambda
+			(if
+				true
+				1
+				(unordered_list (get_entity_comments) 1)
+			)
+		)
+		[5 6]
+	]
+))&", R"(15)"},
+			{R"&((commonality .infinity 3))&", R"(0.125)"},
+			{R"&((commonality
+	(null)
+	3
+	{types_must_match .false}
+))&", R"(0.125)"},
+			{R"&((commonality .infinity .infinity))&", R"(1)"},
+			{R"&((commonality .infinity -.infinity))&", R"(0.125)"},
+			{R"&((commonality "hello" "hello"))&", R"(1)"},
+			{R"&((commonality
+	"hello"
+	"hello"
+	{string_edit_distance .true}
+))&", R"(5)"},
+			{R"&((commonality
+	"hello"
+	"el"
+	{nominal_strings .false}
+))&", R"(0.49099467997549845)"},
+			{R"&((commonality
+	"hello"
+	"el"
+	{string_edit_distance .true}
+))&", R"(2)"},
+			{R"&((commonality
+	"el"
+	"hello"
+	{string_edit_distance .true}
+))&", R"(2)"},
+			{R"&((commonality
+	(lambda
+		{a 1 b 2 c 3}
+	)
+	(lambda
+		(if
+			x
+			{a 1 b 2 c 3}
+			.false
+		)
+	)
+))&", R"(4)"},
+			{R"&((commonality
+	[1 2 3]
+	[
+		[1 2 3]
+	]
+))&", R"(4)"},
+			{R"&((commonality
+	[1 2 3]
+	(lambda
+		(null 1 2 3)
+	)
+	{types_must_match .false}
+))&", R"(3.125)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_EDIT_DISTANCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node1 * node2 [assoc params])";

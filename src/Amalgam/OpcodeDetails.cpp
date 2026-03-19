@@ -4813,34 +4813,216 @@ R"&(^\s*\{\s*
 		"d"
 	]
 	100
-))&", R"(.false)"}
+))&", R"(.false)"},
+			{R"&((contains_value "hello world" ".*world"))&", R"(.true)"},
+			{R"&((contains_value "abcdefg" "a.*g"))&", R"(.true)"},
+			{R"&((contains_value "3.141" "[0-9]+\\.[0-9]+"))&", R"(.true)"},
+			{R"&((contains_value "3.141" "\\d+\\.\\d+"))&", R"(.true)"},
+			{R"&((contains_value "3.a141" "\\d+\\.\\d+"))&", R"(.false)"},
+			{R"&((contains_value "abc\r\n123" "(.|\r)*\n.*"))&", R"(.true)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_REMOVE)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(list|assoc a number|string|list index)";
+		d.parameters = R"(list|assoc collection number|string|list index)";
 		d.returns = R"(list|assoc)";
-		d.description = R"(Removes the index-value pair with index being the index in assoc or index of the list or assoc, returning a new list or assoc with that index removed.  If index is a list of numbers or strings, then it will remove each of the requested indices.  Negative numbered indices will count back from the end of a list.)";
+		d.description = R"(Removes the index-value pair with `index` being the index in assoc or index of `collection`, returning a new list or assoc with `index` removed.  If `index` is a list of numbers or strings, then it will remove each of the requested indices.  Negative numbered indices will count back from the end of a list.)";
 		d.examples = MakeExamples({
-			{R"((print (remove (assoc "a" 1 "b" 2 "c" 3 4 "d") 4)))", R"()"}, {R"((print (remove (list "a" 1 "b" 2 "c" 3 4 "d") 4)))", R"()"}, {R"((print (remove (assoc "a" 1 "b" 2 "c" 3 4 "d") (list 4 "a") )))", R"()"}
+			{R"&((sort
+	(remove
+		(associate
+			"a"
+			1
+			"b"
+			2
+			"c"
+			3
+			4
+			"d"
+		)
+		4
+	)
+))&", R"([1 2 3])"},
+			{R"&((remove
+	[
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	]
+	4
+))&", R"([
+	"a"
+	1
+	"b"
+	2
+	3
+	4
+	"d"
+])"},
+			{R"&((sort
+	(remove
+		(associate
+			"a"
+			1
+			"b"
+			2
+			"c"
+			3
+			4
+			"d"
+		)
+		[4 "a"]
+	)
+))&", R"([2 3])"},
+			{R"&((remove
+	[
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	]
+	[4 "a"]
+))&", R"([
+	"a"
+	1
+	"b"
+	2
+	3
+	4
+	"d"
+])"},
+			{R"&((remove
+	[0 1 2 3 4 5]
+	[0 2]
+))&", R"([1 3 4 5])"},
+			{R"&((remove
+	[0 1 2 3 4 5]
+	-1
+))&", R"([0 1 2 3 4])"},
+			{R"&((remove
+	[0 1 2 3 4 5]
+	[0 -1]
+))&", R"([1 2 3 4])"},
+			{R"&((remove
+	[0 1 2 3 4 5]
+	[
+		5
+		0
+		1
+		2
+		3
+		4
+		5
+		6
+	]
+))&", R"([])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_KEEP)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(list|assoc a number|string|list index)";
+		d.parameters = R"(list|assoc collection number|string|list index)";
 		d.returns = R"(list|assoc)";
-		d.description = R"(Keeps only the index-value pair with index being the index in assoc or index of the list or assoc, returning a new list or assoc with that only that index.  If index is a list of numbers or strings, then it will only keep each of the requested indices.  Negative numbered indices will count back from the end of a list.)";
+		d.description = R"(Keeps only the index-value pair with index being the index in `collection`, returning a new list or assoc with only that index.  If `index` is a list of numbers or strings, then it will only keep those requested indices.  Negative numbered indices will count back from the end of a list.)";
 		d.examples = MakeExamples({
-			{R"((print (keep (assoc "a" 1 "b" 2 "c" 3 4 "d") 4)))", R"()"}, {R"((print (keep (list "a" 1 "b" 2 "c" 3 4 "d") 4)))", R"()"}, {R"((print (keep (assoc "a" 1 "b" 2 "c" 3 4 "d") (list 4 "a") )))", R"()"}
+			{R"&((keep
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	)
+	4
+))&", R"({4 "d"})"},
+			{R"&((keep
+	[
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	]
+	4
+))&", R"(["c"])"},
+			{R"&((sort
+	(keep
+		(associate
+			"a"
+			1
+			"b"
+			2
+			"c"
+			3
+			4
+			"d"
+		)
+		[4 "a"]
+	)
+))&", R"([1 "d"])"},
+			{R"&((keep
+	[
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	]
+	[4 "a"]
+))&", R"(["c"])"},
+			{R"&((keep
+	[0 1 2 3 4 5]
+	[0 2]
+))&", R"([0 2])"},
+			{R"&((keep
+	[0 1 2 3 4 5]
+	-1
+))&", R"([5])"},
+			{R"&((keep
+	[0 1 2 3 4 5]
+	[0 -1]
+))&", R"([0 5])"},
+			{R"&((keep
+	[0 1 2 3 4 5]
+	[
+		5
+		0
+		1
+		2
+		3
+		4
+		5
+		6
+	]
+))&", R"([0 1 2 3 4 5])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_ASSOCIATE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* index1] [* value1] [* index2] [* value2] ... [* indexN] [* valueN])";

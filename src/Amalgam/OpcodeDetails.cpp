@@ -5619,40 +5619,234 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_FORMAT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* data string from_format string to_format [assoc from_params] [assoc to_params])";
 		d.returns = R"(any)";
-		d.description = R"(Converts data from from_format into to_format.  Supported language types are "number", "string", and "code", where code represents everything beyond number and string.  Beyond the supported language types, additional formats that are stored in a binary string.  The additional formats are "base16", "base64", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", ">int8", ">uint8", ">int16", ">uint16", ">int32", ">uint32", ">int64", ">uint64", ">float32", ">float64", "<int8", "<uint8", "<int16", "<uint16", "<int32", "<uint32", "<int64", "<uint64", "<float32", "<float64", "json", "yaml", "date", and "time" (though date and time are special cases).  Binary types starting with a < represent little endian, binary types starting with a > represent big endian, and binary types without either will be the endianness of the machine.  Binary types will be handled as strings.  The "date" type requires additional information.  Following "date" or "time" is a colon, followed by a standard strftime date or time format string.  If from_params or to_params are specified, then it will apply the appropriate from or to as appropriate.  If the format is either "string", "json", or "yaml", then the key "sort_keys" can be used to specify a boolean value, if true, then it will sort the keys, otherwise the default behavior is to emit the keys based on memory layout.  If the format is date or time, then the to or from params can be an assoc with "locale" as an optional key.  If date then "time_zone" is also allowed.  The locale is provided, then it will leverage operating system support to apply appropriate formatting, such as en_US.  Note that UTF-8 is assumed and automatically added to the locale.  If no locale is specified, then the default will be used.  If converting to or from dates, if time_zone is specified, it will use the standard time_zone name, if unspecified or empty string, it will assume the current time zone.)";
+		d.description = R"(Converts data from `from_format` into `to_format`.  Supported language types are "number", "string", and "code", where code represents everything beyond number and string.  Beyond the supported language types, additional formats that are stored in a binary string.  The additional formats are "base16", "base64", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", ">int8", ">uint8", ">int16", ">uint16", ">int32", ">uint32", ">int64", ">uint64", ">float32", ">float64", "<int8", "<uint8", "<int16", "<uint16", "<int32", "<uint32", "<int64", "<uint64", "<float32", "<float64", "json", "yaml", "date", and "time" (though date and time are special cases).  Binary types starting with a "<" represent little endian, binary types starting with a ">" represent big endian, and binary types without either will be the endianness of the machine.  Binary types will be handled as strings.  The "date" type requires additional information.  Following "date" or "time" is a colon, followed by a standard strftime date or time format string.  If `from_params` or `to_params` are specified, then it will apply the appropriate from or to as appropriate.  If the format is either "string", "json", or "yaml", then the key "sort_keys" can be used to specify a boolean value, if true, then it will sort the keys, otherwise the default behavior is to emit the keys based on memory layout.  If the format is date or time, then the to or from params can be an assoc with "locale" as an optional key.  If date then "time_zone" is also allowed.  The locale is provided, then it will leverage operating system support to apply appropriate formatting, such as en_US.  Note that UTF-8 is assumed and automatically added to the locale.  If no locale is specified, then the default will be used.  If converting to or from dates, if "time_zone" is specified, it will use the standard time_zone name, if unspecified or empty string, it will assume the current time zone.)";
 		d.examples = MakeExamples({
-			{R"((print (format 65 "number" "int8") "\n"))", R"()"}, {R"((print (format (format -100 "number" "double") "double" "number") "\n"))", R"()"}
+			{R"&((map
+	(lambda
+		(format (current_value) "int8" "number")
+	)
+	(explode "abcdefg" 1)
+))&", R"([
+	97
+	98
+	99
+	100
+	101
+	102
+	103
+])"},
+			{R"&((format 65 "number" "int8"))&", R"("A")"},
+			{R"&((format
+	(format -100 "number" "float64")
+	"float64"
+	"number"
+))&", R"(-100)"},
+			{R"&((format
+	(format -100 "number" "float32")
+	"float32"
+	"number"
+))&", R"(-100)"},
+			{R"&((format
+	(format 100 "number" "uint32")
+	"uint32"
+	"number"
+))&", R"(100)"},
+			{R"&((format
+	(format 123456789 "number" ">uint32")
+	"<uint32"
+	"number"
+))&", R"(365779719)"},
+			{R"&((format
+	(format 123456789 "number" ">uint32")
+	">uint32"
+	"number"
+))&", R"(123456789)"},
+			{R"&((format
+	(format 14294967296 "number" "uint64")
+	"uint64"
+	"number"
+))&", R"(14294967296)"},
+			{R"&((format "A" "int8" "number"))&", R"(65)"},
+			{R"&((format -100 "float32" "number"))&", R"(6.409830999309918e-10)"},
+			{R"&((format 65 "uint8" "string"))&", R"("54")"},
+			{R"&((format 254 "uint8" "base16"))&", R"("32")"},
+			{R"&((format "AAA" "string" "base16"))&", R"("414141")"},
+			{R"&((format "414141" "base16" "string"))&", R"("AAA")"},
+			{R"&((format "Many hands make light work." "string" "base64"))&", R"("TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu")"},
+			{R"&((format "Many hands make light work.." "string" "base64"))&", R"("TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsuLg==")"},
+			{R"&((format "Many hands make light work..." "string" "base64"))&", R"("TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsuLi4=")"},
+			{R"&((format "TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu" "base64" "string"))&", R"("Many hands make light work.")"},
+			{R"&((format "TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsuLg==" "base64" "string"))&", R"("Many hands make light work..")"},
+			{R"&((format "TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsuLi4=" "base64" "string"))&", R"("Many hands make light work...")"},
+			{R"&((format "[{\"a\" : 3, \"b\" : 4}, {\"c\" : \"c\"}]" "json" "code"))&", R"([
+	{a 3 b 4}
+	{c "c"}
+])"},
+			{R"&((format
+	[
+		{a 3 b 4}
+		{c "c" d (null)}
+	]
+	"code"
+	"json"
+	(null)
+	{sort_keys .true}
+))&", R"("[{\"a\":3,\"b\":4},{\"c\":\"c\",\"d\":null}]")"},
+			{R"&((format
+	{
+		a 1
+		b 2
+		c 3
+		d 4
+		e ["a" "b" (null) .infinity]
+	}
+	"code"
+	"yaml"
+	(null)
+	{sort_keys .true}
+))&", R"("a: 1\nb: 2\nc: 3\nd: 4\ne:\n  - a\n  - b\n  - \n  - .inf\n")"},
+			{R"&((format "a: 1" "yaml" "code"))&", R"({a 1})"},
+			{R"&((format 1591503779.1 "number" "date:%Y-%m-%d-%H.%M.%S"))&", R"("2020-06-07-00.22.59.1000000")"},
+			{R"&((format 1591503779 "number" "date:%F %T"))&", R"("2020-06-07 00:22:59")"},
+			{R"&((format "Feb 2014" "date:%b %Y" "number"))&", R"(1391230800)"},
+			{R"&((format "2014-Feb" "date:%Y-%h" "number"))&", R"(1391230800)"},
+			{R"&((format "02/2014" "date:%m/%Y" "number"))&", R"(1391230800)"},
+			{R"&((format 1591505665002 "number" "date:%F %T"))&", R"("-6053-05-28 00:24:29")"},
+			{R"&((format 1591330905 "number" "date:%F %T"))&", R"("2020-06-05 00:21:45")"},
+			{R"&((format 1591330905 "number" "date:%c %Z"))&", R"("06/05/20 00:21:45 EDT")"},
+			{R"&((format 1591330905 "number" "date:%S"))&", R"("45")"},
+			{R"&((format 1591330905 "number" "date:%Oe"))&", R"(" 5")"},
+			{R"&((format 1591330905 "number" "date:%s"))&", R"(" s")"},
+			{R"&((format 1591330905 "number" "date:%s%"))&", R"(" s")"},
+			{R"&((format 1591330905 "number" "date:%a%b%c%d%e%f"))&", R"("FriJun06/05/20 00:21:4505 5 f")"},
+			{R"&((format
+	"abcd"
+	"date:%Y-%m-%d"
+	"date:%A, %b %d, %Y"
+	{locale "en_US"}
+	{locale "es_ES"}
+))&", R"("jueves, ene. 01, 1970")"},
+			{R"&((format
+	"2020-06-07"
+	"date:%Y-%m-%d"
+	"date:%A, %b %d, %Y"
+	{locale "en_US"}
+	{locale "etete123"}
+))&", R"("Sunday, Jun 07, 2020")"},
+			{R"&((format
+	"2020-06-07"
+	"date:%Y-%m-%d"
+	"date:%A, %b %d, %Y"
+	{locale "notalocale"}
+	{locale "es_ES"}
+))&", R"("domingo, jun. 07, 2020")"},
+			{R"&((format "2020-06-07" "date:%Y-%m-%d" "number"))&", R"(1591502400)"},
+			{R"&((format "2020-06-07" "date:%Y-%m-%d" "date:%b %d, %Y"))&", R"("Jun 07, 2020")"},
+			{R"&((format
+	"2020-06-07"
+	"date:%Y-%m-%d"
+	"date:%A, %b %d, %Y"
+	{locale "en_US"}
+	{locale "es_ES"}
+))&", R"("domingo, jun. 07, 2020")"},
+			{R"&((format "1970-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number"))&", R"(664428)"},
+			{R"&((format "1960-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number"))&", R"(-314954772)"},
+			{R"&((format
+	(format "1960-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number")
+	"number"
+	"date:%Y-%m-%d %H.%M.%S"
+))&", R"("1960-01-08 11.33.48")"},
+			{R"&((format
+	(+
+		0.01
+		(format "1960-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number")
+	)
+	"number"
+	"date:%Y-%m-%d %H.%M.%S"
+))&", R"("1960-01-08 11.33.48.0100000")"},
+			{R"&((format "13:22:44" "time:%H:%M:%S" "number"))&", R"(48164)"},
+			{R"&((format
+	"13:22:44"
+	"time:%H:%M:%S"
+	"number"
+	{locale "en_US"}
+))&", R"(48164)"},
+			{R"&((format "10:22:44" "time:%H:%M:%S" "number"))&", R"(37364)"},
+			{R"&((format "10:22:44am" "time:%I:%M:%S%p" "number"))&", R"(37364)"},
+			{R"&((format "10:22:44.33am" "time:%I:%M:%S%p" "number"))&", R"(37364.33)"},
+			{R"&((format "10:22:44" "time:%I:%M:%S" "number"))&", R"(0)"},
+			{R"&((format "10:22:44" "time:%qqq:%qqq:%qqq" "number"))&", R"(0)"},
+			{R"&((format
+	"13:22:44"
+	"time:%H:%M:%S"
+	"number"
+	{locale "notalocale"}
+))&", R"(48164)"},
+			{R"&((format 48164 "number" "time:%H:%M:%S"))&", R"("13:22:44")"},
+			{R"&((format
+	48164
+	"number"
+	"time:%I:%M:%S%p"
+	(null)
+	{locale "es_ES"}
+))&", R"("01:22:44PM")"},
+			{R"&((format 37364.33 "number" "time:%I:%M:%S%p"))&", R"("10:22:44.3300000AM")"},
+			{R"&((format 0 "number" "time:%I:%M:%S%p"))&", R"("12:00:00AM")"},
+			{R"&((format (null) "number" "time:%I:%M:%S%p"))&", R"("12:00:00AM")"},
+			{R"&((format .infinity "number" "time:%I:%M:%S%p"))&", R"("12:00:00AM")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_GET_ANNOTATIONS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node)";
 		d.returns = R"(string)";
-		d.description = R"(Returns a strings comprising all of the annotations for the input node.)";
+		d.description = R"(Returns a string comprising all of the annotation lines for `node`.)";
 		d.examples = MakeExamples({
-			{R"((print (get_annotations)", R"()"}, {R"(#this is an annotation)", R"()"}, {R"((lambda #annotation that will be printed)", R"()"}, {R"(.true))))", R"()"}
+			{R"&((get_annotations
+	(lambda
+		
+		#annotation line 1
+		#annotation line 2
+		.true
+	)
+))&", R"("annotation line 1\r\nannotation line 2")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SET_ANNOTATIONS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node [string new_annotation])";
 		d.returns = R"(any)";
-		d.description = R"(Sets the annotations for the node of code. Evaluates to an updated node.)";
+		d.description = R"(Evaluates to a new copy of `node` with the annotation specified by `new_annotation`, where each newline is a separate line of annotation.  If `new_annotation` is null or missing, it will clear annotations for `node`.)";
 		d.examples = MakeExamples({
-			{R"((print (set_annotations)", R"()"}, {R"(#this is an annotation)", R"()"}, {R"((lambda #annotation too)", R"()"}, {R"(.true) "new annotation")))", R"()"}
+			{R"&((unparse
+	(set_annotations
+		(lambda
+			
+			#labelC
+			.true
+		)
+		["labelD" "labelE"]
+	)
+	.true
+	.true
+	.true
+))&", R"("#[\"labelD\" \"labelE\"]\r\n.true\r\n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_GET_COMMENTS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node)";

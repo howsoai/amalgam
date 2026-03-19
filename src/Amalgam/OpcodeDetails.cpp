@@ -3955,67 +3955,365 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_FILTER)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* function] list|assoc collection)";
 		d.returns = R"(list|assoc)";
 		d.allowsConcurrency = true;
-		d.description = R"(For each element in the collection, pushes a new target scope onto the stack, so that current_value accesses the element in the list and current_index accesses the list or assoc index, with target representing the original list or assoc, and evaluates the function.  If function evaluates to true, then the element is put in a new list or assoc (matching the input type) that is returned.  If function is omitted, then it will remove any elements in the collection that are null.)";
+		d.description = R"(For each element in the `collection`, pushes a new target scope onto the stack, so that `(current_value)` accesses the element in the list and `(current_index)` accesses the list or assoc index, with `(target)` representing the original list or assoc, and evaluates the function.  If `function` evaluates to true, then the element is put in a new list or assoc (matching the input type) that is returned.  If function is omitted, then it will remove any elements in the collection that are null.)";
 		d.examples = MakeExamples({
-			{R"((print (filter (lambda (> (current_value) 2)) (list 1 2 3 4))))", R"()"}
+			{R"&((filter
+	(lambda
+		(> (current_value) 2)
+	)
+	[1 2 3 4]
+))&", R"([3 4])"},
+			{R"&((filter
+	(lambda
+		(< (current_index) 3)
+	)
+	[
+		10
+		1
+		20
+		2
+		30
+		3
+		40
+		4
+	]
+))&", R"([10 1 20])"},
+			{R"&((filter
+	(lambda
+		(< (current_index) 20)
+	)
+	(associate
+		10
+		1
+		20
+		2
+		30
+		3
+		40
+		4
+	)
+))&", R"({10 1})"},
+			{R"&((filter
+	[
+		10
+		1
+		20
+		(null)
+		30
+		(null)
+		(null)
+		40
+		4
+	]
+))&", R"([10 1 20 30 40 4])"},
+			{R"&((filter
+	[
+		10
+		1
+		20
+		(null)
+		30
+		""
+		40
+		4
+	]
+))&", R"([
+	10
+	1
+	20
+	30
+	""
+	40
+	4
+])"},
+			{R"&((filter
+	{
+		a 10
+		b 1
+		c 20
+		d ""
+		e 30
+		f 3
+		g (null)
+		h 4
+	}
+))&", R"({
+	a 10
+	b 1
+	c 20
+	d ""
+	e 30
+	f 3
+	h 4
+})"},
+			{R"&((filter
+	{
+		a 10
+		b 1
+		c 20
+		d ""
+		e 30
+		f 3
+		g (null)
+		h 4
+	}
+))&", R"({
+	a 10
+	b 1
+	c 20
+	d ""
+	e 30
+	f 3
+	h 4
+})"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_WEAVE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* function] list|immediate values1 [list|immediate values2] [list|immediate values3]...)";
 		d.returns = R"(list)";
-		d.description = R"(Interleaves the values lists optionally by applying a function.  If only values1 is passed in, then it evaluates to values1. If values1 and values2 are passed in, or, if more values are passed in but function is null, it interleaves the two lists out to whichever list is longer, filling in the remainder with null, and if any value is an immediate, then it will repeat the immediate value.  If the function is specified and not null, it pushes a new target scope onto the stack, so that current_value accesses a list of elements to be woven together from the list, and current_index accesses the list or assoc index, with target representing the resulting list or assoc.  The function should evaluate to a list, and weave will evaluate to a concatenated list of all of the lists that the function evaluated to.)";
+		d.description = R"(Interleaves the values lists optionally by applying a function.  If only `values1` is passed in, then it evaluates to `values1`. If `values1` and `values2` are passed in, or, if more values are passed in but function is null, it interleaves the lists and extends the result to the length of the longest list, filling in the remainder with null.  If any of the value parameters are immediate, then it will repeat that immediate value when weaving.  If the `function` is specified and not null, it pushes a new target scope onto the stack, so that `(current_value)` accesses a list of elements to be woven together from the list, and `(current_index)` accesses the list or assoc index, with `(target)` representing the resulting list or assoc.  The `function` should evaluate to a list, and weave will evaluate to a concatenated list of all of the lists that the function evaluated to.)";
 		d.examples = MakeExamples({
-			{R"((print (weave (list 1 3 5) (list 2 4 6)) "\n"))", R"()"}, {"(print (weave (lambda (list (apply \"min\" (current_value) ) ) (list 1 3 4 5 5 6) (list 2 2 3 4 6 7) )\"\\n\")", R"()"}, {"(print (weave (lambda (if (<= (get (current_value) 0) 4) (list (apply \"min\" (current_value 1)) ) (current_value)) ) (list 1 3 4 5 5 6) (list 2 2 3 4 6 7) )\"\\n\")", R"()"}, {R"((print (weave (null) (list 2 4 6) (null) ) "\n"))", R"()"}
+			{R"&((weave
+	[1 2 3]
+))&", R"([1 2 3])"},
+			{R"&((weave
+	[1 3 5]
+	[2 4 6]
+))&", R"([1 2 3 4 5 6])"},
+			{R"&((weave
+	(null)
+	[2 4 6]
+	(null)
+))&", R"([2 (null) 4 (null) 6 (null)])"},
+			{R"&((weave
+	"a"
+	[2 4 6]
+))&", R"(["a" 2 @(target .true 0) 4 @(target .true 0) 6])"},
+			{R"&((weave
+	(null)
+	[1 4 7]
+	[2 5 8]
+	[3 6 9]
+))&", R"([
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+	8
+	9
+])"},
+			{R"&((weave
+	[1 3 5 7 9 11]
+	[2 4 6 8 10 12]
+))&", R"([
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+	8
+	9
+	10
+	11
+	12
+])"},
+			{R"&((weave
+	(lambda (current_value))
+	[1 3 5 7 9 11]
+	[2 4 6 8 10 12]
+))&", R"([
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+	8
+	9
+	10
+	11
+	12
+])"},
+			{R"&((weave
+	(lambda
+		(map
+			(lambda
+				(* 2 (current_value))
+			)
+			(current_value)
+		)
+	)
+	[1 3 5 7 9 11]
+	[2 4 6 8 10 12]
+))&", R"([
+	2
+	4
+	6
+	8
+	10
+	12
+	14
+	16
+	18
+	20
+	22
+	24
+])"},
+			{R"&((weave
+	(lambda
+		[
+			(apply
+				"min"
+				(current_value 1)
+			)
+		]
+	)
+	[1 3 4 5 5 6]
+	[2 2 3 4 6 7]
+))&", R"([1 2 3 4 5 6])"},
+			{R"&((weave
+	(lambda
+		(if
+			(<=
+				(get (current_value) 0)
+				4
+			)
+			[
+				(apply
+					"min"
+					(current_value 1)
+				)
+			]
+			(current_value)
+		)
+	)
+	[1 3 4 5 5 6]
+	[2 2 3 4 6 7]
+))&", R"([
+	1
+	2
+	3
+	5
+	4
+	5
+	6
+	6
+	7
+])"},
+			{R"&((weave
+	(lambda
+		(if
+			(>=
+				(first (current_value))
+				3
+			)
+			[
+				(first
+					(current_value 1)
+				)
+			]
+			[]
+		)
+	)
+	[1 2 3 4 5]
+	(null)
+))&", R"([3 4 5])"}
 			});
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_REDUCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* function list|assoc collection)";
 		d.returns = R"(any)";
-		d.description = R"(For each element in the collection after the first one, it evaluates function with a new scope on the stack where current_value accesses each of the elements from the collection, current_index accesses the list or assoc index and previous_result accesses the previously reduced result. If the collection is empty, null is returned. if the collection is of size one, the single element is returned.)";
+		d.description = R"(For each element in the `collection` after the first one, it evaluates `function` with a new scope on the stack where `(current_value)` accesses each of the elements from the `collection`, `(current_index)` accesses the list or assoc index and `(previous_result)` accesses the previously reduced result.  If the `collection` is empty, null is returned.  If the `collection` is of size one, the single element is returned.)";
 		d.examples = MakeExamples({
-			{R"((print (reduce (lambda (* (previous_result) (current_value))) (list 1 2 3 4))))", R"()"}
+			{R"&((reduce
+	(lambda
+		(* (current_value) (previous_result))
+	)
+	[1 2 3 4]
+))&", R"(24)"},
+			{R"&((reduce
+	(lambda
+		(* (current_value) (previous_result))
+	)
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		"d"
+		4
+	)
+))&", R"(24)"}
 			});
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_APPLY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* to_apply [list|assoc collection])";
 		d.returns = R"(any)";
-		d.description = R"(Creates a new list of the values of the elements of the collection, applies the type specified by to_apply, which is either the type corresponding to a string or the type of to_apply, and then evaluates it. If to_apply has any parameters, these are prepended to the collection as the first parameters. When no extra parameters are passed, it is roughly equivalent to (call (set_type list "+")).)";
+		d.description = R"(Creates a new list of the values of the elements of the `collection`, applies the type specified by `to_apply`, which is either the type corresponding to a string or the type of `to_apply`, and then evaluates it.  If `to_apply` has any parameters, i.e., it is a node with one or more elements, these are prepended to the `collection` as the first parameters.  When no extra parameters are passed, it is a more efficient equivalent to `(call (set_type type collection))`.)";
 		d.examples = MakeExamples({
-			{R"((print (apply (lambda (+)) (list 1 2 3 4))))", R"()"}, {R"((print (apply (lambda (+ 5)) (list 1 2 3 4)) "\n"))", R"()"}, {R"((print (apply "+" (list 1 2 3 4))))", R"()"}
+			{R"&((apply
+	(lambda (+))
+	[1 2 3 4]
+))&", R"(10)"},
+			{R"&((apply
+	(lambda
+		(+ 5)
+	)
+	[1 2 3 4]
+))&", R"(15)"},
+			{R"&((apply
+	"+"
+	[1 2 3 4]
+))&", R"(10)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_REVERSE)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(list l)";
+		d.parameters = R"(list collection)";
 		d.returns = R"(list)";
-		d.description = R"(Returns a new list containing the list with its elements in reversed order.)";
+		d.description = R"(Returns a new list containing the `collection` with its elements in reversed order.)";
 		d.examples = MakeExamples({
-			{R"((print (reverse (list 1 2 3 4 5))))", R"()"}
+			{R"&((reverse
+	[1 2 3 4 5]
+))&", R"([5 4 3 2 1])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_SORT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* function] list|assoc l [number k])";

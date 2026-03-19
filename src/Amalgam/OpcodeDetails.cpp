@@ -5022,46 +5022,114 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_ASSOCIATE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* index1] [* value1] [* index2] [* value2] ... [* indexN] [* valueN])";
 		d.returns = R"(assoc)";
 		d.allowsConcurrency = true;
-		d.description = R"(Evaluates to the assoc, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (current_index), and (current_value) access the assoc, the current index, and the current value.)";
+		d.description = R"(Evaluates to the assoc, where each pair of parameters (e.g., `index1` and `value1`) comprises a index/value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.)";
 		d.examples = MakeExamples({
-			{R"((print (assoc "a" 1 "b" 2 "c" 3 4 "d")))", R"()"}
+			{R"&((unparse
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	)
+))&", R"("{4 \"d\" a 1 b 2 c 3}")"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ZIP)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* function] list indices [* values])";
 		d.returns = R"(assoc)";
-		d.description = R"(Evaluates to a new assoc where the indices are the keys and the values are the values, with corresponding positions in the list matched. If the values is omitted, then it will use nulls for each of the values.  If values is not a list, then all of the values in the assoc returned are set to the same value.  When one parameter is specified, it is the list of indices.  When two parameters are specified, it is the indices and values.  When three values are specified, it is the function, indices and values.  Values defaults to (null) and function defaults to (lambda (current_value)).  When there is a collision of indices, the function is called, it pushes a pair of new target scope onto the stack, so that current_value accesses a list of elements from the list, current_index accesses the list or assoc index if it is not already reduced, with target representing the original list or assoc, evaluates function if one exists, and (current_value) is the new value attempted to be inserted over (current_value 1).)";
+		d.description = R"(Evaluates to a new assoc where `indices` are the keys and `values` are the values, with corresponding positions in the list matched.  If the `values` is omitted and only one parameter is specified, then it will use nulls for each of the values.  If `values` is not a list, then all of the values in the assoc returned are set to the same value.  When two parameters are specified, it is the `indices` and `values`.  When three values are specified, it is the `function`, indices, and values.  The parameter `values` defaults to null and `function` defaults to `(lambda (current_value))`.  When there is a collision of indices, `function` is called with a of new target scope pushed onto the stack, so that `(current_value)` accesses a list of elements from the list, `(current_index)` accesses the list or assoc index if it is not already reduced, and `(target)` represents the original list or assoc.  When evaluating `function`, existing indices will be overwritten.)";
 		d.examples = MakeExamples({
-			{R"((print (zip (list "a" "b" "c" "d") (list 1 2 3 4))))", R"()"}
+			{R"&((unparse
+	(zip
+		["a" "b" "c" "d"]
+		[1 2 3 4]
+	)
+))&", R"("{a 1 b 2 c 3 d 4}")"},
+			{R"&((unparse
+	(zip
+		["a" "b" "c" "d"]
+	)
+))&", R"("{a (null) b (null) c (null) d (null)}")"},
+			{R"&((unparse
+	(zip
+		["a" "b" "c" "d"]
+		3
+	)
+))&", R"("{a 3 b (target .true \"a\") c (target .true \"a\") d (target .true \"a\")}")"},
+			{R"&((unparse
+	(zip
+		(lambda (current_value))
+		["a" "b" "c" "d" "a"]
+		[1 2 3 4 4]
+	)
+))&", R"("{a 4 b 2 c 3 d 4}")"},
+			{R"&((unparse
+	(zip
+		(lambda
+			(+
+				(current_value 1)
+				(current_value)
+			)
+		)
+		["a" "b" "c" "d" "a"]
+		[1 2 3 4 4]
+	)
+))&", R"("{a 5 b 2 c 3 d 4}")"},
+			{R"&((unparse
+	(zip
+		(lambda
+			(+
+				(current_value 1)
+				(current_value)
+			)
+		)
+		["a" "b" "c" "d" "a"]
+		1
+	)
+))&", R"("{a 2 b 1 c (target .true \"b\") d (target .true \"b\")}")"}
 			});
 		d.newTargetScope = true;
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_UNZIP)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([list|assoc values] list indices)";
+		d.parameters = R"([list|assoc collection] list indices)";
 		d.returns = R"(list)";
-		d.description = R"(Evaluates to a new list, using the indices list to look up each value from the values list or assoc, in the same order as each index is specified in indices.)";
+		d.description = R"(Evaluates to a new list, using `indices` to look up each value from the `collection` in the same order as each index is specified in `indices`.)";
 		d.examples = MakeExamples({
-			{R"((print (unzip (assoc "a" 1 "b" 2 "c" 3) (list "a" "b"))))", R"()"}, {R"((print (unzip (list 1 2 3) (list 0 -1 1))))", R"()"}
+			{R"&((unzip
+	[1 2 3]
+	[0 -1 1]
+))&", R"([1 3 2])"},
+			{R"&((unzip
+	(associate "a" 1 "b" 2 "c" 3)
+	["a" "b"]
+))&", R"([1 2])"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_AND)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([bool condition1] [bool condition2] ... [bool conditionN])";

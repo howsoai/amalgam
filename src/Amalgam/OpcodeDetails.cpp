@@ -6121,51 +6121,129 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_CRYPTO_SIGN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string message string secret_key)";
 		d.returns = R"(string)";
-		d.description = R"(Signs the message given the secret key and returns the signature using the Ed25519 algorithm.  Note that the message is not included in the signature.  The system opcode using the command sign_key_pair can be used to create a public/secret key pair.)";
+		d.description = R"(Signs `message` given `secret_key` and returns the signature using the Ed25519 algorithm.  Note that `message` is not included in the `signature`.  The `system` opcode using the command "sign_key_pair" can be used to create a public/secret key pair.)";
 		d.examples = MakeExamples({
-			{R"((print (crypto_sign "hello world" secret_key)))", R"()"}
+			{R"&((seq
+	(declare
+		(zip
+			["public_sign_key" "secret_sign_key"]
+			(system "sign_key_pair")
+		)
+	)
+	(declare
+		{message "hello"}
+	)
+	(declare
+		{
+			signature (crypto_sign message secret_sign_key)
+		}
+	)
+	(concat
+		"valid signature: "
+		(crypto_sign_verify message public_sign_key signature)
+		"\n"
+	)
+))&", R"("valid signature: .true\n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CRYPTO_SIGN_VERIFY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string message string public_key string signature)";
 		d.returns = R"(bool)";
-		d.description = R"(Verifies that the message was signed with the signature via the public key using the Ed25519 algorithm and returns true if the signature is valid, false otherwise.  Note that the message is not included in the signature.  The system opcode using the command sign_key_pair can be used to create a public/secret key pair.)";
+		d.description = R"(Verifies that `message` was signed with the signature via the public key using the Ed25519 algorithm and returns true if the signature is valid, false otherwise.  Note that `message` is not included in the `signature`.  The `system` opcode using the command "sign_key_pair" can be used to create a public/secret key pair.)";
 		d.examples = MakeExamples({
-			{R"((print (crypto_sign_verify "hello world" public_key signature)))", R"()"}
+			{R"&((seq
+	(declare
+		(zip
+			["public_sign_key" "secret_sign_key"]
+			(system "sign_key_pair")
+		)
+	)
+	(declare
+		{message "hello"}
+	)
+	(declare
+		{
+			signature (crypto_sign message secret_sign_key)
+		}
+	)
+	(concat
+		"valid signature: "
+		(crypto_sign_verify message public_sign_key signature)
+		"\n"
+	)
+))&", R"("valid signature: .true\n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ENCRYPT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string plaintext_message string key1 [string nonce] [string key2])";
 		d.returns = R"(string)";
-		d.description = R"(If key2 is not provided, then it uses the XSalsa20 algorithm to perform shared secret key encryption on the message, returning the encrypted value.  If key2 is provided, then the Curve25519 algorithm will additionally be used, and key1 will represent the receiver's public key and key2 will represent the sender's secret key.  The nonce is a string of bytes up to 24 bytes long, that will be used to randomize the encryption, and will need to be provided to the decryption in order to work.  Nonces are not technically required, but strongly recommended to prevent replay attacks.  The system opcode using the command encrypt_key_pair can be used to create a public/secret key pair.)";
+		d.description = R"(If `key2` is not provided, then it uses the XSalsa20 algorithm to perform shared secret key encryption on the `message`, returning the encrypted value.  If `key2` is provided, then the Curve25519 algorithm will additionally be used, and `key1` will represent the receiver's public key and `key2` will represent the sender's secret key.  The `nonce` is a string of bytes up to 24 bytes long, that will be used to randomize the encryption, and will need to be provided to the decryption in order to work.  Nonces are not technically required, but strongly recommended to prevent replay attacks.  The `system` opcode using the command "encrypt_key_pair" can be used to create a public/secret key pair.)";
 		d.examples = MakeExamples({
-			{R"((print (encrypt "hello world" shared_secret_key nonce)))", R"()"}, {R"((print (encrypt "hello world" sender_secret_key nonce receiver_public_key)))", R"()"}
+			{R"&((seq
+	(declare
+		(zip
+			["public_encrypt_key" "secret_encrypt_key"]
+			(system "encrypt_key_pair")
+		)
+	)
+	(declare
+		{
+			encrypted (encrypt message secret_encrypt_key "1234")
+		}
+	)
+	(concat
+		"decrypted: "
+		(decrypt encrypted secret_encrypt_key "1234")
+		"\n"
+	)
+))&", R"("decrypted: \n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_DECRYPT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string cyphertext_message string key1 [string nonce] [string key2])";
 		d.returns = R"(string)";
-		d.description = R"(If key2 is not provided, then it uses the XSalsa20 algorithm to perform shared secret key decryption on the message, returning the encrypted value.  If key2 is provided, then the Curve25519 algorithm will additionally be used, and key1 will represent the sender's public key and key2 will represent the receiver's secret key.  The nonce is a string of bytes up to 24 bytes long, that will be used to randomize the encryption, and will need to be provided to the decryption in order to work.  Nonces are not technically required, but strongly recommended to prevent replay attacks.  The system opcode using the command encrypt_key_pair can be used to create a public/secret key pair.)";
+		d.description = R"(If `key2` is not provided, then it uses the XSalsa20 algorithm to perform shared secret key decryption on the `message`, returning the encrypted value.  If `key2` is provided, then the Curve25519 algorithm will additionally be used, and `key1` will represent the sender's public key and `key2` will represent the receiver's secret key.  The `nonce` is a string of bytes up to 24 bytes long, that will be used to randomize the encryption, and will need to be provided to the decryption in order to work.  Nonces are not technically required, but strongly recommended to prevent replay attacks.  The `system` opcode using the command "encrypt_key_pair" can be used to create a public/secret key pair.)";
 		d.examples = MakeExamples({
-			{R"((print (decrypt "hello world" shared_secret_key nonce)))", R"()"}, {R"((print (decrypt "hello world" sender_public_key nonce receiver_secret_key)))", R"()"}
+			{R"&((seq
+	(declare
+		(zip
+			["public_encrypt_key" "secret_encrypt_key"]
+			(system "encrypt_key_pair")
+		)
+	)
+	(declare
+		{
+			encrypted (encrypt message secret_encrypt_key "1234")
+		}
+	)
+	(concat
+		"decrypted: "
+		(decrypt encrypted secret_encrypt_key "1234")
+		"\n"
+	)
+))&", R"("decrypted: \n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_PRINT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";

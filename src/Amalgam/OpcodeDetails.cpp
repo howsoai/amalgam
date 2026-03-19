@@ -3368,19 +3368,197 @@ The values in the parameter `deviations` are used during distance calculation to
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
-	//TODO 25157: up to ENT_APPEND, all of these need special handling for assoc tests
+
 	arr[static_cast<std::size_t>(ENT_TRUNC)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|number|string data] [number retain_count])";
 		d.returns = R"(list)";
-		d.description = R"(Truncates, evaluates to everything but the last element. If data is a list, it will be a list of all but the last element.  If data is an assoc, it will evaluate to the assoc without the first element by assoc storage order, because order does not matter. If data is a string, it will be all but the last character. If data is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If truncate_count is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1 (all but the last).)";
+		d.description = R"(Truncates, evaluates to everything in `data` but the last element. If `data` is a list, it will be a list of all but the last element.  If `data` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, because order does not matter.  If `data` is a string, it will be all but the last character.  If `data` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If `truncate_count` is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1, indicating all but the last.)";
 		d.examples = MakeExamples({
-			{R"((print (trunc (list 4 9.2 "this"))))", R"()"}, {R"((print (trunc (assoc "a" 1 "b" 2))))", R"()"}, {R"((print (trunc 3)))", R"()"}, {R"((print (trunc 0)))", R"()"}, {R"((print (trunc "abc")))", R"()"}, {R"((print (trunc "")))", R"()"}, {R"((print (trunc (list 1 2 3 4 5 6) -2)))", R"()"}
+			{R"&((trunc
+	[4 9.2 "end"]
+))&", R"([4 9.2])"},
+			{R"&((trunc
+	[1 2 3 4 5 6]
+))&", R"([1 2 3 4 5])"},
+			{R"&((trunc
+	[1 2 3 4 5 6]
+	2
+))&", R"([1 2])"},
+			{R"&((trunc
+	[1 2 3 4 5 6]
+	-2
+))&", R"([1 2 3 4])"},
+			{R"&((trunc
+	[1 2 3 4 5 6]
+	-6
+))&", R"([])"},
+			{R"&((trunc
+	[1 2 3 4 5 6]
+	6
+))&", R"([1 2 3 4 5 6])"},
+			{R"&((trunc
+	[1 2 3 4 5 6]
+	10
+))&", R"([1 2 3 4 5 6])"},
+			{R"&((trunc
+	[1 2 3 4 5 6]
+	-10
+))&", R"([])"},
+			{R"&((trunc
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		"d"
+		4
+		"e"
+		5
+		"f"
+		6
+	)
+))&", R"({
+	a 1
+	c 3
+	d 4
+	e 5
+	f 6
+})",
+//just check that some subset worked
+R"&(^\s*\{\s*
+(?:a\s+1\s*)?
+(?:b\s+2\s*)?
+(?:c\s+3\s*)?
+(?:d\s+4\s*)?
+(?:e\s+5\s*)?
+(?:f\s+6\s*)?
+\}$)&" },
+			{R"&((trunc
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		"d"
+		4
+		"e"
+		5
+		"f"
+		6
+	)
+	2
+))&", R"({e 5 f 6})",
+//just check that some subset worked
+R"&(^\s*\{\s*
+(?:a\s+1\s*)?
+(?:b\s+2\s*)?
+(?:c\s+3\s*)?
+(?:d\s+4\s*)?
+(?:e\s+5\s*)?
+(?:f\s+6\s*)?
+\}$)&" },
+			{R"&((trunc
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		"d"
+		4
+		"e"
+		5
+		"f"
+		6
+	)
+	-2
+))&", R"({
+	c 3
+	d 4
+	e 5
+	f 6
+})",
+//just check that some subset worked
+R"&(^\s*\{\s*
+(?:a\s+1\s*)?
+(?:b\s+2\s*)?
+(?:c\s+3\s*)?
+(?:d\s+4\s*)?
+(?:e\s+5\s*)?
+(?:f\s+6\s*)?
+\}$)&" },
+			{R"&((trunc
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		"d"
+		4
+		"e"
+		5
+		"f"
+		6
+	)
+	10
+))&", R"({
+	a 1
+	b 2
+	c 3
+	d 4
+	e 5
+	f 6
+})",
+//just check that some subset worked
+R"&(^\s*\{\s*
+(?:a\s+1\s*)?
+(?:b\s+2\s*)?
+(?:c\s+3\s*)?
+(?:d\s+4\s*)?
+(?:e\s+5\s*)?
+(?:f\s+6\s*)?
+\}$)&" },
+			{R"&((trunc
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		"d"
+		4
+		"e"
+		5
+		"f"
+		6
+	)
+	-10
+))&", R"({})"},
+			{R"&((trunc 3))&", R"(2)"},
+			{R"&((trunc 0))&", R"(0)"},
+			{R"&((trunc "abcdef"))&", R"("abcde")"},
+			{R"&((trunc "abcdef" 2))&", R"("ab")"},
+			{R"&((trunc "abcdef" -2))&", R"("abcd")"},
+			{R"&((trunc "abcdef" 6))&", R"("abcdef")"},
+			{R"&((trunc "abcdef" -6))&", R"("")"},
+			{R"&((trunc "abcdef" 10))&", R"("abcdef")"},
+			{R"&((trunc "abcdef" -10))&", R"("")"},
+			{R"&((trunc ""))&", R"((null))"},
+
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_APPEND)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|* collection1] [list|assoc|* collection2] ... [list|assoc|* collectionN])";

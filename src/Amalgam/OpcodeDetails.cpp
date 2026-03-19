@@ -4313,20 +4313,203 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_SORT)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([* function] list|assoc l [number k])";
+		d.parameters = R"([* function] list|assoc collection [number k])";
 		d.returns = R"(list)";
-		d.description = "Returns a new list containing the list with its values sorted in increasing order, regardless of whether l is an assoc or list.  Numerical values come before strings, and code will be evaluated as the representative strings.  If function is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with (current_value) and (current_value 1) accessing a pair of elements from the list, and evaluates function.  The function should return a number, positive if \"(current_value)\" is greater, negative if \"(current_value 1)\" is greater, 0 if equal.  If k is specified in addition to function and not null, then it will only return the k smallest values sorted in order, or, if k is negative, it will ignore the negative sign and return the highest k values.";
+		d.description = "Returns a new list containing the elements from `collection` sorted in increasing order, regardless of whether `collection` is an assoc or list.  If `function` is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with `(current_value)` and `(current_value 1)` accessing a pair of elements from the list, and evaluates `function`.  The function should return a number, positive if `(current_value)` is greater, negative if `(current_value 1)` is greater, or 0 if equal.  If `k` is specified in addition to `function` and not null, then it will only return the `k` smallest values sorted in order, or, if `k` is negative, it will return the highest `k` values using the absolute value of `k`.";
 		d.examples = MakeExamples({
-			{R"((print (sort (list 4 9 3 5 1))))", R"()"}, {R"((print (sort (list "n" "b" "hello" 4 1 3.2 (list 1 2 3)))))", R"()"}, {R"((print (sort (list 1 "1x" "10" 20 "z2" "z10" "z100"))))", R"()"}, {R"((print (sort (lambda (- (current_value) (current_value 1))) (list 4 9 3 5 1))))", R"()"}
+			{R"&((sort
+	[4 9 3 5 1]
+))&", R"([1 3 4 5 9])"},
+			{R"&((sort
+	{
+		a 4
+		b 9
+		c 3
+		d 5
+		e 1
+	}
+))&", R"([1 3 4 5 9])"},
+			{R"&((sort
+	[
+		"n"
+		"b"
+		"hello"
+		"soy"
+		4
+		1
+		3.2
+		[1 2 3]
+	]
+))&", R"([
+	1
+	3.2
+	4
+	[1 2 3]
+	"b"
+	"hello"
+	"n"
+	"soy"
+])"},
+			{R"&((sort
+	[
+		1
+		"1x"
+		"10"
+		20
+		"z2"
+		"z10"
+		"z100"
+	]
+))&", R"([
+	1
+	20
+	"1x"
+	"10"
+	"z2"
+	"z10"
+	"z100"
+])"},
+			{R"&((sort
+	[
+		1
+		"001x"
+		"010"
+		20
+		"z002"
+		"z010"
+		"z100"
+	]
+))&", R"([
+	1
+	20
+	"001x"
+	"010"
+	"z002"
+	"z010"
+	"z100"
+])"},
+			{R"&((sort
+	(lambda
+		(-
+			(current_value)
+			(current_value 1)
+		)
+	)
+	[4 9 3 5 1]
+))&", R"([1 3 4 5 9])"},
+			{R"&((sort
+	(lambda
+		(- (rand) (rand))
+	)
+	(range 0 10)
+))&", R"([
+	8
+	10
+	6
+	9
+	7
+	5
+	1
+	0
+	2
+	4
+	3
+])"},
+			{R"&((sort
+	[
+		"2020-06-08 lunes 11.33.36"
+		"2020-06-08 lunes 11.32.47"
+		"2020-06-08 lunes 11.32.49"
+		"2020-06-08 lunes 11.32.37"
+		"2020-06-08 lunes 11.33.48"
+		"2020-06-08 lunes 11.33.40"
+		"2020-06-08 lunes 11.33.45"
+		"2020-06-08 lunes 11.33.42"
+		"2020-06-08 lunes 11.33.47"
+		"2020-06-08 lunes 11.33.43"
+		"2020-06-08 lunes 11.33.38"
+		"2020-06-08 lunes 11.33.39"
+		"2020-06-08 lunes 11.32.36"
+		"2020-06-08 lunes 11.32.38"
+		"2020-06-08 lunes 11.33.37"
+		"2020-06-08 lunes 11.32.58"
+		"2020-06-08 lunes 11.33.44"
+		"2020-06-08 lunes 11.32.48"
+		"2020-06-08 lunes 11.32.46"
+		"2020-06-08 lunes 11.32.57"
+		"2020-06-08 lunes 11.33.41"
+		"2020-06-08 lunes 11.32.39"
+		"2020-06-08 lunes 11.32.59"
+		"2020-06-08 lunes 11.32.56"
+		"2020-06-08 lunes 11.33.46"
+	]
+))&", R"([
+	"2020-06-08 lunes 11.32.36"
+	"2020-06-08 lunes 11.32.37"
+	"2020-06-08 lunes 11.32.38"
+	"2020-06-08 lunes 11.32.39"
+	"2020-06-08 lunes 11.32.46"
+	"2020-06-08 lunes 11.32.47"
+	"2020-06-08 lunes 11.32.48"
+	"2020-06-08 lunes 11.32.49"
+	"2020-06-08 lunes 11.32.56"
+	"2020-06-08 lunes 11.32.57"
+	"2020-06-08 lunes 11.32.58"
+	"2020-06-08 lunes 11.32.59"
+	"2020-06-08 lunes 11.33.36"
+	"2020-06-08 lunes 11.33.37"
+	"2020-06-08 lunes 11.33.38"
+	"2020-06-08 lunes 11.33.39"
+	"2020-06-08 lunes 11.33.40"
+	"2020-06-08 lunes 11.33.41"
+	"2020-06-08 lunes 11.33.42"
+	"2020-06-08 lunes 11.33.43"
+	"2020-06-08 lunes 11.33.44"
+	"2020-06-08 lunes 11.33.45"
+	"2020-06-08 lunes 11.33.46"
+	"2020-06-08 lunes 11.33.47"
+	"2020-06-08 lunes 11.33.48"
+])"},
+			{R"&((sort
+	(null)
+	[4 9 3 5 1]
+	2
+))&", R"([1 3])"},
+			{R"&((sort
+	(null)
+	[4 9 3 5 1]
+	-2
+))&", R"([5 9])"},
+			{R"&((sort
+	(lambda
+		(-
+			(current_value)
+			(current_value 1)
+		)
+	)
+	[4 9 3 5 1]
+	2
+))&", R"([1 3])"},
+			{R"&((sort
+	(lambda
+		(-
+			(current_value)
+			(current_value 1)
+		)
+	)
+	[4 9 3 5 1]
+	-2
+))&", R"([9 5])"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_INDICES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|assoc a)";

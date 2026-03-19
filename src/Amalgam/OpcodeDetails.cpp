@@ -3701,32 +3701,261 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_REWRITE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* function * target)";
 		d.returns = R"(any)";
-		d.description = R"(Rewrites target by applying the function in a bottom-up manner.  For each node in the target tree, pushes a new target scope onto the target stack, with current_value being the current node and current_index being to the index to the current node relative to the node passed into rewrite accessed via target, and evaluates function.  Returns the resulting tree, after have been rewritten by function.)";
+		d.description = R"(Rewrites `target` by applying the `function` in a bottom-up manner.  For each node in the `target` structure, it pushes a new target scope onto the target stack, with `(current_value)` being the current node and `(current_index)` being to the index to the current node relative to the node passed into rewrite accessed via target, and evaluates `function`.  Returns the resulting structure, after have been rewritten by function.  Note that there is a small performance overhead if `target` is a graph structure rather than a tree structure.)";
 		d.examples = MakeExamples({
-			{R"((print (rewrite)", R"()"}, {R"((lambda (if (~ (current_value) 0) (+ (current_value) 1) (current_value)) ))", R"()"}, {R"((list (assoc "a" 13))  ) ))", R"()"}, {R"(;rewrite all integer additions into multiplies and then fold constants)", R"()"}, {R"((print (rewrite)", R"()"}, {R"((lambda)", R"()"}, {R"(;find any nodes with a + and where its list is filled to its size with integers)", R"()"}, {R"((if (and)", R"()"}, {R"((= (get_type (current_value)) "+"))", R"()"}, {R"((= (size (current_value)) (size (filter (lambda (~ (current_value) 0)) (current_value))) ))", R"()"}, {R"())", R"()"}, {R"((reduce (lambda (* (previous_result) (current_value)) ) (current_value)))", R"()"}, {R"((current_value)))", R"()"}, {R"())", R"()"}, {R"(;original code with additions to be rewritten)", R"()"}, {R"((lambda)", R"()"}, {R"((list (assoc "a" (+ 3 (+ 13 4 2)) ))  ))", R"()"}, {R"() ))", R"()"}, {R"((print (rewrite)", R"()"}, {R"((lambda)", R"()"}, {R"((if (and)", R"()"}, {R"((= (get_type (current_value)) "+"))", R"()"}, {R"((= (size (current_value)) (size (filter (lambda (~ (current_value) 0)) (current_value))) ))", R"()"}, {R"())", R"()"}, {R"((reduce (lambda (+ (previous_result) (current_value)) ) (current_value)))", R"()"}, {R"((current_value)))", R"()"}, {R"())", R"()"}, {R"((lambda)", R"()"}, {R"((+ (+ 13 4) (current_value 1)) ))", R"()"}, {R"() ))", R"()"}
+			{R"&((rewrite
+	(lambda
+		(if
+			(~ (current_value) 0)
+			(+ (current_value) 1)
+			(current_value)
+		)
+	)
+	[
+		(associate "a" 13)
+	]
+))&", R"([
+	{a 14}
+])"},
+			{R"&(;rewrite all integer additions into multiplies and then fold constants
+(rewrite
+	(lambda
+		
+		;find any nodes with a + and where its list is filled to its size with integers
+		(if
+			(and
+				(=
+					(get_type (current_value))
+					(lambda (+))
+				)
+				(=
+					(size (current_value))
+					(size
+						(filter
+							(lambda
+								(~ (current_value) 0)
+							)
+							(current_value)
+						)
+					)
+				)
+			)
+			(reduce
+				(lambda
+					(* (previous_result) (current_value))
+				)
+				(current_value)
+			)
+			(current_value)
+		)
+	)
+	
+	;original code with additions to be rewritten
+	(lambda
+		[
+			(associate
+				"a"
+				(+
+					3
+					(+ 13 4 2)
+				)
+			)
+		]
+	)
+))&", R"([
+	(associate "a" 312)
+])"},
+			{R"&(;rewrite numbers as sums of position in the list and the number (all 8s)
+(rewrite
+	(lambda
+		
+		;find any nodes with a + and where its list is filled to its size with integers
+		(if
+			(=
+				(get_type_string (current_value))
+				"number"
+			)
+			(+
+				(current_value)
+				(get_value (current_index))
+			)
+			(current_value)
+		)
+	)
+	
+	;original code with additions to be rewritten
+	(lambda
+		[
+			8
+			7
+			6
+			5
+			4
+			3
+			2
+			1
+			0
+		]
+	)
+))&", R"([
+	8
+	8
+	8
+	8
+	8
+	8
+	8
+	8
+	8
+])"},
+			{R"&((rewrite
+	(lambda
+		(if
+			(and
+				(=
+					(get_type (current_value))
+					(lambda (+))
+				)
+				(=
+					(size (current_value))
+					(size
+						(filter
+							(lambda
+								(~ (current_value) 0)
+							)
+							(current_value)
+						)
+					)
+				)
+			)
+			(reduce
+				(lambda
+					(+ (previous_result) (current_value))
+				)
+				(current_value)
+			)
+			(current_value)
+		)
+	)
+	(lambda
+		(+
+			(+ 13 4)
+			a
+		)
+	)
+))&", R"((+ 17 a))"}
 			});
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_MAP)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* function [list|assoc collection1] [list|assoc collection2] ... [list|assoc collectionN])";
 		d.returns = R"(list)";
 		d.allowsConcurrency = true;
-		d.description = R"(For each element in the collection, pushes a new target scope onto the stack, so that current_value accesses the element or elements in the list and current_index accesses the list or assoc index, with target representing the outer set of lists or assocs, and evaluates the function.  Returns the list of results, mapping the list via the specified function. If multiple lists or assocs are specified, then it pulls from each list or assoc simultaneously (null if overrun or index does not exist) and (current_value) contains an array of the values in parameter order.  Note that concurrency is only available when one collection is specified.)";
+		d.description = R"(For each element in the collection, pushes a new target scope onto the stack, so that `(current_value)` accesses the element or elements in the list and `(current_index)` accesses the list or assoc index, with `(target)` representing the outer set of lists or assocs, and evaluates the function.  Returns the list of results, mapping the list via the specified `function`.  If multiple lists or assocs are specified, then it pulls from each list or assoc simultaneously (null if overrun or index does not exist) and `(current_value)` contains an array of the values in parameter order.  Note that concurrency is only available when more than one one collection is specified.)";
 		d.examples = MakeExamples({
-			{R"((print (map (lambda (* (current_value) 2)) (list 1 2 3 4))))", R"()"}, {R"((print (map (lambda (+ (current_value) (current_index))) (assoc 10 1 20 2 30 3 40 4))))", R"()"}, {R"((print (map)", R"()"}, {R"((lambda)", R"()"}, {R"((+ (get (current_value) 0) (get (current_value) 1) (get (current_value) 2)))", R"()"}, {R"())", R"()"}, {R"((assoc "0" 0 "1" 1 "a" 3))", R"()"}, {R"((assoc "a" 1 "b" 4))", R"()"}, {R"((list 2 2 2 2))", R"()"}
+						{R"&((map
+	(lambda
+		(* (current_value) 2)
+	)
+	[1 2 3 4]
+))&", R"([2 4 6 8])"},
+			{R"&((map
+	(lambda
+		(+ (current_value) (current_index))
+	)
+	[
+		10
+		1
+		20
+		2
+		30
+		3
+		40
+		4
+	]
+))&", R"([
+	10
+	2
+	22
+	5
+	34
+	8
+	46
+	11
+])"},
+			{R"&((map
+	(lambda
+		(+ (current_value) (current_index))
+	)
+	(associate
+		10
+		1
+		20
+		2
+		30
+		3
+		40
+		4
+	)
+))&", R"({
+	10 11
+	20 22
+	30 33
+	40 44
+})"},
+			{R"&((map
+	(lambda
+		(+
+			(get (current_value) 0)
+			(get (current_value) 1)
+		)
+	)
+	[1 2 3 4 5 6]
+	[2 2 2 2 2 2]
+))&", R"([3 4 5 6 7 8])"},
+			{R"&((map
+	(lambda
+		(+
+			(get (current_value) 0)
+			(get (current_value) 1)
+		)
+	)
+	[1 2 3 4 5]
+	[2 2 2 2 2 2]
+))&", R"([3 4 5 6 7 (null)])"},
+			{R"&((map
+	(lambda
+		(+
+			(get (current_value) 0)
+			(get (current_value) 1)
+			(get (current_value) 2)
+		)
+	)
+	(associate 0 0 1 1 "a" 3)
+	(associate 0 1 "a" 4)
+	[2 2 2 2]
+))&", R"({
+	0 3
+	1 (null)
+	2 (null)
+	3 (null)
+	a (null)
+})"}
 			});
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_FILTER)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* function] list|assoc collection)";

@@ -64,7 +64,7 @@ int32_t RunAmalgamLanguageValidation()
 
 	//TODO 25158: replace with the top for loop when all are implemented
 	//for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
-	for(size_t opcode_index = 0; opcode_index < ENT_TOTAL_ENTITY_SIZE; opcode_index++)
+	for(size_t opcode_index = 0; opcode_index < ENT_FLATTEN_ENTITY; opcode_index++)
 	{
 		EvaluableNodeType cur_opcode = static_cast<EvaluableNodeType>(opcode_index);
 		std::string cur_opcode_str = GetStringFromEvaluableNodeType(cur_opcode, true);
@@ -117,9 +117,9 @@ int32_t RunAmalgamLanguageValidation()
 			//if the test needs to be cleaned up, do so
 			if(!example.cleanup.empty())
 			{
-				std::cout << "Cleaning up test." << std::endl;
+				std::cout << "...Cleaning up after test.... ";
 				auto [cleanup_code, cleanup_warnings, cleanup_char_with_error, cleanup_code_complete]
-					= Parser::Parse(example.example, &entity->evaluableNodeManager);
+					= Parser::Parse(example.cleanup, &entity->evaluableNodeManager);
 
 				entity->ExecuteOnEntity(cleanup_code, nullptr);
 			}

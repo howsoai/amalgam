@@ -7254,7 +7254,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_MIX)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node1 * node2 [number keep_chance_node1] [number keep_chance_node2] [assoc params])";
@@ -7618,17 +7618,46 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_TOTAL_ENTITY_SIZE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity)";
 		d.returns = R"(number)";
-		d.description = R"(Evaluates to the total count of all of the nodes of the entity represented by the input id_path and all its contained entities.  Each entity itself counts as multiple nodes, as it requires multiple nodes to create an entity as exhibited by flattening an entity.)";
+		d.description = R"(Evaluates to the total count of all of the nodes of `entity` and all of its contained entities.  Each entity itself counts as multiple nodes, corresponding to flattening an entity via the `flatten_entity` opcode.)";
 		d.examples = MakeExamples({
-			{R"((create_entities "MergeEntity1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "MergeEntity1" "MergeEntityChild1") (lambda (assoc "x" 3 "y" 4)) ))", R"()"}, {R"((create_entities (list "MergeEntity1" "MergeEntityChild2") (lambda (assoc "p" 3 "q" 4)) ))", R"()"}, {R"((create_entities (list "MergeEntity1") (lambda (assoc "E" 3 "F" 4)) ))", R"()"}, {R"((create_entities (list "MergeEntity1") (lambda (assoc "e" 3 "f" 4 "g" 5 "h" 6)) ))", R"()"}, {R"((create_entities "MergeEntity2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "MergeEntity2" "MergeEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 5)) ))", R"()"}, {R"((create_entities (list "MergeEntity2" "MergeEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "MergeEntity2") (lambda (assoc "E" 3 "F" 4 "G" 5 "H" 6)) ))", R"()"}, {R"((create_entities (list "MergeEntity2") (lambda (assoc "e" 3 "f" 4)) ))", R"()"}, {R"((print (total_entity_size "MergeEntity1")))", R"()"}, {R"((print (total_entity_size "MergeEntity2")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity1"
+		{a 3 b 4}
+	)
+	(create_entities
+		["Entity1" "EntityChild1"]
+		{x 3 y 4}
+	)
+	(create_entities
+		["Entity1" "EntityChild2"]
+		{p 3 q 4}
+	)
+	(create_entities
+		["Entity1"]
+		{E 3 F 4}
+	)
+	(create_entities
+		["Entity1"]
+		{
+			e 3
+			f 4
+			g 5
+			h 6
+		}
+	)
+	(total_entity_size "Entity1")
+))&", R"(67)", "", R"((destroy_entities "Entity1"))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_FLATTEN_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity [bool include_rand_seeds] [bool parallel_create] [bool include_version])";

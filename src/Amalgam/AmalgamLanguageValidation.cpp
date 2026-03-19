@@ -60,11 +60,10 @@ int32_t RunAmalgamLanguageValidation()
 	entity->SetPermissions(ExecutionPermissions::AllPermissions(), ExecutionPermissions::AllPermissions(), true);
 
 	std::vector<std::pair<std::string, size_t>> failed_test_names_and_numbers;
-	bool any_failures = false;
 
 	//TODO 25158: replace with the top for loop when all are implemented
 	//for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
-	for(size_t opcode_index = 0; opcode_index < ENT_FLATTEN_ENTITY; opcode_index++)
+	for(size_t opcode_index = 0; opcode_index < ENT_MUTATE_ENTITY; opcode_index++)
 	{
 		EvaluableNodeType cur_opcode = static_cast<EvaluableNodeType>(opcode_index);
 		std::string cur_opcode_str = GetStringFromEvaluableNodeType(cur_opcode, true);

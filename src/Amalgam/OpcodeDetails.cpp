@@ -7657,19 +7657,62 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_FLATTEN_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity [bool include_rand_seeds] [bool parallel_create] [bool include_version])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to code that, if called, would completely reproduce the entity specified by id_path, as well as all contained entities.  If include_rand_seeds is true, its default, it will include all entities' random seeds.  If parallel_create is true, then the creates will be performed with parallel markers as appropriate for each group of contained entities.  If include_version is true, it will include a comment on the top node that is the current version of the Amalgam interpreter, which can be used for validating interoperability when loading code.  The code returned accepts two parameters, create_new_entity, which defaults to true, and new_entity, which defaults to null.  If create_new_entity is true, then it will create a new entity with id_path specified by new_entity, where null will create an unnamed entity.  If create_new_entity is false, then it will overwrite the current entity's code and create all contained entities.)";
+		d.description = R"(Evaluates to code that, if called, would completely reproduce the `entity`, as well as all contained entities.  If `include_rand_seeds` is true, by default, it will include all entities' random seeds.  If `parallel_create` is true, then the creates will be performed with parallel markers as appropriate for each group of contained entities.  If `include_version` is true, it will include a comment on the top node that is the current version of the Amalgam interpreter, which can be used for validating interoperability when loading code.  The code returned accepts two parameters, `create_new_entity`, which defaults to true, and `new_entity`, which defaults to null.  If `create_new_entity` is true, then it will create a new entity using the id path specified by `new_entity`, where null will create an unnamed entity.  If `create_new_entity` is false, then it will overwrite the current entity's code and create all contained entities.)";
 		d.examples = MakeExamples({
-			{R"((create_entities "FlattenTest" (lambda)", R"()"}, {R"({ a (rand) })", R"()"}, {R"((let (assoc fe (flatten_entity "FlattenTest")))", R"()"}, {R"((print fe))", R"()"}, {R"((print (flatten_entity (call fe))))", R"()"}, {R"((print (difference_entities "FlattenTest" (call fe))))", R"()"}, {R"((call fe (assoc create_new_entity .false new_entity "new_entity_name")))", R"()"}, {R"())", R"()"}
+			{R"&((seq
+	(create_entities
+		"FlattenEntity"
+		(lambda {})
+	)
+	(call_entity "FlattenEntity" "a")
+	(create_entities
+		["FlattenEntity" "DeepRand"]
+		(lambda
+			{a (rand)}
+		)
+	)
+	(declare
+		{
+			flattened_code (flatten_entity "FlattenEntity" .true .true)
+		}
+	)
+	(declare
+		{first_rand (null) second_rand (null)}
+	)
+	(assign
+		{
+			first_rand (call_entity
+					["FlattenEntity" "DeepRand"]
+					"a"
+				)
+		}
+	)
+	(let
+		{
+			new_entity (call flattened_code)
+		}
+		(assign
+			{
+				second_rand (call_entity
+						[new_entity "DeepRand"]
+						"a"
+					)
+			}
+		)
+	)
+	[first_rand second_rand]
+))&", R"([0.611779739433564 0.611779739433564])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_MUTATE_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 [number mutaton_rate] [id_path entity2] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";

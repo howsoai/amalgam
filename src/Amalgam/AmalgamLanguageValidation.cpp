@@ -64,7 +64,7 @@ int32_t RunAmalgamLanguageValidation()
 
 	//TODO 25158: replace with the top for loop when all are implemented
 	//for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
-	for(size_t opcode_index = 0; opcode_index < ENT_GET_COMMENTS; opcode_index++)
+	for(size_t opcode_index = 0; opcode_index < ENT_EXPLODE; opcode_index++)
 	{
 		EvaluableNodeType cur_opcode = static_cast<EvaluableNodeType>(opcode_index);
 		std::string cur_opcode_str = GetStringFromEvaluableNodeType(cur_opcode, true);
@@ -155,10 +155,12 @@ int32_t RunAmalgamLanguageValidation()
 
 	if(failed_test_names_and_numbers.size() == 0)
 	{
+		std::cout << "----------------" << std::endl;
 		std::cout << "All Tests Passed" << std::endl;
 		return 0;
 	}
 
+	std::cout << "---------------------" << std::endl;
 	std::cout << "Not All Tests Passed:" << std::endl;
 
 	for(auto &[test_name, test_number] : failed_test_names_and_numbers)

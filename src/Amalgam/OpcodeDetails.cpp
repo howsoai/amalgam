@@ -5846,73 +5846,161 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_GET_COMMENTS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node)";
 		d.returns = R"(string)";
-		d.description = R"(Returns a strings comprising all of the comments for the input node.)";
+		d.description = R"(Returns a strings comprising all of the comment lines for `node`.)";
 		d.examples = MakeExamples({
-			{R"((print (get_comments)", R"()"}, {R"(;this is a comment)", R"()"}, {R"((lambda ;comment too)", R"()"}, {R"(.true))))", R"()"}
+			{R"&((get_comments
+	(lambda
+		
+		;comment line 1
+		;comment line 2
+		.true
+	)
+))&", R"("comment line 1\r\ncomment line 2")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SET_COMMENTS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node [string new_comment])";
 		d.returns = R"(any)";
-		d.description = R"(Sets the comments for the node of code. Evaluates to an updated node.)";
+		d.description = R"(Evaluates to a new copy of `node` with the comment specified by `new_comment`, where each newline is a separate line of comment.  If `new_comment` is null or missing, it will clear comments for `node`.)";
 		d.examples = MakeExamples({
-			{R"((print (set_comments)", R"()"}, {R"(;this is a comment)", R"()"}, {R"((lambda ;comment too)", R"()"}, {R"(.true) "new comment")))", R"()"}
+			{R"&((unparse
+	(set_annotations
+		(lambda
+			
+			#labelC
+			.true
+		)
+		["labelD" "labelE"]
+	)
+	.true
+	.true
+	.true
+))&", R"("#[\"labelD\" \"labelE\"]\r\n.true\r\n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_GET_CONCURRENCY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node)";
 		d.returns = R"(bool)";
-		d.description = R"(Returns true if the node has a preference to be processed in a manner where its operations are run concurrently (and potentially subject to race conditions).  False if it is not.)";
+		d.description = R"(Returns true if `node` has a preference to be processed in a manner where its operations are run concurrentl, false if it is not.  Note that concurrency is potentially subject to race conditions or inconsistent results if tasks write to the same locations without synchronization.)";
 		d.examples = MakeExamples({
-			{R"((print (get_concurrency (lambda ||(map foo array))) ")", R"()"}, {R"("))", R"()"}
+			{R"&((get_concurrency
+	(lambda
+		(print "hello")
+	)
+))&", R"(.false)"},
+			{R"&((get_concurrency
+	(lambda
+		||(print "hello")
+	)
+))&", R"(.true)"},
+			{R"&((get_concurrency
+	(set_concurrency
+		(lambda
+			(print "hello")
+		)
+		.true
+	)
+))&", R"(.true)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SET_CONCURRENCY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node bool concurrent)";
 		d.returns = R"(any)";
-		d.description = R"(Sets whether the node has a preference to be processed in a manner where its operations are run concurrently (and potentially subject to race conditions). Evaluates to the node represented by the input node.)";
+		d.description = R"(Evaluates to a new copy of `node` with the preference for concurrency set by `concurrent`.  Note that concurrency is potentially subject to race conditions or inconsistent results if tasks write to the same locations without synchronization.)";
 		d.examples = MakeExamples({
-			{R"((print (set_concurrency (lambda (map foo array)) .true) ")", R"()"}, {R"("))", R"()"}
+			{R"&((unparse
+	(set_concurrency
+		(lambda
+			(print "hello")
+		)
+		.true
+	)
+	.true
+	.true
+	.true
+))&", R"("||(print \"hello\")\r\n")"},
+			{R"&((unparse
+	(set_concurrency
+		(lambda
+			
+			;complex test
+			
+			#some annotation
+			{a "hello" b 4}
+		)
+		.true
+	)
+	.true
+	.true
+	.true
+))&", R"(";complex test\r\n#some annotation\r\n||{a \"hello\" b 4}\r\n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_GET_VALUE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node)";
 		d.returns = R"(any)";
-		d.description = R"(Returns just the value portion of node (no annotations, comments, or concurrency). Will evaluate to a copy of the value if it is not a unique reference, making it useful to ensure that the copy of the data is unique.)";
+		d.description = R"(Evaluates to a new copy of `node` without annotations, comments, or concurrency.)";
 		d.examples = MakeExamples({
-			{R"((print (get_value)", R"()"}, {R"(;this is a comment)", R"()"}, {R"((lambda ;comment too)", R"()"}, {R"(.true))))", R"()"}
+			{R"&((get_value
+	
+	;first comment
+	(lambda
+		
+		;second comment
+		
+		#annotation part 1
+		#annotation part 2
+		.true
+	)
+))&", R"(.true)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SET_VALUE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* target * val)";
 		d.returns = R"(any)";
-		d.description = R"(Sets target's value to the value of val, keeping existing annotations, comments, and concurrency).)";
+		d.description = R"(Evaluates to a new copy of `node` with the value set to `val`, keeping existing annotations, comments, and concurrency).)";
 		d.examples = MakeExamples({
-			{R"((print (set_value)", R"()"}, {R"(;this is a comment)", R"()"}, {R"((lambda ;comment too)", R"()"}, {R"(.true) 3)))", R"()"}
+			{R"&((set_value
+	
+	;first comment
+	(lambda
+		
+		;second comment
+		.true
+	)
+	3
+))&", R"(;second comment
+3)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_EXPLODE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([string str] [number stride])";

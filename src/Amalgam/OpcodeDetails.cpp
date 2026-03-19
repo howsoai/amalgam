@@ -3558,7 +3558,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
+
 	arr[static_cast<std::size_t>(ENT_APPEND)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|* collection1] [list|assoc|* collection2] ... [list|assoc|* collectionN])";
@@ -3616,30 +3616,92 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SIZE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|string collection] collection)";
 		d.returns = R"(number)";
-		d.description = R"(Evaluates to the size of the collection in number of elements.  If collection is a string, returns the length in UTF-8 characters.)";
+		d.description = R"(Evaluates to the size of the `collection` in number of elements.  If `collection` is a string, returns the length in UTF-8 characters.)";
 		d.examples = MakeExamples({
-			{R"((print (size (list 4 9.2 "this"))))", R"()"}, {R"((print (size (assoc "a" 1 "b" 2 "c" 3 4 "d"))))", R"()"}
+			{R"&((size
+	[4 9.2 "this"]
+))&", R"(3)"},
+			{R"&((size
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	)
+))&", R"(4)"},
+			{R"&((size "hello"))&", R"(5)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_RANGE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* function] number low_endpoint number high_endpoint [number step_size])";
 		d.returns = R"(list)";
 		d.allowsConcurrency = true;
-		d.description = R"(Evaluates to a list with the range from low_endpoint to high_endpoint.  The default step_size is 1.  Evaluates to an empty list if the range is not valid.  If four arguments are specified, then the function will be evaluated for each value in the range.)";
+		d.description = R"(Evaluates to a list with the range from `low_endpoint` to `high_endpoint`.  The default `step_size` is 1.  Evaluates to an empty list if the range is not valid.  If four arguments are specified, then `function` will be evaluated for each value in the range.)";
 		d.examples = MakeExamples({
-			{R"((print (range 0 10)))", R"()"}, {R"((print (range 10 0)))", R"()"}, {R"((print (range 0 5 0.0)))", R"()"}
+			{R"&((range 0 10))&", R"([
+	0
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+	8
+	9
+	10
+])"},
+			{R"&((range 10 0))&", R"([
+	10
+	9
+	8
+	7
+	6
+	5
+	4
+	3
+	2
+	1
+	0
+])"},
+			{R"&((range 0 5 0))&", R"([])"},
+			{R"&((range 0 5 1))&", R"([0 1 2 3 4 5])"},
+			{R"&((range 12 0 5 1))&", R"([12 12 12 12 12 12])"},
+			{R"&((range
+	(lambda
+		(+ (current_index) 1)
+	)
+	0
+	5
+	1
+))&", R"([1 2 3 4 5 6])"},
+			{R"&(||(range
+	(lambda
+		(+ (current_index) 1)
+	)
+	0
+	5
+	1
+))&", R"([1 2 3 4 5 6])"}
 			});
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
+	//TODO 25157: update examples from here down
 	arr[static_cast<std::size_t>(ENT_REWRITE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* function * target)";

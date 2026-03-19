@@ -3158,8 +3158,7 @@ The values in the parameter `deviations` are used during distance calculation to
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
-	//TODO 25157: update examples from here down
-	//TODO 25157: up to ENT_APPEND, all of these need special handling for assoc tests
+
 	arr[static_cast<std::size_t>(ENT_TAIL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|number|string data] [number retain_count])";
@@ -3217,7 +3216,16 @@ The values in the parameter `deviations` are used during distance calculation to
 	c 3
 	d 4
 	f 6
-})"},
+})",
+			//just check that some subset worked
+			R"&(^\s*\{\s*
+(?:a\s+1\s*)?
+(?:b\s+2\s*)?
+(?:c\s+3\s*)?
+(?:d\s+4\s*)?
+(?:e\s+5\s*)?
+(?:f\s+6\s*)?
+\}$)&"},
 			{R"&((tail
 	(associate
 		"a"
@@ -3234,7 +3242,16 @@ The values in the parameter `deviations` are used during distance calculation to
 		6
 	)
 	2
-))&", R"({b 2 c 3})"},
+))&", R"({b 2 c 3})",
+			//just check that some subset worked
+			R"&(^\s*\{\s*
+(?:a\s+1\s*)?
+(?:b\s+2\s*)?
+(?:c\s+3\s*)?
+(?:d\s+4\s*)?
+(?:e\s+5\s*)?
+(?:f\s+6\s*)?
+\}$)&"},
 			{R"&((tail
 	(associate
 		"a"
@@ -3256,7 +3273,16 @@ The values in the parameter `deviations` are used during distance calculation to
 	b 2
 	c 3
 	d 4
-})"},
+})",
+			//just check that some subset worked
+			R"&(^\s*\{\s*
+(?:a\s+1\s*)?
+(?:b\s+2\s*)?
+(?:c\s+3\s*)?
+(?:d\s+4\s*)?
+(?:e\s+5\s*)?
+(?:f\s+6\s*)?
+\}$)&"},
 			{R"&((tail
 	(associate
 		"a"
@@ -3280,7 +3306,16 @@ The values in the parameter `deviations` are used during distance calculation to
 	d 4
 	e 5
 	f 6
-})"},
+})",
+			//just check that some subset worked
+			R"&(^\s*\{\s*
+(?:a\s+1\s*)?
+(?:b\s+2\s*)?
+(?:c\s+3\s*)?
+(?:d\s+4\s*)?
+(?:e\s+5\s*)?
+(?:f\s+6\s*)?
+\}$)&" },
 			{R"&((tail
 	(associate
 		"a"
@@ -3333,7 +3368,8 @@ The values in the parameter `deviations` are used during distance calculation to
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
-
+	//TODO 25157: update examples from here down
+	//TODO 25157: up to ENT_APPEND, all of these need special handling for assoc tests
 	arr[static_cast<std::size_t>(ENT_TRUNC)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|number|string data] [number retain_count])";

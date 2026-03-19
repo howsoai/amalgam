@@ -6243,14 +6243,21 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_PRINT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
 		d.returns = R"(null)";
-		d.description = R"(Prints each of the parameters in order in a manner interpretable as if they were code. Output is pretty-printed. Printing a node which evaluates to a literal string or number will not be printed (the value will be printed directly) and not have a newline appended.)";
+		d.description = R"(Prints each of the parameters in order in a manner interpretable as if they were code, except strings are printed without quotes.  Output is pretty-printed.)";
 		d.examples = MakeExamples({
-			{R"((print "hello"))", R"()"}
+			{R"&((print "hello world\n"))&", R"((null))"},
+			{R"&((print
+	1
+	2
+	[3 4]
+	"5"
+	"\n"
+))&", R"((null))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.permissions = ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR;
@@ -6258,17 +6265,27 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_TOTAL_SIZE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node)";
 		d.returns = R"(number)";
-		d.description = R"(Evaluates to the total count of all of the nodes referenced within the input node. The volume of data in an individual node (such as in a string) counts as an additional node for each 48 characters.)";
+		d.description = R"(Evaluates to the total count of all of the nodes referenced directly or indirectly by `node`.)";
 		d.examples = MakeExamples({
-			{R"((print (total_size (list 1 2 3 (assoc "a" 3 "b" 4) (list 5 6)))))", R"()"}
+			{R"&((total_size
+	[
+		1
+		2
+		3
+		(associate "a" 3 "b" 4)
+		[5 6]
+	]
+))&", R"(10)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_MUTATE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";

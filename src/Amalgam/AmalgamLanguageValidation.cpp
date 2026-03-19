@@ -12,7 +12,7 @@
 
 //returns a copy of s where each consecutive whitespace block is replaced
 //by a single space and any leading and trailing spaces are removed
-static std::string NormalizeWhitespace(const std::string &s)
+static std::string NormalizeWhitespace(std::string_view s)
 {
 	std::string out;
 	out.reserve(s.size());
@@ -47,7 +47,7 @@ static std::string NormalizeWhitespace(const std::string &s)
 
 //returns true if a and b are equal ignoring differences in the
 //type of whitespace (spaces, tabs, newlines, etc.)
-inline static bool EqualIgnoringWhitespace(const std::string &a, const std::string &b)
+inline static bool EqualIgnoringWhitespace(std::string_view a, std::string_view b)
 {
 	return NormalizeWhitespace(a) == NormalizeWhitespace(b);
 }
@@ -100,7 +100,8 @@ int32_t RunAmalgamLanguageValidation()
 			}
 			else //match with regular expression
 			{
-				std::regex pattern(example.regexMatch, std::regex::ECMAScript);
+				//use the begin/end constructor since std::string_view isn't universally supported
+				std::regex pattern(begin(example.regexMatch), end(example.regexMatch), std::regex::ECMAScript);
 				if(std::regex_match(result_str, pattern))
 				{
 					std::cerr << "Failed, ran code:" << std::endl;

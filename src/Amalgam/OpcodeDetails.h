@@ -80,26 +80,26 @@ public:
 	//combination of example and its expected output
 	struct OpcodeExample
 	{
-		OpcodeExample(std::string e, std::string o,
-			std::string r = std::string(), std::string c = std::string())
-			: example(std::move(e)), output(std::move(o)),
-			regexMatch(std::move(r)), cleanup(std::move(c))
+		OpcodeExample(std::string_view e, std::string_view o,
+			std::string_view r = std::string_view(), std::string_view c = std::string_view())
+			: example(e), output(o),
+			regexMatch(r), cleanup(c)
 		{}
 
 		//the code example
-		std::string example;
+		std::string_view example;
 		//example output
-		std::string output;
+		std::string_view output;
 
 		//if regexMatch is anything other than the empty string,
 		//it will verify the example's output based on the regexMatch
 		//if regexMatch is empty string, then it will compare example's output
 		//to output except for amount of white space
-		std::string regexMatch;
+		std::string_view regexMatch;
 
 		//if there is code in cleanup, it will run that after example has been run
 		//and verified
-		std::string cleanup;
+		std::string_view cleanup;
 	};
 
 	//arrangements of ordered parameters
@@ -119,9 +119,9 @@ public:
 		NEW, PARTIAL, CONDITIONAL, EXISTING, NULL_VALUE
 	};
 
-	std::string parameters;
-	std::string returns;
-	std::string description;
+	std::string_view parameters;
+	std::string_view returns;
+	std::string_view description;
 	std::vector<OpcodeExample> examples;
 	OrderedChildNodeType orderedChildNodeType = OrderedChildNodeType::POSITION;
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;

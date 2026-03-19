@@ -6000,52 +6000,128 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_EXPLODE)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([string str] [number stride])";
+		d.parameters = R"(string str [number stride])";
 		d.returns = R"(list of string)";
-		d.description = R"(Explodes string str into the pieces that make it up.  If stride is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If stride is specified, then it breaks it into chunks of that many bytes.  For example, a stride of 1 would break it into bytes, whereas a stride of 4 would break it into 32-bit chunks.)";
+		d.description = R"(Explodes `str` into the pieces that make it up.  If `stride` is zero or unspecified, then it explodes `str` by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
 		d.examples = MakeExamples({
-			{R"((print (explode "test")))", R"()"}, {R"((print (explode "test" 2)))", R"()"}
+			{R"&((explode "abcdefghi"))&", R"([
+	"a"
+	"b"
+	"c"
+	"d"
+	"e"
+	"f"
+	"g"
+	"h"
+	"i"
+])"},
+			{R"&((explode "abcdefghi" 1))&", R"([
+	"a"
+	"b"
+	"c"
+	"d"
+	"e"
+	"f"
+	"g"
+	"h"
+	"i"
+])"},
+			{R"&((explode "abcdefghi" 2))&", R"(["ab" "cd" "ef" "gh" "i"])"},
+			{R"&((explode "abcdefghi" 3))&", R"(["abc" "def" "ghi"])"},
+			{R"&((explode "abcdefghi" 4))&", R"(["abcd" "efgh" "i"])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SPLIT)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([string str] [string split_string] [number max_split_count] [number stride])";
+		d.parameters = R"(string str [string split_string] [number max_split_count] [number stride])";
 		d.returns = R"(list of string)";
-		d.description = R"(Splits the string str into a list of strings based on the split_string, which is handled as a regular expression.  Any data matching split_string will not be included in any of the resulting strings.  If max_split_count is provided and greater than zero, it will only split up to that many times.  If stride is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If stride is specified and a value other than zero, then it does not use split_string as a regular expression but rather a string, and it breaks the result into chunks of that many bytes.  For example, a stride of 1 would break it into bytes, whereas a stride of 4 would break it into 32-bit chunks.)";
+		d.description = R"(Splits `str` into a list of strings based on `split_string`, which is handled as a regular expression.  Any data matching `split_string` will not be included in any of the resulting strings.  If `max_split_count` is provided and greater than zero, it will only split up to that many times.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified and a value other than zero, then it does not use `split_string` as a regular expression but rather a string, and it breaks the result into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
 		d.examples = MakeExamples({
-			{R"((print (split "hello world" " ")))", R"()"}
+			{R"&((split "hello world"))&", R"(["hello world"])"},
+			{R"&((split "hello world" " "))&", R"(["hello" "world"])"},
+			{R"&((split "hello\r\nworld\r\n!" "\r\n"))&", R"(["hello" "world" "!"])"},
+			{R"&((split "hello world !" "\\s" 1))&", R"(["hello" "world !"])"},
+			{R"&((split "hello to the world" "to" (null) 2))&", R"(["hello " " the world"])"},
+			{R"&((split "abcdefgij"))&", R"(["abcdefgij"])"},
+			{R"&((split "abc de fghij" " "))&", R"(["abc" "de" "fghij"])"},
+			{R"&((split "abc\r\nde\r\nfghij" "\r\n"))&", R"(["abc" "de" "fghij"])"},
+			{R"&((split "abc de fghij" " " 1))&", R"(["abc" "de fghij"])"},
+			{R"&((split "abc de fghij" " de " (null) 4))&", R"(["abc de fghij"])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SUBSTR)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([string str] [number|string location] [number|string param] [string replacement] [number stride])";
+		d.parameters = R"(string str [number|string location] [number|string param] [string replacement] [number stride])";
 		d.returns = R"(string | list of string | list of list of string)";
-		d.description = R"(Finds a substring of string str.  If location is a number, then evaluates to a new string representing the substring starting at offset, but if location is a string, then it will treat location as a regular expression.  If param is specified, if location is a number it will go until that length beyond the offset, and if location is a regular expression param will represent one of the following: if null or "first", then it will return the first match of the regular expression; if param is a number or the string "all", then substr will evaluate to a list of up to param matches (which may be infinite yielding the same result as "all").  If param is a negative number or the string "submatches", then it will return a list of list of strings, for each match up to the count of the negative number or all matches if "submatches", each inner list will represent the full regular expression match followed by each submatch as captured by parenthesis in the regular expression, ordered from an outer to inner, left-to-right manner.  If location is a number and offset or length are negative, then it will measure from the end of the string rather than the beginning.  If replacement is specified and not null, it will return the original string rather than the substring, but the substring will be replaced by replacement regardless of what location is; and if replacement is specified, then it will override some of the logic for the param type and always return just a string and not a list.  If stride is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If stride is specified, then it breaks it into chunks of that many bytes.  For example, a stride of 1 would break it into bytes, whereas a stride of 4 would break it into 32-bit chunks.)";
+		d.description = R"(Finds a substring `str`.  If `location` is a number, then evaluates to a new string representing the substring starting at the offset specified by `location`.  If `location` is a string, then it will treat `location` as a regular expression.  If `param` is specified, then it may change the interpretation of `location`.  If `param` is specified and `location` is a number it will go until that length beyond the offset specified by `location`.  If `param` is specified and `location` is a regular expression, `param` will represent one of the following: if null or "first", then it will return the first match of the regular expression; or if `param` is a number or the string "all", then substr will evaluate to a list of up to param matches (which may be infinite yielding the same result as "all").  If `param` is a negative number or the string "submatches", then it will return a list of list of strings, for each match up to the count of the negative number or all matches.  If `param` is "submatches", each inner list will represent the full regular expression match followed by each submatch as captured by parenthesis in the regular expression, ordered from an outer to inner, left-to-right manner.  If `location` is a negative number, then it will measure from the end of the string rather than the beginning.  If `replacement` is specified and not null, it will return the original string rather than the substring, but the substring will be replaced by replacement regardless of what `location` is.  And if replacement is specified, then it will override some of the logic for the `param` type and always return just a string and not a list.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
 		d.examples = MakeExamples({
-			{R"((print (substr "hello world" 5)))", R"()"}
+			{R"&((substr "hello world"))&", R"("hello world")"},
+			{R"&((substr "hello world" 1))&", R"("ello world")"},
+			{R"&((substr "hello world" 1 8))&", R"("ello wo")"},
+			{R"&((substr "hello world" 1 100))&", R"("ello world")"},
+			{R"&((substr "hello world" 1 -1))&", R"("ello worl")"},
+			{R"&((substr "hello world" -4 -1))&", R"("orl")"},
+			{R"&((substr "hello world" -4 -1 (null) 1))&", R"("orl")"},
+			{R"&((substr "hello world" 1 3 "x"))&", R"("hxlo world")"},
+			{R"&((substr "hello world" "(e|o)"))&", R"("e")"},
+			{R"&((substr "hello world" "[h|w](e|o)"))&", R"("he")"},
+			{R"&((substr "hello world" "[h|w](e|o)" 1))&", R"(["he"])"},
+			{R"&((substr "hello world" "[h|w](e|o)" "all"))&", R"(["he" "wo"])"},
+			{R"&((substr "hello world" "(([h|w])(e|o))" "all"))&", R"(["he" "wo"])"},
+			{R"&((substr "hello world" "[h|w](e|o)" -1))&", R"([
+	["he" "e"]
+])"},
+			{R"&((substr "hello world" "[h|w](e|o)" "submatches"))&", R"([
+	["he" "e"]
+	["wo" "o"]
+])"},
+			{R"&((substr "hello world" "(([h|w])(e|o))" "submatches"))&", R"([
+	["he" "he" "h" "e"]
+	["wo" "wo" "w" "o"]
+])"},
+			{R"&((substr "hello world" "(?:([h|w])(?:e|o))" "submatches"))&", R"([
+	["he" "h"]
+	["wo" "w"]
+])"},
+			{R"&(;invalid syntax test
+(substr "hello world" "(?([h|w])(?:e|o))" "submatches"))&", R"([])"},
+			{R"&((substr "hello world" "(e|o)" (null) "[$&]"))&", R"("h[e]ll[o] w[o]rld")"},
+			{R"&((substr "hello world" "(e|o)" 2 "[$&]"))&", R"("h[e]ll[o] world")"},
+			{R"&((substr "abcdefgijk"))&", R"("abcdefgijk")"},
+			{R"&((substr "abcdefgijk" 1))&", R"("bcdefgijk")"},
+			{R"&((substr "abcdefgijk" 1 8))&", R"("bcdefgi")"},
+			{R"&((substr "abcdefgijk" 1 100))&", R"("bcdefgijk")"},
+			{R"&((substr "abcdefgijk" 1 -1))&", R"("bcdefgij")"},
+			{R"&((substr "abcdefgijk" -4 -1))&", R"("gij")"},
+			{R"&((substr "abcdefgijk" -4 -1 (null) 1))&", R"("gij")"},
+			{R"&((substr "abcdefgijk" 1 3 "x"))&", R"("axdefgijk")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CONCAT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([string str1] [string str2] ... [string strN])";
 		d.returns = R"(string)";
-		d.description = R"(Concatenates all strings and evaluates to the single string that is the result.)";
+		d.description = R"(Concatenates all strings and evaluates to the single resulting string.)";
 		d.examples = MakeExamples({
-			{R"((print (concat "hello" " " "world")))", R"()"}
+			{R"&((concat "hello" " " "world"))&", R"("hello world")"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_CRYPTO_SIGN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string message string secret_key)";

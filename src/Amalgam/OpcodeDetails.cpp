@@ -3563,9 +3563,54 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"([list|assoc|* collection1] [list|assoc|* collection2] ... [list|assoc|* collectionN])";
 		d.returns = R"(list|assoc)";
-		d.description = R"(Evaluates to a new list or assoc which merges all lists (collection1 through collectionN) based on parameter order. If any assoc is passed in, then returns an assoc (lists will be automatically converted to an assoc with the indices as keys and the list elements as values). If a non-list and non-assoc is specified, then it just adds that one element to the list)";
+		d.description = R"(Evaluates to a new list or assoc which merges all lists, `collection1` through `collectionN`, based on parameter order. If any assoc is passed in, then returns an assoc (lists will be automatically converted to an assoc with the indices as keys and the list elements as values). If a non-list and non-assoc is specified, then it just adds that one element to the list)";
 		d.examples = MakeExamples({
-			{R"((print (append (list 1 2 3) (list 4 5 6) (list 7 8 9))))", R"()"}, {R"((print (append (list 1 2 3) (assoc "a" 4 "b" 5 "c" 6) (list 7 8 9) (assoc d 10 e 11))))", R"()"}, {R"((print (append (list 4 9.2 "this") "end")))", R"()"}, {R"((print (append (assoc 0 4 1 9.2 2 "this") "end")))", R"()"}
+			{R"&((append
+	[1 2 3]
+	[4 5 6]
+	[7 8 9]
+))&", R"([
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+	8
+	9
+])"},
+			{R"&((append
+	[1 2 3]
+	(associate "a" 4 "b" 5 "c" 6)
+	[7 8 9]
+	(associate "d" 10 "e" 11)
+))&", R"({
+	0 1
+	1 2
+	2 3
+	3 7
+	4 8
+	5 9
+	a 4
+	b 5
+	c 6
+	d 10
+	e 11
+})"},
+			{R"&((append
+	[4 9.2 "this"]
+	"end"
+))&", R"([4 9.2 "this" "end"])"},
+			{R"&((append
+	(associate 0 4 1 9.2 2 "this")
+	"end"
+))&", R"({
+	0 4
+	1 9.2
+	2 "this"
+	3 "end"
+})"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;

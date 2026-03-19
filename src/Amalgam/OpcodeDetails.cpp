@@ -5353,28 +5353,44 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_NULL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"()";
-		d.returns = R"(immediate null)";
-		d.description = R"(Evaluates to the immediate null value.)";
+		d.returns = R"(null)";
+		d.description = R"(Evaluates to the immediate null value, regardless of any parameters.)";
 		d.examples = MakeExamples({
-			{R"((print (null)))", R"()"}, {R"((print (lambda (null (+ 3 5) 7)) ))", R"()"}, {R"((print (lambda (null))))", R"()"}
+			{R"&((null))&", R"((null))"},
+			{R"&((lambda
+	(null
+		(+ 3 5)
+		7
+	)
+))&", R"((null
+	(+ 3 5)
+	7
+))"},
+			{R"&((lambda
+	
+	#annotation
+	(null)
+))&", R"(#annotation
+(null))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_LIST)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
-		d.returns = R"(list of any)";
+		d.returns = R"(list)";
 		d.allowsConcurrency = true;
-		d.description = R"(Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.  If []'s are used instead of parenthesis, the keyword list may be omitted.  [] are considered identical to (list).)";
+		d.description = R"(Evaluates to a list with the parameters as elements.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the list itself, the current index, and the current value.  If `[]`'s are used instead of parenthesis, the keyword `list` may be omitted.  `[]` are considered identical to `(list)`.)";
 		d.examples = MakeExamples({
-			{R"((print (list "a" 1 "b")))", R"()"}, {R"((print [1 2 3]))", R"()"}
+			{R"&(["a" 1 "b"])&", R"(["a" 1 "b"])"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.newTargetScope = true;
@@ -5382,14 +5398,46 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_UNORDERED_LIST)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
-		d.returns = R"(list of any)";
+		d.returns = R"(unordered_list)";
 		d.allowsConcurrency = true;
-		d.description = R"(Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.  It operates like a list, except any operations that would normally consider a list's order, such as union, intersect, and mix, will consider the values unordered.)";
+		d.description = R"(Evaluates to the list specified by parameters as elements.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the unordered list itself, the current index, and the current value.  It operates like a list, except any operations that would normally consider a list's order.  For example, union, intersect, and mix, will consider the values unordered.)";
 		d.examples = MakeExamples({
-			{R"((print (list "a" 1 "b")))", R"()"}, {R"((print [1 2 3]))", R"()"}
+			{R"&((unordered_list 4 4 5))&", R"((unordered_list 4 4 5))"},
+			{R"&((unordered_list
+	(unordered_list 4 4 5)
+	(unordered_list 4 5 6)
+))&", R"((unordered_list
+	(unordered_list 4 4 5)
+	(unordered_list 4 5 6)
+))"},
+			{R"&((=
+	(unordered_list 4 4 5)
+	(unordered_list 4 4 5)
+))&", R"(.true)"},
+			{R"&((=
+	(unordered_list 4 4 5)
+	(unordered_list 4 4 6)
+))&", R"(.false)"},
+			{R"&((=
+	(unordered_list 4 4 5)
+	(unordered_list 4 4 5)
+))&", R"(.true)"},
+			{R"&((=
+	(set_type
+		(range 0 100)
+		"unordered_list"
+	)
+	(set_type
+		(reverse
+			(range 0 100)
+		)
+		"unordered_list"
+	)
+))&", R"(.true)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.newTargetScope = true;
@@ -5397,14 +5445,20 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ASSOC)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([bstring index1] [* value1] [bstring index1] [* value2] ...)";
 		d.returns = R"(assoc)";
 		d.allowsConcurrency = true;
-		d.description = R"(Evaluates to the associative list, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (current_index), and (current_value) access the assoc, the current index, and the current value.  If any of the bstrings do not have reserved characters or spaces, then quotes are optional; if spaces or reserved characters are present, then quotes are required.  If {}'s are used instead of parenthesis, the keyword assoc may be omitted.  {} are considered identical to (assoc))";
+		d.description = R"(Evaluates to an associative list, where each pair of parameters (e.g., `index1` and `value1`) comprises a index-value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.  If any of the bareword strings (bstrings) do not have reserved characters or whitespace, then quotes are optional; if whitespace or reserved characters are present, then quotes are required.  If `{}`'s are used instead of parenthesis, the keyword assoc may be omitted.  `{}` are considered identical to `(assoc)`)";
 		d.examples = MakeExamples({
-			{R"((print (assoc b 2 c 3)))", R"()"}, {R"((print (assoc a 1 "b\ttab" 2 c 3 4 "d")))", R"()"}, {R"((print {a 1 b 2}))", R"()"}
+			{R"&((unparse
+	{b 2 c 3}
+))&", R"("{b 2 c 3}")"},
+			{R"&((unparse
+	{(null) 0 (+ 1 2) 3}
+))&", R"("{(null) 0 (+ 1 2) 3}")"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.newTargetScope = true;
@@ -5412,53 +5466,72 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_BOOL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"()";
 		d.returns = R"(bool)";
 		d.description = R"(A 64-bit floating point value)";
 		d.examples = MakeExamples({
-			{R"(4)", R"()"}, {R"(2.22228)", R"()"}
+			{R"&(.true)&", R"(.true)"},
+			{R"&(.false)&", R"(.false)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_NUMBER)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"()";
 		d.returns = R"(number)";
 		d.description = R"(A 64-bit floating point value)";
 		d.examples = MakeExamples({
-			{R"(4)", R"()"}, {R"(2.22228)", R"()"}
+			{R"&(1)&", R"(1)"},
+			{R"&(1.5)&", R"(1.5)"},
+			{R"&(6.02214076e+23)&", R"(6.02214076e+23)"},
+			{R"&(.infinity)&", R"(.infinity)"},
+			{R"&((-
+	(* 3 .infinity)
+))&", R"(-.infinity)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_STRING)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"()";
-		d.returns = R"(number)";
-		d.description = R"(A string.)";
+		d.returns = R"(string)";
+		d.description = R"(A string.  Many opcodes assume UTF-8 formatted strings, but many, such as `format`, can work with any bytes.  Any non double-quote character is considered valid.)";
 		d.examples = MakeExamples({
-			{R"("hello")", R"()"}
+			{R"&("hello")&", R"("hello")"},
+			{R"&("\tHello\n\"Hello\"")&", R"("\tHello\n\"Hello\"")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SYMBOL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"()";
-		d.returns = R"(string)";
-		d.description = R"(A string representing an internal symbol (a variable).)";
+		d.returns = R"(*)";
+		d.description = R"(A string representing an internal symbol, a variable.)";
 		d.examples = MakeExamples({
-			{R"(my_variable)", R"()"}
+			{R"&((let
+	{foo 1}
+	foo
+))&", R"(1)"},
+			{R"&(not_defined)&", R"((null))"},
+			{R"&((lambda foo))&", R"(foo)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		return d;
 	}();
+
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_GET_TYPE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(* node)";

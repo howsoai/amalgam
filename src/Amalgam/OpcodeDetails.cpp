@@ -7715,7 +7715,7 @@ R"&(^\s*\{\s*
 
 	arr[static_cast<std::size_t>(ENT_MUTATE_ENTITY)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(id_path source_entity [number mutaton_rate] [id_path dest_entity] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";
+		d.parameters = R"(id_path source_entity [number mutation_rate] [id_path dest_entity] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";
 		d.returns = R"(id_path)";
 		d.description = R"(Creates a mutated version of the entity specified by `source_entity` like mutate. Returns the id path of a new entity created contained by the entity that ran it.  The value specified by `mutation_rate`, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses `dest_entity` as the optional destination.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "delete", "insert", "swap_elements", "deep_copy_elements", and "delete_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.)";
 		d.examples = MakeExamples({
@@ -7808,25 +7808,91 @@ R"&(^\s*\{\s*
 		n 14
 		o (associate (-) 1 (*) (+))
 	}
-])", ".*", R"((destroy_entities "MutatedEntity" "MutatedEntity1" "MutatedEntity2" "MutatedEntity3" ))"}
+])", ".*", R"((destroy_entities "MutateEntity" "MutatedEntity1" "MutatedEntity2" "MutatedEntity3" ))"}
+			});
+		d.requiresEntity = true;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		return d;
+	}();
+
+	arr[static_cast<std::size_t>(ENT_COMMONALITY_ENTITIES)] = []() {
+		OpcodeDetails d;
+		d.parameters = R"(id_path entity1 id_path entity2 [assoc params])";
+		d.returns = R"(number)";
+		d.description = R"(Evaluates to the total count of all of the nodes referenced within `entity1` and `entity2` that are equivalent, including all contained entities.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
+		d.examples = MakeExamples({
+			{R"&((seq
+	(create_entities
+		"MergeEntity1"
+		{a 3 b 4 c "c1"}
+	)
+	(create_entities
+		["MergeEntity1" "MergeEntityChild1"]
+		{x 3 y 4}
+	)
+	(create_entities
+		["MergeEntity1" "MergeEntityChild2"]
+		{p 3 q 4}
+	)
+	(create_entities
+		["MergeEntity1"]
+		{E 3 F 4}
+	)
+	(create_entities
+		["MergeEntity1"]
+		{
+			e 3
+			f 4
+			g 5
+			h 6
+		}
+	)
+	(create_entities
+		"MergeEntity2"
+		{b 4 c "c2"}
+	)
+	(create_entities
+		["MergeEntity2" "MergeEntityChild1"]
+		{x 3 y 4 z 5}
+	)
+	(create_entities
+		["MergeEntity2" "MergeEntityChild2"]
+		{
+			p 3
+			q 4
+			u 5
+			v 6
+			w 7
+		}
+	)
+	(create_entities
+		["MergeEntity2"]
+		{
+			E 3
+			F 4
+			G 5
+			H 6
+		}
+	)
+	(create_entities
+		["MergeEntity2"]
+		{e 3 f 4}
+	)
+	[
+		(commonality_entities "MergeEntity1" "MergeEntity2")
+		(commonality_entities
+			"MergeEntity1"
+			"MergeEntity2"
+			{nominal_strings .false types_must_match .false}
+		)
+	]
+))&", R"([64 64.74178574543642])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" )"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
 	//TODO 25157: finish from here on down
-	arr[static_cast<std::size_t>(ENT_COMMONALITY_ENTITIES)] = []() {
-		OpcodeDetails d;
-		d.parameters = R"(id_path entity1 id_path entity2 [assoc params])";
-		d.returns = R"(number)";
-		d.description = R"(Evaluates to the total count of all of the nodes referenced within entity1 and entity2 that are equivalent, including all contained entities.  The assoc params can contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
-		d.examples = MakeExamples({
-			{R"((create_entities "e1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities "e2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((print (commonality_entities "e1" "e2")))", R"()"}
-			});
-		d.requiresEntity = true;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		return d;
-	}();
 	arr[static_cast<std::size_t>(ENT_EDIT_DISTANCE_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 id_path entity2 [assoc params])";

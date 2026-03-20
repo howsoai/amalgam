@@ -8443,6 +8443,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_SAMPLE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number num_to_select [string weight_label_name] [number random_seed])";
@@ -8456,6 +8457,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_IN_ENTITY_LIST)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list list_of_entity_ids)";
@@ -8469,6 +8471,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_IN_ENTITY_LIST)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list list_of_entity_ids)";
@@ -8482,6 +8485,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_EXISTS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name)";
@@ -8495,6 +8499,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_EXISTS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name)";
@@ -8508,6 +8513,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_EQUALS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * node_value)";
@@ -8521,6 +8527,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_EQUALS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * node_value)";
@@ -8534,6 +8541,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_BETWEEN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * lower_bound * upper_bound)";
@@ -8547,6 +8555,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_BETWEEN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * lower_bound * upper_bound)";
@@ -8560,6 +8569,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_AMONG)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name list values)";
@@ -8573,6 +8583,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_AMONG)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name list values)";
@@ -8586,6 +8597,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number entities_returned] [bool numeric])";
@@ -8599,6 +8611,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_MIN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number entities_returned] [bool numeric])";
@@ -8612,6 +8625,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_SUM)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [string weight_label_name])";
@@ -8625,6 +8639,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_MODE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [string weight_label_name])";
@@ -8638,6 +8653,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_QUANTILE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number q] [string weight_label_name])";
@@ -8651,6 +8667,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_GENERALIZED_MEAN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number p] [string weight_label_name] [number center] [bool calculate_moment] [bool absolute_value])";
@@ -8664,6 +8681,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_MIN_DIFFERENCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number cyclic_range] [bool include_zero_difference])";
@@ -8677,6 +8695,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX_DIFFERENCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number cyclic_range])";
@@ -8690,6 +8709,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_VALUE_MASSES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [string weight_label_name])";
@@ -8703,6 +8723,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_LESS_OR_EQUAL_TO)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * max_value)";
@@ -8716,6 +8737,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_GREATER_OR_EQUAL_TO)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * min_value)";
@@ -8729,6 +8751,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number max_distance list axis_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
@@ -8742,6 +8765,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number entities_returned list axis_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
@@ -8757,6 +8781,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_DISTANCE_CONTRIBUTIONS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number entities_returned list feature_labels list axis_value_lists [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
@@ -8773,6 +8798,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number entities_returned list feature_labels list axis_value_lists [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
@@ -8789,6 +8815,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CONVICTIONS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number entities_returned list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list])";
@@ -8805,6 +8832,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number entities_returned list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal])";
@@ -8821,6 +8849,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number entities_returned list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
@@ -8837,6 +8866,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_KL_DIVERGENCES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number entities_returned list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list])";
@@ -8853,6 +8883,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number entities_returned list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
@@ -8869,6 +8900,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CONTAINS_LABEL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity] string label_name)";
@@ -8881,6 +8913,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ASSIGN_TO_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity_1] assoc label_value_pairs_1 [id_path entity2] [assoc label_value_pairs_2] [...])";
@@ -8895,6 +8928,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ACCUM_TO_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity_1] assoc label_value_pairs_1 [id_path entity2] [assoc label_value_pairs_2] [...])";
@@ -8909,6 +8943,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_REMOVE_FROM_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity_1] string|list label_names_1 [id_path entity2] [list string|label_names_2] [...])";
@@ -8923,6 +8958,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_RETRIEVE_FROM_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity] [string|list|assoc label_names])";
@@ -8936,6 +8972,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CALL_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings])";
@@ -8950,6 +8987,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CALL_ENTITY_GET_CHANGES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings])";
@@ -8964,6 +9002,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CALL_ON_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity * code [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings])";
@@ -8978,6 +9017,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CALL_CONTAINER)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string parent_label_name [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [bool return_warnings])";

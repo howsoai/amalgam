@@ -7712,19 +7712,109 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_MUTATE_ENTITY)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(id_path entity1 [number mutaton_rate] [id_path entity2] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";
+		d.parameters = R"(id_path source_entity [number mutaton_rate] [id_path dest_entity] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";
 		d.returns = R"(id_path)";
-		d.description = R"(Creates a mutated version of the entity specified by entity1 like mutate. Returns the id_path of a new entity created contained by the entity that ran it.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses entity2 as the optional destination via an internal call to create_contained_entity. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, and delete_elements.  If preserve_type_depth is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.)";
+		d.description = R"(Creates a mutated version of the entity specified by `source_entity` like mutate. Returns the id path of a new entity created contained by the entity that ran it.  The value specified by `mutation_rate`, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses `dest_entity` as the optional destination.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "delete", "insert", "swap_elements", "deep_copy_elements", and "delete_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.)";
 		d.examples = MakeExamples({
-			{R"((create_entities)", R"()"}, {R"("MutateEntity")", R"()"}, {R"((lambda (list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 (assoc "a" 1 "b" 2))))", R"()"}, {R"())", R"()"}, {R"((mutate_entity "MutateEntity" 0.4 "MutatedEntity"))", R"()"}, {R"((print (retrieve_entity_root "MutatedEntity")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"MutateEntity"
+		(lambda
+			{
+				a 1
+				b 2
+				c 3
+				d 4
+				e 5
+				f 6
+				g 7
+				h 8
+				i 9
+				j 10
+				k 11
+				l 12
+				m 13
+				n 14
+				o (associate "a" 1 "b" 2)
+			}
+		)
+	)
+	(mutate_entity "MutateEntity" 0.4 "MutatedEntity1")
+	(mutate_entity "MutateEntity" 0.5 "MutatedEntity2")
+	(mutate_entity
+		"MutateEntity"
+		0.5
+		"MutatedEntity3"
+		(associate "+" 0.5 "-" 0.3 "*" 0.2)
+		(associate "change_type" 0.08 "delete" 0.02 "insert" 0.9)
+	)
+	[
+		(retrieve_entity_root "MutatedEntity1")
+		(retrieve_entity_root "MutatedEntity2")
+		(retrieve_entity_root "MutatedEntity3")
+	]
+))&", R"([
+	{
+		a 1
+		b 2
+		c 3
+		d (set_type)
+		e (if)
+		f (>=)
+		g (<=)
+		h 8
+		i 9
+		j 10
+		k 11
+		l 12
+		m 13
+		n -20.325081516830192
+		o "b"
+	}
+	{
+		a 1
+		b (map)
+		c (min)
+		d 4
+		e 5
+		f (apply)
+		g 7
+		h (get_type_string)
+		i (round)
+		j 10
+		k (lambda)
+		l 12
+		m (declare)
+		n 14
+		o (map)
+	}
+	{
+		a (*)
+		b (*)
+		c 3
+		d 4
+		e (+)
+		f (*)
+		g (-)
+		h 8
+		i 9
+		j 10
+		k 11
+		l 12
+		m (+)
+		n 14
+		o (associate (-) 1 (*) (+))
+	}
+])", ".*", R"((destroy_entities "MutatedEntity" "MutatedEntity1" "MutatedEntity2" "MutatedEntity3" ))"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_COMMONALITY_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 id_path entity2 [assoc params])";

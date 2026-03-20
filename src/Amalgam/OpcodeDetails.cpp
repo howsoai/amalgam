@@ -8139,12 +8139,12 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_DIFFERENCE_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 id_path entity2)";
 		d.returns = R"(any)";
-		d.description = R"(Finds the difference between the entities specified by entity1 and entity2 and generates code that, if evaluated passing the entity id_path as its parameter "_", would create a new entity into the id_path specified by its parameter "new_entity" (null if unspecified), which would contain the applied difference between the two entities and returns the newly created entity id_path.  Useful for finding the smallest set of what needs to be changed to apply it to a new and different entity.)";
+		d.description = R"(Finds the difference between the entities specified by `entity1` and `entity2` and generates code that, if evaluated passing the entity id_path as its parameter "_", would create a new entity into the id path specified by its parameter "new_entity" (null if unspecified), which would contain the applied difference between the two entities and returns the newly created entity id path.  Useful for finding a small difference of what needs to be changed to apply it to new (and possibly slightly different) entity.)";
 		d.examples = MakeExamples({
 			{R"((create_entities "DiffEntity1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "DiffEntity1" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 6)) ))", R"()"}, {R"((create_entities (list "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffEntity1" "OnlyIn1") (lambda (assoc "m" 4)) ))", R"()"}, {R"((create_entities (list "DiffEntity1") (lambda (assoc "E" 3 "F" 4)) ))", R"()"}, {R"((create_entities (list "DiffEntity1") (lambda (assoc "e" 3 "f" 4 "g" 5 "h" 6)) ))", R"()"}, {R"((create_entities "DiffEntity2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "DiffEntity2" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 5)) ))", R"()"}, {R"((create_entities (list "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffEntity2" "OnlyIn2") (lambda (assoc "o" 6)) ))", R"()"}, {R"((create_entities (list "DiffEntity2") (lambda (assoc "E" 3 "F" 4 "G" 5 "H" 6)) ))", R"()"}, {R"((create_entities (list "DiffEntity2") (lambda (assoc "e" 3 "f" 4)) ))", R"()"}, {R"((print (contained_entities "DiffEntity2")))", R"()"}, {R"((print (difference_entities "DiffEntity1" "DiffEntity2")))", R"()"}, {R"((let (assoc new_entity)", R"()"}, {R"((call (difference_entities "DiffEntity1" "DiffEntity2") (assoc _ "DiffEntity1"))))", R"()"}, {R"((print new_entity))", R"()"}, {R"((print (retrieve_entity_root new_entity)))", R"()"}, {R"((print (retrieve_entity_root (list new_entity "DiffEntityChild1"))))", R"()"}, {R"((print (contained_entities new_entity)))", R"()"}, {R"())", R"()"}, {R"((create_entities "DiffContainer" null))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1") (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1" "OnlyIn1") (lambda (assoc "m" 4)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1") (lambda (assoc "E" 3 "F" 4)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1") (lambda (assoc "e" 3 "f" 4 "g" 5 "h" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2") (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2" "OnlyIn2") (lambda (assoc "o" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2") (lambda (assoc "E" 3 "F" 4 "G" 5 "H" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2") (lambda (assoc "e" 3 "f" 4)) ))", R"()"}, {R"((print (difference_entities (list "DiffContainer" "DiffEntity1") (list "DiffContainer" "DiffEntity2") )))", R"()"}, {R"((let (assoc new_entity)", R"()"}, {R"((call (difference_entities (list "DiffContainer" "DiffEntity1") (list "DiffContainer" "DiffEntity2") ))", R"()"}, {R"((assoc _ (list "DiffContainer" "DiffEntity1") ))))", R"()"}, {R"((print new_entity))", R"()"}, {R"((print (get_entity_code new_entity)))", R"()"}, {R"((print (get_entity_code (list new_entity "DiffEntityChild1"))))", R"()"}, {R"((print (contained_entities new_entity)))", R"()"}, {R"())", R"()"}
 			});
@@ -8152,11 +8152,12 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_MIX_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 id_path entity2 [number keep_chance_entity1] [number keep_chance_entity2] [assoc params] [id_path entity3])";
 		d.returns = R"(id_path)";
-		d.description = R"(Performs a union operation on the entities represented by entity1 and entity2, but randomly ignores nodes from one or the other tree if not equal.  If only keep_chance_entity1 is specified, keep_chance_entity2 defaults to 1-keep_chance_entity1.  keep_chance_entity1 specifies the probability that a node from the entity represented by entity1 will be kept, and keep_chance_entity2 the probability that a node from the entity represented by entity2 will be kept.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  similar_mix_chance is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on keep_chance_node1 and keep_chance_node2, and defaults to 0.0.  If similar_mix_chance is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.  unnamed_entity_mix_chance represents the probability that an unnamed entity pair will be mixed versus preserved as independent chunks, where 0.2 would yield 20% of the entities mixed. Returns the id_path of a new entity created contained by the entity that ran it.  Uses entity3 as the optional destination via an internal call to create_contained_entity.   Any contained entities will be mixed either based on matching name or maximal similarity for nameless entities.)";
+		d.description = R"(Performs a union operation on the entities represented by `entity1` and `entity2`, but randomly ignores nodes from one or the other tree if not equal.  If only `keep_chance_entity1` is specified, `keep_chance_entity2` defaults to 1 - `keep_chance_entity1`.  `keep_chance_entity1` specifies the probability that a node from the entity represented by `entity1` will be kept, and `keep_chance_entity2` the probability that a node from the entity represented by `entity2` will be kept.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  `similar_mix_chance` is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on `keep_chance_node1` and `keep_chance_node2`, and defaults to 0.0.  If `similar_mix_chance` is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.  `unnamed_entity_mix_chance` represents the probability that an unnamed entity pair will be mixed versus preserved as independent chunks, where 0.2 would yield 20% of the entities mixed. Returns the id path of a new entity created contained by the entity that ran it.  Uses `entity3` as the optional destination entity.   Any contained entities will be mixed either based on matching name or maximal similarity for nameless entities.)";
 		d.examples = MakeExamples({
 			{R"((create_entities "e1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities "e2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((mix_entities "e1" "e2" 0.5 0.5 "e3"))", R"()"}
 			});
@@ -8165,11 +8166,12 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_GET_ENTITY_ANNOTATIONS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity] [string label] [bool deep_annotations])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to the corresponding annotations based on the parameters.  If the id_path is specified or null is specified as the id_path, then it will use the current entity.  If the label is null or empty string, it will retrieve annotations for the entity root, otherwise if it is a valid label it will attempt to retrieve the annotations for that label, null if the label doesn't exist.  If deep_annotations is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the comment of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_annotations is true, then it will return an assoc of label to comment for each label in the entity.)";
+		d.description = R"(Evaluates to the corresponding annotations for `entity`.  If `entity` is null then it will use the current entity.  If `label` is null or empty string, it will retrieve annotations for the entity root, otherwise if it is a valid `label` it will attempt to retrieve the annotations for that label, null if the label doesn't exist.  If `deep_annotations` is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the annotation of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_annotations is true, then it will return an assoc of label to annotation for each label in the entity.)";
 		d.examples = MakeExamples({
 			{R"((print (get_entity_comments)))", R"()"}, {R"((print (get_entity_comments "label_name" .true))", R"()"}
 			});
@@ -8177,11 +8179,12 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_GET_ENTITY_COMMENTS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity] [string label] [bool deep_comments])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to the corresponding comments based on the parameters.  If the id_path is specified or null is specified as the id_path, then it will use the current entity.  If the label is null or empty string, it will retrieve comments for the entity root, otherwise if it is a valid label it will attempt to retrieve the comments for that label, null if the label doesn't exist.  If deep_comments is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the comment of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_comments is true, then it will return an assoc of label to comment for each label in the entity.)";
+		d.description = R"(Evaluates to the corresponding comments for `entity`.  If `entity` is null then it will use the current entity.  If `label` is null or empty string, it will retrieve comments for the entity root, otherwise if it is a valid `label` it will attempt to retrieve the comments for that label, null if the label doesn't exist.  If `deep_comments` is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the comment of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_comments is true, then it will return an assoc of label to comment for each label in the entity.)";
 		d.examples = MakeExamples({
 			{R"((print (get_entity_comments)))", R"()"}, {R"((print (get_entity_comments "label_name" .true))", R"()"}
 			});
@@ -8189,11 +8192,12 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_RETRIEVE_ENTITY_ROOT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity])";
 		d.returns = R"(any)";
-		d.description = R"(Evaluates to the entity's code, looking up the entity by the id_path.)";
+		d.description = R"(Evaluates to the code contained by `entity`.)";
 		d.examples = MakeExamples({
 			{R"((print (retrieve_entity_root)))", R"()"}
 			});
@@ -8201,11 +8205,12 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_ASSIGN_ENTITY_ROOTS)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([id_path entity_1] * root_1 [id_path entity_2] [* root_2] [...])";
+		d.parameters = R"([id_path entity1] * root1 [id_path entity2] [* root2] [...])";
 		d.returns = R"(bool)";
-		d.description = R"(Sets the code of the entity specified by id_path to node.  If no id_path specified, then uses the current entity, otherwise accesses a contained entity. On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.)";
+		d.description = R"(Sets the code of the `entity1 to `root1`, as well as all subsequent entity-code pairs of parameters.  If `entity1` is not specified or null, then uses the current entity.  On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.)";
 		d.examples = MakeExamples({
 			{R"((print (assign_entity_roots {})))", R"()"}
 			});
@@ -8215,11 +8220,12 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_GET_ENTITY_RAND_SEED)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity])";
 		d.returns = R"(string)";
-		d.description = R"(Evaluates to a string representing the current state of the random number generator for the entity specified by id_path used for seeding the random streams of any calls to the entity.)";
+		d.description = R"(Evaluates to a string representing the current state of the random number generator for `entity` used for seeding the random streams of any calls to the entity.)";
 		d.examples = MakeExamples({
 			{R"((create_entities "RandTest" (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(}))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"}, {R"((print (get_entity_rand_seed "RandTest")))", R"()"}
 			});
@@ -8227,11 +8233,12 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SET_ENTITY_RAND_SEED)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity] * node [bool deep])";
 		d.returns = R"(string)";
-		d.description = R"(Sets the random number seed and state for the random number generator of the specified entity, or the current entity if not specified, to the state specified by node.  If node is already a string in the proper format output by get_entity_rand_seed, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by the entity for new calls.  The parameter deep defaults to false, but if it is true, all contained entities are recursively set with random seeds based on the specified random seed and a hash of their relative id_path path to the entity being set.)";
+		d.description = R"(Sets the random number seed and state for the random number generator of `entity`, or the current entity if null or not specified, to the state specified by `node`.  If `node` is already a string in the proper format output by `(get_entity_rand_seed)`, then it will set the random generator to that current state, picking up where the previous state left off.  If `node` is anything else, it uses the value as a random seed to start the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by `entity` for new calls.  The parameter `deep` defaults to false, but if it is true, all contained entities are recursively set with random seeds based on the specified random seed and a hash of their relative id path to the entity being set.)";
 		d.examples = MakeExamples({
 			{R"((create_entities "RandTest" (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(} ))", R"()"}, {R"((create_entities (list "RandTest" "DeepRand") (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(} ))", R"()"}, {R"((declare (assoc seed (get_entity_rand_seed "RandTest"))))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"}, {R"((set_entity_rand_seed "RandTest" 1234))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"}
 			});
@@ -8241,11 +8248,12 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_GET_ENTITY_PERMISSIONS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity])";
-		d.returns = R"(bool)";
-		d.description = R"(Returns an assoc of the permissions of the specified entity, where each key is the permission and each value is either true or false.  Permission keys consist of std_out_and_std_err, std_in, load, store, environment, alter_performance, and system)";
+		d.returns = R"(assoc)";
+		d.description = R"(Returns an assoc of the permissions of `entity`, the current entity if `entity` is not specified or null, where each key is the permission and each value is either true or false.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.)";
 		d.examples = MakeExamples({
 			{R"((create_entities "RootTest" (lambda (print (system_time)) )))", R"()"}, {R"((print (get_entity_permissions "RootTest")))", R"()"}
 			});
@@ -8253,11 +8261,12 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_SET_ENTITY_PERMISSIONS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity bool|assoc permissions [bool deep])";
 		d.returns = R"(id_path)";
-		d.description = R"(Sets the permissions on the entity specified by id_path.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  Permission keys consist of std_out_and_std_err, std_in, load, store, environment, alter_performance, and system.  The parameter deep defaults to false, but if it is true, all contained entities have their permissions updated.  Returns the id_path of the entity.)";
+		d.description = R"(Sets the permissions on the `entity`.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.  The parameter `deep` defaults to false, but if it is true, all contained entities have their permissions updated.  Returns the id path of `entity`.)";
 		d.examples = MakeExamples({
 			{R"((create_entities "RootTest" (lambda (print (system_time)) )))", R"()"}, {R"((set_entity_permissions "RootTest" .true))", R"()"}, {R"((call_entity "RootTest"))", R"()"}
 			});
@@ -8266,11 +8275,12 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CREATE_ENTITIES)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([id_path entity_1] * node_1 [id_path entity_2] [* node_2] [...])";
+		d.parameters = R"([id_path entity1] * node1 [id_path entity2] [* node2] [...])";
 		d.returns = R"(list of id_path)";
-		d.description = R"(Creates a new entity with code specified by node, returning the list of id_path paths for each of the entities created.  Uses the optional entity location specified by the id_path, ignored if null or invalid.  Evaluates to a list of all of the new entities ids, null in place of each id_path if it was unable to create the id_path.  If the entity does not have permission to create the entities, it will evaluate to null.  If the id_path is omitted, then it will create the new entity in the calling entity.  If id_path specifies an existing entity, then it will create the new entity within that existing entity.  If the last id_path in the string is not an existing entity, then it will attempt to create that entity (returning null if it cannot).  Can only be performed by an entity that contains to the destination specified by id_path.  If the node is of any other type than assoc, it will create an assoc as the top node and place the node under the null key.  Unlike the rest of the entity creation commands, create_entities specifies the optional id_path first to make it easy to read entity definitions.  If more than 2 parameters are specified, create_entities will iterate through all of the pairs of parameters, treating them like the first two as it creates new entities.)";
+		d.description = R"(Creates a new entity for id path `entity1` with code specified by `node1`, repeating this for all entity-node pairs, returning a list of the id paths for each of the entities created.  If the execution does not have permission to create the entities, it will evaluate to null.  If the `entity` is omitted, then it will create an unnamed new entity in the calling entity.  If `entity1` specifies an existing entity, then it will create the new entity within that existing entity.  If the last id path in the string is not an existing entity, then it will attempt to create that entity (returning null if it cannot).  If the node is of any other type than assoc, it will create an assoc as the top node and place the node under the null key.  Unlike the rest of the entity creation commands, create_entities specifies the optional id path first to make it easy to read entity definitions.  If more than 2 parameters are specified, create_entities will iterate through all of the pairs of parameters, treating them like the first two as it creates new entities.)";
 		d.examples = MakeExamples({
 			{R"((print (create_entities "MyLibrary" (lambda { three 3 four 4}) ) ))", R"()"}, {R"((create_entities "EntityWithChildren" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "EntityWithChildren" "Child1") (lambda (assoc "x" 3 "y" 4)) ))", R"()"}, {R"((create_entities (list "EntityWithChildren" "Child2") (lambda (assoc "p" 3 "q" 4)) ))", R"()"}, {R"((print (contained_entities "EntityWithChildren")))", R"()"}
 			});
@@ -8280,11 +8290,12 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CLONE_ENTITIES)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(id_path source_entity_1 [id_path destination_entity_1] [id_path source_entity_2] [id_path destination_entity_2] [...])";
+		d.parameters = R"(id_path source_entity1 [id_path destination_entity1] [id_path source_entity2] [id_path destination_entity2] [...])";
 		d.returns = R"(list of id_path)";
-		d.description = R"(Creates a clone of source_entity_1.  If destination_entity_1 is not specified, then it clones the entity into the current entity.  If destination_entity_1 is specified, then it clones it into the location specified by destination_entity_1; if destination_entity_1 is an existing entity, then it will create it within that entity, if not, it will attempt to create it with the given id_path.  Evaluates to the id_path of the new entity.  Can only be performed by an entity that contains both source_entity_1 and the specified path of destination_entity_1. If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
+		d.description = R"(Creates a clone of `source_entity1`.  If `destination_entity1` is not specified, then it clones the entity into an unnamed entity in the current entity.  If `destination_entity1` is specified, then it clones it into the location specified by `destination_entity1`; if `destination_entity1` is an existing entity, then it will create it as a contained entity within `destination_entity1`, if not, it will attempt to create it with the given id path of `destination_entity1`.  Evaluates to the id path of the new entity.  Can only be performed by an entity that contains both `source_entity1` and the specified path of `destination_entity1`. If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
 		d.examples = MakeExamples({
 			{R"((print (create_entities "MyLibrary" (lambda {three 3 four 4}) ) ))", R"()"}, {R"((print (clone_entities "MyLibrary" "MyNewLibrary")))", R"()"}
 			});
@@ -8293,11 +8304,12 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_MOVE_ENTITIES)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(id_path source_entity_1 [id_path destination_entity_1] [id_path source_entity_2] [id_path destination_entity_2] [...])";
+		d.parameters = R"(id_path source_entity1 [id_path destination_entity1] [id_path source_entity2] [id_path destination_entity2] [...])";
 		d.returns = R"(list of id_path)";
-		d.description = R"(Moves the entity from location specified by source_entity_1 to destination destination_entity_1.  If destination_entity_1 exists, it will move source_entity_1 using source_entity_1's current id_path into destination_entity_1.  If destination_entity_1 does not exist, then it will move source_entity_1 and rename it to the end of the id_path specified in destination_entity_1. Can only be performed by a containing entity relative to both ids.  If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
+		d.description = R"(Moves the entity from location specified by `source_entity1` to destination `destination_entity1`.  If `destination_entity1` exists, it will move `source_entity1` using `source_entity1`'s current id path into `destination_entity1`.  If `destination_entity1` does not exist, then it will move `source_entity1` and rename it to the end of the id path specified by `destination_entity1`. Can only be performed by a containing entity relative to both ids.  If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
 		d.examples = MakeExamples({
 			{R"((print (create_entities "MyLibrary" (lambda {three 3 four 4}) ) ))", R"()"}, {R"((print (move_entities "MyLibrary" "MyLibrary2")))", R"()"}
 			});
@@ -8306,11 +8318,12 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_DESTROY_ENTITIES)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([id_path entity_1] [id_path entity_2] [...])";
+		d.parameters = R"([id_path entity1] [id_path entity2] [...])";
 		d.returns = R"(bool)";
-		d.description = R"(Destroys the entities specified by the ids entity_1, entity_2, etc. Can only be performed by containing entity.  Returns true if all entities were successfully destroyed, false if not due to not existing in the first place or due to code being currently run in it.)";
+		d.description = R"(Destroys the entities specified by the ids `entity1`, `entity2`, etc. Can only be performed by containing entity.  Returns true if all entities were successfully destroyed, false if not.  Generally entities can be destroyed unless they do not exist or if there is code currently being run in it.)";
 		d.examples = MakeExamples({
 			{R"((print (create_entities "MyLibrary" (lambda { three 3 four 4} ) ) ))", R"()"}, {R"((print (contained_entities)))", R"()"}, {R"((destroy_entities "MyLibrary"))", R"()"}, {R"((print (contained_entities)))", R"()"}
 			});
@@ -8320,11 +8333,12 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_LOAD)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string resource_path [string resource_type] [assoc params])";
 		d.returns = R"(any)";
-		d.description = R"(Loads the data specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and evaluate to the corresponding code. The parameter escape_filename defaults to false, but if it is true, it will aggressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.)";
+		d.description = R"(Loads the data specified by `resource_path`, parses it into the appropriate code and data, and returns it. If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 		d.examples = MakeExamples({
 			{R"((print (load "my_directory/MyModule.amlg")))", R"()"}
 			});
@@ -8332,11 +8346,12 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_LOAD_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string resource_path [id_path entity] [string resource_type] [bool persistent] [assoc params])";
 		d.returns = R"(id_path)";
-		d.description = R"(Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id_path, following the same id_path creation rules as create_entities, except that if no id_path is specified, it may default to a name based on the resource if available.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.)";
+		d.description = R"(Loads the data specified by `resource_path` and parse it into the appropriate code and data, and stores it in `entity`.  It follows the same id path creation rules as `(create_entities)`, except that if no id path is specified, it may default to a name based on the resource if available.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 		d.examples = MakeExamples({
 			{R"((load_entity "my_directory/MyModule.amlg" "MyModule"))", R"()"}
 			});
@@ -8345,11 +8360,12 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_STORE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string resource_path * node [string resource_type] [assoc params])";
 		d.returns = R"(bool)";
-		d.description = R"(Stores the code specified by node to the resource in string. Returns true if successful, false if not. If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.    Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.)";
+		d.description = R"(Stores `node` into `resource_path`.  Returns true if successful, false if not.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 		d.examples = MakeExamples({
 			{R"((store "my_directory/MyData.amlg" (list 1 2 3)))", R"()"}
 			});
@@ -8358,11 +8374,12 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_STORE_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string resource_path id_path entity [string resource_type] [bool persistent] [assoc params])";
 		d.returns = R"(bool)";
-		d.description = R"(Stores the entity specified by the id_path to the resource in string. Returns true if successful, false if not. If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.)";
+		d.description = R"(Stores `entity` into `resource_path`.  Returns true if successful, false if not.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 		d.examples = MakeExamples({
 			{R"((store_entity "my_directory/MyData.amlg" "MyData"))", R"()"}
 			});
@@ -8371,11 +8388,12 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CONTAINS_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity)";
 		d.returns = R"(bool)";
-		d.description = R"(Returns true if the referred to entity specified by id_path exists.)";
+		d.description = R"(Returns true if `entity` exists, false if not.)";
 		d.examples = MakeExamples({
 			{R"((print (create_entities "MyLibrary" (lambda { three 3 four 4 } ) ) ))", R"()"}, {R"((print (contains_entity "MyLibrary")))", R"()"}, {R"((print (contains_entity (list "MyLibrary"))))", R"()"}
 			});
@@ -8383,11 +8401,12 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_CONTAINED_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path containing_entity | query|list condition1] [query|list condition2] ...[ query|list conditionN])";
 		d.returns = R"(list of string)";
-		d.description = R"(Returns a list of strings of ids of entities contained in the entity specified by id_path or current entity if containing_entity is omitted.  The parameters of condition1 through conditionN are query conditions, and they may be any of the query opcodes or may be a list of query opcodes (beginning with query_), where each condition will be executed in order.)";
+		d.description = R"(Returns a list of strings of ids of entities contained in `containing_entity` or the current entity if containing_entity is omitted or null.  The parameters of `condition1` through `conditionN` are query conditions, and they may be any of the query opcodes (beginning with `query_`) or may be a list of query opcodes, where each condition will be executed in order as a conjunction.)";
 		d.examples = MakeExamples({
 			{R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 }))", R"()"}, {R"())", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"}
 			});
@@ -8396,11 +8415,12 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_COMPUTE_ON_CONTAINED_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path containing_entity | query|list condition1] [query|list condition2] ...[ query|list conditionN])";
 		d.returns = R"(any)";
-		d.description = R"(Performs queries like contained_entities but returns a value or set of values appropriate for the last query in conditions.  The parameters of condition1 through conditionN are query conditions, and they may be any of the query opcodes or may be a list of query opcodes (beginning with query_), where each condition will be executed in order.  If the last query does not return anything, then it will just return the matching entities.)";
+		d.description = R"(Performs queries like `(contained_entities)` on `containing_entity` or the current entity if containing_entity is omitted or null, but returns a value or set of values appropriate for the last query in conditions.  The parameters of `condition1` through `conditionN` are query conditions, and they may be any of the query opcodes (beginning with `query_`) or may be a list of query opcodes, where each condition will be executed in order as a conjunction.)";
 		d.examples = MakeExamples({
 			{R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 } ))", R"()"}, {R"())", R"()"}, {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"}
 			});
@@ -8409,6 +8429,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+	//TODO 25157: update descriptions, as well as examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_QUERY_SELECT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number num_to_select [number start_offset] [number random_seed])";
@@ -8862,7 +8883,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 	}();
 	arr[static_cast<std::size_t>(ENT_ASSIGN_TO_ENTITIES)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([id_path entity_1] assoc label_value_pairs_1 [id_path entity_2] [assoc label_value_pairs_2] [...])";
+		d.parameters = R"([id_path entity_1] assoc label_value_pairs_1 [id_path entity2] [assoc label_value_pairs_2] [...])";
 		d.returns = R"(bool)";
 		d.description = R"(For each index-value pair of label_value_pairs, assigns the value to the labeled variable on the contained entity represented by the respective entity, itself if no id_path specified, while retaining the original labels. If the label is not found, it will create it.  When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Will perform an assignment for each of the entities referenced, returning .true if all assignments were successful, .false if not.)";
 		d.examples = MakeExamples({
@@ -8876,7 +8897,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 	}();
 	arr[static_cast<std::size_t>(ENT_ACCUM_TO_ENTITIES)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([id_path entity_1] assoc label_value_pairs_1 [id_path entity_2] [assoc label_value_pairs_2] [...])";
+		d.parameters = R"([id_path entity_1] assoc label_value_pairs_1 [id_path entity2] [assoc label_value_pairs_2] [...])";
 		d.returns = R"(bool)";
 		d.description = R"(For each index-value pair of assoc, retrieves the labeled variable from the respective entity, accumulates it by the corresponding value in label_value_pairs, then assigns the value to the labeled variable on the contained entity represented by the id_path, itself if no id_path specified, while retaining the original labels.  If none found, it will not cause an assignment.  When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. Will perform an accum for each of the entities referenced, returning .true if all assignments were successful, .false if not.)";
 		d.examples = MakeExamples({
@@ -8890,7 +8911,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 	}();
 	arr[static_cast<std::size_t>(ENT_REMOVE_FROM_ENTITIES)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"([id_path entity_1] string|list label_names_1 [id_path entity_2] [list string|label_names_2] [...])";
+		d.parameters = R"([id_path entity_1] string|list label_names_1 [id_path entity2] [list string|label_names_2] [...])";
 		d.returns = R"(bool)";
 		d.description = R"(Removes all labels from the list label_names_1 from entity_1, and so on for each respective entity and label list.  Returns true if removes were successful, false otherwise.)";
 		d.examples = MakeExamples({

@@ -7892,45 +7892,254 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: finish from here on down
+
 	arr[static_cast<std::size_t>(ENT_EDIT_DISTANCE_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 id_path entity2 [assoc params])";
 		d.returns = R"(number)";
-		d.description = R"(Evaluates to the edit distance of all of the nodes referenced within entity1 and entity2 that are equivalent, including all contained entities.  The assoc params can contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
+		d.description = R"(Evaluates to the edit distance of all of the nodes referenced within `entity1` and `entity2` that are equivalent, including all contained entities.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 		d.examples = MakeExamples({
-			{R"((create_entities "e1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities "e2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((print (edit_distance_entities "e1" "e2")))", R"()"}
+			{R"&((seq
+	(seq
+		(create_entities
+			"MergeEntity1"
+			{a 3 b 4 c "c1"}
+		)
+		(create_entities
+			["MergeEntity1" "MergeEntityChild1"]
+			{x 3 y 4}
+		)
+		(create_entities
+			["MergeEntity1" "MergeEntityChild2"]
+			{p 3 q 4}
+		)
+		(create_entities
+			["MergeEntity1"]
+			{E 3 F 4}
+		)
+		(create_entities
+			["MergeEntity1"]
+			{
+				e 3
+				f 4
+				g 5
+				h 6
+			}
+		)
+		(create_entities
+			"MergeEntity2"
+			{b 4 c "c2"}
+		)
+		(create_entities
+			["MergeEntity2" "MergeEntityChild1"]
+			{x 3 y 4 z 5}
+		)
+		(create_entities
+			["MergeEntity2" "MergeEntityChild2"]
+			{
+				p 3
+				q 4
+				u 5
+				v 6
+				w 7
+			}
+		)
+		(create_entities
+			["MergeEntity2"]
+			{
+				E 3
+				F 4
+				G 5
+				H 6
+			}
+		)
+		(create_entities
+			["MergeEntity2"]
+			{e 3 f 4}
+		)
+		[
+			(edit_distance_entities "MergeEntity1" "MergeEntity2")
+			(edit_distance_entities
+				"MergeEntity1"
+				"MergeEntity2"
+				{nominal_strings .false types_must_match .false}
+			)
+		]
+	)
+))&", R"([11 9.516428509127167])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" )"},
+
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_INTERSECT_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 id_path entity2 [assoc params] [id_path entity3])";
 		d.returns = R"(id_path)";
-		d.description = R"(Creates an entity of whatever is common between the Entities represented by entity1 and entity2 exclusive.  The assoc params can contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Uses entity3 as the optional destination via an internal call create_contained_entity.  Any contained entities will be intersected either based on matching name or maximal similarity for nameless entities.)";
+		d.description = R"(Creates an entity of whatever is common between the entities `entity1` and `entity2` exclusive.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Uses `entity3` as the optional destination via an internal call create_contained_entity.  Any contained entities will be intersected either based on matching name or maximal similarity for nameless entities.)";
 		d.examples = MakeExamples({
-			{R"((create_entities "e1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities "e2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((intersect_entities "e1" "e2" "e3")))", R"()"}, {R"((print (retrieve_entity_root "e3"))))", R"()"}
+			{R"&((seq
+	(seq
+		(create_entities
+			"MergeEntity1"
+			{a 3 b 4 c "c1"}
+		)
+		(create_entities
+			["MergeEntity1" "MergeEntityChild1"]
+			{x 3 y 4}
+		)
+		(create_entities
+			["MergeEntity1" "MergeEntityChild2"]
+			{p 3 q 4}
+		)
+		(create_entities
+			["MergeEntity1"]
+			{E 3 F 4}
+		)
+		(create_entities
+			["MergeEntity1"]
+			{
+				e 3
+				f 4
+				g 5
+				h 6
+			}
+		)
+		(create_entities
+			"MergeEntity2"
+			{b 4 c "c2"}
+		)
+		(create_entities
+			["MergeEntity2" "MergeEntityChild1"]
+			{x 3 y 4 z 5}
+		)
+		(create_entities
+			["MergeEntity2" "MergeEntityChild2"]
+			{
+				p 3
+				q 4
+				u 5
+				v 6
+				w 7
+			}
+		)
+		(create_entities
+			["MergeEntity2"]
+			{
+				E 3
+				F 4
+				G 5
+				H 6
+			}
+		)
+		(create_entities
+			["MergeEntity2"]
+			{e 3 f 4}
+		)
+		(intersect_entities "MergeEntity1" "MergeEntity2" (null) "IntersectedEntity")
+		[
+			(retrieve_entity_root "IntersectedEntity")
+			(sort
+				(contained_entities "IntersectedEntity")
+			)
+		]
+	)
+))&", R"([
+	{b 4 c (null)}
+	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
+])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" "IntersectedEntity")"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		return d;
 	}();
+
 	arr[static_cast<std::size_t>(ENT_UNION_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 id_path entity2 [assoc params] [id_path entity3])";
 		d.returns = R"(id_path)";
-		d.description = R"(Creates an entity of whatever is inclusive when merging the Entities represented by entity1 and entity2. The assoc params can contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Uses entity3 as the optional destination via an internal call to create_contained_entity.  Any contained entities will be unioned either based on matching name or maximal similarity for nameless entities.)";
+		d.description = R"(Creates an entity of whatever is inclusive when merging the entities `entity1` and `entity2`.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Uses `entity3` as the optional destination via an internal call to create_contained_entity.  Any contained entities will be unioned either based on matching name or maximal similarity for nameless entities.)";
 		d.examples = MakeExamples({
-			{R"((create_entities "e1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities "e2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((union_entities "e1" "e2" "e3")))", R"()"}, {R"((print (retrieve_entity_root "e3"))))", R"()"}
+			{R"&((seq
+	(seq
+		(create_entities
+			"MergeEntity1"
+			{a 3 b 4 c "c1"}
+		)
+		(create_entities
+			["MergeEntity1" "MergeEntityChild1"]
+			{x 3 y 4}
+		)
+		(create_entities
+			["MergeEntity1" "MergeEntityChild2"]
+			{p 3 q 4}
+		)
+		(create_entities
+			["MergeEntity1"]
+			{E 3 F 4}
+		)
+		(create_entities
+			["MergeEntity1"]
+			{
+				e 3
+				f 4
+				g 5
+				h 6
+			}
+		)
+		(create_entities
+			"MergeEntity2"
+			{b 4 c "c2"}
+		)
+		(create_entities
+			["MergeEntity2" "MergeEntityChild1"]
+			{x 3 y 4 z 5}
+		)
+		(create_entities
+			["MergeEntity2" "MergeEntityChild2"]
+			{
+				p 3
+				q 4
+				u 5
+				v 6
+				w 7
+			}
+		)
+		(create_entities
+			["MergeEntity2"]
+			{
+				E 3
+				F 4
+				G 5
+				H 6
+			}
+		)
+		(create_entities
+			["MergeEntity2"]
+			{e 3 f 4}
+		)
+		(union_entities "MergeEntity1" "MergeEntity2" (null) "UnionedEntity")
+		[
+			(retrieve_entity_root "UnionedEntity")
+			(sort
+				(contained_entities "UnionedEntity")
+			)
+		]
+	)
+))&", R"([
+	{a 3 b 4 c (null)}
+	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
+])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" "UnionedEntity")"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		return d;
 	}();
+	//TODO 25157: finish from here on down
 	arr[static_cast<std::size_t>(ENT_DIFFERENCE_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 id_path entity2)";
@@ -7947,7 +8156,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 id_path entity2 [number keep_chance_entity1] [number keep_chance_entity2] [assoc params] [id_path entity3])";
 		d.returns = R"(id_path)";
-		d.description = R"(Performs a union operation on the entities represented by entity1 and entity2, but randomly ignores nodes from one or the other tree if not equal.  If only keep_chance_entity1 is specified, keep_chance_entity2 defaults to 1-keep_chance_entity1.  keep_chance_entity1 specifies the probability that a node from the entity represented by entity1 will be kept, and keep_chance_entity2 the probability that a node from the entity represented by entity2 will be kept.  The assoc params can contain the keys types_must_match, nominal_numbers, nominal_strings, recursive_matching, similar_mix_chance, and unnamed_entity_mix_chance.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  similar_mix_chance is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on keep_chance_node1 and keep_chance_node2, and defaults to 0.0.  If similar_mix_chance is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.  unnamed_entity_mix_chance represents the probability that an unnamed entity pair will be mixed versus preserved as independent chunks, where 0.2 would yield 20% of the entities mixed. Returns the id_path of a new entity created contained by the entity that ran it.  Uses entity3 as the optional destination via an internal call to create_contained_entity.   Any contained entities will be mixed either based on matching name or maximal similarity for nameless entities.)";
+		d.description = R"(Performs a union operation on the entities represented by entity1 and entity2, but randomly ignores nodes from one or the other tree if not equal.  If only keep_chance_entity1 is specified, keep_chance_entity2 defaults to 1-keep_chance_entity1.  keep_chance_entity1 specifies the probability that a node from the entity represented by entity1 will be kept, and keep_chance_entity2 the probability that a node from the entity represented by entity2 will be kept.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  similar_mix_chance is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on keep_chance_node1 and keep_chance_node2, and defaults to 0.0.  If similar_mix_chance is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.  unnamed_entity_mix_chance represents the probability that an unnamed entity pair will be mixed versus preserved as independent chunks, where 0.2 would yield 20% of the entities mixed. Returns the id_path of a new entity created contained by the entity that ran it.  Uses entity3 as the optional destination via an internal call to create_contained_entity.   Any contained entities will be mixed either based on matching name or maximal similarity for nameless entities.)";
 		d.examples = MakeExamples({
 			{R"((create_entities "e1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities "e2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((mix_entities "e1" "e2" 0.5 0.5 "e3"))", R"()"}
 			});

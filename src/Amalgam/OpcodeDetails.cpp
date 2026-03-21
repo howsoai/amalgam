@@ -8429,12 +8429,12 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update descriptions, as well as examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_QUERY_SELECT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number num_to_select [number start_offset] [number random_seed])";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects num_to_select entities sorted by entity id.  If start_offset is specified, then it will return num_to_select starting that far in, and subsequent calls can be used to get all entities in batches.  If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed.  If random_seed is specified and start_offset is null, then it will not guarantee a position in the order for subsequent calls that specify start_offset, and will execute more quickly.)";
+		d.description = R"(When used as a query argument, selects `num_to_select` entities sorted by entity id.  If `start_offset` is specified, then it will return `num_to_select` entities starting that far in, and subsequent calls can be used to get all entities in batches.  If `random_seed` is specified, then it will select `num_to_select` entities randomly from the list based on the random seed.  If `random_seed` is specified and `start_offset` is null, then it will not guarantee a position in the order for subsequent calls that specify `start_offset`, and will execute more quickly.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_select 4 (null) (rand)))", R"()"}
 			});
@@ -8448,7 +8448,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(number num_to_select [string weight_label_name] [number random_seed])";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects a random sample of num_to_select entities sorted by entity_id with replacement. If weight_label_name is specified and not null, it will use weight_label_name as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values for weights will be ignored, and if there are any infinite values, those will be selected from uniformly.  If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed. If random_seed is not specified then the subsequent calls will return the same sample of entities.)";
+		d.description = R"(When used as a query argument, selects a random sample of `num_to_select` entities sorted by entity id, sampled with replacement.  If `weight_label_name` is specified and not null, it will use `weight_label_name` as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values for weights will be ignored, and if there are any infinite values, those will be selected from uniformly.  If `random_seed` is specified, then it will select `num_to_select` entities randomly from the list based on the random seed.  If `random_seed` is not specified then the subsequent calls will return the same sample of entities.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 (rand)))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 "weight" (rand)))", R"()"}
 			});
@@ -8462,7 +8462,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(list list_of_entity_ids)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects only the entities in list_of_entity_ids.  It can be used to filter results before doing subsequent queries.)";
+		d.description = R"(When used as a query argument, selects only the entities in `list_of_entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_in_entity_list (list "Entity1" "Entity2")))", R"()"}
 			});
@@ -8476,7 +8476,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(list list_of_entity_ids)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, filters out the entities in list_of_entity_ids.  It can be used to filter results before doing subsequent queries.)";
+		d.description = R"(When used as a query argument, filters out the entities in `list_of_entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_in_entity_list (list "Entity1" "Entity2")))", R"()"}
 			});
@@ -8490,7 +8490,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects entities which have the named label.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding label names and values.)";
+		d.description = R"(When used as a query argument, selects entities which have the label `label_name`.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding label names and values.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}
 			});
@@ -8504,7 +8504,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects entities which do not have the named label.)";
+		d.description = R"(When used as a query argument, selects entities which do not have the the label `label_name`.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_exists "TargetLabel"))", R"()"}
 			});
@@ -8516,9 +8516,9 @@ R"&(^\s*\{\s*
 
 	arr[static_cast<std::size_t>(ENT_QUERY_EQUALS)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(string label_name * node_value)";
+		d.parameters = R"(string label_name * value)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects entities for which the specified label is equal to the specified *.)";
+		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is equal to `value`.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_equals "TargetLabel" 3))", R"()"}
 			});
@@ -8530,9 +8530,9 @@ R"&(^\s*\{\s*
 
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_EQUALS)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(string label_name * node_value)";
+		d.parameters = R"(string label_name * value)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects entities for which the specified label is not equal to the specified *.)";
+		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is not equal to `value`.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_equals "TargetLabel" 3))", R"()"}
 			});
@@ -8546,7 +8546,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * lower_bound * upper_bound)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects entities for which the specified label has a value between the specified lower_bound an upper_bound.)";
+		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is at least `lower_bound` and at most `upper_bound`.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_between "TargetLabel" 2 5))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_between "x" -4 5))", R"()"}, {R"((query_between "y" -4 0))", R"()"}
 			});
@@ -8560,7 +8560,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * lower_bound * upper_bound)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects entities for which the specified label has a value outside the specified lower_bound an upper_bound.)";
+		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is less than `lower_bound` or greater than `upper_bound`.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "TargetLabel" 2 5))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "x" -4 5))", R"()"}, {R"((query_not_between "y" -4 0))", R"()"}
 			});
@@ -8574,7 +8574,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name list values)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects entities for which the specified label has one of the values specified in values.)";
+		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is one of the values specified in `values`.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "TargetLabel" (2 5)))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "x" (list -4 5)))", R"()"}, {R"((query_among "y" (list -4 0)))", R"()"}
 			});
@@ -8588,7 +8588,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name list values)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects entities for which the specified label does not have one of the values specified in values.)";
+		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is not one of the values specified in `values`.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "TargetLabel" (2 5)))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "x" (list -4 5)))", R"()"}, {R"((query_not_among "y" (list -4 0)))", R"()"}
 			});
@@ -8600,9 +8600,9 @@ R"&(^\s*\{\s*
 
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(string label_name [number entities_returned] [bool numeric])";
+		d.parameters = R"(string label_name [number num_entities] [bool numeric])";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects a number of entities with the highest values in the specified label.  If entities_returned is specified, it will return that many entities, otherwise will return 1.  If numeric is true, its default value, then it only considers numeric values; if false, will consider all types.)";
+		d.description = R"(When used as a query argument, selects a number of entities with the highest values for the label `label_name`.  If `num_entities` is specified, it will return that many entities, otherwise will return 1.  If `numeric` is true, its default value, then it only considers numeric values; if false, will consider all types.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_max "TargetLabel" 3))", R"()"}
 			});
@@ -8616,7 +8616,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number entities_returned] [bool numeric])";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects a number of entities with the lowest values in the specified label.  If entities_returned is specified, it will return that many entities, otherwise will return 1.  If numeric is true, its default value, then it only considers numeric values; if false, will consider all types.)";
+		d.description = R"(When used as a query argument, selects a number of entities with the lowest values for the label `label_name`.  If `num_entities` is specified, it will return that many entities, otherwise will return 1.  If `numeric` is true, its default value, then it only considers numeric values; if false, will consider all types.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_min "TargetLabel" 3))", R"()"}
 			});
@@ -8630,7 +8630,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [string weight_label_name])";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, returns the sum of all entities over the specified label.  If weight_label_name is specified, it will find the weighted sum, which is the same as a dot product.)";
+		d.description = R"(When used as a query argument, returns the sum of all entities over the value at `label_name`.  If `weight_label_name` is specified, it will find the weighted sum, which is the same as a dot product.)";
 		d.examples = MakeExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_sum "TargetLabel"))", R"()"}
 			});
@@ -8644,7 +8644,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [string weight_label_name])";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, finds the statistical mode of label_name for numerical data.  If weight_label_name is specified, it will find the weighted mode.)";
+		d.description = R"(When used as a query argument, finds the statistical mode of `label_name` across all entities using numerical values.  If `weight_label_name` is specified, it will find the weighted mode.)";
 		d.examples = MakeExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_mode "TargetLabel"))", R"()"}
 			});
@@ -8658,7 +8658,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number q] [string weight_label_name])";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, finds the statistical quantile of label_name for numerical data, using q as the parameter to the quantile (default 0.5, median).  If weight_label_name is specified, it will find the weighted quantile, otherwise weight is 1.)";
+		d.description = R"(When used as a query argument, finds the statistical quantile of `label_name` for numerical data, using `q` as the parameter to the quantile, the default being 0.5 which is the median.  If `weight_label_name` is specified, it will find the weighted quantile, otherwise the weight of every entity is 1.)";
 		d.examples = MakeExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_quantile "TargetLabel" 0.75))", R"()"}
 			});
@@ -8672,7 +8672,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number p] [string weight_label_name] [number center] [bool calculate_moment] [bool absolute_value])";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, computes the generalized mean over the label_name for numeric data.  If p is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity) to harmonic mean (-1) to geometric mean (0) to arithmetic mean (1) to maximum (infinity).  If weight_label_name is specified, it will normalize the weights and compute a weighted mean.  If center is specified, calculations will use that as central point, default is 0.0.  If calculate_moment is true, results will not be raised to 1/p.  If absolute_value is true, the differences will take the absolute value.  Various parameterizations of generalized_mean can be used to compute moments about the mean, especially setting the calculate_moment parameter to true and using the mean as the center.)";
+		d.description = R"(When used as a query argument, computes the generalized mean over the label `label_name` for numerical data.  If `p` is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity), to harmonic mean (-1), to geometric mean (0), to arithmetic mean (1), to maximum (infinity).  If `weight_label_name` is specified, it will normalize the weights and compute a weighted mean.  If `center` is specified, calculations will use that value as the central point, and the default is 0.0.  If `calculate_moment` is true, the results will not be raised to 1 / `p`.  If `absolute_value` is true, the differences will take the absolute value.  Various parameterizations of `(generalized_mean)` can be used to compute moments about the mean, especially by setting the `calculate_moment` parameter to true and using the mean as the center.)";
 		d.examples = MakeExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_generalized_mean "TargetLabel" 0.5))", R"()"}
 			});
@@ -8686,7 +8686,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number cyclic_range] [bool include_zero_difference])";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, finds the smallest difference between any two values for the specified label. If cyclic_range is null, the default value, then it will assume the values are not cyclic; if it is a number, then it will assume the range is from 0 to cyclic_range.  If include_zero_difference is true, its default value, then it will return 0 if the smallest gap between any two numbers is 0; if false, it will return the smallest nonzero value.)";
+		d.description = R"(When used as a query argument, finds the smallest difference between any two values for the label `label_name`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.  If `include_zero_difference` is true, its default value, then it will return 0 if the smallest gap between any two numbers is 0.  If `include_zero_difference` is false, it will return the smallest nonzero value.)";
 		d.examples = MakeExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_min_difference "TargetLabel"))", R"()"}
 			});
@@ -8700,7 +8700,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number cyclic_range])";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, finds the largest difference between any two values for the specified label. If cyclic_range is null, the default value, then it will assume the values are not cyclic; if it is a number, then it will assume the range is from 0 to cyclic_range.)";
+		d.description = R"(When used as a query argument, finds the largest difference between any two values for the label `label_name`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.)";
 		d.examples = MakeExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_max_difference "TargetLabel"))", R"()"}
 			});
@@ -8714,7 +8714,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [string weight_label_name])";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, computes the counts for each value of the label and returns an assoc with the keys being the label values and the values being the counts or weights of the values.  If weight_label_name is specified, then it will accumulate that weight for each value, otherwise it will use a weight of 1 for each yielding a count.)";
+		d.description = R"(When used as a query argument, computes the counts for each value of the label `label_name` and returns an assoc with the keys being the label values and the values being the counts or weights of the values.  If `weight_label_name` is specified, then it will accumulate that weight for each value, otherwise it will use a weight of 1 for each yielding a count.)";
 		d.examples = MakeExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_value_masses "TargetLabel"))", R"()"}
 			});
@@ -8728,7 +8728,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * max_value)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects entities with a value in the specified label less than or equal to the specified *.)";
+		d.description = R"(When used as a query argument, selects entities with a value in label `label_name` less than or equal to `max_value`.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_less_or_equal_to "TargetLabel" 3))", R"()"}
 			});
@@ -8742,7 +8742,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * min_value)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects entities with a value in the specified label greater than or equal to the specified *.)";
+		d.description = R"(When used as a query argument, selects entities with a value in label `label_name` greater than or equal to `min_value`.)";
 		d.examples = MakeExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_greater_or_equal_to "TargetLabel" 3))", R"()"}
 			});
@@ -8751,7 +8751,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-
+	//TODO 25157: update descriptions, as well as examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number max_distance list axis_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";

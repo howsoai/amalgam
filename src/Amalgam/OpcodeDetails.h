@@ -6,6 +6,7 @@
 
 //system headers:
 #include <array>
+#include <initializer_list>
 #include <string>
 #include <vector>
 
@@ -72,36 +73,47 @@ public:
 	StorageType allPermissions = static_cast<StorageType>(Permission::NONE);
 };
 
+//combination of example and its expected output
+struct AmalgamExample
+{
+	AmalgamExample(std::string_view e, std::string_view o,
+		std::string_view r = std::string_view(), std::string_view c = std::string_view())
+		: example(e), output(o),
+		regexMatch(r), cleanup(c)
+	{}
+
+	//the code example
+	std::string_view example;
+	//example output
+	std::string_view output;
+
+	//if regexMatch is anything other than the empty string,
+	//it will verify the example's output based on the regexMatch
+	//if regexMatch is empty string, then it will compare example's output
+	//to output except for amount of white space
+	std::string_view regexMatch;
+
+	//if there is code in cleanup, it will run that after example has been run
+	//and verified
+	std::string_view cleanup;
+};
+
+//helper that builds a vector of AmalgamExample from a list of example and output pairs supplied by the generator
+inline std::vector<AmalgamExample> MakeAmalgamExamples(
+		std::initializer_list<AmalgamExample> list)
+{
+	std::vector<AmalgamExample> out;
+	out.reserve(list.size());
+
+	for(const auto &e : list)
+		out.emplace_back(e.example, e.output, e.regexMatch, e.cleanup);
+	return out;
+}
+
 //contains details, including descriptions, examples, and effects for the corresponding opcode
 class OpcodeDetails
 {
 public:
-
-	//combination of example and its expected output
-	struct OpcodeExample
-	{
-		OpcodeExample(std::string_view e, std::string_view o,
-			std::string_view r = std::string_view(), std::string_view c = std::string_view())
-			: example(e), output(o),
-			regexMatch(r), cleanup(c)
-		{}
-
-		//the code example
-		std::string_view example;
-		//example output
-		std::string_view output;
-
-		//if regexMatch is anything other than the empty string,
-		//it will verify the example's output based on the regexMatch
-		//if regexMatch is empty string, then it will compare example's output
-		//to output except for amount of white space
-		std::string_view regexMatch;
-
-		//if there is code in cleanup, it will run that after example has been run
-		//and verified
-		std::string_view cleanup;
-	};
-
 	//arrangements of ordered parameters
 	enum class OrderedChildNodeType
 	{
@@ -122,7 +134,7 @@ public:
 	std::string_view parameters;
 	std::string_view returns;
 	std::string_view description;
-	std::vector<OpcodeExample> examples;
+	std::vector<AmalgamExample> examples;
 	OrderedChildNodeType orderedChildNodeType = OrderedChildNodeType::POSITION;
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
@@ -197,7 +209,7 @@ constexpr bool DoesEvaluableNodeTypeUseOrderedData(EvaluableNodeType t)
 	return (IsEvaluableNodeTypeValid(t) && !IsEvaluableNodeTypeImmediate(t) && !DoesEvaluableNodeTypeUseAssocData(t));
 }
 
-//returns true if it is a query
+//returns true if t is a query
 __forceinline bool IsEvaluableNodeTypeQuery(EvaluableNodeType t)
 {
 	return _opcode_details[t].isQuery;

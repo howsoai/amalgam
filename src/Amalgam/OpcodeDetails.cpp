@@ -3,8 +3,6 @@
 #include "EvaluableNodeManagement.h"
 #include "OpcodeDetails.h"
 
-//system headers:
-#include <initializer_list>
 
 EvaluableNode *ExecutionPermissions::GetPermissionsAsEvaluableNode(EvaluableNodeManager *enm)
 {
@@ -84,18 +82,6 @@ std::pair<ExecutionPermissions, ExecutionPermissions> ExecutionPermissions::Eval
 	return std::make_pair(permissions_to_set, permission_values);
 }
 
-//helper that builds a vector of OpcodeDetails::OpcodeExample from a list of example and output pairs supplied by the generator
-static inline std::vector<OpcodeDetails::OpcodeExample> MakeExamples(
-		std::initializer_list<OpcodeDetails::OpcodeExample> list)
-{
-	std::vector<OpcodeDetails::OpcodeExample> out;
-	out.reserve(list.size());
-
-	for(const auto &e : list)
-		out.emplace_back(e.example, e.output, e.regexMatch, e.cleanup);
-	return out;
-}
-
 static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 {
 	std::array<OpcodeDetails, NUM_ENT_OPCODES> arr{};
@@ -123,7 +109,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
  - get_max_num_threads: Returns the current maximum number of threads.
  - set_max_num_threads: Attempts to set the current maximum number of threads, where 0 means to use the number of processor cores reported by the operating system. Returns the maximum number of threads after it has been set.
  - built_in_data:       Returns built-in data compiled along with the version information.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((system "debugging_info"))", R"([.false .false])"}
 			});
 		d.permissions = ExecutionPermissions::Permission::ALL;
@@ -137,7 +123,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"([string topic])";
 		d.returns = R"(any)";
 		d.description = R"(If no parameter is specified it returns a string of the topics that can be used.  For given a `topic`, returns a string or relevant data that describes the given topic.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((help "+"))", R"&({
 	allows_concurrency .true
 	description "Sums all numbers."
@@ -164,7 +150,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(string value_type)";
 		d.returns = R"(any)";
 		d.description = R"(Retrieves the default values of `value_type`, either "mutation_opcodes" or "mutation_types")";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((get_defaults "mutation_types"))", R"({
 	change_type 0.29
 	deep_copy_elements 0.07
@@ -183,7 +169,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"([id_path entity] [bool apply_to_all_contained_entities] [bool|list clear_query_caches] [bool collect_garbage] [bool force_free_memory])";
 		d.returns = R"(any)";
 		d.description = R"(Frees resources of the specified types on `entity`, which is the current entity if null.  Will include all contained entities if `apply_to_all_contained_entities` is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter `clear_query_caches` will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  If `clear_query_caches` is a boolean, then it will either clear all the caches or none.  If `clear_query_caches` is a list of strings, then it will only clear caches for the labels corresponding to the strings in the list.  The parameter `collect_garbage` will perform garbage collection on the entity, and if `force_free_memory` is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((reclaim_resources (null) .true ["x"] .true .true ))", R"((null))"},
 			{R"((reclaim_resources (null) .true .true .true .true ))", R"((null))"}
 			});
@@ -197,7 +183,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(string str [bool transactional] [bool return_warnings])";
 		d.returns = R"(any)";
 		d.description = R"(String `str` is parsed into code, and the result is returned.  If `transactional` is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If `transactional` is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If any performance constraints are given or `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless `return_warnings` is false, in which case just the value will be returned.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((parse "(seq (+ 1 2))" .true)))&", R"&((seq
 	(+ 1 2)
 ))&"},
@@ -235,7 +221,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(code c [bool pretty_print] [bool sort_keys] [bool include_attributes])";
 		d.returns = R"(string)";
 		d.description = R"(Code is unparsed and the representative string is returned. If `pretty_print` is true, the output will be in pretty-print format, otherwise by default it will be inlined.  If `sort_keys` is true, the default, then it will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to whatever order it is stored in memory.  If `include_attributes` is true, it will print out attributes like comments, but by default it will not.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((unparse (parse "(print \"hello\")")))&", R"&("(print \"hello\")")&"},
 			{R"&((parse (unparse (list (sqrt -1) (null) .infinity -.infinity))))&", R"&([(null) (null) .infinity -.infinity])&"},
 			{R"&((unparse (associate "a" 1 "b" 2 "c" (list "alpha" "beta" "gamma"))))&", R"&("{a 1 b 2 c [\"alpha\" \"beta\" \"gamma\"]}")&"},
@@ -250,7 +236,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"([bool condition1] [code then1] [bool condition2] [code then2] ... [bool conditionN] [code thenN] [code else])";
 		d.returns = R"(any)";
 		d.description = R"(If `condition1` is true, then it will evaluate to the then1 argument.  Otherwise `condition2` will be checked, repeating for every pair.  If there is an odd number of parameters, the last is the final 'else', and will be evaluated as that if all conditions are false.  If there is an even number of parameters and none are true, then evaluates to null.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((if 1 "if 1"))&", R"("if 1")"},
 			{R"&((if 0 "not this one" "if 2"))&", R"("if 2")"},
 			{R"&((if
@@ -269,7 +255,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"([code c1] [code c2] ... [code cN])";
 		d.returns = R"(any)";
 		d.description = R"(Runs each code block sequentially.  Evaluates to the result of the last code block run, unless it encounters a conclude or return in an earlier step, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value (see conclude opcode).)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((seq 1 2 3))", R"(3)"},
 			{R"((seq
 	(declare {a 1})
@@ -287,7 +273,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(* function [bool evaluate_and_wrap])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the code specified without evaluating it.  Useful for referencing functions or handling data without evaluating it.  The parameter `evaluate_and_wrap` defaults to false, but if it is true, it will evaluate the function, but then return the result wrapped in a lambda opcode.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((lambda (+ 1 2)))", R"((+ 1 2))"},
 			{R"((seq
 	(declare {foo (lambda (+ y 1))})
@@ -304,7 +290,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(* conclusion)";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to `conclusion` wrapped in a `conclude` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a `conclude` (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to the value `conclusion`.  Note that conclude opcodes may be nested to break out of outer opcodes.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	"seq1"
 	(conclude "success")
@@ -351,7 +337,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(* return_value)";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to `return_value` wrapped in a `return` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a return (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to the `return` opcode with its `return_value`.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including `call`, `call_sandboxed`, `call_entity`, `call_entity_get_changes`, or `call_container`, at which point it will evaluate to `return_value`.  Note that return opcodes may be nested to break out of multiple calls.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((call
 	(seq
 		1
@@ -374,7 +360,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(* function [assoc arguments])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates `function` after pushing the `arguments` assoc onto the scope stack.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((let
 	{
 		foo (lambda
@@ -401,7 +387,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(* function assoc arguments [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [bool return_warnings])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates the code specified by function, isolating it from everything except for arguments, which is used as a single layer of the scope stack.  This is useful when evaluating code passed by other entities that may or may not be trusted.  Opcodes run from within call_sandboxed that require any form of permissions will not perform any action and will evaluate to null.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed. If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted, up to the limits of the current calling context. If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If `max_node_allocations` is 0 or infinite and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if `max_node_allocations` is specified while call_sandboxed is being called in a multithreaded environment, if the collective memory from all the related threads exceeds the average memory specified by call_sandboxed, that may trigger a memory limit for the call_sandboxed.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called. If `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or (null) if none)).  If `return_warnings` is false, just the value will be returned.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((call_sandboxed
 	(lambda
 		(+
@@ -461,7 +447,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(bool condition [code code1] [code code2] ... [code codeN])";
 		d.returns = R"(any)";
 		d.description = R"(Each time the `condition` evaluates to true, it runs each of code sequentially, looping. Evaluates to the last `codeN` or null if the `condition` was initially false or if it encounters a `conclude` or `return`, it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  For each iteration of the loop, it pushes a new target scope onto the target stack, with `(current_index)` being the iteration count, and `(previous_result)` being the last evaluated `codeN` of the previous loop.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(assign
 		{i 1}
@@ -486,7 +472,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(assoc variables [code code1] [code code2] ... [code codeN])";
 		d.returns = R"(any)";
 		d.description = R"(Pushes the key-value pairs of `variables` onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((let
 	{x 4 y 6}
 	(+ x y)
@@ -510,7 +496,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(assoc variables [code code1] [code code2] ... [code codeN])";
 		d.returns = R"(any)";
 		d.description = R"(For each key-value pair of `variables`, if not already in the current context in the scope stack, it will define them.  Then it runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(declare
 		{x 7}
@@ -533,7 +519,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(assoc|string variables [number index1|string index1|list walk_path1|* new_value1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...)";
 		d.returns = R"(null)";
 		d.description = R"(If `variables` is an assoc, then for each key-value pair it assigns the value to the variable represented by the key found by tracing upward on the stack.  If a variable is not found, it will create a variable on the top of the stack with that name.  If `variables` is a string and there are two parameters, it will assign the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to assign new_value to that part of the variable's structure.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((let
 	{x 0}
 	(assign {x 10} )
@@ -604,8 +590,8 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		OpcodeDetails d;
 		d.parameters = R"(assoc|string variables [number index1|string index1|list walk_path1] [* accum_value1] [number index2|string index2|list walk_path2] [* accum_value2] ...)";
 		d.returns = R"(null)";
-		d.description = R"(If `variables` is an assoc, then for each key-value pair of data, it assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the result in the variable.  It searches for the variable name tracing up the stack to find the variable. If the variable is not found, it will create a variable on the top of the stack.  Accumulation is performed differently based on the type.  For numeric values it adds, for strings it concatenates, for lists and assocs it appends.  If `variables` is a string and there are two parameters, then it will accum the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to accum accum_value to that part of the variable's structure.)";
-		d.examples = MakeExamples({
+		d.description = R"(If `variables` is an assoc, then for each key-value pair of data, it assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the result in the variable.  It searches for the variable name tracing up the stack to find the variable. If the variable is not found, it will create a variable on the top of the stack.  Accumulation is performed differently based on the type.  For numeric values it adds, for strings it concatenates, for lists and assocs it appends.  If `variables` is a string and there are two parameters, then it will accum the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of the corresponding walk path and accum value to that part of the variable's structure.)";
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(assign
 		{x 10}
@@ -704,7 +690,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"([string|list|assoc variables])";
 		d.returns = R"(any)";
 		d.description = R"(If `variables` is a string, then it gets the value on the stack specified by the string.  If `variables` is a list, it returns a list of the values on the stack specified by each element of the list interpreted as a string.  If `variables` is an assoc, it returns an assoc with the indices of the assoc which was passed in with the values being the appropriate values on the stack for each index.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(assign
 		{a 1}
@@ -741,7 +727,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(* data [number|index|list walk_path_1] [number|string|list walk_path_2] ...)";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to `data` as traversed by the set of values specified by `walk_path_1', which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then `get` returns a list, where each element in the list is the respective element retrieved by the respective walk path.  If the walk path continues past the data structure, it will return a null.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((get
 	[4 9.2 "this"]
 ))&", R"([4 9.2 "this"])"},
@@ -856,7 +842,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(* data [number|string|list walk_path1] [* new_value1] [number|string|list walk_path2] [* new_value2] ... [number|string|list walk_pathN] [* new_valueN])";
 		d.returns = R"(any)";
 		d.description = R"(Performs a deep copy on `data` (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values as a walk path of indices. `new_value1` to `new_valueN` represent a value that will be used to replace  whatever is in the location the preceding location parameter specifies.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc); however, it will not change the type of immediate values to an assoc or list. Note that `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((set
 	(associate
 		"a"
@@ -898,7 +884,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"(* data [number|string|list walk_path1] [* function1] [number|string|list walk_path2] [* function2] ... [number|string|list walk_pathN] [* functionN])";
 		d.returns = R"(any)";
 		d.description = R"(Performs a deep copy on `data` (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((replace
 	[
 		(associate "a" 13)
@@ -955,7 +941,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"([number|bool stack_distance] [number|string|list walk_path])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the node being created, referenced by the parameters by target.  Useful for serializing graph data structures or looking up data during iteration.  If `stack_distance` is a number, it climbs back up the target stack that many levels.  If `stack_distance` is a boolean, then `.true` indicates the top of the stack and `.false` indicates the bottom.  If `walk_path` is specified, it will walk from the node at `stack_distance` to the corresponding target.  If building an object, specifying `stack_distance` to true is often useful for accessing or traversing the top-level elements.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&([
 	1
 	2
@@ -1053,7 +1039,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"([number stack_distance])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the index of the current node being iterated on within the current target.  If `stack_distance` is specified, it climbs back up the target stack that many levels.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&([0 1 2 3 (current_index) 5])&", R"([0 1 2 3 4 5])"},
 			{R"&([
 	0
@@ -1081,7 +1067,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"([number stack_distance])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the current node being iterated on within the current target.  If `stack_distance` is specified, it climbs back up the target stack that many levels.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((map
 	(lambda
 		(* 2 (current_value))
@@ -1098,7 +1084,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"([number stack_distance] [bool copy])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the resulting node of the previous iteration for applicable opcodes. If `stack_distance` is specified, it climbs back up the target stack that many levels.  If `copy` is true, which is false by default, then a copy of the resulting node of the previous iteration is returned, otherwise the result of the previous iteration is returned directly and consumed.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((while
 	(< (current_index) 3)
 	(append (previous_result) (current_index))
@@ -1134,7 +1120,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"([number stack_distance] [bool no_child_nodes])";
 		d.returns = R"(list of any)";
 		d.description = R"(Evaluates to the list of opcodes that make up the call stack or a single opcode within the call stack.  If `stack_distance` is specified, then a copy of the node at that specified depth is returned, otherwise the list of all opcodes in opcode stack are returned. Negative values for `stack_distance` specify the depth from the top of the stack and positive values specify the depth from the bottom.  If `no_child_nodes` is true, then only the root node(s) are returned, otherwise the returned node(s) are deep-copied.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((size (opcode_stack)))&", R"(2)"},
 			{R"&((seq
 	(seq
@@ -1160,7 +1146,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"( )";
 		d.returns = R"(list of assoc)";
 		d.description = R"(Evaluates to the current execution context, also known as the scope stack, containing all of the variables for each layer of the stack.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((stack))&", R"([{}])"},
 			{R"&((call
 	(lambda
@@ -1185,7 +1171,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"([number stack_distance])";
 		d.returns = R"(assoc)";
 		d.description = R"(Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments.  If `stack_distance` is specified, then it evaluates to the context that many layers up the stack.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((call
 	(lambda
 		(let
@@ -1211,7 +1197,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
 		d.parameters = R"([list|assoc|number range] [number number_to_generate] [bool unique])";
 		d.returns = R"(any)";
 		d.description = R"(Generates random values based on its parameters.  The random values are drawn from a random stream specific to each execution flow for each entity.  With no range, evaluates to a random number between 0.0 and 1.0.  If range is a list, it will uniformly randomly choose and evaluate to one element of the list.  If range is a number, it will evaluate to a value greater than or equal to zero and less than the number specified.  If range is an assoc, then it will randomly evaluate to one of the keys using the values as the weights for the probabilities.  If  number_to_generate is specified, it will generate a list of multiple values (even if number_to_generate is 1).  If unique is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.  Note that if unique only applies to list and assoc ranges.  If unique is true and there are not enough values in a list or assoc, it will only generate the number of elements in range.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((rand))&", R"(0.4153759082605256)"},
 			{R"&((rand 50))&", R"(20.768795413026282)"},
 			{R"&((rand
@@ -1344,7 +1330,7 @@ R"&(\[\s*
 		d.parameters = R"()";
 		d.returns = R"(string)";
 		d.description = R"(Evaluates to a string representing the current state of the random number generator.  Note that the string will be a string of bytes that may not be valid as UTF-8.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((format (get_rand_seed) "string" "base64"))&", R"("X6f8e5JTT5kuHHGZUu7r6/8=")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1356,7 +1342,7 @@ R"&(\[\s*
 		d.parameters = R"(string seed)";
 		d.returns = R"(string)";
 		d.description = R"(Initializes the random number stream for the given `seed` without affecting any entity.  If the seed is already a string in the proper format output by `get_entity_rand_seed` or `get_rand_seed`, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the generator.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(declare
 		{cur_seed (get_rand_seed)}
@@ -1389,7 +1375,7 @@ R"&(\[\s*
 		d.parameters = R"()";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the current system time since epoch in seconds (including fractions of seconds).)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((system_time))&", R"(1773855306.4474)",
 			R"&(^\s*
     (                                   # start of the number
@@ -1410,7 +1396,7 @@ R"&(\[\s*
 		d.returns = R"(number)";
 		d.allowsConcurrency = true;
 		d.description = R"(Sums all numbers.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((+ 1 2 3 4))", R"(10)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
@@ -1424,7 +1410,7 @@ R"&(\[\s*
 		d.returns = R"(number)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as negative)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((- 1 2 3 4))", R"(-8)"},
 			{R"((- 3))", R"(-3)"}
 			});
@@ -1439,7 +1425,7 @@ R"&(\[\s*
 		d.returns = R"(number)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to the product of all numbers.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((* 1 2 3 4))", R"(24)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
@@ -1453,7 +1439,7 @@ R"&(\[\s*
 		d.returns = R"(number)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to `x1` / `x2` / ... / `xN`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((/ 1.0 2 3 4))", R"(0.041666666666666664)"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
@@ -1467,7 +1453,7 @@ R"&(\[\s*
 		d.returns = R"(number)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates the modulus of `x1` % `x2` % ... % `xN`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((mod 1 2 3 4))", R"(1)"},
 			{R"((mod 5 3))", R"(2)"},
 			});
@@ -1481,7 +1467,7 @@ R"&(\[\s*
 		d.parameters = R"(number value [number base] [number start_digit] [number end_digit] [bool relative_to_zero])";
 		d.returns = R"(list of number)";
 		d.description = R"(Evaluates to a list of the number of each digit of `value` for the given `base`.  If `base` is omitted, 10 is the default.  The parameters `start_digit` and `end_digit` can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of `start_digit` and `end_digit` are with respect to relative_to_zero, which defaults to true.  If relative_to_zero is true, then the digits are indexed from their distance to zero, such as "5 4 3 2 1 0 . -1 -2".  If relative_to_zero is false, then the digits are indexed from their most significant digit, such as "0 1 2 3 4 5 . 6  7".  The default values of `start_digit` and `end_digit` are the most and least significant digits respectively.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((get_digits 1234567.8 10))&", R"([
 	1
 	2
@@ -1574,7 +1560,7 @@ R"&(\[\s*
 		d.parameters = R"(number value [number base] [list|number|null digits] [number start_digit] [number end_digit] [bool relative_to_zero])";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to `value` having each of the values in the list of `digits` replace each of the relative digits in `value` for the given base.  If a digit is null in `digits`, then that digit is not set.  If `base` is omitted, 10 is the default.  The parameters `start_digit` and `end_digit` can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of `start_digit` and `end_digit` are with respect to `relative_to_zero`, which defaults to true.  If `relative_to_zero` is true, then the digits are indexed from their distance to zero, such as "5 4 3 2 1 0 . -1 -2".  If `relative_to_zer`o is false, then the digits are indexed from their most significant digit, such as "0 1 2 3 4 5 . 6  7".  The default values of `start_digit` and `end_digit` are the most and least significant digits respectively.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((set_digits
 	1234567.8
 	10
@@ -1721,7 +1707,7 @@ R"&(\[\s*
 		d.parameters = R"(number x)";
 		d.returns = R"(int)";
 		d.description = R"(Evaluates to the mathematical floor of x.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((floor 1.5))", R"(1)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1733,7 +1719,7 @@ R"&(\[\s*
 		d.parameters = R"(number x)";
 		d.returns = R"(int)";
 		d.description = R"(Evaluates to the mathematical ceiling of x.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((ceil 1.5))", R"(2)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1745,7 +1731,7 @@ R"&(\[\s*
 		d.parameters = R"(number x [number significant_digits] [number significant_digits_after_decimal])";
 		d.returns = R"(int)";
 		d.description = R"(Rounds the value `x` and evaluates to the new value.  If only one parameter is specified, it rounds to the nearest integer.  If `significant_digits` is specified, then it rounds to the specified number of significant digits.  If `significant_digits_after_decimal` is specified, then it ensures that `x` will be rounded at least to the number of decimal points past the integer as specified, and takes priority over `significant_digits`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((round 12.7))&", R"(13)"},
 			{R"&((round 12.7 1))&", R"(10)"},
 			{R"&((round 123.45678 5))&", R"(123.46)"},
@@ -1777,7 +1763,7 @@ R"&(\[\s*
 		d.parameters = R"(number x)";
 		d.returns = R"(number)";
 		d.description = R"(e^x)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((exp 0.5))", R"(1.6487212707001282)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1789,7 +1775,7 @@ R"&(\[\s*
 		d.parameters = R"(number x [number base])";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the logarithm of `x`.  If `base` is specified, uses that base, otherwise defaults to natural log.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((log 0.5))", R"(-0.6931471805599453)"},
 			{R"((log 0.5 2))", R"(-1)"}
 			});
@@ -1802,7 +1788,7 @@ R"&(\[\s*
 		d.parameters = R"(number theta)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the sine of `theta`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((sin 0.5))", R"(0.479425538604203)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1814,7 +1800,7 @@ R"&(\[\s*
 		d.parameters = R"(number length)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the arc sine (inverse sine) of `length`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((sin 0.5))", R"(0.479425538604203)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1826,7 +1812,7 @@ R"&(\[\s*
 		d.parameters = R"(number theta)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the cosine of `theta`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((cos 0.5))", R"(0.8775825618903728)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1838,7 +1824,7 @@ R"&(\[\s*
 		d.parameters = R"(number length)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the arc cosine (inverse cosine) of `length`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((acos 0.5))", R"(1.0471975511965979)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1850,7 +1836,7 @@ R"&(\[\s*
 		d.parameters = R"(number theta)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the tangent of `theta`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((tan 0.5))", R"(0.5463024898437905)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1862,7 +1848,7 @@ R"&(\[\s*
 		d.parameters = R"(number num [number divisor])";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the arc tangent (inverse tangent) of `num`.  If two numbers are provided, then it evaluates to the arc tangent of `num` / `divisor`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((atan 0.5))", R"(0.4636476090008061)"}, {R"((atan 0.5 0.5))", R"(0.7853981633974483)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1874,7 +1860,7 @@ R"&(\[\s*
 		d.parameters = R"(number z)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the hyperbolic sine of `z`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((sinh 0.5))", R"(0.5210953054937474)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1886,7 +1872,7 @@ R"&(\[\s*
 		d.parameters = R"(number x)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the hyperbolic arc sine of `x`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((asinh 0.5))", R"(0.48121182505960347)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1898,7 +1884,7 @@ R"&(\[\s*
 		d.parameters = R"(number z)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the hyperbolic cosine of `z`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((cosh 0.5))", R"(1.1276259652063807)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1910,7 +1896,7 @@ R"&(\[\s*
 		d.parameters = R"(number x)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the hyperbolic arc cosine of `x`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((acosh 1.5))", R"(0.9624236501192069)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1922,7 +1908,7 @@ R"&(\[\s*
 		d.parameters = R"(number z)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the hyperbolic tangent on `z`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((tanh 0.5))", R"(0.46211715726000974)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1934,7 +1920,7 @@ R"&(\[\s*
 		d.parameters = R"(number x)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the hyperbolic arc tangent on `x`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((atanh 0.5))", R"(0.5493061443340549)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1946,7 +1932,7 @@ R"&(\[\s*
 		d.parameters = R"(number errno)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the error function on `errno`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((erf 0.5))", R"(0.5204998778130465)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1958,7 +1944,7 @@ R"&(\[\s*
 		d.parameters = R"(number z)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates the true (complete) gamma function on `z`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((tgamma 0.5))", R"(1.772453850905516)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1970,7 +1956,7 @@ R"&(\[\s*
 		d.parameters = R"(number z)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates the log-gamma function function on `z`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((lgamma 0.5))", R"(0.5723649429247001)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1982,7 +1968,7 @@ R"&(\[\s*
 		d.parameters = R"(number x)";
 		d.returns = R"(number)";
 		d.description = R"(Returns the square root of `x`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((sqrt 0.5))", R"(0.7071067811865476)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -1994,7 +1980,7 @@ R"&(\[\s*
 		d.parameters = R"(number base number exponent)";
 		d.returns = R"(number)";
 		d.description = R"(Returns `base` raised to the `exponent` power.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((pow 0.5 2))", R"(0.25)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -2006,7 +1992,7 @@ R"&(\[\s*
 		d.parameters = R"(number x)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to absolute value of `x`)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((abs -0.5))", R"(0.5)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -2019,7 +2005,7 @@ R"&(\[\s*
 		d.returns = R"(number)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to the maximum of all of parameters.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((max 0.5 1 7 9 -5))&", R"(9)"},
 			{R"&((max (null) 4 8))&", R"(8)"},
 			{R"&((max (null)))&", R"((null))"}
@@ -2035,7 +2021,7 @@ R"&(\[\s*
 		d.returns = R"(number)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to the minimum of all of the numbers.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((min 0.5 1 7 9 -5))&", R"(-5)"},
 			{R"&((min (null) 4 8))&", R"(4)"}
 			});
@@ -2050,7 +2036,7 @@ R"&(\[\s*
 		d.returns = R"([any])";
 		d.allowsConcurrency = true;
 		d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the maximum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the maximum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the maximum value.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((index_max 0.5 -12 3 5 7))&", R"([4])"},
 			{R"&((index_max
 	[1 1 3 2 1 3]
@@ -2072,7 +2058,7 @@ R"&(\[\s*
 		d.returns = R"([any])";
 		d.allowsConcurrency = true;
 		d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the minimum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the minimum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the minimum value.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((index_min 0.5 -12 3 5 7))&", R"([1])"},
 			{R"&((index_min
 	[1 1 3 2 1 3]
@@ -2092,7 +2078,7 @@ R"&(\[\s*
 		d.parameters = R"(list|assoc x1 list|assoc x2)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the sum of all corresponding element-wise products of `x1` and `x2`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((dot_product
 	[0.5 0.25 0.25]
 	[4 8 8]
@@ -2115,7 +2101,7 @@ R"&(\[\s*
 		d.parameters = R"(list|assoc values [number p])";
 		d.returns = R"(list|assoc)";
 		d.description = R"(Evaluates to a container of the values with the elements normalized, where `p` represents the order of the Lebesgue space to normalize the vector (e.g., 1 is Manhattan or surprisal space, 2 is Euclidean) and defaults to 1.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((normalize
 	[0.5 0.5 0.5 0.5]
 ))&", R"([0.25 0.25 0.25 0.25])"},
@@ -2146,7 +2132,7 @@ R"&(\[\s*
 		d.parameters = R"(list|assoc values [list|assoc weights])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to mode of the `values`.  If `values` is an assoc, it will return the key.  If `weights` is specified and both `values` and `weights` are lists, then the corresponding elements will be weighted by `weights`.  If weights is specified and is an assoc, then each value will be looked up in the `weights`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((mode
 	[1 1 2 3 4 5]
 ))&", R"(1)"},
@@ -2232,7 +2218,7 @@ R"&(\[\s*
 		d.parameters = R"(list|assoc values number quantile [list|assoc weights])";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the quantile of the `values` specified by `quantile` ranging from 0 to 1.  If `weights` is specified and both `values` and `weights` are lists, then the corresponding elements will be weighted by `weights`.  If `weights` is specified and is an assoc, then each value will be looked up in the `weights`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((quantile
 	[1 2 3 4 5]
 	0.5
@@ -2294,7 +2280,7 @@ R"&(\[\s*
 		d.parameters = R"(list|assoc values [number p] [list|assoc weights] [number center] [bool calculate_moment] [bool absolute_value])";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the generalized mean of the `values`.  If `p` is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity) to harmonic mean (-1) to geometric mean (0) to arithmetic mean (1) to maximum (infinity).  If `weights` are specified, it uses those when calculating the corresponding values for the generalized mean.  If `center` is specified, calculations will use that as central point, and the default center is is 0.0.  If `calculate_moment` is true, which defaults to false, then the results will not be raised to 1/`p` at the end.  If `absolute_value` is true, which defaults to false, the differences will take the absolute value.  Various parameterizations of generalized_mean can be used to compute moments about the mean, especially setting the calculate_moment parameter to true and using the mean as the center.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((generalized_mean
 	[1 2 3 4 5]
 ))&", R"(3)"},
@@ -2356,7 +2342,7 @@ R"&(\[\s*
 		d.description = R"(Computes the generalized norm between `vector1` and `vector2` (or an equivalent zero vector if unspecified) with parameter specified by `p` (1 being probability space and Manhattan distance, the default, and e.g., 2 being Euclidean distance), using the numerical distance or edit distance as appropriate.  The parameter `value_names`, if specified as a list of the names of the values, will transform via unzipping any assoc into a list for the respective parameter in the order of the `value_names`, or if a number will use the number repeatedly for every element.  The `weights` parameter specifies how to weight the different dimensions.  If `weights` is a list, each value maps to its respective element in the vectors.  If `weights` is null, then it will assume that the `weights` are 1 and additionally will ignore null values for the vectors instead of treating them as unknown differences.  If `weights` is an assoc, then the parameter `value_names` will select the `weights` from the assoc.  If `weights` is an assoc of assocs, additionally the parameter `weights_selection_features` will select which set of `weights` to use.  If `weights_selection_features` is a string, then it will select `weights` for the given feature and rebalance any `weights` for unused features.  If `weights_selection_features` is a list, then it will select and rebalance the `weights` as best suited for predicting the combination of features in the list.  The parameter `distance_types` is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  
 For `attributes`, the particular `distance_types` specifies what particular `attributes` are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).  If the feature type is continuous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 The values in the parameter `deviations` are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.   If any vector value is null or any of the differences between `vector1` and `vector2` evaluate to null, then it will compute a corresponding maximum distance value based on the properties of the feature.  If `surprisal_space` is true, which defaults to false, it will perform all computations in surprisal space.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((generalized_distance
 	(map
 		10000
@@ -3103,7 +3089,7 @@ The values in the parameter `deviations` are used during distance calculation to
 		d.parameters = R"(list|assoc|number p [list|assoc|number q] [number p_exponent] [number q_exponent])";
 		d.returns = R"(number)";
 		d.description = R"(Computes a form of entropy on the specified vectors `p` and `q` using nats (natural log, not bits) in the form of -sum p_i ln (p_i^p_exponent * q_i^q_exponent).  For both `p` and `q`, if `p` or `q` is a list of numbers, then it will treat each entry as being the probability of that element.  If it is an associative array, then elements with matching keys will be matched.  If `p` or `q` is a number then it will use that value in place of each element.  If `p` or `q` is null or not specified, it will be calculated as the reciprocal of the size of the other element (p_i would be 1/|q| or q_i would be 1/|p|).  If either `p_exponent` or `q_exponent` is 0, then that exponent will be ignored.  Shannon entropy can be computed by ignoring the q parameters by specifying it as null, setting `p_exponent` to 1 and `q_exponent` to 0. KL-divergence can be computed by providing both `p` and `q` and setting `p_exponent` to -1 and `q_exponent` to 1.  Cross-entropy can be computed by setting `p_exponent` to 0 and `q_exponent` to 1.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((entropy
 	[0.5 0.5]
 ))&", R"(0.6931471805599453)"},
@@ -3143,7 +3129,7 @@ The values in the parameter `deviations` are used during distance calculation to
 		d.parameters = R"([list|assoc|number|string data])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the first element of `data`.  If `data` is a list, it will be the first element.  If `data` is an assoc, it will evaluate to the first element by assoc storage, but order does not matter.  If `data` is a string, it will be the first character.  If `data` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((first
 	[4 9.2 "this"]
 ))&", R"(4)"},
@@ -3164,7 +3150,7 @@ The values in the parameter `deviations` are used during distance calculation to
 		d.parameters = R"([list|assoc|number|string data] [number retain_count])";
 		d.returns = R"(list)";
 		d.description = R"(Evaluates to everything but the first element.  If `data` is a list, it will be a list of all but the first element.  If `data` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, but order does not matter.  If `data` is a string, it will be all but the first character.  If `data` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero.  If a `retain_count` is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first element).)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((tail
 	[4 9.2 "this"]
 ))&", R"([9.2 "this"])"},
@@ -3353,7 +3339,7 @@ The values in the parameter `deviations` are used during distance calculation to
 		d.parameters = R"([list|assoc|number|string data])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the last element of `data`.  If `data` is a list, it will be the last element.  If `data` is an assoc, it will evaluate to the first element by assoc storage, because order does not matter.  If `data` is a string, it will be the last character.  If `data` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((last
 	[4 9.2 "this"]
 ))&", R"("this")"},
@@ -3374,7 +3360,7 @@ The values in the parameter `deviations` are used during distance calculation to
 		d.parameters = R"([list|assoc|number|string data] [number retain_count])";
 		d.returns = R"(list)";
 		d.description = R"(Truncates, evaluates to everything in `data` but the last element. If `data` is a list, it will be a list of all but the last element.  If `data` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, because order does not matter.  If `data` is a string, it will be all but the last character.  If `data` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If `truncate_count` is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1, indicating all but the last.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((trunc
 	[4 9.2 "end"]
 ))&", R"([4 9.2])"},
@@ -3564,7 +3550,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([list|assoc|* collection1] [list|assoc|* collection2] ... [list|assoc|* collectionN])";
 		d.returns = R"(list|assoc)";
 		d.description = R"(Evaluates to a new list or assoc which merges all lists, `collection1` through `collectionN`, based on parameter order. If any assoc is passed in, then returns an assoc (lists will be automatically converted to an assoc with the indices as keys and the list elements as values). If a non-list and non-assoc is specified, then it just adds that one element to the list)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((append
 	[1 2 3]
 	[4 5 6]
@@ -3622,7 +3608,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([list|assoc|string collection] collection)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the size of the `collection` in number of elements.  If `collection` is a string, returns the length in UTF-8 characters.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((size
 	[4 9.2 "this"]
 ))&", R"(3)"},
@@ -3650,7 +3636,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(list)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to a list with the range from `low_endpoint` to `high_endpoint`.  The default `step_size` is 1.  Evaluates to an empty list if the range is not valid.  If four arguments are specified, then `function` will be evaluated for each value in the range.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((range 0 10))&", R"([
 	0
 	1
@@ -3707,7 +3693,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* function * target)";
 		d.returns = R"(any)";
 		d.description = R"(Rewrites `target` by applying the `function` in a bottom-up manner.  For each node in the `target` structure, it pushes a new target scope onto the target stack, with `(current_value)` being the current node and `(current_index)` being to the index to the current node relative to the node passed into rewrite accessed via target, and evaluates `function`.  Returns the resulting structure, after have been rewritten by function.  Note that there is a small performance overhead if `target` is a graph structure rather than a tree structure.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((rewrite
 	(lambda
 		(if
@@ -3861,7 +3847,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(list)";
 		d.allowsConcurrency = true;
 		d.description = R"(For each element in the collection, pushes a new target scope onto the stack, so that `(current_value)` accesses the element or elements in the list and `(current_index)` accesses the list or assoc index, with `(target)` representing the outer set of lists or assocs, and evaluates the function.  Returns the list of results, mapping the list via the specified `function`.  If multiple lists or assocs are specified, then it pulls from each list or assoc simultaneously (null if overrun or index does not exist) and `(current_value)` contains an array of the values in parameter order.  Note that concurrency is only available when more than one one collection is specified.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 						{R"&((map
 	(lambda
 		(* (current_value) 2)
@@ -3962,7 +3948,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(list|assoc)";
 		d.allowsConcurrency = true;
 		d.description = R"(For each element in the `collection`, pushes a new target scope onto the stack, so that `(current_value)` accesses the element in the list and `(current_index)` accesses the list or assoc index, with `(target)` representing the original list or assoc, and evaluates the function.  If `function` evaluates to true, then the element is put in a new list or assoc (matching the input type) that is returned.  If function is omitted, then it will remove any elements in the collection that are null.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((filter
 	(lambda
 		(> (current_value) 2)
@@ -4084,7 +4070,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([* function] list|immediate values1 [list|immediate values2] [list|immediate values3]...)";
 		d.returns = R"(list)";
 		d.description = R"(Interleaves the values lists optionally by applying a function.  If only `values1` is passed in, then it evaluates to `values1`. If `values1` and `values2` are passed in, or, if more values are passed in but function is null, it interleaves the lists and extends the result to the length of the longest list, filling in the remainder with null.  If any of the value parameters are immediate, then it will repeat that immediate value when weaving.  If the `function` is specified and not null, it pushes a new target scope onto the stack, so that `(current_value)` accesses a list of elements to be woven together from the list, and `(current_index)` accesses the list or assoc index, with `(target)` representing the resulting list or assoc.  The `function` should evaluate to a list, and weave will evaluate to a concatenated list of all of the lists that the function evaluated to.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((weave
 	[1 2 3]
 ))&", R"([1 2 3])"},
@@ -4247,7 +4233,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* function list|assoc collection)";
 		d.returns = R"(any)";
 		d.description = R"(For each element in the `collection` after the first one, it evaluates `function` with a new scope on the stack where `(current_value)` accesses each of the elements from the `collection`, `(current_index)` accesses the list or assoc index and `(previous_result)` accesses the previously reduced result.  If the `collection` is empty, null is returned.  If the `collection` is of size one, the single element is returned.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((reduce
 	(lambda
 		(* (current_value) (previous_result))
@@ -4280,7 +4266,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* to_apply [list|assoc collection])";
 		d.returns = R"(any)";
 		d.description = R"(Creates a new list of the values of the elements of the `collection`, applies the type specified by `to_apply`, which is either the type corresponding to a string or the type of `to_apply`, and then evaluates it.  If `to_apply` has any parameters, i.e., it is a node with one or more elements, these are prepended to the `collection` as the first parameters.  When no extra parameters are passed, it is a more efficient equivalent to `(call (set_type type collection))`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((apply
 	(lambda (+))
 	[1 2 3 4]
@@ -4305,7 +4291,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(list collection)";
 		d.returns = R"(list)";
 		d.description = R"(Returns a new list containing the `collection` with its elements in reversed order.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((reverse
 	[1 2 3 4 5]
 ))&", R"([5 4 3 2 1])"}
@@ -4319,7 +4305,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([* function] list|assoc collection [number k])";
 		d.returns = R"(list)";
 		d.description = "Returns a new list containing the elements from `collection` sorted in increasing order, regardless of whether `collection` is an assoc or list.  If `function` is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with `(current_value)` and `(current_value 1)` accessing a pair of elements from the list, and evaluates `function`.  The function should return a number, positive if `(current_value)` is greater, negative if `(current_value 1)` is greater, or 0 if equal.  If `k` is specified in addition to `function` and not null, then it will only return the `k` smallest values sorted in order, or, if `k` is negative, it will return the highest `k` values using the absolute value of `k`.";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((sort
 	[4 9 3 5 1]
 ))&", R"([1 3 4 5 9])"},
@@ -4515,7 +4501,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(list|assoc collection)";
 		d.returns = R"(list of string|number)";
 		d.description = R"(Evaluates to the list of strings or numbers that comprise the indices for the list or associative parameter `collection`.  It is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((sort
 	(indices
 		(associate
@@ -4578,7 +4564,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(list|assoc collection [bool only_unique_values])";
 		d.returns = R"(list of any)";
 		d.description = R"(Evaluates to the list of entities that comprise the values for the list or associative list `collection`.  If `only_unique_values` is true (defaults to false), then it will filter out any duplicate values and only return those that are unique, preserving their order of first appearance.  If `only_unique_values` is not true, then it is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((sort
 	(values
 		(associate
@@ -4698,7 +4684,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(list|assoc collection string|number|list index)";
 		d.returns = R"(bool)";
 		d.description = R"(Evaluates to true if the index is in the `collection`.  If index is a string, it will attempt to look at `collection` as an assoc, if number, it will look at `collection` as a list.  If index is a list, it will traverse a via the elements in the list as a walk path, with each element .)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((contains_index
 	(associate
 		"a"
@@ -4761,7 +4747,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(list|assoc|string collection_or_string string|number value)";
 		d.returns = R"(bool)";
 		d.description = R"(Evaluates to true if the `value` is contained in `collection_or_string`.  If `collection_or_string` is a string, then it uses `value` as a regular expression and evaluates to true if the regular expression matches.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((contains_value
 	(associate
 		"a"
@@ -4830,7 +4816,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(list|assoc collection number|string|list index)";
 		d.returns = R"(list|assoc)";
 		d.description = R"(Removes the index-value pair with `index` being the index in assoc or index of `collection`, returning a new list or assoc with `index` removed.  If `index` is a list of numbers or strings, then it will remove each of the requested indices.  Negative numbered indices will count back from the end of a list.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((sort
 	(remove
 		(associate
@@ -4938,7 +4924,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(list|assoc collection number|string|list index)";
 		d.returns = R"(list|assoc)";
 		d.description = R"(Keeps only the index-value pair with index being the index in `collection`, returning a new list or assoc with only that index.  If `index` is a list of numbers or strings, then it will only keep those requested indices.  Negative numbered indices will count back from the end of a list.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((keep
 	(associate
 		"a"
@@ -5029,7 +5015,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(assoc)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to the assoc, where each pair of parameters (e.g., `index1` and `value1`) comprises a index/value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((unparse
 	(associate
 		"a"
@@ -5054,7 +5040,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([* function] list indices [* values])";
 		d.returns = R"(assoc)";
 		d.description = R"(Evaluates to a new assoc where `indices` are the keys and `values` are the values, with corresponding positions in the list matched.  If the `values` is omitted and only one parameter is specified, then it will use nulls for each of the values.  If `values` is not a list, then all of the values in the assoc returned are set to the same value.  When two parameters are specified, it is the `indices` and `values`.  When three values are specified, it is the `function`, indices, and values.  The parameter `values` defaults to null and `function` defaults to `(lambda (current_value))`.  When there is a collision of indices, `function` is called with a of new target scope pushed onto the stack, so that `(current_value)` accesses a list of elements from the list, `(current_index)` accesses the list or assoc index if it is not already reduced, and `(target)` represents the original list or assoc.  When evaluating `function`, existing indices will be overwritten.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((unparse
 	(zip
 		["a" "b" "c" "d"]
@@ -5115,7 +5101,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([list|assoc collection] list indices)";
 		d.returns = R"(list)";
 		d.description = R"(Evaluates to a new list, using `indices` to look up each value from the `collection` in the same order as each index is specified in `indices`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((unzip
 	[1 2 3]
 	[0 -1 1]
@@ -5136,7 +5122,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(any)";
 		d.allowsConcurrency = true;
 		d.description = R"(If all condition expressions are true, evaluates to `conditionN`.  Otherwise evaluates to false.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((and 1 4.8 "true" .true))&", R"(.true)"},
 			{R"&((and 1 0 "true" .true))&", R"(.false)"}
 			});
@@ -5151,7 +5137,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(any)";
 		d.allowsConcurrency = true;
 		d.description = R"(If all condition expressions are false, evaluates to false.  Otherwise evaluates to the first condition that is true.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((or .true .false))&", R"(.true)"},
 			{R"&((or .false .false .false))&", R"(.false)"},
 			{R"&((or 1 0 "true"))&", R"(1)"},
@@ -5169,7 +5155,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(any)";
 		d.allowsConcurrency = true;
 		d.description = R"(If an even number of condition expressions are true, evaluates to false.  Otherwise evaluates to true.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((xor .true .true))&", R"(.false)"},
 			{R"&((xor .true .false))&", R"(.true)"},
 			{R"&((xor 1 4.8 "true"))&", R"(.true)"},
@@ -5185,7 +5171,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(bool condition)";
 		d.returns = R"(bool)";
 		d.description = R"(Evaluates to false if `condition` is true, true if false.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((not .true))&", R"(.false)"},
 			{R"&((not .false))&", R"(.true)"},
 			{R"&((not 1))&", R"(.false)"},
@@ -5201,7 +5187,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if the value of all nodes are equal, false otherwise. Values of null are considered equal, and any complex data structures will be traversed evaluated for deep equality.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((= 4 4 5))&", R"(.false)"},
 			{R"&((= 4 4 4))&", R"(.true)"},
 			{R"&((=
@@ -5223,7 +5209,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if no two values are equal, false otherwise.  Values of null are considered equal, and any complex data structures will be traversed evaluated for deep equality.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((!= 4 4))&", R"(.false)"},
 			{R"&((!= 4 5))&", R"(.true)"},
 			{R"&((!= 4 4 5))&", R"(.false)"},
@@ -5251,7 +5237,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are in strict increasing order, false otherwise.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((< 4 5))&", R"(.true)"},
 			{R"&((< 4 4))&", R"(.false)"},
 			{R"&((< 4 5 6))&", R"(.true)"},
@@ -5268,7 +5254,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are in nondecreasing order, false otherwise.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((<= 4 5))&", R"(.true)"},
 			{R"&((<= 4 4))&", R"(.true)"},
 			{R"&((<= 4 5 6))&", R"(.true)"},
@@ -5287,7 +5273,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are in strict decreasing order, false otherwise.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((> 6 5))&", R"(.true)"},
 			{R"&((> 4 4))&", R"(.false)"},
 			{R"&((> 6 5 4))&", R"(.true)"},
@@ -5304,7 +5290,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are in nonincreasing order, false otherwise.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((>= 6 5))&", R"(.true)"},
 			{R"&((>= 4 4))&", R"(.true)"},
 			{R"&((>= 6 5 4))&", R"(.true)"},
@@ -5323,7 +5309,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to true if all values are of the same data type, false otherwise.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((~ 1 4 5))&", R"(.true)"},
 			{R"&((~ 1 4 "a"))&", R"(.false)"}
 			});
@@ -5337,7 +5323,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
 		d.returns = R"(bool)";
 		d.description = R"(Evaluates to true if no two values are of the same data types, false otherwise.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((!~
 	"true"
 	"false"
@@ -5359,7 +5345,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"()";
 		d.returns = R"(null)";
 		d.description = R"(Evaluates to the immediate null value, regardless of any parameters.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((null))&", R"((null))"},
 			{R"&((lambda
 	(null
@@ -5389,7 +5375,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(list)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to a list with the parameters as elements.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the list itself, the current index, and the current value.  If `[]`'s are used instead of parenthesis, the keyword `list` may be omitted.  `[]` are considered identical to `(list)`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&(["a" 1 "b"])&", R"(["a" 1 "b"])"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
@@ -5405,7 +5391,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(unordered_list)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to the list specified by parameters as elements.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the unordered list itself, the current index, and the current value.  It operates like a list, except any operations that would normally consider a list's order.  For example, union, intersect, and mix, will consider the values unordered.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((unordered_list 4 4 5))&", R"((unordered_list 4 4 5))"},
 			{R"&((unordered_list
 	(unordered_list 4 4 5)
@@ -5452,7 +5438,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(assoc)";
 		d.allowsConcurrency = true;
 		d.description = R"(Evaluates to an associative list, where each pair of parameters (e.g., `index1` and `value1`) comprises a index-value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.  If any of the bareword strings (bstrings) do not have reserved characters or whitespace, then quotes are optional; if whitespace or reserved characters are present, then quotes are required.  If `{}`'s are used instead of parenthesis, the keyword assoc may be omitted.  `{}` are considered identical to `(assoc)`)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((unparse
 	{b 2 c 3}
 ))&", R"("{b 2 c 3}")"},
@@ -5472,7 +5458,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"()";
 		d.returns = R"(bool)";
 		d.description = R"(A 64-bit floating point value)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&(.true)&", R"(.true)"},
 			{R"&(.false)&", R"(.false)"}
 			});
@@ -5486,7 +5472,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"()";
 		d.returns = R"(number)";
 		d.description = R"(A 64-bit floating point value)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&(1)&", R"(1)"},
 			{R"&(1.5)&", R"(1.5)"},
 			{R"&(6.02214076e+23)&", R"(6.02214076e+23)"},
@@ -5505,7 +5491,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"()";
 		d.returns = R"(string)";
 		d.description = R"(A string.  Many opcodes assume UTF-8 formatted strings, but many, such as `format`, can work with any bytes.  Any non double-quote character is considered valid.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&("hello")&", R"("hello")"},
 			{R"&("\tHello\n\"Hello\"")&", R"("\tHello\n\"Hello\"")"}
 			});
@@ -5519,7 +5505,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"()";
 		d.returns = R"(*)";
 		d.description = R"(A string representing an internal symbol, a variable.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((let
 	{foo 1}
 	foo
@@ -5536,7 +5522,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node)";
 		d.returns = R"(any)";
 		d.description = R"(Returns a node of the type corresponding to the node.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((get_type
 	(lambda
 		(+ 3 4)
@@ -5552,7 +5538,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node)";
 		d.returns = R"(string)";
 		d.description = R"(Returns a string that represents the type corresponding to the node.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((get_type_string
 	(lambda
 		(+ 3 4)
@@ -5569,7 +5555,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node [string|* type])";
 		d.returns = R"(any)";
 		d.description = R"(Creates a copy of `node`, setting the type of the node of to `type`.  If `type` is a string, it will look that up as the type, or if `type` is a node that is not a string, it will set the type to match the top node of `type`.  It will convert opcode parameters as necessary.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((set_type
 	(lambda
 		(+ 3 4)
@@ -5625,7 +5611,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* data string from_format string to_format [assoc from_params] [assoc to_params])";
 		d.returns = R"(any)";
 		d.description = R"(Converts data from `from_format` into `to_format`.  Supported language types are "number", "string", and "code", where code represents everything beyond number and string.  Beyond the supported language types, additional formats that are stored in a binary string.  The additional formats are "base16", "base64", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", ">int8", ">uint8", ">int16", ">uint16", ">int32", ">uint32", ">int64", ">uint64", ">float32", ">float64", "<int8", "<uint8", "<int16", "<uint16", "<int32", "<uint32", "<int64", "<uint64", "<float32", "<float64", "json", "yaml", "date", and "time" (though date and time are special cases).  Binary types starting with a "<" represent little endian, binary types starting with a ">" represent big endian, and binary types without either will be the endianness of the machine.  Binary types will be handled as strings.  The "date" type requires additional information.  Following "date" or "time" is a colon, followed by a standard strftime date or time format string.  If `from_params` or `to_params` are specified, then it will apply the appropriate from or to as appropriate.  If the format is either "string", "json", or "yaml", then the key "sort_keys" can be used to specify a boolean value, if true, then it will sort the keys, otherwise the default behavior is to emit the keys based on memory layout.  If the format is date or time, then the to or from params can be an assoc with "locale" as an optional key.  If date then "time_zone" is also allowed.  The locale is provided, then it will leverage operating system support to apply appropriate formatting, such as en_US.  Note that UTF-8 is assumed and automatically added to the locale.  If no locale is specified, then the default will be used.  If converting to or from dates, if "time_zone" is specified, it will use the standard time_zone name, if unspecified or empty string, it will assume the current time zone.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((map
 	(lambda
 		(format (current_value) "int8" "number")
@@ -5809,7 +5795,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node)";
 		d.returns = R"(string)";
 		d.description = R"(Returns a string comprising all of the annotation lines for `node`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((get_annotations
 	(lambda
 		
@@ -5828,7 +5814,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node [string new_annotation])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to a new copy of `node` with the annotation specified by `new_annotation`, where each newline is a separate line of annotation.  If `new_annotation` is null or missing, it will clear annotations for `node`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((unparse
 	(set_annotations
 		(lambda
@@ -5852,7 +5838,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node)";
 		d.returns = R"(string)";
 		d.description = R"(Returns a strings comprising all of the comment lines for `node`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((get_comments
 	(lambda
 		
@@ -5871,7 +5857,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node [string new_comment])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to a new copy of `node` with the comment specified by `new_comment`, where each newline is a separate line of comment.  If `new_comment` is null or missing, it will clear comments for `node`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((unparse
 	(set_annotations
 		(lambda
@@ -5895,7 +5881,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node)";
 		d.returns = R"(bool)";
 		d.description = R"(Returns true if `node` has a preference to be processed in a manner where its operations are run concurrentl, false if it is not.  Note that concurrency is potentially subject to race conditions or inconsistent results if tasks write to the same locations without synchronization.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((get_concurrency
 	(lambda
 		(print "hello")
@@ -5924,7 +5910,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node bool concurrent)";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to a new copy of `node` with the preference for concurrency set by `concurrent`.  Note that concurrency is potentially subject to race conditions or inconsistent results if tasks write to the same locations without synchronization.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((unparse
 	(set_concurrency
 		(lambda
@@ -5961,7 +5947,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node)";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to a new copy of `node` without annotations, comments, or concurrency.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((get_value
 	
 	;first comment
@@ -5984,7 +5970,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* target * val)";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to a new copy of `node` with the value set to `val`, keeping existing annotations, comments, and concurrency).)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((set_value
 	
 	;first comment
@@ -6006,7 +5992,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string str [number stride])";
 		d.returns = R"(list of string)";
 		d.description = R"(Explodes `str` into the pieces that make it up.  If `stride` is zero or unspecified, then it explodes `str` by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((explode "abcdefghi"))&", R"([
 	"a"
 	"b"
@@ -6042,7 +6028,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string str [string split_string] [number max_split_count] [number stride])";
 		d.returns = R"(list of string)";
 		d.description = R"(Splits `str` into a list of strings based on `split_string`, which is handled as a regular expression.  Any data matching `split_string` will not be included in any of the resulting strings.  If `max_split_count` is provided and greater than zero, it will only split up to that many times.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified and a value other than zero, then it does not use `split_string` as a regular expression but rather a string, and it breaks the result into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((split "hello world"))&", R"(["hello world"])"},
 			{R"&((split "hello world" " "))&", R"(["hello" "world"])"},
 			{R"&((split "hello\r\nworld\r\n!" "\r\n"))&", R"(["hello" "world" "!"])"},
@@ -6063,7 +6049,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string str [number|string location] [number|string param] [string replacement] [number stride])";
 		d.returns = R"(string | list of string | list of list of string)";
 		d.description = R"(Finds a substring `str`.  If `location` is a number, then evaluates to a new string representing the substring starting at the offset specified by `location`.  If `location` is a string, then it will treat `location` as a regular expression.  If `param` is specified, then it may change the interpretation of `location`.  If `param` is specified and `location` is a number it will go until that length beyond the offset specified by `location`.  If `param` is specified and `location` is a regular expression, `param` will represent one of the following: if null or "first", then it will return the first match of the regular expression; or if `param` is a number or the string "all", then substr will evaluate to a list of up to param matches (which may be infinite yielding the same result as "all").  If `param` is a negative number or the string "submatches", then it will return a list of list of strings, for each match up to the count of the negative number or all matches.  If `param` is "submatches", each inner list will represent the full regular expression match followed by each submatch as captured by parenthesis in the regular expression, ordered from an outer to inner, left-to-right manner.  If `location` is a negative number, then it will measure from the end of the string rather than the beginning.  If `replacement` is specified and not null, it will return the original string rather than the substring, but the substring will be replaced by replacement regardless of what `location` is.  And if replacement is specified, then it will override some of the logic for the `param` type and always return just a string and not a list.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((substr "hello world"))&", R"("hello world")"},
 			{R"&((substr "hello world" 1))&", R"("ello world")"},
 			{R"&((substr "hello world" 1 8))&", R"("ello wo")"},
@@ -6114,7 +6100,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([string str1] [string str2] ... [string strN])";
 		d.returns = R"(string)";
 		d.description = R"(Concatenates all strings and evaluates to the single resulting string.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((concat "hello" " " "world"))&", R"("hello world")"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
@@ -6127,7 +6113,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string message string secret_key)";
 		d.returns = R"(string)";
 		d.description = R"(Signs `message` given `secret_key` and returns the signature using the Ed25519 algorithm.  Note that `message` is not included in the `signature`.  The `system` opcode using the command "sign_key_pair" can be used to create a public/secret key pair.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(declare
 		(zip
@@ -6159,7 +6145,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string message string public_key string signature)";
 		d.returns = R"(bool)";
 		d.description = R"(Verifies that `message` was signed with the signature via the public key using the Ed25519 algorithm and returns true if the signature is valid, false otherwise.  Note that `message` is not included in the `signature`.  The `system` opcode using the command "sign_key_pair" can be used to create a public/secret key pair.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(declare
 		(zip
@@ -6191,7 +6177,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string plaintext_message string key1 [string nonce] [string key2])";
 		d.returns = R"(string)";
 		d.description = R"(If `key2` is not provided, then it uses the XSalsa20 algorithm to perform shared secret key encryption on the `message`, returning the encrypted value.  If `key2` is provided, then the Curve25519 algorithm will additionally be used, and `key1` will represent the receiver's public key and `key2` will represent the sender's secret key.  The `nonce` is a string of bytes up to 24 bytes long, that will be used to randomize the encryption, and will need to be provided to the decryption in order to work.  Nonces are not technically required, but strongly recommended to prevent replay attacks.  The `system` opcode using the command "encrypt_key_pair" can be used to create a public/secret key pair.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(declare
 		(zip
@@ -6220,7 +6206,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string cyphertext_message string key1 [string nonce] [string key2])";
 		d.returns = R"(string)";
 		d.description = R"(If `key2` is not provided, then it uses the XSalsa20 algorithm to perform shared secret key decryption on the `message`, returning the encrypted value.  If `key2` is provided, then the Curve25519 algorithm will additionally be used, and `key1` will represent the sender's public key and `key2` will represent the receiver's secret key.  The `nonce` is a string of bytes up to 24 bytes long, that will be used to randomize the encryption, and will need to be provided to the decryption in order to work.  Nonces are not technically required, but strongly recommended to prevent replay attacks.  The `system` opcode using the command "encrypt_key_pair" can be used to create a public/secret key pair.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(declare
 		(zip
@@ -6249,7 +6235,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
 		d.returns = R"(null)";
 		d.description = R"(Prints each of the parameters in order in a manner interpretable as if they were code, except strings are printed without quotes.  Output is pretty-printed.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((print "hello world\n"))&", R"((null))"},
 			{R"&((print
 	1
@@ -6271,7 +6257,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the total count of all of the nodes referenced directly or indirectly by `node`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((total_size
 	[
 		1
@@ -6291,7 +6277,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.00001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "delete", "insert", "swap_elements", "deep_copy_elements", and "delete_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((mutate
 	(lambda
 		[
@@ -6382,7 +6368,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node1 * node2 [assoc params])";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the total count of all of the nodes referenced within `node1` and `node2` that are equivalent.  The assoc `params` can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "use_string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((commonality
 	(lambda
 		(seq 2 (get_entity_comments) 1)
@@ -6485,7 +6471,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node1 * node2 [assoc params])";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the number of nodes that are different between `node1` and `node2`. The assoc `params` can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "use_string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((edit_distance
 	(lambda
 		(seq 2 (get_entity_comments) 1)
@@ -6563,7 +6549,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node1 * node2 [assoc params])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to whatever is common between `node1` and `node2` exclusive.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((intersect
 	[
 		1
@@ -6726,7 +6712,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node1 * node2 [assoc params])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to whatever is inclusive when merging `node1` and `node2`.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((union
 	(lambda
 		(seq 2 (get_entity_comments) 1)
@@ -6920,7 +6906,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node1 * node2)";
 		d.returns = R"(any)";
 		d.description = R"(Finds the difference between `node1` and `node2`, and generates code that, if evaluated passing `node1` as its parameter "_", would turn it into `node2`.  Useful for finding a small difference of what needs to be changed to apply it to new (and possibly slightly different) data or code.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((difference
 	(lambda
 		{
@@ -7260,7 +7246,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(* node1 * node2 [number keep_chance_node1] [number keep_chance_node2] [assoc params])";
 		d.returns = R"(any)";
 		d.description = R"(Performs a union operation on `node1` and `node2`, but randomly ignores nodes from one or the other if the nodes are not equal.  If only `keep_chance_node1` is specified, `keep_chance_node2` defaults to 1 - `keep_chance_node1`. `keep_chance_node1` specifies the probability that a node from `node1` will be kept, and `keep_chance_node2` the probability that a node from `node2` will be kept.  `keep_chance_node1` + `keep_chance_node2` should be between 1 and 2, as there are two objects being merged, otherwise the values will be normalized.  `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", "recursive_matching", and "similar_mix_chance".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  "similar_mix_chance" is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on `keep_chance_node1` and `keep_chance_node2`, and defaults to 0.0.  If "similar_mix_chance" is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((mix
 	(lambda
 		[
@@ -7624,7 +7610,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path entity)";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the total count of all of the nodes of `entity` and all of its contained entities.  Each entity itself counts as multiple nodes, corresponding to flattening an entity via the `flatten_entity` opcode.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(create_entities
 		"Entity1"
@@ -7663,7 +7649,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path entity [bool include_rand_seeds] [bool parallel_create] [bool include_version])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to code that, if called, would completely reproduce the `entity`, as well as all contained entities.  If `include_rand_seeds` is true, by default, it will include all entities' random seeds.  If `parallel_create` is true, then the creates will be performed with parallel markers as appropriate for each group of contained entities.  If `include_version` is true, it will include a comment on the top node that is the current version of the Amalgam interpreter, which can be used for validating interoperability when loading code.  The code returned accepts two parameters, `create_new_entity`, which defaults to true, and `new_entity`, which defaults to null.  If `create_new_entity` is true, then it will create a new entity using the id path specified by `new_entity`, where null will create an unnamed entity.  If `create_new_entity` is false, then it will overwrite the current entity's code and create all contained entities.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(create_entities
 		"FlattenEntity"
@@ -7718,7 +7704,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path source_entity [number mutation_rate] [id_path dest_entity] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";
 		d.returns = R"(id_path)";
 		d.description = R"(Creates a mutated version of the entity specified by `source_entity` like mutate. Returns the id path of a new entity created contained by the entity that ran it.  The value specified by `mutation_rate`, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses `dest_entity` as the optional destination.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "delete", "insert", "swap_elements", "deep_copy_elements", and "delete_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(create_entities
 		"MutateEntity"
@@ -7820,7 +7806,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path entity1 id_path entity2 [assoc params])";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the total count of all of the nodes referenced within `entity1` and `entity2` that are equivalent, including all contained entities.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(create_entities
 		"MergeEntity1"
@@ -7898,7 +7884,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path entity1 id_path entity2 [assoc params])";
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the edit distance of all of the nodes referenced within `entity1` and `entity2` that are equivalent, including all contained entities.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(seq
 		(create_entities
@@ -7979,7 +7965,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path entity1 id_path entity2 [assoc params] [id_path entity3])";
 		d.returns = R"(id_path)";
 		d.description = R"(Creates an entity of whatever is common between the entities `entity1` and `entity2` exclusive.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Uses `entity3` as the optional destination via an internal call create_contained_entity.  Any contained entities will be intersected either based on matching name or maximal similarity for nameless entities.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(seq
 		(create_entities
@@ -8062,7 +8048,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path entity1 id_path entity2 [assoc params] [id_path entity3])";
 		d.returns = R"(id_path)";
 		d.description = R"(Creates an entity of whatever is inclusive when merging the entities `entity1` and `entity2`.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Uses `entity3` as the optional destination via an internal call to create_contained_entity.  Any contained entities will be unioned either based on matching name or maximal similarity for nameless entities.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(seq
 		(create_entities
@@ -8145,7 +8131,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path entity1 id_path entity2)";
 		d.returns = R"(any)";
 		d.description = R"(Finds the difference between the entities specified by `entity1` and `entity2` and generates code that, if evaluated passing the entity id_path as its parameter "_", would create a new entity into the id path specified by its parameter "new_entity" (null if unspecified), which would contain the applied difference between the two entities and returns the newly created entity id path.  Useful for finding a small difference of what needs to be changed to apply it to new (and possibly slightly different) entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities "DiffEntity1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "DiffEntity1" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 6)) ))", R"()"}, {R"((create_entities (list "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffEntity1" "OnlyIn1") (lambda (assoc "m" 4)) ))", R"()"}, {R"((create_entities (list "DiffEntity1") (lambda (assoc "E" 3 "F" 4)) ))", R"()"}, {R"((create_entities (list "DiffEntity1") (lambda (assoc "e" 3 "f" 4 "g" 5 "h" 6)) ))", R"()"}, {R"((create_entities "DiffEntity2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "DiffEntity2" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 5)) ))", R"()"}, {R"((create_entities (list "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffEntity2" "OnlyIn2") (lambda (assoc "o" 6)) ))", R"()"}, {R"((create_entities (list "DiffEntity2") (lambda (assoc "E" 3 "F" 4 "G" 5 "H" 6)) ))", R"()"}, {R"((create_entities (list "DiffEntity2") (lambda (assoc "e" 3 "f" 4)) ))", R"()"}, {R"((print (contained_entities "DiffEntity2")))", R"()"}, {R"((print (difference_entities "DiffEntity1" "DiffEntity2")))", R"()"}, {R"((let (assoc new_entity)", R"()"}, {R"((call (difference_entities "DiffEntity1" "DiffEntity2") (assoc _ "DiffEntity1"))))", R"()"}, {R"((print new_entity))", R"()"}, {R"((print (retrieve_entity_root new_entity)))", R"()"}, {R"((print (retrieve_entity_root (list new_entity "DiffEntityChild1"))))", R"()"}, {R"((print (contained_entities new_entity)))", R"()"}, {R"())", R"()"}, {R"((create_entities "DiffContainer" null))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1") (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1" "OnlyIn1") (lambda (assoc "m" 4)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1") (lambda (assoc "E" 3 "F" 4)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1") (lambda (assoc "e" 3 "f" 4 "g" 5 "h" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2") (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2" "OnlyIn2") (lambda (assoc "o" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2") (lambda (assoc "E" 3 "F" 4 "G" 5 "H" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2") (lambda (assoc "e" 3 "f" 4)) ))", R"()"}, {R"((print (difference_entities (list "DiffContainer" "DiffEntity1") (list "DiffContainer" "DiffEntity2") )))", R"()"}, {R"((let (assoc new_entity)", R"()"}, {R"((call (difference_entities (list "DiffContainer" "DiffEntity1") (list "DiffContainer" "DiffEntity2") ))", R"()"}, {R"((assoc _ (list "DiffContainer" "DiffEntity1") ))))", R"()"}, {R"((print new_entity))", R"()"}, {R"((print (get_entity_code new_entity)))", R"()"}, {R"((print (get_entity_code (list new_entity "DiffEntityChild1"))))", R"()"}, {R"((print (contained_entities new_entity)))", R"()"}, {R"())", R"()"}
 			});
 		d.requiresEntity = true;
@@ -8158,7 +8144,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path entity1 id_path entity2 [number keep_chance_entity1] [number keep_chance_entity2] [assoc params] [id_path entity3])";
 		d.returns = R"(id_path)";
 		d.description = R"(Performs a union operation on the entities represented by `entity1` and `entity2`, but randomly ignores nodes from one or the other tree if not equal.  If only `keep_chance_entity1` is specified, `keep_chance_entity2` defaults to 1 - `keep_chance_entity1`.  `keep_chance_entity1` specifies the probability that a node from the entity represented by `entity1` will be kept, and `keep_chance_entity2` the probability that a node from the entity represented by `entity2` will be kept.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  `similar_mix_chance` is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on `keep_chance_node1` and `keep_chance_node2`, and defaults to 0.0.  If `similar_mix_chance` is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.  `unnamed_entity_mix_chance` represents the probability that an unnamed entity pair will be mixed versus preserved as independent chunks, where 0.2 would yield 20% of the entities mixed. Returns the id path of a new entity created contained by the entity that ran it.  Uses `entity3` as the optional destination entity.   Any contained entities will be mixed either based on matching name or maximal similarity for nameless entities.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities "e1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities "e2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((mix_entities "e1" "e2" 0.5 0.5 "e3"))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -8172,7 +8158,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([id_path entity] [string label] [bool deep_annotations])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the corresponding annotations for `entity`.  If `entity` is null then it will use the current entity.  If `label` is null or empty string, it will retrieve annotations for the entity root, otherwise if it is a valid `label` it will attempt to retrieve the annotations for that label, null if the label doesn't exist.  If `deep_annotations` is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the annotation of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_annotations is true, then it will return an assoc of label to annotation for each label in the entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((print (get_entity_comments)))", R"()"}, {R"((print (get_entity_comments "label_name" .true))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -8185,7 +8171,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([id_path entity] [string label] [bool deep_comments])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the corresponding comments for `entity`.  If `entity` is null then it will use the current entity.  If `label` is null or empty string, it will retrieve comments for the entity root, otherwise if it is a valid `label` it will attempt to retrieve the comments for that label, null if the label doesn't exist.  If `deep_comments` is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the comment of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_comments is true, then it will return an assoc of label to comment for each label in the entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((print (get_entity_comments)))", R"()"}, {R"((print (get_entity_comments "label_name" .true))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -8198,7 +8184,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([id_path entity])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the code contained by `entity`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((print (retrieve_entity_root)))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -8211,7 +8197,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([id_path entity1] * root1 [id_path entity2] [* root2] [...])";
 		d.returns = R"(bool)";
 		d.description = R"(Sets the code of the `entity1 to `root1`, as well as all subsequent entity-code pairs of parameters.  If `entity1` is not specified or null, then uses the current entity.  On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((print (assign_entity_roots {})))", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
@@ -8226,7 +8212,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([id_path entity])";
 		d.returns = R"(string)";
 		d.description = R"(Evaluates to a string representing the current state of the random number generator for `entity` used for seeding the random streams of any calls to the entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities "RandTest" (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(}))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"}, {R"((print (get_entity_rand_seed "RandTest")))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -8239,7 +8225,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([id_path entity] * node [bool deep])";
 		d.returns = R"(string)";
 		d.description = R"(Sets the random number seed and state for the random number generator of `entity`, or the current entity if null or not specified, to the state specified by `node`.  If `node` is already a string in the proper format output by `(get_entity_rand_seed)`, then it will set the random generator to that current state, picking up where the previous state left off.  If `node` is anything else, it uses the value as a random seed to start the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by `entity` for new calls.  The parameter `deep` defaults to false, but if it is true, all contained entities are recursively set with random seeds based on the specified random seed and a hash of their relative id path to the entity being set.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities "RandTest" (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(} ))", R"()"}, {R"((create_entities (list "RandTest" "DeepRand") (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(} ))", R"()"}, {R"((declare (assoc seed (get_entity_rand_seed "RandTest"))))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"}, {R"((set_entity_rand_seed "RandTest" 1234))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
@@ -8254,7 +8240,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([id_path entity])";
 		d.returns = R"(assoc)";
 		d.description = R"(Returns an assoc of the permissions of `entity`, the current entity if `entity` is not specified or null, where each key is the permission and each value is either true or false.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities "RootTest" (lambda (print (system_time)) )))", R"()"}, {R"((print (get_entity_permissions "RootTest")))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -8267,7 +8253,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path entity bool|assoc permissions [bool deep])";
 		d.returns = R"(id_path)";
 		d.description = R"(Sets the permissions on the `entity`.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.  The parameter `deep` defaults to false, but if it is true, all contained entities have their permissions updated.  Returns the id path of `entity`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities "RootTest" (lambda (print (system_time)) )))", R"()"}, {R"((set_entity_permissions "RootTest" .true))", R"()"}, {R"((call_entity "RootTest"))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -8281,7 +8267,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([id_path entity1] * node1 [id_path entity2] [* node2] [...])";
 		d.returns = R"(list of id_path)";
 		d.description = R"(Creates a new entity for id path `entity1` with code specified by `node1`, repeating this for all entity-node pairs, returning a list of the id paths for each of the entities created.  If the execution does not have permission to create the entities, it will evaluate to null.  If the `entity` is omitted, then it will create an unnamed new entity in the calling entity.  If `entity1` specifies an existing entity, then it will create the new entity within that existing entity.  If the last id path in the string is not an existing entity, then it will attempt to create that entity (returning null if it cannot).  If the node is of any other type than assoc, it will create an assoc as the top node and place the node under the null key.  Unlike the rest of the entity creation commands, create_entities specifies the optional id path first to make it easy to read entity definitions.  If more than 2 parameters are specified, create_entities will iterate through all of the pairs of parameters, treating them like the first two as it creates new entities.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((print (create_entities "MyLibrary" (lambda { three 3 four 4}) ) ))", R"()"}, {R"((create_entities "EntityWithChildren" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "EntityWithChildren" "Child1") (lambda (assoc "x" 3 "y" 4)) ))", R"()"}, {R"((create_entities (list "EntityWithChildren" "Child2") (lambda (assoc "p" 3 "q" 4)) ))", R"()"}, {R"((print (contained_entities "EntityWithChildren")))", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
@@ -8296,7 +8282,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path source_entity1 [id_path destination_entity1] [id_path source_entity2] [id_path destination_entity2] [...])";
 		d.returns = R"(list of id_path)";
 		d.description = R"(Creates a clone of `source_entity1`.  If `destination_entity1` is not specified, then it clones the entity into an unnamed entity in the current entity.  If `destination_entity1` is specified, then it clones it into the location specified by `destination_entity1`; if `destination_entity1` is an existing entity, then it will create it as a contained entity within `destination_entity1`, if not, it will attempt to create it with the given id path of `destination_entity1`.  Evaluates to the id path of the new entity.  Can only be performed by an entity that contains both `source_entity1` and the specified path of `destination_entity1`. If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((print (create_entities "MyLibrary" (lambda {three 3 four 4}) ) ))", R"()"}, {R"((print (clone_entities "MyLibrary" "MyNewLibrary")))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -8310,7 +8296,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path source_entity1 [id_path destination_entity1] [id_path source_entity2] [id_path destination_entity2] [...])";
 		d.returns = R"(list of id_path)";
 		d.description = R"(Moves the entity from location specified by `source_entity1` to destination `destination_entity1`.  If `destination_entity1` exists, it will move `source_entity1` using `source_entity1`'s current id path into `destination_entity1`.  If `destination_entity1` does not exist, then it will move `source_entity1` and rename it to the end of the id path specified by `destination_entity1`. Can only be performed by a containing entity relative to both ids.  If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((print (create_entities "MyLibrary" (lambda {three 3 four 4}) ) ))", R"()"}, {R"((print (move_entities "MyLibrary" "MyLibrary2")))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -8324,7 +8310,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([id_path entity1] [id_path entity2] [...])";
 		d.returns = R"(bool)";
 		d.description = R"(Destroys the entities specified by the ids `entity1`, `entity2`, etc. Can only be performed by containing entity.  Returns true if all entities were successfully destroyed, false if not.  Generally entities can be destroyed unless they do not exist or if there is code currently being run in it.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((print (create_entities "MyLibrary" (lambda { three 3 four 4} ) ) ))", R"()"}, {R"((print (contained_entities)))", R"()"}, {R"((destroy_entities "MyLibrary"))", R"()"}, {R"((print (contained_entities)))", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
@@ -8339,7 +8325,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string resource_path [string resource_type] [assoc params])";
 		d.returns = R"(any)";
 		d.description = R"(Loads the data specified by `resource_path`, parses it into the appropriate code and data, and returns it. If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((print (load "my_directory/MyModule.amlg")))", R"()"}
 			});
 		d.permissions = ExecutionPermissions::Permission::LOAD;
@@ -8352,7 +8338,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string resource_path [id_path entity] [string resource_type] [bool persistent] [assoc params])";
 		d.returns = R"(id_path)";
 		d.description = R"(Loads the data specified by `resource_path` and parse it into the appropriate code and data, and stores it in `entity`.  It follows the same id path creation rules as `(create_entities)`, except that if no id path is specified, it may default to a name based on the resource if available.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((load_entity "my_directory/MyModule.amlg" "MyModule"))", R"()"}
 			});
 		d.permissions = ExecutionPermissions::Permission::LOAD;
@@ -8366,7 +8352,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string resource_path * node [string resource_type] [assoc params])";
 		d.returns = R"(bool)";
 		d.description = R"(Stores `node` into `resource_path`.  Returns true if successful, false if not.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((store "my_directory/MyData.amlg" (list 1 2 3)))", R"()"}
 			});
 		d.permissions = ExecutionPermissions::Permission::STORE;
@@ -8380,7 +8366,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string resource_path id_path entity [string resource_type] [bool persistent] [assoc params])";
 		d.returns = R"(bool)";
 		d.description = R"(Stores `entity` into `resource_path`.  Returns true if successful, false if not.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((store_entity "my_directory/MyData.amlg" "MyData"))", R"()"}
 			});
 		d.permissions = ExecutionPermissions::Permission::STORE;
@@ -8394,7 +8380,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(id_path entity)";
 		d.returns = R"(bool)";
 		d.description = R"(Returns true if `entity` exists, false if not.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((print (create_entities "MyLibrary" (lambda { three 3 four 4 } ) ) ))", R"()"}, {R"((print (contains_entity "MyLibrary")))", R"()"}, {R"((print (contains_entity (list "MyLibrary"))))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -8407,7 +8393,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([id_path containing_entity | query|list condition1] [query|list condition2] ...[ query|list conditionN])";
 		d.returns = R"(list of string)";
 		d.description = R"(Returns a list of strings of ids of entities contained in `containing_entity` or the current entity if containing_entity is omitted or null.  The parameters of `condition1` through `conditionN` are query conditions, and they may be any of the query opcodes (beginning with `query_`) or may be a list of query opcodes, where each condition will be executed in order as a conjunction.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 }))", R"()"}, {R"())", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
@@ -8421,7 +8407,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"([id_path containing_entity | query|list condition1] [query|list condition2] ...[ query|list conditionN])";
 		d.returns = R"(any)";
 		d.description = R"(Performs queries like `(contained_entities)` on `containing_entity` or the current entity if containing_entity is omitted or null, but returns a value or set of values appropriate for the last query in conditions.  The parameters of `condition1` through `conditionN` are query conditions, and they may be any of the query opcodes (beginning with `query_`) or may be a list of query opcodes, where each condition will be executed in order as a conjunction.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 } ))", R"()"}, {R"())", R"()"}, {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
@@ -8435,7 +8421,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(number num_to_select [number start_offset] [number random_seed])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects `num_to_select` entities sorted by entity id.  If `start_offset` is specified, then it will return `num_to_select` entities starting that far in, and subsequent calls can be used to get all entities in batches.  If `random_seed` is specified, then it will select `num_to_select` entities randomly from the list based on the random seed.  If `random_seed` is specified and `start_offset` is null, then it will not guarantee a position in the order for subsequent calls that specify `start_offset`, and will execute more quickly.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_select 4 (null) (rand)))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8449,7 +8435,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(number num_to_select [string weight_label_name] [number random_seed])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects a random sample of `num_to_select` entities sorted by entity id, sampled with replacement.  If `weight_label_name` is specified and not null, it will use `weight_label_name` as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values for weights will be ignored, and if there are any infinite values, those will be selected from uniformly.  If `random_seed` is specified, then it will select `num_to_select` entities randomly from the list based on the random seed.  If `random_seed` is not specified then the subsequent calls will return the same sample of entities.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 (rand)))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 "weight" (rand)))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8463,7 +8449,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(list list_of_entity_ids)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects only the entities in `list_of_entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_in_entity_list (list "Entity1" "Entity2")))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8477,7 +8463,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(list list_of_entity_ids)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, filters out the entities in `list_of_entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_in_entity_list (list "Entity1" "Entity2")))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8491,7 +8477,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities which have the label `label_name`.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding label names and values.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8505,7 +8491,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities which do not have the the label `label_name`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_exists "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8519,7 +8505,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name * value)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is equal to `value`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_equals "TargetLabel" 3))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8533,7 +8519,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name * value)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is not equal to `value`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_equals "TargetLabel" 3))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8547,7 +8533,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name * lower_bound * upper_bound)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is at least `lower_bound` and at most `upper_bound`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_between "TargetLabel" 2 5))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_between "x" -4 5))", R"()"}, {R"((query_between "y" -4 0))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8561,7 +8547,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name * lower_bound * upper_bound)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is less than `lower_bound` or greater than `upper_bound`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "TargetLabel" 2 5))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "x" -4 5))", R"()"}, {R"((query_not_between "y" -4 0))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8575,7 +8561,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name list values)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is one of the values specified in `values`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "TargetLabel" (2 5)))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "x" (list -4 5)))", R"()"}, {R"((query_among "y" (list -4 0)))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8589,7 +8575,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name list values)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is not one of the values specified in `values`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "TargetLabel" (2 5)))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "x" (list -4 5)))", R"()"}, {R"((query_not_among "y" (list -4 0)))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8603,7 +8589,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name [number num_entities] [bool numeric])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects a number of entities with the highest values for the label `label_name`.  If `num_entities` is specified, it will return that many entities, otherwise will return 1.  If `numeric` is true, its default value, then it only considers numeric values; if false, will consider all types.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_max "TargetLabel" 3))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8617,7 +8603,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name [number entities_returned] [bool numeric])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects a number of entities with the lowest values for the label `label_name`.  If `num_entities` is specified, it will return that many entities, otherwise will return 1.  If `numeric` is true, its default value, then it only considers numeric values; if false, will consider all types.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_min "TargetLabel" 3))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8631,7 +8617,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name [string weight_label_name])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, returns the sum of all entities over the value at `label_name`.  If `weight_label_name` is specified, it will find the weighted sum, which is the same as a dot product.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_sum "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8645,7 +8631,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name [string weight_label_name])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, finds the statistical mode of `label_name` across all entities using numerical values.  If `weight_label_name` is specified, it will find the weighted mode.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_mode "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8659,7 +8645,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name [number q] [string weight_label_name])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, finds the statistical quantile of `label_name` for numerical data, using `q` as the parameter to the quantile, the default being 0.5 which is the median.  If `weight_label_name` is specified, it will find the weighted quantile, otherwise the weight of every entity is 1.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_quantile "TargetLabel" 0.75))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8673,7 +8659,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name [number p] [string weight_label_name] [number center] [bool calculate_moment] [bool absolute_value])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, computes the generalized mean over the label `label_name` for numerical data.  If `p` is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity), to harmonic mean (-1), to geometric mean (0), to arithmetic mean (1), to maximum (infinity).  If `weight_label_name` is specified, it will normalize the weights and compute a weighted mean.  If `center` is specified, calculations will use that value as the central point, and the default is 0.0.  If `calculate_moment` is true, the results will not be raised to 1 / `p`.  If `absolute_value` is true, the differences will take the absolute value.  Various parameterizations of `(generalized_mean)` can be used to compute moments about the mean, especially by setting the `calculate_moment` parameter to true and using the mean as the center.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_generalized_mean "TargetLabel" 0.5))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8687,7 +8673,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name [number cyclic_range] [bool include_zero_difference])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, finds the smallest difference between any two values for the label `label_name`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.  If `include_zero_difference` is true, its default value, then it will return 0 if the smallest gap between any two numbers is 0.  If `include_zero_difference` is false, it will return the smallest nonzero value.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_min_difference "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8701,7 +8687,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name [number cyclic_range])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, finds the largest difference between any two values for the label `label_name`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_max_difference "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8715,7 +8701,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name [string weight_label_name])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, computes the counts for each value of the label `label_name` and returns an assoc with the keys being the label values and the values being the counts or weights of the values.  If `weight_label_name` is specified, then it will accumulate that weight for each value, otherwise it will use a weight of 1 for each yielding a count.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_value_masses "TargetLabel"))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8729,7 +8715,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name * max_value)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities with a value in label `label_name` less than or equal to `max_value`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_less_or_equal_to "TargetLabel" 3))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8743,7 +8729,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(string label_name * min_value)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities with a value in label `label_name` greater than or equal to `min_value`.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_greater_or_equal_to "TargetLabel" 3))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8757,7 +8743,7 @@ R"&(^\s*\{\s*
 		d.parameters = R"(number max_distance list axis_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities which represent a point within a certain generalized norm to a given point. axis_labels specifies the names of the coordinate axes (as labels on the target entity), and axis_values_or_entity_id specifies the corresponding values for the point to test from or if a string the entity to collect the labels from.  The parameter p_value is the generalized norm parameter, where the value of 1 is probability space and Manhattan distance, the default, 2 being Euclidean distance, etc.  The weights parameter specifies how to weight the different dimensions.  If weights is a list, each value maps to its respective element in the vectors.  If weights is null, then it will assume the weights to be 1 / number of features if distance_transform is probability space or surprisal space, or otherwise 1.  If weights is an assoc, then the parameter value_names will select the weights from the assoc.  If weights is an assoc of assocs, additionally the parameter weights_selection_features will select which set of weights to use.  If weights_selection_features is a string, then it will select weights for the given feature and rebalance any weights for unused features.  If weights_selection_features is a list, then it will select and rebalance the weights as best suited for predicting the combination of features in the list.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", "continuous_code_no_recursive_matching", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  For attributes, the particular distance_types specifies what is expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values available.  For continuous, a null means unbounded where distance for a null will be computed automatically from the relevant data; a single number indicates the difference between a value and a null, a specified uncertainty.  Cyclic requires either a single value or a list of two values; a list of two values indicates that the first value, the lower bound, will wrap around to the upper bound, the second value specified; if only a single number is provided instead of a list, then it will assume that number for the upper bound and 0 for the lower bound.  For the string distance type, the value specified can be a number indicating the maximum possible string length, inferred if null is provided.   If the feature type is continuous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Deviations contains numbers that are used during the distance calculation, per-element, prior to exponentiation.  Specifying null as deviations is equivalent to setting each deviation to 0. max_distance is the maximum distance allowed. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision. If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their distances.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be treated as a distance weight exponent, and will be applied to each distance as distance^distance_weight_exponent, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively). If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestContainerExec" (list (query_within_generalized_distance 3 (list "x" "y") (list 0.0 0.0) 0.01 (list 2 1) (list "nominal_number" "continuous_number_cyclic") (list 1 360) (null) (null) 1 (null) "random seed 1234" "radius") ) ))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8773,7 +8759,7 @@ R"&(^\s*\{\s*
 		d.description = R"(When used as a query argument, selects the closest entities which represent a point within a certain generalized norm to a given point. axis_labels specifies the names of the coordinate axes (as labels on the target entity), and axis_values_or_entity_id specifies the corresponding values for the point to test from or if a string the entity to collect the labels from. The parameter p_value is the generalized norm parameter, where the value of 1 is probability space and Manhattan distance, the default, 2 being Euclidean distance, etc.  The weights parameter specifies how to weight the different dimensions.  If weights is a list, each value maps to its respective element in the vectors.  If weights is null, then it will assume the weights to be 1 / number of features if distance_transform is probability space or surprisal space, or otherwise 1.  If weights is an assoc, then the parameter value_names will select the weights from the assoc.  If weights is an assoc of assocs, additionally the parameter weights_selection_features will select which set of weights to use.  If weights_selection_features is a string, then it will select weights for the given feature and rebalance any weights for unused features.  If weights_selection_features is a list, then it will select and rebalance the weights as best suited for predicting the combination of features in the list.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  
 For attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).   If the feature type is continuous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their distances.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be treated as a distance weight exponent, and will be applied to each distance as distance^distance_weight_exponent, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestContainerExec" (list (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) 0.01 (list 2 1) (list "nominal_number" "continuous_number_cyclic") (list 1 360) (null) (null) 1 (null) "random seed 1234" "radius") ) ))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8790,7 +8776,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, computes the distance or surprisal contribution for every case given by axis_value_lists.   axis_value_lists specifies a list of lists, where each inner list is the set of values for each axis, and a distance contribution will be computed for each outer list.  feature_labels specifies the names of the features to consider the during computation.  The parameter p_value is the generalized norm parameter, where the value of 1 is probability space and Manhattan distance, the default, 2 being Euclidean distance, etc.  The weights parameter specifies how to weight the different dimensions.  If weights is a list, each value maps to its respective element in the vectors.  If weights is null, then it will assume the weights to be 1 / number of features if distance_transform is probability space or surprisal space, or otherwise 1.  If weights is an assoc, then the parameter value_names will select the weights from the assoc.  If weights is an assoc of assocs, additionally the parameter weights_selection_features will select which set of weights to use.  If weights_selection_features is a string, then it will select weights for the given feature and rebalance any weights for unused features.  If weights_selection_features is a list, then it will select and rebalance the weights as best suited for predicting the combination of features in the list.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  
 For attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).   If the feature type is continuous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities "SurprisalTransformContainer" (list (query_distance_contributions 4 (list "x") [[0]] 1 (null) (null) (null) (list 0.25) (null) "surprisal" (null) "fixed_seed" (null) "precise") )))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8807,7 +8793,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, computes the nearest neighbors to every case given by axis_value_lists, normalizes their influence weights, and accumulates the entity's total influence weights relative to every other case.  It returns a list of all cases whose cumulative neighbor values are greater than zero.   axis_value_lists specifies a list of lists, where each inner list is the set of values for each axis, and a distance contribution will be computed for each outer list.  feature_labels specifies the names of the features to consider the during computation.  The parameter p_value is the generalized norm parameter, where the value of 1 is probability space and Manhattan distance, the default, 2 being Euclidean distance, etc.  The weights parameter specifies how to weight the different dimensions.  If weights is a list, each value maps to its respective element in the vectors.  If weights is null, then it will assume the weights to be 1 / number of features if distance_transform is probability space or surprisal space, or otherwise 1.  If weights is an assoc, then the parameter value_names will select the weights from the assoc.  If weights is an assoc of assocs, additionally the parameter weights_selection_features will select which set of weights to use.  If weights_selection_features is a string, then it will select weights for the given feature and rebalance any weights for unused features.  If weights_selection_features is a list, then it will select and rebalance the weights as best suited for predicting the combination of features in the list.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  
 For attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).   If the feature type is continuous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities "SurprisalTransformContainer" (list (query_entity_cumulative_nearest_entity_weights 4 (list "x") [[0]] 1 (null) (null) (null) (list 0.25) (null) "surprisal" (null) "fixed_seed" (null) "precise") )))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8824,7 +8810,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, computes the case conviction for every case given in case_ids_to_compute with respect to *all* cases in the contained entities set input during a query.  If case_ids_to_compute is null or an empty list, case conviction is computed for all cases.  feature_labels specifies the names of the features to consider the during computation. The parameter p_value is the generalized norm parameter, where the value of 1 is probability space and Manhattan distance, the default, 2 being Euclidean distance, etc.  The weights parameter specifies how to weight the different dimensions.  If weights is a list, each value maps to its respective element in the vectors.  If weights is null, then it will assume the weights to be 1 / number of features if distance_transform is probability space or surprisal space, or otherwise 1.  If weights is an assoc, then the parameter value_names will select the weights from the assoc.  If weights is an assoc of assocs, additionally the parameter weights_selection_features will select which set of weights to use.  If weights_selection_features is a string, then it will select weights for the given feature and rebalance any weights for unused features.  If weights_selection_features is a list, then it will select and rebalance the weights as best suited for predicting the combination of features in the list.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  
 For attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).   If the feature type is continuous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If conviction_of_removal is true, then it will compute the conviction as if the entities specified by entity_ids_to_compute were removed; if false (the default), then will compute the conviction as if those entities were added or included. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities (list (query_entity_convictions 2 (list "alpha" "b" "c") (null) 0.1 (null) (list 0 0 1) ) )))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8841,7 +8827,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, computes the case kl divergence for every case given in case_ids_to_compute as a group with respect to *all* cases in the contained entities set input during a query.  If case_ids_to_compute is null or an empty list, case conviction is computed for all cases.  feature_labels specifies the names of the features to consider the during computation. The parameter p_value is the generalized norm parameter, where the value of 1 is probability space and Manhattan distance, the default, 2 being Euclidean distance, etc.  The weights parameter specifies how to weight the different dimensions.  If weights is a list, each value maps to its respective element in the vectors.  If weights is null, then it will assume the weights to be 1 / number of features if distance_transform is probability space or surprisal space, or otherwise 1.  If weights is an assoc, then the parameter value_names will select the weights from the assoc.  If weights is an assoc of assocs, additionally the parameter weights_selection_features will select which set of weights to use.  If weights_selection_features is a string, then it will select weights for the given feature and rebalance any weights for unused features.  If weights_selection_features is a list, then it will select and rebalance the weights as best suited for predicting the combination of features in the list.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  
 For attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).   If the feature type is continuous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If conviction_of_removal is true, then it will compute the conviction as if the entities specified by entity_ids_to_compute were removed; if false (the default), then will compute the conviction as if those entities were added or included.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities (list (query_entity_group_kl_divergence 2 (list "x" "y") obj2_verts 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234") )))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8858,7 +8844,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, computes the case conviction for every case given in case_ids_to_compute with respect to *all* cases in the contained entities set input during a query.  If case_ids_to_compute is null or an empty list, case conviction is computed for all cases.  feature_labels specifies the names of the features to consider the during computation. The parameter p_value is the generalized norm parameter, where the value of 1 is probability space and Manhattan distance, the default, 2 being Euclidean distance, etc.  The weights parameter specifies how to weight the different dimensions.  If weights is a list, each value maps to its respective element in the vectors.  If weights is null, then it will assume the weights to be 1 / number of features if distance_transform is probability space or surprisal space, or otherwise 1.  If weights is an assoc, then the parameter value_names will select the weights from the assoc.  If weights is an assoc of assocs, additionally the parameter weights_selection_features will select which set of weights to use.  If weights_selection_features is a string, then it will select weights for the given feature and rebalance any weights for unused features.  If weights_selection_features is a list, then it will select and rebalance the weights as best suited for predicting the combination of features in the list.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  
 For attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).   If the feature type is continuous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities (list (query_entity_distance_contributions 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234") )))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8875,7 +8861,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, computes the case conviction for every case given in case_ids_to_compute with respect to *all* cases in the contained entities set input during a query.  If case_ids_to_compute is null or an empty list, case conviction is computed for all cases.  feature_labels specifies the names of the features to consider the during computation. The parameter p_value is the generalized norm parameter, where the value of 1 is probability space and Manhattan distance, the default, 2 being Euclidean distance, etc.  The weights parameter specifies how to weight the different dimensions.  If weights is a list, each value maps to its respective element in the vectors.  If weights is null, then it will assume the weights to be 1 / number of features if distance_transform is probability space or surprisal space, or otherwise 1.  If weights is an assoc, then the parameter value_names will select the weights from the assoc.  If weights is an assoc of assocs, additionally the parameter weights_selection_features will select which set of weights to use.  If weights_selection_features is a string, then it will select weights for the given feature and rebalance any weights for unused features.  If weights_selection_features is a list, then it will select and rebalance the weights as best suited for predicting the combination of features in the list.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  
 For attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).   If the feature type is continuous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If conviction_of_removal is true, then it will compute the conviction as if the entities specified by entity_ids_to_compute were removed; if false (the default), then will compute the conviction as if those entities were added or included. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities (list (query_entity_kl_divergences 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234"))))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8892,7 +8878,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.description = R"(When used as a query argument, computes the nearest neighbors to every entity given by entity_ids_to_compute, normalizes their influence weights, and accumulates the entity's total influence weights relative to every other case.  It returns a list of all cases whose cumulative neighbor values are greater than zero.  feature_labels specifies the names of the features to consider the during computation.  The parameter p_value is the generalized norm parameter, where the value of 1 is probability space and Manhattan distance, the default, 2 being Euclidean distance, etc.  The weights parameter specifies how to weight the different dimensions.  If weights is a list, each value maps to its respective element in the vectors.  If weights is null, then it will assume the weights to be 1 / number of features if distance_transform is probability space or surprisal space, or otherwise 1.  If weights is an assoc, then the parameter value_names will select the weights from the assoc.  If weights is an assoc of assocs, additionally the parameter weights_selection_features will select which set of weights to use.  If weights_selection_features is a string, then it will select weights for the given feature and rebalance any weights for unused features.  If weights_selection_features is a list, then it will select and rebalance the weights as best suited for predicting the combination of features in the list.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are "nominal_bool", "nominal_number", "nominal_string", "nominal_code", "continuous_number", "continuous_number_cyclic", "continuous_string", and "continuous_code".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  
 For attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).   If the feature type is continuous_code, then the parameter will be an assoc that may contain the keys types_must_match, nominal_numbers, nominal_strings, and recursive_matching.  If the key types_must_match is true (the default), it will only consider nodes common if the types match.  If the key nominal_numbers is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key nominal_strings defaults to true, but works similar to nominal_numbers except on strings using string edit distance.  If the key recursive_matching is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key recursive_matching is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is "surprisal" or "surprisal_to_prob", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  The parameter entities_returned specifies either the number of entities to return, or is a list.  If entities_returned is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for entities_returned, the constraint yielding the fewest entities will govern the number of entities returned. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: "precise", which computes every distance with high numerical precision, "fast", which computes every distance with lower but faster numerical precision, and "recompute_precise", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is "surprisal" then distances will be calculated as surprisals, and weights will not be applied to the values.  If distance_transform is "surprisal_to_prob" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances, only using entity weights for nonpositive values of distance_transform.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((compute_on_contained_entities (list (query_entity_cumulative_nearest_entity_weights 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234") )))", R"()"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -8906,7 +8892,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.parameters = R"([id_path entity] string label_name)";
 		d.returns = R"(bool)";
 		d.description = R"(Evaluates to true if the label represented by string exists for the entity specified by id_path for a contained entity.  If id_path is omitted, then it uses the current entity.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((print (contains_label "MyEntity" "some_label")))", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
@@ -8919,7 +8905,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.parameters = R"([id_path entity_1] assoc label_value_pairs_1 [id_path entity2] [assoc label_value_pairs_2] [...])";
 		d.returns = R"(bool)";
 		d.description = R"(For each index-value pair of label_value_pairs, assigns the value to the labeled variable on the contained entity represented by the respective entity, itself if no id_path specified, while retaining the original labels. If the label is not found, it will create it.  When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Will perform an assignment for each of the entities referenced, returning .true if all assignments were successful, .false if not.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((assign_to_entities (assoc asgn_test1 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test1")))", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
@@ -8934,7 +8920,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.parameters = R"([id_path entity_1] assoc label_value_pairs_1 [id_path entity2] [assoc label_value_pairs_2] [...])";
 		d.returns = R"(bool)";
 		d.description = R"(For each index-value pair of assoc, retrieves the labeled variable from the respective entity, accumulates it by the corresponding value in label_value_pairs, then assigns the value to the labeled variable on the contained entity represented by the id_path, itself if no id_path specified, while retaining the original labels.  If none found, it will not cause an assignment.  When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. Will perform an accum for each of the entities referenced, returning .true if all assignments were successful, .false if not.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((accum_to_entities (assoc asgn_test1 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test1")))", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
@@ -8949,7 +8935,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.parameters = R"([id_path entity_1] string|list label_names_1 [id_path entity2] [list string|label_names_2] [...])";
 		d.returns = R"(bool)";
 		d.description = R"(Removes all labels from the list label_names_1 from entity_1, and so on for each respective entity and label list.  Returns true if removes were successful, false otherwise.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities "DRFE" (lambda { a 12 } ) ))", R"()"}, {R"((print (remove_from_entities "DRFE" "a")))", R"()"}, {R"((print (retrieve_from_entity "DRFE" "a")))", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
@@ -8964,7 +8950,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.parameters = R"([id_path entity] [string|list|assoc label_names])";
 		d.returns = R"(any)";
 		d.description = R"(If string specified, returns the value of the contained entity id_path, itself if no id_path specified, at the label specified by the string. If list specified, returns the value of the contained entity id_path, itself if no id_path specified, returns a list of the values on the stack specified by each element of the list interpreted as a string label. If assoc specified, returns the value of the contained entity id_path, itself if no id_path specified, returns an assoc with the indices of the assoc passed in with the values being the appropriate values of the label represented by each index.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((assign_to_entities (assoc asgn_test1 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test1")))", R"()"}, {R"((assign_to_entities (assoc asgn_test2 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test2")))", R"()"}, {R"((create_entities "RCT" (lambda {a 12 b 13}) ))", R"()"}, {R"((print (retrieve_from_entity "RCT" "a")))", R"()"}, {R"((print (retrieve_from_entity "RCT" (list "a" "b") )))", R"()"}, {R"((print (retrieve_from_entity "RCT" (zip (list "a" "b") null) )))", R"()"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
@@ -8978,7 +8964,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.parameters = R"(id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings])";
 		d.returns = R"(any)";
 		d.description = R"(Calls the contained entity specified by id_path, using the entity as the new entity context.  It will evaluate to the return value of the call, null if not found.  If label_name is specified, then it will call the label specified by string.  If arguments is specified, then it will pass those as the arguments on the scope stack.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The parameters max_contained_entities, max_contained_entity_depth, and max_entity_id_length constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)).  If return_warnings is false just the value will be returned.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities "TestContainerExec")", R"()"}, {R"((lambda {d (print "hello " x))", R"()"}, {R"(}))", R"()"}, {R"())", R"()"}, {R"((print (call_entity "TestContainerExec" "d" (assoc x "goodbye"))))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -8993,7 +8979,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.parameters = R"(id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings])";
 		d.returns = R"(list of any1 any2)";
 		d.description = R"(Like call_entity returning the value in *1.  However, it also returns a list of direct_assign_to_entities calls with respective data in *2, holding a log of all of the changes that have elapsed.  The log may be evaluated to apply or re-apply the changes to any id_path passed in to the log as _. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)).  If return_warnings is false, just the value will be returned.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities "CEGCTest" (lambda)", R"()"}, {R"((assoc a_assign)", R"()"}, {R"((seq)", R"()"}, {R"((create_entities "Contained" (lambda)", R"()"}, {R"({a 4 })", R"()"}, {R"((print (retrieve_from_entity "Contained" "a") ))", R"()"}, {R"((assign_to_entities "Contained" (assoc a 6) ))", R"()"}, {R"((print (retrieve_from_entity "Contained" "a") ))", R"()"}, {R"((set_entity_rand_seed "Contained" "bbbb"))", R"()"}, {R"((destroy_entities "Contained"))", R"()"}, {R"())", R"()"}, {R"())", R"()"}, {R"((print (call_entity_get_changes "CEGCTest" "a_assign")))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -9008,7 +8994,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.parameters = R"(id_path entity * code [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings])";
 		d.returns = R"(any)";
 		d.description = R"(Calls code to be run on the contained entity specified by id_path, using the entity as the new entity context.  It will evaluate to the return value of the call of code, run as if it were a label on the specified entity.  If arguments is specified, then it will pass those as the arguments on the scope stack.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The parameters max_contained_entities, max_contained_entity_depth, and max_entity_id_length constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)).  If return_warnings is false just the value will be returned.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities "CallOnEntity")", R"()"}, {R"({ a 1 b 2 })", R"()"}, {R"())", R"()"}, {R"((print (call_on_entity "CallOnEntity" (lambda [a b]))))", R"()"}
 			});
 		d.requiresEntity = true;
@@ -9023,7 +9009,7 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 		d.parameters = R"(string parent_label_name [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [bool return_warnings])";
 		d.returns = R"(any)";
 		d.description = R"(Attempts to call the container associated with the label that begins with a caret; the caret indicates that the label is allowed to be accessed by contained entities.  It will evaluate to the return value of the call, null if not found.  The call is made on the label specified by string.  If assoc is specified, then it will pass assoc as the arguments on the scope stack.  The parameter accessing_entity will automatically be set to the id of the caller, regardless of the arguments.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The execution performed will use a random number stream created from the entity's random number stream. If return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)).  If return_warnings is false, just the value will be returned.)";
-		d.examples = MakeExamples({
+		d.examples = MakeAmalgamExamples({
 			{R"((create_entities "TestContainerExec")", R"()"}, {R"((lambda (assoc)", R"()"}, {R"(^a 3)", R"()"}, {R"(b (contained_entities))", R"()"}, {R"(c (+ x 1))", R"()"}, {R"(d (call_entity "TCEc" "q" (assoc x x)))", R"()"}, {R"(x 4)", R"()"}, {R"(y 5)", R"()"}, {R"())", R"()"}, {R"((create_entities (list "TestContainerExec" "TCEc"))", R"()"}, {R"((lambda (assoc)", R"()"}, {R"(p 3)", R"()"}, {R"(q (+ x (call_container "a")))", R"()"}, {R"(bar "foo")", R"()"}, {R"())", R"()"}, {R"((print (call_entity "TestContainerExec" "d" (assoc x 4))))", R"()"}
 			});
 		d.requiresEntity = true;

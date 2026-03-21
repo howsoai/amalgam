@@ -8125,20 +8125,235 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_DIFFERENCE_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 id_path entity2)";
 		d.returns = R"(any)";
 		d.description = R"(Finds the difference between the entities specified by `entity1` and `entity2` and generates code that, if evaluated passing the entity id_path as its parameter "_", would create a new entity into the id path specified by its parameter "new_entity" (null if unspecified), which would contain the applied difference between the two entities and returns the newly created entity id path.  Useful for finding a small difference of what needs to be changed to apply it to new (and possibly slightly different) entity.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities "DiffEntity1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "DiffEntity1" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 6)) ))", R"()"}, {R"((create_entities (list "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffEntity1" "OnlyIn1") (lambda (assoc "m" 4)) ))", R"()"}, {R"((create_entities (list "DiffEntity1") (lambda (assoc "E" 3 "F" 4)) ))", R"()"}, {R"((create_entities (list "DiffEntity1") (lambda (assoc "e" 3 "f" 4 "g" 5 "h" 6)) ))", R"()"}, {R"((create_entities "DiffEntity2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "DiffEntity2" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 5)) ))", R"()"}, {R"((create_entities (list "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffEntity2" "OnlyIn2") (lambda (assoc "o" 6)) ))", R"()"}, {R"((create_entities (list "DiffEntity2") (lambda (assoc "E" 3 "F" 4 "G" 5 "H" 6)) ))", R"()"}, {R"((create_entities (list "DiffEntity2") (lambda (assoc "e" 3 "f" 4)) ))", R"()"}, {R"((print (contained_entities "DiffEntity2")))", R"()"}, {R"((print (difference_entities "DiffEntity1" "DiffEntity2")))", R"()"}, {R"((let (assoc new_entity)", R"()"}, {R"((call (difference_entities "DiffEntity1" "DiffEntity2") (assoc _ "DiffEntity1"))))", R"()"}, {R"((print new_entity))", R"()"}, {R"((print (retrieve_entity_root new_entity)))", R"()"}, {R"((print (retrieve_entity_root (list new_entity "DiffEntityChild1"))))", R"()"}, {R"((print (contained_entities new_entity)))", R"()"}, {R"())", R"()"}, {R"((create_entities "DiffContainer" null))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1") (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1" "OnlyIn1") (lambda (assoc "m" 4)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1") (lambda (assoc "E" 3 "F" 4)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity1") (lambda (assoc "e" 3 "f" 4 "g" 5 "h" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2") (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2" "OnlyIn2") (lambda (assoc "o" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2") (lambda (assoc "E" 3 "F" 4 "G" 5 "H" 6)) ))", R"()"}, {R"((create_entities (list "DiffContainer" "DiffEntity2") (lambda (assoc "e" 3 "f" 4)) ))", R"()"}, {R"((print (difference_entities (list "DiffContainer" "DiffEntity1") (list "DiffContainer" "DiffEntity2") )))", R"()"}, {R"((let (assoc new_entity)", R"()"}, {R"((call (difference_entities (list "DiffContainer" "DiffEntity1") (list "DiffContainer" "DiffEntity2") ))", R"()"}, {R"((assoc _ (list "DiffContainer" "DiffEntity1") ))))", R"()"}, {R"((print new_entity))", R"()"}, {R"((print (get_entity_code new_entity)))", R"()"}, {R"((print (get_entity_code (list new_entity "DiffEntityChild1"))))", R"()"}, {R"((print (contained_entities new_entity)))", R"()"}, {R"())", R"()"}
-			});
+						{R"&((seq
+	(create_entities
+		"DiffEntity1"
+		(lambda
+			{a 3 b 4}
+		)
+	)
+	(create_entities
+		["DiffEntity1" "DiffEntityChild1"]
+		(lambda
+			{x 3 y 4 z 6}
+		)
+	)
+	(create_entities
+		["DiffEntity1" "DiffEntityChild1" "DiffEntityChild2"]
+		(lambda
+			{
+				p 3
+				q 4
+				u 5
+				v 6
+				w 7
+			}
+		)
+	)
+	(create_entities
+		["DiffEntity1" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3"]
+		(lambda
+			{
+				a 5
+				e 3
+				o 6
+				p 4
+				w 7
+			}
+		)
+	)
+	(create_entities
+		["DiffEntity1" "OnlyIn1"]
+		(lambda
+			{m 4}
+		)
+	)
+	(create_entities
+		["DiffEntity1"]
+		(lambda
+			{E 3 F 4}
+		)
+	)
+	(create_entities
+		["DiffEntity1"]
+		(lambda
+			{
+				e 3
+				f 4
+				g 5
+				h 6
+			}
+		)
+	)
+	(create_entities
+		"DiffEntity2"
+		(lambda
+			{b 4 c 3}
+		)
+	)
+	(create_entities
+		["DiffEntity2" "DiffEntityChild1"]
+		(lambda
+			{x 3 y 4 z 5}
+		)
+	)
+	(create_entities
+		["DiffEntity2" "DiffEntityChild1" "DiffEntityChild2"]
+		(lambda
+			{
+				p 3
+				q 4
+				u 5
+				v 6
+				w 7
+			}
+		)
+	)
+	(create_entities
+		["DiffEntity2" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3"]
+		(lambda
+			{
+				a 5
+				e 3
+				o 6
+				p 4
+				w 7
+			}
+		)
+	)
+	(create_entities
+		["DiffEntity2" "OnlyIn2"]
+		(lambda
+			{o 6}
+		)
+	)
+	(create_entities
+		["DiffEntity2"]
+		(lambda
+			{
+				E 3
+				F 4
+				G 5
+				H 6
+			}
+		)
+	)
+	(create_entities
+		["DiffEntity2"]
+		(lambda
+			{e 3 f 4}
+		)
+	)
+	
+	;applying the difference to DiffEntity1 results in an entity identical to DiffEntity2
+	(let
+		{
+			new_entity (call
+					(difference_entities "DiffEntity1" "DiffEntity2")
+					{_ "DiffEntity1"}
+				)
+		}
+		(difference_entities "DiffEntity2" new_entity)
+	)
+))&", R"((declare
+	{_ (null) new_entity (null)}
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_6WAIFZIuUjP")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_6WAIFZIuUjP")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_dAyR4VDlo1a")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_dAyR4VDlo1a")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	new_entity
+))", "", R"((apply "destroy_entities" (contained_entities)))"}
+		});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_MIX_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 id_path entity2 [number keep_chance_entity1] [number keep_chance_entity2] [assoc params] [id_path entity3])";
@@ -8446,9 +8661,9 @@ R"&(^\s*\{\s*
 
 	arr[static_cast<std::size_t>(ENT_QUERY_IN_ENTITY_LIST)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(list list_of_entity_ids)";
+		d.parameters = R"(list entity_ids)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects only the entities in `list_of_entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.)";
+		d.description = R"(When used as a query argument, selects only the entities in `entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.)";
 		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_in_entity_list (list "Entity1" "Entity2")))", R"()"}
 			});
@@ -8460,9 +8675,9 @@ R"&(^\s*\{\s*
 
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_IN_ENTITY_LIST)] = []() {
 		OpcodeDetails d;
-		d.parameters = R"(list list_of_entity_ids)";
+		d.parameters = R"(list entity_ids)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, filters out the entities in `list_of_entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.)";
+		d.description = R"(When used as a query argument, filters out the entities in `entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.)";
 		d.examples = MakeAmalgamExamples({
 			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_in_entity_list (list "Entity1" "Entity2")))", R"()"}
 			});

@@ -7,51 +7,6 @@
 #include "PerformanceProfiler.h"
 #include "PlatformSpecific.h"
 
-//system headers:
-#include <regex>
-
-//returns a copy of s where each consecutive whitespace block is replaced
-//by a single space and any leading and trailing spaces are removed
-static std::string NormalizeWhitespace(std::string_view s)
-{
-	std::string out;
-	out.reserve(s.size());
-
-	bool in_whitespace = false;
-	for(char ch : s)
-	{
-		if(std::isspace(static_cast<unsigned char>(ch)))
-		{
-			//if first whitespace, change to space
-			if(!in_whitespace)
-			{
-				out.push_back(' ');
-				in_whitespace = true;
-			}
-		}
-		else //not first whitespace so skip
-		{
-			out.push_back(ch);
-			in_whitespace = false;
-		}
-	}
-
-	//trim spaces
-	if(!out.empty() && out.front() == ' ')
-		out.erase(out.begin());
-	if(!out.empty() && out.back() == ' ')
-		out.pop_back();
-
-	return out;
-}
-
-//returns true if a and b are equal ignoring differences in the
-//type of whitespace (spaces, tabs, newlines, etc.)
-inline static bool EqualIgnoringWhitespace(std::string_view a, std::string_view b)
-{
-	return NormalizeWhitespace(a) == NormalizeWhitespace(b);
-}
-
 //runs a test suite against the language
 //the return value of this function will be returned for the executable
 int32_t RunAmalgamLanguageValidation()
@@ -72,76 +27,10 @@ int32_t RunAmalgamLanguageValidation()
 		size_t num_examples = _opcode_details[opcode_index].examples.size();
 		for(size_t test_number = 0; test_number < num_examples; test_number++)
 		{
-			bool test_succeeded = true;
 			auto &example = _opcode_details[opcode_index].examples[test_number];
 			std::cout << "Test " << (test_number + 1) << " of " << num_examples << ": ";
 
-			entity->SetRandomState("12345", true);
-
-			auto [code, warnings, char_with_error, code_complete]
-				= Parser::Parse(example.example, &entity->evaluableNodeManager);
-
-			auto result = entity->ExecuteOnEntity(code, nullptr);
-			std::string result_str = Parser::Unparse(result, true, true, true);
-
-			if(example.regexMatch.empty())
-			{
-				if(!EqualIgnoringWhitespace(result_str, example.output))
-				{
-					std::cerr << "Failed, ran code:" << std::endl;
-					std::cerr << example.example << std::endl;
-					std::cerr << "Expected result:" << std::endl;
-					std::cerr << example.output << std::endl;
-					std::cerr << "Observed result:" << std::endl;
-					std::cerr << result_str << std::endl;
-					test_succeeded = false;
-				}
-			}
-			else //match with regular expression
-			{
-				//use the begin/end constructor since std::string_view isn't universally supported
-				std::regex pattern(begin(example.regexMatch), end(example.regexMatch), std::regex::ECMAScript);
-				if(std::regex_match(result_str, pattern))
-				{
-					std::cerr << "Failed, ran code:" << std::endl;
-					std::cerr << example.example << std::endl;
-					std::cerr << "Expected to match:" << std::endl;
-					std::cerr << example.regexMatch << std::endl;
-					std::cerr << "Observed:" << std::endl;
-					std::cerr << result_str << std::endl;
-					test_succeeded = false;
-				}
-			}
-
-			//if the test needs to be cleaned up, do so
-			if(!example.cleanup.empty())
-			{
-				std::cout << "...Cleaning up after test.... ";
-				auto [cleanup_code, cleanup_warnings, cleanup_char_with_error, cleanup_code_complete]
-					= Parser::Parse(example.cleanup, &entity->evaluableNodeManager);
-
-				entity->ExecuteOnEntity(cleanup_code, nullptr);
-			}
-
-			entity->ReclaimResources(false, true, false);
-
-			auto query_caches = entity->GetQueryCaches();
-			if(query_caches != nullptr)
-				query_caches->sbfds.VerifyAllEntitiesForAllColumns();
-
-			if(entity->GetLabelIndex().size() != 0)
-			{
-				std::cerr << "Failed: Labels remain in entity after test" << std::endl;
-				test_succeeded = false;
-			}
-
-			if(entity->GetContainedEntities().size() > 0)
-			{
-				std::cerr << "Failed: One or more contained entities remain after test" << std::endl;
-				test_succeeded = false;
-			}
-
-			if(test_succeeded)
+			if(example.ValidateExample(entity))
 				std::cout << "Passed" << std::endl;
 			else
 				failed_test_names_and_numbers.emplace_back(cur_opcode_str, test_number);

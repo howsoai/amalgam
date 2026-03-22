@@ -73,14 +73,21 @@ public:
 	StorageType allPermissions = static_cast<StorageType>(Permission::NONE);
 };
 
+class Entity;
+
 //combination of example and its expected output
-struct AmalgamExample
+class AmalgamExample
 {
+public:
 	AmalgamExample(std::string_view e, std::string_view o,
 		std::string_view r = std::string_view(), std::string_view c = std::string_view())
 		: example(e), output(o),
 		regexMatch(r), cleanup(c)
 	{}
+
+	//runs the example on entity, returns true on success, false on failure
+	//any errors will be written to stderr
+	bool ValidateExample(Entity *entity);
 
 	//the code example
 	std::string_view example;
@@ -147,7 +154,7 @@ public:
 	bool isQuery = false;
 };
 
-extern const std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
+extern std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
 
 //returns the type of structure that the ordered child nodes have for a given t
 __forceinline OpcodeDetails::OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t)

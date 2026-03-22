@@ -1,8 +1,11 @@
 ﻿//project headers:
+#include "Entity.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeManagement.h"
 #include "OpcodeDetails.h"
 
+//system headers:
+#include <regex>
 
 EvaluableNode *ExecutionPermissions::GetPermissionsAsEvaluableNode(EvaluableNodeManager *enm)
 {
@@ -82,7 +85,121 @@ std::pair<ExecutionPermissions, ExecutionPermissions> ExecutionPermissions::Eval
 	return std::make_pair(permissions_to_set, permission_values);
 }
 
-static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildArray()
+
+//returns a copy of s where each consecutive whitespace block is replaced
+//by a single space and any leading and trailing spaces are removed
+static std::string NormalizeWhitespace(std::string_view s)
+{
+	std::string out;
+	out.reserve(s.size());
+
+	bool in_whitespace = false;
+	for(char ch : s)
+	{
+		if(std::isspace(static_cast<unsigned char>(ch)))
+		{
+			//if first whitespace, change to space
+			if(!in_whitespace)
+			{
+				out.push_back(' ');
+				in_whitespace = true;
+			}
+		}
+		else //not first whitespace so skip
+		{
+			out.push_back(ch);
+			in_whitespace = false;
+		}
+	}
+
+	//trim spaces
+	if(!out.empty() && out.front() == ' ')
+		out.erase(out.begin());
+	if(!out.empty() && out.back() == ' ')
+		out.pop_back();
+
+	return out;
+}
+
+//returns true if a and b are equal ignoring differences in the
+//type of whitespace (spaces, tabs, newlines, etc.)
+inline static bool EqualIgnoringWhitespace(std::string_view a, std::string_view b)
+{
+	return NormalizeWhitespace(a) == NormalizeWhitespace(b);
+}
+
+bool AmalgamExample::ValidateExample(Entity *entity)
+{
+	bool test_succeeded = true;
+	entity->SetRandomState("12345", true);
+
+	auto [code, warnings, char_with_error, code_complete]
+		= Parser::Parse(example, &entity->evaluableNodeManager);
+
+	auto result = entity->ExecuteOnEntity(code, nullptr);
+	std::string result_str = Parser::Unparse(result, true, true, true);
+
+	if(regexMatch.empty())
+	{
+		if(!EqualIgnoringWhitespace(result_str, output))
+		{
+			std::cerr << "Failed, ran code:" << std::endl;
+			std::cerr << example << std::endl;
+			std::cerr << "Expected result:" << std::endl;
+			std::cerr << output << std::endl;
+			std::cerr << "Observed result:" << std::endl;
+			std::cerr << result_str << std::endl;
+			test_succeeded = false;
+		}
+	}
+	else //match with regular expression
+	{
+		//use the begin/end constructor since std::string_view isn't universally supported
+		std::regex pattern(begin(regexMatch), end(regexMatch), std::regex::ECMAScript);
+		if(std::regex_match(result_str, pattern))
+		{
+			std::cerr << "Failed, ran code:" << std::endl;
+			std::cerr << example << std::endl;
+			std::cerr << "Expected to match:" << std::endl;
+			std::cerr << regexMatch << std::endl;
+			std::cerr << "Observed:" << std::endl;
+			std::cerr << result_str << std::endl;
+			test_succeeded = false;
+		}
+	}
+
+	//if the test needs to be cleaned up, do so
+	if(!cleanup.empty())
+	{
+		std::cout << "...Cleaning up after test.... ";
+		auto [cleanup_code, cleanup_warnings, cleanup_char_with_error, cleanup_code_complete]
+			= Parser::Parse(cleanup, &entity->evaluableNodeManager);
+
+		entity->ExecuteOnEntity(cleanup_code, nullptr);
+	}
+
+	entity->ReclaimResources(false, true, false);
+
+	auto query_caches = entity->GetQueryCaches();
+	if(query_caches != nullptr)
+		query_caches->sbfds.VerifyAllEntitiesForAllColumns();
+
+	if(entity->GetLabelIndex().size() != 0)
+	{
+		std::cerr << "Failed: Labels remain in entity after test" << std::endl;
+		test_succeeded = false;
+	}
+
+	if(entity->GetContainedEntities().size() > 0)
+	{
+		std::cerr << "Failed: One or more contained entities remain after test" << std::endl;
+		test_succeeded = false;
+	}
+
+	return test_succeeded;
+}
+
+static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOpcodes()
 {
 	std::array<OpcodeDetails, NUM_ENT_OPCODES> arr{};
 
@@ -9681,4 +9798,4 @@ Deviations are used during distance calculation to specify uncertainty per-eleme
 	return arr;
 }
 
-const std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details = BuildArray();
+std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details = BuildAmalgamExamplesArrayForOpcodes();

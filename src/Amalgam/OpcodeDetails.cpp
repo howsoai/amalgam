@@ -8655,14 +8655,22 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_RETRIEVE_ENTITY_ROOT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity])";
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the code contained by `entity`.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((print (retrieve_entity_root)))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		(lambda
+			{1 2 three 3}
+		)
+	)
+	(retrieve_entity_root "Entity")
+))&", R"({1 2 three 3})"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -8675,7 +8683,19 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.description = R"(Sets the code of the `entity1 to `root1`, as well as all subsequent entity-code pairs of parameters.  If `entity1` is not specified or null, then uses the current entity.  On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((print (assign_entity_roots {})))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		(lambda
+			{1 2 three 3}
+		)
+	)
+	(assign_entity_roots
+		"Entity"
+		{a 4 b 5 c 6}
+	)
+	(retrieve_entity_root "Entity")
+))&", R"({a 4 b 5 c 6})"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.requiresEntity = true;
@@ -8690,13 +8710,26 @@ R"&(^\s*\{\s*
 		d.returns = R"(string)";
 		d.description = R"(Evaluates to a string representing the current state of the random number generator for `entity` used for seeding the random streams of any calls to the entity.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities "RandTest" (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(}))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"}, {R"((print (get_entity_rand_seed "RandTest")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Rand"
+		(lambda
+			{a (rand)}
+		)
+	)
+	(call_entity "Rand" "a")
+	(format
+		(get_entity_rand_seed "Rand")
+		"string"
+		"base64"
+	)
+))&", R"("nHKVcHddHVaqvcDt3AYbD/8=")"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_SET_ENTITY_RAND_SEED)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity] * node [bool deep])";

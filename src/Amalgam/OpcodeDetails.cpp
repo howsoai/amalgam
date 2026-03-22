@@ -8670,7 +8670,7 @@ R"&(^\s*\{\s*
 		)
 	)
 	(retrieve_entity_root "Entity")
-))&", R"({1 2 three 3})"}
+))&", R"({1 2 three 3})", "", R"((destroy_entities "Entity"))"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -8695,7 +8695,7 @@ R"&(^\s*\{\s*
 		{a 4 b 5 c 6}
 	)
 	(retrieve_entity_root "Entity")
-))&", R"({a 4 b 5 c 6})"}
+))&", R"({a 4 b 5 c 6})", "", R"((destroy_entities "Entity"))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.requiresEntity = true;
@@ -8723,20 +8723,65 @@ R"&(^\s*\{\s*
 		"string"
 		"base64"
 	)
-))&", R"("nHKVcHddHVaqvcDt3AYbD/8=")"}
+))&", R"("nHKVcHddHVaqvcDt3AYbD/8=")", "", R"((destroy_entities "Rand"))"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_SET_ENTITY_RAND_SEED)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity] * node [bool deep])";
 		d.returns = R"(string)";
 		d.description = R"(Sets the random number seed and state for the random number generator of `entity`, or the current entity if null or not specified, to the state specified by `node`.  If `node` is already a string in the proper format output by `(get_entity_rand_seed)`, then it will set the random generator to that current state, picking up where the previous state left off.  If `node` is anything else, it uses the value as a random seed to start the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by `entity` for new calls.  The parameter `deep` defaults to false, but if it is true, all contained entities are recursively set with random seeds based on the specified random seed and a hash of their relative id path to the entity being set.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities "RandTest" (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(} ))", R"()"}, {R"((create_entities (list "RandTest" "DeepRand") (lambda)", R"()"}, {R"({a (rand) ))", R"()"}, {R"(} ))", R"()"}, {R"((declare (assoc seed (get_entity_rand_seed "RandTest"))))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"}, {R"((set_entity_rand_seed "RandTest" 1234))", R"()"}, {R"((print (call_entity "RandTest" "a")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Rand"
+		(lambda
+			{a (rand)}
+		)
+	)
+	(create_entities
+		["Rand" "DeepRand"]
+		(lambda
+			{a (rand)}
+		)
+	)
+	(declare
+		{
+			seed (get_entity_rand_seed "Rand")
+		}
+	)
+	(declare
+		{
+			first_rand_numbers [
+					(call_entity "Rand" "a")
+					(call_entity
+						["Rand" "DeepRand"]
+						"a"
+					)
+				]
+		}
+	)
+	(set_entity_rand_seed "Rand" seed .true)
+	(declare
+		{
+			second_rand_numbers [
+					(call_entity "Rand" "a")
+					(call_entity
+						["Rand" "DeepRand"]
+						"a"
+					)
+				]
+		}
+	)
+	[first_rand_numbers second_rand_numbers]
+))&", R"([
+	[0.9512993766655248 0.3733350484591008]
+	[0.9512993766655248 0.3733350484591008]
+])", "", R"((destroy_entities "Rand"))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
@@ -8751,7 +8796,23 @@ R"&(^\s*\{\s*
 		d.returns = R"(assoc)";
 		d.description = R"(Returns an assoc of the permissions of `entity`, the current entity if `entity` is not specified or null, where each key is the permission and each value is either true or false.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities "RootTest" (lambda (print (system_time)) )))", R"()"}, {R"((print (get_entity_permissions "RootTest")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		(lambda
+			(print (system_time))
+		)
+	)
+	(get_entity_permissions "Entity")
+))&", R"({
+	alter_performance .false
+	environment .false
+	load .false
+	std_in .false
+	std_out_and_std_err .false
+	store .false
+	system .false
+})", "", R"((destroy_entities "Entity"))"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -8764,14 +8825,31 @@ R"&(^\s*\{\s*
 		d.returns = R"(id_path)";
 		d.description = R"(Sets the permissions on the `entity`.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.  The parameter `deep` defaults to false, but if it is true, all contained entities have their permissions updated.  Returns the id path of `entity`.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities "RootTest" (lambda (print (system_time)) )))", R"()"}, {R"((set_entity_permissions "RootTest" .true))", R"()"}, {R"((call_entity "RootTest"))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		(lambda
+			(print (system_time))
+		)
+	)
+	(set_entity_permissions "Entity" .true)
+	(get_entity_permissions "Entity")
+))&", R"({
+	alter_performance .true
+	environment .true
+	load .true
+	std_in .true
+	std_out_and_std_err .true
+	store .true
+	system .true
+})", "", R"((destroy_entities "Entity"))"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_CREATE_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity1] * node1 [id_path entity2] [* node2] [...])";

@@ -8849,14 +8849,40 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_CREATE_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity1] * node1 [id_path entity2] [* node2] [...])";
 		d.returns = R"(list of id_path)";
 		d.description = R"(Creates a new entity for id path `entity1` with code specified by `node1`, repeating this for all entity-node pairs, returning a list of the id paths for each of the entities created.  If the execution does not have permission to create the entities, it will evaluate to null.  If the `entity` is omitted, then it will create an unnamed new entity in the calling entity.  If `entity1` specifies an existing entity, then it will create the new entity within that existing entity.  If the last id path in the string is not an existing entity, then it will attempt to create that entity (returning null if it cannot).  If the node is of any other type than assoc, it will create an assoc as the top node and place the node under the null key.  Unlike the rest of the entity creation commands, create_entities specifies the optional id path first to make it easy to read entity definitions.  If more than 2 parameters are specified, create_entities will iterate through all of the pairs of parameters, treating them like the first two as it creates new entities.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((print (create_entities "MyLibrary" (lambda { three 3 four 4}) ) ))", R"()"}, {R"((create_entities "EntityWithChildren" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities (list "EntityWithChildren" "Child1") (lambda (assoc "x" 3 "y" 4)) ))", R"()"}, {R"((create_entities (list "EntityWithChildren" "Child2") (lambda (assoc "p" 3 "q" 4)) ))", R"()"}, {R"((print (contained_entities "EntityWithChildren")))", R"()"}
+			{R"&((create_entities
+	"Entity"
+	(lambda
+		{
+			a (+ 3 4)
+		}
+	)
+))&", R"(["Entity"])", "", R"((destroy_entities "Entity"))"},
+			{R"&((seq
+	(create_entities
+		"EntityWithContainedEntities"
+		{a 3 b 4}
+	)
+	(create_entities
+		["EntityWithContainedEntities" "NamedEntity1"]
+		{x 3 y 4}
+	)
+	(create_entities
+		["EntityWithContainedEntities" "NamedEntity2"]
+		{p 3 q 4}
+	)
+	(create_entities
+		["EntityWithContainedEntities"]
+		{m 3 n 4}
+	)
+	(contained_entities "EntityWithContainedEntities")
+))&", R"(["NamedEntity1" "NamedEntity2" "_hIcoPxJ8LiS"])", "", R"((destroy_entities "EntityWithContainedEntities"))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.requiresEntity = true;
@@ -8871,7 +8897,26 @@ R"&(^\s*\{\s*
 		d.returns = R"(list of id_path)";
 		d.description = R"(Creates a clone of `source_entity1`.  If `destination_entity1` is not specified, then it clones the entity into an unnamed entity in the current entity.  If `destination_entity1` is specified, then it clones it into the location specified by `destination_entity1`; if `destination_entity1` is an existing entity, then it will create it as a contained entity within `destination_entity1`, if not, it will attempt to create it with the given id path of `destination_entity1`.  Evaluates to the id path of the new entity.  Can only be performed by an entity that contains both `source_entity1` and the specified path of `destination_entity1`. If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((print (create_entities "MyLibrary" (lambda {three 3 four 4}) ) ))", R"()"}, {R"((print (clone_entities "MyLibrary" "MyNewLibrary")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity1"
+		{a 3 b 4}
+	)
+	(create_entities
+		["Entity1" "NamedEntity1"]
+		{x 3 y 4}
+	)
+	(create_entities
+		["Entity1" "NamedEntity2"]
+		{p 3 q 4}
+	)
+	(create_entities
+		["Entity1"]
+		{m 3 n 4}
+	)
+	(clone_entities "Entity1" "Entity2")
+	(contained_entities "Entity2")
+))&", R"(["NamedEntity1" "NamedEntity2" "_539JylCpbqn"])", "", R"((destroy_entities "Entity1" "Entity2"))"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -8885,7 +8930,26 @@ R"&(^\s*\{\s*
 		d.returns = R"(list of id_path)";
 		d.description = R"(Moves the entity from location specified by `source_entity1` to destination `destination_entity1`.  If `destination_entity1` exists, it will move `source_entity1` using `source_entity1`'s current id path into `destination_entity1`.  If `destination_entity1` does not exist, then it will move `source_entity1` and rename it to the end of the id path specified by `destination_entity1`. Can only be performed by a containing entity relative to both ids.  If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((print (create_entities "MyLibrary" (lambda {three 3 four 4}) ) ))", R"()"}, {R"((print (move_entities "MyLibrary" "MyLibrary2")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity1"
+		{a 3 b 4}
+	)
+	(create_entities
+		["Entity1" "NamedEntity1"]
+		{x 3 y 4}
+	)
+	(create_entities
+		["Entity1" "NamedEntity2"]
+		{p 3 q 4}
+	)
+	(create_entities
+		["Entity1"]
+		{m 3 n 4}
+	)
+	(move_entities "Entity1" "Entity2")
+	(contained_entities "Entity2")
+))&", R"(["NamedEntity1" "NamedEntity2" "_539JylCpbqn"])", "", R"((destroy_entities "Entity2"))"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -8899,7 +8963,14 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.description = R"(Destroys the entities specified by the ids `entity1`, `entity2`, etc. Can only be performed by containing entity.  Returns true if all entities were successfully destroyed, false if not.  Generally entities can be destroyed unless they do not exist or if there is code currently being run in it.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((print (create_entities "MyLibrary" (lambda { three 3 four 4} ) ) ))", R"()"}, {R"((print (contained_entities)))", R"()"}, {R"((destroy_entities "MyLibrary"))", R"()"}, {R"((print (contained_entities)))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		{a 3 b 4}
+	)
+	(destroy_entities "Entity")
+	(contained_entities)
+))&", R"([])"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.requiresEntity = true;
@@ -8907,7 +8978,7 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_LOAD)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string resource_path [string resource_type] [assoc params])";

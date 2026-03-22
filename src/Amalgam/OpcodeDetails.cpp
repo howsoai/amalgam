@@ -8353,14 +8353,88 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_MIX_ENTITIES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity1 id_path entity2 [number keep_chance_entity1] [number keep_chance_entity2] [assoc params] [id_path entity3])";
 		d.returns = R"(id_path)";
 		d.description = R"(Performs a union operation on the entities represented by `entity1` and `entity2`, but randomly ignores nodes from one or the other tree if not equal.  If only `keep_chance_entity1` is specified, `keep_chance_entity2` defaults to 1 - `keep_chance_entity1`.  `keep_chance_entity1` specifies the probability that a node from the entity represented by `entity1` will be kept, and `keep_chance_entity2` the probability that a node from the entity represented by `entity2` will be kept.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  `similar_mix_chance` is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on `keep_chance_node1` and `keep_chance_node2`, and defaults to 0.0.  If `similar_mix_chance` is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.  `unnamed_entity_mix_chance` represents the probability that an unnamed entity pair will be mixed versus preserved as independent chunks, where 0.2 would yield 20% of the entities mixed. Returns the id path of a new entity created contained by the entity that ran it.  Uses `entity3` as the optional destination entity.   Any contained entities will be mixed either based on matching name or maximal similarity for nameless entities.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities "e1" (lambda (assoc "a" 3 "b" 4)) ))", R"()"}, {R"((create_entities "e2" (lambda (assoc "c" 3 "b" 4)) ))", R"()"}, {R"((mix_entities "e1" "e2" 0.5 0.5 "e3"))", R"()"}
+			{R"&((seq
+	(create_entities
+		"MergeEntity1"
+		{a 3 b 4 c "c1"}
+	)
+	(create_entities
+		["MergeEntity1" "MergeEntityChild1"]
+		{x 3 y 4}
+	)
+	(create_entities
+		["MergeEntity1" "MergeEntityChild2"]
+		{p 3 q 4}
+	)
+	(create_entities
+		["MergeEntity1"]
+		{E 3 F 4}
+	)
+	(create_entities
+		["MergeEntity1"]
+		{
+			e 3
+			f 4
+			g 5
+			h 6
+		}
+	)
+	(create_entities
+		"MergeEntity2"
+		{b 4 c "c2"}
+	)
+	(create_entities
+		["MergeEntity2" "MergeEntityChild1"]
+		{x 3 y 4 z 5}
+	)
+	(create_entities
+		["MergeEntity2" "MergeEntityChild2"]
+		{
+			p 3
+			q 4
+			u 5
+			v 6
+			w 7
+		}
+	)
+	(create_entities
+		["MergeEntity2"]
+		{
+			E 3
+			F 4
+			G 5
+			H 6
+		}
+	)
+	(create_entities
+		["MergeEntity2"]
+		{e 3 f 4}
+	)
+	(mix_entities
+		"MergeEntity1"
+		"MergeEntity2"
+		0.5
+		0.5
+		{similar_mix_chance 0.5 unnamed_entity_mix_chance 0.2}
+		"MixedEntities"
+	)
+	[
+		(retrieve_entity_root "MixedEntities")
+		(sort
+			(contained_entities "MixedEntities")
+		)
+	]
+))&", R"([
+	{b 4 c "c1"}
+	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
+])", ".*", R"((apply "destroy_entities" (contained_entities)))"},
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -8374,7 +8448,101 @@ R"&(^\s*\{\s*
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the corresponding annotations for `entity`.  If `entity` is null then it will use the current entity.  If `label` is null or empty string, it will retrieve annotations for the entity root, otherwise if it is a valid `label` it will attempt to retrieve the annotations for that label, null if the label doesn't exist.  If `deep_annotations` is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the annotation of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_annotations is true, then it will return an assoc of label to annotation for each label in the entity.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((print (get_entity_comments)))", R"()"}, {R"((print (get_entity_comments "label_name" .true))", R"()"}
+			{R"&((seq
+	(create_entities
+		"descriptive_entity"
+		(lambda
+			
+			;this is a fully described entity
+			
+			#entity annotations
+			{
+				!privatevar 
+					;some private variable
+					
+					#privatevar annotation
+					2
+				^containervar 
+					;a variable accessible to contained entities
+					
+					#containervar annotation
+					3
+				foo 
+					;the function foo
+					
+					#foo annotation
+					(declare
+						
+						;a number representing the sum
+						
+						#return annotation
+						{
+							x 
+								;the value of x
+								;the default value of x
+								
+								#x annotation
+								#x value annotation
+								1
+							y 
+								;the value of y
+								
+								#y value annotation
+								2
+						}
+						(+ x y)
+					)
+				get_api 
+					;returns the api details
+					
+					#get_api annotation
+					(seq
+						{
+							description (get_entity_comments)
+							labels (map
+									(lambda
+										{
+											description (current_value 1)
+											parameters (get_entity_comments
+													(null)
+													(current_index 1)
+													.true
+												)
+										}
+									)
+									(get_entity_comments (null) (null) .true)
+								)
+						}
+					)
+				publicvar 
+					;some public variable
+					
+					#publicvar annotation
+					1
+			}
+		)
+	)
+	[
+		(get_entity_annotations "descriptive_entity")
+		(get_entity_annotations "descriptive_entity" (null) .true)
+		(get_entity_annotations "descriptive_entity" "foo" .true)
+	]
+))&", R"([
+	"entity annotations"
+	{
+		^containervar "containervar annotation"
+		foo "foo annotation"
+		get_api "get_api annotation"
+		publicvar "publicvar annotation"
+	}
+	[
+		{
+			x ["x annotation\r\nx value annotation" 1]
+			y ["y value annotation" 2]
+		}
+		"return annotation"
+	]
+])", "", R"((destroy_entities "descriptive_entity"))"},
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -8387,13 +8555,107 @@ R"&(^\s*\{\s*
 		d.returns = R"(any)";
 		d.description = R"(Evaluates to the corresponding comments for `entity`.  If `entity` is null then it will use the current entity.  If `label` is null or empty string, it will retrieve comments for the entity root, otherwise if it is a valid `label` it will attempt to retrieve the comments for that label, null if the label doesn't exist.  If `deep_comments` is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the comment of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_comments is true, then it will return an assoc of label to comment for each label in the entity.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((print (get_entity_comments)))", R"()"}, {R"((print (get_entity_comments "label_name" .true))", R"()"}
+			{R"&((seq
+	(create_entities
+		"descriptive_entity"
+		(lambda
+			
+			;this is a fully described entity
+			
+			#entity annotations
+			{
+				!privatevar 
+					;some private variable
+					
+					#privatevar annotation
+					2
+				^containervar 
+					;a variable accessible to contained entities
+					
+					#containervar annotation
+					3
+				foo 
+					;the function foo
+					
+					#foo annotation
+					(declare
+						
+						;a number representing the sum
+						
+						#return annotation
+						{
+							x 
+								;the value of x
+								;the default value of x
+								
+								#x annotation
+								#x value annotation
+								1
+							y 
+								;the value of y
+								
+								#y value annotation
+								2
+						}
+						(+ x y)
+					)
+				get_api 
+					;returns the api details
+					
+					#get_api annotation
+					(seq
+						{
+							description (get_entity_comments)
+							labels (map
+									(lambda
+										{
+											description (current_value 1)
+											parameters (get_entity_comments
+													(null)
+													(current_index 1)
+													.true
+												)
+										}
+									)
+									(get_entity_comments (null) (null) .true)
+								)
+						}
+					)
+				publicvar 
+					;some public variable
+					
+					#publicvar annotation
+					1
+			}
+		)
+	)
+	[
+		(get_entity_comments "descriptive_entity")
+		(get_entity_comments "descriptive_entity" (null) .true)
+		(get_entity_comments "descriptive_entity" "foo" .true)
+	]
+))&", R"([
+	"this is a fully described entity"
+	{
+		^containervar "a variable accessible to contained entities"
+		foo "the function foo"
+		get_api "returns the api details"
+		publicvar "some public variable"
+	}
+	[
+		{
+			x ["the value of x\r\nthe default value of x" 1]
+			y ["the value of y" 2]
+		}
+		"a number representing the sum"
+	]
+])", "", R"((destroy_entities "descriptive_entity"))"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_RETRIEVE_ENTITY_ROOT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity])";

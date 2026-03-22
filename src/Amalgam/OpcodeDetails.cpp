@@ -8249,7 +8249,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(any)";
 		d.description = R"(Finds the difference between the entities specified by `entity1` and `entity2` and generates code that, if evaluated passing the entity id_path as its parameter "_", would create a new entity into the id path specified by its parameter "new_entity" (null if unspecified), which would contain the applied difference between the two entities and returns the newly created entity id path.  Useful for finding a small difference of what needs to be changed to apply it to new (and possibly slightly different) entity.)";
 		d.examples = MakeAmalgamExamples({
-						{R"&((seq
+			{R"&((seq
 	(create_entities
 		"DiffEntity1"
 		(lambda
@@ -8295,17 +8295,17 @@ R"&(^\s*\{\s*
 	(create_entities
 		["DiffEntity1"]
 		(lambda
-			{E 3 F 4}
+			{e 3 f 4}
 		)
 	)
 	(create_entities
 		["DiffEntity1"]
 		(lambda
 			{
-				e 3
-				f 4
-				g 5
-				h 6
+				E 3
+				F 4
+				G 5
+				H 6
 			}
 		)
 	)
@@ -8381,89 +8381,7 @@ R"&(^\s*\{\s*
 	)
 ))&", R"((declare
 	{_ (null) new_entity (null)}
-	(assign
-		"new_entity"
-		(first
-			(create_entities
-				new_entity
-				(call
-					(lambda
-						(declare
-							{_ (null)}
-							(replace _)
-						)
-					)
-					{
-						_ (retrieve_entity_root _)
-					}
-				)
-			)
-		)
-	)
-	(create_entities
-		(append new_entity "_6WAIFZIuUjP")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{
-								E (null)
-								F (null)
-								G (get
-										(current_value 1)
-										"G"
-									)
-								H (get
-										(current_value 1)
-										"H"
-									)
-							}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_6WAIFZIuUjP")
-					)
-			}
-		)
-	)
-	(create_entities
-		(append new_entity "_dAyR4VDlo1a")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{e (null) f (null)}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_dAyR4VDlo1a")
-					)
-			}
-		)
-	)
-	(clone_entities
-		(append _ "DiffEntityChild1")
-		(append new_entity "DiffEntityChild1")
-	)
-	(clone_entities
-		(append _ "OnlyIn2")
-		(append new_entity "OnlyIn2")
-	)
-	new_entity
+	(clone_entities _ new_entity)
 ))", "", R"((apply "destroy_entities" (contained_entities)))"}
 		});
 		d.requiresEntity = true;

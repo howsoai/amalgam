@@ -7,6 +7,18 @@
 #include "PerformanceProfiler.h"
 #include "PlatformSpecific.h"
 
+template<class... Ts>
+constexpr std::array<AmalgamExample, sizeof...(Ts)>
+MakeAmalgamUnitTests(Ts... elems)
+{
+	return { std::forward<Ts>(elems)... };
+}
+
+//TODO 25158: implement unit tests
+auto _amalgam_unit_tests = MakeAmalgamUnitTests(
+	AmalgamExample{ "1", "1" }
+);
+
 //runs a test suite against the language
 //the return value of this function will be returned for the executable
 int32_t RunAmalgamLanguageValidation()
@@ -37,7 +49,16 @@ int32_t RunAmalgamLanguageValidation()
 		}
 	}
 
-	//TODO 25158: implement tests beyond opcode tests, should genericize loop above
+	for(size_t unit_test_num = 0; unit_test_num < _amalgam_unit_tests.size(); unit_test_num++)
+	{
+		auto &unit_test = _amalgam_unit_tests[unit_test_num];
+		std::cout << "Validating unit test " << (unit_test_num + 1) << " of " << _amalgam_unit_tests.size() << ": ";
+
+		if(unit_test.ValidateExample(entity))
+			std::cout << "Passed" << std::endl;
+		else
+			failed_test_names_and_numbers.emplace_back("unit test", unit_test_num);
+	}
 
 	delete entity;
 

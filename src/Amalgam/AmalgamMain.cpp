@@ -96,9 +96,9 @@ Options:
     --tracefile [file]
                      Like trace, but pulls the data from the file specified
 
-    --validate-opcodes
-                     Runs a test suite, validating all of the opcodes based on examples in documentation
-                     as well as additional stress tests.  Will report any issues found.
+    --validate-amalgam
+                     Runs a test suite, validating the opcodes and running unit tests based on examples
+                     in documentation as well as additional stress tests.  Will report any issues found.
 )";
 
 	//additional compiler defined options

@@ -170,7 +170,7 @@ PLATFORM_MAIN_CONSOLE
 	std::string profile_out_file;
 	bool run_trace = false;
 	bool run_tracefile = false;
-	bool run_validate_opcodes = false;
+	bool run_validate_amalgam = false;
 	std::string tracefile;
 	std::string amlg_file_to_run;
 	bool print_to_stdio = true;
@@ -241,8 +241,8 @@ PLATFORM_MAIN_CONSOLE
 			run_tracefile = true;
 			tracefile = args[++i];
 		}
-		else if(args[i] == "--validate-opcodes")
-			run_validate_opcodes = true;
+		else if(args[i] == "--validate-amalgam")
+			run_validate_amalgam = true;
 	#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 		else if(args[i] == "--numthreads")
 			num_threads = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
@@ -316,7 +316,7 @@ PLATFORM_MAIN_CONSOLE
 
 		return return_val;
 	}
-	else if(run_validate_opcodes)
+	else if(run_validate_amalgam)
 	{
 		return RunAmalgamLanguageValidation();
 	}

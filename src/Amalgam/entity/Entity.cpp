@@ -347,6 +347,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			for(auto &wl : *write_listeners)
 				wl->LogWriteLabelValuesToEntity(this, new_label_values, accum_values);
 		}
+
 		asset_manager.UpdateEntityLabelValues(this, new_label_values, accum_values);
 
 		if(num_new_nodes_allocated != nullptr)
@@ -418,6 +419,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 			for(auto &wl : *write_listeners)
 				wl->LogRemoveLabelsFromEntity(this, labels_to_remove);
 		}
+
 		asset_manager.RemoveEntityLabelValues(this, labels_to_remove);
 
 		//needed to allocate new top node
@@ -616,6 +618,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 		for(auto &wl : *write_listeners)
 			wl->LogCreateEntity(t);
 	}
+
 	asset_manager.CreateEntity(t);
 
 	return t->idStringId;
@@ -682,6 +685,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 		for(auto &wl : *write_listeners)
 			wl->LogCreateEntity(t);
 	}
+
 	asset_manager.CreateEntity(t);
 
 	return t->idStringId;
@@ -710,9 +714,9 @@ void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<En
 	{
 		for(auto &wl : *write_listeners)
 			wl->LogDestroyEntity(entity_to_remove);
-
-		asset_manager.DestroyEntity(entity_to_remove);
 	}
+
+	asset_manager.DestroyEntity(entity_to_remove);
 
 	EntityQueryCaches *caches = GetQueryCaches();
 	if(caches != nullptr)
@@ -818,9 +822,9 @@ void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed,
 	{
 		for(auto &wl : *write_listeners)
 			wl->LogSetEntityRandomSeed(this, new_state, false);
-
-		asset_manager.UpdateEntityRandomSeed(this, new_state, deep_set_seed, all_contained_entities);
 	}
+
+	asset_manager.UpdateEntityRandomSeed(this, new_state, deep_set_seed, all_contained_entities);
 
 	if(deep_set_seed)
 	{
@@ -834,15 +838,15 @@ void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityW
 	Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities)
 {
 	randomStream = new_stream;
+	std::string new_state = randomStream.GetState();
 
 	if(write_listeners != nullptr)
 	{
-		std::string new_state = randomStream.GetState();
 		for(auto &wl : *write_listeners)
 			wl->LogSetEntityRandomSeed(this, new_state, false);
-
-		asset_manager.UpdateEntityRandomSeed(this, new_state, false, all_contained_entities);
 	}
+
+	asset_manager.UpdateEntityRandomSeed(this, new_state, false, all_contained_entities);
 }
 
 std::string Entity::CreateRandomStreamFromStringAndRand(const std::string &seed_string)
@@ -862,10 +866,10 @@ void Entity::SetPermissions(ExecutionPermissions permissions_to_set, ExecutionPe
 	{
 		for(auto &wl : *write_listeners)
 			wl->LogSetEntityPermissions(this, permissions_to_set, permission_values, deep_set_permissions);
-
-		asset_manager.UpdateEntityPermissions(this, permissions_to_set, permission_values,
-			deep_set_permissions, all_contained_entities);
 	}
+
+	asset_manager.UpdateEntityPermissions(this, permissions_to_set, permission_values,
+			deep_set_permissions, all_contained_entities);
 
 	if(deep_set_permissions)
 	{
@@ -906,13 +910,11 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::
 
 	if(write_listeners != nullptr)
 	{
-		if(write_listeners->size() > 0)
-		{
-			for(auto &wl : *write_listeners)
-				wl->LogWriteToEntityRoot(this);
-		}
-		asset_manager.UpdateEntityRoot(this);
+		for(auto &wl : *write_listeners)
+			wl->LogWriteToEntityRoot(this);
 	}
+
+	asset_manager.UpdateEntityRoot(this);
 }
 
 void Entity::SetRoot(std::string &code_string, std::vector<EntityWriteListener *> *write_listeners)

@@ -9083,7 +9083,7 @@ R"&(^\s*\{\s*
 	(load "file.caml")
 ))&", R"((seq
 	(print "hello")
-))"},
+))", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.caml") (system "system" "rm file.caml")))"},
 			{R"&((seq
 	(declare
 		{
@@ -9314,7 +9314,7 @@ R"&(^\s*\{\s*
 	(load "file.caml")
 ))&", R"((seq
 	(print "hello")
-))"},
+))", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.caml") (system "system" "rm file.caml")))"},
 			{R"&((seq
 	(declare
 		{
@@ -9483,7 +9483,22 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.description = R"(Returns true if `entity` exists, false if not.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((print (create_entities "MyLibrary" (lambda { three 3 four 4 } ) ) ))", R"()"}, {R"((print (contains_entity "MyLibrary")))", R"()"}, {R"((print (contains_entity (list "MyLibrary"))))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		{a 1 b 2}
+	)
+	(create_entities
+		["Entity" "Contained1"]
+		{c 3}
+	)
+	[
+		(contains_entity "Entity")
+		(contains_entity
+			["Entity" "NotAnEntity"]
+		)
+	]
+))&", R"([.true .false])", "", R"((destroy_entities "Entity")"}
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;

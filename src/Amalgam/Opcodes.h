@@ -367,6 +367,7 @@ enum EvaluableNodeBuiltInStringId
 	//help options
 	ENBISI_overview,
 	ENBISI_syntax,
+	ENBISI_distance,
 	ENBISI_opcodes,
 
 	//file storage options

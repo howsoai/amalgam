@@ -352,6 +352,7 @@ void StringInternPool::InitializeStaticStrings()
 	//help options
 	EmplaceStaticString(ENBISI_overview,"overview");
 	EmplaceStaticString(ENBISI_syntax,"syntax");
+	EmplaceStaticString(ENBISI_distance, "distance");
 	EmplaceStaticString(ENBISI_opcodes, "opcodes");
 
 	//file storage options

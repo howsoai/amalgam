@@ -9511,7 +9511,27 @@ R"&(^\s*\{\s*
 		d.returns = R"(list of string)";
 		d.description = R"(Returns a list of strings of ids of entities contained in `containing_entity` or the current entity if containing_entity is omitted or null.  The parameters of `condition1` through `conditionN` are query conditions, and they may be any of the query opcodes (beginning with `query_`) or may be a list of query opcodes, where each condition will be executed in order as a conjunction.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 }))", R"()"}, {R"())", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity1"
+		{a 1 b 2}
+		"Entity2"
+		{c 3}
+	)
+	(create_entities
+		["Entity2" "A"]
+		{d 4}
+		["Entity2"]
+		{e 5}
+	)
+	[
+		(contained_entities)
+		(contained_entities "Entity2")
+	]
+))&", R"([
+	["Entity1" "Entity2"]
+	["A" "_3SaCTguSSie"]
+])", "", R"((destroy_entities "Entity1" "Entity2"))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;

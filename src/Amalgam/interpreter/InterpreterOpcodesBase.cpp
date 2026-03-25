@@ -441,7 +441,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 
 		opcode_attribs->SetMappedChildNode("examples", example_output_pairs);
 
-		//TODO 25157: finish this
 		return opcode_attribs;
 	}
 

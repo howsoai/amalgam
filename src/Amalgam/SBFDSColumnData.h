@@ -12,9 +12,7 @@
 #include <memory>
 #include <type_traits>
 #include <vector>
-//TODO 25158: remove these
-#define SBFDS_VERIFICATION
-#define DISABLE_SBFDS_VALUE_INTERNING
+
 //if SBFDS_VERIFICATION is defined, then it will frequently verify integrity at cost of performance
 //if FORCE_SBFDS_VALUE_INTERNING is defined, then it will force value interning to always be on
 //if DISABLE_SBFDS_VALUE_INTERNING is defined, then it will disable all value interning

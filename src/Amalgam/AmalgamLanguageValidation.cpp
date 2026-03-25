@@ -14,7 +14,6 @@ MakeAmalgamUnitTests(Ts... elems)
 	return { std::forward<Ts>(elems)... };
 }
 
-//TODO 25158: implement unit tests
 auto _amalgam_unit_tests = MakeAmalgamUnitTests(
 	AmalgamExample{ R"&((associate "a" 1 "b" 2))&", R"({a 1 b 2})" },
 	AmalgamExample{ R"&((lambda
@@ -2424,7 +2423,7 @@ int32_t RunAmalgamLanguageValidation()
 
 	std::vector<std::pair<std::string, size_t>> failed_test_names_and_numbers;
 
-	//TODO 25158: replace with the top for loop when all are implemented
+	//TODO 25157: replace with the top for loop when all are implemented
 	//for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
 	for(size_t opcode_index = 0; opcode_index < ENT_QUERY_SELECT; opcode_index++)
 	{
@@ -2445,7 +2444,7 @@ int32_t RunAmalgamLanguageValidation()
 		}
 	}
 
-	//TODO 25158: put this back in when done with opcodes
+	//TODO 25157: put this back in when done with opcodes
 	/*
 	for(size_t unit_test_num = 0; unit_test_num < _amalgam_unit_tests.size(); unit_test_num++)
 	{

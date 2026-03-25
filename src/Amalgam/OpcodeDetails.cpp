@@ -9013,14 +9013,100 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_LOAD)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string resource_path [string resource_type] [assoc params])";
 		d.returns = R"(any)";
 		d.description = R"(Loads the data specified by `resource_path`, parses it into the appropriate code and data, and returns it. If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((print (load "my_directory/MyModule.amlg")))", R"()"}
+			{R"&((seq
+	(store
+		"file.amlg"
+		(lambda
+			(seq
+				(print "hello")
+			)
+		)
+	)
+	(load "file.amlg")
+))&", R"((seq
+	(print "hello")
+))", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.amlg") (system "system" "rm file.amlg")))"},
+			{R"&((seq
+	(store
+		"file.json"
+		[
+			1
+			2
+			3
+			{a 1 b 2 c (null)}
+		]
+	)
+	(load "file.json")
+))&", R"([
+	1
+	2
+	3
+	{a 1 b 2 c (null)}
+])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.json") (system "system" "rm file.json")))"},
+			{R"&((seq
+	(store
+		"file.yaml"
+		[
+			1
+			2
+			3
+			{a 1 b 2 c (null)}
+		]
+	)
+	(load "file.yaml")
+))&", R"([
+	1
+	2
+	3
+	{a 1 b 2 c (null)}
+])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.yaml") (system "system" "rm file.yaml")))"},
+			{R"&((seq
+	(store "file.txt" "This is text.")
+	(load "test.txt")
+))&", R"((null))"},
+			{R"&((seq
+	(store
+		"file.caml"
+		(lambda
+			(seq
+				(print "hello")
+			)
+		)
+	)
+	(load "file.caml")
+))&", R"((seq
+	(print "hello")
+))"},
+			{R"&((seq
+	(declare
+		{
+			csv_data [
+					[6.4 2.8 5.6 2.2 "virginica"]
+					[4.9 2.5 4.5 1.7 "virg\"inica"]
+					[]
+					["" "" "" (null)]
+					[4.9 3.1 1.5 0.1 "set\nosa" 3]
+					[4.4 3.2 1.3 0.2 "setosa"]
+				]
+		}
+	)
+	(store "file.csv" csv_data)
+	(load "file.csv")
+))&", R"([
+	[6.4 2.8 5.6 2.2 "virginica"]
+	[4.9 2.5 4.5 1.7 "virg\"inica"]
+	[(null)]
+	[(null) (null) (null) (null)]
+	[4.9 3.1 1.5 0.1 "set\nosa" 3]
+	[4.4 3.2 1.3 0.2 "setosa"]
+])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.csv") (system "system" "rm file.csv")))"}
 			});
 		d.permissions = ExecutionPermissions::Permission::LOAD;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -9033,7 +9119,125 @@ R"&(^\s*\{\s*
 		d.returns = R"(id_path)";
 		d.description = R"(Loads the data specified by `resource_path` and parse it into the appropriate code and data, and stores it in `entity`.  It follows the same id path creation rules as `(create_entities)`, except that if no id path is specified, it may default to a name based on the resource if available.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((load_entity "my_directory/MyModule.amlg" "MyModule"))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		{a 1 b 2}
+	)
+	(create_entities
+		["Entity" "Contained1"]
+		{c 3}
+	)
+	(create_entities
+		["Entity" "Contained1" "Contained2_1"]
+		{d 4}
+	)
+	(create_entities
+		["Entity" "Contained1" "Contained2_2"]
+		{e 5}
+	)
+	(store_entity "entity.amlg" "Entity")
+	(destroy_entities "Entity")
+	(load_entity "entity.amlg" "Entity")
+	(flatten_entity "Entity" .false)
+))&", R"((declare
+	{create_new_entity .true new_entity (null) require_version_compatibility .false}
+	(let
+		{
+			_ (lambda
+					{a 1 b 2}
+				)
+		}
+		(if
+			create_new_entity
+			(assign
+				"new_entity"
+				(first
+					(create_entities new_entity _)
+				)
+			)
+			(assign_entity_roots new_entity _)
+		)
+	)
+	(create_entities
+		(append new_entity "Contained1")
+		(lambda
+			{c 3}
+		)
+	)
+	(create_entities
+		(append
+			new_entity
+			["Contained1" "Contained2_1"]
+		)
+		(lambda
+			{d 4}
+		)
+	)
+	(create_entities
+		(append
+			new_entity
+			["Contained1" "Contained2_2"]
+		)
+		(lambda
+			{e 5}
+		)
+	)
+	new_entity
+))", "", R"((seq (destroy_entities "Entity") (if (= (system "os") "Windows") (seq (system "system" "del /q entity*") (system "system" "rmdir /s /q entity")) (system "system" "rm -rf entity*"))))"},
+			{R"&((seq
+	(create_entities
+		"Entity"
+		[1 2 3 4]
+	)
+	(create_entities
+		["Entity" "Contained1"]
+		[5 6 7]
+	)
+	(create_entities
+		["Entity" "Contained1" "Contained1_1"]
+		{eight 8 nine 9}
+	)
+	(create_entities
+		["Entity" "Contained1" "Contained1_3"]
+		[12 13]
+	)
+	(store_entity
+		"entity.caml"
+		"Entity"
+		(null)
+		.true
+		{flatten .true transactional .true}
+	)
+	(create_entities
+		["Entity" "Contained1" "Contained1_2"]
+		[10 11]
+	)
+	(destroy_entities
+		["Entity" "Contained1" "Contained1_3"]
+	)
+	(assign_to_entities
+		["Entity" "Contained1" "Contained1_1"]
+		{eight 88}
+	)
+	(load_entity
+		"entity.caml"
+		"EntityCopy"
+		(null)
+		.false
+		{execute_on_load .true require_version_compatibility .true transactional .true}
+	)
+	(declare
+		{
+			diff (difference_entities "EntityCopy" "Entity")
+		}
+	)
+	(destroy_entities "EntityCopy" "Entity")
+	diff
+))&", R"((declare
+	{_ (null) new_entity (null)}
+	(clone_entities _ new_entity)
+))"}
 			});
 		d.permissions = ExecutionPermissions::Permission::LOAD;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -9047,7 +9251,93 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.description = R"(Stores `node` into `resource_path`.  Returns true if successful, false if not.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((store "my_directory/MyData.amlg" (list 1 2 3)))", R"()"}
+			{R"&((seq
+	(store
+		"file.amlg"
+		(lambda
+			(seq
+				(print "hello")
+			)
+		)
+	)
+	(load "file.amlg")
+))&", R"((seq
+	(print "hello")
+))", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.amlg") (system "system" "rm file.amlg")))"},
+			{R"&((seq
+	(store
+		"file.json"
+		[
+			1
+			2
+			3
+			{a 1 b 2 c (null)}
+		]
+	)
+	(load "file.json")
+))&", R"([
+	1
+	2
+	3
+	{a 1 b 2 c (null)}
+])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.json") (system "system" "rm file.json")))"},
+			{R"&((seq
+	(store
+		"file.yaml"
+		[
+			1
+			2
+			3
+			{a 1 b 2 c (null)}
+		]
+	)
+	(load "file.yaml")
+))&", R"([
+	1
+	2
+	3
+	{a 1 b 2 c (null)}
+])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.yaml") (system "system" "rm file.yaml")))"},
+			{R"&((seq
+	(store "file.txt" "This is text.")
+	(load "test.txt")
+))&", R"((null))"},
+			{R"&((seq
+	(store
+		"file.caml"
+		(lambda
+			(seq
+				(print "hello")
+			)
+		)
+	)
+	(load "file.caml")
+))&", R"((seq
+	(print "hello")
+))"},
+			{R"&((seq
+	(declare
+		{
+			csv_data [
+					[6.4 2.8 5.6 2.2 "virginica"]
+					[4.9 2.5 4.5 1.7 "virg\"inica"]
+					[]
+					["" "" "" (null)]
+					[4.9 3.1 1.5 0.1 "set\nosa" 3]
+					[4.4 3.2 1.3 0.2 "setosa"]
+				]
+		}
+	)
+	(store "file.csv" csv_data)
+	(load "file.csv")
+))&", R"([
+	[6.4 2.8 5.6 2.2 "virginica"]
+	[4.9 2.5 4.5 1.7 "virg\"inica"]
+	[(null)]
+	[(null) (null) (null) (null)]
+	[4.9 3.1 1.5 0.1 "set\nosa" 3]
+	[4.4 3.2 1.3 0.2 "setosa"]
+])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.csv") (system "system" "rm file.csv")))"}
 			});
 		d.permissions = ExecutionPermissions::Permission::STORE;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -9061,14 +9351,132 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.description = R"(Stores `entity` into `resource_path`.  Returns true if successful, false if not.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((store_entity "my_directory/MyData.amlg" "MyData"))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		{a 1 b 2}
+	)
+	(create_entities
+		["Entity" "Contained1"]
+		{c 3}
+	)
+	(create_entities
+		["Entity" "Contained1" "Contained2_1"]
+		{d 4}
+	)
+	(create_entities
+		["Entity" "Contained1" "Contained2_2"]
+		{e 5}
+	)
+	(store_entity "entity.amlg" "Entity")
+	(destroy_entities "Entity")
+	(load_entity "entity.amlg" "Entity")
+	(flatten_entity "Entity" .false)
+))&", R"((declare
+	{create_new_entity .true new_entity (null) require_version_compatibility .false}
+	(let
+		{
+			_ (lambda
+					{a 1 b 2}
+				)
+		}
+		(if
+			create_new_entity
+			(assign
+				"new_entity"
+				(first
+					(create_entities new_entity _)
+				)
+			)
+			(assign_entity_roots new_entity _)
+		)
+	)
+	(create_entities
+		(append new_entity "Contained1")
+		(lambda
+			{c 3}
+		)
+	)
+	(create_entities
+		(append
+			new_entity
+			["Contained1" "Contained2_1"]
+		)
+		(lambda
+			{d 4}
+		)
+	)
+	(create_entities
+		(append
+			new_entity
+			["Contained1" "Contained2_2"]
+		)
+		(lambda
+			{e 5}
+		)
+	)
+	new_entity
+))", "", R"((seq (destroy_entities "Entity") (if (= (system "os") "Windows") (seq (system "system" "del /q entity*") (system "system" "rmdir /s /q entity")) (system "system" "rm -rf entity*"))))"},
+			{R"&((seq
+	(create_entities
+		"Entity"
+		[1 2 3 4]
+	)
+	(create_entities
+		["Entity" "Contained1"]
+		[5 6 7]
+	)
+	(create_entities
+		["Entity" "Contained1" "Contained1_1"]
+		{eight 8 nine 9}
+	)
+	(create_entities
+		["Entity" "Contained1" "Contained1_3"]
+		[12 13]
+	)
+	(store_entity
+		"entity.caml"
+		"Entity"
+		(null)
+		.true
+		{flatten .true transactional .true}
+	)
+	(create_entities
+		["Entity" "Contained1" "Contained1_2"]
+		[10 11]
+	)
+	(destroy_entities
+		["Entity" "Contained1" "Contained1_3"]
+	)
+	(assign_to_entities
+		["Entity" "Contained1" "Contained1_1"]
+		{eight 88}
+	)
+	(load_entity
+		"entity.caml"
+		"EntityCopy"
+		(null)
+		.false
+		{execute_on_load .true require_version_compatibility .true transactional .true}
+	)
+	(declare
+		{
+			diff (difference_entities "EntityCopy" "Entity")
+		}
+	)
+	(destroy_entities "EntityCopy" "Entity")
+	diff
+))&", R"((declare
+	{_ (null) new_entity (null)}
+	(clone_entities _ new_entity)
+))"}
 			});
 		d.permissions = ExecutionPermissions::Permission::STORE;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_CONTAINS_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity)";

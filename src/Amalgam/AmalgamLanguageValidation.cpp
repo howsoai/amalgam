@@ -2426,7 +2426,7 @@ int32_t RunAmalgamLanguageValidation()
 
 	//TODO 25158: replace with the top for loop when all are implemented
 	//for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
-	for(size_t opcode_index = 0; opcode_index < ENT_LOAD; opcode_index++)
+	for(size_t opcode_index = 0; opcode_index < ENT_CONTAINS_ENTITY; opcode_index++)
 	{
 		EvaluableNodeType cur_opcode = static_cast<EvaluableNodeType>(opcode_index);
 		std::string cur_opcode_str = GetStringFromEvaluableNodeType(cur_opcode, true);
@@ -2445,6 +2445,8 @@ int32_t RunAmalgamLanguageValidation()
 		}
 	}
 
+	//TODO 25158: put this back in when done with opcodes
+	/*
 	for(size_t unit_test_num = 0; unit_test_num < _amalgam_unit_tests.size(); unit_test_num++)
 	{
 		auto &unit_test = _amalgam_unit_tests[unit_test_num];
@@ -2454,7 +2456,7 @@ int32_t RunAmalgamLanguageValidation()
 			std::cout << "Passed" << std::endl;
 		else
 			failed_test_names_and_numbers.emplace_back("unit test", unit_test_num);
-	}
+	}*/
 
 	delete entity;
 

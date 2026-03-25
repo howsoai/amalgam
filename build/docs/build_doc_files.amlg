@@ -2,7 +2,6 @@
 	(store "./amalgam_overview.md" (concat
 		(help "overview") "\n"
 		(help "syntax") "\n"
-		(help "distance") "\n"
 
 		"## Amalgam Opcodes\n"
 		(apply "concat"
@@ -49,6 +48,8 @@
 				(help "opcodes")
 			)
 		)
+		
+		(help "distance") "\n"
 	))
 	
 	(store "./opcodes.json"

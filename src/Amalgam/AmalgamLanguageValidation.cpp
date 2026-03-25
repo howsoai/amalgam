@@ -2426,7 +2426,7 @@ int32_t RunAmalgamLanguageValidation()
 
 	//TODO 25158: replace with the top for loop when all are implemented
 	//for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
-	for(size_t opcode_index = 0; opcode_index < ENT_COMPUTE_ON_CONTAINED_ENTITIES; opcode_index++)
+	for(size_t opcode_index = 0; opcode_index < ENT_QUERY_SELECT; opcode_index++)
 	{
 		EvaluableNodeType cur_opcode = static_cast<EvaluableNodeType>(opcode_index);
 		std::string cur_opcode_str = GetStringFromEvaluableNodeType(cur_opcode, true);

@@ -9476,7 +9476,7 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_CONTAINS_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity)";
@@ -9527,10 +9527,14 @@ R"&(^\s*\{\s*
 	[
 		(contained_entities)
 		(contained_entities "Entity2")
+		(contained_entities
+			(query_exists "a")
+		)
 	]
 ))&", R"([
 	["Entity1" "Entity2"]
 	["A" "_3SaCTguSSie"]
+	["Entity1"]
 ])", "", R"((destroy_entities "Entity1" "Entity2"))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
@@ -9545,14 +9549,36 @@ R"&(^\s*\{\s*
 		d.returns = R"(any)";
 		d.description = R"(Performs queries like `(contained_entities)` on `containing_entity` or the current entity if containing_entity is omitted or null, but returns a value or set of values appropriate for the last query in conditions.  The parameters of `condition1` through `conditionN` are query conditions, and they may be any of the query opcodes (beginning with `query_`) or may be a list of query opcodes, where each condition will be executed in order as a conjunction.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities (list "TestEntity" "Child"))", R"()"}, {R"((lambda { TargetLabel 3 } ))", R"()"}, {R"())", R"()"}, {R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}, {R"(; For more examples see the individual entries for each query.)", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity1"
+		{a 1 b 2}
+		"Entity2"
+		{a 3}
+	)
+	[
+		(compute_on_contained_entities
+			(query_exists "a")
+		)
+		(compute_on_contained_entities
+			(query_exists "a")
+			(query_sum "a")
+		)
+	]
+))&", R"([
+	{
+		Entity1 {a 1}
+		Entity2 {a 3}
+	}
+	4
+])", "", R"((destroy_entities "Entity1" "Entity2"))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_QUERY_SELECT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number num_to_select [number start_offset] [number random_seed])";

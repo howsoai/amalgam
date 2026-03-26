@@ -10155,14 +10155,52 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number num_entities] [bool numeric])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects a number of entities with the highest values for the label `label_name`.  If `num_entities` is specified, it will return that many entities, otherwise will return 1.  If `numeric` is true, its default value, then it only considers numeric values; if false, will consider all types.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_max "TargetLabel" 3))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+		"E5q"
+		{a 5 q "a"}
+		"E6"
+		{a 6 q "q"}
+		"Er"
+		{r "r"}
+	)
+	[
+		(contained_entities
+			(query_max "a")
+		)
+		(contained_entities
+			(query_max "a" 2)
+		)
+		(compute_on_contained_entities
+			(query_exists "a")
+			(query_max "q" 1 .false)
+			(query_exists "q")
+		)
+	]
+))&", R"([
+	["E6"]
+	["E5" "E6"]
+	{
+		E6 {q "q"}
+	}
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -10176,14 +10214,52 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects a number of entities with the lowest values for the label `label_name`.  If `num_entities` is specified, it will return that many entities, otherwise will return 1.  If `numeric` is true, its default value, then it only considers numeric values; if false, will consider all types.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_min "TargetLabel" 3))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+		"E5q"
+		{a 5 q "a"}
+		"E6"
+		{a 6 q "q"}
+		"Er"
+		{r "r"}
+	)
+	[
+		(contained_entities
+			(query_min "a")
+		)
+		(contained_entities
+			(query_min "a" 2)
+		)
+		(compute_on_contained_entities
+			(query_exists "a")
+			(query_min "q" 1 .false)
+			(query_exists "q")
+		)
+	]
+))&", R"([
+	["E1"]
+	["E1" "E2"]
+	{
+		E5q {q "a"}
+	}
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_QUERY_SUM)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [string weight_label_name])";

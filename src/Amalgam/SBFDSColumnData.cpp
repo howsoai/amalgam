@@ -785,8 +785,8 @@ void SBFDSColumnData::FindMinMax(EvaluableNodeImmediateValueType value_type, siz
 
 		std::sort(begin(all_sids), end(all_sids), StringIDNaturalCompareSort);
 
-		//search left to right for max (bucket 0 is largest) or right to left for min
-		int64_t value_index = find_max ? 0 : all_sids.size() - 1;
+		//search right to left for max (bucket size - 1 is largest) or left to right for min
+		int64_t value_index = find_max ? all_sids.size() - 1 : 0;
 
 		while(value_index < static_cast<int64_t>(all_sids.size()) && value_index >= 0)
 		{
@@ -803,7 +803,7 @@ void SBFDSColumnData::FindMinMax(EvaluableNodeImmediateValueType value_type, siz
 					return;
 			}
 
-			value_index += find_max ? 1 : -1; //search left to right for max (bucket 0 is largest) or right to left for min
+			value_index += find_max ? -1 : 1;
 		}
 	}
 }

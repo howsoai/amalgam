@@ -10688,7 +10688,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests for this opcode
+
 	arr[static_cast<std::size_t>(ENT_QUERY_DISTANCE_CONTRIBUTIONS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number selection_bandwidth list feature_labels list axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
@@ -10696,14 +10696,57 @@ R"&(^\s*\{\s*
 		d.allowsConcurrency = true;
 		d.description = R"(When used as a query argument, computes the distance or surprisal contribution for every entity.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((compute_on_contained_entities "SurprisalTransformContainer" (list (query_distance_contributions 4 (list "x") [[0]] 1 (null) (null) (null) (list 0.25) (null) "surprisal" (null) "fixed_seed" (null) "precise") )))", R"()"}
+			{R"&((seq
+	(create_entities
+		"vert0"
+		{object 1 x 0 y 0}
+	)
+	(create_entities
+		"vert1"
+		{object 1 x 1 y 0}
+	)
+	(create_entities
+		"vert2"
+		{object 1 x 1 y 1}
+	)
+	(create_entities
+		"vert3"
+		{object 1 x 0 y 1}
+	)
+	(create_entities
+		"vert4"
+		{object 2 x 0.5 y 0.5}
+	)
+	(create_entities
+		"vert5"
+		{object 2 x 2 y 1}
+	)
+	(compute_on_contained_entities
+		(query_distance_contributions
+			2
+			["x" "y"]
+			[
+				[1 2]
+			]
+			2
+			(null)
+			(null)
+			(null)
+			(null)
+			(null)
+			-1
+			(null)
+			"random seed 1234"
+		)
+	)
+))&", R"([1.17157287525381])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests for this opcode
+
 	arr[static_cast<std::size_t>(ENT_QUERY_ENTITY_CONVICTIONS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list])";
@@ -10711,7 +10754,126 @@ R"&(^\s*\{\s*
 		d.allowsConcurrency = true;
 		d.description = R"(When used as a query argument, computes the case conviction for every case given in `entity_ids_to_compute` with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((compute_on_contained_entities (list (query_entity_convictions 2 (list "alpha" "b" "c") (null) 0.1 (null) (list 0 0 1) ) )))", R"()"}
+			{R"&((seq
+	(create_entities
+		"vert0"
+		{object 1 x 0 y 0}
+	)
+	(create_entities
+		"vert1"
+		{object 1 x 1 y 0}
+	)
+	(create_entities
+		"vert2"
+		{object 1 x 1 y 1}
+	)
+	(create_entities
+		"vert3"
+		{object 1 x 0 y 1}
+	)
+	(create_entities
+		"vert4"
+		{object 2 x 0.5 y 0.5}
+	)
+	(create_entities
+		"vert5"
+		{object 2 x 2 y 1}
+	)
+	[
+		(compute_on_contained_entities
+			(query_entity_convictions
+				2
+				["x" "y"]
+				(null)
+				2
+				(null)
+				(null)
+				(null)
+				(null)
+				(null)
+				-1
+				(null)
+				"random seed 1234"
+			)
+		)
+		(compute_on_contained_entities
+			(query_entity_convictions
+				2
+				["x" "y"]
+				["vert0" "vert1" "vert2"]
+				2
+				(null)
+				(null)
+				(null)
+				(null)
+				(null)
+				-1
+			)
+		)
+		(compute_on_contained_entities
+			(query_exists "object")
+			(query_entity_convictions
+				2
+				["x" "y"]
+				(null)
+				2
+				(null)
+				(null)
+				(null)
+				(null)
+				(null)
+				-1
+				(null)
+				"random seed 1234"
+			)
+		)
+		(compute_on_contained_entities
+			(query_exists "object")
+			(query_entity_convictions
+				2
+				["x" "y"]
+				(contained_entities
+					(query_exists "object")
+				)
+				2
+				(null)
+				(null)
+				(null)
+				(null)
+				(null)
+				-1
+				(null)
+				"random seed 1234"
+			)
+		)
+	]
+))&", R"([
+	{
+		vert0 20.64507068846579
+		vert1 10.936029135274522
+		vert2 0.7220080663101216
+		vert3 20.64507068846579
+		vert4 0.6024424202611007
+		vert5 0.361435163373361
+	}
+	{vert0 10.493921488434916 vert1 5.558800590831786 vert2 0.3669978212333347}
+	{
+		vert0 20.64507068846579
+		vert1 10.936029135274522
+		vert2 0.7220080663101216
+		vert3 20.64507068846579
+		vert4 0.6024424202611007
+		vert5 0.361435163373361
+	}
+	{
+		vert0 20.64507068846579
+		vert1 10.936029135274522
+		vert2 0.7220080663101216
+		vert3 20.64507068846579
+		vert4 0.6024424202611007
+		vert5 0.361435163373361
+	}
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;

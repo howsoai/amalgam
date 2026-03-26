@@ -10372,14 +10372,75 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_QUERY_GENERALIZED_MEAN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number p] [string weight_label_name] [number center] [bool calculate_moment] [bool absolute_value])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, computes the generalized mean over the label `label_name` for numerical data.  If `p` is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity), to harmonic mean (-1), to geometric mean (0), to arithmetic mean (1), to maximum (infinity).  If `weight_label_name` is specified, it will normalize the weights and compute a weighted mean.  If `center` is specified, calculations will use that value as the central point, and the default is 0.0.  If `calculate_moment` is true, the results will not be raised to 1 / `p`.  If `absolute_value` is true, the differences will take the absolute value.  Various parameterizations of `(generalized_mean)` can be used to compute moments about the mean, especially by setting the `calculate_moment` parameter to true and using the mean as the center.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_generalized_mean "TargetLabel" 0.5))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1 weight 5}
+		"E2"
+		{a 2 weight 4}
+		"E3"
+		{a 3 weight 3}
+		"E4"
+		{a 4 weight 2}
+		"E5"
+		{a 5 weight 1}
+	)
+	(declare
+		{
+			mean (compute_on_contained_entities
+					(query_generalized_mean "a" 1)
+				)
+		}
+	)
+	[
+		mean
+		(compute_on_contained_entities
+			(query_generalized_mean "weight" 0)
+		)
+		(compute_on_contained_entities
+			(query_generalized_mean "weight" -1)
+		)
+		(compute_on_contained_entities
+			(query_generalized_mean "a" 2)
+		)
+		(compute_on_contained_entities
+			(query_generalized_mean "a" 1 "weight")
+		)
+		(compute_on_contained_entities
+			(query_generalized_mean "weight" 0 "weight")
+		)
+		(compute_on_contained_entities
+			(query_generalized_mean "a" 1 (null) mean .true .true)
+		)
+		(compute_on_contained_entities
+			(query_generalized_mean "a" 2 (null) mean .true)
+		)
+		(compute_on_contained_entities
+			(query_generalized_mean "a" 3 (null) mean .false)
+		)
+		(compute_on_contained_entities
+			(query_generalized_mean "a" 4 (null) mean .true)
+		)
+	]
+))&", R"([
+	3
+	2.6051710846973517
+	2.18978102189781
+	3.3166247903554
+	2.3333333333333335
+	86400000.00000006
+	1.2
+	2
+	0
+	6.8
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -10391,16 +10452,46 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number cyclic_range] [bool include_zero_difference])";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, finds the smallest difference between any two values for the label `label_name`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.  If `include_zero_difference` is true, its default value, then it will return 0 if the smallest gap between any two numbers is 0.  If `include_zero_difference` is false, it will return the smallest nonzero value.)";
+		d.description = R"(When used as a query argument, finds the smallest difference between any two values for the label `label_name`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.  If `include_zero_difference` is true then it will return 0 if the smallest gap between any two numbers is 0.  If `include_zero_difference` is false, its default value, it will return the smallest nonzero value.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_min_difference "TargetLabel"))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E0.1"
+		{a 0.1}
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+		"E5.5"
+		{a 5.5}
+		"E5.5_2"
+		{a 5.5}
+	)
+	[
+		(compute_on_contained_entities
+			(query_min_difference "a")
+		)
+		(compute_on_contained_entities
+			(query_min_difference "a" (null) .true)
+		)
+		(compute_on_contained_entities
+			(query_min_difference "a" 5.5 .false)
+		)
+	]
+))&", R"([0.5 0 0.1])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX_DIFFERENCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number cyclic_range])";

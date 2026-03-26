@@ -695,23 +695,19 @@ void SBFDSColumnData::FindAllIndicesWithinRange(EvaluableNodeImmediateValueType 
 		//check every string value to see if between
 		for(auto &[id, entry] : stringIdValueEntries)
 		{
-			//check where the string is in the order; empty strings for comparison always pass
-			bool value_less_than_low = true;
-			if(low.stringID != string_intern_pool.NOT_A_STRING_ID && StringNaturalCompare(low.stringID, id) <= 0)
-				value_less_than_low = false;
-
-			bool value_less_than_high = true;
-			if(high.stringID != string_intern_pool.NOT_A_STRING_ID && StringNaturalCompare(high.stringID, id) <= 0)
-				value_less_than_high = false;
-
 			if(between_values)
 			{
-				if(value_less_than_low || !value_less_than_high)
+				if(low.stringID != string_intern_pool.NOT_A_STRING_ID && StringNaturalCompare(low.stringID, id) > 0)
+					continue;
+
+				if(high.stringID != string_intern_pool.NOT_A_STRING_ID && StringNaturalCompare(id, high.stringID) > 0)
 					continue;
 			}
 			else //not between_values
 			{
-				if(!value_less_than_low && value_less_than_high)
+				bool less_than = (low.stringID != string_intern_pool.NOT_A_STRING_ID && StringNaturalCompare(low.stringID, id) > 0);
+				bool greater_than = (high.stringID != string_intern_pool.NOT_A_STRING_ID && StringNaturalCompare(id, high.stringID) > 0);
+				if(!less_than && !greater_than)
 					continue;
 			}
 

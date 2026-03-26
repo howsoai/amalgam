@@ -9968,7 +9968,7 @@ R"&(^\s*\{\s*
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * lower_bound * upper_bound)";
 		d.returns = R"(query)";
-		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is at least `lower_bound` and at most `upper_bound`.)";
+		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is at least `lower_bound` and at most `upper_bound`, inclusive for both values.)";
 		d.examples = MakeAmalgamExamples({
 			{R"&((seq
 	(create_entities
@@ -10491,14 +10491,41 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX_DIFFERENCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number cyclic_range])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, finds the largest difference between any two values for the label `label_name`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_max_difference "TargetLabel"))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E0.1"
+		{a 0.1}
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+		"E5.5"
+		{a 5.5}
+		"E5.5_2"
+		{a 5.5}
+	)
+	[
+		(compute_on_contained_entities
+			(query_max_difference "a")
+		)
+		(compute_on_contained_entities
+			(query_max_difference "a" 7.5)
+		)
+	]
+))&", R"([1 2.1])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -10512,7 +10539,45 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, computes the counts for each value of the label `label_name` and returns an assoc with the keys being the label values and the values being the counts or weights of the values.  If `weight_label_name` is specified, then it will accumulate that weight for each value, otherwise it will use a weight of 1 for each yielding a count.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_value_masses "TargetLabel"))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1 weight 5}
+		"E2"
+		{a 2 weight 4}
+		"E3"
+		{a 3 weight 3}
+		"E4"
+		{a 4 weight 2}
+		"E5"
+		{a 5 weight 1}
+		"E5_2"
+		{a 5 weight 1}
+	)
+	[
+		(compute_on_contained_entities
+			(query_value_masses "a")
+		)
+		(compute_on_contained_entities
+			(query_value_masses "a" "weight")
+		)
+	]
+))&", R"([
+	{
+		1 1
+		2 1
+		3 1
+		4 1
+		5 2
+	}
+	{
+		1 5
+		2 4
+		3 3
+		4 2
+		5 2
+	}
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -10526,7 +10591,31 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities with a value in label `label_name` less than or equal to `max_value`.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_less_or_equal_to "TargetLabel" 3))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1 b "a"}
+		"E2"
+		{a 2 b "b"}
+		"E3"
+		{a 3 b "c"}
+		"E4"
+		{a 4 b "d"}
+		"E5"
+		{a 5 b "e"}
+	)
+	[
+		(contained_entities
+			(query_less_or_equal_to "a" 3)
+		)
+		(contained_entities
+			(query_less_or_equal_to "b" "c")
+		)
+	]
+))&", R"([
+	["E1" "E2" "E3"]
+	["E1" "E2" "E3"]
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -10540,14 +10629,38 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities with a value in label `label_name` greater than or equal to `min_value`.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_greater_or_equal_to "TargetLabel" 3))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1 b "a"}
+		"E2"
+		{a 2 b "b"}
+		"E3"
+		{a 3 b "c"}
+		"E4"
+		{a 4 b "d"}
+		"E5"
+		{a 5 b "e"}
+	)
+	[
+		(contained_entities
+			(query_greater_or_equal_to "a" 3)
+		)
+		(contained_entities
+			(query_greater_or_equal_to "b" "c")
+		)
+	]
+))&", R"([
+	["E3" "E4" "E5"]
+	["E3" "E4" "E5"]
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number max_distance list feature_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";

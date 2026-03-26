@@ -5828,9 +5828,9 @@ R"&(^\s*\{\s*
 			{R"&((format "Feb 2014" "date:%b %Y" "number"))&", R"(1391230800)", R"(139\d+)"},
 			{R"&((format "2014-Feb" "date:%Y-%h" "number"))&", R"(1391230800)", R"(139\d+)"},
 			{R"&((format "02/2014" "date:%m/%Y" "number"))&", R"(1391230800)", R"(139\d+)"},
-			{R"&((format 1591505665002 "number" "date:%F %T"))&", R"("-6053-05-28 00:24:29")"},
-			{R"&((format 1591330905 "number" "date:%F %T"))&", R"("2020-06-05 00:21:45")"},
-			{R"&((format 1591330905 "number" "date:%c %Z"))&", R"("06/05/20 00:21:45 EDT")"},
+			{R"&((format 1591505665002 "number" "date:%F %T"))&", R"("-6053-05-28 00:24:29")", R"(".*?-\d\d-\d\d \d\d:\d\d:\d\d")"},
+			{R"&((format 1591330905 "number" "date:%F %T"))&", R"("2020-06-05 00:21:45")", R"("2020-06-0\d \d\d:21:45")"},
+			{R"&((format 1591330905 "number" "date:%c %Z"))&", R"("06/05/20 00:21:45 EDT")", R"("06/05/\d\d \d\d:21:45 \w+")"},
 			{R"&((format 1591330905 "number" "date:%S"))&", R"("45")"},
 			{R"&((format 1591330905 "number" "date:%Oe"))&", R"(" 5")"},
 			{R"&((format 1591330905 "number" "date:%s"))&", R"(" s")"},
@@ -5865,7 +5865,7 @@ R"&(^\s*\{\s*
 	"date:%A, %b %d, %Y"
 	{locale "en_US"}
 	{locale "es_ES"}
-))&", R"("domingo, jun. 07, 2020")"},
+))&", R"("domingo, jun. 07, 2020")", R"("domingo, jun.* 07, 2020")" },
 			{R"&((format "1970-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number"))&", R"(664428)", R"(6\d+)" },
 			{R"&((format "1960-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number"))&", R"(-314954772)", R"(-3149\d+)" },
 			{R"&((format
@@ -5889,8 +5889,8 @@ R"&(^\s*\{\s*
 	{locale "en_US"}
 ))&", R"(48164)"},
 			{R"&((format "10:22:44" "time:%H:%M:%S" "number"))&", R"(37364)"},
-			{R"&((format "10:22:44am" "time:%I:%M:%S%p" "number"))&", R"(37364)"},
-			{R"&((format "10:22:44.33am" "time:%I:%M:%S%p" "number"))&", R"(37364.33)"},
+			{R"&((format "10:22:44am" "time:%I:%M:%S%p" "number"))&", R"(37364)", R"(\d+)" },
+			{R"&((format "10:22:44.33am" "time:%I:%M:%S%p" "number"))&", R"(37364.33)", R"(\d+)"},
 			{R"&((format "10:22:44" "time:%I:%M:%S" "number"))&", R"(0)"},
 			{R"&((format "10:22:44" "time:%qqq:%qqq:%qqq" "number"))&", R"(0)"},
 			{R"&((format

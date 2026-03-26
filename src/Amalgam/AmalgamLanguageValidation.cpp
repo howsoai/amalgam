@@ -2542,7 +2542,150 @@ AmalgamExample{ R"&((seq
 		{x 0 y 0}
 		{x 0 y 1}
 	]
-])"}
+])"},
+AmalgamExample{ R"&((seq
+	(create_entities "CyclicTestEntity" (null))
+	(create_entities
+		["CyclicTestEntity" "10"]
+		{deg 177}
+	)
+	(create_entities
+		["CyclicTestEntity" "20"]
+		{deg 103}
+	)
+	(create_entities
+		["CyclicTestEntity" "30"]
+		{deg 83}
+	)
+	(create_entities
+		["CyclicTestEntity" "40"]
+		{deg 294}
+	)
+	(create_entities
+		["CyclicTestEntity" "50"]
+		{deg 80}
+	)
+	(create_entities
+		["CyclicTestEntity" "60"]
+		{deg 320}
+	)
+	(create_entities
+		["CyclicTestEntity" "70"]
+		{deg 90}
+	)
+	(create_entities
+		["CyclicTestEntity" "80"]
+		{deg 300}
+	)
+	(create_entities
+		["CyclicTestEntity" "90"]
+		{deg 40}
+	)
+	(create_entities
+		["CyclicTestEntity" "100"]
+		{deg 15}
+	)
+	(create_entities
+		["CyclicTestEntity" "110"]
+		{deg 50}
+	)
+	(create_entities
+		["CyclicTestEntity" "120"]
+		{deg 170}
+	)
+	(create_entities
+		["CyclicTestEntity" "130"]
+		{deg 175}
+	)
+	(create_entities
+		["CyclicTestEntity" "140"]
+		{deg 165}
+	)
+	(create_entities
+		["CyclicTestEntity" "150"]
+		{deg 270}
+	)
+	(create_entities
+		["CyclicTestEntity" "155"]
+		{deg 0}
+	)
+	(create_entities
+		["CyclicTestEntity" "160"]
+		{deg 313}
+	)
+	(create_entities
+		["CyclicTestEntity" "170"]
+		{deg 120}
+	)
+	(create_entities
+		["CyclicTestEntity" "180"]
+		{deg 213}
+	)
+	(create_entities
+		["CyclicTestEntity" "190"]
+		{deg 12}
+	)
+	(create_entities
+		["CyclicTestEntity" "200"]
+		{deg 8}
+	)
+	(declare
+		{
+			buds (compute_on_contained_entities
+					"CyclicTestEntity"
+					[
+						(query_nearest_generalized_distance
+							3
+							
+							; K
+							["deg"]
+							[350]
+							1
+							
+							; p
+							(null)
+							
+							; weights
+							["continuous_number_cyclic"]
+							
+							; types
+							[360]
+							
+							; attributes
+							(null)
+							
+							; deviations
+							(null)
+							-1
+							
+							; dwe
+							(null)
+							
+							; weight
+							(rand)
+						)
+					]
+				)
+		}
+	)
+	(map
+		(lambda
+			(concat
+				(current_index)
+				": "
+				(current_value)
+				" "
+				(retrieve_entity_root
+					[
+						"CyclicTestEntity"
+						(current_index 1)
+					]
+				)
+			)
+		)
+		buds
+	)
+))&", R"({"155" "155: 0.1 {deg 0}" "190" "190: 0.045454545454545456 {deg 12}" "200" "200: 0.05555555555555555 {deg 8}"})", "", R"((destroy_entities "CyclicTestEntity"))" }
 );
 
 //runs a test suite against the language
@@ -2554,7 +2697,7 @@ int32_t RunAmalgamLanguageValidation()
 
 	std::vector<std::pair<std::string, size_t>> failed_test_names_and_numbers;
 
-	//TODO 25157: replace with the top for loop when all are implemented
+	//run opcode tests
 	for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
 	{
 		EvaluableNodeType cur_opcode = static_cast<EvaluableNodeType>(opcode_index);
@@ -2574,8 +2717,7 @@ int32_t RunAmalgamLanguageValidation()
 		}
 	}
 
-	//TODO 25157: put this back in when done with opcodes
-	/*
+	//run unit tests
 	for(size_t unit_test_num = 0; unit_test_num < _amalgam_unit_tests.size(); unit_test_num++)
 	{
 		auto &unit_test = _amalgam_unit_tests[unit_test_num];
@@ -2585,7 +2727,7 @@ int32_t RunAmalgamLanguageValidation()
 			std::cout << "Passed" << std::endl;
 		else
 			failed_test_names_and_numbers.emplace_back("unit test", unit_test_num);
-	}//*/
+	}
 
 	delete entity;
 

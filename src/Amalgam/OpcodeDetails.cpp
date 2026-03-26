@@ -10793,14 +10793,23 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests upward to next TODO
 	arr[static_cast<std::size_t>(ENT_CONTAINS_LABEL)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity] string label_name)";
 		d.returns = R"(bool)";
 		d.description = R"(Evaluates to true if the label represented by `label_name` exists for `entity`.  If `entity` is omitted or null, then it uses the current entity.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((print (contains_label "MyEntity" "some_label")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		{a 1 b 2 c 3}
+	)
+	[
+		(contains_label "Entity" "a")
+		(contains_label "Entity" "z")
+	]
+))&", R"([.true .false])", "", R"((destroy_entities "Entity"))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -10813,7 +10822,24 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.description = R"(For each index-value pair of `label_value_pairs`, assigns the value to the label on the contained entity represented by the respective `entity`, itself if `entity` is not specified or is null.  If the label is not found, it will create it.  Returns true if all assignments were successful, false if not.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((assign_to_entities (assoc asgn_test1 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test1")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		{a 1 b 2 c 3}
+	)
+	(assign_to_entities
+		"Entity"
+		{a 2 b 3 c 4}
+		"Entity"
+		{three 12}
+	)
+	(retrieve_entity_root "Entity")
+))&", R"({
+	a 2
+	b 3
+	c 4
+	three 12
+})", "", R"((destroy_entities "Entity"))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.requiresEntity = true;
@@ -10828,7 +10854,19 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.description = R"(For each index-value pair of `label_value_pairs`, it accumulates the value to the label on the contained entity represented by the respective `entity`, itself if `entity` is not specified or is null.  If the label is not found, it will create it.  Returns true if all assignments were successful, false if not.  Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((accum_to_entities (assoc asgn_test1 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test1")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		{a 1 b 2 c 3}
+	)
+	(accum_to_entities
+		"Entity"
+		{a 2 b 3 c 4}
+		"Entity"
+		{doesnt_exist 12}
+	)
+	(retrieve_entity_root "Entity")
+))&", R"({a 3 b 5 c 7})", "", R"((destroy_entities "Entity"))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.requiresEntity = true;
@@ -10843,7 +10881,24 @@ R"&(^\s*\{\s*
 		d.returns = R"(bool)";
 		d.description = R"(Removes all labels in `label_names1` from `entity1` and so on for each respective entity and label list.  Returns true if all removes were successful, false otherwise.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities "DRFE" (lambda { a 12 } ) ))", R"()"}, {R"((print (remove_from_entities "DRFE" "a")))", R"()"}, {R"((print (retrieve_from_entity "DRFE" "a")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		{
+			a 1
+			b 2
+			c 3
+			d 4
+		}
+	)
+	(remove_from_entities
+		"Entity"
+		"a"
+		"Entity"
+		["b" "c"]
+	)
+	(retrieve_entity_root "Entity")
+))&", R"({d 4})", "", R"((destroy_entities "Entity"))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.requiresEntity = true;
@@ -10851,7 +10906,7 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests upward to next TODO
+
 	arr[static_cast<std::size_t>(ENT_RETRIEVE_FROM_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity] [string|list|assoc label_names])";

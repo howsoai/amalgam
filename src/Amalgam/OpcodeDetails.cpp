@@ -10660,7 +10660,7 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+	//TODO 25157: update examples and tests here on downward to next TODO
 	arr[static_cast<std::size_t>(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number max_distance list feature_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
@@ -10880,14 +10880,66 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests upward to next TODO
 	arr[static_cast<std::size_t>(ENT_CALL_ENTITY_GET_CHANGES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings])";
 		d.returns = R"(list of any1 any2)";
 		d.description = R"(Calls the contained `entity` and returns the result of the call.  However, it also returns a list of opcodes that hold an executable log of all of the changes that have elapsed to the entity and its contained entities.  The log may be evaluated to apply or re-apply the changes to any entity passed in to the executable log as the parameter "_".  If `label_name` is specified, then it will call the label specified by string, otherwise it will call the null label.  If `arguments` is specified, then it will pass those as the arguments on the scope stack.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed.  If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations.  If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If `max_node_allocations` is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called.  The parameters `max_contained_entities`, `max_contained_entity_depth`, and `max_entity_id_length` constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true, the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities "CEGCTest" (lambda)", R"()"}, {R"((assoc a_assign)", R"()"}, {R"((seq)", R"()"}, {R"((create_entities "Contained" (lambda)", R"()"}, {R"({a 4 })", R"()"}, {R"((print (retrieve_from_entity "Contained" "a") ))", R"()"}, {R"((assign_to_entities "Contained" (assoc a 6) ))", R"()"}, {R"((print (retrieve_from_entity "Contained" "a") ))", R"()"}, {R"((set_entity_rand_seed "Contained" "bbbb"))", R"()"}, {R"((destroy_entities "Contained"))", R"()"}, {R"())", R"()"}, {R"())", R"()"}, {R"((print (call_entity_get_changes "CEGCTest" "a_assign")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		(lambda
+			{
+				a_assign (seq
+						(create_entities
+							"Contained"
+							{a 4 b 6}
+						)
+						(assign_to_entities
+							"Contained"
+							{a 6 b 10}
+						)
+						(set_entity_rand_seed "Contained" "bbbb")
+						(accum_to_entities
+							"Contained"
+							{b 12}
+						)
+						(destroy_entities "Contained")
+					)
+			}
+		)
+	)
+	(set_entity_permissions "Entity" .true)
+	(call_entity_get_changes "Entity" "a_assign")
+))&", R"([
+	.true
+	(seq
+		(create_entities
+			["Entity" "Contained"]
+			(lambda
+				{a 4 b 6}
+			)
+		)
+		(assign_to_entities
+			["Entity" "Contained"]
+			{a 6 b 10}
+		)
+		(set_entity_rand_seed
+			["Entity" "Contained"]
+			"bbbb"
+			.false
+		)
+		(accum_to_entities
+			["Entity" "Contained"]
+			{b 12}
+		)
+		(destroy_entities
+			["Entity" "Contained"]
+		)
+	)
+])", "", R"((destroy_entities "Entity"))"}
 			});
 		d.requiresEntity = true;
 		d.newScope = true;
@@ -10902,7 +10954,20 @@ R"&(^\s*\{\s*
 		d.returns = R"(any)";
 		d.description = R"(Calls `code` to be run on the contained `entity` and returns the result of the call.  If `arguments` is specified, then it will pass those as the arguments on the scope stack.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed.  If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations.  If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If `max_node_allocations` is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called.  The parameters `max_contained_entities`, `max_contained_entity_depth`, and `max_entity_id_length` constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true, the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities "CallOnEntity")", R"()"}, {R"({ a 1 b 2 })", R"()"}, {R"())", R"()"}, {R"((print (call_on_entity "CallOnEntity" (lambda [a b]))))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		{a 1 b 2}
+	)
+	(set_entity_permissions "Entity" .true)
+	(call_on_entity
+		"Entity"
+		(lambda
+			[a b c]
+		)
+		{c 3}
+	)
+))&", R"([1 2 3])", "", R"((destroy_entities "Entity"))"}
 			});
 		d.requiresEntity = true;
 		d.newScope = true;
@@ -10917,7 +10982,73 @@ R"&(^\s*\{\s*
 		d.returns = R"(any)";
 		d.description = R"(Attempts to call the container associated with `label_name` that must begin with a caret; the caret indicates that the label is allowed to be accessed by contained entities.  It will evaluate to the return value of the call.  If `arguments` is specified, then it will pass those as the arguments on the scope stack.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed.  If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations.  If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If `max_node_allocations` is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called.  The parameters `max_contained_entities`, `max_contained_entity_depth`, and `max_entity_id_length` constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true, the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities "TestContainerExec")", R"()"}, {R"((lambda (assoc)", R"()"}, {R"(^a 3)", R"()"}, {R"(b (contained_entities))", R"()"}, {R"(c (+ x 1))", R"()"}, {R"(d (call_entity "TCEc" "q" (assoc x x)))", R"()"}, {R"(x 4)", R"()"}, {R"(y 5)", R"()"}, {R"())", R"()"}, {R"((create_entities (list "TestContainerExec" "TCEc"))", R"()"}, {R"((lambda (assoc)", R"()"}, {R"(p 3)", R"()"}, {R"(q (+ x (call_container "a")))", R"()"}, {R"(bar "foo")", R"()"}, {R"())", R"()"}, {R"((print (call_entity "TestContainerExec" "d" (assoc x 4))))", R"()"}
+			{R"&((seq
+	(create_entities
+		"OuterEntity"
+		(lambda
+			{
+				^available_method 3
+				compute_value (call_entity
+						"InnerEntity"
+						"inner_call"
+						{x x}
+					)
+			}
+		)
+	)
+	(create_entities
+		["OuterEntity" "InnerEntity"]
+		(lambda
+			{
+				inner_call (+
+						x
+						(call_container "^available_method")
+					)
+			}
+		)
+	)
+	[
+		(call_entity
+			"OuterEntity"
+			"compute_value"
+			{x 5}
+		)
+		(call_entity
+			"OuterEntity"
+			"compute_value"
+			{x 5}
+			30
+			30
+		)
+		(call_entity
+			"OuterEntity"
+			"compute_value"
+			{x 5}
+			1
+			1
+		)
+		(call_entity
+			"OuterEntity"
+			"compute_value"
+			{x 5}
+			1
+			1
+			1
+			1
+			1
+			.false
+		)
+	]
+))&", R"([
+	8
+	[
+		[8 {} (null)]
+		{}
+		(null)
+	]
+	[(null) {} "Execution step limit exceeded"]
+	[(null) {} "Execution step limit exceeded"]
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.requiresEntity = true;
 		d.newScope = true;

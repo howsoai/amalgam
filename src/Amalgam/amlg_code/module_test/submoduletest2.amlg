@@ -1,4 +1,0 @@
-{
- a 8
- hello (print "sub hello 2\n")
-}

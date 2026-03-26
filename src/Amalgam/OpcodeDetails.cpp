@@ -5823,11 +5823,11 @@ R"&(^\s*\{\s*
 	{sort_keys .true}
 ))&", R"("a: 1\nb: 2\nc: 3\nd: 4\ne:\n  - a\n  - b\n  - \n  - .inf\n")"},
 			{R"&((format "a: 1" "yaml" "code"))&", R"({a 1})"},
-			{R"&((format 1591503779.1 "number" "date:%Y-%m-%d-%H.%M.%S"))&", R"("2020-06-07-00.22.59.1000000")"},
-			{R"&((format 1591503779 "number" "date:%F %T"))&", R"("2020-06-07 00:22:59")"},
-			{R"&((format "Feb 2014" "date:%b %Y" "number"))&", R"(1391230800)"},
-			{R"&((format "2014-Feb" "date:%Y-%h" "number"))&", R"(1391230800)"},
-			{R"&((format "02/2014" "date:%m/%Y" "number"))&", R"(1391230800)"},
+			{R"&((format 1591503779.1 "number" "date:%Y-%m-%d-%H.%M.%S"))&", R"("2020-06-07-00.22.59.1000000")", R"("2020-06-07-00.22.59.100+")"},
+			{R"&((format 1591503779 "number" "date:%F %T"))&", R"("2020-06-07 00:22:59")", R"("2020-06-07 \d\d:22:59")"},
+			{R"&((format "Feb 2014" "date:%b %Y" "number"))&", R"(1391230800)", R"(139\d+)"},
+			{R"&((format "2014-Feb" "date:%Y-%h" "number"))&", R"(1391230800)", R"(139\d+)"},
+			{R"&((format "02/2014" "date:%m/%Y" "number"))&", R"(1391230800)", R"(139\d+)"},
 			{R"&((format 1591505665002 "number" "date:%F %T"))&", R"("-6053-05-28 00:24:29")"},
 			{R"&((format 1591330905 "number" "date:%F %T"))&", R"("2020-06-05 00:21:45")"},
 			{R"&((format 1591330905 "number" "date:%c %Z"))&", R"("06/05/20 00:21:45 EDT")"},
@@ -5842,7 +5842,7 @@ R"&(^\s*\{\s*
 	"date:%A, %b %d, %Y"
 	{locale "en_US"}
 	{locale "es_ES"}
-))&", R"("jueves, ene. 01, 1970")"},
+))&", R"("jueves, ene. 01, 1970")", R"("jueves, ene.* 01, 1970")" },
 			{R"&((format
 	"2020-06-07"
 	"date:%Y-%m-%d"
@@ -5856,8 +5856,8 @@ R"&(^\s*\{\s*
 	"date:%A, %b %d, %Y"
 	{locale "notalocale"}
 	{locale "es_ES"}
-))&", R"("domingo, jun. 07, 2020")"},
-			{R"&((format "2020-06-07" "date:%Y-%m-%d" "number"))&", R"(1591502400)"},
+))&", R"("domingo, jun. 07, 2020")", R"("domingo, jun.* 07, 2020")" },
+			{R"&((format "2020-06-07" "date:%Y-%m-%d" "number"))&", R"(1591502400)", R"(159\d+)" },
 			{R"&((format "2020-06-07" "date:%Y-%m-%d" "date:%b %d, %Y"))&", R"("Jun 07, 2020")"},
 			{R"&((format
 	"2020-06-07"
@@ -5866,7 +5866,7 @@ R"&(^\s*\{\s*
 	{locale "en_US"}
 	{locale "es_ES"}
 ))&", R"("domingo, jun. 07, 2020")"},
-			{R"&((format "1970-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number"))&", R"(664428)"},
+			{R"&((format "1970-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number"))&", R"(664428)", R"(6\d+)" },
 			{R"&((format "1960-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number"))&", R"(-314954772)"},
 			{R"&((format
 	(format "1960-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number")
@@ -5880,7 +5880,7 @@ R"&(^\s*\{\s*
 	)
 	"number"
 	"date:%Y-%m-%d %H.%M.%S"
-))&", R"("1960-01-08 11.33.48.0100000")"},
+))&", R"("1960-01-08 11.33.48.0100000")", R"("1960-01-08 11.33.48.010+")" },
 			{R"&((format "13:22:44" "time:%H:%M:%S" "number"))&", R"(48164)"},
 			{R"&((format
 	"13:22:44"
@@ -5907,7 +5907,7 @@ R"&(^\s*\{\s*
 	(null)
 	{locale "es_ES"}
 ))&", R"("01:22:44PM")"},
-			{R"&((format 37364.33 "number" "time:%I:%M:%S%p"))&", R"("10:22:44.3300000AM")"},
+			{R"&((format 37364.33 "number" "time:%I:%M:%S%p"))&", R"("10:22:44.3300000AM")", R"("10:22:44.330+AM")" },
 			{R"&((format 0 "number" "time:%I:%M:%S%p"))&", R"("12:00:00AM")"},
 			{R"&((format (null) "number" "time:%I:%M:%S%p"))&", R"("12:00:00AM")"},
 			{R"&((format .infinity "number" "time:%I:%M:%S%p"))&", R"("12:00:00AM")"}

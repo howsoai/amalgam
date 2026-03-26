@@ -9717,14 +9717,32 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_QUERY_IN_ENTITY_LIST)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list entity_ids)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects only the entities in `entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_in_entity_list (list "Entity1" "Entity2")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+	)
+	(contained_entities
+		(query_in_entity_list
+			["E1" "E2"]
+		)
+	)
+))&", R"(["E1" "E2"])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -9738,14 +9756,32 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, filters out the entities in `entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_in_entity_list (list "Entity1" "Entity2")))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+	)
+	(contained_entities
+		(query_not_in_entity_list
+			["E1" "E2"]
+		)
+	)
+))&", R"(["E3" "E4" "E5"])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_QUERY_EXISTS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name)";

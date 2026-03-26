@@ -131,11 +131,23 @@ inline static bool EqualIgnoringWhitespace(std::string_view a, std::string_view 
 bool AmalgamExample::ValidateExample(Entity *entity)
 {
 	bool test_succeeded = true;
+	std::cout << "Initializing... ";
+
 	entity->SetRandomState("12345", true);
 
 	auto [code, warnings, char_with_error, code_complete]
 		= Parser::Parse(example, &entity->evaluableNodeManager);
 
+	if(warnings.size() > 0)
+	{
+		std::cerr << "Improper code: " << std::endl;
+		for(auto &w : warnings)
+			std::cerr << w << std::endl;
+
+		return false;
+	}
+
+	std::cout << "Executing... ";
 	auto result = entity->ExecuteOnEntity(code, nullptr);
 	std::string result_str = Parser::Unparse(result, true, true, true);
 
@@ -168,10 +180,9 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 		}
 	}
 
-	//if the test needs to be cleaned up, do so
+	std::cout << "Reclaiming Resources... ";
 	if(!cleanup.empty())
 	{
-		std::cout << "...Cleaning up after test.... ";
 		auto [cleanup_code, cleanup_warnings, cleanup_char_with_error, cleanup_code_complete]
 			= Parser::Parse(cleanup, &entity->evaluableNodeManager);
 

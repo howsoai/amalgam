@@ -9781,14 +9781,47 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_QUERY_EXISTS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities which have the label `label_name`.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding label names and values.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_exists "TargetLabel"))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{!e 3 a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+		"E5q"
+		{a 5 q 3}
+	)
+	[
+		(contained_entities
+			(query_exists "a")
+		)
+		
+		;can't find private labels
+		(contained_entities
+			(query_exists "!e")
+		)
+		(contained_entities
+			(query_equals "a" 5)
+			(query_exists "q")
+		)
+	]
+))&", R"([
+	["E1" "E2" "E3" "E4" "E5" "E5q"]
+	[]
+	["E5q"]
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -9802,7 +9835,38 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities which do not have the the label `label_name`.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_exists "TargetLabel"))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+		"E5q"
+		{a 5 q 3}
+		"Eq"
+		{q 0}
+		"Er"
+		{r 0}
+	)
+	[
+		(contained_entities
+			(query_not_exists "q")
+		)
+		(contained_entities
+			(query_not_exists "q")
+			(query_exists "a")
+		)
+	]
+))&", R"([
+	["E1" "E2" "E3" "E4" "E5" "Er"]
+	["E1" "E2" "E3" "E4" "E5"]
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -9816,14 +9880,45 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is equal to `value`.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_equals "TargetLabel" 3))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+		"E5q"
+		{a 5 q 3}
+		"Eq"
+		{q 0}
+		"Er"
+		{r 0}
+	)
+	[
+		(contained_entities
+			(query_equals "a" 5)
+		)
+		(contained_entities
+			(query_exists "q")
+			(query_equals "a" 5)
+		)
+	]
+))&", R"([
+	["E5" "E5q"]
+	["E5q"]
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_EQUALS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * value)";

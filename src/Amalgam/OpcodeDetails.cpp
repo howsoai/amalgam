@@ -10259,14 +10259,35 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_QUERY_SUM)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [string weight_label_name])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, returns the sum of all entities over the value at `label_name`.  If `weight_label_name` is specified, it will find the weighted sum, which is the same as a dot product.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_sum "TargetLabel"))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1 weight 5}
+		"E2"
+		{a 2 weight 4}
+		"E3"
+		{a 3 weight 3}
+		"E4"
+		{a 4 weight 2}
+		"E5"
+		{a 5 weight 1}
+	)
+	[
+		(compute_on_contained_entities
+			(query_sum "a")
+		)
+		(compute_on_contained_entities
+			(query_sum "a" "weight")
+		)
+	]
+))&", R"([15 35])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -10280,7 +10301,30 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, finds the statistical mode of `label_name` across all entities using numerical values.  If `weight_label_name` is specified, it will find the weighted mode.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_mode "TargetLabel"))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1 weight 5}
+		"E2"
+		{a 2 weight 4}
+		"E3"
+		{a 3 weight 3}
+		"E4"
+		{a 4 weight 2}
+		"E5"
+		{a 5 weight 1}
+		"E5_2"
+		{a 5 weight 1}
+	)
+	[
+		(compute_on_contained_entities
+			(query_mode "a")
+		)
+		(compute_on_contained_entities
+			(query_mode "a" "weight")
+		)
+	]
+))&", R"([5 1])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -10294,14 +10338,41 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, finds the statistical quantile of `label_name` for numerical data, using `q` as the parameter to the quantile, the default being 0.5 which is the median.  If `weight_label_name` is specified, it will find the weighted quantile, otherwise the weight of every entity is 1.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((compute_on_contained_entities "TestEntity" (list)", R"()"}, {R"((query_quantile "TargetLabel" 0.75))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1 weight 5}
+		"E2"
+		{a 2 weight 4}
+		"E3"
+		{a 3 weight 3}
+		"E4"
+		{a 4 weight 2}
+		"E5"
+		{a 5 weight 1}
+	)
+	[
+		(compute_on_contained_entities
+			(query_quantile "a" 0.5)
+		)
+		(compute_on_contained_entities
+			(query_quantile "a" 0.5 "weight")
+		)
+		(compute_on_contained_entities
+			(query_quantile "a" 0.25)
+		)
+		(compute_on_contained_entities
+			(query_quantile "a" 0.25 "weight")
+		)
+	]
+))&", R"([3 2.142857142857143 2 1.2777777777777777])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_QUERY_GENERALIZED_MEAN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number p] [string weight_label_name] [number center] [bool calculate_moment] [bool absolute_value])";

@@ -9918,21 +9918,52 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_EQUALS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * value)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is not equal to `value`.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_equals "TargetLabel" 3))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+		"E5q"
+		{a 5 q 3}
+		"Eq"
+		{q "q"}
+		"Er"
+		{r "r"}
+	)
+	[
+		(contained_entities
+			(query_not_equals "a" 5)
+		)
+		(contained_entities
+			(query_not_equals "q" "q")
+			(query_equals "q" 3)
+		)
+	]
+))&", R"([
+	["E1" "E2" "E3" "E4"]
+	["E5q"]
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_QUERY_BETWEEN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * lower_bound * upper_bound)";

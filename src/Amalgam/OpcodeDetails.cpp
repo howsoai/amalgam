@@ -10851,14 +10851,37 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests upward to next TODO
 	arr[static_cast<std::size_t>(ENT_RETRIEVE_FROM_ENTITY)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity] [string|list|assoc label_names])";
 		d.returns = R"(any)";
 		d.description = R"(Retrieves one or more labels from `entity`, using its own entity if `entity` is omitted or null.  If `label_names` is a string, it returns the value at the corresponding label.  If `label_names` is a list, it returns a list of the values of the labels of the corresponding labels.  If `label_names` is an assoc, it an assoc with label names as keys and the label values as the values.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((assign_to_entities (assoc asgn_test1 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test1")))", R"()"}, {R"((assign_to_entities (assoc asgn_test2 4)))", R"()"}, {R"((print (retrieve_from_entity "asgn_test2")))", R"()"}, {R"((create_entities "RCT" (lambda {a 12 b 13}) ))", R"()"}, {R"((print (retrieve_from_entity "RCT" "a")))", R"()"}, {R"((print (retrieve_from_entity "RCT" (list "a" "b") )))", R"()"}, {R"((print (retrieve_from_entity "RCT" (zip (list "a" "b") null) )))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		{a 12 b 13}
+	)
+	[
+		(retrieve_from_entity "Entity" "a")
+		(retrieve_from_entity
+			"Entity"
+			["a" "b"]
+		)
+		(retrieve_from_entity
+			"Entity"
+			(zip
+				["a" "b"]
+				null
+			)
+		)
+	]
+))&", R"([
+	12
+	[12 13]
+	{a 12 b 13}
+])", "", R"((destroy_entities "Entity"))"}
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
@@ -10872,7 +10895,50 @@ R"&(^\s*\{\s*
 		d.returns = R"(any)";
 		d.description = R"(Calls the contained `entity` and returns the result of the call.  If `label_name` is specified, then it will call the label specified by string, otherwise it will call the null label.  If `arguments` is specified, then it will pass those as the arguments on the scope stack.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed.  If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations.  If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If `max_node_allocations` is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called.  The parameters `max_contained_entities`, `max_contained_entity_depth`, and `max_entity_id_length` constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true, the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((create_entities "TestContainerExec")", R"()"}, {R"((lambda {d (print "hello " x))", R"()"}, {R"(}))", R"()"}, {R"())", R"()"}, {R"((print (call_entity "TestContainerExec" "d" (assoc x "goodbye"))))", R"()"}
+			{R"&((seq
+	(create_entities
+		"Entity"
+		(lambda
+			{
+				!private_method "should not access"
+				copy_entity (while
+						.true
+						(clone_entities (null) (null))
+					)
+				hello (declare
+						{message ""}
+						(concat "hello " message)
+					)
+				load (while .true)
+			}
+		)
+	)
+	[
+		(call_entity
+			"Entity"
+			"hello"
+			{message "world"}
+		)
+		(call_entity "Entity" "!private_method")
+		(call_entity "Entity" "load" (null) 100)
+		(call_entity
+			"Entity"
+			"copy_entity"
+			(null)
+			1000
+			1000
+			100
+			10
+			3
+			20
+		)
+	]
+))&", R"([
+	"hello world"
+	(null)
+	[(null) {} "Execution step limit exceeded"]
+	[(null) {} "Execution step limit exceeded"]
+])", "", R"((destroy_entities "Entity"))"}
 			});
 		d.requiresEntity = true;
 		d.newScope = true;
@@ -10880,7 +10946,7 @@ R"&(^\s*\{\s*
 		d.hasSideEffects = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests upward to next TODO
+
 	arr[static_cast<std::size_t>(ENT_CALL_ENTITY_GET_CHANGES)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings])";

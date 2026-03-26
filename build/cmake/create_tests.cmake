@@ -66,7 +66,7 @@ foreach(TEST_TARGET ${ALL_APP_TARGETS})
     set(TEST_OUTPUT_LOG "${TEST_OUTPUT_LOG_BASE}/out.${TEST_NAME}.txt")
     add_test(
         NAME ${TEST_NAME}
-        COMMAND ${TEST_RUNNER} "$<TARGET_FILE:${TEST_TARGET}>" -l ${TEST_OUTPUT_LOG} amlg_code/full_test.amlg
+        COMMAND ${TEST_RUNNER} "$<TARGET_FILE:${TEST_TARGET}>" --validate-amalgam
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/Amalgam
     )
     set_tests_properties(${TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "--total execution time--")

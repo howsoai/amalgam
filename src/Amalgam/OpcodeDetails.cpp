@@ -9583,7 +9583,60 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects `num_to_select` entities sorted by entity id.  If `start_offset` is specified, then it will return `num_to_select` entities starting that far in, and subsequent calls can be used to get all entities in batches.  If `random_seed` is specified, then it will select `num_to_select` entities randomly from the list based on the random seed.  If `random_seed` is specified and `start_offset` is null, then it will not guarantee a position in the order for subsequent calls that specify `start_offset`, and will execute more quickly.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_select 4 (null) (rand)))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5 q 5}
+	)
+	[
+		(contained_entities
+			(query_select 3)
+		)
+		(contained_entities
+			(query_select 3 1)
+		)
+		(contained_entities
+			(query_select 100 2)
+		)
+		(contained_entities
+			(query_select 2 0 1)
+		)
+		(contained_entities
+			(query_select 2 2 1)
+		)
+		(contained_entities
+			(query_select 2 4 1)
+		)
+		(contained_entities
+			(query_select 4 (null) (rand))
+		)
+		(contained_entities
+			(query_select 4 (null) (rand))
+		)
+		(contained_entities
+			(query_not_exists "q")
+			(query_select 2 3)
+		)
+	]
+))&", R"([
+	["E1" "E2" "E3"]
+	["E2" "E3" "E4"]
+	["E3" "E4" "E5"]
+	["E2" "E3"]
+	["E4" "E5"]
+	["E1"]
+	["E1" "E2" "E3" "E4"]
+	["E1" "E2" "E3" "E4"]
+	["E4"]
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;

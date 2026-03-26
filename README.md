@@ -237,17 +237,29 @@ For debugging the C++ code, example launch files are provided in [launch.json](d
 
 Remote debugging for linux is supported in both IDEs.
 
+### Unit Tests
+
+Unit tests can be run via an amalgam executable via the `--validate-amalgam` paramater.  No additional files are required as the majority of the tests are run from the built-in documentation.
+```bash
+./amalgam-mt --validate-amalgam
+```
+
 ### Usage
 
 Given an Amalgam interpreter, usage is similar to other popular interpreters.
 
-Basic usage description and CLI options can be retrieved by running the binary without any parameters:
+Running the binary without any parameters yields a read-execute-print loop, and help is available from within:
 
 ```bash
 ./amalgam-mt
 ```
 
-Run an Amalgam script:
+Help for command line parameters can be obtained via the startard `--help` parameter:
+```bash
+./amalgam-mt --help
+```
+
+To run an Amalgam script:
 
 ```bash
 ./amalgam-mt test.amlg

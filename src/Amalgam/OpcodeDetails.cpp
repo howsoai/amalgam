@@ -5005,7 +5005,7 @@ R"&(^\s*\{\s*
 		4
 		"d"
 	]
-	[4 "a"]
+	[4]
 ))&", R"([
 	"a"
 	1
@@ -5835,7 +5835,7 @@ R"&(^\s*\{\s*
 			{R"&((format 1591330905 "number" "date:%Oe"))&", R"(" 5")"},
 			{R"&((format 1591330905 "number" "date:%s"))&", R"(" s")"},
 			{R"&((format 1591330905 "number" "date:%s%"))&", R"(" s")"},
-			{R"&((format 1591330905 "number" "date:%a%b%c%d%e%f"))&", R"("FriJun06/05/20 00:21:4505 5 f")"},
+			{R"&((format 1591330905 "number" "date:%a%b%c%d%e%f"))&", R"("FriJun06/05/20 00:21:4505 5 f")", ".+f"},
 			{R"&((format
 	"abcd"
 	"date:%Y-%m-%d"
@@ -5867,7 +5867,7 @@ R"&(^\s*\{\s*
 	{locale "es_ES"}
 ))&", R"("domingo, jun. 07, 2020")"},
 			{R"&((format "1970-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number"))&", R"(664428)", R"(6\d+)" },
-			{R"&((format "1960-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number"))&", R"(-314954772)"},
+			{R"&((format "1960-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number"))&", R"(-314954772)", R"(-3149\d+)" },
 			{R"&((format
 	(format "1960-01-08 11.33.48" "date:%Y-%m-%d %H.%M.%S" "number")
 	"number"

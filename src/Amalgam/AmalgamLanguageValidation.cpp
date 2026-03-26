@@ -2411,7 +2411,138 @@ AmalgamExample{ R"&((seq
 	)
 	(destroy_entities "ConcurrentWritesTest")
 	result
-))&", R"(.true)", "", R"((apply "destroy_entities" (contained_entities)))" }
+))&", R"(.true)", "", R"((apply "destroy_entities" (contained_entities)))" },
+AmalgamExample{ R"&((seq
+	(create_entities "eq_distance_test" (null))
+	(create_entities
+		["eq_distance_test"]
+		{x 0 y 0}
+	)
+	(create_entities
+		["eq_distance_test" "to_delete1"]
+		{x 1 y 0}
+	)
+	(create_entities
+		["eq_distance_test"]
+		{x 2 y 0}
+	)
+	(create_entities
+		["eq_distance_test"]
+		{x 3 y 0}
+	)
+	(create_entities
+		["eq_distance_test"]
+		{x 0 y 1}
+	)
+	(create_entities
+		["eq_distance_test"]
+		{x 0 y 2}
+	)
+	(create_entities
+		["eq_distance_test"]
+		{x 1 y 1}
+	)
+	(declare
+		{
+			result1 (map
+					(lambda
+						(retrieve_entity_root
+							[
+								"eq_distance_test"
+								(current_value 1)
+							]
+						)
+					)
+					(contained_entities
+						"eq_distance_test"
+						[
+							(query_within_generalized_distance
+								1
+								["x" "y"]
+								[0 0]
+							)
+						]
+					)
+				)
+		}
+	)
+	(create_entities
+		["eq_distance_test" "to_delete2"]
+		{x 0 y 0.5}
+	)
+	(declare
+		{
+			result2 (map
+					(lambda
+						(retrieve_entity_root
+							[
+								"eq_distance_test"
+								(current_value 1)
+							]
+						)
+					)
+					(contained_entities
+						"eq_distance_test"
+						[
+							(query_within_generalized_distance
+								1
+								["x" "y"]
+								[0 0]
+							)
+						]
+					)
+				)
+		}
+	)
+	(destroy_entities
+		["eq_distance_test" "to_delete2"]
+	)
+	(destroy_entities
+		["eq_distance_test" "to_delete1"]
+	)
+	(declare
+		{
+			result3 (map
+					(lambda
+						(retrieve_entity_root
+							[
+								"eq_distance_test"
+								(current_value 1)
+							]
+						)
+					)
+					(contained_entities
+						"eq_distance_test"
+						[
+							(query_within_generalized_distance
+								1
+								["x" "y"]
+								[0 0]
+							)
+						]
+					)
+				)
+		}
+	)
+	(destroy_entities "eq_distance_test")
+	[result1 result2 result3]
+))&", R"([
+	[
+		{x 0 y 0}
+		{x 1 y 0}
+		{x 0 y 1}
+	]
+	[
+		{x 0 y 0}
+		{x 1 y 0}
+		{x 0 y 1}
+		{x 0 y 0.5}
+	]
+	[
+		{x 0 y 0}
+		{x 0 y 1}
+	]
+])"}
 );
 
 //runs a test suite against the language
@@ -2424,8 +2555,7 @@ int32_t RunAmalgamLanguageValidation()
 	std::vector<std::pair<std::string, size_t>> failed_test_names_and_numbers;
 
 	//TODO 25157: replace with the top for loop when all are implemented
-	//for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
-	for(size_t opcode_index = 0; opcode_index < ENT_QUERY_WITHIN_GENERALIZED_DISTANCE; opcode_index++)
+	for(size_t opcode_index = 0; opcode_index < NUM_VALID_ENT_OPCODES; opcode_index++)
 	{
 		EvaluableNodeType cur_opcode = static_cast<EvaluableNodeType>(opcode_index);
 		std::string cur_opcode_str = GetStringFromEvaluableNodeType(cur_opcode, true);
@@ -2455,7 +2585,7 @@ int32_t RunAmalgamLanguageValidation()
 			std::cout << "Passed" << std::endl;
 		else
 			failed_test_names_and_numbers.emplace_back("unit test", unit_test_num);
-	}*/
+	}//*/
 
 	delete entity;
 

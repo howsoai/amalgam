@@ -10660,14 +10660,55 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests for this opcode
+
 	arr[static_cast<std::size_t>(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number max_distance list feature_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects the entities with labels that are at least as close as `max_distance` to the given point.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestContainerExec" (list (query_within_generalized_distance 3 (list "x" "y") (list 0.0 0.0) 0.01 (list 2 1) (list "nominal_number" "continuous_number_cyclic") (list 1 360) (null) (null) 1 (null) "random seed 1234" "radius") ) ))", R"()"}
+{R"&((seq
+	(create_entities
+		"vert0"
+		{object 1 x 0 y 0}
+	)
+	(create_entities
+		"vert1"
+		{object 1 x 1 y 0}
+	)
+	(create_entities
+		"vert2"
+		{object 1 x 1 y 1}
+	)
+	(create_entities
+		"vert3"
+		{object 1 x 0 y 1}
+	)
+	(create_entities
+		"vert4"
+		{object 2 x 0.5 y 0.5}
+	)
+	(create_entities
+		"vert5"
+		{object 2 x 2 y 1}
+	)
+	(compute_on_contained_entities
+		(query_within_generalized_distance
+			1.5
+			["x" "y"]
+			[1 2]
+			2
+			(null)
+			(null)
+			(null)
+			(null)
+			(null)
+			1
+			(null)
+			"random seed 1234"
+		)
+	)
+))&", R"({vert2 1 vert3 1.4142135623730951 vert5 1.4142135623730951})", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -10681,7 +10722,7 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects the closest entities to the given point.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestContainerExec" (list (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) 0.01 (list 2 1) (list "nominal_number" "continuous_number_cyclic") (list 1 360) (null) (null) 1 (null) "random seed 1234" "radius") ) ))", R"()"}
+			
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;

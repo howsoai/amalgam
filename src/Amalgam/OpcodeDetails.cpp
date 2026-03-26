@@ -10008,14 +10008,45 @@ R"&(^\s*\{\s*
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_QUERY_NOT_BETWEEN)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * lower_bound * upper_bound)";
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is less than `lower_bound` or greater than `upper_bound`.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "TargetLabel" 2 5))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_between "x" -4 5))", R"()"}, {R"((query_not_between "y" -4 0))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+		"E5q"
+		{a 5 q "a"}
+		"E6"
+		{a 6 q "q"}
+		"Er"
+		{r "r"}
+	)
+	[
+		(contained_entities
+			(query_not_between "a" 2 4)
+		)
+		(contained_entities
+			(query_exists "a")
+			(query_not_between "q" "m" "z")
+		)
+	]
+))&", R"([
+	["E1" "E5" "E5q" "E6"]
+	["E5q"]
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -10029,7 +10060,44 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is one of the values specified in `values`.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "TargetLabel" (2 5)))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_among "x" (list -4 5)))", R"()"}, {R"((query_among "y" (list -4 0)))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+		"E5q"
+		{a 5 q "a"}
+		"E6"
+		{a 6 q "q"}
+		"Er"
+		{r "r"}
+	)
+	[
+		(contained_entities
+			(query_among
+				"a"
+				[1 5]
+			)
+		)
+		(contained_entities
+			(query_exists "a")
+			(query_among
+				"q"
+				["a"]
+			)
+		)
+	]
+))&", R"([
+	["E1" "E5" "E5q"]
+	["E5q"]
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
@@ -10043,14 +10111,51 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is not one of the values specified in `values`.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "TargetLabel" (2 5)))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_not_among "x" (list -4 5)))", R"()"}, {R"((query_not_among "y" (list -4 0)))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1}
+		"E2"
+		{a 2}
+		"E3"
+		{a 3}
+		"E4"
+		{a 4}
+		"E5"
+		{a 5}
+		"E5q"
+		{a 5 q "a"}
+		"E6"
+		{a 6 q "q"}
+		"Er"
+		{r "r"}
+	)
+	[
+		(contained_entities
+			(query_not_among
+				"a"
+				[1 5]
+			)
+		)
+		(contained_entities
+			(query_exists "a")
+			(query_not_among
+				"q"
+				["a"]
+			)
+		)
+	]
+))&", R"([
+	["E2" "E3" "E4" "E6"]
+	["E6"]
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_QUERY_MAX)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number num_entities] [bool numeric])";

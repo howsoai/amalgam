@@ -179,18 +179,20 @@ AmalgamExample{ R"&([
 	)
 ])" },
 AmalgamExample{ R"&((seq
-	(create_entities
-		"test"
-		{
-			a {a 3}
-			b @(target 1 "a")
-		}
+	(seq
+		(create_entities
+			"test"
+			{
+				a {a 3}
+				b @(target 1 "a")
+			}
+		)
+		(call
+			(flatten_entity "test")
+			{new_entity "test2"}
+		)
+		(flatten_entity "test2" .false)
 	)
-	(call
-		(flatten_entity "test")
-		{new_entity "test2"}
-	)
-	(flatten_entity "test2")
 ))&", R"((declare
 	{create_new_entity .true new_entity (null) require_version_compatibility .false}
 	(let
@@ -213,7 +215,6 @@ AmalgamExample{ R"&((seq
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "›è©ìÝ¦Iç/…çS•ÿ")
 	new_entity
 ))", "", R"((apply "destroy_entities" (contained_entities)))"},
 AmalgamExample{ R"&((seq

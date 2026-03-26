@@ -2049,7 +2049,7 @@ R"&(\[\s*
 		d.returns = R"(number)";
 		d.description = R"(Evaluates to the hyperbolic arc tangent on `x`.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((atanh 0.5))", R"(0.5493061443340549)"}
+			{R"((atanh 0.5))", R"(0.5493061443340549)", R"(0.54930614433405\d+)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;

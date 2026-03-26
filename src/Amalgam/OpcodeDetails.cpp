@@ -9576,7 +9576,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		return d;
 	}();
-	//TODO 25157: update examples and tests here on downward
+
 	arr[static_cast<std::size_t>(ENT_QUERY_SELECT)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(number num_to_select [number start_offset] [number random_seed])";
@@ -9650,14 +9650,74 @@ R"&(^\s*\{\s*
 		d.returns = R"(query)";
 		d.description = R"(When used as a query argument, selects a random sample of `num_to_select` entities sorted by entity id, sampled with replacement.  If `weight_label_name` is specified and not null, it will use `weight_label_name` as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values for weights will be ignored, and if there are any infinite values, those will be selected from uniformly.  If `random_seed` is specified, then it will select `num_to_select` entities randomly from the list based on the random seed.  If `random_seed` is not specified then the subsequent calls will return the same sample of entities.)";
 		d.examples = MakeAmalgamExamples({
-			{R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 (rand)))", R"()"}, {R"((contained_entities "TestEntity" (list)", R"()"}, {R"((query_sample 4 "weight" (rand)))", R"()"}
+			{R"&((seq
+	(create_entities
+		"E1"
+		{a 1 weight 0.4}
+		"E2"
+		{a 2 weight 0.5}
+		"E3"
+		{a 3 weight 0.01}
+		"E4"
+		{a 4 weight 0.01}
+		"E5"
+		{a 5 q 5 weight 3.5}
+	)
+	[
+		(contained_entities (query_sample))
+		(contained_entities
+			(query_sample 2)
+		)
+		(contained_entities
+			(query_sample 1 (null) (rand))
+		)
+		(contained_entities
+			(query_sample 1 (null) (null))
+		)
+		(contained_entities
+			(query_sample 1 "weight")
+		)
+		(contained_entities
+			(query_sample 1 "weight")
+		)
+		(contained_entities
+			(query_sample 5 "weight" (rand))
+		)
+		(contained_entities
+			(query_sample 5 "weight" (null))
+		)
+		(contained_entities
+			(query_not_in_entity_list
+				["E1" "E2" "E5"]
+			)
+			(query_sample 5 "weight" (rand))
+		)
+		(contained_entities
+			(query_sample 10 "weight" (rand))
+			(query_not_in_entity_list
+				["E5"]
+			)
+		)
+	]
+))&", R"([
+	["E1"]
+	["E2" "E3"]
+	["E4"]
+	["E3"]
+	["E5"]
+	["E5"]
+	["E2" "E5" "E2" "E5" "E5"]
+	["E5" "E2" "E2" "E5" "E1"]
+	["E3" "E4" "E3" "E3" "E4"]
+	["E1" "E2"]
+])", "", R"((apply "destroy_entities" (contained_entities)))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		return d;
 	}();
-
+	//TODO 25157: update examples and tests here on downward
 	arr[static_cast<std::size_t>(ENT_QUERY_IN_ENTITY_LIST)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(list entity_ids)";

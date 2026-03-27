@@ -9183,71 +9183,31 @@ R"&(^\s*\{\s*
 		d.description = R"(Loads the data specified by `resource_path` and parse it into the appropriate code and data, and stores it in `entity`.  It follows the same id path creation rules as `(create_entities)`, except that if no id path is specified, it may default to a name based on the resource if available.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 		d.examples = MakeAmalgamExamples({
 			{R"&((seq
-	(create_entities
-		"Entity"
-		{a 1 b 2}
-	)
-	(create_entities
-		["Entity" "Contained1"]
-		{c 3}
-	)
-	(create_entities
-		["Entity" "Contained1" "Contained2_1"]
-		{d 4}
-	)
-	(create_entities
-		["Entity" "Contained1" "Contained2_2"]
-		{e 5}
-	)
-	(store_entity "entity.amlg" "Entity")
-	(destroy_entities "Entity")
-	(load_entity "entity.amlg" "Entity")
-	(flatten_entity "Entity" .false)
-))&", R"((declare
-	{create_new_entity .true new_entity (null) require_version_compatibility .false}
-	(let
-		{
-			_ (lambda
-					{a 1 b 2}
-				)
-		}
-		(if
-			create_new_entity
-			(assign
-				"new_entity"
-				(first
-					(create_entities new_entity _)
-				)
-			)
-			(assign_entity_roots new_entity _)
+	(seq
+		(create_entities
+			"Entity"
+			{a 1 b 2}
 		)
-	)
-	(create_entities
-		(append new_entity "Contained1")
-		(lambda
+		(create_entities
+			["Entity" "Contained1"]
 			{c 3}
 		)
-	)
-	(create_entities
-		(append
-			new_entity
-			["Contained1" "Contained2_1"]
-		)
-		(lambda
+		(create_entities
+			["Entity" "Contained1" "Contained2_1"]
 			{d 4}
 		)
-	)
-	(create_entities
-		(append
-			new_entity
-			["Contained1" "Contained2_2"]
-		)
-		(lambda
+		(create_entities
+			["Entity" "Contained1" "Contained2_2"]
 			{e 5}
 		)
+		(store_entity "entity.amlg" "Entity")
+		(load_entity "entity.amlg" "EntityCopy")
+		(difference_entities "Entity" "EntityCopy")
 	)
-	new_entity
-))", "", R"((seq (destroy_entities "Entity") (if (= (system "os") "Windows") (seq (system "system" "del /q entity*") (system "system" "rmdir /s /q entity")) (system "system" "rm -rf entity*"))))"},
+))&", R"((declare
+	{_ (null) new_entity (null)}
+	(clone_entities _ new_entity)
+))", "", R"((seq (destroy_entities "Entity" "EntityCopy") (if (= (system "os") "Windows") (seq (system "system" "del /q entity*") (system "system" "rmdir /s /q entity")) (system "system" "rm -rf entity*"))))"},
 			{R"&((seq
 	(create_entities
 		"Entity"
@@ -9415,71 +9375,31 @@ R"&(^\s*\{\s*
 		d.description = R"(Stores `entity` into `resource_path`.  Returns true if successful, false if not.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 		d.examples = MakeAmalgamExamples({
 			{R"&((seq
-	(create_entities
-		"Entity"
-		{a 1 b 2}
-	)
-	(create_entities
-		["Entity" "Contained1"]
-		{c 3}
-	)
-	(create_entities
-		["Entity" "Contained1" "Contained2_1"]
-		{d 4}
-	)
-	(create_entities
-		["Entity" "Contained1" "Contained2_2"]
-		{e 5}
-	)
-	(store_entity "entity.amlg" "Entity")
-	(destroy_entities "Entity")
-	(load_entity "entity.amlg" "Entity")
-	(flatten_entity "Entity" .false)
-))&", R"((declare
-	{create_new_entity .true new_entity (null) require_version_compatibility .false}
-	(let
-		{
-			_ (lambda
-					{a 1 b 2}
-				)
-		}
-		(if
-			create_new_entity
-			(assign
-				"new_entity"
-				(first
-					(create_entities new_entity _)
-				)
-			)
-			(assign_entity_roots new_entity _)
+	(seq
+		(create_entities
+			"Entity"
+			{a 1 b 2}
 		)
-	)
-	(create_entities
-		(append new_entity "Contained1")
-		(lambda
+		(create_entities
+			["Entity" "Contained1"]
 			{c 3}
 		)
-	)
-	(create_entities
-		(append
-			new_entity
-			["Contained1" "Contained2_1"]
-		)
-		(lambda
+		(create_entities
+			["Entity" "Contained1" "Contained2_1"]
 			{d 4}
 		)
-	)
-	(create_entities
-		(append
-			new_entity
-			["Contained1" "Contained2_2"]
-		)
-		(lambda
+		(create_entities
+			["Entity" "Contained1" "Contained2_2"]
 			{e 5}
 		)
+		(store_entity "entity.amlg" "Entity")
+		(load_entity "entity.amlg" "EntityCopy")
+		(difference_entities "Entity" "EntityCopy")
 	)
-	new_entity
-))", "", R"((seq (destroy_entities "Entity") (if (= (system "os") "Windows") (seq (system "system" "del /q entity*") (system "system" "rmdir /s /q entity")) (system "system" "rm -rf entity*"))))"},
+))&", R"((declare
+	{_ (null) new_entity (null)}
+	(clone_entities _ new_entity)
+))", "", R"((seq (destroy_entities "Entity" "EntityCopy") (if (= (system "os") "Windows") (seq (system "system" "del /q entity*") (system "system" "rmdir /s /q entity")) (system "system" "rm -rf entity*"))))"},
 			{R"&((seq
 	(create_entities
 		"Entity"

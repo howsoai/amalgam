@@ -88,14 +88,18 @@ std::pair<ExecutionPermissions, ExecutionPermissions> ExecutionPermissions::Eval
 
 //returns a copy of s where each consecutive whitespace block is replaced
 //by a single space and any leading and trailing spaces are removed
-static std::string NormalizeWhitespace(std::string_view s)
+static std::string NormalizeTestValidationString(std::string_view s)
 {
 	std::string out;
 	out.reserve(s.size());
 
 	bool in_whitespace = false;
-	for(char ch : s)
+	bool after_dot = false;
+	int frac_count = 0;
+	for(size_t i = 0; i < s.size(); i++)
 	{
+		char ch = s[i];
+
 		if(std::isspace(static_cast<unsigned char>(ch)))
 		{
 			//if first whitespace, change to space
@@ -104,12 +108,40 @@ static std::string NormalizeWhitespace(std::string_view s)
 				out.push_back(' ');
 				in_whitespace = true;
 			}
+			continue;
 		}
-		else //not first whitespace so skip
+
+		in_whitespace = false;
+
+		if(ch == '.' && i + 1 < s.size()
+			&& std::isdigit(static_cast<unsigned char>(s[i + 1])))
 		{
+			after_dot = true;
+			frac_count = 0;
 			out.push_back(ch);
-			in_whitespace = false;
+			continue;
 		}
+
+		//decimal digit truncation
+		if(after_dot)
+		{
+			if(std::isdigit(static_cast<unsigned char>(ch)))
+			{
+				frac_count++;
+				//keep only the first 6 digits after the decimal place
+				if(frac_count <= 6)
+					out.push_back(ch);
+
+				continue;
+			}
+			else //any other character ends the number
+			{
+				after_dot = false;
+				frac_count = 0;
+			}
+		}
+
+		out.push_back(ch);
 	}
 
 	//trim spaces
@@ -125,7 +157,7 @@ static std::string NormalizeWhitespace(std::string_view s)
 //type of whitespace (spaces, tabs, newlines, etc.)
 inline static bool EqualIgnoringWhitespace(std::string_view a, std::string_view b)
 {
-	return NormalizeWhitespace(a) == NormalizeWhitespace(b);
+	return NormalizeTestValidationString(a) == NormalizeTestValidationString(b);
 }
 
 bool AmalgamExample::ValidateExample(Entity *entity)

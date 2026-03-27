@@ -64,13 +64,20 @@ jobs:
       - name: CMake Build
         run: cmake --build --preset $PRESET --
 
+      - name: Debug checkout 0
+        run: |
+          ls -la src/Amalgam/
+          ls -la src/Amalgam/entity/ || echo "entity/ directory missing"
+          git status
+          git ls-files --error-unmatch src/Amalgam/entity/Entity.cpp
+
       - name: CMake Test
         run: cmake --build --preset $PRESET --target test
 
       - name: Fix git ownership
         run: git config --global --add safe.directory /__w/amalgam/amalgam
 
-      - name: Debug checkout
+      - name: Debug checkout 1
         run: |
           ls -la src/Amalgam/
           ls -la src/Amalgam/entity/ || echo "entity/ directory missing"

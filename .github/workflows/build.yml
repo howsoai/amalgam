@@ -67,6 +67,9 @@ jobs:
       - name: CMake Test
         run: cmake --build --preset $PRESET --target test
 
+      - name: Fix git ownership
+        run: git config --global --add safe.directory /__w/amalgam/amalgam
+
       - name: Debug checkout
         run: |
           ls -la src/Amalgam/
@@ -126,6 +129,9 @@ jobs:
 
       - name: CMake Test
         run: cmake --build --preset $PRESET --target test
+
+      - name: Fix git ownership
+        run: git config --global --add safe.directory /__w/amalgam/amalgam
 
       - name: CMake Install
         run: cmake --build --preset $PRESET --target install
@@ -270,12 +276,8 @@ jobs:
       - name: CMake Test
         run: cmake --build --preset $PRESET --target test
 
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: test-results-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
-          path: ./out/test/*
+      - name: Fix git ownership
+        run: git config --global --add safe.directory /__w/amalgam/amalgam
 
       - name: CMake Install
         run: cmake --build --preset $PRESET --target install

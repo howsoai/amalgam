@@ -44,7 +44,11 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        env:
+          GIT_CONFIG_GLOBAL: /dev/null
 
       - name: Set build preset
         run: |
@@ -100,7 +104,11 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        env:
+          GIT_CONFIG_GLOBAL: /dev/null
 
       - name: Set build preset
         run: |
@@ -221,7 +229,11 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        env:
+          GIT_CONFIG_GLOBAL: /dev/null
 
       - name: Set build preset
         run: |

@@ -63,6 +63,9 @@ jobs:
       - name: CMake Test
         run: cmake --build --preset $PRESET --target test
 
+      - name: Verify Entity directory
+        run: pwd && ls && ls -la src/Amalgam/
+
       - name: CMake Install
         run: cmake --build --preset $PRESET --target install
 

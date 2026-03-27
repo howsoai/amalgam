@@ -69,7 +69,6 @@ foreach(TEST_TARGET ${ALL_APP_TARGETS})
         COMMAND ${TEST_RUNNER} "$<TARGET_FILE:${TEST_TARGET}>" --validate-amalgam
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/Amalgam
     )
-    set_tests_properties(${TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "--total execution time--")
     list(APPEND ALL_TEST_TARGETS ${TEST_NAME})
 
 endforeach()

@@ -32,6 +32,7 @@ endif()
 # Create tests for every app target:
 set(ALL_TEST_TARGETS)
 set(TEST_OUTPUT_LOG_BASE "${CMAKE_INSTALL_PREFIX}/../../test")
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/test_workspace)
 foreach(TEST_TARGET ${ALL_APP_TARGETS})
 
     message(STATUS "GLIBC version: ${GLIBC_VERSION}")
@@ -67,7 +68,7 @@ foreach(TEST_TARGET ${ALL_APP_TARGETS})
     add_test(
         NAME ${TEST_NAME}
         COMMAND ${TEST_RUNNER} "$<TARGET_FILE:${TEST_TARGET}>" --validate-amalgam
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/Amalgam
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test_workspace
     )
     list(APPEND ALL_TEST_TARGETS ${TEST_NAME})
 

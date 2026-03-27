@@ -63,8 +63,12 @@ jobs:
       - name: CMake Test
         run: cmake --build --preset $PRESET --target test
 
-      - name: Verify Entity directory
-        run: pwd && ls && ls -la src/Amalgam/
+      - name: Debug checkout
+        run: |
+          ls -la src/Amalgam/
+          ls -la src/Amalgam/entity/ || echo "entity/ directory missing"
+          git status
+          git ls-files --error-unmatch src/Amalgam/entity/Entity.cpp
 
       - name: CMake Install
         run: cmake --build --preset $PRESET --target install

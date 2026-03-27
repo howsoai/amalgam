@@ -217,7 +217,7 @@ public:
 				double delta = values[i + 1] - values[i];
 
 				//skip zeros if applicable
-				if(include_zero_distances && delta == 0)
+				if(!include_zero_distances && delta == 0)
 					continue;
 
 				if(delta < extreme_distance)

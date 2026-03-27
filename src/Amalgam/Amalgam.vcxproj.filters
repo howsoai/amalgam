@@ -162,6 +162,12 @@
     <ClCompile Include="SBFDSColumnData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OpcodeDetails.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AmalgamLanguageValidation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetManager.h">
@@ -336,6 +342,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="importexport\FileSupportYAML.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OpcodeDetails.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

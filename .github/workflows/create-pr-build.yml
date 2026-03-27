@@ -33,11 +33,13 @@ jobs:
           echo "Found tag: $tag"
           echo "tag=$(echo $tag)" >> $GITHUB_OUTPUT
 
-      - name: Get next semver from previous tag
+      - name: Get next patch version from previous tag
         id: next-semvers
-        uses: WyriHaximus/github-action-next-semvers@v1
-        with:
-          version: ${{ steps.previous-tag.outputs.tag }}
+        run: |
+          IFS='.' read -r major minor patch <<< "${{ steps.previous-tag.outputs.tag }}"
+          echo "patch=${major}.${minor}.$((patch + 1))" >> $GITHUB_OUTPUT
+          echo "major=$((major + 1)).0.0" >> $GITHUB_OUTPUT
+          echo "minor=${major}.$((minor + 1)).0" >> $GITHUB_OUTPUT
 
       - name: Set PR version
         id: set-pr-version

@@ -171,6 +171,8 @@ set(COMMON_SOURCE
     src/Amalgam/interpreter/InterpreterOpcodesTransformations.cpp
     src/Amalgam/KnnCache.h
     src/Amalgam/Merger.h
+    src/Amalgam/OpcodeDetails.cpp
+    src/Amalgam/OpcodeDetails.h
     src/Amalgam/Opcodes.cpp
     src/Amalgam/Opcodes.h
     src/Amalgam/Parser.cpp
@@ -209,6 +211,7 @@ if(IS_MSVC)
     )
 endif()
 set(AMALGAM_APP_ONLY_SOURCE
+    src/Amalgam/AmalgamLanguageValidation.cpp
     src/Amalgam/AmalgamMain.cpp
     src/Amalgam/AmalgamTrace.cpp
     ${RESOURCE_SOURCE}
@@ -220,7 +223,7 @@ source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${AMALGAM_ALL_SOURCE})
 # Get all files we care about for easy access in projects (mainly IDEs)
 file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/*")
 list(FILTER ALL_FILES EXCLUDE REGEX "(.*/.git/.*|.*/out/.*|.*/src/.*|.*/test/.*|.*Amalgam\.sln.*)")
-file(GLOB_RECURSE ADDITIONAL_FILES "${CMAKE_SOURCE_DIR}/src/Amalgam/out.txt" "${CMAKE_SOURCE_DIR}/src/Amalgam/amlg_code/*")
+file(GLOB_RECURSE ADDITIONAL_FILES "${CMAKE_SOURCE_DIR}/src/Amalgam/amlg_code/*")
 list(APPEND ALL_FILES ${ADDITIONAL_FILES})
 source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${ALL_FILES})
 list(APPEND AMALGAM_APP_ONLY_SOURCE ${ALL_FILES})

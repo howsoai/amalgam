@@ -28,6 +28,7 @@ void StringInternPool::InitializeStaticStrings()
 
 	//built-in / system specific
 	EmplaceNodeTypeString(ENT_SYSTEM, "system");
+	EmplaceNodeTypeString(ENT_HELP, "help");
 	EmplaceNodeTypeString(ENT_GET_DEFAULTS, "get_defaults");
 	EmplaceNodeTypeString(ENT_RECLAIM_RESOURCES, "reclaim_resources");
 
@@ -347,6 +348,12 @@ void StringInternPool::InitializeStaticStrings()
 	//config file parameters
 	EmplaceStaticString(ENBISI_rand_seed, "rand_seed");
 	EmplaceStaticString(ENBISI_version, "version");
+
+	//help options
+	EmplaceStaticString(ENBISI_overview,"overview");
+	EmplaceStaticString(ENBISI_syntax,"syntax");
+	EmplaceStaticString(ENBISI_distance, "distance");
+	EmplaceStaticString(ENBISI_opcodes, "opcodes");
 
 	//file storage options
 	EmplaceStaticString(ENBISI_include_rand_seeds, "include_rand_seeds");

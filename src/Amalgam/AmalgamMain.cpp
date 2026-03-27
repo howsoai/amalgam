@@ -20,8 +20,9 @@
 #include <fstream>
 #include <string>
 
-//function prototypes:
+//function prototypes for alternative main functions in respective files
 int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &rand_seed);
+int32_t RunAmalgamLanguageValidation();
 
 //usage:
 // Note: spaces in raw string are correct, do not replace with tabs
@@ -94,6 +95,10 @@ Options:
 
     --tracefile [file]
                      Like trace, but pulls the data from the file specified
+
+    --validate-amalgam
+                     Runs a test suite, validating the opcodes and running unit tests based on examples
+                     in documentation as well as additional stress tests.  Will report any issues found.
 )";
 
 	//additional compiler defined options
@@ -109,13 +114,13 @@ Options:
 }
 
 //parses the permissions string and returns the permissions parsed
-static EntityPermissions ParsePermissionsCommandLineParam(std::string_view permissions_str)
+static ExecutionPermissions ParsePermissionsCommandLineParam(std::string_view permissions_str)
 {
 	if(permissions_str.empty())
-		return EntityPermissions::AllPermissions();
+		return ExecutionPermissions::AllPermissions();
 
 	//start with no permissions, but if removing permissions, then start with all
-	EntityPermissions permissions;
+	ExecutionPermissions permissions;
 	bool add_permissions = true;
 	size_t permission_letters_start = 0;
 	if(permissions_str[0] == '+')
@@ -124,7 +129,7 @@ static EntityPermissions ParsePermissionsCommandLineParam(std::string_view permi
 	}
 	else if(permissions_str[0] == '-')
 	{
-		permissions = EntityPermissions::AllPermissions();
+		permissions = ExecutionPermissions::AllPermissions();
 		add_permissions = false;
 		permission_letters_start++;
 	}
@@ -134,13 +139,13 @@ static EntityPermissions ParsePermissionsCommandLineParam(std::string_view permi
 	{
 		switch(permissions_str[i])
 		{
-		case 'o': permissions.SetPermission(EntityPermissions::Permission::STD_OUT_AND_STD_ERR, add_permissions);	break;
-		case 'i': permissions.SetPermission(EntityPermissions::Permission::STD_IN, add_permissions);	break;
-		case 'l': permissions.SetPermission(EntityPermissions::Permission::LOAD, add_permissions);	break;
-		case 's': permissions.SetPermission(EntityPermissions::Permission::STORE, add_permissions);	break;
-		case 'e': permissions.SetPermission(EntityPermissions::Permission::ENVIRONMENT, add_permissions);	break;
-		case 'a': permissions.SetPermission(EntityPermissions::Permission::ALTER_PERFORMANCE, add_permissions);	break;
-		case 'x': permissions.SetPermission(EntityPermissions::Permission::SYSTEM, add_permissions);	break;
+		case 'o': permissions.SetPermission(ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR, add_permissions);	break;
+		case 'i': permissions.SetPermission(ExecutionPermissions::Permission::STD_IN, add_permissions);	break;
+		case 'l': permissions.SetPermission(ExecutionPermissions::Permission::LOAD, add_permissions);	break;
+		case 's': permissions.SetPermission(ExecutionPermissions::Permission::STORE, add_permissions);	break;
+		case 'e': permissions.SetPermission(ExecutionPermissions::Permission::ENVIRONMENT, add_permissions);	break;
+		case 'a': permissions.SetPermission(ExecutionPermissions::Permission::ALTER_PERFORMANCE, add_permissions);	break;
+		case 'x': permissions.SetPermission(ExecutionPermissions::Permission::SYSTEM, add_permissions);	break;
 		default:  std::cerr << "Invalid permission character: '" << permissions_str[i] << "'" << std::endl;
 		}
 	}
@@ -165,6 +170,7 @@ PLATFORM_MAIN_CONSOLE
 	std::string profile_out_file;
 	bool run_trace = false;
 	bool run_tracefile = false;
+	bool run_validate_amalgam = false;
 	std::string tracefile;
 	std::string amlg_file_to_run;
 	bool print_to_stdio = true;
@@ -174,7 +180,7 @@ PLATFORM_MAIN_CONSOLE
 	size_t num_threads = 0;
 #endif
 	bool debug_internal_memory = Platform_IsDebuggerPresent();
-	EntityPermissions entity_permissions = EntityPermissions::AllPermissions();
+	ExecutionPermissions entity_permissions = ExecutionPermissions::AllPermissions();
 
 	std::string rand_seed;
 	if(Platform_IsDebuggerPresent())
@@ -235,6 +241,8 @@ PLATFORM_MAIN_CONSOLE
 			run_tracefile = true;
 			tracefile = args[++i];
 		}
+		else if(args[i] == "--validate-amalgam")
+			run_validate_amalgam = true;
 	#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 		else if(args[i] == "--numthreads")
 			num_threads = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
@@ -308,6 +316,10 @@ PLATFORM_MAIN_CONSOLE
 
 		return return_val;
 	}
+	else if(run_validate_amalgam)
+	{
+		return RunAmalgamLanguageValidation();
+	}
 	else //run the standard amlg command line interface
 	{
 		Entity *entity = nullptr;
@@ -330,7 +342,7 @@ PLATFORM_MAIN_CONSOLE
 		if(entity == nullptr)
 			return 1;
 
-		entity->SetPermissions(EntityPermissions::AllPermissions(), entity_permissions, true);
+		entity->SetPermissions(ExecutionPermissions::AllPermissions(), entity_permissions, true);
 
 		PrintListener *print_listener = nullptr;
 		std::vector<EntityWriteListener *> write_listeners;
@@ -377,8 +389,12 @@ PLATFORM_MAIN_CONSOLE
 		}
 		else //repl
 		{
-			std::cout << "Amalgam " << AMALGAM_VERSION_STRING << " - " << GetConcurrencyTypeString() << " read-execute-print loop" << std::endl;
-			std::cout << "End a line with \\ for multiline commands.  (conclude) will exit.  Run the executable with --help for command-line options." << std::endl;
+			std::cout << "Amalgam " << AMALGAM_VERSION_STRING << " - " << GetConcurrencyTypeString()
+				<< " build running read-execute-print loop" << std::endl;
+			std::cout << "Incomplete lines will be prompted for completed code with ...,"
+				<< " and ending a line with \\ will expect a multiline command."
+				<< "  (conclude) will exit, and (print (help)) will offer help information."
+				<< "  Run the executable with --help for command-line options." << std::endl;
 
 			std::string input;
 			std::string line;

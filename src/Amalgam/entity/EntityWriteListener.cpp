@@ -200,7 +200,7 @@ void EntityWriteListener::LogSetEntityRandomSeed(Entity *entity, const std::stri
 }
 
 void EntityWriteListener::LogSetEntityPermissions(Entity *entity,
-		EntityPermissions permissions_to_set, EntityPermissions permission_values, bool deep_set)
+		ExecutionPermissions permissions_to_set, ExecutionPermissions permission_values, bool deep_set)
 {
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::Lock lock(mutex);
@@ -211,33 +211,33 @@ void EntityWriteListener::LogSetEntityPermissions(Entity *entity,
 	EvaluableNode *assoc = listenerStorage.AllocNode(ENT_ASSOC);
 	new_set->AppendOrderedChildNode(assoc);
 
-	if(permissions_to_set.HasPermission(EntityPermissions::Permission::STD_OUT_AND_STD_ERR))
+	if(permissions_to_set.HasPermission(ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err),
-			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::STD_OUT_AND_STD_ERR)));
+			listenerStorage.AllocNode(permission_values.HasPermission(ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR)));
 
-	if(permissions_to_set.HasPermission(EntityPermissions::Permission::STD_IN))
+	if(permissions_to_set.HasPermission(ExecutionPermissions::Permission::STD_IN))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_in),
-			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::STD_IN)));
+			listenerStorage.AllocNode(permission_values.HasPermission(ExecutionPermissions::Permission::STD_IN)));
 
-	if(permissions_to_set.HasPermission(EntityPermissions::Permission::LOAD))
+	if(permissions_to_set.HasPermission(ExecutionPermissions::Permission::LOAD))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_load),
-			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::LOAD)));
+			listenerStorage.AllocNode(permission_values.HasPermission(ExecutionPermissions::Permission::LOAD)));
 
-	if(permissions_to_set.HasPermission(EntityPermissions::Permission::STORE))
+	if(permissions_to_set.HasPermission(ExecutionPermissions::Permission::STORE))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_store),
-			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::STORE)));
+			listenerStorage.AllocNode(permission_values.HasPermission(ExecutionPermissions::Permission::STORE)));
 
-	if(permissions_to_set.HasPermission(EntityPermissions::Permission::ENVIRONMENT))
+	if(permissions_to_set.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_environment),
-			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::ENVIRONMENT)));
+			listenerStorage.AllocNode(permission_values.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT)));
 
-	if(permissions_to_set.HasPermission(EntityPermissions::Permission::ALTER_PERFORMANCE))
+	if(permissions_to_set.HasPermission(ExecutionPermissions::Permission::ALTER_PERFORMANCE))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_alter_performance),
-			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::ALTER_PERFORMANCE)));
+			listenerStorage.AllocNode(permission_values.HasPermission(ExecutionPermissions::Permission::ALTER_PERFORMANCE)));
 
-	if(permissions_to_set.HasPermission(EntityPermissions::Permission::SYSTEM))
+	if(permissions_to_set.HasPermission(ExecutionPermissions::Permission::SYSTEM))
 		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_system),
-			listenerStorage.AllocNode(permission_values.HasPermission(EntityPermissions::Permission::SYSTEM)));
+			listenerStorage.AllocNode(permission_values.HasPermission(ExecutionPermissions::Permission::SYSTEM)));
 
 	if(!deep_set)
 		new_set->AppendOrderedChildNode(listenerStorage.AllocNode(false));

@@ -187,7 +187,7 @@ bool EntityExternalInterface::SetEntityPermissions(std::string &handle, std::str
 	EvaluableNode *permissions_en = EvaluableNodeJSONTranslation::JsonToEvaluableNode(
 		&entity->evaluableNodeManager, json_permissions);
 
-	auto [permissions_to_set, permission_values] = EntityPermissions::EvaluableNodeToPermissions(permissions_en);
+	auto [permissions_to_set, permission_values] = ExecutionPermissions::EvaluableNodeToPermissions(permissions_en);
 	entity->SetPermissions(permissions_to_set, permission_values, true);
 	entity->evaluableNodeManager.FreeNodeTree(permissions_en);
 	return true;

@@ -891,7 +891,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 	//if new_type doesn't affect anything and always creates a new value, then
 	//don't need to maintain source (can be interpreted as immediate) and can free it
 	bool transient_source_node = (!DoesOpcodeHaveSideEffects(new_type)
-		&& GetOpcodeNewValueReturnType(new_type) == ONVRT_NEW_VALUE);
+		&& GetOpcodeNewValueReturnType(new_type) == OpcodeDetails::OpcodeReturnNewnessType::NEW);
 	EvaluableNodeReference source;
 
 	if(transient_source_node)

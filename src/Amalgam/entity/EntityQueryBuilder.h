@@ -1131,7 +1131,7 @@ namespace EntityQueryBuilder
 				if(ocn.size() >= 2)
 					cur_condition->maxDistance = EvaluableNode::ToNumber(ocn[1]);
 
-				cur_condition->includeZeroDifferences = true;
+				cur_condition->includeZeroDifferences = false;
 				if(ocn.size() >= 3)
 					cur_condition->includeZeroDifferences = EvaluableNode::ToBool(ocn[2]);
 				break;

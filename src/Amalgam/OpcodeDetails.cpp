@@ -87,7 +87,11 @@ std::pair<ExecutionPermissions, ExecutionPermissions> ExecutionPermissions::Eval
 
 
 //returns a copy of s where each consecutive whitespace block is replaced
-//by a single space and any leading and trailing spaces are removed
+//by a single space, any leading and trailing spaces are removed,
+//numbers with large precision are truncated to remove errors of
+//insignificant rounding across platforms, and unnamed entity ids are replaced with
+//underscores since they are not reliable based on differences of randomization
+//across platforms
 static std::string NormalizeTestValidationString(std::string_view s)
 {
 	std::string out;
@@ -139,6 +143,24 @@ static std::string NormalizeTestValidationString(std::string_view s)
 				after_dot = false;
 				frac_count = 0;
 			}
+		}
+
+		//detect a quoted string that starts with an underscore as an unnamed entity reference
+		if(ch == '"' && i + 1 < s.size())
+		{
+			size_t closing_quote_pos = i + 1;
+			while(closing_quote_pos < s.size() && s[closing_quote_pos] != '"')
+				closing_quote_pos++;
+
+			//if found closing quote, then normalize
+			if(closing_quote_pos < s.size() && s[i + 1] == '_')
+			{
+				out.append("\"_____\"");
+				i = closing_quote_pos;
+				continue;
+			}
+
+			//otherwise normal character
 		}
 
 		out.push_back(ch);

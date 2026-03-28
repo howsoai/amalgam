@@ -175,9 +175,8 @@ static std::string NormalizeTestValidationString(std::string_view s)
 	return out;
 }
 
-//returns true if a and b are equal ignoring differences in the
-//type of whitespace (spaces, tabs, newlines, etc.)
-inline static bool EqualIgnoringWhitespace(std::string_view a, std::string_view b)
+//returns true if a and b are equal ignoring subtle differences due to differing platforms
+inline static bool EqualGivenValidationNormalization(std::string_view a, std::string_view b)
 {
 	return NormalizeTestValidationString(a) == NormalizeTestValidationString(b);
 }
@@ -207,7 +206,7 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 
 	if(regexMatch.empty())
 	{
-		if(!EqualIgnoringWhitespace(result_str, output))
+		if(!EqualGivenValidationNormalization(result_str, output))
 		{
 			std::cerr << "Failed, ran code:" << std::endl;
 			std::cerr << example << std::endl;

@@ -1282,7 +1282,8 @@ protected:
 	//the warning will be printed to stderr.
 	void EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::StringID not_found_variable_sid, EvaluableNode *en);
 
-	//opcodes
+public:
+	//opcode methods -- they are public so the _opcodes table can be initialized
 	//returns an EvaluableNode tree from evaluating the tree passed in (or nullptr) and associated properties in an EvaluableNodeReference
 	//prior to calling, en must be referenced (via KeepNodeReference, or part of an entity) so it will not be garbage collected
 	//further, for performance, en must be guaranteed to be a valid pointer, and not nullptr
@@ -1531,6 +1532,8 @@ protected:
 	//override hook for profiling
 	EvaluableNodeReference InterpretNode_PROFILE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
+protected:
+
 	//ensures that there are no reachable nodes that are deallocated
 	void VerifyEvaluableNodeIntegrity();
 
@@ -1587,10 +1590,12 @@ protected:
 
 #endif
 
+public:
 	//opcode function pointers
 	// each opcode function takes in an EvaluableNode
 	typedef EvaluableNodeReference(Interpreter::*OpcodeFunction) (EvaluableNode *, EvaluableNodeRequestedValueTypes);
 	static std::array<OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> _opcodes;
+protected:
 
 	//opcodes that all point to debugging
 	// can be swapped with _opcodes

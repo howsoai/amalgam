@@ -5,9 +5,11 @@
 #include "FastMath.h"
 #include "Interpreter.h"
 #include "Merger.h"
+#include "OpcodeDetails.h"
 
 //system headers:
 #include <cmath>
+#include <iterator>
 
 EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream random_stream, EvaluableNodeManager *_enm,
 	double fraction_a, double fraction_b, double similar_mix_chance,
@@ -518,7 +520,17 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 	EvaluableNode::ReferenceSetType checked;
 	GetStringsFromTree(tree, strings, checked);
 
-	//static MutationParameters::WeightedRandEvaluableNodeType default_operation_type_wrs(;
+	//TODO 25196: need to revisit this to have it check during runtime instead of load time before _opcode_details is populated
+	static MutationParameters::WeightedRandEvaluableNodeType default_operation_type_wrs(
+		_opcode_details, true,
+		[](auto &e)
+		{
+			using It = decltype(begin(_opcode_details));
+			It it(&e);
+			return static_cast<EvaluableNodeType>(std::distance(begin(_opcode_details), it));
+		},
+		[](auto &e) { return e.frequencyPer10000Opcodes; }
+	);
 
 	MutationParameters::WeightedRandEvaluableNodeType operation_type_wrs;
 	if(evaluable_node_weights != nullptr && !evaluable_node_weights->empty())

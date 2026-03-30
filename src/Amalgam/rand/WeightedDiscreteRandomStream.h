@@ -87,15 +87,15 @@ public:
 		Initialize(map, normalize);
 	}
 
-	template<class KeyExtractor, class ProbExtractor>
-	WeightedDiscreteRandomStreamTransform(const MapType &map, bool normalize,
+	template<class Container, class KeyExtractor, class ProbExtractor>
+	WeightedDiscreteRandomStreamTransform(Container &map, bool normalize,
 		KeyExtractor key_extractor, ProbExtractor prob_extractor)
 	{
 		Initialize(map, normalize, key_extractor, prob_extractor);
 	}
 
-	template<class KeyExtractor, class ProbExtractor>
-	void Initialize(const MapType &map, bool normalize,
+	template<class Container, class KeyExtractor, class ProbExtractor>
+	void Initialize(Container &map, bool normalize,
 		KeyExtractor key_extractor, ProbExtractor prob_extractor)
 	{
 		std::vector<double> probabilities;
@@ -104,10 +104,10 @@ public:
 
 		ProbabilityAsDoubleFunctor transform_to_double;
 
-		for(const auto &entry : map)
+		for(auto &entry : map)
 		{
-			valueTable.push_back(key_extractor(entry));
-			probabilities.push_back(transform_to_double(prob_extractor(entry)));
+			valueTable.emplace_back(key_extractor(entry));
+			probabilities.emplace_back(transform_to_double(prob_extractor(entry)));
 		}
 
 		InitializeAliasTable(probabilities, normalize);

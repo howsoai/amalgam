@@ -1590,7 +1590,7 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	//built-in / system specific
 	{ENT_SYSTEM,										0.01},
 	{ENT_HELP,											0.001},
-	{ENT_GET_DEFAULTS,									0.001},
+	{ENT_GET_MUTATION_DEFAULTS,							0.001},
 	{ENT_RECLAIM_RESOURCES,								0.001},
 
 	//parsing

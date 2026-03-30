@@ -326,13 +326,13 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 		return d;
 	}();
 
-	arr[static_cast<std::size_t>(ENT_GET_DEFAULTS)] = []() {
+	arr[static_cast<std::size_t>(ENT_GET_MUTATION_DEFAULTS)] = []() {
 		OpcodeDetails d;
 		d.parameters = R"(string value_type)";
 		d.returns = R"(any)";
-		d.description = R"(Retrieves the default values of `value_type`, either "mutation_opcodes" or "mutation_types")";
+		d.description = R"(Retrieves the default values of `value_type` for mutation, either "mutation_opcodes" or "mutation_types")";
 		d.examples = MakeAmalgamExamples({
-			{R"((get_defaults "mutation_types"))", R"({
+			{R"((get_mutation_defaults "mutation_types"))", R"({
 	change_type 0.29
 	deep_copy_elements 0.07
 	delete 0.1

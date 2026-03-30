@@ -10,21 +10,20 @@
 enum EvaluableNodeType : uint8_t
 {
 	//System and Runtime
-	ENT_SYSTEM,
 	ENT_HELP,
-	ENT_GET_DEFAULTS,
-	ENT_RECLAIM_RESOURCES,
 	ENT_PRINT,
 	ENT_SYSTEM_TIME,
+	ENT_SYSTEM,
+	ENT_RECLAIM_RESOURCES,
 
 	//Primitive Types
 	ENT_NULL,
-	ENT_LIST,
-	ENT_UNORDERED_LIST,
-	ENT_ASSOC,
 	ENT_BOOL,
 	ENT_NUMBER,
 	ENT_STRING,
+	ENT_LIST,
+	ENT_UNORDERED_LIST,
+	ENT_ASSOC,
 
 	//Variable Definition & Modification
 	ENT_SYMBOL,
@@ -232,6 +231,7 @@ enum EvaluableNodeType : uint8_t
 	//Code Comparison and Evolution
 	ENT_TOTAL_SIZE,
 	ENT_MUTATE,
+	ENT_GET_MUTATION_DEFAULTS,
 	ENT_COMMONALITY,
 	ENT_EDIT_DISTANCE,
 	ENT_INTERSECT,

@@ -1291,7 +1291,7 @@ public:
 	//built-in / system specific
 	EvaluableNodeReference InterpretNode_ENT_SYSTEM(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_HELP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_GET_DEFAULTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GET_MUTATION_DEFAULTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_RECLAIM_RESOURCES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//parsing

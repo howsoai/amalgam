@@ -296,7 +296,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 		d.permissions = ExecutionPermissions::Permission::ALL;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 3.0;
 		return d;
 	}();
 
@@ -312,6 +312,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 	examples [
 			{example "(+ 1 2 3 4)" output "10"}
 		]
+	frequency_per_10000_opcodes 18
 	new_scope .false
 	new_target_scope .false
 	parameters "[number x1] [number x2] ... [number xN]"
@@ -324,7 +325,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 		d.permissions = ExecutionPermissions::Permission::ALL;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -344,7 +345,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 })"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 	
@@ -398,7 +399,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 			{R"&((parse "(not_an_opcode)")))&", R"((apply "not_an_opcode"))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -434,7 +435,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
  ))&", R"(4)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 197.0;
 		return d;
 	}();
 
@@ -453,7 +454,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 27.0;
 		return d;
 	}();
 
@@ -471,7 +472,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 			{R"((lambda (+ 1 2) .true ))", R"((lambda 3))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 103.0;
 		return d;
 	}();
 
@@ -519,7 +520,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 16.0;
 		return d;
 	}();
 
@@ -543,7 +544,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 12.0;
 		return d;
 	}();
 
@@ -571,7 +572,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		d.newScope = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 200.0;
 		return d;
 	}();
 
@@ -632,7 +633,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.newScope = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -658,7 +659,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 4.0;
 		return d;
 	}();
 
@@ -683,7 +684,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 47.0;
 		return d;
 	}();
 
@@ -707,7 +708,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 85.0;
 		return d;
 	}();
 
@@ -780,7 +781,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 109.0;
 		return d;
 	}();
 
@@ -880,7 +881,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 20.0;
 		return d;
 	}();
 
@@ -918,7 +919,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 ])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -1034,7 +1035,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 ])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 244.0;
 		return d;
 	}();
 
@@ -1077,7 +1078,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 6.0;
 		return d;
 	}();
 
@@ -1135,7 +1136,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 6.0;
 		return d;
 	}();
 
@@ -1234,7 +1235,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 })"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -1263,7 +1264,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 ])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 36.0;
 		return d;
 	}();
 
@@ -1281,7 +1282,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 ))&", R"([0 2 4 6 8])"},
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 14.0;
 		return d;
 	}();
 
@@ -1318,7 +1319,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -1371,7 +1372,7 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 ])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -1532,7 +1533,7 @@ R"&(\[\s*
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 12.0;
 		return d;
 	}();
 
@@ -1545,7 +1546,7 @@ R"&(\[\s*
 			{R"&((format (get_rand_seed) "string" "base64"))&", R"("X6f8e5JTT5kuHHGZUu7r6/8=")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -1600,7 +1601,7 @@ R"&(\[\s*
 			});
 		d.permissions = ExecutionPermissions::Permission::ENVIRONMENT;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 8.0;
 		return d;
 	}();
 
@@ -1615,7 +1616,7 @@ R"&(\[\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 18.0;
 		return d;
 	}();
 
@@ -1631,7 +1632,7 @@ R"&(\[\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 22.0;
 		return d;
 	}();
 
@@ -1646,7 +1647,7 @@ R"&(\[\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 17.0;
 		return d;
 	}();
 
@@ -1661,7 +1662,7 @@ R"&(\[\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 20.0;
 		return d;
 	}();
 
@@ -1677,7 +1678,7 @@ R"&(\[\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -1932,7 +1933,7 @@ R"&(\[\s*
 			{R"((floor 1.5))", R"(1)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -1945,7 +1946,7 @@ R"&(\[\s*
 			{R"((ceil 1.5))", R"(2)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -1978,7 +1979,7 @@ R"&(\[\s*
 ))&", R"(0.3)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -1991,7 +1992,7 @@ R"&(\[\s*
 			{R"((exp 0.5))", R"(1.6487212707001282)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 1.5;
 		return d;
 	}();
 
@@ -2005,7 +2006,7 @@ R"&(\[\s*
 			{R"((log 0.5 2))", R"(-1)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 1.5;
 		return d;
 	}();
 
@@ -2018,7 +2019,7 @@ R"&(\[\s*
 			{R"((sin 0.5))", R"(0.479425538604203)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -2031,7 +2032,7 @@ R"&(\[\s*
 			{R"((sin 0.5))", R"(0.479425538604203)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -2044,7 +2045,7 @@ R"&(\[\s*
 			{R"((cos 0.5))", R"(0.8775825618903728)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -2057,7 +2058,7 @@ R"&(\[\s*
 			{R"((acos 0.5))", R"(1.0471975511965979)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -2070,7 +2071,7 @@ R"&(\[\s*
 			{R"((tan 0.5))", R"(0.5463024898437905)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -2083,7 +2084,7 @@ R"&(\[\s*
 			{R"((atan 0.5))", R"(0.4636476090008061)"}, {R"((atan 0.5 0.5))", R"(0.7853981633974483)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -2096,7 +2097,7 @@ R"&(\[\s*
 			{R"((sinh 0.5))", R"(0.5210953054937474)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.001;
 		return d;
 	}();
 
@@ -2109,7 +2110,7 @@ R"&(\[\s*
 			{R"((asinh 0.5))", R"(0.48121182505960347)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.001;
 		return d;
 	}();
 
@@ -2122,7 +2123,7 @@ R"&(\[\s*
 			{R"((cosh 0.5))", R"(1.1276259652063807)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.001;
 		return d;
 	}();
 
@@ -2135,7 +2136,7 @@ R"&(\[\s*
 			{R"((acosh 1.5))", R"(0.9624236501192069)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.001;
 		return d;
 	}();
 
@@ -2148,7 +2149,7 @@ R"&(\[\s*
 			{R"((tanh 0.5))", R"(0.46211715726000974)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.001;
 		return d;
 	}();
 
@@ -2161,7 +2162,7 @@ R"&(\[\s*
 			{R"((atanh 0.5))", R"(0.5493061443340549)", R"(0.54930614433405\d+)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.001;
 		return d;
 	}();
 
@@ -2174,7 +2175,7 @@ R"&(\[\s*
 			{R"((erf 0.5))", R"(0.5204998778130465)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -2187,7 +2188,7 @@ R"&(\[\s*
 			{R"((tgamma 0.5))", R"(1.772453850905516)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -2200,7 +2201,7 @@ R"&(\[\s*
 			{R"((lgamma 0.5))", R"(0.5723649429247001)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -2226,7 +2227,7 @@ R"&(\[\s*
 			{R"((pow 0.5 2))", R"(0.25)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -2239,7 +2240,7 @@ R"&(\[\s*
 			{R"((abs -0.5))", R"(0.5)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 3.0;
 		return d;
 	}();
 
@@ -2256,7 +2257,7 @@ R"&(\[\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 4.0;
 		return d;
 	}();
 
@@ -2272,7 +2273,7 @@ R"&(\[\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 4.0;
 		return d;
 	}();
 
@@ -2373,7 +2374,7 @@ R"&(\[\s*
 })"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 1.5;
 		return d;
 	}();
 
@@ -2460,7 +2461,7 @@ R"&(\[\s*
 ))&", R"(1)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -2523,7 +2524,7 @@ R"&(\[\s*
 ))&", R"(1.1666666666666667)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -2584,7 +2585,7 @@ R"&(\[\s*
 ))&", R"(1.5714285714285714)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 3.5;
 		return d;
 	}();
 
@@ -3395,7 +3396,7 @@ R"&(\[\s*
 			{R"&((first ""))&", R"((null))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 35.0;
 		return d;
 	}();
 
@@ -3585,7 +3586,7 @@ R"&(\[\s*
 			{R"&((tail ""))&", R"((null))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 5.0;
 		return d;
 	}();
 
@@ -3607,7 +3608,7 @@ R"&(\[\s*
 			{R"&((last ""))&", R"((null))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 23.0;
 		return d;
 	}();
 
@@ -3798,7 +3799,7 @@ R"&(^\s*\{\s*
 
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 11.0;
 		return d;
 	}();
 
@@ -3857,7 +3858,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 33.0;
 		return d;
 	}();
 
@@ -3885,7 +3886,7 @@ R"&(^\s*\{\s*
 			{R"&((size "hello"))&", R"(5)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 76.0;
 		return d;
 	}();
 
@@ -3944,7 +3945,7 @@ R"&(^\s*\{\s*
 			});
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 9.0;
 		return d;
 	}();
 
@@ -4200,7 +4201,7 @@ R"&(^\s*\{\s*
 			});
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 69.0;
 		return d;
 	}();
 
@@ -4324,7 +4325,7 @@ R"&(^\s*\{\s*
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 28.0;
 		return d;
 	}();
 
@@ -4488,7 +4489,7 @@ R"&(^\s*\{\s*
 			});
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 4.0;
 		return d;
 	}();
 
@@ -4522,7 +4523,7 @@ R"&(^\s*\{\s*
 			});
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 1.5;
 		return d;
 	}();
 
@@ -4548,7 +4549,7 @@ R"&(^\s*\{\s*
 ))&", R"(10)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 22.0;
 		return d;
 	}();
 
@@ -4563,7 +4564,7 @@ R"&(^\s*\{\s*
 ))&", R"([5 4 3 2 1])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -4760,7 +4761,7 @@ R"&(^\s*\{\s*
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 5.0;
 		return d;
 	}();
 
@@ -4824,7 +4825,7 @@ R"&(^\s*\{\s*
 ))&", R"([0 1 2 3])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 22.0;
 		return d;
 	}();
 
@@ -4945,7 +4946,7 @@ R"&(^\s*\{\s*
 ])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 16.0;
 		return d;
 	}();
 
@@ -5009,7 +5010,7 @@ R"&(^\s*\{\s*
 ))&", R"(.false)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 36.0;
 		return d;
 	}();
 
@@ -5079,7 +5080,7 @@ R"&(^\s*\{\s*
 			{R"&((contains_value "abc\r\n123" "(.|\r)*\n.*"))&", R"(.true)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 13.5;
 		return d;
 	}();
 
@@ -5188,7 +5189,7 @@ R"&(^\s*\{\s*
 ))&", R"([])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 12.0;
 		return d;
 	}();
 
@@ -5279,7 +5280,7 @@ R"&(^\s*\{\s*
 ))&", R"([0 1 2 3 4 5])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 5.0;
 		return d;
 	}();
 
@@ -5306,7 +5307,7 @@ R"&(^\s*\{\s*
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 8.0;
 		return d;
 	}();
 
@@ -5368,7 +5369,7 @@ R"&(^\s*\{\s*
 		d.newTargetScope = true;
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 32.0;
 		return d;
 	}();
 
@@ -5389,7 +5390,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 14.0;
 		return d;
 	}();
 
@@ -5405,7 +5406,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 38.0;
 		return d;
 	}();
 
@@ -5424,7 +5425,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 23.0;
 		return d;
 	}();
 
@@ -5442,7 +5443,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -5458,7 +5459,7 @@ R"&(^\s*\{\s*
 			{R"&((not ""))&", R"(.true)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 22.0;
 		return d;
 	}();
 
@@ -5481,7 +5482,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 73.5;
 		return d;
 	}();
 
@@ -5510,7 +5511,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 32.0;
 		return d;
 	}();
 
@@ -5528,7 +5529,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 13.0;
 		return d;
 	}();
 
@@ -5548,7 +5549,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 4.0;
 		return d;
 	}();
 
@@ -5566,7 +5567,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 19.0;
 		return d;
 	}();
 
@@ -5586,7 +5587,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 4.0;
 		return d;
 	}();
 
@@ -5602,7 +5603,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 5.0;
 		return d;
 	}();
 
@@ -5655,7 +5656,7 @@ R"&(^\s*\{\s*
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 142.5;
 		return d;
 	}();
 
@@ -5672,7 +5673,7 @@ R"&(^\s*\{\s*
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 852.0;
 		return d;
 	}();
 
@@ -5720,7 +5721,7 @@ R"&(^\s*\{\s*
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 5.0;
 		return d;
 	}();
 
@@ -5742,7 +5743,7 @@ R"&(^\s*\{\s*
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 621.0;
 		return d;
 	}();
 
@@ -5757,7 +5758,7 @@ R"&(^\s*\{\s*
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 130.0;
 		return d;
 	}();
 
@@ -5777,7 +5778,7 @@ R"&(^\s*\{\s*
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 1085.0;
 		return d;
 	}();
 
@@ -5792,7 +5793,7 @@ R"&(^\s*\{\s*
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 949.0;
 		return d;
 	}();
 
@@ -5810,7 +5811,7 @@ R"&(^\s*\{\s*
 			{R"&((lambda foo))&", R"(foo)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2981.0;
 		return d;
 	}();
 
@@ -5827,7 +5828,7 @@ R"&(^\s*\{\s*
 ))&", R"((+))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -5845,7 +5846,7 @@ R"&(^\s*\{\s*
 			{R"&((get_type_string "hello"))&", R"("string")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -5902,7 +5903,7 @@ R"&(^\s*\{\s*
 ))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -6087,7 +6088,7 @@ R"&(^\s*\{\s*
 			{R"&((format .infinity "number" "time:%I:%M:%S%p"))&", R"("12:00:00AM")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 3.0;
 		return d;
 	}();
 
@@ -6107,7 +6108,7 @@ R"&(^\s*\{\s*
 ))&", R"("annotation line 1\r\nannotation line 2")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	}();
 
@@ -6132,7 +6133,7 @@ R"&(^\s*\{\s*
 ))&", R"("#[\"labelD\" \"labelE\"]\r\n.true\r\n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -6152,7 +6153,7 @@ R"&(^\s*\{\s*
 ))&", R"("comment line 1\r\ncomment line 2")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -6177,7 +6178,7 @@ R"&(^\s*\{\s*
 ))&", R"("#[\"labelD\" \"labelE\"]\r\n.true\r\n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -6207,7 +6208,7 @@ R"&(^\s*\{\s*
 ))&", R"(.true)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -6245,7 +6246,7 @@ R"&(^\s*\{\s*
 ))&", R"(";complex test\r\n#some annotation\r\n||{a \"hello\" b 4}\r\n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -6269,7 +6270,7 @@ R"&(^\s*\{\s*
 ))&", R"(.true)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2;
 		return d;
 	}();
 
@@ -6292,7 +6293,7 @@ R"&(^\s*\{\s*
 3)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -6329,7 +6330,7 @@ R"&(^\s*\{\s*
 			{R"&((explode "abcdefghi" 4))&", R"(["abcd" "efgh" "i"])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -6351,7 +6352,7 @@ R"&(^\s*\{\s*
 			{R"&((split "abc de fghij" " de " (null) 4))&", R"(["abc de fghij"])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -6417,7 +6418,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 19.0;
 		return d;
 	}();
 
@@ -6450,7 +6451,7 @@ R"&(^\s*\{\s*
 ))&", R"("valid signature: .true\n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -6483,7 +6484,7 @@ R"&(^\s*\{\s*
 ))&", R"("valid signature: .true\n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -6513,7 +6514,7 @@ R"&(^\s*\{\s*
 ))&", R"("decrypted: \n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -6543,7 +6544,7 @@ R"&(^\s*\{\s*
 ))&", R"("decrypted: \n")"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -6566,7 +6567,7 @@ R"&(^\s*\{\s*
 		d.permissions = ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 76.0;
 		return d;
 	}();
 
@@ -6587,7 +6588,7 @@ R"&(^\s*\{\s*
 ))&", R"(10)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -6679,7 +6680,7 @@ R"&(^\s*\{\s*
 			".*"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	}();
 
@@ -6783,7 +6784,7 @@ R"&(^\s*\{\s*
 ))&", R"(3.125)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -6862,7 +6863,7 @@ R"&(^\s*\{\s*
 ))&", R"(1)"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -7026,7 +7027,7 @@ R"&(^\s*\{\s*
 ))&", R"([])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 1;
 		return d;
 	}();
 
@@ -7221,7 +7222,7 @@ R"&(^\s*\{\s*
 ])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 1;
 		return d;
 	}();
 
@@ -7562,7 +7563,7 @@ R"&(^\s*\{\s*
 ])"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -7927,7 +7928,7 @@ R"&(^\s*\{\s*
 			".*" }
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -7967,7 +7968,7 @@ R"&(^\s*\{\s*
 ))&", R"(67)", "", R"((destroy_entities "Entity1"))"}
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -8023,7 +8024,7 @@ R"&(^\s*\{\s*
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -8126,7 +8127,7 @@ R"&(^\s*\{\s*
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	}();
 
@@ -8205,7 +8206,7 @@ R"&(^\s*\{\s*
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -8287,7 +8288,7 @@ R"&(^\s*\{\s*
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -8371,7 +8372,7 @@ R"&(^\s*\{\s*
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -8455,7 +8456,7 @@ R"&(^\s*\{\s*
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -8602,7 +8603,7 @@ R"&(^\s*\{\s*
 		});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -8691,7 +8692,7 @@ R"&(^\s*\{\s*
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	}();
 
@@ -8799,7 +8800,7 @@ R"&(^\s*\{\s*
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -8907,7 +8908,7 @@ R"&(^\s*\{\s*
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -8929,7 +8930,7 @@ R"&(^\s*\{\s*
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -8957,7 +8958,7 @@ R"&(^\s*\{\s*
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	}();
 
@@ -8984,7 +8985,7 @@ R"&(^\s*\{\s*
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -9045,7 +9046,7 @@ R"&(^\s*\{\s*
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -9075,7 +9076,7 @@ R"&(^\s*\{\s*
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	}();
 
@@ -9107,7 +9108,7 @@ R"&(^\s*\{\s*
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.75;
 		return d;
 	}();
 
@@ -9183,7 +9184,7 @@ R"&(^\s*\{\s*
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -9240,7 +9241,7 @@ R"&(^\s*\{\s*
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	}();
 
@@ -9340,7 +9341,7 @@ R"&(^\s*\{\s*
 			});
 		d.permissions = ExecutionPermissions::Permission::LOAD;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 15.0;
 		return d;
 	}();
 
@@ -9433,7 +9434,7 @@ R"&(^\s*\{\s*
 		d.permissions = ExecutionPermissions::Permission::LOAD;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 1.25;
 		return d;
 	}();
 
@@ -9627,7 +9628,7 @@ R"&(^\s*\{\s*
 		d.permissions = ExecutionPermissions::Permission::STORE;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -9656,7 +9657,7 @@ R"&(^\s*\{\s*
 			});
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -9695,7 +9696,7 @@ R"&(^\s*\{\s*
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 9.0;
 		return d;
 	}();
 
@@ -9732,7 +9733,7 @@ R"&(^\s*\{\s*
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 9.5;
 		return d;
 	}();
 
@@ -9800,7 +9801,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -9875,7 +9876,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.75;
 		return d;
 	}();
 
@@ -9908,7 +9909,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	}();
 
@@ -9941,7 +9942,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 3.5;
 		return d;
 	}();
 
@@ -9989,7 +9990,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 6.5;
 		return d;
 	}();
 
@@ -10035,7 +10036,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.2;
 		return d;
 	}();
 
@@ -10081,7 +10082,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 3.0;
 		return d;
 	}();
 
@@ -10127,7 +10128,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 3.0;
 		return d;
 	}();
 
@@ -10173,7 +10174,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -10219,7 +10220,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	}();
 
@@ -10271,7 +10272,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -10323,7 +10324,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -10465,7 +10466,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -10503,7 +10504,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	}();
 
@@ -10545,7 +10546,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -10621,7 +10622,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -10666,7 +10667,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.3;
 		return d;
 	}();
 
@@ -10708,7 +10709,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -10800,7 +10801,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -10839,7 +10840,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -10895,7 +10896,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -10977,7 +10978,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 3.5;
 		return d;
 	}();
 
@@ -11036,7 +11037,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -11171,7 +11172,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	}();
 
@@ -11231,7 +11232,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	}();
 
@@ -11366,7 +11367,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -11466,7 +11467,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -11535,7 +11536,7 @@ R"&(^\s*\{\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -11558,7 +11559,7 @@ R"&(^\s*\{\s*
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	}();
 
@@ -11591,7 +11592,7 @@ R"&(^\s*\{\s*
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 17.5;
 		return d;
 	}();
 
@@ -11619,7 +11620,7 @@ R"&(^\s*\{\s*
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 5.0;
 		return d;
 	}();
 
@@ -11652,7 +11653,7 @@ R"&(^\s*\{\s*
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 
@@ -11690,7 +11691,7 @@ R"&(^\s*\{\s*
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 13.5;
 		return d;
 	}();
 
@@ -11749,7 +11750,7 @@ R"&(^\s*\{\s*
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 84.5;
 		return d;
 	}();
 
@@ -11817,7 +11818,7 @@ R"&(^\s*\{\s*
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.01;
 		return d;
 	}();
 
@@ -11846,7 +11847,7 @@ R"&(^\s*\{\s*
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	}();
 
@@ -11928,7 +11929,7 @@ R"&(^\s*\{\s*
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	}();
 

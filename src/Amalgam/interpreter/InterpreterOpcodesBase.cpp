@@ -398,6 +398,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 		opcode_attribs->SetMappedChildNode("requires_entity", evaluableNodeManager->AllocNode(od.requiresEntity));
 		opcode_attribs->SetMappedChildNode("new_scope", evaluableNodeManager->AllocNode(od.newScope));
 		opcode_attribs->SetMappedChildNode("new_target_scope", evaluableNodeManager->AllocNode(od.newTargetScope));
+		opcode_attribs->SetMappedChildNode("frequency_per_10000_opcodes", evaluableNodeManager->AllocNode(od.frequencyPer10000Opcodes));
 
 		std::string_view permissions_str;
 		switch(od.permissions)

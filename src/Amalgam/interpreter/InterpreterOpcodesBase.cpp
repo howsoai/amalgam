@@ -459,12 +459,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_MUTATION_DEFAULTS(Eval
 	if(key == "mutation_opcodes")
 	{
 		EvaluableNode *out_node = evaluableNodeManager->AllocNode(ENT_ASSOC);
-		out_node->ReserveMappedChildNodes(EvaluableNodeTreeManipulation::evaluableNodeTypeProbabilities.size());
-		for(auto &[node_type, node_prob] : EvaluableNodeTreeManipulation::evaluableNodeTypeProbabilities)
+		out_node->ReserveMappedChildNodes(NUM_VALID_ENT_OPCODES);
+		for(size_t node_type = 0;  node_type < NUM_VALID_ENT_OPCODES; node_type++)
 		{
-			EvaluableNode *num_node = evaluableNodeManager->AllocNode(node_prob);
+			EvaluableNode *num_node = evaluableNodeManager->AllocNode(_opcode_details[node_type].frequencyPer10000Opcodes);
 
-			StringInternPool::StringID node_type_sid = GetStringIdFromNodeType(node_type);
+			StringInternPool::StringID node_type_sid = GetStringIdFromNodeType(static_cast<EvaluableNodeType>(node_type));
 			out_node->SetMappedChildNode(node_type_sid, num_node);
 		}
 

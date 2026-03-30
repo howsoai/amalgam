@@ -82,28 +82,43 @@ public:
 	WeightedDiscreteRandomStreamTransform()
 	{ }
 
-	WeightedDiscreteRandomStreamTransform(const MapType &map, bool normalize = false)
+	inline WeightedDiscreteRandomStreamTransform(const MapType &map, bool normalize = false)
 	{
 		Initialize(map, normalize);
 	}
 
-	//initializes like the constructor
-	void Initialize(const MapType &map, bool normalize = false)
+	template<class KeyExtractor, class ProbExtractor>
+	WeightedDiscreteRandomStreamTransform(const MapType &map, bool normalize,
+		KeyExtractor key_extractor, ProbExtractor prob_extractor)
 	{
-		//pull out data from input
+		Initialize(map, normalize, key_extractor, prob_extractor);
+	}
+
+	template<class KeyExtractor, class ProbExtractor>
+	void Initialize(const MapType &map, bool normalize,
+		KeyExtractor key_extractor, ProbExtractor prob_extractor)
+	{
 		std::vector<double> probabilities;
 		probabilities.reserve(map.size());
 		valueTable.reserve(map.size());
 
-		//iterate over all input and grab values
 		ProbabilityAsDoubleFunctor transform_to_double;
-		for(auto &[key, prob] : map)
+
+		for(const auto &entry : map)
 		{
-			valueTable.push_back(key);
-			probabilities.push_back(transform_to_double(prob));
+			valueTable.push_back(key_extractor(entry));
+			probabilities.push_back(transform_to_double(prob_extractor(entry)));
 		}
 
 		InitializeAliasTable(probabilities, normalize);
+	}
+
+	inline void Initialize(const MapType &map, bool normalize)
+	{
+		auto default_key = [](const auto &pair) { return pair.first; };
+		auto default_prob = [](const auto &pair) { return pair.second; };
+
+		Initialize(map, normalize, default_key, default_prob);
 	}
 
 	WeightedDiscreteRandomStreamTransform(std::vector<ValueType> &values, std::vector<double> &probabilities, bool normalize = false)

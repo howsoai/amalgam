@@ -56,10 +56,6 @@ struct MergeMetricResultsParams
 	bool recursiveMatching;
 };
 
-//for random streams that are based on an EvaluableNode MappedChildNodes
-typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeBuiltInStringId, EvaluableNode::AssocType, EvaluableNodeAsDouble>
-			EvaluableNodeMappedWeightedDiscreteRandomStreamTransform;
-
 class EvaluableNodeTreeManipulation
 {
 public:
@@ -84,7 +80,7 @@ public:
 				mutation_rate(0),
 				strings(nullptr),
 				references(EvaluableNode::ReferenceAssocType()),
-				randEvaluableNodeType(&evaluableNodeTypeRandomStream),
+				randEvaluableNodeType(nullptr),
 				randMutationType(&mutationOperationTypeRandomStream)
 		{
 			this->interpreter = interpreter;
@@ -107,7 +103,6 @@ public:
 	};
 
 	static CompactHashMap<EvaluableNodeBuiltInStringId, double> mutationOperationTypeProbabilities;
-	static CompactHashMap<EvaluableNodeType, double> evaluableNodeTypeProbabilities;
 
 	//functionality to merge two nodes
 	class NodesMergeMethod : public Merger<EvaluableNode *, nullptr, EvaluableNode::AssocType>
@@ -547,9 +542,6 @@ public:
 		ReplaceStringsInTree(tree, to_replace, checked);
 	}
 
-	//returns an EvaluableNodeType based on the probabilities specified by evaluableNodeTypeRandomStream
-	static EvaluableNodeType GetRandomEvaluableNodeType(RandomStream *rs);
-
 protected:
 
 	//Evaluates commonality metric between the two nodes passed in, including labels.
@@ -574,9 +566,6 @@ protected:
 	// returns the new value, which may be n, a modification of n, or an entirely different node
 	//depth is the depth in the tree
 	static EvaluableNode *MutateNode(EvaluableNode *n, MutationParameters &mp, size_t depth);
-
-	//random stream for EvaluableNodeType, so can obtain a random type from a useful distribution
-	static MutationParameters::WeightedRandEvaluableNodeType evaluableNodeTypeRandomStream;
 
 	//Recursively creates a new tree using enm which is a copy of tree, but given a mutation_rate
 	// will create the new tree with interpreter's evaluableNodeManager

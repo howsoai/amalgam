@@ -138,13 +138,8 @@ public:
 		NEW, PARTIAL, CONDITIONAL, EXISTING, NULL_VALUE
 	};
 
-	std::string_view parameters;
-	std::string_view returns;
-	std::string_view description;
-	std::vector<AmalgamExample> examples;
-	OrderedChildNodeType orderedChildNodeType = OrderedChildNodeType::POSITION;
-	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
-	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
+	//attribute ordering here is generally ordered by operational use to improve caching,
+	//with descriptive strings at the end
 	bool potentiallyIdempotent = false;
 	bool hasSideEffects = false;
 	bool allowsConcurrency = false;
@@ -152,6 +147,15 @@ public:
 	bool newScope = false;
 	bool newTargetScope = false;
 	bool isQuery = false;
+	OrderedChildNodeType orderedChildNodeType = OrderedChildNodeType::POSITION;
+	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
+	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
+
+	std::string_view parameters;
+	std::string_view returns;
+	std::string_view description;
+	std::vector<AmalgamExample> examples;
+	double frequencyPer10000Opcodes;
 };
 
 extern std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;

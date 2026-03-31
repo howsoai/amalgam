@@ -266,6 +266,14 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 
 std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
 
+template<typename OpcodeFunction, typename OpcodeDetailsBuilder>
+OpcodeInitializer::OpcodeInitializer(EvaluableNodeType type, OpcodeFunction func, OpcodeDetailsBuilder details_builder)
+{
+	size_t index = static_cast<size_t>(type);
+	Interpreter::_opcodes[index] = func;
+	_opcode_details[index] = details_builder();
+}
+
 static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT_SYSTEM, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string command [* optional1] ... [* optionalN])";

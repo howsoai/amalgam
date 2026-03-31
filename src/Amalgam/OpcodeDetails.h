@@ -158,10 +158,11 @@ public:
 	double frequencyPer10000Opcodes = 1.0;
 };
 
+//details for every opcode, indexed by EvaluableNodeType
 extern std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
 
-
-//no-storage class to initialize storage for opcodes
+//no-storage class to initialize storage for opcodes such that all relevant
+//code and data for an opcode can be kept in the same location
 class OpcodeInitializer
 {
 public:

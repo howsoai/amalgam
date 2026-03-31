@@ -9152,7 +9152,7 @@ static OpcodeInitializer _ENT_CREATE_ENTITIES(ENT_CREATE_ENTITIES, &Interpreter:
 		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	});
-//TODO 25196: finish here down
+
 static OpcodeInitializer _ENT_CLONE_ENTITIES(ENT_CLONE_ENTITIES, &Interpreter::InterpretNode_ENT_CLONE_ENTITIES, []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path source_entity1 [id_path destination_entity1] [id_path source_entity2] [id_path destination_entity2] [...])";
@@ -9183,7 +9183,7 @@ static OpcodeInitializer _ENT_CLONE_ENTITIES(ENT_CLONE_ENTITIES, &Interpreter::I
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 0.5;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	});
 
@@ -9217,7 +9217,7 @@ static OpcodeInitializer _ENT_MOVE_ENTITIES(ENT_MOVE_ENTITIES, &Interpreter::Int
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	});
 
@@ -9240,7 +9240,7 @@ static OpcodeInitializer _ENT_DESTROY_ENTITIES(ENT_DESTROY_ENTITIES, &Interprete
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 2.0;
+		d.frequencyPer10000Opcodes = 1.5;
 		return d;
 	});
 
@@ -9340,7 +9340,7 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 			});
 		d.permissions = ExecutionPermissions::Permission::LOAD;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 15.0;
+		d.frequencyPer10000Opcodes = 8.5;
 		return d;
 	});
 
@@ -9433,7 +9433,7 @@ static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::Interpr
 		d.permissions = ExecutionPermissions::Permission::LOAD;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.25;
+		d.frequencyPer10000Opcodes = 1.0;
 		return d;
 	});
 
@@ -9534,7 +9534,7 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 		d.permissions = ExecutionPermissions::Permission::STORE;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	});
 
@@ -9627,7 +9627,7 @@ static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::Inter
 		d.permissions = ExecutionPermissions::Permission::STORE;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 0.25;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	});
 
@@ -9660,7 +9660,7 @@ static OpcodeInitializer _ENT_CONTAINS_ENTITY(ENT_CONTAINS_ENTITY, &Interpreter:
 		return d;
 	});
 
-static OpcodeInitializer _ENT_CONTAINED_ENTITIES(ENT_CONTAINED_ENTITIES, &Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES, []() {
+static OpcodeInitializer _ENT_CONTAINED_ENTITIES(ENT_CONTAINED_ENTITIES, &Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES, []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path containing_entity | query|list condition1] [query|list condition2] ...[ query|list conditionN])";
 		d.returns = R"(list of string)";
@@ -9695,11 +9695,11 @@ static OpcodeInitializer _ENT_CONTAINED_ENTITIES(ENT_CONTAINED_ENTITIES, &Interp
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 9.0;
+		d.frequencyPer10000Opcodes = 5.0;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_COMPUTE_ON_CONTAINED_ENTITIES(ENT_COMPUTE_ON_CONTAINED_ENTITIES, &Interpreter::InterpretNode_ENT_COMPUTE_ON_CONTAINED_ENTITIES, []() {
+static OpcodeInitializer _ENT_COMPUTE_ON_CONTAINED_ENTITIES(ENT_COMPUTE_ON_CONTAINED_ENTITIES, &Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES, []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path containing_entity | query|list condition1] [query|list condition2] ...[ query|list conditionN])";
 		d.returns = R"(any)";
@@ -9732,11 +9732,11 @@ static OpcodeInitializer _ENT_COMPUTE_ON_CONTAINED_ENTITIES(ENT_COMPUTE_ON_CONTA
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 9.5;
+		d.frequencyPer10000Opcodes = 5.0;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_SELECT(ENT_QUERY_SELECT, &Interpreter::InterpretNode_ENT_QUERY_SELECT, []() {
+static OpcodeInitializer _ENT_QUERY_SELECT(ENT_QUERY_SELECT, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(number num_to_select [number start_offset] [number random_seed])";
 		d.returns = R"(query)";
@@ -9804,7 +9804,7 @@ static OpcodeInitializer _ENT_QUERY_SELECT(ENT_QUERY_SELECT, &Interpreter::Inter
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_SAMPLE(ENT_QUERY_SAMPLE, &Interpreter::InterpretNode_ENT_QUERY_SAMPLE, []() {
+static OpcodeInitializer _ENT_QUERY_SAMPLE(ENT_QUERY_SAMPLE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(number num_to_select [string weight_label_name] [number random_seed])";
 		d.returns = R"(query)";
@@ -9875,11 +9875,11 @@ static OpcodeInitializer _ENT_QUERY_SAMPLE(ENT_QUERY_SAMPLE, &Interpreter::Inter
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 0.75;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_IN_ENTITY_LIST(ENT_QUERY_IN_ENTITY_LIST, &Interpreter::InterpretNode_ENT_QUERY_IN_ENTITY_LIST, []() {
+static OpcodeInitializer _ENT_QUERY_IN_ENTITY_LIST(ENT_QUERY_IN_ENTITY_LIST, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(list entity_ids)";
 		d.returns = R"(query)";
@@ -9908,11 +9908,11 @@ static OpcodeInitializer _ENT_QUERY_IN_ENTITY_LIST(ENT_QUERY_IN_ENTITY_LIST, &In
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 0.1;
+		d.frequencyPer10000Opcodes = 1.5;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_NOT_IN_ENTITY_LIST(ENT_QUERY_NOT_IN_ENTITY_LIST, &Interpreter::InterpretNode_ENT_QUERY_NOT_IN_ENTITY_LIST, []() {
+static OpcodeInitializer _ENT_QUERY_NOT_IN_ENTITY_LIST(ENT_QUERY_NOT_IN_ENTITY_LIST, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(list entity_ids)";
 		d.returns = R"(query)";
@@ -9941,11 +9941,11 @@ static OpcodeInitializer _ENT_QUERY_NOT_IN_ENTITY_LIST(ENT_QUERY_NOT_IN_ENTITY_L
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 3.5;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_EXISTS(ENT_QUERY_EXISTS, &Interpreter::InterpretNode_ENT_QUERY_EXISTS, []() {
+static OpcodeInitializer _ENT_QUERY_EXISTS(ENT_QUERY_EXISTS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name)";
 		d.returns = R"(query)";
@@ -9989,11 +9989,11 @@ static OpcodeInitializer _ENT_QUERY_EXISTS(ENT_QUERY_EXISTS, &Interpreter::Inter
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 6.5;
+		d.frequencyPer10000Opcodes = 3.5;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_NOT_EXISTS(ENT_QUERY_NOT_EXISTS, &Interpreter::InterpretNode_ENT_QUERY_NOT_EXISTS, []() {
+static OpcodeInitializer _ENT_QUERY_NOT_EXISTS(ENT_QUERY_NOT_EXISTS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name)";
 		d.returns = R"(query)";
@@ -10035,11 +10035,11 @@ static OpcodeInitializer _ENT_QUERY_NOT_EXISTS(ENT_QUERY_NOT_EXISTS, &Interprete
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 0.2;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_EQUALS(ENT_QUERY_EQUALS, &Interpreter::InterpretNode_ENT_QUERY_EQUALS, []() {
+static OpcodeInitializer _ENT_QUERY_EQUALS(ENT_QUERY_EQUALS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * value)";
 		d.returns = R"(query)";
@@ -10081,11 +10081,11 @@ static OpcodeInitializer _ENT_QUERY_EQUALS(ENT_QUERY_EQUALS, &Interpreter::Inter
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 3.0;
+		d.frequencyPer10000Opcodes = 1.5;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_NOT_EQUALS(ENT_QUERY_NOT_EQUALS, &Interpreter::InterpretNode_ENT_QUERY_NOT_EQUALS, []() {
+static OpcodeInitializer _ENT_QUERY_NOT_EQUALS(ENT_QUERY_NOT_EQUALS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * value)";
 		d.returns = R"(query)";
@@ -10127,11 +10127,11 @@ static OpcodeInitializer _ENT_QUERY_NOT_EQUALS(ENT_QUERY_NOT_EQUALS, &Interprete
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 3.0;
+		d.frequencyPer10000Opcodes = 1.5;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_BETWEEN(ENT_QUERY_BETWEEN, &Interpreter::InterpretNode_ENT_QUERY_BETWEEN, []() {
+static OpcodeInitializer _ENT_QUERY_BETWEEN(ENT_QUERY_BETWEEN, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * lower_bound * upper_bound)";
 		d.returns = R"(query)";
@@ -10173,11 +10173,11 @@ static OpcodeInitializer _ENT_QUERY_BETWEEN(ENT_QUERY_BETWEEN, &Interpreter::Int
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 0.25;
+		d.frequencyPer10000Opcodes = 0.1;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_NOT_BETWEEN(ENT_QUERY_NOT_BETWEEN, &Interpreter::InterpretNode_ENT_QUERY_NOT_BETWEEN, []() {
+static OpcodeInitializer _ENT_QUERY_NOT_BETWEEN(ENT_QUERY_NOT_BETWEEN, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * lower_bound * upper_bound)";
 		d.returns = R"(query)";
@@ -10219,11 +10219,11 @@ static OpcodeInitializer _ENT_QUERY_NOT_BETWEEN(ENT_QUERY_NOT_BETWEEN, &Interpre
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 0.1;
+		d.frequencyPer10000Opcodes = 0.05;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_AMONG(ENT_QUERY_AMONG, &Interpreter::InterpretNode_ENT_QUERY_AMONG, []() {
+static OpcodeInitializer _ENT_QUERY_AMONG(ENT_QUERY_AMONG, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name list values)";
 		d.returns = R"(query)";
@@ -10271,11 +10271,11 @@ static OpcodeInitializer _ENT_QUERY_AMONG(ENT_QUERY_AMONG, &Interpreter::Interpr
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 0.5;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_NOT_AMONG(ENT_QUERY_NOT_AMONG, &Interpreter::InterpretNode_ENT_QUERY_NOT_AMONG, []() {
+static OpcodeInitializer _ENT_QUERY_NOT_AMONG(ENT_QUERY_NOT_AMONG, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name list values)";
 		d.returns = R"(query)";
@@ -10327,7 +10327,7 @@ static OpcodeInitializer _ENT_QUERY_NOT_AMONG(ENT_QUERY_NOT_AMONG, &Interpreter:
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_MAX(ENT_QUERY_MAX, &Interpreter::InterpretNode_ENT_QUERY_MAX, []() {
+static OpcodeInitializer _ENT_QUERY_MAX(ENT_QUERY_MAX, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number num_entities] [bool numeric])";
 		d.returns = R"(query)";
@@ -10376,11 +10376,11 @@ static OpcodeInitializer _ENT_QUERY_MAX(ENT_QUERY_MAX, &Interpreter::InterpretNo
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_MIN(ENT_QUERY_MIN, &Interpreter::InterpretNode_ENT_QUERY_MIN, []() {
+static OpcodeInitializer _ENT_QUERY_MIN(ENT_QUERY_MIN, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number entities_returned] [bool numeric])";
 		d.returns = R"(query)";
@@ -10429,11 +10429,11 @@ static OpcodeInitializer _ENT_QUERY_MIN(ENT_QUERY_MIN, &Interpreter::InterpretNo
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_SUM(ENT_QUERY_SUM, &Interpreter::InterpretNode_ENT_QUERY_SUM, []() {
+static OpcodeInitializer _ENT_QUERY_SUM(ENT_QUERY_SUM, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [string weight_label_name])";
 		d.returns = R"(query)";
@@ -10465,11 +10465,11 @@ static OpcodeInitializer _ENT_QUERY_SUM(ENT_QUERY_SUM, &Interpreter::InterpretNo
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 0.5;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_MODE(ENT_QUERY_MODE, &Interpreter::InterpretNode_ENT_QUERY_MODE, []() {
+static OpcodeInitializer _ENT_QUERY_MODE(ENT_QUERY_MODE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [string weight_label_name])";
 		d.returns = R"(query)";
@@ -10507,7 +10507,7 @@ static OpcodeInitializer _ENT_QUERY_MODE(ENT_QUERY_MODE, &Interpreter::Interpret
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_QUANTILE(ENT_QUERY_QUANTILE, &Interpreter::InterpretNode_ENT_QUERY_QUANTILE, []() {
+static OpcodeInitializer _ENT_QUERY_QUANTILE(ENT_QUERY_QUANTILE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number q] [string weight_label_name])";
 		d.returns = R"(query)";
@@ -10549,7 +10549,7 @@ static OpcodeInitializer _ENT_QUERY_QUANTILE(ENT_QUERY_QUANTILE, &Interpreter::I
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_GENERALIZED_MEAN(ENT_QUERY_GENERALIZED_MEAN, &Interpreter::InterpretNode_ENT_QUERY_GENERALIZED_MEAN, []() {
+static OpcodeInitializer _ENT_QUERY_GENERALIZED_MEAN(ENT_QUERY_GENERALIZED_MEAN, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number p] [string weight_label_name] [number center] [bool calculate_moment] [bool absolute_value])";
 		d.returns = R"(query)";
@@ -10621,11 +10621,11 @@ static OpcodeInitializer _ENT_QUERY_GENERALIZED_MEAN(ENT_QUERY_GENERALIZED_MEAN,
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 0.5;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_MIN_DIFFERENCE(ENT_QUERY_MIN_DIFFERENCE, &Interpreter::InterpretNode_ENT_QUERY_MIN_DIFFERENCE, []() {
+static OpcodeInitializer _ENT_QUERY_MIN_DIFFERENCE(ENT_QUERY_MIN_DIFFERENCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number cyclic_range] [bool include_zero_difference])";
 		d.returns = R"(query)";
@@ -10666,11 +10666,11 @@ static OpcodeInitializer _ENT_QUERY_MIN_DIFFERENCE(ENT_QUERY_MIN_DIFFERENCE, &In
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 0.3;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_MAX_DIFFERENCE(ENT_QUERY_MAX_DIFFERENCE, &Interpreter::InterpretNode_ENT_QUERY_MAX_DIFFERENCE, []() {
+static OpcodeInitializer _ENT_QUERY_MAX_DIFFERENCE(ENT_QUERY_MAX_DIFFERENCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [number cyclic_range])";
 		d.returns = R"(query)";
@@ -10708,11 +10708,11 @@ static OpcodeInitializer _ENT_QUERY_MAX_DIFFERENCE(ENT_QUERY_MAX_DIFFERENCE, &In
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 0.5;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_VALUE_MASSES(ENT_QUERY_VALUE_MASSES, &Interpreter::InterpretNode_ENT_QUERY_VALUE_MASSES, []() {
+static OpcodeInitializer _ENT_QUERY_VALUE_MASSES(ENT_QUERY_VALUE_MASSES, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name [string weight_label_name])";
 		d.returns = R"(query)";
@@ -10761,11 +10761,11 @@ static OpcodeInitializer _ENT_QUERY_VALUE_MASSES(ENT_QUERY_VALUE_MASSES, &Interp
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 1.0;
+		d.frequencyPer10000Opcodes = 0.5;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_LESS_OR_EQUAL_TO(ENT_QUERY_LESS_OR_EQUAL_TO, &Interpreter::InterpretNode_ENT_QUERY_LESS_OR_EQUAL_TO, []() {
+static OpcodeInitializer _ENT_QUERY_LESS_OR_EQUAL_TO(ENT_QUERY_LESS_OR_EQUAL_TO, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * max_value)";
 		d.returns = R"(query)";
@@ -10800,11 +10800,11 @@ static OpcodeInitializer _ENT_QUERY_LESS_OR_EQUAL_TO(ENT_QUERY_LESS_OR_EQUAL_TO,
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 0.5;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_GREATER_OR_EQUAL_TO(ENT_QUERY_GREATER_OR_EQUAL_TO, &Interpreter::InterpretNode_ENT_QUERY_GREATER_OR_EQUAL_TO, []() {
+static OpcodeInitializer _ENT_QUERY_GREATER_OR_EQUAL_TO(ENT_QUERY_GREATER_OR_EQUAL_TO, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string label_name * min_value)";
 		d.returns = R"(query)";
@@ -10839,11 +10839,11 @@ static OpcodeInitializer _ENT_QUERY_GREATER_OR_EQUAL_TO(ENT_QUERY_GREATER_OR_EQU
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 0.5;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_WITHIN_GENERALIZED_DISTANCE(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE, &Interpreter::InterpretNode_ENT_QUERY_WITHIN_GENERALIZED_DISTANCE, []() {
+static OpcodeInitializer _ENT_QUERY_WITHIN_GENERALIZED_DISTANCE(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(number max_distance list feature_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
 		d.returns = R"(query)";
@@ -10899,7 +10899,7 @@ static OpcodeInitializer _ENT_QUERY_WITHIN_GENERALIZED_DISTANCE(ENT_QUERY_WITHIN
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_NEAREST_GENERALIZED_DISTANCE(ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, &Interpreter::InterpretNode_ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, []() {
+static OpcodeInitializer _ENT_QUERY_NEAREST_GENERALIZED_DISTANCE(ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number selection_bandwidth list feature_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
 		d.returns = R"(query)";
@@ -10977,11 +10977,11 @@ static OpcodeInitializer _ENT_QUERY_NEAREST_GENERALIZED_DISTANCE(ENT_QUERY_NEARE
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
-		d.frequencyPer10000Opcodes = 3.5;
+		d.frequencyPer10000Opcodes = 2.0;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_DISTANCE_CONTRIBUTIONS, &Interpreter::InterpretNode_ENT_QUERY_DISTANCE_CONTRIBUTIONS, []() {
+static OpcodeInitializer _ENT_QUERY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_DISTANCE_CONTRIBUTIONS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number selection_bandwidth list feature_labels list axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
 		d.returns = R"(query)";
@@ -11040,7 +11040,7 @@ static OpcodeInitializer _ENT_QUERY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_DISTANCE_CO
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_ENTITY_CONVICTIONS(ENT_QUERY_ENTITY_CONVICTIONS, &Interpreter::InterpretNode_ENT_QUERY_ENTITY_CONVICTIONS, []() {
+static OpcodeInitializer _ENT_QUERY_ENTITY_CONVICTIONS(ENT_QUERY_ENTITY_CONVICTIONS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list])";
 		d.returns = R"(query)";
@@ -11175,7 +11175,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CONVICTIONS(ENT_QUERY_ENTITY_CONVICTI
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE(ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE, &Interpreter::InterpretNode_ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE, []() {
+static OpcodeInitializer _ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE(ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal])";
 		d.returns = R"(query)";
@@ -11235,7 +11235,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE(ENT_QUERY_ENTITY_
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS, &Interpreter::InterpretNode_ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS, []() {
+static OpcodeInitializer _ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
 		d.returns = R"(query)";
@@ -11370,7 +11370,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_ENTI
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_ENTITY_KL_DIVERGENCES(ENT_QUERY_ENTITY_KL_DIVERGENCES, &Interpreter::InterpretNode_ENT_QUERY_ENTITY_KL_DIVERGENCES, []() {
+static OpcodeInitializer _ENT_QUERY_ENTITY_KL_DIVERGENCES(ENT_QUERY_ENTITY_KL_DIVERGENCES, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list])";
 		d.returns = R"(query)";
@@ -11470,7 +11470,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_KL_DIVERGENCES(ENT_QUERY_ENTITY_KL_DI
 		return d;
 	});
 
-static OpcodeInitializer _ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS, &Interpreter::InterpretNode_ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS, []() {
+static OpcodeInitializer _ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 		OpcodeDetails d;
 		d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
 		d.returns = R"(query)";
@@ -11558,11 +11558,11 @@ static OpcodeInitializer _ENT_CONTAINS_LABEL(ENT_CONTAINS_LABEL, &Interpreter::I
 			});
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 0.5;
+		d.frequencyPer10000Opcodes = 0.25;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_ASSIGN_TO_ENTITIES(ENT_ASSIGN_TO_ENTITIES, &Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES, []() {
+static OpcodeInitializer _ENT_ASSIGN_TO_ENTITIES(ENT_ASSIGN_TO_ENTITIES, &Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES, []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity1] assoc label_value_pairs1 [id_path entity2] [assoc label_value_pairs2] [...])";
 		d.returns = R"(bool)";
@@ -11591,11 +11591,11 @@ static OpcodeInitializer _ENT_ASSIGN_TO_ENTITIES(ENT_ASSIGN_TO_ENTITIES, &Interp
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 17.5;
+		d.frequencyPer10000Opcodes = 10.0;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_ACCUM_TO_ENTITIES(ENT_ACCUM_TO_ENTITIES, &Interpreter::InterpretNode_ENT_ACCUM_TO_ENTITIES, []() {
+static OpcodeInitializer _ENT_ACCUM_TO_ENTITIES(ENT_ACCUM_TO_ENTITIES, &Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES, []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity1] assoc label_value_pairs1 [id_path entity2] [assoc label_value_pairs2] [...])";
 		d.returns = R"(bool)";
@@ -11619,11 +11619,11 @@ static OpcodeInitializer _ENT_ACCUM_TO_ENTITIES(ENT_ACCUM_TO_ENTITIES, &Interpre
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 5.0;
+		d.frequencyPer10000Opcodes = 3.0;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_REMOVE_FROM_ENTITIES(ENT_REMOVE_FROM_ENTITIES, &Interpreter::InterpretNode_ENT_REMOVE_FROM_ENTITIES, []() {
+static OpcodeInitializer _ENT_REMOVE_FROM_ENTITIES(ENT_REMOVE_FROM_ENTITIES, &Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES, []() {
 		OpcodeDetails d;
 		d.parameters = R"([id_path entity1] string|list label_names1 [id_path entity2] [list string|label_names2] [...])";
 		d.returns = R"(bool)";
@@ -11690,11 +11690,11 @@ static OpcodeInitializer _ENT_RETRIEVE_FROM_ENTITY(ENT_RETRIEVE_FROM_ENTITY, &In
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 13.5;
+		d.frequencyPer10000Opcodes = 7.5;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::InterpretNode_ENT_CALL_ENTITY, []() {
+static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY, []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings])";
 		d.returns = R"(any)";
@@ -11749,11 +11749,11 @@ static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::Interpr
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 84.5;
+		d.frequencyPer10000Opcodes = 48.0;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_CALL_ENTITY_GET_CHANGES(ENT_CALL_ENTITY_GET_CHANGES, &Interpreter::InterpretNode_ENT_CALL_ENTITY_GET_CHANGES, []() {
+static OpcodeInitializer _ENT_CALL_ENTITY_GET_CHANGES(ENT_CALL_ENTITY_GET_CHANGES, &Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY, []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings])";
 		d.returns = R"(list of any1 any2)";
@@ -11821,7 +11821,7 @@ static OpcodeInitializer _ENT_CALL_ENTITY_GET_CHANGES(ENT_CALL_ENTITY_GET_CHANGE
 		return d;
 	});
 
-static OpcodeInitializer _ENT_CALL_ON_ENTITY(ENT_CALL_ON_ENTITY, &Interpreter::InterpretNode_ENT_CALL_ON_ENTITY, []() {
+static OpcodeInitializer _ENT_CALL_ON_ENTITY(ENT_CALL_ON_ENTITY, &Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY, []() {
 		OpcodeDetails d;
 		d.parameters = R"(id_path entity * code [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings])";
 		d.returns = R"(any)";
@@ -11932,4 +11932,4 @@ static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::I
 		return d;
 	});
 
-std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details = BuildAmalgamExamplesArrayForOpcodes();
+std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;

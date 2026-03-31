@@ -161,6 +161,9 @@ public:
 //details for every opcode, indexed by EvaluableNodeType
 extern std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
 
+//forward declaration
+class Interpreter;
+
 //no-storage class to initialize storage for opcodes such that all relevant
 //code and data for an opcode can be kept in the same location
 class OpcodeInitializer

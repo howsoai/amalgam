@@ -79,7 +79,7 @@ class WeightedDiscreteRandomStreamTransform
 {
 public:
 	
-	WeightedDiscreteRandomStreamTransform()
+	inline WeightedDiscreteRandomStreamTransform()
 	{ }
 
 	inline WeightedDiscreteRandomStreamTransform(const MapType &map, bool normalize = false)
@@ -88,14 +88,14 @@ public:
 	}
 
 	template<class Container, class KeyExtractor, class ProbExtractor>
-	WeightedDiscreteRandomStreamTransform(Container &map, bool normalize,
+	inline WeightedDiscreteRandomStreamTransform(Container &map, bool normalize,
 		KeyExtractor key_extractor, ProbExtractor prob_extractor)
 	{
 		Initialize(map, normalize, key_extractor, prob_extractor);
 	}
 
 	template<class Container, class KeyExtractor, class ProbExtractor>
-	void Initialize(Container &map, bool normalize,
+	inline void Initialize(Container &map, bool normalize,
 		KeyExtractor key_extractor, ProbExtractor prob_extractor)
 	{
 		std::vector<double> probabilities;
@@ -104,9 +104,11 @@ public:
 
 		ProbabilityAsDoubleFunctor transform_to_double;
 
+		//keep track of the index in case it is needed
+		std::size_t i = 0;
 		for(auto &entry : map)
 		{
-			valueTable.emplace_back(key_extractor(entry));
+			valueTable.emplace_back(key_extractor(entry, i++));
 			probabilities.emplace_back(transform_to_double(prob_extractor(entry)));
 		}
 
@@ -115,13 +117,14 @@ public:
 
 	inline void Initialize(const MapType &map, bool normalize)
 	{
-		auto default_key = [](const auto &pair) { return pair.first; };
+		auto default_key = [](const auto &pair, size_t i) { return pair.first; };
 		auto default_prob = [](const auto &pair) { return pair.second; };
 
 		Initialize(map, normalize, default_key, default_prob);
 	}
 
-	WeightedDiscreteRandomStreamTransform(std::vector<ValueType> &values, std::vector<double> &probabilities, bool normalize = false)
+	inline WeightedDiscreteRandomStreamTransform(
+		std::vector<ValueType> &values, std::vector<double> &probabilities, bool normalize = false)
 	{
 		valueTable = values;
 		InitializeAliasTable(probabilities, normalize);
@@ -187,7 +190,7 @@ public:
 	}
 
 	//returns true if initialized
-	bool IsInitialized()
+	inline bool IsInitialized()
 	{
 		return aliasTable.size() > 0;
 	}

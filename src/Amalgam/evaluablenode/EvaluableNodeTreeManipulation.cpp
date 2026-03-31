@@ -520,14 +520,12 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 	EvaluableNode::ReferenceSetType checked;
 	GetStringsFromTree(tree, strings, checked);
 
-	//TODO 25196: need to revisit this to have it check during runtime instead of load time before _opcode_details is populated
+	//initializes on first call, 
 	static MutationParameters::WeightedRandEvaluableNodeType default_operation_type_wrs(
 		_opcode_details, true,
-		[](auto &e)
+		[](auto &e, size_t i)
 		{
-			using It = decltype(begin(_opcode_details));
-			It it(&e);
-			return static_cast<EvaluableNodeType>(std::distance(begin(_opcode_details), it));
+			return static_cast<EvaluableNodeType>(i);
 		},
 		[](auto &e) { return e.frequencyPer10000Opcodes; }
 	);

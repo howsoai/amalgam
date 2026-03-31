@@ -2,6 +2,7 @@
 #include "Entity.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeManagement.h"
+#include "Interpreter.h"
 #include "OpcodeDetails.h"
 
 //system headers:
@@ -263,11 +264,9 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 	return test_succeeded;
 }
 
-static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOpcodes()
-{
-	std::array<OpcodeDetails, NUM_ENT_OPCODES> arr{};
+static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOpcodes;
 
-	arr[static_cast<std::size_t>(ENT_SYSTEM)] = []() {
+static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT_SYSTEM, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string command [* optional1] ... [* optionalN])";
 		d.returns = R"(any)";
@@ -298,7 +297,9 @@ static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOp
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 3.0;
 		return d;
-	}();
+	});
+
+//TODO 25196: finish here downward
 
 	arr[static_cast<std::size_t>(ENT_HELP)] = []() {
 		OpcodeDetails d;

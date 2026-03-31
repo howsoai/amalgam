@@ -285,19 +285,6 @@ __forceinline constexpr bool IsEvaluableNodeTypeValid(EvaluableNodeType t)
 //covers ENBISI_NOT_A_STRING and ENBISI_EMPTY_STRING
 constexpr size_t NUM_ENBISI_SPECIAL_STRING_IDS = 2;
 
-//no-storage class to initialize storage for opcodes
-class OpcodeInitializer
-{
-public:
-
-	//TODO 25196: add OpcodeDetails to the initializer
-	template<typename OpcodeFunction>
-	inline OpcodeInitializer(EvaluableNodeType type, OpcodeFunction func)
-	{
-		Interpreter::_opcodes[static_cast<size_t>(type)] = func;
-	}
-};
-
 //ids of built-in strings
 enum EvaluableNodeBuiltInStringId
 {

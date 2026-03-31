@@ -160,6 +160,21 @@ public:
 
 extern std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
 
+
+//no-storage class to initialize storage for opcodes
+class OpcodeInitializer
+{
+public:
+
+	template<typename OpcodeFunction, typename OpcodeDetailsBuilder>
+	inline OpcodeInitializer(EvaluableNodeType type, OpcodeFunction func, OpcodeDetailsBuilder details_builder)
+	{
+		size_t index = static_cast<size_t>(type);
+		Interpreter::_opcodes[index] = func;
+		_opcode_details[index] = details_builder();
+	}
+};
+
 //returns the type of structure that the ordered child nodes have for a given t
 __forceinline OpcodeDetails::OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t)
 {

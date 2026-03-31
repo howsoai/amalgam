@@ -5,6 +5,7 @@
 #include "EntityQueries.h"
 #include "EntityQueryBuilder.h"
 #include "EvaluableNodeTreeFunctions.h"
+#include "OpcodeDetails.h"
 #include "PerformanceProfiler.h"
 #include "StringInternPool.h"
 
@@ -15,7 +16,6 @@
 std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter::_opcodes;
 
 	//built-in / system specific
-static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT_SYSTEM);
 static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HELP);
 static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &Interpreter::InterpretNode_ENT_GET_MUTATION_DEFAULTS);
 static OpcodeInitializer _ENT_RECLAIM_RESOURCES(ENT_RECLAIM_RESOURCES, &Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES);

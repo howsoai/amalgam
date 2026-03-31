@@ -156,6 +156,7 @@ public:
 	std::string_view description;
 	std::vector<AmalgamExample> examples;
 	double frequencyPer10000Opcodes = 1.0;
+	std::string_view opcodeGroup;
 };
 
 //details for every opcode, indexed by EvaluableNodeType

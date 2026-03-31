@@ -274,6 +274,8 @@ OpcodeInitializer::OpcodeInitializer(EvaluableNodeType type, OpcodeFunction func
 	_opcode_details[index] = details_builder();
 }
 
+static std::string _opcode_group = "global";
+
 static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT_SYSTEM, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string command [* optional1] ... [* optionalN])";
@@ -304,6 +306,7 @@ static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 2.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -333,6 +336,7 @@ static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HEL
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -353,6 +357,7 @@ static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 	
@@ -368,6 +373,7 @@ static OpcodeInitializer _ENT_RECLAIM_RESOURCES(ENT_RECLAIM_RESOURCES, &Interpre
 		d.permissions = ExecutionPermissions::Permission::ALTER_PERFORMANCE;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -407,6 +413,7 @@ static OpcodeInitializer _ENT_PARSE(ENT_PARSE, &Interpreter::InterpretNode_ENT_P
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -423,6 +430,7 @@ static OpcodeInitializer _ENT_UNPARSE(ENT_UNPARSE, &Interpreter::InterpretNode_E
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -443,6 +451,7 @@ static OpcodeInitializer _ENT_IF(ENT_IF, &Interpreter::InterpretNode_ENT_IF, [](
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 111.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -462,6 +471,7 @@ static OpcodeInitializer _ENT_SEQUENCE(ENT_SEQUENCE, &Interpreter::InterpretNode
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 15.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -480,6 +490,7 @@ static OpcodeInitializer _ENT_LAMBDA(ENT_LAMBDA, &Interpreter::InterpretNode_ENT
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 58.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -528,6 +539,7 @@ static OpcodeInitializer _ENT_CONCLUDE(ENT_CONCLUDE, &Interpreter::InterpretNode
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 9.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -552,6 +564,7 @@ static OpcodeInitializer _ENT_RETURN(ENT_RETURN, &Interpreter::InterpretNode_ENT
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 11.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -580,6 +593,7 @@ static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CAL
 		d.hasSideEffects = true;
 		d.newScope = true;
 		d.frequencyPer10000Opcodes = 112.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -641,6 +655,7 @@ static OpcodeInitializer _ENT_CALL_SANDBOXED(ENT_CALL_SANDBOXED, &Interpreter::I
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.newScope = true;
 		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -667,6 +682,7 @@ static OpcodeInitializer _ENT_WHILE(ENT_WHILE, &Interpreter::InterpretNode_ENT_W
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 2.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -692,6 +708,7 @@ static OpcodeInitializer _ENT_LET(ENT_LET, &Interpreter::InterpretNode_ENT_LET, 
 		d.newScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 26.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -716,6 +733,7 @@ static OpcodeInitializer _ENT_DECLARE(ENT_DECLARE, &Interpreter::InterpretNode_E
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 49.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -789,6 +807,7 @@ static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 61.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -889,6 +908,7 @@ static OpcodeInitializer _ENT_ACCUM(ENT_ACCUM, &Interpreter::InterpretNode_ENT_A
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 11.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -927,6 +947,7 @@ static OpcodeInitializer _ENT_RETRIEVE(ENT_RETRIEVE, &Interpreter::InterpretNode
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1043,6 +1064,7 @@ static OpcodeInitializer _ENT_GET(ENT_GET, &Interpreter::InterpretNode_ENT_GET, 
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 138.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1086,6 +1108,7 @@ static OpcodeInitializer _ENT_SET(ENT_SET, &Interpreter::InterpretNode_ENT_SET_a
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 3.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1144,6 +1167,7 @@ static OpcodeInitializer _ENT_REPLACE(ENT_REPLACE, &Interpreter::InterpretNode_E
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 5.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1243,6 +1267,7 @@ static OpcodeInitializer _ENT_TARGET(ENT_TARGET, &Interpreter::InterpretNode_ENT
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1272,6 +1297,7 @@ static OpcodeInitializer _ENT_CURRENT_INDEX(ENT_CURRENT_INDEX, &Interpreter::Int
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 31.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1290,6 +1316,7 @@ static OpcodeInitializer _ENT_CURRENT_VALUE(ENT_CURRENT_VALUE, &Interpreter::Int
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 77.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1327,6 +1354,7 @@ static OpcodeInitializer _ENT_PREVIOUS_RESULT(ENT_PREVIOUS_RESULT, &Interpreter:
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1354,6 +1382,7 @@ static OpcodeInitializer _ENT_OPCODE_STACK(ENT_OPCODE_STACK, &Interpreter::Inter
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1380,6 +1409,7 @@ static OpcodeInitializer _ENT_STACK(ENT_STACK, &Interpreter::InterpretNode_ENT_S
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1407,6 +1437,7 @@ static OpcodeInitializer _ENT_ARGS(ENT_ARGS, &Interpreter::InterpretNode_ENT_ARG
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1541,6 +1572,7 @@ R"&(\[\s*
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 6.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1554,6 +1586,7 @@ static OpcodeInitializer _ENT_GET_RAND_SEED(ENT_GET_RAND_SEED, &Interpreter::Int
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1588,6 +1621,7 @@ static OpcodeInitializer _ENT_SET_RAND_SEED(ENT_SET_RAND_SEED, &Interpreter::Int
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1609,6 +1643,7 @@ static OpcodeInitializer _ENT_SYSTEM_TIME(ENT_SYSTEM_TIME, &Interpreter::Interpr
 		d.permissions = ExecutionPermissions::Permission::ENVIRONMENT;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 4.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1624,6 +1659,7 @@ static OpcodeInitializer _ENT_ADD(ENT_ADD, &Interpreter::InterpretNode_ENT_ADD, 
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 18.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1640,6 +1676,7 @@ static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 15.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1655,6 +1692,7 @@ static OpcodeInitializer _ENT_MULTIPLY(ENT_MULTIPLY, &Interpreter::InterpretNode
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 9.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1670,6 +1708,7 @@ static OpcodeInitializer _ENT_DIVIDE(ENT_DIVIDE, &Interpreter::InterpretNode_ENT
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 12.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1686,6 +1725,7 @@ static OpcodeInitializer _ENT_MODULUS(ENT_MODULUS, &Interpreter::InterpretNode_E
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1780,6 +1820,7 @@ static OpcodeInitializer _ENT_GET_DIGITS(ENT_GET_DIGITS, &Interpreter::Interpret
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1928,6 +1969,7 @@ static OpcodeInitializer _ENT_SET_DIGITS(ENT_SET_DIGITS, &Interpreter::Interpret
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1941,6 +1983,7 @@ static OpcodeInitializer _ENT_FLOOR(ENT_FLOOR, &Interpreter::InterpretNode_ENT_F
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 1.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1954,6 +1997,7 @@ static OpcodeInitializer _ENT_CEILING(ENT_CEILING, &Interpreter::InterpretNode_E
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 1.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -1987,6 +2031,7 @@ static OpcodeInitializer _ENT_ROUND(ENT_ROUND, &Interpreter::InterpretNode_ENT_R
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2000,6 +2045,7 @@ static OpcodeInitializer _ENT_EXPONENT(ENT_EXPONENT, &Interpreter::InterpretNode
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2014,6 +2060,7 @@ static OpcodeInitializer _ENT_LOG(ENT_LOG, &Interpreter::InterpretNode_ENT_LOG, 
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2027,6 +2074,7 @@ static OpcodeInitializer _ENT_SIN(ENT_SIN, &Interpreter::InterpretNode_ENT_SIN, 
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2040,6 +2088,7 @@ static OpcodeInitializer _ENT_ASIN(ENT_ASIN, &Interpreter::InterpretNode_ENT_ASI
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2053,6 +2102,7 @@ static OpcodeInitializer _ENT_COS(ENT_COS, &Interpreter::InterpretNode_ENT_COS, 
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2066,6 +2116,7 @@ static OpcodeInitializer _ENT_ACOS(ENT_ACOS, &Interpreter::InterpretNode_ENT_ACO
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2079,6 +2130,7 @@ static OpcodeInitializer _ENT_TAN(ENT_TAN, &Interpreter::InterpretNode_ENT_TAN, 
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2092,6 +2144,7 @@ static OpcodeInitializer _ENT_ATAN(ENT_ATAN, &Interpreter::InterpretNode_ENT_ATA
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2105,6 +2158,7 @@ static OpcodeInitializer _ENT_SINH(ENT_SINH, &Interpreter::InterpretNode_ENT_SIN
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.001;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2118,6 +2172,7 @@ static OpcodeInitializer _ENT_ASINH(ENT_ASINH, &Interpreter::InterpretNode_ENT_A
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.001;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2131,6 +2186,7 @@ static OpcodeInitializer _ENT_COSH(ENT_COSH, &Interpreter::InterpretNode_ENT_COS
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.001;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2144,6 +2200,7 @@ static OpcodeInitializer _ENT_ACOSH(ENT_ACOSH, &Interpreter::InterpretNode_ENT_A
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.001;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2157,6 +2214,7 @@ static OpcodeInitializer _ENT_TANH(ENT_TANH, &Interpreter::InterpretNode_ENT_TAN
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.001;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2170,6 +2228,7 @@ static OpcodeInitializer _ENT_ATANH(ENT_ATANH, &Interpreter::InterpretNode_ENT_A
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.001;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2183,6 +2242,7 @@ static OpcodeInitializer _ENT_ERF(ENT_ERF, &Interpreter::InterpretNode_ENT_ERF, 
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2196,6 +2256,7 @@ static OpcodeInitializer _ENT_TGAMMA(ENT_TGAMMA, &Interpreter::InterpretNode_ENT
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2209,6 +2270,7 @@ static OpcodeInitializer _ENT_LGAMMA(ENT_LGAMMA, &Interpreter::InterpretNode_ENT
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2222,6 +2284,7 @@ static OpcodeInitializer _ENT_SQRT(ENT_SQRT, &Interpreter::InterpretNode_ENT_SQR
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2235,6 +2298,7 @@ static OpcodeInitializer _ENT_POW(ENT_POW, &Interpreter::InterpretNode_ENT_POW, 
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2248,6 +2312,7 @@ static OpcodeInitializer _ENT_ABS(ENT_ABS, &Interpreter::InterpretNode_ENT_ABS, 
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 1.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2265,6 +2330,7 @@ static OpcodeInitializer _ENT_MAX(ENT_MAX, &Interpreter::InterpretNode_ENT_MAX, 
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 2.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2281,6 +2347,7 @@ static OpcodeInitializer _ENT_MIN(ENT_MIN, &Interpreter::InterpretNode_ENT_MIN, 
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 2.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2304,6 +2371,7 @@ static OpcodeInitializer _ENT_INDEX_MAX(ENT_INDEX_MAX, &Interpreter::InterpretNo
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2326,6 +2394,7 @@ static OpcodeInitializer _ENT_INDEX_MIN(ENT_INDEX_MIN, &Interpreter::InterpretNo
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2350,6 +2419,7 @@ static OpcodeInitializer _ENT_DOT_PRODUCT(ENT_DOT_PRODUCT, &Interpreter::Interpr
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2382,6 +2452,7 @@ static OpcodeInitializer _ENT_NORMALIZE(ENT_NORMALIZE, &Interpreter::InterpretNo
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2469,6 +2540,7 @@ static OpcodeInitializer _ENT_MODE(ENT_MODE, &Interpreter::InterpretNode_ENT_MOD
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2532,6 +2604,7 @@ static OpcodeInitializer _ENT_QUANTILE(ENT_QUANTILE, &Interpreter::InterpretNode
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -2593,6 +2666,7 @@ static OpcodeInitializer _ENT_GENERALIZED_MEAN(ENT_GENERALIZED_MEAN, &Interprete
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 2.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -3341,6 +3415,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -3382,6 +3457,7 @@ static OpcodeInitializer _ENT_ENTROPY(ENT_ENTROPY, &Interpreter::InterpretNode_E
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -3404,6 +3480,7 @@ static OpcodeInitializer _ENT_FIRST(ENT_FIRST, &Interpreter::InterpretNode_ENT_F
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.frequencyPer10000Opcodes = 20.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -3594,6 +3671,7 @@ static OpcodeInitializer _ENT_TAIL(ENT_TAIL, &Interpreter::InterpretNode_ENT_TAI
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.frequencyPer10000Opcodes = 2.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -3616,6 +3694,7 @@ static OpcodeInitializer _ENT_LAST(ENT_LAST, &Interpreter::InterpretNode_ENT_LAS
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.frequencyPer10000Opcodes = 13.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -3807,6 +3886,7 @@ R"&(^\s*\{\s*
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.frequencyPer10000Opcodes = 5.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -3866,6 +3946,7 @@ static OpcodeInitializer _ENT_APPEND(ENT_APPEND, &Interpreter::InterpretNode_ENT
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 18.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -3894,6 +3975,7 @@ static OpcodeInitializer _ENT_SIZE(ENT_SIZE, &Interpreter::InterpretNode_ENT_SIZ
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 43.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -3953,6 +4035,7 @@ static OpcodeInitializer _ENT_RANGE(ENT_RANGE, &Interpreter::InterpretNode_ENT_R
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.frequencyPer10000Opcodes = 4.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -4107,6 +4190,7 @@ static OpcodeInitializer _ENT_REWRITE(ENT_REWRITE, &Interpreter::InterpretNode_E
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -4209,6 +4293,7 @@ static OpcodeInitializer _ENT_MAP(ENT_MAP, &Interpreter::InterpretNode_ENT_MAP, 
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 39.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -4333,6 +4418,7 @@ static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 15.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -4497,6 +4583,7 @@ static OpcodeInitializer _ENT_WEAVE(ENT_WEAVE, &Interpreter::InterpretNode_ENT_W
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 1.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -4531,6 +4618,7 @@ static OpcodeInitializer _ENT_REDUCE(ENT_REDUCE, &Interpreter::InterpretNode_ENT
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -4557,6 +4645,7 @@ static OpcodeInitializer _ENT_APPLY(ENT_APPLY, &Interpreter::InterpretNode_ENT_A
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.frequencyPer10000Opcodes = 12.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -4572,6 +4661,7 @@ static OpcodeInitializer _ENT_REVERSE(ENT_REVERSE, &Interpreter::InterpretNode_E
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -4769,6 +4859,7 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 3.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -4833,6 +4924,7 @@ static OpcodeInitializer _ENT_INDICES(ENT_INDICES, &Interpreter::InterpretNode_E
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 12.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -4954,6 +5046,7 @@ static OpcodeInitializer _ENT_VALUES(ENT_VALUES, &Interpreter::InterpretNode_ENT
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 9.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5018,6 +5111,7 @@ static OpcodeInitializer _ENT_CONTAINS_INDEX(ENT_CONTAINS_INDEX, &Interpreter::I
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 20.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5088,6 +5182,7 @@ static OpcodeInitializer _ENT_CONTAINS_VALUE(ENT_CONTAINS_VALUE, &Interpreter::I
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 77.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5197,6 +5292,7 @@ static OpcodeInitializer _ENT_REMOVE(ENT_REMOVE, &Interpreter::InterpretNode_ENT
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 6.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5288,6 +5384,7 @@ static OpcodeInitializer _ENT_KEEP(ENT_KEEP, &Interpreter::InterpretNode_ENT_KEE
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 2.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5315,6 +5412,7 @@ static OpcodeInitializer _ENT_ASSOCIATE(ENT_ASSOCIATE, &Interpreter::InterpretNo
 		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 4.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5377,6 +5475,7 @@ static OpcodeInitializer _ENT_ZIP(ENT_ZIP, &Interpreter::InterpretNode_ENT_ZIP, 
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 18.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5398,6 +5497,7 @@ static OpcodeInitializer _ENT_UNZIP(ENT_UNZIP, &Interpreter::InterpretNode_ENT_U
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 8.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5414,6 +5514,7 @@ static OpcodeInitializer _ENT_AND(ENT_AND, &Interpreter::InterpretNode_ENT_AND, 
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.frequencyPer10000Opcodes = 21.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5433,6 +5534,7 @@ static OpcodeInitializer _ENT_OR(ENT_OR, &Interpreter::InterpretNode_ENT_OR, [](
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.frequencyPer10000Opcodes = 12.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5451,6 +5553,7 @@ static OpcodeInitializer _ENT_XOR(ENT_XOR, &Interpreter::InterpretNode_ENT_XOR, 
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5467,6 +5570,7 @@ static OpcodeInitializer _ENT_NOT(ENT_NOT, &Interpreter::InterpretNode_ENT_NOT, 
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 12.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5490,6 +5594,7 @@ static OpcodeInitializer _ENT_EQUAL(ENT_EQUAL, &Interpreter::InterpretNode_ENT_E
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 41.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5519,6 +5624,7 @@ static OpcodeInitializer _ENT_NEQUAL(ENT_NEQUAL, &Interpreter::InterpretNode_ENT
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 18.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5537,6 +5643,7 @@ static OpcodeInitializer _ENT_LESS(ENT_LESS, &Interpreter::InterpretNode_ENT_LES
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 5.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5557,6 +5664,7 @@ static OpcodeInitializer _ENT_LEQUAL(ENT_LEQUAL, &Interpreter::InterpretNode_ENT
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 5.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5575,6 +5683,7 @@ static OpcodeInitializer _ENT_GREATER(ENT_GREATER, &Interpreter::InterpretNode_E
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 5.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5595,6 +5704,7 @@ static OpcodeInitializer _ENT_GEQUAL(ENT_GEQUAL, &Interpreter::InterpretNode_ENT
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 5.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5611,6 +5721,7 @@ static OpcodeInitializer _ENT_TYPE_EQUALS(ENT_TYPE_EQUALS, &Interpreter::Interpr
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 2.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5634,6 +5745,7 @@ static OpcodeInitializer _ENT_TYPE_NEQUALS(ENT_TYPE_NEQUALS, &Interpreter::Inter
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5664,6 +5776,7 @@ static OpcodeInitializer _ENT_NULL(ENT_NULL, &Interpreter::InterpretNode_ENT_NUL
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 81.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5681,6 +5794,7 @@ static OpcodeInitializer _ENT_LIST(ENT_LIST, &Interpreter::InterpretNode_ENT_LIS
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 484.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5729,6 +5843,7 @@ static OpcodeInitializer _ENT_UNORDERED_LIST(ENT_UNORDERED_LIST, &Interpreter::I
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 5.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5751,6 +5866,7 @@ static OpcodeInitializer _ENT_ASSOC(ENT_ASSOC, &Interpreter::InterpretNode_ENT_A
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 352.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5766,6 +5882,7 @@ static OpcodeInitializer _ENT_BOOL(ENT_BOOL, &Interpreter::InterpretNode_ENT_BOO
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 73.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5786,6 +5903,7 @@ static OpcodeInitializer _ENT_NUMBER(ENT_NUMBER, &Interpreter::InterpretNode_ENT
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 2545.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5801,6 +5919,7 @@ static OpcodeInitializer _ENT_STRING(ENT_STRING, &Interpreter::InterpretNode_ENT
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 766.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5819,6 +5938,7 @@ static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.frequencyPer10000Opcodes = 4329.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5836,6 +5956,7 @@ static OpcodeInitializer _ENT_GET_TYPE(ENT_GET_TYPE, &Interpreter::InterpretNode
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5854,6 +5975,7 @@ static OpcodeInitializer _ENT_GET_TYPE_STRING(ENT_GET_TYPE_STRING, &Interpreter:
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 1.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -5911,6 +6033,7 @@ static OpcodeInitializer _ENT_SET_TYPE(ENT_SET_TYPE, &Interpreter::InterpretNode
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6096,6 +6219,7 @@ static OpcodeInitializer _ENT_FORMAT(ENT_FORMAT, &Interpreter::InterpretNode_ENT
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 2.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6116,6 +6240,7 @@ static OpcodeInitializer _ENT_GET_ANNOTATIONS(ENT_GET_ANNOTATIONS, &Interpreter:
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6141,6 +6266,7 @@ static OpcodeInitializer _ENT_SET_ANNOTATIONS(ENT_SET_ANNOTATIONS, &Interpreter:
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6161,6 +6287,7 @@ static OpcodeInitializer _ENT_GET_COMMENTS(ENT_GET_COMMENTS, &Interpreter::Inter
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6186,6 +6313,7 @@ static OpcodeInitializer _ENT_SET_COMMENTS(ENT_SET_COMMENTS, &Interpreter::Inter
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6216,6 +6344,7 @@ static OpcodeInitializer _ENT_GET_CONCURRENCY(ENT_GET_CONCURRENCY, &Interpreter:
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6254,6 +6383,7 @@ static OpcodeInitializer _ENT_SET_CONCURRENCY(ENT_SET_CONCURRENCY, &Interpreter:
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6278,6 +6408,7 @@ static OpcodeInitializer _ENT_GET_VALUE(ENT_GET_VALUE, &Interpreter::InterpretNo
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6301,6 +6432,7 @@ static OpcodeInitializer _ENT_SET_VALUE(ENT_SET_VALUE, &Interpreter::InterpretNo
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6338,6 +6470,7 @@ static OpcodeInitializer _ENT_EXPLODE(ENT_EXPLODE, &Interpreter::InterpretNode_E
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6360,6 +6493,7 @@ static OpcodeInitializer _ENT_SPLIT(ENT_SPLIT, &Interpreter::InterpretNode_ENT_S
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6412,6 +6546,7 @@ static OpcodeInitializer _ENT_SUBSTR(ENT_SUBSTR, &Interpreter::InterpretNode_ENT
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6426,6 +6561,7 @@ static OpcodeInitializer _ENT_CONCAT(ENT_CONCAT, &Interpreter::InterpretNode_ENT
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 10.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6459,6 +6595,7 @@ static OpcodeInitializer _ENT_CRYPTO_SIGN(ENT_CRYPTO_SIGN, &Interpreter::Interpr
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6492,6 +6629,7 @@ static OpcodeInitializer _ENT_CRYPTO_SIGN_VERIFY(ENT_CRYPTO_SIGN_VERIFY, &Interp
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6522,6 +6660,7 @@ static OpcodeInitializer _ENT_ENCRYPT(ENT_ENCRYPT, &Interpreter::InterpretNode_E
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6552,6 +6691,7 @@ static OpcodeInitializer _ENT_DECRYPT(ENT_DECRYPT, &Interpreter::InterpretNode_E
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6575,6 +6715,7 @@ static OpcodeInitializer _ENT_PRINT(ENT_PRINT, &Interpreter::InterpretNode_ENT_P
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 43.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6596,6 +6737,7 @@ static OpcodeInitializer _ENT_TOTAL_SIZE(ENT_TOTAL_SIZE, &Interpreter::Interpret
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6688,6 +6830,7 @@ static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6792,6 +6935,7 @@ static OpcodeInitializer _ENT_COMMONALITY(ENT_COMMONALITY, &Interpreter::Interpr
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -6871,6 +7015,7 @@ static OpcodeInitializer _ENT_EDIT_DISTANCE(ENT_EDIT_DISTANCE, &Interpreter::Int
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -7035,6 +7180,7 @@ static OpcodeInitializer _ENT_INTERSECT(ENT_INTERSECT, &Interpreter::InterpretNo
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -7230,6 +7376,7 @@ static OpcodeInitializer _ENT_UNION(ENT_UNION, &Interpreter::InterpretNode_ENT_U
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -7571,6 +7718,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -7936,6 +8084,7 @@ static OpcodeInitializer _ENT_MIX(ENT_MIX, &Interpreter::InterpretNode_ENT_MIX, 
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -7976,6 +8125,7 @@ static OpcodeInitializer _ENT_TOTAL_ENTITY_SIZE(ENT_TOTAL_ENTITY_SIZE, &Interpre
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8032,6 +8182,7 @@ static OpcodeInitializer _ENT_FLATTEN_ENTITY(ENT_FLATTEN_ENTITY, &Interpreter::I
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8135,6 +8286,7 @@ static OpcodeInitializer _ENT_MUTATE_ENTITY(ENT_MUTATE_ENTITY, &Interpreter::Int
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8214,6 +8366,7 @@ static OpcodeInitializer _ENT_COMMONALITY_ENTITIES(ENT_COMMONALITY_ENTITIES, &In
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8296,6 +8449,7 @@ static OpcodeInitializer _ENT_EDIT_DISTANCE_ENTITIES(ENT_EDIT_DISTANCE_ENTITIES,
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8380,6 +8534,7 @@ static OpcodeInitializer _ENT_INTERSECT_ENTITIES(ENT_INTERSECT_ENTITIES, &Interp
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8464,6 +8619,7 @@ static OpcodeInitializer _ENT_UNION_ENTITIES(ENT_UNION_ENTITIES, &Interpreter::I
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8611,6 +8767,7 @@ static OpcodeInitializer _ENT_DIFFERENCE_ENTITIES(ENT_DIFFERENCE_ENTITIES, &Inte
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8700,6 +8857,7 @@ static OpcodeInitializer _ENT_MIX_ENTITIES(ENT_MIX_ENTITIES, &Interpreter::Inter
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8808,6 +8966,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_ANNOTATIONS(ENT_GET_ENTITY_ANNOTATIONS,
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8916,6 +9075,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_COMMENTS(ENT_GET_ENTITY_COMMENTS, &Inte
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8938,6 +9098,7 @@ static OpcodeInitializer _ENT_RETRIEVE_ENTITY_ROOT(ENT_RETRIEVE_ENTITY_ROOT, &In
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8966,6 +9127,7 @@ static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Inte
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -8993,6 +9155,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_RAND_SEED(ENT_GET_ENTITY_RAND_SEED, &In
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9054,6 +9217,7 @@ static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &In
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9084,6 +9248,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_PERMISSIONS(ENT_GET_ENTITY_PERMISSIONS,
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9116,6 +9281,7 @@ static OpcodeInitializer _ENT_SET_ENTITY_PERMISSIONS(ENT_SET_ENTITY_PERMISSIONS,
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9158,6 +9324,7 @@ static OpcodeInitializer _ENT_CREATE_ENTITIES(ENT_CREATE_ENTITIES, &Interpreter:
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9192,6 +9359,7 @@ static OpcodeInitializer _ENT_CLONE_ENTITIES(ENT_CLONE_ENTITIES, &Interpreter::I
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9226,6 +9394,7 @@ static OpcodeInitializer _ENT_MOVE_ENTITIES(ENT_MOVE_ENTITIES, &Interpreter::Int
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9249,6 +9418,7 @@ static OpcodeInitializer _ENT_DESTROY_ENTITIES(ENT_DESTROY_ENTITIES, &Interprete
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 1.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9349,6 +9519,7 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 		d.permissions = ExecutionPermissions::Permission::LOAD;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 8.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9442,6 +9613,7 @@ static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::Interpr
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9543,6 +9715,7 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9636,6 +9809,7 @@ static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::Inter
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9665,6 +9839,7 @@ static OpcodeInitializer _ENT_CONTAINS_ENTITY(ENT_CONTAINS_ENTITY, &Interpreter:
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9704,6 +9879,7 @@ static OpcodeInitializer _ENT_CONTAINED_ENTITIES(ENT_CONTAINED_ENTITIES, &Interp
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 5.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9741,6 +9917,7 @@ static OpcodeInitializer _ENT_COMPUTE_ON_CONTAINED_ENTITIES(ENT_COMPUTE_ON_CONTA
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 5.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9809,6 +9986,7 @@ static OpcodeInitializer _ENT_QUERY_SELECT(ENT_QUERY_SELECT, &Interpreter::Inter
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9884,6 +10062,7 @@ static OpcodeInitializer _ENT_QUERY_SAMPLE(ENT_QUERY_SAMPLE, &Interpreter::Inter
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9917,6 +10096,7 @@ static OpcodeInitializer _ENT_QUERY_IN_ENTITY_LIST(ENT_QUERY_IN_ENTITY_LIST, &In
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 1.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9950,6 +10130,7 @@ static OpcodeInitializer _ENT_QUERY_NOT_IN_ENTITY_LIST(ENT_QUERY_NOT_IN_ENTITY_L
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 2.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -9998,6 +10179,7 @@ static OpcodeInitializer _ENT_QUERY_EXISTS(ENT_QUERY_EXISTS, &Interpreter::Inter
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 3.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10044,6 +10226,7 @@ static OpcodeInitializer _ENT_QUERY_NOT_EXISTS(ENT_QUERY_NOT_EXISTS, &Interprete
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10090,6 +10273,7 @@ static OpcodeInitializer _ENT_QUERY_EQUALS(ENT_QUERY_EQUALS, &Interpreter::Inter
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 1.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10136,6 +10320,7 @@ static OpcodeInitializer _ENT_QUERY_NOT_EQUALS(ENT_QUERY_NOT_EQUALS, &Interprete
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 1.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10182,6 +10367,7 @@ static OpcodeInitializer _ENT_QUERY_BETWEEN(ENT_QUERY_BETWEEN, &Interpreter::Int
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10228,6 +10414,7 @@ static OpcodeInitializer _ENT_QUERY_NOT_BETWEEN(ENT_QUERY_NOT_BETWEEN, &Interpre
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10280,6 +10467,7 @@ static OpcodeInitializer _ENT_QUERY_AMONG(ENT_QUERY_AMONG, &Interpreter::Interpr
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10332,6 +10520,7 @@ static OpcodeInitializer _ENT_QUERY_NOT_AMONG(ENT_QUERY_NOT_AMONG, &Interpreter:
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10385,6 +10574,7 @@ static OpcodeInitializer _ENT_QUERY_MAX(ENT_QUERY_MAX, &Interpreter::InterpretNo
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10438,6 +10628,7 @@ static OpcodeInitializer _ENT_QUERY_MIN(ENT_QUERY_MIN, &Interpreter::InterpretNo
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10474,6 +10665,7 @@ static OpcodeInitializer _ENT_QUERY_SUM(ENT_QUERY_SUM, &Interpreter::InterpretNo
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10512,6 +10704,7 @@ static OpcodeInitializer _ENT_QUERY_MODE(ENT_QUERY_MODE, &Interpreter::Interpret
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10554,6 +10747,7 @@ static OpcodeInitializer _ENT_QUERY_QUANTILE(ENT_QUERY_QUANTILE, &Interpreter::I
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10630,6 +10824,7 @@ static OpcodeInitializer _ENT_QUERY_GENERALIZED_MEAN(ENT_QUERY_GENERALIZED_MEAN,
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10675,6 +10870,7 @@ static OpcodeInitializer _ENT_QUERY_MIN_DIFFERENCE(ENT_QUERY_MIN_DIFFERENCE, &In
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10717,6 +10913,7 @@ static OpcodeInitializer _ENT_QUERY_MAX_DIFFERENCE(ENT_QUERY_MAX_DIFFERENCE, &In
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10770,6 +10967,7 @@ static OpcodeInitializer _ENT_QUERY_VALUE_MASSES(ENT_QUERY_VALUE_MASSES, &Interp
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10809,6 +11007,7 @@ static OpcodeInitializer _ENT_QUERY_LESS_OR_EQUAL_TO(ENT_QUERY_LESS_OR_EQUAL_TO,
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10848,6 +11047,7 @@ static OpcodeInitializer _ENT_QUERY_GREATER_OR_EQUAL_TO(ENT_QUERY_GREATER_OR_EQU
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10904,6 +11104,7 @@ static OpcodeInitializer _ENT_QUERY_WITHIN_GENERALIZED_DISTANCE(ENT_QUERY_WITHIN
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -10986,6 +11187,7 @@ static OpcodeInitializer _ENT_QUERY_NEAREST_GENERALIZED_DISTANCE(ENT_QUERY_NEARE
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 2.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11045,6 +11247,7 @@ static OpcodeInitializer _ENT_QUERY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_DISTANCE_CO
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11180,6 +11383,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CONVICTIONS(ENT_QUERY_ENTITY_CONVICTI
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.05;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11240,6 +11444,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE(ENT_QUERY_ENTITY_
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11375,6 +11580,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_ENTI
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11475,6 +11681,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_KL_DIVERGENCES(ENT_QUERY_ENTITY_KL_DI
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11544,6 +11751,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS(ENT
 		d.isQuery = true;
 		d.potentiallyIdempotent = true;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11567,6 +11775,7 @@ static OpcodeInitializer _ENT_CONTAINS_LABEL(ENT_CONTAINS_LABEL, &Interpreter::I
 		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11600,6 +11809,7 @@ static OpcodeInitializer _ENT_ASSIGN_TO_ENTITIES(ENT_ASSIGN_TO_ENTITIES, &Interp
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 10.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11628,6 +11838,7 @@ static OpcodeInitializer _ENT_ACCUM_TO_ENTITIES(ENT_ACCUM_TO_ENTITIES, &Interpre
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 3.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11661,6 +11872,7 @@ static OpcodeInitializer _ENT_REMOVE_FROM_ENTITIES(ENT_REMOVE_FROM_ENTITIES, &In
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11699,6 +11911,7 @@ static OpcodeInitializer _ENT_RETRIEVE_FROM_ENTITY(ENT_RETRIEVE_FROM_ENTITY, &In
 		d.requiresEntity = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.frequencyPer10000Opcodes = 7.5;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11758,6 +11971,7 @@ static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::Interpr
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 48.0;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11826,6 +12040,7 @@ static OpcodeInitializer _ENT_CALL_ENTITY_GET_CHANGES(ENT_CALL_ENTITY_GET_CHANGE
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.01;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11855,6 +12070,7 @@ static OpcodeInitializer _ENT_CALL_ON_ENTITY(ENT_CALL_ON_ENTITY, &Interpreter::I
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.1;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
@@ -11937,6 +12153,7 @@ static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::I
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.25;
+		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 

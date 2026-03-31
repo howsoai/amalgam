@@ -849,5 +849,5 @@ void AssetManager::RemoveAllPermissions(Entity *entity)
 	for(auto contained_entity : entity->GetContainedEntities())
 		RemoveAllPermissions(contained_entity);
 
-	SetEntityPermissions(entity, ExecutionPermissions(), ExecutionPermissions());
+	SetEntityPermissions(entity, ExecutionPermissions::AllPermissions(), ExecutionPermissions());
 }

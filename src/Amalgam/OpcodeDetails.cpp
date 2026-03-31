@@ -264,7 +264,7 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 	return test_succeeded;
 }
 
-static std::array<OpcodeDetails, NUM_ENT_OPCODES> BuildAmalgamExamplesArrayForOpcodes;
+std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
 
 static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT_SYSTEM, []() {
 		OpcodeDetails d;
@@ -11932,4 +11932,3 @@ static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::I
 		return d;
 	});
 
-std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;

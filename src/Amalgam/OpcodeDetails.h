@@ -155,7 +155,7 @@ public:
 	std::string_view returns;
 	std::string_view description;
 	std::vector<AmalgamExample> examples;
-	double frequencyPer10000Opcodes;
+	double frequencyPer10000Opcodes = 1.0;
 };
 
 extern std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;

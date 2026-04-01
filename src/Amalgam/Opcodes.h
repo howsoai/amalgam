@@ -82,7 +82,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_MIN,
 	ENT_INDEX_MAX,
 	ENT_INDEX_MIN,
-	//TODO 25241: consolidate from here down
+
 	//Advanced Math
 	ENT_EXPONENT,
 	ENT_LOG,
@@ -98,7 +98,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_GENERALIZED_MEAN,
 	ENT_GENERALIZED_DISTANCE,
 	ENT_ENTROPY,
-
+	//TODO 25241: consolidate from here down
 	//Trigonometry
 	ENT_SIN,
 	ENT_ASIN,

@@ -153,7 +153,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_CURRENT_INDEX,
 	ENT_CURRENT_VALUE,
 	ENT_PREVIOUS_RESULT,
-	//TODO 25241: consolidate from here down
+
 	//Entity Lifecycle and Storage
 	ENT_CREATE_ENTITIES,
 	ENT_CLONE_ENTITIES,
@@ -165,7 +165,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_STORE_ENTITY,
 	ENT_CONTAINS_ENTITY,
 	ENT_FLATTEN_ENTITY,
-
+	//TODO 25241: consolidate from here down
 	//Entity Access and Manipulation
 	ENT_CONTAINS_LABEL,
 	ENT_ASSIGN_TO_ENTITIES,

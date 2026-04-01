@@ -365,34 +365,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE(Evaluabl
 	return AllocReturn(size, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
-{
-	auto &ocn = en->GetOrderedChildNodesReference();
-
-	if(ocn.size() < 1)
-		return EvaluableNodeReference::Null();
-
-	bool include_rand_seeds = true;
-	if(ocn.size() > 1)
-		include_rand_seeds = InterpretNodeIntoBoolValue(ocn[1]);
-
-	bool parallel_create = false;
-	if(ocn.size() > 2)
-		parallel_create = InterpretNodeIntoBoolValue(ocn[2]);
-
-	bool include_version = false;
-	if(ocn.size() > 3)
-		include_version = InterpretNodeIntoBoolValue(ocn[3]);
-
-	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
-	if(entity == nullptr)
-		return EvaluableNodeReference::Null();
-
-	auto erbr = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
-	return EntityManipulation::FlattenEntity(evaluableNodeManager, entity, erbr,
-		include_rand_seeds, parallel_create, include_version);
-}
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();

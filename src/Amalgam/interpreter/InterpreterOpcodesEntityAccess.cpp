@@ -14,20 +14,6 @@
 //system headers:
 #include <utility>
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
-{
-	auto &ocn = en->GetOrderedChildNodesReference();
-
-	if(ocn.size() < 1)
-		return EvaluableNodeReference::Null();
-
-	//not allowed if don't have a Entity to create within
-	if(curEntity == nullptr)
-		return EvaluableNodeReference::Null();
-
-	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
-	return AllocReturn(entity != nullptr, immediate_result);
-}
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {

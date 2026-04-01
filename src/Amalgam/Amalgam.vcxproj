@@ -581,8 +581,6 @@
     <ClCompile Include="interpreter\InterpreterOpcodesDataTypes.cpp" />
     <ClCompile Include="interpreter\InterpreterOpcodesEntityAccess.cpp" />
     <ClCompile Include="interpreter\InterpreterOpcodesEntityControl.cpp" />
-    <ClCompile Include="interpreter\InterpreterOpcodesListManipulation.cpp" />
-    <ClCompile Include="interpreter\InterpreterOpcodesTransformations.cpp" />
     <ClCompile Include="interpreter\OpcodesAdvancedMath.cpp" />
     <ClCompile Include="interpreter\OpcodesBasicMath.cpp" />
     <ClCompile Include="interpreter\OpcodesCodeComparisonAndEvolution.cpp" />

@@ -137,7 +137,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_CONTAINS_VALUE,
 	ENT_REMOVE,
 	ENT_KEEP,
-	//TODO 25241: consolidate from here down
+
 	//Iteration and Container Transformation
 	ENT_RANGE,
 	ENT_REWRITE,
@@ -153,7 +153,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_CURRENT_INDEX,
 	ENT_CURRENT_VALUE,
 	ENT_PREVIOUS_RESULT,
-
+	//TODO 25241: consolidate from here down
 	//Entity Lifecycle and Storage
 	ENT_CREATE_ENTITIES,
 	ENT_CLONE_ENTITIES,

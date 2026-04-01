@@ -120,7 +120,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_CONCAT,
 	ENT_PARSE,
 	ENT_UNPARSE,
-	//TODO 25241: consolidate from here down
+
 	//Container Manipulation
 	ENT_FIRST,
 	ENT_TAIL,
@@ -131,15 +131,13 @@ enum EvaluableNodeType : uint8_t
 	ENT_GET,
 	ENT_SET,
 	ENT_REPLACE,
-	ENT_REVERSE,
-	ENT_SORT,
 	ENT_INDICES,
 	ENT_VALUES,
 	ENT_CONTAINS_INDEX,
 	ENT_CONTAINS_VALUE,
 	ENT_REMOVE,
 	ENT_KEEP,
-
+	//TODO 25241: consolidate from here down
 	//Iteration and Container Transformation
 	ENT_RANGE,
 	ENT_REWRITE,
@@ -150,6 +148,8 @@ enum EvaluableNodeType : uint8_t
 	ENT_ASSOCIATE,
 	ENT_ZIP,
 	ENT_UNZIP,
+	ENT_REVERSE,
+	ENT_SORT,
 	ENT_CURRENT_INDEX,
 	ENT_CURRENT_VALUE,
 	ENT_PREVIOUS_RESULT,

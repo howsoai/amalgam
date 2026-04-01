@@ -289,226 +289,6 @@ static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &
 		return d;
 	});
 
-static OpcodeInitializer _ENT_GET(ENT_GET, &Interpreter::InterpretNode_ENT_GET, []() {
-		OpcodeDetails d;
-		d.parameters = R"(* data [number|index|list walk_path_1] [number|string|list walk_path_2] ...)";
-		d.returns = R"(any)";
-		d.description = R"(Evaluates to `data` as traversed by the set of values specified by `walk_path_1', which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then `get` returns a list, where each element in the list is the respective element retrieved by the respective walk path.  If the walk path continues past the data structure, it will return a null.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((get
-	[4 9.2 "this"]
-))&", R"([4 9.2 "this"])"},
-			{R"&((get
-	[4 9.2 "this"]
-	1
-))&", R"(9.2)"},
-			{R"&((get
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	)
-	"c"
-))&", R"(3)"},
-			{R"&((get
-	[
-		0
-		1
-		2
-		3
-		[
-			0
-			1
-			2
-			(associate "a" 1)
-		]
-	]
-	[4 3 "a"]
-))&", R"(1)"},
-			{R"&((get
-	[4 9.2 "this"]
-	1
-	2
-))&", R"([9.2 "this"])"},
-			{R"&((seq
-	(declare
-		{
-			var {
-					A (associate "B" 2)
-					B 2
-				}
-		}
-	)
-	[
-		(get
-			var
-			["A" "B"]
-		)
-		(get
-			var
-			["A" "C"]
-		)
-		(get
-			var
-			["B" "C"]
-		)
-	]
-))&", R"([2 (null) (null)])"},
-			{R"&((get
-	{(null) 3}
-	(null)
-))&", R"(3)"},
-			{R"&((let
-	{
-		complex_assoc {
-				4 "number"
-				[4] "list"
-				{4 4} "assoc"
-				"4" "string"
-			}
-	}
-	[
-		(get complex_assoc 4)
-		(get complex_assoc "4")
-		(get
-			complex_assoc
-			[
-				[4]
-			]
-		)
-		(get
-			complex_assoc
-			{4 4}
-		)
-		(sort (indices complex_assoc))
-	]
-))&", R"([
-	"number"
-	"string"
-	"list"
-	"assoc"
-	[
-		4
-		[4]
-		{4 4}
-		"4"
-	]
-])"}
-			});
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 138.0;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_SET(ENT_SET, &Interpreter::InterpretNode_ENT_SET_and_REPLACE, []() {
-		OpcodeDetails d;
-		d.parameters = R"(* data [number|string|list walk_path1] [* new_value1] [number|string|list walk_path2] [* new_value2] ... [number|string|list walk_pathN] [* new_valueN])";
-		d.returns = R"(any)";
-		d.description = R"(Performs a deep copy on `data` (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values as a walk path of indices. `new_value1` to `new_valueN` represent a value that will be used to replace  whatever is in the location the preceding location parameter specifies.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc); however, it will not change the type of immediate values to an assoc or list. Note that `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((set
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	)
-	"e"
-	5
-))&", R"({
-	4 "d"
-	a 1
-	b 2
-	c 3
-	e 5
-})"},
-			{R"&((set
-	[0 1 2 3 4]
-	2
-	10
-))&", R"([0 1 10 3 4])"},
-			{R"&((set
-	(associate "a" 1 "b" 2)
-	"a"
-	3
-))&", R"({a 3 b 2})"}
-			});
-		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 3.0;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_REPLACE(ENT_REPLACE, &Interpreter::InterpretNode_ENT_SET_and_REPLACE, []() {
-		OpcodeDetails d;
-		d.parameters = R"(* data [number|string|list walk_path1] [* function1] [number|string|list walk_path2] [* function2] ... [number|string|list walk_pathN] [* functionN])";
-		d.returns = R"(any)";
-		d.description = R"(Performs a deep copy on `data` (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((replace
-	[
-		(associate "a" 13)
-	]
-))&", R"([
-	{a 13}
-])"},
-			{R"&((replace
-	[
-		(associate "a" 1)
-	]
-	[2]
-	1
-	[0]
-	[4 5 6]
-))&", R"([
-	[4 5 6]
-	(null)
-	1
-])"},
-			{R"&((replace
-	[
-		(associate "a" 1)
-	]
-	2
-	1
-	0
-	[4 5 6]
-))&", R"([
-	[4 5 6]
-	(null)
-	1
-])"},
-			{R"&((replace
-	[
-		(associate "a" 1)
-	]
-	[0]
-	(lambda
-		(set (current_value) "b" 2)
-	)
-))&", R"([
-	{a 1 b 2}
-])"}
-			});
-		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
-		d.newTargetScope = true;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 5.5;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
 static OpcodeInitializer _ENT_CURRENT_INDEX(ENT_CURRENT_INDEX, &Interpreter::InterpretNode_ENT_CURRENT_INDEX, []() {
 		OpcodeDetails d;
 		d.parameters = R"([number stack_distance])";
@@ -776,524 +556,6 @@ static OpcodeInitializer _ENT_SET_RAND_SEED(ENT_SET_RAND_SEED, &Interpreter::Int
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.5;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_FIRST(ENT_FIRST, &Interpreter::InterpretNode_ENT_FIRST, []() {
-		OpcodeDetails d;
-		d.parameters = R"([list|assoc|number|string data])";
-		d.returns = R"(any)";
-		d.description = R"(Evaluates to the first element of `data`.  If `data` is a list, it will be the first element.  If `data` is an assoc, it will evaluate to the first element by assoc storage, but order does not matter.  If `data` is a string, it will be the first character.  If `data` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((first
-	[4 9.2 "this"]
-))&", R"(4)"},
-			{R"&((first
-	(associate "a" 1 "b" 2)
-))&", R"(2)", R"(1|2)"},
-			{R"&((first 3))&", R"(1)"},
-			{R"&((first 0))&", R"(0)"},
-			{R"&((first "abc"))&", R"("a")"},
-			{R"&((first ""))&", R"((null))"}
-			});
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 20.0;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_TAIL(ENT_TAIL, &Interpreter::InterpretNode_ENT_TAIL, []() {
-		OpcodeDetails d;
-		d.parameters = R"([list|assoc|number|string data] [number retain_count])";
-		d.returns = R"(list)";
-		d.description = R"(Evaluates to everything but the first element.  If `data` is a list, it will be a list of all but the first element.  If `data` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, but order does not matter.  If `data` is a string, it will be all but the first character.  If `data` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero.  If a `retain_count` is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first element).)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((tail
-	[4 9.2 "this"]
-))&", R"([9.2 "this"])"},
-			{R"&((tail
-	[1 2 3 4 5 6]
-))&", R"([2 3 4 5 6])"},
-			{R"&((tail
-	[1 2 3 4 5 6]
-	2
-))&", R"([5 6])"},
-			{R"&((tail
-	[1 2 3 4 5 6]
-	-2
-))&", R"([3 4 5 6])"},
-			{R"&((tail
-	[1 2 3 4 5 6]
-	-6
-))&", R"([])"},
-			{R"&((tail
-	[1 2 3 4 5 6]
-	6
-))&", R"([1 2 3 4 5 6])"},
-			{R"&((tail
-	[1 2 3 4 5 6]
-	10
-))&", R"([1 2 3 4 5 6])"},
-			{R"&((tail
-	[1 2 3 4 5 6]
-	-10
-))&", R"([])"},
-			{R"&((tail
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		"d"
-		4
-		"e"
-		5
-		"f"
-		6
-	)
-))&", R"({
-	a 1
-	b 2
-	c 3
-	d 4
-	f 6
-})",
-			//just check that some subset worked
-			R"&(^\s*\{\s*
-(?:a\s+1\s*)?
-(?:b\s+2\s*)?
-(?:c\s+3\s*)?
-(?:d\s+4\s*)?
-(?:e\s+5\s*)?
-(?:f\s+6\s*)?
-\}$)&"},
-			{R"&((tail
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		"d"
-		4
-		"e"
-		5
-		"f"
-		6
-	)
-	2
-))&", R"({b 2 c 3})",
-			//just check that some subset worked
-			R"&(^\s*\{\s*
-(?:a\s+1\s*)?
-(?:b\s+2\s*)?
-(?:c\s+3\s*)?
-(?:d\s+4\s*)?
-(?:e\s+5\s*)?
-(?:f\s+6\s*)?
-\}$)&"},
-			{R"&((tail
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		"d"
-		4
-		"e"
-		5
-		"f"
-		6
-	)
-	-2
-))&", R"({
-	a 1
-	b 2
-	c 3
-	d 4
-})",
-			//just check that some subset worked
-			R"&(^\s*\{\s*
-(?:a\s+1\s*)?
-(?:b\s+2\s*)?
-(?:c\s+3\s*)?
-(?:d\s+4\s*)?
-(?:e\s+5\s*)?
-(?:f\s+6\s*)?
-\}$)&"},
-			{R"&((tail
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		"d"
-		4
-		"e"
-		5
-		"f"
-		6
-	)
-	10
-))&", R"({
-	a 1
-	b 2
-	c 3
-	d 4
-	e 5
-	f 6
-})",
-			//just check that some subset worked
-			R"&(^\s*\{\s*
-(?:a\s+1\s*)?
-(?:b\s+2\s*)?
-(?:c\s+3\s*)?
-(?:d\s+4\s*)?
-(?:e\s+5\s*)?
-(?:f\s+6\s*)?
-\}$)&" },
-			{R"&((tail
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		"d"
-		4
-		"e"
-		5
-		"f"
-		6
-	)
-	-10
-))&", R"({})"},
-			{R"&((tail 3))&", R"(2)"},
-			{R"&((tail 0))&", R"(0)"},
-			{R"&((tail "abcdef"))&", R"("bcdef")"},
-			{R"&((tail "abcdef" 2))&", R"("ef")"},
-			{R"&((tail "abcdef" -2))&", R"("cdef")"},
-			{R"&((tail "abcdef" 6))&", R"("abcdef")"},
-			{R"&((tail "abcdef" -6))&", R"("")"},
-			{R"&((tail "abcdef" 10))&", R"("abcdef")"},
-			{R"&((tail "abcdef" -10))&", R"("")"},
-			{R"&((tail ""))&", R"((null))"}
-			});
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 2.5;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_LAST(ENT_LAST, &Interpreter::InterpretNode_ENT_LAST, []() {
-		OpcodeDetails d;
-		d.parameters = R"([list|assoc|number|string data])";
-		d.returns = R"(any)";
-		d.description = R"(Evaluates to the last element of `data`.  If `data` is a list, it will be the last element.  If `data` is an assoc, it will evaluate to the first element by assoc storage, because order does not matter.  If `data` is a string, it will be the last character.  If `data` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((last
-	[4 9.2 "this"]
-))&", R"("this")"},
-			{R"&((last
-	(associate "a" 1 "b" 2)
-))&", R"(2)", R"(1|2)"},
-			{R"&((last 3))&", R"(1)"},
-			{R"&((last 0))&", R"(0)"},
-			{R"&((last "abc"))&", R"("c")"},
-			{R"&((last ""))&", R"((null))"}
-			});
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 13.0;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_TRUNC(ENT_TRUNC, &Interpreter::InterpretNode_ENT_TRUNC, []() {
-		OpcodeDetails d;
-		d.parameters = R"([list|assoc|number|string data] [number retain_count])";
-		d.returns = R"(list)";
-		d.description = R"(Truncates, evaluates to everything in `data` but the last element. If `data` is a list, it will be a list of all but the last element.  If `data` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, because order does not matter.  If `data` is a string, it will be all but the last character.  If `data` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If `truncate_count` is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1, indicating all but the last.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((trunc
-	[4 9.2 "end"]
-))&", R"([4 9.2])"},
-			{R"&((trunc
-	[1 2 3 4 5 6]
-))&", R"([1 2 3 4 5])"},
-			{R"&((trunc
-	[1 2 3 4 5 6]
-	2
-))&", R"([1 2])"},
-			{R"&((trunc
-	[1 2 3 4 5 6]
-	-2
-))&", R"([1 2 3 4])"},
-			{R"&((trunc
-	[1 2 3 4 5 6]
-	-6
-))&", R"([])"},
-			{R"&((trunc
-	[1 2 3 4 5 6]
-	6
-))&", R"([1 2 3 4 5 6])"},
-			{R"&((trunc
-	[1 2 3 4 5 6]
-	10
-))&", R"([1 2 3 4 5 6])"},
-			{R"&((trunc
-	[1 2 3 4 5 6]
-	-10
-))&", R"([])"},
-			{R"&((trunc
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		"d"
-		4
-		"e"
-		5
-		"f"
-		6
-	)
-))&", R"({
-	a 1
-	c 3
-	d 4
-	e 5
-	f 6
-})",
-//just check that some subset worked
-R"&(^\s*\{\s*
-(?:a\s+1\s*)?
-(?:b\s+2\s*)?
-(?:c\s+3\s*)?
-(?:d\s+4\s*)?
-(?:e\s+5\s*)?
-(?:f\s+6\s*)?
-\}$)&" },
-			{R"&((trunc
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		"d"
-		4
-		"e"
-		5
-		"f"
-		6
-	)
-	2
-))&", R"({e 5 f 6})",
-//just check that some subset worked
-R"&(^\s*\{\s*
-(?:a\s+1\s*)?
-(?:b\s+2\s*)?
-(?:c\s+3\s*)?
-(?:d\s+4\s*)?
-(?:e\s+5\s*)?
-(?:f\s+6\s*)?
-\}$)&" },
-			{R"&((trunc
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		"d"
-		4
-		"e"
-		5
-		"f"
-		6
-	)
-	-2
-))&", R"({
-	c 3
-	d 4
-	e 5
-	f 6
-})",
-//just check that some subset worked
-R"&(^\s*\{\s*
-(?:a\s+1\s*)?
-(?:b\s+2\s*)?
-(?:c\s+3\s*)?
-(?:d\s+4\s*)?
-(?:e\s+5\s*)?
-(?:f\s+6\s*)?
-\}$)&" },
-			{R"&((trunc
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		"d"
-		4
-		"e"
-		5
-		"f"
-		6
-	)
-	10
-))&", R"({
-	a 1
-	b 2
-	c 3
-	d 4
-	e 5
-	f 6
-})",
-//just check that some subset worked
-R"&(^\s*\{\s*
-(?:a\s+1\s*)?
-(?:b\s+2\s*)?
-(?:c\s+3\s*)?
-(?:d\s+4\s*)?
-(?:e\s+5\s*)?
-(?:f\s+6\s*)?
-\}$)&" },
-			{R"&((trunc
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		"d"
-		4
-		"e"
-		5
-		"f"
-		6
-	)
-	-10
-))&", R"({})"},
-			{R"&((trunc 3))&", R"(2)"},
-			{R"&((trunc 0))&", R"(0)"},
-			{R"&((trunc "abcdef"))&", R"("abcde")"},
-			{R"&((trunc "abcdef" 2))&", R"("ab")"},
-			{R"&((trunc "abcdef" -2))&", R"("abcd")"},
-			{R"&((trunc "abcdef" 6))&", R"("abcdef")"},
-			{R"&((trunc "abcdef" -6))&", R"("")"},
-			{R"&((trunc "abcdef" 10))&", R"("abcdef")"},
-			{R"&((trunc "abcdef" -10))&", R"("")"},
-			{R"&((trunc ""))&", R"((null))"},
-
-			});
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-		d.frequencyPer10000Opcodes = 5.5;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_APPEND(ENT_APPEND, &Interpreter::InterpretNode_ENT_APPEND, []() {
-		OpcodeDetails d;
-		d.parameters = R"([list|assoc|* collection1] [list|assoc|* collection2] ... [list|assoc|* collectionN])";
-		d.returns = R"(list|assoc)";
-		d.description = R"(Evaluates to a new list or assoc which merges all lists, `collection1` through `collectionN`, based on parameter order. If any assoc is passed in, then returns an assoc (lists will be automatically converted to an assoc with the indices as keys and the list elements as values). If a non-list and non-assoc is specified, then it just adds that one element to the list)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((append
-	[1 2 3]
-	[4 5 6]
-	[7 8 9]
-))&", R"([
-	1
-	2
-	3
-	4
-	5
-	6
-	7
-	8
-	9
-])"},
-			{R"&((append
-	[1 2 3]
-	(associate "a" 4 "b" 5 "c" 6)
-	[7 8 9]
-	(associate "d" 10 "e" 11)
-))&", R"({
-	0 1
-	1 2
-	2 3
-	3 7
-	4 8
-	5 9
-	a 4
-	b 5
-	c 6
-	d 10
-	e 11
-})"},
-			{R"&((append
-	[4 9.2 "this"]
-	"end"
-))&", R"([4 9.2 "this" "end"])"},
-			{R"&((append
-	(associate 0 4 1 9.2 2 "this")
-	"end"
-))&", R"({
-	0 4
-	1 9.2
-	2 "this"
-	3 "end"
-})"}
-			});
-		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 18.5;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_SIZE(ENT_SIZE, &Interpreter::InterpretNode_ENT_SIZE, []() {
-		OpcodeDetails d;
-		d.parameters = R"([list|assoc|string collection] collection)";
-		d.returns = R"(number)";
-		d.description = R"(Evaluates to the size of the `collection` in number of elements.  If `collection` is a string, returns the length in UTF-8 characters.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((size
-	[4 9.2 "this"]
-))&", R"(3)"},
-			{R"&((size
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	)
-))&", R"(4)"},
-			{R"&((size "hello"))&", R"(5)"}
-			});
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 43.0;
 		d.opcodeGroup = _opcode_group;
 		return d;
 	});
@@ -1941,29 +1203,142 @@ static OpcodeInitializer _ENT_REDUCE(ENT_REDUCE, &Interpreter::InterpretNode_ENT
 		return d;
 	});
 
-static OpcodeInitializer _ENT_REVERSE(ENT_REVERSE, &Interpreter::InterpretNode_ENT_REVERSE, []() {
+static OpcodeInitializer _ENT_ASSOCIATE(ENT_ASSOCIATE, &Interpreter::InterpretNode_ENT_ASSOCIATE, []() {
 		OpcodeDetails d;
-		d.parameters = R"(list collection)";
-		d.returns = R"(list)";
-		d.description = R"(Returns a new list containing the `collection` with its elements in reversed order.)";
+		d.parameters = R"([* index1] [* value1] [* index2] [* value2] ... [* indexN] [* valueN])";
+		d.returns = R"(assoc)";
+		d.allowsConcurrency = true;
+		d.description = R"(Evaluates to the assoc, where each pair of parameters (e.g., `index1` and `value1`) comprises a index/value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.)";
 		d.examples = MakeAmalgamExamples({
-			{R"&((reverse
-	[1 2 3 4 5]
-))&", R"([5 4 3 2 1])"}
+			{R"&((unparse
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
+	)
+))&", R"("{4 \"d\" a 1 b 2 c 3}")"}
 			});
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
+		d.newTargetScope = true;
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 0.5;
+		d.frequencyPer10000Opcodes = 4.5;
 		d.opcodeGroup = _opcode_group;
 		return d;
 	});
 
-static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SORT, []() {
+static OpcodeInitializer _ENT_ZIP(ENT_ZIP, &Interpreter::InterpretNode_ENT_ZIP, []() {
 		OpcodeDetails d;
-		d.parameters = R"([* function] list|assoc collection [number k])";
-		d.returns = R"(list)";
-		d.description = "Returns a new list containing the elements from `collection` sorted in increasing order, regardless of whether `collection` is an assoc or list.  If `function` is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with `(current_value)` and `(current_value 1)` accessing a pair of elements from the list, and evaluates `function`.  The function should return a number, positive if `(current_value)` is greater, negative if `(current_value 1)` is greater, or 0 if equal.  If `k` is specified in addition to `function` and not null, then it will only return the `k` smallest values sorted in order, or, if `k` is negative, it will return the highest `k` values using the absolute value of `k`.";
+		d.parameters = R"([* function] list indices [* values])";
+		d.returns = R"(assoc)";
+		d.description = R"(Evaluates to a new assoc where `indices` are the keys and `values` are the values, with corresponding positions in the list matched.  If the `values` is omitted and only one parameter is specified, then it will use nulls for each of the values.  If `values` is not a list, then all of the values in the assoc returned are set to the same value.  When two parameters are specified, it is the `indices` and `values`.  When three values are specified, it is the `function`, indices, and values.  The parameter `values` defaults to null and `function` defaults to `(lambda (current_value))`.  When there is a collision of indices, `function` is called with a of new target scope pushed onto the stack, so that `(current_value)` accesses a list of elements from the list, `(current_index)` accesses the list or assoc index if it is not already reduced, and `(target)` represents the original list or assoc.  When evaluating `function`, existing indices will be overwritten.)";
 		d.examples = MakeAmalgamExamples({
-			{R"&((sort
+			{R"&((unparse
+	(zip
+		["a" "b" "c" "d"]
+		[1 2 3 4]
+	)
+))&", R"("{a 1 b 2 c 3 d 4}")"},
+			{R"&((unparse
+	(zip
+		["a" "b" "c" "d"]
+	)
+))&", R"("{a (null) b (null) c (null) d (null)}")"},
+			{R"&((unparse
+	(zip
+		["a" "b" "c" "d"]
+		3
+	)
+))&", R"("{a 3 b (target .true \"a\") c (target .true \"a\") d (target .true \"a\")}")"},
+			{R"&((unparse
+	(zip
+		(lambda (current_value))
+		["a" "b" "c" "d" "a"]
+		[1 2 3 4 4]
+	)
+))&", R"("{a 4 b 2 c 3 d 4}")"},
+			{R"&((unparse
+	(zip
+		(lambda
+			(+
+				(current_value 1)
+				(current_value)
+			)
+		)
+		["a" "b" "c" "d" "a"]
+		[1 2 3 4 4]
+	)
+))&", R"("{a 5 b 2 c 3 d 4}")"},
+			{R"&((unparse
+	(zip
+		(lambda
+			(+
+				(current_value 1)
+				(current_value)
+			)
+		)
+		["a" "b" "c" "d" "a"]
+		1
+	)
+))&", R"("{a 2 b 1 c (target .true \"b\") d (target .true \"b\")}")"}
+			});
+		d.newTargetScope = true;
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.frequencyPer10000Opcodes = 18.0;
+		d.opcodeGroup = _opcode_group;
+		return d;
+	});
+
+static OpcodeInitializer _ENT_UNZIP(ENT_UNZIP, &Interpreter::InterpretNode_ENT_UNZIP, []() {
+		OpcodeDetails d;
+		d.parameters = R"([list|assoc collection] list indices)";
+		d.returns = R"(list)";
+		d.description = R"(Evaluates to a new list, using `indices` to look up each value from the `collection` in the same order as each index is specified in `indices`.)";
+		d.examples = MakeAmalgamExamples({
+			{R"&((unzip
+	[1 2 3]
+	[0 -1 1]
+))&", R"([1 3 2])"},
+			{R"&((unzip
+	(associate "a" 1 "b" 2 "c" 3)
+	["a" "b"]
+))&", R"([1 2])"}
+			});
+		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+		d.frequencyPer10000Opcodes = 8.0;
+		d.opcodeGroup = _opcode_group;
+		return d;
+	});
+
+static OpcodeInitializer _ENT_REVERSE(ENT_REVERSE, &Interpreter::InterpretNode_ENT_REVERSE, []() {
+	OpcodeDetails d;
+	d.parameters = R"(list collection)";
+	d.returns = R"(list)";
+	d.description = R"(Returns a new list containing the `collection` with its elements in reversed order.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((reverse
+	[1 2 3 4 5]
+))&", R"([5 4 3 2 1])"}
+		});
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+	d.frequencyPer10000Opcodes = 0.5;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SORT, []() {
+	OpcodeDetails d;
+	d.parameters = R"([* function] list|assoc collection [number k])";
+	d.returns = R"(list)";
+	d.description = "Returns a new list containing the elements from `collection` sorted in increasing order, regardless of whether `collection` is an assoc or list.  If `function` is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with `(current_value)` and `(current_value 1)` accessing a pair of elements from the list, and evaluates `function`.  The function should return a number, positive if `(current_value)` is greater, negative if `(current_value 1)` is greater, or 0 if equal.  If `k` is specified in addition to `function` and not null, then it will only return the `k` smallest values sorted in order, or, if `k` is negative, it will return the highest `k` values using the absolute value of `k`.";
+	d.examples = MakeAmalgamExamples({
+		{R"&((sort
 	[4 9 3 5 1]
 ))&", R"([1 3 4 5 9])"},
 			{R"&((sort
@@ -2146,652 +1521,14 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 	[4 9 3 5 1]
 	-2
 ))&", R"([9 5])"}
-			});
-		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
-		d.newTargetScope = true;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 3.0;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_INDICES(ENT_INDICES, &Interpreter::InterpretNode_ENT_INDICES, []() {
-		OpcodeDetails d;
-		d.parameters = R"(list|assoc collection)";
-		d.returns = R"(list of string|number)";
-		d.description = R"(Evaluates to the list of strings or numbers that comprise the indices for the list or associative parameter `collection`.  It is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((sort
-	(indices
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
-	)
-))&", R"([4 "a" "b" "c"])"},
-			{R"&((indices
-	[
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	]
-))&", R"([
-	0
-	1
-	2
-	3
-	4
-	5
-	6
-	7
-])"},
-			{R"&((indices
-	(range 0 3)
-))&", R"([0 1 2 3])"},
-			{R"&((sort
-	(indices
-		(zip
-			(range 0 3)
-		)
-	)
-))&", R"([0 1 2 3])"},
-			{R"&((sort
-	(indices
-		(zip
-			[0 1 2 3]
-		)
-	)
-))&", R"([0 1 2 3])"}
-			});
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 12.5;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_VALUES(ENT_VALUES, &Interpreter::InterpretNode_ENT_VALUES, []() {
-		OpcodeDetails d;
-		d.parameters = R"(list|assoc collection [bool only_unique_values])";
-		d.returns = R"(list of any)";
-		d.description = R"(Evaluates to the list of entities that comprise the values for the list or associative list `collection`.  If `only_unique_values` is true (defaults to false), then it will filter out any duplicate values and only return those that are unique, preserving their order of first appearance.  If `only_unique_values` is not true, then it is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((sort
-	(values
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
-	)
-))&", R"([1 2 3 "d"])"},
-			{R"&((values
-	[
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	]
-))&", R"([
-	"a"
-	1
-	"b"
-	2
-	"c"
-	3
-	4
-	"d"
-])"},
-			{R"&((values
-	[
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-		1
-		2
-		3
-		4
-		"a"
-		"b"
-		"c"
-	]
-	.true
-))&", R"([
-	"a"
-	1
-	"b"
-	2
-	"c"
-	3
-	4
-	"d"
-])"},
-			{R"&((sort
-	(values
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-			"e"
-			1
-		)
-		.true
-	)
-))&", R"([1 2 3 "d"])"},
-			{R"&((values
-	(append
-		(range 1 20)
-		(range 1 20)
-	)
-	.true
-))&", R"([
-	1
-	2
-	3
-	4
-	5
-	6
-	7
-	8
-	9
-	10
-	11
-	12
-	13
-	14
-	15
-	16
-	17
-	18
-	19
-	20
-])"}
-			});
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 9.0;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_CONTAINS_INDEX(ENT_CONTAINS_INDEX, &Interpreter::InterpretNode_ENT_CONTAINS_INDEX, []() {
-		OpcodeDetails d;
-		d.parameters = R"(list|assoc collection string|number|list index)";
-		d.returns = R"(bool)";
-		d.description = R"(Evaluates to true if the index is in the `collection`.  If index is a string, it will attempt to look at `collection` as an assoc, if number, it will look at `collection` as a list.  If index is a list, it will traverse a via the elements in the list as a walk path, with each element .)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((contains_index
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	)
-	"c"
-))&", R"(.true)"},
-			{R"&((contains_index
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	)
-	"m"
-))&", R"(.false)"},
-			{R"&((contains_index
-	[
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	]
-	2
-))&", R"(.true)"},
-			{R"&((contains_index
-	[
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	]
-	100
-))&", R"(.false)"}
-			});
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 20.0;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_CONTAINS_VALUE(ENT_CONTAINS_VALUE, &Interpreter::InterpretNode_ENT_CONTAINS_VALUE, []() {
-		OpcodeDetails d;
-		d.parameters = R"(list|assoc|string collection_or_string string|number value)";
-		d.returns = R"(bool)";
-		d.description = R"(Evaluates to true if the `value` is contained in `collection_or_string`.  If `collection_or_string` is a string, then it uses `value` as a regular expression and evaluates to true if the regular expression matches.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((contains_value
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	)
-	1
-))&", R"(.true)"},
-			{R"&((contains_value
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	)
-	44
-))&", R"(.false)"},
-			{R"&((contains_value
-	[
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	]
-	"d"
-))&", R"(.true)"},
-			{R"&((contains_value
-	[
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	]
-	100
-))&", R"(.false)"},
-			{R"&((contains_value "hello world" ".*world"))&", R"(.true)"},
-			{R"&((contains_value "abcdefg" "a.*g"))&", R"(.true)"},
-			{R"&((contains_value "3.141" "[0-9]+\\.[0-9]+"))&", R"(.true)"},
-			{R"&((contains_value "3.141" "\\d+\\.\\d+"))&", R"(.true)"},
-			{R"&((contains_value "3.a141" "\\d+\\.\\d+"))&", R"(.false)"},
-			{R"&((contains_value "abc\r\n123" "(.|\r)*\n.*"))&", R"(.true)"}
-			});
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.frequencyPer10000Opcodes = 77.5;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_REMOVE(ENT_REMOVE, &Interpreter::InterpretNode_ENT_REMOVE, []() {
-		OpcodeDetails d;
-		d.parameters = R"(list|assoc collection number|string|list index)";
-		d.returns = R"(list|assoc)";
-		d.description = R"(Removes the index-value pair with `index` being the index in assoc or index of `collection`, returning a new list or assoc with `index` removed.  If `index` is a list of numbers or strings, then it will remove each of the requested indices.  Negative numbered indices will count back from the end of a list.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((sort
-	(remove
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
-		4
-	)
-))&", R"([1 2 3])"},
-			{R"&((remove
-	[
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	]
-	4
-))&", R"([
-	"a"
-	1
-	"b"
-	2
-	3
-	4
-	"d"
-])"},
-			{R"&((sort
-	(remove
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
-		[4 "a"]
-	)
-))&", R"([2 3])"},
-			{R"&((remove
-	[
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	]
-	[4]
-))&", R"([
-	"a"
-	1
-	"b"
-	2
-	3
-	4
-	"d"
-])"},
-			{R"&((remove
-	[0 1 2 3 4 5]
-	[0 2]
-))&", R"([1 3 4 5])"},
-			{R"&((remove
-	[0 1 2 3 4 5]
-	-1
-))&", R"([0 1 2 3 4])"},
-			{R"&((remove
-	[0 1 2 3 4 5]
-	[0 -1]
-))&", R"([1 2 3 4])"},
-			{R"&((remove
-	[0 1 2 3 4 5]
-	[
-		5
-		0
-		1
-		2
-		3
-		4
-		5
-		6
-	]
-))&", R"([])"}
-			});
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 6.5;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_KEEP(ENT_KEEP, &Interpreter::InterpretNode_ENT_KEEP, []() {
-		OpcodeDetails d;
-		d.parameters = R"(list|assoc collection number|string|list index)";
-		d.returns = R"(list|assoc)";
-		d.description = R"(Keeps only the index-value pair with index being the index in `collection`, returning a new list or assoc with only that index.  If `index` is a list of numbers or strings, then it will only keep those requested indices.  Negative numbered indices will count back from the end of a list.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((keep
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	)
-	4
-))&", R"({4 "d"})"},
-			{R"&((keep
-	[
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	]
-	4
-))&", R"(["c"])"},
-			{R"&((sort
-	(keep
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
-		[4 "a"]
-	)
-))&", R"([1 "d"])"},
-			{R"&((keep
-	[
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	]
-	[4 "a"]
-))&", R"(["c"])"},
-			{R"&((keep
-	[0 1 2 3 4 5]
-	[0 2]
-))&", R"([0 2])"},
-			{R"&((keep
-	[0 1 2 3 4 5]
-	-1
-))&", R"([5])"},
-			{R"&((keep
-	[0 1 2 3 4 5]
-	[0 -1]
-))&", R"([0 5])"},
-			{R"&((keep
-	[0 1 2 3 4 5]
-	[
-		5
-		0
-		1
-		2
-		3
-		4
-		5
-		6
-	]
-))&", R"([0 1 2 3 4 5])"}
-			});
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 2.5;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_ASSOCIATE(ENT_ASSOCIATE, &Interpreter::InterpretNode_ENT_ASSOCIATE, []() {
-		OpcodeDetails d;
-		d.parameters = R"([* index1] [* value1] [* index2] [* value2] ... [* indexN] [* valueN])";
-		d.returns = R"(assoc)";
-		d.allowsConcurrency = true;
-		d.description = R"(Evaluates to the assoc, where each pair of parameters (e.g., `index1` and `value1`) comprises a index/value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((unparse
-	(associate
-		"a"
-		1
-		"b"
-		2
-		"c"
-		3
-		4
-		"d"
-	)
-))&", R"("{4 \"d\" a 1 b 2 c 3}")"}
-			});
-		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
-		d.newTargetScope = true;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 4.5;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_ZIP(ENT_ZIP, &Interpreter::InterpretNode_ENT_ZIP, []() {
-		OpcodeDetails d;
-		d.parameters = R"([* function] list indices [* values])";
-		d.returns = R"(assoc)";
-		d.description = R"(Evaluates to a new assoc where `indices` are the keys and `values` are the values, with corresponding positions in the list matched.  If the `values` is omitted and only one parameter is specified, then it will use nulls for each of the values.  If `values` is not a list, then all of the values in the assoc returned are set to the same value.  When two parameters are specified, it is the `indices` and `values`.  When three values are specified, it is the `function`, indices, and values.  The parameter `values` defaults to null and `function` defaults to `(lambda (current_value))`.  When there is a collision of indices, `function` is called with a of new target scope pushed onto the stack, so that `(current_value)` accesses a list of elements from the list, `(current_index)` accesses the list or assoc index if it is not already reduced, and `(target)` represents the original list or assoc.  When evaluating `function`, existing indices will be overwritten.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((unparse
-	(zip
-		["a" "b" "c" "d"]
-		[1 2 3 4]
-	)
-))&", R"("{a 1 b 2 c 3 d 4}")"},
-			{R"&((unparse
-	(zip
-		["a" "b" "c" "d"]
-	)
-))&", R"("{a (null) b (null) c (null) d (null)}")"},
-			{R"&((unparse
-	(zip
-		["a" "b" "c" "d"]
-		3
-	)
-))&", R"("{a 3 b (target .true \"a\") c (target .true \"a\") d (target .true \"a\")}")"},
-			{R"&((unparse
-	(zip
-		(lambda (current_value))
-		["a" "b" "c" "d" "a"]
-		[1 2 3 4 4]
-	)
-))&", R"("{a 4 b 2 c 3 d 4}")"},
-			{R"&((unparse
-	(zip
-		(lambda
-			(+
-				(current_value 1)
-				(current_value)
-			)
-		)
-		["a" "b" "c" "d" "a"]
-		[1 2 3 4 4]
-	)
-))&", R"("{a 5 b 2 c 3 d 4}")"},
-			{R"&((unparse
-	(zip
-		(lambda
-			(+
-				(current_value 1)
-				(current_value)
-			)
-		)
-		["a" "b" "c" "d" "a"]
-		1
-	)
-))&", R"("{a 2 b 1 c (target .true \"b\") d (target .true \"b\")}")"}
-			});
-		d.newTargetScope = true;
-		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 18.0;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_UNZIP(ENT_UNZIP, &Interpreter::InterpretNode_ENT_UNZIP, []() {
-		OpcodeDetails d;
-		d.parameters = R"([list|assoc collection] list indices)";
-		d.returns = R"(list)";
-		d.description = R"(Evaluates to a new list, using `indices` to look up each value from the `collection` in the same order as each index is specified in `indices`.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((unzip
-	[1 2 3]
-	[0 -1 1]
-))&", R"([1 3 2])"},
-			{R"&((unzip
-	(associate "a" 1 "b" 2 "c" 3)
-	["a" "b"]
-))&", R"([1 2])"}
-			});
-		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
-		d.frequencyPer10000Opcodes = 8.0;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
+		});
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.newTargetScope = true;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+	d.frequencyPer10000Opcodes = 3.0;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
 
 static OpcodeInitializer _ENT_GET_ANNOTATIONS(ENT_GET_ANNOTATIONS, &Interpreter::InterpretNode_ENT_GET_ANNOTATIONS, []() {
 		OpcodeDetails d;

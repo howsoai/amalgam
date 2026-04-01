@@ -204,6 +204,7 @@ set(COMMON_SOURCE
     src/Amalgam/string/StringInternPool.h
     src/Amalgam/string/StringManipulation.cpp
     src/Amalgam/string/StringManipulation.h
+    src/Amalgam/UninitializedArray.h
 )
 set(COMMON_SOURCE_THREADS
     ${COMMON_SOURCE}

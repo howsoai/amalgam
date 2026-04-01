@@ -51,7 +51,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_RETURN,
 	ENT_APPLY,
 	ENT_OPCODE_STACK,
-	//TODO 25241: consolidate from here down
+
 	//Logic & Comparison
 	ENT_AND,
 	ENT_OR,
@@ -65,7 +65,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_GEQUAL,
 	ENT_TYPE_EQUALS,
 	ENT_TYPE_NEQUALS,
-
+	//TODO 25241: consolidate from here down
 	//Basic Math
 	ENT_ADD,
 	ENT_SUBTRACT,

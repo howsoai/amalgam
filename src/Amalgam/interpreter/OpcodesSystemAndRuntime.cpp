@@ -24,6 +24,7 @@ static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HEL
 	frequency_per_10000_opcodes 18
 	new_scope .false
 	new_target_scope .false
+	opcode_group "Basic Math"
 	parameters "[number x1] [number x2] ... [number xN]"
 	permissions "none"
 	requires_entity .false

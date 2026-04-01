@@ -39,7 +39,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_GET_TYPE_STRING,
 	ENT_SET_TYPE,
 	ENT_FORMAT,
-	//TODO 25241: consolidate from here down
+
 	//Control Flow
 	ENT_IF,
 	ENT_SEQUENCE,
@@ -51,7 +51,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_RETURN,
 	ENT_APPLY,
 	ENT_OPCODE_STACK,
-
+	//TODO 25241: consolidate from here down
 	//Logic & Comparison
 	ENT_AND,
 	ENT_OR,

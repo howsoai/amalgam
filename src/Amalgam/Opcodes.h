@@ -112,7 +112,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_ACOSH,
 	ENT_TANH,
 	ENT_ATANH,
-	//TODO 25241: consolidate from here down
+
 	//String Operations
 	ENT_EXPLODE,
 	ENT_SPLIT,
@@ -120,7 +120,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_CONCAT,
 	ENT_PARSE,
 	ENT_UNPARSE,
-
+	//TODO 25241: consolidate from here down
 	//Container Manipulation
 	ENT_FIRST,
 	ENT_TAIL,

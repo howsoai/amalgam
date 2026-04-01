@@ -24,7 +24,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_LIST,
 	ENT_UNORDERED_LIST,
 	ENT_ASSOC,
-//TODO 25241: consolidate from here down
+
 	//Variable Definition & Modification
 	ENT_SYMBOL,
 	ENT_LET,
@@ -39,7 +39,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_GET_TYPE_STRING,
 	ENT_SET_TYPE,
 	ENT_FORMAT,
-
+	//TODO 25241: consolidate from here down
 	//Control Flow
 	ENT_IF,
 	ENT_SEQUENCE,

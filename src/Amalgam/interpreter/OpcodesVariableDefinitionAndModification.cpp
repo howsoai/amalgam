@@ -1,9 +1,11 @@
 //project headers:
+#include "AssetManager.h"
 #include "DateTimeFormat.h"
 #include "FileSupportJSON.h"
 #include "FileSupportYAML.h"
 #include "Interpreter.h"
 #include "OpcodeDetails.h"
+#include "PerformanceProfiler.h"
 
 static std::string _opcode_group = "Variable Definition and Modification";
 
@@ -41,7 +43,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	//if didn't find it in the stack, try it in the labels
 	//don't need to lock the entity since it's already executing on it
 	if(curEntity != nullptr)
-	{
+	{ 
 		auto [label_value, label_found] = curEntity->GetValueAtLabel(sid, evaluableNodeManager, immediate_result, true);
 		if(label_found)
 			return label_value;

@@ -65,7 +65,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_GEQUAL,
 	ENT_TYPE_EQUALS,
 	ENT_TYPE_NEQUALS,
-	//TODO 25241: consolidate from here down
+
 	//Basic Math
 	ENT_ADD,
 	ENT_SUBTRACT,
@@ -82,7 +82,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_MIN,
 	ENT_INDEX_MAX,
 	ENT_INDEX_MIN,
-
+	//TODO 25241: consolidate from here down
 	//Advanced Math
 	ENT_EXPONENT,
 	ENT_LOG,

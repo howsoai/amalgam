@@ -1162,3 +1162,280 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNo
 	return EntityManipulation::FlattenEntity(evaluableNodeManager, entity, erbr,
 		include_rand_seeds, parallel_create, include_version);
 }
+
+static OpcodeInitializer _ENT_RETRIEVE_ENTITY_ROOT(ENT_RETRIEVE_ENTITY_ROOT, &Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT, []() {
+	OpcodeDetails d;
+	d.parameters = R"([id_path entity])";
+	d.returns = R"(any)";
+	d.description = R"(Evaluates to the code contained by `entity`.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((seq
+	(create_entities
+		"Entity"
+		(lambda
+			{1 2 three 3}
+		)
+	)
+	(retrieve_entity_root "Entity")
+))&", R"({1 2 three 3})", "", R"((destroy_entities "Entity"))"}
+		});
+	d.requiresEntity = true;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.frequencyPer10000Opcodes = 0.25;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	if(curEntity == nullptr)
+		return EvaluableNodeReference::Null();
+	auto &ocn = en->GetOrderedChildNodesReference();
+
+	//retrieve the entity after other parameters to minimize time in locks
+	// and prevent deadlock if one of the params accessed the entity
+	EntityReadReference target_entity;
+	if(ocn.size() > 0)
+		target_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
+	else
+		target_entity = EntityReadReference(curEntity);
+
+	if(target_entity == nullptr)
+		return EvaluableNodeReference::Null();
+
+
+	return target_entity->GetRoot(evaluableNodeManager);
+}
+
+static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS, []() {
+	OpcodeDetails d;
+	d.parameters = R"([id_path entity1] * root1 [id_path entity2] [* root2] [...])";
+	d.returns = R"(bool)";
+	d.description = R"(Sets the code of the `entity1 to `root1`, as well as all subsequent entity-code pairs of parameters.  If `entity1` is not specified or null, then uses the current entity.  On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((seq
+	(create_entities
+		"Entity"
+		(lambda
+			{1 2 three 3}
+		)
+	)
+	(assign_entity_roots
+		"Entity"
+		{a 4 b 5 c 6}
+	)
+	(retrieve_entity_root "Entity")
+))&", R"({a 4 b 5 c 6})", "", R"((destroy_entities "Entity"))"}
+		});
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
+	d.requiresEntity = true;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.hasSideEffects = true;
+	d.frequencyPer10000Opcodes = 0.1;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	if(curEntity == nullptr)
+		return EvaluableNodeReference::Null();
+
+	auto &ocn = en->GetOrderedChildNodesReference();
+
+	bool all_assignments_successful = true;
+
+	for(size_t i = 0; i < ocn.size(); i += 2)
+	{
+		//get value to assign first before getting the entity in case it needs to be locked
+		EvaluableNodeReference new_code = EvaluableNodeReference::Null();
+		if(i + 1 < ocn.size())
+			new_code = InterpretNodeForImmediateUse(ocn[i + 1]);
+		else
+			new_code = InterpretNodeForImmediateUse(ocn[i]);
+		auto node_stack = CreateOpcodeStackStateSaver(new_code);
+
+		EntityWriteReference target_entity;
+		if(i + 1 < ocn.size())
+		{
+			target_entity = InterpretNodeIntoRelativeSourceEntityWriteReference(ocn[i]);
+
+			//if didn't find an entity, then use current one
+			if(target_entity == nullptr)
+			{
+				all_assignments_successful = false;
+				evaluableNodeManager->FreeNodeTreeIfPossible(new_code);
+				continue;
+			}
+		}
+		else
+		{
+			target_entity = EntityWriteReference(curEntity);
+		}
+
+		//pause if allocating to another entity
+		EvaluableNodeManager::LocalAllocationBufferPause lab_pause;
+		if(target_entity != curEntity)
+			lab_pause = evaluableNodeManager->PauseLocalAllocationBuffer();
+
+		size_t prev_size = 0;
+		if(ConstrainedAllocatedNodes())
+			prev_size = target_entity->GetSizeInNodes();
+
+		target_entity->SetRoot(new_code, false, writeListeners);
+
+		if(ConstrainedAllocatedNodes())
+		{
+			size_t cur_size = target_entity->GetSizeInNodes();
+			//don't get credit for freeing memory, but do count toward memory consumed
+			if(cur_size > prev_size)
+				interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += cur_size - prev_size;
+		}
+
+		lab_pause.Resume();
+
+		if(target_entity != curEntity)
+		{
+			//don't need to set side effects because the data was copied, not directly assigned
+		#ifdef AMALGAM_MEMORY_INTEGRITY
+			VerifyEvaluableNodeIntegrity();
+		#endif
+
+			target_entity->CollectGarbageWithEntityWriteReference();
+
+		#ifdef AMALGAM_MEMORY_INTEGRITY
+			VerifyEvaluableNodeIntegrity();
+		#endif
+		}
+
+		evaluableNodeManager->FreeNodeTreeIfPossible(new_code);
+	}
+
+	return AllocReturn(all_assignments_successful, immediate_result);
+}
+
+static OpcodeInitializer _ENT_GET_ENTITY_PERMISSIONS(ENT_GET_ENTITY_PERMISSIONS, &Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS, []() {
+	OpcodeDetails d;
+	d.parameters = R"([id_path entity])";
+	d.returns = R"(assoc)";
+	d.description = R"(Returns an assoc of the permissions of `entity`, the current entity if `entity` is not specified or null, where each key is the permission and each value is either true or false.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((seq
+	(create_entities
+		"Entity"
+		(lambda
+			(print (system_time))
+		)
+	)
+	(get_entity_permissions "Entity")
+))&", R"({
+	alter_performance .false
+	environment .false
+	load .false
+	std_in .false
+	std_out_and_std_err .false
+	store .false
+	system .false
+})", "", R"((destroy_entities "Entity"))"}
+		});
+	d.requiresEntity = true;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.frequencyPer10000Opcodes = 0.05;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodesReference();
+
+	EntityReadReference entity;
+	if(ocn.size() > 0)
+		entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
+	else
+		entity = EntityReadReference(curEntity);
+
+	auto entity_permissions = asset_manager.GetEntityPermissions(entity);
+	//clear lock
+	entity = EntityReadReference();
+
+	return EvaluableNodeReference(entity_permissions.GetPermissionsAsEvaluableNode(evaluableNodeManager), true);
+}
+
+static OpcodeInitializer _ENT_SET_ENTITY_PERMISSIONS(ENT_SET_ENTITY_PERMISSIONS, &Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS, []() {
+	OpcodeDetails d;
+	d.parameters = R"(id_path entity bool|assoc permissions [bool deep])";
+	d.returns = R"(id_path)";
+	d.description = R"(Sets the permissions on the `entity`.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.  The parameter `deep` defaults to false, but if it is true, all contained entities have their permissions updated.  Returns the id path of `entity`.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((seq
+	(create_entities
+		"Entity"
+		(lambda
+			(print (system_time))
+		)
+	)
+	(set_entity_permissions "Entity" .true)
+	(get_entity_permissions "Entity")
+))&", R"({
+	alter_performance .true
+	environment .true
+	load .true
+	std_in .true
+	std_out_and_std_err .true
+	store .true
+	system .true
+})", "", R"((destroy_entities "Entity"))"}
+		});
+	d.requiresEntity = true;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.hasSideEffects = true;
+	d.frequencyPer10000Opcodes = 0.5;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodesReference();
+	size_t num_params = ocn.size();
+
+	if(num_params < 2)
+		return EvaluableNodeReference::Null();
+
+	//retrieve parameter to determine whether to deep set the seeds, if applicable
+	bool deep_set = true;
+	if(num_params > 2)
+		deep_set = InterpretNodeIntoBoolValue(ocn[2], true);
+
+	EvaluableNodeReference permissions_en = InterpretNodeForImmediateUse(ocn[1]);
+
+	auto [permissions_to_set, permission_values] = ExecutionPermissions::EvaluableNodeToPermissions(permissions_en);
+
+	//any permissions set by this entity need to be filtered by the current entity's permissions
+	auto current_entity_permissions = asset_manager.GetEntityPermissions(curEntity);
+	permissions_to_set.allPermissions &= current_entity_permissions.allPermissions;
+	permission_values.allPermissions &= current_entity_permissions.allPermissions;
+
+	//get the id of the entity
+	auto id_node = InterpretNode(ocn[0]);
+	EntityWriteReference entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityWriteReference>(curEntity, id_node);
+
+	if(entity == nullptr)
+		return EvaluableNodeReference::Null();
+
+#ifdef MULTITHREAD_SUPPORT
+	if(deep_set)
+	{
+		auto contained_entities = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityWriteReference>();
+		if(contained_entities == nullptr)
+			return EvaluableNodeReference::Null();
+
+		entity->SetPermissions(permissions_to_set, permission_values, true, writeListeners, &contained_entities);
+	}
+	else
+	#endif
+		entity->SetPermissions(permissions_to_set, permission_values, deep_set, writeListeners);
+
+	return id_node;
+}

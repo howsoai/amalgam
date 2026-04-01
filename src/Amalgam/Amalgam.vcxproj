@@ -579,7 +579,6 @@
     <ClCompile Include="interpreter\InterpreterOpcodesBase.cpp" />
     <ClCompile Include="interpreter\InterpreterOpcodesCodeMixing.cpp" />
     <ClCompile Include="interpreter\InterpreterOpcodesDataTypes.cpp" />
-    <ClCompile Include="interpreter\InterpreterOpcodesEntityAccess.cpp" />
     <ClCompile Include="interpreter\InterpreterOpcodesEntityControl.cpp" />
     <ClCompile Include="interpreter\OpcodesAdvancedMath.cpp" />
     <ClCompile Include="interpreter\OpcodesBasicMath.cpp" />

@@ -227,7 +227,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_SET_VALUE,
 	ENT_GET_ENTITY_ANNOTATIONS,
 	ENT_GET_ENTITY_COMMENTS,
-	//TODO 25241: consolidate from here down
+
 	//Code Comparison and Evolution
 	ENT_TOTAL_SIZE,
 	ENT_MUTATE,
@@ -248,7 +248,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_UNION_ENTITIES,
 	ENT_DIFFERENCE_ENTITIES,
 	ENT_MIX_ENTITIES,
-
+	//TODO 25241: consolidate from here down
 	//Random
 	ENT_RAND,
 	ENT_GET_RAND_SEED,

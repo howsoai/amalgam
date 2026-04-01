@@ -134,16 +134,3 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECRYPT(EvaluableNode *en,
 	return AllocReturn(plaintext, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
-{
-	auto &ocn = en->GetOrderedChildNodesReference();
-
-	if(ocn.size() == 0)
-		return EvaluableNodeReference::Null();
-
-	auto n = InterpretNodeForImmediateUse(ocn[0]);
-	double total_size = static_cast<double>(EvaluableNode::GetDeepSize(n));
-	evaluableNodeManager->FreeNodeTreeIfPossible(n);
-
-	return AllocReturn(total_size, immediate_result);
-}

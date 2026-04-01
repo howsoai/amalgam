@@ -20,46 +20,6 @@
 #include <limits>
 #include <utility>
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_MUTATION_DEFAULTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
-{
-	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
-		return EvaluableNodeReference::Null();
-	//get the string key
-	std::string key = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-
-	if(key == "mutation_opcodes")
-	{
-		EvaluableNode *out_node = evaluableNodeManager->AllocNode(ENT_ASSOC);
-		out_node->ReserveMappedChildNodes(NUM_VALID_ENT_OPCODES);
-		for(size_t node_type = 0;  node_type < NUM_VALID_ENT_OPCODES; node_type++)
-		{
-			EvaluableNode *num_node = evaluableNodeManager->AllocNode(_opcode_details[node_type].frequencyPer10000Opcodes);
-
-			StringInternPool::StringID node_type_sid = GetStringIdFromNodeType(static_cast<EvaluableNodeType>(node_type));
-			out_node->SetMappedChildNode(node_type_sid, num_node);
-		}
-
-		return EvaluableNodeReference(out_node, true);
-	}
-
-	if(key == "mutation_types")
-	{
-		EvaluableNode *out_node = evaluableNodeManager->AllocNode(ENT_ASSOC);
-		out_node->ReserveMappedChildNodes(EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities.size());
-		for(auto &[op_type, op_prob] : EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities)
-		{
-			EvaluableNode *num_node = evaluableNodeManager->AllocNode(op_prob);
-
-			StringInternPool::StringID op_type_sid = GetStringIdFromBuiltInStringId(op_type);
-			out_node->SetMappedChildNode(op_type_sid, num_node);
-		}
-
-		return EvaluableNodeReference(out_node, true);
-	}
-
-	return EvaluableNodeReference::Null();
-}
 
 static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints::ViolationType violation, EvaluableNodeManager *evaluable_node_manager)
 {

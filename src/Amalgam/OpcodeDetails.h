@@ -162,6 +162,10 @@ public:
 //details for every opcode, indexed by EvaluableNodeType
 extern std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
 
+//forward declaration
+template<typename OpcodeFunction>
+void SetInterpreterOpcodeFunction(EvaluableNodeType type, OpcodeFunction func);
+
 //no-storage class to initialize storage for opcodes such that all relevant
 //code and data for an opcode can be kept in the same location
 class OpcodeInitializer
@@ -169,7 +173,11 @@ class OpcodeInitializer
 public:
 
 	template<typename OpcodeFunction, typename OpcodeDetailsBuilder>
-	OpcodeInitializer(EvaluableNodeType type, OpcodeFunction func, OpcodeDetailsBuilder details_builder);
+	OpcodeInitializer(EvaluableNodeType type, OpcodeFunction func, OpcodeDetailsBuilder details_builder)
+	{
+		SetInterpreterOpcodeFunction(type, func);
+		_opcode_details[static_cast<size_t>(type)] = details_builder();
+	}
 };
 
 //returns the type of structure that the ordered child nodes have for a given t

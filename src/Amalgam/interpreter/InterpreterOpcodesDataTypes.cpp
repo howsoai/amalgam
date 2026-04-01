@@ -1733,55 +1733,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECRYPT(EvaluableNode *en,
 	return AllocReturn(plaintext, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
-{
-	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR))
-		return EvaluableNodeReference::Null();
-
-	for(auto &cn : en->GetOrderedChildNodesReference())
-	{
-		auto cur = InterpretNodeForImmediateUse(cn);
-
-		std::string s;
-		if(cur == nullptr)
-		{
-			s = "(null)";
-		}
-		else
-		{
-			if(DoesEvaluableNodeTypeUseBoolData(cur->GetType()))
-				s = EvaluableNode::BoolToString(cur->GetBoolValueReference());
-			else if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
-				s = cur->GetStringValue();
-			else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
-				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
-			else //only print attributes if not debugSources
-				s = Parser::Unparse(cur, true, false, true);
-
-			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
-		}
-
-		if(writeListeners != nullptr)
-		{
-			for(auto &wl : *writeListeners)
-				wl->LogPrint(s);
-		}
-		if(printListener != nullptr)
-			printListener->LogPrint(s);
-	}
-
-	if(writeListeners != nullptr)
-	{
-		for(auto &wl : *writeListeners)
-			wl->FlushLogFile();
-	}
-	if(printListener != nullptr)
-		printListener->FlushLogFile();
-
-	return EvaluableNodeReference::Null();
-}
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();

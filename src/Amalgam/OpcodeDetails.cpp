@@ -266,79 +266,7 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 
 std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
 
-template<typename OpcodeFunction, typename OpcodeDetailsBuilder>
-OpcodeInitializer::OpcodeInitializer(EvaluableNodeType type, OpcodeFunction func, OpcodeDetailsBuilder details_builder)
-{
-	size_t index = static_cast<size_t>(type);
-	Interpreter::_opcodes[index] = func;
-	_opcode_details[index] = details_builder();
-}
-
 static std::string _opcode_group = "global";
-
-static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT_SYSTEM, []() {
-		OpcodeDetails d;
-		d.parameters = R"(string command [* optional1] ... [* optionalN])";
-		d.returns = R"(any)";
-		d.description = R"(Executes system command specified by `command`.  The available system commands are as follows:
- - exit:                Exits the application.
- - readline:            Reads a line of input from the terminal and returns the string.
- - printline:           Prints a line of string output of the second argument directly to the terminal and returns null.
- - cwd:                 If no additional parameter is specified, returns the current working directory. If an additional parameter is specified, it attempts to change the current working directory to that parameter, returning true on success and false on failure.
- - system:              Executes the the second argument as a system command (i.e., a string that would normally be run on the command line). Returns `(null)` if the command was not found. If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.
- - os:                  Returns a string describing the operating system.
- - sleep:               Sleeps for the amount of seconds specified by the second argument.
- - version:             Returns a string representing the current Amalgam version.
- - est_mem_reserved:    Returns data involving the estimated memory reserved.
- - est_mem_used:        Returns data involving the estimated memory used (excluding memory management overhead, caching, etc.).
- - mem_diagnostics:     Returns data involving memory diagnostics.
- - rand:                Returns the number of bytes specified by the additional parameter of secure random data intended for cryptographic use.
- - sign_key_pair:       Returns a list of two values, first a public key and second a secret key, for use with cryptographic signatures using the Ed25519 algorithm, generated via securely generated random numbers.
- - encrypt_key_pair:    Returns a list of two values, first a public key and second a secret key, for use with cryptographic encryption using the XSalsa20 and Curve25519 algorithms, generated via securely generated random numbers.
- - debugging_info:      Returns a list of two values. The first is true if a debugger is present, false if it is not. The second is true if debugging sources is enabled, which means that source code location information is prepended to opcodes comments for any opcodes loaded from a file.
- - get_max_num_threads: Returns the current maximum number of threads.
- - set_max_num_threads: Attempts to set the current maximum number of threads, where 0 means to use the number of processor cores reported by the operating system. Returns the maximum number of threads after it has been set.
- - built_in_data:       Returns built-in data compiled along with the version information.)";
-		d.examples = MakeAmalgamExamples({
-			{R"((system "debugging_info"))", R"([.false .false])"}
-			});
-		d.permissions = ExecutionPermissions::Permission::ALL;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 2.0;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HELP, []() {
-		OpcodeDetails d;
-		d.parameters = R"([string topic])";
-		d.returns = R"(any)";
-		d.description = R"(If no parameter is specified it returns a string of the topics that can be used.  For given a `topic`, returns a string or relevant data that describes the given topic.)";
-		d.examples = MakeAmalgamExamples({
-			{R"((help "+"))", R"&({
-	allows_concurrency .true
-	description "Sums all numbers."
-	examples [
-			{example "(+ 1 2 3 4)" output "10"}
-		]
-	frequency_per_10000_opcodes 18
-	new_scope .false
-	new_target_scope .false
-	parameters "[number x1] [number x2] ... [number xN]"
-	permissions "none"
-	requires_entity .false
-	returns "number"
-	value_newness "new"
-})&"}
-			});
-		d.permissions = ExecutionPermissions::Permission::ALL;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 0.01;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
 
 static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &Interpreter::InterpretNode_ENT_GET_MUTATION_DEFAULTS, []() {
 		OpcodeDetails d;
@@ -361,22 +289,6 @@ static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &
 		return d;
 	});
 	
-static OpcodeInitializer _ENT_RECLAIM_RESOURCES(ENT_RECLAIM_RESOURCES, &Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES, []() {
-		OpcodeDetails d;
-		d.parameters = R"([id_path entity] [bool apply_to_all_contained_entities] [bool|list clear_query_caches] [bool collect_garbage] [bool force_free_memory])";
-		d.returns = R"(any)";
-		d.description = R"(Frees resources of the specified types on `entity`, which is the current entity if null.  Will include all contained entities if `apply_to_all_contained_entities` is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter `clear_query_caches` will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  If `clear_query_caches` is a boolean, then it will either clear all the caches or none.  If `clear_query_caches` is a list of strings, then it will only clear caches for the labels corresponding to the strings in the list.  The parameter `collect_garbage` will perform garbage collection on the entity, and if `force_free_memory` is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.)";
-		d.examples = MakeAmalgamExamples({
-			{R"((reclaim_resources (null) .true ["x"] .true .true ))", R"((null))"},
-			{R"((reclaim_resources (null) .true .true .true .true ))", R"((null))"}
-			});
-		d.permissions = ExecutionPermissions::Permission::ALTER_PERFORMANCE;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
-		d.frequencyPer10000Opcodes = 1.0;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
 static OpcodeInitializer _ENT_PARSE(ENT_PARSE, &Interpreter::InterpretNode_ENT_PARSE, []() {
 		OpcodeDetails d;
 		d.parameters = R"(string str [bool transactional] [bool return_warnings])";
@@ -1621,28 +1533,6 @@ static OpcodeInitializer _ENT_SET_RAND_SEED(ENT_SET_RAND_SEED, &Interpreter::Int
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 		d.hasSideEffects = true;
 		d.frequencyPer10000Opcodes = 0.5;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_SYSTEM_TIME(ENT_SYSTEM_TIME, &Interpreter::InterpretNode_ENT_SYSTEM_TIME, []() {
-		OpcodeDetails d;
-		d.parameters = R"()";
-		d.returns = R"(number)";
-		d.description = R"(Evaluates to the current system time since epoch in seconds (including fractions of seconds).)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((system_time))&", R"(1773855306.4474)",
-			R"&(^\s*
-    (                                   # start of the number
-        (?:\d+\.\d*|\.\d+|\d+)          # integer part with optional fraction
-        (?:[eE][+-]?\d+)?               # optional exponent
-    )
-    \s*$)&"
-}
-			});
-		d.permissions = ExecutionPermissions::Permission::ENVIRONMENT;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-		d.frequencyPer10000Opcodes = 4.5;
 		d.opcodeGroup = _opcode_group;
 		return d;
 	});
@@ -6691,30 +6581,6 @@ static OpcodeInitializer _ENT_DECRYPT(ENT_DECRYPT, &Interpreter::InterpretNode_E
 			});
 		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 		d.frequencyPer10000Opcodes = 0.01;
-		d.opcodeGroup = _opcode_group;
-		return d;
-	});
-
-static OpcodeInitializer _ENT_PRINT(ENT_PRINT, &Interpreter::InterpretNode_ENT_PRINT, []() {
-		OpcodeDetails d;
-		d.parameters = R"([* node1] [* node2] ... [* nodeN])";
-		d.returns = R"(null)";
-		d.description = R"(Prints each of the parameters in order in a manner interpretable as if they were code, except strings are printed without quotes.  Output is pretty-printed.)";
-		d.examples = MakeAmalgamExamples({
-			{R"&((print "hello world\n"))&", R"((null))"},
-			{R"&((print
-	1
-	2
-	[3 4]
-	"5"
-	"\n"
-))&", R"((null))"}
-			});
-		d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
-		d.permissions = ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR;
-		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
-		d.hasSideEffects = true;
-		d.frequencyPer10000Opcodes = 43.0;
 		d.opcodeGroup = _opcode_group;
 		return d;
 	});

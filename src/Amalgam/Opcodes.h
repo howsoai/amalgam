@@ -15,7 +15,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_SYSTEM_TIME,
 	ENT_SYSTEM,
 	ENT_RECLAIM_RESOURCES,
-
+//TODO 25241: consolidate from here down
 	//Primitive Types
 	ENT_NULL,
 	ENT_BOOL,

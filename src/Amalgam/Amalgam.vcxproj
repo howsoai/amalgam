@@ -667,6 +667,7 @@
     <ClInclude Include="string\StringInternPool.h" />
     <ClInclude Include="string\StringManipulation.h" />
     <ClInclude Include="ThreadPool.h" />
+    <ClInclude Include="UninitializedArray.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="out.txt" />

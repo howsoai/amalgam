@@ -112,7 +112,7 @@ public:
 		if constexpr(!std::is_trivially_destructible_v<T>)
 		{
 			for(size_type i = 0; i < N; ++i)
-				destroy(i);
+				Destroy(i);
 		}
 	}
 

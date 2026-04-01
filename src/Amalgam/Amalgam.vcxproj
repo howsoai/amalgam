@@ -576,9 +576,6 @@
     <ClCompile Include="importexport\FileSupportYAML.cpp" />
     <ClCompile Include="interpreter\Interpreter.cpp" />
     <ClCompile Include="interpreter\InterpreterDebugger.cpp" />
-    <ClCompile Include="interpreter\InterpreterOpcodesBase.cpp" />
-    <ClCompile Include="interpreter\InterpreterOpcodesDataTypes.cpp" />
-    <ClCompile Include="interpreter\InterpreterOpcodesEntityControl.cpp" />
     <ClCompile Include="interpreter\OpcodesAdvancedMath.cpp" />
     <ClCompile Include="interpreter\OpcodesBasicMath.cpp" />
     <ClCompile Include="interpreter\OpcodesCodeComparisonAndEvolution.cpp" />

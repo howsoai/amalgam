@@ -248,7 +248,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_UNION_ENTITIES,
 	ENT_DIFFERENCE_ENTITIES,
 	ENT_MIX_ENTITIES,
-	//TODO 25241: consolidate from here down
+
 	//Random
 	ENT_RAND,
 	ENT_GET_RAND_SEED,

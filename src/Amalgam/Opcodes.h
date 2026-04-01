@@ -98,7 +98,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_GENERALIZED_MEAN,
 	ENT_GENERALIZED_DISTANCE,
 	ENT_ENTROPY,
-	//TODO 25241: consolidate from here down
+
 	//Trigonometry
 	ENT_SIN,
 	ENT_ASIN,
@@ -112,7 +112,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_ACOSH,
 	ENT_TANH,
 	ENT_ATANH,
-
+	//TODO 25241: consolidate from here down
 	//String Operations
 	ENT_EXPLODE,
 	ENT_SPLIT,

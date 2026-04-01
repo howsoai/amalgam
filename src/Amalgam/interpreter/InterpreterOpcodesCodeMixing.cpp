@@ -188,7 +188,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 		return EvaluableNodeReference::Null();
 
 	bool types_must_match = true;
-	bool nominal_numbers = false;
+	bool nominal_numbers = true;
 	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
@@ -228,7 +228,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, E
 		return EvaluableNodeReference::Null();
 
 	bool types_must_match = true;
-	bool nominal_numbers = false;
+	bool nominal_numbers = true;
 	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
@@ -566,7 +566,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 		return EvaluableNodeReference::Null();
 
 	bool types_must_match = true;
-	bool nominal_numbers = false;
+	bool nominal_numbers = true;
 	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
@@ -645,7 +645,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 		return EvaluableNodeReference::Null();
 
 	bool types_must_match = true;
-	bool nominal_numbers = false;
+	bool nominal_numbers = true;
 	bool nominal_strings = true;
 	bool recursive_matching = true;
 	if(ocn.size() > 2)

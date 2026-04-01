@@ -3,11 +3,13 @@
 //project headers:
 #include "FastMath.h"
 #include "Opcodes.h"
+#include "UninitializedArray.h"
 
 //system headers:
 #include <array>
 #include <initializer_list>
 #include <string>
+#include <utility>
 #include <vector>
 
 //forward declarations
@@ -160,7 +162,9 @@ public:
 };
 
 //details for every opcode, indexed by EvaluableNodeType
-extern std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
+//stored as an UninitializedArray to prevent initialization order from clobbering
+//the data being assigned
+extern UninitializedArray<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
 
 //forward declaration
 template<typename OpcodeFunction>
@@ -176,7 +180,8 @@ public:
 	OpcodeInitializer(EvaluableNodeType type, OpcodeFunction func, OpcodeDetailsBuilder details_builder)
 	{
 		SetInterpreterOpcodeFunction(type, func);
-		_opcode_details[static_cast<size_t>(type)] = details_builder();
+		//construct from a move due to the more complex data structures with heap data, e.g., std::vector
+		new (&_opcode_details[static_cast<size_t>(type)]) OpcodeDetails(std::move(details_builder()));
 	}
 };
 

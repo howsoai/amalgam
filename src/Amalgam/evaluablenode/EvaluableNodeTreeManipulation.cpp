@@ -554,9 +554,11 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		return MergeMetricResults(1.0, tree1, tree2, false, true);
 
 	//if the pair of nodes has already been computed, then just return the result
-	auto found = mmrp.memoizedNodeMergePairs.find(std::make_pair(tree1, tree2));
-	if(found != end(mmrp.memoizedNodeMergePairs))
-		return found->second;
+	auto [memoized_entry, new_memoization_inserted] =
+		mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, tree2),
+			MergeMetricResults<EvaluableNode *>());
+	if(!new_memoization_inserted)
+		return memoized_entry->second;
 
 	if(mmrp.checked != nullptr)
 	{
@@ -569,7 +571,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	if(tree1 == tree2)
 	{
 		MergeMetricResults results(static_cast<double>(EvaluableNode::GetDeepSize(tree1)), tree1, tree2, true, true);
-		mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, tree2), results);
+		memoized_entry->second = results;
 		return results;
 	}
 
@@ -595,9 +597,12 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	if(tree1_ordered_nodes_size == 0 && tree2_ordered_nodes_size == 0
 		&& tree1_mapped_nodes_size == 0 && tree2_mapped_nodes_size == 0)
 	{
-		mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, tree2), commonality);
+		memoized_entry->second = commonality;
 		return commonality;
 	}
+
+	//note that memoized_entry may be invalidated for subsequent calls to emplace because memoizedNodeMergePairs
+	//may be a flat hash map
 
 	if(mmrp.checked != nullptr)
 	{
@@ -803,7 +808,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 					if(sub_match > commonality)
 					{
 						commonality = sub_match;
-						mmrp.memoizedNodeMergePairs.emplace(std::make_pair(node, tree2), commonality);
+						mmrp.memoizedNodeMergePairs.insert_or_assign(std::make_pair(node, tree2), commonality);
 						if(exact_match)
 							break;
 					}
@@ -822,7 +827,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 					if(sub_match > commonality)
 					{
 						commonality = sub_match;
-						mmrp.memoizedNodeMergePairs.emplace(std::make_pair(node, tree2), commonality);
+						mmrp.memoizedNodeMergePairs.insert_or_assign(std::make_pair(node, tree2), commonality);
 						if(exact_match)
 							break;
 					}
@@ -846,7 +851,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 					if(sub_match > commonality)
 					{
 						commonality = sub_match;
-						mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, node), commonality);
+						mmrp.memoizedNodeMergePairs.insert_or_assign(std::make_pair(tree1, node), commonality);
 						if(exact_match)
 							break;
 					}
@@ -865,7 +870,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 					if(sub_match > commonality)
 					{
 						commonality = sub_match;
-						mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, node), commonality);
+						mmrp.memoizedNodeMergePairs.insert_or_assign(std::make_pair(tree1, node), commonality);
 						if(exact_match)
 							break;
 					}
@@ -881,7 +886,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		mmrp.checked->erase(tree2);
 	}
 
-	mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, tree2), commonality);
+	mmrp.memoizedNodeMergePairs.insert_or_assign(std::make_pair(tree1, tree2), commonality);
 	return commonality;
 }
 

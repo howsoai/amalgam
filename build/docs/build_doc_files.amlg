@@ -1,4 +1,31 @@
 (seq
+	(declare {
+		convert_group_name (lambda
+			(declare {opcode_group ""}
+				(apply "concat"
+					(map (lambda
+							(if (or
+								(<= "A" (current_value) "Z")
+								)
+								(format (+ (format (current_value) "int8" "number") 32) "number" "int8")
+								
+								(= (current_value) " ")
+								"_"
+								
+								(current_value)
+							)
+						)
+						(explode opcode_group)
+					)
+				)
+			)
+		
+		)
+		
+		current_opcode_group ""
+    })
+
+	
 	(store "./amalgam_overview.md" (concat
 		(help "overview") "\n"
 		(help "syntax") "\n"
@@ -7,41 +34,27 @@
 		(apply "concat"
 			(map
 				(lambda
-					(let (assoc
+					(let {
 							opcode (current_value 1)
 							details (help (current_value 1))
-						)
-				
-						(concat
-							"### Opcode: `" opcode "`\n"
-							"#### Parameters\n"
-							"`" (get details "parameters") "`\n"
-							"#### Description\n"
-							(get details "description") "\n"
-							"#### Details\n"
-							" - Permissions required:  " (get details "permissions") "\n"
-							" - Allows concurrency: " (if (get details "allows_concurrency") "true" "false") "\n"
-							" - Requires entity: " (if (get details "requires_entity") "true" "false") "\n"
-							" - Creates new scope: " (if (get details "new_scope") "true" "false") "\n"
-							" - Creates new target scope: " (if (get details "new_target_scope") "true" "false") "\n"
-							" - Value newness (whether references existing node): " (get details "value_newness") "\n"
-							"#### Examples\n"
-							(apply "concat"
-								(map
-									(lambda
-										(concat
-											"Example:\n```amalgam\n"
-											(get (current_value) "example")
-											"\n```\nOutput:\n```amalgam\n"
-											(get (current_value) "output")
-											"\n```\n"
-										)
-									)
-									(get details "examples")
-								)
-							)
+						}
+						
+						(let
+							{result_string ""}
 
-							"\n"
+							(if (!= current_opcode_group (get details "opcode_group"))
+									(assign {
+										current_opcode_group (get details "opcode_group")
+										result_string (concat "### " (get details "opcode_group") "\n")
+										})
+							)
+							
+							(concat
+								result_string
+								"  - [" opcode "](./"
+								(call convert_group_name {opcode_group (get details "opcode_group")})
+								".md#opcode-" opcode ")"
+								"\n")
 						)
 					)
 				)
@@ -52,12 +65,76 @@
 		(help "distance") "\n"
 	))
 	
-	(store "./opcodes.json"
+	(assign "current_opcode_group" "")
+	(let {
+			opcode_groups_docs
+			(zip
+				(lambda 
+					(concat (current_value 1) (current_value))
+				)
+				(map (lambda
+						(get (help (current_value)) "opcode_group")
+					)
+					(help "opcodes")
+				)
+				(map
+					(lambda
+						(let {
+								opcode (current_value 1)
+								details (help (current_value 1))
+							}
+							
+							(concat
+								"### Opcode: `" opcode "`\n"
+								"#### Parameters\n"
+								"`" (get details "parameters") "`\n"
+								"#### Description\n"
+								(get details "description") "\n"
+								"#### Details\n"
+								" - Permissions required:  " (get details "permissions") "\n"
+								" - Allows concurrency: " (if (get details "allows_concurrency") "true" "false") "\n"
+								" - Requires entity: " (if (get details "requires_entity") "true" "false") "\n"
+								" - Creates new scope: " (if (get details "new_scope") "true" "false") "\n"
+								" - Creates new target scope: " (if (get details "new_target_scope") "true" "false") "\n"
+								" - Value newness (whether references existing node): " (get details "value_newness") "\n"
+								"#### Examples\n"
+								(apply "concat"
+									(map
+										(lambda
+											(concat
+												"Example:\n```amalgam\n"
+												(get (current_value) "example")
+												"\n```\nOutput:\n```amalgam\n"
+												(get (current_value) "output")
+												"\n```\n"
+											)
+										)
+										(get details "examples")
+									)
+								)
+
+								"\n"
+								"[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)\n\n"
+							)
+						)
+					)
+					(help "opcodes")
+				)
+			)
+		}
+		
 		(map
 			(lambda
-				(set (help (current_value)) "opcode" (current_value))
+				(let {
+						opcode_group
+							(call convert_group_name {opcode_group (current_index 2)})
+						opcode_text (current_value 1)
+					}
+					(print "writing to " opcode_group "\n")
+					(store (concat opcode_group ".md") opcode_text)
+				)
 			)
-			(help "opcodes")
+			opcode_groups_docs
 		)
 	)
  )

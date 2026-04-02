@@ -5,9 +5,9 @@
 #include <iterator>
 #include <stdexcept>
 
-//holds raw, correctly?aligned storage for N objects of type T.
+//holds raw, correctly-aligned storage for N objects of type T
 //does *not* invoke any constructors or destructors automatically
-//provides a minimal std::array?like API (operator[], size(), begin(),
+//provides a minimal std::array-like API (operator[], size(), begin(),
 //end(), data())
 template <class T, std::size_t N>
 class UninitializedArray
@@ -31,7 +31,7 @@ public:
 	{
 		return N;
 	}
-	static constexpr bool      empty() noexcept
+	static constexpr bool empty() noexcept
 	{
 		return N == 0;
 	}

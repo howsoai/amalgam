@@ -1,4 +1,6 @@
 (seq
+	(declare {current_opcode_group ""})
+	
 	(store "./amalgam_overview.md" (concat
 		(help "overview") "\n"
 		(help "syntax") "\n"
@@ -7,42 +9,22 @@
 		(apply "concat"
 			(map
 				(lambda
-					(let (assoc
+					(let {
 							opcode (current_value 1)
 							details (help (current_value 1))
-						)
-				
-						(concat
-							"### Opcode: `" opcode "`\n"
-							"#### Parameters\n"
-							"`" (get details "parameters") "`\n"
-							"#### Description\n"
-							(get details "description") "\n"
-							"#### Details\n"
-							" - Permissions required:  " (get details "permissions") "\n"
-							" - Allows concurrency: " (if (get details "allows_concurrency") "true" "false") "\n"
-							" - Requires entity: " (if (get details "requires_entity") "true" "false") "\n"
-							" - Creates new scope: " (if (get details "new_scope") "true" "false") "\n"
-							" - Creates new target scope: " (if (get details "new_target_scope") "true" "false") "\n"
-							" - Value newness (whether references existing node): " (get details "value_newness") "\n"
-							"#### Examples\n"
-							(apply "concat"
-								(map
-									(lambda
-										(concat
-											"Example:\n```amalgam\n"
-											(get (current_value) "example")
-											"\n```\nOutput:\n```amalgam\n"
-											(get (current_value) "output")
-											"\n```\n"
-										)
-									)
-									(get details "examples")
-								)
+						}
+						
+						(if (!= current_opcode_group (get details "opcode_group"))
+							(seq
+								(assign "current_opcode_group" (get details "opcode_group"))
+								"### " current_opcode_group "\n"
 							)
-
-							"\n"
+							""
 						)
+						
+						;TODO: these should be links, can we make them local/relative?
+						(concat "  - " opcode "\n")
+				
 					)
 				)
 				(help "opcodes")
@@ -51,6 +33,86 @@
 		
 		(help "distance") "\n"
 	))
+	
+	(assign "current_opcode_group" "")
+	(let {
+			opcode_groups_docs
+			(zip
+				(lambda 
+					(concat (current_value 1) (current_value))
+				)
+				(map (lambda
+						(get (help (current_value)) "opcode_group")
+					)
+					(help "opcodes")
+				)
+				(map
+					(lambda
+						(let {
+								opcode (current_value 1)
+								details (help (current_value 1))
+							}
+							
+							(concat
+								"### Opcode: `" opcode "`\n"
+								"#### Parameters\n"
+								"`" (get details "parameters") "`\n"
+								"#### Description\n"
+								(get details "description") "\n"
+								"#### Details\n"
+								" - Permissions required:  " (get details "permissions") "\n"
+								" - Allows concurrency: " (if (get details "allows_concurrency") "true" "false") "\n"
+								" - Requires entity: " (if (get details "requires_entity") "true" "false") "\n"
+								" - Creates new scope: " (if (get details "new_scope") "true" "false") "\n"
+								" - Creates new target scope: " (if (get details "new_target_scope") "true" "false") "\n"
+								" - Value newness (whether references existing node): " (get details "value_newness") "\n"
+								"#### Examples\n"
+								(apply "concat"
+									(map
+										(lambda
+											(concat
+												"Example:\n```amalgam\n"
+												(get (current_value) "example")
+												"\n```\nOutput:\n```amalgam\n"
+												(get (current_value) "output")
+												"\n```\n"
+											)
+										)
+										(get details "examples")
+									)
+								)
+
+								"\n"
+							)
+						)
+					)
+					(help "opcodes")
+				)
+			)
+			
+			;(apply (lambda (zip 
+			;
+			;
+			;))
+			;
+			;)
+	
+		}
+		
+		(map
+			(lambda
+				(let {
+						opcode_group (current_index 1)
+						opcode_text (current_value 1)
+					}
+				
+					(store (concat opcode_group ".md") opcode_text)
+				)
+			)
+			opcode_groups_docs
+		)
+	)
+	
 	
 	(store "./opcodes.json"
 		(map

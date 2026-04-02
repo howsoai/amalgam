@@ -31,7 +31,7 @@ public:
 	{
 		return N;
 	}
-	static constexpr bool      empty() noexcept
+	static constexpr bool empty() noexcept
 	{
 		return N == 0;
 	}

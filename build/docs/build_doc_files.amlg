@@ -1,5 +1,30 @@
 (seq
-	(declare {current_opcode_group ""})
+	(declare {
+		convert_group_name (lambda
+			(declare {opcode_group ""}
+				(apply "concat"
+					(map (lambda
+							(if (or
+								(<= "A" (current_value) "Z")
+								)
+								(format (+ (format (current_value) "int8" "number") 32) "number" "int8")
+								
+								(= (current_value) " ")
+								"_"
+								
+								(current_value)
+							)
+						)
+						(explode opcode_group)
+					)
+				)
+			)
+		
+		)
+		
+		current_opcode_group ""
+    })
+
 	
 	(store "./amalgam_overview.md" (concat
 		(help "overview") "\n"
@@ -14,17 +39,25 @@
 							details (help (current_value 1))
 						}
 						
-						(if (!= current_opcode_group (get details "opcode_group"))
-							(seq
-								(assign "current_opcode_group" (get details "opcode_group"))
-								"### " current_opcode_group "\n"
+						(let
+							{result_string ""}
+
+							(if (!= current_opcode_group (get details "opcode_group"))
+								(seq
+									(assign {
+										current_opcode_group (get details "opcode_group")
+										result_string (concat "### " (get details "opcode_group") "\n")
+										})
+								)
 							)
-							""
+							
+							(concat
+								result_string
+								"  - [" opcode "](./"
+								(call convert_group_name {opcode_group (get details "opcode_group")})
+								"#opcode-" opcode ")"
+								"\n")
 						)
-						
-						;TODO: these should be links, can we make them local/relative?
-						(concat "  - " opcode "\n")
-				
 					)
 				)
 				(help "opcodes")
@@ -83,6 +116,7 @@
 								)
 
 								"\n"
+								"[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)\n\n"
 							)
 						)
 					)
@@ -102,7 +136,8 @@
 		(map
 			(lambda
 				(let {
-						opcode_group (current_index 1)
+						opcode_group
+							(call convert_group_name {opcode_group (current_index 1)})
 						opcode_text (current_value 1)
 					}
 				
@@ -110,16 +145,6 @@
 				)
 			)
 			opcode_groups_docs
-		)
-	)
-	
-	
-	(store "./opcodes.json"
-		(map
-			(lambda
-				(set (help (current_value)) "opcode" (current_value))
-			)
-			(help "opcodes")
 		)
 	)
  )

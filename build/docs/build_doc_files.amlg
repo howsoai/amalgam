@@ -53,7 +53,7 @@
 								result_string
 								"  - [" opcode "](./"
 								(call convert_group_name {opcode_group (get details "opcode_group")})
-								"#opcode-" opcode ")"
+								".md#opcode-" opcode ")"
 								"\n")
 						)
 					)

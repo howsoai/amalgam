@@ -43,12 +43,10 @@
 							{result_string ""}
 
 							(if (!= current_opcode_group (get details "opcode_group"))
-								(seq
 									(assign {
 										current_opcode_group (get details "opcode_group")
 										result_string (concat "### " (get details "opcode_group") "\n")
 										})
-								)
 							)
 							
 							(concat
@@ -129,10 +127,10 @@
 			(lambda
 				(let {
 						opcode_group
-							(call convert_group_name {opcode_group (current_index 1)})
+							(call convert_group_name {opcode_group (current_index 2)})
 						opcode_text (current_value 1)
 					}
-				
+					(print "writing to " opcode_group "\n")
 					(store (concat opcode_group ".md") opcode_text)
 				)
 			)

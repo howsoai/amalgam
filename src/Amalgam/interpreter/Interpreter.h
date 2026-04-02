@@ -1591,10 +1591,15 @@ protected:
 #endif
 
 public:
-	//opcode function pointers
-	// each opcode function takes in an EvaluableNode
+	//opcode function pointer
+	// each opcode function takes in an EvaluableNode and type to indicate what kind of immediate values it can accept
 	typedef EvaluableNodeReference(Interpreter::*OpcodeFunction) (EvaluableNode *, EvaluableNodeRequestedValueTypes);
-	static std::array<OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> _opcodes;
+
+	//global opcode function pointers
+	//stored as an UninitializedArray to prevent initialization order from clobbering
+	//the data being assigned
+	static UninitializedArray<OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> _opcodes;
+
 protected:
 
 	//opcodes that all point to debugging
@@ -1623,3 +1628,10 @@ protected:
 	static constexpr int64_t constructionStackOffsetCurrentValue = -2;
 	static constexpr int64_t constructionStackOffsetPreviousResult = -1;
 };
+
+//templated setter for opcode functions to break dependency cycle
+template<typename OpcodeFunction>
+void SetInterpreterOpcodeFunction(EvaluableNodeType type, OpcodeFunction func)
+{
+	Interpreter::_opcodes[static_cast<size_t>(type)] = func;
+}

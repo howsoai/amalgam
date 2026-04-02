@@ -12,7 +12,7 @@
 //system headers:
 #include <utility>
 
-std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter::_opcodes;
+UninitializedArray<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter::_opcodes;
 
 Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
@@ -812,3 +812,137 @@ Interpreter *Interpreter::LockScopeStackTop(Concurrency::SingleLock &lock, Evalu
 }
 
 #endif
+
+
+
+static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints::ViolationType violation, EvaluableNodeManager *evaluable_node_manager)
+{
+	switch(violation)
+	{
+	case InterpreterConstraints::ViolationType::NoViolation:
+		return EvaluableNodeReference::Null();
+	case InterpreterConstraints::ViolationType::ContainedEntitiesDepth:
+		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Contained entities depth exceeded")), true);
+	case InterpreterConstraints::ViolationType::ContainedEntitiesNumber:
+		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Contained entities number l)imit exceeded")), true);
+	case InterpreterConstraints::ViolationType::ExecutionDepth:
+		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Execution depth exceeded")), true);
+	case InterpreterConstraints::ViolationType::ExecutionStep:
+		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Execution step limit exceeded")), true);
+	case InterpreterConstraints::ViolationType::NodeAllocation:
+		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Node allocation limit exceeded")), true);
+	default:
+		//cases should be exhaustive, so this is unreachable
+		assert(false);
+	}
+
+	assert(false);
+	return ""; //unreachable
+}
+
+void Interpreter::EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::StringID not_found_variable_sid, EvaluableNode *en)
+{
+	std::string warning = "";
+
+	warning.append("Warning: undefined symbol " + not_found_variable_sid->string);
+
+	if(asset_manager.debugSources && en->HasComments())
+	{
+		std::string_view comment_string = en->GetCommentsString();
+		size_t newline_index = comment_string.find("\n");
+
+		std::string comment_string_first_line;
+
+		if(newline_index != std::string::npos)
+			comment_string_first_line = comment_string.substr(0, newline_index + 1);
+		else
+			comment_string_first_line = comment_string;
+
+		warning.append(" at " + comment_string_first_line);
+	}
+
+	if(interpreterConstraints != nullptr)
+	{
+		if(interpreterConstraints->collectWarnings)
+			interpreterConstraints->AddWarning(std::move(warning));
+	}
+	else if(asset_manager.warnOnUndefined)
+	{
+		ExecutionPermissions entity_permissions = asset_manager.GetEntityPermissions(curEntity);
+		if(entity_permissions.HasPermission(ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR))
+			std::cerr << warning << std::endl;
+	}
+}
+
+EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints)
+{
+	if(interpreter_constraints == nullptr || !interpreter_constraints->collectWarnings)
+		return result;
+
+	EvaluableNodeReference warning_assoc = CreateAssocOfNumbersFromIteratorAndFunctions(
+		interpreter_constraints->warnings, [](std::pair<std::string, size_t> warning_count)
+	{ return warning_count.first; }, [](std::pair<std::string, size_t> warning_count)
+	{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);
+
+	EvaluableNodeReference constraint_violation_string = ConstraintViolationToString(interpreter_constraints->constraintViolation, evaluableNodeManager);
+
+	EvaluableNodeReference result_tuple(evaluableNodeManager->AllocNode(ENT_LIST), true);
+
+	auto &result_tuple_ocn = result_tuple->GetOrderedChildNodesReference();
+
+	result_tuple_ocn.reserve(3);
+	result_tuple_ocn.push_back(result);
+	result_tuple_ocn.push_back(warning_assoc);
+	result_tuple_ocn.push_back(constraint_violation_string);
+
+	result_tuple.UpdatePropertiesBasedOnAttachedNode(result);
+	result_tuple.UpdatePropertiesBasedOnAttachedNode(warning_assoc);
+	result_tuple.UpdatePropertiesBasedOnAttachedNode(constraint_violation_string);
+
+	return result_tuple;
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_DEALLOCATED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	std::cerr << "ERROR: attempt to use freed memory\n";
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(false);
+#endif
+	return EvaluableNodeReference::Null();
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	std::cerr << "ERROR: encountered an invalid instruction\n";
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(false);
+#endif
+	return EvaluableNodeReference::Null();
+}
+
+void Interpreter::VerifyEvaluableNodeIntegrity()
+{
+	for(EvaluableNode *en : *scopeStackNodes)
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
+
+	for(EvaluableNode *en : *opcodeStackNodes)
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
+
+	for(EvaluableNode *en : *constructionStackNodes)
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
+
+	if(curEntity != nullptr)
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(curEntity->GetRoot());
+
+	{
+		auto &nr = evaluableNodeManager->GetNodesReferenced();
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::Lock lock(nr.mutex);
+	#endif
+		for(auto &[en, _] : nr.nodesReferenced)
+			EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
+	}
+
+	if(callingInterpreter != nullptr)
+		callingInterpreter->VerifyEvaluableNodeIntegrity();
+}

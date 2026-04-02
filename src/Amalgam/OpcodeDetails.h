@@ -3,11 +3,13 @@
 //project headers:
 #include "FastMath.h"
 #include "Opcodes.h"
+#include "UninitializedArray.h"
 
 //system headers:
 #include <array>
 #include <initializer_list>
 #include <string>
+#include <utility>
 #include <vector>
 
 //forward declarations
@@ -156,10 +158,17 @@ public:
 	std::string_view description;
 	std::vector<AmalgamExample> examples;
 	double frequencyPer10000Opcodes = 1.0;
+	std::string_view opcodeGroup;
 };
 
 //details for every opcode, indexed by EvaluableNodeType
-extern std::array<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
+//stored as an UninitializedArray to prevent initialization order from clobbering
+//the data being assigned
+extern UninitializedArray<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
+
+//forward declaration
+template<typename OpcodeFunction>
+void SetInterpreterOpcodeFunction(EvaluableNodeType type, OpcodeFunction func);
 
 //no-storage class to initialize storage for opcodes such that all relevant
 //code and data for an opcode can be kept in the same location
@@ -168,7 +177,12 @@ class OpcodeInitializer
 public:
 
 	template<typename OpcodeFunction, typename OpcodeDetailsBuilder>
-	OpcodeInitializer(EvaluableNodeType type, OpcodeFunction func, OpcodeDetailsBuilder details_builder);
+	OpcodeInitializer(EvaluableNodeType type, OpcodeFunction func, OpcodeDetailsBuilder details_builder)
+	{
+		SetInterpreterOpcodeFunction(type, func);
+		//construct from a move due to the more complex data structures with heap data, e.g., std::vector
+		new (&_opcode_details[static_cast<size_t>(type)]) OpcodeDetails(std::move(details_builder()));
+	}
 };
 
 //returns the type of structure that the ordered child nodes have for a given t

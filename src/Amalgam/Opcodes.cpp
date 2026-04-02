@@ -11,7 +11,7 @@ static inline void EmplaceStaticString(EvaluableNodeBuiltInStringId bisid, std::
 	string_intern_pool.staticStringIDToIndex.emplace(sid, bisid);
 }
 
-inline void EmplaceNodeTypeString(EvaluableNodeType t, const char *str)
+static inline void EmplaceNodeTypeString(EvaluableNodeType t, const char *str)
 {
 	EmplaceStaticString(static_cast<EvaluableNodeBuiltInStringId>(t + NUM_ENBISI_SPECIAL_STRING_IDS), str);
 }

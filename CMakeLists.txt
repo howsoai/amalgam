@@ -160,15 +160,25 @@ set(COMMON_SOURCE
     src/Amalgam/interpreter/Interpreter.cpp
     src/Amalgam/interpreter/Interpreter.h
     src/Amalgam/interpreter/InterpreterDebugger.cpp
-    src/Amalgam/interpreter/InterpreterOpcodesBase.cpp
-    src/Amalgam/interpreter/InterpreterOpcodesCodeMixing.cpp
-    src/Amalgam/interpreter/InterpreterOpcodesDataTypes.cpp
-    src/Amalgam/interpreter/InterpreterOpcodesEntityAccess.cpp
-    src/Amalgam/interpreter/InterpreterOpcodesEntityControl.cpp
-    src/Amalgam/interpreter/InterpreterOpcodesListManipulation.cpp
-    src/Amalgam/interpreter/InterpreterOpcodesLogic.cpp
-    src/Amalgam/interpreter/InterpreterOpcodesMath.cpp
-    src/Amalgam/interpreter/InterpreterOpcodesTransformations.cpp
+    src/Amalgam/interpreter/OpcodesAdvancedMath.cpp
+    src/Amalgam/interpreter/OpcodesBasicMath.cpp
+    src/Amalgam/interpreter/OpcodesCodeComparisonAndEvolution.cpp
+    src/Amalgam/interpreter/OpcodesContainerManipulation.cpp
+    src/Amalgam/interpreter/OpcodesControlFlow.cpp
+    src/Amalgam/interpreter/OpcodesCryptography.cpp
+    src/Amalgam/interpreter/OpcodesEntityAccessAndManipulation.cpp
+    src/Amalgam/interpreter/OpcodesEntityComparisonAndEvolution.cpp
+    src/Amalgam/interpreter/OpcodesEntityLifecycleAndStorage.cpp
+    src/Amalgam/interpreter/OpcodesEntityQueryEngine.cpp
+    src/Amalgam/interpreter/OpcodesIterationAndContainerTransformation.cpp
+    src/Amalgam/interpreter/OpcodesLogicAndComparison.cpp
+    src/Amalgam/interpreter/OpcodesMetadata.cpp
+    src/Amalgam/interpreter/OpcodesPrimitiveTypes.cpp
+    src/Amalgam/interpreter/OpcodesRandom.cpp
+    src/Amalgam/interpreter/OpcodesStringOperations.cpp
+    src/Amalgam/interpreter/OpcodesSystemAndRuntime.cpp
+    src/Amalgam/interpreter/OpcodesTrigonometry.cpp
+    src/Amalgam/interpreter/OpcodesVariableDefinitionAndModification.cpp
     src/Amalgam/KnnCache.h
     src/Amalgam/Merger.h
     src/Amalgam/OpcodeDetails.cpp
@@ -194,6 +204,7 @@ set(COMMON_SOURCE
     src/Amalgam/string/StringInternPool.h
     src/Amalgam/string/StringManipulation.cpp
     src/Amalgam/string/StringManipulation.h
+    src/Amalgam/UninitializedArray.h
 )
 set(COMMON_SOURCE_THREADS
     ${COMMON_SOURCE}

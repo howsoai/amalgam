@@ -290,6 +290,87 @@ void EvaluableNode::ConvertAssocToList()
 	std::swap(GetOrderedChildNodesReference(), new_ocn);
 }
 
+size_t EvaluableNode::GetDeepSize(EvaluableNode *n)
+{
+	if(n == nullptr)
+		return 1;
+
+	if(!n->GetNeedCycleCheck())
+	{
+		if(n->IsImmediate())
+			return 1;
+
+		reusableBuffer.clear();
+		reusableBuffer.emplace_back(n);
+		size_t size = 0;
+
+		//depth-first walk
+		while(!reusableBuffer.empty())
+		{
+			EvaluableNode *cur = reusableBuffer.back();
+			reusableBuffer.pop_back();
+			//count current node
+			size++;
+
+			// Expand children depending on the node type.
+			if(cur->IsAssociativeArray())
+			{
+				for(auto &[_, child] : cur->GetMappedChildNodesReference())
+				{
+					if(child != nullptr)
+						reusableBuffer.push_back(child);
+				}
+			}
+			else if(!cur->IsImmediate())
+			{
+				for(EvaluableNode *child : cur->GetOrderedChildNodesReference())
+				{
+					if(child != nullptr)
+						reusableBuffer.push_back(child);
+				}
+			}
+		}
+
+		return size;
+	}
+	else
+	{
+		reusableBuffer.clear();
+		reusableBuffer.emplace_back(n);
+
+		ReferenceSetType visited;
+		visited.insert(n);
+
+		size_t size = 0;
+
+		while(!reusableBuffer.empty())
+		{
+			EvaluableNode *cur = reusableBuffer.back();
+			reusableBuffer.pop_back();
+			size++;
+
+			if(cur->IsAssociativeArray())
+			{
+				for(auto &[_, child] : cur->GetMappedChildNodesReference())
+				{
+					if(child != nullptr && visited.emplace(child).second)
+						reusableBuffer.push_back(child);
+				}
+			}
+			else if(!cur->IsImmediate())
+			{
+				for(EvaluableNode *child : cur->GetOrderedChildNodesReference())
+				{
+					if(child != nullptr && visited.insert(child).second)
+						reusableBuffer.push_back(child);
+				}
+			}
+		}
+
+		return size;
+	}
+}
+
 size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 {
 	if(n == nullptr)
@@ -1199,8 +1280,8 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *
 
 	if(use_immediate_method)
 	{
-		std::vector<EvaluableNode *> b_unmatched;
-		b_unmatched.reserve(a_size - index);
+		auto &b_unmatched = reusableBuffer;
+		b_unmatched.clear();
 		for(size_t i = index; i < a_size; i++)
 			b_unmatched.push_back(b_ocn[i]);
 
@@ -1309,62 +1390,6 @@ bool EvaluableNode::CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<
 
 	//didn't find itself
 	return true;
-}
-
-size_t EvaluableNode::GetDeepSizeRecurse(EvaluableNode *n, ReferenceSetType &checked)
-{
-	//try to insert. if fails, then it has already been inserted, so ignore
-	if(checked.insert(n).second == false)
-		return 0;
-
-	//count this one
-	size_t size = 1;
-
-	//check child nodes
-	if(n->IsAssociativeArray())
-	{
-		for(auto &[_, e] : n->GetMappedChildNodesReference())
-		{
-			if(e != nullptr)
-				size += GetDeepSizeRecurse(e, checked);
-		}
-	}
-	else if(!n->IsImmediate())
-	{
-		for(auto &e : n->GetOrderedChildNodesReference())
-		{
-			if(e != nullptr)
-				size += GetDeepSizeRecurse(e, checked);
-		}
-	}
-
-	return size;
-}
-
-size_t EvaluableNode::GetDeepSizeNoCycleRecurse(EvaluableNode *n)
-{
-	//count this one
-	size_t size = 1;
-
-	//check child nodes
-	if(n->IsAssociativeArray())
-	{
-		for(auto &[_, e] : n->GetMappedChildNodesReference())
-		{
-			if(e != nullptr)
-				size += GetDeepSizeNoCycleRecurse(e);
-		}
-	}
-	else if(!n->IsImmediate())
-	{
-		for(auto &e : n->GetOrderedChildNodesReference())
-		{
-			if(e != nullptr)
-				size += GetDeepSizeNoCycleRecurse(e);
-		}
-	}
-
-	return size;
 }
 
 void EvaluableNodeImmediateValueWithType::CopyValueFromEvaluableNode(EvaluableNode *en, EvaluableNodeManager *enm)

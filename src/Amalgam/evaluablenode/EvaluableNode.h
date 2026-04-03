@@ -527,26 +527,11 @@ public:
 		if(!n->GetNeedCycleCheck())
 			return true;
 
-		std::vector<EvaluableNode *> stack;
-		return CanNodeTreeBeFlattenedRecurse(n, stack);
+		return CanNodeTreeBeFlattenedRecurse(n, reusableBuffer);
 	}
 
 	//Returns the number of nodes in the data structure
-	static inline size_t GetDeepSize(EvaluableNode *n)
-	{
-		if(n == nullptr)
-			return 1;
-
-		if(!n->GetNeedCycleCheck())
-		{
-			return GetDeepSizeNoCycleRecurse(n);
-		}
-		else
-		{
-			ReferenceSetType checked;
-			return GetDeepSizeRecurse(n, checked);
-		}
-	}
+	static size_t GetDeepSize(EvaluableNode *n);
 
 	//Returns the number of bytes of memory that node is currently using
 	static size_t GetEstimatedNodeSizeInBytes(EvaluableNode *n);
@@ -1557,13 +1542,6 @@ protected:
 	// assumes n is not nullptr
 	static bool CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<EvaluableNode *> &stack);
 
-	//Returns the deep size, excluding nodes already checked
-	// Assists the public function GetDeepSize
-	static size_t GetDeepSizeRecurse(EvaluableNode *n, ReferenceSetType &checked);
-
-	//Like GetDeepSizeRecurse, but assumes there are no cycles in n
-	static size_t GetDeepSizeNoCycleRecurse(EvaluableNode *n);
-
 	EvaluableNodeValue value;
 
 	//Executable/data type of the node
@@ -1582,6 +1560,14 @@ protected:
 	static std::vector<EvaluableNode *> emptyOrderedChildNodes;
 	static AssocType emptyMappedChildNodes;
 	static AnnotationsAndComments emptyAnnotationsAndComments;
+
+public:
+	//reusable memory pool for local operations
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+	#endif
+		inline static std::vector<EvaluableNode *> reusableBuffer;
+protected:
 
 	//field for watching EvaluableNodes for debugging
 	static FastHashSet<EvaluableNode *> debugWatch;

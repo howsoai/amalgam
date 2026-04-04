@@ -468,16 +468,17 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 	//quick copy iteratively if don't need cycle check
 	if(!en->GetNeedCycleCheck())
 	{
-		nodeMarkBuffer.clear();
+		auto &node_stack = EvaluableNode::reusableBuffer;
+		node_stack.clear();
 
 		EvaluableNode *root_copy = AllocNode(en, copy_metadata);
-		nodeMarkBuffer.push_back(root_copy);
+		node_stack.push_back(root_copy);
 
 		//walk the tree depth‑first using the buffer as a stack
-		while(!nodeMarkBuffer.empty())
+		while(!node_stack.empty())
 		{
-			EvaluableNode *cur = nodeMarkBuffer.back();
-			nodeMarkBuffer.pop_back();
+			EvaluableNode *cur = node_stack.back();
+			node_stack.pop_back();
 
 			if(cur->IsAssociativeArray())
 			{
@@ -488,7 +489,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 
 					EvaluableNode *child_copy = AllocNode(child, copy_metadata);
 					child = child_copy;
-					nodeMarkBuffer.push_back(child_copy);
+					node_stack.push_back(child_copy);
 				}
 			}
 			else if(!cur->IsImmediate())
@@ -500,7 +501,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 
 					EvaluableNode *child_copy = AllocNode(child, copy_metadata);
 					child = child_copy;
-					nodeMarkBuffer.push_back(child_copy);
+					node_stack.push_back(child_copy);
 				}
 			}
 		}
@@ -732,7 +733,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 {
 	tree->SetKnownToBeInUse(true);
-	auto &node_stack = nodeMarkBuffer;
+	auto &node_stack = EvaluableNode::reusableBuffer;
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())
@@ -777,7 +778,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 #endif
 
 	tree->SetKnownToBeInUseAtomic(true);
-	auto &node_stack = nodeMarkBuffer;
+	auto &node_stack = EvaluableNode::reusableBuffer;
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())

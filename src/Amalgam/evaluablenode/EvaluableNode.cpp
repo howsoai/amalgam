@@ -281,7 +281,7 @@ void EvaluableNode::ConvertAssocToList()
 	auto &mcn = GetMappedChildNodesReference();
 	new_ocn.reserve(mcn.size());
 	for(auto &[_, cn] : mcn)
-		new_ocn.push_back(cn);
+		new_ocn.emplace_back(cn);
 
 	InitOrderedChildNodes();
 	type = ENT_LIST;
@@ -643,8 +643,8 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 			for(auto &[cn_id, cn] : mcn)
 			{
 				EvaluableNode *key = Parser::ParseFromKeyStringId(cn_id, enm);
-				new_ordered.push_back(key);
-				new_ordered.push_back(cn);
+				new_ordered.emplace_back(key);
+				new_ordered.emplace_back(cn);
 			}
 
 			InitOrderedChildNodes();
@@ -808,7 +808,7 @@ void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 	if(!IsOrderedArray())
 		return;
 
-	GetOrderedChildNodesReference().push_back(cn);
+	GetOrderedChildNodesReference().emplace_back(cn);
 
 	UpdateFlagsBasedOnNewChildNode(cn);
 }
@@ -1199,10 +1199,10 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *
 
 	if(use_immediate_method)
 	{
-		std::vector<EvaluableNode *> b_unmatched;
-		b_unmatched.reserve(a_size - index);
+		auto &b_unmatched = reusableBuffer;
+		b_unmatched.clear();
 		for(size_t i = index; i < a_size; i++)
-			b_unmatched.push_back(b_ocn[i]);
+			b_unmatched.emplace_back(b_ocn[i]);
 
 		//find a match for each remaining node
 		for(; index < a_size; index++)
@@ -1279,7 +1279,7 @@ bool EvaluableNode::CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<
 	if(std::find(begin(stack), end(stack), n) != end(stack))
 		return false;
 
-	stack.push_back(n);
+	stack.emplace_back(n);
 
 	//check child nodes
 	if(n->IsAssociativeArray())

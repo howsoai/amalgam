@@ -315,11 +315,8 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 				break;
 			}
 
-			//need to create a new node to fill in, but create the most generic type possible that uses the type of the index as the way to access it
-			if(!addr_empty && DoesEvaluableNodeTypeUseNumberData(addr->GetType())) //used to access lists
-				*destination = enm->AllocNode(ENT_LIST);
-			else
-				*destination = enm->AllocNode(ENT_ASSOC);
+			//need to create a new node to fill in, use assoc because it is the most generic
+			*destination = enm->AllocNode(ENT_ASSOC);
 		}
 
 		if(EvaluableNode::IsAssociativeArray(*destination))
@@ -390,7 +387,9 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 			else //beyond index
 			{
 				if(enm == nullptr)
+				{
 					destination = nullptr;
+				}
 				else //resize to fit
 				{
 					//if the index is more than can be referenced in 53 bits of 64-bit float mantissa,

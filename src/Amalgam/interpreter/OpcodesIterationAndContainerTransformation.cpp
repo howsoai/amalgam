@@ -128,6 +128,43 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	EvaluableNodeReference function = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
+	if(immediate_result.NoValueRequested())
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		if(en->GetConcurrency() && num_nodes > 1)
+		{
+			auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
+			if(Concurrency::threadPool.AreThreadsAvailable())
+			{
+				ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+
+				for(size_t node_index = 0; node_index < num_nodes; node_index++)
+					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
+						EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start),
+						nullptr);
+
+				concurrency_manager.EndConcurrency();
+				return nullptr;
+			}
+		}
+	#endif
+
+		PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+
+		for(size_t i = 0; i < num_nodes; i++)
+		{
+			//pass index of list to be mapped -- leave value at nullptr
+			SetTopCurrentIndexInConstructionStack(i * range_step_size + range_start);
+
+			EvaluableNodeReference element_result = InterpretNodeForImmediateUse(function);
+			evaluableNodeManager->FreeNodeTreeIfPossible(element_result);
+		}
+
+		PopConstructionContextAndGetExecutionSideEffectFlag();
+		
+		return nullptr;
+	}
+
 	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	auto &result_ocn = result->GetOrderedChildNodesReference();
 	result_ocn.resize(num_nodes);

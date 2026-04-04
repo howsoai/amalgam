@@ -928,8 +928,10 @@ protected:
 
 					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
+
 					auto result_ref = interpreter.ExecuteNode(node_to_execute,
-						nullptr, opcode_stack, construction_stack, &csiau, false, false);
+						nullptr, opcode_stack, construction_stack, &csiau,
+						EvaluableNodeRequestedValueTypes::Type::NONE, false);
 
 					if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 					{
@@ -964,6 +966,51 @@ protected:
 			);
 		}
 
+		//like the previous definition of EnqueueTaskWithConstructionStack,
+		//but without keeping results or building a target
+		template<typename EvaluableNodeRefType>
+		void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
+			EvaluableNodeImmediateValueWithType current_index,
+			EvaluableNode *current_value)
+		{
+			RandomStream rand_seed = randomSeeds[curNumTasksEnqueued++];
+
+			Concurrency::threadPool.BatchEnqueueTask(
+				[this, rand_seed, node_to_execute, current_index, current_value]
+				{
+					EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
+
+					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
+						parentInterpreter->writeListeners, parentInterpreter->printListener,
+						parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
+
+					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
+
+					//build new construction stack
+					EvaluableNode *construction_stack = enm->AllocNode(*parentInterpreter->constructionStackNodes);
+					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
+					interpreter.PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
+						csiau, nullptr, nullptr, current_index, current_value, EvaluableNodeReference::Null());
+
+					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
+						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
+
+					auto result = interpreter.ExecuteNode(node_to_execute,
+						nullptr, opcode_stack, construction_stack, &csiau,
+						EvaluableNodeRequestedValueTypes::Type::NULL_VALUE, false);
+
+					interpreter.PopConstructionContextAndGetExecutionSideEffectFlag();
+					enm->FreeNodeTreeIfPossible(result);
+
+					enm->FreeNode(construction_stack);
+					enm->FreeNode(opcode_stack);
+
+					interpreter.memoryModificationLock.unlock();
+					taskSet.MarkTaskCompleted();
+				}
+			);
+		}
+
 		//Enqueues a concurrent task using the relative interpreter, executing node_to_execute
 		//if result is specified, it will store the result there, otherwise it will free it
 		template<typename EvaluableNodeRefType>
@@ -991,6 +1038,7 @@ protected:
 					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
+
 					auto result_ref = interpreter.ExecuteNode(node_to_execute, nullptr, opcode_stack,
 						construction_stack, &csiau, immediate_results, false);
 

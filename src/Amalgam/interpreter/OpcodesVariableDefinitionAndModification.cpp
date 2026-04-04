@@ -776,8 +776,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		if(accum)
 		{
-			//create destination reference
-			EvaluableNodeReference value_destination_node(*copy_destination, false);
+			//create destination reference; the logic above has already made a copy if it wasn't freeable
+			//so the destination can be treated as unique
+			EvaluableNodeReference value_destination_node(*copy_destination, true);
 			EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
 			//assign the new accumulation

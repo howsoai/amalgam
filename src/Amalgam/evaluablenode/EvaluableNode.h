@@ -1724,6 +1724,11 @@ public:
 		return (static_cast<StorageType>(requestedValueTypes) & ~static_cast<StorageType>(Type::CODE)) == 0;
 	}
 
+	constexpr bool NoValueRequested() const noexcept
+	{
+		return requestedValueTypes == Type::NULL_VALUE;
+	}
+
 private:
 	Type requestedValueTypes;
 };

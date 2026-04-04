@@ -774,6 +774,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			is_idempotent_before = (*copy_destination)->GetIsIdempotent();
 		}
 
+		bool updated_node_unique = true;
 		if(accum)
 		{
 			//create destination reference; the logic above has already made a copy if it wasn't freeable
@@ -783,12 +784,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			//assign the new accumulation
 			*copy_destination = variable_value_node;
+			updated_node_unique = variable_value_node.unique;
 		}
 		else
 		{
 			*copy_destination = new_value;
-
-			any_nonunique_assignments |= !new_value.unique;
+			updated_node_unique = new_value.unique;
 		}
 
 		bool need_cycle_check_after = false;
@@ -799,10 +800,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			is_idempotent_after = (*copy_destination)->GetIsIdempotent();
 		}
 
-		if(!new_value.unique
-				|| need_cycle_check_before != need_cycle_check_after
-				|| is_idempotent_before != is_idempotent_after)
-			result_flags_need_updates = true;
+		if(!updated_node_unique)
+		{
+			if(need_cycle_check_before != need_cycle_check_after || is_idempotent_before != is_idempotent_after)
+				result_flags_need_updates = true;
+
+			any_nonunique_assignments = true;;
+		}
 	}
 
 	if(result_flags_need_updates)

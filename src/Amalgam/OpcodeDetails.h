@@ -144,6 +144,7 @@ public:
 	//with descriptive strings at the end
 	bool potentiallyIdempotent = false;
 	bool hasSideEffects = false;
+	bool mayCauseNodeUpdateInCurrentEntity = false;
 	bool allowsConcurrency = false;
 	bool requiresEntity = false;
 	bool newScope = false;
@@ -195,6 +196,12 @@ __forceinline OpcodeDetails::OrderedChildNodeType GetOpcodeOrderedChildNodeType(
 __forceinline bool DoesOpcodeHaveSideEffects(EvaluableNodeType t)
 {
 	return _opcode_details[t].hasSideEffects;
+}
+
+//returns true if the opcode modifies things outside of its return
+__forceinline bool MayOpcodeCauseNodeUpdateInCurrentEntity(EvaluableNodeType t)
+{
+	return _opcode_details[t].mayCauseNodeUpdateInCurrentEntity;
 }
 
 //returns whether the opcode returns a new value

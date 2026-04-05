@@ -148,6 +148,7 @@ static OpcodeInitializer _ENT_DECLARE(ENT_DECLARE, &Interpreter::InterpretNode_E
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.hasSideEffects = true;
+	d.mayCauseNodeUpdateInCurrentEntity = true;
 	d.frequencyPer10000Opcodes = 49.0;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -409,6 +410,7 @@ static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 	d.hasSideEffects = true;
+	d.mayCauseNodeUpdateInCurrentEntity = true;
 	d.frequencyPer10000Opcodes = 61.0;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -510,6 +512,7 @@ static OpcodeInitializer _ENT_ACCUM(ENT_ACCUM, &Interpreter::InterpretNode_ENT_A
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 	d.hasSideEffects = true;
+	d.mayCauseNodeUpdateInCurrentEntity = true;
 	d.frequencyPer10000Opcodes = 11.0;
 	d.opcodeGroup = _opcode_group;
 	return d;

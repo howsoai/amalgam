@@ -313,7 +313,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 		//    (create_entities
 		//         (append new_entity *relative id*)
 		//         (call *entity difference code*
-		//           (assoc _ (get_entity_code (append _ *relative id*)) )
+		//           (assoc _ (retrieve_entity_root (append _ *relative id*)) )
 		//    )
 		EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, entity2, entity_to_create);
 		EvaluableNode *src_append = enm->AllocNode(ENT_APPEND);

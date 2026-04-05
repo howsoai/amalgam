@@ -229,7 +229,9 @@ public:
 
 	//when debugging, checks any relevant breakpoints and update debugger state if any are triggered
 	// if before_opcode is true, then it is checking before it is run, otherwise it'll check after it is completed
-	void DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool before_opcode);
+	//if before_opcode is false, then previous_opcode_return_value should be set to whatever the previous opcode returned
+	void DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool before_opcode,
+		EvaluableNodeReference previous_opcode_return_value);
 
 	//collects garbage on evaluableNodeManager
 	__forceinline void CollectGarbage()

@@ -50,6 +50,9 @@ struct InterpreterDebugData
 	std::thread::id interactiveModeThread = std::thread::id();
 #endif
 
+	//set after an opcode has run
+	EvaluableNodeReference previousOpcodeReturnValue;
+
 	//labels to break on
 	std::vector<std::string> breakLabels;
 
@@ -142,7 +145,7 @@ static void PrintStackNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t 
 
 EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	DebugCheckBreakpointsAndUpdateState(en, true);
+	DebugCheckBreakpointsAndUpdateState(en, true, EvaluableNodeReference::Null());
 
 	EvaluableNodeType cur_node_type = ENT_NULL;
 	if(en != nullptr)
@@ -171,7 +174,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 		EvaluableNodeReference retval = (this->*oc)(en, false);
 
 		//check for debug after execution
-		DebugCheckBreakpointsAndUpdateState(en, false);
+		DebugCheckBreakpointsAndUpdateState(en, false, retval);
 
 		return retval;
 	}
@@ -264,6 +267,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			std::cout << "entity [name]: prints out the entity specified, current entity if name omitted" << std::endl;
 			std::cout << "labels [name]: prints out the labels of the entity specified, current entity if name omitted" << std::endl;
 			std::cout << "vars: prints out the variables, grouped by each layer going up the stack" << std::endl;
+			std::cout << "r: prints out the value returned from the previous opcode" << std::endl;
 			std::cout << "p [var]: prints variable var" << std::endl;
 			std::cout << "pv [var]: prints only the value of the variable var (no comments or labels)" << std::endl;
 			std::cout << "pp [var]: prints only a preview of the value of the variable var (no comments or labels)" << std::endl;
@@ -481,6 +485,64 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 					std::cout << "  " << string_intern_pool.GetStringFromID(symbol_id) << std::endl;
 			}
 		}
+		else if(command == "r")
+		{
+			EvaluableNodeReference retval = _interpreter_debug_data.previousOpcodeReturnValue;
+
+			auto &retval_value = retval.GetValue();
+
+			switch(retval_value.nodeType)
+			{
+			case ENIVT_NOT_EXIST:
+				std::cout << "Error: value does not exist" << std::endl;
+				break;
+
+			case ENIVT_NULL:
+				std::cout << "(null)" << std::endl;
+				std::cout << "Value type: immediate null" << std::endl;
+				break;
+
+			case ENIVT_BOOL:
+				std::cout << EvaluableNode::BoolToString(retval_value.GetValueAsBoolean()) << std::endl;
+				std::cout << "Value type: immediate bool" << std::endl;
+				break;
+
+			case ENIVT_NUMBER:
+				std::cout << EvaluableNode::NumberToString(retval_value.GetValueAsNumber()) << std::endl;
+				std::cout << "Value type: immediate number" << std::endl;
+				break;
+
+			case ENIVT_STRING_ID:
+			{
+				auto [valid, str] = retval_value.GetValueAsString();
+				if(valid)
+					std::cout << str << std::endl;
+				else
+					std::cout << "Error: string type but storing not-a-string value" << std::endl;
+				std::cout << "Value type: immediate string" << std::endl;
+				break;
+			}
+
+			case ENIVT_CODE:
+				std::cout << Parser::Unparse(retval, true, true, true) << std::endl;
+				if(retval == nullptr)
+					std::cout << "Value type: null node" << std::endl;
+				else
+					std::cout << "Value type: node value" << std::endl;
+
+				std::cout << "Unique reference: " << (retval.unique ? "true" : "false") << std::endl;
+				std::cout << "Top node unique reference: " << (retval.uniqueUnreferencedTopNode ? "true" : "false") << std::endl;
+				break;
+
+			case ENIVT_NUMBER_INDIRECTION_INDEX:
+				std::cout << "Error: type was invalid, a number indirection index" << std::endl;
+				break;
+
+			case ENIVT_STRING_ID_INDIRECTION_INDEX:
+				std::cout << "Error: type was invalid, a string id indirection index" << std::endl;
+				break;
+			}
+		}
 		else if(command == "p" || command == "pv" || command == "pp")
 		{
 			auto sid = string_intern_pool.GetIDFromString(input);
@@ -570,7 +632,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 	EvaluableNodeReference retval = (this->*oc)(en, false);
 
 	//check for debug after execution
-	DebugCheckBreakpointsAndUpdateState(en, false);
+	DebugCheckBreakpointsAndUpdateState(en, false, retval);
 
 	return retval;
 }
@@ -633,11 +695,15 @@ void Interpreter::SetLabelProfilingState(bool label_profiling_enabled)
 	PerformanceProfiler::SetProfilingState(_label_profiling_enabled);
 }
 
-void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool before_opcode)
+void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en,
+	bool before_opcode, EvaluableNodeReference previous_opcode_return_value)
 {
 	EvaluableNodeType cur_node_type = ENT_NULL;
 	if(en != nullptr)
 		cur_node_type = en->GetType();
+
+	if(!before_opcode)
+		_interpreter_debug_data.previousOpcodeReturnValue = previous_opcode_return_value;
 
 	//if not interactive, check for events that could trigger interactiveMode
 	if(!_interpreter_debug_data.interactiveMode)

@@ -143,6 +143,7 @@ public:
 			value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_id);
 			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 		}
+		SetIsIdempotent(true);
 	}
 
 	//like InitializeType, but hands off the string reference to string_id

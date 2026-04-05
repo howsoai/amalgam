@@ -34,7 +34,6 @@ static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HEL
 		});
 	d.permissions = ExecutionPermissions::Permission::ALL;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.01;
 	d.opcodeGroup = _opcode_group;
 	return d;

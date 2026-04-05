@@ -455,7 +455,6 @@ static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::Interpr
 	d.requiresEntity = true;
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 48.0;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -524,7 +523,6 @@ static OpcodeInitializer _ENT_CALL_ENTITY_GET_CHANGES(ENT_CALL_ENTITY_GET_CHANGE
 	d.requiresEntity = true;
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.01;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -554,7 +552,6 @@ static OpcodeInitializer _ENT_CALL_ON_ENTITY(ENT_CALL_ON_ENTITY, &Interpreter::I
 	d.requiresEntity = true;
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.1;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -828,7 +825,6 @@ static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::I
 	d.requiresEntity = true;
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;
 	return d;

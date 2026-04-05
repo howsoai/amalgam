@@ -163,7 +163,6 @@ static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CAL
 ))&", R"(5)"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-	d.hasSideEffects = true;
 	d.newScope = true;
 	d.frequencyPer10000Opcodes = 112.0;
 	d.opcodeGroup = _opcode_group;
@@ -634,8 +633,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 
 	//if new_type doesn't affect anything and always creates a new value, then
 	//don't need to maintain source (can be interpreted as immediate) and can free it
+	auto opcode_new_value_return_type = GetOpcodeNewValueReturnType(new_type);
 	bool transient_source_node = (!DoesOpcodeHaveSideEffects(new_type)
-		&& GetOpcodeNewValueReturnType(new_type) == OpcodeDetails::OpcodeReturnNewnessType::NEW);
+		&& (opcode_new_value_return_type == OpcodeDetails::OpcodeReturnNewnessType::NEW
+			|| opcode_new_value_return_type == OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE));
 	EvaluableNodeReference source;
 
 	if(transient_source_node)

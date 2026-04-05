@@ -163,8 +163,8 @@ static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CAL
 ))&", R"(5)"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-	d.hasSideEffects = true;
 	d.newScope = true;
+	d.mayCauseNodeUpdateInCurrentEntity = true;
 	d.frequencyPer10000Opcodes = 112.0;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -634,14 +634,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 
 	//if new_type doesn't affect anything and always creates a new value, then
 	//don't need to maintain source (can be interpreted as immediate) and can free it
-	bool transient_source_node = (!DoesOpcodeHaveSideEffects(new_type)
-		&& GetOpcodeNewValueReturnType(new_type) == OpcodeDetails::OpcodeReturnNewnessType::NEW);
-	EvaluableNodeReference source;
+	auto opcode_new_value_return_type = GetOpcodeNewValueReturnType(new_type);
+	bool may_opcode_cause_node_update_in_current_entity = MayOpcodeCauseNodeUpdateInCurrentEntity(new_type);
 
-	if(transient_source_node)
-		source = InterpretNodeForImmediateUse(ocn[1]);
-	else
+	EvaluableNodeReference source;
+	if(may_opcode_cause_node_update_in_current_entity
+			|| opcode_new_value_return_type == OpcodeDetails::OpcodeReturnNewnessType::PARTIAL
+			|| opcode_new_value_return_type == OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL
+			|| opcode_new_value_return_type == OpcodeDetails::OpcodeReturnNewnessType::EXISTING)
 		source = InterpretNode(ocn[1]);
+	else //returns a new value without affecting anything else, can call potentially faster interpret
+		source = InterpretNodeForImmediateUse(ocn[1]);
 
 	//change source type
 	if(source == nullptr)
@@ -672,7 +675,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 	//passing through whether an immediate_result is desired
 	EvaluableNodeReference result = InterpretNode(source, immediate_result);
 
-	if(transient_source_node)
+	//can free the source if none of its data can be referenced elsewhere
+	if(!may_opcode_cause_node_update_in_current_entity && result.unique)
 		evaluableNodeManager->FreeNodeTreeIfPossible(source);
 
 	return result;

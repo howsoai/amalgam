@@ -148,6 +148,7 @@ static OpcodeInitializer _ENT_DECLARE(ENT_DECLARE, &Interpreter::InterpretNode_E
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.hasSideEffects = true;
+	d.mayCauseNodeUpdateInCurrentEntity = true;
 	d.frequencyPer10000Opcodes = 49.0;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -409,6 +410,7 @@ static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 	d.hasSideEffects = true;
+	d.mayCauseNodeUpdateInCurrentEntity = true;
 	d.frequencyPer10000Opcodes = 61.0;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -510,6 +512,7 @@ static OpcodeInitializer _ENT_ACCUM(ENT_ACCUM, &Interpreter::InterpretNode_ENT_A
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 	d.hasSideEffects = true;
+	d.mayCauseNodeUpdateInCurrentEntity = true;
 	d.frequencyPer10000Opcodes = 11.0;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -595,7 +598,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 		#endif
 
-			if(accum)
+			if(accum && !EvaluableNode::IsNull(*value_destination))
 			{
 				if(is_freeable)
 				{
@@ -641,7 +644,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	//if only 2 params and not accumulating, then just assign/accum the destination
 	if(num_params == 2)
 	{
-		auto new_value = InterpretNodeForImmediateUse(ocn[1]);
+		auto new_value = InterpretNode(ocn[1]);
 
 		//retrieve the symbol location
 	#ifdef MULTITHREAD_SUPPORT
@@ -660,7 +663,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
-		if(accum)
+		if(accum && !EvaluableNode::IsNull(*value_destination))
 		{
 			EvaluableNodeReference variable_value_node;
 			if(is_freeable)
@@ -721,7 +724,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		node_stack.PushEvaluableNode(address);
 		is_value_unique.push_back(address.unique);
 
-		auto new_value = InterpretNodeForImmediateUse(ocn[ocn_index + 1]);
+		auto new_value = InterpretNode(ocn[ocn_index + 1]);
 		node_stack.PushEvaluableNode(new_value);
 		is_value_unique.push_back(new_value.unique);
 	}
@@ -774,20 +777,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			is_idempotent_before = (*copy_destination)->GetIsIdempotent();
 		}
 
-		if(accum)
+		bool updated_node_unique = true;
+		//if accum'ing into a null, then just treat as an assignment
+		if(accum && !EvaluableNode::IsNull(*copy_destination))
 		{
-			//create destination reference
-			EvaluableNodeReference value_destination_node(*copy_destination, false);
+			//create destination reference; the logic above has already made a copy if it wasn't freeable
+			//so the destination can be treated as unique
+			EvaluableNodeReference value_destination_node(*copy_destination, true);
 			EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
 			//assign the new accumulation
 			*copy_destination = variable_value_node;
+			updated_node_unique = variable_value_node.unique;
 		}
 		else
 		{
 			*copy_destination = new_value;
-
-			any_nonunique_assignments |= !new_value.unique;
+			updated_node_unique = new_value.unique;
 		}
 
 		bool need_cycle_check_after = false;
@@ -798,10 +804,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			is_idempotent_after = (*copy_destination)->GetIsIdempotent();
 		}
 
-		if(!new_value.unique
-				|| need_cycle_check_before != need_cycle_check_after
-				|| is_idempotent_before != is_idempotent_after)
-			result_flags_need_updates = true;
+		if(!updated_node_unique)
+		{
+			if(need_cycle_check_before != need_cycle_check_after || is_idempotent_before != is_idempotent_after)
+				result_flags_need_updates = true;
+
+			any_nonunique_assignments = true;
+		}
 	}
 
 	if(result_flags_need_updates)

@@ -143,6 +143,9 @@ public:
 			value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_id);
 			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 		}
+
+		if(type == ENT_STRING)
+			SetIsIdempotent(true);
 	}
 
 	//like InitializeType, but hands off the string reference to string_id
@@ -527,8 +530,7 @@ public:
 		if(!n->GetNeedCycleCheck())
 			return true;
 
-		std::vector<EvaluableNode *> stack;
-		return CanNodeTreeBeFlattenedRecurse(n, stack);
+		return CanNodeTreeBeFlattenedRecurse(n, reusableBuffer);
 	}
 
 	//Returns the number of nodes in the data structure
@@ -1583,6 +1585,14 @@ protected:
 	static AssocType emptyMappedChildNodes;
 	static AnnotationsAndComments emptyAnnotationsAndComments;
 
+public:
+	//reusable memory pool for local operations
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+	#endif
+		inline static std::vector<EvaluableNode *> reusableBuffer;
+protected:
+
 	//field for watching EvaluableNodes for debugging
 	static FastHashSet<EvaluableNode *> debugWatch;
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
@@ -1715,6 +1725,11 @@ public:
 	constexpr bool ImmediateValueButNotImmediateType() const noexcept
 	{
 		return (static_cast<StorageType>(requestedValueTypes) & ~static_cast<StorageType>(Type::CODE)) == 0;
+	}
+
+	constexpr bool NoValueRequested() const noexcept
+	{
+		return requestedValueTypes == Type::NULL_VALUE;
 	}
 
 private:

@@ -315,11 +315,8 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 				break;
 			}
 
-			//need to create a new node to fill in, but create the most generic type possible that uses the type of the index as the way to access it
-			if(!addr_empty && DoesEvaluableNodeTypeUseNumberData(addr->GetType())) //used to access lists
-				*destination = enm->AllocNode(ENT_LIST);
-			else
-				*destination = enm->AllocNode(ENT_ASSOC);
+			//need to create a new node to fill in, use assoc because it is the most generic
+			*destination = enm->AllocNode(ENT_ASSOC);
 		}
 
 		if(EvaluableNode::IsAssociativeArray(*destination))
@@ -390,7 +387,9 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 			else //beyond index
 			{
 				if(enm == nullptr)
+				{
 					destination = nullptr;
+				}
 				else //resize to fit
 				{
 					//if the index is more than can be referenced in 53 bits of 64-bit float mantissa,
@@ -446,6 +445,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			double cur_value = EvaluableNode::ToNumber(value_destination_node);
 			double inc_value = EvaluableNode::ToNumber(variable_value_node);
 			value_destination_node->SetTypeViaNumberValue(cur_value + inc_value);
+			enm->FreeNodeTreeIfPossible(variable_value_node);
 		}
 		else if(value_destination_node->IsAssociativeArray())
 		{
@@ -490,7 +490,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 				value_destination_node->SetType(ENT_NULL, nullptr, false);
 			}
 
-			value_destination_node.unique = true;
+			enm->FreeNodeTreeIfPossible(variable_value_node);
 		}
 		else //add ordered child node
 		{
@@ -537,6 +537,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		double cur_value = EvaluableNode::ToNumber(value_destination_node);
 		double inc_value = EvaluableNode::ToNumber(variable_value_node);
 		value_destination_node.SetReference(enm->AllocNode(cur_value + inc_value), true);
+		enm->FreeNodeTreeIfPossible(variable_value_node);
 	}
 	else if(value_destination_node->IsAssociativeArray())
 	{
@@ -577,6 +578,8 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		{
 			value_destination_node.SetReference(enm->AllocNode(ENT_NULL), true);
 		}
+
+		enm->FreeNodeTreeIfPossible(variable_value_node);
 	}
 	else //add ordered child node
 	{

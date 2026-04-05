@@ -913,15 +913,16 @@ public:
 		}
 		else if(!en->GetNeedCycleCheck())
 		{
-			nodeMarkBuffer.clear();
+			auto &node_stack = EvaluableNode::reusableBuffer;
+			node_stack.clear();
 			if(en != nullptr)
-				nodeMarkBuffer.push_back(en);
+				node_stack.push_back(en);
 
 			//perform depth-first traversal
-			while(!nodeMarkBuffer.empty())
+			while(!node_stack.empty())
 			{
-				EvaluableNode *cur = nodeMarkBuffer.back();
-				nodeMarkBuffer.pop_back();
+				EvaluableNode *cur = node_stack.back();
+				node_stack.pop_back();
 
 			#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 				assert(cur->IsNodeValid());
@@ -933,7 +934,7 @@ public:
 					for(auto &[_, child] : cur->GetMappedChildNodesReference())
 					{
 						if(child != nullptr)
-							nodeMarkBuffer.push_back(child);
+							node_stack.push_back(child);
 					}
 				}
 				else if(!cur->IsImmediate())
@@ -941,7 +942,7 @@ public:
 					for(auto &child : cur->GetOrderedChildNodesReference())
 					{
 						if(child != nullptr)
-							nodeMarkBuffer.push_back(child);
+							node_stack.push_back(child);
 					}
 				}
 
@@ -952,19 +953,20 @@ public:
 		}
 		else //more costly cyclic free
 		{
-			nodeMarkBuffer.clear();
+			auto &node_stack = EvaluableNode::reusableBuffer;
+			node_stack.clear();
 			if(en != nullptr)
-				nodeMarkBuffer.push_back(en);
+				node_stack.push_back(en);
 
 		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 			assert(en->IsNodeValid());
 		#endif
 
 			//perform depth-first traversal
-			while(!nodeMarkBuffer.empty())
+			while(!node_stack.empty())
 			{
-				EvaluableNode *cur = nodeMarkBuffer.back();
-				nodeMarkBuffer.pop_back();
+				EvaluableNode *cur = node_stack.back();
+				node_stack.pop_back();
 
 				if(cur->IsNodeDeallocated())
 					continue;
@@ -974,7 +976,7 @@ public:
 					for(auto &[_, e] : cur->GetMappedChildNodesReference())
 					{
 						if(e != nullptr && !e->IsNodeDeallocated())
-							nodeMarkBuffer.push_back(e);
+							node_stack.push_back(e);
 					}
 				}
 				else if(!cur->IsImmediate())
@@ -982,7 +984,7 @@ public:
 					for(auto &e : cur->GetOrderedChildNodesReference())
 					{
 						if(e != nullptr && !e->IsNodeDeallocated())
-							nodeMarkBuffer.push_back(e);
+							node_stack.push_back(e);
 					}
 				}
 
@@ -1008,7 +1010,8 @@ public:
 	//just frees the child nodes of tree, but not tree itself; assumes no cycles
 	inline void FreeNodeChildNodes(EvaluableNode *tree)
 	{
-		nodeMarkBuffer.clear();
+		auto &node_stack = EvaluableNode::reusableBuffer;
+		node_stack.clear();
 
 		// Seed the buffer with the direct children of *tree*.
 		if(tree->IsAssociativeArray())
@@ -1016,7 +1019,7 @@ public:
 			for(auto &[_, e] : tree->GetMappedChildNodesReference())
 			{
 				if(e != nullptr)
-					nodeMarkBuffer.push_back(e);
+					node_stack.push_back(e);
 			}
 		}
 		else if(tree->IsOrderedArray())
@@ -1024,15 +1027,15 @@ public:
 			for(auto &e : tree->GetOrderedChildNodesReference())
 			{
 				if(e != nullptr)
-					nodeMarkBuffer.push_back(e);
+					node_stack.push_back(e);
 			}
 		}
 
 		//perform depth-first traversal
-		while(!nodeMarkBuffer.empty())
+		while(!node_stack.empty())
 		{
-			EvaluableNode *cur = nodeMarkBuffer.back();
-			nodeMarkBuffer.pop_back();
+			EvaluableNode *cur = node_stack.back();
+			node_stack.pop_back();
 
 		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 			assert(cur->IsNodeValid());
@@ -1044,7 +1047,7 @@ public:
 				for(auto &[_, child] : cur->GetMappedChildNodesReference())
 				{
 					if(child != nullptr)
-						nodeMarkBuffer.push_back(child);
+						node_stack.push_back(child);
 				}
 			}
 			else if(!cur->IsImmediate())
@@ -1052,7 +1055,7 @@ public:
 				for(auto &child : cur->GetOrderedChildNodesReference())
 				{
 					if(child != nullptr)
-						nodeMarkBuffer.push_back(child);
+						node_stack.push_back(child);
 				}
 			}
 
@@ -1341,12 +1344,6 @@ protected:
 	thread_local
 #endif
 		inline static LocalAllocationBuffer localAllocationBuffer;
-
-	//local memory pool for garbage collection
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	thread_local
-	#endif
-		inline static std::vector<EvaluableNode *> nodeMarkBuffer;
 
 	//debug diagnostic variables for localAllocationBuffer
 #ifdef DEBUG_REPORT_LAB_USAGE

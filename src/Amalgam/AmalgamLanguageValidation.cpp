@@ -2236,6 +2236,15 @@ AmalgamExample{ R"&((concat
 	"~ : "
 	||(~ 1 1 1 2)
 ))&", R"("~ : .true")" },
+AmalgamExample{ R"&((seq
+	(declare {counter 0})
+	||(range (lambda
+			(accum "counter" 1)
+		)
+		1 1000 1
+	)
+	counter
+))&", R"(1000)" },
 AmalgamExample{ R"&((concat
 	"list : "
 	||[

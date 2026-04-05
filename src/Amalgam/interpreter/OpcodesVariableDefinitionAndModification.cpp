@@ -595,7 +595,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 		#endif
 
-			if(accum)
+			if(accum && !EvaluableNode::IsNull(*value_destination))
 			{
 				if(is_freeable)
 				{
@@ -660,7 +660,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
-		if(accum)
+		if(accum && !EvaluableNode::IsNull(*value_destination))
 		{
 			EvaluableNodeReference variable_value_node;
 			if(is_freeable)
@@ -775,7 +775,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		}
 
 		bool updated_node_unique = true;
-		if(accum)
+		//if accum'ing into a null, then just treat as an assignment
+		if(accum && !EvaluableNode::IsNull(*copy_destination))
 		{
 			//create destination reference; the logic above has already made a copy if it wasn't freeable
 			//so the destination can be treated as unique

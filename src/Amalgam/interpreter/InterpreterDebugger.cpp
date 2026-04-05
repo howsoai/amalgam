@@ -195,7 +195,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 		EvaluableNodeReference retval = (this->*oc)(en, false);
 
 		//check for debug after execution
-		DebugCheckBreakpointsAndUpdateState(en, false);
+		DebugCheckBreakpointsAndUpdateState(en, false, retval);
 
 		return retval;
 	}

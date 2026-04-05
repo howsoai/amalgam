@@ -445,6 +445,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			double cur_value = EvaluableNode::ToNumber(value_destination_node);
 			double inc_value = EvaluableNode::ToNumber(variable_value_node);
 			value_destination_node->SetTypeViaNumberValue(cur_value + inc_value);
+			enm->FreeNodeTreeIfPossible(variable_value_node);
 		}
 		else if(value_destination_node->IsAssociativeArray())
 		{
@@ -489,7 +490,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 				value_destination_node->SetType(ENT_NULL, nullptr, false);
 			}
 
-			value_destination_node.unique = true;
+			enm->FreeNodeTreeIfPossible(variable_value_node);
 		}
 		else //add ordered child node
 		{
@@ -536,6 +537,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		double cur_value = EvaluableNode::ToNumber(value_destination_node);
 		double inc_value = EvaluableNode::ToNumber(variable_value_node);
 		value_destination_node.SetReference(enm->AllocNode(cur_value + inc_value), true);
+		enm->FreeNodeTreeIfPossible(variable_value_node);
 	}
 	else if(value_destination_node->IsAssociativeArray())
 	{
@@ -576,6 +578,8 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		{
 			value_destination_node.SetReference(enm->AllocNode(ENT_NULL), true);
 		}
+
+		enm->FreeNodeTreeIfPossible(variable_value_node);
 	}
 	else //add ordered child node
 	{

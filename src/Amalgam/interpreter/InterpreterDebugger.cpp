@@ -594,7 +594,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 						std::string var_preview = Parser::Unparse(node, true, false, true);
 						if(var_preview.size() > 1023)
 							var_preview.resize(1023);
-						std::cout << var_preview << std::endl;
+						std::cout << var_preview;
 					}
 				}
 			}

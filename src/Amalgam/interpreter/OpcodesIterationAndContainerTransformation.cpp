@@ -39,7 +39,7 @@ static OpcodeInitializer _ENT_RANGE(ENT_RANGE, &Interpreter::InterpretNode_ENT_R
 ])"},
 			{R"&((range 0 5 0))&", R"([])"},
 			{R"&((range 0 5 1))&", R"([0 1 2 3 4 5])"},
-			{R"&((range (lambda (replace 12)) 0 5 1))&", R"([12 12 12 12 12 12])"},
+			{R"&((range 12 0 5 1))&", R"([12 12 12 12 12 12])"},
 			{R"&((range
 	(lambda
 		(+ (current_index) 1)
@@ -125,7 +125,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	}
 
 	//if a function is specified, then set up appropriate data structures to call the function and move the indices for the index and value parameters
-	EvaluableNodeReference function = InterpretNode(ocn[0]);
+	EvaluableNodeReference function = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	if(immediate_result.NoValueRequested())
@@ -156,7 +156,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 			//pass index of list to be mapped -- leave value at nullptr
 			SetTopCurrentIndexInConstructionStack(i * range_step_size + range_start);
 
-			EvaluableNodeReference element_result = InterpretNode(function);
+			EvaluableNodeReference element_result = InterpretNodeForImmediateUse(function);
 			evaluableNodeManager->FreeNodeTreeIfPossible(element_result);
 		}
 
@@ -377,7 +377,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNode(ocn[0]);
+	auto function = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 	auto node_stack = CreateOpcodeStackStateSaver(function);
@@ -506,7 +506,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNode(ocn[0]);
+	auto function = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -964,7 +964,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		//specialized path for immediate result just getting the count
 		if(immediate_result.AnyImmediateType())
 		{
-			auto list = InterpretNode(ocn[0]);
+			auto list = InterpretNodeForImmediateUse(ocn[0]);
 			if(list == nullptr)
 				return EvaluableNodeReference::Null();
 
@@ -1057,7 +1057,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		return result_list;
 	}
 
-	auto function = InterpretNode(ocn[0]);
+	auto function = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	//get list
@@ -1431,7 +1431,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 
 		//need to interpret node here in case function is actually a null
 		// null is a special non-function for weave
-		function = InterpretNode(ocn[0]);
+		function = InterpretNodeForImmediateUse(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 	}
 
@@ -1585,7 +1585,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNode(ocn[0]);
+	auto function = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
@@ -1844,12 +1844,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 		index_list_index++;
 		value_list_index++;
 
-		function = InterpretNode(ocn[0]);
+		function = InterpretNodeForImmediateUse(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 	}
 
 	//attempt to get indices, the keys of the assoc
-	auto index_list = InterpretNode(ocn[index_list_index]);
+	auto index_list = InterpretNodeForImmediateUse(ocn[index_list_index]);
 	if(EvaluableNode::IsNull(index_list))
 	{
 		EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
@@ -1994,7 +1994,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	auto node_stack = CreateOpcodeStackStateSaver(zipped);
-	auto index_list = InterpretNode(ocn[1]);
+	auto index_list = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PopEvaluableNode();
 
 	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
@@ -2312,7 +2312,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 
 	if(ocn.size() >= 2)
 	{
-		function = InterpretNode(ocn[0]);
+		function = InterpretNodeForImmediateUse(ocn[0]);
 
 		if(EvaluableNode::IsNull(function))
 		{

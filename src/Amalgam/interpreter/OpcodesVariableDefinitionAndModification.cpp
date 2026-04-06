@@ -88,7 +88,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 		return EvaluableNodeReference::Null();
 
 	//add new context
-	auto new_context = InterpretNode(ocn[0]);
+	auto new_context = InterpretNodeForImmediateUse(ocn[0]);
 	//can keep constant, but need the top node to be unique in case assignments are made
 	evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, false);
 	PushNewScopeStack(new_context);
@@ -721,7 +721,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		if(AreExecutionResourcesExhausted())
 			return EvaluableNodeReference::Null();
 
-		auto address = InterpretNode(ocn[ocn_index]);
+		auto address = InterpretNodeForImmediateUse(ocn[ocn_index]);
 		node_stack.PushEvaluableNode(address);
 		is_value_unique[ocn_index - 1] = address.unique;
 
@@ -870,7 +870,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	auto to_lookup = InterpretNode(ocn[0]);
+	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
 
 	//get the value(s)
 	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
@@ -1034,7 +1034,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 	size_t depth = 0;
 	if(ocn.size() > 0)
 	{
-		auto result = InterpretNode(ocn[0], true);
+		auto result = InterpretNodeForImmediateUse(ocn[0], true);
 		if(result.IsImmediateValue())
 		{
 			double value_number = result.GetValue().GetValueAsNumber();
@@ -1193,7 +1193,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto cur = InterpretNode(ocn[0]);
+	auto cur = InterpretNodeForImmediateUse(ocn[0]);
 	EvaluableNodeType type = ENT_NULL;
 	if(cur != nullptr)
 		type = cur->GetType();
@@ -1227,7 +1227,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableN
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto cur = InterpretNode(ocn[0]);
+	auto cur = InterpretNodeForImmediateUse(ocn[0]);
 	EvaluableNodeType type = ENT_NULL;
 	if(cur != nullptr)
 		type = cur->GetType();
@@ -1312,7 +1312,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en
 
 	//get the type to set
 	EvaluableNodeType new_type = ENT_NULL;
-	auto type_node = InterpretNode(ocn[1]);
+	auto type_node = InterpretNodeForImmediateUse(ocn[1]);
 	if(type_node != nullptr)
 	{
 		if(type_node->GetType() == ENT_STRING)
@@ -1542,7 +1542,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	EvaluableNodeReference from_params = EvaluableNodeReference::Null();
 	if(ocn.size() > 3)
 	{
-		from_params = InterpretNode(ocn[3]);
+		from_params = InterpretNodeForImmediateUse(ocn[3]);
 		node_stack.PushEvaluableNode(from_params);
 		node_stack_needs_popping = true;
 	}
@@ -1577,7 +1577,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_code))
 	{
 		use_code = true;
-		code_value = InterpretNode(ocn[0]);
+		code_value = InterpretNodeForImmediateUse(ocn[0]);
 	}
 	else //base on string type
 	{
@@ -1825,7 +1825,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 	EvaluableNodeReference to_params = EvaluableNodeReference::Null();
 	if(ocn.size() > 4)
-		to_params = InterpretNode(ocn[4]);
+		to_params = InterpretNodeForImmediateUse(ocn[4]);
 
 	//convert
 	if(to_type == GetStringIdFromNodeType(ENT_NUMBER))

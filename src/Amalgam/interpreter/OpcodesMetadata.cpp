@@ -33,7 +33,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ANNOTATIONS(EvaluableN
 
 	std::string annotations;
 
-	auto n = InterpretNode(ocn[0]);
+	auto n = InterpretNodeForImmediateUse(ocn[0]);
 	if(n != nullptr)
 	{
 		annotations = std::string(n->GetAnnotationsString());
@@ -117,7 +117,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	std::string comment;
-	auto n = InterpretNode(ocn[0]);
+	auto n = InterpretNodeForImmediateUse(ocn[0]);
 	if(n != nullptr)
 	{
 		comment = std::string(n->GetCommentsString());
@@ -210,8 +210,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableN
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
+	auto n = InterpretNodeForImmediateUse(ocn[0]);
 
-	auto n = InterpretNode(ocn[0]);
 	return AllocReturn(n != nullptr && n->GetConcurrency(), immediate_result);
 }
 

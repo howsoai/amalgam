@@ -49,7 +49,7 @@ static OpcodeInitializer _ENT_BOOL(ENT_BOOL, &Interpreter::InterpretNode_ENT_BOO
 		{R"&(.true)&", R"(.true)"},
 		{R"&(.false)&", R"(.false)"}
 		});
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.potentiallyIdempotent = true;
 	d.frequencyPer10000Opcodes = 73.5;
 	d.opcodeGroup = _opcode_group;
@@ -58,7 +58,8 @@ static OpcodeInitializer _ENT_BOOL(ENT_BOOL, &Interpreter::InterpretNode_ENT_BOO
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_BOOL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	return EvaluableNodeReference(en, false);
+	bool value = en->GetBoolValueReference();
+	return AllocReturn(value, immediate_result);
 }
 
 static OpcodeInitializer _ENT_NUMBER(ENT_NUMBER, &Interpreter::InterpretNode_ENT_NUMBER, []() {
@@ -75,7 +76,7 @@ static OpcodeInitializer _ENT_NUMBER(ENT_NUMBER, &Interpreter::InterpretNode_ENT
 	(* 3 .infinity)
 ))&", R"(-.infinity)"}
 		});
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.potentiallyIdempotent = true;
 	d.frequencyPer10000Opcodes = 2545.0;
 	d.opcodeGroup = _opcode_group;
@@ -84,7 +85,8 @@ static OpcodeInitializer _ENT_NUMBER(ENT_NUMBER, &Interpreter::InterpretNode_ENT
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NUMBER(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	return EvaluableNodeReference(en, false);
+	double value = en->GetNumberValueReference();
+	return AllocReturn(value, immediate_result);
 }
 
 static OpcodeInitializer _ENT_STRING(ENT_STRING, &Interpreter::InterpretNode_ENT_STRING, []() {
@@ -96,7 +98,7 @@ static OpcodeInitializer _ENT_STRING(ENT_STRING, &Interpreter::InterpretNode_ENT
 		{R"&("hello")&", R"("hello")"},
 		{R"&("\tHello\n\"Hello\"")&", R"("\tHello\n\"Hello\"")"}
 		});
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.potentiallyIdempotent = true;
 	d.frequencyPer10000Opcodes = 766.0;
 	d.opcodeGroup = _opcode_group;
@@ -105,7 +107,8 @@ static OpcodeInitializer _ENT_STRING(ENT_STRING, &Interpreter::InterpretNode_ENT
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	return EvaluableNodeReference(en, false);
+	StringInternPool::StringID value = en->GetStringIDReference();
+	return AllocReturn(value, immediate_result);
 }
 
 
@@ -180,7 +183,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(Ev
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
-		return EvaluableNodeReference(en, false);
+		return evaluableNodeManager->DeepAllocCopy(en, false);
 
 	EvaluableNodeReference new_list(evaluableNodeManager->AllocNode(en->GetType()), true);
 
@@ -267,7 +270,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, E
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
-		return EvaluableNodeReference(en, false);
+		return evaluableNodeManager->DeepAllocCopy(en, false);
 
 	//create a new assoc from the previous
 	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(en, false), true);

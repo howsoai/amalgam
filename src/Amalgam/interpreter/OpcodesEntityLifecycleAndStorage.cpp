@@ -67,9 +67,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 		//code will be the last parameter
 		EvaluableNodeReference root = EvaluableNodeReference::Null();
 		if(i + 1 == ocn.size())
-			root = InterpretNode(ocn[i]);
+			root = InterpretNodeForImmediateUse(ocn[i]);
 		else
-			root = InterpretNode(ocn[i + 1]);
+			root = InterpretNodeForImmediateUse(ocn[i + 1]);
 
 		//get destination if applicable
 		EntityWriteReference entity_container;
@@ -282,7 +282,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 	for(size_t i = 0; i < ocn.size(); i += 2)
 	{
 		//get the id of the source entity
-		auto source_id_node = InterpretNode(ocn[i]);
+		auto source_id_node = InterpretNodeForImmediateUse(ocn[i]);
 
 		auto [source_entity, source_entity_parent]
 			= TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(curEntity, source_id_node);
@@ -377,7 +377,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 	for(auto &cn : en->GetOrderedChildNodesReference())
 	{
 		//get the id of the source entity
-		auto id_node = InterpretNode(cn);
+		auto id_node = InterpretNodeForImmediateUse(cn);
 		auto [entity, entity_container]
 			= TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(curEntity, id_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(id_node);
@@ -541,7 +541,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, Ev
 
 	if(ocn.size() > 2)
 	{
-		EvaluableNodeReference params = InterpretNode(ocn[2]);
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[2]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
 			asset_params.SetParams(params->GetMappedChildNodesReference());
@@ -679,7 +679,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 		= std::make_shared<AssetManager::AssetParameters>(path, file_type, true);
 	if(ocn.size() > 4)
 	{
-		EvaluableNodeReference params = InterpretNode(ocn[4]);
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
 			asset_params->SetParams(params->GetMappedChildNodesReference());
@@ -847,7 +847,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, E
 	if(path.empty())
 		return EvaluableNodeReference::Null();
 
-	auto to_store = InterpretNode(ocn[1]);
+	auto to_store = InterpretNodeForImmediateUse(ocn[1]);
 	auto node_stack = CreateOpcodeStackStateSaver(to_store);
 
 	std::string file_type = "";
@@ -861,7 +861,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, E
 	AssetManager::AssetParameters asset_params(path, file_type, false);
 	if(ocn.size() > 3)
 	{
-		EvaluableNodeReference params = InterpretNode(ocn[3]);
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
 			asset_params.SetParams(params->GetMappedChildNodesReference());
@@ -997,7 +997,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	bool persistent = false;
 	if(ocn.size() > 3)
 	{
-		auto persistence_node = InterpretNode(ocn[3]);
+		auto persistence_node = InterpretNodeForImmediateUse(ocn[3]);
 		if(!EvaluableNode::IsNull(persistence_node))
 		{
 			update_persistence = true;
@@ -1010,7 +1010,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		= std::make_shared<AssetManager::AssetParameters>(path, file_type, true);
 	if(ocn.size() > 4)
 	{
-		EvaluableNodeReference params = InterpretNode(ocn[4]);
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
 			asset_params->SetParams(params->GetMappedChildNodesReference());
@@ -1250,9 +1250,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS(Evalua
 		//get value to assign first before getting the entity in case it needs to be locked
 		EvaluableNodeReference new_code = EvaluableNodeReference::Null();
 		if(i + 1 < ocn.size())
-			new_code = InterpretNode(ocn[i + 1]);
+			new_code = InterpretNodeForImmediateUse(ocn[i + 1]);
 		else
-			new_code = InterpretNode(ocn[i]);
+			new_code = InterpretNodeForImmediateUse(ocn[i]);
 		auto node_stack = CreateOpcodeStackStateSaver(new_code);
 
 		EntityWriteReference target_entity;
@@ -1408,7 +1408,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(Eva
 	if(num_params > 2)
 		deep_set = InterpretNodeIntoBoolValue(ocn[2], true);
 
-	EvaluableNodeReference permissions_en = InterpretNode(ocn[1]);
+	EvaluableNodeReference permissions_en = InterpretNodeForImmediateUse(ocn[1]);
 
 	auto [permissions_to_set, permission_values] = ExecutionPermissions::EvaluableNodeToPermissions(permissions_en);
 

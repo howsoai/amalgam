@@ -101,7 +101,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	std::vector<EvaluableNodeReference> condition_nodes;
 	for(size_t param_index = 0; param_index < ocn.size(); param_index++)
 	{
-		EvaluableNodeReference param_node = InterpretNode(ocn[param_index]);
+		EvaluableNodeReference param_node = InterpretNodeForImmediateUse(ocn[param_index]);
 
 		//see if first parameter is the entity id
 		if(param_index == 0)

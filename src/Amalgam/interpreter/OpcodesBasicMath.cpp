@@ -670,7 +670,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 
 	EvaluableNodeReference digits = EvaluableNodeReference::Null();
 	if(num_params > 2)
-		digits = InterpretNode(ocn[2]);
+		digits = InterpretNodeForImmediateUse(ocn[2]);
 
 	if(digits == nullptr || digits->GetType() != ENT_LIST)
 		return AllocReturn(value, immediate_result);
@@ -1218,7 +1218,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference ocn_zero = InterpretNode(ocn[0]);
+	EvaluableNodeReference ocn_zero = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(ocn_zero);
 
 	EvaluableNodeReference result;
@@ -1266,7 +1266,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *e
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference ocn_zero = InterpretNode(ocn[0]);
+	EvaluableNodeReference ocn_zero = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(ocn_zero);
 
 	EvaluableNodeReference result;

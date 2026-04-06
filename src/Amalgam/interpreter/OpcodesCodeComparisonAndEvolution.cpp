@@ -35,7 +35,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto n = InterpretNode(ocn[0]);
+	auto n = InterpretNodeForImmediateUse(ocn[0]);
 	double total_size = static_cast<double>(EvaluableNode::GetDeepSize(n));
 	evaluableNodeManager->FreeNodeTreeIfPossible(n);
 
@@ -142,7 +142,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto to_mutate = InterpretNode(ocn[0]);
+	auto to_mutate = InterpretNodeForImmediateUse(ocn[0]);
 	if(to_mutate == nullptr)
 		to_mutate.SetReference(evaluableNodeManager->AllocNode(ENT_NULL));
 	auto node_stack = CreateOpcodeStackStateSaver(to_mutate);
@@ -155,7 +155,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	CompactHashMap<EvaluableNodeType, double> opcode_weights;
 	if(ocn.size() > 2)
 	{
-		auto opcode_weights_node = InterpretNode(ocn[2]);
+		auto opcode_weights_node = InterpretNodeForImmediateUse(ocn[2]);
 		if(!EvaluableNode::IsNull(opcode_weights_node))
 		{
 			ow_exists = true;
@@ -170,7 +170,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	CompactHashMap<EvaluableNodeBuiltInStringId, double> mutation_type_weights;
 	if(ocn.size() > 3)
 	{
-		auto mutation_weights_node = InterpretNode(ocn[3]);
+		auto mutation_weights_node = InterpretNodeForImmediateUse(ocn[3]);
 		if(!EvaluableNode::IsNull(mutation_weights_node))
 		{
 			mtw_exists = true;
@@ -377,7 +377,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
-		auto params = InterpretNode(ocn[2]);
+		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
@@ -402,10 +402,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 	}
 
 	//otherwise, treat both as nodes and calculate node commonality
-	auto tree1 = InterpretNode(ocn[0]);
+	auto tree1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(tree1);
 
-	auto tree2 = InterpretNode(ocn[1]);
+	auto tree2 = InterpretNodeForImmediateUse(ocn[1]);
 	auto results = EvaluableNodeTreeManipulation::NumberOfSharedNodes(tree1, tree2,
 		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
 
@@ -511,7 +511,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
-		auto params = InterpretNode(ocn[2]);
+		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
@@ -525,10 +525,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 	}
 
 	//otherwise, treat both as nodes and calculate node edit distance
-	auto tree1 = InterpretNode(ocn[0]);
+	auto tree1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(tree1);
 
-	auto tree2 = InterpretNode(ocn[1]);
+	auto tree2 = InterpretNodeForImmediateUse(ocn[1]);
 
 	double edit_distance = 0.0;
 	//calculate string edit distance if string edit distance
@@ -729,7 +729,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
-		auto params = InterpretNode(ocn[2]);
+		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
@@ -741,10 +741,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
 
-	auto n1 = InterpretNode(ocn[0]);
+	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(n1);
 
-	auto n2 = InterpretNode(ocn[1]);
+	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::IntersectTrees(evaluableNodeManager, n1, n2,
 		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
@@ -966,7 +966,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, E
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
-		auto params = InterpretNode(ocn[2]);
+		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
@@ -978,10 +978,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, E
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
 
-	auto n1 = InterpretNode(ocn[0]);
+	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(n1);
 
-	auto n2 = InterpretNode(ocn[1]);
+	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::UnionTrees(evaluableNodeManager, n1, n2,
 		types_must_match, nominal_numbers, nominal_strings, recursive_matching);
@@ -1342,10 +1342,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE(EvaluableNode *
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto n1 = InterpretNode(ocn[0]);
+	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(n1);
 
-	auto n2 = InterpretNode(ocn[1]);
+	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PushEvaluableNode(n2);
 
 	EvaluableNode *result = EvaluableNodeTreeDifference::DifferenceTrees(evaluableNodeManager, n1, n2);
@@ -1761,7 +1761,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, Eva
 	double similar_mix_chance = 0.0;
 	if(ocn.size() > 4)
 	{
-		auto params = InterpretNode(ocn[4]);
+		auto params = InterpretNodeForImmediateUse(ocn[4]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
@@ -1774,10 +1774,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, Eva
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
 
-	auto n1 = InterpretNode(ocn[0]);
+	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(n1);
 
-	auto n2 = InterpretNode(ocn[1]);
+	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::MixTrees(randomStream.CreateOtherStreamViaRand(),
 		evaluableNodeManager, n1, n2, blend1, blend2, similar_mix_chance,

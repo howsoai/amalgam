@@ -53,6 +53,11 @@ struct InterpreterDebugData
 	//set after an opcode has run
 	EvaluableNodeReference previousOpcodeReturnValue;
 
+	//if previousOpcodeReturnValue isn't immediate, will make a copy of the code
+	//so it survives deallocations.  has its own enm to keep track of the copies separately
+	EvaluableNodeManager enm;
+	EvaluableNode *previousOpcodeReturnValueCopy;
+
 	//labels to break on
 	std::vector<std::string> breakLabels;
 
@@ -524,7 +529,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			}
 
 			case ENIVT_CODE:
-				std::cout << Parser::Unparse(retval, true, true, true) << std::endl;
+				std::cout << Parser::Unparse(_interpreter_debug_data.previousOpcodeReturnValueCopy, true, false, true);
 				if(retval == nullptr)
 					std::cout << "Value type: null node" << std::endl;
 				else
@@ -578,15 +583,15 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				if(value_exists)
 				{
 					if(command == "p")
-						std::cout << Parser::Unparse(node, true, true, true) << std::endl;
+						std::cout << Parser::Unparse(node, true, true, true);
 					else if(command == "pv")
-						std::cout << Parser::Unparse(node, true, false, true) << std::endl;
+						std::cout << Parser::Unparse(node, true, false, true);
 					else if(command == "pp")
 					{
 						std::string var_preview = Parser::Unparse(node, true, false, true);
 						if(var_preview.size() > 1023)
 							var_preview.resize(1023);
-						std::cout << var_preview << std::endl;
+						std::cout << var_preview;
 					}
 				}
 			}
@@ -600,7 +605,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				std::cerr << w << std::endl;
 
 			EvaluableNodeReference result = InterpretNodeForImmediateUse(node);
-			std::cout << Parser::Unparse(result, true, true, true) << std::endl;
+			std::cout << Parser::Unparse(result, true, false, true);
 			evaluableNodeManager->FreeNodeTreeIfPossible(result);
 			SetDebuggingState(true);
 		}
@@ -703,7 +708,18 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en,
 		cur_node_type = en->GetType();
 
 	if(!before_opcode)
+	{
 		_interpreter_debug_data.previousOpcodeReturnValue = previous_opcode_return_value;
+		if(previous_opcode_return_value.IsImmediateValue())
+		{
+			_interpreter_debug_data.previousOpcodeReturnValueCopy = nullptr;
+		}
+		{
+			_interpreter_debug_data.enm.FreeAllNodes();
+			_interpreter_debug_data.previousOpcodeReturnValueCopy
+				= _interpreter_debug_data.enm.DeepAllocCopy(previous_opcode_return_value, false);
+		}
+	}
 
 	//if not interactive, check for events that could trigger interactiveMode
 	if(!_interpreter_debug_data.interactiveMode)

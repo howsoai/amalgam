@@ -524,14 +524,22 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			}
 
 			case ENIVT_CODE:
-				std::cout << Parser::Unparse(retval, true, true, true) << std::endl;
-				if(retval == nullptr)
-					std::cout << "Value type: null node" << std::endl;
+				if(retval != nullptr && retval->IsNodeDeallocated())
+				{
+					std::cout << "(null)" << std::endl;
+					std::cout << "Value type: deallocated node" << std::endl;
+				}
 				else
-					std::cout << "Value type: node value" << std::endl;
+				{
+					std::cout << Parser::Unparse(retval, true, true, true);
+					if(retval == nullptr)
+						std::cout << "Value type: null node" << std::endl;
+					else
+						std::cout << "Value type: node value" << std::endl;
 
-				std::cout << "Unique reference: " << (retval.unique ? "true" : "false") << std::endl;
-				std::cout << "Top node unique reference: " << (retval.uniqueUnreferencedTopNode ? "true" : "false") << std::endl;
+					std::cout << "Unique reference: " << (retval.unique ? "true" : "false") << std::endl;
+					std::cout << "Top node unique reference: " << (retval.uniqueUnreferencedTopNode ? "true" : "false") << std::endl;
+				}
 				break;
 
 			case ENIVT_NUMBER_INDIRECTION_INDEX:
@@ -578,9 +586,9 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				if(value_exists)
 				{
 					if(command == "p")
-						std::cout << Parser::Unparse(node, true, true, true) << std::endl;
+						std::cout << Parser::Unparse(node, true, true, true);
 					else if(command == "pv")
-						std::cout << Parser::Unparse(node, true, false, true) << std::endl;
+						std::cout << Parser::Unparse(node, true, false, true);
 					else if(command == "pp")
 					{
 						std::string var_preview = Parser::Unparse(node, true, false, true);
@@ -600,7 +608,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				std::cerr << w << std::endl;
 
 			EvaluableNodeReference result = InterpretNodeForImmediateUse(node);
-			std::cout << Parser::Unparse(result, true, true, true) << std::endl;
+			std::cout << Parser::Unparse(result, true, true, true);
 			evaluableNodeManager->FreeNodeTreeIfPossible(result);
 			SetDebuggingState(true);
 		}

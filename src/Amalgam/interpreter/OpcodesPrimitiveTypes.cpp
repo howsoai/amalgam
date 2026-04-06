@@ -123,7 +123,7 @@ static OpcodeInitializer _ENT_LIST(ENT_LIST, &Interpreter::InterpretNode_ENT_LIS
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.newTargetScope = true;
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 	d.potentiallyIdempotent = true;
 	d.frequencyPer10000Opcodes = 484.0;
 	d.opcodeGroup = _opcode_group;
@@ -172,7 +172,7 @@ static OpcodeInitializer _ENT_UNORDERED_LIST(ENT_UNORDERED_LIST, &Interpreter::I
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 	d.newTargetScope = true;
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 	d.potentiallyIdempotent = true;
 	d.frequencyPer10000Opcodes = 5.0;
 	d.opcodeGroup = _opcode_group;
@@ -259,7 +259,7 @@ static OpcodeInitializer _ENT_ASSOC(ENT_ASSOC, &Interpreter::InterpretNode_ENT_A
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 	d.newTargetScope = true;
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 	d.potentiallyIdempotent = true;
 	d.frequencyPer10000Opcodes = 352.0;
 	d.opcodeGroup = _opcode_group;

@@ -697,15 +697,6 @@ public:
 		return value;
 	}
 
-	//if n is immediate, it just returns it, otherwise calls InterpretNode
-	__forceinline EvaluableNodeReference InterpretNodeForImmediateUse(EvaluableNode *n,
-		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes())
-	{
-		if(n == nullptr || n->GetIsIdempotent())
-			return EvaluableNodeReference(n, false);
-		return InterpretNode(n, immediate_result);
-	}
-
 	//computes a unary numeric function on the given node, returns an ENT_NULL if n is interpreted as an ENT_NULL
 	__forceinline EvaluableNodeReference InterpretNodeUnaryNumericOperation(EvaluableNode *n, EvaluableNodeRequestedValueTypes immediate_result,
 		std::function<double(double)> func)
@@ -777,7 +768,7 @@ public:
 	__forceinline EvaluableNode **InterpretNodeIntoDestination(EvaluableNode **source,
 		EvaluableNode *tpl, bool create_destination_if_necessary)
 	{
-		EvaluableNodeReference address_list_node = InterpretNodeForImmediateUse(tpl);
+		EvaluableNodeReference address_list_node = InterpretNode(tpl);
 		EvaluableNode **destination = TraverseToDestinationFromTraversalPathList(source, address_list_node, create_destination_if_necessary);
 		evaluableNodeManager->FreeNodeTreeIfPossible(address_list_node);
 		return destination;
@@ -795,7 +786,7 @@ public:
 			return EntityReferenceType(curEntity);
 
 		//only need to interpret if not idempotent
-		EvaluableNodeReference source_id_node = InterpretNodeForImmediateUse(node_id_path_to_interpret);
+		EvaluableNodeReference source_id_node = InterpretNode(node_id_path_to_interpret);
 		EntityReferenceType source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReferenceType>(curEntity, source_id_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
 
@@ -822,9 +813,9 @@ public:
 			return std::make_tuple(nullptr, nullptr,
 				Entity::EntityReferenceBufferReference<EntityReadReference>());
 
-		auto node_id_path_1 = InterpretNodeForImmediateUse(node_id_path_to_interpret_1);
+		auto node_id_path_1 = InterpretNode(node_id_path_to_interpret_1);
 		auto node_stack = CreateOpcodeStackStateSaver(node_id_path_1);
-		auto node_id_path_2 = InterpretNodeForImmediateUse(node_id_path_to_interpret_2);
+		auto node_id_path_2 = InterpretNode(node_id_path_to_interpret_2);
 		node_stack.PopEvaluableNode();
 
 		auto [entity_1, entity_2, erbr]

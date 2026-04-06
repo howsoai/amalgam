@@ -349,7 +349,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 			return AllocReturn(string_intern_pool.NOT_A_STRING_ID, immediate_result);
 	}
 
-	EvaluableNodeReference substr_node = InterpretNodeForImmediateUse(ocn[1]);
+	EvaluableNodeReference substr_node = InterpretNode(ocn[1]);
 	if(EvaluableNode::IsNull(substr_node))
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(substr_node);
@@ -506,7 +506,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 		{
 			EvaluableNodeReference param_node = EvaluableNodeReference::Null();
 			if(ocn.size() >= 3)
-				param_node = InterpretNodeForImmediateUse(ocn[2]);
+				param_node = InterpretNode(ocn[2]);
 
 			//these three options are mutually exclusive
 			//if true, returns first full match as a string
@@ -814,7 +814,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en,
 	if(interpreterConstraints != nullptr)
 		max_length = interpreterConstraints->maxNumAllocatedNodes;
 
-	auto tree = InterpretNodeForImmediateUse(ocn[0]);
+	auto tree = InterpretNode(ocn[0]);
 	std::string s = Parser::Unparse(tree, pretty, include_attributes, deterministic_order, false, false, max_length);
 	evaluableNodeManager->FreeNodeTreeIfPossible(tree);
 

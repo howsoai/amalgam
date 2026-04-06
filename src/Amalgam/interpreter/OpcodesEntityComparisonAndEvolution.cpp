@@ -186,7 +186,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	CompactHashMap<EvaluableNodeType, double> opcode_weights;
 	if(ocn.size() > 3)
 	{
-		auto opcode_weights_node = InterpretNodeForImmediateUse(ocn[3]);
+		auto opcode_weights_node = InterpretNode(ocn[3]);
 		if(!EvaluableNode::IsNull(opcode_weights_node))
 		{
 			ow_exists = true;
@@ -201,7 +201,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	CompactHashMap<EvaluableNodeBuiltInStringId, double> mutation_type_weights;
 	if(ocn.size() > 4)
 	{
-		auto mutation_weights_node = InterpretNodeForImmediateUse(ocn[4]);
+		auto mutation_weights_node = InterpretNode(ocn[4]);
 		if(!EvaluableNode::IsNull(mutation_weights_node))
 		{
 			mtw_exists = true;
@@ -356,7 +356,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(Evalu
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
-		auto params = InterpretNodeForImmediateUse(ocn[2]);
+		auto params = InterpretNode(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
@@ -473,7 +473,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(Eva
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
-		auto params = InterpretNodeForImmediateUse(ocn[2]);
+		auto params = InterpretNode(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
@@ -592,7 +592,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
-		auto params = InterpretNodeForImmediateUse(ocn[2]);
+		auto params = InterpretNode(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
@@ -756,7 +756,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 	bool recursive_matching = true;
 	if(ocn.size() > 2)
 	{
-		auto params = InterpretNodeForImmediateUse(ocn[2]);
+		auto params = InterpretNode(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
@@ -1124,7 +1124,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	double unnamed_entity_mix_chance = 0.2;
 	if(ocn.size() > 4)
 	{
-		auto params = InterpretNodeForImmediateUse(ocn[4]);
+		auto params = InterpretNode(ocn[4]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();

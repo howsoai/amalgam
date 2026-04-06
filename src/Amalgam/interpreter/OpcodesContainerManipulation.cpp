@@ -39,7 +39,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 		return EvaluableNodeReference::Null();
 
 	//get the "list" itself
-	auto list = InterpretNodeForImmediateUse(ocn[0]);
+	auto list = InterpretNode(ocn[0]);
 	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -310,7 +310,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto list = InterpretNodeForImmediateUse(ocn[0]);
+	auto list = InterpretNode(ocn[0]);
 	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -455,7 +455,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 		return EvaluableNodeReference::Null();
 
 	//get the list itself
-	auto list = InterpretNodeForImmediateUse(ocn[0]);
+	auto list = InterpretNode(ocn[0]);
 	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -730,7 +730,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto list = InterpretNodeForImmediateUse(ocn[0]);
+	auto list = InterpretNode(ocn[0]);
 	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -1053,7 +1053,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, Ev
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto n = InterpretNodeForImmediateUse(ocn[0], true);
+	auto n = InterpretNode(ocn[0], true);
 
 	double size = 0;
 	if(n.IsImmediateValue())
@@ -1214,7 +1214,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, Eva
 	if(ocn_size < 1)
 		return EvaluableNodeReference::Null();
 
-	auto source = InterpretNodeForImmediateUse(ocn[0]);
+	auto source = InterpretNode(ocn[0]);
 	if(ocn_size < 2 || source == nullptr)
 		return source;
 
@@ -1422,7 +1422,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 		else //en->GetType() == ENT_REPLACE
 		{
 			//replace copy_destination (a part of result) with the new value
-			auto function = InterpretNodeForImmediateUse(ocn[replace_change_index + 1]);
+			auto function = InterpretNode(ocn[replace_change_index + 1]);
 			if(EvaluableNode::IsNull(function))
 			{
 				(*copy_destination) = nullptr;
@@ -1432,7 +1432,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 			node_stack.PushEvaluableNode(function);
 			PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(), *copy_destination);
 
-			EvaluableNodeReference new_value = InterpretNodeForImmediateUse(function);
+			EvaluableNodeReference new_value = InterpretNode(function);
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
@@ -1538,7 +1538,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 		return EvaluableNodeReference::Null();
 
 	//get assoc array to look up
-	auto container = InterpretNodeForImmediateUse(ocn[0]);
+	auto container = InterpretNode(ocn[0]);
 	EvaluableNodeReference index_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	if(container == nullptr)
@@ -1924,14 +1924,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 		return EvaluableNodeReference::Null();
 
 	//get assoc array to look up
-	auto container = InterpretNodeForImmediateUse(ocn[0]);
+	auto container = InterpretNode(ocn[0]);
 	if(container == nullptr)
 		return AllocReturn(false, immediate_result);
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 
 	//get index to look up (will attempt to reuse this node below)
-	auto index = InterpretNodeForImmediateUse(ocn[1]);
+	auto index = InterpretNode(ocn[1]);
 
 	EvaluableNode **target = TraverseToDestinationFromTraversalPathList(&container.GetReference(), index, false);
 	bool found = (target != nullptr);
@@ -2019,7 +2019,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto container = InterpretNodeForImmediateUse(ocn[0]);
+	auto container = InterpretNode(ocn[0]);
 
 	if(container == nullptr)
 		return AllocReturn(false, immediate_result);
@@ -2027,7 +2027,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 
 	//get value to look up (will attempt to reuse this node below)
-	auto value = InterpretNodeForImmediateUse(ocn[1]);
+	auto value = InterpretNode(ocn[1]);
 
 	bool found = false;
 
@@ -2208,7 +2208,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 
 	//get indices (or index) to remove
-	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
+	auto indices = InterpretNode(ocn[1], true);
 
 	//used for deleting nodes if possible -- unique and cycle free
 	EvaluableNodeReference removed_node = EvaluableNodeReference(static_cast<EvaluableNode *>(nullptr),
@@ -2410,7 +2410,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 
 	//get indices (or index) to keep
-	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
+	auto indices = InterpretNode(ocn[1], true);
 
 	//if immediate then just keep individual element
 	if(indices.IsImmediateValueType())

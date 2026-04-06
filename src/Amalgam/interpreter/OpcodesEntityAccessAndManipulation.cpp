@@ -326,7 +326,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 
 	//get lookup reference
 	size_t lookup_param_index = (ocn.size() > 1 ? 1 : 0);
-	auto to_lookup = InterpretNodeForImmediateUse(ocn[lookup_param_index]);
+	auto to_lookup = InterpretNode(ocn[lookup_param_index]);
 	auto node_stack = CreateOpcodeStackStateSaver(to_lookup);
 
 	//get the id of the source to check
@@ -587,7 +587,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
 	if(ocn.size() > 2)
-		args = InterpretNodeForImmediateUse(ocn[2]);
+		args = InterpretNode(ocn[2]);
 
 	auto node_stack = CreateOpcodeStackStateSaver(args);
 
@@ -598,7 +598,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	{
 		if(call_type == ENT_CALL_ON_ENTITY)
 		{
-			function = InterpretNodeForImmediateUse(ocn[1]);
+			function = InterpretNode(ocn[1]);
 			node_stack.PushEvaluableNode(function);
 		}
 		else
@@ -869,7 +869,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
 	if(ocn.size() > 1)
-		args = InterpretNodeForImmediateUse(ocn[1]);
+		args = InterpretNode(ocn[1]);
 
 	//obtain a lock on the container
 	EntityReadReference cur_entity(curEntity);

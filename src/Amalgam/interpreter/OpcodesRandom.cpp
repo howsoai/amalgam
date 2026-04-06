@@ -291,7 +291,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 		generate_unique_values = InterpretNodeIntoBoolValue(ocn[2]);
 
 	//get random param
-	auto param = InterpretNodeForImmediateUse(ocn[0]);
+	auto param = InterpretNode(ocn[0]);
 
 	//if generating a single value
 	if(!generate_list)
@@ -490,7 +490,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNod
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	auto seed_node = InterpretNodeForImmediateUse(ocn[0]);
+	auto seed_node = InterpretNode(ocn[0]);
 	std::string seed_string;
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
 		seed_string = seed_node->GetStringValue();

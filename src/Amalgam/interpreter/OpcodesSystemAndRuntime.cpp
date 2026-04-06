@@ -263,7 +263,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 
 	for(auto &cn : en->GetOrderedChildNodesReference())
 	{
-		auto cur = InterpretNodeForImmediateUse(cn);
+		auto cur = InterpretNode(cn);
 
 		std::string s;
 		if(cur == nullptr)

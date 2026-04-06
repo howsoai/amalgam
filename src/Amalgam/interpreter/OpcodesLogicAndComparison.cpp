@@ -235,7 +235,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, Eva
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto cur = InterpretNodeForImmediateUse(ocn[0], true);
+	auto cur = InterpretNode(ocn[0], true);
 	if(cur.IsImmediateValue())
 	{
 		bool is_true = cur.GetValue().GetValueAsBoolean();
@@ -320,7 +320,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EQUAL(EvaluableNode *en, E
 
 	for(auto &cn : ocn)
 	{
-		auto cur = InterpretNodeForImmediateUse(cn);
+		auto cur = InterpretNode(cn);
 
 		//if haven't gotten a value yet, then use this as the first data
 		if(!processed_first_value)
@@ -417,10 +417,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NEQUAL(EvaluableNode *en, 
 	//special (faster) case for comparing two
 	if(ocn.size() == 2)
 	{
-		EvaluableNodeReference a = InterpretNodeForImmediateUse(ocn[0]);
+		EvaluableNodeReference a = InterpretNode(ocn[0]);
 
 		auto node_stack = CreateOpcodeStackStateSaver(a);
-		EvaluableNodeReference b = InterpretNodeForImmediateUse(ocn[1]);
+		EvaluableNodeReference b = InterpretNode(ocn[1]);
 
 		bool a_b_not_equal = (!EvaluableNode::AreDeepEqual(a, b));
 		evaluableNodeManager->FreeNodeTreeIfPossible(a);
@@ -435,7 +435,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NEQUAL(EvaluableNode *en, 
 	values.reserve(ocn.size());
 	for(size_t i = 0; i < ocn.size(); i++)
 	{
-		values.push_back(InterpretNodeForImmediateUse(ocn[i]));
+		values.push_back(InterpretNode(ocn[i]));
 		node_stack.PushEvaluableNode(values[i]);
 	}
 
@@ -556,7 +556,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 	}
 #endif
 
-	auto prev = InterpretNodeForImmediateUse(ocn[0]);
+	auto prev = InterpretNode(ocn[0]);
 	if(EvaluableNode::IsNull(prev))
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(prev);
@@ -568,7 +568,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 	for(size_t i = 1; i < ocn.size(); i++)
 	{
 		//if not in strict increasing order, return false
-		auto cur = InterpretNodeForImmediateUse(ocn[i]);
+		auto cur = InterpretNode(ocn[i]);
 
 		if(EvaluableNode::IsNull(cur)
 			|| !EvaluableNode::IsLessThan(prev, cur, en->GetType() == ENT_LEQUAL))
@@ -683,7 +683,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 	}
 #endif
 
-	auto prev = InterpretNodeForImmediateUse(ocn[0]);
+	auto prev = InterpretNode(ocn[0]);
 	if(EvaluableNode::IsNull(prev))
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(prev);
@@ -695,7 +695,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 	for(size_t i = 1; i < ocn.size(); i++)
 	{
 		//if not in strict increasing order, return false
-		auto cur = InterpretNodeForImmediateUse(ocn[i]);
+		auto cur = InterpretNode(ocn[i]);
 
 		if(EvaluableNode::IsNull(cur)
 			|| !EvaluableNode::IsLessThan(cur, prev, en->GetType() == ENT_GEQUAL))
@@ -787,7 +787,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode 
 
 	for(auto &cn : ocn)
 	{
-		auto cur = InterpretNodeForImmediateUse(cn);
+		auto cur = InterpretNode(cn);
 
 		//if haven't gotten a value yet, then use this as the first data
 		if(!processed_first_value)
@@ -852,13 +852,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode
 	//special (faster) case for comparing two
 	if(ocn.size() == 2)
 	{
-		EvaluableNodeReference a = InterpretNodeForImmediateUse(ocn[0]);
+		EvaluableNodeReference a = InterpretNode(ocn[0]);
 		EvaluableNodeType a_type = ENT_NULL;
 		if(a != nullptr)
 			a_type = a->GetType();
 
 		auto node_stack = CreateOpcodeStackStateSaver(a);
-		EvaluableNodeReference b = InterpretNodeForImmediateUse(ocn[1]);
+		EvaluableNodeReference b = InterpretNode(ocn[1]);
 		EvaluableNodeType b_type = ENT_NULL;
 		if(b != nullptr)
 			b_type = b->GetType();
@@ -875,7 +875,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode
 	//evaluate all nodes just once
 	for(size_t i = 0; i < ocn.size(); i++)
 	{
-		values[i] = InterpretNodeForImmediateUse(ocn[i]);
+		values[i] = InterpretNode(ocn[i]);
 		node_stack.PushEvaluableNode(values[i]);
 	}
 

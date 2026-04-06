@@ -214,12 +214,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 	if(ocn.size() < 2)
 		return AllocReturn(0.0, immediate_result);
 
-	EvaluableNodeReference elements1 = InterpretNodeForImmediateUse(ocn[0]);
+	EvaluableNodeReference elements1 = InterpretNode(ocn[0]);
 	if(EvaluableNode::IsNull(elements1))
 		return AllocReturn(0.0, immediate_result);
 
 	auto node_stack = CreateOpcodeStackStateSaver(elements1);
-	EvaluableNodeReference elements2 = InterpretNodeForImmediateUse(ocn[1]);
+	EvaluableNodeReference elements2 = InterpretNode(ocn[1]);
 	node_stack.PopEvaluableNode();
 
 	if(EvaluableNode::IsNull(elements2))
@@ -1788,7 +1788,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	auto node_stack = CreateOpcodeStackStateSaver();
 
 	//get location
-	auto location_node = InterpretNodeForImmediateUse(ocn[0]);
+	auto location_node = InterpretNode(ocn[0]);
 	if(location_node != nullptr)
 		node_stack.PushEvaluableNode(location_node);
 
@@ -1796,7 +1796,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	EvaluableNodeReference origin_node = EvaluableNodeReference::Null();
 	if(ocn.size() > 1)
 	{
-		origin_node = InterpretNodeForImmediateUse(ocn[1]);
+		origin_node = InterpretNode(ocn[1]);
 		if(origin_node != nullptr)
 			node_stack.PushEvaluableNode(origin_node);
 	}
@@ -1814,7 +1814,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	EvaluableNodeReference weights_node;
 	if(ocn.size() > 3)
 	{
-		weights_node = InterpretNodeForImmediateUse(ocn[3]);
+		weights_node = InterpretNode(ocn[3]);
 		if(weights_node != nullptr)
 			node_stack.PushEvaluableNode(weights_node);
 	}
@@ -1823,7 +1823,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	EvaluableNodeReference distance_types_node;
 	if(ocn.size() > 4)
 	{
-		distance_types_node = InterpretNodeForImmediateUse(ocn[4]);
+		distance_types_node = InterpretNode(ocn[4]);
 		if(distance_types_node != nullptr)
 			node_stack.PushEvaluableNode(distance_types_node);
 	}
@@ -1832,7 +1832,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	EvaluableNodeReference attributes_node;
 	if(ocn.size() > 5)
 	{
-		attributes_node = InterpretNodeForImmediateUse(ocn[5]);
+		attributes_node = InterpretNode(ocn[5]);
 		if(attributes_node != nullptr)
 			node_stack.PushEvaluableNode(attributes_node);
 	}
@@ -1841,7 +1841,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	EvaluableNodeReference deviations_node;
 	if(ocn.size() > 6)
 	{
-		deviations_node = InterpretNodeForImmediateUse(ocn[6]);
+		deviations_node = InterpretNode(ocn[6]);
 		if(deviations_node != nullptr)
 			node_stack.PushEvaluableNode(deviations_node);
 	}
@@ -1850,7 +1850,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	std::vector<StringInternPool::StringID> value_names;
 	if(ocn.size() > 7)
 	{
-		EvaluableNodeReference value_names_node = InterpretNodeForImmediateUse(ocn[7]);
+		EvaluableNodeReference value_names_node = InterpretNode(ocn[7]);
 		if(!EvaluableNode::IsNull(value_names_node))
 		{
 			//extract the names for each value into value_names
@@ -1870,7 +1870,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	EvaluableNodeReference weights_selection_features_node = EvaluableNodeReference::Null();
 	if(ocn.size() > 8)
 	{
-		weights_selection_features_node = InterpretNodeForImmediateUse(ocn[8]);
+		weights_selection_features_node = InterpretNode(ocn[8]);
 		if(weights_selection_features_node != nullptr)
 			node_stack.PushEvaluableNode(weights_selection_features_node);
 	}
@@ -1994,7 +1994,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	std::vector<EvaluableNode *> *p_values = nullptr;
 	std::vector<EvaluableNode *> p_copied_values;
 
-	auto p_node = InterpretNodeForImmediateUse(ocn[0]);
+	auto p_node = InterpretNode(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(p_node);
 
 	if(EvaluableNode::IsAssociativeArray(p_node))
@@ -2039,7 +2039,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	{
 		//comparison so use positive sign
 		have_q_distribution = true;
-		q_node = InterpretNodeForImmediateUse(ocn[1]);
+		q_node = InterpretNode(ocn[1]);
 		node_stack.PushEvaluableNode(q_node);
 
 		if(EvaluableNode::IsAssociativeArray(q_node))

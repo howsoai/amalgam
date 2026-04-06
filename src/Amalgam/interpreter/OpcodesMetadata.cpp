@@ -31,12 +31,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ANNOTATIONS(EvaluableN
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto n = InterpretNodeForImmediateUse(ocn[0]);
-	if(n == nullptr)
-		return EvaluableNodeReference::Null();
+	std::string annotations;
 
-	std::string annotations(n->GetAnnotationsString());
-	evaluableNodeManager->FreeNodeTreeIfPossible(n);
+	auto n = InterpretNode(ocn[0]);
+	if(n != nullptr)
+	{
+		annotations = std::string(n->GetAnnotationsString());
+		evaluableNodeManager->FreeNodeTreeIfPossible(n);
+	}
 	return AllocReturn(annotations, immediate_result);
 }
 
@@ -114,12 +116,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto n = InterpretNodeForImmediateUse(ocn[0]);
-	if(n == nullptr)
-		return EvaluableNodeReference::Null();
-
-	std::string comment(n->GetCommentsString());
-	evaluableNodeManager->FreeNodeTreeIfPossible(n);
+	std::string comment;
+	auto n = InterpretNode(ocn[0]);
+	if(n != nullptr)
+	{
+		comment = std::string(n->GetCommentsString());
+		evaluableNodeManager->FreeNodeTreeIfPossible(n);
+	}
 	return AllocReturn(comment, immediate_result);
 }
 
@@ -207,8 +210,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableN
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
-	auto n = InterpretNodeForImmediateUse(ocn[0]);
 
+	auto n = InterpretNode(ocn[0]);
 	return AllocReturn(n != nullptr && n->GetConcurrency(), immediate_result);
 }
 

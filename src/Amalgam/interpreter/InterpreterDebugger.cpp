@@ -599,7 +599,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			for(auto &w : warnings)
 				std::cerr << w << std::endl;
 
-			EvaluableNodeReference result = InterpretNodeForImmediateUse(node);
+			EvaluableNodeReference result = InterpretNode(node);
 			std::cout << Parser::Unparse(result, true, true, true) << std::endl;
 			evaluableNodeManager->FreeNodeTreeIfPossible(result);
 			SetDebuggingState(true);

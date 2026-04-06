@@ -53,6 +53,11 @@ struct InterpreterDebugData
 	//set after an opcode has run
 	EvaluableNodeReference previousOpcodeReturnValue;
 
+	//if previousOpcodeReturnValue isn't immediate, will make a copy of the code
+	//so it survives deallocations.  has its own enm to keep track of the copies separately
+	EvaluableNodeManager enm;
+	EvaluableNode *previousOpcodeReturnValueCopy;
+
 	//labels to break on
 	std::vector<std::string> breakLabels;
 
@@ -524,22 +529,14 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			}
 
 			case ENIVT_CODE:
-				if(retval != nullptr && retval->IsNodeDeallocated())
-				{
-					std::cout << "(null)" << std::endl;
-					std::cout << "Value type: deallocated node" << std::endl;
-				}
+				std::cout << Parser::Unparse(_interpreter_debug_data.previousOpcodeReturnValueCopy, true, false, true);
+				if(retval == nullptr)
+					std::cout << "Value type: null node" << std::endl;
 				else
-				{
-					std::cout << Parser::Unparse(retval, true, true, true);
-					if(retval == nullptr)
-						std::cout << "Value type: null node" << std::endl;
-					else
-						std::cout << "Value type: node value" << std::endl;
+					std::cout << "Value type: node value" << std::endl;
 
-					std::cout << "Unique reference: " << (retval.unique ? "true" : "false") << std::endl;
-					std::cout << "Top node unique reference: " << (retval.uniqueUnreferencedTopNode ? "true" : "false") << std::endl;
-				}
+				std::cout << "Unique reference: " << (retval.unique ? "true" : "false") << std::endl;
+				std::cout << "Top node unique reference: " << (retval.uniqueUnreferencedTopNode ? "true" : "false") << std::endl;
 				break;
 
 			case ENIVT_NUMBER_INDIRECTION_INDEX:
@@ -711,7 +708,18 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en,
 		cur_node_type = en->GetType();
 
 	if(!before_opcode)
+	{
 		_interpreter_debug_data.previousOpcodeReturnValue = previous_opcode_return_value;
+		if(previous_opcode_return_value.IsImmediateValue())
+		{
+			_interpreter_debug_data.previousOpcodeReturnValueCopy = nullptr;
+		}
+		{
+			_interpreter_debug_data.enm.FreeAllNodes();
+			_interpreter_debug_data.previousOpcodeReturnValueCopy
+				= _interpreter_debug_data.enm.DeepAllocCopy(previous_opcode_return_value, false);
+		}
+	}
 
 	//if not interactive, check for events that could trigger interactiveMode
 	if(!_interpreter_debug_data.interactiveMode)

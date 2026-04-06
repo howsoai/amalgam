@@ -708,7 +708,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 	//keeps track of whether each address is unique so they can be freed if relevant
 	std::vector<bool> is_value_unique;
-	is_value_unique.reserve(num_params - 1);
+	is_value_unique.resize(num_params);
 	//keeps track of whether all new values assigned or accumed are unique, cycle free, etc.
 	bool result_flags_need_updates = false;
 
@@ -722,11 +722,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		auto address = InterpretNode(ocn[ocn_index]);
 		node_stack.PushEvaluableNode(address);
-		is_value_unique.push_back(address.unique);
+		is_value_unique[ocn_index] = address.unique;
 
 		auto new_value = InterpretNode(ocn[ocn_index + 1]);
 		node_stack.PushEvaluableNode(new_value);
-		is_value_unique.push_back(new_value.unique);
+		is_value_unique[ocn_index + 1] = new_value.unique;
 	}
 	size_t num_replacements = (num_params - 1) / 2;
 

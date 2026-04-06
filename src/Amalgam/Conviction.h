@@ -268,7 +268,7 @@ public:
 		for(size_t i = 0; i < entity_probabilities.size(); i++)
 		{
 			if(entity_probabilities[i] > 0.0)
-				neighbors_with_weights.push_back(DistanceReferencePair(entity_probabilities[i], i));
+				neighbors_with_weights.emplace_back(entity_probabilities[i], i);
 		}
 	}
 
@@ -320,7 +320,7 @@ public:
 		for(size_t i = 0; i < entity_probabilities.size(); i++)
 		{
 			if(entity_probabilities[i] > 0.0)
-				neighbors_with_weights.push_back(DistanceReferencePair(entity_probabilities[i], i));
+				neighbors_with_weights.emplace_back(entity_probabilities[i], i);
 		}
 	}
 

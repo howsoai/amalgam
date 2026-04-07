@@ -1042,6 +1042,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		{
 			auto &result_list_mcn = result_list->GetMappedChildNodesReference();
 
+			//can't erase from result_list_mcn while iterating because it may invalidate
+			//iteration, need to collect those to remove and remove in a separate pass
 			std::vector<StringInternPool::StringID> ids_to_remove;
 			for(auto &[cn_id, cn] : result_list_mcn)
 			{
@@ -1049,7 +1051,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 					ids_to_remove.push_back(cn_id);
 			}
 
-			string_intern_pool.DestroyStringReferences(ids_to_remove);
 			if(result_list.unique && !result_list->GetNeedCycleCheck())
 			{
 				//FreeNodeTree and erase the key
@@ -1058,12 +1059,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 					auto pair = result_list_mcn.find(id);
 					evaluableNodeManager->FreeNodeTree(pair->second);
 					result_list_mcn.erase(pair);
+					string_intern_pool.DestroyStringReference(id);
 				}
 			}
 			else //can't safely delete any nodes
 			{
 				for(auto &id : ids_to_remove)
+				{
 					result_list_mcn.erase(id);
+					string_intern_pool.DestroyStringReference(id);
+				}
 			}
 		}
 		else if(result_list->IsOrderedArray())

@@ -829,10 +829,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT_FILTER, []() {
 	OpcodeDetails d;
-	d.parameters = R"([* function] list|assoc collection)";
+	d.parameters = R"([* function] list|assoc collection [bool match_on_value])";
 	d.returns = R"(list|assoc)";
 	d.allowsConcurrency = true;
-	d.description = R"(For each element in the `collection`, pushes a new target scope onto the stack, so that `(current_value)` accesses the element in the list and `(current_index)` accesses the list or assoc index, with `(target)` representing the original list or assoc, and evaluates the function.  If `function` evaluates to true, then the element is put in a new list or assoc (matching the input type) that is returned.  If function is omitted, then it will remove any elements in the collection that are null.)";
+	d.description = R"(For each element in the `collection`, pushes a new target scope onto the stack, so that `(current_value)` accesses the element in the list and `(current_index)` accesses the list or assoc index, with `(target)` representing the original list or assoc, and evaluates the function.  If `function` evaluates to true, then the element is put in a new list or assoc (matching the input type) that is returned.  If function is omitted, then it will remove any elements in the collection that are null.  The parameter match_on_value defaults to null, which will evaluate the function.  However, if match_on_value is true, it will only retain elements which equal the value in function and if match_on_value is false, it will retain elements which do not equal the value in function.  Using match_on_value and wrapping filter in a size opcode additionally acts as an efficient way to count the number of a specific element in a container.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((filter
 	(lambda
@@ -942,7 +942,9 @@ static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT
 	e 30
 	f 3
 	h 4
-})"}
+})"},
+{ R"&((filter (null) [(null) 1 (null) 2 (null) 3] .false))&", R"([1 2 3])" },
+{ R"&((filter (null) {a (null) b 1 c (null) d 2 e (null) f 3} .true))&", R"({a (null) c (null) e (null)})" }
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.newTargetScope = true;
@@ -959,13 +961,46 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
+	EvaluableNodeReference function = EvaluableNodeReference::Null();
+	auto node_stack = CreateOpcodeStackStateSaver();
+
+	bool match_on_value = false;
+	bool match_on_not_value = false;
+	size_t list_index = 0;
 	if(ocn.size() == 1)
+	{
+		//match on not null
+		match_on_not_value = true;
+	}
+	else //ocn.size() > 1
+	{
+		list_index = 1;
+		function = InterpretNodeForImmediateUse(ocn[0]);
+		node_stack.PushEvaluableNode(function);
+
+		if(ocn.size() > 2)
+		{
+			auto match_on_value_param = InterpretNodeForImmediateUse(ocn[2],
+				EvaluableNodeRequestedValueTypes::Type::REQUEST_BOOL);
+			auto &match_on_value_ref = match_on_value_param.GetValue();
+
+			if(!match_on_value_ref.IsNull())
+			{
+				if(match_on_value_ref.GetValueAsBoolean())
+					match_on_value = true;
+				else
+					match_on_not_value = true;
+			}
+		}
+	}
+
+	if(match_on_value || match_on_not_value)
 	{
 		//specialized path for immediate result just getting the count
 		if(immediate_result.AnyImmediateType())
 		{
-			auto list = InterpretNodeForImmediateUse(ocn[0]);
-			if(list == nullptr)
+			auto list = InterpretNode(ocn[list_index]);
+			if(EvaluableNode::IsNull(list))
 				return EvaluableNodeReference::Null();
 
 			size_t num_elements_not_filtered = 0;
@@ -974,16 +1009,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				auto &list_mcn = list->GetMappedChildNodesReference();
 				for(auto &[cn_id, cn] : list_mcn)
 				{
-					if(!EvaluableNode::IsNull(cn))
+					//want either to be equal or match_on_not_value, but not both or neither
+					if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
 						num_elements_not_filtered++;
 				}
+
 			}
 			else if(list->IsOrderedArray())
 			{
 				auto &list_ocn = list->GetOrderedChildNodesReference();
 				for(auto &cn : list_ocn)
 				{
-					if(!EvaluableNode::IsNull(cn))
+					if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
 						num_elements_not_filtered++;
 				}
 			}
@@ -992,8 +1029,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			return EvaluableNodeReference(static_cast<double>(num_elements_not_filtered));
 		}
 
-		auto list = InterpretNode(ocn[0]);
-		if(list == nullptr)
+		auto list = InterpretNode(ocn[list_index]);
+		if(EvaluableNode::IsNull(list))
 			return EvaluableNodeReference::Null();
 
 		EvaluableNodeReference result_list(list, list.unique, list.uniqueUnreferencedTopNode);
@@ -1005,14 +1042,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		{
 			auto &result_list_mcn = result_list->GetMappedChildNodesReference();
 
+			//can't erase from result_list_mcn while iterating because it may invalidate
+			//iteration, need to collect those to remove and remove in a separate pass
 			std::vector<StringInternPool::StringID> ids_to_remove;
 			for(auto &[cn_id, cn] : result_list_mcn)
 			{
-				if(EvaluableNode::IsNull(cn))
+				if(!(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value))
 					ids_to_remove.push_back(cn_id);
 			}
 
-			string_intern_pool.DestroyStringReferences(ids_to_remove);
 			if(result_list.unique && !result_list->GetNeedCycleCheck())
 			{
 				//FreeNodeTree and erase the key
@@ -1021,12 +1059,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 					auto pair = result_list_mcn.find(id);
 					evaluableNodeManager->FreeNodeTree(pair->second);
 					result_list_mcn.erase(pair);
+					string_intern_pool.DestroyStringReference(id);
 				}
 			}
 			else //can't safely delete any nodes
 			{
 				for(auto &id : ids_to_remove)
+				{
 					result_list_mcn.erase(id);
+					string_intern_pool.DestroyStringReference(id);
+				}
 			}
 		}
 		else if(result_list->IsOrderedArray())
@@ -1039,7 +1081,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				for(size_t i = result_list_ocn.size(); i > 0; i--)
 				{
 					size_t index = i - 1;
-					if(!EvaluableNode::IsNull(result_list_ocn[index]))
+					if(EvaluableNode::AreDeepEqual(result_list_ocn[index], function) != match_on_not_value)
 						continue;
 
 					evaluableNodeManager->FreeNodeTree(result_list_ocn[index]);
@@ -1049,7 +1091,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			else //can't safely delete any nodes
 			{
 				auto new_end = std::remove_if(begin(result_list_ocn), end(result_list_ocn),
-					[](EvaluableNode *en) { return EvaluableNode::IsNull(en); });
+					[&function, match_on_not_value](EvaluableNode *en)
+					{
+						return !(EvaluableNode::AreDeepEqual(en, function) != match_on_not_value);
+					});
 				result_list_ocn.erase(new_end, end(result_list_ocn));
 			}
 		}
@@ -1057,13 +1102,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		return result_list;
 	}
 
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateOpcodeStackStateSaver(function);
-
 	//get list
-	auto list = InterpretNode(ocn[1]);
+	auto list = InterpretNode(ocn[list_index]);
 	//if null, just return a new null, since it has no child nodes
-	if(list == nullptr)
+	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
 
 	//create result_list as a copy of the current list, but without child nodes

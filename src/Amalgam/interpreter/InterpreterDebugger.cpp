@@ -709,15 +709,23 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en,
 
 	if(!before_opcode)
 	{
-		_interpreter_debug_data.previousOpcodeReturnValue = previous_opcode_return_value;
-		if(previous_opcode_return_value.IsImmediateValue())
+	#ifdef MULTITHREAD_SUPPORT
+		//only one debugger at a time; however, if concurrently executing,
+		//only have one thread write at a time.  it's ok if concurrent writes are lost
+		Concurrency::SingleLock lock(_interpreter_debug_data.debuggingMutex, std::defer_lock);
+		if(lock.try_lock())
+	#endif
 		{
-			_interpreter_debug_data.previousOpcodeReturnValueCopy = nullptr;
-		}
-		{
-			_interpreter_debug_data.enm.FreeAllNodes();
-			_interpreter_debug_data.previousOpcodeReturnValueCopy
-				= _interpreter_debug_data.enm.DeepAllocCopy(previous_opcode_return_value, false);
+			_interpreter_debug_data.previousOpcodeReturnValue = previous_opcode_return_value;
+			if(previous_opcode_return_value.IsImmediateValue())
+			{
+				_interpreter_debug_data.previousOpcodeReturnValueCopy = nullptr;
+			}
+			{
+				_interpreter_debug_data.enm.FreeAllNodes();
+				_interpreter_debug_data.previousOpcodeReturnValueCopy
+					= _interpreter_debug_data.enm.DeepAllocCopy(previous_opcode_return_value, false);
+			}
 		}
 	}
 

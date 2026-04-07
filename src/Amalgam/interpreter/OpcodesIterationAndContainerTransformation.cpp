@@ -1010,7 +1010,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				for(auto &[cn_id, cn] : list_mcn)
 				{
 					//want either to be equal or match_on_not_value, but not both or neither
-					if(EvaluableNode::AreDeepEqual(cn, function) ^ match_on_not_value)
+					if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
 						num_elements_not_filtered++;
 				}
 
@@ -1020,7 +1020,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				auto &list_ocn = list->GetOrderedChildNodesReference();
 				for(auto &cn : list_ocn)
 				{
-					if(EvaluableNode::AreDeepEqual(cn, function) ^ match_on_not_value)
+					if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
 						num_elements_not_filtered++;
 				}
 			}
@@ -1045,7 +1045,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			std::vector<StringInternPool::StringID> ids_to_remove;
 			for(auto &[cn_id, cn] : result_list_mcn)
 			{
-				if(!(EvaluableNode::AreDeepEqual(cn, function) ^ match_on_not_value))
+				if(!(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value))
 					ids_to_remove.push_back(cn_id);
 			}
 
@@ -1076,7 +1076,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				for(size_t i = result_list_ocn.size(); i > 0; i--)
 				{
 					size_t index = i - 1;
-					if(EvaluableNode::AreDeepEqual(result_list_ocn[index], function) ^ match_on_not_value)
+					if(EvaluableNode::AreDeepEqual(result_list_ocn[index], function) != match_on_not_value)
 						continue;
 
 					evaluableNodeManager->FreeNodeTree(result_list_ocn[index]);
@@ -1088,7 +1088,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				auto new_end = std::remove_if(begin(result_list_ocn), end(result_list_ocn),
 					[&function, match_on_not_value](EvaluableNode *en)
 					{
-						return !(EvaluableNode::AreDeepEqual(en, function) ^ match_on_not_value);
+						return !(EvaluableNode::AreDeepEqual(en, function) != match_on_not_value);
 					});
 				result_list_ocn.erase(new_end, end(result_list_ocn));
 			}

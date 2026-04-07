@@ -1721,7 +1721,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			if(container->GetType() == ENT_LIST && !container->HasMetadata())
 				return container;
 
-			if(container.uniqueUnreferencedTopNode && !container.GetNeedCycleCheck())
+			if(container.uniqueUnreferencedTopNode)
 			{
 				container->ClearMetadata();
 				container->SetType(ENT_LIST, evaluableNodeManager, false);
@@ -1739,7 +1739,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 		}
 		else //container->IsAssociativeArray()
 		{
-			if(container.uniqueUnreferencedTopNode && !container.GetNeedCycleCheck())
+			if(container.uniqueUnreferencedTopNode)
 			{
 				container->ClearMetadata();
 				container->ConvertAssocToList();

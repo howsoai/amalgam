@@ -710,13 +710,13 @@ public:
 
 	//ensures that the top node is modifiable -- will allocate the node if necessary,
 	// and if the result and any child nodes are all unique, then it will return an EvaluableNodeReference that is unique
-	//if ensure_copy_if_cycles, then it will also allocate a new node if there are cycles,
+	//if ensure_copy_if_top_node_in_cycle, then it will also allocate a new node if the top node is in a cycle
 	//in case the top node is referenced by any of its node tree and it needs to ensure that structure is maintained
-	inline void EnsureNodeIsModifiable(EvaluableNodeReference &original, bool ensure_copy_if_cycles = false,
+	inline void EnsureNodeIsModifiable(EvaluableNodeReference &original, bool ensure_copy_if_top_node_in_cycle = false,
 		bool copy_metadata = true)
 	{
-		if(original.uniqueUnreferencedTopNode && original != nullptr
-				&& (!ensure_copy_if_cycles || !original.GetNeedCycleCheck()) )
+		if(original != nullptr
+				&& (original.uniqueUnreferencedTopNode || (original.unique && !ensure_copy_if_top_node_in_cycle) ) )
 			return;
 
 		EvaluableNode *copy = AllocNode(original.GetReference(), copy_metadata);
@@ -883,8 +883,7 @@ public:
 		assert(enr == nullptr || enr->IsNodeValid());
 	#endif
 
-		if( (enr.unique || enr.uniqueUnreferencedTopNode)
-			&& enr != nullptr && !enr->GetNeedCycleCheck())
+		if( (enr.unique || enr.uniqueUnreferencedTopNode) && enr != nullptr)
 		{
 			enr->Invalidate();
 			AddNodeToLocalAllocationBuffer(enr);

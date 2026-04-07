@@ -136,7 +136,7 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            type: release
+            type: debug
             platform: macos
             os: macos-15   # Apple Silicon runner
     runs-on: ${{ matrix.os }}

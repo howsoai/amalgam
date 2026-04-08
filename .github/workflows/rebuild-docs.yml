@@ -14,6 +14,10 @@ on:
         type: boolean
         default: false
   workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
 
 defaults:
   run:
@@ -130,13 +134,13 @@ jobs:
         if: needs.check-previous-docs-rebuild.outputs.skip == ''
         uses: actions/download-artifact@v8
         with:
-          name: amalgam-*-release-linux-amd64
+          name: amalgam-${{ inputs.version }}-release-linux-amd64
 
       - name: Extract Amalgam
         if: needs.check-previous-docs-rebuild.outputs.skip == ''
         run: |
           mkdir ./amalgam
-          tar -xvf ./amalgam-*-linux-amd64.tar.gz -C ./amalgam
+          tar -xvf ./amalgam-${{ inputs.version }}-linux-amd64.tar.gz -C ./amalgam
           mv ./amalgam/lib/amalgam-st ./amalgam-st
           chmod +x amalgam-st
 

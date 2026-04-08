@@ -1,0 +1,185 @@
+name: Rebuild Docs Files
+run-name: "Rebuild Docs"
+
+on:
+  workflow_dispatch:
+    inputs:
+      ticket-number:
+        description: "A ticket number to use for the creation of the branch and PR."
+        type: string
+        required: false
+      create-pr:
+        description: "Create a PR against the default branch?"
+        required: true
+        type: boolean
+        default: false
+  workflow_call:
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  gen-branch-name:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      branch: ${{ steps.gen-branch-name.outputs.branch }}
+
+    steps:
+    
+    - name: Generate branch name
+      id: gen-branch-name
+      run: |
+        if [[ "${{ github.ref_name }}" != "${{ github.event.repository.default_branch }}" ]]; then
+          echo "Workflow appears to have been triggered from a non-default branch. Committing to ${{ github.ref_name }}." 
+          echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        NOW=$(date +'%Y-%m-%dT%Hh%Mm%Ss')
+        if [[ -n "${{ inputs.ticket-number }}" ]]; then
+          BRANCH="${{ inputs.ticket-number }}-rebuild-docs-$NOW"
+        else
+          BRANCH="rebuild-docs-$NOW"
+        fi
+        echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+  create-branch:
+    needs: ["gen-branch-name"]
+    uses: "howsoai/.github/.github/workflows/create-branch.yml@main"
+    secrets: inherit
+    with:
+      branch: ${{ needs.gen-branch-name.outputs.branch }}
+
+  regenerate-docs-files:
+    needs: ["gen-branch-name", "create-branch"]
+    runs-on: ubuntu-latest
+    permissions: write-all
+    outputs:
+      skip: ${{ steps.check-rebuild.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.HOWSOAI_WORKFLOW_AUTOMATION_TOKEN }}
+          ref: ${{ needs.gen-branch-name.outputs.branch }}
+
+      - name: Check for previous rebuild
+        id: check-rebuild
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" && -n "$changes" ]]; then
+            PR_NUMBER=$(echo "${{ github.ref }}" | sed 's/refs\/pull\/\([0-9]*\)\/merge/\1/')
+            
+            echo "Parsing PR #$PR_NUMBER for automated requirements commits..."
+            
+            # Use GitHub API to check each commit's files
+            COMMITS_JSON=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER/commits)
+            
+            # Use process substitution to avoid subshell
+            while read commit_sha; do
+              echo "Checking commit $commit_sha..."
+              
+              # Get commit details including files changed
+              COMMIT_DATA=$(gh api repos/${{ github.repository }}/commits/$commit_sha)
+              
+              COMMIT_AUTHOR=$(echo "$COMMIT_DATA" | jq -r '.commit.author.name')
+              COMMIT_MESSAGE=$(echo "$COMMIT_DATA" | jq -r '.commit.message' | head -n1)
+              
+              echo "  Author: $COMMIT_AUTHOR"
+              echo "  Message: $COMMIT_MESSAGE"
+              
+              # Check if this looks like a bot/automation commit
+              if [[ "$COMMIT_AUTHOR" == *"bot"* || "$COMMIT_AUTHOR" == *"automation"* || "$COMMIT_MESSAGE" == *"docs rebuild"* ]]; then
+                echo "  Bot/automation commit detected, checking files..."
+                
+                # Get list of files changed in this commit
+                FILES_CHANGED=$(echo "$COMMIT_DATA" | jq -r '.files[].filename')
+                echo "  Files changed:"
+                echo "$FILES_CHANGED"
+                
+                # Check if requirements files were modified
+                if echo "$FILES_CHANGED" | grep -qE "*\.md"; then
+                  echo "  ✓ Found previous docs rebuild in commit $commit_sha; skipping rebuild."
+                  unset changes
+                  break
+                fi
+              fi
+            done < <(echo "$COMMITS_JSON" | jq -r '.[].sha')
+          fi
+
+          echo "skip=true" >> $GITHUB_OUTPUT
+
+      - name: Download Artifact
+        if: steps.check-rebuild.outputs.skip == ''
+        uses: actions/download-artifact@v8
+        with:
+          name: amalgam-*-release-linux-amd64
+
+      - name: Extract Amalgam
+        if: steps.check-rebuild.outputs.skip == ''
+        run: |
+          mkdir ./amalgam
+          tar -xvf ./amalgam-*-linux-amd64.tar.gz -C ./amalgam
+          mv ./amalgam/lib/amalgam-st ./amalgam-st
+          chmod +x amalgam-st
+
+      - name: Generate docs
+        if: steps.check-rebuild.outputs.skip == ''
+        run: |
+          cd ./docs
+          ../amalgam-st ../build/docs/build_doc_files.amlg
+          mv ./amalgam_overview.md ./index.md
+
+      - name: Commit changes
+        if: steps.check-rebuild.outputs.skip == ''
+        id: commit-changes
+        run: |
+          git pull
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes to docs files detected. Making a new commit..."
+            git config user.name "howso-automation"
+            git config user.email "support@howso.com"
+            git add docs/*.md
+            git commit -m "Automated docs rebuild"
+            git push
+          else
+            echo "No changes detected in the repository."
+          fi
+
+  gen-pr-title:
+    if: inputs.create-pr == true && needs.regenerate-docs-files.outputs.skip == ''
+    needs: ['gen-branch-name', 'create-branch', 'regenerate-docs-files']
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      title: ${{ steps.gen-pr-title.outputs.title }}
+    env:
+        GH_TOKEN: ${{ github.token }}
+    steps:
+
+    - name: Generate PR title
+      id: gen-pr-title
+      run: |
+        if [[ -n "${{ inputs.ticket-number }}" ]]; then
+          TITLE="${{ inputs.ticket-number }}: Automated requirements generation"
+        else
+          TITLE="Automated requirements generation"
+        fi
+        echo "title=$TITLE" >> $GITHUB_OUTPUT
+  
+  create-pr:
+    if: inputs.create-pr == true && needs.regenerate-docs-files.outputs.skip == ''
+    needs: ['gen-branch-name', 'create-branch', 'gen-pr-title', 'regenerate-docs-files']
+    uses: "howsoai/.github/.github/workflows/create-pr.yml@main"
+    secrets: inherit
+    with:
+      branch: ${{ needs.gen-branch-name.outputs.branch }}
+      title: ${{ needs.gen-pr-title.outputs.title }}
+      body: "Automated PR with generated docs files."

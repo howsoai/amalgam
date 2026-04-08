@@ -16,7 +16,12 @@ concurrency:
 
 jobs:
 
+  rebuild-docs:
+    uses: "./.github/workflows/rebuild-docs.yml"
+    secrets: inherit
+
   set-pr-version:
+    needs: ["rebuild-docs"]
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.set-pr-version.outputs.version }}

@@ -33,11 +33,20 @@ jobs:
     - name: Generate branch name
       id: gen-branch-name
       run: |
-        if [[ "${{ github.ref_name }}" != "${{ github.event.repository.default_branch }}" ]]; then
-          echo "Workflow appears to have been triggered from a non-default branch. Committing to ${{ github.ref_name }}." 
-          echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        # On pull_request events, ref_name is a synthetic merge ref (e.g. 520/merge).
+        # Use head_ref instead, which carries the real branch name.
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          CURRENT_BRANCH="${{ github.head_ref }}"
+        else
+          CURRENT_BRANCH="${{ github.ref_name }}"
+        fi
+
+        if [[ "$CURRENT_BRANCH" != "${{ github.event.repository.default_branch }}" ]]; then
+          echo "Workflow triggered from non-default branch. Committing to $CURRENT_BRANCH."
+          echo "branch=$CURRENT_BRANCH" >> $GITHUB_OUTPUT
           exit 0
         fi
+
         NOW=$(date +'%Y-%m-%dT%Hh%Mm%Ss')
         if [[ -n "${{ inputs.ticket-number }}" ]]; then
           BRANCH="${{ inputs.ticket-number }}-rebuild-docs-$NOW"

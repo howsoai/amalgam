@@ -572,7 +572,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			else if(input == "off")
 				_interpreter_debug_data.maintainPreviousOpcodeReturnValue = false;
 			else
-				std::cout << "Return watch is currentently "
+				std::cout << "Return watch is currently"
 					<< (_interpreter_debug_data.maintainPreviousOpcodeReturnValue ? "on" : "off") << std::endl;
 		}
 		else if(command == "p" || command == "pv" || command == "pp")

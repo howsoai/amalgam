@@ -141,7 +141,7 @@ jobs:
         run: |
           mkdir ./amalgam
           tar -xvf ./amalgam-${{ inputs.version }}-linux-amd64.tar.gz -C ./amalgam
-          mv ./amalgam/lib/amalgam-st ./amalgam-st
+          mv ./amalgam/bin/amalgam-st ./amalgam-st
           chmod +x amalgam-st
 
       - name: Generate docs

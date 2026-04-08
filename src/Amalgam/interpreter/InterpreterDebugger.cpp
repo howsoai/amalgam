@@ -50,13 +50,15 @@ struct InterpreterDebugData
 	std::thread::id interactiveModeThread = std::thread::id();
 #endif
 
+	//if set to true, then it will maintain previousOpcodeReturnValue and make copies
+	bool maintainPreviousOpcodeReturnValue = true;
 	//set after an opcode has run
 	EvaluableNodeReference previousOpcodeReturnValue;
 
 	//if previousOpcodeReturnValue isn't immediate, will make a copy of the code
 	//so it survives deallocations.  has its own enm to keep track of the copies separately
 	EvaluableNodeManager enm;
-	EvaluableNode *previousOpcodeReturnValueCopy;
+	EvaluableNode *previousOpcodeReturnValueCopy = nullptr;
 
 	//labels to break on
 	std::vector<std::string> breakLabels;
@@ -272,7 +274,9 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			std::cout << "entity [name]: prints out the entity specified, current entity if name omitted" << std::endl;
 			std::cout << "labels [name]: prints out the labels of the entity specified, current entity if name omitted" << std::endl;
 			std::cout << "vars: prints out the variables, grouped by each layer going up the stack" << std::endl;
-			std::cout << "r: prints out the value returned from the previous opcode" << std::endl;
+			std::cout << "r: prints the value returned from the previous opcode; use \"rwatch on\" to enable" << std::endl;
+			std::cout << "rp: prints a preview of the value returned from the previous opcode; use \"rwatch on\" to enable" << std::endl;
+			std::cout << "rwatch [toggle]: turns on or off watching returned values, where toggle is \"on\" or \"off\"" << std::endl;
 			std::cout << "p [var]: prints variable var" << std::endl;
 			std::cout << "pv [var]: prints only the value of the variable var (no comments or labels)" << std::endl;
 			std::cout << "pp [var]: prints only a preview of the value of the variable var (no comments or labels)" << std::endl;
@@ -490,7 +494,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 					std::cout << "  " << string_intern_pool.GetStringFromID(symbol_id) << std::endl;
 			}
 		}
-		else if(command == "r")
+		else if(command == "r" || command == "rp")
 		{
 			EvaluableNodeReference retval = _interpreter_debug_data.previousOpcodeReturnValue;
 
@@ -529,7 +533,20 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			}
 
 			case ENIVT_CODE:
-				std::cout << Parser::Unparse(_interpreter_debug_data.previousOpcodeReturnValueCopy, true, false, true);
+			{
+				std::string return_str = Parser::Unparse(_interpreter_debug_data.previousOpcodeReturnValueCopy, true, false, true);
+				if(command == "r")
+				{
+					std::cout << return_str;
+				}
+				else if(command == "rp")
+				{
+
+					if(return_str.size() > 1023)
+						return_str.resize(1023);
+					std::cout << return_str;
+				}
+
 				if(retval == nullptr)
 					std::cout << "Value type: null node" << std::endl;
 				else
@@ -538,7 +555,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				std::cout << "Unique reference: " << (retval.unique ? "true" : "false") << std::endl;
 				std::cout << "Top node unique reference: " << (retval.uniqueUnreferencedTopNode ? "true" : "false") << std::endl;
 				break;
-
+			}
 			case ENIVT_NUMBER_INDIRECTION_INDEX:
 				std::cout << "Error: type was invalid, a number indirection index" << std::endl;
 				break;
@@ -547,6 +564,16 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				std::cout << "Error: type was invalid, a string id indirection index" << std::endl;
 				break;
 			}
+		}
+		else if(command == "rwatch")
+		{
+			if(input == "on")
+				_interpreter_debug_data.maintainPreviousOpcodeReturnValue = true;
+			else if(input == "off")
+				_interpreter_debug_data.maintainPreviousOpcodeReturnValue = false;
+			else
+				std::cout << "Return watch is currentently "
+					<< (_interpreter_debug_data.maintainPreviousOpcodeReturnValue ? "on" : "off") << std::endl;
 		}
 		else if(command == "p" || command == "pv" || command == "pp")
 		{
@@ -583,9 +610,13 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				if(value_exists)
 				{
 					if(command == "p")
+					{
 						std::cout << Parser::Unparse(node, true, true, true);
+					}
 					else if(command == "pv")
+					{
 						std::cout << Parser::Unparse(node, true, false, true);
+					}
 					else if(command == "pp")
 					{
 						std::string var_preview = Parser::Unparse(node, true, false, true);
@@ -707,7 +738,7 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en,
 	if(en != nullptr)
 		cur_node_type = en->GetType();
 
-	if(!before_opcode)
+	if(_interpreter_debug_data.maintainPreviousOpcodeReturnValue && !before_opcode)
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		//only one debugger at a time; however, if concurrently executing,

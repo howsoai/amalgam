@@ -22,23 +22,23 @@ jobs:
       skip-build: ${{ steps.check.outputs.skip-build }}
     steps:
 
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 2
 
-      - name: Check if last commit was from docs rebuild bot
-        id: check
-        run: |
-          LAST_AUTHOR=$(git log -1 --format='%an')
-          LAST_MESSAGE=$(git log -1 --format='%s')
-          echo "Last commit author: $LAST_AUTHOR"
-          echo "Last commit message: $LAST_MESSAGE"
-          if [[ "$LAST_AUTHOR" == "howso-automation" && "$LAST_MESSAGE" == "Automated docs rebuild" ]]; then
-            echo "Last commit was from the docs rebuild bot. Skipping build."
-            echo "skip-build=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip-build=" >> $GITHUB_OUTPUT
-          fi
+    - name: Check if last commit was from docs rebuild bot
+      id: check
+      run: |
+        LAST_AUTHOR=$(git log -1 --format='%an' HEAD^2)
+        LAST_MESSAGE=$(git log -1 --format='%s' HEAD^2)
+        echo "Last commit author: $LAST_AUTHOR"
+        echo "Last commit message: $LAST_MESSAGE"
+        if [[ "$LAST_AUTHOR" == "howso-automation" && "$LAST_MESSAGE" == "Automated docs rebuild" ]]; then
+          echo "Last commit was from the docs rebuild bot. Skipping build."
+          echo "skip-build=true" >> $GITHUB_OUTPUT
+        else
+          echo "skip-build=" >> $GITHUB_OUTPUT
+        fi
 
   set-pr-version:
     if: needs.check-docs-commit.outputs.skip-build != 'true'

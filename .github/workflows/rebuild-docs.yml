@@ -2,17 +2,6 @@ name: Rebuild Docs Files
 run-name: "Rebuild Docs"
 
 on:
-  workflow_dispatch:
-    inputs:
-      ticket-number:
-        description: "A ticket number to use for the creation of the branch and PR."
-        type: string
-        required: false
-      create-pr:
-        description: "Create a PR against the default branch?"
-        required: true
-        type: boolean
-        default: false
   workflow_call:
     inputs:
       version:
@@ -25,98 +14,8 @@ defaults:
 
 jobs:
 
-  gen-branch-name:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      branch: ${{ steps.gen-branch-name.outputs.branch }}
-
-    steps:
-    
-    - name: Generate branch name
-      id: gen-branch-name
-      run: |
-        # On pull_request events, ref_name is a synthetic merge ref (e.g. 520/merge).
-        # Use head_ref instead, which carries the real branch name.
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          CURRENT_BRANCH="${{ github.head_ref }}"
-        else
-          CURRENT_BRANCH="${{ github.ref_name }}"
-        fi
-
-        if [[ "$CURRENT_BRANCH" != "${{ github.event.repository.default_branch }}" ]]; then
-          echo "Workflow triggered from non-default branch. Committing to $CURRENT_BRANCH."
-          echo "branch=$CURRENT_BRANCH" >> $GITHUB_OUTPUT
-          exit 0
-        fi
-
-        NOW=$(date +'%Y-%m-%dT%Hh%Mm%Ss')
-        if [[ -n "${{ inputs.ticket-number }}" ]]; then
-          BRANCH="${{ inputs.ticket-number }}-rebuild-docs-$NOW"
-        else
-          BRANCH="rebuild-docs-$NOW"
-        fi
-        echo "branch=$BRANCH" >> $GITHUB_OUTPUT
-
-  create-branch:
-    needs: ["gen-branch-name"]
-    uses: "howsoai/.github/.github/workflows/create-branch.yml@main"
-    secrets: inherit
-    with:
-      branch: ${{ needs.gen-branch-name.outputs.branch }}
-
-  build-linux-docs-only:
-    if: inputs.create-pr == true
-    runs-on: ubuntu-24.04
-    container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.8
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ github.token }}
-    strategy:
-      matrix:
-        preset:
-          - arch: arm64
-            platform: linux
-            type: release
-
-    permissions:
-      contents: write
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Set build preset
-        run: |
-          PRESET=$(echo ${{ matrix.preset.arch }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }})
-          echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
-          echo "Build preset: $PRESET"
-          # Print glibc version
-          ldd --version
-
-      - name: CMake Configure
-        run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET
-
-      - name: CMake Build
-        run: cmake --build --preset $PRESET --
-
-      - name: CMake Install
-        run: cmake --build --preset $PRESET --target install
-
-      - name: CMake Package
-        run: cmake --build --preset $PRESET --target package
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: amalgam-${{ inputs.version }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
-          path: ./out/package/amalgam-*.tar.gz
-          if-no-files-found: error
-
   regenerate-docs-files:
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
-    needs: ["gen-branch-name", "create-branch", "build-linux-docs-only"]
     runs-on: ubuntu-24.04-arm
     permissions: write-all
 
@@ -126,7 +25,7 @@ jobs:
         with:
           # Check out with a PAT so that the workflow can make commits that re-trigger the PR build
           token: ${{ secrets.HOWSOAI_WORKFLOW_AUTOMATION_TOKEN }}
-          ref: ${{ needs.gen-branch-name.outputs.branch }}
+          ref: ${{ github.head_ref }}
 
       - name: Download Artifact
         uses: actions/download-artifact@v8
@@ -145,6 +44,11 @@ jobs:
           cd ./docs
           ../amalgam-st ../build/docs/build_doc_files.amlg
           mv ./amalgam_overview.md ./index.md
+          # Clean up
+          cd ..
+          rm -rf ./amalgam
+          rm ./amalgam-st
+          rm ./amalgam-${{ inputs.version }}-linux-arm64.tar.gz
 
       - name: Commit changes
         id: commit-changes
@@ -160,36 +64,3 @@ jobs:
           else
             echo "No changes detected in the repository."
           fi
-
-  gen-pr-title:
-    if: inputs.create-pr == true
-    needs: ['gen-branch-name', 'create-branch', 'regenerate-docs-files']
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    outputs:
-      title: ${{ steps.gen-pr-title.outputs.title }}
-    env:
-        GH_TOKEN: ${{ github.token }}
-    steps:
-
-    - name: Generate PR title
-      id: gen-pr-title
-      run: |
-        if [[ -n "${{ inputs.ticket-number }}" ]]; then
-          TITLE="${{ inputs.ticket-number }}: Automated requirements generation"
-        else
-          TITLE="Automated requirements generation"
-        fi
-        echo "title=$TITLE" >> $GITHUB_OUTPUT
-  
-  create-pr:
-    if: inputs.create-pr == true
-    needs: ['gen-branch-name', 'create-branch', 'gen-pr-title', 'regenerate-docs-files']
-    uses: "howsoai/.github/.github/workflows/create-pr.yml@main"
-    secrets: inherit
-    with:
-      branch: ${{ needs.gen-branch-name.outputs.branch }}
-      title: ${{ needs.gen-pr-title.outputs.title }}
-      body: "Automated PR with generated docs files."

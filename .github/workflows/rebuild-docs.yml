@@ -65,6 +65,8 @@ jobs:
   check-previous-docs-rebuild:
     needs: ["gen-branch-name", "create-branch"]
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     outputs:
       skip: ${{ steps.check-rebuild.outputs.skip }}
     steps:
@@ -121,8 +123,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ github.token }}
     permissions: write-all
-    env:
-      GH_TOKEN: ${{ github.token }}
+
     steps:
 
       - uses: actions/checkout@v6

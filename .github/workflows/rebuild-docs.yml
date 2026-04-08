@@ -62,24 +62,12 @@ jobs:
     with:
       branch: ${{ needs.gen-branch-name.outputs.branch }}
 
-  regenerate-docs-files:
+  check-previous-docs-rebuild:
     needs: ["gen-branch-name", "create-branch"]
-    runs-on: ubuntu-24.04
-    container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.8
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ github.token }}
-    permissions: write-all
-    env:
-      GH_TOKEN: ${{ github.token }}
+    runs-on: ubuntu-latest
     outputs:
       skip: ${{ steps.check-rebuild.outputs.skip }}
     steps:
-      - uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.HOWSOAI_WORKFLOW_AUTOMATION_TOKEN }}
-          ref: ${{ needs.gen-branch-name.outputs.branch }}
 
       - name: Check for previous rebuild
         id: check-rebuild
@@ -124,23 +112,42 @@ jobs:
             done < <(echo "$COMMITS_JSON" | jq -r '.[].sha')
           fi
 
+  regenerate-docs-files:
+    needs: ["gen-branch-name", "create-branch", "check-previous-docs-rebuild"]
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.8
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    permissions: write-all
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.HOWSOAI_WORKFLOW_AUTOMATION_TOKEN }}
+          ref: ${{ needs.gen-branch-name.outputs.branch }}
+
+
       - name: CMake Configure
-        if: steps.check-rebuild.outputs.skip == ''
+        if: needs.check-previous-docs-rebuild.outputs.skip == ''
         run: AMALGAM_BUILD_VERSION=0.0.1 cmake --preset amd64-release-linux
 
       - name: CMake Build
-        if: steps.check-rebuild.outputs.skip == ''
+        if: needs.check-previous-docs-rebuild.outputs.skip == ''
         run: cmake --build --preset amd64-release-linux --
 
       - name: Generate docs
-        if: steps.check-rebuild.outputs.skip == ''
+        if: needs.check-previous-docs-rebuild.outputs.skip == ''
         run: |
           cd ./docs
           ../out/build/amd64-release-linux/amalgam-st ../build/docs/build_doc_files.amlg
           mv ./amalgam_overview.md ./index.md
 
       - name: Commit changes
-        if: steps.check-rebuild.outputs.skip == ''
+        if: needs.check-previous-docs-rebuild.outputs.skip == ''
         id: commit-changes
         run: |
           git pull
@@ -156,8 +163,8 @@ jobs:
           fi
 
   gen-pr-title:
-    if: inputs.create-pr == true && needs.regenerate-docs-files.outputs.skip == ''
-    needs: ['gen-branch-name', 'create-branch', 'regenerate-docs-files']
+    if: inputs.create-pr == true && needs.check-previous-docs-rebuild.outputs.skip == ''
+    needs: ['gen-branch-name', 'create-branch', 'regenerate-docs-files', 'check-previous-docs-rebuild']
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -179,8 +186,8 @@ jobs:
         echo "title=$TITLE" >> $GITHUB_OUTPUT
   
   create-pr:
-    if: inputs.create-pr == true && needs.regenerate-docs-files.outputs.skip == ''
-    needs: ['gen-branch-name', 'create-branch', 'gen-pr-title', 'regenerate-docs-files']
+    if: inputs.create-pr == true && needs.check-previous-docs-rebuild.outputs.skip == ''
+    needs: ['gen-branch-name', 'create-branch', 'gen-pr-title', 'regenerate-docs-files', 'check-previous-docs-rebuild']
     uses: "howsoai/.github/.github/workflows/create-pr.yml@main"
     secrets: inherit
     with:

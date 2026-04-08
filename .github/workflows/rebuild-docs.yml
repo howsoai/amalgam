@@ -77,7 +77,7 @@ jobs:
       - name: Check for previous rebuild
         id: check-rebuild
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" && -n "$changes" ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             PR_NUMBER=$(echo "${{ github.ref }}" | sed 's/refs\/pull\/\([0-9]*\)\/merge/\1/')
             
             echo "Parsing PR #$PR_NUMBER for automated requirements commits..."
@@ -110,14 +110,12 @@ jobs:
                 # Check if requirements files were modified
                 if echo "$FILES_CHANGED" | grep -qE "*\.md"; then
                   echo "  ✓ Found previous docs rebuild in commit $commit_sha; skipping rebuild."
-                  unset changes
+                  echo "skip=true" >> $GITHUB_OUTPUT
                   break
                 fi
               fi
             done < <(echo "$COMMITS_JSON" | jq -r '.[].sha')
           fi
-
-          echo "skip=true" >> $GITHUB_OUTPUT
 
       - name: Download Artifact
         if: steps.check-rebuild.outputs.skip == ''

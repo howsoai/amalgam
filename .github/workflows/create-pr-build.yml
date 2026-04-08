@@ -16,12 +16,7 @@ concurrency:
 
 jobs:
 
-  rebuild-docs:
-    uses: "./.github/workflows/rebuild-docs.yml"
-    secrets: inherit
-
   set-pr-version:
-    needs: ["rebuild-docs"]
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.set-pr-version.outputs.version }}
@@ -60,6 +55,11 @@ jobs:
     with:
       version: ${{ needs.set-pr-version.outputs.version }}
       build-type: "PR"
+
+  rebuild-docs:
+    needs: ['build']
+    uses: "./.github/workflows/rebuild-docs.yml"
+    secrets: inherit
 
   # This job is here to have only one final step to add for "Status Checks"
   # in GitHub, instead of adding every leaf test from 'build'

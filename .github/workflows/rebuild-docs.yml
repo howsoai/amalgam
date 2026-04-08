@@ -119,25 +119,19 @@ jobs:
             done < <(echo "$COMMITS_JSON" | jq -r '.[].sha')
           fi
 
-      - name: Download Artifact
+      - name: CMake Configure
         if: steps.check-rebuild.outputs.skip == ''
-        uses: actions/download-artifact@v8
-        with:
-          name: amalgam-*-release-linux-amd64
+        run: AMALGAM_BUILD_VERSION=0.0.1 cmake --preset amd64-release-linux
 
-      - name: Extract Amalgam
+      - name: CMake Build
         if: steps.check-rebuild.outputs.skip == ''
-        run: |
-          mkdir ./amalgam
-          tar -xvf ./amalgam-*-linux-amd64.tar.gz -C ./amalgam
-          mv ./amalgam/lib/amalgam-st ./amalgam-st
-          chmod +x amalgam-st
+        run: cmake --build --preset amd64-release-linux --
 
       - name: Generate docs
         if: steps.check-rebuild.outputs.skip == ''
         run: |
           cd ./docs
-          ../amalgam-st ../build/docs/build_doc_files.amlg
+          ../out/build/amd64-release-linux/amalgam-st ../build/docs/build_doc_files.amlg
           mv ./amalgam_overview.md ./index.md
 
       - name: Commit changes

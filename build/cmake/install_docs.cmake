@@ -5,8 +5,7 @@
 # Install language reference:
 install(
     FILES
-        "${CMAKE_SOURCE_DIR}/docs/index.html"
-        "${CMAKE_SOURCE_DIR}/docs/language.js"
+        "${CMAKE_SOURCE_DIR}/docs/index.md"
     DESTINATION "docs/language_reference"
 )
 

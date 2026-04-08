@@ -64,7 +64,12 @@ jobs:
 
   regenerate-docs-files:
     needs: ["gen-branch-name", "create-branch"]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.8
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
     permissions: write-all
     env:
       GH_TOKEN: ${{ github.token }}

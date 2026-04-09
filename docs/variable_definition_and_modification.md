@@ -39,7 +39,7 @@ Output:
 foo
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `let`
 #### Parameters
@@ -80,7 +80,7 @@ Output:
 11
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `declare`
 #### Parameters
@@ -113,7 +113,7 @@ Output:
 8
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `assign`
 #### Parameters
@@ -216,7 +216,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `accum`
 #### Parameters
@@ -346,7 +346,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `retrieve`
 #### Parameters
@@ -402,7 +402,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `target`
 #### Parameters
@@ -540,7 +540,7 @@ Output:
 }
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `stack`
 #### Parameters
@@ -584,7 +584,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `args`
 #### Parameters
@@ -622,7 +622,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `get_type`
 #### Parameters
@@ -650,7 +650,7 @@ Output:
 (+)
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `get_type_string`
 #### Parameters
@@ -686,7 +686,7 @@ Output:
 "string"
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `set_type`
 #### Parameters
@@ -789,7 +789,7 @@ Output:
 )
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `format`
 #### Parameters
@@ -1405,5 +1405,5 @@ Output:
 "12:00:00AM"
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 

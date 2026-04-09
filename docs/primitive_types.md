@@ -49,7 +49,7 @@ Output:
 (null)
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `bool`
 #### Parameters
@@ -81,7 +81,7 @@ Output:
 .false
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `number`
 #### Parameters
@@ -139,7 +139,7 @@ Output:
 -.infinity
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `string`
 #### Parameters
@@ -171,7 +171,7 @@ Output:
 "\tHello\n\"Hello\""
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `list`
 #### Parameters
@@ -195,7 +195,7 @@ Output:
 ["a" 1 "b"]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `unordered_list`
 #### Parameters
@@ -285,7 +285,7 @@ Output:
 .true
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `assoc`
 #### Parameters
@@ -321,5 +321,5 @@ Output:
 "{(null) 0 (+ 1 2) 3}"
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 

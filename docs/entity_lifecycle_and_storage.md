@@ -53,7 +53,7 @@ Output:
 ["NamedEntity1" "NamedEntity2" "_hIcoPxJ8LiS"]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `clone_entities`
 #### Parameters
@@ -96,7 +96,7 @@ Output:
 ["NamedEntity1" "NamedEntity2" "_539JylCpbqn"]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `move_entities`
 #### Parameters
@@ -139,7 +139,7 @@ Output:
 ["NamedEntity1" "NamedEntity2" "_539JylCpbqn"]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `destroy_entities`
 #### Parameters
@@ -170,7 +170,7 @@ Output:
 []
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `load`
 #### Parameters
@@ -315,7 +315,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `load_entity`
 #### Parameters
@@ -424,7 +424,7 @@ Output:
 )
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `store`
 #### Parameters
@@ -569,7 +569,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `store_entity`
 #### Parameters
@@ -678,7 +678,7 @@ Output:
 )
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `contains_entity`
 #### Parameters
@@ -717,7 +717,7 @@ Output:
 [.true .false]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `flatten_entity`
 #### Parameters
@@ -783,7 +783,7 @@ Output:
 [0.611779739433564 0.611779739433564]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `retrieve_entity_root`
 #### Parameters
@@ -815,7 +815,7 @@ Output:
 {1 2 three 3}
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `assign_entity_roots`
 #### Parameters
@@ -851,7 +851,7 @@ Output:
 {a 4 b 5 c 6}
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `get_entity_permissions`
 #### Parameters
@@ -891,7 +891,7 @@ Output:
 }
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `set_entity_permissions`
 #### Parameters
@@ -932,5 +932,5 @@ Output:
 }
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 

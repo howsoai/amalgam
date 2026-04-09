@@ -20,7 +20,7 @@ Output:
 0.479425538604203
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `asin`
 #### Parameters
@@ -44,7 +44,7 @@ Output:
 0.479425538604203
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `cos`
 #### Parameters
@@ -68,7 +68,7 @@ Output:
 0.8775825618903728
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `acos`
 #### Parameters
@@ -92,7 +92,7 @@ Output:
 1.0471975511965979
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `tan`
 #### Parameters
@@ -116,7 +116,7 @@ Output:
 0.5463024898437905
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `atan`
 #### Parameters
@@ -148,7 +148,7 @@ Output:
 0.7853981633974483
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `sinh`
 #### Parameters
@@ -172,7 +172,7 @@ Output:
 0.5210953054937474
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `asinh`
 #### Parameters
@@ -196,7 +196,7 @@ Output:
 0.48121182505960347
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `cosh`
 #### Parameters
@@ -220,7 +220,7 @@ Output:
 1.1276259652063807
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `acosh`
 #### Parameters
@@ -244,7 +244,7 @@ Output:
 0.9624236501192069
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `tanh`
 #### Parameters
@@ -268,7 +268,7 @@ Output:
 0.46211715726000974
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `atanh`
 #### Parameters
@@ -292,5 +292,5 @@ Output:
 0.5493061443340549
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 

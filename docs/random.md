@@ -187,7 +187,7 @@ Output:
 [2 6 1]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `get_rand_seed`
 #### Parameters
@@ -211,7 +211,7 @@ Output:
 "X6f8e5JTT5kuHHGZUu7r6/8="
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `set_rand_seed`
 #### Parameters
@@ -262,7 +262,7 @@ Output:
 0.5507987428849511
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `get_entity_rand_seed`
 #### Parameters
@@ -299,7 +299,7 @@ Output:
 "nHKVcHddHVaqvcDt3AYbD/8="
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `set_entity_rand_seed`
 #### Parameters
@@ -368,5 +368,5 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 

@@ -106,7 +106,7 @@ Output:
 [1 2 3 4 5 6]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `rewrite`
 #### Parameters
@@ -291,7 +291,7 @@ Output:
 (+ 17 a)
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `map`
 #### Parameters
@@ -437,7 +437,7 @@ Output:
 }
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `filter`
 #### Parameters
@@ -627,7 +627,7 @@ Output:
 {a (null) c (null) e (null)}
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `weave`
 #### Parameters
@@ -871,7 +871,7 @@ Output:
 [3 4 5]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `reduce`
 #### Parameters
@@ -922,7 +922,7 @@ Output:
 24
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `associate`
 #### Parameters
@@ -957,7 +957,7 @@ Output:
 "{4 \"d\" a 1 b 2 c 3}"
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `zip`
 #### Parameters
@@ -1063,7 +1063,7 @@ Output:
 "{a 2 b 1 c (target .true \"b\") d (target .true \"b\")}"
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `unzip`
 #### Parameters
@@ -1101,7 +1101,7 @@ Output:
 [1 2]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `reverse`
 #### Parameters
@@ -1127,7 +1127,7 @@ Output:
 [5 4 3 2 1]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `sort`
 #### Parameters
@@ -1410,7 +1410,7 @@ Output:
 [9 5]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `current_index`
 #### Parameters
@@ -1457,7 +1457,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `current_value`
 #### Parameters
@@ -1486,7 +1486,7 @@ Output:
 [0 2 4 6 8]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `previous_result`
 #### Parameters
@@ -1540,5 +1540,5 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 

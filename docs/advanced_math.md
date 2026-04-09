@@ -20,7 +20,7 @@ Output:
 1.6487212707001282
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `log`
 #### Parameters
@@ -52,7 +52,7 @@ Output:
 -1
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `erf`
 #### Parameters
@@ -76,7 +76,7 @@ Output:
 0.5204998778130465
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `tgamma`
 #### Parameters
@@ -100,7 +100,7 @@ Output:
 1.772453850905516
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `lgamma`
 #### Parameters
@@ -124,7 +124,7 @@ Output:
 0.5723649429247001
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `sqrt`
 #### Parameters
@@ -148,7 +148,7 @@ Output:
 0.7071067811865476
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `pow`
 #### Parameters
@@ -172,7 +172,7 @@ Output:
 0.25
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `dot_product`
 #### Parameters
@@ -221,7 +221,7 @@ Output:
 6
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `normalize`
 #### Parameters
@@ -278,7 +278,7 @@ Output:
 }
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `mode`
 #### Parameters
@@ -432,7 +432,7 @@ Output:
 1
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `quantile`
 #### Parameters
@@ -548,7 +548,7 @@ Output:
 1.1666666666666667
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `generalized_mean`
 #### Parameters
@@ -662,7 +662,7 @@ Output:
 1.5714285714285714
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `generalized_distance`
 #### Parameters
@@ -1764,7 +1764,7 @@ Output:
 0.8383382080915318
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 
 ### Opcode: `entropy`
 #### Parameters
@@ -1851,5 +1851,5 @@ Output:
 0.14384103622589045
 ```
 
-[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)
+[Amalgam Opcodes](./index.md#amalgam-opcodes)
 

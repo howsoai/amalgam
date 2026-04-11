@@ -383,6 +383,12 @@
     <ClInclude Include="evaluablenode\EvaluableNodeReference.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="interpreter\InterpreterConcurrencyManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="interpreter\InterpreterUtilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

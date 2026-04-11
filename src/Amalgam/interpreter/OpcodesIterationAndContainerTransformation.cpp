@@ -1,5 +1,6 @@
 //project headers:
 #include "Interpreter.h"
+#include "InterpreterConcurrencyManager.h"
 #include "OpcodeDetails.h"
 
 static std::string _opcode_group = "Iteration and Container Transform";
@@ -136,7 +137,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 			auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
 			if(Concurrency::threadPool.AreThreadsAvailable())
 			{
-				ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+				InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
 					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
@@ -179,7 +180,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
 			result->SetNeedCycleCheck(true);
 
-			ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+			InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
 			for(size_t node_index = 0; node_index < num_nodes; node_index++)
 				concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
@@ -540,7 +541,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
 					result->SetNeedCycleCheck(true);
 
-					ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+					InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
 					for(size_t node_index = 0; node_index < num_nodes; node_index++)
 						concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
@@ -601,7 +602,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
 					result->SetNeedCycleCheck(true);
 
-					ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+					InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
 					for(auto &[result_id, result_node] : result_mcn)
 					{
@@ -1137,7 +1138,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 				std::vector<EvaluableNodeReference> evaluations(num_nodes);
 
-				ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+				InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
 					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(function,
@@ -1226,7 +1227,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 				std::vector<EvaluableNodeReference> evaluations(num_nodes);
 
-				ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+				InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
 				//kick off interpreters
 				size_t node_index = 0;
@@ -1745,7 +1746,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 
 				std::vector<EvaluableNodeReference> results(num_nodes / 2);
 
-				ConcurrencyManager concurrency_manager(this, num_nodes / 2, enqueue_task_lock);
+				InterpreterConcurrencyManager concurrency_manager(this, num_nodes / 2, enqueue_task_lock);
 
 				//kick off interpreters
 				for(size_t node_index = 0; node_index + 1 < num_nodes; node_index += 2)

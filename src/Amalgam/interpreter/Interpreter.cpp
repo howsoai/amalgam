@@ -1,10 +1,8 @@
 //project headers:
-#include "Interpreter.h"
-
 #include "AssetManager.h"
-#include "EntityQueries.h"
-#include "EntityQueryBuilder.h"
 #include "EvaluableNodeTreeFunctions.h"
+#include "Interpreter.h"
+#include "InterpreterConcurrencyManager.h"
 #include "OpcodeDetails.h"
 #include "PerformanceProfiler.h"
 #include "StringInternPool.h"
@@ -781,7 +779,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 	if(!Concurrency::threadPool.AreThreadsAvailable())
 		return false;
 
-	ConcurrencyManager concurrency_manager(this, num_tasks, enqueue_task_lock);
+	InterpreterConcurrencyManager concurrency_manager(this, num_tasks, enqueue_task_lock);
 
 	interpreted_nodes.resize(num_tasks);
 

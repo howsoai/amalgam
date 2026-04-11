@@ -589,7 +589,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in_use)
 {
-	//TODO 25297: figure out best way to safely retrieve all nodes if there could be other active threads
+	//TODO 25297: add a second global registry of resource nodes awaiting garbage collection, have node keepers switch into that when entering GC, and go back to active when coming out of gc; need structure to have fast inserts, deletes, and iterate over
 	NodesReferenced &nr = GetNodesReferenced();
 
 #ifdef MULTITHREAD_SUPPORT

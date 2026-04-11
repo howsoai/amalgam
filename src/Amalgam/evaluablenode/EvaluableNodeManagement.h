@@ -43,26 +43,25 @@ public:
 		if(inserted)
 			enm_emplaced->second = std::make_unique<EvaluableNodesReferenced>();
 
-		EvaluableNodesReferenced &en_ref_counts = *enm_it->second;
-
+		auto &en_ref_counts = *enm_it->second;
 		for(EvaluableNode *en : { nodes... })
 		{
 			if(en == nullptr)
 				continue;
 
 			//attempt to put in value 1 for the reference
-			auto [inserted_entry, inserted] = en_ref_counts.emplace(en, 1);
+			auto [node_it, inserted] = en_ref_counts.enmToENReferenceCounts.emplace(en, 1);
 
 			//if couldn't insert because already referenced, then increment
 			if(!inserted)
-				inserted_entry->second++;
+				node_it->second++;
 		}
 
-		//register if previously empty
-		if(!isRegistered)
+		//register if previously unregistered
+		if(!_evaluable_nodes_referenced.isRegistered)
 		{
-			Register(this);
-			isRegistered = true;
+			Register(&_evaluable_nodes_referenced);
+			_evaluable_nodes_referenced.isRegistered = true;
 		}
 	}
 
@@ -70,65 +69,60 @@ public:
 	inline void FreeNodeReferences(EvaluableNodeManager *enm,
 								   EvaluableNodeReferenceType... nodes)
 	{
-		auto mgrIt = enmToENReferenceCounts.find(enm);
-		if(mgrIt == enmToENReferenceCounts.end())
+		auto enm_it = _evaluable_nodes_referenced.find(enm);
+		if(enm_it == end(enmToENReferenceCounts))
 			return;
 
-		EvaluableNodeReferenceCountMap &inner = *mgrIt->second;
-
-		(([&] {
-			if(nodes == nullptr)
-				return;
-
-			auto it = inner.find(nodes);
-			if(it == inner.end())
-				return;
-
-			if(it->second > 1)
-				--it->second;
-			else
-				inner.erase(it);
-		}()), ...);
-
-		if(inner.empty())
+		auto &en_ref_counts = *enm_it->second;
+		for(EvaluableNode *en : { nodes... })
 		{
-			enmToENReferenceCounts.erase(mgrIt);
+			if(en == nullptr)
+				continue;
+
+			//get reference count
+			auto node_it = en_ref_counts.enmToENReferenceCounts.find(en);
+
+			//don't do anything if not counted
+			if(node_it == end(en_ref_counts.enmToENReferenceCounts))
+				return;
+
+			//if it has sufficient refcount, then just decrement
+			if(node_it->second > 1)
+				node_it->second--;
+			else //otherwise remove reference
+				en_ref_counts.enmToENReferenceCounts.erase(node);
 		}
 
-		if(isRegistered && enmToENReferenceCounts.empty())
+		if(en_ref_counts.enmToENReferenceCounts.empty())
+			enmToENReferenceCounts.erase(enm_it);
+
+		//deregister if previously registered
+		if(_evaluable_nodes_referenced.isRegistered)
 		{
-			_evaluable_nodes_referenced_registry.Deregister(this);
-			isRegistered = false;
+			Deregister(&_evaluable_nodes_referenced);
+			_evaluable_nodes_referenced.isRegistered = false;
 		}
 	}
 
 protected:
-	void Deregister(EvaluableNodesReferenced *en_references)
+	inline void Register(EvaluableNodesReferenced *en_references)
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::Lock lock(mutex);
 	#endif
-		for(auto it : evaluableNodeReferenceContainers)
-		{
-			if(*it == en_references)
-			{
-				std::swap(*it, evaluableNodeReferenceContainers.back());
-				evaluableNodeReferenceContainers.pop_back();
-				break;
-			}
-		}
+		evaluableNodeReferenceContainers.push_back(en_references);
 	}
 
-	void Deregister(EvaluableNodesReferenced *en_references)
+	inline void Deregister(EvaluableNodesReferenced *en_references)
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::Lock lock(mutex);
 	#endif
-		for(auto it : evaluableNodeReferenceContainers)
+		for(size_t i = 0; i < evaluableNodeReferenceContainers.size(); i++)
 		{
-			if(*it == en_references)
+			if(evaluableNodeReferenceContainers[i] == en_references)
 			{
-				std::swap(*it, evaluableNodeReferenceContainers.back());
+				std::swap(evaluableNodeReferenceContainers[i], evaluableNodeReferenceContainers.back());
 				evaluableNodeReferenceContainers.pop_back();
 				break;
 			}
@@ -136,7 +130,7 @@ protected:
 	}
 public:
 
-	std::vector<EvaluableNodesReferenced *> GetAllContainers()
+	inline std::vector<EvaluableNodesReferenced *> GetAllContainers()
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::Lock lock(mutex);
@@ -147,7 +141,7 @@ public:
 
 #ifdef MULTITHREAD_SUPPORT
 	//mutex to lock the memory from the EvaluableNodeManager it is using
-	Concurrency::SingleLock mutex;
+	Concurrency::SingleMutex mutex;
 #endif
 
 	std::vector<EvaluableNodesReferenced *> evaluableNodeReferenceContainers;
@@ -159,6 +153,7 @@ extern EvaluableNodesReferencedRegistry _evaluable_nodes_referenced_registry;
 class EvaluableNodeManager
 {
 public:
+	//TODO 25297: remove this
 	//data structure to store which nodes are referenced with a lock
 	struct NodesReferenced
 	{
@@ -1032,6 +1027,7 @@ protected:
 	// nodes cannot be nullptr for lower indices than firstUnusedNodeIndex
 	std::vector<EvaluableNode *> nodes;
 
+//TODO 25297: remove this
 	//keeps track of all of the nodes currently referenced by any resource or interpreter
 	//only allocated if needed
 	std::unique_ptr<NodesReferenced> nodesCurrentlyReferenced;

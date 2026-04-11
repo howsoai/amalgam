@@ -223,7 +223,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -250,7 +250,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -281,7 +281,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -317,7 +317,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <OpenMPSupport>true</OpenMPSupport>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
@@ -354,7 +354,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>MULTITHREAD_SUPPORT;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -386,7 +386,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -415,7 +415,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -448,7 +448,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -484,7 +484,7 @@
       <OpenMPSupport>true</OpenMPSupport>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -519,7 +519,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>

@@ -12,6 +12,149 @@
 //if the macro DEBUG_REPORT_LAB_USAGE is defined, then the local allocation buffer storage will be
 //profiled and printed
 
+//forward definition
+class EvaluableNodeManager;
+
+//maintains which EvaluableNodes are currently referenced for their respective EvaluableNodeManagers
+struct EvaluableNodesReferenced
+{
+	FastHashMap<EvaluableNodeManager *, std::unique_ptr<EvaluableNode::ReferenceCountType>> enmToENReferenceCounts;
+	bool isRegistered;
+};
+
+//TODO 25297: below is a work-in progress, not ready yet
+
+extern
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+thread_local
+#endif
+EvaluableNodesReferenced _evaluable_nodes_referenced;
+
+//keeps track of all EvaluableNodesReferenced active across all threads
+class EvaluableNodesReferencedRegistry
+{
+public:
+
+	template <typename... EvaluableNodeReferenceType>
+	inline void KeepNodeReferences(EvaluableNodeManager *enm, EvaluableNodeReferenceType... nodes)
+	{
+		//ensure the EvaluableNodeManager is currently tracked
+		auto [enm_it, inserted] = _evaluable_nodes_referenced.emplace(enm, nullptr);
+		if(inserted)
+			enm_emplaced->second = std::make_unique<EvaluableNodesReferenced>();
+
+		EvaluableNodesReferenced &en_ref_counts = *enm_it->second;
+
+		for(EvaluableNode *en : { nodes... })
+		{
+			if(en == nullptr)
+				continue;
+
+			//attempt to put in value 1 for the reference
+			auto [inserted_entry, inserted] = en_ref_counts.emplace(en, 1);
+
+			//if couldn't insert because already referenced, then increment
+			if(!inserted)
+				inserted_entry->second++;
+		}
+
+		//register if previously empty
+		if(!isRegistered)
+		{
+			Register(this);
+			isRegistered = true;
+		}
+	}
+
+	template <typename... EvaluableNodeReferenceType>
+	inline void FreeNodeReferences(EvaluableNodeManager *enm,
+								   EvaluableNodeReferenceType... nodes)
+	{
+		auto mgrIt = enmToENReferenceCounts.find(enm);
+		if(mgrIt == enmToENReferenceCounts.end())
+			return;
+
+		EvaluableNodeReferenceCountMap &inner = *mgrIt->second;
+
+		(([&] {
+			if(nodes == nullptr)
+				return;
+
+			auto it = inner.find(nodes);
+			if(it == inner.end())
+				return;
+
+			if(it->second > 1)
+				--it->second;
+			else
+				inner.erase(it);
+		}()), ...);
+
+		if(inner.empty())
+		{
+			enmToENReferenceCounts.erase(mgrIt);
+		}
+
+		if(isRegistered && enmToENReferenceCounts.empty())
+		{
+			_evaluable_nodes_referenced_registry.Deregister(this);
+			isRegistered = false;
+		}
+	}
+
+protected:
+	void Deregister(EvaluableNodesReferenced *en_references)
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::Lock lock(mutex);
+	#endif
+		for(auto it : evaluableNodeReferenceContainers)
+		{
+			if(*it == en_references)
+			{
+				std::swap(*it, evaluableNodeReferenceContainers.back());
+				evaluableNodeReferenceContainers.pop_back();
+				break;
+			}
+		}
+	}
+
+	void Deregister(EvaluableNodesReferenced *en_references)
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::Lock lock(mutex);
+	#endif
+		for(auto it : evaluableNodeReferenceContainers)
+		{
+			if(*it == en_references)
+			{
+				std::swap(*it, evaluableNodeReferenceContainers.back());
+				evaluableNodeReferenceContainers.pop_back();
+				break;
+			}
+		}
+	}
+public:
+
+	std::vector<EvaluableNodesReferenced *> GetAllContainers()
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::Lock lock(mutex);
+	#endif
+		//create a copy so can free the lock
+		return evaluableNodeReferenceContainers;
+	}
+
+#ifdef MULTITHREAD_SUPPORT
+	//mutex to lock the memory from the EvaluableNodeManager it is using
+	Concurrency::SingleLock mutex;
+#endif
+
+	std::vector<EvaluableNodesReferenced *> evaluableNodeReferenceContainers;
+};
+
+extern EvaluableNodesReferencedRegistry _evaluable_nodes_referenced_registry;
+
 //memory pooled manager for allocating EvaluableNodes
 class EvaluableNodeManager
 {

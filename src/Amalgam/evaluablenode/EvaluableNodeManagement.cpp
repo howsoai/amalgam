@@ -7,13 +7,6 @@
 #include <vector>
 #include <utility>
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-thread_local
-#endif
-EvaluableNodesReferenced _evaluable_nodes_referenced;
-
-EvaluableNodesReferencedRegistry _evaluable_nodes_referenced_registry;
-
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 
 EvaluableNodeManager::~EvaluableNodeManager()

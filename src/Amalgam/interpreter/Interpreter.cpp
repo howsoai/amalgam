@@ -77,9 +77,9 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	if(construction_stack_indices != nullptr)
 		constructionStackIndicesAndUniqueness = *construction_stack_indices;
 	
-	evaluableNodeManager->KeepNodeReferences(scope_stack, opcode_stack, construction_stack);
+	evaluableNodeManager->AddActiveInterpreter(this);
 	auto retval = InterpretNode(en, immediate_result);
-	evaluableNodeManager->FreeNodeReferences(scope_stack, opcode_stack, construction_stack);
+	evaluableNodeManager->RemoveActiveInterpreter(this);
 
 	return retval;
 }

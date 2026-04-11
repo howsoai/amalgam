@@ -12,162 +12,22 @@
 //if the macro DEBUG_REPORT_LAB_USAGE is defined, then the local allocation buffer storage will be
 //profiled and printed
 
-//forward definition
-class EvaluableNodeManager;
-
-//maintains which EvaluableNodes are currently referenced for their respective EvaluableNodeManagers
-struct EvaluableNodesReferenced
-{
-	FastHashMap<EvaluableNodeManager *, std::unique_ptr<EvaluableNode::ReferenceCountType>> enmToENReferenceCounts;
-	bool isRegistered;
-};
-
-extern
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-thread_local
-#endif
-EvaluableNodesReferenced _evaluable_nodes_referenced;
-
-//keeps track of all EvaluableNodesReferenced active across all threads
-class EvaluableNodesReferencedRegistry
-{
-public:
-
-	template <typename... EvaluableNodeReferenceType>
-	inline void KeepNodeReferences(EvaluableNodeManager *enm, EvaluableNodeReferenceType... nodes)
-	{
-		//ensure the EvaluableNodeManager is currently tracked
-		auto [enm_it, inserted] = _evaluable_nodes_referenced.emplace(enm, nullptr);
-		if(inserted)
-			enm_emplaced->second = std::make_unique<EvaluableNodesReferenced>();
-
-		auto &en_ref_counts = *enm_it->second;
-		for(EvaluableNode *en : { nodes... })
-		{
-			if(en == nullptr)
-				continue;
-
-			//attempt to put in value 1 for the reference
-			auto [node_it, inserted] = en_ref_counts.enmToENReferenceCounts.emplace(en, 1);
-
-			//if couldn't insert because already referenced, then increment
-			if(!inserted)
-				node_it->second++;
-		}
-
-		//register if previously unregistered
-		if(!_evaluable_nodes_referenced.isRegistered)
-		{
-			Register(&_evaluable_nodes_referenced);
-			_evaluable_nodes_referenced.isRegistered = true;
-		}
-	}
-
-	template <typename... EvaluableNodeReferenceType>
-	inline void FreeNodeReferences(EvaluableNodeManager *enm,
-								   EvaluableNodeReferenceType... nodes)
-	{
-		auto enm_it = _evaluable_nodes_referenced.find(enm);
-		if(enm_it == end(enmToENReferenceCounts))
-			return;
-
-		auto &en_ref_counts = *enm_it->second;
-		for(EvaluableNode *en : { nodes... })
-		{
-			if(en == nullptr)
-				continue;
-
-			//get reference count
-			auto node_it = en_ref_counts.enmToENReferenceCounts.find(en);
-
-			//don't do anything if not counted
-			if(node_it == end(en_ref_counts.enmToENReferenceCounts))
-				return;
-
-			//if it has sufficient refcount, then just decrement
-			if(node_it->second > 1)
-				node_it->second--;
-			else //otherwise remove reference
-				en_ref_counts.enmToENReferenceCounts.erase(node);
-		}
-
-		if(en_ref_counts.enmToENReferenceCounts.empty())
-			enmToENReferenceCounts.erase(enm_it);
-
-		//deregister if previously registered
-		if(_evaluable_nodes_referenced.isRegistered)
-		{
-			Deregister(&_evaluable_nodes_referenced);
-			_evaluable_nodes_referenced.isRegistered = false;
-		}
-	}
-
-	__forceinline size_t GetNumberOfNodesReferenced()
-	{
-		size_t count = 0;
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(mutex);
-	#endif
-		for(size_t i = 0; i < activeENReferenceContainers.size(); i++)
-		{
-			for(auto &[enm, en_ref_counts] : activeENReferenceContainers[i]->enmToENReferenceCounts)
-				count += en_ref_counts->size();
-		}
-
-		return count;
-	}
-
-protected:
-
-	inline void Register(EvaluableNodesReferenced *en_references)
-	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(mutex);
-	#endif
-		activeENReferenceContainers.push_back(en_references);
-	}
-
-	inline void Deregister(EvaluableNodesReferenced *en_references)
-	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(mutex);
-	#endif
-		for(size_t i = 0; i < activeENReferenceContainers.size(); i++)
-		{
-			if(activeENReferenceContainers[i] == en_references)
-			{
-				std::swap(activeENReferenceContainers[i], activeENReferenceContainers.back());
-				activeENReferenceContainers.pop_back();
-				break;
-			}
-		}
-	}
-
-public:
-
-	inline std::vector<EvaluableNodesReferenced *> GetAllContainers()
-	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(mutex);
-	#endif
-		//create a copy so can free the lock
-		return activeENReferenceContainers;
-	}
-
-#ifdef MULTITHREAD_SUPPORT
-	//mutex to lock the memory from the EvaluableNodeManager it is using
-	Concurrency::SingleMutex mutex;
-#endif
-
-	std::vector<EvaluableNodesReferenced *> activeENReferenceContainers;
-};
-
-extern EvaluableNodesReferencedRegistry _evaluable_nodes_referenced_registry;
+//forward declaration
+class Interpreter;
 
 //memory pooled manager for allocating EvaluableNodes
 class EvaluableNodeManager
 {
 public:
+
+	struct ActiveInterpreters
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::SingleMutex mutex;
+	#endif
+		CompactHashSet<Interpreter *> activeInterpreters;
+	}
+
 	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
 	//during garbage collection, these buffers need to be cleared because memory may be rearranged or reassigned
 	//this also means that garbage collection processes may reuse this buffer as long as it is cleared
@@ -741,23 +601,61 @@ public:
 	#endif
 	}
 
-	//retuns the nodes currently referenced, allocating if they don't exist
-	NodesReferenced &GetNodesReferenced()
+	//returns true if any interpreters are operating on the nodes managed by this instance
+	inline bool AreAnyInterpretersRunning()
 	{
-		if(nodesCurrentlyReferenced.get() == nullptr)
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::WriteLock write_lock(managerAttributesMutex);
+	#endif
+
+		return (activeInterpreters.get() != nullptr && activeInterpreters->activeInterpreters.size() > 0);
+	}
+
+	//adds the interpreter to the active list for tracking EvaluableNode references
+	void AddActiveInterpreter(Interpreter *interpreter)
+	{
+		if(activeInterpreters.get() == nullptr)
 		{
 		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::WriteLock write_lock(managerAttributesMutex);
 
 			//double check that it's still nullptr in case another thread created it
-			if(nodesCurrentlyReferenced.get() == nullptr)
+			if(activeInterpreters.get() == nullptr)
 		#endif
-				nodesCurrentlyReferenced = std::make_unique<NodesReferenced>();
+				activeInterpreters = std::make_unique<ActiveInterpreters>();
 		}
 
-		return *nodesCurrentlyReferenced.get();
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::Lock lock(activeInterpreters->mutex);
+	#endif
+
+		activeInterpreters->activeInterpreters.insert(interpreter);
 	}
 
+	//removes the interpreter from the active list for tracking EvaluableNode references
+	void RemoveActiveInterpreter(Interpreter *interpreter)
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::Lock lock(activeInterpreters->mutex);
+	#endif
+
+		activeInterpreters->activeInterpreters.erase(interpreter);
+	}
+
+	//removes the node from nodes referenced
+	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
+	//to obtain a lock around all calls to this method
+	template<typename ...EvaluableNodeReferenceType>
+	void FreeNodeReferences(EvaluableNodeReferenceType... nodes)
+	{
+		NodesReferenced &nr = GetNodesReferenced();
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::Lock lock(nr.mutex);
+	#endif
+
+		for(EvaluableNode *en : { nodes... })
+			nr.FreeNodeReference(en);
+	}
 	//returns the number of nodes currently being used that have not been freed yet
 	__forceinline size_t GetNumberOfUsedNodes()
 	{	return firstUnusedNodeIndex;		}
@@ -856,7 +754,7 @@ protected:
 	// returns an uninitialized EvaluableNode -- care must be taken to set fields properly
 	EvaluableNode *AllocUninitializedNode();
 
-	//frees everything except those nodes referenced by nodesCurrentlyReferenced
+	//frees everything except those nodes referenced by rootNode and activeInterpreters
 	//cur_first_unused_node_index represents the first unused index and will set firstUnusedNodeIndex
 	//to the reduced value
 	//note that this method does not read from firstUnusedNodeIndex, as it may be cleared to indicate threads
@@ -942,6 +840,10 @@ protected:
 	// all nodes in use are below firstUnusedNodeIndex, such that all above that index are free for use
 	// nodes cannot be nullptr for lower indices than firstUnusedNodeIndex
 	std::vector<EvaluableNode *> nodes;
+
+	//keeps track of all of the nodes currently referenced by any resource or interpreter
+	//only allocated if needed
+	std::unique_ptr<ActiveInterpreters> activeInterpreters;
 
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;

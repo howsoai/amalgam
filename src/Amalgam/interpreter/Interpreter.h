@@ -46,10 +46,7 @@ public:
 		Entity *t, Interpreter *calling_interpreter);
 
 	~Interpreter()
-	{
-		if(curEntity != nullptr)
-			curEntity->RemoveActiveInterpreter();
-	}
+	{	}
 
 	//Executes the current Entity that this Interpreter is contained by
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
@@ -1113,6 +1110,8 @@ public:
 
 	//allow the concurrency manager access to the necessary attributes
 	friend class InterpreterConcurrencyManager;
+	//allow EvaluableNodeManager to access referencing nodes
+	friend class EvaluableNodeManager;
 protected:
 
 	//ensures that there are no reachable nodes that are deallocated

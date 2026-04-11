@@ -462,21 +462,9 @@ PLATFORM_MAIN_CONSOLE
 
 		//detect memory leaks for debugging
 		// the entity should have one reference left, which is the entity's code itself
-		if(_evaluable_nodes_referenced_registry.GetNumberOfNodesReferenced() > 1)
+		if(entity->AreAnyInterpretersRunning())
 		{
-			auto &nr = entity->evaluableNodeManager.GetNodesReferenced();
-			std::cerr << "Error: memory leak." << std::endl;
-
-			if(debug_internal_memory)
-			{
-				std::cerr << "The following temporary nodes are still in use : " << std::endl;
-				for(auto &[used_node, _] : nr.nodesReferenced)
-				{
-					std::cerr << "Item:" << std::endl;
-					std::cerr << Parser::Unparse(used_node);
-				}
-			}
-
+			std::cerr << "Error, active interpreters are still running." << std::endl;
 			return_val = -1;
 		}
 

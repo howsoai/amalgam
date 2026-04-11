@@ -1,5 +1,6 @@
 ﻿//project headers:
 #include "EvaluableNodeManagement.h"
+#include "Interpreter.h"
 #include "PerformanceProfiler.h"
 
 //system headers:
@@ -582,22 +583,19 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in_use)
 {
-	//TODO 25297: reverting back to a nodes referenced unique ptr for EvaluableNodeManager, but this time make it a ConcurrentFastHashSet of Interpreter *'s (will need to make from ConcurrentFastHashMap)
-	//TODO 25297: have GC iterate over the set and retrieve the interpreter's scopeStackNodes, opcodeStackNodes, constructionStackNodes
-	//TODO 25297: to see if there are active interpreters, just see if the unique ptr to the ConcurrentFastHashSet is nullptr
-	NodesReferenced &nr = GetNodesReferenced();
+	size_t num_active_interpreters = 0;
+	if(activeInterpreters.get() != nullptr)
+		num_active_interpreters = activeInterpreters->activeInterpreters.size();
 
 #ifdef MULTITHREAD_SUPPORT
 	//because code cannot be executed when in garbage collection due to other locks,
 	//the nodes referenced cannot be modified while in this method, so nr.mutex does not need to be locked
 
-	size_t reference_count = nr.nodesReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
-	if(Concurrency::GetMaxNumThreads() > 1 && reference_count > 1
-		&& (estimated_nodes_in_use / reference_count) >= 10000)
+	if(Concurrency::GetMaxNumThreads() > 1 && num_active_interpreters >= 1 && estimated_nodes_in_use >= 10000)
 	{
 		//allocate all the tasks assuming they will happen, but mark when they can be skipped
-		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(nr.nodesReferenced.size() + 1);
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_active_interpreters + 1);
 
 		Concurrency::urgentThreadPool.EnqueueTask(
 					[this, &task_set]
@@ -607,27 +605,35 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		}
 		);
 
-		for(auto &[enr, _] : nr.nodesReferenced)
+		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
-			//some compilers are pedantic about the types passed into the lambda, so make a copy
-			EvaluableNode *en = enr;
-			//only enqueue a task if the top node isn't known to be in use
-			if(en != nullptr && !en->GetKnownToBeInUseAtomic())
+			auto mark_nodes = [this, interpreter, &task_set](std::vector<EvaluableNode *> &stack)
 			{
-				//don't enqueue in batch, as threads racing ahead of others will reduce memory
-				//contention
-				Concurrency::urgentThreadPool.EnqueueTask(
-					[en, &task_set]
+				for(EvaluableNode *en : *interpreter->scopeStackNodes)
+				{
+					//only enqueue a task if the top node isn't known to be in use
+					if(en != nullptr && !en->GetKnownToBeInUseAtomic())
 					{
-						MarkAllReferencedNodesInUseConcurrent(en);
-						task_set.MarkTaskCompleted();
+						//don't enqueue in batch, as threads racing ahead of others will reduce memory
+						//contention
+						Concurrency::urgentThreadPool.EnqueueTask(
+							[en, &task_set]
+							{
+								MarkAllReferencedNodesInUseConcurrent(en);
+								task_set.MarkTaskCompleted();
+							}
+						);
 					}
-				);
-			}
-			else //autocompleted
-			{
-				task_set.MarkTaskCompletedBeforeWaitForTasks();
-			}
+					else //autocompleted
+					{
+						task_set.MarkTaskCompletedBeforeWaitForTasks();
+					}
+				}
+			};
+
+			mark_nodes(*interpreter->scopeStackNodes);
+			mark_nodes(*interpreter->opcodeStackNodes);
+			mark_nodes(*interpreter->constructionStackNodes);
 		}
 
 		task_set.WaitForTasks();
@@ -636,12 +642,25 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 #endif
 
 	MarkAllReferencedNodesInUse(rootNode);
-	for(auto &[t, _] : nr.nodesReferenced)
+	if(num_active_interpreters > 0)
 	{
-		if(t == nullptr || t->GetKnownToBeInUse())
-			continue;
+		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
+		{
+			auto mark_nodes = [this, interpreter](std::vector<EvaluableNode *> &stack)
+			{
+				for(EvaluableNode *en : *interpreter->scopeStackNodes)
+				{
+					if(en == nullptr || en->GetKnownToBeInUse())
+						continue;
 
-		MarkAllReferencedNodesInUse(t);
+					MarkAllReferencedNodesInUse(en);
+				}
+			};
+
+			mark_nodes(*interpreter->scopeStackNodes);
+			mark_nodes(*interpreter->opcodeStackNodes);
+			mark_nodes(*interpreter->constructionStackNodes);
+		}
 	}
 }
 

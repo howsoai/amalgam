@@ -20,8 +20,6 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 
 	randomStream = rand_stream;
 	curEntity = t;
-	if(curEntity != nullptr)
-		curEntity->AddActiveInterpreter();
 	callingInterpreter = calling_interpreter;
 	writeListeners = write_listeners;
 	printListener = print_listener;
@@ -66,6 +64,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		construction_stack = evaluableNodeManager->AllocNode(ENT_LIST);
 	construction_stack->SetNeedCycleCheck(true);
 
+	//TODO 25297: make these three no longer need associated nodes
 	scopeStackNodes = &scope_stack->GetOrderedChildNodes();
 	opcodeStackNodes = &opcode_stack->GetOrderedChildNodes();
 	constructionStackNodes = &construction_stack->GetOrderedChildNodes();

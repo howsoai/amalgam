@@ -26,7 +26,7 @@ public:
 		Concurrency::SingleMutex mutex;
 	#endif
 		CompactHashSet<Interpreter *> activeInterpreters;
-	}
+	};
 
 	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
 	//during garbage collection, these buffers need to be cleared because memory may be rearranged or reassigned

@@ -589,7 +589,9 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in_use)
 {
-	//TODO 25297: add a second global registry of resource nodes awaiting garbage collection, have node keepers switch into that when entering GC, and go back to active when coming out of gc; need structure to have fast inserts, deletes, and iterate over
+	//TODO 25297: consider reverting back to a nodes referenced unique ptr for EvaluableNodeManager, but this time make it a more complex structure
+	//TODO 25297: make it have a (lock free?) deque of unique ptrs to hash maps of node reference counters.  Pass the hash map ptr into Interpreter::ExecuteNode and have it keep and free from its own
+	//TODO 25297: then in GC just iterate over each of the hash maps of node reference counters.  to see if there are active interpreters, just see if the unique ptr to the deque is nonnull
 	NodesReferenced &nr = GetNodesReferenced();
 
 #ifdef MULTITHREAD_SUPPORT

@@ -589,6 +589,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in_use)
 {
+	//TODO 25297: figure out best way to safely retrieve all nodes if there could be other active threads
 	NodesReferenced &nr = GetNodesReferenced();
 
 #ifdef MULTITHREAD_SUPPORT

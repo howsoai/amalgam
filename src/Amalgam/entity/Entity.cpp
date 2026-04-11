@@ -310,7 +310,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 				string_intern_pool.CreateStringReference(label_sid);
 
 				//can only free the root if nothing is running on this entity and nothing references it
-				if(!evaluableNodeManager.AreAnyInterpretersRunning()
+				if(!AreAnyInterpretersRunning()
 						&& !evaluableNodeManager.rootNode->GetNeedCycleCheck())
 					evaluableNodeManager.FreeNode(evaluableNodeManager.rootNode);
 
@@ -469,6 +469,9 @@ EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
 
 bool Entity::IsEntityCurrentlyBeingExecuted()
 {
+	if(AreAnyInterpretersRunning())
+		return true;
+
 	if(hasContainedEntities)
 	{
 		for(auto ce : entityRelationships.relationships->containedEntities)
@@ -478,7 +481,7 @@ bool Entity::IsEntityCurrentlyBeingExecuted()
 		}
 	}
 
-	return evaluableNodeManager.AreAnyInterpretersRunning();
+	return false;
 }
 
 size_t Entity::GetDeepSizeInNodes()

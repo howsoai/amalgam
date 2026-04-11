@@ -752,8 +752,7 @@ public:
 #ifdef MULTITHREAD_SUPPORT
 	__forceinline void CollectGarbageWithEntityWriteReference()
 	{
-		if(evaluableNodeManager.RecommendGarbageCollection()
-				&& !evaluableNodeManager.AreAnyInterpretersRunning())
+		if(evaluableNodeManager.RecommendGarbageCollection() && !AreAnyInterpretersRunning())
 			evaluableNodeManager.CollectGarbage();
 	}
 #else
@@ -845,6 +844,24 @@ public:
 		return LockType(mutex);
 	}
 #endif
+
+	//returns true if any interpreters are operating on the nodes managed by this instance
+	inline bool AreAnyInterpretersRunning()
+	{
+		return (numActiveInterpreters > 0);
+	}
+
+	//should be called when a new interpreter is active
+	inline void AddActiveInterpreter()
+	{
+		numActiveInterpreters++;
+	}
+
+	//should be called when an interpreter deactivates
+	inline void RemoveActiveInterpreter()
+	{
+		numActiveInterpreters--;
+	}
 
 	//ensures that there are no reachable nodes that are deallocated
 	void VerifyEvaluableNodeIntegrity();
@@ -960,6 +977,13 @@ protected:
 	//if true, then the entity has contained entities and will use the relationships reference of entityRelationships
 	//note this is located after labelIndex because labelIndex is of a size that does not align tightly
 	bool hasContainedEntities;
+
+	//number of active interpreters on this entity
+#if defined(MULTITHREAD_SUPPORT)
+	std::atomic<uint32_t> numActiveInterpreters;
+#else
+	uint32_t numActiveInterpreters;
+#endif
 
 	//structure to compactly store parent and contained entities
 	EntityRelationshipsReference entityRelationships;

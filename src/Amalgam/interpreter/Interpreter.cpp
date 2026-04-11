@@ -20,6 +20,8 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 
 	randomStream = rand_stream;
 	curEntity = t;
+	if(curEntity != nullptr)
+		curEntity->AddActiveInterpreter();
 	callingInterpreter = calling_interpreter;
 	writeListeners = write_listeners;
 	printListener = print_listener;

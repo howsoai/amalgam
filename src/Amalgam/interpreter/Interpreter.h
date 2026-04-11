@@ -46,7 +46,10 @@ public:
 		Entity *t, Interpreter *calling_interpreter);
 
 	~Interpreter()
-	{	}
+	{
+		if(curEntity != nullptr)
+			curEntity->RemoveActiveInterpreter();
+	}
 
 	//Executes the current Entity that this Interpreter is contained by
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
@@ -775,7 +778,7 @@ protected:
 			if(cur_interpreter->curEntity == entity)
 				return false;
 
-			if(entity->evaluableNodeManager.AreAnyInterpretersRunning())
+			if(entity->AreAnyInterpretersRunning())
 				return false;
 		}
 

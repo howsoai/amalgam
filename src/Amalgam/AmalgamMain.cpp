@@ -462,7 +462,7 @@ PLATFORM_MAIN_CONSOLE
 
 		//detect memory leaks for debugging
 		// the entity should have one reference left, which is the entity's code itself
-		if(entity->evaluableNodeManager.GetNumberOfNodesReferenced() > 1)
+		if(_evaluable_nodes_referenced_registry.GetNumberOfNodesReferenced() > 1)
 		{
 			auto &nr = entity->evaluableNodeManager.GetNodesReferenced();
 			std::cerr << "Error: memory leak." << std::endl;

@@ -22,8 +22,6 @@ struct EvaluableNodesReferenced
 	bool isRegistered;
 };
 
-//TODO 25297: below is a work-in progress, not ready yet
-
 extern
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
@@ -104,13 +102,29 @@ public:
 		}
 	}
 
+	__forceinline size_t GetNumberOfNodesReferenced()
+	{
+		size_t count = 0;
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::Lock lock(mutex);
+	#endif
+		for(size_t i = 0; i < activeENReferenceContainers.size(); i++)
+		{
+			for(auto &[enm, en_ref_counts] : activeENReferenceContainers[i]->enmToENReferenceCounts)
+				count += en_ref_counts->size();
+		}
+
+		return count;
+	}
+
 protected:
+
 	inline void Register(EvaluableNodesReferenced *en_references)
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::Lock lock(mutex);
 	#endif
-		evaluableNodeReferenceContainers.push_back(en_references);
+		activeENReferenceContainers.push_back(en_references);
 	}
 
 	inline void Deregister(EvaluableNodesReferenced *en_references)
@@ -118,16 +132,17 @@ protected:
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::Lock lock(mutex);
 	#endif
-		for(size_t i = 0; i < evaluableNodeReferenceContainers.size(); i++)
+		for(size_t i = 0; i < activeENReferenceContainers.size(); i++)
 		{
-			if(evaluableNodeReferenceContainers[i] == en_references)
+			if(activeENReferenceContainers[i] == en_references)
 			{
-				std::swap(evaluableNodeReferenceContainers[i], evaluableNodeReferenceContainers.back());
-				evaluableNodeReferenceContainers.pop_back();
+				std::swap(activeENReferenceContainers[i], activeENReferenceContainers.back());
+				activeENReferenceContainers.pop_back();
 				break;
 			}
 		}
 	}
+
 public:
 
 	inline std::vector<EvaluableNodesReferenced *> GetAllContainers()
@@ -136,7 +151,7 @@ public:
 		Concurrency::Lock lock(mutex);
 	#endif
 		//create a copy so can free the lock
-		return evaluableNodeReferenceContainers;
+		return activeENReferenceContainers;
 	}
 
 #ifdef MULTITHREAD_SUPPORT
@@ -144,7 +159,7 @@ public:
 	Concurrency::SingleMutex mutex;
 #endif
 
-	std::vector<EvaluableNodesReferenced *> evaluableNodeReferenceContainers;
+	std::vector<EvaluableNodesReferenced *> activeENReferenceContainers;
 };
 
 extern EvaluableNodesReferencedRegistry _evaluable_nodes_referenced_registry;
@@ -153,51 +168,6 @@ extern EvaluableNodesReferencedRegistry _evaluable_nodes_referenced_registry;
 class EvaluableNodeManager
 {
 public:
-	//TODO 25297: remove this
-	//data structure to store which nodes are referenced with a lock
-	struct NodesReferenced
-	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::SingleMutex mutex;
-	#endif
-
-		//adds the node to nodes referenced
-		inline void KeepNodeReference(EvaluableNode *en)
-		{
-			if(en == nullptr)
-				return;
-
-			//attempt to put in value 1 for the reference
-			auto [inserted_entry, inserted] = nodesReferenced.emplace(en, 1);
-
-			//if couldn't insert because already referenced, then increment
-			if(!inserted)
-				inserted_entry->second++;
-		}
-
-		//removes the node from nodes referenced
-		inline void FreeNodeReference(EvaluableNode *en)
-		{
-			if(en == nullptr)
-				return;
-
-			//get reference count
-			auto node = nodesReferenced.find(en);
-
-			//don't do anything if not counted
-			if(node == nodesReferenced.end())
-				return;
-
-			//if it has sufficient refcount, then just decrement
-			if(node->second > 1)
-				node->second--;
-			else //otherwise remove reference
-				nodesReferenced.erase(node);
-		}
-
-		EvaluableNode::ReferenceCountType nodesReferenced;
-	};
-
 	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
 	//during garbage collection, these buffers need to be cleared because memory may be rearranged or reassigned
 	//this also means that garbage collection processes may reuse this buffer as long as it is cleared
@@ -825,30 +795,6 @@ public:
 	__forceinline size_t GetNumberOfUnusedNodes()
 	{	return nodes.size() - firstUnusedNodeIndex;		}
 
-	__forceinline size_t GetNumberOfNodesReferenced()
-	{
-		NodesReferenced &nr = GetNodesReferenced();
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(nr.mutex);
-	#endif
-
-		return nr.nodesReferenced.size();
-	}
-
-	//returns true if any interpreters are operating on the nodes managed by this instance
-	inline bool AreAnyInterpretersRunning()
-	{
-		NodesReferenced &nr = GetNodesReferenced();
-
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(nr.mutex);
-	#endif
-
-		//interpreters use 3 nodes, so if more than one is referenced, there's an interpreter
-		size_t num_nodes_currently_referenced = nr.nodesReferenced.size();
-		return (num_nodes_currently_referenced > 1);
-	}
-
 	//returns all nodes still in use.  For debugging purposes
 	std::vector<EvaluableNode *> GetUsedNodes()
 	{	return std::vector<EvaluableNode *>(begin(nodes), begin(nodes) + firstUnusedNodeIndex);	}
@@ -1026,11 +972,6 @@ protected:
 	// all nodes in use are below firstUnusedNodeIndex, such that all above that index are free for use
 	// nodes cannot be nullptr for lower indices than firstUnusedNodeIndex
 	std::vector<EvaluableNode *> nodes;
-
-//TODO 25297: remove this
-	//keeps track of all of the nodes currently referenced by any resource or interpreter
-	//only allocated if needed
-	std::unique_ptr<NodesReferenced> nodesCurrentlyReferenced;
 
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;

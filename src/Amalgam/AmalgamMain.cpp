@@ -19,6 +19,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <sstream>
 
 //function prototypes for alternative main functions in respective files
 int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &rand_seed);

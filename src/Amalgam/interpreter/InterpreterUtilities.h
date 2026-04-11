@@ -1,5 +1,8 @@
 #pragma once
 
+typedef int64_t ExecutionCycleCount;
+typedef int32_t ExecutionCycleCountCompactDelta;
+
 //Manages performance constraints and accompanying performance counters
 class InterpreterConstraints
 {

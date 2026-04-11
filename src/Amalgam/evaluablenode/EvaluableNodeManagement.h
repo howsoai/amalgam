@@ -12,9 +12,7 @@
 //if the macro DEBUG_REPORT_LAB_USAGE is defined, then the local allocation buffer storage will be
 //profiled and printed
 
-typedef int64_t ExecutionCycleCount;
-typedef int32_t ExecutionCycleCountCompactDelta;
-
+//memory pooled manager for allocating EvaluableNodes
 class EvaluableNodeManager
 {
 public:

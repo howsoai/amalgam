@@ -1066,8 +1066,6 @@ public:
 	//sets the root node ensuring that the memory has been flushed so it is ready for reading
 	__forceinline void SetRootNode(EvaluableNode *new_root)
 	{
-		ExchangeNodeReference(new_root, rootNode);
-
 	#ifdef MULTITHREAD_SUPPORT
 		//fence memory flushing by using an atomic store
 		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
@@ -1124,21 +1122,6 @@ public:
 
 		for(EvaluableNode *en : { nodes... })
 			nr.FreeNodeReference(en);
-	}
-
-	//a combo of KeepNodeReferences and FreeNodeReferences but for one node
-	void ExchangeNodeReference(EvaluableNode *node_reference_to_keep, EvaluableNode *node_reference_to_free)
-	{
-		if(node_reference_to_keep == node_reference_to_free)
-			return;
-
-		NodesReferenced &nr = GetNodesReferenced();
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(nr.mutex);
-	#endif
-
-		nr.FreeNodeReference(node_reference_to_free);
-		nr.KeepNodeReference(node_reference_to_keep);
 	}
 
 	//returns the number of nodes currently being used that have not been freed yet

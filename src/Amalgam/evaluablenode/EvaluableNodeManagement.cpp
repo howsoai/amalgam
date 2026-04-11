@@ -594,7 +594,16 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		&& (estimated_nodes_in_use / reference_count) >= 10000)
 	{
 		//allocate all the tasks assuming they will happen, but mark when they can be skipped
-		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(nr.nodesReferenced.size());
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(nr.nodesReferenced.size() + 1);
+
+		Concurrency::urgentThreadPool.EnqueueTask(
+					[this, &task_set]
+		{
+			MarkAllReferencedNodesInUseConcurrent(rootNode);
+			task_set.MarkTaskCompleted();
+		}
+		);
+
 		for(auto &[enr, _] : nr.nodesReferenced)
 		{
 			//some compilers are pedantic about the types passed into the lambda, so make a copy
@@ -623,6 +632,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	}
 #endif
 
+	MarkAllReferencedNodesInUse(rootNode);
 	for(auto &[t, _] : nr.nodesReferenced)
 	{
 		if(t == nullptr || t->GetKnownToBeInUse())

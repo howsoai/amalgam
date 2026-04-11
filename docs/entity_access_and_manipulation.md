@@ -396,7 +396,7 @@ Example:
 		"OuterEntity"
 		(lambda
 			{
-				^available_method 3
+				^available_method 5
 				compute_value (call_entity
 						"InnerEntity"
 						"inner_call"
@@ -427,7 +427,7 @@ Example:
 			"compute_value"
 			{x 5}
 			30
-			30
+			50
 		)
 		(call_entity
 			"OuterEntity"
@@ -453,12 +453,8 @@ Example:
 Output:
 ```amalgam
 [
-	8
-	[
-		[8 {} (null)]
-		{}
-		(null)
-	]
+	10
+	[10 {} (null)]
 	[(null) {} "Execution step limit exceeded"]
 	[(null) {} "Execution step limit exceeded"]
 ]

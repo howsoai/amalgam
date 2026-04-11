@@ -128,7 +128,6 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 		case ENT_NULL:
 			return value_if_null;
 		case ENT_STRING:
-		case ENT_SYMBOL:
 		{
 			auto sid = e->GetStringIDReference();
 			if(sid == string_intern_pool.NOT_A_STRING_ID)
@@ -140,7 +139,7 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 			return value_if_null;
 		}
 		default:
-			return static_cast<double>(e->GetNumChildNodes());
+			return value_if_null;
 	}
 }
 

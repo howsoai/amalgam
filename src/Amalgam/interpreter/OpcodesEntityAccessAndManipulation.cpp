@@ -740,7 +740,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
 
 	//if only want results, return them
-	if(!interpreter_constraints.collectWarnings)
+	if(interpreter_constraints_ptr == nullptr || ocn.size() <= 3)
 	{
 		if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
 			return EvaluableNodeReference::Null();
@@ -765,7 +765,7 @@ static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::I
 		"OuterEntity"
 		(lambda
 			{
-				^available_method 3
+				^available_method 5
 				compute_value (call_entity
 						"InnerEntity"
 						"inner_call"
@@ -796,7 +796,7 @@ static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::I
 			"compute_value"
 			{x 5}
 			30
-			30
+			50
 		)
 		(call_entity
 			"OuterEntity"
@@ -818,12 +818,8 @@ static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::I
 		)
 	]
 ))&", R"([
-	8
-	[
-		[8 {} (null)]
-		{}
-		(null)
-	]
+	10
+	[10 {} (null)]
 	[(null) {} "Execution step limit exceeded"]
 	[(null) {} "Execution step limit exceeded"]
 ])", "", R"((apply "destroy_entities" (contained_entities)))"}
@@ -935,7 +931,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
 
 	//if only want results, return them
-	if(!interpreter_constraints.collectWarnings)
+	if(interpreter_constraints_ptr == nullptr || ocn.size() <= 2)
 	{
 		if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
 			return EvaluableNodeReference::Null();

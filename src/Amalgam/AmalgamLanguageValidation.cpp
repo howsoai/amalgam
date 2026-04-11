@@ -2349,24 +2349,22 @@ AmalgamExample{ R"&((concat
 	)
 ))&", R"("filter assoc 2 : {10 1 20 2}")" },
 AmalgamExample{ R"&(;nested concurrency
-||(+
-	||(map
-		(lambda
-			(let
-				{
-					index (current_value 1)
-				}
-				||(map
-					(lambda
-						(+ (current_index))
-					)
-					(range 1 100)
+(apply "+" ||(map
+			(lambda
+				(let
+					{
+						index (current_value 1)
+					}
+					(apply "+" ||(map
+						(lambda
+							(+ (current_index))
+						)
+						(range 1 100)
+					))
 				)
 			)
-		)
-		(range 1 100)
-	)
-))&", R"(100)" },
+			(range 1 100)
+		)))&", R"(495000)" },
 AmalgamExample{ R"&(;writing outside of concurrency
 (let
 	{x []}

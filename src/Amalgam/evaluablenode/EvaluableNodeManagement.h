@@ -1063,6 +1063,22 @@ public:
 		}
 	}
 
+	//sets the root node ensuring that the memory has been flushed so it is ready for reading
+	__forceinline void SetRootNode(EvaluableNode *new_root)
+	{
+		ExchangeNodeReference(new_root, rootNode);
+
+	#ifdef MULTITHREAD_SUPPORT
+		//fence memory flushing by using an atomic store
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		std::atomic<EvaluableNode *> *atomic_ref
+			= reinterpret_cast<std::atomic<EvaluableNode *> *>(&rootNode);
+		atomic_ref->store(new_root, std::memory_order_release);
+	#else
+		rootNode = new_root;
+	#endif
+	}
+
 	//retuns the nodes currently referenced, allocating if they don't exist
 	NodesReferenced &GetNodesReferenced()
 	{
@@ -1299,6 +1315,12 @@ protected:
 	#endif
 		localAllocationBuffer.AddNode(en, this);
 	}
+
+public:
+	//root of the entity
+	EvaluableNode *rootNode;
+
+protected:
 
 #ifdef MULTITHREAD_SUPPORT
 	//mutex to manage attributes of manager, including operations such as

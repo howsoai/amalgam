@@ -211,9 +211,9 @@ public:
 		EvaluableNode *node_to_execute = nullptr;
 		//if label is not specified, then check type to see if it has keys
 		if(label_sid == string_intern_pool.NOT_A_STRING_ID
-			&& !EvaluableNode::IsAssociativeArray(rootNode))
+			&& !EvaluableNode::IsAssociativeArray(evaluableNodeManager.rootNode))
 		{
-			node_to_execute = rootNode;
+			node_to_execute = evaluableNodeManager.rootNode;
 		}
 		else //get code at label
 		{
@@ -259,7 +259,7 @@ public:
 	//Returns the code for the Entity in string form
 	inline std::string GetCodeAsString()
 	{
-		return Parser::Unparse(rootNode);
+		return Parser::Unparse(evaluableNodeManager.rootNode);
 	}
 
 	//returns the root of the entity
@@ -267,15 +267,15 @@ public:
 	EvaluableNodeReference GetRoot(EvaluableNodeManager *destination_temp_enm = nullptr)
 	{
 		if(destination_temp_enm == nullptr)
-			return EvaluableNodeReference(rootNode, false);
+			return EvaluableNodeReference(evaluableNodeManager.rootNode, false);
 
-		return destination_temp_enm->DeepAllocCopy(rootNode);
+		return destination_temp_enm->DeepAllocCopy(evaluableNodeManager.rootNode);
 	}
 
 	//Returns the number of nodes in the entity
 	inline size_t GetSizeInNodes()
 	{
-		return EvaluableNode::GetDeepSize(rootNode);
+		return EvaluableNode::GetDeepSize(evaluableNodeManager.rootNode);
 	}
 
 	//Returns the number of nodes in the entity and all contained entities
@@ -360,7 +360,7 @@ public:
 	//returns an assoc of the labels
 	inline EvaluableNode::AssocType &GetLabelIndex()
 	{
-		return rootNode->GetMappedChildNodesReference();
+		return evaluableNodeManager.rootNode->GetMappedChildNodesReference();
 	}
 
 	//Iterates over all of the labels, calling GetValueAtLabel for each,
@@ -956,25 +956,6 @@ protected:
 	//mutex for operations that may edit or modify the entity's properties and attributes
 	Concurrency::ReadWriteMutex mutex;
 #endif
-
-	//sets the root node ensuring that the memory has been flushed so it is ready for reading
-	__forceinline void SetRootNode(EvaluableNode *new_root)
-	{
-		evaluableNodeManager.ExchangeNodeReference(new_root, rootNode);
-
-	#ifdef MULTITHREAD_SUPPORT
-		//fence memory flushing by using an atomic store
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		std::atomic<EvaluableNode *> *atomic_ref
-			= reinterpret_cast<std::atomic<EvaluableNode *> *>(&rootNode);
-		atomic_ref->store(new_root, std::memory_order_release);
-	#else
-		rootNode = new_root;
-	#endif
-	}
-
-	//root of the entity
-	EvaluableNode *rootNode;
 
 	//if true, then the entity has contained entities and will use the relationships reference of entityRelationships
 	//note this is located after labelIndex because labelIndex is of a size that does not align tightly

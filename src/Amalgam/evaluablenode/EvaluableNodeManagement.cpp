@@ -467,13 +467,13 @@ void EvaluableNodeManager::VerifyEvaluableNodeIntegretyForAllReferencedNodes()
 
 	for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 	{
-		for(EvaluableNode *en : *interpreter->scopeStackNodes)
+		for(EvaluableNode *en : interpreter->scopeStackNodes)
 			ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
 
-		for(EvaluableNode *en : *interpreter->opcodeStackNodes)
+		for(EvaluableNode *en : interpreter->opcodeStackNodes)
 			ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
 
-		for(EvaluableNode *en : *interpreter->constructionStackNodes)
+		for(EvaluableNode *en : interpreter->constructionStackNodes)
 			ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
 	}
 }
@@ -648,9 +648,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 				}
 			};
 
-			mark_nodes(*interpreter->scopeStackNodes);
-			mark_nodes(*interpreter->opcodeStackNodes);
-			mark_nodes(*interpreter->constructionStackNodes);
+			mark_nodes(interpreter->scopeStackNodes);
+			mark_nodes(interpreter->opcodeStackNodes);
+			mark_nodes(interpreter->constructionStackNodes);
 		}
 
 		task_set.WaitForTasks();
@@ -674,9 +674,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 				}
 			};
 
-			mark_nodes(*interpreter->scopeStackNodes);
-			mark_nodes(*interpreter->opcodeStackNodes);
-			mark_nodes(*interpreter->constructionStackNodes);
+			mark_nodes(interpreter->scopeStackNodes);
+			mark_nodes(interpreter->opcodeStackNodes);
+			mark_nodes(interpreter->constructionStackNodes);
 		}
 	}
 }

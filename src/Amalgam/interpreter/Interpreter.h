@@ -1,6 +1,7 @@
 #pragma once
 
 //project headers:
+#include "Concurrency.h"
 #include "Entity.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNode.h"
@@ -130,7 +131,7 @@ public:
 		//just in case a variable is added which needs cycle checks
 		new_context->SetNeedCycleCheck(true);
 
-		scopeStackNodes->push_back(new_context);
+		scopeStackNodes.push_back(new_context);
 		scopeStackFreeable.push_back(new_context.unique);
 	}
 
@@ -139,10 +140,10 @@ public:
 	__forceinline void PopScopeStack(bool returning_unique_value)
 	{
 		if(returning_unique_value && scopeStackFreeable.back())
-			evaluableNodeManager->FreeNodeTree(scopeStackNodes->back());
+			evaluableNodeManager->FreeNodeTree(scopeStackNodes.back());
 		else
 		{
-			EvaluableNode *scope = scopeStackNodes->back();
+			EvaluableNode *scope = scopeStackNodes.back();
 			//only check its child nodes if it itself has a freeable flag set,
 			//since iterating over the mapped child nodes can be costly wrt performance
 			if(scope->GetIsFreeable())
@@ -156,7 +157,7 @@ public:
 			evaluableNodeManager->FreeNode(scope);
 		}
 
-		scopeStackNodes->pop_back();
+		scopeStackNodes.pop_back();
 		scopeStackFreeable.pop_back();
 	}
 
@@ -198,7 +199,7 @@ public:
 		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
 		EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
 	{
-		return PushNewConstructionContextToStack(*constructionStackNodes, constructionStackIndicesAndUniqueness,
+		return PushNewConstructionContextToStack(constructionStackNodes, constructionStackIndicesAndUniqueness,
 			target_origin, target, current_index, current_value, previous_result);
 	}
 
@@ -206,13 +207,13 @@ public:
 	//and returns true if that construction stack node had memory write side effects
 	inline bool PopConstructionContextAndGetExecutionSideEffectFlag()
 	{
-		size_t new_size = constructionStackNodes->size();
+		size_t new_size = constructionStackNodes.size();
 		if(new_size > constructionStackOffsetStride)
 			new_size -= constructionStackOffsetStride;
 		else
 			new_size = 0;
 
-		constructionStackNodes->resize(new_size);
+		constructionStackNodes.resize(new_size);
 
 		if(constructionStackIndicesAndUniqueness.size() > 0)
 		{
@@ -250,14 +251,14 @@ public:
 	//assumes there is at least one construction stack entry
 	__forceinline void SetTopCurrentValueInConstructionStack(EvaluableNode *value)
 	{
-		(*constructionStackNodes)[constructionStackNodes->size() + constructionStackOffsetCurrentValue] = value;
+		constructionStackNodes[constructionStackNodes.size() + constructionStackOffsetCurrentValue] = value;
 	}
 
 	//sets the previous_result node for the top reference on the construction stack
 	//assumes there is at least one construction stack entry
 	__forceinline void SetTopPreviousResultInConstructionStack(EvaluableNodeReference previous_result)
 	{
-		(*constructionStackNodes)[constructionStackNodes->size() + constructionStackOffsetPreviousResult] = previous_result;
+		constructionStackNodes[constructionStackNodes.size() + constructionStackOffsetPreviousResult] = previous_result;
 		constructionStackIndicesAndUniqueness.back().unique = previous_result.unique;
 		constructionStackIndicesAndUniqueness.back().uniqueUnreferencedTopNode = previous_result.uniqueUnreferencedTopNode;
 	}
@@ -272,9 +273,9 @@ public:
 			= constructionStackIndicesAndUniqueness[uniqueness_offset].uniqueUnreferencedTopNode;
 
 		//clear previous result
-		size_t prev_result_offset = constructionStackNodes->size()
+		size_t prev_result_offset = constructionStackNodes.size()
 						- (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
-		auto &previous_result_loc = (*constructionStackNodes)[prev_result_offset];
+		auto &previous_result_loc = constructionStackNodes[prev_result_offset];
 		EvaluableNode *previous_result = nullptr;
 		std::swap(previous_result, previous_result_loc);
 
@@ -286,9 +287,9 @@ public:
 	__forceinline EvaluableNodeReference CopyPreviousResultInConstructionStack(size_t depth)
 	{
 		//clear previous result
-		size_t prev_result_offset = constructionStackNodes->size()
+		size_t prev_result_offset = constructionStackNodes.size()
 						- (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
-		auto &previous_result_loc = (*constructionStackNodes)[prev_result_offset];
+		auto &previous_result_loc = constructionStackNodes[prev_result_offset];
 		return evaluableNodeManager->DeepAllocCopy(previous_result_loc);
 	}
 
@@ -352,7 +353,7 @@ public:
 	)
 	{
 		//find appropriate context for symbol by walking up the stack
-		for(auto it = rbegin(*scopeStackNodes); it != rend(*scopeStackNodes); ++it)
+		for(auto it = rbegin(scopeStackNodes); it != rend(scopeStackNodes); ++it)
 		{
 			auto &mcn = (*it)->GetMappedChildNodesReference();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
@@ -380,7 +381,7 @@ public:
 					}
 				}
 
-				return std::make_tuple(&found->second, it == rbegin(*scopeStackNodes), is_freeable);
+				return std::make_tuple(&found->second, it == rbegin(scopeStackNodes), is_freeable);
 			}
 		}
 
@@ -388,7 +389,7 @@ public:
 		//need to search further down the stack if appropriate
 		if(!bottomOfScopeStack && callingInterpreter != nullptr)
 		{
-			bool top_is_next_stack = (scopeStackNodes->size() == 0);
+			bool top_is_next_stack = (scopeStackNodes.size() == 0);
 			auto [value_destination, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocation(
 				symbol_sid, top_is_next_stack && create_if_nonexistent, clear_freeable_flag, true);
 			if(value_destination != nullptr)
@@ -400,8 +401,8 @@ public:
 			return std::make_tuple(nullptr, false, false);
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
-		size_t scope_stack_index = scopeStackNodes->size() - 1;
-		EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
+		size_t scope_stack_index = scopeStackNodes.size() - 1;
+		EvaluableNode *context_to_use = scopeStackNodes[scope_stack_index];
 		auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
 		return std::make_tuple(new_location, true, false);
 	}
@@ -436,10 +437,10 @@ public:
 	{
 		//find appropriate context for symbol by walking up the stack
 		//acquire lock if found
-		size_t cur_scope_stack_size = scopeStackNodes->size();
+		size_t cur_scope_stack_size = scopeStackNodes.size();
 		for(size_t scope_stack_index = cur_scope_stack_size; scope_stack_index > 0; scope_stack_index--)
 		{
-			EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
+			EvaluableNode *cur_context = scopeStackNodes[scope_stack_index - 1];
 			auto &mcn = cur_context->GetMappedChildNodesReference();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
@@ -452,7 +453,7 @@ public:
 						LockMutexWithoutBlockingGarbageCollection(lock, *scopeStackMutex);
 
 					//need to refetch after lock in case object has changed
-					cur_context = (*scopeStackNodes)[scope_stack_index - 1];
+					cur_context = scopeStackNodes[scope_stack_index - 1];
 					mcn = cur_context->GetMappedChildNodesReference();
 					found = mcn.find(symbol_sid);
 
@@ -483,24 +484,23 @@ public:
 			return std::make_tuple(nullptr, false, false);
 
 		Interpreter *interp_with_scope = LockScopeStackTop(lock, nullptr, executing_interpreter);
-		std::vector<EvaluableNode *> *scope_stack_nodes = interp_with_scope->scopeStackNodes;
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
-		size_t scope_stack_index = scope_stack_nodes->size() - 1;
+		size_t scope_stack_index = interp_with_scope->scopeStackNodes.size() - 1;
 
 		if(lock.owns_lock())
 		{
 			//since all modern processors treat word writes as essentially atomic,
 			// though with no guarantees with regard to latency, we can use this behavior to not require
 			// locks for reading threads; assign this after updating the new context_to_use
-			EvaluableNode *context_to_use = evaluableNodeManager->AllocNode((*scope_stack_nodes)[scope_stack_index]);
+			EvaluableNode *context_to_use = evaluableNodeManager->AllocNode(interp_with_scope->scopeStackNodes[scope_stack_index]);
 			auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
-			(*scope_stack_nodes)[scope_stack_index] = context_to_use;
+			interp_with_scope->scopeStackNodes[scope_stack_index] = context_to_use;
 			return std::make_tuple(new_location, false, false);
 		}
 		else
 		{
-			EvaluableNode *context_to_use = (*scope_stack_nodes)[scope_stack_index];
+			EvaluableNode *context_to_use = interp_with_scope->scopeStackNodes[scope_stack_index];
 			auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
 			return std::make_tuple(new_location, true, false);
 		}
@@ -510,20 +510,20 @@ public:
 	//returns the current scope stack index
 	__forceinline size_t GetScopeStackDepth()
 	{
-		return scopeStackNodes->size() - 1;
+		return scopeStackNodes.size() - 1;
 	}
 
 	//creates a stack state saver for the interpreterNodeStack, which will be restored back to its previous condition when this object is destructed
 	__forceinline EvaluableNodeStackStateSaver CreateOpcodeStackStateSaver()
 	{
-		return EvaluableNodeStackStateSaver(opcodeStackNodes);
+		return EvaluableNodeStackStateSaver(&opcodeStackNodes);
 	}
 
 	//like CreateOpcodeStackStateSaver, but also pushes another node on the stack
 	__forceinline EvaluableNodeStackStateSaver CreateOpcodeStackStateSaver(EvaluableNode *en)
 	{
 		//count on C++ return value optimization to not call the destructor
-		return EvaluableNodeStackStateSaver(opcodeStackNodes, en);
+		return EvaluableNodeStackStateSaver(&opcodeStackNodes, en);
 	}
 
 	//keeps the current node on the stack and calls InterpretNodeExecution
@@ -726,7 +726,7 @@ protected:
 
 		//if doesn't own any scope stack of its own, then it's shared
 		//and callingInterpreter will have it
-		return scopeStackNodes->size() == 0;
+		return scopeStackNodes.size() == 0;
 	}
 
 	//acquires lock of scopeStackMutex and assumes it is not nullptr,
@@ -854,7 +854,7 @@ protected:
 
 		if(interpreterConstraints->ConstrainedOpcodeExecutionDepth())
 		{
-			if(opcodeStackNodes->size() > interpreterConstraints->maxOpcodeExecutionDepth)
+			if(opcodeStackNodes.size() > interpreterConstraints->maxOpcodeExecutionDepth)
 			{
 				interpreterConstraints->constraintsExceeded = true;
 				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;
@@ -1121,7 +1121,7 @@ protected:
 	InterpreterConstraints *interpreterConstraints;
 
 	//a stack (list) of the current nodes being executed
-	std::vector<EvaluableNode *> *opcodeStackNodes;
+	std::vector<EvaluableNode *> opcodeStackNodes;
 
 public:
 	//where to allocate new nodes
@@ -1136,13 +1136,13 @@ public:
 protected:
 
 	//the scope stack is comprised of the variable contexts
-	std::vector<EvaluableNode *> *scopeStackNodes;
+	std::vector<EvaluableNode *> scopeStackNodes;
 
 	//vector corresponding to scopeStackNodes, each entry is true if there was a side effect
 	std::vector<bool> scopeStackFreeable;
 
 	//the current construction stack, containing an interleaved array of nodes
-	std::vector<EvaluableNode *> *constructionStackNodes;
+	std::vector<EvaluableNode *> constructionStackNodes;
 
 	//current index for each level of constructionStackNodes;
 	//note, this should always be the same size as constructionStackNodes

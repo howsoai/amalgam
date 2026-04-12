@@ -24,10 +24,6 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	writeListeners = write_listeners;
 	printListener = print_listener;
 
-	scopeStackNodes = nullptr;
-	opcodeStackNodes = nullptr;
-	constructionStackNodes = nullptr;
-
 	evaluableNodeManager = enm;
 #ifdef MULTITHREAD_SUPPORT
 	bottomOfScopeStack = true;
@@ -64,7 +60,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		construction_stack = evaluableNodeManager->AllocNode(ENT_LIST);
 	construction_stack->SetNeedCycleCheck(true);
 
-	//TODO 25297: make these three no longer need associated nodes
+	//TODO 25297: make these three no longer need associated nodes, and change function signature of Interpreter::ExecuteNode to match
 	scopeStackNodes = &scope_stack->GetOrderedChildNodes();
 	opcodeStackNodes = &opcode_stack->GetOrderedChildNodes();
 	constructionStackNodes = &construction_stack->GetOrderedChildNodes();
@@ -90,7 +86,7 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 )
 {
 	EvaluableNode *scope_stack = nullptr;
-	size_t ss_size = scopeStackNodes->size();
+	size_t ss_size = scopeStackNodes.size();
 	if(ss_size > depth)
 		scope_stack = (*scopeStackNodes)[ss_size - (depth + 1)];
 
@@ -126,8 +122,8 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 		auto &stack_nodes_ocn = copied_stack->GetOrderedChildNodesReference();
 		for(Interpreter *interp = callingInterpreter; interp != nullptr; interp = interp->callingInterpreter)
 		{
-			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStackNodes->size(), nullptr);
-			for(size_t i = 0; i < scopeStackNodes->size(); i++)
+			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStackNodes.size(), nullptr);
+			for(size_t i = 0; i < scopeStackNodes.size(); i++)
 				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy((*scopeStackNodes)[i]);
 
 			if(interp->bottomOfScopeStack)
@@ -185,7 +181,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNo
 	//reference this node before we collect garbage
 	//CreateOpcodeStackStateSaver is a bit expensive for this frequently called function
 	//especially because only one node is kept
-	opcodeStackNodes->push_back(en);
+	opcodeStackNodes.push_back(en);
 
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();
@@ -199,7 +195,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNo
 
 	if(AreExecutionResourcesExhausted(true))
 	{
-		opcodeStackNodes->pop_back();
+		opcodeStackNodes.pop_back();
 		return EvaluableNodeReference::Null();
 	}
 
@@ -214,7 +210,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNo
 #endif
 
 	//finished with opcode
-	opcodeStackNodes->pop_back();
+	opcodeStackNodes.pop_back();
 
 	return retval;
 }
@@ -222,10 +218,10 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNo
 EvaluableNode *Interpreter::GetCurrentScopeStackContext()
 {
 	//this should not happen, but just in case
-	if(scopeStackNodes->size() < 1)
+	if(scopeStackNodes.size() < 1)
 		return nullptr;
 
-	return scopeStackNodes->back();
+	return scopeStackNodes.back();
 }
 
 std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(EvaluableNode *n, bool key_string)
@@ -671,7 +667,7 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 	if(interpreterConstraints != nullptr && interpreterConstraints->ConstrainedOpcodeExecutionDepth())
 	{
 		size_t remaining_depth = interpreterConstraints->GetRemainingOpcodeExecutionDepth(
-			opcodeStackNodes->size());
+			opcodeStackNodes.size());
 		if(remaining_depth > 0)
 		{
 			if(interpreter_constraints->ConstrainedOpcodeExecutionDepth())
@@ -795,7 +791,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 Interpreter *Interpreter::LockScopeStackTop(Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve,
 	Interpreter *executing_interpreter)
 {
-	if(scopeStackNodes->size() == 0 && callingInterpreter != nullptr)
+	if(scopeStackNodes.size() == 0 && callingInterpreter != nullptr)
 		return callingInterpreter->LockScopeStackTop(lock, en_to_preserve,
 			executing_interpreter == nullptr ? this : executing_interpreter);
 
@@ -811,8 +807,6 @@ Interpreter *Interpreter::LockScopeStackTop(Concurrency::SingleLock &lock, Evalu
 }
 
 #endif
-
-
 
 static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints::ViolationType violation, EvaluableNodeManager *evaluable_node_manager)
 {
@@ -921,13 +915,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(Evalua
 
 void Interpreter::VerifyEvaluableNodeIntegrity()
 {
-	for(EvaluableNode *en : *scopeStackNodes)
+	for(EvaluableNode *en : scopeStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 
-	for(EvaluableNode *en : *opcodeStackNodes)
+	for(EvaluableNode *en : opcodeStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
 
-	for(EvaluableNode *en : *constructionStackNodes)
+	for(EvaluableNode *en : constructionStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 
 	evaluableNodeManager->VerifyEvaluableNodeIntegretyForAllReferencedNodes();

@@ -2582,8 +2582,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNod
 	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
-	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetCurrentValue;
-	return EvaluableNodeReference((*constructionStackNodes)[offset], false);
+	size_t offset = constructionStackNodes.size() - (constructionStackOffsetStride * depth) + constructionStackOffsetCurrentValue;
+	return EvaluableNodeReference(constructionStackNodes[offset], false);
 }
 
 static OpcodeInitializer _ENT_PREVIOUS_RESULT(ENT_PREVIOUS_RESULT, &Interpreter::InterpretNode_ENT_PREVIOUS_RESULT, []() {

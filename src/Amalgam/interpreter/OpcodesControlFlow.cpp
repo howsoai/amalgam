@@ -737,16 +737,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 		if(!no_child_nodes)
 		{
 			EvaluableNode stack_top_holder(ENT_LIST);
-			stack_top_holder.SetOrderedChildNodes(*opcodeStackNodes);
+			stack_top_holder.SetOrderedChildNodes(opcodeStackNodes);
 			return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 		}
 		else
 		{
 			EvaluableNodeReference stack_top_holder(evaluableNodeManager->AllocNode(ENT_LIST), true);
 			auto &sth_ocn = stack_top_holder->GetOrderedChildNodesReference();
-			sth_ocn.reserve(opcodeStackNodes->size());
+			sth_ocn.reserve(opcodeStackNodes.size());
 			bool first_node = true;
-			for(auto iter = begin(*opcodeStackNodes); iter != end(*opcodeStackNodes); ++iter)
+			for(auto iter = begin(opcodeStackNodes); iter != end(opcodeStackNodes); ++iter)
 			{
 				EvaluableNode *cur_node = *iter;
 				EvaluableNodeReference new_node(evaluableNodeManager->AllocNode(cur_node->GetType()), true);
@@ -763,17 +763,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 		//only return one node from the opcode stack
 		int64_t actual_offset;
 		if(depth < 0)
-			actual_offset = opcodeStackNodes->size() + depth;
+			actual_offset = opcodeStackNodes.size() + depth;
 		else
 			actual_offset = depth;
 
-		if(actual_offset < 0 || actual_offset >= static_cast<int64_t>(opcodeStackNodes->size()))
+		if(actual_offset < 0 || actual_offset >= static_cast<int64_t>(opcodeStackNodes.size()))
 		{
 			return EvaluableNodeReference::Null();
 		}
 		else
 		{
-			EvaluableNode *cur_node = *(end(*opcodeStackNodes) - actual_offset - 1);
+			EvaluableNode *cur_node = *(end(opcodeStackNodes) - actual_offset - 1);
 			if(!no_child_nodes)
 			{
 				return evaluableNodeManager->DeepAllocCopy(cur_node);

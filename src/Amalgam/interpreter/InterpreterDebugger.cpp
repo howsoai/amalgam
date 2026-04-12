@@ -313,13 +313,13 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 		{
 			if(command == "f")
 			{
-				if(opcodeStackNodes->size() > 0)
-					_interpreter_debug_data.runUntilOpcode = opcodeStackNodes->back();
+				if(opcodeStackNodes.size() > 0)
+					_interpreter_debug_data.runUntilOpcode = opcodeStackNodes.back();
 			}
 			else if(command == "fc")
 			{
-				if(scopeStackNodes->size() > 0)
-					_interpreter_debug_data.runUntilScopeStackSize = scopeStackNodes->size() - 1;
+				if(scopeStackNodes.size() > 0)
+					_interpreter_debug_data.runUntilScopeStackSize = scopeStackNodes.size() - 1;
 			}
 			else if(command == "ul")
 			{
@@ -429,15 +429,15 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 		else if(command == "stack")
 		{
 			std::cout << "Construction stack:" << std::endl;
-			for(EvaluableNode *csn : *constructionStackNodes)
+			for(EvaluableNode *csn : constructionStackNodes)
 				PrintStackNode(csn, evaluableNodeManager);
 
 			std::cout << "scope stack:" << std::endl;
-			for(EvaluableNode *csn : *scopeStackNodes)
+			for(EvaluableNode *csn : scopeStackNodes)
 				PrintStackNode(csn, evaluableNodeManager);
 
 			std::cout << "Opcode stack:" << std::endl;
-			for(EvaluableNode *insn : *opcodeStackNodes)
+			for(EvaluableNode *insn : opcodeStackNodes)
 				PrintStackNode(insn, evaluableNodeManager);
 		}
 		else if(command == "entities")
@@ -484,9 +484,9 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 		{
 			//find symbol by walking up the stack; each layer must be an assoc
 			//count down from the top, and use (i - 1) below to make this loop one-based instead of having to wrap around
-			for(auto i = scopeStackNodes->size(); i > 0; i--)
+			for(auto i = scopeStackNodes.size(); i > 0; i--)
 			{
-				EvaluableNode *cur_context = (*scopeStackNodes)[i - 1];
+				EvaluableNode *cur_context = scopeStackNodes[i - 1];
 
 				//see if this level of the stack contains the symbol
 				auto &mcn = cur_context->GetMappedChildNodesReference();
@@ -776,7 +776,7 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en,
 			_interpreter_debug_data.EnableInteractiveMode();
 		}
 
-		if(_interpreter_debug_data.runUntilScopeStackSize == scopeStackNodes->size())
+		if(_interpreter_debug_data.runUntilScopeStackSize == scopeStackNodes.size())
 		{
 			_interpreter_debug_data.runUntilScopeStackSize = 0;
 			_interpreter_debug_data.EnableInteractiveMode();

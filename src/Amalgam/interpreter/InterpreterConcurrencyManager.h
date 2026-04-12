@@ -69,17 +69,17 @@ public:
 			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
 			//build new construction stack
-			EvaluableNode *construction_stack = enm->AllocNode(*parentInterpreter->constructionStackNodes);
+			std::vector<EvaluableNode *> construction_stack(parentInterpreter->constructionStackNodes);
 			std::vector<Interpreter::ConstructionStackIndexAndPreviousResultUniqueness>
 				csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
-			interpreter.PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
+			interpreter.PushNewConstructionContextToStack(construction_stack,
 				csiau, target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
 
-			EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
-				begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
+			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
+				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 
 			auto result_ref = interpreter.ExecuteNode(node_to_execute,
-				nullptr, opcode_stack, construction_stack, &csiau,
+				nullptr, &opcode_stack, &construction_stack, &csiau,
 				EvaluableNodeRequestedValueTypes::Type::NONE, false);
 
 			if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -88,9 +88,6 @@ public:
 				resultsUnique = false;
 				resultsUniqueUnreferencedTopNode = false;
 			}
-
-			enm->FreeNode(construction_stack);
-			enm->FreeNode(opcode_stack);
 
 			if(result_ref.unique)
 			{
@@ -136,24 +133,21 @@ public:
 			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
 			//build new construction stack
-			EvaluableNode *construction_stack = enm->AllocNode(*parentInterpreter->constructionStackNodes);
+			std::vector<EvaluableNode *> construction_stack(parentInterpreter->constructionStackNodes);
 			std::vector<Interpreter::ConstructionStackIndexAndPreviousResultUniqueness>
 				csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
-			interpreter.PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
+			interpreter.PushNewConstructionContextToStack(construction_stack,
 				csiau, nullptr, nullptr, current_index, current_value, EvaluableNodeReference::Null());
 
-			EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
-				begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
+			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
+				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 
 			auto result = interpreter.ExecuteNode(node_to_execute,
-				nullptr, opcode_stack, construction_stack, &csiau,
+				nullptr, &opcode_stack, &construction_stack, &csiau,
 				EvaluableNodeRequestedValueTypes::Type::NULL_VALUE, false);
 
 			interpreter.PopConstructionContextAndGetExecutionSideEffectFlag();
 			enm->FreeNodeTreeIfPossible(result);
-
-			enm->FreeNode(construction_stack);
-			enm->FreeNode(opcode_stack);
 
 			interpreter.memoryModificationLock.unlock();
 			taskSet.MarkTaskCompleted();
@@ -184,18 +178,16 @@ public:
 
 			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
-			EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
-				begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
+			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
+				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 			std::vector<Interpreter::ConstructionStackIndexAndPreviousResultUniqueness>
 				csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 
-			auto result_ref = interpreter.ExecuteNode(node_to_execute, nullptr, opcode_stack,
+			auto result_ref = interpreter.ExecuteNode(node_to_execute, nullptr, &opcode_stack,
 				&parentInterpreter->constructionStackNodes, &csiau, immediate_results, false);
 
 			if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
 				resultsSideEffect = true;
-
-			enm->FreeNode(opcode_stack);
 
 			if(result == nullptr)
 			{

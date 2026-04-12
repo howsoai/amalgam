@@ -53,6 +53,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		scopeStackNodes = *scope_stack;
 	}
 
+	//TODO 25297: see if can ensure that all stacks passed in are moved (need to ensure all are newly allocated copies), same from Entity's execute
 	if(opcode_stack == nullptr)
 		opcodeStackNodes.clear();
 	else

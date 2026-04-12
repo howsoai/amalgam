@@ -615,45 +615,48 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	if(Concurrency::GetMaxNumThreads() > 1 && num_active_interpreters >= 1 && estimated_nodes_in_use >= 10000)
 	{
 		//allocate all the tasks assuming they will happen, but mark when they can be skipped
-		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(3 * num_active_interpreters + 1);
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_active_interpreters + 1);
 
 		Concurrency::urgentThreadPool.EnqueueTask(
 					[this, &task_set]
-		{
-			MarkAllReferencedNodesInUseConcurrent(rootNode);
-			task_set.MarkTaskCompleted();
-		}
+			{
+				MarkAllReferencedNodesInUseConcurrent(rootNode);
+				task_set.MarkTaskCompleted();
+			}
 		);
 
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
-			auto mark_nodes = [this, interpreter, &task_set](std::vector<EvaluableNode *> &stack)
-			{
-				for(EvaluableNode *en : stack)
+			Concurrency::urgentThreadPool.EnqueueTask(
+					[this, interpreter, &task_set]
 				{
-					//only enqueue a task if the top node isn't known to be in use
-					if(en != nullptr && !en->GetKnownToBeInUseAtomic())
+					for(EvaluableNode *en : interpreter->scopeStackNodes)
 					{
-						//don't enqueue in batch, as threads racing ahead of others will reduce memory
-						//contention
-						Concurrency::urgentThreadPool.EnqueueTask(
-							[en, &task_set]
-							{
-								MarkAllReferencedNodesInUseConcurrent(en);
-								task_set.MarkTaskCompleted();
-							}
-						);
-					}
-					else //autocompleted
-					{
-						task_set.MarkTaskCompletedBeforeWaitForTasks();
-					}
-				}
-			};
+						if(en == nullptr || en->GetKnownToBeInUse())
+							continue;
 
-			mark_nodes(interpreter->scopeStackNodes);
-			mark_nodes(interpreter->opcodeStackNodes);
-			mark_nodes(interpreter->constructionStackNodes);
+						MarkAllReferencedNodesInUse(en);
+					}
+
+					for(EvaluableNode *en : interpreter->opcodeStackNodes)
+					{
+						if(en == nullptr || en->GetKnownToBeInUse())
+							continue;
+
+						MarkAllReferencedNodesInUse(en);
+					}
+
+					for(EvaluableNode *en : interpreter->constructionStackNodes)
+					{
+						if(en == nullptr || en->GetKnownToBeInUse())
+							continue;
+
+						MarkAllReferencedNodesInUse(en);
+					}
+
+					task_set.MarkTaskCompleted();
+				}
+			);
 		}
 
 		task_set.WaitForTasks();

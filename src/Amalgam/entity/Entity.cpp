@@ -927,15 +927,6 @@ void Entity::SetRoot(std::string &code_string, std::vector<EntityWriteListener *
 	SetRoot(node, true, write_listeners);
 }
 
-void Entity::VerifyEvaluableNodeIntegrity()
-{
-	EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(GetRoot(), &evaluableNodeManager);
-
-	auto &nr = evaluableNodeManager.GetNodesReferenced();
-	for(auto &[en, _] : nr.nodesReferenced)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
-}
-
 void Entity::VerifyEvaluableNodeIntegrityAndAllContainedEntities()
 {
 	VerifyEvaluableNodeIntegrity();

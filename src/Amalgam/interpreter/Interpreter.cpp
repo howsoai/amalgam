@@ -930,18 +930,18 @@ void Interpreter::VerifyEvaluableNodeIntegrity()
 	for(EvaluableNode *en : *constructionStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 
-	if(curEntity != nullptr)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(curEntity->GetRoot());
+	evaluableNodeManager->VerifyEvaluableNodeIntegretyForAllReferencedNodes();
 
+	//traverse stack to next calling evaluableNodeManager so don't duplicate validation effort on the same one
+	auto next_calling_interpreter_on_other_enm = callingInterpreter;
+	while(next_calling_interpreter_on_other_enm != nullptr)
 	{
-		auto &nr = evaluableNodeManager->GetNodesReferenced();
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(nr.mutex);
-	#endif
-		for(auto &[en, _] : nr.nodesReferenced)
-			EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
+		if(next_calling_interpreter_on_other_enm->evaluableNodeManager != evaluableNodeManager)
+			break;
+
+		next_calling_interpreter_on_other_enm = next_calling_interpreter_on_other_enm->callingInterpreter;
 	}
 
-	if(callingInterpreter != nullptr)
-		callingInterpreter->VerifyEvaluableNodeIntegrity();
+	if(next_calling_interpreter_on_other_enm != nullptr)
+		next_calling_interpreter_on_other_enm->VerifyEvaluableNodeIntegrity();
 }

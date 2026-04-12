@@ -461,6 +461,23 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNod
 	}
 }
 
+void EvaluableNodeManager::VerifyEvaluableNodeIntegretyForAllReferencedNodes()
+{
+	ValidateEvaluableNodeTreeMemoryIntegrity(rootNode, this);
+
+	for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
+	{
+		for(EvaluableNode *en : *interpreter->scopeStackNodes)
+			ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
+
+		for(EvaluableNode *en : *interpreter->opcodeStackNodes)
+			ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
+
+		for(EvaluableNode *en : *interpreter->constructionStackNodes)
+			ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
+	}
+}
+
 EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bool copy_metadata)
 {
 	if(en == nullptr)
@@ -609,7 +626,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		{
 			auto mark_nodes = [this, interpreter, &task_set](std::vector<EvaluableNode *> &stack)
 			{
-				for(EvaluableNode *en : *interpreter->scopeStackNodes)
+				for(EvaluableNode *en : stack)
 				{
 					//only enqueue a task if the top node isn't known to be in use
 					if(en != nullptr && !en->GetKnownToBeInUseAtomic())
@@ -648,7 +665,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		{
 			auto mark_nodes = [this, interpreter](std::vector<EvaluableNode *> &stack)
 			{
-				for(EvaluableNode *en : *interpreter->scopeStackNodes)
+				for(EvaluableNode *en : stack)
 				{
 					if(en == nullptr || en->GetKnownToBeInUse())
 						continue;

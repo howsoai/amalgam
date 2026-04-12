@@ -683,6 +683,9 @@ public:
 	static void ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNode *en,
 		EvaluableNodeManager *ensure_nodes_in_enm = nullptr, bool check_cycle_flag_consistency = true);
 
+	//verifies integrity of all referenced nodes
+	void VerifyEvaluableNodeIntegretyForAllReferencedNodes();
+
 	//when numNodesToRunGarbageCollection are allocated, then it is time to run garbage collection
 	size_t numNodesToRunGarbageCollection;
 

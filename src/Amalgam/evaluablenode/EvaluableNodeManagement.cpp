@@ -465,16 +465,19 @@ void EvaluableNodeManager::VerifyEvaluableNodeIntegretyForAllReferencedNodes()
 {
 	ValidateEvaluableNodeTreeMemoryIntegrity(rootNode, this);
 
-	for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
+	if(activeInterpreters != nullptr)
 	{
-		for(EvaluableNode *en : interpreter->scopeStackNodes)
-			ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
+		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
+		{
+			for(EvaluableNode *en : interpreter->scopeStackNodes)
+				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
 
-		for(EvaluableNode *en : interpreter->opcodeStackNodes)
-			ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
+			for(EvaluableNode *en : interpreter->opcodeStackNodes)
+				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
 
-		for(EvaluableNode *en : interpreter->constructionStackNodes)
-			ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
+			for(EvaluableNode *en : interpreter->constructionStackNodes)
+				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
+		}
 	}
 }
 

@@ -639,13 +639,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	called_entity.lock.unlock();
 #endif
 
-	EvaluableNodeReference scope_stack;
-	if(called_entity == curEntity)
-	{
-		scope_stack = ConvertArgsToScopeStack(args, ce_enm);
-		node_stack.PushEvaluableNode(scope_stack);
-	}
-	else
+	if(called_entity != curEntity)
 	{
 		if(call_type == ENT_CALL_ON_ENTITY)
 		{
@@ -663,9 +657,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		//don't put freed nodes in local allocation buffer, because that will increase memory churn
 		evaluableNodeManager->FreeNodeTreeIfPossible(args, false);
 		args = called_entity_args;
-
-		scope_stack = ConvertArgsToScopeStack(args, ce_enm);
 	}
+
+	auto scope_stack = ConvertArgsToScopeStack(args, ce_enm);
 
 	PopulatePerformanceCounters(interpreter_constraints_ptr, called_entity);
 
@@ -677,14 +671,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	EvaluableNodeReference result;
 	if(call_type != ENT_CALL_ON_ENTITY)
 		result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
-			scope_stack, called_entity == curEntity, this, cur_write_listeners, printListener,
+			&scope_stack, called_entity == curEntity, this, cur_write_listeners, printListener,
 			interpreter_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
 	#endif
 		);
 	else
-		result = called_entity->ExecuteOnEntity(function, scope_stack, this, cur_write_listeners, printListener,
+		result = called_entity->ExecuteOnEntity(function, &scope_stack, this, cur_write_listeners, printListener,
 			interpreter_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
@@ -694,7 +688,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	//can't free args if the result might contain them
 	if(result.unique)
 		ce_enm.FreeNode(args);
-	ce_enm.FreeNode(scope_stack);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again
@@ -887,10 +880,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	//don't put freed nodes in local allocation buffer, because that will increase memory churn
 	evaluableNodeManager->FreeNodeTreeIfPossible(args, false);
 
-	EvaluableNodeReference scope_stack = ConvertArgsToScopeStack(called_entity_args, container->evaluableNodeManager);
+	auto scope_stack = ConvertArgsToScopeStack(called_entity_args, container->evaluableNodeManager);
 
 	//add accessing_entity to arguments. If accessing_entity already specified (it shouldn't be), let garbage collection clean it up
-	EvaluableNode *scope_stack_args = scope_stack->GetOrderedChildNodesReference()[0];
+	EvaluableNode *scope_stack_args = scope_stack[0];
 	scope_stack_args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_accessing_entity),
 		container->evaluableNodeManager.AllocNode(ENT_STRING, cur_entity_sid));
 
@@ -902,14 +895,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 #endif
 
 	EvaluableNodeReference result = container->Execute(container_label_sid,
-		scope_stack, false, this, writeListeners, printListener, interpreter_constraints_ptr
+		&scope_stack, false, this, writeListeners, printListener, interpreter_constraints_ptr
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif
 	);
 
 	container->evaluableNodeManager.FreeNode(called_entity_args);
-	container->evaluableNodeManager.FreeNode(scope_stack);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again

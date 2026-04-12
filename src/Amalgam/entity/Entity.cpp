@@ -435,7 +435,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 }
 
 EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
-	EvaluableNode *scope_stack, Interpreter *calling_interpreter,
+	std::vector<EvaluableNode *> *scope_stack, Interpreter *calling_interpreter,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
 	InterpreterConstraints *interpreter_constraints
 #ifdef MULTITHREAD_SUPPORT

@@ -184,19 +184,17 @@ public:
 
 			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
-			EvaluableNode *construction_stack = enm->AllocNode(*parentInterpreter->constructionStackNodes);
 			EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 				begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 			std::vector<Interpreter::ConstructionStackIndexAndPreviousResultUniqueness>
 				csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 
 			auto result_ref = interpreter.ExecuteNode(node_to_execute, nullptr, opcode_stack,
-				construction_stack, &csiau, immediate_results, false);
+				&parentInterpreter->constructionStackNodes, &csiau, immediate_results, false);
 
 			if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
 				resultsSideEffect = true;
 
-			enm->FreeNode(construction_stack);
 			enm->FreeNode(opcode_stack);
 
 			if(result == nullptr)

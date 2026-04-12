@@ -31,8 +31,8 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 }
 
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	EvaluableNode *scope_stack,
-	EvaluableNode *opcode_stack, EvaluableNode *construction_stack,
+	std::vector<EvaluableNode *> * scope_stack,
+	std::vector<EvaluableNode *> * opcode_stack, std::vector<EvaluableNode *> *construction_stack,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
 	EvaluableNodeRequestedValueTypes immediate_result
 #ifdef MULTITHREAD_SUPPORT
@@ -43,33 +43,33 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	//use specified or create new scopeStack
 	if(scope_stack == nullptr)
 	{
-		//create list of associative lists, and populate it with the top of the stack
-		scope_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-		scope_stack->SetNeedCycleCheck(true);
-
 		EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
 		new_context_entry->SetNeedCycleCheck(true);
-		scope_stack->AppendOrderedChildNode(new_context_entry);
+		scopeStackNodes.clear();
+		scopeStackNodes.push_back(new_context_entry);
+	}
+	else
+	{
+		scopeStackNodes = *scope_stack;
 	}
 
 	if(opcode_stack == nullptr)
-		opcode_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-	opcode_stack->SetNeedCycleCheck(true);
-	
-	if(construction_stack == nullptr)
-		construction_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-	construction_stack->SetNeedCycleCheck(true);
+		opcodeStackNodes.clear();
+	else
+		opcodeStackNodes = *opcode_stack;
 
-	//TODO 25297: make these three no longer need associated nodes, and change function signature of Interpreter::ExecuteNode to match
-	scopeStackNodes = &scope_stack->GetOrderedChildNodes();
-	opcodeStackNodes = &opcode_stack->GetOrderedChildNodes();
-	constructionStackNodes = &construction_stack->GetOrderedChildNodes();
+	if(construction_stack == nullptr)
+		constructionStackNodes.clear();
+	else
+		constructionStackNodes = *construction_stack;
 
 #ifdef MULTITHREAD_SUPPORT
 	bottomOfScopeStack = new_scope_stack;
 #endif
 
-	if(construction_stack_indices != nullptr)
+	if(construction_stack_indices == nullptr)
+		constructionStackIndicesAndUniqueness.clear();
+	else
 		constructionStackIndicesAndUniqueness = *construction_stack_indices;
 	
 	evaluableNodeManager->AddActiveInterpreter(this);
@@ -88,7 +88,7 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 	EvaluableNode *scope_stack = nullptr;
 	size_t ss_size = scopeStackNodes.size();
 	if(ss_size > depth)
-		scope_stack = (*scopeStackNodes)[ss_size - (depth + 1)];
+		scope_stack = scopeStackNodes[ss_size - (depth + 1)];
 
 #ifdef MULTITHREAD_SUPPORT
 	//need to search further down the stack if appropriate
@@ -112,7 +112,7 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 {
 	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetOrderedChildNodes(*scopeStackNodes);
+	stack_top_holder.SetOrderedChildNodes(scopeStackNodes);
 	EvaluableNodeReference copied_stack = evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 
 #ifdef MULTITHREAD_SUPPORT
@@ -124,7 +124,7 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 		{
 			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStackNodes.size(), nullptr);
 			for(size_t i = 0; i < scopeStackNodes.size(); i++)
-				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy((*scopeStackNodes)[i]);
+				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy(scopeStackNodes[i]);
 
 			if(interp->bottomOfScopeStack)
 				break;
@@ -133,32 +133,6 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 #endif
 
 	return copied_stack;
-}
-
-EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm)
-{
-	//ensure have arguments
-	if(args == nullptr)
-	{
-		args.SetReference(enm.AllocNode(ENT_ASSOC), true);
-	}
-	else if(!args->IsAssociativeArray())
-	{
-		args.SetReference(enm.AllocNode(ENT_ASSOC), true);
-	}
-	else if(!args.unique)
-	{
-		args.SetReference(enm.AllocNode(args, false));
-		args.uniqueUnreferencedTopNode = true;
-	}
-	
-	EvaluableNode *scope_stack = enm.AllocNode(ENT_LIST);
-	scope_stack->AppendOrderedChildNode(args);
-
-	scope_stack->SetNeedCycleCheck(true);
-	args->SetNeedCycleCheck(true);
-
-	return EvaluableNodeReference(scope_stack, args.unique, true);
 }
 
 void Interpreter::SetSideEffectFlagsAndAccumulatePerformanceCounters(EvaluableNode *node)

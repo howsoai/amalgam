@@ -402,12 +402,12 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		{
 			if(first_node_type == ENT_LET)
 			{
-				scope_stack->AppendOrderedChildNode(assoc_node);
+				scope_stack.push_back(assoc_node);
 			}
 			else //first_node_type == ENT_DECLARE
 			{
 				first_node->AppendOrderedChildNode(assoc_node);
-				entity->ExecuteOnEntity(first_node, scope_stack, calling_interpreter);
+				entity->ExecuteOnEntity(first_node, &scope_stack, calling_interpreter);
 			}
 		}
 	}
@@ -420,7 +420,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 
-		entity->ExecuteOnEntity(node, scope_stack, calling_interpreter);
+		entity->ExecuteOnEntity(node, &scope_stack, calling_interpreter);
 	}
 
 	//check the version from the stack rather than return, since transactional files may be missing the last return
@@ -434,7 +434,6 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 	}
 
 	entity->evaluableNodeManager.FreeNode(args);
-	entity->evaluableNodeManager.FreeNode(scope_stack);
 
 	return load_status;
 }
@@ -560,7 +559,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 			new_entity->evaluableNodeManager.AllocNode(asset_params->requireVersionCompatibility));
 		auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, new_entity->evaluableNodeManager);
 
-		EvaluableNodeReference result = new_entity->ExecuteOnEntity(code, scope_stack, calling_interpreter);
+		EvaluableNodeReference result = new_entity->ExecuteOnEntity(code, &scope_stack, calling_interpreter);
 
 		//if returned null, return comment as the error
 		if(EvaluableNode::IsNull(result))
@@ -575,7 +574,6 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 		}
 
 		new_entity->evaluableNodeManager.FreeNode(args);
-		new_entity->evaluableNodeManager.FreeNode(scope_stack);
 
 		if(persistent)
 			SetEntityPersistenceForFlattenedEntity(new_entity, asset_params);

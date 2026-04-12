@@ -312,16 +312,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 		args = InterpretNode(ocn[1]);
 
 	//build scope stack from parameters
-	EvaluableNodeReference scope_stack = ConvertArgsToScopeStack(args, *evaluableNodeManager);
-	node_stack.PushEvaluableNode(scope_stack);
-
-	EvaluableNode *opcode_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-	opcode_stack->SetNeedCycleCheck(true);
-	node_stack.PushEvaluableNode(opcode_stack);
-
-	EvaluableNode *construction_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-	construction_stack->SetNeedCycleCheck(true);
-	node_stack.PushEvaluableNode(construction_stack);
+	auto scope_stack = ConvertArgsToScopeStack(args, *evaluableNodeManager);
 
 	PopulatePerformanceCounters(interpreter_constraints_ptr, nullptr);
 
@@ -334,7 +325,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 #endif
 
 	//improve performance by managing the stacks here
-	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack,
+	auto result = sandbox.ExecuteNode(function, &scope_stack, nullptr, nullptr,
 		nullptr, immediate_result);
 
 #ifdef MULTITHREAD_SUPPORT
@@ -346,10 +337,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 		evaluableNodeManager->FreeNodeTreeIfPossible(args);
 	else //it's possible some value is returned, can only free top node
 		evaluableNodeManager->FreeNodeIfPossible(args);
-
-	evaluableNodeManager->FreeNode(scope_stack);
-	evaluableNodeManager->FreeNode(opcode_stack);
-	evaluableNodeManager->FreeNode(construction_stack);
 
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)

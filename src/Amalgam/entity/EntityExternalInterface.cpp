@@ -375,7 +375,7 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 
 	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
-	EvaluableNodeReference returned_value = bundle->entity->Execute(label, scope_stack, false, nullptr,
+	EvaluableNodeReference returned_value = bundle->entity->Execute(label, &scope_stack, false, nullptr,
 		&bundle->writeListeners, bundle->printListener, nullptr
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
@@ -383,7 +383,6 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	);
 
 	enm.FreeNode(args);
-	enm.FreeNode(scope_stack);
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
 	enm.FreeNodeTreeIfPossible(returned_value);
@@ -409,14 +408,13 @@ std::pair<std::string, std::string> EntityExternalInterface::ExecuteEntityJSONLo
 
 	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
-	EvaluableNodeReference returned_value = bundle->entity->Execute(label, scope_stack, false, nullptr,
+	EvaluableNodeReference returned_value = bundle->entity->Execute(label, &scope_stack, false, nullptr,
 		&listeners, bundle->printListener, nullptr
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif
 	);
 	enm.FreeNode(args);
-	enm.FreeNode(scope_stack);
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
 	enm.FreeNodeTreeIfPossible(returned_value);
@@ -446,7 +444,7 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
 	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
-	EvaluableNodeReference returned_value = bundle->entity->ExecuteOnEntity(code, scope_stack, nullptr,
+	EvaluableNodeReference returned_value = bundle->entity->ExecuteOnEntity(code, &scope_stack, nullptr,
 		&bundle->writeListeners, bundle->printListener, nullptr
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
@@ -454,7 +452,6 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	);
 
 	enm.FreeNode(args);
-	enm.FreeNode(scope_stack);
 	enm.FreeNodeTreeIfPossible(code);
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);

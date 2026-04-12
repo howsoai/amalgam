@@ -51,13 +51,15 @@ public:
 
 	//Executes the current Entity that this Interpreter is contained by
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
-	//if scope_stack, opcode_stack, or construction_stack are nullptr, it will start with a new one
-	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
+	//if scope_stack, opcode_stack, or construction_stack are nullptr,
+	// it will start with a new one, but if they were specified it will make a copy of the vector
+	//note that construction_stack and construction_stack_indices should be specified together
+	// and should be the same length
 	//if immediate_result is true, then the returned value may be immediate
 	//if new_scope_stack is true, it will mark that it is the bottom of the scope stack
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
-		EvaluableNode *scope_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
-		EvaluableNode *construction_stack = nullptr,
+		std::vector<EvaluableNode *> *scope_stack = nullptr, std::vector<EvaluableNode *> *opcode_stack = nullptr,
+		std::vector<EvaluableNode *> *construction_stack = nullptr,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes()
 	#ifdef MULTITHREAD_SUPPORT
@@ -336,7 +338,29 @@ public:
 	// Will allocate a new node appropriately if it is not
 	//Then wraps the args on a list which will form the scope stack and returns that
 	//ensures that args is still a valid EvaluableNodeReference after the call
-	static EvaluableNodeReference ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm);
+	inline static std::vector<EvaluableNode *> ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm)
+	{
+		//ensure have arguments
+		if(args == nullptr)
+		{
+			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
+		}
+		else if(!args->IsAssociativeArray())
+		{
+			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
+		}
+		else if(!args.unique)
+		{
+			args.SetReference(enm.AllocNode(args, false));
+			args.uniqueUnreferencedTopNode = true;
+		}
+
+		args->SetNeedCycleCheck(true);
+
+		std::vector<EvaluableNode *> scope_stack;
+		scope_stack.push_back(args);
+		return scope_stack;
+	}
 
 	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a
 	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist

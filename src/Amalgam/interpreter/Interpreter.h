@@ -53,7 +53,10 @@ public:
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
 	//if scope_stack, opcode_stack, or construction_stack are nullptr,
 	// it will start with a new one, but if they were specified it will make a copy of the vector
-	//note that construction_stack and construction_stack_indices should be specified together
+	//note that if any of scope_stack, opcode_stack, construction_stack, or construction_stack_indices are specified,
+	// they will transfer the memory in the vector to be owned by this method,
+	// and their contents will be cleared upon completion of this method
+	//further note that construction_stack and construction_stack_indices should be specified together
 	// and should be the same length
 	//if immediate_result is true, then the returned value may be immediate
 	//if new_scope_stack is true, it will mark that it is the bottom of the scope stack

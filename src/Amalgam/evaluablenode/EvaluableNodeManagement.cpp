@@ -612,7 +612,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	if(Concurrency::GetMaxNumThreads() > 1 && num_active_interpreters >= 1 && estimated_nodes_in_use >= 10000)
 	{
 		//allocate all the tasks assuming they will happen, but mark when they can be skipped
-		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_active_interpreters + 1);
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(3 * num_active_interpreters + 1);
 
 		Concurrency::urgentThreadPool.EnqueueTask(
 					[this, &task_set]

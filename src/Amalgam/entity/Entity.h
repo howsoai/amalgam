@@ -177,11 +177,12 @@ public:
 	~Entity();
 
 	//executes the code specified by code as if it were called on this entity using the specified scope_stack
-	//note that code should be allocated from this entity
-	// calling_interpreter should be the interpreter that is calling this, if applicable
-	// write_listeners and print_listener will listen for any modifications to the entity and output as applicable
-	// if interpreter_constraints is not nullptr, then it will constrain performance and update interpreter_constraints
-	// if enm_lock is specified, it should be a lock on this entity's evaluableNodeManager.memoryModificationMutex
+	//note that scope_stack, if specified, will transfer the memory in the vector to be owned by this method,
+	// and its contents will be cleared upon completion of this method
+	//calling_interpreter should be the interpreter that is calling this, if applicable
+	//write_listeners and print_listener will listen for any modifications to the entity and output as applicable
+	//if interpreter_constraints is not nullptr, then it will constrain performance and update interpreter_constraints
+	//if enm_lock is specified, it should be a lock on this entity's evaluableNodeManager.memoryModificationMutex
 	EvaluableNodeReference ExecuteOnEntity(EvaluableNode *code,
 		std::vector<EvaluableNode *> *scope_stack, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
@@ -196,6 +197,8 @@ public:
 	// returns the result from the execution
 	// if on_self is true, then it will be allowed to access private labels
 	//see ExecuteOnEntity for further parameter details
+	//note that scope_stack, if specified, will transfer the memory in the vector to be owned by this method,
+	// and its contents will be cleared upon completion of this method
 	EvaluableNodeReference Execute(StringInternPool::StringID label_sid,
 		std::vector<EvaluableNode *> *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,

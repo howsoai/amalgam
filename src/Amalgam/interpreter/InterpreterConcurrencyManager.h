@@ -180,11 +180,12 @@ public:
 
 			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
 				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
+			std::vector<EvaluableNode *> construction_stack(parentInterpreter->constructionStackNodes);
 			std::vector<Interpreter::ConstructionStackIndexAndPreviousResultUniqueness>
 				csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 
 			auto result_ref = interpreter.ExecuteNode(node_to_execute, nullptr, &opcode_stack,
-				&parentInterpreter->constructionStackNodes, &csiau, immediate_results, false);
+				&construction_stack, &csiau, immediate_results, false);
 
 			if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
 				resultsSideEffect = true;

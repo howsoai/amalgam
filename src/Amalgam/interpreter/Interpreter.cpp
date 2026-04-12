@@ -50,19 +50,19 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	}
 	else
 	{
-		scopeStackNodes = *scope_stack;
+		scopeStackNodes = std::move(*scope_stack);
 	}
 
-	//TODO 25297: see if can ensure that all stacks passed in are moved (need to ensure all are newly allocated copies), same from Entity's execute
+	//
 	if(opcode_stack == nullptr)
 		opcodeStackNodes.clear();
 	else
-		opcodeStackNodes = *opcode_stack;
+		opcodeStackNodes = std::move(*opcode_stack);
 
 	if(construction_stack == nullptr)
 		constructionStackNodes.clear();
 	else
-		constructionStackNodes = *construction_stack;
+		constructionStackNodes = std::move(*construction_stack);
 
 #ifdef MULTITHREAD_SUPPORT
 	bottomOfScopeStack = new_scope_stack;
@@ -71,7 +71,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	if(construction_stack_indices == nullptr)
 		constructionStackIndicesAndUniqueness.clear();
 	else
-		constructionStackIndicesAndUniqueness = *construction_stack_indices;
+		constructionStackIndicesAndUniqueness = std::move(*construction_stack_indices);
 	
 	evaluableNodeManager->AddActiveInterpreter(this);
 	auto retval = InterpretNode(en, immediate_result);

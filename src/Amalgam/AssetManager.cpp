@@ -425,7 +425,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 
 	//check the version from the stack rather than return, since transactional files may be missing the last return
 	EntityExternalInterface::LoadEntityStatus load_status(true, "", "");
-	EvaluableNode **version_node = scope_stack->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_amlg_version));
+	EvaluableNode **version_node = scope_stack[0]->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_amlg_version));
 	if(version_node != nullptr && *version_node != nullptr && (*version_node)->GetType() == ENT_STRING)
 	{
 		const std::string &version_string = (*version_node)->GetStringValue();

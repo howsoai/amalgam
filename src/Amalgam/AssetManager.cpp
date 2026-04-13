@@ -24,6 +24,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 {
 	resourcePath = resource_path;
 	resourceType = file_type;
+	topEntity = nullptr;
 
 	if(resourceType == "")
 	{
@@ -407,7 +408,10 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 			else //first_node_type == ENT_DECLARE
 			{
 				first_node->AppendOrderedChildNode(assoc_node);
-				entity->ExecuteOnEntity(first_node, &scope_stack, calling_interpreter);
+
+				//make a copy of scope_stack siynce ExecuteOnEntity will consume it
+				std::vector<EvaluableNode *> scope_stack_copy(scope_stack);
+				entity->ExecuteOnEntity(first_node, &scope_stack_copy, calling_interpreter);
 			}
 		}
 	}
@@ -420,7 +424,9 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 
-		entity->ExecuteOnEntity(node, &scope_stack, calling_interpreter);
+		//make a copy of scope_stack siynce ExecuteOnEntity will consume it
+		std::vector<EvaluableNode *> scope_stack_copy(scope_stack);
+		entity->ExecuteOnEntity(node, &scope_stack_copy, calling_interpreter);
 	}
 
 	//check the version from the stack rather than return, since transactional files may be missing the last return

@@ -669,7 +669,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	{
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
-			auto mark_nodes = [this, interpreter](std::vector<EvaluableNode *> &stack)
+			auto mark_nodes = [this](std::vector<EvaluableNode *> &stack)
 			{
 				for(EvaluableNode *en : stack)
 				{

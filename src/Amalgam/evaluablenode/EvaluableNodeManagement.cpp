@@ -628,14 +628,14 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
 			Concurrency::urgentThreadPool.EnqueueTask(
-					[interpreter, &task_set]
+					[this, interpreter, &task_set]
 				{
 					for(EvaluableNode *en : interpreter->scopeStackNodes)
 					{
 						if(en == nullptr || en->GetKnownToBeInUse())
 							continue;
 
-						EvaluableNodeManager::MarkAllReferencedNodesInUse(en);
+						MarkAllReferencedNodesInUse(en);
 					}
 
 					for(EvaluableNode *en : interpreter->opcodeStackNodes)
@@ -643,7 +643,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 						if(en == nullptr || en->GetKnownToBeInUse())
 							continue;
 
-						EvaluableNodeManager::MarkAllReferencedNodesInUse(en);
+						MarkAllReferencedNodesInUse(en);
 					}
 
 					for(EvaluableNode *en : interpreter->constructionStackNodes)
@@ -651,7 +651,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 						if(en == nullptr || en->GetKnownToBeInUse())
 							continue;
 
-						EvaluableNodeManager::MarkAllReferencedNodesInUse(en);
+						MarkAllReferencedNodesInUse(en);
 					}
 
 					task_set.MarkTaskCompleted();
@@ -669,14 +669,14 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	{
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
-			auto mark_nodes = [](std::vector<EvaluableNode *> &stack)
+			auto mark_nodes = [this](std::vector<EvaluableNode *> &stack)
 			{
 				for(EvaluableNode *en : stack)
 				{
 					if(en == nullptr || en->GetKnownToBeInUse())
 						continue;
 
-					EvaluableNodeManager::MarkAllReferencedNodesInUse(en);
+					MarkAllReferencedNodesInUse(en);
 				}
 			};
 

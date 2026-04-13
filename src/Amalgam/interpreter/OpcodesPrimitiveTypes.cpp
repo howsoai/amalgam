@@ -1,5 +1,6 @@
 //project headers:
 #include "Interpreter.h"
+#include "InterpreterConcurrencyManager.h"
 #include "OpcodeDetails.h"
 
 static std::string _opcode_group = "Primitive Types";
@@ -204,7 +205,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(Ev
 				//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
 				new_list->SetNeedCycleCheck(true);
 
-				ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+				InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
 				//kick off interpreters
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
@@ -292,7 +293,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, E
 				//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
 				new_assoc->SetNeedCycleCheck(true);
 
-				ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+				InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
 				//kick off interpreters
 				for(auto &[cn_id, cn] : new_mcn)

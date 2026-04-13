@@ -111,33 +111,6 @@
     <ClCompile Include="interpreter\InterpreterDebugger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="interpreter\InterpreterOpcodesBase.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="interpreter\InterpreterOpcodesCodeMixing.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="interpreter\InterpreterOpcodesDataTypes.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="interpreter\InterpreterOpcodesEntityAccess.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="interpreter\InterpreterOpcodesEntityControl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="interpreter\InterpreterOpcodesListManipulation.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="interpreter\InterpreterOpcodesLogic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="interpreter\InterpreterOpcodesMath.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="interpreter\InterpreterOpcodesTransformations.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="string\StringManipulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -166,6 +139,63 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AmalgamLanguageValidation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesAdvancedMath.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesBasicMath.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesCodeComparisonAndEvolution.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesContainerManipulation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesControlFlow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesCryptography.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesEntityAccessAndManipulation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesEntityComparisonAndEvolution.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesEntityLifecycleAndStorage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesEntityQueryEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesIterationAndContainerTransformation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesLogicAndComparison.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesMetadata.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesPrimitiveTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesRandom.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesStringOperations.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesSystemAndRuntime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesTrigonometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="interpreter\OpcodesVariableDefinitionAndModification.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -345,6 +375,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OpcodeDetails.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UninitializedArray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="evaluablenode\EvaluableNodeReference.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="interpreter\InterpreterConcurrencyManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="interpreter\InterpreterUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

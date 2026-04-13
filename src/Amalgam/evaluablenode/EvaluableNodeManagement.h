@@ -2,7 +2,7 @@
 
 //project headers:
 #include "Concurrency.h"
-#include "EvaluableNode.h"
+#include "EvaluableNodeReference.h"
 
 //system headers:
 #include <memory>
@@ -12,496 +12,20 @@
 //if the macro DEBUG_REPORT_LAB_USAGE is defined, then the local allocation buffer storage will be
 //profiled and printed
 
-typedef int64_t ExecutionCycleCount;
-typedef int32_t ExecutionCycleCountCompactDelta;
+//forward declaration
+class Interpreter;
 
-//describes an EvaluableNode value and whether it is uniquely referenced
-//this is mostly used for actual EvaluableNode *'s, and so most of the methods are built as such
-//however, if it may contain an immediate value, then that must be checked via IsImmediateValue()
-class EvaluableNodeReference
-{
-public:
-	constexpr EvaluableNodeReference()
-		: value(), unique(true), uniqueUnreferencedTopNode(true)
-	{	}
-
-	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique)
-		: value(_reference), unique(_unique), uniqueUnreferencedTopNode(_unique)
-	{	}
-
-	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique, bool top_node_unique)
-		: value(_reference), unique(_unique), uniqueUnreferencedTopNode(top_node_unique)
-	{}
-
-	constexpr EvaluableNodeReference(const EvaluableNodeReference &inr)
-		: value(inr.value), unique(inr.unique), uniqueUnreferencedTopNode(inr.uniqueUnreferencedTopNode)
-	{	}
-
-	__forceinline EvaluableNodeReference(bool value)
-		: value(value), unique(true), uniqueUnreferencedTopNode(true)
-	{	}
-
-	__forceinline EvaluableNodeReference(double value)
-		: value(value), unique(true), uniqueUnreferencedTopNode(true)
-	{	}
-
-	//if reference_handoff is true, it will assume ownership rather than creating a new reference
-	__forceinline EvaluableNodeReference(StringInternPool::StringID string_id, bool reference_handoff = false)
-		: value(reference_handoff ? string_id : string_intern_pool.CreateStringReference(string_id)),
-		unique(true), uniqueUnreferencedTopNode(true)
-	{	}
-
-	__forceinline EvaluableNodeReference(const std::string &str)
-		: value(string_intern_pool.CreateStringReference(str)), unique(true), uniqueUnreferencedTopNode(true)
-	{	}
-
-	__forceinline EvaluableNodeReference(std::string_view str)
-		: value(string_intern_pool.CreateStringReference(str)), unique(true), uniqueUnreferencedTopNode(true)
-	{}
-
-	__forceinline EvaluableNodeReference(EvaluableNodeImmediateValueWithType enivwt, bool _unique)
-		: value(enivwt), unique(_unique), uniqueUnreferencedTopNode(_unique)
-	{}
-
-	//constructs an EvaluableNodeReference with an immediate type and true if possible to coerce node
-	//into one of the immediate request types, or returns a non-unique EvaluableNodeReference and false if not
-	static inline EvaluableNodeReference CoerceNonUniqueEvaluableNodeToImmediateIfPossible(EvaluableNode *en,
-		EvaluableNodeRequestedValueTypes immediate_result)
-	{
-		if(en == nullptr)
-		{
-			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
-				return EvaluableNodeReference(EvaluableNodeImmediateValueWithType(), true);
-			return EvaluableNodeReference::Null();
-		}
-
-		if(immediate_result.AnyImmediateType())
-		{
-			//first check for null, since it's not an immediate value
-			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
-			{
-				if(en->GetType() == ENT_NULL)
-				{
-					if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
-						return EvaluableNodeReference(EvaluableNodeImmediateValueWithType(), true);
-					return EvaluableNodeReference::Null();
-				}
-			}
-
-			if(en->IsImmediate())
-			{
-				//first check for key strings
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
-					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en, true));
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::KEY_STRING_ID))
-					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en, true), true);
-
-				//if type matches the usable return type, then return that, otherwise fall back to returning
-				//the node as the caller will know the most appropriate type change to apply
-				auto type = en->GetType();
-				if(type == ENT_BOOL)
-				{
-					if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::BOOL))
-						return EvaluableNodeReference(en->GetBoolValueReference());
-				}
-				else if(type == ENT_NUMBER)
-				{
-					if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NUMBER))
-						return EvaluableNodeReference(en->GetNumberValueReference());
-				}
-				else if(type == ENT_STRING)
-				{
-					if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID)
-							|| immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::STRING_ID))
-						return EvaluableNodeReference(en->GetStringIDReference());
-				}
-			}
-
-			//if it doesn't allow code, then coerce into the the most general type
-			if(!immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::CODE))
-			{
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
-					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en, true));
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::KEY_STRING_ID))
-					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en, true), true);
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID))
-					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en));
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::STRING_ID))
-					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en), true);
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NUMBER))
-					return EvaluableNodeReference(EvaluableNode::ToNumber(en), true);
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::BOOL))
-					return EvaluableNodeReference(EvaluableNode::ToBool(en), true);
-
-				//otherwise EvaluableNodeRequestedValueTypes::Type::NULL_VALUE
-				return EvaluableNodeReference::Null();
-			}
-		}
-
-		return EvaluableNodeReference(en, false);
-	}
-
-	//frees resources associated with immediate values
-	//note that this could be placed in a destructor, but this is such a rare use,
-	//i.e., only when an immediate value is requested, and the references are usually handled specially,
-	//that it's just as complex to put it in the destructor but will incur more overhead
-	__forceinline void FreeImmediateResources()
-	{
-		if(value.nodeType == ENIVT_STRING_ID)
-			string_intern_pool.DestroyStringReference(value.nodeValue.stringID);
-	}
-
-	//when attached a child node, make sure that this node reflects the same properties
-	//if first_attachment_and_not_construction_stack_node is true, then it will not call SetNeedCycleCheck(true)
-	// unless the attached node also needs cycle check.  Note that this parameter should not be set to true
-	//if the node can be accessed in any other way, such as the construction stack
-	void UpdatePropertiesBasedOnAttachedNode(EvaluableNodeReference &attached,
-		bool first_attachment_and_not_construction_stack_node = false)
-	{
-		if(attached.value.nodeValue.code == nullptr)
-			return;
-
-		if(!attached.unique)
-		{
-			unique = false;
-
-			//first attachment doesn't need to automatically require a cycle check
-			if(first_attachment_and_not_construction_stack_node)
-			{
-				if(attached.value.nodeValue.code->GetNeedCycleCheck())
-					value.nodeValue.code->SetNeedCycleCheck(true);
-			}
-			else //if new attachments aren't unique, then can't guarantee there isn't a cycle present
-			{
-				value.nodeValue.code->SetNeedCycleCheck(true);
-			}
-		}
-		else if(attached.value.nodeValue.code->GetNeedCycleCheck())
-		{
-			value.nodeValue.code->SetNeedCycleCheck(true);
-		}
-
-		if(!attached.value.nodeValue.code->GetIsIdempotent())
-			value.nodeValue.code->SetIsIdempotent(false);
-	}
-
-	//when attached a child node to a random location under this node, checks to see
-	//if all flags for this node should be rechecked
-	//this will update uniqueness based on the new attachment
-	bool NeedAllFlagsRecheckedAfterNodeAttachedAndUpdateUniqueness(EvaluableNodeReference &attached)
-	{
-		if(attached.value.nodeValue.code == nullptr)
-			return false;
-
-		if(!attached.unique)
-		{
-			unique = false;
-			return true;
-		}
-
-		if(value.nodeValue.code->GetNeedCycleCheck() != attached.value.nodeValue.code->GetNeedCycleCheck())
-			return true;
-
-		if(value.nodeValue.code->GetIsIdempotent() != attached.value.nodeValue.code->GetIsIdempotent())
-			return true;
-
-		return false;
-	}
-
-	//calls GetNeedCycleCheck if the reference is not nullptr, returns false if it is nullptr
-	__forceinline bool GetNeedCycleCheck()
-	{
-		if(value.nodeType != ENIVT_CODE)
-			return false;
-
-		if(value.nodeValue.code == nullptr)
-			return false;
-
-		return value.nodeValue.code->GetNeedCycleCheck();
-	}
-
-	//calls SetNeedCycleCheck if the reference is not nullptr
-	__forceinline void SetNeedCycleCheck(bool need_cycle_check)
-	{
-		if(value.nodeValue.code == nullptr)
-			return;
-
-		value.nodeValue.code->SetNeedCycleCheck(need_cycle_check);
-	}
-
-	//returns true if the reference is idempotent
-	__forceinline bool GetIsIdempotent()
-	{
-		if(value.nodeType != ENIVT_CODE)
-			return true;
-
-		if(value.nodeValue.code == nullptr)
-			return true;
-
-		return value.nodeValue.code->GetIsIdempotent();
-	}
-
-	//sets idempotency if the reference is code and not nullptr
-	__forceinline void SetIsIdempotent(bool is_idempotent)
-	{
-		if(value.nodeType != ENIVT_CODE)
-			return;
-
-		if(value.nodeValue.code == nullptr)
-			return;
-
-		return value.nodeValue.code->SetIsIdempotent(is_idempotent);
-	}
-
-	__forceinline static EvaluableNodeReference Null()
-	{
-		return EvaluableNodeReference(static_cast<EvaluableNode *>(nullptr), true);
-	}
-
-	__forceinline void SetReference(EvaluableNode *_reference)
-	{
-		value = _reference;
-	}
-
-	__forceinline void SetReference(EvaluableNode *_reference, bool _unique)
-	{
-		value = _reference;
-		unique = _unique;
-		uniqueUnreferencedTopNode = _unique;
-	}
-
-	__forceinline void SetReference(EvaluableNode *_reference,
-		bool _unique, bool unique_unreferenced_top_node)
-	{
-		value = _reference;
-		unique = _unique;
-		uniqueUnreferencedTopNode = unique_unreferenced_top_node;
-	}
-
-	__forceinline void SetReference(const EvaluableNodeImmediateValueWithType &enimvwt, bool _unique)
-	{
-		value = enimvwt;
-		unique = _unique;
-		uniqueUnreferencedTopNode = _unique;
-	}
-
-	__forceinline void SetReference(const EvaluableNodeImmediateValueWithType &enimvwt,
-		bool _unique, bool unique_unreferenced_top_node)
-	{
-		value = enimvwt;
-		unique = _unique;
-		uniqueUnreferencedTopNode = unique_unreferenced_top_node;
-	}
-
-	//returns true if it is an immediate value stored in this EvaluableNodeReference
-	__forceinline bool IsImmediateValue()
-	{
-		return (value.nodeType != ENIVT_CODE || value.nodeValue.code == nullptr);
-	}
-
-	//returns true if the type of whatever is stored is an immediate type
-	__forceinline bool IsImmediateValueType()
-	{
-		if(value.nodeType != ENIVT_CODE)
-			return true;
-
-		return (value.nodeValue.code == nullptr || value.nodeValue.code->IsImmediate());
-	}
-
-	__forceinline bool IsNonNullNodeReference()
-	{
-		return (value.nodeType == ENIVT_CODE && value.nodeValue.code != nullptr);
-	}
-
-	__forceinline EvaluableNodeImmediateValueWithType &GetValue()
-	{
-		return value;
-	}
-
-	__forceinline EvaluableNode *&GetReference()
-	{
-		return value.nodeValue.code;
-	}
-
-	//allow to use as an EvaluableNode *
-	__forceinline operator EvaluableNode *&()
-	{	return value.nodeValue.code;	}
-
-	//allow to use as an EvaluableNode *
-	__forceinline EvaluableNode *operator->()
-	{	return value.nodeValue.code;	}
-
-	//forbid implicit assignment from a raw pointer, since things can go wrong
-	EvaluableNodeReference &operator=(EvaluableNode *) = delete;
-
-	__forceinline EvaluableNodeReference &operator =(const EvaluableNodeReference &enr)
-	{
-		//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
-		value = enr.value;
-		unique = enr.unique;
-		uniqueUnreferencedTopNode = enr.uniqueUnreferencedTopNode;
-		return *this;
-	}
-
-	EvaluableNodeReference &operator=(EvaluableNodeReference &&enr)
-	{
-		//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
-		value = enr.value;
-		unique = enr.unique;
-		uniqueUnreferencedTopNode = enr.uniqueUnreferencedTopNode;
-		return *this;
-	}
-
-protected:
-	//align so the entire data structure takes up 16 bytes
-#pragma pack(push, 4)
-	EvaluableNodeImmediateValueWithType value;
-
-public:
-
-	//true if this is the only reference to the result
-	bool unique;
-
-	//true if this is the only reference to the top node, including no child nodes referencing it
-	bool uniqueUnreferencedTopNode;
-#pragma pack(pop)
-};
-
-
-//Uses an EvaluableNode as a stack which may already have elements in it
-// upon destruction it restores the stack back to the state it was when constructed
-class EvaluableNodeStackStateSaver
-{
-public:
-	inline EvaluableNodeStackStateSaver()
-		: stack(nullptr), originalStackSize(0)
-	{	}
-
-	__forceinline EvaluableNodeStackStateSaver(std::vector<EvaluableNode *> *_stack)
-	{
-		stack = _stack;
-		originalStackSize = stack->size();
-	}
-
-	//constructor that adds one first element
-	__forceinline EvaluableNodeStackStateSaver(std::vector<EvaluableNode *> *_stack, EvaluableNode *initial_element)
-	{
-		stack = _stack;
-		originalStackSize = stack->size();
-
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(initial_element == nullptr || initial_element->IsNodeValid());
-	#endif
-
-		stack->push_back(initial_element);
-	}
-
-	__forceinline ~EvaluableNodeStackStateSaver()
-	{
-		stack->resize(originalStackSize);
-	}
-
-	//ensures that the stack is allocated to hold up to num_new_nodes
-	__forceinline void ReserveNodes(size_t num_new_nodes)
-	{
-		stack->resize(stack->size() + num_new_nodes);
-	}
-
-	__forceinline void PushEvaluableNode(EvaluableNode *n)
-	{
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(n == nullptr || n->IsNodeValid());
-	#endif
-		stack->push_back(n);
-	}
-
-	__forceinline void PopEvaluableNode()
-	{
-		stack->pop_back();
-	}
-
-	//returns the offset to the first element of this state saver
-	__forceinline size_t GetIndexOfFirstElement()
-	{
-		return originalStackSize;
-	}
-
-	//returns the offset to the last element of this state saver
-	__forceinline size_t GetIndexOfLastElement()
-	{
-		return stack->size();
-	}
-
-	//returns the corresponding element
-	__forceinline EvaluableNode *GetStackElement(size_t location)
-	{
-		return (*stack)[location];
-	}
-
-	//replaces the position of the stack with new_value
-	__forceinline void SetStackElement(size_t location, EvaluableNode *new_value)
-	{
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(new_value == nullptr || new_value->IsNodeValid());
-	#endif
-		(*stack)[location] = new_value;
-	}
-
-	std::vector<EvaluableNode *> *stack;
-	size_t originalStackSize;
-};
-
+//memory pooled manager for allocating EvaluableNodes
 class EvaluableNodeManager
 {
 public:
-	//data structure to store which nodes are referenced with a lock
-	struct NodesReferenced
+
+	struct ActiveInterpreters
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::SingleMutex mutex;
 	#endif
-
-		//adds the node to nodes referenced
-		inline void KeepNodeReference(EvaluableNode *en)
-		{
-			if(en == nullptr)
-				return;
-
-			//attempt to put in value 1 for the reference
-			auto [inserted_entry, inserted] = nodesReferenced.emplace(en, 1);
-
-			//if couldn't insert because already referenced, then increment
-			if(!inserted)
-				inserted_entry->second++;
-		}
-
-		//removes the node from nodes referenced
-		inline void FreeNodeReference(EvaluableNode *en)
-		{
-			if(en == nullptr)
-				return;
-
-			//get reference count
-			auto node = nodesReferenced.find(en);
-
-			//don't do anything if not counted
-			if(node == nodesReferenced.end())
-				return;
-
-			//if it has sufficient refcount, then just decrement
-			if(node->second > 1)
-				node->second--;
-			else //otherwise remove reference
-				nodesReferenced.erase(node);
-		}
-
-		EvaluableNode::ReferenceCountType nodesReferenced;
+		CompactHashSet<Interpreter *> activeInterpreters;
 	};
 
 	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
@@ -1063,66 +587,59 @@ public:
 		}
 	}
 
-	//retuns the nodes currently referenced, allocating if they don't exist
-	NodesReferenced &GetNodesReferenced()
+	//sets the root node ensuring that the memory has been flushed so it is ready for reading
+	__forceinline void SetRootNode(EvaluableNode *new_root)
 	{
-		if(nodesCurrentlyReferenced.get() == nullptr)
+	#ifdef MULTITHREAD_SUPPORT
+		//fence memory flushing by using an atomic store
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		std::atomic<EvaluableNode *> *atomic_ref
+			= reinterpret_cast<std::atomic<EvaluableNode *> *>(&rootNode);
+		atomic_ref->store(new_root, std::memory_order_release);
+	#else
+		rootNode = new_root;
+	#endif
+	}
+
+	//returns true if any interpreters are operating on the nodes managed by this instance
+	inline bool AreAnyInterpretersRunning()
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::WriteLock write_lock(managerAttributesMutex);
+	#endif
+
+		return (activeInterpreters.get() != nullptr && activeInterpreters->activeInterpreters.size() > 0);
+	}
+
+	//adds the interpreter to the active list for tracking EvaluableNode references
+	void AddActiveInterpreter(Interpreter *interpreter)
+	{
+		if(activeInterpreters.get() == nullptr)
 		{
 		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::WriteLock write_lock(managerAttributesMutex);
 
 			//double check that it's still nullptr in case another thread created it
-			if(nodesCurrentlyReferenced.get() == nullptr)
+			if(activeInterpreters.get() == nullptr)
 		#endif
-				nodesCurrentlyReferenced = std::make_unique<NodesReferenced>();
+				activeInterpreters = std::make_unique<ActiveInterpreters>();
 		}
 
-		return *nodesCurrentlyReferenced.get();
-	}
-
-	//adds the node to nodes referenced
-	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
-	//to obtain a lock around all calls to this method
-	template<typename ...EvaluableNodeReferenceType>
-	inline void KeepNodeReferences(EvaluableNodeReferenceType... nodes)
-	{
-		NodesReferenced &nr = GetNodesReferenced();
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(nr.mutex);
+		Concurrency::Lock lock(activeInterpreters->mutex);
 	#endif
 
-		for(EvaluableNode *en : { nodes... })
-			nr.KeepNodeReference(en);
+		activeInterpreters->activeInterpreters.insert(interpreter);
 	}
 
-	//removes the node from nodes referenced
-	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
-	//to obtain a lock around all calls to this method
-	template<typename ...EvaluableNodeReferenceType>
-	void FreeNodeReferences(EvaluableNodeReferenceType... nodes)
+	//removes the interpreter from the active list for tracking EvaluableNode references
+	void RemoveActiveInterpreter(Interpreter *interpreter)
 	{
-		NodesReferenced &nr = GetNodesReferenced();
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(nr.mutex);
+		Concurrency::Lock lock(activeInterpreters->mutex);
 	#endif
 
-		for(EvaluableNode *en : { nodes... })
-			nr.FreeNodeReference(en);
-	}
-
-	//a combo of KeepNodeReferences and FreeNodeReferences but for one node
-	void ExchangeNodeReference(EvaluableNode *node_reference_to_keep, EvaluableNode *node_reference_to_free)
-	{
-		if(node_reference_to_keep == node_reference_to_free)
-			return;
-
-		NodesReferenced &nr = GetNodesReferenced();
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(nr.mutex);
-	#endif
-
-		nr.FreeNodeReference(node_reference_to_free);
-		nr.KeepNodeReference(node_reference_to_keep);
+		activeInterpreters->activeInterpreters.erase(interpreter);
 	}
 
 	//returns the number of nodes currently being used that have not been freed yet
@@ -1131,30 +648,6 @@ public:
 
 	__forceinline size_t GetNumberOfUnusedNodes()
 	{	return nodes.size() - firstUnusedNodeIndex;		}
-
-	__forceinline size_t GetNumberOfNodesReferenced()
-	{
-		NodesReferenced &nr = GetNodesReferenced();
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(nr.mutex);
-	#endif
-
-		return nr.nodesReferenced.size();
-	}
-
-	//returns true if any interpreters are operating on the nodes managed by this instance
-	inline bool AreAnyInterpretersRunning()
-	{
-		NodesReferenced &nr = GetNodesReferenced();
-
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(nr.mutex);
-	#endif
-
-		//interpreters use 3 nodes, so if more than one is referenced, there's an interpreter
-		size_t num_nodes_currently_referenced = nr.nodesReferenced.size();
-		return (num_nodes_currently_referenced > 1);
-	}
 
 	//returns all nodes still in use.  For debugging purposes
 	std::vector<EvaluableNode *> GetUsedNodes()
@@ -1175,6 +668,9 @@ public:
 	//intended for debugging only
 	static void ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNode *en,
 		EvaluableNodeManager *ensure_nodes_in_enm = nullptr, bool check_cycle_flag_consistency = true);
+
+	//verifies integrity of all referenced nodes
+	void VerifyEvaluableNodeIntegretyForAllReferencedNodes();
 
 	//when numNodesToRunGarbageCollection are allocated, then it is time to run garbage collection
 	size_t numNodesToRunGarbageCollection;
@@ -1247,7 +743,7 @@ protected:
 	// returns an uninitialized EvaluableNode -- care must be taken to set fields properly
 	EvaluableNode *AllocUninitializedNode();
 
-	//frees everything except those nodes referenced by nodesCurrentlyReferenced
+	//frees everything except those nodes referenced by rootNode and activeInterpreters
 	//cur_first_unused_node_index represents the first unused index and will set firstUnusedNodeIndex
 	//to the reduced value
 	//note that this method does not read from firstUnusedNodeIndex, as it may be cleared to indicate threads
@@ -1268,15 +764,6 @@ protected:
 	// requires tree not be nullptr; the first tree should have nullptr as parent
 	static std::pair<bool, bool> UpdateFlagsForNodeTreeRecurse(EvaluableNode *tree, EvaluableNode *parent,
 		EvaluableNode::ReferenceAssocType &checked_to_parent);
-
-	//sets or clears all referenced nodes' in use flags
-	//if set_in_use is true, then it will set the value, if false, it will clear the value
-	//note that tree cannot be nullptr and it should already be inserted into the references prior to calling
-	static void MarkAllReferencedNodesInUse(EvaluableNode *tree);
-
-#ifdef MULTITHREAD_SUPPORT
-	static void MarkAllReferencedNodesInUseConcurrent(EvaluableNode *tree);
-#endif
 
 	//helper method for ValidateEvaluableNodeTreeMemoryIntegrity
 	//returns a tuple of whether it is cycle free and whether it is idempotent
@@ -1299,6 +786,12 @@ protected:
 	#endif
 		localAllocationBuffer.AddNode(en, this);
 	}
+
+public:
+	//root of the entity
+	EvaluableNode *rootNode;
+
+protected:
 
 #ifdef MULTITHREAD_SUPPORT
 	//mutex to manage attributes of manager, including operations such as
@@ -1330,7 +823,7 @@ protected:
 
 	//keeps track of all of the nodes currently referenced by any resource or interpreter
 	//only allocated if needed
-	std::unique_ptr<NodesReferenced> nodesCurrentlyReferenced;
+	std::unique_ptr<ActiveInterpreters> activeInterpreters;
 
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;

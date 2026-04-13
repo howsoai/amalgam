@@ -138,6 +138,7 @@ set(COMMON_SOURCE
     src/Amalgam/evaluablenode/EvaluableNode.h
     src/Amalgam/evaluablenode/EvaluableNodeManagement.cpp
     src/Amalgam/evaluablenode/EvaluableNodeManagement.h
+    src/Amalgam/evaluablenode/EvaluableNodeReference.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeDifference.cpp
     src/Amalgam/evaluablenode/EvaluableNodeTreeDifference.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeFunctions.cpp
@@ -159,7 +160,9 @@ set(COMMON_SOURCE
     src/Amalgam/IntegerSet.h
     src/Amalgam/interpreter/Interpreter.cpp
     src/Amalgam/interpreter/Interpreter.h
+    src/Amalgam/interpreter/InterpreterConcurrencyManager.h
     src/Amalgam/interpreter/InterpreterDebugger.cpp
+    src/Amalgam/interpreter/InterpreterUtilities.h
     src/Amalgam/interpreter/OpcodesAdvancedMath.cpp
     src/Amalgam/interpreter/OpcodesBasicMath.cpp
     src/Amalgam/interpreter/OpcodesCodeComparisonAndEvolution.cpp

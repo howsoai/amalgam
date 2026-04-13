@@ -14,6 +14,7 @@
 //system headers:
 #include <filesystem>
 #include <string>
+#include <sstream>
 #include <tuple>
 
 const std::string FILE_EXTENSION_AMLG_METADATA("mdam");

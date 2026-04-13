@@ -23,8 +23,7 @@ Entity::Entity()
 {
 	hasContainedEntities = false;
 	entityRelationships.container = nullptr;
-	rootNode = evaluableNodeManager.AllocNode(ENT_ASSOC);
-	evaluableNodeManager.KeepNodeReferences(rootNode);
+	evaluableNodeManager.SetRootNode(evaluableNodeManager.AllocNode(ENT_ASSOC));
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 }
@@ -34,7 +33,7 @@ Entity::Entity(std::string &code_string, const std::string &rand_state)
 {
 	hasContainedEntities = false;
 	entityRelationships.container = nullptr;
-	rootNode = nullptr;
+	evaluableNodeManager.rootNode = nullptr;
 
 	SetRoot(code_string);
 
@@ -46,7 +45,7 @@ Entity::Entity(EvaluableNode *_root, const std::string &rand_state)
 {
 	hasContainedEntities = false;
 	entityRelationships.container = nullptr;
-	rootNode = nullptr;
+	evaluableNodeManager.rootNode = nullptr;
 
 	//since this is the constructor, can't have had this entity's EntityNodeManager
 	SetRoot(_root, false);
@@ -60,9 +59,9 @@ Entity::Entity(Entity *t)
 	randomStream = t->randomStream;
 	hasContainedEntities = false;
 	entityRelationships.container = nullptr;
-	rootNode = nullptr;
+	evaluableNodeManager.rootNode = nullptr;
 
-	SetRoot(t->rootNode, false);
+	SetRoot(t->evaluableNodeManager.rootNode, false);
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 
@@ -286,7 +285,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 				new_value_reference, &evaluableNodeManager);
 
 			//overwrite the root's flags and value at the location
-			rootNode->UpdateFlagsBasedOnNewChildNode(accumulated_value);
+			evaluableNodeManager.rootNode->UpdateFlagsBasedOnNewChildNode(accumulated_value);
 
 		#ifdef MULTITHREAD_SUPPORT
 			//fence memory to ensure flags are up to date by flushing by using an atomic store
@@ -303,7 +302,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			//if label doesn't exist, create new root to contain it
 			if(label_iterator == end(label_index))
 			{
-				EvaluableNode *new_root = evaluableNodeManager.AllocNode(rootNode);
+				EvaluableNode *new_root = evaluableNodeManager.AllocNode(evaluableNodeManager.rootNode);
 				//ensure flags are updated before new_root is exposed
 				new_root->UpdateFlagsBasedOnNewChildNode(new_value_reference);
 				auto &new_root_mcn = new_root->GetMappedChildNodesReference();
@@ -311,15 +310,16 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 				string_intern_pool.CreateStringReference(label_sid);
 
 				//can only free the root if nothing is running on this entity and nothing references it
-				if(!evaluableNodeManager.AreAnyInterpretersRunning() && !rootNode->GetNeedCycleCheck())
-					evaluableNodeManager.FreeNode(rootNode);
+				if(!AreAnyInterpretersRunning()
+						&& !evaluableNodeManager.rootNode->GetNeedCycleCheck())
+					evaluableNodeManager.FreeNode(evaluableNodeManager.rootNode);
 
-				SetRootNode(new_root);
+				evaluableNodeManager.SetRootNode(new_root);
 			}
 			else
 			{
 				//overwrite the root's flags before value at the location
-				rootNode->UpdateFlagsBasedOnNewChildNode(new_value_reference);
+				evaluableNodeManager.rootNode->UpdateFlagsBasedOnNewChildNode(new_value_reference);
 
 			#ifdef MULTITHREAD_SUPPORT
 				//fence memory to ensure flags are up to date by flushing by using an atomic store
@@ -412,7 +412,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		if(container_caches != nullptr)
 			container_caches->RemoveEntityLabels(this, GetEntityIndexOfContainer(), label_sids_and_values_to_remove);
 
-		SetRootNode(new_root);
+		evaluableNodeManager.SetRootNode(new_root);
 
 		if(write_listeners != nullptr)
 		{
@@ -435,7 +435,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 }
 
 EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
-	EvaluableNode *scope_stack, Interpreter *calling_interpreter,
+	std::vector<EvaluableNode *> *scope_stack, Interpreter *calling_interpreter,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
 	InterpreterConstraints *interpreter_constraints
 #ifdef MULTITHREAD_SUPPORT
@@ -469,6 +469,9 @@ EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
 
 bool Entity::IsEntityCurrentlyBeingExecuted()
 {
+	if(AreAnyInterpretersRunning())
+		return true;
+
 	if(hasContainedEntities)
 	{
 		for(auto ce : entityRelationships.relationships->containedEntities)
@@ -478,7 +481,7 @@ bool Entity::IsEntityCurrentlyBeingExecuted()
 		}
 	}
 
-	return evaluableNodeManager.AreAnyInterpretersRunning();
+	return false;
 }
 
 size_t Entity::GetDeepSizeInNodes()
@@ -895,7 +898,7 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::
 		_code = new_root;
 	}
 
-	SetRootNode(_code);
+	evaluableNodeManager.SetRootNode(_code);
 
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();
@@ -922,15 +925,6 @@ void Entity::SetRoot(std::string &code_string, std::vector<EntityWriteListener *
 	auto [node, warnings, char_with_error, code_complete]
 		= Parser::Parse(code_string, &evaluableNodeManager);
 	SetRoot(node, true, write_listeners);
-}
-
-void Entity::VerifyEvaluableNodeIntegrity()
-{
-	EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(GetRoot(), &evaluableNodeManager);
-
-	auto &nr = evaluableNodeManager.GetNodesReferenced();
-	for(auto &[en, _] : nr.nodesReferenced)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 }
 
 void Entity::VerifyEvaluableNodeIntegrityAndAllContainedEntities()

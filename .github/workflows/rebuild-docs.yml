@@ -1,0 +1,68 @@
+name: Rebuild Docs Files
+run-name: "Rebuild Docs"
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  regenerate-docs-files:
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    runs-on: ubuntu-24.04-arm
+    permissions: write-all
+
+    steps:
+
+      - uses: actions/checkout@v6
+        with:
+          # Check out with a PAT so that the workflow can make commits that re-trigger the PR build
+          token: ${{ secrets.HOWSOAI_WORKFLOW_AUTOMATION_TOKEN }}
+          ref: ${{ github.head_ref }}
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: amalgam-${{ inputs.version }}-release-linux-arm64
+
+      - name: Extract Amalgam
+        run: |
+          mkdir ./amalgam
+          tar -xvf ./amalgam-${{ inputs.version }}-linux-arm64.tar.gz -C ./amalgam
+          mv ./amalgam/bin/amalgam-st ./amalgam-st
+          chmod +x amalgam-st
+
+      - name: Generate docs
+        run: |
+          cd ./docs
+          # Remove all existing
+          rm *.md
+          # Regenerate
+          ../amalgam-st ../build/docs/build_doc_files.amlg
+          # Clean up
+          cd ..
+          rm -rf ./amalgam
+          rm ./amalgam-st
+          rm ./amalgam-${{ inputs.version }}-linux-arm64.tar.gz
+
+      - name: Commit changes
+        id: commit-changes
+        run: |
+          git pull
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes to docs files detected. Making a new commit..."
+            git config user.name "howso-automation"
+            git config user.email "support@howso.com"
+            git add -A docs/
+            git commit -m "Automated docs rebuild"
+            git push
+          else
+            echo "No changes detected in the repository."
+          fi

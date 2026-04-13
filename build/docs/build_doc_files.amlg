@@ -26,7 +26,7 @@
     })
 
 	
-	(store "./amalgam_overview.md" (concat
+	(store "./index.md" (concat
 		(help "overview") "\n"
 		(help "syntax") "\n"
 
@@ -114,7 +114,7 @@
 								)
 
 								"\n"
-								"[Amalgam Opcodes](./amalgam_overview.md#amalgam-opcodes)\n\n"
+								"[Amalgam Opcodes](./index.md#amalgam-opcodes)\n\n"
 							)
 						)
 					)

@@ -335,4 +335,3 @@ message(STATUS "Current build type: ${CMAKE_BUILD_TYPE}")
 
 include(create_tests)
 include(create_package)
-include(install_docs)

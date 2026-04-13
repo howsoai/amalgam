@@ -16,7 +16,33 @@ concurrency:
 
 jobs:
 
+  check-docs-commit:
+    runs-on: ubuntu-latest
+    outputs:
+      skip-build: ${{ steps.check.outputs.skip-build }}
+    steps:
+
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 2
+
+    - name: Check if last commit was from docs rebuild bot
+      id: check
+      run: |
+        LAST_AUTHOR=$(git log -1 --format='%an' HEAD^2)
+        LAST_MESSAGE=$(git log -1 --format='%s' HEAD^2)
+        echo "Last commit author: $LAST_AUTHOR"
+        echo "Last commit message: $LAST_MESSAGE"
+        if [[ "$LAST_AUTHOR" == "howso-automation" && "$LAST_MESSAGE" == "Automated docs rebuild" ]]; then
+          echo "Last commit was from the docs rebuild bot. Skipping build."
+          echo "skip-build=true" >> $GITHUB_OUTPUT
+        else
+          echo "skip-build=" >> $GITHUB_OUTPUT
+        fi
+
   set-pr-version:
+    if: needs.check-docs-commit.outputs.skip-build != 'true'
+    needs: ["check-docs-commit"]
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.set-pr-version.outputs.version }}
@@ -49,18 +75,37 @@ jobs:
           echo "version=$(echo ${{ steps.next-semvers.outputs.patch }}-alpha+PR.${PR_NUMBER}.${PR_ITERATION})" >> $GITHUB_OUTPUT
 
   build:
-    needs: ['set-pr-version']
+    if: needs.check-docs-commit.outputs.skip-build != 'true'
+    needs: ['check-docs-commit', 'set-pr-version']
     uses: "./.github/workflows/build.yml"
     secrets: inherit
     with:
       version: ${{ needs.set-pr-version.outputs.version }}
       build-type: "PR"
 
+  rebuild-docs:
+    if: needs.check-docs-commit.outputs.skip-build != 'true'
+    needs: ['check-docs-commit', 'set-pr-version', 'build']
+    uses: "./.github/workflows/rebuild-docs.yml"
+    secrets: inherit
+    with:
+      version: ${{ needs.set-pr-version.outputs.version }}
+
   # This job is here to have only one final step to add for "Status Checks"
   # in GitHub, instead of adding every leaf test from 'build'
   final-check:
-    needs: ['build']
-    if: always() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
+    needs: ["check-docs-commit", "build"]
+    if: |
+      always() && (
+        needs.check-docs-commit.outputs.skip-build == 'true' ||
+        (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
+      )
     runs-on: ubuntu-latest
     steps:
-      - run: exit 1
+      - name: Skip — docs bot commit detected
+        if: needs.check-docs-commit.outputs.skip-build == 'true'
+        run: echo "Last commit was an automated docs rebuild. Skipping build pipeline."
+
+      - name: Fail — build or upstream job failed
+        if: needs.check-docs-commit.outputs.skip-build != 'true'
+        run: exit 1

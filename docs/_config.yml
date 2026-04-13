@@ -1,0 +1,52 @@
+# -----------------------------------------------
+# Site Settings
+# -----------------------------------------------
+title: "Amalgam®"
+tagline: "Language Reference and Examples."
+description: "Official documentation for the Amalgam programming language."
+url: "https://howsoai.github.io"
+baseurl: "amalgam"
+
+# -----------------------------------------------
+# Author
+# -----------------------------------------------
+author:
+  name: ""
+  email: ""
+
+# -----------------------------------------------
+# Theme (remote, for GitHub Actions)
+# -----------------------------------------------
+remote_theme: abhinavs/moonwalk
+
+# -----------------------------------------------
+# Appearance
+# Options: "light", "dark", "auto"
+# "auto" follows the visitor's OS preference
+# -----------------------------------------------
+appearance: auto
+
+# -----------------------------------------------
+# Date Format
+# -----------------------------------------------
+date_format: "%B %-d, %Y"
+
+# -----------------------------------------------
+# Plugins
+# -----------------------------------------------
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-remote-theme
+  - jekyll-paginate
+
+# -----------------------------------------------
+# Exclude from build
+# -----------------------------------------------
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - LICENSE
+  - bin/

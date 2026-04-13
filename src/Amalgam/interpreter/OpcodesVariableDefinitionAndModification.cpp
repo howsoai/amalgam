@@ -527,7 +527,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		return EvaluableNodeReference::Null();
 
 	//make sure there's at least a scopeStack to use
-	if(scopeStackNodes->size() < 1)
+	if(scopeStackNodes.size() < 1)
 		return EvaluableNodeReference::Null();
 
 	bool accum = (en->GetType() == ENT_ACCUM);
@@ -1076,19 +1076,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
-	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTarget;
+	size_t offset = constructionStackNodes.size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTarget;
 
 	if(ocn.size() > 1)
 	{
 		//if there's a second parameter, try to look up the walk path
-		EvaluableNode **target = InterpretNodeIntoDestination(&(*constructionStackNodes)[offset], ocn[1], false);
+		EvaluableNode **target = InterpretNodeIntoDestination(&constructionStackNodes[offset], ocn[1], false);
 		if(target == nullptr)
 			return EvaluableNodeReference::Null();
 
 		return EvaluableNodeReference(*target, false);
 	}
 
-	return EvaluableNodeReference((*constructionStackNodes)[offset], false);
+	return EvaluableNodeReference(constructionStackNodes[offset], false);
 }
 
 static OpcodeInitializer _ENT_STACK(ENT_STACK, &Interpreter::InterpretNode_ENT_STACK, []() {

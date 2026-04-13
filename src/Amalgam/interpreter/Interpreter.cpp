@@ -1,10 +1,8 @@
 //project headers:
-#include "Interpreter.h"
-
 #include "AssetManager.h"
-#include "EntityQueries.h"
-#include "EntityQueryBuilder.h"
 #include "EvaluableNodeTreeFunctions.h"
+#include "Interpreter.h"
+#include "InterpreterConcurrencyManager.h"
 #include "OpcodeDetails.h"
 #include "PerformanceProfiler.h"
 #include "StringInternPool.h"
@@ -26,10 +24,6 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	writeListeners = write_listeners;
 	printListener = print_listener;
 
-	scopeStackNodes = nullptr;
-	opcodeStackNodes = nullptr;
-	constructionStackNodes = nullptr;
-
 	evaluableNodeManager = enm;
 #ifdef MULTITHREAD_SUPPORT
 	bottomOfScopeStack = true;
@@ -37,8 +31,8 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 }
 
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	EvaluableNode *scope_stack,
-	EvaluableNode *opcode_stack, EvaluableNode *construction_stack,
+	std::vector<EvaluableNode *> * scope_stack,
+	std::vector<EvaluableNode *> * opcode_stack, std::vector<EvaluableNode *> *construction_stack,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
 	EvaluableNodeRequestedValueTypes immediate_result
 #ifdef MULTITHREAD_SUPPORT
@@ -49,37 +43,39 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	//use specified or create new scopeStack
 	if(scope_stack == nullptr)
 	{
-		//create list of associative lists, and populate it with the top of the stack
-		scope_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-		scope_stack->SetNeedCycleCheck(true);
-
 		EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
 		new_context_entry->SetNeedCycleCheck(true);
-		scope_stack->AppendOrderedChildNode(new_context_entry);
+		scopeStackNodes.clear();
+		scopeStackNodes.push_back(new_context_entry);
+	}
+	else
+	{
+		scopeStackNodes = std::move(*scope_stack);
 	}
 
+	//
 	if(opcode_stack == nullptr)
-		opcode_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-	opcode_stack->SetNeedCycleCheck(true);
-	
-	if(construction_stack == nullptr)
-		construction_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-	construction_stack->SetNeedCycleCheck(true);
+		opcodeStackNodes.clear();
+	else
+		opcodeStackNodes = std::move(*opcode_stack);
 
-	scopeStackNodes = &scope_stack->GetOrderedChildNodes();
-	opcodeStackNodes = &opcode_stack->GetOrderedChildNodes();
-	constructionStackNodes = &construction_stack->GetOrderedChildNodes();
+	if(construction_stack == nullptr)
+		constructionStackNodes.clear();
+	else
+		constructionStackNodes = std::move(*construction_stack);
 
 #ifdef MULTITHREAD_SUPPORT
 	bottomOfScopeStack = new_scope_stack;
 #endif
 
-	if(construction_stack_indices != nullptr)
-		constructionStackIndicesAndUniqueness = *construction_stack_indices;
+	if(construction_stack_indices == nullptr)
+		constructionStackIndicesAndUniqueness.clear();
+	else
+		constructionStackIndicesAndUniqueness = std::move(*construction_stack_indices);
 	
-	evaluableNodeManager->KeepNodeReferences(scope_stack, opcode_stack, construction_stack);
+	evaluableNodeManager->AddActiveInterpreter(this);
 	auto retval = InterpretNode(en, immediate_result);
-	evaluableNodeManager->FreeNodeReferences(scope_stack, opcode_stack, construction_stack);
+	evaluableNodeManager->RemoveActiveInterpreter(this);
 
 	return retval;
 }
@@ -91,9 +87,9 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 )
 {
 	EvaluableNode *scope_stack = nullptr;
-	size_t ss_size = scopeStackNodes->size();
+	size_t ss_size = scopeStackNodes.size();
 	if(ss_size > depth)
-		scope_stack = (*scopeStackNodes)[ss_size - (depth + 1)];
+		scope_stack = scopeStackNodes[ss_size - (depth + 1)];
 
 #ifdef MULTITHREAD_SUPPORT
 	//need to search further down the stack if appropriate
@@ -117,7 +113,7 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 {
 	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetOrderedChildNodes(*scopeStackNodes);
+	stack_top_holder.SetOrderedChildNodes(scopeStackNodes);
 	EvaluableNodeReference copied_stack = evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 
 #ifdef MULTITHREAD_SUPPORT
@@ -127,9 +123,9 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 		auto &stack_nodes_ocn = copied_stack->GetOrderedChildNodesReference();
 		for(Interpreter *interp = callingInterpreter; interp != nullptr; interp = interp->callingInterpreter)
 		{
-			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStackNodes->size(), nullptr);
-			for(size_t i = 0; i < scopeStackNodes->size(); i++)
-				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy((*scopeStackNodes)[i]);
+			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStackNodes.size(), nullptr);
+			for(size_t i = 0; i < scopeStackNodes.size(); i++)
+				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy(scopeStackNodes[i]);
 
 			if(interp->bottomOfScopeStack)
 				break;
@@ -138,32 +134,6 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 #endif
 
 	return copied_stack;
-}
-
-EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm)
-{
-	//ensure have arguments
-	if(args == nullptr)
-	{
-		args.SetReference(enm.AllocNode(ENT_ASSOC), true);
-	}
-	else if(!args->IsAssociativeArray())
-	{
-		args.SetReference(enm.AllocNode(ENT_ASSOC), true);
-	}
-	else if(!args.unique)
-	{
-		args.SetReference(enm.AllocNode(args, false));
-		args.uniqueUnreferencedTopNode = true;
-	}
-	
-	EvaluableNode *scope_stack = enm.AllocNode(ENT_LIST);
-	scope_stack->AppendOrderedChildNode(args);
-
-	scope_stack->SetNeedCycleCheck(true);
-	args->SetNeedCycleCheck(true);
-
-	return EvaluableNodeReference(scope_stack, args.unique, true);
 }
 
 void Interpreter::SetSideEffectFlagsAndAccumulatePerformanceCounters(EvaluableNode *node)
@@ -186,7 +156,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNo
 	//reference this node before we collect garbage
 	//CreateOpcodeStackStateSaver is a bit expensive for this frequently called function
 	//especially because only one node is kept
-	opcodeStackNodes->push_back(en);
+	opcodeStackNodes.push_back(en);
 
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();
@@ -200,7 +170,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNo
 
 	if(AreExecutionResourcesExhausted(true))
 	{
-		opcodeStackNodes->pop_back();
+		opcodeStackNodes.pop_back();
 		return EvaluableNodeReference::Null();
 	}
 
@@ -215,7 +185,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNo
 #endif
 
 	//finished with opcode
-	opcodeStackNodes->pop_back();
+	opcodeStackNodes.pop_back();
 
 	return retval;
 }
@@ -223,10 +193,10 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNo
 EvaluableNode *Interpreter::GetCurrentScopeStackContext()
 {
 	//this should not happen, but just in case
-	if(scopeStackNodes->size() < 1)
+	if(scopeStackNodes.size() < 1)
 		return nullptr;
 
-	return scopeStackNodes->back();
+	return scopeStackNodes.back();
 }
 
 std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(EvaluableNode *n, bool key_string)
@@ -672,7 +642,7 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 	if(interpreterConstraints != nullptr && interpreterConstraints->ConstrainedOpcodeExecutionDepth())
 	{
 		size_t remaining_depth = interpreterConstraints->GetRemainingOpcodeExecutionDepth(
-			opcodeStackNodes->size());
+			opcodeStackNodes.size());
 		if(remaining_depth > 0)
 		{
 			if(interpreter_constraints->ConstrainedOpcodeExecutionDepth())
@@ -781,7 +751,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 	if(!Concurrency::threadPool.AreThreadsAvailable())
 		return false;
 
-	ConcurrencyManager concurrency_manager(this, num_tasks, enqueue_task_lock);
+	InterpreterConcurrencyManager concurrency_manager(this, num_tasks, enqueue_task_lock);
 
 	interpreted_nodes.resize(num_tasks);
 
@@ -796,7 +766,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 Interpreter *Interpreter::LockScopeStackTop(Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve,
 	Interpreter *executing_interpreter)
 {
-	if(scopeStackNodes->size() == 0 && callingInterpreter != nullptr)
+	if(scopeStackNodes.size() == 0 && callingInterpreter != nullptr)
 		return callingInterpreter->LockScopeStackTop(lock, en_to_preserve,
 			executing_interpreter == nullptr ? this : executing_interpreter);
 
@@ -812,8 +782,6 @@ Interpreter *Interpreter::LockScopeStackTop(Concurrency::SingleLock &lock, Evalu
 }
 
 #endif
-
-
 
 static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints::ViolationType violation, EvaluableNodeManager *evaluable_node_manager)
 {
@@ -922,27 +890,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(Evalua
 
 void Interpreter::VerifyEvaluableNodeIntegrity()
 {
-	for(EvaluableNode *en : *scopeStackNodes)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
+	evaluableNodeManager->VerifyEvaluableNodeIntegretyForAllReferencedNodes();
 
-	for(EvaluableNode *en : *opcodeStackNodes)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
-
-	for(EvaluableNode *en : *constructionStackNodes)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
-
-	if(curEntity != nullptr)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(curEntity->GetRoot());
-
+	//traverse stack to next calling evaluableNodeManager so don't duplicate validation effort on the same one
+	auto next_calling_interpreter_on_other_enm = callingInterpreter;
+	while(next_calling_interpreter_on_other_enm != nullptr)
 	{
-		auto &nr = evaluableNodeManager->GetNodesReferenced();
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(nr.mutex);
-	#endif
-		for(auto &[en, _] : nr.nodesReferenced)
-			EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
+		if(next_calling_interpreter_on_other_enm->evaluableNodeManager != evaluableNodeManager)
+			break;
+
+		next_calling_interpreter_on_other_enm = next_calling_interpreter_on_other_enm->callingInterpreter;
 	}
 
-	if(callingInterpreter != nullptr)
-		callingInterpreter->VerifyEvaluableNodeIntegrity();
+	if(next_calling_interpreter_on_other_enm != nullptr)
+		next_calling_interpreter_on_other_enm->VerifyEvaluableNodeIntegrity();
 }

@@ -177,13 +177,14 @@ public:
 	~Entity();
 
 	//executes the code specified by code as if it were called on this entity using the specified scope_stack
-	//note that code should be allocated from this entity
-	// calling_interpreter should be the interpreter that is calling this, if applicable
-	// write_listeners and print_listener will listen for any modifications to the entity and output as applicable
-	// if interpreter_constraints is not nullptr, then it will constrain performance and update interpreter_constraints
-	// if enm_lock is specified, it should be a lock on this entity's evaluableNodeManager.memoryModificationMutex
+	//note that scope_stack, if specified, will transfer the memory in the vector to be owned by this method,
+	// and its contents will be cleared upon completion of this method
+	//calling_interpreter should be the interpreter that is calling this, if applicable
+	//write_listeners and print_listener will listen for any modifications to the entity and output as applicable
+	//if interpreter_constraints is not nullptr, then it will constrain performance and update interpreter_constraints
+	//if enm_lock is specified, it should be a lock on this entity's evaluableNodeManager.memoryModificationMutex
 	EvaluableNodeReference ExecuteOnEntity(EvaluableNode *code,
-		EvaluableNode *scope_stack, Interpreter *calling_interpreter = nullptr,
+		std::vector<EvaluableNode *> *scope_stack, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		InterpreterConstraints *interpreter_constraints = nullptr
 #ifdef MULTITHREAD_SUPPORT
@@ -196,8 +197,10 @@ public:
 	// returns the result from the execution
 	// if on_self is true, then it will be allowed to access private labels
 	//see ExecuteOnEntity for further parameter details
+	//note that scope_stack, if specified, will transfer the memory in the vector to be owned by this method,
+	// and its contents will be cleared upon completion of this method
 	EvaluableNodeReference Execute(StringInternPool::StringID label_sid,
-		EvaluableNode *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
+		std::vector<EvaluableNode *> *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		InterpreterConstraints *interpreter_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
@@ -211,9 +214,9 @@ public:
 		EvaluableNode *node_to_execute = nullptr;
 		//if label is not specified, then check type to see if it has keys
 		if(label_sid == string_intern_pool.NOT_A_STRING_ID
-			&& !EvaluableNode::IsAssociativeArray(rootNode))
+			&& !EvaluableNode::IsAssociativeArray(evaluableNodeManager.rootNode))
 		{
-			node_to_execute = rootNode;
+			node_to_execute = evaluableNodeManager.rootNode;
 		}
 		else //get code at label
 		{
@@ -234,7 +237,7 @@ public:
 
 	//same as Execute but accepts a string for label name
 	inline EvaluableNodeReference Execute(const std::string &label_name,
-		EvaluableNode *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
+		std::vector<EvaluableNode *> *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		InterpreterConstraints *interpreter_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
@@ -259,7 +262,7 @@ public:
 	//Returns the code for the Entity in string form
 	inline std::string GetCodeAsString()
 	{
-		return Parser::Unparse(rootNode);
+		return Parser::Unparse(evaluableNodeManager.rootNode);
 	}
 
 	//returns the root of the entity
@@ -267,15 +270,15 @@ public:
 	EvaluableNodeReference GetRoot(EvaluableNodeManager *destination_temp_enm = nullptr)
 	{
 		if(destination_temp_enm == nullptr)
-			return EvaluableNodeReference(rootNode, false);
+			return EvaluableNodeReference(evaluableNodeManager.rootNode, false);
 
-		return destination_temp_enm->DeepAllocCopy(rootNode);
+		return destination_temp_enm->DeepAllocCopy(evaluableNodeManager.rootNode);
 	}
 
 	//Returns the number of nodes in the entity
 	inline size_t GetSizeInNodes()
 	{
-		return EvaluableNode::GetDeepSize(rootNode);
+		return EvaluableNode::GetDeepSize(evaluableNodeManager.rootNode);
 	}
 
 	//Returns the number of nodes in the entity and all contained entities
@@ -360,7 +363,7 @@ public:
 	//returns an assoc of the labels
 	inline EvaluableNode::AssocType &GetLabelIndex()
 	{
-		return rootNode->GetMappedChildNodesReference();
+		return evaluableNodeManager.rootNode->GetMappedChildNodesReference();
 	}
 
 	//Iterates over all of the labels, calling GetValueAtLabel for each,
@@ -752,8 +755,7 @@ public:
 #ifdef MULTITHREAD_SUPPORT
 	__forceinline void CollectGarbageWithEntityWriteReference()
 	{
-		if(evaluableNodeManager.RecommendGarbageCollection()
-				&& !evaluableNodeManager.AreAnyInterpretersRunning())
+		if(evaluableNodeManager.RecommendGarbageCollection() && !AreAnyInterpretersRunning())
 			evaluableNodeManager.CollectGarbage();
 	}
 #else
@@ -846,8 +848,17 @@ public:
 	}
 #endif
 
+	//returns true if any interpreters are operating on the nodes managed by this instance
+	inline bool AreAnyInterpretersRunning()
+	{
+		return evaluableNodeManager.AreAnyInterpretersRunning();
+	}
+
 	//ensures that there are no reachable nodes that are deallocated
-	void VerifyEvaluableNodeIntegrity();
+	inline void VerifyEvaluableNodeIntegrity()
+	{
+		evaluableNodeManager.VerifyEvaluableNodeIntegretyForAllReferencedNodes();
+	}
 
 	//like VerifyEvaluableNodeIntegrity but includes all contained
 	void VerifyEvaluableNodeIntegrityAndAllContainedEntities();
@@ -956,25 +967,6 @@ protected:
 	//mutex for operations that may edit or modify the entity's properties and attributes
 	Concurrency::ReadWriteMutex mutex;
 #endif
-
-	//sets the root node ensuring that the memory has been flushed so it is ready for reading
-	__forceinline void SetRootNode(EvaluableNode *new_root)
-	{
-		evaluableNodeManager.ExchangeNodeReference(new_root, rootNode);
-
-	#ifdef MULTITHREAD_SUPPORT
-		//fence memory flushing by using an atomic store
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		std::atomic<EvaluableNode *> *atomic_ref
-			= reinterpret_cast<std::atomic<EvaluableNode *> *>(&rootNode);
-		atomic_ref->store(new_root, std::memory_order_release);
-	#else
-		rootNode = new_root;
-	#endif
-	}
-
-	//root of the entity
-	EvaluableNode *rootNode;
 
 	//if true, then the entity has contained entities and will use the relationships reference of entityRelationships
 	//note this is located after labelIndex because labelIndex is of a size that does not align tightly

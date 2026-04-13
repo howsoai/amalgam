@@ -1,5 +1,6 @@
 ﻿//project headers:
 #include "EvaluableNodeManagement.h"
+#include "Interpreter.h"
 #include "PerformanceProfiler.h"
 
 //system headers:
@@ -460,6 +461,26 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNod
 	}
 }
 
+void EvaluableNodeManager::VerifyEvaluableNodeIntegretyForAllReferencedNodes()
+{
+	ValidateEvaluableNodeTreeMemoryIntegrity(rootNode, this);
+
+	if(activeInterpreters != nullptr)
+	{
+		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
+		{
+			for(EvaluableNode *en : interpreter->scopeStackNodes)
+				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
+
+			for(EvaluableNode *en : interpreter->opcodeStackNodes)
+				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
+
+			for(EvaluableNode *en : interpreter->constructionStackNodes)
+				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
+		}
+	}
+}
+
 EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bool copy_metadata)
 {
 	if(en == nullptr)
@@ -580,42 +601,152 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 	return std::make_pair(copy, copy->GetNeedCycleCheck());
 }
 
+//sets or clears all referenced nodes' in use flags
+//if set_in_use is true, then it will set the value, if false, it will clear the value
+//note that tree cannot be nullptr and it should already be inserted into the references prior to calling
+static void MarkAllReferencedNodesInUseForNode(EvaluableNode *tree)
+{
+	tree->SetKnownToBeInUse(true);
+	auto &node_stack = EvaluableNode::reusableBuffer;
+	node_stack.push_back(tree);
+
+	while(!node_stack.empty())
+	{
+		auto *node = node_stack.back();
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		assert(node->IsNodeValid());
+	#endif
+		node_stack.pop_back();
+
+		auto type = node->GetType();
+		if(DoesEvaluableNodeTypeUseAssocData(type))
+		{
+			for(auto &[_, cn] : node->GetMappedChildNodesReference())
+			{
+				if(cn != nullptr && !cn->GetKnownToBeInUse())
+				{
+					cn->SetKnownToBeInUse(true);
+					node_stack.push_back(cn);
+				}
+			}
+		}
+		else if(!IsEvaluableNodeTypeImmediate(type))
+		{
+			for(auto &cn : node->GetOrderedChildNodesReference())
+			{
+				if(cn != nullptr && !cn->GetKnownToBeInUse())
+				{
+					cn->SetKnownToBeInUse(true);
+					node_stack.push_back(cn);
+				}
+			}
+		}
+	}
+}
+
+#ifdef MULTITHREAD_SUPPORT
+//like its non-concurrent variant above but for concurrency
+static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
+{
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(tree->IsNodeValid());
+#endif
+
+	tree->SetKnownToBeInUseAtomic(true);
+	auto &node_stack = EvaluableNode::reusableBuffer;
+	node_stack.push_back(tree);
+
+	while(!node_stack.empty())
+	{
+		auto *node = node_stack.back();
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		assert(node->IsNodeValid());
+	#endif
+		node_stack.pop_back();
+
+		auto type = node->GetType();
+		if(DoesEvaluableNodeTypeUseAssocData(type))
+		{
+			for(auto &[_, cn] : node->GetMappedChildNodesReference())
+			{
+				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
+				{
+					cn->SetKnownToBeInUseAtomic(true);
+					node_stack.push_back(cn);
+				}
+			}
+		}
+		else if(!IsEvaluableNodeTypeImmediate(type))
+		{
+			for(auto &cn : node->GetOrderedChildNodesReference())
+			{
+				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
+				{
+					cn->SetKnownToBeInUseAtomic(true);
+					node_stack.push_back(cn);
+				}
+			}
+		}
+	}
+}
+#endif
+
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in_use)
 {
-	NodesReferenced &nr = GetNodesReferenced();
+	size_t num_active_interpreters = 0;
+	if(activeInterpreters.get() != nullptr)
+		num_active_interpreters = activeInterpreters->activeInterpreters.size();
 
 #ifdef MULTITHREAD_SUPPORT
 	//because code cannot be executed when in garbage collection due to other locks,
 	//the nodes referenced cannot be modified while in this method, so nr.mutex does not need to be locked
 
-	size_t reference_count = nr.nodesReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
-	if(Concurrency::GetMaxNumThreads() > 1 && reference_count > 1
-		&& (estimated_nodes_in_use / reference_count) >= 10000)
+	if(Concurrency::GetMaxNumThreads() > 1 && num_active_interpreters >= 1 && estimated_nodes_in_use >= 10000)
 	{
 		//allocate all the tasks assuming they will happen, but mark when they can be skipped
-		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(nr.nodesReferenced.size());
-		for(auto &[enr, _] : nr.nodesReferenced)
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_active_interpreters + 1);
+
+		Concurrency::urgentThreadPool.EnqueueTask(
+			[this, &task_set]
+			{
+				MarkAllReferencedNodesInUseConcurrentForNode(rootNode);
+				task_set.MarkTaskCompleted();
+			}
+		);
+
+		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
-			//some compilers are pedantic about the types passed into the lambda, so make a copy
-			EvaluableNode *en = enr;
-			//only enqueue a task if the top node isn't known to be in use
-			if(en != nullptr && !en->GetKnownToBeInUseAtomic())
-			{
-				//don't enqueue in batch, as threads racing ahead of others will reduce memory
-				//contention
-				Concurrency::urgentThreadPool.EnqueueTask(
-					[en, &task_set]
+			Concurrency::urgentThreadPool.EnqueueTask(
+				[interpreter, &task_set]
+				{
+					for(EvaluableNode *en : interpreter->scopeStackNodes)
 					{
-						MarkAllReferencedNodesInUseConcurrent(en);
-						task_set.MarkTaskCompleted();
+						if(en == nullptr || en->GetKnownToBeInUse())
+							continue;
+
+						MarkAllReferencedNodesInUseConcurrentForNode(en);
 					}
-				);
-			}
-			else //autocompleted
-			{
-				task_set.MarkTaskCompletedBeforeWaitForTasks();
-			}
+
+					for(EvaluableNode *en : interpreter->opcodeStackNodes)
+					{
+						if(en == nullptr || en->GetKnownToBeInUse())
+							continue;
+
+						MarkAllReferencedNodesInUseConcurrentForNode(en);
+					}
+
+					for(EvaluableNode *en : interpreter->constructionStackNodes)
+					{
+						if(en == nullptr || en->GetKnownToBeInUse())
+							continue;
+
+						MarkAllReferencedNodesInUseConcurrentForNode(en);
+					}
+
+					task_set.MarkTaskCompleted();
+				}
+			);
 		}
 
 		task_set.WaitForTasks();
@@ -623,12 +754,26 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	}
 #endif
 
-	for(auto &[t, _] : nr.nodesReferenced)
+	MarkAllReferencedNodesInUseForNode(rootNode);
+	if(num_active_interpreters > 0)
 	{
-		if(t == nullptr || t->GetKnownToBeInUse())
-			continue;
+		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
+		{
+			auto mark_nodes = [](std::vector<EvaluableNode *> &stack)
+			{
+				for(EvaluableNode *en : stack)
+				{
+					if(en == nullptr || en->GetKnownToBeInUse())
+						continue;
 
-		MarkAllReferencedNodesInUse(t);
+					MarkAllReferencedNodesInUseForNode(en);
+				}
+			};
+
+			mark_nodes(interpreter->scopeStackNodes);
+			mark_nodes(interpreter->opcodeStackNodes);
+			mark_nodes(interpreter->constructionStackNodes);
+		}
 	}
 }
 
@@ -729,92 +874,6 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 		return std::make_pair(false, is_idempotent);
 	}
 }
-
-void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
-{
-	tree->SetKnownToBeInUse(true);
-	auto &node_stack = EvaluableNode::reusableBuffer;
-	node_stack.push_back(tree);
-
-	while(!node_stack.empty())
-	{
-		auto *node = node_stack.back();
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(node->IsNodeValid());
-	#endif
-		node_stack.pop_back();
-
-		auto type = node->GetType();
-		if(DoesEvaluableNodeTypeUseAssocData(type))
-		{
-			for(auto &[_, cn] : node->GetMappedChildNodesReference())
-			{
-				if(cn != nullptr && !cn->GetKnownToBeInUse())
-				{
-					cn->SetKnownToBeInUse(true);
-					node_stack.push_back(cn);
-				}
-			}
-		}
-		else if(!IsEvaluableNodeTypeImmediate(type))
-		{
-			for(auto &cn : node->GetOrderedChildNodesReference())
-			{
-				if(cn != nullptr && !cn->GetKnownToBeInUse())
-				{
-					cn->SetKnownToBeInUse(true);
-					node_stack.push_back(cn);
-				}
-			}
-		}
-	}
-}
-
-#ifdef MULTITHREAD_SUPPORT
-void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *tree)
-{
-#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(tree->IsNodeValid());
-#endif
-
-	tree->SetKnownToBeInUseAtomic(true);
-	auto &node_stack = EvaluableNode::reusableBuffer;
-	node_stack.push_back(tree);
-
-	while(!node_stack.empty())
-	{
-		auto *node = node_stack.back();
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(node->IsNodeValid());
-	#endif
-		node_stack.pop_back();
-
-		auto type = node->GetType();
-		if(DoesEvaluableNodeTypeUseAssocData(type))
-		{
-			for(auto &[_, cn] : node->GetMappedChildNodesReference())
-			{
-				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
-				{
-					cn->SetKnownToBeInUseAtomic(true);
-					node_stack.push_back(cn);
-				}
-			}
-		}
-		else if(!IsEvaluableNodeTypeImmediate(type))
-		{
-			for(auto &cn : node->GetOrderedChildNodesReference())
-			{
-				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
-				{
-					cn->SetKnownToBeInUseAtomic(true);
-					node_stack.push_back(cn);
-				}
-			}
-		}
-	}
-}
-#endif
 
 std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(
 	EvaluableNode *en, EvaluableNode::ReferenceSetType &checked,

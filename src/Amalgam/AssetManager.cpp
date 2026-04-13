@@ -24,6 +24,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 {
 	resourcePath = resource_path;
 	resourceType = file_type;
+	topEntity = nullptr;
 
 	if(resourceType == "")
 	{
@@ -402,12 +403,15 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		{
 			if(first_node_type == ENT_LET)
 			{
-				scope_stack->AppendOrderedChildNode(assoc_node);
+				scope_stack.push_back(assoc_node);
 			}
 			else //first_node_type == ENT_DECLARE
 			{
 				first_node->AppendOrderedChildNode(assoc_node);
-				entity->ExecuteOnEntity(first_node, scope_stack, calling_interpreter);
+
+				//make a copy of scope_stack siynce ExecuteOnEntity will consume it
+				std::vector<EvaluableNode *> scope_stack_copy(scope_stack);
+				entity->ExecuteOnEntity(first_node, &scope_stack_copy, calling_interpreter);
 			}
 		}
 	}
@@ -420,12 +424,14 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 
-		entity->ExecuteOnEntity(node, scope_stack, calling_interpreter);
+		//make a copy of scope_stack siynce ExecuteOnEntity will consume it
+		std::vector<EvaluableNode *> scope_stack_copy(scope_stack);
+		entity->ExecuteOnEntity(node, &scope_stack_copy, calling_interpreter);
 	}
 
 	//check the version from the stack rather than return, since transactional files may be missing the last return
 	EntityExternalInterface::LoadEntityStatus load_status(true, "", "");
-	EvaluableNode **version_node = scope_stack->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_amlg_version));
+	EvaluableNode **version_node = args->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_amlg_version));
 	if(version_node != nullptr && *version_node != nullptr && (*version_node)->GetType() == ENT_STRING)
 	{
 		const std::string &version_string = (*version_node)->GetStringValue();
@@ -434,7 +440,6 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 	}
 
 	entity->evaluableNodeManager.FreeNode(args);
-	entity->evaluableNodeManager.FreeNode(scope_stack);
 
 	return load_status;
 }
@@ -560,7 +565,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 			new_entity->evaluableNodeManager.AllocNode(asset_params->requireVersionCompatibility));
 		auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, new_entity->evaluableNodeManager);
 
-		EvaluableNodeReference result = new_entity->ExecuteOnEntity(code, scope_stack, calling_interpreter);
+		EvaluableNodeReference result = new_entity->ExecuteOnEntity(code, &scope_stack, calling_interpreter);
 
 		//if returned null, return comment as the error
 		if(EvaluableNode::IsNull(result))
@@ -575,7 +580,6 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 		}
 
 		new_entity->evaluableNodeManager.FreeNode(args);
-		new_entity->evaluableNodeManager.FreeNode(scope_stack);
 
 		if(persistent)
 			SetEntityPersistenceForFlattenedEntity(new_entity, asset_params);
@@ -662,6 +666,11 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 			delete new_entity;
 			return nullptr;
 		}
+
+	#ifdef AMALGAM_MEMORY_INTEGRITY
+		contained_entity->VerifyEvaluableNodeIntegrity();
+	#endif
+
 
 		new_entity->AddContainedEntity(contained_entity, entity_name);
 	}

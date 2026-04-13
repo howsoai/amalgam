@@ -19,6 +19,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <sstream>
 
 //function prototypes for alternative main functions in respective files
 int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &rand_seed);
@@ -331,6 +332,10 @@ PLATFORM_MAIN_CONSOLE
 
 			entity = asset_manager.LoadEntityFromResource(asset_params, false, rand_seed, nullptr, status);
 
+		#ifdef AMALGAM_MEMORY_INTEGRITY
+			entity->VerifyEvaluableNodeIntegrity();
+		#endif
+
 			if(!status.loaded)
 				return 1;
 		}
@@ -364,16 +369,15 @@ PLATFORM_MAIN_CONSOLE
 		}
 
 		//transform args into args variable
-		EvaluableNode *scope_stack = entity->evaluableNodeManager.AllocNode(ENT_LIST);
 		EvaluableNode *args_node = entity->evaluableNodeManager.AllocNode(ENT_ASSOC);
-		scope_stack->AppendOrderedChildNode(args_node);
+		std::vector<EvaluableNode *> scope_stack;
+		scope_stack.push_back(args_node);
 
 		//top-level stack variable holding argv
 		args_node->SetMappedChildNode("argv", CreateListOfStringsFromIteratorAndFunction(passthrough_params,
 			&entity->evaluableNodeManager, [](auto s) { return s; }));
 
 		//set need cycle check because things may be assigned
-		scope_stack->SetNeedCycleCheck(true);
 		args_node->SetNeedCycleCheck(true);
 
 		//top-level stack variable holding path to interpreter
@@ -384,7 +388,7 @@ PLATFORM_MAIN_CONSOLE
 		//execute the entity
 		if(!run_as_repl)
 		{
-			entity->Execute(StringInternPool::NOT_A_STRING_ID, scope_stack, false, nullptr,
+			entity->Execute(StringInternPool::NOT_A_STRING_ID, &scope_stack, false, nullptr,
 				&write_listeners, print_listener);
 		}
 		else //repl
@@ -450,7 +454,7 @@ PLATFORM_MAIN_CONSOLE
 				for(auto &w : warnings)
 					std::cerr << w << std::endl;
 
-				auto result = entity->ExecuteOnEntity(code, scope_stack, nullptr, &write_listeners, print_listener);
+				auto result = entity->ExecuteOnEntity(code, &scope_stack, nullptr, &write_listeners, print_listener);
 				std::cout << Parser::Unparse(result, true, true, true);
 				running = !(result != nullptr && result->GetType() == ENT_CONCLUDE);
 				entity->evaluableNodeManager.FreeNodeTreeIfPossible(result);
@@ -461,21 +465,9 @@ PLATFORM_MAIN_CONSOLE
 
 		//detect memory leaks for debugging
 		// the entity should have one reference left, which is the entity's code itself
-		if(entity->evaluableNodeManager.GetNumberOfNodesReferenced() > 1)
+		if(entity->AreAnyInterpretersRunning())
 		{
-			auto &nr = entity->evaluableNodeManager.GetNodesReferenced();
-			std::cerr << "Error: memory leak." << std::endl;
-
-			if(debug_internal_memory)
-			{
-				std::cerr << "The following temporary nodes are still in use : " << std::endl;
-				for(auto &[used_node, _] : nr.nodesReferenced)
-				{
-					std::cerr << "Item:" << std::endl;
-					std::cerr << Parser::Unparse(used_node);
-				}
-			}
-
+			std::cerr << "Error, active interpreters are still running." << std::endl;
 			return_val = -1;
 		}
 

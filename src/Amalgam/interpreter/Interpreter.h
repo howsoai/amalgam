@@ -1,169 +1,22 @@
 #pragma once
 
 //project headers:
+#include "Concurrency.h"
 #include "Entity.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeManagement.h"
 #include "EvaluableNodeTreeFunctions.h"
+#include "InterpreterUtilities.h"
 #include "PrintListener.h"
 #include "RandomStream.h"
 
 //system headers:
 #include <algorithm>
 #include <array>
-#include <cmath>
 #include <cstdint>
 #include <string>
-#include <type_traits>
 #include <vector>
-
-//forward declarations:
-class EntityQueryCondition;
-
-//Manages performance constraints and accompanying performance counters
-class InterpreterConstraints
-{
-public:
-	enum class ViolationType
-	{
-		NoViolation,
-		NodeAllocation,
-		ExecutionStep,
-		ExecutionDepth,
-		ContainedEntitiesNumber,
-		ContainedEntitiesDepth
-	};
-
-  //Adds the string specified by warning to the list of warnings. Takes warning as an rvalue reference.
-	void AddWarning(std::string &&warning)
-	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::WriteLock warningLock(warningMutex);
-	#endif
-		warnings[warning]++;
-	}
-
-	//if true, there is a limit to how long can utilize CPU
-	constexpr bool ConstrainedExecutionSteps()
-	{
-		return maxNumExecutionSteps != 0;
-	}
-
-	//returns the remaining execution steps
-	__forceinline ExecutionCycleCount GetRemainingNumExecutionSteps()
-	{
-		if(curExecutionStep < maxNumExecutionSteps)
-			return maxNumExecutionSteps - curExecutionStep;
-		else //already past limit
-			return 0;
-	}
-
-	//if true, there is a limit on how much memory can utilize
-	constexpr bool ConstrainedAllocatedNodes()
-	{
-		return maxNumAllocatedNodes != 0;
-	}
-
-	//returns the remaining execution nodes
-	__forceinline size_t GetRemainingNumAllocatedNodes(size_t cur_allocated_nodes)
-	{
-		cur_allocated_nodes += curNumAllocatedNodesAllocatedToEntities;
-		if(cur_allocated_nodes < maxNumAllocatedNodes)
-			return maxNumAllocatedNodes - cur_allocated_nodes;
-		else //already past limit
-			return 0;
-	}
-
-	//returns true if new_allocated_nodes would exceed the constraint
-	__forceinline bool WouldNewAllocatedNodesExceedConstraint(size_t new_allocated_nodes)
-	{
-		if(!ConstrainedAllocatedNodes())
-			return false;
-
-		new_allocated_nodes += curNumAllocatedNodesAllocatedToEntities;
-		return (new_allocated_nodes >= maxNumAllocatedNodes);
-	}
-
-	//if true, there is a limit on how deep execution can go in opcodes
-	constexpr bool ConstrainedOpcodeExecutionDepth()
-	{
-		return maxOpcodeExecutionDepth != 0;
-	}
-
-	//returns the remaining execution depth
-	__forceinline size_t GetRemainingOpcodeExecutionDepth(size_t cur_execution_depth)
-	{
-		if(cur_execution_depth < maxOpcodeExecutionDepth)
-			return maxOpcodeExecutionDepth - cur_execution_depth;
-		else //already past limit
-			return 0;
-	}
-
-	//accrues performance counters into the current object from interpreter_constraints
-	__forceinline void AccruePerformanceCounters(InterpreterConstraints *interpreter_constraints)
-	{
-		if(interpreter_constraints == nullptr)
-			return;
-
-		curExecutionStep += interpreter_constraints->curExecutionStep;
-		curNumAllocatedNodesAllocatedToEntities += interpreter_constraints->curNumAllocatedNodesAllocatedToEntities;
-	}
-
-	//current execution step - number of nodes executed
-#if defined(MULTITHREAD_SUPPORT)
-	std::atomic<ExecutionCycleCount> curExecutionStep;
-#else
-	ExecutionCycleCount curExecutionStep;
-#endif
-
-	//maximum number of execution steps by this Interpreter and anything called from it.  If 0, then unlimited.
-	//will terminate execution if the value is reached
-	ExecutionCycleCount maxNumExecutionSteps;
-
-	//the maximum opcode execution depth
-	size_t maxOpcodeExecutionDepth;
-
-	//number of nodes allocated only to entities
-	size_t curNumAllocatedNodesAllocatedToEntities;
-
-	//maximum number of nodes allowed to be allocated by this Interpreter and anything called from it.  If 0, then unlimited.
-	//will terminate execution if the value is reached
-	size_t maxNumAllocatedNodes;
-
-	//entity from which the constraints are based
-	Entity *entityToConstrainFrom;
-
-	//flag set to true if constraints have been exceeded
-	bool constraintsExceeded;
-
-	bool constrainMaxContainedEntities;
-	bool constrainMaxContainedEntityDepth;
-
-	//constrains the maximum number of contained entities
-	size_t maxContainedEntities;
-
-	//constrains how deep entities can be created
-	size_t maxContainedEntityDepth;
-
-	//constrains the maximum length of an entity id (primarily to make sure it doesn't cause problems for file systems)
-	//If 0, then unlimited
-	size_t maxEntityIdLength;
-
-	//if true, collect warnings, and return them with any constraint violations
-	bool collectWarnings;
-
-	ViolationType constraintViolation;
-
-	//maps warnings to the count of their occurrence 
-	FastHashMap<std::string, size_t> warnings;
-
-private: 
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::ReadWriteMutex warningMutex;
-#endif
-
-};
 
 class Interpreter
 {
@@ -198,13 +51,18 @@ public:
 
 	//Executes the current Entity that this Interpreter is contained by
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
-	//if scope_stack, opcode_stack, or construction_stack are nullptr, it will start with a new one
-	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
+	//if scope_stack, opcode_stack, or construction_stack are nullptr,
+	// it will start with a new one, but if they were specified it will make a copy of the vector
+	//note that if any of scope_stack, opcode_stack, construction_stack, or construction_stack_indices are specified,
+	// they will transfer the memory in the vector to be owned by this method,
+	// and their contents will be cleared upon completion of this method
+	//further note that construction_stack and construction_stack_indices should be specified together
+	// and should be the same length
 	//if immediate_result is true, then the returned value may be immediate
 	//if new_scope_stack is true, it will mark that it is the bottom of the scope stack
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
-		EvaluableNode *scope_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
-		EvaluableNode *construction_stack = nullptr,
+		std::vector<EvaluableNode *> *scope_stack = nullptr, std::vector<EvaluableNode *> *opcode_stack = nullptr,
+		std::vector<EvaluableNode *> *construction_stack = nullptr,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes()
 	#ifdef MULTITHREAD_SUPPORT
@@ -278,7 +136,7 @@ public:
 		//just in case a variable is added which needs cycle checks
 		new_context->SetNeedCycleCheck(true);
 
-		scopeStackNodes->push_back(new_context);
+		scopeStackNodes.push_back(new_context);
 		scopeStackFreeable.push_back(new_context.unique);
 	}
 
@@ -287,10 +145,10 @@ public:
 	__forceinline void PopScopeStack(bool returning_unique_value)
 	{
 		if(returning_unique_value && scopeStackFreeable.back())
-			evaluableNodeManager->FreeNodeTree(scopeStackNodes->back());
+			evaluableNodeManager->FreeNodeTree(scopeStackNodes.back());
 		else
 		{
-			EvaluableNode *scope = scopeStackNodes->back();
+			EvaluableNode *scope = scopeStackNodes.back();
 			//only check its child nodes if it itself has a freeable flag set,
 			//since iterating over the mapped child nodes can be costly wrt performance
 			if(scope->GetIsFreeable())
@@ -304,7 +162,7 @@ public:
 			evaluableNodeManager->FreeNode(scope);
 		}
 
-		scopeStackNodes->pop_back();
+		scopeStackNodes.pop_back();
 		scopeStackFreeable.pop_back();
 	}
 
@@ -346,7 +204,7 @@ public:
 		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
 		EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
 	{
-		return PushNewConstructionContextToStack(*constructionStackNodes, constructionStackIndicesAndUniqueness,
+		return PushNewConstructionContextToStack(constructionStackNodes, constructionStackIndicesAndUniqueness,
 			target_origin, target, current_index, current_value, previous_result);
 	}
 
@@ -354,13 +212,13 @@ public:
 	//and returns true if that construction stack node had memory write side effects
 	inline bool PopConstructionContextAndGetExecutionSideEffectFlag()
 	{
-		size_t new_size = constructionStackNodes->size();
+		size_t new_size = constructionStackNodes.size();
 		if(new_size > constructionStackOffsetStride)
 			new_size -= constructionStackOffsetStride;
 		else
 			new_size = 0;
 
-		constructionStackNodes->resize(new_size);
+		constructionStackNodes.resize(new_size);
 
 		if(constructionStackIndicesAndUniqueness.size() > 0)
 		{
@@ -398,14 +256,14 @@ public:
 	//assumes there is at least one construction stack entry
 	__forceinline void SetTopCurrentValueInConstructionStack(EvaluableNode *value)
 	{
-		(*constructionStackNodes)[constructionStackNodes->size() + constructionStackOffsetCurrentValue] = value;
+		constructionStackNodes[constructionStackNodes.size() + constructionStackOffsetCurrentValue] = value;
 	}
 
 	//sets the previous_result node for the top reference on the construction stack
 	//assumes there is at least one construction stack entry
 	__forceinline void SetTopPreviousResultInConstructionStack(EvaluableNodeReference previous_result)
 	{
-		(*constructionStackNodes)[constructionStackNodes->size() + constructionStackOffsetPreviousResult] = previous_result;
+		constructionStackNodes[constructionStackNodes.size() + constructionStackOffsetPreviousResult] = previous_result;
 		constructionStackIndicesAndUniqueness.back().unique = previous_result.unique;
 		constructionStackIndicesAndUniqueness.back().uniqueUnreferencedTopNode = previous_result.uniqueUnreferencedTopNode;
 	}
@@ -420,9 +278,9 @@ public:
 			= constructionStackIndicesAndUniqueness[uniqueness_offset].uniqueUnreferencedTopNode;
 
 		//clear previous result
-		size_t prev_result_offset = constructionStackNodes->size()
+		size_t prev_result_offset = constructionStackNodes.size()
 						- (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
-		auto &previous_result_loc = (*constructionStackNodes)[prev_result_offset];
+		auto &previous_result_loc = constructionStackNodes[prev_result_offset];
 		EvaluableNode *previous_result = nullptr;
 		std::swap(previous_result, previous_result_loc);
 
@@ -434,9 +292,9 @@ public:
 	__forceinline EvaluableNodeReference CopyPreviousResultInConstructionStack(size_t depth)
 	{
 		//clear previous result
-		size_t prev_result_offset = constructionStackNodes->size()
+		size_t prev_result_offset = constructionStackNodes.size()
 						- (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
-		auto &previous_result_loc = (*constructionStackNodes)[prev_result_offset];
+		auto &previous_result_loc = constructionStackNodes[prev_result_offset];
 		return evaluableNodeManager->DeepAllocCopy(previous_result_loc);
 	}
 
@@ -483,7 +341,29 @@ public:
 	// Will allocate a new node appropriately if it is not
 	//Then wraps the args on a list which will form the scope stack and returns that
 	//ensures that args is still a valid EvaluableNodeReference after the call
-	static EvaluableNodeReference ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm);
+	inline static std::vector<EvaluableNode *> ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm)
+	{
+		//ensure have arguments
+		if(args == nullptr)
+		{
+			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
+		}
+		else if(!args->IsAssociativeArray())
+		{
+			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
+		}
+		else if(!args.unique)
+		{
+			args.SetReference(enm.AllocNode(args, false));
+			args.uniqueUnreferencedTopNode = true;
+		}
+
+		args->SetNeedCycleCheck(true);
+
+		std::vector<EvaluableNode *> scope_stack;
+		scope_stack.push_back(args);
+		return scope_stack;
+	}
 
 	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a
 	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
@@ -500,7 +380,7 @@ public:
 	)
 	{
 		//find appropriate context for symbol by walking up the stack
-		for(auto it = rbegin(*scopeStackNodes); it != rend(*scopeStackNodes); ++it)
+		for(auto it = rbegin(scopeStackNodes); it != rend(scopeStackNodes); ++it)
 		{
 			auto &mcn = (*it)->GetMappedChildNodesReference();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
@@ -528,7 +408,7 @@ public:
 					}
 				}
 
-				return std::make_tuple(&found->second, it == rbegin(*scopeStackNodes), is_freeable);
+				return std::make_tuple(&found->second, it == rbegin(scopeStackNodes), is_freeable);
 			}
 		}
 
@@ -536,7 +416,7 @@ public:
 		//need to search further down the stack if appropriate
 		if(!bottomOfScopeStack && callingInterpreter != nullptr)
 		{
-			bool top_is_next_stack = (scopeStackNodes->size() == 0);
+			bool top_is_next_stack = (scopeStackNodes.size() == 0);
 			auto [value_destination, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocation(
 				symbol_sid, top_is_next_stack && create_if_nonexistent, clear_freeable_flag, true);
 			if(value_destination != nullptr)
@@ -548,8 +428,8 @@ public:
 			return std::make_tuple(nullptr, false, false);
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
-		size_t scope_stack_index = scopeStackNodes->size() - 1;
-		EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
+		size_t scope_stack_index = scopeStackNodes.size() - 1;
+		EvaluableNode *context_to_use = scopeStackNodes[scope_stack_index];
 		auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
 		return std::make_tuple(new_location, true, false);
 	}
@@ -584,10 +464,10 @@ public:
 	{
 		//find appropriate context for symbol by walking up the stack
 		//acquire lock if found
-		size_t cur_scope_stack_size = scopeStackNodes->size();
+		size_t cur_scope_stack_size = scopeStackNodes.size();
 		for(size_t scope_stack_index = cur_scope_stack_size; scope_stack_index > 0; scope_stack_index--)
 		{
-			EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
+			EvaluableNode *cur_context = scopeStackNodes[scope_stack_index - 1];
 			auto &mcn = cur_context->GetMappedChildNodesReference();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
@@ -600,7 +480,7 @@ public:
 						LockMutexWithoutBlockingGarbageCollection(lock, *scopeStackMutex);
 
 					//need to refetch after lock in case object has changed
-					cur_context = (*scopeStackNodes)[scope_stack_index - 1];
+					cur_context = scopeStackNodes[scope_stack_index - 1];
 					mcn = cur_context->GetMappedChildNodesReference();
 					found = mcn.find(symbol_sid);
 
@@ -631,24 +511,23 @@ public:
 			return std::make_tuple(nullptr, false, false);
 
 		Interpreter *interp_with_scope = LockScopeStackTop(lock, nullptr, executing_interpreter);
-		std::vector<EvaluableNode *> *scope_stack_nodes = interp_with_scope->scopeStackNodes;
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
-		size_t scope_stack_index = scope_stack_nodes->size() - 1;
+		size_t scope_stack_index = interp_with_scope->scopeStackNodes.size() - 1;
 
 		if(lock.owns_lock())
 		{
 			//since all modern processors treat word writes as essentially atomic,
 			// though with no guarantees with regard to latency, we can use this behavior to not require
 			// locks for reading threads; assign this after updating the new context_to_use
-			EvaluableNode *context_to_use = evaluableNodeManager->AllocNode((*scope_stack_nodes)[scope_stack_index]);
+			EvaluableNode *context_to_use = evaluableNodeManager->AllocNode(interp_with_scope->scopeStackNodes[scope_stack_index]);
 			auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
-			(*scope_stack_nodes)[scope_stack_index] = context_to_use;
+			interp_with_scope->scopeStackNodes[scope_stack_index] = context_to_use;
 			return std::make_tuple(new_location, false, false);
 		}
 		else
 		{
-			EvaluableNode *context_to_use = (*scope_stack_nodes)[scope_stack_index];
+			EvaluableNode *context_to_use = interp_with_scope->scopeStackNodes[scope_stack_index];
 			auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
 			return std::make_tuple(new_location, true, false);
 		}
@@ -658,20 +537,20 @@ public:
 	//returns the current scope stack index
 	__forceinline size_t GetScopeStackDepth()
 	{
-		return scopeStackNodes->size() - 1;
+		return scopeStackNodes.size() - 1;
 	}
 
 	//creates a stack state saver for the interpreterNodeStack, which will be restored back to its previous condition when this object is destructed
 	__forceinline EvaluableNodeStackStateSaver CreateOpcodeStackStateSaver()
 	{
-		return EvaluableNodeStackStateSaver(opcodeStackNodes);
+		return EvaluableNodeStackStateSaver(&opcodeStackNodes);
 	}
 
 	//like CreateOpcodeStackStateSaver, but also pushes another node on the stack
 	__forceinline EvaluableNodeStackStateSaver CreateOpcodeStackStateSaver(EvaluableNode *en)
 	{
 		//count on C++ return value optimization to not call the destructor
-		return EvaluableNodeStackStateSaver(opcodeStackNodes, en);
+		return EvaluableNodeStackStateSaver(&opcodeStackNodes, en);
 	}
 
 	//keeps the current node on the stack and calls InterpretNodeExecution
@@ -857,314 +736,6 @@ protected:
 
 #ifdef MULTITHREAD_SUPPORT
 
-	//class to manage the data for concurrent execution by an interpreter
-	class ConcurrencyManager
-	{
-	public:
-
-		//constructs the concurrency manager.  Assumes parent_interpreter is NOT null
-		ConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks,
-			ThreadPool::TaskLock &task_enqueue_lock)
-			: taskSet(&Concurrency::threadPool, num_tasks)
-		{
-			resultsUnique = true;
-			resultsUniqueUnreferencedTopNode = true;
-			resultsNeedCycleCheck = false;
-			resultsIdempotent = true;
-			resultsSideEffect = false;
-
-			parentInterpreter = parent_interpreter;
-			numTasks = num_tasks;
-			curNumTasksEnqueued = 0;
-			taskEnqueueLock = &task_enqueue_lock;
-
-			//create space to store all of these nodes on the stack, but won't copy these over to the other interpreters
-			resultsSaver = parent_interpreter->CreateOpcodeStackStateSaver();
-			resultsSaverFirstTaskOffset = resultsSaver.GetIndexOfFirstElement();
-			resultsSaverCurrentTaskOffset = resultsSaverFirstTaskOffset;
-			resultsSaver.ReserveNodes(num_tasks);
-
-			randomSeeds.reserve(numTasks);
-			for(size_t element_index = 0; element_index < numTasks; element_index++)
-				randomSeeds.emplace_back(parentInterpreter->randomStream.CreateOtherStreamViaRand());
-
-			//since each thread has a copy of the constructionStackNodes, it's possible that more than one of the threads
-			//obtains previous_results, so they must all be marked as not unique
-			parentInterpreter->RemoveUniquenessFromPreviousResultsInConstructionStack();
-
-			//need to create a mutex for all interpreters that will be called
-			parentInterpreter->scopeStackMutex = std::make_unique<Concurrency::SingleMutex>();
-		}
-
-		//Enqueues a concurrent task that needs a construction stack, using the relative interpreter
-		// executes node_to_execute with the following parameters matching those of pushing on the construction stack
-		// will allocate an appropriate node matching the type of current_index
-		//result is set to the result of the task
-		template<typename EvaluableNodeRefType>
-		void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
-			EvaluableNode *target_origin, EvaluableNode *target,
-			EvaluableNodeImmediateValueWithType current_index,
-			EvaluableNode *current_value,
-			EvaluableNodeRefType &result)
-		{
-			size_t results_saver_location = resultsSaverCurrentTaskOffset++;
-			RandomStream rand_seed = randomSeeds[curNumTasksEnqueued++];
-
-			Concurrency::threadPool.BatchEnqueueTask(
-				[this, rand_seed, node_to_execute, target_origin, target, current_index,
-				current_value, &result, results_saver_location]
-				{
-					EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
-
-					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
-						parentInterpreter->writeListeners, parentInterpreter->printListener,
-						parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
-
-					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
-
-					//build new construction stack
-					EvaluableNode *construction_stack = enm->AllocNode(*parentInterpreter->constructionStackNodes);
-					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
-					interpreter.PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
-						csiau, target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
-
-					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
-						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
-
-					auto result_ref = interpreter.ExecuteNode(node_to_execute,
-						nullptr, opcode_stack, construction_stack, &csiau,
-						EvaluableNodeRequestedValueTypes::Type::NONE, false);
-
-					if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
-					{
-						resultsSideEffect = true;
-						resultsUnique = false;
-						resultsUniqueUnreferencedTopNode = false;
-					}
-					
-					enm->FreeNode(construction_stack);
-					enm->FreeNode(opcode_stack);
-
-					if(result_ref.unique)
-					{
-						if(result_ref.GetNeedCycleCheck())
-							resultsNeedCycleCheck = true;
-					}
-					else
-					{
-						resultsUnique = false;
-						resultsNeedCycleCheck = true;
-					}
-
-					if(!result_ref.GetIsIdempotent())
-						resultsIdempotent = false;
-
-					result = result_ref;
-					resultsSaver.SetStackElement(results_saver_location, result);
-
-					interpreter.memoryModificationLock.unlock();
-					taskSet.MarkTaskCompleted();
-				}
-			);
-		}
-
-		//like the previous definition of EnqueueTaskWithConstructionStack,
-		//but without keeping results or building a target
-		template<typename EvaluableNodeRefType>
-		void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
-			EvaluableNodeImmediateValueWithType current_index,
-			EvaluableNode *current_value)
-		{
-			RandomStream rand_seed = randomSeeds[curNumTasksEnqueued++];
-
-			Concurrency::threadPool.BatchEnqueueTask(
-				[this, rand_seed, node_to_execute, current_index, current_value]
-				{
-					EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
-
-					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
-						parentInterpreter->writeListeners, parentInterpreter->printListener,
-						parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
-
-					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
-
-					//build new construction stack
-					EvaluableNode *construction_stack = enm->AllocNode(*parentInterpreter->constructionStackNodes);
-					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
-					interpreter.PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
-						csiau, nullptr, nullptr, current_index, current_value, EvaluableNodeReference::Null());
-
-					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
-						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
-
-					auto result = interpreter.ExecuteNode(node_to_execute,
-						nullptr, opcode_stack, construction_stack, &csiau,
-						EvaluableNodeRequestedValueTypes::Type::NULL_VALUE, false);
-
-					interpreter.PopConstructionContextAndGetExecutionSideEffectFlag();
-					enm->FreeNodeTreeIfPossible(result);
-
-					enm->FreeNode(construction_stack);
-					enm->FreeNode(opcode_stack);
-
-					interpreter.memoryModificationLock.unlock();
-					taskSet.MarkTaskCompleted();
-				}
-			);
-		}
-
-		//Enqueues a concurrent task using the relative interpreter, executing node_to_execute
-		//if result is specified, it will store the result there, otherwise it will free it
-		template<typename EvaluableNodeRefType>
-		void EnqueueTask(EvaluableNode *node_to_execute,
-			EvaluableNodeRefType *result = nullptr, EvaluableNodeRequestedValueTypes immediate_results = false)
-		{
-			//save the node to execute, but also save the location
-			//so the location can be used later to save the result
-			size_t results_saver_location = resultsSaverCurrentTaskOffset++;
-
-			RandomStream rand_seed = randomSeeds[curNumTasksEnqueued++];
-
-			Concurrency::threadPool.BatchEnqueueTask(
-				[this, rand_seed, node_to_execute, result, immediate_results, results_saver_location]
-				{
-					EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
-
-					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
-						parentInterpreter->writeListeners, parentInterpreter->printListener,
-						parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
-
-					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
-
-					EvaluableNode *construction_stack = enm->AllocNode(*parentInterpreter->constructionStackNodes);
-					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
-						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
-					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
-
-					auto result_ref = interpreter.ExecuteNode(node_to_execute, nullptr, opcode_stack,
-						construction_stack, &csiau, immediate_results, false);
-
-					if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
-						resultsSideEffect = true;
-
-					enm->FreeNode(construction_stack);
-					enm->FreeNode(opcode_stack);
-
-					if(result == nullptr)
-					{
-						enm->FreeNodeTreeIfPossible(result_ref);
-					}
-					else //want result
-					{
-						if(result_ref.unique)
-						{
-							if(result_ref.GetNeedCycleCheck())
-								resultsNeedCycleCheck = true;
-						}
-						else
-						{
-							resultsUnique = false;
-							resultsNeedCycleCheck = true;
-						}
-
-						if(!result_ref.GetIsIdempotent())
-							resultsIdempotent = false;
-
-						*result = result_ref;
-
-						//only save the result if it's not immediate
-						if(!result_ref.IsImmediateValue())
-							resultsSaver.SetStackElement(results_saver_location, *result);
-					}
-
-					interpreter.memoryModificationLock.unlock();
-					taskSet.MarkTaskCompleted();
-				}
-			);
-		}
-
-		//ends concurrency from all interpreters and waits for them to finish
-		inline void EndConcurrency()
-		{
-			//allow other threads to perform garbage collection
-			parentInterpreter->memoryModificationLock.unlock();
-			taskSet.WaitForTasks(taskEnqueueLock);
-			parentInterpreter->memoryModificationLock.lock();
-
-			//release scope stack mutex
-			parentInterpreter->scopeStackMutex.reset();
-
-			//propagate side effects back up
-			if(resultsSideEffect)
-				parentInterpreter->SetSideEffectsFlags();
-		}
-
-		//updates the aggregated result reference's properties based on all of the child nodes
-		inline void UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(EvaluableNodeReference &new_result)
-		{
-			if(!resultsUnique)
-				new_result.unique = false;
-
-			if(!resultsUniqueUnreferencedTopNode)
-				new_result.uniqueUnreferencedTopNode = false;
-
-			new_result.SetNeedCycleCheck(resultsNeedCycleCheck);
-
-			if(!resultsIdempotent)
-				new_result.SetIsIdempotent(false);
-		}
-
-		//returns true if any writes occurred
-		inline bool HadSideEffects()
-		{
-			return resultsSideEffect;
-		}
-
-	protected:
-		//random seed for each task, the size of numTasks
-		std::vector<RandomStream> randomSeeds;
-
-		//a barrier to wait for the tasks being run
-		ThreadPool::CountableTaskSet taskSet;
-
-		//structure to keep track of the stack to prevent results from being garbage collected
-		EvaluableNodeStackStateSaver resultsSaver;
-
-		//interpreter that is running all the concurrent interpreters
-		Interpreter *parentInterpreter;
-
-		//if true, indicates all results are unique
-		std::atomic_bool resultsUnique;
-
-		//if true, indicates the result top node is unique
-		std::atomic_bool resultsUniqueUnreferencedTopNode;
-
-		//if false, indicates all results are cycle free
-		std::atomic_bool resultsNeedCycleCheck;
-
-		//if true, indicates all results are idempotent
-		std::atomic_bool resultsIdempotent;
-
-		//if true, indicates there was a side effect
-		std::atomic_bool resultsSideEffect;
-
-		//the total number of tasks to be processed
-		size_t numTasks;
-
-		//offset for the first task in resultsSaver, up to numTasks
-		//uses current location and and counts upward
-		size_t resultsSaverFirstTaskOffset;
-
-		//current task offset, which started at resultsSaverFirstTaskOffset
-		size_t resultsSaverCurrentTaskOffset;
-
-		//number of tasks enqueued so far
-		size_t curNumTasksEnqueued;
-
-		//lock for enqueueing tasks
-		ThreadPool::TaskLock *taskEnqueueLock;
-	};
-
 	//computes the nodes concurrently and stores the interpreted values into interpreted_nodes
 	// looks to parent_node to whether concurrency is enabled
 	//if true, immediate_results allows the interpreted_nodes to be set to immediate values
@@ -1182,7 +753,7 @@ protected:
 
 		//if doesn't own any scope stack of its own, then it's shared
 		//and callingInterpreter will have it
-		return scopeStackNodes->size() == 0;
+		return scopeStackNodes.size() == 0;
 	}
 
 	//acquires lock of scopeStackMutex and assumes it is not nullptr,
@@ -1231,7 +802,7 @@ protected:
 			if(cur_interpreter->curEntity == entity)
 				return false;
 
-			if(entity->evaluableNodeManager.AreAnyInterpretersRunning())
+			if(entity->AreAnyInterpretersRunning())
 				return false;
 		}
 
@@ -1310,7 +881,7 @@ protected:
 
 		if(interpreterConstraints->ConstrainedOpcodeExecutionDepth())
 		{
-			if(opcodeStackNodes->size() > interpreterConstraints->maxOpcodeExecutionDepth)
+			if(opcodeStackNodes.size() > interpreterConstraints->maxOpcodeExecutionDepth)
 			{
 				interpreterConstraints->constraintsExceeded = true;
 				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;
@@ -1564,6 +1135,10 @@ public:
 	//override hook for profiling
 	EvaluableNodeReference InterpretNode_PROFILE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
+	//allow the concurrency manager access to the necessary attributes
+	friend class InterpreterConcurrencyManager;
+	//allow EvaluableNodeManager to access referencing nodes
+	friend class EvaluableNodeManager;
 protected:
 
 	//ensures that there are no reachable nodes that are deallocated
@@ -1573,7 +1148,7 @@ protected:
 	InterpreterConstraints *interpreterConstraints;
 
 	//a stack (list) of the current nodes being executed
-	std::vector<EvaluableNode *> *opcodeStackNodes;
+	std::vector<EvaluableNode *> opcodeStackNodes;
 
 public:
 	//where to allocate new nodes
@@ -1588,13 +1163,13 @@ public:
 protected:
 
 	//the scope stack is comprised of the variable contexts
-	std::vector<EvaluableNode *> *scopeStackNodes;
+	std::vector<EvaluableNode *> scopeStackNodes;
 
 	//vector corresponding to scopeStackNodes, each entry is true if there was a side effect
 	std::vector<bool> scopeStackFreeable;
 
 	//the current construction stack, containing an interleaved array of nodes
-	std::vector<EvaluableNode *> *constructionStackNodes;
+	std::vector<EvaluableNode *> constructionStackNodes;
 
 	//current index for each level of constructionStackNodes;
 	//note, this should always be the same size as constructionStackNodes

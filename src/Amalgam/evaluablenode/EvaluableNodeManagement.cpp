@@ -708,7 +708,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_active_interpreters + 1);
 
 		Concurrency::urgentThreadPool.EnqueueTask(
-					[this, &task_set]
+			[this, &task_set]
 			{
 				MarkAllReferencedNodesInUseConcurrentForNode(rootNode);
 				task_set.MarkTaskCompleted();
@@ -718,7 +718,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
 			Concurrency::urgentThreadPool.EnqueueTask(
-					[interpreter, &task_set]
+				[interpreter, &task_set]
 				{
 					for(EvaluableNode *en : interpreter->scopeStackNodes)
 					{

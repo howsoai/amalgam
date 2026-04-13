@@ -635,7 +635,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 						if(en == nullptr || en->GetKnownToBeInUse())
 							continue;
 
-						MarkAllReferencedNodesInUse(en);
+						EvaluableNodeManager::MarkAllReferencedNodesInUse(en);
 					}
 
 					for(EvaluableNode *en : interpreter->opcodeStackNodes)
@@ -643,7 +643,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 						if(en == nullptr || en->GetKnownToBeInUse())
 							continue;
 
-						MarkAllReferencedNodesInUse(en);
+						EvaluableNodeManager::MarkAllReferencedNodesInUse(en);
 					}
 
 					for(EvaluableNode *en : interpreter->constructionStackNodes)
@@ -651,7 +651,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 						if(en == nullptr || en->GetKnownToBeInUse())
 							continue;
 
-						MarkAllReferencedNodesInUse(en);
+						EvaluableNodeManager::MarkAllReferencedNodesInUse(en);
 					}
 
 					task_set.MarkTaskCompleted();
@@ -676,7 +676,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 					if(en == nullptr || en->GetKnownToBeInUse())
 						continue;
 
-					MarkAllReferencedNodesInUse(en);
+					EvaluableNodeManager::MarkAllReferencedNodesInUse(en);
 				}
 			};
 

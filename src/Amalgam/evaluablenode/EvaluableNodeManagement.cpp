@@ -710,7 +710,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		Concurrency::urgentThreadPool.EnqueueTask(
 					[this, &task_set]
 			{
-			MarkAllReferencedNodesInUseConcurrentForNode(rootNode);
+				MarkAllReferencedNodesInUseConcurrentForNode(rootNode);
 				task_set.MarkTaskCompleted();
 			}
 		);

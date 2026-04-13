@@ -642,20 +642,6 @@ public:
 		activeInterpreters->activeInterpreters.erase(interpreter);
 	}
 
-	//removes the node from nodes referenced
-	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
-	//to obtain a lock around all calls to this method
-	template<typename ...EvaluableNodeReferenceType>
-	void FreeNodeReferences(EvaluableNodeReferenceType... nodes)
-	{
-		NodesReferenced &nr = GetNodesReferenced();
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(nr.mutex);
-	#endif
-
-		for(EvaluableNode *en : { nodes... })
-			nr.FreeNodeReference(en);
-	}
 	//returns the number of nodes currently being used that have not been freed yet
 	__forceinline size_t GetNumberOfUsedNodes()
 	{	return firstUnusedNodeIndex;		}

@@ -628,7 +628,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
 			Concurrency::urgentThreadPool.EnqueueTask(
-					[this, interpreter, &task_set]
+					[interpreter, &task_set]
 				{
 					for(EvaluableNode *en : interpreter->scopeStackNodes)
 					{

@@ -98,6 +98,11 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 	if(!status.loaded)
 		return status;
 
+#ifdef AMALGAM_MEMORY_INTEGRITY
+	entity->VerifyEvaluableNodeIntegrity();
+#endif
+
+
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
 

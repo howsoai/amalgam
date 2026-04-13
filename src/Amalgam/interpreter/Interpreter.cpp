@@ -890,15 +890,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(Evalua
 
 void Interpreter::VerifyEvaluableNodeIntegrity()
 {
-	for(EvaluableNode *en : scopeStackNodes)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
-
-	for(EvaluableNode *en : opcodeStackNodes)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
-
-	for(EvaluableNode *en : constructionStackNodes)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
-
 	evaluableNodeManager->VerifyEvaluableNodeIntegretyForAllReferencedNodes();
 
 	//traverse stack to next calling evaluableNodeManager so don't duplicate validation effort on the same one

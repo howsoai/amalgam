@@ -661,6 +661,11 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 			return nullptr;
 		}
 
+	#ifdef AMALGAM_MEMORY_INTEGRITY
+		contained_entity->VerifyEvaluableNodeIntegrity();
+	#endif
+
+
 		new_entity->AddContainedEntity(contained_entity, entity_name);
 	}
 

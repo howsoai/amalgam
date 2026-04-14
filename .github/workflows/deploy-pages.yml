@@ -32,6 +32,18 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
+      - name: Add front matter to markdown files
+        run: |
+          for file in docs/*.md; do
+            if ! head -1 "$file" | grep -q "^---"; then
+              if [ "$(basename $file)" = "index.md" ]; then
+                echo -e "---\nlayout: home\n---\n$(cat $file)" > "$file"
+              else
+                echo -e "---\nlayout: page\n---\n$(cat $file)" > "$file"
+              fi
+            fi
+          done
+
       - name: Build with Jekyll
         run: bundle exec jekyll build --source . --destination ../_site
         working-directory: docs

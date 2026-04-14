@@ -33,12 +33,15 @@ jobs:
         uses: actions/configure-pages@v6
 
       - name: Build with Jekyll
-        run: bundle exec jekyll build --source . --destination _site
+        run: bundle exec jekyll build --source . --destination ../_site
+        working-directory: docs
         env:
           JEKYLL_ENV: production
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
 
   deploy:
     environment:

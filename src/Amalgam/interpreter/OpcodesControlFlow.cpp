@@ -181,6 +181,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
+	if(function.GetIsIdempotent())
+		return evaluableNodeManager->DeepAllocCopy(function, false);
+
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	bool profiling_call = false;
@@ -293,6 +296,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
+
+	if(function.GetIsIdempotent())
+		return evaluableNodeManager->DeepAllocCopy(function, false);
 
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 

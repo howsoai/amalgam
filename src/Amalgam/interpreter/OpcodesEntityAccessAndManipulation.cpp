@@ -635,7 +635,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 #ifdef MULTITHREAD_SUPPORT
 	//lock memory before allocating scope stack, then can release the entity lock
-	Concurrency::ReadLock enm_lock(ce_enm.memoryModificationMutex);
+	Concurrency::ReadLock enm_lock(ce_enm.GetMemoryModificationMutex());
 	called_entity.lock.unlock();
 #endif
 
@@ -871,7 +871,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 #ifdef MULTITHREAD_SUPPORT
 	//lock memory before allocating scope stack, then can release the entity lock
-	Concurrency::ReadLock enm_lock(container->evaluableNodeManager.memoryModificationMutex);
+	Concurrency::ReadLock enm_lock(container->evaluableNodeManager.GetMemoryModificationMutex());
 	container.lock.unlock();
 #endif
 

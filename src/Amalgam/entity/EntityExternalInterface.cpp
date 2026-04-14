@@ -374,7 +374,7 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
 #ifdef MULTITHREAD_SUPPORT
 	//lock memory before allocating scope stack
-	Concurrency::ReadLock enm_lock(enm.memoryModificationMutex);
+	Concurrency::ReadLock enm_lock(enm.GetMemoryModificationMutex());
 #endif
 	EvaluableNodeReference args = EvaluableNodeReference(EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json), true);
 
@@ -407,7 +407,7 @@ std::pair<std::string, std::string> EntityExternalInterface::ExecuteEntityJSONLo
 	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
 #ifdef MULTITHREAD_SUPPORT
 	//lock memory before allocating scope stack
-	Concurrency::ReadLock enm_lock(enm.memoryModificationMutex);
+	Concurrency::ReadLock enm_lock(enm.GetMemoryModificationMutex());
 #endif
 	EvaluableNodeReference args = EvaluableNodeReference(EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json), true);
 
@@ -439,7 +439,7 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
 #ifdef MULTITHREAD_SUPPORT
 	//lock memory before allocating scope stack
-	Concurrency::ReadLock enm_lock(enm.memoryModificationMutex);
+	Concurrency::ReadLock enm_lock(enm.GetMemoryModificationMutex());
 #endif
 
 	auto [code, warnings, offset, code_complete] = Parser::Parse(amlg, &enm);

@@ -452,8 +452,8 @@ EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
 
 #ifdef MULTITHREAD_SUPPORT
 	if(enm_lock == nullptr)
-		interpreter.memoryModificationLock = Concurrency::ReadLock(evaluableNodeManager.memoryModificationMutex);
-	else
+		interpreter.memoryModificationLock = Concurrency::ReadLock(evaluableNodeManager.GetMemoryModificationMutex());
+	else //calling the entity from itself or with existing lock, keep the same lock
 		interpreter.memoryModificationLock = std::move(*enm_lock);
 #endif
 

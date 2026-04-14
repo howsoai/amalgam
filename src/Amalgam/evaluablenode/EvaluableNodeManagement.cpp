@@ -97,7 +97,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 		memory_modification_lock->unlock();
 
 	//keep trying to acquire write lock to see if this thread wins the race to collect garbage
-	Concurrency::WriteLock write_lock(memoryModificationMutex, std::defer_lock);
+	Concurrency::WriteLock write_lock(GetMemoryModificationMutex(), std::defer_lock);
 
 	//wait for either the lock or no longer need garbage collecting
 	while(!write_lock.try_lock() && RecommendGarbageCollection())

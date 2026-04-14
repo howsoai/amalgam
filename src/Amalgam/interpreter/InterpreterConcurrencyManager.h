@@ -66,7 +66,7 @@ public:
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
-			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
+			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->GetMemoryModificationMutex());
 
 			//build new construction stack
 			std::vector<EvaluableNode *> construction_stack(parentInterpreter->constructionStackNodes);
@@ -130,7 +130,7 @@ public:
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
-			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
+			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->GetMemoryModificationMutex());
 
 			//build new construction stack
 			std::vector<EvaluableNode *> construction_stack(parentInterpreter->constructionStackNodes);
@@ -176,7 +176,7 @@ public:
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
-			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
+			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->GetMemoryModificationMutex());
 
 			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
 				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);

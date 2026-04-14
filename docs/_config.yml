@@ -38,6 +38,7 @@ plugins:
   - jekyll-feed
   - jekyll-sitemap
   - jekyll-remote-theme
+  - jekyll-soopr-seo-tag
 
 # -----------------------------------------------
 # Exclude from build

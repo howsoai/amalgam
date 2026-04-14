@@ -5,7 +5,7 @@ title: "Amalgam®"
 tagline: "Language Reference and Examples."
 description: "Official documentation for the Amalgam programming language."
 url: "https://howsoai.github.io"
-baseurl: "amalgam"
+baseurl: "/amalgam"
 
 # -----------------------------------------------
 # Author

@@ -36,10 +36,8 @@ date_format: "%B %-d, %Y"
 # -----------------------------------------------
 plugins:
   - jekyll-feed
-  - jekyll-seo-tag
   - jekyll-sitemap
   - jekyll-remote-theme
-  - jekyll-paginate
 
 # -----------------------------------------------
 # Exclude from build

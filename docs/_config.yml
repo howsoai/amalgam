@@ -7,45 +7,15 @@ description: "Official documentation for the Amalgam programming language."
 url: "https://howsoai.github.io"
 baseurl: "/amalgam"
 
-# -----------------------------------------------
-# Author
-# -----------------------------------------------
-author:
-  name: ""
-  email: ""
+remote_theme: just-the-docs/just-the-docs
 
-# -----------------------------------------------
-# Theme (remote, for GitHub Actions)
-# -----------------------------------------------
-remote_theme: abhinavs/moonwalk
+# Theme settings
+color_scheme: light  # "light" or "dark"
 
-# -----------------------------------------------
-# Appearance
-# Options: "light", "dark", "auto"
-# "auto" follows the visitor's OS preference
-# -----------------------------------------------
-appearance: auto
+enable_copy_code_button: true
 
-# -----------------------------------------------
-# Date Format
-# -----------------------------------------------
-date_format: "%B %-d, %Y"
+# Search
+search_enabled: true
 
-# -----------------------------------------------
-# Plugins
-# -----------------------------------------------
 plugins:
-  - jekyll-feed
-  - jekyll-sitemap
   - jekyll-remote-theme
-  - jekyll-soopr-seo-tag
-
-# -----------------------------------------------
-# Exclude from build
-# -----------------------------------------------
-exclude:
-  - Gemfile
-  - Gemfile.lock
-  - README.md
-  - LICENSE
-  - bin/

@@ -95,42 +95,60 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 	//free lock so can attempt to enter write lock to collect garbage
 	memory_modification_lock.unlock();
 
-	//keep trying to acquire write lock to see if this thread wins the race to collect garbage
-	Concurrency::WriteLock write_lock(GetMemoryModificationMutex(), std::defer_lock);
+	//the first thread to set the flag becomes the garbage collector
+	bool gc_on_this_thread = false;
+	if(RecommendGarbageCollection())
+		gc_on_this_thread =
+		!activeInterpreters->garbageCollectionThreadSelectionFlag.test_and_set(std::memory_order_acquire);
 
-	//wait for either the lock or no longer need garbage collecting
-	while(!write_lock.try_lock() && RecommendGarbageCollection())
-	{	}
-		
-	//if owns lock, double-check still needs collection,
-	// and not that another thread collected it since acquiring the lock
-	if(write_lock.owns_lock())
+	if(gc_on_this_thread)
 	{
-		if(RecommendGarbageCollection())
+		Concurrency::WriteLock write_lock(activeInterpreters->memoryModificationMutex);
+
+		//make other threads wait
 		{
-			//clear all threads' local allocation buffers that are using this enm
-			LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
-				[this](LocalAllocationBuffer *lab)
-				{
-					lab->Clear(this);
-				});
-
-			size_t cur_first_unused_node_index = firstUnusedNodeIndex;
-			//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
-			firstUnusedNodeIndex = 0;
-
-			//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
-			while(cur_first_unused_node_index > 0 && nodes[cur_first_unused_node_index - 1] != nullptr
-					&& nodes[cur_first_unused_node_index - 1]->IsNodeDeallocated())
-				cur_first_unused_node_index--;
-
-			MarkAllReferencedNodesInUse(cur_first_unused_node_index);
-
-			FreeAllNodesExceptReferencedNodes(cur_first_unused_node_index);
+			Concurrency::SingleLock lock(activeInterpreters->garbageCollectionNotificationMutex);
+			activeInterpreters->garbageCollectionInProgress.store(true, std::memory_order_release);
 		}
 
-		//free the unique lock and reacquire the shared lock
+		//clear all threads' local allocation buffers that are using this enm
+		LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
+			[this](LocalAllocationBuffer *lab)
+		{
+			lab->Clear(this);
+		});
+
+		size_t cur_first_unused_node_index = firstUnusedNodeIndex;
+		//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
+		firstUnusedNodeIndex = 0;
+
+		//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
+		while(cur_first_unused_node_index > 0 && nodes[cur_first_unused_node_index - 1] != nullptr
+				&& nodes[cur_first_unused_node_index - 1]->IsNodeDeallocated())
+			cur_first_unused_node_index--;
+
+		MarkAllReferencedNodesInUse(cur_first_unused_node_index);
+		FreeAllNodesExceptReferencedNodes(cur_first_unused_node_index);
+
+		//wake up remaining threads 
+		{
+			//lock the notification mutex to prevent other threads from waking up and seeing
+			//an outdated state of garbageCollectionThreadSelectionFlag
+			Concurrency::SingleLock lock(activeInterpreters->garbageCollectionNotificationMutex);
+			activeInterpreters->garbageCollectionInProgress.store(false, std::memory_order_release);
+			activeInterpreters->garbageCollectionThreadSelectionFlag.clear(std::memory_order_release);
+		}
+		activeInterpreters->garbageCollectionConditionVar.notify_all();
+
 		write_lock.unlock();
+	}
+	else //wait for GC to finish
+	{
+		Concurrency::SingleLock lock(activeInterpreters->garbageCollectionNotificationMutex);
+		activeInterpreters->garbageCollectionConditionVar.wait(lock, [this]()
+		{
+			return !activeInterpreters->garbageCollectionInProgress.load(std::memory_order_acquire);
+		});
 	}
 
 	memory_modification_lock.lock();

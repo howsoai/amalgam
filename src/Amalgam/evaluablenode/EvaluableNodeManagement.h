@@ -34,6 +34,15 @@ public:
 		Concurrency::SingleMutex activeInterpretersMutex;
 	#endif
 		CompactHashSet<Interpreter *> activeInterpreters;
+
+	#ifdef MULTITHREAD_SUPPORT
+		//singular flag to select which thread will collect garbage
+		std::atomic_flag garbageCollectionThreadSelectionFlag;
+		//shared boolean indicating whether GC is in progress
+		std::atomic<bool> garbageCollectionInProgress;
+		Concurrency::SingleMutex garbageCollectionNotificationMutex;
+		std::condition_variable_any garbageCollectionConditionVar;
+	#endif
 	};
 
 	//holds pointers to EvaluableNode's reserved for allocation by a specific thread

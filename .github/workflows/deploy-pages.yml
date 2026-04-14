@@ -38,17 +38,24 @@ jobs:
             sed -i 's|\(\([^)]*\)\.md\(#[^)]*\)\?\)|({% link \2.md %}\3)|g' "$file"
           done
 
-      - name: Add front matter to markdown files
+      - name: Add front matter and custom head
         run: |
+          # Add front matter to markdown files
           for file in docs/*.md; do
             if ! head -1 "$file" | grep -q "^---"; then
               if [ "$(basename $file)" = "index.md" ]; then
                 echo -e "---\nlayout: home\n---\n$(cat $file)" > "$file"
               else
-                echo -e "---\nlayout: page\n---\n$(cat $file)" > "$file"
+                echo -e "---\nlayout: default\n---\n$(cat $file)" > "$file"
               fi
             fi
           done
+
+          # Create custom head for favicon
+          mkdir -p docs/_includes
+          cat > docs/_includes/head_custom.html << 'EOF'
+          <link rel="icon" type="image/x-icon" href="{{ '/assets/favicon.ico' | relative_url }}">
+          EOF
 
       - name: Build with Jekyll
         run: bundle exec jekyll build --source . --destination ../_site

@@ -80,7 +80,7 @@ void EvaluableNodeManager::CollectGarbage()
 }
 
 #ifdef MULTITHREAD_SUPPORT
-void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadLock *memory_modification_lock)
+void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadLock &memory_modification_lock)
 {
 	if(PerformanceProfiler::IsProfilingEnabled())
 	{
@@ -93,8 +93,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 	localAllocationBuffer.Clear();
 	
 	//free lock so can attempt to enter write lock to collect garbage
-	if(memory_modification_lock != nullptr)
-		memory_modification_lock->unlock();
+	memory_modification_lock.unlock();
 
 	//keep trying to acquire write lock to see if this thread wins the race to collect garbage
 	Concurrency::WriteLock write_lock(GetMemoryModificationMutex(), std::defer_lock);
@@ -134,8 +133,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 		write_lock.unlock();
 	}
 
-	if(memory_modification_lock != nullptr)
-		memory_modification_lock->lock();
+	memory_modification_lock.lock();
 
 	if(PerformanceProfiler::IsProfilingEnabled())
 		PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());

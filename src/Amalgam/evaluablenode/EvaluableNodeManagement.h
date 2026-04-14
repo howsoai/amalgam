@@ -361,7 +361,7 @@ public:
 
 #ifdef MULTITHREAD_SUPPORT
 	//if multithreaded, then memory_modification_lock is the lock used for memoryModificationMutex if not nullptr
-	void CollectGarbageWithConcurrentAccess(Concurrency::ReadLock *memory_modification_lock);
+	void CollectGarbageWithConcurrentAccess(Concurrency::ReadLock &memory_modification_lock);
 #endif
 
 	//frees any extra EvaluableNodes and shrinks memory to be appropriate for current use

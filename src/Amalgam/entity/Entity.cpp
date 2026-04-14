@@ -447,6 +447,10 @@ EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
 	if(code == nullptr)
 		return EvaluableNodeReference::Null();
 
+	//if multithreading, either already has a lock via enm_lock or doesn't need one, so just copy and return
+	if(code->GetIsIdempotent())
+		return evaluableNodeManager.DeepAllocCopy(code, false);
+
 	Interpreter interpreter(&evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
 		write_listeners, print_listener, interpreter_constraints, this, calling_interpreter);
 

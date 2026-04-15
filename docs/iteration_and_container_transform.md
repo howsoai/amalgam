@@ -409,7 +409,7 @@ Example:
 ```
 Output:
 ```amalgam
-[3 4 5 6 7 (null)]
+[3 4 5 6 7 .null]
 ```
 Example:
 ```amalgam
@@ -430,10 +430,10 @@ Output:
 ```amalgam
 {
 	0 3
-	1 (null)
-	2 (null)
-	3 (null)
-	a (null)
+	1 .null
+	2 .null
+	3 .null
+	a .null
 }
 ```
 
@@ -516,10 +516,10 @@ Example:
 		10
 		1
 		20
-		(null)
+		.null
 		30
-		(null)
-		(null)
+		.null
+		.null
 		40
 		4
 	]
@@ -536,7 +536,7 @@ Example:
 		10
 		1
 		20
-		(null)
+		.null
 		30
 		""
 		40
@@ -566,7 +566,7 @@ Example:
 		d ""
 		e 30
 		f 3
-		g (null)
+		g .null
 		h 4
 	}
 )
@@ -593,7 +593,7 @@ Example:
 		d ""
 		e 30
 		f 3
-		g (null)
+		g .null
 		h 4
 	}
 )
@@ -612,7 +612,7 @@ Output:
 ```
 Example:
 ```amalgam
-(filter (null) [(null) 1 (null) 2 (null) 3] .false)
+(filter .null [.null 1 .null 2 .null 3] .false)
 ```
 Output:
 ```amalgam
@@ -620,11 +620,11 @@ Output:
 ```
 Example:
 ```amalgam
-(filter (null) {a (null) b 1 c (null) d 2 e (null) f 3} .true)
+(filter .null {a .null b 1 c .null d 2 e .null f 3} .true)
 ```
 Output:
 ```amalgam
-{a (null) c (null) e (null)}
+{a .null c .null e .null}
 ```
 
 [Amalgam Opcodes](./index.md#amalgam-opcodes)
@@ -666,14 +666,14 @@ Output:
 Example:
 ```amalgam
 (weave
-	(null)
+	.null
 	[2 4 6]
-	(null)
+	.null
 )
 ```
 Output:
 ```amalgam
-[2 (null) 4 (null) 6 (null)]
+[2 .null 4 .null 6 .null]
 ```
 Example:
 ```amalgam
@@ -689,7 +689,7 @@ Output:
 Example:
 ```amalgam
 (weave
-	(null)
+	.null
 	[1 4 7]
 	[2 5 8]
 	[3 6 9]
@@ -863,7 +863,7 @@ Example:
 		)
 	)
 	[1 2 3 4 5]
-	(null)
+	.null
 )
 ```
 Output:
@@ -995,7 +995,7 @@ Example:
 ```
 Output:
 ```amalgam
-"{a (null) b (null) c (null) d (null)}"
+"{a .null b .null c .null d .null}"
 ```
 Example:
 ```amalgam
@@ -1354,7 +1354,7 @@ Output:
 Example:
 ```amalgam
 (sort
-	(null)
+	.null
 	[4 9 3 5 1]
 	2
 )
@@ -1366,7 +1366,7 @@ Output:
 Example:
 ```amalgam
 (sort
-	(null)
+	.null
 	[4 9 3 5 1]
 	-2
 )
@@ -1510,7 +1510,7 @@ Example:
 ```
 Output:
 ```amalgam
-[(null) 0 1 2]
+[.null 0 1 2]
 ```
 Example:
 ```amalgam
@@ -1532,11 +1532,11 @@ Output:
 [
 	3
 	3
-	(null)
+	.null
 	3
 	3
-	(null)
-	(null)
+	.null
+	.null
 ]
 ```
 

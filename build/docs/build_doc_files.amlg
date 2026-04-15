@@ -66,6 +66,41 @@
 	))
 	
 	(assign "current_opcode_group" "")
+
+	(store "./toc.md" (concat
+		"## Opcodes\n"
+		(apply "concat"
+			(map
+				(lambda
+					(let {
+							opcode (current_value 1)
+							details (help (current_value 1))
+						}
+
+						(let
+							{result_string ""}
+
+							(if (!= current_opcode_group (get details "opcode_group"))
+									(assign {
+										current_opcode_group (get details "opcode_group")
+										result_string (concat "### " (get details "opcode_group") "\n")
+										})
+							)
+
+							(concat
+								result_string
+								"  - [" opcode "](./"
+								(call convert_group_name {opcode_group (get details "opcode_group")})
+								".md#opcode-" opcode ")"
+								"\n")
+						)
+					)
+				)
+				(help "opcodes")
+			)
+		)
+	))
+
 	(let {
 			opcode_groups_docs
 			(zip

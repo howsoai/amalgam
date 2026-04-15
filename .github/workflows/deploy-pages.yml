@@ -38,24 +38,33 @@ jobs:
             sed -i -E 's|\((\./)?([^)#]+)\.md(#[^)]*)?\)|({% link \2.md %}\3)|g' "$file"
           done
 
+      - name: Replace amalgam code fence language for Rouge compatibility
+        run: |
+          for file in docs/*.md; do
+            sed -i 's/```amalgam/```plaintext/g' "$file"
+          done
+
       - name: Add front matter and custom head
         run: |
           # Add front matter to markdown files
           for file in docs/*.md; do
             if ! head -1 "$file" | grep -q "^---"; then
-              if [ "$(basename $file)" = "index.md" ]; then
-                echo -e "---\nlayout: home\n---\n$(cat $file)" > "$file"
-              else
-                echo -e "---\nlayout: default\n---\n$(cat $file)" > "$file"
-              fi
+              filename=$(basename "$file" .md)
+              case "$filename" in
+                index)
+                  echo -e "---\nlayout: home\ntitle: Home\nnav_order: 1\n---\n$(cat $file)" > "$file"
+                  ;;
+                toc)
+                  echo -e "---\nlayout: default\ntitle: Opcodes\nhas_children: true\nnav_order: 2\n---\n$(cat $file)" > "$file"
+                  ;;
+                *)
+                  title=$(echo "$filename" | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2); print}')
+                  echo -e "---\nlayout: default\ntitle: $title\nparent: Opcodes\n---\n$(cat $file)" > "$file"
+                  ;;
+              esac
             fi
           done
 
-          # Create custom head for favicon
-          mkdir -p docs/_includes
-          cat > docs/_includes/head_custom.html << 'EOF'
-          <link rel="icon" type="image/x-icon" href="{{ '/assets/favicon.ico' | relative_url }}">
-          EOF
 
       - name: Build with Jekyll
         run: bundle exec jekyll build --source . --destination ../_site

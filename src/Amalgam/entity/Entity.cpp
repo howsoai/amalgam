@@ -447,13 +447,29 @@ EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
 	if(code == nullptr)
 		return EvaluableNodeReference::Null();
 
+	//if multithreading, either already has a lock via enm_lock or doesn't need one, so just copy and return
+	if(code->GetIsIdempotent())
+		return evaluableNodeManager.DeepAllocCopy(code, false);
+
+	if(code->GetIsIdempotent())
+	{
+		if(code == nullptr)
+			return EvaluableNodeReference::Null();
+
+		EvaluableNodeReference retval = evaluableNodeManager.DeepAllocCopy(code, false);
+		if(code->GetType() == ENT_RETURN)
+			retval = RemoveTopConcludeOrReturnNode(retval, &evaluableNodeManager);
+
+		return retval;
+	}
+
 	Interpreter interpreter(&evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
 		write_listeners, print_listener, interpreter_constraints, this, calling_interpreter);
 
 #ifdef MULTITHREAD_SUPPORT
 	if(enm_lock == nullptr)
-		interpreter.memoryModificationLock = Concurrency::ReadLock(evaluableNodeManager.memoryModificationMutex);
-	else
+		interpreter.memoryModificationLock = Concurrency::ReadLock(evaluableNodeManager.GetMemoryModificationMutex());
+	else //calling the entity from itself or with existing lock, keep the same lock
 		interpreter.memoryModificationLock = std::move(*enm_lock);
 #endif
 

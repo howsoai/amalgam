@@ -23,9 +23,26 @@ public:
 	struct ActiveInterpreters
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::SingleMutex mutex;
+		//mutex to manage whether memory nodes are being modified
+		//concurrent modifications can occur as long as there is only one unique thread
+		// that has allocated the memory
+		//garbage collection or destruction of the manager require a unique lock
+		// so that the memory can be traversed
+		Concurrency::ReadWriteMutex memoryModificationMutex;
+
+		//mutex to modify activeInterpreters
+		Concurrency::SingleMutex activeInterpretersMutex;
 	#endif
 		CompactHashSet<Interpreter *> activeInterpreters;
+
+	#ifdef MULTITHREAD_SUPPORT
+		//singular flag to select which thread will collect garbage
+		std::atomic_flag garbageCollectionThreadSelectionFlag;
+		//shared boolean indicating whether GC is in progress
+		std::atomic<bool> garbageCollectionInProgress;
+		Concurrency::SingleMutex garbageCollectionNotificationMutex;
+		std::condition_variable_any garbageCollectionConditionVar;
+	#endif
 	};
 
 	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
@@ -353,7 +370,7 @@ public:
 
 #ifdef MULTITHREAD_SUPPORT
 	//if multithreaded, then memory_modification_lock is the lock used for memoryModificationMutex if not nullptr
-	void CollectGarbageWithConcurrentAccess(Concurrency::ReadLock *memory_modification_lock);
+	void CollectGarbageWithConcurrentAccess(Concurrency::ReadLock &memory_modification_lock);
 #endif
 
 	//frees any extra EvaluableNodes and shrinks memory to be appropriate for current use
@@ -601,6 +618,23 @@ public:
 	#endif
 	}
 
+#ifdef MULTITHREAD_SUPPORT
+	//returns the memory modification mutex for garbage collection, etc.
+	Concurrency::ReadWriteMutex &GetMemoryModificationMutex()
+	{
+		if(activeInterpreters.get() == nullptr)
+		{
+			Concurrency::WriteLock write_lock(managerAttributesMutex);
+
+			//double check that it's still nullptr in case another thread created it
+			if(activeInterpreters.get() == nullptr)
+				activeInterpreters = std::make_unique<ActiveInterpreters>();
+		}
+
+		return activeInterpreters->memoryModificationMutex;
+	}
+#endif
+
 	//returns true if any interpreters are operating on the nodes managed by this instance
 	inline bool AreAnyInterpretersRunning()
 	{
@@ -626,7 +660,7 @@ public:
 		}
 
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(activeInterpreters->mutex);
+		Concurrency::Lock lock(activeInterpreters->activeInterpretersMutex);
 	#endif
 
 		activeInterpreters->activeInterpreters.insert(interpreter);
@@ -636,7 +670,7 @@ public:
 	void RemoveActiveInterpreter(Interpreter *interpreter)
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(activeInterpreters->mutex);
+		Concurrency::Lock lock(activeInterpreters->activeInterpretersMutex);
 	#endif
 
 		activeInterpreters->activeInterpreters.erase(interpreter);
@@ -799,19 +833,6 @@ protected:
 	Concurrency::ReadWriteMutex managerAttributesMutex;
 
 	std::atomic<size_t> firstUnusedNodeIndex;
-
-public:
-	//global mutex to manage whether memory nodes are being modified
-	//concurrent modifications can occur as long as there is only one unique thread
-	// that has allocated the memory
-	//garbage collection or destruction of the manager require a unique lock
-	// so that the memory can be traversed
-	//note that this is a global lock because nodes may be mixed among more than one
-	// EvaluableNodeManager and so garbage collection should not happening while memory is being modified
-	inline static Concurrency::ReadWriteMutex memoryModificationMutex;
-
-protected:
-
 #else
 	size_t firstUnusedNodeIndex;
 #endif

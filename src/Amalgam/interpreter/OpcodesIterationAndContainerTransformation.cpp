@@ -473,7 +473,7 @@ static OpcodeInitializer _ENT_MAP(ENT_MAP, &Interpreter::InterpretNode_ENT_MAP, 
 	)
 	[1 2 3 4 5]
 	[2 2 2 2 2 2]
-))&", R"([3 4 5 6 7 (null)])"},
+))&", R"([3 4 5 6 7 .null])"},
 			{R"&((map
 	(lambda
 		(+
@@ -487,10 +487,10 @@ static OpcodeInitializer _ENT_MAP(ENT_MAP, &Interpreter::InterpretNode_ENT_MAP, 
 	[2 2 2 2]
 ))&", R"({
 	0 3
-	1 (null)
-	2 (null)
-	3 (null)
-	a (null)
+	1 .null
+	2 .null
+	3 .null
+	a .null
 })"}
 		});
 	d.newTargetScope = true;
@@ -876,10 +876,10 @@ static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT
 		10
 		1
 		20
-		(null)
+		.null
 		30
-		(null)
-		(null)
+		.null
+		.null
 		40
 		4
 	]
@@ -889,7 +889,7 @@ static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT
 		10
 		1
 		20
-		(null)
+		.null
 		30
 		""
 		40
@@ -912,7 +912,7 @@ static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT
 		d ""
 		e 30
 		f 3
-		g (null)
+		g .null
 		h 4
 	}
 ))&", R"({
@@ -932,7 +932,7 @@ static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT
 		d ""
 		e 30
 		f 3
-		g (null)
+		g .null
 		h 4
 	}
 ))&", R"({
@@ -944,8 +944,8 @@ static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT
 	f 3
 	h 4
 })"},
-{ R"&((filter (null) [(null) 1 (null) 2 (null) 3] .false))&", R"([1 2 3])" },
-{ R"&((filter (null) {a (null) b 1 c (null) d 2 e (null) f 3} .true))&", R"({a (null) c (null) e (null)})" }
+{ R"&((filter .null [.null 1 .null 2 .null 3] .false))&", R"([1 2 3])" },
+{ R"&((filter .null {a .null b 1 c .null d 2 e .null f 3} .true))&", R"({a .null c .null e .null})" }
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.newTargetScope = true;
@@ -1298,16 +1298,16 @@ static OpcodeInitializer _ENT_WEAVE(ENT_WEAVE, &Interpreter::InterpretNode_ENT_W
 	[2 4 6]
 ))&", R"([1 2 3 4 5 6])"},
 			{R"&((weave
-	(null)
+	.null
 	[2 4 6]
-	(null)
-))&", R"([2 (null) 4 (null) 6 (null)])"},
+	.null
+))&", R"([2 .null 4 .null 6 .null])"},
 			{R"&((weave
 	"a"
 	[2 4 6]
 ))&", R"(["a" 2 @(target .true 0) 4 @(target .true 0) 6])"},
 			{R"&((weave
-	(null)
+	.null
 	[1 4 7]
 	[2 5 8]
 	[3 6 9]
@@ -1439,7 +1439,7 @@ static OpcodeInitializer _ENT_WEAVE(ENT_WEAVE, &Interpreter::InterpretNode_ENT_W
 		)
 	)
 	[1 2 3 4 5]
-	(null)
+	.null
 ))&", R"([3 4 5])"}
 		});
 	d.newTargetScope = true;
@@ -1819,7 +1819,7 @@ static OpcodeInitializer _ENT_ZIP(ENT_ZIP, &Interpreter::InterpretNode_ENT_ZIP, 
 	(zip
 		["a" "b" "c" "d"]
 	)
-))&", R"("{a (null) b (null) c (null) d (null)}")"},
+))&", R"("{a .null b .null c .null d .null}")"},
 			{R"&((unparse
 	(zip
 		["a" "b" "c" "d"]
@@ -2290,12 +2290,12 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 	"2020-06-08 lunes 11.33.48"
 ])"},
 			{R"&((sort
-	(null)
+	.null
 	[4 9 3 5 1]
 	2
 ))&", R"([1 3])"},
 			{R"&((sort
-	(null)
+	.null
 	[4 9 3 5 1]
 	-2
 ))&", R"([5 9])"},
@@ -2595,7 +2595,7 @@ static OpcodeInitializer _ENT_PREVIOUS_RESULT(ENT_PREVIOUS_RESULT, &Interpreter:
 		{R"&((while
 	(< (current_index) 3)
 	(append (previous_result) (current_index))
-))&", R"([(null) 0 1 2])"},
+))&", R"([.null 0 1 2])"},
 			{R"&((while
 	(< (current_index) 3)
 	(if
@@ -2610,11 +2610,11 @@ static OpcodeInitializer _ENT_PREVIOUS_RESULT(ENT_PREVIOUS_RESULT, &Interpreter:
 ))&", R"([
 	3
 	3
-	(null)
+	.null
 	3
 	3
-	(null)
-	(null)
+	.null
+	.null
 ])"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;

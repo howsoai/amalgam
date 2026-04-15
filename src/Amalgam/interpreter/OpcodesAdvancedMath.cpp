@@ -413,7 +413,7 @@ static OpcodeInitializer _ENT_MODE(ENT_MODE, &Interpreter::InterpretNode_ENT_MOD
 		3
 		4
 		5
-		(null)
+		.null
 	]
 ))&", R"(1)"},
 			{R"&((mode
@@ -668,7 +668,7 @@ static OpcodeInitializer _ENT_QUANTILE(ENT_QUANTILE, &Interpreter::InterpretNode
 	0.5
 ))&", R"(3)"},
 			{R"&((quantile
-	[1 2 3 4 5 (null)]
+	[1 2 3 4 5 .null]
 	0.5
 ))&", R"(3)"},
 			{R"&((quantile
@@ -709,7 +709,7 @@ static OpcodeInitializer _ENT_QUANTILE(ENT_QUANTILE, &Interpreter::InterpretNode
 		2 3
 		3 4
 		4 5
-		5 (null)
+		5 .null
 	}
 	0.5
 	[0.75 0 0 0 0.125]
@@ -820,7 +820,7 @@ static OpcodeInitializer _ENT_GENERALIZED_MEAN(ENT_GENERALIZED_MEAN, &Interprete
 	[1 2 3 4 5]
 ))&", R"(3)"},
 			{R"&((generalized_mean
-	[1 2 3 4 5 (null)]
+	[1 2 3 4 5 .null]
 ))&", R"(3)"},
 			{R"&((generalized_mean
 	[1 2 3 4 5]
@@ -860,7 +860,7 @@ static OpcodeInitializer _ENT_GENERALIZED_MEAN(ENT_GENERALIZED_MEAN, &Interprete
 		2 3
 		3 4
 		4 5
-		5 (null)
+		5 .null
 	}
 	1
 	[0.75 0 0 0 0.125]
@@ -994,7 +994,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 		10000
 		(range 0 200)
 	)
-	(null)
+	.null
 	0.01
 ))&", R"(2.0874003024080013e+234)"},
 			{R"&((generalized_distance
@@ -1004,12 +1004,12 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 ))&", R"(1)"},
 			{R"&((generalized_distance
 	[3 4]
-	(null)
+	.null
 	2
 ))&", R"(5)"},
 			{R"&((generalized_distance
 	[3 4]
-	(null)
+	.null
 	-.infinity
 ))&", R"(3)"},
 			{R"&((generalized_distance
@@ -1020,73 +1020,73 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 ))&", R"(1.9210176984148622e-48)"},
 			{R"&((generalized_distance
 	[3 4]
-	(null)
+	.null
 	2
 	[1 1]
 ))&", R"(5)"},
 			{R"&((generalized_distance
 	[3 4]
-	(null)
+	.null
 	2
 	[0.5 0.5]
 ))&", R"(3.5355339059327378)"},
 			{R"&((generalized_distance
 	[3 4]
-	(null)
+	.null
 	1
 	[0.5 0.5]
 ))&", R"(3.5)"},
 			{R"&((generalized_distance
 	[3 4]
-	(null)
+	.null
 	0.5
 	[0.5 0.5]
 ))&", R"(3.482050807568877)"},
 			{R"&((generalized_distance
 	[3 4]
-	(null)
+	.null
 	0.1
 	[0.5 0.5]
 ))&", R"(3.467687001077147)"},
 			{R"&((generalized_distance
 	[3 4]
-	(null)
+	.null
 	0.01
 	[0.5 0.5]
 ))&", R"(3.4644599990846436)"},
 			{R"&((generalized_distance
 	[3 4]
-	(null)
+	.null
 	0.001
 	[0.5 0.5]
 ))&", R"(3.4641374518767565)"},
 			{R"&((generalized_distance
 	[3 4]
-	(null)
+	.null
 	0
 	[0.5 0.5]
 ))&", R"(3.4641016151377544)"},
 			{R"&((generalized_distance
-	[(null) 4]
-	(null)
+	[.null 4]
+	.null
 	2
 	[1 1]
 ))&", R"(.infinity)"},
 			{R"&((generalized_distance
-	[(null) 4]
-	(null)
+	[.null 4]
+	.null
 	0
 	[1 1]
 ))&", R"(.infinity)"},
 			{R"&((generalized_distance
-	[(null) 4]
-	(null)
+	[.null 4]
+	.null
 	2
 	[0.5 0.5]
 ))&", R"(.infinity)"},
 			{R"&((generalized_distance
-	[(null) 4]
-	(null)
+	[.null 4]
+	.null
 	0
 	[0.5 0.5]
 ))&", R"(.infinity)"},
@@ -1094,7 +1094,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[1 2 3]
 	[10 2 4]
 	1
-	(null)
+	.null
 	["nominal_number"]
 	[1]
 ))&", R"(2)"},
@@ -1102,7 +1102,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[1 2 3]
 	[10 2 10]
 	1
-	(null)
+	.null
 	["nominal_number"]
 	[1]
 ))&", R"(8)"},
@@ -1110,7 +1110,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[1 2 3]
 	[10 2 10]
 	1
-	(null)
+	.null
 	["nominal_number"]
 	[1]
 ))&", R"(8)"},
@@ -1156,45 +1156,45 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[0.25 180 -12]
 ))&", R"(92.57407500000001)"},
 			{R"&((generalized_distance
-	[4 4 (null)]
-	[2 (null) (null)]
+	[4 4 .null]
+	[2 .null .null]
 	2
 	[1 0 1]
 	["continuous_number" "nominal_number" "nominal_number"]
-	[(null) 5 5]
+	[.null 5 5]
 	[0.1 0.1 0.1]
 ))&", R"(2.227195548101088)"},
 			{R"&((generalized_distance
-	[4 4 (null)]
-	[2 (null) (null)]
+	[4 4 .null]
+	[2 .null .null]
 	2
 	[1 0 1]
 	["continuous_number" "nominal_number" "nominal_number"]
-	[(null) 5 5]
+	[.null 5 5]
 ))&", R"(2.23606797749979)"},
 			{R"&((generalized_distance
-	[4 4 (null) 4]
-	[2 (null) (null) 2]
+	[4 4 .null 4]
+	[2 .null .null 2]
 	2
 	[1 0 1 1]
 	["continuous_number" "nominal_number" "nominal_number"]
-	[(null) 5 5]
+	[.null 5 5]
 	[0.1 0.1 0.1 0.1]
 ))&", R"(2.9933927271513525)"},
 			{R"&((generalized_distance
-	[4 4 (null) 4]
-	[2 (null) (null) 2]
+	[4 4 .null 4]
+	[2 .null .null 2]
 	2
 	[1 0 1 1]
 	["continuous_number" "nominal_number" "nominal_number"]
-	[(null) 5 5]
+	[.null 5 5]
 ))&", R"(3)"},
 			{R"&((generalized_distance
 	[4 4 4 4 4]
-	[2 (null) 2 2 2]
+	[2 .null 2 2 2]
 	1
 	[1 0 1 1 1]
-))&", R"((null))"},
+))&", R"(.null)"},
 			{R"&((generalized_distance
 	[4 4 4]
 	[2 2 2]
@@ -1202,44 +1202,44 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	{x 1 y 1 z 1}
 	{x "nominal_number" y "continuous_number" z "continuous_number"}
 	{z 5}
-	(null)
-	(null)
-	(null)
+	.null
+	.null
+	.null
 	["x" "y" "z"]
 ))&", R"(6)"},
 			{R"&((generalized_distance
-	[4 4 (null)]
-	[2 2 (null)]
+	[4 4 .null]
+	[2 2 .null]
 	1
 	[1 1 1]
 	["continuous_number" "nominal_number" "nominal_number"]
-	[(null) 5 5]
+	[.null 5 5]
 ))&", R"(4)"},
 			{R"&((generalized_distance
 	[4 4 4 4]
-	[2 2 2 (null)]
+	[2 2 2 .null]
 	0
 	[1 1 1 1]
 	["continuous_number" "nominal_number" "nominal_number" "continuous_number"]
-	[(null) 5 5 (null)]
+	[.null 5 5 .null]
 	[
 		[0 2]
-		(null)
-		(null)
+		.null
+		.null
 		[0 2]
 	]
 ))&", R"(4)"},
 			{R"&((generalized_distance
 	[4 "s" "s" 4]
-	[2 "s" 2 (null)]
+	[2 "s" 2 .null]
 	1
 	[1 1 1 1]
 	["continuous_number" "nominal_string" "nominal_string" "continuous_number"]
-	[(null) 5 5 (null)]
+	[.null 5 5 .null]
 	[
 		[0 1]
-		(null)
-		(null)
+		.null
+		.null
 		[0 1]
 	]
 ))&", R"(4)"},
@@ -1277,10 +1277,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	1
 	[1 1]
 	["continuous_number" "continuous_number"]
-	(null)
+	.null
 	[0.5 0.5]
-	(null)
-	(null)
+	.null
+	.null
 	.true
 ))&", R"(0)"},
 			{R"&((generalized_distance
@@ -1289,10 +1289,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	1
 	[1 1]
 	["nominal_number" "nominal_number"]
-	(null)
+	.null
 	[0.5 0.5]
-	(null)
-	(null)
+	.null
+	.null
 	.true
 ))&", R"(0)"},
 			{R"&((generalized_distance
@@ -1301,10 +1301,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	1
 	[1 1]
 	["continuous_number" "continuous_number"]
-	(null)
+	.null
 	[0.5 0.5]
-	(null)
-	(null)
+	.null
+	.null
 	.true
 ))&", R"(1.6766764161830636)"},
 			{R"&((generalized_distance
@@ -1315,8 +1315,8 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	["nominal_number" "nominal_number"]
 	[2 2]
 	[0.25 0.25]
-	(null)
-	(null)
+	.null
+	.null
 	.true
 ))&", R"(2.197224577336219)"},
 			{R"&((generalized_distance
@@ -1347,10 +1347,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	]
 	
 	;deviations
-	(null)
+	.null
 	
 	;names
-	(null)
+	.null
 	
 	;weights_selection_feature
 	.true
@@ -1383,10 +1383,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	]
 	
 	;deviations
-	(null)
+	.null
 	
 	;names
-	(null)
+	.null
 	
 	;weights_selection_feature
 	.true
@@ -1422,10 +1422,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	]
 	
 	;deviations
-	(null)
+	.null
 	
 	;names
-	(null)
+	.null
 	
 	;weights_selection_feature
 	.true
@@ -1452,10 +1452,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[0.2]
 	
 	;deviations
-	(null)
+	.null
 	
 	;names
-	(null)
+	.null
 	
 	;weights_selection_feature
 	.true
@@ -1494,10 +1494,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	]
 	
 	;deviations
-	(null)
+	.null
 	
 	;names
-	(null)
+	.null
 	
 	;weights_selection_feature
 	.true
@@ -1539,10 +1539,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	]
 	
 	;deviations
-	(null)
+	.null
 	
 	;names
-	(null)
+	.null
 	
 	;weights_selection_feature
 	.true
@@ -1609,7 +1609,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	["continuous_number"]
 	
 	;types
-	(null)
+	.null
 	
 	;attributes
 	0.5
@@ -1711,7 +1711,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	["continuous_number"]
 	
 	;types
-	(null)
+	.null
 	
 	;attributes
 	0.5

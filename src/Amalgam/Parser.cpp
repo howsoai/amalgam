@@ -647,6 +647,11 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 
 		//check for special values
 		double value = 0.0;
+		if(s == ".null")
+		{
+			//token is already null
+			return new_token;
+		}
 		if(s == ".true")
 		{
 			new_token->SetTypeViaBoolValue(true);
@@ -980,7 +985,7 @@ void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringI
 
 	if(key_sid == string_intern_pool.NOT_A_STRING_ID)
 	{
-		upd.result.append("(null)");
+		upd.result.append(".null");
 	}
 	else
 	{
@@ -1059,7 +1064,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 
 	if(tree == nullptr)
 	{
-		upd.result.append(expanded_whitespace ? "(null)\r\n" : "(null)");
+		upd.result.append(expanded_whitespace ? ".null\r\n" : ".null");
 		return;
 	}
 
@@ -1085,6 +1090,9 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 	{
 		switch(tree_type)
 		{
+		case ENT_NULL:
+			upd.result.append(".null");
+			break;
 		case ENT_BOOL:
 			upd.result.append(tree->GetBoolValueReference() ? ".true" : ".false");
 			break;
@@ -1096,7 +1104,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			auto sid = tree->GetStringIDReference();
 			if(sid == string_intern_pool.NOT_A_STRING_ID)
 			{
-				upd.result.append("(null)");
+				upd.result.append(".null");
 			}
 			else //legitimate string
 			{

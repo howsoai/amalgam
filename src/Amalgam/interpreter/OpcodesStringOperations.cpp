@@ -119,12 +119,12 @@ static OpcodeInitializer _ENT_SPLIT(ENT_SPLIT, &Interpreter::InterpretNode_ENT_S
 		{R"&((split "hello world" " "))&", R"(["hello" "world"])"},
 		{R"&((split "hello\r\nworld\r\n!" "\r\n"))&", R"(["hello" "world" "!"])"},
 		{R"&((split "hello world !" "\\s" 1))&", R"(["hello" "world !"])"},
-		{R"&((split "hello to the world" "to" (null) 2))&", R"(["hello " " the world"])"},
+		{R"&((split "hello to the world" "to" .null 2))&", R"(["hello " " the world"])"},
 		{R"&((split "abcdefgij"))&", R"(["abcdefgij"])"},
 		{R"&((split "abc de fghij" " "))&", R"(["abc" "de" "fghij"])"},
 		{R"&((split "abc\r\nde\r\nfghij" "\r\n"))&", R"(["abc" "de" "fghij"])"},
 		{R"&((split "abc de fghij" " " 1))&", R"(["abc" "de fghij"])"},
-		{R"&((split "abc de fghij" " de " (null) 4))&", R"(["abc de fghij"])"}
+		{R"&((split "abc de fghij" " de " .null 4))&", R"(["abc de fghij"])"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
@@ -279,7 +279,7 @@ static OpcodeInitializer _ENT_SUBSTR(ENT_SUBSTR, &Interpreter::InterpretNode_ENT
 		{R"&((substr "hello world" 1 100))&", R"("ello world")"},
 		{R"&((substr "hello world" 1 -1))&", R"("ello worl")"},
 		{R"&((substr "hello world" -4 -1))&", R"("orl")"},
-		{R"&((substr "hello world" -4 -1 (null) 1))&", R"("orl")"},
+		{R"&((substr "hello world" -4 -1 .null 1))&", R"("orl")"},
 		{R"&((substr "hello world" 1 3 "x"))&", R"("hxlo world")"},
 		{R"&((substr "hello world" "(e|o)"))&", R"("e")"},
 		{R"&((substr "hello world" "[h|w](e|o)"))&", R"("he")"},
@@ -303,7 +303,7 @@ static OpcodeInitializer _ENT_SUBSTR(ENT_SUBSTR, &Interpreter::InterpretNode_ENT
 ])"},
 			{R"&(;invalid syntax test
 (substr "hello world" "(?([h|w])(?:e|o))" "submatches"))&", R"([])"},
-			{R"&((substr "hello world" "(e|o)" (null) "[$&]"))&", R"("h[e]ll[o] w[o]rld")"},
+			{R"&((substr "hello world" "(e|o)" .null "[$&]"))&", R"("h[e]ll[o] w[o]rld")"},
 			{R"&((substr "hello world" "(e|o)" 2 "[$&]"))&", R"("h[e]ll[o] world")"},
 			{R"&((substr "abcdefgijk"))&", R"("abcdefgijk")"},
 			{R"&((substr "abcdefgijk" 1))&", R"("bcdefgijk")"},
@@ -311,7 +311,7 @@ static OpcodeInitializer _ENT_SUBSTR(ENT_SUBSTR, &Interpreter::InterpretNode_ENT
 			{R"&((substr "abcdefgijk" 1 100))&", R"("bcdefgijk")"},
 			{R"&((substr "abcdefgijk" 1 -1))&", R"("bcdefgij")"},
 			{R"&((substr "abcdefgijk" -4 -1))&", R"("gij")"},
-			{R"&((substr "abcdefgijk" -4 -1 (null) 1))&", R"("gij")"},
+			{R"&((substr "abcdefgijk" -4 -1 .null 1))&", R"("gij")"},
 			{R"&((substr "abcdefgijk" 1 3 "x"))&", R"("axdefgijk")"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -699,7 +699,7 @@ static OpcodeInitializer _ENT_PARSE(ENT_PARSE, &Interpreter::InterpretNode_ENT_P
 	OpcodeDetails d;
 	d.parameters = R"(string str [bool transactional] [bool return_warnings])";
 	d.returns = R"(any)";
-	d.description = R"(String `str` is parsed into code, and the result is returned.  If `transactional` is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If `transactional` is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If any performance constraints are given or `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless `return_warnings` is false, in which case just the value will be returned.)";
+	d.description = R"(String `str` is parsed into code, and the result is returned.  If `transactional` is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If `transactional` is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If any performance constraints are given or `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or .null if none)), unless `return_warnings` is false, in which case just the value will be returned.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((parse "(seq (+ 1 2))" .true)))&", R"&((seq
 	(+ 1 2)
@@ -782,7 +782,7 @@ static OpcodeInitializer _ENT_UNPARSE(ENT_UNPARSE, &Interpreter::InterpretNode_E
 	d.description = R"(Code is unparsed and the representative string is returned. If `pretty_print` is true, the output will be in pretty-print format, otherwise by default it will be inlined.  If `sort_keys` is true, the default, then it will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to whatever order it is stored in memory.  If `include_attributes` is true, it will print out attributes like comments, but by default it will not.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unparse (parse "(print \"hello\")")))&", R"&("(print \"hello\")")&"},
-		{R"&((parse (unparse (list (sqrt -1) (null) .infinity -.infinity))))&", R"&([(null) (null) .infinity -.infinity])&"},
+		{R"&((parse (unparse (list (sqrt -1) .null .infinity -.infinity))))&", R"&([.null .null .infinity -.infinity])&"},
 		{R"&((unparse (associate "a" 1 "b" 2 "c" (list "alpha" "beta" "gamma"))))&", R"&("{a 1 b 2 c [\"alpha\" \"beta\" \"gamma\"]}")&"},
 		{R"&((unparse (associate "a" 1 "b" 2 "c" (list "alpha" "beta" "gamma")) .true))&", R"&("{\r\n\ta 1\r\n\tb 2\r\n\tc [\"alpha\" \"beta\" \"gamma\"]\r\n}\r\n")&"}
 		});

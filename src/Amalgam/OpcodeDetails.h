@@ -126,6 +126,7 @@ public:
 	//arrangements of ordered parameters
 	enum class OrderedChildNodeType
 	{
+		NONE,
 		UNORDERED,
 		ORDERED,
 		ONE_POSITION_THEN_ORDERED,
@@ -219,10 +220,16 @@ __forceinline bool DoesOpcodeUseAssocParameters(EvaluableNodeType t)
 //returns true if t is an immediate value
 __forceinline constexpr bool IsEvaluableNodeTypeImmediate(EvaluableNodeType t)
 {
-	return (t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING || t == ENT_SYMBOL);
+	return (t == ENT_NULL || t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING || t == ENT_SYMBOL);
 }
 
-//returns true if t uses string data
+//returns true if t uses null (no) data
+__forceinline constexpr bool DoesEvaluableNodeTypeUseNullData(EvaluableNodeType t)
+{
+	return (t == ENT_NULL);
+}
+
+//returns true if t uses boolean data
 __forceinline constexpr bool DoesEvaluableNodeTypeUseBoolData(EvaluableNodeType t)
 {
 	return (t == ENT_BOOL);

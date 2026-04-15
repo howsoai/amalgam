@@ -261,9 +261,9 @@ static OpcodeInitializer _ENT_EQUAL(ENT_EQUAL, &Interpreter::InterpretNode_ENT_E
 		{R"&((= 4 4 4))&", R"(.true)"},
 		{R"&((=
 	(sqrt -1)
-	(null)
+	.null
 ))&", R"(.true)"},
-			{R"&((= (null) (null)))&", R"(.true)"},
+			{R"&((= .null .null))&", R"(.true)"},
 			{R"&((= .infinity .infinity))&", R"(.true)"},
 			{R"&((= .infinity -.infinity))&", R"(.false)"}
 		});
@@ -493,8 +493,8 @@ static OpcodeInitializer _ENT_LEQUAL(ENT_LEQUAL, &Interpreter::InterpretNode_ENT
 		{R"&((<= 4 4))&", R"(.true)"},
 		{R"&((<= 4 5 6))&", R"(.true)"},
 		{R"&((<= 4 5 6 5))&", R"(.false)"},
-		{R"&((<= (null) 2))&", R"(.false)"},
-		{R"&((<= 2 (null)))&", R"(.false)"}
+		{R"&((<= .null 2))&", R"(.false)"},
+		{R"&((<= 2 .null))&", R"(.false)"}
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -620,8 +620,8 @@ static OpcodeInitializer _ENT_GEQUAL(ENT_GEQUAL, &Interpreter::InterpretNode_ENT
 		{R"&((>= 4 4))&", R"(.true)"},
 		{R"&((>= 6 5 4))&", R"(.true)"},
 		{R"&((>= 6 5 4 5))&", R"(.false)"},
-		{R"&((>= (null) 2))&", R"(.false)"},
-		{R"&((>= 2 (null)))&", R"(.false)"}
+		{R"&((>= .null 2))&", R"(.false)"},
+		{R"&((>= 2 .null))&", R"(.false)"}
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;

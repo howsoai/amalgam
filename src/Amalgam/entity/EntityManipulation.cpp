@@ -221,7 +221,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 
 	//////////
 	//build code to look like:
-	// (declare (assoc _ (null) new_entity (null)) 
+	// (declare (assoc _ .null new_entity .null) 
 	//  (assign "new_entity"  (first (create_entities new_entity
 	//                         (call (lambda *entity difference code*)
 	//                           (assoc _ (get_entity_code _) )
@@ -248,7 +248,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	//  )
 	// )
 
-	//create: (declare (assoc new_entity (null) create_new_entity (null)) )
+	//create: (declare (assoc new_entity .null create_new_entity .null) )
 	EvaluableNode *difference_function = enm->AllocNode(ENT_DECLARE);
 
 	auto node_stack = interpreter->CreateOpcodeStackStateSaver(difference_function);
@@ -654,7 +654,7 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 {
 	//////////
 	//build code to look like:
-	// (declare (assoc new_entity (null) create_new_entity (true) require_version_compatibility (false))
+	// (declare (assoc new_entity .null create_new_entity (true) require_version_compatibility (false))
 	//   [(assign "amlg_version" "123.456.789")]
 	//   [(assign "version_compatible"  (system "version_compatible" amlg_version))]
 	//   [(if (and require_version_compatibility (not version_compatible)) (conclude version_compatible))]
@@ -691,7 +691,7 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 	//   )
 	// )
 
-	// (declare (assoc new_entity (null) create_new_entity (true) require_version_compatibility (false))
+	// (declare (assoc new_entity .null create_new_entity (true) require_version_compatibility (false))
 	EvaluableNode *declare_flatten = enm->AllocNode(ENT_DECLARE);
 
 	EvaluableNode *flatten_params = enm->AllocNode(ENT_ASSOC);

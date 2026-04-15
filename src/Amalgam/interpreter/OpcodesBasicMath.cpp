@@ -582,7 +582,7 @@ static OpcodeInitializer _ENT_SET_DIGITS(ENT_SET_DIGITS, &Interpreter::Interpret
 			{R"&((set_digits
 	1.2345678e+100
 	10
-	[5 (null) 5 (null) 5]
+	[5 .null 5 .null 5]
 	4
 	8
 	.false
@@ -923,8 +923,8 @@ static OpcodeInitializer _ENT_MAX(ENT_MAX, &Interpreter::InterpretNode_ENT_MAX, 
 	d.description = R"(Evaluates to the maximum of all of parameters.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((max 0.5 1 7 9 -5))&", R"(9)"},
-		{R"&((max (null) 4 8))&", R"(8)"},
-		{R"&((max (null)))&", R"((null))"}
+		{R"&((max .null 4 8))&", R"(8)"},
+		{R"&((max .null))&", R"(.null)"}
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
@@ -990,7 +990,7 @@ static OpcodeInitializer _ENT_MIN(ENT_MIN, &Interpreter::InterpretNode_ENT_MIN, 
 	d.description = R"(Evaluates to the minimum of all of the numbers.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((min 0.5 1 7 9 -5))&", R"(-5)"},
-		{R"&((min (null) 4 8))&", R"(4)"}
+		{R"&((min .null 4 8))&", R"(4)"}
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
@@ -1059,8 +1059,8 @@ static OpcodeInitializer _ENT_INDEX_MAX(ENT_INDEX_MAX, &Interpreter::InterpretNo
 		{R"&((index_max
 	[1 1 3 2 1 3]
 ))&", R"([2 5])"},
-			{R"&((index_max (null) 34 -66))&", R"([1])"},
-			{R"&((index_max (null) (null) (null)))&", R"((null))"},
+			{R"&((index_max .null 34 -66))&", R"([1])"},
+			{R"&((index_max .null .null .null))&", R"(.null)"},
 			{R"&((index_max
 	{1 2 3 5 tomato 4444}
 ))&", R"(["tomato"])"}
@@ -1247,7 +1247,7 @@ static OpcodeInitializer _ENT_INDEX_MIN(ENT_INDEX_MIN, &Interpreter::InterpretNo
 		{R"&((index_min
 	[1 1 3 2 1 3]
 ))&", R"([0 1 4])"},
-			{R"&((index_min (null) 34 -66))&", R"([2])"},
+			{R"&((index_min .null 34 -66))&", R"([2])"},
 			{R"&((index_min
 	{1 2 3 5 tomato 4444}
 ))&", R"([1])"}

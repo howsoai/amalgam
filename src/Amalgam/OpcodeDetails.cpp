@@ -2,7 +2,6 @@
 #include "Entity.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeManagement.h"
-#include "Interpreter.h"
 #include "OpcodeDetails.h"
 
 //system headers:
@@ -234,7 +233,7 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 		}
 	}
 
-	std::cout << "Reclaiming Resources... ";
+	std::cout << "Freeing Resources... ";
 	if(!cleanup.empty())
 	{
 		auto [cleanup_code, cleanup_warnings, cleanup_char_with_error, cleanup_code_complete]

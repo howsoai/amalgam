@@ -558,7 +558,7 @@ static OpcodeInitializer _ENT_INTERSECT_ENTITIES(ENT_INTERSECT_ENTITIES, &Interp
 			["MergeEntity2"]
 			{e 3 f 4}
 		)
-		(intersect_entities "MergeEntity1" "MergeEntity2" (null) "IntersectedEntity")
+		(intersect_entities "MergeEntity1" "MergeEntity2" .null "IntersectedEntity")
 		[
 			(retrieve_entity_root "IntersectedEntity")
 			(sort
@@ -567,7 +567,7 @@ static OpcodeInitializer _ENT_INTERSECT_ENTITIES(ENT_INTERSECT_ENTITIES, &Interp
 		]
 	)
 ))&", R"([
-	{b 4 c (null)}
+	{b 4 c .null}
 	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
 ])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" "IntersectedEntity")"}
 		});
@@ -722,7 +722,7 @@ static OpcodeInitializer _ENT_UNION_ENTITIES(ENT_UNION_ENTITIES, &Interpreter::I
 			["MergeEntity2"]
 			{e 3 f 4}
 		)
-		(union_entities "MergeEntity1" "MergeEntity2" (null) "UnionedEntity")
+		(union_entities "MergeEntity1" "MergeEntity2" .null "UnionedEntity")
 		[
 			(retrieve_entity_root "UnionedEntity")
 			(sort
@@ -731,7 +731,7 @@ static OpcodeInitializer _ENT_UNION_ENTITIES(ENT_UNION_ENTITIES, &Interpreter::I
 		]
 	)
 ))&", R"([
-	{a 3 b 4 c (null)}
+	{a 3 b 4 c .null}
 	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
 ])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" "UnionedEntity")"}
 		});
@@ -959,7 +959,7 @@ static OpcodeInitializer _ENT_DIFFERENCE_ENTITIES(ENT_DIFFERENCE_ENTITIES, &Inte
 		(difference_entities "DiffEntity2" new_entity)
 	)
 ))&", R"((declare
-	{_ (null) new_entity (null)}
+	{_ .null new_entity .null}
 	(clone_entities _ new_entity)
 ))", "", R"((apply "destroy_entities" (contained_entities)))"}
 	});

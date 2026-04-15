@@ -338,10 +338,10 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_twelve_number_key, std::string("\0" "12", 3));
 	EmplaceStaticString(ENBISI_neg_one_number_key, std::string("\0" "-1", 3));
 	EmplaceStaticString(ENBISI_neg_two_number_key, std::string("\0" "-2", 3));
-	EmplaceStaticString(ENBISI_empty_null, "(null)");
+	EmplaceStaticString(ENBISI_null, ".null");
 	EmplaceStaticString(ENBISI_empty_list, "(list)");
 	EmplaceStaticString(ENBISI_empty_assoc, "(assoc)");
-	EmplaceStaticString(ENBISI_null_key, std::string("\0" "(null)", 7));
+	EmplaceStaticString(ENBISI_null_key, std::string("\0" ".null", 7));
 	EmplaceStaticString(ENBISI_true_key, std::string("\0" ".true", 6));
 	EmplaceStaticString(ENBISI_false_key, std::string("\0" ".false", 7));
 

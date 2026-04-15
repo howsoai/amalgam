@@ -93,9 +93,11 @@ Each entity contains code and/or data via a root node that is executed every cal
 
 Entities may be explicitly named and may be used as code libraries.  For example, a library named MyLibrary with function MyFunction can be called as `(call_entity "MyLibrary" "MyFunction" { parameter_a 1 parameter_b 2 })`.  Entity names are called entity ids, and nested entities can be accessed via an entity walk path, which is a list of ids.  When using null as the entity name, it will refer to the current entity.  Entities that begin with an underscore are unnamed, and when entities are merged, unnamed entities are compared to other unnamed entities to potentially merge.
 
-Numbers are represented via numeric characters, as well as `.`, `-`, and `e` for base-ten exponents, and are stored and processed as double precision floating point format.  Further, infinity and negative infinity are represented as `.infinity` and `-.infinity` respectively.  Not-a-number and non-string results are represented via the opcode `(null)`.  The type of number is the string "number".
+Null is represented as `.null`.
 
-Strings begin and end with double quotes.  Certain characters can be encoded by preceding with a backslash, which are backslash, null represented as 0, double quote, tab represented as t, newline represented as n, and carriage return represented as r.  The type of string is the string "string".  Comparisons and sorting on any strings are done in "natural order", meaning that 1x comes before 10, and m20x comes after m2a.  Bare strings, that is, strings that do not need to be surrounded by quotes, are only allowed with a couple operators, such as assoc, and standalone bare strings are interpreted as symbols.  
+Numbers are represented via numeric characters, as well as `.`, `-`, and `e` for base-ten exponents, and are stored and processed as double precision floating point format.  Further, infinity and negative infinity are represented as `.infinity` and `-.infinity` respectively.  Not-a-number and non-string results are handled as `.null`.  The type of number is the string "number".
+
+Strings begin and end with double quotes.  Certain characters can be encoded by preceding with a backslash, which are backslash, the null character (0), double quote, tab represented as t, newline represented as n, and carriage return represented as r.  The type of string is the string "string".  Comparisons and sorting on any strings are done in "natural order", meaning that 1x comes before 10, and m20x comes after m2a.  Bare strings, that is, strings that do not need to be surrounded by quotes, are only allowed with a couple operators, such as assoc, and standalone bare strings are interpreted as symbols.  
 
 Boolean values can be represented as immediate values `.true` and `.false` respectively.  The type of a bool is the string "bool".
 
@@ -234,17 +236,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 static OpcodeInitializer _ENT_PRINT(ENT_PRINT, &Interpreter::InterpretNode_ENT_PRINT, []() {
 	OpcodeDetails d;
 	d.parameters = R"([* node1] [* node2] ... [* nodeN])";
-	d.returns = R"(null)";
+	d.returns = R"(.null)";
 	d.description = R"(Prints each of the parameters in order in a manner interpretable as if they were code, except strings are printed without quotes.  Output is pretty-printed.)";
 	d.examples = MakeAmalgamExamples({
-		{R"&((print "hello world\n"))&", R"((null))"},
+		{R"&((print "hello world\n"))&", R"(.null)"},
 		{R"&((print
 	1
 	2
 	[3 4]
 	"5"
 	"\n"
-))&", R"((null))"}
+))&", R"(.null)"}
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.permissions = ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR;
@@ -268,11 +270,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 		std::string s;
 		if(cur == nullptr)
 		{
-			s = "(null)";
+			s = ".null";
 		}
 		else
 		{
-			if(DoesEvaluableNodeTypeUseBoolData(cur->GetType()))
+			if(DoesEvaluableNodeTypeUseNullData(cur->GetType()))
+				s = ".null";
+			else if(DoesEvaluableNodeTypeUseBoolData(cur->GetType()))
 				s = EvaluableNode::BoolToString(cur->GetBoolValueReference());
 			else if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
 				s = cur->GetStringValue();
@@ -349,7 +353,7 @@ static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT
  - readline:            Reads a line of input from the terminal and returns the string.
  - printline:           Prints a line of string output of the second argument directly to the terminal and returns null.
  - cwd:                 If no additional parameter is specified, returns the current working directory. If an additional parameter is specified, it attempts to change the current working directory to that parameter, returning true on success and false on failure.
- - system:              Executes the the second argument as a system command (i.e., a string that would normally be run on the command line). Returns `(null)` if the command was not found. If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.
+ - system:              Executes the the second argument as a system command (i.e., a string that would normally be run on the command line). Returns `.null` if the command was not found. If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.
  - os:                  Returns a string describing the operating system.
  - sleep:               Sleeps for the amount of seconds specified by the second argument.
  - version:             Returns a string representing the current Amalgam version.
@@ -617,8 +621,8 @@ static OpcodeInitializer _ENT_RECLAIM_RESOURCES(ENT_RECLAIM_RESOURCES, &Interpre
 	d.returns = R"(any)";
 	d.description = R"(Frees resources of the specified types on `entity`, which is the current entity if null.  Will include all contained entities if `apply_to_all_contained_entities` is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter `clear_query_caches` will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  If `clear_query_caches` is a boolean, then it will either clear all the caches or none.  If `clear_query_caches` is a list of strings, then it will only clear caches for the labels corresponding to the strings in the list.  The parameter `collect_garbage` will perform garbage collection on the entity, and if `force_free_memory` is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.)";
 	d.examples = MakeAmalgamExamples({
-		{R"((reclaim_resources (null) .true ["x"] .true .true ))", R"((null))"},
-		{R"((reclaim_resources (null) .true .true .true .true ))", R"((null))"}
+		{R"((reclaim_resources .null .true ["x"] .true .true ))", R"(.null)"},
+		{R"((reclaim_resources .null .true .true .true .true ))", R"(.null)"}
 		});
 	d.permissions = ExecutionPermissions::Permission::ALTER_PERFORMANCE;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;

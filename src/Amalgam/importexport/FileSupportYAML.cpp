@@ -108,12 +108,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 	else if(!en->IsImmediate())
 	{
 		auto node_type = en->GetType();
-		if(node_type == ENT_NULL)
-		{
-			built_element << nullptr;
-			return true;
-		}
-		else if(node_type != ENT_LIST)
+		if(node_type != ENT_LIST)
 		{
 			//must be a list, so return false as can't build
 			return false;
@@ -128,7 +123,11 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 	}
 	else //immediate
 	{
-		if(DoesEvaluableNodeTypeUseBoolData(en->GetType()))
+		if(DoesEvaluableNodeTypeUseNullData(en->GetType()))
+		{
+			built_element << nullptr;
+		}
+		else if(DoesEvaluableNodeTypeUseBoolData(en->GetType()))
 		{
 			built_element << (en->GetBoolValueReference() ? "true" : "false");
 		}

@@ -42,19 +42,19 @@
 					5
 					(list "A" "B" "N")
 					(list 2 3 "A")
-					(null) ;weights
+					.null ;weights
 					(assoc "A" "continuous" "B" "continuous" "N" "nominal")
 					(assoc
 						"A" 9.0
 						"B" 8.0
 						"N" 3
 					)
-					(null) ;deviations
+					.null ;deviations
 					0.1 ; p
 					-1 ;dwe
-					(null)
+					.null
 					"fixed rand seed"
-					(null)
+					.null
 					"precise"
 					.true
 			)

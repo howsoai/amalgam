@@ -439,7 +439,7 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 			1
 			2
 			3
-			{a 1 b 2 c (null)}
+			{a 1 b 2 c .null}
 		]
 	)
 	(load "file.json")
@@ -447,7 +447,7 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 	1
 	2
 	3
-	{a 1 b 2 c (null)}
+	{a 1 b 2 c .null}
 ])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.json") (system "system" "rm file.json")))"},
 			{R"&((seq
 	(store
@@ -456,7 +456,7 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 			1
 			2
 			3
-			{a 1 b 2 c (null)}
+			{a 1 b 2 c .null}
 		]
 	)
 	(load "file.yaml")
@@ -464,12 +464,12 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 	1
 	2
 	3
-	{a 1 b 2 c (null)}
+	{a 1 b 2 c .null}
 ])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.yaml") (system "system" "rm file.yaml")))"},
 			{R"&((seq
 	(store "file.txt" "This is text.")
 	(load "test.txt")
-))&", R"((null))"},
+))&", R"(.null)"},
 			{R"&((seq
 	(store
 		"file.caml"
@@ -490,7 +490,7 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 					[6.4 2.8 5.6 2.2 "virginica"]
 					[4.9 2.5 4.5 1.7 "virg\"inica"]
 					[]
-					["" "" "" (null)]
+					["" "" "" .null]
 					[4.9 3.1 1.5 0.1 "set\nosa" 3]
 					[4.4 3.2 1.3 0.2 "setosa"]
 				]
@@ -501,8 +501,8 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 ))&", R"([
 	[6.4 2.8 5.6 2.2 "virginica"]
 	[4.9 2.5 4.5 1.7 "virg\"inica"]
-	[(null)]
-	[(null) (null) (null) (null)]
+	[.null]
+	[.null .null .null .null]
 	[4.9 3.1 1.5 0.1 "set\nosa" 3]
 	[4.4 3.2 1.3 0.2 "setosa"]
 ])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.csv") (system "system" "rm file.csv")))"}
@@ -583,7 +583,7 @@ static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::Interpr
 		(difference_entities "Entity" "EntityCopy")
 	)
 ))&", R"((declare
-	{_ (null) new_entity (null)}
+	{_ .null new_entity .null}
 	(clone_entities _ new_entity)
 ))", "", R"((seq (destroy_entities "Entity" "EntityCopy") (if (= (system "os") "Windows") (seq (system "system" "del /q entity*") (system "system" "rmdir /s /q entity")) (system "system" "rm -rf entity*"))))"},
 			{R"&((seq
@@ -606,7 +606,7 @@ static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::Interpr
 	(store_entity
 		"entity.caml"
 		"Entity"
-		(null)
+		.null
 		.true
 		{flatten .true transactional .true}
 	)
@@ -624,7 +624,7 @@ static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::Interpr
 	(load_entity
 		"entity.caml"
 		"EntityCopy"
-		(null)
+		.null
 		.false
 		{execute_on_load .true require_version_compatibility .true transactional .true}
 	)
@@ -636,7 +636,7 @@ static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::Interpr
 	(destroy_entities "EntityCopy" "Entity")
 	diff
 ))&", R"((declare
-	{_ (null) new_entity (null)}
+	{_ .null new_entity .null}
 	(clone_entities _ new_entity)
 ))"}
 		});
@@ -756,7 +756,7 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 			1
 			2
 			3
-			{a 1 b 2 c (null)}
+			{a 1 b 2 c .null}
 		]
 	)
 	(load "file.json")
@@ -764,7 +764,7 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 	1
 	2
 	3
-	{a 1 b 2 c (null)}
+	{a 1 b 2 c .null}
 ])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.json") (system "system" "rm file.json")))"},
 			{R"&((seq
 	(store
@@ -773,7 +773,7 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 			1
 			2
 			3
-			{a 1 b 2 c (null)}
+			{a 1 b 2 c .null}
 		]
 	)
 	(load "file.yaml")
@@ -781,12 +781,12 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 	1
 	2
 	3
-	{a 1 b 2 c (null)}
+	{a 1 b 2 c .null}
 ])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.yaml") (system "system" "rm file.yaml")))"},
 			{R"&((seq
 	(store "file.txt" "This is text.")
 	(load "test.txt")
-))&", R"((null))"},
+))&", R"(.null)"},
 			{R"&((seq
 	(store
 		"file.caml"
@@ -807,7 +807,7 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 					[6.4 2.8 5.6 2.2 "virginica"]
 					[4.9 2.5 4.5 1.7 "virg\"inica"]
 					[]
-					["" "" "" (null)]
+					["" "" "" .null]
 					[4.9 3.1 1.5 0.1 "set\nosa" 3]
 					[4.4 3.2 1.3 0.2 "setosa"]
 				]
@@ -818,8 +818,8 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 ))&", R"([
 	[6.4 2.8 5.6 2.2 "virginica"]
 	[4.9 2.5 4.5 1.7 "virg\"inica"]
-	[(null)]
-	[(null) (null) (null) (null)]
+	[.null]
+	[.null .null .null .null]
 	[4.9 3.1 1.5 0.1 "set\nosa" 3]
 	[4.4 3.2 1.3 0.2 "setosa"]
 ])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.csv") (system "system" "rm file.csv")))"}
@@ -905,7 +905,7 @@ static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::Inter
 		(difference_entities "Entity" "EntityCopy")
 	)
 ))&", R"((declare
-	{_ (null) new_entity (null)}
+	{_ .null new_entity .null}
 	(clone_entities _ new_entity)
 ))", "", R"((seq (destroy_entities "Entity" "EntityCopy") (if (= (system "os") "Windows") (seq (system "system" "del /q entity*") (system "system" "rmdir /s /q entity")) (system "system" "rm -rf entity*"))))"},
 			{R"&((seq
@@ -928,7 +928,7 @@ static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::Inter
 	(store_entity
 		"entity.caml"
 		"Entity"
-		(null)
+		.null
 		.true
 		{flatten .true transactional .true}
 	)
@@ -946,7 +946,7 @@ static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::Inter
 	(load_entity
 		"entity.caml"
 		"EntityCopy"
-		(null)
+		.null
 		.false
 		{execute_on_load .true require_version_compatibility .true transactional .true}
 	)
@@ -958,7 +958,7 @@ static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::Inter
 	(destroy_entities "EntityCopy" "Entity")
 	diff
 ))&", R"((declare
-	{_ (null) new_entity (null)}
+	{_ .null new_entity .null}
 	(clone_entities _ new_entity)
 ))"}
 		});
@@ -1102,7 +1102,7 @@ static OpcodeInitializer _ENT_FLATTEN_ENTITY(ENT_FLATTEN_ENTITY, &Interpreter::I
 		}
 	)
 	(declare
-		{first_rand (null) second_rand (null)}
+		{first_rand .null second_rand .null}
 	)
 	(assign
 		{

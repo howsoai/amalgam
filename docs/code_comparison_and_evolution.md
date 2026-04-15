@@ -85,7 +85,7 @@ Output:
 	12
 	zbiqZH
 	14
-	(associate (null))
+	(associate .null)
 ]
 ```
 Example:
@@ -243,7 +243,7 @@ Output:
 Example:
 ```amalgam
 (commonality
-	(null)
+	.null
 	3
 	{types_must_match .false}
 )
@@ -360,15 +360,13 @@ Example:
 ```amalgam
 (commonality
 	[1 2 3]
-	(lambda
-		(null 1 2 3)
-	)
+	(unordered_list 1 2 3)
 	{types_must_match .false}
 )
 ```
 Output:
 ```amalgam
-3.125
+3.5
 ```
 
 [Amalgam Opcodes](./index.md#amalgam-opcodes)
@@ -651,7 +649,7 @@ Output:
 ```amalgam
 [
 	1
-	(associate (null) 3 "b" 4)
+	(associate .null 3 "b" 4)
 ]
 ```
 Example:
@@ -882,7 +880,7 @@ Output:
 ```amalgam
 [
 	1
-	(associate (null) 3 "b" 4)
+	(associate .null 3 "b" 4)
 ]
 ```
 Example:
@@ -1076,7 +1074,7 @@ Example:
 Output:
 ```amalgam
 (declare
-	{_ (null)}
+	{_ .null}
 	(replace
 		_
 		[]
@@ -1127,7 +1125,7 @@ Example:
 Output:
 ```amalgam
 (declare
-	{_ (null)}
+	{_ .null}
 	(replace
 		_
 		[]
@@ -1184,7 +1182,7 @@ Example:
 Output:
 ```amalgam
 (declare
-	{_ (null)}
+	{_ .null}
 	(replace
 		_
 		[]
@@ -1248,7 +1246,7 @@ Example:
 ```
 Output:
 ```amalgam
-"(declare\r\n\t{_ (null)}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\ta 2\r\n\t\t\t\tc (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"c\"\r\n\t\t\t\t\t)\r\n\t\t\t\td 6\r\n\t\t\t\te (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"e\"\r\n\t\t\t\t\t)\r\n\t\t\t\tf (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"f\"\r\n\t\t\t\t\t)\r\n\t\t\t\tg 14\r\n\t\t\t\tq 8\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n"
+"(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\ta 2\r\n\t\t\t\tc (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"c\"\r\n\t\t\t\t\t)\r\n\t\t\t\td 6\r\n\t\t\t\te (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"e\"\r\n\t\t\t\t\t)\r\n\t\t\t\tf (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"f\"\r\n\t\t\t\t\t)\r\n\t\t\t\tg 14\r\n\t\t\t\tq 8\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n"
 ```
 Example:
 ```amalgam
@@ -1278,7 +1276,7 @@ Example:
 ```
 Output:
 ```amalgam
-"(declare\r\n\t{_ (null)}\r\n\t(replace\r\n\t\t_\r\n\t\t[3]\r\n\t\t(lambda\r\n\t\t\t[\r\n\t\t\t\t(get\r\n\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t0\r\n\t\t\t\t)\r\n\t\t\t\t4\r\n\t\t\t]\r\n\t\t)\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t(set_type\r\n\t\t\t\t[\r\n\t\t\t\t\ta\r\n\t\t\t\t\t2\r\n\t\t\t\t\tg\r\n\t\t\t\t\t(get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t3\r\n\t\t\t\t\t)\r\n\t\t\t\t]\r\n\t\t\t\t\"associate\"\r\n\t\t\t)\r\n\t\t)\r\n\t)\r\n)\r\n"
+"(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[3]\r\n\t\t(lambda\r\n\t\t\t[\r\n\t\t\t\t(get\r\n\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t0\r\n\t\t\t\t)\r\n\t\t\t\t4\r\n\t\t\t]\r\n\t\t)\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t(set_type\r\n\t\t\t\t[\r\n\t\t\t\t\ta\r\n\t\t\t\t\t2\r\n\t\t\t\t\tg\r\n\t\t\t\t\t(get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t3\r\n\t\t\t\t\t)\r\n\t\t\t\t]\r\n\t\t\t\t\"associate\"\r\n\t\t\t)\r\n\t\t)\r\n\t)\r\n)\r\n"
 ```
 Example:
 ```amalgam
@@ -1301,7 +1299,7 @@ Example:
 ```
 Output:
 ```amalgam
-"(declare\r\n\t{_ (null)}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\t2 (null)\r\n\t\t\t\t5 (null)\r\n\t\t\t\t6 (null)\r\n\t\t\t\ta 1\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n"
+"(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\t2 .null\r\n\t\t\t\t5 .null\r\n\t\t\t\t6 .null\r\n\t\t\t\ta 1\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n"
 ```
 Example:
 ```amalgam
@@ -1321,7 +1319,7 @@ Example:
 ```
 Output:
 ```amalgam
-"(declare\r\n\t{_ (null)}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 (null) 5 (null) 6 (null)}\r\n\t\t)\r\n\t)\r\n)\r\n"
+"(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n"
 ```
 Example:
 ```amalgam
@@ -1341,7 +1339,7 @@ Example:
 ```
 Output:
 ```amalgam
-"(declare\r\n\t{_ (null)}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 (null) 5 (null) 6 (null)}\r\n\t\t)\r\n\t)\r\n)\r\n"
+"(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n"
 ```
 Example:
 ```amalgam

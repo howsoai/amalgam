@@ -264,7 +264,7 @@ Order of declaring matters:
 >             y 2
 >             foo (* x y)
 >         ))
->         (print foo "\n") ;outputs (null) because when foo was evaluated, x and y were still undefined nulls
+>         (print foo "\n") ;outputs .null because when foo was evaluated, x and y were still undefined nulls
 >     )
 >
 >     (seq
@@ -547,7 +547,7 @@ usage: *(unzip &lt;assoc&gt; &lt;list\_of\_keys&gt;)*
             ;results in: (assoc "a" 2  "b" 4 "c" 8)
             my_map (zip my_keys my_vals)
 
-            ;if values list is not provided, Amalgam defaults it to nulls, the result is: (assoc "a" (null) "b" (null) "c" (null))
+            ;if values list is not provided, Amalgam defaults it to nulls, the result is: (assoc "a" .null "b" .null "c" .null)
             just_keys_no_values_map (zip my_keys)
         ))
 
@@ -837,23 +837,23 @@ The following opcodes each have their own scope stack (in the Amalgam reference 
 
 ### Types
 
-The value `(null)` represents not-a-value, regardless of type.  This means that not-a-number (NaN) and non-string values may be represented as such.
+The value `.null` represents not-a-value, regardless of type.  This means that not-a-number (NaN) and non-string values may be represented as such.
 
 To numerify something you can use `(+` operator:
 `(+ "5")` converts the string 5 to the number 5
 
-numerifying a null in any way or dividing 0 by 0 results in a `(null)`:
-`(+ (null)` = `(null)`
-`(* 5 (null))` = `(null)`
-`(/ 0 0)` = `(null)`
+numerifying a null in any way or dividing 0 by 0 results in a `.null`:
+`(+ .null` = `.null`
+`(* 5 .null)` = `.null`
+`(/ 0 0)` = `.null`
 
 To stringify something you can use the `(concat` operator:
 `(concat 5)` converts the number 5 into the string 5
 
-stringifying a null in any way results in a `(null)`:
-`(concat (null))` = `(null)`
+stringifying a null in any way results in a `.null`:
+`(concat .null)` = `.null`
 
-`(zip (list "a" (null)) (list 1 2))) ` = `(assoc "a" 1 (null) 2)`
+`(zip (list "a" .null) (list 1 2))) ` = `(assoc "a" 1 .null 2)`
 
 To check the type of something you can use either **(get_type** to return the type itself
 or **(get_type_string** to return the readable string version of the type:
@@ -959,8 +959,8 @@ If the file you are loading is a standalone script, you may execute it via `(cal
 ;return values at specific indices for a list (fast):
 (unzip your_list indices_list)
 
-;check if a list is all of one value, e.g., (null):
-(apply "=" (append your_list (list (null))))
+;check if a list is all of one value, e.g., .null:
+(apply "=" (append your_list (list .null)))
 
 ;set a nested key 'third' in myassoc that's three levels down:
 ;python equivalent of myassoc['first']['second']['third'] = value_to_set

@@ -418,7 +418,7 @@ static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::Interpr
 				!private_method "should not access"
 				copy_entity (while
 						.true
-						(clone_entities (null) (null))
+						(clone_entities .null .null)
 					)
 				hello (declare
 						{message ""}
@@ -435,11 +435,11 @@ static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::Interpr
 			{message "world"}
 		)
 		(call_entity "Entity" "!private_method")
-		(call_entity "Entity" "load" (null) 100)
+		(call_entity "Entity" "load" .null 100)
 		(call_entity
 			"Entity"
 			"copy_entity"
-			(null)
+			.null
 			1000
 			1000
 			100
@@ -450,9 +450,9 @@ static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::Interpr
 	]
 ))&", R"([
 	"hello world"
-	(null)
-	[(null) {} "Execution step limit exceeded"]
-	[(null) {} "Execution step limit exceeded"]
+	.null
+	[.null {} "Execution step limit exceeded"]
+	[.null {} "Execution step limit exceeded"]
 ])", "", R"((destroy_entities "Entity"))"}
 		});
 	d.requiresEntity = true;
@@ -812,9 +812,9 @@ static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::I
 	]
 ))&", R"([
 	10
-	[10 {} (null)]
-	[(null) {} "Execution step limit exceeded"]
-	[(null) {} "Execution step limit exceeded"]
+	[10 {} .null]
+	[.null {} "Execution step limit exceeded"]
+	[.null {} "Execution step limit exceeded"]
 ])", "", R"((apply "destroy_entities" (contained_entities)))"}
 		});
 	d.requiresEntity = true;

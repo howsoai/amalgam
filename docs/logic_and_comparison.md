@@ -215,7 +215,7 @@ Example:
 ```amalgam
 (=
 	(sqrt -1)
-	(null)
+	.null
 )
 ```
 Output:
@@ -224,7 +224,7 @@ Output:
 ```
 Example:
 ```amalgam
-(= (null) (null))
+(= .null .null)
 ```
 Output:
 ```amalgam
@@ -424,7 +424,7 @@ Output:
 ```
 Example:
 ```amalgam
-(<= (null) 2)
+(<= .null 2)
 ```
 Output:
 ```amalgam
@@ -432,7 +432,7 @@ Output:
 ```
 Example:
 ```amalgam
-(<= 2 (null))
+(<= 2 .null)
 ```
 Output:
 ```amalgam
@@ -536,7 +536,7 @@ Output:
 ```
 Example:
 ```amalgam
-(>= (null) 2)
+(>= .null 2)
 ```
 Output:
 ```amalgam
@@ -544,7 +544,7 @@ Output:
 ```
 Example:
 ```amalgam
-(>= 2 (null))
+(>= 2 .null)
 ```
 Output:
 ```amalgam

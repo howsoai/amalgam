@@ -88,12 +88,12 @@ public:
 
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		//use a value that is more apparent that something went wrong
-		value.numberValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+		value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
 	#else
-		value.numberValueContainer.numberValue = 0;
+		value.numberAndNullValueContainer.numberValue = 0;
 	#endif
 
-		AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
+		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 	}
 
 	///////////////////////////////////////////
@@ -106,9 +106,11 @@ public:
 
 		type = _type;
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		SetIsIdempotent(true);
 		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
 		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
+
+		SetIsIdempotent(type == ENT_STRING);
+		SetNeedCycleCheck(false);
 	}
 
 	inline void InitializeType(EvaluableNodeType _type, const std::string_view string_value)
@@ -119,9 +121,11 @@ public:
 
 		type = _type;
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		SetIsIdempotent(true);
 		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
 		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
+
+		SetIsIdempotent(type == ENT_STRING);
+		SetNeedCycleCheck(false);
 	}
 
 	inline void InitializeType(EvaluableNodeType _type, StringInternPool::StringID string_id)
@@ -143,8 +147,8 @@ public:
 			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 		}
 
-		if(type == ENT_STRING)
-			SetIsIdempotent(true);
+		SetIsIdempotent(type == ENT_STRING);
+		SetNeedCycleCheck(false);
 	}
 
 	//like InitializeType, but hands off the string reference to string_id
@@ -166,6 +170,9 @@ public:
 			value.stringValueContainer.stringID = string_id;
 			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 		}
+
+		SetIsIdempotent(type == ENT_STRING);
+		SetNeedCycleCheck(false);
 	}
 
 	inline void InitializeType(double number_value)
@@ -179,19 +186,23 @@ public:
 		else
 		{
 			type = ENT_NUMBER;
-			SetIsIdempotent(true);
-			value.numberValueContainer.numberValue = number_value;
-			AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
+			value.numberAndNullValueContainer.numberValue = number_value;
+			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 		}
+
+		SetIsIdempotent(true);
+		SetNeedCycleCheck(false);
 	}
 
 	inline void InitializeType(bool bool_value)
 	{
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		type = ENT_BOOL;
-		SetIsIdempotent(true);
 		value.boolValueContainer.boolValue = bool_value;
 		AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
+
+		SetIsIdempotent(true);
+		SetNeedCycleCheck(false);
 	}
 
 	//initializes to ENT_UNINITIALIZED
@@ -212,23 +223,33 @@ public:
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(_type));
 
+		if(DoesEvaluableNodeTypeUseNullData(_type))
+		{
+			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
+			SetIsIdempotent(true);
+			SetNeedCycleCheck(false);
+		}
 		if(DoesEvaluableNodeTypeUseBoolData(_type))
 		{
 			AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
 			value.boolValueContainer.boolValue = false;
 			SetIsIdempotent(true);
+			SetNeedCycleCheck(false);
 		}
 		else if(DoesEvaluableNodeTypeUseNumberData(_type))
 		{
-			AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
-			value.numberValueContainer.numberValue = 0.0;
+			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
+			value.numberAndNullValueContainer.numberValue = 0.0;
 			SetIsIdempotent(true);
+			SetNeedCycleCheck(false);
 		}
 		else if(DoesEvaluableNodeTypeUseStringData(_type))
 		{
 			value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
 			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 			SetIsIdempotent(_type == ENT_STRING);
+			SetNeedCycleCheck(false);
 		}
 		else if(DoesEvaluableNodeTypeUseAssocData(_type))
 		{
@@ -240,12 +261,12 @@ public:
 		{
 		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 			//use a value that is more apparent that something went wrong
-			value.numberValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
 		#else
-			value.numberValueContainer.numberValue = 0;
+			value.numberAndNullValueContainer.numberValue = 0;
 		#endif
 
-			AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
+			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 		}
 		else
 		{
@@ -578,6 +599,14 @@ public:
 	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm,
 		bool attempt_to_preserve_immediate_value);
 
+	//sets up null value
+	inline void InitNullValue()
+	{
+		DestructValue();
+		value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
+	}
+
 	//sets up boolean value
 	inline void InitBoolValue()
 	{
@@ -607,8 +636,8 @@ public:
 	inline void InitNumberValue()
 	{
 		DestructValue();
-		value.numberValueContainer.numberValue = 0.0;
-		AnnotationsAndComments::Construct(value.numberValueContainer.annotationsAndComments);
+		value.numberAndNullValueContainer.numberValue = 0.0;
+		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 	}
 
 	//gets the value by reference
@@ -1171,7 +1200,7 @@ public:
 	//assumes that the EvaluableNode is of type ENT_NUMBER, and returns the value by reference
 	__forceinline double &GetNumberValueReference()
 	{
-		return value.numberValueContainer.numberValue;
+		return value.numberAndNullValueContainer.numberValue;
 	}
 
 	//assumes that the EvaluableNode is of type that holds a string, and returns the value by reference
@@ -1201,7 +1230,7 @@ public:
 	//if it is storing an immediate value and has room to store a label
 	inline bool HasCompactAnnotationsAndCommentsStorage()
 	{
-		return (type == ENT_BOOL || type == ENT_NUMBER || type == ENT_STRING || type == ENT_SYMBOL);
+		return (type == ENT_NULL || type == ENT_BOOL || type == ENT_NUMBER || type == ENT_STRING || type == ENT_SYMBOL);
 	}
 
 	//returns a reference to the storage location for the annotation and comment storage
@@ -1212,8 +1241,9 @@ public:
 		{
 		case ENT_BOOL:
 			return value.boolValueContainer.annotationsAndComments;
+		case ENT_NULL:
 		case ENT_NUMBER:
-			return value.numberValueContainer.annotationsAndComments;
+			return value.numberAndNullValueContainer.annotationsAndComments;
 		case ENT_STRING:
 		case ENT_SYMBOL:
 			return value.stringValueContainer.annotationsAndComments;
@@ -1404,7 +1434,7 @@ protected:
 	union EvaluableNodeValue
 	{
 		//take care of all setup and cleanup outside of the union
-		// default to numberValueContainer constructor to allow constexpr
+		// default to numberAndNullValueContainer constructor to allow constexpr
 		__forceinline  EvaluableNodeValue() { }
 		__forceinline  ~EvaluableNodeValue() { }
 
@@ -1439,13 +1469,14 @@ protected:
 		} stringValueContainer;
 
 		//when type represents a number, holds the corresponding value
+		//ENT_NULL also uses this with a NaN
 		struct EvaluableNodeValueNumber
 		{
 			//number value
 			double numberValue;
 
 			AnnotationsAndComments annotationsAndComments;
-		} numberValueContainer;
+		} numberAndNullValueContainer;
 
 		//when type represents a bool, holds the corresponding value
 		struct EvaluableNodeValueBool
@@ -1514,8 +1545,9 @@ protected:
 		case ENT_BOOL:
 			AnnotationsAndComments::Destruct(value.boolValueContainer.annotationsAndComments);
 			break;
+		case ENT_NULL:
 		case ENT_NUMBER:
-			AnnotationsAndComments::Destruct(value.numberValueContainer.annotationsAndComments);
+			AnnotationsAndComments::Destruct(value.numberAndNullValueContainer.annotationsAndComments);
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:

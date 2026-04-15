@@ -121,7 +121,7 @@ Output:
 ```
 Example:
 ```amalgam
-(split "hello to the world" "to" (null) 2)
+(split "hello to the world" "to" .null 2)
 ```
 Output:
 ```amalgam
@@ -161,7 +161,7 @@ Output:
 ```
 Example:
 ```amalgam
-(split "abc de fghij" " de " (null) 4)
+(split "abc de fghij" " de " .null 4)
 ```
 Output:
 ```amalgam
@@ -233,7 +233,7 @@ Output:
 ```
 Example:
 ```amalgam
-(substr "hello world" -4 -1 (null) 1)
+(substr "hello world" -4 -1 .null 1)
 ```
 Output:
 ```amalgam
@@ -341,7 +341,7 @@ Output:
 ```
 Example:
 ```amalgam
-(substr "hello world" "(e|o)" (null) "[$&]")
+(substr "hello world" "(e|o)" .null "[$&]")
 ```
 Output:
 ```amalgam
@@ -405,7 +405,7 @@ Output:
 ```
 Example:
 ```amalgam
-(substr "abcdefgijk" -4 -1 (null) 1)
+(substr "abcdefgijk" -4 -1 .null 1)
 ```
 Output:
 ```amalgam
@@ -450,7 +450,7 @@ Output:
 #### Parameters
 `string str [bool transactional] [bool return_warnings]`
 #### Description
-String `str` is parsed into code, and the result is returned.  If `transactional` is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If `transactional` is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If any performance constraints are given or `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless `return_warnings` is false, in which case just the value will be returned.
+String `str` is parsed into code, and the result is returned.  If `transactional` is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If `transactional` is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If any performance constraints are given or `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or .null if none)), unless `return_warnings` is false, in which case just the value will be returned.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -561,11 +561,11 @@ Output:
 ```
 Example:
 ```amalgam
-(parse (unparse (list (sqrt -1) (null) .infinity -.infinity)))
+(parse (unparse (list (sqrt -1) .null .infinity -.infinity)))
 ```
 Output:
 ```amalgam
-[(null) (null) .infinity -.infinity]
+[.null .null .infinity -.infinity]
 ```
 Example:
 ```amalgam

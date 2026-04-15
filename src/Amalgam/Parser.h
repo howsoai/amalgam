@@ -191,7 +191,7 @@ public:
 	static inline std::string_view GetUnparseStringFromKey(const StringInternPool::StringID sid)
 	{
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
-			return std::string_view("(null)");
+			return std::string_view(".null");
 		return std::string_view(sid->string.data() + 1, sid->string.size() - 1);
 	}
 

@@ -8,27 +8,19 @@ static std::string _opcode_group = "Primitive Types";
 static OpcodeInitializer _ENT_NULL(ENT_NULL, &Interpreter::InterpretNode_ENT_NULL, []() {
 	OpcodeDetails d;
 	d.parameters = R"()";
-	d.returns = R"(null)";
+	d.returns = R"(.null)";
 	d.description = R"(Evaluates to the immediate null value, regardless of any parameters.)";
 	d.examples = MakeAmalgamExamples({
-		{R"&((null))&", R"((null))"},
-		{R"&((lambda
-	(null
-		(+ 3 5)
-		7
-	)
-))&", R"((null
-	(+ 3 5)
-	7
-))"},
+		{R"&(.null)&", R"(.null)"},
+		{R"&((lambda .null ))&", R"(.null)"},
 			{R"&((lambda
 	
 	#annotation
-	(null)
+	.null
 ))&", R"(#annotation
-(null))"}
+.null)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::NONE;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 	d.potentiallyIdempotent = true;
 	d.frequencyPer10000Opcodes = 81.0;
@@ -50,6 +42,7 @@ static OpcodeInitializer _ENT_BOOL(ENT_BOOL, &Interpreter::InterpretNode_ENT_BOO
 		{R"&(.true)&", R"(.true)"},
 		{R"&(.false)&", R"(.false)"}
 		});
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::NONE;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.potentiallyIdempotent = true;
 	d.frequencyPer10000Opcodes = 73.5;
@@ -77,6 +70,7 @@ static OpcodeInitializer _ENT_NUMBER(ENT_NUMBER, &Interpreter::InterpretNode_ENT
 	(* 3 .infinity)
 ))&", R"(-.infinity)"}
 		});
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::NONE;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.potentiallyIdempotent = true;
 	d.frequencyPer10000Opcodes = 2545.0;
@@ -99,6 +93,7 @@ static OpcodeInitializer _ENT_STRING(ENT_STRING, &Interpreter::InterpretNode_ENT
 		{R"&("hello")&", R"("hello")"},
 		{R"&("\tHello\n\"Hello\"")&", R"("\tHello\n\"Hello\"")"}
 		});
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::NONE;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.potentiallyIdempotent = true;
 	d.frequencyPer10000Opcodes = 766.0;
@@ -255,8 +250,8 @@ static OpcodeInitializer _ENT_ASSOC(ENT_ASSOC, &Interpreter::InterpretNode_ENT_A
 	{b 2 c 3}
 ))&", R"("{b 2 c 3}")"},
 			{R"&((unparse
-	{(null) 0 (+ 1 2) 3}
-))&", R"("{(null) 0 (+ 1 2) 3}")"}
+	{.null 0 (+ 1 2) 3}
+))&", R"("{.null 0 (+ 1 2) 3}")"}
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 	d.newTargetScope = true;

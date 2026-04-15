@@ -23,7 +23,7 @@ static OpcodeInitializer _ENT_FIRST(ENT_FIRST, &Interpreter::InterpretNode_ENT_F
 			{R"&((first 3))&", R"(1)"},
 			{R"&((first 0))&", R"(0)"},
 			{R"&((first "abc"))&", R"("a")"},
-			{R"&((first ""))&", R"((null))"}
+			{R"&((first ""))&", R"(.null)"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 	d.frequencyPer10000Opcodes = 20.0;
@@ -295,7 +295,7 @@ R"&(^\s*\{\s*
 			{R"&((tail "abcdef" -6))&", R"("")"},
 			{R"&((tail "abcdef" 10))&", R"("abcdef")"},
 			{R"&((tail "abcdef" -10))&", R"("")"},
-			{R"&((tail ""))&", R"((null))"}
+			{R"&((tail ""))&", R"(.null)"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 	d.frequencyPer10000Opcodes = 2.5;
@@ -439,7 +439,7 @@ static OpcodeInitializer _ENT_LAST(ENT_LAST, &Interpreter::InterpretNode_ENT_LAS
 			{R"&((last 3))&", R"(1)"},
 			{R"&((last 0))&", R"(0)"},
 			{R"&((last "abc"))&", R"("c")"},
-			{R"&((last ""))&", R"((null))"}
+			{R"&((last ""))&", R"(.null)"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 	d.frequencyPer10000Opcodes = 13.0;
@@ -714,7 +714,7 @@ R"&(^\s*\{\s*
 			{R"&((trunc "abcdef" -6))&", R"("")"},
 			{R"&((trunc "abcdef" 10))&", R"("abcdef")"},
 			{R"&((trunc "abcdef" -10))&", R"("")"},
-			{R"&((trunc ""))&", R"((null))"},
+			{R"&((trunc ""))&", R"(.null)"},
 
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
@@ -1158,10 +1158,10 @@ static OpcodeInitializer _ENT_GET(ENT_GET, &Interpreter::InterpretNode_ENT_GET, 
 			["B" "C"]
 		)
 	]
-))&", R"([2 (null) (null)])"},
+))&", R"([2 .null .null])"},
 			{R"&((get
-	{(null) 3}
-	(null)
+	{.null 3}
+	.null
 ))&", R"(3)"},
 			{R"&((let
 	{
@@ -1325,7 +1325,7 @@ static OpcodeInitializer _ENT_REPLACE(ENT_REPLACE, &Interpreter::InterpretNode_E
 	[4 5 6]
 ))&", R"([
 	[4 5 6]
-	(null)
+	.null
 	1
 ])"},
 			{R"&((replace
@@ -1338,7 +1338,7 @@ static OpcodeInitializer _ENT_REPLACE(ENT_REPLACE, &Interpreter::InterpretNode_E
 	[4 5 6]
 ))&", R"([
 	[4 5 6]
-	(null)
+	.null
 	1
 ])"},
 			{R"&((replace

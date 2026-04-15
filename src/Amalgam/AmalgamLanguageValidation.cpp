@@ -24,7 +24,7 @@ AmalgamExample{ R"&((get
 		{a 1 b 2}
 	)
 	0
-))&", R"((null))" },
+))&", R"(.null)" },
 AmalgamExample{ R"&((get
 	(lambda
 		{a 1 b 2}
@@ -36,7 +36,7 @@ AmalgamExample{ R"&((get
 		["a" 1 "b" 2]
 	)
 	"a"
-))&", R"((null))" },
+))&", R"(.null)" },
 AmalgamExample{ R"&((replace
 	[
 		(associate "a" 1)
@@ -194,7 +194,7 @@ AmalgamExample{ R"&((seq
 		(flatten_entity "test2" .false)
 	)
 ))&", R"((declare
-	{create_new_entity .true new_entity (null) require_version_compatibility .false}
+	{create_new_entity .true new_entity .null require_version_compatibility .false}
 	(let
 		{
 			_ (lambda
@@ -262,15 +262,15 @@ AmalgamExample{ R"&((seq
 				}
 		}
 })" },
-AmalgamExample{ R"&((= (null) (null)))&", R"(.true)" },
+AmalgamExample{ R"&((= .null .null))&", R"(.true)" },
 AmalgamExample{ R"&((=
-	(+ (null))
-	(null)
+	(+ .null)
+	.null
 ))&", R"(.true)" },
 AmalgamExample{ R"&((seq
 	(create_entities
 		["NaNTest"]
-		(null)
+		.null
 	)
 	(create_entities
 		["NaNTest" "Entity3"]
@@ -278,11 +278,11 @@ AmalgamExample{ R"&((seq
 	)
 	(create_entities
 		["NaNTest" "EntityNull"]
-		{label1 (null) label2 1}
+		{label1 .null label2 1}
 	)
 	(create_entities
 		["NaNTest" "EntityNaN"]
-		{label1 (null) label2 1}
+		{label1 .null label2 1}
 	)
 	[
 		(contained_entities
@@ -295,14 +295,14 @@ AmalgamExample{ R"&((seq
 		(contained_entities
 			"NaNTest"
 			[
-				(query_equals "label1" (null))
+				(query_equals "label1" .null)
 				(query_exists "label2")
 			]
 		)
 		(contained_entities
 			"NaNTest"
 			[
-				(query_equals "label1" (null))
+				(query_equals "label1" .null)
 				(query_exists "label2")
 			]
 		)
@@ -331,7 +331,7 @@ AmalgamExample{ R"&((call
 			(lambda
 				
 				;+
-				(null)
+				.null
 			)
 		)
 	)
@@ -359,7 +359,7 @@ AmalgamExample{ R"&(;compute distance between two vectors
 	0.5
 ))&", R"(5)" },
 AmalgamExample{ R"&((seq
-	(create_entities "combo_query" (null))
+	(create_entities "combo_query" .null)
 	(create_entities
 		["combo_query" "world"]
 		{
@@ -402,10 +402,10 @@ AmalgamExample{ R"&((seq
 	)
 ))&", R"(["hello" "!"])", "", R"((apply "destroy_entities" (contained_entities)))"},
 AmalgamExample{ R"&((seq
-	(create_entities "nan_queries" (null))
+	(create_entities "nan_queries" .null)
 	(create_entities
 		["nan_queries" "a1"]
-		{A 10 B (null)}
+		{A 10 B .null}
 	)
 	(create_entities
 		["nan_queries" "a2"]
@@ -413,7 +413,7 @@ AmalgamExample{ R"&((seq
 	)
 	(create_entities
 		["nan_queries" "a3"]
-		{A (null) B 1}
+		{A .null B 1}
 	)
 	[
 		
@@ -479,13 +479,13 @@ AmalgamExample{ R"&((seq
 					2
 					
 					;p-value
-					(null)
+					.null
 					
 					;weights
 					["continuous_number" "continuous_number"]
 					
 					;distance types
-					(null)
+					.null
 					
 					;attributes
 					[
@@ -497,7 +497,7 @@ AmalgamExample{ R"&((seq
 		)
 		(create_entities
 			["nan_queries" "a4"]
-			{A (null) B (null)}
+			{A .null B .null}
 		)
 		
 		;expected output is 3 neighbors in order: a4, a1/a3
@@ -511,19 +511,19 @@ AmalgamExample{ R"&((seq
 					["A" "B"]
 					
 					;labels
-					[(null) (null)]
+					[.null .null]
 					
 					;values
 					2
 					
 					;p-value
-					(null)
+					.null
 					
 					;weights
 					["continuous_number" "continuous_number"]
 					
 					;distance types
-					(null)
+					.null
 					
 					;attributes
 					[
@@ -545,7 +545,7 @@ AmalgamExample{ R"&((seq
 	{a1 1 a3 1 a4 0}
 ])", "", R"((apply "destroy_entities" (contained_entities)))"},
 AmalgamExample{ R"&((seq
-	(create_entities "bool_test" (null))
+	(create_entities "bool_test" .null)
 	(create_entities
 		["bool_test" "case1"]
 		(zip
@@ -574,7 +574,7 @@ AmalgamExample{ R"&((seq
 		)
 		(compute_on_contained_entities
 			"bool_test"
-			(query_mode "A" (null))
+			(query_mode "A" .null)
 		)
 	]
 ))&", R"([
@@ -595,7 +595,7 @@ AmalgamExample{ R"&((generalized_distance
 	["nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number"]
 	
 	;attributes
-	[3 100 7 (null) 10 (null)]
+	[3 100 7 .null 10 .null]
 	
 	;deviations
 	[0.4 0.1 0.2 30 0.3 0.05]
@@ -618,7 +618,7 @@ AmalgamExample{ R"&((generalized_distance
 	["nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number"]
 	
 	;attributes
-	[3 100 7 (null) 10 (null)]
+	[3 100 7 .null 10 .null]
 	
 	;deviations
 	[0.4 0.1 0.2 30 0.3 0.05]
@@ -641,7 +641,7 @@ AmalgamExample{ R"&((generalized_distance
 	["nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number"]
 	
 	;attributes
-	[3 100 7 (null) 10 (null)]
+	[3 100 7 .null 10 .null]
 	
 	;deviations
 	[0.4 0.1 0.2 30 0.3 0.05]
@@ -649,7 +649,7 @@ AmalgamExample{ R"&((generalized_distance
 AmalgamExample{ R"&((seq
 	(create_entities
 		"DistanceTestContainer"
-		(lambda (null))
+		(lambda .null)
 	)
 	(create_entities
 		["DistanceTestContainer" "point1"]
@@ -747,15 +747,15 @@ AmalgamExample{ R"&((seq
 				["nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number"]
 				
 				;attributes
-				[3 100 7 (null) 10 (null)]
+				[3 100 7 .null 10 .null]
 				
 				;deviations
 				[0.4 0.1 0.2 30 0.3 0.05]
-				(null)
+				.null
 				
 				;dwe
 				1
-				(null)
+				.null
 				
 				; weight feature
 				"random seed 1234"
@@ -764,7 +764,7 @@ AmalgamExample{ R"&((seq
 	)
 ))&", R"({point1 1036.1581794564518 point2 978.5569789822398 point3 1036.1581794564518})", "", R"((apply "destroy_entities" (contained_entities)))"},
 AmalgamExample{ R"&((seq
-	(create_entities "DistanceSymmetryContainer" (null))
+	(create_entities "DistanceSymmetryContainer" .null)
 	(create_entities
 		["DistanceSymmetryContainer" "A"]
 		{A 4 B 8}
@@ -818,7 +818,7 @@ AmalgamExample{ R"&((seq
 					0.1
 					
 					; p_parameter
-					(null)
+					.null
 					
 					; context_weights
 					["nominal_number" "nominal_number"]
@@ -827,18 +827,18 @@ AmalgamExample{ R"&((seq
 					[1 1]
 					
 					; attributes
-					(null)
+					.null
 					
 					; context_deviations
-					(null)
+					.null
 					1
 					
 					; dwe = 1 means return computed distance to each case
-					(null)
+					.null
 					
 					; weight
 					(rand)
-					(null)
+					.null
 					"precise"
 					.true
 				)
@@ -856,7 +856,7 @@ AmalgamExample{ R"&((seq
 					0.1
 					
 					; p_parameter
-					(null)
+					.null
 					
 					; context_weights
 					["nominal_number" "nominal_number"]
@@ -865,18 +865,18 @@ AmalgamExample{ R"&((seq
 					[1 1]
 					
 					; attributes
-					(null)
+					.null
 					
 					; context_deviations
-					(null)
+					.null
 					1
 					
 					; dwe = 1 means return computed distance to each case
-					(null)
+					.null
 					
 					; weight
 					(rand)
-					(null)
+					.null
 					"precise"
 					.true
 				)
@@ -930,7 +930,7 @@ AmalgamExample{ R"&((seq
 	]
 ])", "", R"((apply "destroy_entities" (contained_entities)))"},
 AmalgamExample{ R"&((seq
-	(create_entities "BoxConvictionTestContainer" (null))
+	(create_entities "BoxConvictionTestContainer" .null)
 	(create_entities
 		["BoxConvictionTestContainer" "vert0"]
 		(lambda
@@ -964,17 +964,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_distance_contributions
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.true
 					)
@@ -989,17 +989,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_distance_contributions
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
 						"weight"
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 					)
 				]
@@ -1014,17 +1014,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_distance_contributions
 						2
 						["x" "y"]
-						(null)
+						.null
 						3
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
 						[0.25 0.25]
-						(null)
+						.null
 						"surprisal"
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.true
 					)
@@ -1039,17 +1039,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_distance_contributions
 						2
 						["x" "y"]
-						(null)
+						.null
 						3
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
 						[0.25 0.25]
-						(null)
+						.null
 						"surprisal"
 						"weight"
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 					)
 				]
@@ -1064,17 +1064,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_kl_divergences
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.true
 					)
@@ -1089,17 +1089,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_kl_divergences
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
 						"weight"
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.true
 					)
@@ -1114,17 +1114,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_convictions
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.true
 					)
@@ -1141,15 +1141,15 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert0" "vert1" "vert2" "vert3"]
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.true
 					)
@@ -1164,17 +1164,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_convictions
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
 						"weight"
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.true
 					)
@@ -1191,15 +1191,15 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert1"]
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.true
 					)
@@ -1216,15 +1216,15 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert1"]
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
 						"weight"
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.true
 					)
@@ -1240,17 +1240,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_kl_divergences
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.false
 					)
@@ -1265,17 +1265,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_kl_divergences
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
 						"weight"
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.false
 					)
@@ -1290,17 +1290,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_convictions
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.false
 					)
@@ -1317,15 +1317,15 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert0" "vert1" "vert2" "vert3"]
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.false
 					)
@@ -1340,17 +1340,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_convictions
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
 						"weight"
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.false
 					)
@@ -1367,15 +1367,15 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert1"]
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.false
 					)
@@ -1392,15 +1392,15 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert1"]
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
 						"weight"
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 						.false
 					)
@@ -1422,17 +1422,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_kl_divergences
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 					)
 				]
@@ -1448,15 +1448,15 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert4"]
 						2
-						(null)
-						(null)
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 					)
 				]
@@ -1470,17 +1470,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_kl_divergences
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
+						.null
 						["continuous_number_cyclic" "continuous_number"]
-						[3.5 (null)]
-						(null)
-						(null)
+						[3.5 .null]
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 					)
 				]
@@ -1494,17 +1494,17 @@ AmalgamExample{ R"&((seq
 					(query_entity_convictions
 						1
 						["x" "y"]
-						(null)
+						.null
 						2
-						(null)
+						.null
 						["continuous_number_cyclic" "continuous_number"]
-						[3.5 (null)]
-						(null)
-						(null)
+						[3.5 .null]
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 					)
 				]
@@ -1520,15 +1520,15 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert4"]
 						2
-						(null)
+						.null
 						["continuous_number_cyclic" "continuous_number"]
-						[3.5 (null)]
-						(null)
-						(null)
+						[3.5 .null]
+						.null
+						.null
 						-1
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"recompute_precise"
 					)
 				]
@@ -1568,7 +1568,7 @@ AmalgamExample{ R"&((seq
 	"cyclic group kl divergence: 0.06081391029364306"
 ])", "", R"((apply "destroy_entities" (contained_entities)))"},
 AmalgamExample{ R"&((seq
-	(create_entities "SurprisalTransformContainer" (null))
+	(create_entities "SurprisalTransformContainer" .null)
 	(create_entities
 		["SurprisalTransformContainer" "vert0"]
 		(lambda
@@ -1610,27 +1610,27 @@ AmalgamExample{ R"&((seq
 						1
 						
 						; p_parameter
-						(null)
+						.null
 						
 						; context_weights
 						["continuous_number"]
 						
 						; types
-						(null)
+						.null
 						
 						; attributes
 						[0.25]
 						
 						; context_deviations
-						(null)
+						.null
 						"surprisal_to_prob"
 						
 						; distance transform
-						(null)
+						.null
 						
 						; weight
 						(rand)
-						(null)
+						.null
 						"precise"
 						.true
 					)
@@ -1654,27 +1654,27 @@ AmalgamExample{ R"&((seq
 						1
 						
 						; p_parameter
-						(null)
+						.null
 						
 						; context_weights
 						["continuous_number"]
 						
 						; types
-						(null)
+						.null
 						
 						; attributes
 						[0.25]
 						
 						; context_deviations
-						(null)
+						.null
 						"surprisal"
 						
 						; distance transform
-						(null)
+						.null
 						
 						; weight
 						(rand)
-						(null)
+						.null
 						"precise"
 						.true
 					)
@@ -1698,19 +1698,19 @@ AmalgamExample{ R"&((seq
 						1
 						
 						; p_parameter
-						(null)
+						.null
 						
 						; context_weights
 						["continuous_number"]
 						
 						; types
-						(null)
+						.null
 						
 						; attributes
 						[0.25]
 						
 						; context_deviations
-						(null)
+						.null
 						"surprisal_to_prob"
 						
 						; distance transform
@@ -1718,7 +1718,7 @@ AmalgamExample{ R"&((seq
 						
 						; weight
 						(rand)
-						(null)
+						.null
 						"precise"
 						.true
 					)
@@ -1742,19 +1742,19 @@ AmalgamExample{ R"&((seq
 						1
 						
 						; p_parameter
-						(null)
+						.null
 						
 						; context_weights
 						["continuous_number"]
 						
 						; types
-						(null)
+						.null
 						
 						; attributes
 						[0.25]
 						
 						; context_deviations
-						(null)
+						.null
 						"surprisal"
 						
 						; distance transform
@@ -1762,7 +1762,7 @@ AmalgamExample{ R"&((seq
 						
 						; weight
 						(rand)
-						(null)
+						.null
 						"precise"
 						.true
 					)
@@ -1785,27 +1785,27 @@ AmalgamExample{ R"&((seq
 						1
 						
 						; p_parameter
-						(null)
+						.null
 						
 						; context_weights
 						["continuous_number"]
 						
 						; types
-						(null)
+						.null
 						
 						; attributes
 						[0.25]
 						
 						; context_deviations
-						(null)
+						.null
 						"surprisal_to_prob"
 						
 						; distance transform
-						(null)
+						.null
 						
 						; weight
 						(rand)
-						(null)
+						.null
 						"precise"
 						.true
 					)
@@ -1828,27 +1828,27 @@ AmalgamExample{ R"&((seq
 						1
 						
 						; p_parameter
-						(null)
+						.null
 						
 						; context_weights
 						["continuous_number"]
 						
 						; types
-						(null)
+						.null
 						
 						; attributes
 						[0.25]
 						
 						; context_deviations
-						(null)
+						.null
 						"surprisal"
 						
 						; distance transform
-						(null)
+						.null
 						
 						; weight
 						(rand)
-						(null)
+						.null
 						"precise"
 						.true
 					)
@@ -1871,27 +1871,27 @@ AmalgamExample{ R"&((seq
 						1
 						
 						; p_parameter
-						(null)
+						.null
 						
 						; context_weights
 						["continuous_number"]
 						
 						; types
-						(null)
+						.null
 						
 						; attributes
 						[0.25]
 						
 						; context_deviations
-						(null)
+						.null
 						"surprisal"
 						
 						; distance transform
-						(null)
+						.null
 						
 						; weight
 						(rand)
-						(null)
+						.null
 						"precise"
 						.true
 					)
@@ -1910,15 +1910,15 @@ AmalgamExample{ R"&((seq
 							[0]
 						]
 						1
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
 						[0.25]
-						(null)
+						.null
 						"surprisal"
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"precise"
 					)
 				]
@@ -1936,15 +1936,15 @@ AmalgamExample{ R"&((seq
 							[0]
 						]
 						1
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
 						[0.25]
-						(null)
+						.null
 						"surprisal"
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"precise"
 					)
 				]
@@ -1962,15 +1962,15 @@ AmalgamExample{ R"&((seq
 							[0]
 						]
 						1
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
 						[0.25]
-						(null)
+						.null
 						"surprisal"
 						"weight"
 						"fixed_seed"
-						(null)
+						.null
 						"precise"
 					)
 				]
@@ -1988,15 +1988,15 @@ AmalgamExample{ R"&((seq
 							[0]
 						]
 						1
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
 						[0.25]
-						(null)
+						.null
 						"surprisal"
 						"weight"
 						"fixed_seed"
-						(null)
+						.null
 						"precise"
 					)
 				]
@@ -2018,15 +2018,15 @@ AmalgamExample{ R"&((seq
 						["x"]
 						["testvert"]
 						1
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
 						[0.25]
-						(null)
+						.null
 						"surprisal"
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"precise"
 					)
 				]
@@ -2042,15 +2042,15 @@ AmalgamExample{ R"&((seq
 						["x"]
 						["testvert"]
 						1
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
 						[0.25]
-						(null)
+						.null
 						"surprisal"
-						(null)
+						.null
 						"fixed_seed"
-						(null)
+						.null
 						"precise"
 					)
 				]
@@ -2066,15 +2066,15 @@ AmalgamExample{ R"&((seq
 						["x"]
 						["testvert"]
 						1
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
 						[0.25]
-						(null)
+						.null
 						"surprisal"
 						"weight"
 						"fixed_seed"
-						(null)
+						.null
 						"precise"
 					)
 				]
@@ -2090,15 +2090,15 @@ AmalgamExample{ R"&((seq
 						["x"]
 						["testvert"]
 						1
-						(null)
-						(null)
-						(null)
+						.null
+						.null
+						.null
 						[0.25]
-						(null)
+						.null
 						"surprisal"
 						"weight"
 						"fixed_seed"
-						(null)
+						.null
 						"precise"
 					)
 				]
@@ -2421,7 +2421,7 @@ AmalgamExample{ R"&((seq
 	result
 ))&", R"(.true)", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
-	(create_entities "eq_distance_test" (null))
+	(create_entities "eq_distance_test" .null)
 	(create_entities
 		["eq_distance_test"]
 		{x 0 y 0}
@@ -2552,7 +2552,7 @@ AmalgamExample{ R"&((seq
 	]
 ])"},
 AmalgamExample{ R"&((seq
-	(create_entities "CyclicTestEntity" (null))
+	(create_entities "CyclicTestEntity" .null)
 	(create_entities
 		["CyclicTestEntity" "10"]
 		{deg 177}
@@ -2651,7 +2651,7 @@ AmalgamExample{ R"&((seq
 							1
 							
 							; p
-							(null)
+							.null
 							
 							; weights
 							["continuous_number_cyclic"]
@@ -2660,14 +2660,14 @@ AmalgamExample{ R"&((seq
 							[360]
 							
 							; attributes
-							(null)
+							.null
 							
 							; deviations
-							(null)
+							.null
 							-1
 							
 							; dwe
-							(null)
+							.null
 							
 							; weight
 							(rand)
@@ -2710,13 +2710,12 @@ int32_t RunAmalgamLanguageValidation()
 	{
 		EvaluableNodeType cur_opcode = static_cast<EvaluableNodeType>(opcode_index);
 		std::string cur_opcode_str = GetStringFromEvaluableNodeType(cur_opcode, true);
-		std::cout << "Validating opcode " << cur_opcode_str << std::endl;
 
 		size_t num_examples = _opcode_details[opcode_index].examples.size();
 		for(size_t test_number = 0; test_number < num_examples; test_number++)
 		{
 			auto &example = _opcode_details[opcode_index].examples[test_number];
-			std::cout << "Test " << (test_number + 1) << " of " << num_examples << ": ";
+			std::cout << "Validating opcode " << cur_opcode_str << " test " << (test_number + 1) << " of " << num_examples << ": ";
 
 			if(example.ValidateExample(entity))
 				std::cout << "Passed" << std::endl;

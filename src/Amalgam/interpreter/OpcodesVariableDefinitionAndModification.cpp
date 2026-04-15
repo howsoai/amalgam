@@ -19,9 +19,10 @@ static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT
 	{foo 1}
 	foo
 ))&", R"(1)"},
-			{R"&(not_defined)&", R"((null))"},
+			{R"&(not_defined)&", R"(.null)"},
 			{R"&((lambda foo))&", R"(foo)"}
 		});
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::NONE;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 4329.0;
 	d.opcodeGroup = _opcode_group;
@@ -344,7 +345,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM, []() {
 	OpcodeDetails d;
 	d.parameters = R"(assoc|string variables [number index1|string index1|list walk_path1|* new_value1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...)";
-	d.returns = R"(null)";
+	d.returns = R"(.null)";
 	d.description = R"(If `variables` is an assoc, then for each key-value pair it assigns the value to the variable represented by the key found by tracing upward on the stack.  If a variable is not found, it will create a variable on the top of the stack with that name.  If `variables` is a string and there are two parameters, it will assign the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to assign new_value to that part of the variable's structure.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
@@ -419,7 +420,7 @@ static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT
 static OpcodeInitializer _ENT_ACCUM(ENT_ACCUM, &Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM, []() {
 	OpcodeDetails d;
 	d.parameters = R"(assoc|string variables [number index1|string index1|list walk_path1] [* accum_value1] [number index2|string index2|list walk_path2] [* accum_value2] ...)";
-	d.returns = R"(null)";
+	d.returns = R"(.null)";
 	d.description = R"(If `variables` is an assoc, then for each key-value pair of data, it assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the result in the variable.  It searches for the variable name tracing up the stack to find the variable. If the variable is not found, it will create a variable on the top of the stack.  Accumulation is performed differently based on the type.  For numeric values it adds, for strings it concatenates, for lists and assocs it appends.  If `variables` is a string and there are two parameters, then it will accum the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of the corresponding walk path and accum value to that part of the variable's structure.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1403,11 +1404,11 @@ static OpcodeInitializer _ENT_FORMAT(ENT_FORMAT, &Interpreter::InterpretNode_ENT
 			{R"&((format
 	[
 		{a 3 b 4}
-		{c "c" d (null)}
+		{c "c" d .null}
 	]
 	"code"
 	"json"
-	(null)
+	.null
 	{sort_keys .true}
 ))&", R"("[{\"a\":3,\"b\":4},{\"c\":\"c\",\"d\":null}]")"},
 			{R"&((format
@@ -1416,11 +1417,11 @@ static OpcodeInitializer _ENT_FORMAT(ENT_FORMAT, &Interpreter::InterpretNode_ENT
 		b 2
 		c 3
 		d 4
-		e ["a" "b" (null) .infinity]
+		e ["a" "b" .null .infinity]
 	}
 	"code"
 	"yaml"
-	(null)
+	.null
 	{sort_keys .true}
 ))&", R"("a: 1\nb: 2\nc: 3\nd: 4\ne:\n  - a\n  - b\n  - \n  - .inf\n")"},
 			{R"&((format "a: 1" "yaml" "code"))&", R"({a 1})"},
@@ -1505,12 +1506,12 @@ static OpcodeInitializer _ENT_FORMAT(ENT_FORMAT, &Interpreter::InterpretNode_ENT
 	48164
 	"number"
 	"time:%I:%M:%S%p"
-	(null)
+	.null
 	{locale "es_ES"}
 ))&", R"("01:22:44PM")"},
 			{R"&((format 37364.33 "number" "time:%I:%M:%S%p"))&", R"("10:22:44.3300000AM")", R"("10:22:44.330+AM")" },
 			{R"&((format 0 "number" "time:%I:%M:%S%p"))&", R"("12:00:00AM")"},
-			{R"&((format (null) "number" "time:%I:%M:%S%p"))&", R"("12:00:00AM")"},
+			{R"&((format .null "number" "time:%I:%M:%S%p"))&", R"("12:00:00AM")"},
 			{R"&((format .infinity "number" "time:%I:%M:%S%p"))&", R"("12:00:00AM")"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;

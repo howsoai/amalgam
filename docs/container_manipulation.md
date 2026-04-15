@@ -61,7 +61,7 @@ Example:
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 
 [Amalgam Opcodes](./index.md#amalgam-opcodes)
@@ -380,7 +380,7 @@ Example:
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 
 [Amalgam Opcodes](./index.md#amalgam-opcodes)
@@ -448,7 +448,7 @@ Example:
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 
 [Amalgam Opcodes](./index.md#amalgam-opcodes)
@@ -767,7 +767,7 @@ Example:
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 
 [Amalgam Opcodes](./index.md#amalgam-opcodes)
@@ -1032,13 +1032,13 @@ Example:
 ```
 Output:
 ```amalgam
-[2 (null) (null)]
+[2 .null .null]
 ```
 Example:
 ```amalgam
 (get
-	{(null) 3}
-	(null)
+	{.null 3}
+	.null
 )
 ```
 Output:
@@ -1201,7 +1201,7 @@ Output:
 ```amalgam
 [
 	[4 5 6]
-	(null)
+	.null
 	1
 ]
 ```
@@ -1221,7 +1221,7 @@ Output:
 ```amalgam
 [
 	[4 5 6]
-	(null)
+	.null
 	1
 ]
 ```

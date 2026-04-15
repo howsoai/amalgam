@@ -507,7 +507,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				break;
 
 			case ENIVT_NULL:
-				std::cout << "(null)" << std::endl;
+				std::cout << ".null" << std::endl;
 				std::cout << "Value type: immediate null" << std::endl;
 				break;
 

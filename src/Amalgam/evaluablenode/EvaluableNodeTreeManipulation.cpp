@@ -448,6 +448,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 		auto iocnt = GetOpcodeOrderedChildNodeType(generalized_node->GetType());
 		switch(iocnt)
 		{
+		case OpcodeDetails::OrderedChildNodeType::NONE:
+			break;
 		case OpcodeDetails::OrderedChildNodeType::UNORDERED:
 			generalized_node->SetOrderedChildNodes(std::move(mm->MergeUnorderedSets(*tree1_ordered_childs, *tree2_ordered_childs)));
 			break;
@@ -622,6 +624,9 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 
 		switch(iocnt)
 		{
+		case OpcodeDetails::OrderedChildNodeType::NONE:
+			break;
+
 		case OpcodeDetails::OrderedChildNodeType::UNORDERED:
 		{
 			std::vector<EvaluableNode *> a2(tree2->GetOrderedChildNodesReference());
@@ -1066,20 +1071,15 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 			auto &n2_value = n2->GetStringValue();
 			return std::make_pair(n2, n2_value == ""  ? 0.25 : 0.125);
 		}
-		if(n2_type == ENT_SEQUENCE)			return std::make_pair(n1, 0.125);
-		if(n2_type == ENT_UNORDERED_LIST)	return std::make_pair(n1, 0.125);
-		if(n2_type == ENT_LIST)				return std::make_pair(n1, 0.125);
 		return std::make_pair(nullptr, 0.0);
 
 	case ENT_LIST:
 		if(n2_type == ENT_SEQUENCE)			return std::make_pair(n1, 0.125);
 		if(n2_type == ENT_UNORDERED_LIST)	return std::make_pair(n1, 0.5);
-		if(n2_type == ENT_NULL)				return std::make_pair(n1, 0.125);
 		return std::make_pair(nullptr, 0.0);
 
 	case ENT_UNORDERED_LIST:
 		if(n2_type == ENT_SEQUENCE)				return std::make_pair(n2, 0.125);
-		if(n2_type == ENT_NULL)					return std::make_pair(n2, 0.125);
 		if(n2_type == ENT_LIST)					return std::make_pair(n2, 0.5);
 		return std::make_pair(nullptr, 0.0);
 

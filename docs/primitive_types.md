@@ -13,40 +13,32 @@ Evaluates to the immediate null value, regardless of any parameters.
 #### Examples
 Example:
 ```amalgam
-(null)
+.null
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 Example:
 ```amalgam
-(lambda
-	(null
-		(+ 3 5)
-		7
-	)
-)
+(lambda .null )
 ```
 Output:
 ```amalgam
-(null
-	(+ 3 5)
-	7
-)
+.null
 ```
 Example:
 ```amalgam
 (lambda
 	
 	#annotation
-	(null)
+	.null
 )
 ```
 Output:
 ```amalgam
 #annotation
-(null)
+.null
 ```
 
 [Amalgam Opcodes](./index.md#amalgam-opcodes)
@@ -313,12 +305,12 @@ Output:
 Example:
 ```amalgam
 (unparse
-	{(null) 0 (+ 1 2) 3}
+	{.null 0 (+ 1 2) 3}
 )
 ```
 Output:
 ```amalgam
-"{(null) 0 (+ 1 2) 3}"
+"{.null 0 (+ 1 2) 3}"
 ```
 
 [Amalgam Opcodes](./index.md#amalgam-opcodes)

@@ -350,7 +350,7 @@ Example:
 		3
 		4
 		5
-		(null)
+		.null
 	]
 )
 ```
@@ -461,7 +461,7 @@ Output:
 Example:
 ```amalgam
 (quantile
-	[1 2 3 4 5 (null)]
+	[1 2 3 4 5 .null]
 	0.5
 )
 ```
@@ -537,7 +537,7 @@ Example:
 		2 3
 		3 4
 		4 5
-		5 (null)
+		5 .null
 	}
 	0.5
 	[0.75 0 0 0 0.125]
@@ -576,7 +576,7 @@ Output:
 Example:
 ```amalgam
 (generalized_mean
-	[1 2 3 4 5 (null)]
+	[1 2 3 4 5 .null]
 )
 ```
 Output:
@@ -651,7 +651,7 @@ Example:
 		2 3
 		3 4
 		4 5
-		5 (null)
+		5 .null
 	}
 	1
 	[0.75 0 0 0 0.125]
@@ -684,7 +684,7 @@ Example:
 		10000
 		(range 0 200)
 	)
-	(null)
+	.null
 	0.01
 )
 ```
@@ -708,7 +708,7 @@ Example:
 ```amalgam
 (generalized_distance
 	[3 4]
-	(null)
+	.null
 	2
 )
 ```
@@ -720,7 +720,7 @@ Example:
 ```amalgam
 (generalized_distance
 	[3 4]
-	(null)
+	.null
 	-.infinity
 )
 ```
@@ -745,7 +745,7 @@ Example:
 ```amalgam
 (generalized_distance
 	[3 4]
-	(null)
+	.null
 	2
 	[1 1]
 )
@@ -758,7 +758,7 @@ Example:
 ```amalgam
 (generalized_distance
 	[3 4]
-	(null)
+	.null
 	2
 	[0.5 0.5]
 )
@@ -771,7 +771,7 @@ Example:
 ```amalgam
 (generalized_distance
 	[3 4]
-	(null)
+	.null
 	1
 	[0.5 0.5]
 )
@@ -784,7 +784,7 @@ Example:
 ```amalgam
 (generalized_distance
 	[3 4]
-	(null)
+	.null
 	0.5
 	[0.5 0.5]
 )
@@ -797,7 +797,7 @@ Example:
 ```amalgam
 (generalized_distance
 	[3 4]
-	(null)
+	.null
 	0.1
 	[0.5 0.5]
 )
@@ -810,7 +810,7 @@ Example:
 ```amalgam
 (generalized_distance
 	[3 4]
-	(null)
+	.null
 	0.01
 	[0.5 0.5]
 )
@@ -823,7 +823,7 @@ Example:
 ```amalgam
 (generalized_distance
 	[3 4]
-	(null)
+	.null
 	0.001
 	[0.5 0.5]
 )
@@ -836,7 +836,7 @@ Example:
 ```amalgam
 (generalized_distance
 	[3 4]
-	(null)
+	.null
 	0
 	[0.5 0.5]
 )
@@ -848,8 +848,8 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
-	[(null) 4]
-	(null)
+	[.null 4]
+	.null
 	2
 	[1 1]
 )
@@ -861,8 +861,8 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
-	[(null) 4]
-	(null)
+	[.null 4]
+	.null
 	0
 	[1 1]
 )
@@ -874,8 +874,8 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
-	[(null) 4]
-	(null)
+	[.null 4]
+	.null
 	2
 	[0.5 0.5]
 )
@@ -887,8 +887,8 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
-	[(null) 4]
-	(null)
+	[.null 4]
+	.null
 	0
 	[0.5 0.5]
 )
@@ -903,7 +903,7 @@ Example:
 	[1 2 3]
 	[10 2 4]
 	1
-	(null)
+	.null
 	["nominal_number"]
 	[1]
 )
@@ -918,7 +918,7 @@ Example:
 	[1 2 3]
 	[10 2 10]
 	1
-	(null)
+	.null
 	["nominal_number"]
 	[1]
 )
@@ -933,7 +933,7 @@ Example:
 	[1 2 3]
 	[10 2 10]
 	1
-	(null)
+	.null
 	["nominal_number"]
 	[1]
 )
@@ -1021,12 +1021,12 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
-	[4 4 (null)]
-	[2 (null) (null)]
+	[4 4 .null]
+	[2 .null .null]
 	2
 	[1 0 1]
 	["continuous_number" "nominal_number" "nominal_number"]
-	[(null) 5 5]
+	[.null 5 5]
 	[0.1 0.1 0.1]
 )
 ```
@@ -1037,12 +1037,12 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
-	[4 4 (null)]
-	[2 (null) (null)]
+	[4 4 .null]
+	[2 .null .null]
 	2
 	[1 0 1]
 	["continuous_number" "nominal_number" "nominal_number"]
-	[(null) 5 5]
+	[.null 5 5]
 )
 ```
 Output:
@@ -1052,12 +1052,12 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
-	[4 4 (null) 4]
-	[2 (null) (null) 2]
+	[4 4 .null 4]
+	[2 .null .null 2]
 	2
 	[1 0 1 1]
 	["continuous_number" "nominal_number" "nominal_number"]
-	[(null) 5 5]
+	[.null 5 5]
 	[0.1 0.1 0.1 0.1]
 )
 ```
@@ -1068,12 +1068,12 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
-	[4 4 (null) 4]
-	[2 (null) (null) 2]
+	[4 4 .null 4]
+	[2 .null .null 2]
 	2
 	[1 0 1 1]
 	["continuous_number" "nominal_number" "nominal_number"]
-	[(null) 5 5]
+	[.null 5 5]
 )
 ```
 Output:
@@ -1084,14 +1084,14 @@ Example:
 ```amalgam
 (generalized_distance
 	[4 4 4 4 4]
-	[2 (null) 2 2 2]
+	[2 .null 2 2 2]
 	1
 	[1 0 1 1 1]
 )
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 Example:
 ```amalgam
@@ -1102,9 +1102,9 @@ Example:
 	{x 1 y 1 z 1}
 	{x "nominal_number" y "continuous_number" z "continuous_number"}
 	{z 5}
-	(null)
-	(null)
-	(null)
+	.null
+	.null
+	.null
 	["x" "y" "z"]
 )
 ```
@@ -1115,12 +1115,12 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
-	[4 4 (null)]
-	[2 2 (null)]
+	[4 4 .null]
+	[2 2 .null]
 	1
 	[1 1 1]
 	["continuous_number" "nominal_number" "nominal_number"]
-	[(null) 5 5]
+	[.null 5 5]
 )
 ```
 Output:
@@ -1131,15 +1131,15 @@ Example:
 ```amalgam
 (generalized_distance
 	[4 4 4 4]
-	[2 2 2 (null)]
+	[2 2 2 .null]
 	0
 	[1 1 1 1]
 	["continuous_number" "nominal_number" "nominal_number" "continuous_number"]
-	[(null) 5 5 (null)]
+	[.null 5 5 .null]
 	[
 		[0 2]
-		(null)
-		(null)
+		.null
+		.null
 		[0 2]
 	]
 )
@@ -1152,15 +1152,15 @@ Example:
 ```amalgam
 (generalized_distance
 	[4 "s" "s" 4]
-	[2 "s" 2 (null)]
+	[2 "s" 2 .null]
 	1
 	[1 1 1 1]
 	["continuous_number" "nominal_string" "nominal_string" "continuous_number"]
-	[(null) 5 5 (null)]
+	[.null 5 5 .null]
 	[
 		[0 1]
-		(null)
-		(null)
+		.null
+		.null
 		[0 1]
 	]
 )
@@ -1219,10 +1219,10 @@ Example:
 	1
 	[1 1]
 	["continuous_number" "continuous_number"]
-	(null)
+	.null
 	[0.5 0.5]
-	(null)
-	(null)
+	.null
+	.null
 	.true
 )
 ```
@@ -1238,10 +1238,10 @@ Example:
 	1
 	[1 1]
 	["nominal_number" "nominal_number"]
-	(null)
+	.null
 	[0.5 0.5]
-	(null)
-	(null)
+	.null
+	.null
 	.true
 )
 ```
@@ -1257,10 +1257,10 @@ Example:
 	1
 	[1 1]
 	["continuous_number" "continuous_number"]
-	(null)
+	.null
 	[0.5 0.5]
-	(null)
-	(null)
+	.null
+	.null
 	.true
 )
 ```
@@ -1278,8 +1278,8 @@ Example:
 	["nominal_number" "nominal_number"]
 	[2 2]
 	[0.25 0.25]
-	(null)
-	(null)
+	.null
+	.null
 	.true
 )
 ```
@@ -1317,10 +1317,10 @@ Example:
 	]
 	
 	;deviations
-	(null)
+	.null
 	
 	;names
-	(null)
+	.null
 	
 	;weights_selection_feature
 	.true
@@ -1360,10 +1360,10 @@ Example:
 	]
 	
 	;deviations
-	(null)
+	.null
 	
 	;names
-	(null)
+	.null
 	
 	;weights_selection_feature
 	.true
@@ -1406,10 +1406,10 @@ Example:
 	]
 	
 	;deviations
-	(null)
+	.null
 	
 	;names
-	(null)
+	.null
 	
 	;weights_selection_feature
 	.true
@@ -1443,10 +1443,10 @@ Example:
 	[0.2]
 	
 	;deviations
-	(null)
+	.null
 	
 	;names
-	(null)
+	.null
 	
 	;weights_selection_feature
 	.true
@@ -1492,10 +1492,10 @@ Example:
 	]
 	
 	;deviations
-	(null)
+	.null
 	
 	;names
-	(null)
+	.null
 	
 	;weights_selection_feature
 	.true
@@ -1544,10 +1544,10 @@ Example:
 	]
 	
 	;deviations
-	(null)
+	.null
 	
 	;names
-	(null)
+	.null
 	
 	;weights_selection_feature
 	.true
@@ -1621,7 +1621,7 @@ Example:
 	["continuous_number"]
 	
 	;types
-	(null)
+	.null
 	
 	;attributes
 	0.5
@@ -1744,7 +1744,7 @@ Example:
 	["continuous_number"]
 	
 	;types
-	(null)
+	.null
 	
 	;attributes
 	0.5

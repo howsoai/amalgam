@@ -330,7 +330,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_twelve_number_key,
 	ENBISI_neg_one_number_key,
 	ENBISI_neg_two_number_key,
-	ENBISI_empty_null,
+	ENBISI_null,
 	ENBISI_empty_list,
 	ENBISI_empty_assoc,
 	ENBISI_null_key,

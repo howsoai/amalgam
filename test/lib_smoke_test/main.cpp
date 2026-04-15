@@ -290,7 +290,7 @@ static void ExecuteCounter2(TestResult &test_result)
 
 		std::string json2("{\"counter\":\"y\"}");
 		ApiString result2(ExecuteEntityJsonPtr(handle.data(), get_value.data(), json2.data()));
-		test_result.Check("ExecuteEntityJsonPtr get_value y", result2, "\0(null)");
+		test_result.Check("ExecuteEntityJsonPtr get_value y", result2, "\0.null");
 	}
 }
 

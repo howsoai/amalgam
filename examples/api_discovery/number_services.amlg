@@ -28,10 +28,10 @@
 							"description"
 							(current_value 1)
 							"parameters"
-							(get_entity_comments (null) (current_index 1) .true)
+							(get_entity_comments .null (current_index 1) .true)
 						)
 					)
-					(get_entity_comments (null) (null) .true)
+					(get_entity_comments .null .null .true)
 				)
 			)
 		)
@@ -58,9 +58,9 @@
 				.true
 
 				(= number 42)
-				(assoc "a" (list (null) 3 (null) (list) (assoc "x" 12) .infinity) )
+				(assoc "a" (list .null 3 .null (list) (assoc "x" 12) .infinity) )
 
-				(= number (null))
+				(= number .null)
 				(list .true .false)
 
 				(< number 0)
@@ -91,12 +91,12 @@
 		(declare (assoc
 				;the first number. also, here's a test of different utf-8 and special characters: ! ; < > & ^ اَلْعَرَبِيَّةُ 日本語 -- ` ~ ‽ ü " " ' ' '' \n\r\n\r\n
 				; and a second line!
-				a (null)
+				a .null
 				;the second number
-				b (null)
+				b .null
 			)
-			(if (or (= a (null)) (= b (null)) )
-				(null)
+			(if (or (= a .null) (= b .null) )
+				.null
 				(call is_even (assoc number (+ a b)))
 			)
 		)

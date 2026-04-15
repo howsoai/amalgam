@@ -38,6 +38,12 @@ jobs:
             sed -i -E 's|\((\./)?([^)#]+)\.md(#[^)]*)?\)|({% link \2.md %}\3)|g' "$file"
           done
 
+      - name: Replace amalgam code fence language for Rouge compatibility
+        run: |
+          for file in docs/*.md; do
+            sed -i 's/```amalgam/```plaintext/g' "$file"
+          done
+
       - name: Add front matter and custom head
         run: |
           # Add front matter to markdown files
@@ -59,11 +65,6 @@ jobs:
             fi
           done
 
-          # Create custom head for favicon
-          mkdir -p docs/_includes
-          cat > docs/_includes/head_custom.html << 'EOF'
-          <link rel="icon" type="image/x-icon" href="{{ '/assets/favicon.ico' | relative_url }}">
-          EOF
 
       - name: Build with Jekyll
         run: bundle exec jekyll build --source . --destination ../_site

@@ -214,7 +214,7 @@ Example:
 			1
 			2
 			3
-			{a 1 b 2 c (null)}
+			{a 1 b 2 c .null}
 		]
 	)
 	(load "file.json")
@@ -226,7 +226,7 @@ Output:
 	1
 	2
 	3
-	{a 1 b 2 c (null)}
+	{a 1 b 2 c .null}
 ]
 ```
 Example:
@@ -238,7 +238,7 @@ Example:
 			1
 			2
 			3
-			{a 1 b 2 c (null)}
+			{a 1 b 2 c .null}
 		]
 	)
 	(load "file.yaml")
@@ -250,7 +250,7 @@ Output:
 	1
 	2
 	3
-	{a 1 b 2 c (null)}
+	{a 1 b 2 c .null}
 ]
 ```
 Example:
@@ -262,7 +262,7 @@ Example:
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 Example:
 ```amalgam
@@ -293,7 +293,7 @@ Example:
 					[6.4 2.8 5.6 2.2 "virginica"]
 					[4.9 2.5 4.5 1.7 "virg\"inica"]
 					[]
-					["" "" "" (null)]
+					["" "" "" .null]
 					[4.9 3.1 1.5 0.1 "set\nosa" 3]
 					[4.4 3.2 1.3 0.2 "setosa"]
 				]
@@ -308,8 +308,8 @@ Output:
 [
 	[6.4 2.8 5.6 2.2 "virginica"]
 	[4.9 2.5 4.5 1.7 "virg\"inica"]
-	[(null)]
-	[(null) (null) (null) (null)]
+	[.null]
+	[.null .null .null .null]
 	[4.9 3.1 1.5 0.1 "set\nosa" 3]
 	[4.4 3.2 1.3 0.2 "setosa"]
 ]
@@ -359,7 +359,7 @@ Example:
 Output:
 ```amalgam
 (declare
-	{_ (null) new_entity (null)}
+	{_ .null new_entity .null}
 	(clone_entities _ new_entity)
 )
 ```
@@ -385,7 +385,7 @@ Example:
 	(store_entity
 		"entity.caml"
 		"Entity"
-		(null)
+		.null
 		.true
 		{flatten .true transactional .true}
 	)
@@ -403,7 +403,7 @@ Example:
 	(load_entity
 		"entity.caml"
 		"EntityCopy"
-		(null)
+		.null
 		.false
 		{execute_on_load .true require_version_compatibility .true transactional .true}
 	)
@@ -419,7 +419,7 @@ Example:
 Output:
 ```amalgam
 (declare
-	{_ (null) new_entity (null)}
+	{_ .null new_entity .null}
 	(clone_entities _ new_entity)
 )
 ```
@@ -468,7 +468,7 @@ Example:
 			1
 			2
 			3
-			{a 1 b 2 c (null)}
+			{a 1 b 2 c .null}
 		]
 	)
 	(load "file.json")
@@ -480,7 +480,7 @@ Output:
 	1
 	2
 	3
-	{a 1 b 2 c (null)}
+	{a 1 b 2 c .null}
 ]
 ```
 Example:
@@ -492,7 +492,7 @@ Example:
 			1
 			2
 			3
-			{a 1 b 2 c (null)}
+			{a 1 b 2 c .null}
 		]
 	)
 	(load "file.yaml")
@@ -504,7 +504,7 @@ Output:
 	1
 	2
 	3
-	{a 1 b 2 c (null)}
+	{a 1 b 2 c .null}
 ]
 ```
 Example:
@@ -516,7 +516,7 @@ Example:
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 Example:
 ```amalgam
@@ -547,7 +547,7 @@ Example:
 					[6.4 2.8 5.6 2.2 "virginica"]
 					[4.9 2.5 4.5 1.7 "virg\"inica"]
 					[]
-					["" "" "" (null)]
+					["" "" "" .null]
 					[4.9 3.1 1.5 0.1 "set\nosa" 3]
 					[4.4 3.2 1.3 0.2 "setosa"]
 				]
@@ -562,8 +562,8 @@ Output:
 [
 	[6.4 2.8 5.6 2.2 "virginica"]
 	[4.9 2.5 4.5 1.7 "virg\"inica"]
-	[(null)]
-	[(null) (null) (null) (null)]
+	[.null]
+	[.null .null .null .null]
 	[4.9 3.1 1.5 0.1 "set\nosa" 3]
 	[4.4 3.2 1.3 0.2 "setosa"]
 ]
@@ -613,7 +613,7 @@ Example:
 Output:
 ```amalgam
 (declare
-	{_ (null) new_entity (null)}
+	{_ .null new_entity .null}
 	(clone_entities _ new_entity)
 )
 ```
@@ -639,7 +639,7 @@ Example:
 	(store_entity
 		"entity.caml"
 		"Entity"
-		(null)
+		.null
 		.true
 		{flatten .true transactional .true}
 	)
@@ -657,7 +657,7 @@ Example:
 	(load_entity
 		"entity.caml"
 		"EntityCopy"
-		(null)
+		.null
 		.false
 		{execute_on_load .true require_version_compatibility .true transactional .true}
 	)
@@ -673,7 +673,7 @@ Example:
 Output:
 ```amalgam
 (declare
-	{_ (null) new_entity (null)}
+	{_ .null new_entity .null}
 	(clone_entities _ new_entity)
 )
 ```
@@ -752,7 +752,7 @@ Example:
 		}
 	)
 	(declare
-		{first_rand (null) second_rand (null)}
+		{first_rand .null second_rand .null}
 	)
 	(assign
 		{

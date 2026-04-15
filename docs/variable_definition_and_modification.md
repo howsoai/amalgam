@@ -28,7 +28,7 @@ not_defined
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 Example:
 ```amalgam
@@ -1017,11 +1017,11 @@ Example:
 (format
 	[
 		{a 3 b 4}
-		{c "c" d (null)}
+		{c "c" d .null}
 	]
 	"code"
 	"json"
-	(null)
+	.null
 	{sort_keys .true}
 )
 ```
@@ -1037,11 +1037,11 @@ Example:
 		b 2
 		c 3
 		d 4
-		e ["a" "b" (null) .infinity]
+		e ["a" "b" .null .infinity]
 	}
 	"code"
 	"yaml"
-	(null)
+	.null
 	{sort_keys .true}
 )
 ```
@@ -1364,7 +1364,7 @@ Example:
 	48164
 	"number"
 	"time:%I:%M:%S%p"
-	(null)
+	.null
 	{locale "es_ES"}
 )
 ```
@@ -1390,7 +1390,7 @@ Output:
 ```
 Example:
 ```amalgam
-(format (null) "number" "time:%I:%M:%S%p")
+(format .null "number" "time:%I:%M:%S%p")
 ```
 Output:
 ```amalgam

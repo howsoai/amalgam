@@ -415,7 +415,7 @@ Example:
 			["MergeEntity2"]
 			{e 3 f 4}
 		)
-		(intersect_entities "MergeEntity1" "MergeEntity2" (null) "IntersectedEntity")
+		(intersect_entities "MergeEntity1" "MergeEntity2" .null "IntersectedEntity")
 		[
 			(retrieve_entity_root "IntersectedEntity")
 			(sort
@@ -428,7 +428,7 @@ Example:
 Output:
 ```amalgam
 [
-	{b 4 c (null)}
+	{b 4 c .null}
 	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
 ]
 ```
@@ -508,7 +508,7 @@ Example:
 			["MergeEntity2"]
 			{e 3 f 4}
 		)
-		(union_entities "MergeEntity1" "MergeEntity2" (null) "UnionedEntity")
+		(union_entities "MergeEntity1" "MergeEntity2" .null "UnionedEntity")
 		[
 			(retrieve_entity_root "UnionedEntity")
 			(sort
@@ -521,7 +521,7 @@ Example:
 Output:
 ```amalgam
 [
-	{a 3 b 4 c (null)}
+	{a 3 b 4 c .null}
 	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
 ]
 ```
@@ -678,7 +678,7 @@ Example:
 Output:
 ```amalgam
 (declare
-	{_ (null) new_entity (null)}
+	{_ .null new_entity .null}
 	(clone_entities _ new_entity)
 )
 ```

@@ -56,7 +56,7 @@ Example:
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 Example:
 ```amalgam
@@ -70,7 +70,7 @@ Example:
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 
 [Amalgam Opcodes](./index.md#amalgam-opcodes)
@@ -108,7 +108,7 @@ Executes system command specified by `command`.  The available system commands a
  - readline:            Reads a line of input from the terminal and returns the string.
  - printline:           Prints a line of string output of the second argument directly to the terminal and returns null.
  - cwd:                 If no additional parameter is specified, returns the current working directory. If an additional parameter is specified, it attempts to change the current working directory to that parameter, returning true on success and false on failure.
- - system:              Executes the the second argument as a system command (i.e., a string that would normally be run on the command line). Returns `(null)` if the command was not found. If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.
+ - system:              Executes the the second argument as a system command (i.e., a string that would normally be run on the command line). Returns `.null` if the command was not found. If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.
  - os:                  Returns a string describing the operating system.
  - sleep:               Sleeps for the amount of seconds specified by the second argument.
  - version:             Returns a string representing the current Amalgam version.
@@ -156,19 +156,19 @@ Frees resources of the specified types on `entity`, which is the current entity 
 #### Examples
 Example:
 ```amalgam
-(reclaim_resources (null) .true ["x"] .true .true )
+(reclaim_resources .null .true ["x"] .true .true )
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 Example:
 ```amalgam
-(reclaim_resources (null) .true .true .true .true )
+(reclaim_resources .null .true .true .true .true )
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 
 [Amalgam Opcodes](./index.md#amalgam-opcodes)

@@ -383,13 +383,13 @@ Example:
 										{
 											description (current_value 1)
 											parameters (get_entity_comments
-													(null)
+													.null
 													(current_index 1)
 													.true
 												)
 										}
 									)
-									(get_entity_comments (null) (null) .true)
+									(get_entity_comments .null .null .true)
 								)
 						}
 					)
@@ -403,7 +403,7 @@ Example:
 	)
 	[
 		(get_entity_annotations "descriptive_entity")
-		(get_entity_annotations "descriptive_entity" (null) .true)
+		(get_entity_annotations "descriptive_entity" .null .true)
 		(get_entity_annotations "descriptive_entity" "foo" .true)
 	]
 )
@@ -501,13 +501,13 @@ Example:
 										{
 											description (current_value 1)
 											parameters (get_entity_comments
-													(null)
+													.null
 													(current_index 1)
 													.true
 												)
 										}
 									)
-									(get_entity_comments (null) (null) .true)
+									(get_entity_comments .null .null .true)
 								)
 						}
 					)
@@ -521,7 +521,7 @@ Example:
 	)
 	[
 		(get_entity_comments "descriptive_entity")
-		(get_entity_comments "descriptive_entity" (null) .true)
+		(get_entity_comments "descriptive_entity" .null .true)
 		(get_entity_comments "descriptive_entity" "foo" .true)
 	]
 )

@@ -219,7 +219,7 @@ Example:
 				!private_method "should not access"
 				copy_entity (while
 						.true
-						(clone_entities (null) (null))
+						(clone_entities .null .null)
 					)
 				hello (declare
 						{message ""}
@@ -236,11 +236,11 @@ Example:
 			{message "world"}
 		)
 		(call_entity "Entity" "!private_method")
-		(call_entity "Entity" "load" (null) 100)
+		(call_entity "Entity" "load" .null 100)
 		(call_entity
 			"Entity"
 			"copy_entity"
-			(null)
+			.null
 			1000
 			1000
 			100
@@ -255,9 +255,9 @@ Output:
 ```amalgam
 [
 	"hello world"
-	(null)
-	[(null) {} "Execution step limit exceeded"]
-	[(null) {} "Execution step limit exceeded"]
+	.null
+	[.null {} "Execution step limit exceeded"]
+	[.null {} "Execution step limit exceeded"]
 ]
 ```
 
@@ -454,9 +454,9 @@ Output:
 ```amalgam
 [
 	10
-	[10 {} (null)]
-	[(null) {} "Execution step limit exceeded"]
-	[(null) {} "Execution step limit exceeded"]
+	[10 {} .null]
+	[.null {} "Execution step limit exceeded"]
+	[.null {} "Execution step limit exceeded"]
 ]
 ```
 

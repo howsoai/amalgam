@@ -140,10 +140,10 @@ Example:
 			(query_select 2 4 1)
 		)
 		(contained_entities
-			(query_select 4 (null) (rand))
+			(query_select 4 .null (rand))
 		)
 		(contained_entities
-			(query_select 4 (null) (rand))
+			(query_select 4 .null (rand))
 		)
 		(contained_entities
 			(query_not_exists "q")
@@ -203,10 +203,10 @@ Example:
 			(query_sample 2)
 		)
 		(contained_entities
-			(query_sample 1 (null) (rand))
+			(query_sample 1 .null (rand))
 		)
 		(contained_entities
-			(query_sample 1 (null) (null))
+			(query_sample 1 .null .null)
 		)
 		(contained_entities
 			(query_sample 1 "weight")
@@ -218,7 +218,7 @@ Example:
 			(query_sample 5 "weight" (rand))
 		)
 		(contained_entities
-			(query_sample 5 "weight" (null))
+			(query_sample 5 "weight" .null)
 		)
 		(contained_entities
 			(query_not_in_entity_list
@@ -1111,16 +1111,16 @@ Example:
 			(query_generalized_mean "weight" 0 "weight")
 		)
 		(compute_on_contained_entities
-			(query_generalized_mean "a" 1 (null) mean .true .true)
+			(query_generalized_mean "a" 1 .null mean .true .true)
 		)
 		(compute_on_contained_entities
-			(query_generalized_mean "a" 2 (null) mean .true)
+			(query_generalized_mean "a" 2 .null mean .true)
 		)
 		(compute_on_contained_entities
-			(query_generalized_mean "a" 3 (null) mean .false)
+			(query_generalized_mean "a" 3 .null mean .false)
 		)
 		(compute_on_contained_entities
-			(query_generalized_mean "a" 4 (null) mean .true)
+			(query_generalized_mean "a" 4 .null mean .true)
 		)
 	]
 )
@@ -1182,7 +1182,7 @@ Example:
 			(query_min_difference "a")
 		)
 		(compute_on_contained_entities
-			(query_min_difference "a" (null) .true)
+			(query_min_difference "a" .null .true)
 		)
 		(compute_on_contained_entities
 			(query_min_difference "a" 5.5 .false)
@@ -1452,13 +1452,13 @@ Example:
 			["x" "y"]
 			[1 2]
 			2
-			(null)
-			(null)
-			(null)
-			(null)
-			(null)
+			.null
+			.null
+			.null
+			.null
+			.null
 			1
-			(null)
+			.null
 			"random seed 1234"
 		)
 	)
@@ -1518,13 +1518,13 @@ Example:
 				["x" "y"]
 				[1 2]
 				2
-				(null)
-				(null)
-				(null)
-				(null)
-				(null)
+				.null
+				.null
+				.null
+				.null
+				.null
 				1
-				(null)
+				.null
 				"random seed 1234"
 			)
 		)
@@ -1534,13 +1534,13 @@ Example:
 				["x" "y"]
 				[1 2]
 				2
-				(null)
-				(null)
-				(null)
-				(null)
-				(null)
+				.null
+				.null
+				.null
+				.null
+				.null
 				1
-				(null)
+				.null
 				"random seed 1234"
 			)
 		)
@@ -1610,13 +1610,13 @@ Example:
 				[1 2]
 			]
 			2
-			(null)
-			(null)
-			(null)
-			(null)
-			(null)
+			.null
+			.null
+			.null
+			.null
+			.null
 			-1
-			(null)
+			.null
 			"random seed 1234"
 		)
 	)
@@ -1674,15 +1674,15 @@ Example:
 			(query_entity_convictions
 				2
 				["x" "y"]
-				(null)
+				.null
 				2
-				(null)
-				(null)
-				(null)
-				(null)
-				(null)
+				.null
+				.null
+				.null
+				.null
+				.null
 				-1
-				(null)
+				.null
 				"random seed 1234"
 			)
 		)
@@ -1692,11 +1692,11 @@ Example:
 				["x" "y"]
 				["vert0" "vert1" "vert2"]
 				2
-				(null)
-				(null)
-				(null)
-				(null)
-				(null)
+				.null
+				.null
+				.null
+				.null
+				.null
 				-1
 			)
 		)
@@ -1705,15 +1705,15 @@ Example:
 			(query_entity_convictions
 				2
 				["x" "y"]
-				(null)
+				.null
 				2
-				(null)
-				(null)
-				(null)
-				(null)
-				(null)
+				.null
+				.null
+				.null
+				.null
+				.null
 				-1
-				(null)
+				.null
 				"random seed 1234"
 			)
 		)
@@ -1726,13 +1726,13 @@ Example:
 					(query_exists "object")
 				)
 				2
-				(null)
-				(null)
-				(null)
-				(null)
-				(null)
+				.null
+				.null
+				.null
+				.null
+				.null
 				-1
-				(null)
+				.null
 				"random seed 1234"
 			)
 		)
@@ -1821,13 +1821,13 @@ Example:
 				(query_equals "object" 2)
 			)
 			2
-			(null)
-			(null)
-			(null)
-			(null)
-			(null)
+			.null
+			.null
+			.null
+			.null
+			.null
 			-1
-			(null)
+			.null
 			"random seed 1234"
 		)
 	)
@@ -1885,15 +1885,15 @@ Example:
 			(query_entity_distance_contributions
 				2
 				["x" "y"]
-				(null)
+				.null
 				2
-				(null)
-				(null)
-				(null)
-				(null)
-				(null)
+				.null
+				.null
+				.null
+				.null
+				.null
 				-1
-				(null)
+				.null
 				"random seed 1234"
 			)
 		)
@@ -1903,11 +1903,11 @@ Example:
 				["x" "y"]
 				["vert0" "vert1" "vert2"]
 				2
-				(null)
-				(null)
-				(null)
-				(null)
-				(null)
+				.null
+				.null
+				.null
+				.null
+				.null
 				-1
 			)
 		)
@@ -1916,15 +1916,15 @@ Example:
 			(query_entity_distance_contributions
 				2
 				["x" "y"]
-				(null)
+				.null
 				2
-				(null)
-				(null)
-				(null)
-				(null)
-				(null)
+				.null
+				.null
+				.null
+				.null
+				.null
 				-1
-				(null)
+				.null
 				"random seed 1234"
 			)
 		)
@@ -1937,13 +1937,13 @@ Example:
 					(query_exists "object")
 				)
 				2
-				(null)
-				(null)
-				(null)
-				(null)
-				(null)
+				.null
+				.null
+				.null
+				.null
+				.null
 				-1
-				(null)
+				.null
 				"random seed 1234"
 			)
 		)
@@ -2030,15 +2030,15 @@ Example:
 				(query_entity_kl_divergences
 					2
 					["x" "y"]
-					(null)
+					.null
 					2
-					(null)
-					(null)
-					(null)
-					(null)
-					(null)
+					.null
+					.null
+					.null
+					.null
+					.null
 					-1
-					(null)
+					.null
 					"random seed 1234"
 				)
 			]
@@ -2053,13 +2053,13 @@ Example:
 						(query_exists "object")
 					)
 					2
-					(null)
-					(null)
-					(null)
-					(null)
-					(null)
+					.null
+					.null
+					.null
+					.null
+					.null
 					-1
-					(null)
+					.null
 					"random seed 1234"
 				)
 			]
@@ -2147,9 +2147,9 @@ Example:
 			(query_entity_cumulative_nearest_entity_weights
 				2
 				["alpha" "b" "c"]
-				(null)
+				.null
 				0.5
-				(null)
+				.null
 				[0 0 1]
 			)
 		]

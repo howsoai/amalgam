@@ -559,7 +559,7 @@ Example:
 (set_digits
 	1.2345678e+100
 	10
-	[5 (null) 5 (null) 5]
+	[5 .null 5 .null 5]
 	4
 	8
 	.false
@@ -887,7 +887,7 @@ Output:
 ```
 Example:
 ```amalgam
-(max (null) 4 8)
+(max .null 4 8)
 ```
 Output:
 ```amalgam
@@ -895,11 +895,11 @@ Output:
 ```
 Example:
 ```amalgam
-(max (null))
+(max .null)
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 
 [Amalgam Opcodes](./index.md#amalgam-opcodes)
@@ -927,7 +927,7 @@ Output:
 ```
 Example:
 ```amalgam
-(min (null) 4 8)
+(min .null 4 8)
 ```
 Output:
 ```amalgam
@@ -969,7 +969,7 @@ Output:
 ```
 Example:
 ```amalgam
-(index_max (null) 34 -66)
+(index_max .null 34 -66)
 ```
 Output:
 ```amalgam
@@ -977,11 +977,11 @@ Output:
 ```
 Example:
 ```amalgam
-(index_max (null) (null) (null))
+(index_max .null .null .null)
 ```
 Output:
 ```amalgam
-(null)
+.null
 ```
 Example:
 ```amalgam
@@ -1029,7 +1029,7 @@ Output:
 ```
 Example:
 ```amalgam
-(index_min (null) 34 -66)
+(index_min .null 34 -66)
 ```
 Output:
 ```amalgam

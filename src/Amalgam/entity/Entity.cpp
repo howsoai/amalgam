@@ -451,6 +451,18 @@ EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
 	if(code->GetIsIdempotent())
 		return evaluableNodeManager.DeepAllocCopy(code, false);
 
+	if(code->GetIsIdempotent())
+	{
+		if(code == nullptr)
+			return EvaluableNodeReference::Null();
+
+		EvaluableNodeReference retval = evaluableNodeManager.DeepAllocCopy(code, false);
+		if(code->GetType() == ENT_RETURN)
+			retval = RemoveTopConcludeOrReturnNode(retval, &evaluableNodeManager);
+
+		return retval;
+	}
+
 	Interpreter interpreter(&evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
 		write_listeners, print_listener, interpreter_constraints, this, calling_interpreter);
 

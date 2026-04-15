@@ -182,7 +182,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 		return EvaluableNodeReference::Null();
 
 	if(function.GetIsIdempotent())
-		return evaluableNodeManager->DeepAllocCopy(function, false);
+	{
+		if(!function.unique)
+			function = evaluableNodeManager->DeepAllocCopy(function, false);
+		if(function.IsNonNullNodeReference() && function->GetType() == ENT_RETURN)
+			function = RemoveTopConcludeOrReturnNode(function, evaluableNodeManager);
+		return function;
+	}
 
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
@@ -298,7 +304,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 		return EvaluableNodeReference::Null();
 
 	if(function.GetIsIdempotent())
-		return evaluableNodeManager->DeepAllocCopy(function, false);
+	{
+		if(!function.unique)
+			function = evaluableNodeManager->DeepAllocCopy(function, false);
+		if(function.IsNonNullNodeReference() && function->GetType() == ENT_RETURN)
+			function = RemoveTopConcludeOrReturnNode(function, evaluableNodeManager);
+		return function;
+	}
 
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 

@@ -618,22 +618,22 @@ public:
 	#endif
 	}
 
+#ifdef MULTITHREAD_SUPPORT
 	//returns the memory modification mutex for garbage collection, etc.
 	Concurrency::ReadWriteMutex &GetMemoryModificationMutex()
 	{
 		if(activeInterpreters.get() == nullptr)
 		{
-		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::WriteLock write_lock(managerAttributesMutex);
 
 			//double check that it's still nullptr in case another thread created it
 			if(activeInterpreters.get() == nullptr)
-		#endif
 				activeInterpreters = std::make_unique<ActiveInterpreters>();
 		}
 
 		return activeInterpreters->memoryModificationMutex;
 	}
+#endif
 
 	//returns true if any interpreters are operating on the nodes managed by this instance
 	inline bool AreAnyInterpretersRunning()

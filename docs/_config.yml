@@ -17,5 +17,12 @@ enable_copy_code_button: true
 # Search
 search_enabled: true
 
+# Table of contents
+defaults:
+  - scope:
+      path: ""
+    values:
+      toc: true
+
 plugins:
   - jekyll-remote-theme

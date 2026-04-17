@@ -743,11 +743,15 @@ AmalgamExample{ R"&((seq
 				;weights
 				[2.5 10 5 0.033333333 3.333333333 20]
 				
-				;types
-				["nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number"]
-				
 				;attributes
-				[3 100 7 .null 10 .null]
+				[
+					{difference_type "nominal" data_type "number" nominal_count 3}
+					{difference_type "nominal" data_type "number" nominal_count 100}
+					{difference_type "nominal" data_type "number" nominal_count 7}
+					{difference_type "continuous" data_type "number"}
+					{difference_type "nominal" data_type "number" nominal_count 10}
+					{difference_type "continuous" data_type "number"}
+				]
 				
 				;deviations
 				[0.4 0.1 0.2 30 0.3 0.05]
@@ -970,7 +974,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -991,7 +994,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						.null
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1018,7 +1020,6 @@ AmalgamExample{ R"&((seq
 						3
 						.null
 						.null
-						.null
 						[0.25 0.25]
 						.null
 						"surprisal"
@@ -1041,7 +1042,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						.null
 						3
-						.null
 						.null
 						.null
 						[0.25 0.25]
@@ -1070,7 +1070,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1091,7 +1090,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						.null
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1120,7 +1118,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1141,7 +1138,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert0" "vert1" "vert2" "vert3"]
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1170,7 +1166,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						"weight"
 						"fixed_seed"
@@ -1195,7 +1190,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1216,7 +1210,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert1"]
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1246,7 +1239,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1267,7 +1259,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						.null
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1296,7 +1287,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1317,7 +1307,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert0" "vert1" "vert2" "vert3"]
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1346,7 +1335,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						"weight"
 						"fixed_seed"
@@ -1371,7 +1359,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1392,7 +1379,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert1"]
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1428,7 +1414,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1448,7 +1433,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert4"]
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1473,8 +1457,10 @@ AmalgamExample{ R"&((seq
 						.null
 						2
 						.null
-						["continuous_number_cyclic" "continuous_number"]
-						[3.5 .null]
+						[
+							{difference_type "continuous" data_type "number" cycle_range 3.5}
+							{difference_type "continuous" data_type "number"}
+						]
 						.null
 						.null
 						-1
@@ -1497,8 +1483,10 @@ AmalgamExample{ R"&((seq
 						.null
 						2
 						.null
-						["continuous_number_cyclic" "continuous_number"]
-						[3.5 .null]
+						[
+							{difference_type "continuous" data_type "number" cycle_range 3.5}
+							{difference_type "continuous" data_type "number"}
+						]
 						.null
 						.null
 						-1
@@ -1521,8 +1509,10 @@ AmalgamExample{ R"&((seq
 						["vert4"]
 						2
 						.null
-						["continuous_number_cyclic" "continuous_number"]
-						[3.5 .null]
+						[
+							{difference_type "continuous" data_type "number" cycle_range 3.5}
+							{difference_type "continuous" data_type "number"}
+						]
 						.null
 						.null
 						-1

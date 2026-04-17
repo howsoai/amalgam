@@ -100,7 +100,7 @@ public:
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN())
 		{
-			typeAttributes.maxCyclicDifference = std::numeric_limits<double>::quiet_NaN();
+			typeAttributes.cycleRange = std::numeric_limits<double>::quiet_NaN();
 		}
 
 		//returns true if the feature is nominal
@@ -171,7 +171,7 @@ public:
 			double nominalCount;
 
 			//maximum difference value of the feature for cyclic features (NaN if unknown)
-			double maxCyclicDifference;
+			double cycleRange;
 
 			//parameters for code matching
 			struct
@@ -623,7 +623,7 @@ public:
 		}
 
 		if(IsFeatureCyclic(index))
-			return featureAttribs[index].typeAttributes.maxCyclicDifference / 2;
+			return featureAttribs[index].typeAttributes.cycleRange / 2;
 
 		//if not theoretical, then not known
 		if(!theoretical_max_dist)
@@ -776,7 +776,7 @@ public:
 
 		//apply cyclic wrapping
 		if(IsFeatureCyclic(index))
-			diff = ConstrainDifferenceToCyclicDifference(diff, featureAttribs[index].typeAttributes.maxCyclicDifference);
+			diff = ConstrainDifferenceToCyclicDifference(diff, featureAttribs[index].typeAttributes.cycleRange);
 
 		//apply deviations
 		if constexpr(compute_surprisal)

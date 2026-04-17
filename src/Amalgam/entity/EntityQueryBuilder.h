@@ -452,11 +452,11 @@ namespace EntityQueryBuilder
 							}
 							else //treat as GetStringIdFromNodeType(ENT_NUMBER)
 							{
-								auto &cycle_difference = dist_eval.featureAttribs[i].typeAttributes.maxCyclicDifference;
-								cycle_difference = std::numeric_limits<double>::quiet_NaN();
-								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_cycle_range, cycle_difference);
+								auto &cycle_range = dist_eval.featureAttribs[i].typeAttributes.cycleRange;
+								cycle_range = std::numeric_limits<double>::quiet_NaN();
+								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_cycle_range, cycle_range);
 
-								if(FastIsNaN(cycle_difference))
+								if(FastIsNaN(cycle_range))
 									feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 								else
 									feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC;

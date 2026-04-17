@@ -1095,48 +1095,42 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[10 2 4]
 	1
 	.null
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 ))&", R"(2)"},
 			{R"&((generalized_distance
 	[1 2 3]
 	[10 2 10]
 	1
 	.null
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 ))&", R"(8)"},
 			{R"&((generalized_distance
 	[1 2 3]
 	[10 2 10]
 	1
 	.null
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 ))&", R"(8)"},
 			{R"&((generalized_distance
 	[1 2 3]
 	[10 2 4]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 ))&", R"(0.6666)"},
 			{R"&((generalized_distance
 	[1 2 3]
 	[10 2 10]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 ))&", R"(2.6664)"},
 			{R"&((generalized_distance
 	[1 2 3]
 	[10 2 10]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 ))&", R"(2.6664)"},
 			{R"&((generalized_distance
 	[1 2 3]
@@ -1868,7 +1862,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 
 	dist_eval.computeSurprisal = false;
 	if(ocn.size() > 8)
-		dist_eval.computeSurprisal = InterpretNodeIntoBoolValue(ocn[9], false);
+		dist_eval.computeSurprisal = InterpretNodeIntoBoolValue(ocn[8], false);
 
 	//get the origin and destination
 	std::vector<EvaluableNodeImmediateValue> location;

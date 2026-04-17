@@ -407,7 +407,7 @@ namespace EntityQueryBuilder
 						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_data_type, data_type);
 
 						auto feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
-						if(data_type == GetStringIdFromBuiltInStringId(ENBISI_nominal))
+						if(difference_type == GetStringIdFromBuiltInStringId(ENBISI_nominal))
 						{
 							if(data_type == GetStringIdFromNodeType(ENT_BOOL))
 							{

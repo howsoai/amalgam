@@ -54,8 +54,17 @@ jobs:
                 index)
                   echo -e "---\nlayout: home\ntitle: Home\nnav_order: 1\n---\n$(cat $file)" > "$file"
                   ;;
+                beginner_guide)
+                  echo -e "---\nlayout: default\ntitle: Beginner Guide\nnav_order: 2\n---\n$(cat $file)" > "$file"
+                  ;;
+                syntax)
+                  echo -e "---\nlayout: default\ntitle: Syntax\nnav_order: 3\n---\n$(cat $file)" > "$file"
+                  ;;
                 toc)
-                  echo -e "---\nlayout: default\ntitle: Opcodes\nhas_children: true\nnav_order: 2\n---\n$(cat $file)" > "$file"
+                  echo -e "---\nlayout: default\ntitle: Opcodes\nhas_children: true\nnav_order: 4\n---\n$(cat $file)" > "$file"
+                  ;;
+                distance_and_surprisal)
+                  echo -e "---\nlayout: default\ntitle: Distance and Surprisal\nnav_order: 5\n---\n$(cat $file)" > "$file"
                   ;;
                 *)
                   title=$(echo "$filename" | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2); print}')

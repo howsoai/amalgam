@@ -42,8 +42,8 @@ jobs:
       - name: Generate docs
         run: |
           cd ./docs
-          # Remove all existing
-          rm *.md
+          # Remove all generated docs (preserve static files like beginner_guide.md)
+          rm $(ls *.md | grep -v beginner_guide.md)
           # Regenerate
           ../amalgam-st ../build/docs/build_doc_files.amlg
           # Clean up

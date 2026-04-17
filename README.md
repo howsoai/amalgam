@@ -31,7 +31,7 @@ When referencing the language: 'Amalgam', 'amalgam', 'amalgam-lang', and 'amalga
 
 ### Programming in Amalgam
 
-See the [Amalgam beginner's guide](AMALGAM-BEGINNER-GUIDE.md) to get started.
+See the [Amalgam beginner's guide](docs/beginner_guide.md) to get started.
 
 Full Amalgam language usage documentation is located in the [Amalgam Language Reference](https://howsoai.github.io/amalgam).
 

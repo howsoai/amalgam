@@ -20,7 +20,7 @@ Output:
 10
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `-`
 #### Parameters
@@ -52,7 +52,7 @@ Output:
 -3
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `*`
 #### Parameters
@@ -76,7 +76,7 @@ Output:
 24
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `/`
 #### Parameters
@@ -100,7 +100,7 @@ Output:
 0.041666666666666664
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `mod`
 #### Parameters
@@ -132,7 +132,7 @@ Output:
 2
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `get_digits`
 #### Parameters
@@ -370,7 +370,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `set_digits`
 #### Parameters
@@ -634,7 +634,7 @@ Output:
 [1 0 1 0]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `floor`
 #### Parameters
@@ -658,7 +658,7 @@ Output:
 1
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `ceil`
 #### Parameters
@@ -682,7 +682,7 @@ Output:
 2
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `round`
 #### Parameters
@@ -838,7 +838,7 @@ Output:
 0.3
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `abs`
 #### Parameters
@@ -862,7 +862,7 @@ Output:
 0.5
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `max`
 #### Parameters
@@ -902,7 +902,7 @@ Output:
 .null
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `min`
 #### Parameters
@@ -934,7 +934,7 @@ Output:
 4
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `index_max`
 #### Parameters
@@ -994,7 +994,7 @@ Output:
 ["tomato"]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `index_min`
 #### Parameters
@@ -1046,5 +1046,5 @@ Output:
 [1]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 

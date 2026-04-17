@@ -35,7 +35,7 @@ Output:
 }
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `print`
 #### Parameters
@@ -73,7 +73,7 @@ Output:
 .null
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `system_time`
 #### Parameters
@@ -97,7 +97,7 @@ Output:
 1773855306.4474
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `system`
 #### Parameters
@@ -139,7 +139,7 @@ Output:
 [.false .false]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `reclaim_resources`
 #### Parameters
@@ -171,5 +171,5 @@ Output:
 .null
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 

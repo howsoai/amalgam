@@ -27,7 +27,7 @@ Output:
 "annotation line 1\r\nannotation line 2"
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `set_annotations`
 #### Parameters
@@ -63,7 +63,7 @@ Output:
 "#[\"labelD\" \"labelE\"]\r\n.true\r\n"
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `get_comments`
 #### Parameters
@@ -94,7 +94,7 @@ Output:
 "comment line 1\r\ncomment line 2"
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `set_comments`
 #### Parameters
@@ -130,7 +130,7 @@ Output:
 "#[\"labelD\" \"labelE\"]\r\n.true\r\n"
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `get_concurrency`
 #### Parameters
@@ -185,7 +185,7 @@ Output:
 .true
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `set_concurrency`
 #### Parameters
@@ -241,7 +241,7 @@ Output:
 ";complex test\r\n#some annotation\r\n||{a \"hello\" b 4}\r\n"
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `get_value`
 #### Parameters
@@ -276,7 +276,7 @@ Output:
 .true
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `set_value`
 #### Parameters
@@ -310,7 +310,7 @@ Output:
 3
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `get_entity_annotations`
 #### Parameters
@@ -428,7 +428,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `get_entity_comments`
 #### Parameters
@@ -546,5 +546,5 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 

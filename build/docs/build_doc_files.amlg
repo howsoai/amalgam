@@ -40,7 +40,7 @@
 	
 	(assign "current_opcode_group" "")
 
-	(store "./toc.md" (concat
+	(store "./opcodes.md" (concat
 		"## Opcodes\n"
 		(apply "concat"
 			(map
@@ -122,7 +122,7 @@
 								)
 
 								"\n"
-								"[Amalgam Opcodes](./index.md#amalgam-opcodes)\n\n"
+								"[Amalgam Opcodes](./opcodes.md)\n\n"
 							)
 						)
 					)

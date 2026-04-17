@@ -1181,6 +1181,8 @@ public:
 				value = EvaluableNode::ToNumber(found_value->second);
 			else if constexpr(std::is_same<T, std::string>::value)
 				value = EvaluableNode::ToString(found_value->second);
+			else if constexpr(std::is_same<T, StringInternPool::StringID>::value)
+				value = EvaluableNode::ToStringIDIfExists(found_value->second);
 			else
 				value = found_value->second;
 		}

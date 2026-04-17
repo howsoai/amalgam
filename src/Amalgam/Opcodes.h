@@ -383,14 +383,12 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_system,
 
 	//distance types
-	ENBISI_nominal_bool,
-	ENBISI_nominal_number,
-	ENBISI_nominal_string,
-	ENBISI_nominal_code,
-	ENBISI_continuous_number,
-	ENBISI_continuous_number_cyclic,
-	ENBISI_continuous_string,
-	ENBISI_continuous_code,
+	ENBISI_nominal,
+	ENBISI_continuous,
+	ENBISI_difference_type,
+	ENBISI_data_type,
+	ENBISI_nominal_count,
+	ENBISI_cycle_range,
 
 	//distance parameter values
 	ENBISI_surprisal,

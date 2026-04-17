@@ -23,7 +23,6 @@ namespace EntityQueryBuilder
 		//optional params
 		MINKOWSKI_PARAMETER,
 		WEIGHTS,
-		DISTANCE_TYPES,
 		ATTRIBUTES,
 		DEVIATIONS,
 		WEIGHTS_SELECTION_FEATURE,
@@ -316,7 +315,7 @@ namespace EntityQueryBuilder
 	inline void PopulateDistanceFeatureParameters(GeneralizedDistanceEvaluator &dist_eval,
 		size_t num_elements, std::vector<StringInternPool::StringID> &element_names,
 		EvaluableNode *weights_node, EvaluableNode *weights_selection_features,
-		EvaluableNode *distance_types_node, EvaluableNode *attributes_node, EvaluableNode *deviations_node)
+		EvaluableNode *attributes_node, EvaluableNode *deviations_node)
 	{
 		dist_eval.featureAttribs.resize(num_elements);
 
@@ -387,81 +386,92 @@ namespace EntityQueryBuilder
 			});
 		}
 
-		//get type
-		EvaluableNode::ConvertChildNodesAndStoreValue(distance_types_node, element_names, num_elements,
-			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
-				if(i < dist_eval.featureAttribs.size())
-				{
-					auto feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
-					if(found)
-					{
-						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
-						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_bool))
-							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_number))
-							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_string))
-							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_code))
-							feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number))
-							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number_cyclic))
-							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_string))
-							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code))
-							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;
-						else
-							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
-					}
-					dist_eval.featureAttribs[i].featureType = feature_type;
-				}
-			});
-
 		//get attributes
 		EvaluableNode::ConvertChildNodesAndStoreValue(attributes_node, element_names, num_elements,
 			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_eval.featureAttribs.size())
 				{
-					//get attributes based on feature type
-					switch(dist_eval.featureAttribs[i].featureType)
+					if(!found)
 					{
-					case GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL:
-					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER:
-					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
-					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
-						if(found && !EvaluableNode::IsNull(en))
-							dist_eval.featureAttribs[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en);
-						break;
-
-					case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC:
-						if(found && !EvaluableNode::IsNull(en))
-							dist_eval.featureAttribs[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(en);
-						else //can't be cyclic without a range
-							dist_eval.featureAttribs[i].featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
-						break;
-
-					case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE:
-					{
-						auto &attribs = dist_eval.featureAttribs[i].typeAttributes.code;
-						attribs.typesMustMatch = true;
-						attribs.nominalNumbers = false;
-						attribs.nominalStrings = true;
-						attribs.recursiveMatching = true;
-						if(found && EvaluableNode::IsAssociativeArray(en))
-						{
-							auto &mcn = en->GetMappedChildNodesReference();
-							EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, attribs.typesMustMatch);
-							EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, attribs.nominalNumbers);
-							EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, attribs.nominalStrings);
-							EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, attribs.recursiveMatching);
-						}
-						break;
+						dist_eval.featureAttribs[i].featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
+						return;
 					}
 
-					default:
-						break;
+					if(EvaluableNode::IsAssociativeArray(en))
+					{
+						auto &mcn = en->GetMappedChildNodesReference();
+
+						StringInternPool::StringID difference_type;
+						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_difference_type, difference_type);
+						StringInternPool::StringID data_type;
+						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_data_type, data_type);
+
+						auto feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
+						if(data_type == GetStringIdFromBuiltInStringId(ENBISI_nominal))
+						{
+							if(data_type == GetStringIdFromNodeType(ENT_BOOL))
+							{
+								feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL;
+							}
+							else if(data_type == GetStringIdFromNodeType(ENT_NUMBER))
+							{
+								feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER;
+							}
+							else if(data_type == GetStringIdFromBuiltInStringId(ENBISI_code))
+							{
+								feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;
+							}
+							else //treat as GetStringIdFromNodeType(ENT_STRING)
+							{
+								feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
+							}
+
+							auto &nominal_count = dist_eval.featureAttribs[i].typeAttributes.nominalCount;
+							nominal_count = std::numeric_limits<double>::quiet_NaN();
+							EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_count, nominal_count);
+						}
+						else //ENBISI_continuous
+						{
+							if(data_type == GetStringIdFromNodeType(ENT_STRING))
+							{
+								feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;
+							}
+							else if(data_type == GetStringIdFromBuiltInStringId(ENBISI_code))
+							{
+								auto &attribs = dist_eval.featureAttribs[i].typeAttributes.code;
+								attribs.typesMustMatch = true;
+								attribs.nominalNumbers = false;
+								attribs.nominalStrings = true;
+								attribs.recursiveMatching = true;
+								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, attribs.typesMustMatch);
+								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, attribs.nominalNumbers);
+								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, attribs.nominalStrings);
+								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, attribs.recursiveMatching);
+
+								feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;
+							}
+							else //treat as GetStringIdFromNodeType(ENT_NUMBER)
+							{
+								auto &cycle_difference = dist_eval.featureAttribs[i].typeAttributes.maxCyclicDifference;
+								cycle_difference = std::numeric_limits<double>::quiet_NaN();
+								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_cycle_range, cycle_difference);
+
+								if(FastIsNaN(cycle_difference))
+									feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
+								else
+									feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC;
+							}
+						}
+
+						dist_eval.featureAttribs[i].featureType = feature_type;
+					}
+					else //not an assoc, just assume string for type
+					{
+						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
+						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal))
+							dist_eval.featureAttribs[i].featureType = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
+						else
+							dist_eval.featureAttribs[i].featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 					}
 				}
 			});
@@ -708,10 +718,6 @@ namespace EntityQueryBuilder
 		if(ocn.size() > WEIGHTS)
 			weights_node = ocn[WEIGHTS];
 
-		EvaluableNode *distance_types_node = nullptr;
-		if(ocn.size() > DISTANCE_TYPES)
-			distance_types_node = ocn[DISTANCE_TYPES];
-
 		EvaluableNode *attributes_node = nullptr;
 		if(ocn.size() > ATTRIBUTES)
 			attributes_node = ocn[ATTRIBUTES];
@@ -754,7 +760,7 @@ namespace EntityQueryBuilder
 
 		PopulateDistanceFeatureParameters(cur_condition->distEvaluator,
 			cur_condition->positionLabels.size(), cur_condition->positionLabels,
-			weights_node, weights_selection_features_node, distance_types_node, attributes_node, deviations_node);
+			weights_node, weights_selection_features_node, attributes_node, deviations_node);
 
 		cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
 		if(ocn.size() > ENTITY_WEIGHT_LABEL_NAME)

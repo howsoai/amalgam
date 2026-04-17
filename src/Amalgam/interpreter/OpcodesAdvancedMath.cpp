@@ -985,7 +985,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 
 static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|assoc|* vector1 [list|assoc|* vector2] [number p_value] [list|assoc|assoc of assoc|number weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc|number deviations] [list value_names] [list|string weights_selection_features] [bool surprisal_space])";
+	d.parameters = R"(list|assoc|* vector1 [list|assoc|* vector2] [number p_value] [list|assoc|assoc of assoc|number weights] [list|assoc attributes] [list|assoc|number deviations] [list value_names] [list|string weights_selection_features] [bool surprisal_space])";
 	d.returns = R"(number)";
 	d.description = R"(Computes the generalized norm between `vector1` and `vector2` (or an equivalent zero vector if unspecified) using the numerical distance or edit distance as appropriate.  The parameter `value_names`, if specified as a list of the names of the values, will transform via unzipping any assoc into a list for the respective parameter in the order of the `value_names`, or if a number will use the number repeatedly for every element.  If any vector value is null or any of the differences between `vector1` and `vector2` evaluate to null, then it will compute a corresponding maximum distance value based on the properties of the feature.  If `surprisal_space` is true, which defaults to false, it will perform all computations in surprisal space.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.)";
 	d.examples = MakeAmalgamExamples({
@@ -1819,38 +1819,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 			node_stack.PushEvaluableNode(weights_node);
 	}
 
-	//get distance types if applicable
-	EvaluableNodeReference distance_types_node;
-	if(ocn.size() > 4)
-	{
-		distance_types_node = InterpretNodeForImmediateUse(ocn[4]);
-		if(distance_types_node != nullptr)
-			node_stack.PushEvaluableNode(distance_types_node);
-	}
-
 	//get feature attributes if applicable
 	EvaluableNodeReference attributes_node;
-	if(ocn.size() > 5)
+	if(ocn.size() > 4)
 	{
-		attributes_node = InterpretNodeForImmediateUse(ocn[5]);
+		attributes_node = InterpretNodeForImmediateUse(ocn[4]);
 		if(attributes_node != nullptr)
 			node_stack.PushEvaluableNode(attributes_node);
 	}
 
 	//get deviations if applicable
 	EvaluableNodeReference deviations_node;
-	if(ocn.size() > 6)
+	if(ocn.size() > 5)
 	{
-		deviations_node = InterpretNodeForImmediateUse(ocn[6]);
+		deviations_node = InterpretNodeForImmediateUse(ocn[5]);
 		if(deviations_node != nullptr)
 			node_stack.PushEvaluableNode(deviations_node);
 	}
 
 	//get value_names if applicable
 	std::vector<StringInternPool::StringID> value_names;
-	if(ocn.size() > 7)
+	if(ocn.size() > 6)
 	{
-		EvaluableNodeReference value_names_node = InterpretNodeForImmediateUse(ocn[7]);
+		EvaluableNodeReference value_names_node = InterpretNodeForImmediateUse(ocn[6]);
 		if(!EvaluableNode::IsNull(value_names_node))
 		{
 			//extract the names for each value into value_names
@@ -1868,15 +1859,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	}
 
 	EvaluableNodeReference weights_selection_features_node = EvaluableNodeReference::Null();
-	if(ocn.size() > 8)
+	if(ocn.size() > 7)
 	{
-		weights_selection_features_node = InterpretNodeForImmediateUse(ocn[8]);
+		weights_selection_features_node = InterpretNodeForImmediateUse(ocn[7]);
 		if(weights_selection_features_node != nullptr)
 			node_stack.PushEvaluableNode(weights_selection_features_node);
 	}
 
 	dist_eval.computeSurprisal = false;
-	if(ocn.size() > 9)
+	if(ocn.size() > 8)
 		dist_eval.computeSurprisal = InterpretNodeIntoBoolValue(ocn[9], false);
 
 	//get the origin and destination
@@ -1896,11 +1887,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	origin_types.resize(num_elements, ENIVT_NUMBER);
 
 	EntityQueryBuilder::PopulateDistanceFeatureParameters(dist_eval, num_elements, value_names,
-		weights_node, weights_selection_features_node, distance_types_node, attributes_node, deviations_node);
+		weights_node, weights_selection_features_node, attributes_node, deviations_node);
 
 	//done with all values
 	evaluableNodeManager->FreeNodeTreeIfPossible(weights_node);
-	evaluableNodeManager->FreeNodeTreeIfPossible(distance_types_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(attributes_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(deviations_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(weights_selection_features_node);

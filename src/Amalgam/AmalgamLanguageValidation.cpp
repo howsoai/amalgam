@@ -2633,33 +2633,37 @@ AmalgamExample{ R"&((seq
 					"CyclicTestEntity"
 					[
 						(query_nearest_generalized_distance
+							;k
 							3
 							
-							; K
+							;features
 							["deg"]
+
+							;values
 							[350]
+
+							;weights
 							1
 							
 							; p
 							.null
 							
-							; weights
-							["continuous_number_cyclic"]
-							
-							; types
-							[360]
-							
 							; attributes
-							.null
+							[{difference_type "continuous" data_type "number" cycle_range 360}]
 							
 							; deviations
 							.null
+
+							;weights selection
+							.null
+
+							;distance transform
 							-1
 							
-							; dwe
+							;weight label
 							.null
 							
-							; weight
+							;rand seed
 							(rand)
 						)
 					]

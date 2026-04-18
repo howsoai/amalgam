@@ -423,8 +423,6 @@ AmalgamExample{ R"&((seq
 			[
 				(query_nearest_generalized_distance
 					3
-					
-					;k-value
 					["A" "B"]
 					[9 2]
 					2
@@ -438,8 +436,6 @@ AmalgamExample{ R"&((seq
 			[
 				(query_nearest_generalized_distance
 					2
-					
-					;k-value
 					["A" "B"]
 					[9 2]
 					2
@@ -453,8 +449,6 @@ AmalgamExample{ R"&((seq
 			[
 				(query_nearest_generalized_distance
 					1
-					
-					;k-value
 					["A" "B"]
 					[9 2]
 					2
@@ -467,27 +461,22 @@ AmalgamExample{ R"&((seq
 			"nan_queries"
 			[
 				(query_nearest_generalized_distance
-					3
-					
 					;k-value
+					3
+					;features
 					["A" "B"]
-					
-					;labels
-					[9 2]
-					
 					;values
-					2
-					
+					[9 2]
 					;p-value
-					.null
-					
+					2
 					;weights
-					["continuous_number" "continuous_number"]
-					
-					;distance types
 					.null
-					
 					;attributes
+					[
+						{difference_type "continuous" data_type "number"}
+						{difference_type "continuous" data_type "number"}
+					]										
+					;deviations
 					[
 						[0 5 6]
 						[0 5 5]
@@ -505,27 +494,22 @@ AmalgamExample{ R"&((seq
 			"nan_queries"
 			[
 				(query_nearest_generalized_distance
-					3
-					
 					;k-value
+					3
+					;features
 					["A" "B"]
-					
-					;labels
-					[.null .null]
-					
 					;values
-					2
-					
+					[.null .null]
 					;p-value
-					.null
-					
+					2
 					;weights
-					["continuous_number" "continuous_number"]
-					
-					;distance types
 					.null
-					
 					;attributes
+					[
+						{difference_type "continuous" data_type "number"}
+						{difference_type "continuous" data_type "number"}
+					]										
+					;deviations
 					[
 						[0 1 0]
 						[0 1 0]

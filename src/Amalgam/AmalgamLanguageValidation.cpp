@@ -567,66 +567,62 @@ AmalgamExample{ R"&((seq
 ])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((generalized_distance
 	[1 2 1 100 1 50]
-	[1 1 1 120 1 50.1]
-	
+	[1 1 1 120 1 50.1]	
 	;p
 	0.5
-	
 	;weights
 	[2.5 10 5 0.033333333 3.333333333 20]
-	
-	;types
-	["nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number"]
-	
 	;attributes
-	[3 100 7 .null 10 .null]
-	
+	[
+		{difference_type "nominal" data_type "number" nominal_count 3}
+		{difference_type "nominal" data_type "number" nominal_count 100}
+		{difference_type "nominal" data_type "number" nominal_count 7}
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 10}
+		{difference_type "continuous" data_type "number"}
+	]
 	;deviations
 	[0.4 0.1 0.2 30 0.3 0.05]
 ))&", R"(1036.1581794564518)" },
 AmalgamExample{ R"&((generalized_distance
-	
 	;point 1
 	[1 2 1 100 1 50]
-	
 	;point 2
 	[1 1 1 120 1 50.1]
-	
 	;p
 	1
-	
 	;weights
 	[2.5 10 5 0.033333333 3.333333333 20]
-	
-	;types
-	["nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number"]
-	
 	;attributes
-	[3 100 7 .null 10 .null]
-	
+	[
+		{difference_type "nominal" data_type "number" nominal_count 3}
+		{difference_type "nominal" data_type "number" nominal_count 100}
+		{difference_type "nominal" data_type "number" nominal_count 7}
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 10}
+		{difference_type "continuous" data_type "number"}
+	]
 	;deviations
 	[0.4 0.1 0.2 30 0.3 0.05]
 ))&", R"(24.769501899470985)" },
 AmalgamExample{ R"&((generalized_distance
-	
 	;point 1
 	[1 2 1 100 1 50]
-	
 	;point 2
 	[1 1 1 120 1 50.1]
-	
 	;p
 	0
-	
 	;weights
 	[2.5 10 5 0.033333333 3.333333333 20]
-	
-	;types
-	["nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number"]
-	
 	;attributes
-	[3 100 7 .null 10 .null]
-	
+	[
+		{difference_type "nominal" data_type "number" nominal_count 3}
+		{difference_type "nominal" data_type "number" nominal_count 100}
+		{difference_type "nominal" data_type "number" nominal_count 7}
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 10}
+		{difference_type "continuous" data_type "number"}
+	]
 	;deviations
 	[0.4 0.1 0.2 30 0.3 0.05]
 ))&", R"(4.3464184709105573e-45)" },

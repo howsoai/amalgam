@@ -29,7 +29,7 @@ Examples:
 >     ;Amalgam
 >     (print "hello world")
 ````
-For a list of all operations, see the [Amalgam Language Reference](https://howsoai.github.io/amalgam).
+For a list of all operations, see the [Amalgam Opcodes Reference](./opcodes.md).
 
 
 # Scripting

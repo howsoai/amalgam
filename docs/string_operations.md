@@ -72,7 +72,7 @@ Output:
 ["abcd" "efgh" "i"]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `split`
 #### Parameters
@@ -168,7 +168,7 @@ Output:
 ["abc de fghij"]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `substr`
 #### Parameters
@@ -420,7 +420,7 @@ Output:
 "axdefgijk"
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `concat`
 #### Parameters
@@ -444,7 +444,7 @@ Output:
 "hello world"
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `parse`
 #### Parameters
@@ -536,7 +536,7 @@ Output:
 (apply "not_an_opcode")
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `unparse`
 #### Parameters
@@ -584,5 +584,5 @@ Output:
 "{\r\n\ta 1\r\n\tb 2\r\n\tc [\"alpha\" \"beta\" \"gamma\"]\r\n}\r\n"
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 

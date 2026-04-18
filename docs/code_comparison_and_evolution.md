@@ -28,7 +28,7 @@ Output:
 10
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `mutate`
 #### Parameters
@@ -134,7 +134,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `get_mutation_defaults`
 #### Parameters
@@ -165,7 +165,7 @@ Output:
 }
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `commonality`
 #### Parameters
@@ -369,7 +369,7 @@ Output:
 3.5
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `edit_distance`
 #### Parameters
@@ -508,7 +508,7 @@ Output:
 1
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `intersect`
 #### Parameters
@@ -739,7 +739,7 @@ Output:
 []
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `union`
 #### Parameters
@@ -1022,7 +1022,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `difference`
 #### Parameters
@@ -1444,7 +1444,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `mix`
 #### Parameters
@@ -1883,5 +1883,5 @@ Output:
 }
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 

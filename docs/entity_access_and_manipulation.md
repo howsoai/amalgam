@@ -29,7 +29,7 @@ Output:
 [.true .false]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `assign_to_entities`
 #### Parameters
@@ -70,7 +70,7 @@ Output:
 }
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `accum_to_entities`
 #### Parameters
@@ -106,7 +106,7 @@ Output:
 {a 3 b 5 c 7}
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `remove_from_entities`
 #### Parameters
@@ -147,7 +147,7 @@ Output:
 {d 4}
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `retrieve_from_entity`
 #### Parameters
@@ -194,7 +194,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `call_entity`
 #### Parameters
@@ -261,7 +261,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `call_entity_get_changes`
 #### Parameters
@@ -337,7 +337,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `call_on_entity`
 #### Parameters
@@ -374,7 +374,7 @@ Output:
 [1 2 3]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `call_container`
 #### Parameters
@@ -460,5 +460,5 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 

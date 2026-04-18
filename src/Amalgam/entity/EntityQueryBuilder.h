@@ -401,9 +401,9 @@ namespace EntityQueryBuilder
 					{
 						auto &mcn = en->GetMappedChildNodesReference();
 
-						StringInternPool::StringID difference_type;
+						StringInternPool::StringID difference_type = string_intern_pool.NOT_A_STRING_ID;
 						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_difference_type, difference_type);
-						StringInternPool::StringID data_type;
+						StringInternPool::StringID data_type = string_intern_pool.NOT_A_STRING_ID;
 						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_data_type, data_type);
 
 						auto feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;

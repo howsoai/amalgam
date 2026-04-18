@@ -1351,24 +1351,17 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	.true
 ))&", R"(2.197224577336219)"},
 			{R"&((generalized_distance
+	;vector1
 	["b"]
-	
-	;vector 1
+	;vector2
 	["c"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1 1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
 		{
 			a {a 0.00744879 b 0.996275605 c 0.996275605}
@@ -1376,35 +1369,25 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 			c {a 0.996539792 b 0.996539792 c 0.006920415}
 		}
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 ))&", R"(4.966335099422683)"},
 			{R"&((generalized_distance
+	;vector1
 	["b"]
-	
-	;vector 1
+	;vector2
 	["a"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1 1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
 		{
 			a {a 0.00744879 b 0.996275605 c 0.996275605}
@@ -1412,37 +1395,27 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 			c {a 0.996539792 b 0.996539792 c 0.006920415}
 		}
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 ))&", R"(0)"},
 			{R"&((generalized_distance
+	;vector1
 	["b"]
-	
-	;vector 1
+	;vector2
 	["q"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1 1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
-		{
+{
 			a {a 0.00744879 b 0.996275605 c 0.996275605}
 			b [
 					{a 0.501736111 b 0.501736111 c 0.996527778}
@@ -1451,65 +1424,45 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 			c {a 0.996539792 b 0.996539792 c 0.006920415}
 		}
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 ))&", R"(0.9128124677208268)"},
 			{R"&((generalized_distance
+	;vector1
 	["q"]
-	
-	;vector 1
+	;vector2
 	["u"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[2 2]
-	
+	[1 1]
 	;attributes
-	[0.2]
-	
+	[{difference_type "nominal" data_type "string" nominal_count 2}]
 	;deviations
+	[ 0.2 ]
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 ))&", R"(1.3862943611198906)"},
 			{R"&((generalized_distance
+	;vector1
 	["q"]
-	
-	;vector 1
+	;vector2
 	["u"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1 1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
 		[
 			{
@@ -1523,35 +1476,25 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 			0.2
 		]
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 ))&", R"(1.3862943611198906)"},
 			{R"&((generalized_distance
+	;vector1
 	["q"]
-	
-	;vector 1
+	;vector2
 	["u"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1 1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
 		[
 			[
@@ -1568,14 +1511,11 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 			0.2
 		]
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 ))&", R"(1.3862943611198906)"},
 			{R"&((generalized_distance

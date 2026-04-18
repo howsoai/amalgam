@@ -1358,7 +1358,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	;p
 	1
 	;weights
-	[1 1]
+	[1]
 	;attributes
 	[{difference_type "nominal" data_type "string" nominal_count 4}]
 	;deviations
@@ -1384,7 +1384,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	;p
 	1
 	;weights
-	[1 1]
+	[1]
 	;attributes
 	[{difference_type "nominal" data_type "string" nominal_count 4}]
 	;deviations
@@ -1410,7 +1410,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	;p
 	1
 	;weights
-	[1 1]
+	[1]
 	;attributes
 	[{difference_type "nominal" data_type "string" nominal_count 4}]
 	;deviations
@@ -1439,7 +1439,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	;p
 	1
 	;weights
-	[1 1]
+	[1]
 	;attributes
 	[{difference_type "nominal" data_type "string" nominal_count 2}]
 	;deviations
@@ -1459,7 +1459,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	;p
 	1
 	;weights
-	[1 1]
+	[1]
 	;attributes
 	[{difference_type "nominal" data_type "string" nominal_count 4}]
 	;deviations
@@ -1491,7 +1491,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	;p
 	1
 	;weights
-	[1 1]
+	[1]
 	;attributes
 	[{difference_type "nominal" data_type "string" nominal_count 4}]
 	;deviations

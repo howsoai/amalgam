@@ -1310,12 +1310,12 @@ protected:
 		}
 
 		AnnotationsAndComments() = default;
-		AnnotationsAndComments(std::string_view annotation, std::string_view comment)
+		__forceinline AnnotationsAndComments(std::string_view annotation, std::string_view comment)
 		{
 			SetAnnotationsAndComments(annotation, comment);
 		}
 
-		void Clear()
+		__forceinline void Clear()
 		{
 			buffer.reset();
 		}
@@ -1385,18 +1385,18 @@ protected:
 		}
 
 		//replace only the annotations
-		void SetAnnotations(std::string_view new_annotations)
+		__forceinline void SetAnnotations(std::string_view new_annotations)
 		{
 			SetAnnotationsAndComments(new_annotations, GetComments());
 		}
 
 		//replace only the comments
-		void SetComments(std::string_view new_comments)
+		__forceinline void SetComments(std::string_view new_comments)
 		{
 			SetAnnotationsAndComments(GetAnnotations(), new_comments);
 		}
 
-		inline bool HasAnnotations()
+		__forceinline bool HasAnnotations()
 		{
 			return buffer && buffer[0] != '\0';
 		}

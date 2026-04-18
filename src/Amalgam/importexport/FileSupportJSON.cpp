@@ -328,7 +328,7 @@ std::pair<std::string, bool> EvaluableNodeJSONTranslation::EvaluableNodeToJson(E
 {
 	if(code == nullptr)
 	{
-		std::string s = Parser::UnparseToKeyString(nullptr);
+		std::string s = "null";
 		return std::make_pair(s, true);
 	}
 

@@ -1607,25 +1607,23 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[{difference_type "continuous" data_type "code" nominal_strings .false types_must_match .false}]
 ))&", R"(3.697640774259515)"},
 			{R"&((generalized_distance
+	;vector1
 	{
 		A1 1
 		A2 1
 		A3 1
 		B 1
 	}
-	
-	;vector 1
+	;vector2
 	{
 		A1 2
 		A2 2
 		A3 2
 		B 2
 	}
-	
-	;vector 2
-	1
-	
 	;p
+	1
+	;weights
 	{
 		A1 {
 				A1 0
@@ -1663,23 +1661,15 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 				sum 0
 			}
 	}
-	
-	;weights
-	["continuous_number"]
-	
-	;types
-	.null
-	
 	;attributes
-	0.5
-	
+	[{difference_type "continuous" data_type "number"}]
 	;deviations
+	0.5
+	;value_names
 	["A2" "A3"]
-	
-	;names
+	;weights_selection_features
 	["sum" "A1" "B"]
-	
-	;weights_selection_feature
+	;surprisal_space
 	.true
 ))&", R"(0.8383382080915318)"}
 		});

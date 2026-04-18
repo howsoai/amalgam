@@ -327,10 +327,7 @@ EvaluableNode *EvaluableNodeJSONTranslation::JsonToEvaluableNode(EvaluableNodeMa
 std::pair<std::string, bool> EvaluableNodeJSONTranslation::EvaluableNodeToJson(EvaluableNode *code, bool sort_keys)
 {
 	if(code == nullptr)
-	{
-		std::string s = "null";
-		return std::make_pair(s, true);
-	}
+		return std::make_pair("null", true);
 
 	//if need cycle check, double-check
 	if(!EvaluableNode::CanNodeTreeBeFlattened(code))

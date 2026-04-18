@@ -794,36 +794,36 @@ AmalgamExample{ R"&((seq
 			"DistanceSymmetryContainer"
 			[
 				(query_nearest_generalized_distance
+					;k
 					8
-					
-					; k
+					;features
 					["A" "B"]
+					;values
 					[4 9]
+					;p
 					0.1
-					
-					; p_parameter
+					;weights
 					.null
-					
-					; context_weights
-					["nominal_number" "nominal_number"]
-					
-					; types
-					[1 1]
-					
-					; attributes
+					;attributes
+					[
+						{difference_type "nominal" data_type "number" nominal_count 1}
+						{difference_type "nominal" data_type "number" nominal_count 1}
+					]
+					;deviations
 					.null
-					
-					; context_deviations
+					;weight selection features
 					.null
+					;dist transform
 					1
-					
-					; dwe = 1 means return computed distance to each case
+					;weight label
 					.null
-					
-					; weight
+					;rand seed
 					(rand)
+					;radius
 					.null
+					;precision
 					"precise"
+					;output sorted
 					.true
 				)
 			]
@@ -832,36 +832,36 @@ AmalgamExample{ R"&((seq
 			"DistanceSymmetryContainer"
 			[
 				(query_nearest_generalized_distance
+					;k
 					8
-					
-					; k
+					;features
 					["B" "A"]
+					;values
 					[9 4]
+					;p
 					0.1
-					
-					; p_parameter
+					;weights
 					.null
-					
-					; context_weights
-					["nominal_number" "nominal_number"]
-					
-					; types
-					[1 1]
-					
-					; attributes
+					;attributes
+					[
+						{difference_type "nominal" data_type "number" nominal_count 1}
+						{difference_type "nominal" data_type "number" nominal_count 1}
+					]
+					;deviations
 					.null
-					
-					; context_deviations
+					;weight selection features
 					.null
+					;dist transform
 					1
-					
-					; dwe = 1 means return computed distance to each case
+					;weight label
 					.null
-					
-					; weight
+					;rand seed
 					(rand)
+					;radius
 					.null
+					;precision
 					"precise"
+					;output sorted
 					.true
 				)
 			]
@@ -1572,36 +1572,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						4
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal_to_prob"
-						
-						; distance transform
+						;weight label
 						.null
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1616,36 +1613,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						4
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal"
-						
-						; distance transform
+						;weight label
 						.null
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1660,36 +1654,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						4
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal_to_prob"
-						
-						; distance transform
+						;weight label
 						"weight"
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1704,36 +1695,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						4
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal"
-						
-						; distance transform
+						;weight label
 						"weight"
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1747,36 +1735,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						[0.01 1 20]
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal_to_prob"
-						
-						; distance transform
+						;weight label
 						.null
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1790,36 +1775,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						[0.01 1 20]
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal"
-						
-						; distance transform
+						;weight label
 						.null
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1833,36 +1815,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						[0.01 1 20 1]
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal"
-						
-						; distance transform
+						;weight label
 						.null
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1880,7 +1859,6 @@ AmalgamExample{ R"&((seq
 							[0]
 						]
 						1
-						.null
 						.null
 						.null
 						[0.25]
@@ -1908,7 +1886,6 @@ AmalgamExample{ R"&((seq
 						1
 						.null
 						.null
-						.null
 						[0.25]
 						.null
 						"surprisal"
@@ -1932,7 +1909,6 @@ AmalgamExample{ R"&((seq
 							[0]
 						]
 						1
-						.null
 						.null
 						.null
 						[0.25]
@@ -1958,7 +1934,6 @@ AmalgamExample{ R"&((seq
 							[0]
 						]
 						1
-						.null
 						.null
 						.null
 						[0.25]
@@ -1990,7 +1965,6 @@ AmalgamExample{ R"&((seq
 						1
 						.null
 						.null
-						.null
 						[0.25]
 						.null
 						"surprisal"
@@ -2012,7 +1986,6 @@ AmalgamExample{ R"&((seq
 						["x"]
 						["testvert"]
 						1
-						.null
 						.null
 						.null
 						[0.25]
@@ -2038,7 +2011,6 @@ AmalgamExample{ R"&((seq
 						1
 						.null
 						.null
-						.null
 						[0.25]
 						.null
 						"surprisal"
@@ -2060,7 +2032,6 @@ AmalgamExample{ R"&((seq
 						["x"]
 						["testvert"]
 						1
-						.null
 						.null
 						.null
 						[0.25]

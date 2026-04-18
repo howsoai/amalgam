@@ -40,7 +40,7 @@ Output:
 "valid signature: .true\n"
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `crypto_sign_verify`
 #### Parameters
@@ -84,7 +84,7 @@ Output:
 "valid signature: .true\n"
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `encrypt`
 #### Parameters
@@ -125,7 +125,7 @@ Output:
 "decrypted: \n"
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `decrypt`
 #### Parameters
@@ -166,5 +166,5 @@ Output:
 "decrypted: \n"
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 

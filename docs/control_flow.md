@@ -41,7 +41,7 @@ Output:
 4
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `seq`
 #### Parameters
@@ -77,7 +77,7 @@ Output:
 2
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `lambda`
 #### Parameters
@@ -120,7 +120,7 @@ Output:
 (lambda 3)
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `call`
 #### Parameters
@@ -157,7 +157,7 @@ Output:
 5
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `call_sandboxed`
 #### Parameters
@@ -242,7 +242,7 @@ Output:
 ]
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `while`
 #### Parameters
@@ -277,7 +277,7 @@ Output:
 10
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `conclude`
 #### Parameters
@@ -363,7 +363,7 @@ Output:
 2
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `return`
 #### Parameters
@@ -397,7 +397,7 @@ Output:
 3
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `apply`
 #### Parameters
@@ -448,7 +448,7 @@ Output:
 10
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `opcode_stack`
 #### Parameters
@@ -500,5 +500,5 @@ Output:
 (seq)
 ```
 
-[Amalgam Opcodes](./index.md#amalgam-opcodes)
+[Amalgam Opcodes](./opcodes.md)
 

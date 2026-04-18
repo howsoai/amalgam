@@ -60,7 +60,7 @@ jobs:
                 syntax)
                   echo -e "---\nlayout: default\ntitle: Syntax\nnav_order: 3\n---\n$(cat $file)" > "$file"
                   ;;
-                toc)
+                opcodes)
                   echo -e "---\nlayout: default\ntitle: Opcodes\nhas_children: true\nnav_order: 4\n---\n$(cat $file)" > "$file"
                   ;;
                 distance_and_surprisal)

@@ -43,6 +43,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		flatten = false;
 		parallelCreate = false;
 		executeOnLoad = false;
+		loadExternalFiles = true;
 		requireVersionCompatibility = true;
 		toMemory = false;
 	}
@@ -58,6 +59,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		flatten = false;
 		parallelCreate = false;
 		executeOnLoad = false;
+		loadExternalFiles = false;
 		requireVersionCompatibility = false;
 		toMemory = false;
 	}
@@ -72,6 +74,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		flatten = is_entity;
 		parallelCreate = false;
 		executeOnLoad = is_entity;
+		loadExternalFiles = false;
 		requireVersionCompatibility = true;
 		toMemory = false;
 	}
@@ -86,6 +89,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		flatten = is_entity;
 		parallelCreate = false;
 		executeOnLoad = is_entity;
+		loadExternalFiles = false;
 		requireVersionCompatibility = false;
 		toMemory = false;
 	}
@@ -104,6 +108,7 @@ void AssetManager::AssetParameters::SetParams(EvaluableNode::AssocType &params)
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_flatten, flatten);
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_parallel_create, parallelCreate);
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_execute_on_load, executeOnLoad);
+	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_load_external_files, loadExternalFiles);
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_require_version_compatibility, requireVersionCompatibility);
 }
 

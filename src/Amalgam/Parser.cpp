@@ -1,7 +1,7 @@
 //project headers:
-#include "Parser.h"
-
+#include "AssetManager.h"
 #include "EvaluableNode.h"
+#include "Parser.h"
 #include "StringManipulation.h"
 
 //system headers:
@@ -19,7 +19,8 @@ Parser::Parser()
 }
 
 Parser::Parser(std::string_view code_string, EvaluableNodeManager *enm,
-	bool transactional_parse, std::string *original_source, bool debug_sources)
+	bool transactional_parse, std::string *original_source,
+	bool debug_sources, bool allow_file_loading)
 {
 	code = code_string;
 	pos = 0;
@@ -43,6 +44,7 @@ Parser::Parser(std::string_view code_string, EvaluableNodeManager *enm,
 	}
 
 	debugSources = debug_sources;
+	allowFileLoading = allow_file_loading;
 	evaluableNodeManager = enm;
 	transactionalParse = transactional_parse;
 	charOffsetStartOfLastCompletedCode = std::numeric_limits<size_t>::max();
@@ -97,9 +99,10 @@ std::string Parser::Backslashify(const std::string &s)
 
 std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t, bool>
 	Parser::Parse(std::string_view code_string,
-		EvaluableNodeManager *enm, bool transactional_parse,  std::string *original_source, bool debug_sources)
+		EvaluableNodeManager *enm, bool transactional_parse,  std::string *original_source,
+		bool debug_sources, bool allow_file_loading)
 {
-	Parser pt(code_string, enm, transactional_parse, original_source, debug_sources);
+	Parser pt(code_string, enm, transactional_parse, original_source, debug_sources, allow_file_loading);
 
 	EvaluableNode *top_node = pt.ParseCode();
 
@@ -1474,41 +1477,33 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 	return nullptr;
 }
 
-void Parser::PreevaluateNodes(EvaluableNode *top_node)
+void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 {
 	//only need to update flags if any nodes actually change
 	bool any_nodes_changed = false;
-	for(auto &n : preevaluationNodes)
+
+	auto replace_node = [this, &top_node, &any_nodes_changed](EvaluableNode *node, EvaluableNode *replacement)
 	{
-		if(n == nullptr)
-			continue;
-
-		auto node_type = n->GetType();
-		if(node_type != ENT_GET && node_type != ENT_TARGET)
-		{
-			EmitWarning("Opcode cannot be evaluated at load time");
-			continue;
-		}
-
-		EvaluableNode *target = GetNodeFromRelativeCodePath(n);
-		if(target == nullptr)
-			EmitWarning("Could not resolve location, using null instead");
-
 		//find the node's parent in order to set it to target
 		EvaluableNode *parent = nullptr;
-		parent = parentNodes[n];
+		parent = parentNodes[node];
 		if(parent == nullptr)
-			continue;
+		{
+			top_node = replacement;
+			return;
+		}
+
+		bool node_changed = false;
 
 		//copy reference of target to the parent's index of the target
 		if(parent->IsAssociativeArray())
 		{
 			for(auto &[_, cn] : parent->GetMappedChildNodesReference())
 			{
-				if(cn == n)
+				if(cn == node)
 				{
-					cn = target;
-					any_nodes_changed = true;
+					cn = replacement;
+					node_changed = true;
 					break;
 				}
 			}
@@ -1517,17 +1512,130 @@ void Parser::PreevaluateNodes(EvaluableNode *top_node)
 		{
 			for(auto &cn : parent->GetOrderedChildNodesReference())
 			{
-				if(cn == n)
+				if(cn == node)
 				{
-					cn = target;
-					any_nodes_changed = true;
+					cn = replacement;
+					node_changed = true;
 					break;
 				}
 			}
 		}
 
-		if(!any_nodes_changed)
+		if(node_changed)
+			any_nodes_changed = true;
+		else
 			EmitWarning("Could not find code to preevaluate, check to see if it has been overwritten");
+	};
+
+	//any appends that need to be applied at the end
+	std::vector<EvaluableNode *> post_eval_appends;
+	for(auto &n : preevaluationNodes)
+	{
+		if(n == nullptr)
+			continue;
+
+		auto node_type = n->GetType();
+		if(node_type == ENT_GET || node_type == ENT_TARGET)
+		{
+			EvaluableNode *target = GetNodeFromRelativeCodePath(n);
+			if(target == nullptr)
+				EmitWarning("Could not resolve location, using null instead");
+
+			replace_node(n, target);
+		}
+		else if(node_type == ENT_LOAD)
+		{
+			if(!allowFileLoading)
+			{
+				replace_node(n, nullptr);
+				continue;
+			}
+
+			auto &ocn = n->GetOrderedChildNodes();
+			if(ocn.size() == 0)
+			{
+				replace_node(n, nullptr);
+				continue;
+			}
+			
+			std::string path = EvaluableNode::ToString(ocn[0]);
+			if(path.empty())
+			{
+				replace_node(n, nullptr);
+				continue;
+			}
+
+			std::string file_type = "";
+			if(ocn.size() > 1)
+				file_type = EvaluableNode::ToString(ocn[1]);
+
+			AssetManager::AssetParameters asset_params(path, file_type, false);
+
+			if(ocn.size() > 2)
+			{
+				EvaluableNodeReference params = ocn[2];
+
+				if(EvaluableNode::IsAssociativeArray(params))
+					asset_params.SetParams(params->GetMappedChildNodesReference());
+			}
+			asset_params.UpdateResources();
+
+			EntityExternalInterface::LoadEntityStatus status;
+			EvaluableNode *new_code = asset_manager.LoadResource(&asset_params, evaluableNodeManager, status);
+
+			replace_node(n, new_code);
+			continue;
+		}
+		else if(node_type == ENT_APPEND)
+		{
+			post_eval_appends.push_back(n);
+		}
+		else
+		{
+			EmitWarning("Opcode cannot be evaluated at load time");
+			continue;
+		}
+	}
+
+	for(size_t post_index = post_eval_appends.size(); post_index > 0; post_index--)
+	{
+		EvaluableNode *append_node = post_eval_appends[post_index - 1];
+
+		auto &ocn = append_node->GetOrderedChildNodesReference();
+		if(ocn.size() == 0)
+		{
+			replace_node(append_node, evaluableNodeManager->AllocNode(ENT_LIST));
+			continue;
+		}
+
+		EvaluableNode *result_node = evaluableNodeManager->AllocNode(ocn[0]);
+		for(size_t i = 1; i < ocn.size(); i++)
+		{
+			if(EvaluableNode::IsNull(ocn[i]))
+				continue;
+
+			if(ocn[i]->IsAssociativeArray())
+			{
+				if(!result_node->IsAssociativeArray())
+					result_node->ConvertListToNumberedAssoc();
+
+				result_node->AppendMappedChildNodes(ocn[i]->GetMappedChildNodes());
+			}
+			else if(ocn[i]->IsImmediate())
+			{
+				if(result_node->IsOrderedArray())
+					result_node->AppendOrderedChildNode(ocn[i]);
+				//don't append to a mapped node without a key
+			}
+			else //ocn[i] is ordered
+			{
+				if(result_node->IsOrderedArray())
+					result_node->AppendOrderedChildNodes(ocn[i]->GetOrderedChildNodesReference());
+				//don't append to a mapped node without keys
+			}
+		}
+
+		replace_node(append_node, result_node);
 	}
 
 	if(any_nodes_changed)

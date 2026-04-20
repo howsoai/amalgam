@@ -16,7 +16,8 @@ public:
 	Parser();
 
 	Parser(std::string_view code_string, EvaluableNodeManager *enm,
-		bool transactional_parse, std::string *original_source, bool debug_sources);
+		bool transactional_parse, std::string *original_source,
+		bool debug_sources, bool allow_file_loading);
 
 	//returns true if the string needs to be backslashified
 	inline static bool NeedsBackslashify(const std::string &s)
@@ -111,9 +112,11 @@ public:
 	//if transactional_parse is true, then it will ignore any incomplete or erroneous opcodes except the outermost one
 	//if original_source is a valid string, it will emit any warnings to stderr
 	//if debug_sources is true, it will prepend each node with a comment indicating original source
+	//if allow_file_loading is true, it will allow the use of the prepended load opcode
 	static std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t, bool>
 		Parse(std::string_view code_string, EvaluableNodeManager *enm,
-		bool transactional_parse = false, std::string *original_source = nullptr, bool debug_sources = false);
+		bool transactional_parse = false, std::string *original_source = nullptr,
+			bool debug_sources = false, bool allow_file_loading = false);
 
 	//like Parse, but applies on the current object and only returns the first node
 	std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> ParseFirstNode();
@@ -310,7 +313,7 @@ protected:
 	EvaluableNode *GetNodeFromRelativeCodePath(EvaluableNode *path);
 
 	//resolves any nodes that require preevaluation (such as assocs or circular references)
-	void PreevaluateNodes(EvaluableNode *top_node);
+	void PreevaluateNodes(EvaluableNode *&top_node);
 
 	//string of the code currently being parsed
 	std::string_view code;
@@ -332,6 +335,9 @@ protected:
 
 	//if true, will prepend debug sources to node comments
 	bool debugSources;
+
+	//if true, will allow loading of files
+	bool allowFileLoading;
 
 	//contains a list of nodes that need to be preevaluated on parsing
 	std::vector<EvaluableNode *> preevaluationNodes;

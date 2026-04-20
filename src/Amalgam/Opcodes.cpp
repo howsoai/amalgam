@@ -364,6 +364,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_pretty_print, "pretty_print");
 	EmplaceStaticString(ENBISI_flatten, "flatten");
 	EmplaceStaticString(ENBISI_execute_on_load, "execute_on_load");
+	EmplaceStaticString(ENBISI_load_external_files, "load_external_files");
 
 	//substr parameters
 	EmplaceStaticString(ENBISI_all, "all");

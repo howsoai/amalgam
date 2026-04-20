@@ -238,7 +238,7 @@ Example:
 ```
 Output:
 ```amalgam
-";complex test\r\n#some annotation\r\n||{a \"hello\" b 4}\r\n"
+"#some annotation\r\n;complex test\r\n||{a \"hello\" b 4}\r\n"
 ```
 
 [Amalgam Opcodes](./opcodes.md)

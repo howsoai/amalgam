@@ -152,6 +152,7 @@ public:
 		bool flatten;
 		bool parallelCreate;
 		bool executeOnLoad;
+		bool loadExternalFiles;
 		bool requireVersionCompatibility;
 		bool toMemory;
 	};

@@ -990,8 +990,8 @@ Example:
 	[0.3333 0.3333 0.3333]
 	[
 		{difference_type "nominal" data_type "number" nominal_count 1}
-		{difference_type "continous" data_type "number" cycle_range 360}
-		{difference_type "continous" data_type "number" cycle_range 12}
+		{difference_type "continuous" data_type "number" cycle_range 360}
+		{difference_type "continuous" data_type "number" cycle_range 12}
 	]
 )
 ```
@@ -1022,7 +1022,7 @@ Example:
 	2
 	[1 0 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
@@ -1041,7 +1041,7 @@ Example:
 	2
 	[1 0 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
@@ -1059,7 +1059,7 @@ Example:
 	2
 	[1 0 1 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
@@ -1078,7 +1078,7 @@ Example:
 	2
 	[1 0 1 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
@@ -1128,7 +1128,7 @@ Example:
 	1
 	[1 1 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
@@ -1146,10 +1146,10 @@ Example:
 	0
 	[1 1 1 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 	]
 	[
 		[0 2]
@@ -1171,10 +1171,10 @@ Example:
 	1
 	[1 1 1 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 	]
 	[
 		[0 1]
@@ -1202,7 +1202,7 @@ Example:
 	1
 	[1 1]
 	[
-		{difference_type "continous" data_type "code"}
+		{difference_type "continuous" data_type "code"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
 )
@@ -1225,7 +1225,7 @@ Example:
 	1
 	[1 1]
 	[
-		{difference_type "continous" data_type "code"}
+		{difference_type "continuous" data_type "code"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
 )
@@ -1242,8 +1242,8 @@ Example:
 	1
 	[1 1]
 	[
-		{difference_type "continous" data_type "number"}
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 	]
 	[0.5 0.5]
 	.null
@@ -1284,8 +1284,8 @@ Example:
 	1
 	[1 1]
 	[
-		{difference_type "continous" data_type "number"}
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 	]
 	[0.5 0.5]
 	.null

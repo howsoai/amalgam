@@ -985,7 +985,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 
 static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|assoc|* vector1 [list|assoc|* vector2] [number p_value] [list|assoc|assoc of assoc|number weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc|number deviations] [list value_names] [list|string weights_selection_features] [bool surprisal_space])";
+	d.parameters = R"(list|assoc|* vector1 [list|assoc|* vector2] [number p_value] [list|assoc|assoc of assoc|number weights] [list|assoc attributes] [list|assoc|number deviations] [list value_names] [list|string weights_selection_features] [bool surprisal_space])";
 	d.returns = R"(number)";
 	d.description = R"(Computes the generalized norm between `vector1` and `vector2` (or an equivalent zero vector if unspecified) using the numerical distance or edit distance as appropriate.  The parameter `value_names`, if specified as a list of the names of the values, will transform via unzipping any assoc into a list for the respective parameter in the order of the `value_names`, or if a number will use the number repeatedly for every element.  If any vector value is null or any of the differences between `vector1` and `vector2` evaluate to null, then it will compute a corresponding maximum distance value based on the properties of the feature.  If `surprisal_space` is true, which defaults to false, it will perform all computations in surprisal space.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.)";
 	d.examples = MakeAmalgamExamples({
@@ -1095,64 +1095,60 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[10 2 4]
 	1
 	.null
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 ))&", R"(2)"},
 			{R"&((generalized_distance
 	[1 2 3]
 	[10 2 10]
 	1
 	.null
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 ))&", R"(8)"},
 			{R"&((generalized_distance
 	[1 2 3]
 	[10 2 10]
 	1
 	.null
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 ))&", R"(8)"},
 			{R"&((generalized_distance
 	[1 2 3]
 	[10 2 4]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 ))&", R"(0.6666)"},
 			{R"&((generalized_distance
 	[1 2 3]
 	[10 2 10]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 ))&", R"(2.6664)"},
 			{R"&((generalized_distance
 	[1 2 3]
 	[10 2 10]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 ))&", R"(2.6664)"},
 			{R"&((generalized_distance
 	[1 2 3]
 	[10 2 10]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number" "continuous_number_cyclic" "continuous_number_cyclic"]
-	[1 360 12]
+	[
+		{difference_type "nominal" data_type "number" nominal_count 1}
+		{difference_type "continuous" data_type "number" cycle_range 360}
+		{difference_type "continuous" data_type "number" cycle_range 12}
+	]
 ))&", R"(1.9997999999999998)"},
 			{R"&((generalized_distance
 	[1 2 3]
 	[10 2 10]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number"]
-	[1.1]
+	[{difference_type "nominal" data_type "number" nominal_count 1.1}]
 	[0.25 180 -12]
 ))&", R"(92.57407500000001)"},
 			{R"&((generalized_distance
@@ -1160,8 +1156,11 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[2 .null .null]
 	2
 	[1 0 1]
-	["continuous_number" "nominal_number" "nominal_number"]
-	[.null 5 5]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 	[0.1 0.1 0.1]
 ))&", R"(2.227195548101088)"},
 			{R"&((generalized_distance
@@ -1169,16 +1168,22 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[2 .null .null]
 	2
 	[1 0 1]
-	["continuous_number" "nominal_number" "nominal_number"]
-	[.null 5 5]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 ))&", R"(2.23606797749979)"},
 			{R"&((generalized_distance
 	[4 4 .null 4]
 	[2 .null .null 2]
 	2
 	[1 0 1 1]
-	["continuous_number" "nominal_number" "nominal_number"]
-	[.null 5 5]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 	[0.1 0.1 0.1 0.1]
 ))&", R"(2.9933927271513525)"},
 			{R"&((generalized_distance
@@ -1186,8 +1191,11 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[2 .null .null 2]
 	2
 	[1 0 1 1]
-	["continuous_number" "nominal_number" "nominal_number"]
-	[.null 5 5]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 ))&", R"(3)"},
 			{R"&((generalized_distance
 	[4 4 4 4 4]
@@ -1212,16 +1220,23 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[2 2 .null]
 	1
 	[1 1 1]
-	["continuous_number" "nominal_number" "nominal_number"]
-	[.null 5 5]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 ))&", R"(4)"},
 			{R"&((generalized_distance
 	[4 4 4 4]
 	[2 2 2 .null]
 	0
 	[1 1 1 1]
-	["continuous_number" "nominal_number" "nominal_number" "continuous_number"]
-	[.null 5 5 .null]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "continuous" data_type "number"}
+	]
 	[
 		[0 2]
 		.null
@@ -1234,8 +1249,12 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[2 "s" 2 .null]
 	1
 	[1 1 1 1]
-	["continuous_number" "nominal_string" "nominal_string" "continuous_number"]
-	[.null 5 5 .null]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "continuous" data_type "number"}
+	]
 	[
 		[0 1]
 		.null
@@ -1254,8 +1273,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	]
 	1
 	[1 1]
-	["continuous_code" "nominal_string"]
-	[0 5]
+	[
+		{difference_type "continuous" data_type "code"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 ))&", R"(2)"},
 			{R"&((generalized_distance
 	[
@@ -1268,16 +1289,20 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	]
 	1
 	[1 1]
-	["continuous_code" "nominal_string"]
-	[0 5]
+	[
+		{difference_type "continuous" data_type "code"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 ))&", R"(3.3255881193876142)"},
 			{R"&((generalized_distance
 	[1 1]
 	[1 1]
 	1
 	[1 1]
-	["continuous_number" "continuous_number"]
-	.null
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
+	]
 	[0.5 0.5]
 	.null
 	.null
@@ -1288,8 +1313,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[1 1]
 	1
 	[1 1]
-	["nominal_number" "nominal_number"]
-	.null
+	[
+		{difference_type "nominal" data_type "number"}
+		{difference_type "nominal" data_type "number"}
+	]
 	[0.5 0.5]
 	.null
 	.null
@@ -1300,8 +1327,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[2 2]
 	1
 	[1 1]
-	["continuous_number" "continuous_number"]
-	.null
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
+	]
 	[0.5 0.5]
 	.null
 	.null
@@ -1312,32 +1341,27 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[2 2]
 	1
 	[1 1]
-	["nominal_number" "nominal_number"]
-	[2 2]
+	[
+		{difference_type "nominal" data_type "number" nominal_count 2}
+		{difference_type "nominal" data_type "number" nominal_count 2}
+	]
 	[0.25 0.25]
 	.null
 	.null
 	.true
 ))&", R"(2.197224577336219)"},
 			{R"&((generalized_distance
+	;vector1
 	["b"]
-	
-	;vector 1
+	;vector2
 	["c"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
 		{
 			a {a 0.00744879 b 0.996275605 c 0.996275605}
@@ -1345,35 +1369,25 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 			c {a 0.996539792 b 0.996539792 c 0.006920415}
 		}
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 ))&", R"(4.966335099422683)"},
 			{R"&((generalized_distance
+	;vector1
 	["b"]
-	
-	;vector 1
+	;vector2
 	["a"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
 		{
 			a {a 0.00744879 b 0.996275605 c 0.996275605}
@@ -1381,37 +1395,27 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 			c {a 0.996539792 b 0.996539792 c 0.006920415}
 		}
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 ))&", R"(0)"},
 			{R"&((generalized_distance
+	;vector1
 	["b"]
-	
-	;vector 1
+	;vector2
 	["q"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
-		{
+{
 			a {a 0.00744879 b 0.996275605 c 0.996275605}
 			b [
 					{a 0.501736111 b 0.501736111 c 0.996527778}
@@ -1420,65 +1424,45 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 			c {a 0.996539792 b 0.996539792 c 0.006920415}
 		}
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 ))&", R"(0.9128124677208268)"},
 			{R"&((generalized_distance
+	;vector1
 	["q"]
-	
-	;vector 1
+	;vector2
 	["u"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[2 2]
-	
+	[1]
 	;attributes
-	[0.2]
-	
+	[{difference_type "nominal" data_type "string" nominal_count 2}]
 	;deviations
+	[ 0.2 ]
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 ))&", R"(1.3862943611198906)"},
 			{R"&((generalized_distance
+	;vector1
 	["q"]
-	
-	;vector 1
+	;vector2
 	["u"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
 		[
 			{
@@ -1492,35 +1476,25 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 			0.2
 		]
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 ))&", R"(1.3862943611198906)"},
 			{R"&((generalized_distance
+	;vector1
 	["q"]
-	
-	;vector 1
+	;vector2
 	["u"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
 		[
 			[
@@ -1537,36 +1511,31 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 			0.2
 		]
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 ))&", R"(1.3862943611198906)"},
 			{R"&((generalized_distance
+	;vector1
 	{
 		A1 1
 		A2 1
 		A3 1
 		B 1
 	}
-	
-	;vector 1
+	;vector2
 	{
 		A1 2
 		A2 2
 		A3 2
 		B 2
 	}
-	
-	;vector 2
-	1
-	
 	;p
+	1
+	;weights
 	{
 		A1 {
 				A1 0
@@ -1604,23 +1573,15 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 				sum 0
 			}
 	}
-	
-	;weights
-	["continuous_number"]
-	
-	;types
-	.null
-	
 	;attributes
-	0.5
-	
+	[{difference_type "continuous" data_type "number"}]
 	;deviations
+	0.5
+	;value_names
 	["A2" "A3" "B"]
-	
-	;names
+	;weights_selection_features
 	"sum"
-	
-	;weights_selection_feature
+	;surprisal_space
 	.true
 ))&", R"(0.8383382080915319)"},
 			{R"&((generalized_distance
@@ -1632,8 +1593,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	]
 	1
 	[1]
-	["continuous_code"]
-	[{}]
+	[{difference_type "continuous" data_type "code"}]
 ))&", R"(5.325588119387614)"},
 			{R"&((generalized_distance
 	[
@@ -1644,31 +1604,26 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	]
 	1
 	[1]
-	["continuous_code"]
-	[
-		{nominal_strings .false types_must_match .false}
-	]
+	[{difference_type "continuous" data_type "code" nominal_strings .false types_must_match .false}]
 ))&", R"(3.697640774259515)"},
 			{R"&((generalized_distance
+	;vector1
 	{
 		A1 1
 		A2 1
 		A3 1
 		B 1
 	}
-	
-	;vector 1
+	;vector2
 	{
 		A1 2
 		A2 2
 		A3 2
 		B 2
 	}
-	
-	;vector 2
-	1
-	
 	;p
+	1
+	;weights
 	{
 		A1 {
 				A1 0
@@ -1706,23 +1661,15 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 				sum 0
 			}
 	}
-	
-	;weights
-	["continuous_number"]
-	
-	;types
-	.null
-	
 	;attributes
-	0.5
-	
+	[{difference_type "continuous" data_type "number"}]
 	;deviations
+	0.5
+	;value_names
 	["A2" "A3"]
-	
-	;names
+	;weights_selection_features
 	["sum" "A1" "B"]
-	
-	;weights_selection_feature
+	;surprisal_space
 	.true
 ))&", R"(0.8383382080915318)"}
 		});
@@ -1819,38 +1766,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 			node_stack.PushEvaluableNode(weights_node);
 	}
 
-	//get distance types if applicable
-	EvaluableNodeReference distance_types_node;
-	if(ocn.size() > 4)
-	{
-		distance_types_node = InterpretNodeForImmediateUse(ocn[4]);
-		if(distance_types_node != nullptr)
-			node_stack.PushEvaluableNode(distance_types_node);
-	}
-
 	//get feature attributes if applicable
 	EvaluableNodeReference attributes_node;
-	if(ocn.size() > 5)
+	if(ocn.size() > 4)
 	{
-		attributes_node = InterpretNodeForImmediateUse(ocn[5]);
+		attributes_node = InterpretNodeForImmediateUse(ocn[4]);
 		if(attributes_node != nullptr)
 			node_stack.PushEvaluableNode(attributes_node);
 	}
 
 	//get deviations if applicable
 	EvaluableNodeReference deviations_node;
-	if(ocn.size() > 6)
+	if(ocn.size() > 5)
 	{
-		deviations_node = InterpretNodeForImmediateUse(ocn[6]);
+		deviations_node = InterpretNodeForImmediateUse(ocn[5]);
 		if(deviations_node != nullptr)
 			node_stack.PushEvaluableNode(deviations_node);
 	}
 
 	//get value_names if applicable
 	std::vector<StringInternPool::StringID> value_names;
-	if(ocn.size() > 7)
+	if(ocn.size() > 6)
 	{
-		EvaluableNodeReference value_names_node = InterpretNodeForImmediateUse(ocn[7]);
+		EvaluableNodeReference value_names_node = InterpretNodeForImmediateUse(ocn[6]);
 		if(!EvaluableNode::IsNull(value_names_node))
 		{
 			//extract the names for each value into value_names
@@ -1868,16 +1806,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	}
 
 	EvaluableNodeReference weights_selection_features_node = EvaluableNodeReference::Null();
-	if(ocn.size() > 8)
+	if(ocn.size() > 7)
 	{
-		weights_selection_features_node = InterpretNodeForImmediateUse(ocn[8]);
+		weights_selection_features_node = InterpretNodeForImmediateUse(ocn[7]);
 		if(weights_selection_features_node != nullptr)
 			node_stack.PushEvaluableNode(weights_selection_features_node);
 	}
 
 	dist_eval.computeSurprisal = false;
-	if(ocn.size() > 9)
-		dist_eval.computeSurprisal = InterpretNodeIntoBoolValue(ocn[9], false);
+	if(ocn.size() > 8)
+		dist_eval.computeSurprisal = InterpretNodeIntoBoolValue(ocn[8], false);
 
 	//get the origin and destination
 	std::vector<EvaluableNodeImmediateValue> location;
@@ -1896,11 +1834,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	origin_types.resize(num_elements, ENIVT_NUMBER);
 
 	EntityQueryBuilder::PopulateDistanceFeatureParameters(dist_eval, num_elements, value_names,
-		weights_node, weights_selection_features_node, distance_types_node, attributes_node, deviations_node);
+		weights_node, weights_selection_features_node, attributes_node, deviations_node);
 
 	//done with all values
 	evaluableNodeManager->FreeNodeTreeIfPossible(weights_node);
-	evaluableNodeManager->FreeNodeTreeIfPossible(distance_types_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(attributes_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(deviations_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(weights_selection_features_node);

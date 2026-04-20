@@ -223,7 +223,7 @@ public:
 
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC:
 			//maximum is the other side of the cycle
-			return feature_attribs.typeAttributes.maxCyclicDifference / 2;
+			return feature_attribs.typeAttributes.cycleRange / 2;
 
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING:
 			//the max difference is the worst case edit distance, of removing all the characters

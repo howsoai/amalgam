@@ -391,14 +391,12 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_system, "system");
 
 	//distance types
-	EmplaceStaticString(ENBISI_nominal_bool, "nominal_bool");
-	EmplaceStaticString(ENBISI_nominal_number, "nominal_number");
-	EmplaceStaticString(ENBISI_nominal_string, "nominal_string");
-	EmplaceStaticString(ENBISI_nominal_code, "nominal_code");
-	EmplaceStaticString(ENBISI_continuous_number, "continuous_number");
-	EmplaceStaticString(ENBISI_continuous_number_cyclic, "continuous_number_cyclic");
-	EmplaceStaticString(ENBISI_continuous_string, "continuous_string");
-	EmplaceStaticString(ENBISI_continuous_code, "continuous_code");
+	EmplaceStaticString(ENBISI_nominal, "nominal");
+	EmplaceStaticString(ENBISI_continuous, "continuous");
+	EmplaceStaticString(ENBISI_difference_type, "difference_type");
+	EmplaceStaticString(ENBISI_data_type, "data_type");
+	EmplaceStaticString(ENBISI_nominal_count, "nominal_count");
+	EmplaceStaticString(ENBISI_cycle_range, "cycle_range");
 
 	//distance parameter values
 	EmplaceStaticString(ENBISI_surprisal, "surprisal");

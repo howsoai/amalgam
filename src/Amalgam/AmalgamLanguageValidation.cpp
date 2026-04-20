@@ -423,8 +423,6 @@ AmalgamExample{ R"&((seq
 			[
 				(query_nearest_generalized_distance
 					3
-					
-					;k-value
 					["A" "B"]
 					[9 2]
 					2
@@ -438,8 +436,6 @@ AmalgamExample{ R"&((seq
 			[
 				(query_nearest_generalized_distance
 					2
-					
-					;k-value
 					["A" "B"]
 					[9 2]
 					2
@@ -453,8 +449,6 @@ AmalgamExample{ R"&((seq
 			[
 				(query_nearest_generalized_distance
 					1
-					
-					;k-value
 					["A" "B"]
 					[9 2]
 					2
@@ -467,27 +461,22 @@ AmalgamExample{ R"&((seq
 			"nan_queries"
 			[
 				(query_nearest_generalized_distance
-					3
-					
 					;k-value
+					3
+					;features
 					["A" "B"]
-					
-					;labels
-					[9 2]
-					
 					;values
-					2
-					
+					[9 2]
 					;p-value
-					.null
-					
+					2
 					;weights
-					["continuous_number" "continuous_number"]
-					
-					;distance types
 					.null
-					
 					;attributes
+					[
+						{difference_type "continuous" data_type "number"}
+						{difference_type "continuous" data_type "number"}
+					]										
+					;deviations
 					[
 						[0 5 6]
 						[0 5 5]
@@ -505,27 +494,22 @@ AmalgamExample{ R"&((seq
 			"nan_queries"
 			[
 				(query_nearest_generalized_distance
-					3
-					
 					;k-value
+					3
+					;features
 					["A" "B"]
-					
-					;labels
-					[.null .null]
-					
 					;values
-					2
-					
+					[.null .null]
 					;p-value
-					.null
-					
+					2
 					;weights
-					["continuous_number" "continuous_number"]
-					
-					;distance types
 					.null
-					
 					;attributes
+					[
+						{difference_type "continuous" data_type "number"}
+						{difference_type "continuous" data_type "number"}
+					]										
+					;deviations
 					[
 						[0 1 0]
 						[0 1 0]
@@ -583,66 +567,62 @@ AmalgamExample{ R"&((seq
 ])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((generalized_distance
 	[1 2 1 100 1 50]
-	[1 1 1 120 1 50.1]
-	
+	[1 1 1 120 1 50.1]	
 	;p
 	0.5
-	
 	;weights
 	[2.5 10 5 0.033333333 3.333333333 20]
-	
-	;types
-	["nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number"]
-	
 	;attributes
-	[3 100 7 .null 10 .null]
-	
+	[
+		{difference_type "nominal" data_type "number" nominal_count 3}
+		{difference_type "nominal" data_type "number" nominal_count 100}
+		{difference_type "nominal" data_type "number" nominal_count 7}
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 10}
+		{difference_type "continuous" data_type "number"}
+	]
 	;deviations
 	[0.4 0.1 0.2 30 0.3 0.05]
 ))&", R"(1036.1581794564518)" },
 AmalgamExample{ R"&((generalized_distance
-	
 	;point 1
 	[1 2 1 100 1 50]
-	
 	;point 2
 	[1 1 1 120 1 50.1]
-	
 	;p
 	1
-	
 	;weights
 	[2.5 10 5 0.033333333 3.333333333 20]
-	
-	;types
-	["nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number"]
-	
 	;attributes
-	[3 100 7 .null 10 .null]
-	
+	[
+		{difference_type "nominal" data_type "number" nominal_count 3}
+		{difference_type "nominal" data_type "number" nominal_count 100}
+		{difference_type "nominal" data_type "number" nominal_count 7}
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 10}
+		{difference_type "continuous" data_type "number"}
+	]
 	;deviations
 	[0.4 0.1 0.2 30 0.3 0.05]
 ))&", R"(24.769501899470985)" },
 AmalgamExample{ R"&((generalized_distance
-	
 	;point 1
 	[1 2 1 100 1 50]
-	
 	;point 2
 	[1 1 1 120 1 50.1]
-	
 	;p
 	0
-	
 	;weights
 	[2.5 10 5 0.033333333 3.333333333 20]
-	
-	;types
-	["nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number"]
-	
 	;attributes
-	[3 100 7 .null 10 .null]
-	
+	[
+		{difference_type "nominal" data_type "number" nominal_count 3}
+		{difference_type "nominal" data_type "number" nominal_count 100}
+		{difference_type "nominal" data_type "number" nominal_count 7}
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 10}
+		{difference_type "continuous" data_type "number"}
+	]
 	;deviations
 	[0.4 0.1 0.2 30 0.3 0.05]
 ))&", R"(4.3464184709105573e-45)" },
@@ -743,11 +723,15 @@ AmalgamExample{ R"&((seq
 				;weights
 				[2.5 10 5 0.033333333 3.333333333 20]
 				
-				;types
-				["nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number"]
-				
 				;attributes
-				[3 100 7 .null 10 .null]
+				[
+					{difference_type "nominal" data_type "number" nominal_count 3}
+					{difference_type "nominal" data_type "number" nominal_count 100}
+					{difference_type "nominal" data_type "number" nominal_count 7}
+					{difference_type "continuous" data_type "number"}
+					{difference_type "nominal" data_type "number" nominal_count 10}
+					{difference_type "continuous" data_type "number"}
+				]
 				
 				;deviations
 				[0.4 0.1 0.2 30 0.3 0.05]
@@ -810,36 +794,36 @@ AmalgamExample{ R"&((seq
 			"DistanceSymmetryContainer"
 			[
 				(query_nearest_generalized_distance
+					;k
 					8
-					
-					; k
+					;features
 					["A" "B"]
+					;values
 					[4 9]
+					;p
 					0.1
-					
-					; p_parameter
+					;weights
 					.null
-					
-					; context_weights
-					["nominal_number" "nominal_number"]
-					
-					; types
-					[1 1]
-					
-					; attributes
+					;attributes
+					[
+						{difference_type "nominal" data_type "number" nominal_count 1}
+						{difference_type "nominal" data_type "number" nominal_count 1}
+					]
+					;deviations
 					.null
-					
-					; context_deviations
+					;weight selection features
 					.null
+					;dist transform
 					1
-					
-					; dwe = 1 means return computed distance to each case
+					;weight label
 					.null
-					
-					; weight
+					;rand seed
 					(rand)
+					;radius
 					.null
+					;precision
 					"precise"
+					;output sorted
 					.true
 				)
 			]
@@ -848,36 +832,36 @@ AmalgamExample{ R"&((seq
 			"DistanceSymmetryContainer"
 			[
 				(query_nearest_generalized_distance
+					;k
 					8
-					
-					; k
+					;features
 					["B" "A"]
+					;values
 					[9 4]
+					;p
 					0.1
-					
-					; p_parameter
+					;weights
 					.null
-					
-					; context_weights
-					["nominal_number" "nominal_number"]
-					
-					; types
-					[1 1]
-					
-					; attributes
+					;attributes
+					[
+						{difference_type "nominal" data_type "number" nominal_count 1}
+						{difference_type "nominal" data_type "number" nominal_count 1}
+					]
+					;deviations
 					.null
-					
-					; context_deviations
+					;weight selection features
 					.null
+					;dist transform
 					1
-					
-					; dwe = 1 means return computed distance to each case
+					;weight label
 					.null
-					
-					; weight
+					;rand seed
 					(rand)
+					;radius
 					.null
+					;precision
 					"precise"
+					;output sorted
 					.true
 				)
 			]
@@ -970,7 +954,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -991,7 +974,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						.null
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1018,7 +1000,6 @@ AmalgamExample{ R"&((seq
 						3
 						.null
 						.null
-						.null
 						[0.25 0.25]
 						.null
 						"surprisal"
@@ -1041,7 +1022,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						.null
 						3
-						.null
 						.null
 						.null
 						[0.25 0.25]
@@ -1070,7 +1050,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1091,7 +1070,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						.null
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1120,7 +1098,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1141,7 +1118,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert0" "vert1" "vert2" "vert3"]
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1170,7 +1146,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						"weight"
 						"fixed_seed"
@@ -1195,7 +1170,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1216,7 +1190,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert1"]
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1246,7 +1219,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1267,7 +1239,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						.null
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1296,7 +1267,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1317,7 +1287,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert0" "vert1" "vert2" "vert3"]
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1346,7 +1315,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						"weight"
 						"fixed_seed"
@@ -1371,7 +1339,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1392,7 +1359,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert1"]
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1428,7 +1394,6 @@ AmalgamExample{ R"&((seq
 						.null
 						.null
 						.null
-						.null
 						-1
 						.null
 						"fixed_seed"
@@ -1448,7 +1413,6 @@ AmalgamExample{ R"&((seq
 						["x" "y"]
 						["vert4"]
 						2
-						.null
 						.null
 						.null
 						.null
@@ -1473,8 +1437,10 @@ AmalgamExample{ R"&((seq
 						.null
 						2
 						.null
-						["continuous_number_cyclic" "continuous_number"]
-						[3.5 .null]
+						[
+							{difference_type "continuous" data_type "number" cycle_range 3.5}
+							{difference_type "continuous" data_type "number"}
+						]
 						.null
 						.null
 						-1
@@ -1497,8 +1463,10 @@ AmalgamExample{ R"&((seq
 						.null
 						2
 						.null
-						["continuous_number_cyclic" "continuous_number"]
-						[3.5 .null]
+						[
+							{difference_type "continuous" data_type "number" cycle_range 3.5}
+							{difference_type "continuous" data_type "number"}
+						]
 						.null
 						.null
 						-1
@@ -1521,8 +1489,10 @@ AmalgamExample{ R"&((seq
 						["vert4"]
 						2
 						.null
-						["continuous_number_cyclic" "continuous_number"]
-						[3.5 .null]
+						[
+							{difference_type "continuous" data_type "number" cycle_range 3.5}
+							{difference_type "continuous" data_type "number"}
+						]
 						.null
 						.null
 						-1
@@ -1602,36 +1572,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						4
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal_to_prob"
-						
-						; distance transform
+						;weight label
 						.null
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1646,36 +1613,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						4
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal"
-						
-						; distance transform
+						;weight label
 						.null
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1690,36 +1654,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						4
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal_to_prob"
-						
-						; distance transform
+						;weight label
 						"weight"
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1734,36 +1695,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						4
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal"
-						
-						; distance transform
+						;weight label
 						"weight"
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1777,36 +1735,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						[0.01 1 20]
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal_to_prob"
-						
-						; distance transform
+						;weight label
 						.null
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1820,36 +1775,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						[0.01 1 20]
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal"
-						
-						; distance transform
+						;weight label
 						.null
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1863,36 +1815,33 @@ AmalgamExample{ R"&((seq
 				"SurprisalTransformContainer"
 				[
 					(query_nearest_generalized_distance
+						;k
 						[0.01 1 20 1]
-						
-						; k
+						;features
 						["x"]
+						;values
 						[0]
+						;p
 						1
-						
-						; p_parameter
+						;weights
 						.null
-						
-						; context_weights
-						["continuous_number"]
-						
-						; types
-						.null
-						
-						; attributes
+						;attributes
+						[{difference_type "continuous" data_type "number"}]						
+						;deviations
 						[0.25]
-						
-						; context_deviations
+						;weights selection
 						.null
+						;distance transform
 						"surprisal"
-						
-						; distance transform
+						;weight label
 						.null
-						
-						; weight
+						;rand seed
 						(rand)
+						;radius
 						.null
+						;precision
 						"precise"
+						;output sorted list
 						.true
 					)
 				]
@@ -1910,7 +1859,6 @@ AmalgamExample{ R"&((seq
 							[0]
 						]
 						1
-						.null
 						.null
 						.null
 						[0.25]
@@ -1938,7 +1886,6 @@ AmalgamExample{ R"&((seq
 						1
 						.null
 						.null
-						.null
 						[0.25]
 						.null
 						"surprisal"
@@ -1962,7 +1909,6 @@ AmalgamExample{ R"&((seq
 							[0]
 						]
 						1
-						.null
 						.null
 						.null
 						[0.25]
@@ -1988,7 +1934,6 @@ AmalgamExample{ R"&((seq
 							[0]
 						]
 						1
-						.null
 						.null
 						.null
 						[0.25]
@@ -2020,7 +1965,6 @@ AmalgamExample{ R"&((seq
 						1
 						.null
 						.null
-						.null
 						[0.25]
 						.null
 						"surprisal"
@@ -2042,7 +1986,6 @@ AmalgamExample{ R"&((seq
 						["x"]
 						["testvert"]
 						1
-						.null
 						.null
 						.null
 						[0.25]
@@ -2068,7 +2011,6 @@ AmalgamExample{ R"&((seq
 						1
 						.null
 						.null
-						.null
 						[0.25]
 						.null
 						"surprisal"
@@ -2090,7 +2032,6 @@ AmalgamExample{ R"&((seq
 						["x"]
 						["testvert"]
 						1
-						.null
 						.null
 						.null
 						[0.25]
@@ -2643,33 +2584,37 @@ AmalgamExample{ R"&((seq
 					"CyclicTestEntity"
 					[
 						(query_nearest_generalized_distance
+							;k
 							3
 							
-							; K
+							;features
 							["deg"]
+
+							;values
 							[350]
+
+							;weights
 							1
 							
 							; p
 							.null
 							
-							; weights
-							["continuous_number_cyclic"]
-							
-							; types
-							[360]
-							
 							; attributes
-							.null
+							[{difference_type "continuous" data_type "number" cycle_range 360}]
 							
 							; deviations
 							.null
+
+							;weights selection
+							.null
+
+							;distance transform
 							-1
 							
-							; dwe
+							;weight label
 							.null
 							
-							; weight
+							;rand seed
 							(rand)
 						)
 					]

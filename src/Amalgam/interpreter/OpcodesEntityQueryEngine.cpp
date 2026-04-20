@@ -1357,7 +1357,7 @@ static OpcodeInitializer _ENT_QUERY_GREATER_OR_EQUAL_TO(ENT_QUERY_GREATER_OR_EQU
 
 static OpcodeInitializer _ENT_QUERY_WITHIN_GENERALIZED_DISTANCE(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number max_distance list feature_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
+	d.parameters = R"(number max_distance list feature_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
 	d.returns = R"(query)";
 	d.description = R"(When used as a query argument, selects the entities with labels that are at least as close as `max_distance` to the given point.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 	d.examples = MakeAmalgamExamples({
@@ -1414,7 +1414,7 @@ static OpcodeInitializer _ENT_QUERY_WITHIN_GENERALIZED_DISTANCE(ENT_QUERY_WITHIN
 
 static OpcodeInitializer _ENT_QUERY_NEAREST_GENERALIZED_DISTANCE(ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|number selection_bandwidth list feature_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
+	d.parameters = R"(list|number selection_bandwidth list feature_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
 	d.returns = R"(query)";
 	d.description = R"(When used as a query argument, selects the closest entities to the given point.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 	d.examples = MakeAmalgamExamples({
@@ -1497,7 +1497,7 @@ static OpcodeInitializer _ENT_QUERY_NEAREST_GENERALIZED_DISTANCE(ENT_QUERY_NEARE
 
 static OpcodeInitializer _ENT_QUERY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_DISTANCE_CONTRIBUTIONS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|number selection_bandwidth list feature_labels list axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
+	d.parameters = R"(list|number selection_bandwidth list feature_labels list axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
 	d.returns = R"(query)";
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes the distance or surprisal contribution for every entity.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
@@ -1539,7 +1539,6 @@ static OpcodeInitializer _ENT_QUERY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_DISTANCE_CO
 			.null
 			.null
 			.null
-			.null
 			-1
 			.null
 			"random seed 1234"
@@ -1557,7 +1556,7 @@ static OpcodeInitializer _ENT_QUERY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_DISTANCE_CO
 
 static OpcodeInitializer _ENT_QUERY_ENTITY_CONVICTIONS(ENT_QUERY_ENTITY_CONVICTIONS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list])";
+	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list])";
 	d.returns = R"(query)";
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes the case conviction for every case given in `entity_ids_to_compute` with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
@@ -1598,7 +1597,6 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CONVICTIONS(ENT_QUERY_ENTITY_CONVICTI
 				.null
 				.null
 				.null
-				.null
 				-1
 				.null
 				"random seed 1234"
@@ -1614,7 +1612,6 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CONVICTIONS(ENT_QUERY_ENTITY_CONVICTI
 				.null
 				.null
 				.null
-				.null
 				-1
 			)
 		)
@@ -1625,7 +1622,6 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CONVICTIONS(ENT_QUERY_ENTITY_CONVICTI
 				["x" "y"]
 				.null
 				2
-				.null
 				.null
 				.null
 				.null
@@ -1644,7 +1640,6 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CONVICTIONS(ENT_QUERY_ENTITY_CONVICTI
 					(query_exists "object")
 				)
 				2
-				.null
 				.null
 				.null
 				.null
@@ -1693,7 +1688,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CONVICTIONS(ENT_QUERY_ENTITY_CONVICTI
 
 static OpcodeInitializer _ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE(ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal])";
+	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal])";
 	d.returns = R"(query)";
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes the case kl divergence for every case given in `entity_ids_to_compute` as a group with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
@@ -1736,7 +1731,6 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE(ENT_QUERY_ENTITY_
 			.null
 			.null
 			.null
-			.null
 			-1
 			.null
 			"random seed 1234"
@@ -1754,7 +1748,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE(ENT_QUERY_ENTITY_
 
 static OpcodeInitializer _ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
+	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
 	d.returns = R"(query)";
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes the case conviction for every case given in `entity_ids_to_compute` with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
@@ -1795,7 +1789,6 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_ENTI
 				.null
 				.null
 				.null
-				.null
 				-1
 				.null
 				"random seed 1234"
@@ -1811,7 +1804,6 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_ENTI
 				.null
 				.null
 				.null
-				.null
 				-1
 			)
 		)
@@ -1822,7 +1814,6 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_ENTI
 				["x" "y"]
 				.null
 				2
-				.null
 				.null
 				.null
 				.null
@@ -1841,7 +1832,6 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_ENTI
 					(query_exists "object")
 				)
 				2
-				.null
 				.null
 				.null
 				.null
@@ -1890,7 +1880,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_ENTI
 
 static OpcodeInitializer _ENT_QUERY_ENTITY_KL_DIVERGENCES(ENT_QUERY_ENTITY_KL_DIVERGENCES, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list])";
+	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list])";
 	d.returns = R"(query)";
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes the case conviction for every case given in `entity_ids_to_compute` with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
@@ -1933,7 +1923,6 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_KL_DIVERGENCES(ENT_QUERY_ENTITY_KL_DI
 					.null
 					.null
 					.null
-					.null
 					-1
 					.null
 					"random seed 1234"
@@ -1950,7 +1939,6 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_KL_DIVERGENCES(ENT_QUERY_ENTITY_KL_DI
 						(query_exists "object")
 					)
 					2
-					.null
 					.null
 					.null
 					.null
@@ -1991,7 +1979,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_KL_DIVERGENCES(ENT_QUERY_ENTITY_KL_DI
 
 static OpcodeInitializer _ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
+	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
 	d.returns = R"(query)";
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes the nearest neighbors to every entity given by `entity_ids_to_compute`, normalizes their influence weights, and accumulates the entity's total influence weights relative to every other case.  It returns a list of all cases whose cumulative neighbor values are greater than zero.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";

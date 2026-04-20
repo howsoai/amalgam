@@ -1073,8 +1073,8 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 
 	if(upd.emitAttributes)
 	{
-		AppendComments(tree, indentation_depth, expanded_whitespace, upd.result);
 		AppendAnnotations(tree, indentation_depth, expanded_whitespace, upd.result);
+		AppendComments(tree, indentation_depth, expanded_whitespace, upd.result);
 
 		if(tree->GetConcurrency() == true)
 			upd.result.append("||");
@@ -1609,6 +1609,7 @@ void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 		}
 
 		EvaluableNode *result_node = evaluableNodeManager->AllocNode(ocn[0]);
+		result_node->CopyMetadataFrom(append_node);
 		for(size_t i = 1; i < ocn.size(); i++)
 		{
 			if(EvaluableNode::IsNull(ocn[i]))

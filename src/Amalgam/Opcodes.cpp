@@ -365,7 +365,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_flatten, "flatten");
 	EmplaceStaticString(ENBISI_execute_on_load, "execute_on_load");
 	EmplaceStaticString(ENBISI_load_external_files, "load_external_files");
-	//TODO 25348: document and use load_external_files for logic in parser where appropriate
 
 	//substr parameters
 	EmplaceStaticString(ENBISI_all, "all");

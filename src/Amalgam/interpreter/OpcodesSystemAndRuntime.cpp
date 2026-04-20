@@ -81,9 +81,18 @@ Variables are accessed in from the closest immediate scope, which means if there
 
 In addition to the stack scope, there is a target scope, which can be accessed via the target opcodes to access the data being iterated over.  Some opcodes will add one or more layers to the target stack, so care must be taken to count back up the target stack an appropriate number of levels if the target is being used directly as opposed to being accessed via a variable.
 
-If an operator is preceeded by an @ symbol, then it will be evaluated with regard to data format on load, useful for storing self-referential or graph data structures, or for loading additional code.  In particular, `target`, `get`, `append`, and `load` opcodes are available for use with the @ symbol, can only have immediate parameters, and `target` and `get` can reference locally or from the top of the stack.  For example, `@(target .true "inlined_referenced_method")` will point directly to the top level inlined_reference_method for an inline-like method.
+If an operator is preceeded by an `@` symbol, then it will be evaluated on load rather than during execution, but only on a limited set of opcodes.  The `@` symbol is particularly useful for storing self-referential or graph data structures or for loading additional code as modules.  The opcodes `@` is permitted on consists of `target`, `get`, `append`, and `load`, and the opcodes' parameters must be resolvable without additional code execution.  The opcades `target` and `get` can reference locally or from the top of the stack.  For example, `@(target .true "inlined_referenced_method")` will point directly to the top level inlined_reference_method for an inline-like method.  The opcodes `load` and `append` are designed to make it easy to include modules, and the common idiom for including modules within an entity is
+```amalgam
+@(append
+@(load "module_1.amlg")
+@(load "module_2.amlg")
+{
+	...code...
+}
+```
+where the two modules would be included as additional labels on the entity.
 
-Comments nor annotations do not affect execution directly, but can be read by code and thus influence execution.  They can also be used to store metadata.  An entity's root node's comment specifies the name and description of the Entity.  The first line of the comment is its name, the remainder of the lines of the comment are the description.  Annotations and comments are almost identical in how they are handled, but are accessed with different opcodes and annotations are intended for code-like metadata.  Annotations will always be printed before comments, enabling the classic Unix shebang #! operation for amalgam scripts as the first line.
+Neither comments nor annotations affect execution directly.  However, they can be read by code and thus influence execution, and can be 6used to store metadata.  An entity's root node's comment specifies the name and description of the Entity.  The first line of the comment is its name, the remainder of the lines of the comment are the description.  Annotations and comments are almost identical in how they are handled, but are accessed with different opcodes and annotations are intended for code-like metadata.  Annotations will always be printed before comments, enabling the classic Unix shebang #! operation for amalgam scripts as the first line.
 
 In-order evaluation of parameters of most opcodes are not guaranteed to execute in order, or be executed at all if not necessary, unless otherwise specified in the opcode (e.g., seq, declare, let, etc. all execute in order).  It is generally not recommended practice to have side effects (variable or entity writes) in opcodes whose parameters are not guaranteed to be sequential.
 
@@ -118,6 +127,7 @@ For file I/O, the following parameters apply to load and store opcodes and API c
  - flatten:                         If true, then will attempt to flatten all contained entities into one executable object and thus one file.
  - parallel_create:                 If true, will attempt use concurrency to store and load entities in parallel.
  - execute_on_load:                 If true, will execute the code upon load, which is required when entities are stored using flatten in order to create all of the entity structures.
+ - load_external_files:             If true, upon parsing, will allow `@(load...)` statements to load external files.  It is true by default for parsing `.amlg` files, but false for all other file types.
  - require_version_compatibility:   If true, will fail on a load if the version of Amalgam is not compatible with the file version.)");
 
 static std::string_view _help_distance(R"&(# Distance and Surprisal Calculations

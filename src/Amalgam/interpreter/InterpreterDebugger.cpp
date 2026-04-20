@@ -631,7 +631,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 		{
 			SetDebuggingState(false);
 			auto [node, warnings, char_with_error, code_complete]
-				= Parser::Parse(input, evaluableNodeManager);
+				= Parser::Parse(input, evaluableNodeManager, false, nullptr, asset_manager.debugSources, true);
 			for(auto &w : warnings)
 				std::cerr << w << std::endl;
 

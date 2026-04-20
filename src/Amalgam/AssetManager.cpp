@@ -255,7 +255,8 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters *asset_params,
 		StringManipulation::RemoveBOMFromUTF8String(code);
 
 		auto [node, warnings, char_with_error, code_complete]
-			= Parser::Parse(code, enm, asset_params->transactional, &asset_params->resourcePath, debugSources);
+			= Parser::Parse(code, enm, asset_params->transactional,
+				&asset_params->resourcePath, debugSources, asset_params->loadExternalFiles);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 		return node;
@@ -315,7 +316,7 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters *asset_params,
 
 		auto [node, warnings, char_with_error, code_complete]
 			= Parser::Parse(code_string, enm, asset_params->transactional,
-			&asset_params->resourcePath, debugSources);
+			&asset_params->resourcePath, debugSources, asset_params->loadExternalFiles);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 		return node;
@@ -382,7 +383,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 
 	StringManipulation::RemoveBOMFromUTF8String(code_string);
 
-	Parser parser(code_string, &entity->evaluableNodeManager, true, &asset_params->resourcePath, debugSources);
+	Parser parser(code_string, &entity->evaluableNodeManager, true, &asset_params->resourcePath, debugSources, asset_params->loadExternalFiles);
 	auto [first_node, first_node_warnings, first_node_char_with_error] = parser.ParseFirstNode();
 	for(auto &w : first_node_warnings)
 		std::cerr << w << std::endl;

@@ -43,6 +43,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		flatten = false;
 		parallelCreate = false;
 		executeOnLoad = false;
+		loadExternalFiles = true;
 		requireVersionCompatibility = true;
 		toMemory = false;
 	}
@@ -58,6 +59,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		flatten = false;
 		parallelCreate = false;
 		executeOnLoad = false;
+		loadExternalFiles = false;
 		requireVersionCompatibility = false;
 		toMemory = false;
 	}
@@ -72,6 +74,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		flatten = is_entity;
 		parallelCreate = false;
 		executeOnLoad = is_entity;
+		loadExternalFiles = false;
 		requireVersionCompatibility = true;
 		toMemory = false;
 	}
@@ -86,6 +89,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		flatten = is_entity;
 		parallelCreate = false;
 		executeOnLoad = is_entity;
+		loadExternalFiles = false;
 		requireVersionCompatibility = false;
 		toMemory = false;
 	}
@@ -104,6 +108,7 @@ void AssetManager::AssetParameters::SetParams(EvaluableNode::AssocType &params)
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_flatten, flatten);
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_parallel_create, parallelCreate);
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_execute_on_load, executeOnLoad);
+	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_load_external_files, loadExternalFiles);
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_require_version_compatibility, requireVersionCompatibility);
 }
 
@@ -250,7 +255,8 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters *asset_params,
 		StringManipulation::RemoveBOMFromUTF8String(code);
 
 		auto [node, warnings, char_with_error, code_complete]
-			= Parser::Parse(code, enm, asset_params->transactional, &asset_params->resourcePath, debugSources);
+			= Parser::Parse(code, enm, asset_params->transactional,
+				&asset_params->resourcePath, debugSources, asset_params->loadExternalFiles);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 		return node;
@@ -310,7 +316,7 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters *asset_params,
 
 		auto [node, warnings, char_with_error, code_complete]
 			= Parser::Parse(code_string, enm, asset_params->transactional,
-			&asset_params->resourcePath, debugSources);
+			&asset_params->resourcePath, debugSources, asset_params->loadExternalFiles);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 		return node;
@@ -377,7 +383,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 
 	StringManipulation::RemoveBOMFromUTF8String(code_string);
 
-	Parser parser(code_string, &entity->evaluableNodeManager, true, &asset_params->resourcePath, debugSources);
+	Parser parser(code_string, &entity->evaluableNodeManager, true, &asset_params->resourcePath, debugSources, asset_params->loadExternalFiles);
 	auto [first_node, first_node_warnings, first_node_char_with_error] = parser.ParseFirstNode();
 	for(auto &w : first_node_warnings)
 		std::cerr << w << std::endl;

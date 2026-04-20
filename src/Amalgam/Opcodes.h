@@ -357,6 +357,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_flatten,
 	ENBISI_parallel_create,
 	ENBISI_execute_on_load,
+	ENBISI_load_external_files,
 
 	//substr parameters
 	ENBISI_all,

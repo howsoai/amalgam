@@ -442,7 +442,9 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	Concurrency::ReadLock enm_lock(enm.GetMemoryModificationMutex());
 #endif
 
-	auto [code, warnings, offset, code_complete] = Parser::Parse(amlg, &enm);
+	auto [code, warnings, offset, code_complete] = Parser::Parse(amlg, &enm, false,
+		nullptr, asset_manager.debugSources, true);
+
 	if(code == nullptr)
 		return "";
 

@@ -189,7 +189,7 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 	entity->SetRandomState("12345", true);
 
 	auto [code, warnings, char_with_error, code_complete]
-		= Parser::Parse(example, &entity->evaluableNodeManager);
+		= Parser::Parse(example, &entity->evaluableNodeManager, false, nullptr, false, true);
 
 	if(warnings.size() > 0)
 	{

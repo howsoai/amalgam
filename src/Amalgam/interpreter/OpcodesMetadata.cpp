@@ -246,7 +246,7 @@ static OpcodeInitializer _ENT_SET_CONCURRENCY(ENT_SET_CONCURRENCY, &Interpreter:
 	.true
 	.true
 	.true
-))&", R"(";complex test\r\n#some annotation\r\n||{a \"hello\" b 4}\r\n")"}
+))&", R"("#some annotation\r\n;complex test\r\n||{a \"hello\" b 4}\r\n")"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 0.01;

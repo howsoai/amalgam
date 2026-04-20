@@ -1139,8 +1139,8 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	[0.3333 0.3333 0.3333]
 	[
 		{difference_type "nominal" data_type "number" nominal_count 1}
-		{difference_type "continous" data_type "number" cycle_range 360}
-		{difference_type "continous" data_type "number" cycle_range 12}
+		{difference_type "continuous" data_type "number" cycle_range 360}
+		{difference_type "continuous" data_type "number" cycle_range 12}
 	]
 ))&", R"(1.9997999999999998)"},
 			{R"&((generalized_distance
@@ -1157,7 +1157,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	2
 	[1 0 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
@@ -1169,7 +1169,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	2
 	[1 0 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
@@ -1180,7 +1180,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	2
 	[1 0 1 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
@@ -1192,7 +1192,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	2
 	[1 0 1 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
@@ -1221,7 +1221,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	1
 	[1 1 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
@@ -1232,10 +1232,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	0
 	[1 1 1 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 	]
 	[
 		[0 2]
@@ -1250,10 +1250,10 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	1
 	[1 1 1 1]
 	[
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 		{difference_type "nominal" data_type "number" nominal_count 5}
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 	]
 	[
 		[0 1]
@@ -1274,7 +1274,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	1
 	[1 1]
 	[
-		{difference_type "continous" data_type "code"}
+		{difference_type "continuous" data_type "code"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
 ))&", R"(2)"},
@@ -1290,7 +1290,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	1
 	[1 1]
 	[
-		{difference_type "continous" data_type "code"}
+		{difference_type "continuous" data_type "code"}
 		{difference_type "nominal" data_type "number" nominal_count 5}
 	]
 ))&", R"(3.3255881193876142)"},
@@ -1300,8 +1300,8 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	1
 	[1 1]
 	[
-		{difference_type "continous" data_type "number"}
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 	]
 	[0.5 0.5]
 	.null
@@ -1328,8 +1328,8 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	1
 	[1 1]
 	[
-		{difference_type "continous" data_type "number"}
-		{difference_type "continous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
 	]
 	[0.5 0.5]
 	.null

@@ -980,7 +980,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	bool cyclic_feature = r_dist_eval.distEvaluator->IsFeatureCyclic(query_feature_index);
 	double cycle_length = std::numeric_limits<double>::infinity();
 	if(cyclic_feature)
-		cycle_length = feature_attribs.typeAttributes.maxCyclicDifference;
+		cycle_length = feature_attribs.typeAttributes.cycleRange;
 
 	auto value_entry_iter = column->FindClosestValueEntryForNumberValue(value.nodeValue.number, cycle_length);
 

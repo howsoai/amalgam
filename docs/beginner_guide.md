@@ -1,4 +1,6 @@
-﻿Amalgam uses [S-expressions](https://en.wikipedia.org/wiki/S-expression) as its operators, which are a pair of parenthesis surrounding an opcode and its parameters.
+﻿## Amalgam : code-is-data-is-code
+
+Amalgam uses [S-expressions](https://en.wikipedia.org/wiki/S-expression) as its operators, which are a pair of parenthesis surrounding an opcode and its parameters.
 One way to think about this is: every operator *is* a function. So when you see `(+ 2 1)`, you can read that
 as "add two and one", or "call the function named '+' with
 parameters of 2 and 1".

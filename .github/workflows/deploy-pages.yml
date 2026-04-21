@@ -55,7 +55,7 @@ jobs:
                   echo -e "---\nlayout: home\ntitle: Home\nnav_order: 1\n---\n$(cat $file)" > "$file"
                   ;;
                 beginner_guide)
-                  echo -e "---\nlayout: default\ntitle: Amalgam Beginner Guide\nnav_order: 2\n---\n$(cat $file)" > "$file"
+                  echo -e "---\nlayout: default\ntitle: Beginner Guide\nnav_order: 2\n---\n$(cat $file)" > "$file"
                   ;;
                 syntax)
                   echo -e "---\nlayout: default\ntitle: Syntax\nnav_order: 3\n---\n$(cat $file)" > "$file"

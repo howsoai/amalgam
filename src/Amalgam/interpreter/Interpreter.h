@@ -90,47 +90,73 @@ public:
 	//but if not, it will attempt to put an appropriate unique associative array on scopeStack
 	__forceinline void InterpretAndPushNewScopeStack(EvaluableNode *new_context_node)
 	{
+		EvaluableNode *new_context = nullptr;
 		if(new_context_node == nullptr)
 		{
-			scopeStack.emplace_back(evaluableNodeManager->AllocNode(ENT_ASSOC));
-			return;
+			new_context = evaluableNodeManager->AllocNode(ENT_ASSOC);
 		}
-
-		//can keep constant, but need the top node to be unique in case assignments are made
-		EvaluableNodeReference new_context_node_reference = InterpretNodeForImmediateUse(new_context_node);
-		evaluableNodeManager->EnsureNodeIsModifiable(new_context_node_reference, false, false);
-
-		//make sure unique assoc
-		if(EvaluableNode::IsAssociativeArray(new_context_node_reference))
+		else if(new_context_node->IsAssociativeArray())
 		{
-			if(new_context_node_reference.unique)
+			new_context = evaluableNodeManager->AllocNode(new_context_node, false);
+
+			if(!new_context_node->GetIsIdempotent())
 			{
-				for(auto &[id, cn] : new_context_node_reference->GetMappedChildNodesReference())
+				//need to interpret nodes
+				PushNewConstructionContext(new_context, nullptr,
+						EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
+
+				for(auto &[cn_id, cn] : new_context->GetMappedChildNodesReference())
 				{
-					if(cn != nullptr)
-						cn->SetIsFreeable(true);
+					if(cn == nullptr || cn->GetIsIdempotent())
+						continue;
+
+					//need to interpret
+					SetTopCurrentIndexInConstructionStack(cn_id);
+					EvaluableNodeReference value = InterpretNodeForImmediateUse(cn);
+
+					if(value.unique)
+					{
+						if(value != nullptr)
+							value->SetIsFreeable(true);
+					}
+
+					cn = value;
+					new_context->UpdateFlagsBasedOnNewChildNode(cn);
 				}
 
-				//set the context to be freeable so it knows to look for any possible freeable values
-				new_context_node_reference->SetIsFreeable(true);
-			}
-			else
-			{
-				new_context_node_reference.SetReference(evaluableNodeManager->AllocNode(new_context_node_reference, false));
+				//if there was a side-effect, then need to make another copy of the context in case something is referencing it
+				if(PopConstructionContextAndGetExecutionSideEffectFlag())
+					new_context = evaluableNodeManager->AllocNode(new_context, false);
 			}
 		}
-		else //not assoc, make a new one
+		else //not an assoc, so interpret
 		{
-			evaluableNodeManager->FreeNodeTreeIfPossible(new_context_node_reference);
-			new_context_node_reference = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
-			//set the context to be freeable so it knows to look for any possible freeable values
-			new_context_node_reference->SetIsFreeable(true);
+			EvaluableNodeReference new_context_ref = InterpretNode(new_context_node);
+			if(EvaluableNode::IsAssociativeArray(new_context_ref))
+			{
+				if(new_context_ref.unique)
+				{
+					for(auto &[id, cn] : new_context_ref->GetMappedChildNodesReference())
+					{
+						if(cn != nullptr)
+							cn->SetIsFreeable(true);
+					}
+				}
+
+				evaluableNodeManager->EnsureNodeIsModifiable(new_context_ref, true, false);
+				new_context = new_context_ref;
+			}
+			else //not an assoc
+			{
+				evaluableNodeManager->FreeNodeTreeIfPossible(new_context_ref);
+				new_context = evaluableNodeManager->AllocNode(ENT_ASSOC);
+			}
 		}
 
-		//just in case a variable is added which needs cycle checks
-		new_context_node_reference->SetNeedCycleCheck(true);
-
-		scopeStack.emplace_back(new_context_node_reference);
+		new_context->SetIsFreeable(true);
+		new_context->SetNeedCycleCheck(true);
+		scopeStack.emplace_back(new_context);
+		return;
 	}
 
 	//pops the top context off the stack

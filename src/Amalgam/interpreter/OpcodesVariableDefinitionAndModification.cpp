@@ -274,7 +274,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				#endif
 
 					SetTopCurrentIndexInConstructionStack(cn_id);
-					EvaluableNodeReference value = InterpretNode(cn);
+					EvaluableNodeReference value = InterpretNodeForImmediateUse(cn);
 
 					//mark if not unique
 					any_nonunique_assignments |= !value.unique;

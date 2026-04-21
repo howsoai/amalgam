@@ -96,28 +96,6 @@ public:
 			return;
 		}
 
-		/*TODO 25333: finish this
-		//transform into variables if possible
-		EvaluableNodeReference new_context;
-
-		bool need_to_interpret = false;
-		if(new_context_node->GetIsIdempotent())
-		{
-			new_context = EvaluableNodeReference(new_context_node, false);
-		}
-		else if(new_context_node->IsAssociativeArray())
-		{
-			new_context = EvaluableNodeReference(new_context_node, false);
-			need_to_interpret = true;
-		}
-		else //just need to interpret
-		{
-			new_context = InterpretNode(new_context_node);
-		}
-
-		*/
-
-
 		//can keep constant, but need the top node to be unique in case assignments are made
 		EvaluableNodeReference new_context_node_reference = InterpretNodeForImmediateUse(new_context_node);
 		evaluableNodeManager->EnsureNodeIsModifiable(new_context_node_reference, false, false);

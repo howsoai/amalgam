@@ -85,46 +85,74 @@ public:
 		}
 	}
 
-	//interprets new_context and pushes a new scope onto the stack
-	//new_context should be a unique associative array,
+	//interprets new_context_node and pushes a new scope onto the stack
+	//new_context_node should be a unique associative array,
 	//but if not, it will attempt to put an appropriate unique associative array on scopeStack
-	__forceinline void InterpretAndPushNewScopeStack(EvaluableNode *new_context)
+	__forceinline void InterpretAndPushNewScopeStack(EvaluableNode *new_context_node)
 	{
+		if(new_context_node == nullptr)
+		{
+			scopeStack.emplace_back(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
+			return;
+		}
+
+		/*TODO 25333: finish this
+		//transform into variables if possible
+		EvaluableNodeReference new_context;
+
+		bool need_to_interpret = false;
+		if(new_context_node->GetIsIdempotent())
+		{
+			new_context = EvaluableNodeReference(new_context_node, false);
+		}
+		else if(new_context_node->IsAssociativeArray())
+		{
+			new_context = EvaluableNodeReference(new_context_node, false);
+			need_to_interpret = true;
+		}
+		else //just need to interpret
+		{
+			new_context = InterpretNode(new_context_node);
+		}
+
+		*/
+
+
 		//can keep constant, but need the top node to be unique in case assignments are made
-		EvaluableNodeReference new_context_reference = InterpretNodeForImmediateUse(new_context);
-		evaluableNodeManager->EnsureNodeIsModifiable(new_context_reference, false, false);
+		EvaluableNodeReference new_context_node_reference = InterpretNodeForImmediateUse(new_context_node);
+		evaluableNodeManager->EnsureNodeIsModifiable(new_context_node_reference, false, false);
 
 		//make sure unique assoc
-		if(EvaluableNode::IsAssociativeArray(new_context_reference))
+		if(EvaluableNode::IsAssociativeArray(new_context_node_reference))
 		{
-			if(new_context_reference.unique)
+			if(new_context_node_reference.unique)
 			{
-				for(auto &[id, cn] : new_context_reference->GetMappedChildNodesReference())
+				for(auto &[id, cn] : new_context_node_reference->GetMappedChildNodesReference())
 				{
 					if(cn != nullptr)
 						cn->SetIsFreeable(true);
 				}
 
 				//set the context to be freeable so it knows to look for any possible freeable values
-				new_context_reference->SetIsFreeable(true);
+				new_context_node_reference->SetIsFreeable(true);
 			}
 			else
 			{
-				new_context_reference.SetReference(evaluableNodeManager->AllocNode(new_context_reference, false));
+				new_context_node_reference.SetReference(evaluableNodeManager->AllocNode(new_context_node_reference, false));
 			}
 		}
 		else //not assoc, make a new one
 		{
-			evaluableNodeManager->FreeNodeTreeIfPossible(new_context_reference);
-			new_context_reference = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
+			evaluableNodeManager->FreeNodeTreeIfPossible(new_context_node_reference);
+			new_context_node_reference = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 			//set the context to be freeable so it knows to look for any possible freeable values
-			new_context_reference->SetIsFreeable(true);
+			new_context_node_reference->SetIsFreeable(true);
 		}
 
 		//just in case a variable is added which needs cycle checks
-		new_context_reference->SetNeedCycleCheck(true);
+		new_context_node_reference->SetNeedCycleCheck(true);
 
-		scopeStack.emplace_back(new_context_reference, new_context_reference.unique);
+		scopeStack.emplace_back(new_context_node_reference, new_context_node_reference.unique);
 	}
 
 	//pops the top context off the stack

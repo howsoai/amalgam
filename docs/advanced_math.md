@@ -666,7 +666,7 @@ Output:
 
 ### Opcode: `generalized_distance`
 #### Parameters
-`list|assoc|* vector1 [list|assoc|* vector2] [number p_value] [list|assoc|assoc of assoc|number weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc|number deviations] [list value_names] [list|string weights_selection_features] [bool surprisal_space]`
+`list|assoc|* vector1 [list|assoc|* vector2] [number p_value] [list|assoc|assoc of assoc|number weights] [list|assoc attributes] [list|assoc|number deviations] [list value_names] [list|string weights_selection_features] [bool surprisal_space]`
 #### Description
 Computes the generalized norm between `vector1` and `vector2` (or an equivalent zero vector if unspecified) using the numerical distance or edit distance as appropriate.  The parameter `value_names`, if specified as a list of the names of the values, will transform via unzipping any assoc into a list for the respective parameter in the order of the `value_names`, or if a number will use the number repeatedly for every element.  If any vector value is null or any of the differences between `vector1` and `vector2` evaluate to null, then it will compute a corresponding maximum distance value based on the properties of the feature.  If `surprisal_space` is true, which defaults to false, it will perform all computations in surprisal space.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.
 #### Details
@@ -904,8 +904,7 @@ Example:
 	[10 2 4]
 	1
 	.null
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 )
 ```
 Output:
@@ -919,8 +918,7 @@ Example:
 	[10 2 10]
 	1
 	.null
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 )
 ```
 Output:
@@ -934,8 +932,7 @@ Example:
 	[10 2 10]
 	1
 	.null
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 )
 ```
 Output:
@@ -949,8 +946,7 @@ Example:
 	[10 2 4]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 )
 ```
 Output:
@@ -964,8 +960,7 @@ Example:
 	[10 2 10]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 )
 ```
 Output:
@@ -979,8 +974,7 @@ Example:
 	[10 2 10]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number"]
-	[1]
+	[{difference_type "nominal" data_type "number" nominal_count 1}]
 )
 ```
 Output:
@@ -994,8 +988,11 @@ Example:
 	[10 2 10]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number" "continuous_number_cyclic" "continuous_number_cyclic"]
-	[1 360 12]
+	[
+		{difference_type "nominal" data_type "number" nominal_count 1}
+		{difference_type "continuous" data_type "number" cycle_range 360}
+		{difference_type "continuous" data_type "number" cycle_range 12}
+	]
 )
 ```
 Output:
@@ -1009,8 +1006,7 @@ Example:
 	[10 2 10]
 	1
 	[0.3333 0.3333 0.3333]
-	["nominal_number"]
-	[1.1]
+	[{difference_type "nominal" data_type "number" nominal_count 1.1}]
 	[0.25 180 -12]
 )
 ```
@@ -1025,8 +1021,11 @@ Example:
 	[2 .null .null]
 	2
 	[1 0 1]
-	["continuous_number" "nominal_number" "nominal_number"]
-	[.null 5 5]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 	[0.1 0.1 0.1]
 )
 ```
@@ -1041,8 +1040,11 @@ Example:
 	[2 .null .null]
 	2
 	[1 0 1]
-	["continuous_number" "nominal_number" "nominal_number"]
-	[.null 5 5]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 )
 ```
 Output:
@@ -1056,8 +1058,11 @@ Example:
 	[2 .null .null 2]
 	2
 	[1 0 1 1]
-	["continuous_number" "nominal_number" "nominal_number"]
-	[.null 5 5]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 	[0.1 0.1 0.1 0.1]
 )
 ```
@@ -1072,8 +1077,11 @@ Example:
 	[2 .null .null 2]
 	2
 	[1 0 1 1]
-	["continuous_number" "nominal_number" "nominal_number"]
-	[.null 5 5]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 )
 ```
 Output:
@@ -1119,8 +1127,11 @@ Example:
 	[2 2 .null]
 	1
 	[1 1 1]
-	["continuous_number" "nominal_number" "nominal_number"]
-	[.null 5 5]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 )
 ```
 Output:
@@ -1134,8 +1145,12 @@ Example:
 	[2 2 2 .null]
 	0
 	[1 1 1 1]
-	["continuous_number" "nominal_number" "nominal_number" "continuous_number"]
-	[.null 5 5 .null]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "continuous" data_type "number"}
+	]
 	[
 		[0 2]
 		.null
@@ -1155,8 +1170,12 @@ Example:
 	[2 "s" 2 .null]
 	1
 	[1 1 1 1]
-	["continuous_number" "nominal_string" "nominal_string" "continuous_number"]
-	[.null 5 5 .null]
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+		{difference_type "continuous" data_type "number"}
+	]
 	[
 		[0 1]
 		.null
@@ -1182,8 +1201,10 @@ Example:
 	]
 	1
 	[1 1]
-	["continuous_code" "nominal_string"]
-	[0 5]
+	[
+		{difference_type "continuous" data_type "code"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 )
 ```
 Output:
@@ -1203,8 +1224,10 @@ Example:
 	]
 	1
 	[1 1]
-	["continuous_code" "nominal_string"]
-	[0 5]
+	[
+		{difference_type "continuous" data_type "code"}
+		{difference_type "nominal" data_type "number" nominal_count 5}
+	]
 )
 ```
 Output:
@@ -1218,8 +1241,10 @@ Example:
 	[1 1]
 	1
 	[1 1]
-	["continuous_number" "continuous_number"]
-	.null
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
+	]
 	[0.5 0.5]
 	.null
 	.null
@@ -1237,8 +1262,10 @@ Example:
 	[1 1]
 	1
 	[1 1]
-	["nominal_number" "nominal_number"]
-	.null
+	[
+		{difference_type "nominal" data_type "number"}
+		{difference_type "nominal" data_type "number"}
+	]
 	[0.5 0.5]
 	.null
 	.null
@@ -1256,8 +1283,10 @@ Example:
 	[2 2]
 	1
 	[1 1]
-	["continuous_number" "continuous_number"]
-	.null
+	[
+		{difference_type "continuous" data_type "number"}
+		{difference_type "continuous" data_type "number"}
+	]
 	[0.5 0.5]
 	.null
 	.null
@@ -1275,8 +1304,10 @@ Example:
 	[2 2]
 	1
 	[1 1]
-	["nominal_number" "nominal_number"]
-	[2 2]
+	[
+		{difference_type "nominal" data_type "number" nominal_count 2}
+		{difference_type "nominal" data_type "number" nominal_count 2}
+	]
 	[0.25 0.25]
 	.null
 	.null
@@ -1290,24 +1321,17 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
+	;vector1
 	["b"]
-	
-	;vector 1
+	;vector2
 	["c"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
 		{
 			a {a 0.00744879 b 0.996275605 c 0.996275605}
@@ -1315,14 +1339,11 @@ Example:
 			c {a 0.996539792 b 0.996539792 c 0.006920415}
 		}
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 )
 ```
@@ -1333,24 +1354,17 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
+	;vector1
 	["b"]
-	
-	;vector 1
+	;vector2
 	["a"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
 		{
 			a {a 0.00744879 b 0.996275605 c 0.996275605}
@@ -1358,14 +1372,11 @@ Example:
 			c {a 0.996539792 b 0.996539792 c 0.006920415}
 		}
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 )
 ```
@@ -1376,26 +1387,19 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
+	;vector1
 	["b"]
-	
-	;vector 1
+	;vector2
 	["q"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
-		{
+{
 			a {a 0.00744879 b 0.996275605 c 0.996275605}
 			b [
 					{a 0.501736111 b 0.501736111 c 0.996527778}
@@ -1404,14 +1408,11 @@ Example:
 			c {a 0.996539792 b 0.996539792 c 0.006920415}
 		}
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 )
 ```
@@ -1422,33 +1423,23 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
+	;vector1
 	["q"]
-	
-	;vector 1
+	;vector2
 	["u"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[2 2]
-	
+	[1]
 	;attributes
-	[0.2]
-	
+	[{difference_type "nominal" data_type "string" nominal_count 2}]
 	;deviations
+	[ 0.2 ]
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 )
 ```
@@ -1459,24 +1450,17 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
+	;vector1
 	["q"]
-	
-	;vector 1
+	;vector2
 	["u"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
 		[
 			{
@@ -1490,14 +1474,11 @@ Example:
 			0.2
 		]
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 )
 ```
@@ -1508,24 +1489,17 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
+	;vector1
 	["q"]
-	
-	;vector 1
+	;vector2
 	["u"]
-	
-	;vector 2
-	1
-	
 	;p
-	[1 1]
-	
+	1
 	;weights
-	["nominal_string"]
-	
-	;types
-	[4]
-	
+	[1]
 	;attributes
+	[{difference_type "nominal" data_type "string" nominal_count 4}]
+	;deviations
 	[
 		[
 			[
@@ -1542,14 +1516,11 @@ Example:
 			0.2
 		]
 	]
-	
-	;deviations
+	;value_names
 	.null
-	
-	;names
-	.null
-	
 	;weights_selection_feature
+	.null
+	;surpisal_space
 	.true
 )
 ```
@@ -1560,25 +1531,23 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
+	;vector1
 	{
 		A1 1
 		A2 1
 		A3 1
 		B 1
 	}
-	
-	;vector 1
+	;vector2
 	{
 		A1 2
 		A2 2
 		A3 2
 		B 2
 	}
-	
-	;vector 2
-	1
-	
 	;p
+	1
+	;weights
 	{
 		A1 {
 				A1 0
@@ -1616,23 +1585,15 @@ Example:
 				sum 0
 			}
 	}
-	
-	;weights
-	["continuous_number"]
-	
-	;types
-	.null
-	
 	;attributes
-	0.5
-	
+	[{difference_type "continuous" data_type "number"}]
 	;deviations
+	0.5
+	;value_names
 	["A2" "A3" "B"]
-	
-	;names
+	;weights_selection_features
 	"sum"
-	
-	;weights_selection_feature
+	;surprisal_space
 	.true
 )
 ```
@@ -1651,8 +1612,7 @@ Example:
 	]
 	1
 	[1]
-	["continuous_code"]
-	[{}]
+	[{difference_type "continuous" data_type "code"}]
 )
 ```
 Output:
@@ -1670,10 +1630,7 @@ Example:
 	]
 	1
 	[1]
-	["continuous_code"]
-	[
-		{nominal_strings .false types_must_match .false}
-	]
+	[{difference_type "continuous" data_type "code" nominal_strings .false types_must_match .false}]
 )
 ```
 Output:
@@ -1683,25 +1640,23 @@ Output:
 Example:
 ```amalgam
 (generalized_distance
+	;vector1
 	{
 		A1 1
 		A2 1
 		A3 1
 		B 1
 	}
-	
-	;vector 1
+	;vector2
 	{
 		A1 2
 		A2 2
 		A3 2
 		B 2
 	}
-	
-	;vector 2
-	1
-	
 	;p
+	1
+	;weights
 	{
 		A1 {
 				A1 0
@@ -1739,23 +1694,15 @@ Example:
 				sum 0
 			}
 	}
-	
-	;weights
-	["continuous_number"]
-	
-	;types
-	.null
-	
 	;attributes
-	0.5
-	
+	[{difference_type "continuous" data_type "number"}]
 	;deviations
+	0.5
+	;value_names
 	["A2" "A3"]
-	
-	;names
+	;weights_selection_features
 	["sum" "A1" "B"]
-	
-	;weights_selection_feature
+	;surprisal_space
 	.true
 )
 ```

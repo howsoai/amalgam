@@ -282,7 +282,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				#ifdef MULTITHREAD_SUPPORT
 					//relock if needed before assigning the value
 					if(need_write_lock)
+					{
 						LockScopeStackTop(write_lock, required_vars);
+					}
 					else
 					#endif
 						//only set unread if writing to parts of the stack that aren't shared

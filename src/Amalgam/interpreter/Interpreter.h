@@ -104,42 +104,47 @@ public:
 		}
 	}
 
-	//pushes new_context on the stack; new_context should be a unique associative array,
-	// but if not, it will attempt to put an appropriate unique associative array on scopeStackNodes
-	__forceinline void PushNewScopeStack(EvaluableNodeReference new_context)
+	//interprets new_context and pushes a new scope onto the stack
+	//new_context should be a unique associative array,
+	//but if not, it will attempt to put an appropriate unique associative array on scopeStackNodes
+	__forceinline void InterpretAndPushNewScopeStack(EvaluableNode *new_context)
 	{
+		//can keep constant, but need the top node to be unique in case assignments are made
+		EvaluableNodeReference new_context_reference = InterpretNodeForImmediateUse(new_context);
+		evaluableNodeManager->EnsureNodeIsModifiable(new_context_reference, false, false);
+
 		//make sure unique assoc
-		if(EvaluableNode::IsAssociativeArray(new_context))
+		if(EvaluableNode::IsAssociativeArray(new_context_reference))
 		{
-			if(new_context.unique)
+			if(new_context_reference.unique)
 			{
-				for(auto &[id, cn] : new_context->GetMappedChildNodesReference())
+				for(auto &[id, cn] : new_context_reference->GetMappedChildNodesReference())
 				{
 					if(cn != nullptr)
 						cn->SetIsFreeable(true);
 				}
 
 				//set the context to be freeable so it knows to look for any possible freeable values
-				new_context->SetIsFreeable(true);
+				new_context_reference->SetIsFreeable(true);
 			}
 			else
 			{
-				new_context.SetReference(evaluableNodeManager->AllocNode(new_context, false));
+				new_context_reference.SetReference(evaluableNodeManager->AllocNode(new_context_reference, false));
 			}
 		}
 		else //not assoc, make a new one
 		{
-			evaluableNodeManager->FreeNodeTreeIfPossible(new_context);
-			new_context = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
+			evaluableNodeManager->FreeNodeTreeIfPossible(new_context_reference);
+			new_context_reference = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 			//set the context to be freeable so it knows to look for any possible freeable values
-			new_context->SetIsFreeable(true);
+			new_context_reference->SetIsFreeable(true);
 		}
 
 		//just in case a variable is added which needs cycle checks
-		new_context->SetNeedCycleCheck(true);
+		new_context_reference->SetNeedCycleCheck(true);
 
-		scopeStackNodes.push_back(new_context);
-		scopeStackFreeable.push_back(new_context.unique);
+		scopeStackNodes.push_back(new_context_reference);
+		scopeStackFreeable.push_back(new_context_reference.unique);
 	}
 
 	//pops the top context off the stack

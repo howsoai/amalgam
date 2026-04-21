@@ -41,17 +41,6 @@ struct ConstructionStackEntry
 	bool executionSideEffects;
 };
 
-//used for storage in the scopeStack
-struct ScopeStackNodeAndUniqueness
-{
-	inline ScopeStackNodeAndUniqueness(EvaluableNode *n, bool _unique)
-		: node(n), unique(_unique)
-	{}
-
-	EvaluableNode *node;
-	bool unique;
-};
-
 //memory pooled manager for allocating EvaluableNodes
 class EvaluableNodeManager
 {

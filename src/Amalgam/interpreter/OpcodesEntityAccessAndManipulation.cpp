@@ -883,7 +883,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	auto scope_stack = ConvertArgsToScopeStack(called_entity_args, container->evaluableNodeManager);
 
 	//add accessing_entity to arguments. If accessing_entity already specified (it shouldn't be), let garbage collection clean it up
-	EvaluableNode *scope_stack_args = scope_stack[0].node;
+	EvaluableNode *scope_stack_args = scope_stack[0];
 	scope_stack_args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_accessing_entity),
 		container->evaluableNodeManager.AllocNode(ENT_STRING, cur_entity_sid));
 

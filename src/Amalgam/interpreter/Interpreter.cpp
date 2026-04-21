@@ -31,7 +31,7 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 }
 
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	std::vector<ScopeStackNodeAndUniqueness> * scope_stack,
+	std::vector<EvaluableNode *> * scope_stack,
 	std::vector<EvaluableNode *> * opcode_stack, std::vector<ConstructionStackEntry> *construction_stack,
 	EvaluableNodeRequestedValueTypes immediate_result
 #ifdef MULTITHREAD_SUPPORT
@@ -45,11 +45,11 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
 		new_context_entry->SetNeedCycleCheck(true);
 		scopeStack.clear();
-		scopeStack.emplace_back(new_context_entry, true);
+		scopeStack.emplace_back(new_context_entry);
 	}
 	else
 	{
-		scopeStack= std::move(*scope_stack);
+		scopeStack = std::move(*scope_stack);
 	}
 
 	//
@@ -83,7 +83,7 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 	EvaluableNode *scope_stack = nullptr;
 	size_t ss_size = scopeStack.size();
 	if(ss_size > depth)
-		scope_stack = scopeStack[ss_size - (depth + 1)].node;
+		scope_stack = scopeStack[ss_size - (depth + 1)];
 
 #ifdef MULTITHREAD_SUPPORT
 	//need to search further down the stack if appropriate
@@ -110,7 +110,7 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 	auto &stack_top_ocn = stack_top_holder.GetOrderedChildNodesReference();
 	stack_top_ocn.resize(scopeStack.size());
 	for(size_t i = 0; i < scopeStack.size(); i++)
-		stack_top_ocn[i] = scopeStack[i].node;
+		stack_top_ocn[i] = scopeStack[i];
 
 	//set flags conservatively before copy
 	stack_top_holder.SetNeedCycleCheck(true);
@@ -127,7 +127,7 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 		{
 			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStack.size(), nullptr);
 			for(size_t i = 0; i < scopeStack.size(); i++)
-				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy(scopeStack[i].node);
+				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy(scopeStack[i]);
 
 			if(interp->bottomOfScopeStack)
 				break;
@@ -198,7 +198,7 @@ EvaluableNode *Interpreter::GetCurrentScopeStackContext()
 	if(scopeStack.size() < 1)
 		return nullptr;
 
-	return scopeStack.back().node;
+	return scopeStack.back();
 }
 
 std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(EvaluableNode *n, bool key_string)

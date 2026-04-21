@@ -439,7 +439,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 
 			std::cout << "scope stack:" << std::endl;
 			for(auto &scope_stack_entry : scopeStack)
-				PrintStackNode(scope_stack_entry.node, evaluableNodeManager);
+				PrintStackNode(scope_stack_entry, evaluableNodeManager);
 
 			std::cout << "Opcode stack:" << std::endl;
 			for(EvaluableNode *insn : opcodeStackNodes)
@@ -491,7 +491,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			//count down from the top, and use (i - 1) below to make this loop one-based instead of having to wrap around
 			for(auto i = scopeStack.size(); i > 0; i--)
 			{
-				EvaluableNode *cur_context = scopeStack[i - 1].node;
+				EvaluableNode *cur_context = scopeStack[i - 1];
 
 				//see if this level of the stack contains the symbol
 				auto &mcn = cur_context->GetMappedChildNodesReference();

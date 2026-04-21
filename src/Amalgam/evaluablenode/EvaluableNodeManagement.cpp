@@ -486,7 +486,7 @@ void EvaluableNodeManager::VerifyEvaluableNodeIntegretyForAllReferencedNodes()
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
 			for(auto &scope_stack_entry : interpreter->scopeStack)
-				ValidateEvaluableNodeTreeMemoryIntegrity(scope_stack_entry.node, this);
+				ValidateEvaluableNodeTreeMemoryIntegrity(scope_stack_entry, this);
 
 			for(EvaluableNode *en : interpreter->opcodeStackNodes)
 				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
@@ -743,10 +743,10 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 				{
 					for(auto &scope_stack_entry : interpreter->scopeStack)
 					{
-						if(scope_stack_entry.node == nullptr || scope_stack_entry.node->GetKnownToBeInUse())
+						if(scope_stack_entry == nullptr || scope_stack_entry->GetKnownToBeInUse())
 							continue;
 
-						MarkAllReferencedNodesInUseConcurrentForNode(scope_stack_entry.node);
+						MarkAllReferencedNodesInUseConcurrentForNode(scope_stack_entry);
 					}
 
 					for(EvaluableNode *en : interpreter->opcodeStackNodes)
@@ -789,10 +789,10 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		{
 			for(auto &scope_stack_entry : interpreter->scopeStack)
 			{
-				if(scope_stack_entry.node == nullptr || scope_stack_entry.node->GetKnownToBeInUse())
+				if(scope_stack_entry == nullptr || scope_stack_entry->GetKnownToBeInUse())
 					continue;
 
-				MarkAllReferencedNodesInUseForNode(scope_stack_entry.node);
+				MarkAllReferencedNodesInUseForNode(scope_stack_entry);
 			}
 
 			for(EvaluableNode *en : interpreter->opcodeStackNodes)

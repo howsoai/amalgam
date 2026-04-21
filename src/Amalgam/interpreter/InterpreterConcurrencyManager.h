@@ -70,7 +70,7 @@ public:
 
 			//build new construction stack
 			std::vector<EvaluableNode *> construction_stack(parentInterpreter->constructionStackNodes);
-			std::vector<Interpreter::ConstructionStackIndexAndPreviousResultUniqueness>
+			std::vector<ConstructionStackIndexAndPreviousResultUniqueness>
 				csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 			interpreter.PushNewConstructionContextToStack(construction_stack,
 				csiau, target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
@@ -134,7 +134,7 @@ public:
 
 			//build new construction stack
 			std::vector<EvaluableNode *> construction_stack(parentInterpreter->constructionStackNodes);
-			std::vector<Interpreter::ConstructionStackIndexAndPreviousResultUniqueness>
+			std::vector<ConstructionStackIndexAndPreviousResultUniqueness>
 				csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 			interpreter.PushNewConstructionContextToStack(construction_stack,
 				csiau, nullptr, nullptr, current_index, current_value, EvaluableNodeReference::Null());
@@ -181,7 +181,7 @@ public:
 			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
 				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 			std::vector<EvaluableNode *> construction_stack(parentInterpreter->constructionStackNodes);
-			std::vector<Interpreter::ConstructionStackIndexAndPreviousResultUniqueness>
+			std::vector<ConstructionStackIndexAndPreviousResultUniqueness>
 				csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 
 			auto result_ref = interpreter.ExecuteNode(node_to_execute, nullptr, &opcode_stack,

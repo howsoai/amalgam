@@ -409,14 +409,14 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		{
 			if(first_node_type == ENT_LET)
 			{
-				scope_stack.push_back(assoc_node);
+				scope_stack.emplace_back(assoc_node, true);
 			}
 			else //first_node_type == ENT_DECLARE
 			{
 				first_node->AppendOrderedChildNode(assoc_node);
 
 				//make a copy of scope_stack siynce ExecuteOnEntity will consume it
-				std::vector<EvaluableNode *> scope_stack_copy(scope_stack);
+				std::vector<ScopeStackNodeAndUniqueness> scope_stack_copy(scope_stack);
 				entity->ExecuteOnEntity(first_node, &scope_stack_copy, calling_interpreter);
 			}
 		}
@@ -431,7 +431,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 			std::cerr << w << std::endl;
 
 		//make a copy of scope_stack siynce ExecuteOnEntity will consume it
-		std::vector<EvaluableNode *> scope_stack_copy(scope_stack);
+		std::vector<ScopeStackNodeAndUniqueness> scope_stack_copy(scope_stack);
 		entity->ExecuteOnEntity(node, &scope_stack_copy, calling_interpreter);
 	}
 

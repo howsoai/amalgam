@@ -485,8 +485,8 @@ void EvaluableNodeManager::VerifyEvaluableNodeIntegretyForAllReferencedNodes()
 	{
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
-			for(EvaluableNode *en : interpreter->scopeStackNodes)
-				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
+			for(auto &scope_stack_entry : interpreter->scopeStack)
+				ValidateEvaluableNodeTreeMemoryIntegrity(scope_stack_entry.node, this);
 
 			for(EvaluableNode *en : interpreter->opcodeStackNodes)
 				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
@@ -736,12 +736,12 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 			Concurrency::urgentThreadPool.EnqueueTask(
 				[interpreter, &task_set]
 				{
-					for(EvaluableNode *en : interpreter->scopeStackNodes)
+					for(auto &scope_stack_entry : interpreter->scopeStack)
 					{
-						if(en == nullptr || en->GetKnownToBeInUse())
+						if(scope_stack_entry.node == nullptr || scope_stack_entry.node->GetKnownToBeInUse())
 							continue;
 
-						MarkAllReferencedNodesInUseConcurrentForNode(en);
+						MarkAllReferencedNodesInUseConcurrentForNode(scope_stack_entry.node);
 					}
 
 					for(EvaluableNode *en : interpreter->opcodeStackNodes)
@@ -775,20 +775,29 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	{
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
-			auto mark_nodes = [](std::vector<EvaluableNode *> &stack)
+			for(auto &scope_stack_entry : interpreter->scopeStack)
 			{
-				for(EvaluableNode *en : stack)
-				{
-					if(en == nullptr || en->GetKnownToBeInUse())
-						continue;
+				if(scope_stack_entry.node == nullptr || scope_stack_entry.node->GetKnownToBeInUse())
+					continue;
 
-					MarkAllReferencedNodesInUseForNode(en);
-				}
-			};
+				MarkAllReferencedNodesInUseForNode(scope_stack_entry.node);
+			}
 
-			mark_nodes(interpreter->scopeStackNodes);
-			mark_nodes(interpreter->opcodeStackNodes);
-			mark_nodes(interpreter->constructionStackNodes);
+			for(EvaluableNode *en : interpreter->opcodeStackNodes)
+			{
+				if(en == nullptr || en->GetKnownToBeInUse())
+					continue;
+
+				MarkAllReferencedNodesInUseForNode(en);
+			}
+
+			for(EvaluableNode *en : interpreter->constructionStackNodes)
+			{
+				if(en == nullptr || en->GetKnownToBeInUse())
+					continue;
+
+				MarkAllReferencedNodesInUseForNode(en);
+			}
 		}
 	}
 }

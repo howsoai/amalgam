@@ -31,7 +31,7 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 }
 
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	std::vector<EvaluableNode *> * scope_stack,
+	std::vector<ScopeStackNodeAndUniqueness> * scope_stack,
 	std::vector<EvaluableNode *> * opcode_stack, std::vector<EvaluableNode *> *construction_stack,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
 	EvaluableNodeRequestedValueTypes immediate_result
@@ -45,12 +45,12 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	{
 		EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
 		new_context_entry->SetNeedCycleCheck(true);
-		scopeStackNodes.clear();
-		scopeStackNodes.push_back(new_context_entry);
+		scopeStack.clear();
+		scopeStack.emplace_back(new_context_entry, true);
 	}
 	else
 	{
-		scopeStackNodes = std::move(*scope_stack);
+		scopeStack= std::move(*scope_stack);
 	}
 
 	//
@@ -87,9 +87,9 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 )
 {
 	EvaluableNode *scope_stack = nullptr;
-	size_t ss_size = scopeStackNodes.size();
+	size_t ss_size = scopeStack.size();
 	if(ss_size > depth)
-		scope_stack = scopeStackNodes[ss_size - (depth + 1)];
+		scope_stack = scopeStack[ss_size - (depth + 1)].node;
 
 #ifdef MULTITHREAD_SUPPORT
 	//need to search further down the stack if appropriate
@@ -113,7 +113,15 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 {
 	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetOrderedChildNodes(scopeStackNodes);
+	auto &stack_top_ocn = stack_top_holder.GetOrderedChildNodesReference();
+	stack_top_ocn.resize(scopeStack.size());
+	for(size_t i = 0; i < scopeStack.size(); i++)
+		stack_top_ocn[i] = scopeStack[i].node;
+
+	//set flags conservatively before copy
+	stack_top_holder.SetNeedCycleCheck(true);
+	stack_top_holder.SetIsIdempotent(false);
+
 	EvaluableNodeReference copied_stack = evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 
 #ifdef MULTITHREAD_SUPPORT
@@ -123,9 +131,9 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 		auto &stack_nodes_ocn = copied_stack->GetOrderedChildNodesReference();
 		for(Interpreter *interp = callingInterpreter; interp != nullptr; interp = interp->callingInterpreter)
 		{
-			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStackNodes.size(), nullptr);
-			for(size_t i = 0; i < scopeStackNodes.size(); i++)
-				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy(scopeStackNodes[i]);
+			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStack.size(), nullptr);
+			for(size_t i = 0; i < scopeStack.size(); i++)
+				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy(scopeStack[i].node);
 
 			if(interp->bottomOfScopeStack)
 				break;
@@ -193,10 +201,10 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNo
 EvaluableNode *Interpreter::GetCurrentScopeStackContext()
 {
 	//this should not happen, but just in case
-	if(scopeStackNodes.size() < 1)
+	if(scopeStack.size() < 1)
 		return nullptr;
 
-	return scopeStackNodes.back();
+	return scopeStack.back().node;
 }
 
 std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(EvaluableNode *n, bool key_string)
@@ -766,7 +774,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 Interpreter *Interpreter::LockScopeStackTop(Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve,
 	Interpreter *executing_interpreter)
 {
-	if(scopeStackNodes.size() == 0 && callingInterpreter != nullptr)
+	if(scopeStack.size() == 0 && callingInterpreter != nullptr)
 		return callingInterpreter->LockScopeStackTop(lock, en_to_preserve,
 			executing_interpreter == nullptr ? this : executing_interpreter);
 

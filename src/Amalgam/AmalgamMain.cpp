@@ -370,8 +370,8 @@ PLATFORM_MAIN_CONSOLE
 
 		//transform args into args variable
 		EvaluableNode *args_node = entity->evaluableNodeManager.AllocNode(ENT_ASSOC);
-		std::vector<EvaluableNode *> scope_stack;
-		scope_stack.push_back(args_node);
+		std::vector<ScopeStackNodeAndUniqueness> scope_stack;
+		scope_stack.emplace_back(args_node, true);
 
 		//top-level stack variable holding argv
 		args_node->SetMappedChildNode("argv", CreateListOfStringsFromIteratorAndFunction(passthrough_params,

@@ -318,8 +318,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			}
 			else if(command == "fc")
 			{
-				if(scopeStackNodes.size() > 0)
-					_interpreter_debug_data.runUntilScopeStackSize = scopeStackNodes.size() - 1;
+				if(scopeStack.size() > 0)
+					_interpreter_debug_data.runUntilScopeStackSize = scopeStack.size() - 1;
 			}
 			else if(command == "ul")
 			{
@@ -433,8 +433,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				PrintStackNode(csn, evaluableNodeManager);
 
 			std::cout << "scope stack:" << std::endl;
-			for(EvaluableNode *csn : scopeStackNodes)
-				PrintStackNode(csn, evaluableNodeManager);
+			for(auto &scope_stack_entry : scopeStack)
+				PrintStackNode(scope_stack_entry.node, evaluableNodeManager);
 
 			std::cout << "Opcode stack:" << std::endl;
 			for(EvaluableNode *insn : opcodeStackNodes)
@@ -484,9 +484,9 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 		{
 			//find symbol by walking up the stack; each layer must be an assoc
 			//count down from the top, and use (i - 1) below to make this loop one-based instead of having to wrap around
-			for(auto i = scopeStackNodes.size(); i > 0; i--)
+			for(auto i = scopeStack.size(); i > 0; i--)
 			{
-				EvaluableNode *cur_context = scopeStackNodes[i - 1];
+				EvaluableNode *cur_context = scopeStack[i - 1].node;
 
 				//see if this level of the stack contains the symbol
 				auto &mcn = cur_context->GetMappedChildNodesReference();
@@ -776,7 +776,7 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en,
 			_interpreter_debug_data.EnableInteractiveMode();
 		}
 
-		if(_interpreter_debug_data.runUntilScopeStackSize == scopeStackNodes.size())
+		if(_interpreter_debug_data.runUntilScopeStackSize == scopeStack.size())
 		{
 			_interpreter_debug_data.runUntilScopeStackSize = 0;
 			_interpreter_debug_data.EnableInteractiveMode();

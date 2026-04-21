@@ -524,7 +524,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		return EvaluableNodeReference::Null();
 
 	//make sure there's at least a scopeStack to use
-	if(scopeStackNodes.size() < 1)
+	if(scopeStack.size() < 1)
 		return EvaluableNodeReference::Null();
 
 	bool accum = (en->GetType() == ENT_ACCUM);

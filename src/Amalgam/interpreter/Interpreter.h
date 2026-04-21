@@ -12,7 +12,6 @@
 #include "RandomStream.h"
 
 //system headers:
-#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <string>
@@ -21,23 +20,6 @@
 class Interpreter
 {
 public:
-
-	//used with construction stack to store the index and whether previous_result is unique,
-	//as well as whether any opcodes have been executed that have side effects, that could have written memory elsewhere,
-	//and prevent any part of the construction stack from being unique
-	struct ConstructionStackIndexAndPreviousResultUniqueness
-	{
-		inline ConstructionStackIndexAndPreviousResultUniqueness(EvaluableNodeImmediateValueWithType _index,
-			bool _unique, bool top_node_unique)
-			: index(_index), unique(_unique), uniqueUnreferencedTopNode(top_node_unique), executionSideEffects(false)
-		{	}
-
-		EvaluableNodeImmediateValueWithType index;
-		bool unique;
-		bool uniqueUnreferencedTopNode;
-		bool executionSideEffects;
-	};
-
 	//Creates a new interpreter to run code and to store labels.
 	// If no entity is specified via nullptr, then it will run sandboxed
 	// if interpreter_constraints is not nullptr, then it will limit execution appropriately
@@ -61,7 +43,7 @@ public:
 	//if immediate_result is true, then the returned value may be immediate
 	//if new_scope_stack is true, it will mark that it is the bottom of the scope stack
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
-		std::vector<EvaluableNode *> *scope_stack = nullptr, std::vector<EvaluableNode *> *opcode_stack = nullptr,
+		std::vector<ScopeStackNodeAndUniqueness> *scope_stack = nullptr, std::vector<EvaluableNode *> *opcode_stack = nullptr,
 		std::vector<EvaluableNode *> *construction_stack = nullptr,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes()
@@ -106,7 +88,7 @@ public:
 
 	//interprets new_context and pushes a new scope onto the stack
 	//new_context should be a unique associative array,
-	//but if not, it will attempt to put an appropriate unique associative array on scopeStackNodes
+	//but if not, it will attempt to put an appropriate unique associative array on scopeStack
 	__forceinline void InterpretAndPushNewScopeStack(EvaluableNode *new_context)
 	{
 		//can keep constant, but need the top node to be unique in case assignments are made
@@ -143,19 +125,21 @@ public:
 		//just in case a variable is added which needs cycle checks
 		new_context_reference->SetNeedCycleCheck(true);
 
-		scopeStackNodes.push_back(new_context_reference);
-		scopeStackFreeable.push_back(new_context_reference.unique);
+		scopeStack.emplace_back(new_context_reference, new_context_reference.unique);
 	}
 
 	//pops the top context off the stack
 	//if returning_unique_value, then can potentially free the whole scope
 	__forceinline void PopScopeStack(bool returning_unique_value)
 	{
-		if(returning_unique_value && scopeStackFreeable.back())
-			evaluableNodeManager->FreeNodeTree(scopeStackNodes.back());
+		auto &scope_stack_back = scopeStack.back();
+		if(returning_unique_value && scope_stack_back.unique)
+		{
+			evaluableNodeManager->FreeNodeTree(scope_stack_back.node);
+		}
 		else
 		{
-			EvaluableNode *scope = scopeStackNodes.back();
+			EvaluableNode *scope = scope_stack_back.node;
 			//only check its child nodes if it itself has a freeable flag set,
 			//since iterating over the mapped child nodes can be costly wrt performance
 			if(scope->GetIsFreeable())
@@ -169,11 +153,10 @@ public:
 			evaluableNodeManager->FreeNode(scope);
 		}
 
-		scopeStackNodes.pop_back();
-		scopeStackFreeable.pop_back();
+		scopeStack.pop_back();
 	}
 
-	//returns the node from scopeStackNodes given the depth, nullptr if it doesn't exist
+	//returns the node from scopeStack given the depth, nullptr if it doesn't exist
 	//use_atomic_when_setting_access_flag is used for recursion and should not be modified by the caller
 	EvaluableNode *GetScopeStackGivenDepth(size_t depth
 	#ifdef MULTITHREAD_SUPPORT
@@ -334,9 +317,11 @@ public:
 		}
 
 		//indicate scope stack is not freeable if the top is still freeable
-		if(scopeStackFreeable.size() > 0 && scopeStackFreeable.back())
-			std::fill(begin(scopeStackFreeable), end(scopeStackFreeable), false);
-
+		if(scopeStack.size() > 0 && scopeStack.back().unique)
+		{
+			for(auto &stack_entry : scopeStack)
+				stack_entry.unique = false;
+		}
 		return std::make_pair(any_constructions, any_set);
 	}
 
@@ -348,9 +333,10 @@ public:
 	// Will allocate a new node appropriately if it is not
 	//Then wraps the args on a list which will form the scope stack and returns that
 	//ensures that args is still a valid EvaluableNodeReference after the call
-	inline static std::vector<EvaluableNode *> ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm)
+	inline static std::vector<ScopeStackNodeAndUniqueness> ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm)
 	{
 		//ensure have arguments
+		bool is_freeable = true;
 		if(args == nullptr)
 		{
 			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
@@ -389,8 +375,8 @@ public:
 
 		args->SetNeedCycleCheck(true);
 
-		std::vector<EvaluableNode *> scope_stack;
-		scope_stack.push_back(args);
+		std::vector<ScopeStackNodeAndUniqueness> scope_stack;
+		scope_stack.emplace_back(args, args.uniqueUnreferencedTopNode);
 		return scope_stack;
 	}
 
@@ -409,9 +395,9 @@ public:
 	)
 	{
 		//find appropriate context for symbol by walking up the stack
-		for(auto it = rbegin(scopeStackNodes); it != rend(scopeStackNodes); ++it)
+		for(auto it = rbegin(scopeStack); it != rend(scopeStack); ++it)
 		{
-			auto &mcn = (*it)->GetMappedChildNodesReference();
+			auto &mcn = it->node->GetMappedChildNodesReference();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
 				bool is_freeable = true;
@@ -437,7 +423,7 @@ public:
 					}
 				}
 
-				return std::make_tuple(&found->second, it == rbegin(scopeStackNodes), is_freeable);
+				return std::make_tuple(&found->second, it == rbegin(scopeStack), is_freeable);
 			}
 		}
 
@@ -445,7 +431,7 @@ public:
 		//need to search further down the stack if appropriate
 		if(!bottomOfScopeStack && callingInterpreter != nullptr)
 		{
-			bool top_is_next_stack = (scopeStackNodes.size() == 0);
+			bool top_is_next_stack = (scopeStack.size() == 0);
 			auto [value_destination, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocation(
 				symbol_sid, top_is_next_stack && create_if_nonexistent, clear_freeable_flag, true);
 			if(value_destination != nullptr)
@@ -457,8 +443,8 @@ public:
 			return std::make_tuple(nullptr, false, false);
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
-		size_t scope_stack_index = scopeStackNodes.size() - 1;
-		EvaluableNode *context_to_use = scopeStackNodes[scope_stack_index];
+		size_t scope_stack_index = scopeStack.size() - 1;
+		EvaluableNode *context_to_use = scopeStack[scope_stack_index].node;
 		auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
 		return std::make_tuple(new_location, true, false);
 	}
@@ -493,10 +479,10 @@ public:
 	{
 		//find appropriate context for symbol by walking up the stack
 		//acquire lock if found
-		size_t cur_scope_stack_size = scopeStackNodes.size();
+		size_t cur_scope_stack_size = scopeStack.size();
 		for(size_t scope_stack_index = cur_scope_stack_size; scope_stack_index > 0; scope_stack_index--)
 		{
-			EvaluableNode *cur_context = scopeStackNodes[scope_stack_index - 1];
+			EvaluableNode *cur_context = scopeStack[scope_stack_index - 1].node;
 			auto &mcn = cur_context->GetMappedChildNodesReference();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
@@ -509,7 +495,7 @@ public:
 						LockMutexWithoutBlockingGarbageCollection(lock, *scopeStackMutex);
 
 					//need to refetch after lock in case object has changed
-					cur_context = scopeStackNodes[scope_stack_index - 1];
+					cur_context = scopeStack[scope_stack_index - 1].node;
 					mcn = cur_context->GetMappedChildNodesReference();
 					found = mcn.find(symbol_sid);
 
@@ -542,21 +528,21 @@ public:
 		Interpreter *interp_with_scope = LockScopeStackTop(lock, nullptr, executing_interpreter);
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
-		size_t scope_stack_index = interp_with_scope->scopeStackNodes.size() - 1;
+		size_t scope_stack_index = interp_with_scope->scopeStack.size() - 1;
 
 		if(lock.owns_lock())
 		{
 			//since all modern processors treat word writes as essentially atomic,
 			// though with no guarantees with regard to latency, we can use this behavior to not require
 			// locks for reading threads; assign this after updating the new context_to_use
-			EvaluableNode *context_to_use = evaluableNodeManager->AllocNode(interp_with_scope->scopeStackNodes[scope_stack_index]);
+			EvaluableNode *context_to_use = evaluableNodeManager->AllocNode(interp_with_scope->scopeStack[scope_stack_index].node);
 			auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
-			interp_with_scope->scopeStackNodes[scope_stack_index] = context_to_use;
+			interp_with_scope->scopeStack[scope_stack_index].node = context_to_use;
 			return std::make_tuple(new_location, false, false);
 		}
 		else
 		{
-			EvaluableNode *context_to_use = interp_with_scope->scopeStackNodes[scope_stack_index];
+			EvaluableNode *context_to_use = interp_with_scope->scopeStack[scope_stack_index].node;
 			auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
 			return std::make_tuple(new_location, true, false);
 		}
@@ -566,7 +552,7 @@ public:
 	//returns the current scope stack index
 	__forceinline size_t GetScopeStackDepth()
 	{
-		return scopeStackNodes.size() - 1;
+		return scopeStack.size() - 1;
 	}
 
 	//creates a stack state saver for the interpreterNodeStack, which will be restored back to its previous condition when this object is destructed
@@ -782,7 +768,7 @@ protected:
 
 		//if doesn't own any scope stack of its own, then it's shared
 		//and callingInterpreter will have it
-		return scopeStackNodes.size() == 0;
+		return scopeStack.size() == 0;
 	}
 
 	//acquires lock of scopeStackMutex and assumes it is not nullptr,
@@ -1192,10 +1178,7 @@ public:
 protected:
 
 	//the scope stack is comprised of the variable contexts
-	std::vector<EvaluableNode *> scopeStackNodes;
-
-	//vector corresponding to scopeStackNodes, each entry is true if there was a side effect
-	std::vector<bool> scopeStackFreeable;
+	std::vector<ScopeStackNodeAndUniqueness> scopeStack;
 
 	//the current construction stack, containing an interleaved array of nodes
 	std::vector<EvaluableNode *> constructionStackNodes;

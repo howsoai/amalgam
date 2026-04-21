@@ -6,7 +6,6 @@
 #include "UninitializedArray.h"
 
 //system headers:
-#include <array>
 #include <initializer_list>
 #include <string>
 #include <utility>

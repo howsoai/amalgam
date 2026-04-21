@@ -15,6 +15,33 @@
 //forward declaration
 class Interpreter;
 
+//used with construction stack to store the index and whether previous_result is unique,
+//as well as whether any opcodes have been executed that have side effects, that could have written memory elsewhere,
+//and prevent any part of the construction stack from being unique
+struct ConstructionStackIndexAndPreviousResultUniqueness
+{
+	inline ConstructionStackIndexAndPreviousResultUniqueness(EvaluableNodeImmediateValueWithType _index,
+		bool _unique, bool top_node_unique)
+		: index(_index), unique(_unique), uniqueUnreferencedTopNode(top_node_unique), executionSideEffects(false)
+	{}
+
+	EvaluableNodeImmediateValueWithType index;
+	bool unique;
+	bool uniqueUnreferencedTopNode;
+	bool executionSideEffects;
+};
+
+//used for storage in the scopeStack
+struct ScopeStackNodeAndUniqueness
+{
+	inline ScopeStackNodeAndUniqueness(EvaluableNode *n, bool _unique)
+		: node(n), unique(_unique)
+	{}
+
+	EvaluableNode *node;
+	bool unique;
+};
+
 //memory pooled manager for allocating EvaluableNodes
 class EvaluableNodeManager
 {

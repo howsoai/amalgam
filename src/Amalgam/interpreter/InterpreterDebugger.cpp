@@ -429,8 +429,13 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 		else if(command == "stack")
 		{
 			std::cout << "Construction stack:" << std::endl;
-			for(EvaluableNode *csn : constructionStackNodes)
-				PrintStackNode(csn, evaluableNodeManager);
+			for(auto &cs_entry : constructionStack)
+			{
+				PrintStackNode(cs_entry.targetOrigin, evaluableNodeManager);
+				PrintStackNode(cs_entry.target, evaluableNodeManager);
+				PrintStackNode(cs_entry.currentValue, evaluableNodeManager);
+				PrintStackNode(cs_entry.previousResult, evaluableNodeManager);
+			}
 
 			std::cout << "scope stack:" << std::endl;
 			for(auto &scope_stack_entry : scopeStack)

@@ -2517,14 +2517,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	}
 
 	//make sure have a large enough stack
-	if(depth >= constructionStackIndicesAndUniqueness.size())
+	if(depth >= constructionStack.size())
 		return EvaluableNodeReference::Null();
 
 	//depth is 1-based
-	size_t offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
+	size_t offset = constructionStack.size() - 1 - depth;
 
 	//build the index node to return
-	EvaluableNodeImmediateValueWithType enivwt(constructionStackIndicesAndUniqueness[offset].index);
+	EvaluableNodeImmediateValueWithType enivwt(constructionStack[offset].index);
 	if(enivwt.nodeType == ENIVT_NUMBER)
 	{
 		return AllocReturn(enivwt.nodeValue.number, immediate_result);
@@ -2579,11 +2579,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNod
 	}
 
 	//make sure have a large enough stack
-	if(depth >= constructionStackIndicesAndUniqueness.size())
+	if(depth >= constructionStack.size())
 		return EvaluableNodeReference::Null();
 
-	size_t offset = constructionStackNodes.size() - (constructionStackOffsetStride * depth) + constructionStackOffsetCurrentValue;
-	return EvaluableNodeReference(constructionStackNodes[offset], false);
+	size_t offset = constructionStack.size() - 1 - depth;
+	return EvaluableNodeReference(constructionStack[offset].currentValue, false);
 }
 
 static OpcodeInitializer _ENT_PREVIOUS_RESULT(ENT_PREVIOUS_RESULT, &Interpreter::InterpretNode_ENT_PREVIOUS_RESULT, []() {
@@ -2644,7 +2644,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableN
 		make_copy = InterpretNodeIntoBoolValue(ocn[1]);
 
 	//make sure have a large enough stack
-	if(depth >= constructionStackIndicesAndUniqueness.size())
+	if(depth >= constructionStack.size())
 		return EvaluableNodeReference::Null();
 
 	if(make_copy)

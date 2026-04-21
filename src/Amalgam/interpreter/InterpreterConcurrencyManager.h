@@ -34,7 +34,7 @@ public:
 		for(size_t element_index = 0; element_index < numTasks; element_index++)
 			randomSeeds.emplace_back(parentInterpreter->randomStream.CreateOtherStreamViaRand());
 
-		//since each thread has a copy of the constructionStackNodes, it's possible that more than one of the threads
+		//since each thread has a copy of the constructionStack, it's possible that more than one of the threads
 		//obtains previous_results, so they must all be marked as not unique
 		parentInterpreter->RemoveUniquenessFromPreviousResultsInConstructionStack();
 
@@ -69,18 +69,14 @@ public:
 			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->GetMemoryModificationMutex());
 
 			//build new construction stack
-			std::vector<EvaluableNode *> construction_stack(parentInterpreter->constructionStackNodes);
-			std::vector<ConstructionStackIndexAndPreviousResultUniqueness>
-				csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
-			interpreter.PushNewConstructionContextToStack(construction_stack,
-				csiau, target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
+			std::vector<ConstructionStackEntry> construction_stack(parentInterpreter->constructionStack);
+			construction_stack.emplace_back(target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
 
 			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
 				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 
 			auto result_ref = interpreter.ExecuteNode(node_to_execute,
-				nullptr, &opcode_stack, &construction_stack, &csiau,
-				EvaluableNodeRequestedValueTypes::Type::NONE, false);
+				nullptr, &opcode_stack, &construction_stack, EvaluableNodeRequestedValueTypes::Type::NONE, false);
 
 			if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
@@ -133,17 +129,13 @@ public:
 			interpreter.memoryModificationLock = Concurrency::ReadLock(enm->GetMemoryModificationMutex());
 
 			//build new construction stack
-			std::vector<EvaluableNode *> construction_stack(parentInterpreter->constructionStackNodes);
-			std::vector<ConstructionStackIndexAndPreviousResultUniqueness>
-				csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
-			interpreter.PushNewConstructionContextToStack(construction_stack,
-				csiau, nullptr, nullptr, current_index, current_value, EvaluableNodeReference::Null());
+			std::vector<ConstructionStackEntry> construction_stack(parentInterpreter->constructionStack);
+			construction_stack.emplace_back(nullptr, nullptr, current_index, current_value, EvaluableNodeReference::Null());
 
 			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
 				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 
-			auto result = interpreter.ExecuteNode(node_to_execute,
-				nullptr, &opcode_stack, &construction_stack, &csiau,
+			auto result = interpreter.ExecuteNode(node_to_execute, nullptr, &opcode_stack, &construction_stack,
 				EvaluableNodeRequestedValueTypes::Type::NULL_VALUE, false);
 
 			interpreter.PopConstructionContextAndGetExecutionSideEffectFlag();
@@ -180,12 +172,10 @@ public:
 
 			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
 				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
-			std::vector<EvaluableNode *> construction_stack(parentInterpreter->constructionStackNodes);
-			std::vector<ConstructionStackIndexAndPreviousResultUniqueness>
-				csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
+			std::vector<ConstructionStackEntry> construction_stack(parentInterpreter->constructionStack);
 
 			auto result_ref = interpreter.ExecuteNode(node_to_execute, nullptr, &opcode_stack,
-				&construction_stack, &csiau, immediate_results, false);
+				&construction_stack, immediate_results, false);
 
 			if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
 				resultsSideEffect = true;

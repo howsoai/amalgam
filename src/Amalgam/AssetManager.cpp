@@ -511,7 +511,9 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters *asset_par
 
 		const std::string &s = code->GetStringValue();
 		if(asset_params->toMemory)
+		{
 			asset_params->resourceContents = s;
+		}
 		else
 		{
 			std::ofstream outf(asset_params->resourcePath, std::ios::out | std::ios::binary);

@@ -620,7 +620,7 @@ public:
 
 #ifdef MULTITHREAD_SUPPORT
 	//returns the memory modification mutex for garbage collection, etc.
-	Concurrency::ReadWriteMutex &GetMemoryModificationMutex()
+	inline Concurrency::ReadWriteMutex &GetMemoryModificationMutex()
 	{
 		if(activeInterpreters.get() == nullptr)
 		{
@@ -644,6 +644,29 @@ public:
 
 		return (activeInterpreters.get() != nullptr && activeInterpreters->activeInterpreters.size() > 0);
 	}
+
+#ifdef MULTITHREAD_SUPPORT
+	//acquires a memory modification lock when beginning execution but there isn't a known thread
+	//running already (e.g., not concurrent execution of spawned threads), but need to be careful of
+	//garbage collection
+	inline Concurrency::ReadLock AcquireMemoryModificationReadLock()
+	{
+		//ensure data structures are set up for interpreters
+		auto &mem_mod_mutex = GetMemoryModificationMutex();
+
+		//if garbage collection, wait for it to finish
+		while(activeInterpreters->garbageCollectionInProgress.load(std::memory_order_acquire))
+		{
+			Concurrency::SingleLock lock(activeInterpreters->garbageCollectionNotificationMutex);
+			activeInterpreters->garbageCollectionConditionVar.wait(lock, [this]()
+			{
+				return !activeInterpreters->garbageCollectionInProgress.load(std::memory_order_acquire);
+			});
+		}
+
+		return Concurrency::ReadLock(mem_mod_mutex);
+	}
+#endif
 
 	//adds the interpreter to the active list for tracking EvaluableNode references
 	void AddActiveInterpreter(Interpreter *interpreter)

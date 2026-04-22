@@ -103,13 +103,13 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 
 	if(gc_on_this_thread)
 	{
-		Concurrency::WriteLock write_lock(activeInterpreters->memoryModificationMutex);
-
-		//make other threads wait
+		//make other threads wait, but do so before locking other threads out in case some thread activating
 		{
 			Concurrency::SingleLock lock(activeInterpreters->garbageCollectionNotificationMutex);
 			activeInterpreters->garbageCollectionInProgress.store(true, std::memory_order_release);
 		}
+
+		Concurrency::WriteLock write_lock(activeInterpreters->memoryModificationMutex);
 
 		//clear all threads' local allocation buffers that are using this enm
 		LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(

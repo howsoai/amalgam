@@ -20,23 +20,6 @@
 class Interpreter
 {
 public:
-
-	//used with construction stack to store the index and whether previous_result is unique,
-	//as well as whether any opcodes have been executed that have side effects, that could have written memory elsewhere,
-	//and prevent any part of the construction stack from being unique
-	struct ConstructionStackIndexAndPreviousResultUniqueness
-	{
-		inline ConstructionStackIndexAndPreviousResultUniqueness(EvaluableNodeImmediateValueWithType _index,
-			bool _unique, bool top_node_unique)
-			: index(_index), unique(_unique), uniqueUnreferencedTopNode(top_node_unique), executionSideEffects(false)
-		{	}
-
-		EvaluableNodeImmediateValueWithType index;
-		bool unique;
-		bool uniqueUnreferencedTopNode;
-		bool executionSideEffects;
-	};
-
 	//Creates a new interpreter to run code and to store labels.
 	// If no entity is specified via nullptr, then it will run sandboxed
 	// if interpreter_constraints is not nullptr, then it will limit execution appropriately
@@ -61,8 +44,7 @@ public:
 	//if new_scope_stack is true, it will mark that it is the bottom of the scope stack
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		std::vector<EvaluableNode *> *scope_stack = nullptr, std::vector<EvaluableNode *> *opcode_stack = nullptr,
-		std::vector<EvaluableNode *> *construction_stack = nullptr,
-		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
+		std::vector<ConstructionStackEntry> *construction_stack = nullptr,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes()
 	#ifdef MULTITHREAD_SUPPORT
 		, bool new_scope_stack = true
@@ -178,26 +160,6 @@ public:
 	//returns a copy of the scope stack
 	EvaluableNode *MakeCopyOfScopeStack();
 
-	//pushes a new construction context on the stack, which is assumed to not be nullptr
-	//the stack is indexed via the constructionStackOffset* constants
-	//target_origin is the original node of target useful for keeping track of the reference
-	static inline void PushNewConstructionContextToStack(std::vector<EvaluableNode *> &stack_nodes,
-		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> &stack_node_indices,
-		EvaluableNode *target_origin, EvaluableNode *target,
-		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
-		EvaluableNodeReference previous_result)
-	{
-		size_t new_size = stack_nodes.size() + constructionStackOffsetStride;
-		stack_nodes.resize(new_size, nullptr);
-
-		stack_nodes[new_size + constructionStackOffsetTargetOrigin] = target_origin;
-		stack_nodes[new_size + constructionStackOffsetTarget] = target;
-		stack_nodes[new_size + constructionStackOffsetCurrentValue] = current_value;
-		stack_nodes[new_size + constructionStackOffsetPreviousResult] = previous_result;
-
-		stack_node_indices.emplace_back(current_index, previous_result.unique, previous_result.uniqueUnreferencedTopNode);
-	}
-
 	//pushes a new construction context on the stack
 	//the stack is indexed via the constructionStackOffset* constants
 	//target_origin is the original node of target useful for keeping track of the reference
@@ -205,26 +167,17 @@ public:
 		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
 		EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
 	{
-		return PushNewConstructionContextToStack(constructionStackNodes, constructionStackIndicesAndUniqueness,
-			target_origin, target, current_index, current_value, previous_result);
+		constructionStack.emplace_back(target_origin, target, current_index, current_value, previous_result);
 	}
 
 	//pops the top construction context off the stack
 	//and returns true if that construction stack node had memory write side effects
 	inline bool PopConstructionContextAndGetExecutionSideEffectFlag()
 	{
-		size_t new_size = constructionStackNodes.size();
-		if(new_size > constructionStackOffsetStride)
-			new_size -= constructionStackOffsetStride;
-		else
-			new_size = 0;
-
-		constructionStackNodes.resize(new_size);
-
-		if(constructionStackIndicesAndUniqueness.size() > 0)
+		if(constructionStack.size() > 0)
 		{
-			bool execution_side_effects = constructionStackIndicesAndUniqueness.back().executionSideEffects;
-			constructionStackIndicesAndUniqueness.pop_back();
+			bool execution_side_effects = constructionStack.back().executionSideEffects;
+			constructionStack.pop_back();
 			return execution_side_effects;
 		}
 
@@ -235,8 +188,8 @@ public:
 	//returns true if the top of the construction stack has memory write execution side effects
 	inline bool DoesConstructionStackHaveExecutionSideEffects()
 	{
-		if(constructionStackIndicesAndUniqueness.size() > 0)
-			return constructionStackIndicesAndUniqueness.front().executionSideEffects;
+		if(constructionStack.size() > 0)
+			return constructionStack.front().executionSideEffects;
 		return false;
 	}
 
@@ -244,12 +197,12 @@ public:
 	//assumes there is at least one construction stack entry
 	__forceinline void SetTopCurrentIndexInConstructionStack(double new_index)
 	{
-		constructionStackIndicesAndUniqueness.back().index = EvaluableNodeImmediateValueWithType(new_index);
+		constructionStack.back().index = EvaluableNodeImmediateValueWithType(new_index);
 	}
 
 	__forceinline void SetTopCurrentIndexInConstructionStack(StringInternPool::StringID new_index)
 	{
-		constructionStackIndicesAndUniqueness.back().index = EvaluableNodeImmediateValueWithType(new_index);
+		constructionStack.back().index = EvaluableNodeImmediateValueWithType(new_index);
 	}
 
 	//sets the value node for the top reference on the construction stack
@@ -257,33 +210,32 @@ public:
 	//assumes there is at least one construction stack entry
 	__forceinline void SetTopCurrentValueInConstructionStack(EvaluableNode *value)
 	{
-		constructionStackNodes[constructionStackNodes.size() + constructionStackOffsetCurrentValue] = value;
+		constructionStack.back().currentValue = value;
 	}
 
 	//sets the previous_result node for the top reference on the construction stack
 	//assumes there is at least one construction stack entry
 	__forceinline void SetTopPreviousResultInConstructionStack(EvaluableNodeReference previous_result)
 	{
-		constructionStackNodes[constructionStackNodes.size() + constructionStackOffsetPreviousResult] = previous_result;
-		constructionStackIndicesAndUniqueness.back().unique = previous_result.unique;
-		constructionStackIndicesAndUniqueness.back().uniqueUnreferencedTopNode = previous_result.uniqueUnreferencedTopNode;
+		auto &cs_entry = constructionStack.back();
+		cs_entry.previousResult = previous_result;
+		cs_entry.previousResultUnique = previous_result.unique;
+		cs_entry.previousResultUniqueUnreferencedTopNode = previous_result.uniqueUnreferencedTopNode;
 	}
 
 	//gets the previous_result node for the reference at depth on the construction stack
 	//assumes there is at least one construction stack entry and depth is a valid depth
 	__forceinline EvaluableNodeReference GetAndClearPreviousResultInConstructionStack(size_t depth)
 	{
-		size_t uniqueness_offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
-		bool previous_result_unique = constructionStackIndicesAndUniqueness[uniqueness_offset].unique;
-		bool previous_result_unique_top_node
-			= constructionStackIndicesAndUniqueness[uniqueness_offset].uniqueUnreferencedTopNode;
+		auto &cs_entry = constructionStack[constructionStack.size() - 1 - depth];
+		bool previous_result_unique = cs_entry.previousResultUnique;
+		cs_entry.previousResultUnique = false;
 
-		//clear previous result
-		size_t prev_result_offset = constructionStackNodes.size()
-						- (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
-		auto &previous_result_loc = constructionStackNodes[prev_result_offset];
-		EvaluableNode *previous_result = nullptr;
-		std::swap(previous_result, previous_result_loc);
+		bool previous_result_unique_top_node = cs_entry.previousResultUniqueUnreferencedTopNode;
+		cs_entry.previousResultUniqueUnreferencedTopNode = false;
+
+		EvaluableNode *previous_result = cs_entry.previousResult;
+		cs_entry.previousResult = nullptr;
 
 		return EvaluableNodeReference(previous_result, previous_result_unique, previous_result_unique_top_node);
 	}
@@ -292,20 +244,17 @@ public:
 	//assumes there is at least one construction stack entry and depth is a valid depth
 	__forceinline EvaluableNodeReference CopyPreviousResultInConstructionStack(size_t depth)
 	{
-		//clear previous result
-		size_t prev_result_offset = constructionStackNodes.size()
-						- (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
-		auto &previous_result_loc = constructionStackNodes[prev_result_offset];
-		return evaluableNodeManager->DeepAllocCopy(previous_result_loc);
+		auto &cs_entry = constructionStack[constructionStack.size() - 1 - depth];
+		return evaluableNodeManager->DeepAllocCopy(cs_entry.previousResult);
 	}
 
 	//clears all uniqueness of previous_results in construction stack in case the construction stack is copied across threads
 	inline void RemoveUniquenessFromPreviousResultsInConstructionStack()
 	{
-		for(auto &entry : constructionStackIndicesAndUniqueness)
+		for(auto &cs_entry : constructionStack)
 		{
-			entry.unique = false;
-			entry.uniqueUnreferencedTopNode = false;
+			cs_entry.previousResultUnique = false;
+			cs_entry.previousResultUniqueUnreferencedTopNode = false;
 		}
 	}
 
@@ -314,16 +263,16 @@ public:
 	// and the second is true if it set at least one flag (i.e., it was the first time doing so)
 	inline std::pair<bool, bool> SetSideEffectsFlags()
 	{
-		bool any_constructions = (constructionStackIndicesAndUniqueness.size() > 0);
+		bool any_constructions = (constructionStack.size() > 0);
 		bool any_set = false;
-		for(size_t i = constructionStackIndicesAndUniqueness.size(); i > 0; i--)
+		for(size_t i = constructionStack.size(); i > 0; i--)
 		{
 			size_t index = i - 1;
 			//early out if already set with side effects
-			if(constructionStackIndicesAndUniqueness[index].executionSideEffects)
+			if(constructionStack[index].executionSideEffects)
 				break;
 
-			constructionStackIndicesAndUniqueness[index].executionSideEffects = true;
+			constructionStack[index].executionSideEffects = true;
 			any_set = true;
 		}
 
@@ -1191,12 +1140,8 @@ protected:
 	//vector corresponding to scopeStackNodes, each entry is true if there was a side effect
 	std::vector<bool> scopeStackFreeable;
 
-	//the current construction stack, containing an interleaved array of nodes
-	std::vector<EvaluableNode *> constructionStackNodes;
-
-	//current index for each level of constructionStackNodes;
-	//note, this should always be the same size as constructionStackNodes
-	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> constructionStackIndicesAndUniqueness;
+	//the construction stack for building data structures
+	std::vector<ConstructionStackEntry> constructionStack;
 
 	//references to listeners for writes on an Entity and prints
 	std::vector<EntityWriteListener *> *writeListeners;
@@ -1246,17 +1191,6 @@ public:
 
 	//set to true if label profiling is enabled
 	static bool _label_profiling_enabled;
-
-protected:
-	//number of items in each level of the constructionStack
-	static constexpr int64_t constructionStackOffsetStride = 4;
-
-	//index of each item for a given level in the constructionStack relative to the size of the stack minus the level * constructionStackOffsetStride
-	//target origin is the original node of target useful for keeping track of the reference
-	static constexpr int64_t constructionStackOffsetTargetOrigin = -4;
-	static constexpr int64_t constructionStackOffsetTarget = -3;
-	static constexpr int64_t constructionStackOffsetCurrentValue = -2;
-	static constexpr int64_t constructionStackOffsetPreviousResult = -1;
 };
 
 //templated setter for opcode functions to break dependency cycle

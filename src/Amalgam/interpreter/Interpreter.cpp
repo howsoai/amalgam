@@ -32,8 +32,7 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	std::vector<EvaluableNode *> * scope_stack,
-	std::vector<EvaluableNode *> * opcode_stack, std::vector<EvaluableNode *> *construction_stack,
-	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
+	std::vector<EvaluableNode *> * opcode_stack, std::vector<ConstructionStackEntry> *construction_stack,
 	EvaluableNodeRequestedValueTypes immediate_result
 #ifdef MULTITHREAD_SUPPORT
 	, bool new_scope_stack
@@ -60,18 +59,13 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		opcodeStackNodes = std::move(*opcode_stack);
 
 	if(construction_stack == nullptr)
-		constructionStackNodes.clear();
+		constructionStack.clear();
 	else
-		constructionStackNodes = std::move(*construction_stack);
+		constructionStack = std::move(*construction_stack);
 
 #ifdef MULTITHREAD_SUPPORT
 	bottomOfScopeStack = new_scope_stack;
 #endif
-
-	if(construction_stack_indices == nullptr)
-		constructionStackIndicesAndUniqueness.clear();
-	else
-		constructionStackIndicesAndUniqueness = std::move(*construction_stack_indices);
 	
 	evaluableNodeManager->AddActiveInterpreter(this);
 	auto retval = InterpretNode(en, immediate_result);

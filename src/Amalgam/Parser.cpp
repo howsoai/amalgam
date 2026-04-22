@@ -1569,7 +1569,7 @@ void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 			if(ocn.size() > 1)
 				file_type = EvaluableNode::ToString(ocn[1]);
 
-			AssetManager::AssetParameters asset_params(path, file_type, false);
+			AssetManager::AssetParameters asset_params(path, file_type, false, originalSource);
 
 			if(ocn.size() > 2)
 			{

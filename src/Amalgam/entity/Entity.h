@@ -200,7 +200,8 @@ public:
 	//note that scope_stack, if specified, will transfer the memory in the vector to be owned by this method,
 	// and its contents will be cleared upon completion of this method
 	EvaluableNodeReference Execute(StringInternPool::StringID label_sid,
-		std::vector<EvaluableNode *> *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
+		std::vector<EvaluableNode *> *scope_stack,
+		bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		InterpreterConstraints *interpreter_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
@@ -237,7 +238,8 @@ public:
 
 	//same as Execute but accepts a string for label name
 	inline EvaluableNodeReference Execute(const std::string &label_name,
-		std::vector<EvaluableNode *> *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
+		std::vector<EvaluableNode *> *scope_stack,
+		bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		InterpreterConstraints *interpreter_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT

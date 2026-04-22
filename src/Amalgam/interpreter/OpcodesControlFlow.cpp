@@ -173,7 +173,6 @@ static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CAL
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 

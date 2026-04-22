@@ -569,7 +569,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		list_ocn[1] = evaluableNodeManager->AllocNode(secret_key);
 
 		return EvaluableNodeReference(list, true);
-
 	}
 	else if(command == "encrypt_key_pair" && permissions.HasPermission(ExecutionPermissions::Permission::SYSTEM))
 	{

@@ -46,7 +46,10 @@ public:
 		//initializes defaults for AssetParameters -- should specify whether it is an entity
 		//resource_path specifies the path.  if file_type is empty string, then it will
 		//attempt to extract the file_type from the file extension on the resource
-		AssetParameters(std::string resource_path, std::string file_type, bool is_entity);
+		//if relative_to_file is specified and resource_path is not absolute, then it will
+		//attempt to load resource path from a location relative to the file specified
+		AssetParameters(std::string resource_path, std::string file_type,
+			bool is_entity, std::string_view relative_to_file = {});
 
 		//copy constructor
 		AssetParameters(const AssetParameters &other)

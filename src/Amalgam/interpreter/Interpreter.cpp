@@ -879,6 +879,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DEALLOCATED(EvaluableNode 
 	return EvaluableNodeReference::Null();
 }
 
+EvaluableNodeReference Interpreter::InterpretNode_ENT_UNINITIALIZED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	std::cerr << "ERROR: encountered an uninitialized node\n";
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(false);
+#endif
+	return EvaluableNodeReference::Null();
+}
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	std::cerr << "ERROR: encountered an invalid instruction\n";

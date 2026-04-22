@@ -12,7 +12,6 @@
 #include "RandomStream.h"
 
 //system headers:
-#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <string>

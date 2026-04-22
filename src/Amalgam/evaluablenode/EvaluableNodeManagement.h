@@ -651,6 +651,7 @@ public:
 	//garbage collection
 	inline Concurrency::ReadLock AcquireMemoryModificationReadLock()
 	{
+		//ensure data structures are set up for interpreters
 		auto &mem_mod_mutex = GetMemoryModificationMutex();
 
 		//if garbage collection, wait for it to finish

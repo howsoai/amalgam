@@ -710,7 +710,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again
-	memoryModificationLock.lock();
+	memoryModificationLock = evaluableNodeManager->AcquireMemoryModificationReadLock();
 #endif
 
 	//handle errors

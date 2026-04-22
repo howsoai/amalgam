@@ -18,6 +18,7 @@ class EntityQueryCaches;
 class EntityWriteListener;
 class EvaluableNode;
 class EvaluableNodeManagement;
+class Interpreter;
 class InterpreterConstraints;
 class PrintListener;
 

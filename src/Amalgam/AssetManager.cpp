@@ -432,7 +432,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		{
 			if(first_node_type == ENT_LET)
 			{
-				scope_stack.emplace_back(assoc_node);
+				scope_stack.push_back(assoc_node);
 			}
 			else //first_node_type == ENT_DECLARE
 			{

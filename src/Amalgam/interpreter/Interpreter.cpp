@@ -45,7 +45,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
 		new_context_entry->SetNeedCycleCheck(true);
 		scopeStack.clear();
-		scopeStack.emplace_back(new_context_entry);
+		scopeStack.push_back(new_context_entry);
 	}
 	else
 	{

@@ -654,7 +654,7 @@ public:
 		auto &mem_mod_mutex = GetMemoryModificationMutex();
 
 		//if garbage collection, wait for it to finish
-		while(activeInterpreters->garbageCollectionInProgress)
+		while(activeInterpreters->garbageCollectionInProgress.load(std::memory_order_acquire))
 		{
 			Concurrency::SingleLock lock(activeInterpreters->garbageCollectionNotificationMutex);
 			activeInterpreters->garbageCollectionConditionVar.wait(lock, [this]()

@@ -436,7 +436,7 @@ PLATFORM_MAIN_CONSOLE
 				}
 
 				auto [code, warnings, char_with_error, code_complete]
-					= Parser::Parse(input, &entity->evaluableNodeManager, false, nullptr, debug_sources, true);
+					= Parser::Parse(input, &entity->evaluableNodeManager, false, &amlg_file_to_run, debug_sources, true);
 
 				//if the parser reports the code is incomplete, keep prompting
 				while(!code_complete)
@@ -448,7 +448,7 @@ PLATFORM_MAIN_CONSOLE
 					input += '\n' + line;
 
 					std::tie(code, warnings, char_with_error, code_complete)
-						= Parser::Parse(input, &entity->evaluableNodeManager, false, nullptr, debug_sources, true);
+						= Parser::Parse(input, &entity->evaluableNodeManager, false, &amlg_file_to_run, debug_sources, true);
 				}
 
 				for(auto &w : warnings)

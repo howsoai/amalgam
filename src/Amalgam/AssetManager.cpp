@@ -20,10 +20,31 @@
 
 AssetManager asset_manager;
 
-AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::string file_type, bool is_entity)
+AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::string file_type,
+	bool is_entity, std::string_view relative_to_file)
 {
-	resourcePath = resource_path;
-	resourceType = file_type;
+
+	if(relative_to_file.empty())
+	{
+		resourcePath = std::move(resource_path);
+	}
+	else
+	{
+		std::filesystem::path res_path = std::move(resource_path);
+		if(!res_path.is_absolute())
+		{
+			std::filesystem::path relative_to_file_path = relative_to_file;
+			if(!relative_to_file_path.empty() && relative_to_file_path.has_filename())
+				relative_to_file_path = relative_to_file_path.parent_path();
+
+			//combine the relative_to_file_path directory with the relative resource path
+			res_path = relative_to_file_path / res_path;
+		}
+
+		resourcePath = res_path.generic_string();
+	}
+
+	resourceType = std::move(file_type);
 	topEntity = nullptr;
 
 	if(resourceType == "")
@@ -383,7 +404,9 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 
 	StringManipulation::RemoveBOMFromUTF8String(code_string);
 
-	Parser parser(code_string, &entity->evaluableNodeManager, true, &asset_params->resourcePath, debugSources, asset_params->loadExternalFiles);
+	Parser parser(code_string, &entity->evaluableNodeManager, true,
+		&asset_params->resourcePath, debugSources, asset_params->loadExternalFiles);
+
 	auto [first_node, first_node_warnings, first_node_char_with_error] = parser.ParseFirstNode();
 	for(auto &w : first_node_warnings)
 		std::cerr << w << std::endl;

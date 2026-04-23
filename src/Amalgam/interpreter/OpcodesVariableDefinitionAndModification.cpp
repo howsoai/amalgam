@@ -281,6 +281,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 							if(value.unique)
 								scope->SetIsFreeable(true);
 						}
+
 					scope->SetMappedChildNode(cn_id, value, false);
 				}
 			}

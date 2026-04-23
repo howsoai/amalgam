@@ -1064,7 +1064,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 			else if(node_type == ENT_BOOL && result->GetBoolValueReference())
 			{
 				//select the top of the stack
-				depth = constructionStackIndicesAndUniqueness.size() - 1;
+				depth = constructionStack.size() - 1;
 			}
 			else if(node_type != ENT_BOOL)
 			{
@@ -1074,22 +1074,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 	}
 
 	//make sure have a large enough stack
-	if(depth >= constructionStackIndicesAndUniqueness.size())
+	if(depth >= constructionStack.size())
 		return EvaluableNodeReference::Null();
 
-	size_t offset = constructionStackNodes.size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTarget;
+	size_t offset = constructionStack.size() - 1 - depth;
 
 	if(ocn.size() > 1)
 	{
 		//if there's a second parameter, try to look up the walk path
-		EvaluableNode **target = InterpretNodeIntoDestination(&constructionStackNodes[offset], ocn[1], false);
+		EvaluableNode **target = InterpretNodeIntoDestination(&constructionStack[offset].target, ocn[1], false);
 		if(target == nullptr)
 			return EvaluableNodeReference::Null();
 
 		return EvaluableNodeReference(*target, false);
 	}
 
-	return EvaluableNodeReference(constructionStackNodes[offset], false);
+	return EvaluableNodeReference(constructionStack[offset].target, false);
 }
 
 static OpcodeInitializer _ENT_STACK(ENT_STACK, &Interpreter::InterpretNode_ENT_STACK, []() {

@@ -342,8 +342,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 #endif
 
 	//improve performance by managing the stacks here
-	auto result = sandbox.ExecuteNode(function, &scope_stack, nullptr, nullptr,
-		nullptr, immediate_result);
+	auto result = sandbox.ExecuteNode(function, &scope_stack, nullptr, nullptr, immediate_result);
 
 #ifdef MULTITHREAD_SUPPORT
 	//hand lock back to this interpreter

@@ -491,8 +491,13 @@ void EvaluableNodeManager::VerifyEvaluableNodeIntegretyForAllReferencedNodes()
 			for(EvaluableNode *en : interpreter->opcodeStackNodes)
 				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
 
-			for(EvaluableNode *en : interpreter->constructionStackNodes)
-				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
+			for(auto &cs_entry : interpreter->constructionStack)
+			{
+				ValidateEvaluableNodeTreeMemoryIntegrity(cs_entry.targetOrigin, this);
+				ValidateEvaluableNodeTreeMemoryIntegrity(cs_entry.target, this);
+				ValidateEvaluableNodeTreeMemoryIntegrity(cs_entry.currentValue, this);
+				ValidateEvaluableNodeTreeMemoryIntegrity(cs_entry.previousResult, this);
+			}
 		}
 	}
 }
@@ -752,12 +757,19 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 						MarkAllReferencedNodesInUseConcurrentForNode(en);
 					}
 
-					for(EvaluableNode *en : interpreter->constructionStackNodes)
+					for(auto &cs_entry : interpreter->constructionStack)
 					{
-						if(en == nullptr || en->GetKnownToBeInUse())
-							continue;
+						if(cs_entry.targetOrigin != nullptr && !cs_entry.targetOrigin->GetKnownToBeInUse())
+							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.targetOrigin);
 
-						MarkAllReferencedNodesInUseConcurrentForNode(en);
+						if(cs_entry.target!= nullptr && !cs_entry.target->GetKnownToBeInUse())
+							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.target);
+
+						if(cs_entry.currentValue != nullptr && !cs_entry.currentValue->GetKnownToBeInUse())
+							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.currentValue);
+
+						if(cs_entry.previousResult != nullptr && !cs_entry.previousResult->GetKnownToBeInUse())
+							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.previousResult);
 					}
 
 					task_set.MarkTaskCompleted();
@@ -775,20 +787,36 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	{
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
-			auto mark_nodes = [](std::vector<EvaluableNode *> &stack)
+			for(EvaluableNode *en : interpreter->scopeStackNodes)
 			{
-				for(EvaluableNode *en : stack)
-				{
-					if(en == nullptr || en->GetKnownToBeInUse())
-						continue;
+				if(en == nullptr || en->GetKnownToBeInUse())
+					continue;
 
-					MarkAllReferencedNodesInUseForNode(en);
-				}
-			};
+				MarkAllReferencedNodesInUseForNode(en);
+			}
 
-			mark_nodes(interpreter->scopeStackNodes);
-			mark_nodes(interpreter->opcodeStackNodes);
-			mark_nodes(interpreter->constructionStackNodes);
+			for(EvaluableNode *en : interpreter->opcodeStackNodes)
+			{
+				if(en == nullptr || en->GetKnownToBeInUse())
+					continue;
+
+				MarkAllReferencedNodesInUseForNode(en);
+			}
+
+			for(auto &cs_entry : interpreter->constructionStack)
+			{
+				if(cs_entry.targetOrigin != nullptr && !cs_entry.targetOrigin->GetKnownToBeInUse())
+					MarkAllReferencedNodesInUseForNode(cs_entry.targetOrigin);
+
+				if(cs_entry.target != nullptr && !cs_entry.target->GetKnownToBeInUse())
+					MarkAllReferencedNodesInUseForNode(cs_entry.target);
+
+				if(cs_entry.currentValue != nullptr && !cs_entry.currentValue->GetKnownToBeInUse())
+					MarkAllReferencedNodesInUseForNode(cs_entry.currentValue);
+
+				if(cs_entry.previousResult != nullptr && !cs_entry.previousResult->GetKnownToBeInUse())
+					MarkAllReferencedNodesInUseForNode(cs_entry.previousResult);
+			}
 		}
 	}
 }

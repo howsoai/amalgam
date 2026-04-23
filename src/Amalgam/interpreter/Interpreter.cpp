@@ -91,7 +91,6 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 		}
 	}
 
-	bool any_nonunique_vars = false;
 	if(EvaluableNode::IsAssociativeArray(new_scope))
 	{
 		evaluableNodeManager->EnsureNodeIsModifiable(new_scope, true, false);
@@ -111,7 +110,6 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 			{
 				if(new_scope_mcn.size() > 0)
 				{
-					any_nonunique_vars = true;
 					//set not freeable incase referenced elsewhere
 					for(auto &[id, cn] : new_scope_mcn)
 					{
@@ -144,19 +142,14 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 				if(value != nullptr)
 				{
 					if(value.unique)
-					{
 						value->SetIsFreeable(true);
-					}
 					else
-					{
-						any_nonunique_vars = true;
 					#ifdef MULTITHREAD_SUPPORT
 						//not unique, so should set atomically if other threads may be accessing it
 						value->SetIsFreeableAtomic(false);
 					#else
 						value->SetIsFreeable(false);
 					#endif
-					}
 				}
 
 				cn = value;

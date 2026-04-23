@@ -222,9 +222,11 @@ public:
 		}
 
 		//indicate scope stack is not freeable if the top is still freeable
-		if(scopeStackFreeable.size() > 0 && scopeStackFreeable.back())
-			std::fill(begin(scopeStackFreeable), end(scopeStackFreeable), false);
-
+		if(scopeStack.size() > 0 && scopeStack.back()->GetIsFreeable())
+		{
+			for(auto &stack_entry : scopeStack)
+				stack_entry->SetIsFreeable(false);
+		}
 		return std::make_pair(any_constructions, any_set);
 	}
 
@@ -1081,9 +1083,6 @@ protected:
 
 	//the scope stack is comprised of the variable contexts
 	std::vector<EvaluableNode *> scopeStack;
-
-	//vector corresponding to scopeStack, each entry is true if there was a side effect
-	std::vector<bool> scopeStackFreeable;
 
 	//the construction stack for building data structures
 	std::vector<ConstructionStackEntry> constructionStack;

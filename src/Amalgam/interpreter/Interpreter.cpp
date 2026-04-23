@@ -113,35 +113,25 @@ void Interpreter::InterpretAndPushNewScopeStack(EvaluableNode *new_context_node)
 	new_context->SetNeedCycleCheck(true);
 
 	scopeStack.push_back(new_context);
-	scopeStackFreeable.push_back(new_context.unique);
 }
 
 //pops the top context off the stack
 //if returning_unique_value, then can potentially free the whole scope
 void Interpreter::PopScopeStack(bool returning_unique_value)
 {
-	if(returning_unique_value && scopeStackFreeable.back())
+	EvaluableNode *scope = scopeStack.back();
+
+	if(returning_unique_value && scope->GetIsFreeable())
 	{
-		evaluableNodeManager->FreeNodeTree(scopeStack.back());
-	}
-	else
-	{
-		EvaluableNode *scope = scopeStack.back();
-		//only check its child nodes if it itself has a freeable flag set,
-		//since iterating over the mapped child nodes can be costly wrt performance
-		if(scope->GetIsFreeable())
+		for(auto &[id, cn] : scope->GetMappedChildNodesReference())
 		{
-			for(auto &[id, cn] : scope->GetMappedChildNodesReference())
-			{
-				if(cn != nullptr && cn->GetIsFreeable())
-					evaluableNodeManager->FreeNodeTree(cn);
-			}
+			if(cn != nullptr && cn->GetIsFreeable())
+				evaluableNodeManager->FreeNodeTree(cn);
 		}
-		evaluableNodeManager->FreeNode(scope);
 	}
 
+	evaluableNodeManager->FreeNode(scope);
 	scopeStack.pop_back();
-	scopeStackFreeable.pop_back();
 }
 
 EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth

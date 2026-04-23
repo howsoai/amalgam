@@ -787,12 +787,12 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	{
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
-			for(auto &scope_stack_entry : interpreter->scopeStack)
+			for(EvaluableNode *en : interpreter->scopeStack)
 			{
-				if(scope_stack_entry == nullptr || scope_stack_entry->GetKnownToBeInUse())
+				if(en == nullptr || en->GetKnownToBeInUse())
 					continue;
 
-				MarkAllReferencedNodesInUseForNode(scope_stack_entry);
+				MarkAllReferencedNodesInUseForNode(en);
 			}
 
 			for(EvaluableNode *en : interpreter->opcodeStackNodes)

@@ -76,34 +76,96 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 
 void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_node)
 {
-	//can keep constant, but need the top node to be unique in case assignments are made
-	EvaluableNodeReference new_scope = InterpretNodeForImmediateUse(new_scope_node);
-	evaluableNodeManager->EnsureNodeIsModifiable(new_scope, true, false);
+	EvaluableNodeReference new_scope = EvaluableNodeReference::Null();
+	bool need_to_interpret_new_scope = false;
+	if(new_scope_node != nullptr)
+	{
+		if(new_scope_node->IsAssociativeArray())
+		{
+			new_scope = EvaluableNodeReference(new_scope_node, false);
+			need_to_interpret_new_scope = !new_scope_node->GetIsIdempotent();
+		}
+		else //just need to interpret
+		{
+			new_scope = InterpretNodeForImmediateUse(new_scope_node);
+		}
+	}
 
-	//make sure unique assoc
+	bool any_nonunique_vars = false;
 	if(EvaluableNode::IsAssociativeArray(new_scope))
 	{
-		if(new_scope.unique)
+		evaluableNodeManager->EnsureNodeIsModifiable(new_scope, true, false);
+
+		if(!need_to_interpret_new_scope)
 		{
-			for(auto &[id, cn] : new_scope->GetMappedChildNodesReference())
+			auto &new_scope_mcn = new_scope->GetMappedChildNodesReference();
+			if(new_scope.unique)
 			{
-				if(cn != nullptr)
-					cn->SetIsFreeable(true);
+				for(auto &[id, cn] : new_scope_mcn)
+				{
+					if(cn != nullptr)
+						cn->SetIsFreeable(true);
+				}
+			}
+			else //!new_scope.unique
+			{
+				if(new_scope_mcn.size() > 0)
+				{
+					any_nonunique_vars = true;
+					//set not freeable incase referenced elsewhere
+					for(auto &[id, cn] : new_scope_mcn)
+					{
+						if(cn != nullptr)
+						#ifdef MULTITHREAD_SUPPORT
+							//not unique, so should set atomically if other threads may be accessing it
+							cn->SetIsFreeableAtomic(false);
+						#else
+							cn->SetIsFreeable(false);
+						#endif
+					}
+				}
 			}
 		}
-		else
+		else //need_to_interpret_new_scope
 		{
-			new_scope.SetReference(evaluableNodeManager->AllocNode(new_scope, false));
+			//need to interpret nodes
+			PushNewConstructionContext(new_scope_node, new_scope,
+					EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-			//ensure none of these are set as freeable even if referenced from another location
-			for(auto &[id, cn] : new_scope->GetMappedChildNodesReference())
+			for(auto &[cn_id, cn] : new_scope->GetMappedChildNodesReference())
 			{
+				if(cn == nullptr || cn->GetIsIdempotent())
+					continue;
 
-				//TODO 25375: improve logic around SetIsFreeable and unify with scopeStackFreeable; branch above where not unique could stay if only use flag for when there is something potentially freeable
-				//TODO 25375: should this be atomic in MT?
-				if(cn != nullptr)
-					cn->SetIsFreeable(false);
+				//need to interpret
+				SetTopCurrentIndexInConstructionStack(cn_id);
+				EvaluableNodeReference value = InterpretNodeForImmediateUse(cn);
+
+				if(value != nullptr)
+				{
+					if(value.unique)
+					{
+						value->SetIsFreeable(true);
+					}
+					else
+					{
+						any_nonunique_vars = true;
+					#ifdef MULTITHREAD_SUPPORT
+						//not unique, so should set atomically if other threads may be accessing it
+						value->SetIsFreeableAtomic(false);
+					#else
+						value->SetIsFreeable(false);
+					#endif
+					}
+				}
+
+				cn = value;
+				new_scope->UpdateFlagsBasedOnNewChildNode(cn);
 			}
+
+			//if there was a side-effect, then need to make another copy of the context in case something is referencing it
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(new_scope, false), false, true);
 		}
 	}
 	else //not assoc, make a new one

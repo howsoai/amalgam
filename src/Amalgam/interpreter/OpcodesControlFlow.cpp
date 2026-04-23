@@ -203,7 +203,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 		profiling_call = true;
 	}
 
-	InterpretAndPushNewScopeStack(ocn.size() > 1 ? ocn[1] : nullptr);
+	InterpretAndPushNewScopeStackNode(ocn.size() > 1 ? ocn[1] : nullptr);
 
 	//call the code
 	auto result = InterpretNode(function, immediate_result);

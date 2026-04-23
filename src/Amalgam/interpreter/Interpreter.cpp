@@ -74,45 +74,45 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	return retval;
 }
 
-void Interpreter::InterpretAndPushNewScopeStack(EvaluableNode *new_context_node)
+void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_node)
 {
 	//can keep constant, but need the top node to be unique in case assignments are made
-	EvaluableNodeReference new_context = InterpretNodeForImmediateUse(new_context_node);
-	evaluableNodeManager->EnsureNodeIsModifiable(new_context, true, false);
+	EvaluableNodeReference new_scope = InterpretNodeForImmediateUse(new_scope_node);
+	evaluableNodeManager->EnsureNodeIsModifiable(new_scope, true, false);
 
 	//make sure unique assoc
-	if(EvaluableNode::IsAssociativeArray(new_context))
+	if(EvaluableNode::IsAssociativeArray(new_scope))
 	{
-		if(new_context.unique)
+		if(new_scope.unique)
 		{
-			for(auto &[id, cn] : new_context->GetMappedChildNodesReference())
+			for(auto &[id, cn] : new_scope->GetMappedChildNodesReference())
 			{
 				if(cn != nullptr)
 					cn->SetIsFreeable(true);
 			}
 
 			//set the context to be freeable so it knows to look for any possible freeable values
-			new_context->SetIsFreeable(true);
+			new_scope->SetIsFreeable(true);
 		}
 		else
 		{
-			new_context.SetReference(evaluableNodeManager->AllocNode(new_context, false));
+			new_scope.SetReference(evaluableNodeManager->AllocNode(new_scope, false));
 		}
 	}
 	else //not assoc, make a new one
 	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(new_context);
-		new_context = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
+		evaluableNodeManager->FreeNodeTreeIfPossible(new_scope);
+		new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 		//set the context to be freeable so it knows to look for any possible freeable values
-		new_context->SetIsFreeable(true);
+		new_scope->SetIsFreeable(true);
 	}
 
 	//TODO 25375: improve logic around SetIsFreeable and unify with scopeStackFreeable; branch above where not unique could stay if only use flag for when there is something potentially freeable
 
 	//just in case a variable is added which needs cycle checks
-	new_context->SetNeedCycleCheck(true);
+	new_scope->SetNeedCycleCheck(true);
 
-	scopeStack.push_back(new_context);
+	scopeStack.push_back(new_scope);
 }
 
 //pops the top context off the stack

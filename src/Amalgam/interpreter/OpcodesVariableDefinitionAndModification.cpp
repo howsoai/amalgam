@@ -88,7 +88,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
-	InterpretAndPushNewScopeStack(ocn[0]);
+	InterpretAndPushNewScopeStackNode(ocn[0]);
 
 	//run code
 	EvaluableNodeReference result = EvaluableNodeReference::Null();

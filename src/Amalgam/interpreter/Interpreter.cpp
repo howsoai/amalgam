@@ -90,28 +90,32 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 				if(cn != nullptr)
 					cn->SetIsFreeable(true);
 			}
-
-			//set the context to be freeable so it knows to look for any possible freeable values
-			new_scope->SetIsFreeable(true);
 		}
 		else
 		{
 			new_scope.SetReference(evaluableNodeManager->AllocNode(new_scope, false));
+
+			//ensure none of these are set as freeable even if referenced from another location
+			for(auto &[id, cn] : new_scope->GetMappedChildNodesReference())
+			{
+
+				//TODO 25375: improve logic around SetIsFreeable and unify with scopeStackFreeable; branch above where not unique could stay if only use flag for when there is something potentially freeable
+				//TODO 25375: should this be atomic in MT?
+				if(cn != nullptr)
+					cn->SetIsFreeable(false);
+			}
 		}
 	}
 	else //not assoc, make a new one
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(new_scope);
 		new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
-		//set the context to be freeable so it knows to look for any possible freeable values
-		new_scope->SetIsFreeable(true);
 	}
 
-	//TODO 25375: improve logic around SetIsFreeable and unify with scopeStackFreeable; branch above where not unique could stay if only use flag for when there is something potentially freeable
-
+	//start to check things as being freeable unless cleared/invalidated later
+	new_scope->SetIsFreeable(true);
 	//just in case a variable is added which needs cycle checks
 	new_scope->SetNeedCycleCheck(true);
-
 	scopeStack.push_back(new_scope);
 }
 

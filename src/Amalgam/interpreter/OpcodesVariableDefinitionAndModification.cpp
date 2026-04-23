@@ -276,11 +276,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					#endif
 						//only set unread if writing to parts of the stack that aren't shared
 						if(value != nullptr)
-						{
 							value->SetIsFreeable(value.unique);
-							if(value.unique)
-								scope->SetIsFreeable(true);
-						}
 
 					scope->SetMappedChildNode(cn_id, value, false);
 				}

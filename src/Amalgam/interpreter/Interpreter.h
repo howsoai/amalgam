@@ -121,6 +121,8 @@ public:
 			new_context->SetIsFreeable(true);
 		}
 
+		//TODO 25375: improve logic around SetIsFreeable and unify with scopeStackFreeable; branch above where not unique could stay if only use flag for when there is something potentially freeable
+
 		//just in case a variable is added which needs cycle checks
 		new_context->SetNeedCycleCheck(true);
 

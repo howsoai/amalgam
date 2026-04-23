@@ -288,7 +288,7 @@ public:
 
 		EvaluableNode *copy = AllocNode(original.GetReference(), copy_metadata);
 		//the copy will only be unique if there are no child nodes
-		original = EvaluableNodeReference(copy, (copy->GetNumChildNodes() == 0), true);
+		original = EvaluableNodeReference(copy, (copy->GetNumChildNodes() == 0) || original.unique, true);
 	}
 
 	//returns an EvaluableNodeReference for value, allocating if necessary based on if immediate result is needed

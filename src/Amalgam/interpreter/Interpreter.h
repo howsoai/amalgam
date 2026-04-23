@@ -92,7 +92,7 @@ public:
 	{
 		//can keep constant, but need the top node to be unique in case assignments are made
 		EvaluableNodeReference new_context = InterpretNodeForImmediateUse(new_context_node);
-		evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, false);
+		evaluableNodeManager->EnsureNodeIsModifiable(new_context, true, false);
 
 		//make sure unique assoc
 		if(EvaluableNode::IsAssociativeArray(new_context))
@@ -133,7 +133,9 @@ public:
 	__forceinline void PopScopeStack(bool returning_unique_value)
 	{
 		if(returning_unique_value && scopeStackFreeable.back())
+		{
 			evaluableNodeManager->FreeNodeTree(scopeStack.back());
+		}
 		else
 		{
 			EvaluableNode *scope = scopeStack.back();

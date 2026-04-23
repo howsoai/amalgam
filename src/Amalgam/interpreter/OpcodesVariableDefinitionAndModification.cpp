@@ -178,19 +178,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		//transform into variables if possible
 		EvaluableNodeReference required_vars;
 
-		bool need_to_interpret = false;
-		if(required_vars_node->GetIsIdempotent())
+		bool need_to_interpret_required_vars = false;
+		if(required_vars_node->IsAssociativeArray())
 		{
 			required_vars = EvaluableNodeReference(required_vars_node, false);
-		}
-		else if(required_vars_node->IsAssociativeArray())
-		{
-			required_vars = EvaluableNodeReference(required_vars_node, false);
-			need_to_interpret = true;
+			need_to_interpret_required_vars = !required_vars_node->GetIsIdempotent();
 		}
 		else //just need to interpret
 		{
-			required_vars = InterpretNode(required_vars_node);
+			required_vars = InterpretNodeForImmediateUse(required_vars_node);
 		}
 
 		if(EvaluableNode::IsAssociativeArray(required_vars))
@@ -210,7 +206,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 			if(scope == nullptr)	//this shouldn't happen, but just in case it does
 				return EvaluableNodeReference::Null();
 
-			if(!need_to_interpret)
+			if(!need_to_interpret_required_vars)
 			{
 				//check each of the required variables and put into the stack if appropriate
 				for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
@@ -221,8 +217,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						//not unique so just set to true
 						any_nonunique_assignments = true;
 
-						if(required_vars.unique && cn != nullptr)
-							cn->SetIsFreeable(true);
+						if(cn != nullptr)
+							cn->SetIsFreeable(required_vars.unique);
 					}
 					else
 					{
@@ -233,7 +229,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					}
 				}
 			}
-			else //need_to_interpret
+			else //need_to_interpret_required_vars
 			{
 				auto &scope_mcn = scope->GetMappedChildNodesReference();
 
@@ -282,14 +278,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					#ifdef MULTITHREAD_SUPPORT
 						//relock if needed before assigning the value
 						if(need_write_lock)
+						{
 							LockScopeStackTop(write_lock, required_vars);
+						}
 						else
 						#endif
 							//only set unread if writing to parts of the stack that aren't shared
-							if(value.unique && value != nullptr)
+							if(value != nullptr)
 							{
-								value->SetIsFreeable(true);
-								scope->SetIsFreeable(true);
+								value->SetIsFreeable(value.unique);
+								if(value.unique)
+									scope->SetIsFreeable(true);
 							}
 						scope->SetMappedChildNode(cn_id, value, false);
 					}
@@ -619,8 +618,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
 			any_nonunique_assignments |= !top_of_stack;
 
-			if(variable_value_node.unique && variable_value_node != nullptr)
-				variable_value_node->SetIsFreeable(true);
+			//need to set whether freeable in case a variable's value is assigned to another variable
+			if(variable_value_node != nullptr)
+				variable_value_node->SetIsFreeable(variable_value_node.unique);
 
 			//assign back into the context_to_use
 			*value_destination = variable_value_node;

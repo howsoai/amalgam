@@ -203,16 +203,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 		profiling_call = true;
 	}
 
-	//if have an scope stack context of variables specified, then use it
-	EvaluableNodeReference new_context = EvaluableNodeReference::Null();
-	if(ocn.size() > 1)
-	{
-		//can keep constant, but need the top node to be unique in case assignments are made
-		new_context = InterpretNodeForImmediateUse(ocn[1]);
-		evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, false);
-	}
-
-	PushNewScopeStack(new_context);
+	InterpretAndPushNewScopeStack(ocn.size() > 1 ? ocn[1] : nullptr);
 
 	//call the code
 	auto result = InterpretNode(function, immediate_result);

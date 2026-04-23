@@ -88,11 +88,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
-	//add new context
-	auto new_context = InterpretNodeForImmediateUse(ocn[0]);
-	//can keep constant, but need the top node to be unique in case assignments are made
-	evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, false);
-	PushNewScopeStack(new_context);
+	InterpretAndPushNewScopeStack(ocn[0]);
 
 	//run code
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -528,7 +524,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		return EvaluableNodeReference::Null();
 
 	//make sure there's at least a scopeStack to use
-	if(scopeStackNodes.size() < 1)
+	if(scopeStack.size() < 1)
 		return EvaluableNodeReference::Null();
 
 	bool accum = (en->GetType() == ENT_ACCUM);

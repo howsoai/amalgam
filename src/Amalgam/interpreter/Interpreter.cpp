@@ -75,7 +75,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 }
 
 void Interpreter::InterpretAndPushNewScopeStack(EvaluableNode *new_context_node)
-{
+//* {
 	if(new_context_node == nullptr)
 	{
 		scopeStack.emplace_back(evaluableNodeManager->AllocNode(ENT_ASSOC));
@@ -118,6 +118,7 @@ void Interpreter::InterpretAndPushNewScopeStack(EvaluableNode *new_context_node)
 
 	scopeStack.emplace_back(new_context_node_reference);
 }
+//*/
 //TODO 25333: use below code and consider moving back to inline in class
 /*
 {

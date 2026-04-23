@@ -485,8 +485,8 @@ void EvaluableNodeManager::VerifyEvaluableNodeIntegretyForAllReferencedNodes()
 	{
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
-			for(auto &scope_stack_entry : interpreter->scopeStack)
-				ValidateEvaluableNodeTreeMemoryIntegrity(scope_stack_entry, this);
+			for(EvaluableNode *en : interpreter->scopeStack)
+				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
 
 			for(EvaluableNode *en : interpreter->opcodeStackNodes)
 				ValidateEvaluableNodeTreeMemoryIntegrity(en, this);
@@ -741,12 +741,12 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 			Concurrency::urgentThreadPool.EnqueueTask(
 				[interpreter, &task_set]
 				{
-					for(auto &scope_stack_entry : interpreter->scopeStack)
+					for(EvaluableNode *en : interpreter->scopeStack)
 					{
-						if(scope_stack_entry == nullptr || scope_stack_entry->GetKnownToBeInUse())
+						if(en == nullptr || en->GetKnownToBeInUse())
 							continue;
 
-						MarkAllReferencedNodesInUseConcurrentForNode(scope_stack_entry);
+						MarkAllReferencedNodesInUseConcurrentForNode(en);
 					}
 
 					for(EvaluableNode *en : interpreter->opcodeStackNodes)

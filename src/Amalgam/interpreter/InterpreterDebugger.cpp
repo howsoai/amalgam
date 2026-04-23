@@ -438,8 +438,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			}
 
 			std::cout << "scope stack:" << std::endl;
-			for(auto &scope_stack_entry : scopeStack)
-				PrintStackNode(scope_stack_entry, evaluableNodeManager);
+			for(EvaluableNode *csn : scopeStack)
+				PrintStackNode(csn, evaluableNodeManager);
 
 			std::cout << "Opcode stack:" << std::endl;
 			for(EvaluableNode *insn : opcodeStackNodes)

@@ -88,75 +88,11 @@ public:
 	//interprets new_context_node and pushes a new scope onto the stack
 	//new_context_node should be a unique associative array,
 	//but if not, it will attempt to put an appropriate unique associative array on scopeStack
-	void InterpretAndPushNewScopeStack(EvaluableNode *new_context_node)
-	{
-		//can keep constant, but need the top node to be unique in case assignments are made
-		EvaluableNodeReference new_context = InterpretNodeForImmediateUse(new_context_node);
-		evaluableNodeManager->EnsureNodeIsModifiable(new_context, true, false);
-
-		//make sure unique assoc
-		if(EvaluableNode::IsAssociativeArray(new_context))
-		{
-			if(new_context.unique)
-			{
-				for(auto &[id, cn] : new_context->GetMappedChildNodesReference())
-				{
-					if(cn != nullptr)
-						cn->SetIsFreeable(true);
-				}
-
-				//set the context to be freeable so it knows to look for any possible freeable values
-				new_context->SetIsFreeable(true);
-			}
-			else
-			{
-				new_context.SetReference(evaluableNodeManager->AllocNode(new_context, false));
-			}
-		}
-		else //not assoc, make a new one
-		{
-			evaluableNodeManager->FreeNodeTreeIfPossible(new_context);
-			new_context = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
-			//set the context to be freeable so it knows to look for any possible freeable values
-			new_context->SetIsFreeable(true);
-		}
-
-		//TODO 25375: improve logic around SetIsFreeable and unify with scopeStackFreeable; branch above where not unique could stay if only use flag for when there is something potentially freeable
-
-		//just in case a variable is added which needs cycle checks
-		new_context->SetNeedCycleCheck(true);
-
-		scopeStack.push_back(new_context);
-		scopeStackFreeable.push_back(new_context.unique);
-	}
+	void InterpretAndPushNewScopeStack(EvaluableNode *new_context_node);
 
 	//pops the top context off the stack
 	//if returning_unique_value, then can potentially free the whole scope
-	__forceinline void PopScopeStack(bool returning_unique_value)
-	{
-		if(returning_unique_value && scopeStackFreeable.back())
-		{
-			evaluableNodeManager->FreeNodeTree(scopeStack.back());
-		}
-		else
-		{
-			EvaluableNode *scope = scopeStack.back();
-			//only check its child nodes if it itself has a freeable flag set,
-			//since iterating over the mapped child nodes can be costly wrt performance
-			if(scope->GetIsFreeable())
-			{
-				for(auto &[id, cn] : scope->GetMappedChildNodesReference())
-				{
-					if(cn != nullptr && cn->GetIsFreeable())
-						evaluableNodeManager->FreeNodeTree(cn);
-				}
-			}
-			evaluableNodeManager->FreeNode(scope);
-		}
-
-		scopeStack.pop_back();
-		scopeStackFreeable.pop_back();
-	}
+	void PopScopeStack(bool returning_unique_value);
 
 	//returns the node from scopeStack given the depth, nullptr if it doesn't exist
 	//use_atomic_when_setting_access_flag is used for recursion and should not be modified by the caller

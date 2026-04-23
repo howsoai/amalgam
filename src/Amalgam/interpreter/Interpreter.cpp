@@ -111,6 +111,7 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 	//set flags conservatively before copy
 	stack_top_holder.SetNeedCycleCheck(true);
 	stack_top_holder.SetIsIdempotent(false);
+
 	EvaluableNodeReference copied_stack = evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 
 #ifdef MULTITHREAD_SUPPORT

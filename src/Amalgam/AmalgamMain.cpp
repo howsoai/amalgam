@@ -333,7 +333,8 @@ PLATFORM_MAIN_CONSOLE
 			entity = asset_manager.LoadEntityFromResource(asset_params, false, rand_seed, nullptr, status);
 
 		#ifdef AMALGAM_MEMORY_INTEGRITY
-			entity->VerifyEvaluableNodeIntegrity();
+			if(entity != nullptr)
+				entity->VerifyEvaluableNodeIntegrity();
 		#endif
 
 			if(!status.loaded)

@@ -230,17 +230,12 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 		VerifyAllEntitiesForColumn(column_index);
 	#endif
 
-		auto [reference, found] = entity->GetValueAtLabel(column_data->stringId, nullptr, EvaluableNodeRequestedValueTypes::Type::ALL);
+		auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
 
 		if(found)
-		{
-			auto &value_with_type = reference.GetValue();
-			column_data->ChangeIndexValue(value_with_type.nodeType, value_with_type.nodeValue, entity_index);
-		}
+			column_data->ChangeIndexValue(value.nodeType, value.nodeValue, entity_index);
 		else
-		{
 			column_data->ChangeIndexValue(ENIVT_NOT_EXIST, EvaluableNodeImmediateValue(), entity_index);
-		}
 
 		//remove the label if no longer relevant
 		if(IsColumnIndexRemovable(column_index))
@@ -277,17 +272,12 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity,
 	VerifyAllEntitiesForColumn(column_index);
 #endif
 
-	auto [reference, found] = entity->GetValueAtLabel(label_id, nullptr, EvaluableNodeRequestedValueTypes::Type::ALL);
+	auto [value, found] = entity->GetValueAtLabelAsImmediateValue(label_id);
 
 	if(found)
-	{
-		auto &value_with_type = reference.GetValue();
-		column_data->ChangeIndexValue(value_with_type.nodeType, value_with_type.nodeValue, entity_index);
-	}
+		column_data->ChangeIndexValue(value.nodeType, value.nodeValue, entity_index);
 	else
-	{
 		column_data->ChangeIndexValue(ENIVT_NOT_EXIST, EvaluableNodeImmediateValue(), entity_index);
-	}
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))

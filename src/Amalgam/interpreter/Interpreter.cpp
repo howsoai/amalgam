@@ -44,12 +44,12 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	{
 		EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
 		new_context_entry->SetNeedCycleCheck(true);
-		scopeStackNodes.clear();
-		scopeStackNodes.push_back(new_context_entry);
+		scopeStack.clear();
+		scopeStack.push_back(new_context_entry);
 	}
 	else
 	{
-		scopeStackNodes = std::move(*scope_stack);
+		scopeStack = std::move(*scope_stack);
 	}
 
 	//
@@ -74,6 +74,125 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	return retval;
 }
 
+void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_node)
+{
+	EvaluableNodeReference new_scope = EvaluableNodeReference::Null();
+	bool need_to_interpret_new_scope = false;
+	if(new_scope_node != nullptr)
+	{
+		if(new_scope_node->IsAssociativeArray())
+		{
+			new_scope = EvaluableNodeReference(new_scope_node, false);
+			need_to_interpret_new_scope = !new_scope_node->GetIsIdempotent();
+		}
+		else //just need to interpret
+		{
+			new_scope = InterpretNodeForImmediateUse(new_scope_node);
+		}
+	}
+
+	if(EvaluableNode::IsAssociativeArray(new_scope))
+	{
+		evaluableNodeManager->EnsureNodeIsModifiable(new_scope, true, false);
+
+		if(!need_to_interpret_new_scope)
+		{
+			auto &new_scope_mcn = new_scope->GetMappedChildNodesReference();
+			if(new_scope.unique)
+			{
+				for(auto &[id, cn] : new_scope_mcn)
+				{
+					if(cn != nullptr)
+						cn->SetIsFreeable(true);
+				}
+			}
+			else //!new_scope.unique
+			{
+				if(new_scope_mcn.size() > 0)
+				{
+					//set not freeable incase referenced elsewhere
+					for(auto &[id, cn] : new_scope_mcn)
+					{
+						if(cn != nullptr)
+						#ifdef MULTITHREAD_SUPPORT
+							//not unique, so should set atomically if other threads may be accessing it
+							cn->SetIsFreeableAtomic(false);
+						#else
+							cn->SetIsFreeable(false);
+						#endif
+					}
+				}
+			}
+		}
+		else //need_to_interpret_new_scope
+		{
+			//need to interpret nodes
+			PushNewConstructionContext(new_scope_node, new_scope,
+					EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
+
+			for(auto &[cn_id, cn] : new_scope->GetMappedChildNodesReference())
+			{
+				if(cn == nullptr || cn->GetIsIdempotent())
+					continue;
+
+				//need to interpret
+				SetTopCurrentIndexInConstructionStack(cn_id);
+				EvaluableNodeReference value = InterpretNodeForImmediateUse(cn);
+
+				if(value != nullptr)
+				{
+					if(value.unique)
+						value->SetIsFreeable(true);
+					else
+					#ifdef MULTITHREAD_SUPPORT
+						//not unique, so should set atomically if other threads may be accessing it
+						value->SetIsFreeableAtomic(false);
+					#else
+						value->SetIsFreeable(false);
+					#endif
+				}
+
+				cn = value;
+				new_scope->UpdateFlagsBasedOnNewChildNode(cn);
+			}
+
+			//if there was a side-effect, then need to make another copy of the context in case something is referencing it
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(new_scope, false), false, true);
+		}
+	}
+	else //not assoc, make a new one
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(new_scope);
+		new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
+	}
+
+	//start to check things as being freeable unless cleared/invalidated later
+	new_scope->SetIsFreeable(true);
+	//just in case a variable is added which needs cycle checks
+	new_scope->SetNeedCycleCheck(true);
+	scopeStack.push_back(new_scope);
+}
+
+//pops the top context off the stack
+//if returning_unique_value, then can potentially free the whole scope
+void Interpreter::PopScopeStack(bool returning_unique_value)
+{
+	EvaluableNode *scope = scopeStack.back();
+
+	if(returning_unique_value && scope->GetIsFreeable())
+	{
+		for(auto &[id, cn] : scope->GetMappedChildNodesReference())
+		{
+			if(cn != nullptr && cn->GetIsFreeable())
+				evaluableNodeManager->FreeNodeTree(cn);
+		}
+	}
+
+	evaluableNodeManager->FreeNode(scope);
+	scopeStack.pop_back();
+}
+
 EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 #ifdef MULTITHREAD_SUPPORT
 	, bool use_atomic_when_setting_access_flag
@@ -81,9 +200,9 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 )
 {
 	EvaluableNode *scope_stack = nullptr;
-	size_t ss_size = scopeStackNodes.size();
+	size_t ss_size = scopeStack.size();
 	if(ss_size > depth)
-		scope_stack = scopeStackNodes[ss_size - (depth + 1)];
+		scope_stack = scopeStack[ss_size - (depth + 1)];
 
 #ifdef MULTITHREAD_SUPPORT
 	//need to search further down the stack if appropriate
@@ -107,7 +226,11 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 {
 	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetOrderedChildNodes(scopeStackNodes);
+	stack_top_holder.SetOrderedChildNodes(scopeStack);
+	//set flags conservatively before copy
+	stack_top_holder.SetNeedCycleCheck(true);
+	stack_top_holder.SetIsIdempotent(false);
+
 	EvaluableNodeReference copied_stack = evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 
 #ifdef MULTITHREAD_SUPPORT
@@ -117,9 +240,9 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 		auto &stack_nodes_ocn = copied_stack->GetOrderedChildNodesReference();
 		for(Interpreter *interp = callingInterpreter; interp != nullptr; interp = interp->callingInterpreter)
 		{
-			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStackNodes.size(), nullptr);
-			for(size_t i = 0; i < scopeStackNodes.size(); i++)
-				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy(scopeStackNodes[i]);
+			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStack.size(), nullptr);
+			for(size_t i = 0; i < scopeStack.size(); i++)
+				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy(scopeStack[i]);
 
 			if(interp->bottomOfScopeStack)
 				break;
@@ -187,10 +310,10 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNo
 EvaluableNode *Interpreter::GetCurrentScopeStackContext()
 {
 	//this should not happen, but just in case
-	if(scopeStackNodes.size() < 1)
+	if(scopeStack.size() < 1)
 		return nullptr;
 
-	return scopeStackNodes.back();
+	return scopeStack.back();
 }
 
 std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(EvaluableNode *n, bool key_string)
@@ -760,7 +883,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 Interpreter *Interpreter::LockScopeStackTop(Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve,
 	Interpreter *executing_interpreter)
 {
-	if(scopeStackNodes.size() == 0 && callingInterpreter != nullptr)
+	if(scopeStack.size() == 0 && callingInterpreter != nullptr)
 		return callingInterpreter->LockScopeStackTop(lock, en_to_preserve,
 			executing_interpreter == nullptr ? this : executing_interpreter);
 

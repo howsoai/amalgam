@@ -13,7 +13,6 @@
 bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
-EvaluableNode *EvaluableNode::emptyEvaluableNodeNullptr = nullptr;
 std::vector<std::string> EvaluableNode::emptyStringVector;
 std::vector<StringInternPool::StringID> EvaluableNode::emptyStringIdVector;
 std::vector<EvaluableNode *> EvaluableNode::emptyOrderedChildNodes;

@@ -88,11 +88,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
-	//add new context
-	auto new_context = InterpretNodeForImmediateUse(ocn[0]);
-	//can keep constant, but need the top node to be unique in case assignments are made
-	evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, false);
-	PushNewScopeStack(new_context);
+	InterpretAndPushNewScopeStackNode(ocn[0]);
 
 	//run code
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -176,138 +172,129 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 	//work on the node that is declaring the variables
 	EvaluableNode *required_vars_node = ocn[0];
-	bool any_nonunique_assignments = false;
+	//transform into variables if possible
+	EvaluableNodeReference required_vars = EvaluableNodeReference::Null();
+	bool need_to_interpret_required_vars = false;
 	if(required_vars_node != nullptr)
 	{
-		//transform into variables if possible
-		EvaluableNodeReference required_vars;
-
-		bool need_to_interpret = false;
-		if(required_vars_node->GetIsIdempotent())
+		if(required_vars_node->IsAssociativeArray())
 		{
 			required_vars = EvaluableNodeReference(required_vars_node, false);
-		}
-		else if(required_vars_node->IsAssociativeArray())
-		{
-			required_vars = EvaluableNodeReference(required_vars_node, false);
-			need_to_interpret = true;
+			need_to_interpret_required_vars = !required_vars_node->GetIsIdempotent();
 		}
 		else //just need to interpret
 		{
-			required_vars = InterpretNode(required_vars_node);
+			required_vars = InterpretNodeForImmediateUse(required_vars_node);
 		}
+	}
 
-		if(EvaluableNode::IsAssociativeArray(required_vars))
+	bool any_nonunique_assignments = false;
+	if(EvaluableNode::IsAssociativeArray(required_vars))
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::SingleLock write_lock;
+		bool need_write_lock = HasSharedScopeStackTop();
+		if(need_write_lock)
 		{
-		#ifdef MULTITHREAD_SUPPORT
-			Concurrency::SingleLock write_lock;
-			bool need_write_lock = HasSharedScopeStackTop();
-			if(need_write_lock)
+			LockScopeStackTop(write_lock, required_vars);
+			RecordStackLockForProfiling(en, string_intern_pool.NOT_A_STRING_ID);
+		}
+	#endif
+
+		//get the current layer of the stack
+		EvaluableNode *scope = GetCurrentScopeStackContext();
+		if(scope == nullptr)	//this shouldn't happen, but just in case it does
+			return EvaluableNodeReference::Null();
+
+		if(!need_to_interpret_required_vars)
+		{
+			//check each of the required variables and put into the stack if appropriate
+			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
 			{
-				LockScopeStackTop(write_lock, required_vars);
-				RecordStackLockForProfiling(en, string_intern_pool.NOT_A_STRING_ID);
+				auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
+				if(inserted)
+				{
+					//not unique so just set to true
+					any_nonunique_assignments = true;
+
+					if(cn != nullptr)
+						cn->SetIsFreeable(required_vars.unique);
+				}
+				else
+				{
+					//if it can't insert the new variable because it already exists,
+					// then try to free the default / new value that was attempted to be assigned
+					if(required_vars.unique && !required_vars.GetNeedCycleCheck())
+						evaluableNodeManager->FreeNodeTree(cn);
+				}
 			}
-		#endif
+		}
+		else //need_to_interpret_required_vars
+		{
+			auto &scope_mcn = scope->GetMappedChildNodesReference();
 
-			//get the current layer of the stack
-			EvaluableNode *scope = GetCurrentScopeStackContext();
-			if(scope == nullptr)	//this shouldn't happen, but just in case it does
-				return EvaluableNodeReference::Null();
+			PushNewConstructionContext(required_vars, nullptr,
+				EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-			if(!need_to_interpret)
+			//check each of the required variables and put into the stack if appropriate
+			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
 			{
-				//check each of the required variables and put into the stack if appropriate
-				for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
+				if(cn == nullptr || cn->GetIsIdempotent())
 				{
 					auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
 					if(inserted)
-					{
-						//not unique so just set to true
 						any_nonunique_assignments = true;
+					//if not inserted, don't need to free it since it wasn't interpreted
+				}
+				else //need to interpret
+				{
+					//don't need to do anything if the variable already exists
+					//but can't insert the variable here because it will mask definitions further up the stack that
+					//may be used in the declare
+					if(scope_mcn.find(cn_id) != end(scope_mcn))
+						continue;
 
-						if(required_vars.unique && cn != nullptr)
-							cn->SetIsFreeable(true);
+				#ifdef MULTITHREAD_SUPPORT
+					//unlock before interpreting
+					if(need_write_lock)
+						write_lock.unlock();
+				#endif
+
+					SetTopCurrentIndexInConstructionStack(cn_id);
+					EvaluableNodeReference value = InterpretNodeForImmediateUse(cn);
+
+					//mark if not unique
+					any_nonunique_assignments |= !value.unique;
+
+				#ifdef MULTITHREAD_SUPPORT
+					//relock if needed before assigning the value
+					if(need_write_lock)
+					{
+						LockScopeStackTop(write_lock, required_vars);
 					}
 					else
-					{
-						//if it can't insert the new variable because it already exists,
-						// then try to free the default / new value that was attempted to be assigned
-						if(required_vars.unique && !required_vars.GetNeedCycleCheck())
-							evaluableNodeManager->FreeNodeTree(cn);
-					}
-				}
-			}
-			else //need_to_interpret
-			{
-				auto &scope_mcn = scope->GetMappedChildNodesReference();
-
-				PushNewConstructionContext(required_vars, nullptr,
-					EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
-
-				//check each of the required variables and put into the stack if appropriate
-				for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
-				{
-					if(cn == nullptr || cn->GetIsIdempotent())
-					{
-						auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
-						if(inserted)
-						{
-							//not unique so just set to true
-							any_nonunique_assignments = true;
-						}
-						else
-						{
-							//if it can't insert the new variable because it already exists,
-							// then try to free the default / new value that was attempted to be assigned
-							if(required_vars.unique && !required_vars.GetNeedCycleCheck())
-								evaluableNodeManager->FreeNodeTree(cn);
-						}
-					}
-					else //need to interpret
-					{
-						//don't need to do anything if the variable already exists
-						//but can't insert the variable here because it will mask definitions further up the stack that
-						//may be used in the declare
-						if(scope_mcn.find(cn_id) != end(scope_mcn))
-							continue;
-
-					#ifdef MULTITHREAD_SUPPORT
-						//unlock before interpreting
-						if(need_write_lock)
-							write_lock.unlock();
 					#endif
+						//only set unread if writing to parts of the stack that aren't shared
+						if(value != nullptr)
+							value->SetIsFreeable(value.unique);
 
-						SetTopCurrentIndexInConstructionStack(cn_id);
-						EvaluableNodeReference value = InterpretNode(cn);
-
-						//mark if not unique
-						any_nonunique_assignments |= !value.unique;
-
-					#ifdef MULTITHREAD_SUPPORT
-						//relock if needed before assigning the value
-						if(need_write_lock)
-							LockScopeStackTop(write_lock, required_vars);
-						else
-						#endif
-							//only set unread if writing to parts of the stack that aren't shared
-							if(value.unique && value != nullptr)
-							{
-								value->SetIsFreeable(true);
-								scope->SetIsFreeable(true);
-							}
-						scope->SetMappedChildNode(cn_id, value, false);
-					}
-				}
-				if(PopConstructionContextAndGetExecutionSideEffectFlag())
-				{
-					required_vars.unique = false;
-					required_vars.uniqueUnreferencedTopNode = false;
+					scope->SetMappedChildNode(cn_id, value, false);
 				}
 			}
 
-			//free the vars / assoc node
-			evaluableNodeManager->FreeNodeIfPossible(required_vars);
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+			{
+				required_vars.unique = false;
+				required_vars.uniqueUnreferencedTopNode = false;
+			}
 		}
+
+		//free the vars / assoc node
+		evaluableNodeManager->FreeNodeIfPossible(required_vars);
+	}
+	else //not an assoc
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(required_vars);
 	}
 
 	if(any_nonunique_assignments)
@@ -528,7 +515,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		return EvaluableNodeReference::Null();
 
 	//make sure there's at least a scopeStack to use
-	if(scopeStackNodes.size() < 1)
+	if(scopeStack.size() < 1)
 		return EvaluableNodeReference::Null();
 
 	bool accum = (en->GetType() == ENT_ACCUM);
@@ -623,8 +610,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
 			any_nonunique_assignments |= !top_of_stack;
 
-			if(variable_value_node.unique && variable_value_node != nullptr)
-				variable_value_node->SetIsFreeable(true);
+			//need to set whether freeable in case a variable's value is assigned to another variable
+			if(variable_value_node != nullptr)
+				variable_value_node->SetIsFreeable(variable_value_node.unique);
 
 			//assign back into the context_to_use
 			*value_destination = variable_value_node;

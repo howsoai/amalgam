@@ -49,16 +49,11 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			for(size_t i = 0; i < singleLabels.size(); i++)
 			{
 				auto &[label_id, compare_value] = singleLabels[i];
-				auto compare_type = valueTypes[i];
-				EvaluableNodeImmediateValueWithType compare(compare_value, compare_type);
-
 				auto [value, found] = e->GetValueAtLabelAsImmediateValue(label_id);
-
-				//needs to exist
 				if(value.nodeType == ENIVT_NOT_EXIST)
 					return false;
 
-				if(!EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(compare, value))
+				if(!EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(compare_value, value))
 					return false;
 			}
 			return true;
@@ -67,16 +62,11 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			for(size_t i = 0; i < singleLabels.size(); i++)
 			{
 				auto &[label_id, compare_value] = singleLabels[i];
-				auto compare_type = valueTypes[i];
-				EvaluableNodeImmediateValueWithType compare(compare_value, compare_type);
-
 				auto [value, found] = e->GetValueAtLabelAsImmediateValue(label_id);
-
-				//needs to exist
 				if(value.nodeType == ENIVT_NOT_EXIST)
 					return false;
 
-				if(EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(compare, value))
+				if(EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(compare_value, value))
 					return false;
 			}
 			return true;
@@ -137,7 +127,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 		case ENT_QUERY_AMONG:
 		{
-			auto [value,found] = e->GetValueAtLabelAsImmediateValue(singleLabel);
+			auto [value, found] = e->GetValueAtLabelAsImmediateValue(singleLabel);
 
 			if(value.nodeType == ENIVT_NOT_EXIST)
 				return false;

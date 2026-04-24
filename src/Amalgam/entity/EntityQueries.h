@@ -44,7 +44,7 @@ public:
 	std::vector<EvaluableNodeImmediateValueType> valueTypes;
 
 	//pairs of ids and values
-	std::vector<std::pair<StringInternPool::StringID, EvaluableNodeImmediateValue>> singleLabels;
+	std::vector<std::pair<StringInternPool::StringID, EvaluableNodeImmediateValueWithType>> singleLabels;
 
 	//pairs of ids and pairs of values
 	std::vector<std::pair<StringInternPool::StringID, std::pair<EvaluableNodeImmediateValue, EvaluableNodeImmediateValue>>> pairedLabels;

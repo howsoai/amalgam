@@ -513,19 +513,17 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				for(size_t i = 0; i < cond->singleLabels.size(); i++)
 				{
 					auto &[label_id, compare_value] = cond->singleLabels[i];
-					auto compare_type = cond->valueTypes[i];
-
 					if(first_feature)
 					{
 						matching_entities.clear();
-						sbfds.UnionAllEntitiesWithValue(label_id, compare_type, compare_value, matching_entities);
+						sbfds.UnionAllEntitiesWithValue(label_id, compare_value.nodeType, compare_value.nodeValue, matching_entities);
 						first_feature = false;
 					}
 					else //get corresponding indices and intersect with results
 					{
 						BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
 						temp.clear();
-						sbfds.UnionAllEntitiesWithValue(label_id, compare_type, compare_value, temp);
+						sbfds.UnionAllEntitiesWithValue(label_id, compare_value.nodeType, compare_value.nodeValue, temp);
 						matching_entities.Intersect(temp);
 					}
 				}
@@ -541,7 +539,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			for(size_t i = 0; i < cond->singleLabels.size(); i++)
 			{
 				auto &[label_id, compare_value] = cond->singleLabels[i];
-				auto compare_type = cond->valueTypes[i];
 
 				if(first_feature)
 				{
@@ -552,7 +549,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 				BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
 				temp.clear();
-				sbfds.UnionAllEntitiesWithValue(label_id, compare_type, compare_value, temp);
+				sbfds.UnionAllEntitiesWithValue(label_id, compare_value.nodeType, compare_value.nodeValue, temp);
 				matching_entities.EraseInBatch(temp);
 			}
 			matching_entities.UpdateNumElements();

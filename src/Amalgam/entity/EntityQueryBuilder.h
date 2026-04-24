@@ -1118,13 +1118,10 @@ namespace EntityQueryBuilder
 
 			case ENT_QUERY_NOT_EQUALS:
 			case ENT_QUERY_EQUALS:
-			{				
-				EvaluableNodeImmediateValue value;
-				EvaluableNodeImmediateValueType value_type = value.CopyValueFromEvaluableNode(ocn[1]);
-
-				cur_condition->valueTypes.push_back(value_type);
+			{
+				EvaluableNodeImmediateValueWithType value;
+				value.CopyValueFromEvaluableNode(ocn[1]);
 				cur_condition->singleLabels.emplace_back(std::make_pair(label_sid, value));
-
 				break;
 			}
 

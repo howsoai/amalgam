@@ -556,17 +556,17 @@ public:
 	//Returns the number of nodes in the data structure
 	static inline size_t GetDeepSize(EvaluableNode *n)
 	{
-		if(n == nullptr)
+		if(n == nullptr || n->IsImmediate())
 			return 1;
 
 		if(!n->GetNeedCycleCheck())
 		{
-			return GetDeepSizeNoCycleRecurse(n);
+			return GetDeepSizeNoCycles(n);
 		}
 		else
 		{
 			ReferenceSetType checked;
-			return GetDeepSizeRecurse(n, checked);
+			return GetDeepSizeWithCycles(n, checked);
 		}
 	}
 
@@ -1594,10 +1594,10 @@ protected:
 
 	//Returns the deep size, excluding nodes already checked
 	// Assists the public function GetDeepSize
-	static size_t GetDeepSizeRecurse(EvaluableNode *n, ReferenceSetType &checked);
+	static size_t GetDeepSizeWithCycles(EvaluableNode *n, ReferenceSetType &checked);
 
-	//Like GetDeepSizeRecurse, but assumes there are no cycles in n
-	static size_t GetDeepSizeNoCycleRecurse(EvaluableNode *n);
+	//Like GetDeepSizeWithCycles, but assumes there are no cycles in n
+	static size_t GetDeepSizeNoCycles(EvaluableNode *n);
 
 	EvaluableNodeValue value;
 
@@ -1611,8 +1611,6 @@ protected:
 	static bool falseBoolValue;
 	static double nanNumberValue;
 	static std::string emptyStringValue;
-	static std::vector<std::string> emptyStringVector;
-	static std::vector<StringInternPool::StringID> emptyStringIdVector;
 	static std::vector<EvaluableNode *> emptyOrderedChildNodes;
 	static AssocType emptyMappedChildNodes;
 	static AnnotationsAndComments emptyAnnotationsAndComments;

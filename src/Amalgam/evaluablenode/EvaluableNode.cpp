@@ -13,8 +13,6 @@
 bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
-std::vector<std::string> EvaluableNode::emptyStringVector;
-std::vector<StringInternPool::StringID> EvaluableNode::emptyStringIdVector;
 std::vector<EvaluableNode *> EvaluableNode::emptyOrderedChildNodes;
 EvaluableNode::AssocType EvaluableNode::emptyMappedChildNodes;
 EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments;
@@ -1332,60 +1330,103 @@ bool EvaluableNode::CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<
 	return true;
 }
 
-size_t EvaluableNode::GetDeepSizeRecurse(EvaluableNode *n, ReferenceSetType &checked)
+size_t EvaluableNode::GetDeepSizeWithCycles(EvaluableNode *n, ReferenceSetType &checked)
 {
-	//try to insert. if fails, then it has already been inserted, so ignore
-	if(checked.insert(n).second == false)
-		return 0;
+	reusableBuffer.clear();
+	reusableBuffer.push_back(n);
 
-	//count this one
-	size_t size = 1;
-
-	//check child nodes
-	if(n->IsAssociativeArray())
+	//count the current node
+	size_t total = 1;
+	checked.insert(n);
+	while(!reusableBuffer.empty())
 	{
-		for(auto &[_, e] : n->GetMappedChildNodesReference())
+		EvaluableNode *cur = reusableBuffer.back();
+		reusableBuffer.pop_back();
+
+		if(cur->IsAssociativeArray())
 		{
-			if(e != nullptr)
-				size += GetDeepSizeRecurse(e, checked);
+			for(auto [_, e] : cur->GetMappedChildNodesReference())
+			{
+				if(e == nullptr)
+				{
+					total++;
+					continue;
+				}
+
+				if(!checked.insert(e).second)
+					continue;
+
+				total++;
+
+				if(!e->IsImmediate())
+					reusableBuffer.push_back(e);
+			}
+		}
+		else //must be ordered, since immediate are not recursed
+		{
+			for(EvaluableNode *e : cur->GetOrderedChildNodesReference())
+			{
+				if(e == nullptr)
+				{
+					total++;
+					continue;
+				}
+
+				if(!checked.insert(e).second)
+					continue;
+
+				total++;
+
+				if(!e->IsImmediate())
+					reusableBuffer.push_back(e);
+			}
 		}
 	}
-	else if(!n->IsImmediate())
-	{
-		for(auto &e : n->GetOrderedChildNodesReference())
-		{
-			if(e != nullptr)
-				size += GetDeepSizeRecurse(e, checked);
-		}
-	}
 
-	return size;
+	return total;
 }
 
-size_t EvaluableNode::GetDeepSizeNoCycleRecurse(EvaluableNode *n)
+size_t EvaluableNode::GetDeepSizeNoCycles(EvaluableNode *n)
 {
-	//count this one
-	size_t size = 1;
+	reusableBuffer.clear();
+	reusableBuffer.push_back(n);
 
-	//check child nodes
-	if(n->IsAssociativeArray())
+	//count the current node
+	size_t total = 1;
+	while(!reusableBuffer.empty())
 	{
-		for(auto &[_, e] : n->GetMappedChildNodesReference())
+		EvaluableNode *cur = reusableBuffer.back();
+		reusableBuffer.pop_back();
+
+		if(cur->IsAssociativeArray())
 		{
-			if(e != nullptr)
-				size += GetDeepSizeNoCycleRecurse(e);
+			auto &mcn = cur->GetMappedChildNodesReference();
+			total += mcn.size();
+			for(auto [_, e] : mcn)
+			{
+				if(e == nullptr)
+					continue;
+
+				if(!e->IsImmediate())
+					reusableBuffer.push_back(e);
+			}
+		}
+		else //must be ordered, since immediate are not recursed
+		{
+			auto &ocn = cur->GetOrderedChildNodesReference();
+			total += ocn.size();
+			for(EvaluableNode *e : ocn)
+			{
+				if(e == nullptr)
+					continue;
+
+				if(!e->IsImmediate())
+					reusableBuffer.push_back(e);
+			}
 		}
 	}
-	else if(!n->IsImmediate())
-	{
-		for(auto &e : n->GetOrderedChildNodesReference())
-		{
-			if(e != nullptr)
-				size += GetDeepSizeNoCycleRecurse(e);
-		}
-	}
 
-	return size;
+	return total;
 }
 
 void EvaluableNodeImmediateValueWithType::CopyValueFromEvaluableNode(EvaluableNode *en, EvaluableNodeManager *enm)

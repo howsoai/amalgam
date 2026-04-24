@@ -514,9 +514,11 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 		node_stack.clear();
 
 		EvaluableNode *root_copy = AllocNode(en, copy_metadata);
-		node_stack.push_back(root_copy);
+		if(root_copy->IsImmediate())
+			return EvaluableNodeReference(root_copy, true);
 
 		//walk the tree depth‑first using the buffer as a stack
+		node_stack.push_back(root_copy);
 		while(!node_stack.empty())
 		{
 			EvaluableNode *cur = node_stack.back();
@@ -529,21 +531,21 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 					if(child == nullptr)
 						continue;
 
-					EvaluableNode *child_copy = AllocNode(child, copy_metadata);
-					child = child_copy;
-					node_stack.push_back(child_copy);
+					child = AllocNode(child, copy_metadata);
+					if(!child->IsImmediate())
+						node_stack.push_back(child);
 				}
 			}
-			else if(!cur->IsImmediate())
+			else //ordered, since immediates are not pushed in stack
 			{
 				for(auto &child : cur->GetOrderedChildNodesReference())
 				{
 					if(child == nullptr)
 						continue;
 
-					EvaluableNode *child_copy = AllocNode(child, copy_metadata);
-					child = child_copy;
-					node_stack.push_back(child_copy);
+					child = AllocNode(child, copy_metadata);
+					if(!child->IsImmediate())
+						node_stack.push_back(child);
 				}
 			}
 		}

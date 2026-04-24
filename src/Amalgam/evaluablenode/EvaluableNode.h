@@ -1611,7 +1611,6 @@ protected:
 	static bool falseBoolValue;
 	static double nanNumberValue;
 	static std::string emptyStringValue;
-	static EvaluableNode *emptyEvaluableNodeNullptr;
 	static std::vector<std::string> emptyStringVector;
 	static std::vector<StringInternPool::StringID> emptyStringIdVector;
 	static std::vector<EvaluableNode *> emptyOrderedChildNodes;

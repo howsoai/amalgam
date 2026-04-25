@@ -681,25 +681,20 @@ namespace EntityQueryBuilder
 			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == cur_condition->positionLabels.size()))
 			{
 				CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),
-					cur_condition->valueToCompare, cur_condition->valueTypes);
+					cur_condition->valuesToCompare);
 			}
 			else if(position != nullptr && position->GetType() == ENT_STRING)
 			{
 				cur_condition->entityIdToExclude = position->GetStringIDReference();
 				//these will be set later under lock
-				cur_condition->valueTypes.clear();
-				cur_condition->valueToCompare.clear();
+				cur_condition->valuesToCompare.clear();
 				cur_condition->populateOmittedFeatureValues = true;
 			}
 			else // no positions given, default to nulls for each label
 			{
-				cur_condition->valueToCompare.reserve(cur_condition->positionLabels.size());
-				cur_condition->valueTypes.reserve(cur_condition->positionLabels.size());
+				cur_condition->valuesToCompare.reserve(cur_condition->positionLabels.size());
 				for(size_t i = 0; i < cur_condition->positionLabels.size(); i++)
-				{
-					cur_condition->valueTypes.push_back(ENIVT_NULL);
-					cur_condition->valueToCompare.push_back(EvaluableNodeImmediateValue());
-				}
+					cur_condition->valuesToCompare.push_back(EvaluableNodeImmediateValueWithType());
 			}
 		}
 
@@ -1018,22 +1013,11 @@ namespace EntityQueryBuilder
 
 				//since types need to match, force both to the same type
 				if(EvaluableNode::IsNumericOrNull(low_value) || EvaluableNode::IsNumericOrNull(high_value))
-				{
-					cur_condition->pairedLabels.emplace_back(label_sid, std::make_pair(
-						EvaluableNode::ToNumber(low_value), EvaluableNode::ToNumber(high_value)));
-
-					cur_condition->valueTypes.push_back(ENIVT_NUMBER);
-				}
+					cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_NUMBER,
+						EvaluableNode::ToNumber(low_value), EvaluableNode::ToNumber(high_value));
 				else
-				{
-					StringInternPool::StringID low_sid = EvaluableNode::ToStringIDIfExists(low_value);
-					StringInternPool::StringID high_sid = EvaluableNode::ToStringIDIfExists(high_value);
-
-					cur_condition->pairedLabels.emplace_back(label_sid, std::make_pair(low_sid, high_sid));
-
-					cur_condition->valueTypes.push_back(ENIVT_STRING_ID);
-				}
-
+					cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_STRING_ID,
+						EvaluableNode::ToStringIDIfExists(low_value), EvaluableNode::ToStringIDIfExists(high_value));
 				break;
 			}
 
@@ -1045,7 +1029,7 @@ namespace EntityQueryBuilder
 				EvaluableNode *value_list = ocn[1];
 				if(EvaluableNode::IsOrderedArray(value_list))
 					CopyOrderedChildNodesToImmediateValuesAndTypes(value_list->GetOrderedChildNodesReference(),
-						cur_condition->valueToCompare, cur_condition->valueTypes);
+						cur_condition->valuesToCompare);
 				break;
 			}
 
@@ -1091,40 +1075,32 @@ namespace EntityQueryBuilder
 				if(EvaluableNode::IsNumericOrNull(compare_value))
 				{
 					if(type == ENT_QUERY_LESS_OR_EQUAL_TO)
-						cur_condition->pairedLabels.emplace_back(label_sid, std::make_pair(
-							-std::numeric_limits<double>::infinity(), EvaluableNode::ToNumber(compare_value)));
+						cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_NUMBER,
+							-std::numeric_limits<double>::infinity(), EvaluableNode::ToNumber(compare_value));
 					else
-						cur_condition->pairedLabels.emplace_back(label_sid, std::make_pair(
-							EvaluableNode::ToNumber(compare_value), std::numeric_limits<double>::infinity()));
-
-					cur_condition->valueTypes.push_back(ENIVT_NUMBER);
+						cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_NUMBER,
+							EvaluableNode::ToNumber(compare_value), std::numeric_limits<double>::infinity());
 				}
 				else
 				{
 					if(type == ENT_QUERY_LESS_OR_EQUAL_TO)
-						cur_condition->pairedLabels.emplace_back(label_sid, std::make_pair(
-							string_intern_pool.NOT_A_STRING_ID, EvaluableNode::ToStringIDIfExists(compare_value)));
+						cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_STRING_ID,
+							string_intern_pool.NOT_A_STRING_ID, EvaluableNode::ToStringIDIfExists(compare_value));
 					else
-						cur_condition->pairedLabels.emplace_back(label_sid, std::make_pair(
-							EvaluableNode::ToStringIDIfExists(compare_value), string_intern_pool.NOT_A_STRING_ID));
-
-					cur_condition->valueTypes.push_back(ENIVT_STRING_ID);
+						cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_STRING_ID,
+							EvaluableNode::ToStringIDIfExists(compare_value), string_intern_pool.NOT_A_STRING_ID);
 				}
 
 				cur_condition->queryType = ENT_QUERY_BETWEEN;
 				break;
 			}
 
-
 			case ENT_QUERY_NOT_EQUALS:
 			case ENT_QUERY_EQUALS:
-			{				
-				EvaluableNodeImmediateValue value;
-				EvaluableNodeImmediateValueType value_type = value.CopyValueFromEvaluableNode(ocn[1]);
-
-				cur_condition->valueTypes.push_back(value_type);
+			{
+				EvaluableNodeImmediateValueWithType value;
+				value.CopyValueFromEvaluableNode(ocn[1]);
 				cur_condition->singleLabels.emplace_back(std::make_pair(label_sid, value));
-
 				break;
 			}
 

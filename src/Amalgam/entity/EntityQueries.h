@@ -40,20 +40,29 @@ public:
 	//**also aliased and used for the list of entity IDs to compute conviction for when type is ENT_QUERY_ENTITY_CONVICTIONS
 	std::vector<StringInternPool::StringID> existLabels;
 
-	//vector used to describe the types of each label or value
-	std::vector<EvaluableNodeImmediateValueType> valueTypes;
-
 	//pairs of ids and values
-	std::vector<std::pair<StringInternPool::StringID, EvaluableNodeImmediateValue>> singleLabels;
+	std::vector<std::pair<StringInternPool::StringID, EvaluableNodeImmediateValueWithType>> singleLabels;
 
-	//pairs of ids and pairs of values
-	std::vector<std::pair<StringInternPool::StringID, std::pair<EvaluableNodeImmediateValue, EvaluableNodeImmediateValue>>> pairedLabels;
+	//an id and pairs of values
+	struct LabelBetweenValues
+	{
+		LabelBetweenValues(StringInternPool::StringID _label, EvaluableNodeImmediateValueType value_type,
+			EvaluableNodeImmediateValue low_value, EvaluableNodeImmediateValue high_value)
+			: label(_label), valueType(value_type), lowValue(low_value), highValue(high_value)
+		{	}
+
+		StringInternPool::StringID label;
+		EvaluableNodeImmediateValueType valueType;
+		EvaluableNodeImmediateValue lowValue;
+		EvaluableNodeImmediateValue highValue;
+	};
+	std::vector<LabelBetweenValues> labelBetweenValues;
 
 	//the labels that comprise each dimension of the position
 	std::vector<StringInternPool::StringID> positionLabels;
 
 	//the labels corresponding to positionLabels when appropriate
-	std::vector<EvaluableNodeImmediateValue> valueToCompare;
+	std::vector<EvaluableNodeImmediateValueWithType> valuesToCompare;
 
 	//when initialized, points to an OrderedChildNodes vector of the values to compare
 	std::vector<EvaluableNode *> *positionsToCompare;
@@ -75,7 +84,7 @@ public:
 	//a label representing a weight label
 	StringInternPool::StringID weightLabel;
 
-	//maximum distance between valueToCompare and the entity
+	//maximum distance between valuesToCompare and the entity
 	double maxDistance;
 
 	//maximum number of entities to attempt to retrieve (based on queryType)

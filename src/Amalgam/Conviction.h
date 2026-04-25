@@ -65,8 +65,7 @@ public:
 		std::vector<DistanceReferencePair<size_t>> updatedDistanceContribs;
 		std::vector<double> baseDistanceContributions;
 		std::vector<double> baseDistanceProbabilities;
-		std::vector<EvaluableNodeImmediateValueType> positionValueTypes;
-		std::vector<EvaluableNodeImmediateValue> positionValues;
+		std::vector<EvaluableNodeImmediateValueWithType> positionValues;
 	};
 
 #ifdef MULTITHREAD_SUPPORT
@@ -174,11 +173,9 @@ public:
 				return;
 			}
 			
-			CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),
-					buffers.positionValues, buffers.positionValueTypes);
+			CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(), buffers.positionValues);
 
-			knnCache->GetKnnWithoutCache(buffers.positionValues, buffers.positionValueTypes,
-				numNearestNeighbors, true, buffers.neighbors);
+			knnCache->GetKnnWithoutCache(buffers.positionValues, numNearestNeighbors, true, buffers.neighbors);
 			contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, 1.0);
 		}
 	#ifdef MULTITHREAD_SUPPORT
@@ -292,11 +289,10 @@ public:
 			if(!EvaluableNode::IsOrderedArray(position))
 				return;
 
-			CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),
-					buffers.positionValues, buffers.positionValueTypes);
+			CopyOrderedChildNodesToImmediateValuesAndTypes(
+				position->GetOrderedChildNodesReference(), buffers.positionValues);
 
-			knnCache->GetKnnWithoutCache(buffers.positionValues, buffers.positionValueTypes,
-				numNearestNeighbors, false, buffers.neighbors);
+			knnCache->GetKnnWithoutCache(buffers.positionValues, numNearestNeighbors, false, buffers.neighbors);
 
 			distanceTransform->TransformDistances(buffers.neighbors, false);
 

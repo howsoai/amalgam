@@ -338,22 +338,22 @@ public:
 
 	//given a feature_sid, value_type, and value, inserts into out all the entities that have the value
 	inline void UnionAllEntitiesWithValue(StringInternPool::StringID feature_sid,
-		EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue &value, BitArrayIntegerSet &out)
+		const EvaluableNodeImmediateValueWithType &value, BitArrayIntegerSet &out)
 	{
 		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
 			return;
 		size_t column_index = column->second;
 
-		if(value_type != ENIVT_CODE)
+		if(value.nodeType != ENIVT_CODE)
 		{
-			columnData[column_index]->UnionAllIndicesWithValue(value_type, value, out);
+			columnData[column_index]->UnionAllIndicesWithValue(value, out);
 		}
 		else //compare if code is equal
 		{
 			for(auto entity_index : columnData[column_index]->codeIndices)
 			{
-				if(EvaluableNode::AreDeepEqual(value.code, GetValue(entity_index, column_index).code))
+				if(EvaluableNode::AreDeepEqual(value.nodeValue.code, GetValue(entity_index, column_index).code))
 					out.insert(entity_index);
 			}
 		}
@@ -529,8 +529,8 @@ public:
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
 	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	inline void FindEntitiesWithinDistanceToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
-		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
+	inline void FindEntitiesWithinDistanceToPosition(GeneralizedDistanceEvaluator &dist_eval,
+		std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValueWithType> &position_values,
 		double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out)
 	{
@@ -538,9 +538,9 @@ public:
 		r_dist_eval.distEvaluator = &dist_eval;
 
 		if(r_dist_eval.distEvaluator->computeSurprisal)
-			PopulateTargetValuesAndLabelIndicesFromPosition<true>(r_dist_eval, position_label_sids, position_values, position_value_types);
+			PopulateTargetValuesAndLabelIndicesFromPosition<true>(r_dist_eval, position_label_sids, position_values);
 		else
-			PopulateTargetValuesAndLabelIndicesFromPosition<false>(r_dist_eval, position_label_sids, position_values, position_value_types);
+			PopulateTargetValuesAndLabelIndicesFromPosition<false>(r_dist_eval, position_label_sids, position_values);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -614,7 +614,7 @@ public:
 	//enabled_indices is the set of entities to find from, and will be modified
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	inline void FindEntitiesNearestToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
-		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
+		std::vector<EvaluableNodeImmediateValueWithType> &position_values, 
 		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
 		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices, bool expand_to_first_nonzero_distance,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream())
@@ -622,7 +622,7 @@ public:
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 		r_dist_eval.distEvaluator = &dist_eval;
 
-		PopulateTargetValuesAndLabelIndicesFromPosition(r_dist_eval, position_label_sids, position_values, position_value_types);
+		PopulateTargetValuesAndLabelIndicesFromPosition(r_dist_eval, position_label_sids, position_values);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -739,8 +739,9 @@ protected:
 			if(!enabled_indices.contains(entity_index))
 				continue;
 
-			auto [other_value_type, other_value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
-			double term = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, other_value_type, query_feature_index, high_accuracy);
+			auto other_value = column_data->GetResolvedIndexValueWithType(entity_index);
+			double term = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
+				other_value, query_feature_index, high_accuracy);
 
 			partial_sums.Accum(entity_index, accum_location, term);
 		}
@@ -887,7 +888,8 @@ protected:
 		auto value_entry = column.sortedNumberValueEntries.find(value);
 		if(value_entry != end(column.sortedNumberValueEntries))
 		{
-			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_NUMBER, query_feature_index);
+			double term = r_dist_eval.ComputeDistanceTermNominal(
+				EvaluableNodeImmediateValueWithType(value, ENIVT_NUMBER), query_feature_index);
 			AccumulatePartialSums(enabled_indices, value_entry->second.indicesWithValue, query_feature_index, term);
 			return term;
 		}
@@ -904,7 +906,8 @@ protected:
 		auto value_found = column.stringIdValueEntries.find(value);
 		if(value_found != end(column.stringIdValueEntries))
 		{
-			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_STRING_ID, query_feature_index);
+			double term = r_dist_eval.ComputeDistanceTermNominal(
+				EvaluableNodeImmediateValueWithType(value, ENIVT_STRING_ID), query_feature_index);
 			AccumulatePartialSums(enabled_indices, value_found->second->indicesWithValue, query_feature_index, term);
 			return term;
 		}
@@ -921,7 +924,8 @@ protected:
 		if( (value && column.trueBoolIndices.size() > 0)
 			|| (!value && column.falseBoolIndices.size() > 0) )
 		{
-			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_BOOL, query_feature_index);
+			double term = r_dist_eval.ComputeDistanceTermNominal(
+				EvaluableNodeImmediateValueWithType(value, ENIVT_BOOL), query_feature_index);
 			auto &indices = (value ? column.trueBoolIndices : column.falseBoolIndices);
 			AccumulatePartialSums(enabled_indices, indices, query_feature_index, term);
 			return term;
@@ -942,12 +946,15 @@ protected:
 		size_t num_entities_to_populate, bool expand_search_if_optimal, bool high_accuracy,
 		size_t query_feature_index, BitArrayIntegerSet &enabled_indices);
 
-	//computes a heuristically derived set of partial sums across all the enabled features from parametersAndBuffers.targetValues[i] and parametersAndBuffers.targetColumnIndices[i]
-	// if enabled_indices is not nullptr, then will only use elements in that list
+	//computes a heuristically derived set of partial sums across all the enabled features from
+	// parametersAndBuffers.targetValues[i] and parametersAndBuffers.targetColumnIndices[i]
+	//if enabled_indices is not nullptr, then will only use elements in that list
 	// uses top_k for heuristics as to how many partial sums to compute
-	// if radius_column_index is specified, it will populate the initial partial sums with them
-	// will compute and populate min_unpopulated_distances and min_distance_by_unpopulated_count, where the former is the next smallest uncomputed feature distance indexed by the number of features not computed
-	// and min_distance_by_unpopulated_count is the total distance of all uncomputed features where the index is the number of uncomputed features
+	//if radius_column_index is specified, it will populate the initial partial sums with them
+	// will compute and populate min_unpopulated_distances and min_distance_by_unpopulated_count,
+	// where the former is the next smallest uncomputed feature distance indexed by the number of
+	// features not computed and min_distance_by_unpopulated_count is the total distance of all
+	// uncomputed features where the index is the number of uncomputed features
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
 	void PopulateInitialPartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t top_k, size_t radius_column_index,
@@ -969,17 +976,17 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
 
 			size_t column_index = feature_attribs.featureIndex;
-			auto [other_value_type, other_value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(other_index);
-			dist_accum += r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, other_value_type, i, high_accuracy);
+			auto other_value = columnData[column_index]->GetResolvedIndexValueWithType(other_index);
+			dist_accum += r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, i, high_accuracy);
 		}
 
 		double dist = r_dist_eval.distEvaluator->InverseExponentiateDistance<compute_surprisal>(dist_accum, high_accuracy);
 
 		if(radius_column_index < columnData.size())
 		{
-			auto [radius_value_type, radius_value] = columnData[radius_column_index]->GetResolvedIndexValueTypeAndValue(other_index);
-			if(radius_value_type == ENIVT_NUMBER)
-				dist -= radius_value.number;
+			auto radius_value = columnData[radius_column_index]->GetResolvedIndexValueWithType(other_index);
+			if(radius_value.nodeType == ENIVT_NUMBER)
+				dist -= radius_value.nodeValue.number;
 		}
 
 		return dist;
@@ -1128,7 +1135,7 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->stringIdIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
-					GetValue(entity_index, feature_attribs.featureIndex).stringID, ENIVT_STRING_ID,
+					EvaluableNodeImmediateValueWithType(GetValue(entity_index, feature_attribs.featureIndex).stringID, ENIVT_STRING_ID),
 					query_feature_index);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
@@ -1140,7 +1147,7 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
-					GetValue(entity_index, feature_attribs.featureIndex).number, ENIVT_NUMBER,
+					EvaluableNodeImmediateValueWithType(GetValue(entity_index, feature_attribs.featureIndex).number, ENIVT_NUMBER),
 					query_feature_index);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
@@ -1153,10 +1160,10 @@ protected:
 
 			if(column_data->trueBoolIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
-					true, ENIVT_BOOL, query_feature_index);
+					EvaluableNodeImmediateValueWithType(true), query_feature_index);
 			else if(column_data->falseBoolIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
-					false, ENIVT_BOOL, query_feature_index);
+					EvaluableNodeImmediateValueWithType(false), query_feature_index);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
@@ -1169,8 +1176,9 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 
-			auto [other_value_type, other_value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
-			return r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, other_value_type, query_feature_index, high_accuracy);
+			auto other_value = column_data->GetResolvedIndexValueWithType(entity_index);
+			return r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
+				other_value, query_feature_index, high_accuracy);
 		}
 		}
 	}
@@ -1285,15 +1293,13 @@ public:
 	//if compute_surprisal is true, it will use a faster execution path
 	template<bool compute_surprisal = false>
 	void PopulateTargetValueAndLabelIndex(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		size_t query_feature_index, EvaluableNodeImmediateValue position_value,
-		EvaluableNodeImmediateValueType position_value_type);
+		size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);
 
 	//populates all target values given the selected target values for each value in corresponding position* parameters
 	//if compute_surprisal is true, it will use a faster execution path
 	template<bool compute_surprisal = false>
 	void PopulateTargetValuesAndLabelIndicesFromPosition(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValue> &position_values,
-		std::vector<EvaluableNodeImmediateValueType> &position_value_types)
+		std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValueWithType> &position_values)
 	{
 		size_t num_features = position_values.size();
 		r_dist_eval.featureData.resize(num_features);
@@ -1303,8 +1309,8 @@ public:
 			if(column == end(labelIdToColumnIndex))
 				continue;
 
-			PopulateTargetValueAndLabelIndex<compute_surprisal>(r_dist_eval, query_feature_index,
-				position_values[query_feature_index], position_value_types[query_feature_index]);
+			PopulateTargetValueAndLabelIndex<compute_surprisal>(
+				r_dist_eval, query_feature_index, position_values[query_feature_index]);
 		}
 	}
 
@@ -1323,9 +1329,9 @@ public:
 				continue;
 
 			size_t column_index = found->second;
-			auto [value_type, value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(entity_index);
+			auto value = columnData[column_index]->GetResolvedIndexValueWithType(entity_index);
 
-			PopulateTargetValueAndLabelIndex<compute_surprisal>(r_dist_eval, i, value, value_type);
+			PopulateTargetValueAndLabelIndex<compute_surprisal>(r_dist_eval, i, value);
 		}
 	}
 

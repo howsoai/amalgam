@@ -351,9 +351,9 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		for(auto entity_index : enabled_indices)
 		{
 			double radius = 0.0;
-			auto [radius_value_type, radius_value] = radius_column_data->GetResolvedIndexValueTypeAndValue(entity_index);
-			if(radius_value_type == ENIVT_NUMBER)
-				radius = radius_value.number;
+			auto radius_value = radius_column_data->GetResolvedIndexValueWithType(entity_index);
+			if(radius_value.nodeType == ENIVT_NUMBER)
+				radius = radius_value.nodeValue.number;
 
 			if(radius == 0)
 				distances[entity_index] = -max_dist_exponentiated;
@@ -405,7 +405,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 				{
 					//get distance term that is applicable to each entity in this bucket
 					double distance_term = r_dist_eval.ComputeDistanceTerm(
-						value_entry.first, ENIVT_NUMBER, query_feature_index, high_accuracy);
+						EvaluableNodeImmediateValueWithType(value_entry.first, ENIVT_NUMBER), query_feature_index, high_accuracy);
 
 					//for each bucket, add term to their sums
 					for(auto entity_index : value_entry.second.indicesWithValue)
@@ -446,9 +446,8 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		//else, there are less indices to consider than possible unique values, so save computation by just considering entities that are still valid
 		for(auto entity_index : enabled_indices)
 		{
-			auto [value_type, value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
-			distances[entity_index] += r_dist_eval.ComputeDistanceTerm(
-											value, value_type, query_feature_index, high_accuracy);
+			auto value = column_data->GetResolvedIndexValueWithType(entity_index);
+			distances[entity_index] += r_dist_eval.ComputeDistanceTerm(value, query_feature_index, high_accuracy);
 
 			//remove entity if its distance is already greater than the max_dist
 			if(!(distances[entity_index] <= max_dist_exponentiated)) //false for NaN indices as well so they will be removed
@@ -844,7 +843,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		size_t num_true = column->trueBoolIndices.size();
 		size_t num_false = column->trueBoolIndices.size();
 		size_t num_non_bool = (numEntities - column->invalidIndices.size()) - (num_true + num_false);
-		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominal(!comparison_value, ENIVT_BOOL, query_feature_index);
+		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominal(
+			EvaluableNodeImmediateValueWithType(!comparison_value), query_feature_index);
 
 		if(num_non_bool == 0)
 		{
@@ -1339,8 +1339,7 @@ void SeparableBoxFilterDataStore::PopulatePotentialGoodMatches(FlexiblePriorityQ
 
 template<bool compute_surprisal>
 void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-	size_t query_feature_index, EvaluableNodeImmediateValue position_value,
-	EvaluableNodeImmediateValueType position_value_type)
+	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value)
 {
 	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 	auto &feature_type = feature_attribs.featureType;
@@ -1349,7 +1348,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	auto &column_data = columnData[feature_attribs.featureIndex];
 
 	feature_data.Clear();
-	feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value, position_value_type);
+	feature_data.targetValue = position_value;
 
 	if(feature_attribs.IsFeatureNominal())
 		r_dist_eval.ComputeAndStoreNominalDistanceTerms<compute_surprisal>(query_feature_index);
@@ -1362,7 +1361,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	//however, symmetric nominals are fast, so don't compute interned values for them
 	if(!feature_attribs.IsFeatureSymmetricNominal() && !complex_comparison)
 	{
-		if(position_value_type == ENIVT_NUMBER && column_data->internedNumberValues.valueInterningEnabled)
+		if(position_value.nodeType == ENIVT_NUMBER && column_data->internedNumberValues.valueInterningEnabled)
 		{
 			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
 
@@ -1375,7 +1374,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 				query_feature_index, column_data->internedNumberValues.internedIndexToValue);
 			return;
 		}
-		else if(position_value_type == ENIVT_STRING_ID && column_data->internedStringIdValues.valueInterningEnabled)
+		else if(position_value.nodeType == ENIVT_STRING_ID && column_data->internedStringIdValues.valueInterningEnabled)
 		{
 			size_t num_values_stored_as_string_ids = column_data->stringIdIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
 
@@ -1388,7 +1387,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 				query_feature_index, column_data->internedStringIdValues.internedIndexToValue);
 			return;
 		}
-		else if(position_value_type == ENIVT_BOOL)
+		else if(position_value.nodeType == ENIVT_BOOL)
 		{
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_BOOL_PRECOMPUTED;
 
@@ -1427,9 +1426,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 }
 
 template void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex<true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-	size_t query_feature_index, EvaluableNodeImmediateValue position_value,
-	EvaluableNodeImmediateValueType position_value_type);
+	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);
 
 template void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex<false>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-	size_t query_feature_index, EvaluableNodeImmediateValue position_value,
-	EvaluableNodeImmediateValueType position_value_type);
+	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);

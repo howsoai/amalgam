@@ -1682,7 +1682,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 //builds a vector of the values in the node, using ordered or mapped child nodes as appropriate
 // if node is mapped child nodes, it will use id_order to order populate out and use default_value if any given id is not found
 static inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vector<StringInternPool::StringID> &id_order,
-	std::vector<EvaluableNodeImmediateValue> &out, std::vector<EvaluableNodeImmediateValueType> &out_types)
+	std::vector<EvaluableNodeImmediateValueWithType> &out)
 {
 	if(node != nullptr)
 	{
@@ -1690,37 +1690,29 @@ static inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std
 		{
 			auto &wn_mcn = node->GetMappedChildNodesReference();
 			out.resize(id_order.size());
-			out_types.resize(id_order.size());
 			for(size_t i = 0; i < id_order.size(); i++)
 			{
 				auto found_node = wn_mcn.find(id_order[i]);
 				if(found_node != end(wn_mcn))
-				{
-					out_types[i] = out[i].CopyValueFromEvaluableNode(found_node->second);
-				}
+					out[i].CopyValueFromEvaluableNode(found_node->second);
 				else //not found, use default
-				{
-					out[i] = EvaluableNodeImmediateValue(0.0);
-					out_types[i] = ENIVT_NUMBER;
-				}
+					out[i] = EvaluableNodeImmediateValueWithType(0.0);
 			}
 		}
 		else if(node->IsImmediate())
 		{
 			//fill in with the node's value
-			EvaluableNodeImmediateValue value;
-			EvaluableNodeImmediateValueType value_type = value.CopyValueFromEvaluableNode(node);
+			EvaluableNodeImmediateValueWithType value;
+			value.CopyValueFromEvaluableNode(node);
 			out.assign(id_order.size(), value);
-			out_types.assign(id_order.size(), value_type);
 		}
 		else //must be ordered
 		{
 			auto &node_ocn = node->GetOrderedChildNodesReference();
 
 			out.resize(node_ocn.size());
-			out_types.resize(node_ocn.size());
 			for(size_t i = 0; i < node_ocn.size(); i++)
-				out_types[i] = out[i].CopyValueFromEvaluableNode(node_ocn[i]);
+				out[i].CopyValueFromEvaluableNode(node_ocn[i]);
 		}
 	}
 }
@@ -1818,20 +1810,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 		dist_eval.computeSurprisal = InterpretNodeIntoBoolValue(ocn[8], false);
 
 	//get the origin and destination
-	std::vector<EvaluableNodeImmediateValue> location;
-	std::vector<EvaluableNodeImmediateValueType> location_types;
-	GetChildNodesAsENImmediateValueArray(location_node, value_names, location, location_types);
+	std::vector<EvaluableNodeImmediateValueWithType> location;
+	GetChildNodesAsENImmediateValueArray(location_node, value_names, location);
 
-	std::vector<EvaluableNodeImmediateValue> origin;
-	std::vector<EvaluableNodeImmediateValueType> origin_types;
-	GetChildNodesAsENImmediateValueArray(origin_node, value_names, origin, origin_types);
+	std::vector<EvaluableNodeImmediateValueWithType> origin;
+	GetChildNodesAsENImmediateValueArray(origin_node, value_names, origin);
 
 	//resize everything to the proper number of elements, fill in with zeros
 	size_t num_elements = std::max(std::max(location.size(), origin.size()), value_names.size());
 	location.resize(num_elements, 0.0);
-	location_types.resize(num_elements, ENIVT_NUMBER);
 	origin.resize(num_elements, 0.0);
-	origin_types.resize(num_elements, ENIVT_NUMBER);
 
 	EntityQueryBuilder::PopulateDistanceFeatureParameters(dist_eval, num_elements, value_names,
 		weights_node, weights_selection_features_node, attributes_node, deviations_node);
@@ -1864,7 +1852,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	dist_eval.recomputeAccurateDistances = false;
 	dist_eval.InitializeParametersAndFeatureParams();
 
-	double value = dist_eval.ComputeMinkowskiDistance(location, location_types, origin, origin_types, true);
+	double value = dist_eval.ComputeMinkowskiDistance(location, origin, true);
 	evaluableNodeManager->FreeNodeTreeIfPossible(location_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(origin_node);
 	return AllocReturn(value, immediate_result);

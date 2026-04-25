@@ -391,9 +391,10 @@ namespace EntityQueryBuilder
 			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_eval.featureAttribs.size())
 				{
+					auto &feature_attribs = dist_eval.featureAttribs[i];
 					if(!found)
 					{
-						dist_eval.featureAttribs[i].featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
+						feature_attribs.featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 						return;
 					}
 
@@ -406,21 +407,19 @@ namespace EntityQueryBuilder
 						StringInternPool::StringID data_type = string_intern_pool.NOT_A_STRING_ID;
 						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_data_type, data_type);
 
-						bool call_entity = false;
+						feature_attribs.callEntity = false;
 						if(auto found_value = mcn.find(GetStringIdFromNodeType(ENT_CALL_ENTITY)); found_value != end(mcn))
-							call_entity = EvaluableNode::ToBool(found_value->second);
+							feature_attribs.callEntity = EvaluableNode::ToBool(found_value->second);
 
-						bool call_on_entity = false;
+						feature_attribs.callOnEntity = false;
 						if(auto found_value = mcn.find(GetStringIdFromNodeType(ENT_CALL_ON_ENTITY)); found_value != end(mcn))
 						{
-							call_on_entity = EvaluableNode::ToBool(found_value->second);
-							call_entity = false;
+							feature_attribs.callOnEntity = EvaluableNode::ToBool(found_value->second);
+							feature_attribs.callEntity = false;
 						}
 
-						EvaluableNode *params = nullptr;
-						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_params, data_type);
-
-						//TODO 25393: finish implementing the rest of the flow for call*
+						feature_attribs.callParams = nullptr;
+						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_params, feature_attribs.callParams);
 
 						auto feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 						if(difference_type == GetStringIdFromBuiltInStringId(ENBISI_nominal))
@@ -442,7 +441,7 @@ namespace EntityQueryBuilder
 								feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
 							}
 
-							auto &nominal_count = dist_eval.featureAttribs[i].typeAttributes.nominalCount;
+							auto &nominal_count = feature_attribs.typeAttributes.nominalCount;
 							nominal_count = std::numeric_limits<double>::quiet_NaN();
 							EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_count, nominal_count);
 						}
@@ -454,21 +453,21 @@ namespace EntityQueryBuilder
 							}
 							else if(data_type == GetStringIdFromBuiltInStringId(ENBISI_code))
 							{
-								auto &attribs = dist_eval.featureAttribs[i].typeAttributes.code;
-								attribs.typesMustMatch = true;
-								attribs.nominalNumbers = false;
-								attribs.nominalStrings = true;
-								attribs.recursiveMatching = true;
-								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, attribs.typesMustMatch);
-								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, attribs.nominalNumbers);
-								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, attribs.nominalStrings);
-								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, attribs.recursiveMatching);
+								auto &code_attribs = feature_attribs.typeAttributes.code;
+								code_attribs.typesMustMatch = true;
+								code_attribs.nominalNumbers = false;
+								code_attribs.nominalStrings = true;
+								code_attribs.recursiveMatching = true;
+								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, code_attribs.typesMustMatch);
+								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, code_attribs.nominalNumbers);
+								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, code_attribs.nominalStrings);
+								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_recursive_matching, code_attribs.recursiveMatching);
 
 								feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;
 							}
 							else //treat as GetStringIdFromNodeType(ENT_NUMBER)
 							{
-								auto &cycle_range = dist_eval.featureAttribs[i].typeAttributes.cycleRange;
+								auto &cycle_range = feature_attribs.typeAttributes.cycleRange;
 								cycle_range = std::numeric_limits<double>::quiet_NaN();
 								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_cycle_range, cycle_range);
 
@@ -479,15 +478,15 @@ namespace EntityQueryBuilder
 							}
 						}
 
-						dist_eval.featureAttribs[i].featureType = feature_type;
+						feature_attribs.featureType = feature_type;
 					}
 					else //not an assoc, just assume string for type
 					{
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
 						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal))
-							dist_eval.featureAttribs[i].featureType = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
+							feature_attribs.featureType = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
 						else
-							dist_eval.featureAttribs[i].featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
+							feature_attribs.featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 					}
 				}
 			});

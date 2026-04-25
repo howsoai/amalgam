@@ -211,6 +211,12 @@ public:
 		//distance term to use if one value is known and the other is unknown
 		//the difference will be NaN if unknown
 		DistanceTermWithDeviation knownToUnknownDistanceTerm;
+
+		//if either callOnEntity or callEntity are set, it will call the entity before computing
+		// distance, passing in callparams
+		EvaluableNode *callParams;
+		bool callOnEntity;
+		bool callEntity;
 	};
 
 	//initializes and precomputes relevant data including featureAttribs

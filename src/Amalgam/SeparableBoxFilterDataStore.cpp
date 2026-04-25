@@ -1338,7 +1338,7 @@ void SeparableBoxFilterDataStore::PopulatePotentialGoodMatches(FlexiblePriorityQ
 }
 
 template<bool compute_surprisal>
-void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value)
 {
 	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
@@ -1346,6 +1346,8 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	auto &feature_data = r_dist_eval.featureData[query_feature_index];
 	auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
 	auto &column_data = columnData[feature_attribs.featureIndex];
+
+	//TODO 25393: finish implementing the rest of the flow for call*, add new extended distance type
 
 	feature_data.Clear();
 	feature_data.targetValue = position_value;
@@ -1425,8 +1427,8 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	}
 }
 
-template void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex<true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+template void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature<true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);
 
-template void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex<false>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+template void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature<false>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);

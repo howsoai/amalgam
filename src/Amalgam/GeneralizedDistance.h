@@ -1043,8 +1043,8 @@ public:
 	//	-uses featured nominal dimensions: if a dimension is marked in nominal_dimensions as true, partial distance is binary: 0.0 if equal, 1.0 otherwise
 	//if deviations.size() == 0, no deviations are used, else deviations.size() must == a.size() == b.size()
 	//	-uses per-feature deviations: per-feature deviation is added after the distance between ai and bi is computed
-	__forceinline double ComputeMinkowskiDistance(std::vector<EvaluableNodeImmediateValue> &a, std::vector<EvaluableNodeImmediateValueType> &a_types,
-		std::vector<EvaluableNodeImmediateValue> &b, std::vector<EvaluableNodeImmediateValueType> &b_types, bool high_accuracy)
+	__forceinline double ComputeMinkowskiDistance(std::vector<EvaluableNodeImmediateValueWithType> &a,
+		std::vector<EvaluableNodeImmediateValueWithType> &b, bool high_accuracy)
 	{
 		if(a.size() != b.size())
 			return std::numeric_limits<double>::quiet_NaN();
@@ -1053,8 +1053,7 @@ public:
 		{
 			double dist_accum = 1.0;
 			for(size_t i = 0; i < a.size(); i++)
-				dist_accum *= ComputeDistanceTermP0(EvaluableNodeImmediateValueWithType(a[i], a_types[i]),
-					EvaluableNodeImmediateValueWithType(b[i], b_types[i]), i, high_accuracy);
+				dist_accum *= ComputeDistanceTermP0(a[i], b[i], i, high_accuracy);
 
 			return dist_accum;
 		}
@@ -1064,8 +1063,7 @@ public:
 
 			for(size_t i = 0; i < a.size(); i++)
 			{
-				double term = ComputeDistanceTermPInf(EvaluableNodeImmediateValueWithType(a[i], a_types[i]),
-					EvaluableNodeImmediateValueWithType(b[i], b_types[i]), i, high_accuracy);
+				double term = ComputeDistanceTermPInf(a[i], b[i], i, high_accuracy);
 
 				if(term > max_term)
 					max_term = term;
@@ -1079,8 +1077,7 @@ public:
 
 			for(size_t i = 0; i < a.size(); i++)
 			{
-				double term = ComputeDistanceTermPInf(EvaluableNodeImmediateValueWithType(a[i], a_types[i]),
-					EvaluableNodeImmediateValueWithType(b[i], b_types[i]), i, high_accuracy);
+				double term = ComputeDistanceTermPInf(a[i], b[i], i, high_accuracy);
 
 				if(term < min_term)
 					min_term = term;
@@ -1092,8 +1089,7 @@ public:
 		{
 			double dist_accum = 0.0;
 			for(size_t i = 0; i < a.size(); i++)
-				dist_accum += ComputeDistanceTermRegular(EvaluableNodeImmediateValueWithType(a[i], a_types[i]),
-					EvaluableNodeImmediateValueWithType(b[i], b_types[i]), i, high_accuracy);
+				dist_accum += ComputeDistanceTermRegular(a[i], b[i], i, high_accuracy);
 
 			return InverseExponentiateDistance(dist_accum, high_accuracy);
 		}

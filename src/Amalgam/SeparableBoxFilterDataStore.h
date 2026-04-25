@@ -529,8 +529,8 @@ public:
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
 	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	inline void FindEntitiesWithinDistanceToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
-		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
+	inline void FindEntitiesWithinDistanceToPosition(GeneralizedDistanceEvaluator &dist_eval,
+		std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValueWithType> &position_values,
 		double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out)
 	{
@@ -538,9 +538,9 @@ public:
 		r_dist_eval.distEvaluator = &dist_eval;
 
 		if(r_dist_eval.distEvaluator->computeSurprisal)
-			PopulateTargetValuesAndLabelIndicesFromPosition<true>(r_dist_eval, position_label_sids, position_values, position_value_types);
+			PopulateTargetValuesAndLabelIndicesFromPosition<true>(r_dist_eval, position_label_sids, position_values);
 		else
-			PopulateTargetValuesAndLabelIndicesFromPosition<false>(r_dist_eval, position_label_sids, position_values, position_value_types);
+			PopulateTargetValuesAndLabelIndicesFromPosition<false>(r_dist_eval, position_label_sids, position_values);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -614,7 +614,7 @@ public:
 	//enabled_indices is the set of entities to find from, and will be modified
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	inline void FindEntitiesNearestToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
-		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
+		std::vector<EvaluableNodeImmediateValueWithType> &position_values, 
 		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
 		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices, bool expand_to_first_nonzero_distance,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream())
@@ -622,7 +622,7 @@ public:
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 		r_dist_eval.distEvaluator = &dist_eval;
 
-		PopulateTargetValuesAndLabelIndicesFromPosition(r_dist_eval, position_label_sids, position_values, position_value_types);
+		PopulateTargetValuesAndLabelIndicesFromPosition(r_dist_eval, position_label_sids, position_values);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -1299,8 +1299,7 @@ public:
 	//if compute_surprisal is true, it will use a faster execution path
 	template<bool compute_surprisal = false>
 	void PopulateTargetValuesAndLabelIndicesFromPosition(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValue> &position_values,
-		std::vector<EvaluableNodeImmediateValueType> &position_value_types)
+		std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValueWithType> &position_values)
 	{
 		size_t num_features = position_values.size();
 		r_dist_eval.featureData.resize(num_features);
@@ -1310,8 +1309,8 @@ public:
 			if(column == end(labelIdToColumnIndex))
 				continue;
 
-			PopulateTargetValueAndLabelIndex<compute_surprisal>(r_dist_eval, query_feature_index,
-				EvaluableNodeImmediateValueWithType(position_values[query_feature_index], position_value_types[query_feature_index]));
+			PopulateTargetValueAndLabelIndex<compute_surprisal>(
+				r_dist_eval, query_feature_index, position_values[query_feature_index]);
 		}
 	}
 

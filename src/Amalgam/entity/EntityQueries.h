@@ -65,7 +65,7 @@ public:
 	std::vector<StringInternPool::StringID> positionLabels;
 
 	//the labels corresponding to positionLabels when appropriate
-	std::vector<EvaluableNodeImmediateValue> valueToCompare;
+	std::vector<EvaluableNodeImmediateValueWithType> valuesToCompare;
 
 	//when initialized, points to an OrderedChildNodes vector of the values to compare
 	std::vector<EvaluableNode *> *positionsToCompare;
@@ -87,7 +87,7 @@ public:
 	//a label representing a weight label
 	StringInternPool::StringID weightLabel;
 
-	//maximum distance between valueToCompare and the entity
+	//maximum distance between valuesToCompare and the entity
 	double maxDistance;
 
 	//maximum number of entities to attempt to retrieve (based on queryType)

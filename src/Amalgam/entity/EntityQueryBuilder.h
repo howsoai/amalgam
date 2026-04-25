@@ -681,25 +681,21 @@ namespace EntityQueryBuilder
 			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == cur_condition->positionLabels.size()))
 			{
 				CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),
-					cur_condition->valueToCompare, cur_condition->valueTypes);
+					cur_condition->valuesToCompare);
 			}
 			else if(position != nullptr && position->GetType() == ENT_STRING)
 			{
 				cur_condition->entityIdToExclude = position->GetStringIDReference();
 				//these will be set later under lock
 				cur_condition->valueTypes.clear();
-				cur_condition->valueToCompare.clear();
+				cur_condition->valuesToCompare.clear();
 				cur_condition->populateOmittedFeatureValues = true;
 			}
 			else // no positions given, default to nulls for each label
 			{
-				cur_condition->valueToCompare.reserve(cur_condition->positionLabels.size());
-				cur_condition->valueTypes.reserve(cur_condition->positionLabels.size());
+				cur_condition->valuesToCompare.reserve(cur_condition->positionLabels.size());
 				for(size_t i = 0; i < cur_condition->positionLabels.size(); i++)
-				{
-					cur_condition->valueTypes.push_back(ENIVT_NULL);
-					cur_condition->valueToCompare.push_back(EvaluableNodeImmediateValue());
-				}
+					cur_condition->valuesToCompare.push_back(EvaluableNodeImmediateValueWithType());
 			}
 		}
 
@@ -1034,7 +1030,7 @@ namespace EntityQueryBuilder
 				EvaluableNode *value_list = ocn[1];
 				if(EvaluableNode::IsOrderedArray(value_list))
 					CopyOrderedChildNodesToImmediateValuesAndTypes(value_list->GetOrderedChildNodesReference(),
-						cur_condition->valueToCompare, cur_condition->valueTypes);
+						cur_condition->valuesToCompare);
 				break;
 			}
 

@@ -128,10 +128,9 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			if(value.nodeType == ENIVT_NOT_EXIST)
 				return false;
 			
-			for(size_t i = 0; i < valueToCompare.size(); i++)
+			for(size_t i = 0; i < valuesToCompare.size(); i++)
 			{
-				if(EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(value,
-						EvaluableNodeImmediateValueWithType(valueToCompare[i], valueTypes[i])))
+				if(EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(value, valuesToCompare[i]))
 					return true;
 			}
 
@@ -145,14 +144,13 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			if(value.nodeType == ENIVT_NOT_EXIST)
 				return false;
 
-			for(size_t i = 0; i < valueToCompare.size(); i++)
+			for(size_t i = 0; i < valuesToCompare.size(); i++)
 			{
 				//make sure same type
 				if(value.nodeType != valueTypes[i])
 					return false;
 
-				if(EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(value,
-						EvaluableNodeImmediateValueWithType(valueToCompare[i], valueTypes[i])))
+				if(EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(value, valuesToCompare[i]))
 					return false;
 			}
 
@@ -173,14 +171,12 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 		case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 		{
-			std::vector<EvaluableNodeImmediateValue> position(positionLabels.size());
-			std::vector<EvaluableNodeImmediateValueType> position_types(positionLabels.size());
+			std::vector<EvaluableNodeImmediateValueWithType> position(positionLabels.size());
 			for(size_t i = 0; i < positionLabels.size(); i++)
 			{
 				auto [value, found] = e->GetValueAtLabelAsImmediateValue(positionLabels[i]);
-				position_types[i] = value.nodeType;
-				position[i] = value.nodeValue;
-				if(position_types[i] == ENIVT_NOT_EXIST)
+				position[i] = value;
+				if(position[i].nodeType == ENIVT_NOT_EXIST)
 					return false;
 			}
 
@@ -192,7 +188,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 					radius = value;
 			}
 
-			double distance = distEvaluator.ComputeMinkowskiDistance(position, position_types, valueToCompare, valueTypes, distEvaluator.highAccuracyDistances);
+			double distance = distEvaluator.ComputeMinkowskiDistance(position, valuesToCompare, distEvaluator.highAccuracyDistances);
 			if(distance - radius > maxDistance)
 				return false;
 
@@ -228,14 +224,12 @@ double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e, bool high_ac
 	if(e->GetIdStringId() == entityIdToExclude)
 		return std::numeric_limits<double>::quiet_NaN();
 
-	std::vector<EvaluableNodeImmediateValue> position(positionLabels.size());
-	std::vector<EvaluableNodeImmediateValueType> position_types(positionLabels.size());
+	std::vector<EvaluableNodeImmediateValueWithType> position(positionLabels.size());
 	for(size_t i = 0; i < positionLabels.size(); i++)
 	{
 		auto [value, found] = e->GetValueAtLabelAsImmediateValue(positionLabels[i]);
-		position_types[i] = value.nodeType;
-		position[i] = value.nodeValue;
-		if(position_types[i] == ENIVT_NOT_EXIST)
+		position[i] = value;
+		if(position[i].nodeType == ENIVT_NOT_EXIST)
 			return std::numeric_limits<double>::quiet_NaN();
 	}
 
@@ -247,7 +241,7 @@ double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e, bool high_ac
 			radius = value;
 	}
 		
-	double distance = distEvaluator.ComputeMinkowskiDistance(position, position_types, valueToCompare, valueTypes, high_accuracy);
+	double distance = distEvaluator.ComputeMinkowskiDistance(position, valuesToCompare, high_accuracy);
 	return distance - radius;
 }
 
@@ -630,13 +624,12 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		{
 			//populate values from the comparison entity
 			Entity *comparison_entity = container->GetContainedEntity(entityIdToExclude);
-			valueToCompare.resize(positionLabels.size());
+			valuesToCompare.resize(positionLabels.size());
 			valueTypes.resize(positionLabels.size());
 			for(size_t i = 0; i < positionLabels.size(); i++)
 			{
 				auto [value, found] = comparison_entity->GetValueAtLabelAsImmediateValue(positionLabels[i]);
-				valueTypes[i] = value.nodeType;
-				valueToCompare[i] = value.nodeValue;
+				valuesToCompare[i] = value;
 			}
 		}
 
@@ -711,13 +704,12 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		{
 			//populate values from the comparison entity
 			Entity *comparison_entity = container->GetContainedEntity(entityIdToExclude);
-			valueToCompare.resize(positionLabels.size());
+			valuesToCompare.resize(positionLabels.size());
 			valueTypes.resize(positionLabels.size());
 			for(size_t i = 0; i < positionLabels.size(); i++)
 			{
 				auto [value, found] = comparison_entity->GetValueAtLabelAsImmediateValue(positionLabels[i]);
-				valueTypes[i] = value.nodeType;
-				valueToCompare[i] = value.nodeValue;
+				valuesToCompare[i] = value;
 			}
 		}
 

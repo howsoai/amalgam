@@ -1293,8 +1293,7 @@ public:
 	//if compute_surprisal is true, it will use a faster execution path
 	template<bool compute_surprisal = false>
 	void PopulateTargetValueAndLabelIndex(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		size_t query_feature_index, EvaluableNodeImmediateValue position_value,
-		EvaluableNodeImmediateValueType position_value_type);
+		size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);
 
 	//populates all target values given the selected target values for each value in corresponding position* parameters
 	//if compute_surprisal is true, it will use a faster execution path
@@ -1312,7 +1311,7 @@ public:
 				continue;
 
 			PopulateTargetValueAndLabelIndex<compute_surprisal>(r_dist_eval, query_feature_index,
-				position_values[query_feature_index], position_value_types[query_feature_index]);
+				EvaluableNodeImmediateValueWithType(position_values[query_feature_index], position_value_types[query_feature_index]));
 		}
 	}
 
@@ -1333,7 +1332,7 @@ public:
 			size_t column_index = found->second;
 			auto [value_type, value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(entity_index);
 
-			PopulateTargetValueAndLabelIndex<compute_surprisal>(r_dist_eval, i, value, value_type);
+			PopulateTargetValueAndLabelIndex<compute_surprisal>(r_dist_eval, i, EvaluableNodeImmediateValueWithType(value, value_type));
 		}
 	}
 

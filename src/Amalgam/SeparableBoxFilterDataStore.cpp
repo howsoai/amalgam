@@ -1340,8 +1340,7 @@ void SeparableBoxFilterDataStore::PopulatePotentialGoodMatches(FlexiblePriorityQ
 
 template<bool compute_surprisal>
 void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-	size_t query_feature_index, EvaluableNodeImmediateValue position_value,
-	EvaluableNodeImmediateValueType position_value_type)
+	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value)
 {
 	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 	auto &feature_type = feature_attribs.featureType;
@@ -1350,7 +1349,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	auto &column_data = columnData[feature_attribs.featureIndex];
 
 	feature_data.Clear();
-	feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value, position_value_type);
+	feature_data.targetValue = position_value;
 
 	if(feature_attribs.IsFeatureNominal())
 		r_dist_eval.ComputeAndStoreNominalDistanceTerms<compute_surprisal>(query_feature_index);
@@ -1363,7 +1362,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	//however, symmetric nominals are fast, so don't compute interned values for them
 	if(!feature_attribs.IsFeatureSymmetricNominal() && !complex_comparison)
 	{
-		if(position_value_type == ENIVT_NUMBER && column_data->internedNumberValues.valueInterningEnabled)
+		if(position_value.nodeType == ENIVT_NUMBER && column_data->internedNumberValues.valueInterningEnabled)
 		{
 			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
 
@@ -1376,7 +1375,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 				query_feature_index, column_data->internedNumberValues.internedIndexToValue);
 			return;
 		}
-		else if(position_value_type == ENIVT_STRING_ID && column_data->internedStringIdValues.valueInterningEnabled)
+		else if(position_value.nodeType == ENIVT_STRING_ID && column_data->internedStringIdValues.valueInterningEnabled)
 		{
 			size_t num_values_stored_as_string_ids = column_data->stringIdIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
 
@@ -1389,7 +1388,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 				query_feature_index, column_data->internedStringIdValues.internedIndexToValue);
 			return;
 		}
-		else if(position_value_type == ENIVT_BOOL)
+		else if(position_value.nodeType == ENIVT_BOOL)
 		{
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_BOOL_PRECOMPUTED;
 
@@ -1428,9 +1427,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 }
 
 template void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex<true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-	size_t query_feature_index, EvaluableNodeImmediateValue position_value,
-	EvaluableNodeImmediateValueType position_value_type);
+	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);
 
 template void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex<false>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-	size_t query_feature_index, EvaluableNodeImmediateValue position_value,
-	EvaluableNodeImmediateValueType position_value_type);
+	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);

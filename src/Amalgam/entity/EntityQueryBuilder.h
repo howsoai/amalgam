@@ -687,7 +687,6 @@ namespace EntityQueryBuilder
 			{
 				cur_condition->entityIdToExclude = position->GetStringIDReference();
 				//these will be set later under lock
-				cur_condition->valueTypes.clear();
 				cur_condition->valuesToCompare.clear();
 				cur_condition->populateOmittedFeatureValues = true;
 			}

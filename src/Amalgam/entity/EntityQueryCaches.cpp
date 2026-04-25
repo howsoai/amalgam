@@ -293,8 +293,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					{
 						if(cond->valuesToCompare.size() > i)
 							cond->valuesToCompare.erase(cond->valuesToCompare.begin() + i);
-						if(cond->valueTypes.size() > i)
-							cond->valueTypes.erase(cond->valueTypes.begin() + i);
 					}
 
 					//need to process the new value in this feature slot

@@ -146,10 +146,6 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 			for(size_t i = 0; i < valuesToCompare.size(); i++)
 			{
-				//make sure same type
-				if(value.nodeType != valueTypes[i])
-					return false;
-
 				if(EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(value, valuesToCompare[i]))
 					return false;
 			}
@@ -625,7 +621,6 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			//populate values from the comparison entity
 			Entity *comparison_entity = container->GetContainedEntity(entityIdToExclude);
 			valuesToCompare.resize(positionLabels.size());
-			valueTypes.resize(positionLabels.size());
 			for(size_t i = 0; i < positionLabels.size(); i++)
 			{
 				auto [value, found] = comparison_entity->GetValueAtLabelAsImmediateValue(positionLabels[i]);
@@ -705,7 +700,6 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			//populate values from the comparison entity
 			Entity *comparison_entity = container->GetContainedEntity(entityIdToExclude);
 			valuesToCompare.resize(positionLabels.size());
-			valueTypes.resize(positionLabels.size());
 			for(size_t i = 0; i < positionLabels.size(); i++)
 			{
 				auto [value, found] = comparison_entity->GetValueAtLabelAsImmediateValue(positionLabels[i]);

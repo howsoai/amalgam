@@ -406,6 +406,22 @@ namespace EntityQueryBuilder
 						StringInternPool::StringID data_type = string_intern_pool.NOT_A_STRING_ID;
 						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_data_type, data_type);
 
+						bool call_entity = false;
+						if(auto found_value = mcn.find(GetStringIdFromNodeType(ENT_CALL_ENTITY)); found_value != end(mcn))
+							call_entity = EvaluableNode::ToBool(found_value->second);
+
+						bool call_on_entity = false;
+						if(auto found_value = mcn.find(GetStringIdFromNodeType(ENT_CALL_ON_ENTITY)); found_value != end(mcn))
+						{
+							call_on_entity = EvaluableNode::ToBool(found_value->second);
+							call_entity = false;
+						}
+
+						EvaluableNode *params = nullptr;
+						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_params, data_type);
+
+						//TODO 25393: finish implementing the rest of the flow for call*
+
 						auto feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 						if(difference_type == GetStringIdFromBuiltInStringId(ENBISI_nominal))
 						{

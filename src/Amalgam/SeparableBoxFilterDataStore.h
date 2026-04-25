@@ -1041,7 +1041,6 @@ protected:
 	__forceinline double ComputeDistanceTermNonMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t entity_index, size_t query_feature_index, bool high_accuracy)
 	{
-		//TODO 25393: finish implementing the rest of the flow for call*
 		auto &feature_data = r_dist_eval.featureData[query_feature_index];
 		switch(feature_data.effectiveFeatureType)
 		{
@@ -1169,10 +1168,8 @@ protected:
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
 
-		default:
-			//RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING,
-			//RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING,
-			//or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
@@ -1181,6 +1178,14 @@ protected:
 			return r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
 				other_value, query_feature_index, high_accuracy);
 		}
+
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ENTITY:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ON_ENTITY:
+		{
+			//TODO 25393: finish this
+			return 0.0;
+		}
+
 		}
 	}
 

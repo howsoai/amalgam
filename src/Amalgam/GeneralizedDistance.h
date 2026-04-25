@@ -212,10 +212,11 @@ public:
 		//the difference will be NaN if unknown
 		DistanceTermWithDeviation knownToUnknownDistanceTerm;
 
-		//if either callOnEntity or callEntity are set, it will call the entity before computing
+		//if callEntity is set, it will call the entity before computing;
+		//if callOnEntity is not null, it will use that instead of calling the entity label
 		// distance, passing in callparams
 		EvaluableNode *callParams;
-		bool callOnEntity;
+		EvaluableNode *callOnEntity;
 		bool callEntity;
 	};
 
@@ -1227,6 +1228,10 @@ public:
 		EFDT_CONTINUOUS_STRING,
 		//continuous measures of the number of nodes different between two sets of code
 		EFDT_CONTINUOUS_CODE,
+		//calls the entity's label, then evaluates distance using GeneralizedDistanceEvaluator::FeatureDifferenceType
+		EFDT_CALL_ENTITY,
+		//calls on entity, then evaluates distance using GeneralizedDistanceEvaluator::FeatureDifferenceType
+		EFDT_CALL_ON_ENTITY
 	};
 
 	RepeatedGeneralizedDistanceEvaluator()

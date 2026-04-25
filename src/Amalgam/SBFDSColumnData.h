@@ -293,32 +293,32 @@ public:
 
 	//given a value, inserts into out all the entities that have the value
 	// does not handle ENIVT_CODE because it doesn't have the data
-	void UnionAllIndicesWithValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue &value, BitArrayIntegerSet &out)
+	void UnionAllIndicesWithValue(EvaluableNodeImmediateValueWithType &value, BitArrayIntegerSet &out)
 	{
-		if(value_type == ENIVT_NOT_EXIST)
+		if(value.nodeType == ENIVT_NOT_EXIST)
 			return;
 
-		if(value_type == ENIVT_NULL)
+		if(value.nodeType == ENIVT_NULL)
 		{
 			//only want nulls that are not numbers
 			nullIndices.UnionTo(out);
 		}
-		else if(value_type == ENIVT_BOOL)
+		else if(value.nodeType == ENIVT_BOOL)
 		{
-			if(value.boolValue)
+			if(value.nodeValue.boolValue)
 				trueBoolIndices.UnionTo(out);
 			else
 				falseBoolIndices.UnionTo(out);
 		}
-		else if(value_type == ENIVT_NUMBER)
+		else if(value.nodeType == ENIVT_NUMBER)
 		{
-			auto value_entry = sortedNumberValueEntries.find(value.number);
+			auto value_entry = sortedNumberValueEntries.find(value.nodeValue.number);
 			if(value_entry != end(sortedNumberValueEntries))
 				out.InsertInBatch(value_entry->second.indicesWithValue);
 		}
-		else if(value_type == ENIVT_STRING_ID)
+		else if(value.nodeType == ENIVT_STRING_ID)
 		{
-			auto id_entry = stringIdValueEntries.find(value.stringID);
+			auto id_entry = stringIdValueEntries.find(value.nodeValue.stringID);
 			if(id_entry != end(stringIdValueEntries))
 				out.InsertInBatch(id_entry->second->indicesWithValue);
 		}

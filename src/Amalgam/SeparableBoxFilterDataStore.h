@@ -338,22 +338,22 @@ public:
 
 	//given a feature_sid, value_type, and value, inserts into out all the entities that have the value
 	inline void UnionAllEntitiesWithValue(StringInternPool::StringID feature_sid,
-		EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue &value, BitArrayIntegerSet &out)
+		EvaluableNodeImmediateValueWithType &value, BitArrayIntegerSet &out)
 	{
 		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
 			return;
 		size_t column_index = column->second;
 
-		if(value_type != ENIVT_CODE)
+		if(value.nodeType != ENIVT_CODE)
 		{
-			columnData[column_index]->UnionAllIndicesWithValue(value_type, value, out);
+			columnData[column_index]->UnionAllIndicesWithValue(value, out);
 		}
 		else //compare if code is equal
 		{
 			for(auto entity_index : columnData[column_index]->codeIndices)
 			{
-				if(EvaluableNode::AreDeepEqual(value.code, GetValue(entity_index, column_index).code))
+				if(EvaluableNode::AreDeepEqual(value.nodeValue.code, GetValue(entity_index, column_index).code))
 					out.insert(entity_index);
 			}
 		}

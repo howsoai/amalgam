@@ -210,8 +210,10 @@ union EvaluableNodeImmediateValue
 	}
 
 	//returns true if the values are equal, which can include ENIVT_CODE containing null, etc.
-	inline static bool AreEqual(EvaluableNodeImmediateValueType type_1, EvaluableNodeImmediateValue &value_1,
-		EvaluableNodeImmediateValueType type_2, EvaluableNodeImmediateValue &value_2)
+	inline static bool AreEqual(EvaluableNodeImmediateValueType type_1,
+		const EvaluableNodeImmediateValue &value_1,
+		EvaluableNodeImmediateValueType type_2,
+		const EvaluableNodeImmediateValue &value_2)
 	{
 		if(type_1 != type_2)
 		{
@@ -258,8 +260,10 @@ union EvaluableNodeImmediateValue
 
 	//like AreEqual but requires that immediate values are already transformed into immediate representations,
 	//e.g., ENIVT_CODE would not contain a null
-	inline static bool AreEqualGivenImmediateValuesNotCode(EvaluableNodeImmediateValueType type_1, EvaluableNodeImmediateValue &value_1,
-		EvaluableNodeImmediateValueType type_2, EvaluableNodeImmediateValue &value_2)
+	inline static bool AreEqualGivenImmediateValuesNotCode(EvaluableNodeImmediateValueType type_1,
+		const EvaluableNodeImmediateValue &value_1,
+		EvaluableNodeImmediateValueType type_2,
+		const EvaluableNodeImmediateValue &value_2)
 	{
 		if(type_1 != type_2)
 			return false;
@@ -280,7 +284,8 @@ union EvaluableNodeImmediateValue
 	}
 
 	//returns true if it is a null or null equivalent
-	static __forceinline constexpr bool IsNull(EvaluableNodeImmediateValueType type, EvaluableNodeImmediateValue &value)
+	static __forceinline constexpr bool IsNull(EvaluableNodeImmediateValueType type,
+		const EvaluableNodeImmediateValue &value)
 	{
 		if(type != ENIVT_CODE)
 			return type == ENIVT_NULL;
@@ -378,18 +383,20 @@ public:
 
 	StringInternPool::StringID GetValueAsStringIDWithReference(bool key_string = false);
 
-	static inline bool AreEqual(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)
+	static inline bool AreEqual(const EvaluableNodeImmediateValueWithType &a,
+		const EvaluableNodeImmediateValueWithType &b)
 	{
 		return EvaluableNodeImmediateValue::AreEqual(a.nodeType, a.nodeValue, b.nodeType, b.nodeValue);
 	}
 
-	static inline bool AreEqualGivenImmediateValuesNotCode(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)
+	static inline bool AreEqualGivenImmediateValuesNotCode(const EvaluableNodeImmediateValueWithType &a,
+		const EvaluableNodeImmediateValueWithType &b)
 	{
 		return EvaluableNodeImmediateValue::AreEqualGivenImmediateValuesNotCode(a.nodeType, a.nodeValue, b.nodeType, b.nodeValue);
 	}
 
 	//returns true if it is a null or null equivalent
-	constexpr bool IsNull()
+	constexpr bool IsNull() const
 	{
 		return EvaluableNodeImmediateValue::IsNull(nodeType, nodeValue);
 	}

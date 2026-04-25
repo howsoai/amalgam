@@ -405,7 +405,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 				{
 					//get distance term that is applicable to each entity in this bucket
 					double distance_term = r_dist_eval.ComputeDistanceTerm(
-						value_entry.first, ENIVT_NUMBER, query_feature_index, high_accuracy);
+						EvaluableNodeImmediateValueWithType(value_entry.first, ENIVT_NUMBER), query_feature_index, high_accuracy);
 
 					//for each bucket, add term to their sums
 					for(auto entity_index : value_entry.second.indicesWithValue)
@@ -448,7 +448,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		{
 			auto [value_type, value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
 			distances[entity_index] += r_dist_eval.ComputeDistanceTerm(
-											value, value_type, query_feature_index, high_accuracy);
+				EvaluableNodeImmediateValueWithType(value, value_type), query_feature_index, high_accuracy);
 
 			//remove entity if its distance is already greater than the max_dist
 			if(!(distances[entity_index] <= max_dist_exponentiated)) //false for NaN indices as well so they will be removed
@@ -844,7 +844,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		size_t num_true = column->trueBoolIndices.size();
 		size_t num_false = column->trueBoolIndices.size();
 		size_t num_non_bool = (numEntities - column->invalidIndices.size()) - (num_true + num_false);
-		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominal(!comparison_value, ENIVT_BOOL, query_feature_index);
+		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominal(
+			EvaluableNodeImmediateValueWithType(!comparison_value), query_feature_index);
 
 		if(num_non_bool == 0)
 		{

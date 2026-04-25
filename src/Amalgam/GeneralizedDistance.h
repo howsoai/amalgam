@@ -494,15 +494,15 @@ public:
 	//returns the distance term given that it is nominal
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
-	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
-		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index)
+	__forceinline double ComputeDistanceTermNominal(const EvaluableNodeImmediateValueWithType &a,
+		const EvaluableNodeImmediateValueWithType &b, size_t index)
 	{
-		bool a_is_null = EvaluableNodeImmediateValue::IsNull(a_type, a);
-		bool b_is_null = EvaluableNodeImmediateValue::IsNull(b_type, b);
+		bool a_is_null = a.IsNull();
+		bool b_is_null = b.IsNull();
 		if(a_is_null && b_is_null)
 			return ComputeDistanceTermUnknownToUnknown(index);
 
-		bool are_equal = EvaluableNodeImmediateValue::AreEqualGivenImmediateValuesNotCode(a_type, a, b_type, b);
+		bool are_equal = EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(a, b);
 
 		auto &feature_attribs = featureAttribs[index];
 		if(feature_attribs.IsFeatureSymmetricNominal())
@@ -517,30 +517,30 @@ public:
 
 		double prob_class_given_match = std::numeric_limits<double>::quiet_NaN();
 		double prob_class_given_nonmatch = std::numeric_limits<double>::quiet_NaN();
-		if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
+		if(a.nodeType == ENIVT_NUMBER && b.nodeType == ENIVT_NUMBER)
 		{
 			std::tie(prob_class_given_match, prob_class_given_nonmatch)
 				= ComputeProbClassGivenMatchAndNonMatchFromSDM(
-					feature_attribs.nominalNumberSparseDeviationMatrix, index, a.number, b.number);
+					feature_attribs.nominalNumberSparseDeviationMatrix, index, a.nodeValue.number, b.nodeValue.number);
 		}
-		else if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
+		else if(a.nodeType == ENIVT_STRING_ID && b.nodeType == ENIVT_STRING_ID)
 		{
 			std::tie(prob_class_given_match, prob_class_given_nonmatch)
 				= ComputeProbClassGivenMatchAndNonMatchFromSDM(
-					feature_attribs.nominalStringSparseDeviationMatrix, index, a.stringID, b.stringID);
+					feature_attribs.nominalStringSparseDeviationMatrix, index, a.nodeValue.stringID, b.nodeValue.stringID);
 		}
-		else if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+		else if(a.nodeType == ENIVT_BOOL && b.nodeType == ENIVT_BOOL)
 		{
-			StringInternPool::StringID a_sid = EvaluableNode::BoolToStringID(a.boolValue, true);
-			StringInternPool::StringID b_sid = EvaluableNode::BoolToStringID(b.boolValue, true);
+			StringInternPool::StringID a_sid = EvaluableNode::BoolToStringID(a.nodeValue.boolValue, true);
+			StringInternPool::StringID b_sid = EvaluableNode::BoolToStringID(b.nodeValue.boolValue, true);
 			std::tie(prob_class_given_match, prob_class_given_nonmatch)
 				= ComputeProbClassGivenMatchAndNonMatchFromSDM(
 					feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);
 		}
-		else if(a_type == ENIVT_CODE && b_type == ENIVT_CODE)
+		else if(a.nodeType == ENIVT_CODE && b.nodeType == ENIVT_CODE)
 		{
-			StringInternPool::StringID a_sid = EvaluableNode::ToStringIDIfExists(a.code, true);
-			StringInternPool::StringID b_sid = EvaluableNode::ToStringIDIfExists(b.code, true);
+			StringInternPool::StringID a_sid = EvaluableNode::ToStringIDIfExists(a.nodeValue.code, true);
+			StringInternPool::StringID b_sid = EvaluableNode::ToStringIDIfExists(b.nodeValue.code, true);
 			std::tie(prob_class_given_match, prob_class_given_nonmatch)
 				= ComputeProbClassGivenMatchAndNonMatchFromSDM(
 					feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);
@@ -858,16 +858,16 @@ public:
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p=0
-	__forceinline double ComputeDistanceTermP0(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
-		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermP0(const EvaluableNodeImmediateValueWithType &a,
+		const EvaluableNodeImmediateValueWithType &b, size_t index, bool high_accuracy)
 	{
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
-			return ComputeDistanceTermNominal(a, b, a_type, b_type, index);
+			return ComputeDistanceTermNominal(a, b, index);
 
-		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index]);
+		double diff = ComputeDifference(a, b, featureAttribs[index]);
 		if(FastIsNaN(diff))
-			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
+			return LookupNullDistanceTerm(a, b, index, high_accuracy);
 
 		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
@@ -875,16 +875,16 @@ public:
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p=infinity or -infinity
-	__forceinline double ComputeDistanceTermPInf(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
-		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermPInf(const EvaluableNodeImmediateValueWithType &a,
+		const EvaluableNodeImmediateValueWithType &b, size_t index, bool high_accuracy)
 	{
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
-			return ComputeDistanceTermNominal(a, b, a_type, b_type, index);
+			return ComputeDistanceTermNominal(a, b, index);
 
-		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index]);
+		double diff = ComputeDifference(a, b, featureAttribs[index]);
 		if(FastIsNaN(diff))
-			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
+			return LookupNullDistanceTerm(a, b, index, high_accuracy);
 
 		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
@@ -920,26 +920,26 @@ public:
 	//computes the inner term of the Minkowski norm summation for a single index for p non-zero and non-infinite
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
-	__forceinline double ComputeDistanceTermRegular(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
-		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermRegular(const EvaluableNodeImmediateValueWithType &a,
+		const EvaluableNodeImmediateValueWithType &b, size_t index, bool high_accuracy)
 	{
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
-			return ComputeDistanceTermNominal(a, b, a_type, b_type, index);
+			return ComputeDistanceTermNominal(a, b, index);
 
-		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index]);
+		double diff = ComputeDifference(a, b, featureAttribs[index]);
 		if(FastIsNaN(diff))
-			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
+			return LookupNullDistanceTerm(a, b, index, high_accuracy);
 
 		return ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(diff, index, high_accuracy);
 	}
 
 	//returns the distance term for the either one or two unknown values
-	__forceinline double LookupNullDistanceTerm(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
-		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
+	__forceinline double LookupNullDistanceTerm(const EvaluableNodeImmediateValueWithType &a,
+		const EvaluableNodeImmediateValueWithType &b, size_t index, bool high_accuracy)
 	{
-		bool a_unknown = EvaluableNodeImmediateValue::IsNull(a_type, a);
-		bool b_unknown = EvaluableNodeImmediateValue::IsNull(b_type, b);
+		bool a_unknown = a.IsNull();
+		bool b_unknown = b.IsNull();
 		if(a_unknown && b_unknown)
 			return ComputeDistanceTermUnknownToUnknown(index);
 		if(a_unknown || b_unknown)
@@ -950,27 +950,26 @@ public:
 	}
 
 	//computes the difference between a and b given their types and the distance_type and the feature difference type
-	__forceinline static double ComputeDifference(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
-		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type,
-		GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
+	__forceinline static double ComputeDifference(const EvaluableNodeImmediateValueWithType &a,
+		const EvaluableNodeImmediateValueWithType &b, GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
 	{
 		auto feature_type = feature_attribs.featureType;
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC)
 		{
-			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
-				return a.number - b.number;
+			if(a.nodeType == ENIVT_NUMBER && b.nodeType == ENIVT_NUMBER)
+				return a.nodeValue.number - b.nodeValue.number;
 
-			if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
-				return (a.boolValue == b.boolValue ? 0.0 : 1.0);
+			if(a.nodeType == ENIVT_BOOL && b.nodeType == ENIVT_BOOL)
+				return (a.nodeValue.boolValue == b.nodeValue.boolValue ? 0.0 : 1.0);
 
-			if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
-				return (a.stringID == b.stringID ? 0.0 : 1.0);
+			if(a.nodeType == ENIVT_STRING_ID && b.nodeType == ENIVT_STRING_ID)
+				return (a.nodeValue.stringID == b.nodeValue.stringID ? 0.0 : 1.0);
 
 			return std::numeric_limits<double>::quiet_NaN();
 		}
 
-		if(a_type == ENIVT_NULL || b_type == ENIVT_NULL)
+		if(a.nodeType == ENIVT_NULL || b.nodeType == ENIVT_NULL)
 			return std::numeric_limits<double>::quiet_NaN();
 
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL
@@ -978,17 +977,17 @@ public:
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
-			if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
-				return (a.boolValue == b.boolValue ? 0.0 : 1.0);
+			if(a.nodeType == ENIVT_BOOL && b.nodeType == ENIVT_BOOL)
+				return (a.nodeValue.boolValue == b.nodeValue.boolValue ? 0.0 : 1.0);
 
-			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
-				return (a.number == b.number ? 0.0 : 1.0);
+			if(a.nodeType == ENIVT_NUMBER && b.nodeType == ENIVT_NUMBER)
+				return (a.nodeValue.number == b.nodeValue.number ? 0.0 : 1.0);
 
-			if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
-				return (a.stringID == b.stringID ? 0.0 : 1.0);
+			if(a.nodeType == ENIVT_STRING_ID && b.nodeType == ENIVT_STRING_ID)
+				return (a.nodeValue.stringID == b.nodeValue.stringID ? 0.0 : 1.0);
 
-			if(a_type == ENIVT_CODE && b_type == ENIVT_CODE)
-				return (EvaluableNode::AreDeepEqual(a.code, b.code) ? 0.0 : 1.0);
+			if(a.nodeType == ENIVT_CODE && b.nodeType == ENIVT_CODE)
+				return (EvaluableNode::AreDeepEqual(a.nodeValue.code, b.nodeValue.code) ? 0.0 : 1.0);
 
 			//don't match
 			return 1.0;
@@ -996,10 +995,10 @@ public:
 
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
 		{
-			if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
+			if(a.nodeType == ENIVT_STRING_ID && b.nodeType == ENIVT_STRING_ID)
 			{
-				auto &a_str = string_intern_pool.GetStringFromID(a.stringID);
-				auto &b_str = string_intern_pool.GetStringFromID(b.stringID);
+				auto &a_str = string_intern_pool.GetStringFromID(a.nodeValue.stringID);
+				auto &b_str = string_intern_pool.GetStringFromID(b.nodeValue.stringID);
 				return static_cast<double>(EvaluableNodeTreeManipulation::EditDistance(a_str, b_str));
 			}
 
@@ -1008,25 +1007,25 @@ public:
 
 		//everything below is for feature_type == FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING or FDT_CONTINUOUS_CODE
 
-		if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
-			return 1.0 - EvaluableNodeTreeManipulation::CommonalityBetweenNumbers(a.number, b.number);
+		if(a.nodeType == ENIVT_NUMBER && b.nodeType == ENIVT_NUMBER)
+			return 1.0 - EvaluableNodeTreeManipulation::CommonalityBetweenNumbers(a.nodeValue.number, b.nodeValue.number);
 
-		if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
-			return (a.boolValue == b.boolValue ? 0.0 : 1.0);
+		if(a.nodeType == ENIVT_BOOL && b.nodeType == ENIVT_BOOL)
+			return (a.nodeValue.boolValue == b.nodeValue.boolValue ? 0.0 : 1.0);
 
-		if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
-			return (a.stringID == b.stringID ? 0.0 : 1.0);
+		if(a.nodeType == ENIVT_STRING_ID && b.nodeType == ENIVT_STRING_ID)
+			return (a.nodeValue.stringID == b.nodeValue.stringID ? 0.0 : 1.0);
 
-		if(a_type == ENIVT_CODE || b_type == ENIVT_CODE)
+		if(a.nodeType == ENIVT_CODE || b.nodeType == ENIVT_CODE)
 		{
 			//if one isn't code, then just return the size of the other, or at least 1
-			if(a_type != ENIVT_CODE)
-				return std::max(1.0, static_cast<double>(EvaluableNode::GetDeepSize(b.code)));
-			if(b_type != ENIVT_CODE)
-				return std::max(1.0, static_cast<double>(EvaluableNode::GetDeepSize(a.code)));
+			if(a.nodeType != ENIVT_CODE)
+				return std::max(1.0, static_cast<double>(EvaluableNode::GetDeepSize(b.nodeValue.code)));
+			if(b.nodeType != ENIVT_CODE)
+				return std::max(1.0, static_cast<double>(EvaluableNode::GetDeepSize(a.nodeValue.code)));
 
 			auto &code_attribs = feature_attribs.typeAttributes.code;
-			return EvaluableNodeTreeManipulation::EditDistance(a.code, b.code,
+			return EvaluableNodeTreeManipulation::EditDistance(a.nodeValue.code, b.nodeValue.code,
 				code_attribs.typesMustMatch, code_attribs.nominalNumbers,
 				code_attribs.nominalStrings, code_attribs.recursiveMatching);
 		}
@@ -1054,7 +1053,8 @@ public:
 		{
 			double dist_accum = 1.0;
 			for(size_t i = 0; i < a.size(); i++)
-				dist_accum *= ComputeDistanceTermP0(a[i], b[i], a_types[i], b_types[i], i, high_accuracy);
+				dist_accum *= ComputeDistanceTermP0(EvaluableNodeImmediateValueWithType(a[i], a_types[i]),
+					EvaluableNodeImmediateValueWithType(b[i], b_types[i]), i, high_accuracy);
 
 			return dist_accum;
 		}
@@ -1064,7 +1064,8 @@ public:
 
 			for(size_t i = 0; i < a.size(); i++)
 			{
-				double term = ComputeDistanceTermPInf(a[i], b[i], a_types[i], b_types[i], i, high_accuracy);
+				double term = ComputeDistanceTermPInf(EvaluableNodeImmediateValueWithType(a[i], a_types[i]),
+					EvaluableNodeImmediateValueWithType(b[i], b_types[i]), i, high_accuracy);
 
 				if(term > max_term)
 					max_term = term;
@@ -1078,7 +1079,8 @@ public:
 
 			for(size_t i = 0; i < a.size(); i++)
 			{
-				double term = ComputeDistanceTermPInf(a[i], b[i], a_types[i], b_types[i], i, high_accuracy);
+				double term = ComputeDistanceTermPInf(EvaluableNodeImmediateValueWithType(a[i], a_types[i]),
+					EvaluableNodeImmediateValueWithType(b[i], b_types[i]), i, high_accuracy);
 
 				if(term < min_term)
 					min_term = term;
@@ -1090,7 +1092,8 @@ public:
 		{
 			double dist_accum = 0.0;
 			for(size_t i = 0; i < a.size(); i++)
-				dist_accum += ComputeDistanceTermRegular(a[i], b[i], a_types[i], b_types[i], i, high_accuracy);
+				dist_accum += ComputeDistanceTermRegular(EvaluableNodeImmediateValueWithType(a[i], a_types[i]),
+					EvaluableNodeImmediateValueWithType(b[i], b_types[i]), i, high_accuracy);
 
 			return InverseExponentiateDistance(dist_accum, high_accuracy);
 		}
@@ -1255,8 +1258,9 @@ public:
 		double smallest_dist_term = std::numeric_limits<double>::infinity();
 		for(auto &[value, deviation] : deviations)
 		{
-			double dist_term = distEvaluator->ComputeDistanceTermNominal(target_value,
-				value, target_type, target_type, index);
+			double dist_term = distEvaluator->ComputeDistanceTermNominal(
+				EvaluableNodeImmediateValueWithType(target_value, target_type),
+				EvaluableNodeImmediateValueWithType(value, target_type), index);
 			nominal_distance_terms.emplace(value, dist_term);
 				
 			if(dist_term < smallest_dist_term)
@@ -1388,7 +1392,7 @@ public:
 			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
 			{
 				feature_data.internedDistanceTerms[i] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
-						feature_data.targetValue.nodeValue, interned_values[i], immediate_type, immediate_type,
+						feature_data.targetValue, EvaluableNodeImmediateValueWithType(interned_values[i], immediate_type),
 						index, high_accuracy_interned_values);
 			}
 		}
@@ -1422,11 +1426,11 @@ public:
 		else
 		{
 			feature_data.internedDistanceTerms[0] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
-						feature_data.targetValue.nodeValue, false, ENIVT_BOOL, ENIVT_BOOL,
+						feature_data.targetValue, EvaluableNodeImmediateValueWithType(false),
 						index, high_accuracy_interned_values);
 
 			feature_data.internedDistanceTerms[1] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
-						feature_data.targetValue.nodeValue, true, ENIVT_BOOL, ENIVT_BOOL,
+						feature_data.targetValue, EvaluableNodeImmediateValueWithType(true),
 						index, high_accuracy_interned_values);
 		}
 	}
@@ -1449,41 +1453,40 @@ public:
 	}
 
 	//returns the distance term given that it is nominal
-	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue other_value,
-		EvaluableNodeImmediateValueType other_type, size_t index)
+	__forceinline double ComputeDistanceTermNominal(const EvaluableNodeImmediateValueWithType &other_value, size_t index)
 	{
 		auto &feature_data = featureData[index];
 		
-		if(other_type == ENIVT_NUMBER)
+		if(other_value.nodeType == ENIVT_NUMBER)
 		{
-			auto dist_term_entry = feature_data.nominalNumberDistanceTerms.find(other_value.number);
+			auto dist_term_entry = feature_data.nominalNumberDistanceTerms.find(other_value.nodeValue.number);
 			if(dist_term_entry != end(feature_data.nominalNumberDistanceTerms))
 				return dist_term_entry->second;
 
-			if(other_value.number == feature_data.targetValue.GetValueAsNumber())
+			if(other_value.nodeValue.number == feature_data.targetValue.GetValueAsNumber())
 				return feature_data.defaultNominalMatchDistanceTerm;
 		}
-		else if(other_type == ENIVT_STRING_ID)
+		else if(other_value.nodeType == ENIVT_STRING_ID)
 		{
-			auto dist_term_entry = feature_data.nominalStringDistanceTerms.find(other_value.stringID);
+			auto dist_term_entry = feature_data.nominalStringDistanceTerms.find(other_value.nodeValue.stringID);
 			if(dist_term_entry != end(feature_data.nominalStringDistanceTerms))
 				return dist_term_entry->second;
 
-			if(other_value.stringID == feature_data.targetValue.GetValueAsStringIDIfExists())
+			if(other_value.nodeValue.stringID == feature_data.targetValue.GetValueAsStringIDIfExists())
 				return feature_data.defaultNominalMatchDistanceTerm;
 		}
-		else if(other_type == ENIVT_BOOL)
+		else if(other_value.nodeType == ENIVT_BOOL)
 		{
-			StringInternPool::StringID other_sid = EvaluableNode::BoolToStringID(other_value.boolValue, true);
+			StringInternPool::StringID other_sid = EvaluableNode::BoolToStringID(other_value.nodeValue.boolValue, true);
 			auto dist_term_entry = feature_data.nominalStringDistanceTerms.find(other_sid);
 			if(dist_term_entry != end(feature_data.nominalStringDistanceTerms))
 				return dist_term_entry->second;
 
-			if(other_value.boolValue == feature_data.targetValue.GetValueAsBoolean())
+			if(other_value.nodeValue.boolValue == feature_data.targetValue.GetValueAsBoolean())
 				return feature_data.defaultNominalMatchDistanceTerm;
 		}
 		
-		if(EvaluableNodeImmediateValue::IsNull(other_type, other_value))
+		if(other_value.IsNull())
 		{
 			if(feature_data.targetValue.IsNull())
 				return distEvaluator->ComputeDistanceTermUnknownToUnknown(index);
@@ -1619,21 +1622,20 @@ public:
 	//computes the inner term of the Minkowski norm summation
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
-	__forceinline double ComputeDistanceTerm(EvaluableNodeImmediateValue other_value,
-		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTerm(const EvaluableNodeImmediateValueWithType &other_value,
+		size_t index, bool high_accuracy)
 	{
 		auto &feature_data = featureData[index];
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(distEvaluator->IsFeatureNominal(index))
-			return ComputeDistanceTermNominal(other_value, other_type, index);
+			return ComputeDistanceTermNominal(other_value, index);
 
-		double diff = distEvaluator->ComputeDifference(feature_data.targetValue.nodeValue, other_value,
-			feature_data.targetValue.nodeType, other_type, distEvaluator->featureAttribs[index]);
+		double diff = distEvaluator->ComputeDifference(feature_data.targetValue, other_value,
+			distEvaluator->featureAttribs[index]);
 
 		if(FastIsNaN(diff))
-			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue.nodeValue, other_value,
-				feature_data.targetValue.nodeType, other_type, index, high_accuracy);
+			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue, other_value, index, high_accuracy);
 
 		return distEvaluator->ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(diff, index, high_accuracy);
 	}

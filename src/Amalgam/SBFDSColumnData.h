@@ -293,7 +293,7 @@ public:
 
 	//given a value, inserts into out all the entities that have the value
 	// does not handle ENIVT_CODE because it doesn't have the data
-	void UnionAllIndicesWithValue(EvaluableNodeImmediateValueWithType &value, BitArrayIntegerSet &out)
+	void UnionAllIndicesWithValue(const EvaluableNodeImmediateValueWithType &value, BitArrayIntegerSet &out)
 	{
 		if(value.nodeType == ENIVT_NOT_EXIST)
 			return;

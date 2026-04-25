@@ -338,7 +338,7 @@ public:
 
 	//given a feature_sid, value_type, and value, inserts into out all the entities that have the value
 	inline void UnionAllEntitiesWithValue(StringInternPool::StringID feature_sid,
-		EvaluableNodeImmediateValueWithType &value, BitArrayIntegerSet &out)
+		const EvaluableNodeImmediateValueWithType &value, BitArrayIntegerSet &out)
 	{
 		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
@@ -740,7 +740,8 @@ protected:
 				continue;
 
 			auto [other_value_type, other_value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
-			double term = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, other_value_type, query_feature_index, high_accuracy);
+			double term = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(EvaluableNodeImmediateValueWithType(other_value, other_value_type),
+				query_feature_index, high_accuracy);
 
 			partial_sums.Accum(entity_index, accum_location, term);
 		}
@@ -887,7 +888,8 @@ protected:
 		auto value_entry = column.sortedNumberValueEntries.find(value);
 		if(value_entry != end(column.sortedNumberValueEntries))
 		{
-			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_NUMBER, query_feature_index);
+			double term = r_dist_eval.ComputeDistanceTermNominal(
+				EvaluableNodeImmediateValueWithType(value, ENIVT_NUMBER), query_feature_index);
 			AccumulatePartialSums(enabled_indices, value_entry->second.indicesWithValue, query_feature_index, term);
 			return term;
 		}
@@ -904,7 +906,8 @@ protected:
 		auto value_found = column.stringIdValueEntries.find(value);
 		if(value_found != end(column.stringIdValueEntries))
 		{
-			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_STRING_ID, query_feature_index);
+			double term = r_dist_eval.ComputeDistanceTermNominal(
+				EvaluableNodeImmediateValueWithType(value, ENIVT_STRING_ID), query_feature_index);
 			AccumulatePartialSums(enabled_indices, value_found->second->indicesWithValue, query_feature_index, term);
 			return term;
 		}
@@ -921,7 +924,8 @@ protected:
 		if( (value && column.trueBoolIndices.size() > 0)
 			|| (!value && column.falseBoolIndices.size() > 0) )
 		{
-			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_BOOL, query_feature_index);
+			double term = r_dist_eval.ComputeDistanceTermNominal(
+				EvaluableNodeImmediateValueWithType(value, ENIVT_BOOL), query_feature_index);
 			auto &indices = (value ? column.trueBoolIndices : column.falseBoolIndices);
 			AccumulatePartialSums(enabled_indices, indices, query_feature_index, term);
 			return term;
@@ -942,12 +946,15 @@ protected:
 		size_t num_entities_to_populate, bool expand_search_if_optimal, bool high_accuracy,
 		size_t query_feature_index, BitArrayIntegerSet &enabled_indices);
 
-	//computes a heuristically derived set of partial sums across all the enabled features from parametersAndBuffers.targetValues[i] and parametersAndBuffers.targetColumnIndices[i]
-	// if enabled_indices is not nullptr, then will only use elements in that list
+	//computes a heuristically derived set of partial sums across all the enabled features from
+	// parametersAndBuffers.targetValues[i] and parametersAndBuffers.targetColumnIndices[i]
+	//if enabled_indices is not nullptr, then will only use elements in that list
 	// uses top_k for heuristics as to how many partial sums to compute
-	// if radius_column_index is specified, it will populate the initial partial sums with them
-	// will compute and populate min_unpopulated_distances and min_distance_by_unpopulated_count, where the former is the next smallest uncomputed feature distance indexed by the number of features not computed
-	// and min_distance_by_unpopulated_count is the total distance of all uncomputed features where the index is the number of uncomputed features
+	//if radius_column_index is specified, it will populate the initial partial sums with them
+	// will compute and populate min_unpopulated_distances and min_distance_by_unpopulated_count,
+	// where the former is the next smallest uncomputed feature distance indexed by the number of
+	// features not computed and min_distance_by_unpopulated_count is the total distance of all
+	// uncomputed features where the index is the number of uncomputed features
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
 	void PopulateInitialPartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t top_k, size_t radius_column_index,
@@ -970,7 +977,7 @@ protected:
 
 			size_t column_index = feature_attribs.featureIndex;
 			auto [other_value_type, other_value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(other_index);
-			dist_accum += r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, other_value_type, i, high_accuracy);
+			dist_accum += r_dist_eval.ComputeDistanceTerm<compute_surprisal>(EvaluableNodeImmediateValueWithType(other_value, other_value_type), i, high_accuracy);
 		}
 
 		double dist = r_dist_eval.distEvaluator->InverseExponentiateDistance<compute_surprisal>(dist_accum, high_accuracy);
@@ -1128,7 +1135,7 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->stringIdIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
-					GetValue(entity_index, feature_attribs.featureIndex).stringID, ENIVT_STRING_ID,
+					EvaluableNodeImmediateValueWithType(GetValue(entity_index, feature_attribs.featureIndex).stringID, ENIVT_STRING_ID),
 					query_feature_index);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
@@ -1140,7 +1147,7 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
-					GetValue(entity_index, feature_attribs.featureIndex).number, ENIVT_NUMBER,
+					EvaluableNodeImmediateValueWithType(GetValue(entity_index, feature_attribs.featureIndex).number, ENIVT_NUMBER),
 					query_feature_index);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
@@ -1153,10 +1160,10 @@ protected:
 
 			if(column_data->trueBoolIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
-					true, ENIVT_BOOL, query_feature_index);
+					EvaluableNodeImmediateValueWithType(true), query_feature_index);
 			else if(column_data->falseBoolIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
-					false, ENIVT_BOOL, query_feature_index);
+					EvaluableNodeImmediateValueWithType(false), query_feature_index);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
@@ -1170,7 +1177,8 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 
 			auto [other_value_type, other_value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
-			return r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, other_value_type, query_feature_index, high_accuracy);
+			return r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
+				EvaluableNodeImmediateValueWithType(other_value, other_value_type), query_feature_index, high_accuracy);
 		}
 		}
 	}

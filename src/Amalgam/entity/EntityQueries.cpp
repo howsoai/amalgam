@@ -130,7 +130,9 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			
 			for(size_t i = 0; i < valueToCompare.size(); i++)
 			{
-				if(EvaluableNodeImmediateValue::AreEqualGivenImmediateValuesNotCode(value.nodeType, value.nodeValue, valueTypes[i], valueToCompare[i]))
+				if(EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(
+						EvaluableNodeImmediateValueWithType(value.nodeValue, value.nodeType),
+						EvaluableNodeImmediateValueWithType(valueToCompare[i], valueTypes[i])))
 					return true;
 			}
 
@@ -150,7 +152,9 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				if(value.nodeType != valueTypes[i])
 					return false;
 
-				if(EvaluableNodeImmediateValue::AreEqualGivenImmediateValuesNotCode(value.nodeType, value.nodeValue, valueTypes[i], valueToCompare[i]))
+				if(EvaluableNodeImmediateValueWithType::AreEqualGivenImmediateValuesNotCode(
+						EvaluableNodeImmediateValueWithType(value.nodeValue, value.nodeType),
+						EvaluableNodeImmediateValueWithType(valueToCompare[i], valueTypes[i])))
 					return false;
 			}
 

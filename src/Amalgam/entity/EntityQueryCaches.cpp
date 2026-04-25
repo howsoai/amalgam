@@ -163,10 +163,10 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 
 		default:
 		{
-			for(auto &[label_id, _] : cond->pairedLabels)
+			for(auto &lbv : cond->labelBetweenValues)
 			{
-				if(!DoesHaveLabel(label_id))
-					labels_to_add.push_back(label_id);
+				if(!DoesHaveLabel(lbv.label))
+					labels_to_add.push_back(lbv.label);
 			}
 		}
 	}
@@ -564,22 +564,19 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
 
 				//loop over all features
-				for(size_t i = 0; i < cond->pairedLabels.size(); i++)
+				for(auto &lbv : cond->labelBetweenValues)
 				{
-					auto label_id = cond->pairedLabels[i].first;
-					auto &[low_value, high_value] = cond->pairedLabels[i].second;
-
 					if(first_feature)
 					{
-						sbfds.FindAllEntitiesWithinRange(label_id, cond->valueTypes[i],
-							low_value, high_value, matching_entities, cond->queryType == ENT_QUERY_BETWEEN);
+						sbfds.FindAllEntitiesWithinRange(lbv.label, lbv.valueType,
+							lbv.lowValue, lbv.highValue, matching_entities, cond->queryType == ENT_QUERY_BETWEEN);
 						first_feature = false;
 					}
 					else //get corresponding indices and intersect with results
 					{
 						temp.clear();
-						sbfds.FindAllEntitiesWithinRange(label_id, cond->valueTypes[i],
-							low_value, high_value, temp, cond->queryType == ENT_QUERY_BETWEEN);
+						sbfds.FindAllEntitiesWithinRange(lbv.label, lbv.valueType,
+							lbv.lowValue, lbv.highValue, temp, cond->queryType == ENT_QUERY_BETWEEN);
 						matching_entities.Intersect(temp);
 					}
 				}

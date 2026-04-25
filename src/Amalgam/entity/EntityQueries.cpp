@@ -72,54 +72,50 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			return true;
 
 		case ENT_QUERY_BETWEEN:
-			for(size_t i = 0; i < pairedLabels.size(); i++)
+			for(auto &lbv : labelBetweenValues)
 			{
-				auto &[label_id, range] = pairedLabels[i];
-
-				if(valueTypes[i] == ENIVT_NUMBER)
+				if(lbv.valueType == ENIVT_NUMBER)
 				{
-					auto [value, found] = e->GetValueAtLabelAsNumber(label_id);
+					auto [value, found] = e->GetValueAtLabelAsNumber(lbv.label);
 					if(!found)
 						return false;
 
-					if(value < range.first.number || range.second.number < value)
+					if(value < lbv.lowValue.number || lbv.highValue.number < value)
 						return false;
 				}
-				else if(valueTypes[i] == ENIVT_STRING_ID)
+				else if(lbv.valueType == ENIVT_STRING_ID)
 				{
-					auto [value, found] = e->GetValueAtLabelAsString(label_id);
+					auto [value, found] = e->GetValueAtLabelAsString(lbv.label);
 					if(!found)
 						return false;
 
-					if(StringManipulation::StringNaturalCompare(value, range.first.stringID->string) <= 0
-							|| StringManipulation::StringNaturalCompare(range.second.stringID->string, value) <= 0)
+					if(StringManipulation::StringNaturalCompare(value, lbv.lowValue.stringID->string) <= 0
+							|| StringManipulation::StringNaturalCompare(lbv.highValue.stringID->string, value) <= 0)
 						return false;
 				}
 			}
 			return true;
 
 		case ENT_QUERY_NOT_BETWEEN:
-			for(size_t i = 0; i < pairedLabels.size(); i++)
+			for(auto &lbv : labelBetweenValues)
 			{
-				auto &[label_id, range] = pairedLabels[i];
-
-				if(valueTypes[i] == ENIVT_NUMBER)
+				if(lbv.valueType == ENIVT_NUMBER)
 				{
-					auto [value, found] = e->GetValueAtLabelAsNumber(label_id);
+					auto [value, found] = e->GetValueAtLabelAsNumber(lbv.label);
 					if(!found)
 						return false;
 
-					if(value >= range.first.number && range.second.number >= value)
+					if(value >= lbv.lowValue.number && lbv.highValue.number >= value)
 						return false;
 				}
-				else if(valueTypes[i] == ENIVT_STRING_ID)
+				else if(lbv.valueType == ENIVT_STRING_ID)
 				{
-					auto [value, found] = e->GetValueAtLabelAsString(label_id);
+					auto [value, found] = e->GetValueAtLabelAsString(lbv.label);
 					if(!found)
 						return false;
 
-					if(StringManipulation::StringNaturalCompare(value, range.first.stringID->string) > 0
-							&& StringManipulation::StringNaturalCompare(range.second.stringID->string, value) > 0)
+					if(StringManipulation::StringNaturalCompare(value, lbv.lowValue.stringID->string) > 0
+							&& StringManipulation::StringNaturalCompare(lbv.highValue.stringID->string, value) > 0)
 						return false;
 				}
 			}

@@ -46,8 +46,20 @@ public:
 	//pairs of ids and values
 	std::vector<std::pair<StringInternPool::StringID, EvaluableNodeImmediateValueWithType>> singleLabels;
 
-	//pairs of ids and pairs of values
-	std::vector<std::pair<StringInternPool::StringID, std::pair<EvaluableNodeImmediateValue, EvaluableNodeImmediateValue>>> pairedLabels;
+	//an id and pairs of values
+	struct LabelBetweenValues
+	{
+		LabelBetweenValues(StringInternPool::StringID _label, EvaluableNodeImmediateValueType value_type,
+			EvaluableNodeImmediateValue low_value, EvaluableNodeImmediateValue high_value)
+			: label(_label), valueType(value_type), lowValue(low_value), highValue(high_value)
+		{	}
+
+		StringInternPool::StringID label;
+		EvaluableNodeImmediateValueType valueType;
+		EvaluableNodeImmediateValue lowValue;
+		EvaluableNodeImmediateValue highValue;
+	};
+	std::vector<LabelBetweenValues> labelBetweenValues;
 
 	//the labels that comprise each dimension of the position
 	std::vector<StringInternPool::StringID> positionLabels;

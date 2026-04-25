@@ -739,9 +739,9 @@ protected:
 			if(!enabled_indices.contains(entity_index))
 				continue;
 
-			auto [other_value_type, other_value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
-			double term = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(EvaluableNodeImmediateValueWithType(other_value, other_value_type),
-				query_feature_index, high_accuracy);
+			auto other_value = column_data->GetResolvedIndexValueWithType(entity_index);
+			double term = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
+				other_value, query_feature_index, high_accuracy);
 
 			partial_sums.Accum(entity_index, accum_location, term);
 		}
@@ -976,17 +976,17 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
 
 			size_t column_index = feature_attribs.featureIndex;
-			auto [other_value_type, other_value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(other_index);
-			dist_accum += r_dist_eval.ComputeDistanceTerm<compute_surprisal>(EvaluableNodeImmediateValueWithType(other_value, other_value_type), i, high_accuracy);
+			auto other_value = columnData[column_index]->GetResolvedIndexValueWithType(other_index);
+			dist_accum += r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, i, high_accuracy);
 		}
 
 		double dist = r_dist_eval.distEvaluator->InverseExponentiateDistance<compute_surprisal>(dist_accum, high_accuracy);
 
 		if(radius_column_index < columnData.size())
 		{
-			auto [radius_value_type, radius_value] = columnData[radius_column_index]->GetResolvedIndexValueTypeAndValue(other_index);
-			if(radius_value_type == ENIVT_NUMBER)
-				dist -= radius_value.number;
+			auto radius_value = columnData[radius_column_index]->GetResolvedIndexValueWithType(other_index);
+			if(radius_value.nodeType == ENIVT_NUMBER)
+				dist -= radius_value.nodeValue.number;
 		}
 
 		return dist;
@@ -1176,9 +1176,9 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 
-			auto [other_value_type, other_value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
+			auto other_value = column_data->GetResolvedIndexValueWithType(entity_index);
 			return r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
-				EvaluableNodeImmediateValueWithType(other_value, other_value_type), query_feature_index, high_accuracy);
+				other_value, query_feature_index, high_accuracy);
 		}
 		}
 	}
@@ -1330,9 +1330,9 @@ public:
 				continue;
 
 			size_t column_index = found->second;
-			auto [value_type, value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(entity_index);
+			auto value = columnData[column_index]->GetResolvedIndexValueWithType(entity_index);
 
-			PopulateTargetValueAndLabelIndex<compute_surprisal>(r_dist_eval, i, EvaluableNodeImmediateValueWithType(value, value_type));
+			PopulateTargetValueAndLabelIndex<compute_surprisal>(r_dist_eval, i, value);
 		}
 	}
 

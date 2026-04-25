@@ -90,15 +90,6 @@ public:
 		return ENIVT_CODE;
 	}
 
-	//returns the resolved type and value at the index
-	inline std::pair<EvaluableNodeImmediateValueType, EvaluableNodeImmediateValue> GetResolvedIndexValueTypeAndValue(size_t index)
-	{
-		auto value_type = GetIndexValueType(index);
-		auto value = ResolveValue(value_type, valueEntries[index]);
-		value_type = ResolveValueType(value_type);
-		return std::make_pair(value_type, value);
-	}
-
 	//returns the resolved value with type
 	inline EvaluableNodeImmediateValueWithType GetResolvedIndexValueWithType(size_t index)
 	{

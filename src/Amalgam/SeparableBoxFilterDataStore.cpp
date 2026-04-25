@@ -351,9 +351,9 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		for(auto entity_index : enabled_indices)
 		{
 			double radius = 0.0;
-			auto [radius_value_type, radius_value] = radius_column_data->GetResolvedIndexValueTypeAndValue(entity_index);
-			if(radius_value_type == ENIVT_NUMBER)
-				radius = radius_value.number;
+			auto radius_value = radius_column_data->GetResolvedIndexValueWithType(entity_index);
+			if(radius_value.nodeType == ENIVT_NUMBER)
+				radius = radius_value.nodeValue.number;
 
 			if(radius == 0)
 				distances[entity_index] = -max_dist_exponentiated;
@@ -446,9 +446,8 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		//else, there are less indices to consider than possible unique values, so save computation by just considering entities that are still valid
 		for(auto entity_index : enabled_indices)
 		{
-			auto [value_type, value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
-			distances[entity_index] += r_dist_eval.ComputeDistanceTerm(
-				EvaluableNodeImmediateValueWithType(value, value_type), query_feature_index, high_accuracy);
+			auto value = column_data->GetResolvedIndexValueWithType(entity_index);
+			distances[entity_index] += r_dist_eval.ComputeDistanceTerm(value, query_feature_index, high_accuracy);
 
 			//remove entity if its distance is already greater than the max_dist
 			if(!(distances[entity_index] <= max_dist_exponentiated)) //false for NaN indices as well so they will be removed

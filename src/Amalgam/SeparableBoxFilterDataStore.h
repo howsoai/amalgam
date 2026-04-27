@@ -1182,6 +1182,7 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ENTITY:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ON_ENTITY:
 		{
+			//TODO 25393: add parameter for how to sandbox the calls
 			//TODO 25393: finish this
 			return 0.0;
 		}

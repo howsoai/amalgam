@@ -174,7 +174,6 @@ static OpcodeInitializer _ENT_POW(ENT_POW, &Interpreter::InterpretNode_ENT_POW, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_POW(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -575,7 +574,6 @@ static inline bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
@@ -724,7 +722,6 @@ static OpcodeInitializer _ENT_QUANTILE(ENT_QUANTILE, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -875,7 +872,6 @@ static OpcodeInitializer _ENT_GENERALIZED_MEAN(ENT_GENERALIZED_MEAN, &Interprete
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
@@ -1720,7 +1716,6 @@ static inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
@@ -1903,7 +1898,6 @@ static OpcodeInitializer _ENT_ENTROPY(ENT_ENTROPY, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 		return AllocReturn(0.0, immediate_result);
 

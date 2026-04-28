@@ -374,7 +374,6 @@ static OpcodeInitializer _ENT_REWRITE(ENT_REWRITE, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -503,7 +502,6 @@ static OpcodeInitializer _ENT_MAP(ENT_MAP, &Interpreter::InterpretNode_ENT_MAP, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -958,7 +956,6 @@ static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -1624,7 +1621,6 @@ static OpcodeInitializer _ENT_REDUCE(ENT_REDUCE, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -1869,7 +1865,6 @@ static OpcodeInitializer _ENT_ZIP(ENT_ZIP, &Interpreter::InterpretNode_ENT_ZIP, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	size_t num_params = ocn.size();
 	if(num_params < 1)
 		return EvaluableNodeReference::Null();
@@ -2028,7 +2023,6 @@ static OpcodeInitializer _ENT_UNZIP(ENT_UNZIP, &Interpreter::InterpretNode_ENT_U
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -2112,7 +2106,6 @@ static OpcodeInitializer _ENT_REVERSE(ENT_REVERSE, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
@@ -2331,7 +2324,6 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 

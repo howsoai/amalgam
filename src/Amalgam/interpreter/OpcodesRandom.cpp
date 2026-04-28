@@ -257,7 +257,6 @@ static EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeR
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 	{
 		double r = randomStream.RandFull();
@@ -486,7 +485,6 @@ static OpcodeInitializer _ENT_SET_RAND_SEED(ENT_SET_RAND_SEED, &Interpreter::Int
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 

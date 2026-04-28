@@ -207,11 +207,10 @@ static OpcodeInitializer _ENT_GET_CONCURRENCY(ENT_GET_CONCURRENCY, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
-	auto n = InterpretNodeForImmediateUse(ocn[0]);
 
+	auto n = InterpretNodeForImmediateUse(ocn[0]);
 	return AllocReturn(n != nullptr && n->GetConcurrency(), immediate_result);
 }
 
@@ -257,7 +256,6 @@ static OpcodeInitializer _ENT_SET_CONCURRENCY(ENT_SET_CONCURRENCY, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -304,9 +302,9 @@ static OpcodeInitializer _ENT_GET_VALUE(ENT_GET_VALUE, &Interpreter::InterpretNo
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
+
 	auto n = InterpretNode(ocn[0]);
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
@@ -346,7 +344,6 @@ static OpcodeInitializer _ENT_SET_VALUE(ENT_SET_VALUE, &Interpreter::InterpretNo
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 

@@ -485,7 +485,7 @@ public:
 
 	//Converts the node to a number
 	//if null, then will return value_if_null
-	static __forceinline double ToNumber(EvaluableNode *e, double value_if_null = std::numeric_limits<double>::quiet_NaN());
+	static double ToNumber(EvaluableNode *e, double value_if_null = std::numeric_limits<double>::quiet_NaN());
 
 	//returns true if the node can directly be interpreted as a number
 	static __forceinline bool IsNumericOrNull(EvaluableNode *e)

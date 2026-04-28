@@ -138,12 +138,12 @@ inline double FastPow(double base, double exponent)
 class RepeatedFastPow
 {
 public:
-	inline RepeatedFastPow()
+	__forceinline RepeatedFastPow()
 	{
 		SetExponent(1.0);
 	}
 
-	inline RepeatedFastPow(double _exponent)
+	__forceinline RepeatedFastPow(double _exponent)
 	{
 		SetExponent(_exponent);
 	}
@@ -396,7 +396,7 @@ __forceinline void NormalizeVectorAsMap(MapType &map, double p)
 // if has_weight, then will use get_weight to obtain the weight of each value
 template<typename ValueIterator,
 	typename ValueType, typename ValueHash, typename ValueEquality, typename ValueFunction, typename WeightFunction>
-static __forceinline std::pair<bool, ValueType> Mode(ValueIterator first, ValueIterator last,
+__forceinline static std::pair<bool, ValueType> Mode(ValueIterator first, ValueIterator last,
 	ValueFunction get_value, bool has_weight, WeightFunction get_weight, ValueType value_if_not_found)
 {
 	FastHashMap<ValueType, double, ValueHash, ValueEquality> value_weights;
@@ -452,7 +452,7 @@ static __forceinline std::pair<bool, ValueType> Mode(ValueIterator first, ValueI
 
 //specialization of Mode for std::string
 template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
-static __forceinline std::pair<bool, std::string> ModeString(ValueIterator first, ValueIterator last,
+__forceinline static std::pair<bool, std::string> ModeString(ValueIterator first, ValueIterator last,
 		ValueFunction get_value, bool has_weight, WeightFunction get_weight)
 {
 	return Mode<ValueIterator, std::string,
@@ -466,7 +466,7 @@ static __forceinline std::pair<bool, std::string> ModeString(ValueIterator first
 //q_percentage is the quantile percentage to calculate
 //values_buffer is a temporary buffer to hold data that can be reused if specified
 template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
-static __forceinline double Quantile(ValueIterator first, ValueIterator last,
+__forceinline static double Quantile(ValueIterator first, ValueIterator last,
 	ValueFunction get_value, bool has_weight, WeightFunction get_weight, double q_percentage,
 	std::vector<std::pair<double, double>> *values_buffer = nullptr)
 {
@@ -601,7 +601,7 @@ static __forceinline double Quantile(ValueIterator first, ValueIterator last,
 // if has_weight, then will use get_weight to obtain the weight of each value
 //has separate paths for different values of p_value for efficiency
 template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
-static __forceinline double GeneralizedMean(ValueIterator first, ValueIterator last,
+__forceinline static double GeneralizedMean(ValueIterator first, ValueIterator last,
 	ValueFunction get_value, bool has_weight, WeightFunction get_weight,
 	double p_value, double center = 0.0, bool calculate_moment = false,
 	bool absolute_value = false)

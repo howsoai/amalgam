@@ -538,9 +538,9 @@ public:
 		r_dist_eval.distEvaluator = &dist_eval;
 
 		if(r_dist_eval.distEvaluator->computeSurprisal)
-			PopulateTargetValuesAndLabelIndicesFromPosition<true>(r_dist_eval, position_label_sids, position_values);
+			InitializeRepeatedDistanceEvaluator<true>(r_dist_eval, position_label_sids, position_values);
 		else
-			PopulateTargetValuesAndLabelIndicesFromPosition<false>(r_dist_eval, position_label_sids, position_values);
+			InitializeRepeatedDistanceEvaluator<false>(r_dist_eval, position_label_sids, position_values);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -622,7 +622,7 @@ public:
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 		r_dist_eval.distEvaluator = &dist_eval;
 
-		PopulateTargetValuesAndLabelIndicesFromPosition(r_dist_eval, position_label_sids, position_values);
+		InitializeRepeatedDistanceEvaluator(r_dist_eval, position_label_sids, position_values);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -1289,16 +1289,16 @@ protected:
 
 public:
 
-	//populates specified target value given the selected target values for each value in corresponding position* parameters
+	//initializes everything needed to quickly compute the distance to position_value for query_feature_index
 	//if compute_surprisal is true, it will use a faster execution path
 	template<bool compute_surprisal = false>
-	void PopulateTargetValueAndLabelIndex(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	void InitializeRepeatedDistanceEvaluatorForFeature(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);
 
-	//populates all target values given the selected target values for each value in corresponding position* parameters
+	//initializes everything needed to quickly compute the distance to position_value for position_label_sids
 	//if compute_surprisal is true, it will use a faster execution path
 	template<bool compute_surprisal = false>
-	void PopulateTargetValuesAndLabelIndicesFromPosition(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	void InitializeRepeatedDistanceEvaluator(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValueWithType> &position_values)
 	{
 		size_t num_features = position_values.size();
@@ -1309,7 +1309,7 @@ public:
 			if(column == end(labelIdToColumnIndex))
 				continue;
 
-			PopulateTargetValueAndLabelIndex<compute_surprisal>(
+			InitializeRepeatedDistanceEvaluatorForFeature<compute_surprisal>(
 				r_dist_eval, query_feature_index, position_values[query_feature_index]);
 		}
 	}
@@ -1331,7 +1331,7 @@ public:
 			size_t column_index = found->second;
 			auto value = columnData[column_index]->GetResolvedIndexValueWithType(entity_index);
 
-			PopulateTargetValueAndLabelIndex<compute_surprisal>(r_dist_eval, i, value);
+			InitializeRepeatedDistanceEvaluatorForFeature<compute_surprisal>(r_dist_eval, i, value);
 		}
 	}
 

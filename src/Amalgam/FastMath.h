@@ -221,7 +221,7 @@ protected:
 //Normalizes the vector; if any are infinity, it will equally uniformly normalize over just the infinite values
 //p is the Lebesque order, where 1 is Manhattan / probability, 2 is Euclidean, etc.
 template<typename ContainerType, typename GetterFunc, typename SetterFunc>
-inline void NormalizeVector(ContainerType &vec, double p, GetterFunc getter, SetterFunc setter)
+__forceinline void NormalizeVector(ContainerType &vec, double p, GetterFunc getter, SetterFunc setter)
 {
 	//fast path for p = 1
 	if(p == 1.0)
@@ -373,7 +373,7 @@ inline void NormalizeVector(ContainerType &vec, double p, GetterFunc getter, Set
 }
 
 template<typename ContainerType>
-inline void NormalizeVector(ContainerType &vec, double p)
+__forceinline void NormalizeVector(ContainerType &vec, double p)
 {
 	NormalizeVector(vec, p,
 		[](auto &v) { return v; },
@@ -382,7 +382,7 @@ inline void NormalizeVector(ContainerType &vec, double p)
 }
 
 template<typename MapType>
-inline void NormalizeVectorAsMap(MapType &map, double p)
+__forceinline void NormalizeVectorAsMap(MapType &map, double p)
 {
 	NormalizeVector(map, p,
 		[](const auto &pair) { return pair.second; },
@@ -396,7 +396,7 @@ inline void NormalizeVectorAsMap(MapType &map, double p)
 // if has_weight, then will use get_weight to obtain the weight of each value
 template<typename ValueIterator,
 	typename ValueType, typename ValueHash, typename ValueEquality, typename ValueFunction, typename WeightFunction>
-static std::pair<bool, ValueType> Mode(ValueIterator first, ValueIterator last,
+static __forceinline std::pair<bool, ValueType> Mode(ValueIterator first, ValueIterator last,
 	ValueFunction get_value, bool has_weight, WeightFunction get_weight, ValueType value_if_not_found)
 {
 	FastHashMap<ValueType, double, ValueHash, ValueEquality> value_weights;
@@ -452,7 +452,7 @@ static std::pair<bool, ValueType> Mode(ValueIterator first, ValueIterator last,
 
 //specialization of Mode for std::string
 template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
-inline static std::pair<bool, std::string> ModeString(ValueIterator first, ValueIterator last,
+static __forceinline std::pair<bool, std::string> ModeString(ValueIterator first, ValueIterator last,
 		ValueFunction get_value, bool has_weight, WeightFunction get_weight)
 {
 	return Mode<ValueIterator, std::string,
@@ -466,7 +466,7 @@ inline static std::pair<bool, std::string> ModeString(ValueIterator first, Value
 //q_percentage is the quantile percentage to calculate
 //values_buffer is a temporary buffer to hold data that can be reused if specified
 template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
-static double Quantile(ValueIterator first, ValueIterator last,
+static __forceinline double Quantile(ValueIterator first, ValueIterator last,
 	ValueFunction get_value, bool has_weight, WeightFunction get_weight, double q_percentage,
 	std::vector<std::pair<double, double>> *values_buffer = nullptr)
 {
@@ -601,7 +601,7 @@ static double Quantile(ValueIterator first, ValueIterator last,
 // if has_weight, then will use get_weight to obtain the weight of each value
 //has separate paths for different values of p_value for efficiency
 template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
-static double GeneralizedMean(ValueIterator first, ValueIterator last,
+static __forceinline double GeneralizedMean(ValueIterator first, ValueIterator last,
 	ValueFunction get_value, bool has_weight, WeightFunction get_weight,
 	double p_value, double center = 0.0, bool calculate_moment = false,
 	bool absolute_value = false)

@@ -154,7 +154,7 @@ public:
 		// of Lukaszyk–Karmowski difference calculations and using a constant instead
 		bool fastApproxDeviation;
 
-		//index of the in an external location
+		//index of the feature as stored in an external location
 		size_t featureIndex;
 
 		//weight of the feature

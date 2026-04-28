@@ -37,7 +37,7 @@ static OpcodeInitializer _ENT_BOOL(ENT_BOOL, &Interpreter::InterpretNode_ENT_BOO
 	OpcodeDetails d;
 	d.parameters = R"()";
 	d.returns = R"(bool)";
-	d.description = R"(A 64-bit floating point value)";
+	d.description = R"(A boolean value that may hold true and false as `.true` and `.false` respectively.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&(.true)&", R"(.true)"},
 		{R"&(.false)&", R"(.false)"}
@@ -60,7 +60,7 @@ static OpcodeInitializer _ENT_NUMBER(ENT_NUMBER, &Interpreter::InterpretNode_ENT
 	OpcodeDetails d;
 	d.parameters = R"()";
 	d.returns = R"(number)";
-	d.description = R"(A 64-bit floating point value)";
+	d.description = R"(A 64-bit floating point value.  Note that `.infinity` and `-.infinity` are used to denote infinite values and not-a-number is transformed into a null value.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&(1)&", R"(1)"},
 		{R"&(1.5)&", R"(1.5)"},

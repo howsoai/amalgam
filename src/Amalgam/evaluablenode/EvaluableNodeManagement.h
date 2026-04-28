@@ -112,9 +112,9 @@ public:
 
 		//gets a pointer to the next available node from the local allocation buffer
 		//nullptr if it cannot
-		inline EvaluableNode *GetNode(EvaluableNodeManager *cur_enm)
+		inline EvaluableNode *AllocNodeIfAvailable(EvaluableNodeManager *cur_enm)
 		{
-			if(buffer.size() > 0 && cur_enm == lastEvaluableNodeManager)
+			if(cur_enm == lastEvaluableNodeManager && !buffer.empty())
 			{
 				EvaluableNode *node = buffer.back();
 				buffer.pop_back();
@@ -131,7 +131,7 @@ public:
 		//adds a node to the local allocation buffer
 		//if this is accessed by a different EvaluableNode manager than the last time it was called on this thread,
 		// it will clear the buffer before adding the node
-		inline void AddNode(EvaluableNode *en, EvaluableNodeManager *cur_enm)
+		inline void AddNodeForReallocation(EvaluableNode *en, EvaluableNodeManager *cur_enm)
 		{
 			if(cur_enm != lastEvaluableNodeManager)
 			{
@@ -856,9 +856,9 @@ protected:
 
 	//gets a pointer to the next available node from the local allocation buffer
 	//nullptr if it cannot
-	inline EvaluableNode *GetNextNodeFromLocalAllocationBuffer()
+	inline EvaluableNode *AllocNodeFromLocalAllocationBufferIfAvailable()
 	{
-		return localAllocationBuffer.GetNode(this);
+		return localAllocationBuffer.AllocNodeIfAvailable(this);
 	}
 
 	//adds en to the local allocation buffer
@@ -867,7 +867,7 @@ protected:
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		assert(en->IsNodeDeallocated());
 	#endif
-		localAllocationBuffer.AddNode(en, this);
+		localAllocationBuffer.AddNodeForReallocation(en, this);
 	}
 
 public:

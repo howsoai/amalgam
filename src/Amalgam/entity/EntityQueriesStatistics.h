@@ -32,7 +32,7 @@ public:
 	//iterates from first to last, calling get_value
 	// if has_weight, then will use get_weight to obtain the weight of each value
 	template<typename EntityIterator, typename ValueFunction, typename WeightFunction>
-	static double Sum(EntityIterator first, EntityIterator last,
+	__forceinline static double Sum(EntityIterator first, EntityIterator last,
 		ValueFunction get_value, bool has_weight, WeightFunction get_weight)
 	{
 		double sum = 0.0;
@@ -73,7 +73,7 @@ public:
 	//iterates from first to last, calling get_value
 	// if has_weight, then will use get_weight to obtain the weight of each value
 	template<typename EntityIterator, typename ValueFunction, typename WeightFunction>
-	static
+	__forceinline static
 		FastHashMap<double, double, std::hash<double>, DoubleNanHashComparator>
 		ValueMassesNumber(EntityIterator first, EntityIterator last, size_t estimated_num_unique_values,
 			ValueFunction get_value, bool has_weight, WeightFunction get_weight)
@@ -118,7 +118,7 @@ public:
 	//iterates from first to last, calling get_value
 	// if has_weight, then will use get_weight to obtain the weight of each value
 	template<typename EntityIterator, typename ValueFunction, typename WeightFunction>
-	static
+	__forceinline static
 		FastHashMap<StringInternPool::StringID, double>
 		ValueMassesStringId(EntityIterator first, EntityIterator last, size_t estimated_num_unique_values,
 			ValueFunction get_value, bool has_weight, WeightFunction get_weight)
@@ -173,7 +173,7 @@ public:
 	// if has_weight, then will use get_weight to obtain the weight of each value
 	// values_buffer is a temporary buffer to hold data that can be reused
 	template<typename EntityIterator, typename ValueFunction>
-	static double ExtremeDifference(EntityIterator first, EntityIterator last,
+	__forceinline static double ExtremeDifference(EntityIterator first, EntityIterator last,
 		ValueFunction get_value,
 		bool select_min_value, double max_distance, bool include_zero_distances,
 		std::vector<double> &values_buffer)
@@ -543,7 +543,7 @@ public:
 		//selects the bandwidth from the transformed values and returns the number of entities to keep,
 		// which may be less than the total
 		template<typename EntityDistancePairContainer>
-		inline void TransformDistances(EntityDistancePairContainer &entity_distance_pair_container,
+		__forceinline void TransformDistances(EntityDistancePairContainer &entity_distance_pair_container,
 			bool sort_results)
 		{
 			size_t num_kept = TransformDistancesWithBandwidthSelectionAndResultFunction(
@@ -690,8 +690,10 @@ public:
 		//Computes the distance contribution as a type of generalized mean with special handling for distances of zero
 		// entity_distance_pair_container are the distances to its nearest entities,
 		// and entity_weight is the weight of the entity for which this distance contribution is being computed
-		// the functions get_entity and get_distance_ref return the entity and reference to the distance for an iterator of entity_distance_pair_container
-		double ComputeDistanceContribution(std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container, double entity_weight)
+		// the functions get_entity and get_distance_ref return the entity and reference to the distance for an
+		// iterator of entity_distance_pair_container
+		inline double ComputeDistanceContribution(
+			std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container, double entity_weight)
 		{
 			if(entity_weight == 0.0)
 				return 0.0;

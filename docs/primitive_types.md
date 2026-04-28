@@ -47,7 +47,7 @@ Output:
 #### Parameters
 ``
 #### Description
-A 64-bit floating point value
+A boolean value that may hold true and false as `.true` and `.false` respectively.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -79,7 +79,7 @@ Output:
 #### Parameters
 ``
 #### Description
-A 64-bit floating point value
+A 64-bit floating point value.  Note that `.infinity` and `-.infinity` are used to denote infinite values and not-a-number is transformed into a null value.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

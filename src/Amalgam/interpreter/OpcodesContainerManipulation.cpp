@@ -34,7 +34,6 @@ static OpcodeInitializer _ENT_FIRST(ENT_FIRST, &Interpreter::InterpretNode_ENT_F
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -306,7 +305,6 @@ R"&(^\s*\{\s*
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -450,7 +448,6 @@ static OpcodeInitializer _ENT_LAST(ENT_LAST, &Interpreter::InterpretNode_ENT_LAS
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -726,7 +723,6 @@ R"&(^\s*\{\s*
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -905,7 +901,6 @@ static OpcodeInitializer _ENT_APPEND(ENT_APPEND, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -1049,7 +1044,6 @@ static OpcodeInitializer _ENT_SIZE(ENT_SIZE, &Interpreter::InterpretNode_ENT_SIZ
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -1210,7 +1204,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, Eva
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-
 	if(ocn_size < 1)
 		return EvaluableNodeReference::Null();
 
@@ -1364,7 +1357,6 @@ static OpcodeInitializer _ENT_REPLACE(ENT_REPLACE, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -1533,7 +1525,6 @@ static OpcodeInitializer _ENT_INDICES(ENT_INDICES, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
@@ -1696,7 +1687,6 @@ static OpcodeInitializer _ENT_VALUES(ENT_VALUES, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
@@ -1919,7 +1909,6 @@ static OpcodeInitializer _ENT_CONTAINS_INDEX(ENT_CONTAINS_INDEX, &Interpreter::I
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -2015,7 +2004,6 @@ static OpcodeInitializer _ENT_CONTAINS_VALUE(ENT_CONTAINS_VALUE, &Interpreter::I
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -2195,7 +2183,6 @@ static OpcodeInitializer _ENT_REMOVE(ENT_REMOVE, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -2397,7 +2384,6 @@ static OpcodeInitializer _ENT_KEEP(ENT_KEEP, &Interpreter::InterpretNode_ENT_KEE
 EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 

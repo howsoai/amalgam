@@ -88,7 +88,7 @@ If an operator is preceeded by an `@` symbol, then it will be evaluated on load 
 @(load "module_2.amlg")
 {
 	...code...
-}
+})
 ```
 where the two modules would be included as additional labels on the entity.
 

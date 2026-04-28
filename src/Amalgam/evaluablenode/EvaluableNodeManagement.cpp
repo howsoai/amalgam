@@ -197,7 +197,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	}
 #endif
 
-	EvaluableNode *lab_node = GetNextNodeFromLocalAllocationBuffer();
+	EvaluableNode *lab_node = AllocNodeFromLocalAllocationBufferIfAvailable();
 
 	//Fast Path; get node from thread local buffer
 	if(lab_node != nullptr)
@@ -229,7 +229,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	#ifdef MULTITHREAD_SUPPORT
 		read_lock.unlock();
 	#endif
-		return GetNextNodeFromLocalAllocationBuffer();
+		return AllocNodeFromLocalAllocationBufferIfAvailable();
 	}
 
 #ifdef MULTITHREAD_SUPPORT
@@ -262,7 +262,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 #ifdef MULTITHREAD_SUPPORT
 	write_lock.unlock();
 #endif
-	return GetNextNodeFromLocalAllocationBuffer();
+	return AllocNodeFromLocalAllocationBufferIfAvailable();
 }
 
 void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index)

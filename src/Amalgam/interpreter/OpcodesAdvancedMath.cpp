@@ -461,19 +461,19 @@ static OpcodeInitializer _ENT_MODE(ENT_MODE, &Interpreter::InterpretNode_ENT_MOD
 });
 
 //set of getter methods to help ENT_MODE, ENT_QUANTILE, and ENT_GENERALIZED_DISTANCE when retrieving values and weights
-static inline bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, double &value)
+inline static bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, double &value)
 {
 	value = EvaluableNode::ToNumber(iter->second);
 	return !FastIsNaN(value);
 };
 
-static inline bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, std::string &value)
+inline static bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, std::string &value)
 {
 	value = Parser::UnparseToKeyString(iter->second);
 	return true;
 };
 
-static inline bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, double &value)
+inline static bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, double &value)
 {
 	if(i >= ocn.size())
 		return false;
@@ -482,7 +482,7 @@ static inline bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i
 	return !FastIsNaN(value);
 };
 
-static inline bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, std::string &value)
+inline static bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, std::string &value)
 {
 	if(i >= ocn.size())
 		return false;
@@ -491,7 +491,7 @@ static inline bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i
 	return true;
 };
 
-static inline bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
+inline static bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
 	EvaluableNode::AssocType::iterator iter, double &value)
 {
 	auto entry = values_mcn.find(iter->first);
@@ -502,7 +502,7 @@ static inline bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
 	return !FastIsNaN(value);
 };
 
-static inline bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
+inline static bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
 	EvaluableNode::AssocType::iterator iter, std::string &value)
 {
 	auto entry = values_mcn.find(iter->first);
@@ -513,7 +513,7 @@ static inline bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
 	return true;
 };
 
-static inline bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
+inline static bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
 	EvaluableNode::AssocType::iterator iter, double &value)
 {
 	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
@@ -527,7 +527,7 @@ static inline bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_
 	return !FastIsNaN(value);
 };
 
-static inline bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
+inline static bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
 	EvaluableNode::AssocType::iterator iter, std::string &value)
 {
 	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
@@ -541,7 +541,7 @@ static inline bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_
 	return true;
 };
 
-static inline bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
+inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
 	size_t index, double &value)
 {
 	auto key_sid = EvaluableNode::NumberToStringIDIfExists(index, true);
@@ -556,7 +556,7 @@ static inline bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn
 	return !FastIsNaN(value);
 };
 
-static inline bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
+inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
 	size_t index, std::string &value)
 {
 	auto key_sid = EvaluableNode::NumberToStringIDIfExists(index, true);
@@ -1677,7 +1677,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 
 //builds a vector of the values in the node, using ordered or mapped child nodes as appropriate
 // if node is mapped child nodes, it will use id_order to order populate out and use default_value if any given id is not found
-static inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vector<StringInternPool::StringID> &id_order,
+inline static void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vector<StringInternPool::StringID> &id_order,
 	std::vector<EvaluableNodeImmediateValueWithType> &out)
 {
 	if(node != nullptr)

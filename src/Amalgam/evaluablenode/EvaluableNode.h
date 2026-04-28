@@ -324,7 +324,7 @@ public:
 	}
 
 	//Returns true if the immediate data structure of a is equal to b
-	static inline bool AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
+	inline static bool AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
 	{
 		EvaluableNodeType a_type = (a == nullptr ? ENT_NULL : a->GetType());
 		EvaluableNodeType b_type = (b == nullptr ? ENT_NULL : b->GetType());
@@ -350,7 +350,7 @@ public:
 	}
 
 	//Returns true if the entire data structure of a is equal in value to the data structure of b
-	static inline bool AreDeepEqual(EvaluableNode *a, EvaluableNode *b)
+	inline static bool AreDeepEqual(EvaluableNode *a, EvaluableNode *b)
 	{
 		//if pointers are the same, then they are the same
 		if(a == b)
@@ -430,7 +430,7 @@ public:
 	static int Compare(EvaluableNode *a, EvaluableNode *b);
 
 	//Returns true if the node b is less than node a.  If or_equal_to is true, then also returns true if equal
-	static inline bool IsLessThan(EvaluableNode *a, EvaluableNode *b, bool or_equal_to)
+	inline static bool IsLessThan(EvaluableNode *a, EvaluableNode *b, bool or_equal_to)
 	{
 		int r = Compare(a, b);
 		if(r < 0)
@@ -440,12 +440,12 @@ public:
 		return false;
 	}
 
-	static inline bool IsStrictlyLessThan(EvaluableNode *a, EvaluableNode *b)
+	inline static bool IsStrictlyLessThan(EvaluableNode *a, EvaluableNode *b)
 	{
 		return IsLessThan(a, b, false);
 	}
 
-	static inline bool IsStrictlyGreaterThan(EvaluableNode *a, EvaluableNode *b)
+	inline static bool IsStrictlyGreaterThan(EvaluableNode *a, EvaluableNode *b)
 	{
 		return !IsLessThan(a, b, true);
 	}
@@ -542,7 +542,7 @@ public:
 	//returns true if the node can be flattened,
 	// that is, contains no cycles when traversing downward and potentially
 	// duplicating nodes if they are referenced more than once
-	static inline bool CanNodeTreeBeFlattened(EvaluableNode *n)
+	inline static bool CanNodeTreeBeFlattened(EvaluableNode *n)
 	{
 		if(n == nullptr)
 			return true;
@@ -554,7 +554,7 @@ public:
 	}
 
 	//Returns the number of nodes in the data structure
-	static inline size_t GetDeepSize(EvaluableNode *n)
+	inline static size_t GetDeepSize(EvaluableNode *n)
 	{
 		if(n == nullptr || n->IsImmediate())
 			return 1;
@@ -729,7 +729,7 @@ public:
 		return GetAnnotationsAndCommentsStorage().GetAnnotations();
 	}
 
-	static inline std::string_view GetAnnotationsString(EvaluableNode *en)
+	inline static std::string_view GetAnnotationsString(EvaluableNode *en)
 	{
 		if(en == nullptr)
 			return std::string_view();
@@ -765,7 +765,7 @@ public:
 		return GetAnnotationsAndCommentsStorage().GetComments();
 	}
 
-	static inline std::string_view GetCommentsString(EvaluableNode *en)
+	inline static std::string_view GetCommentsString(EvaluableNode *en)
 	{
 		if(en == nullptr)
 			return std::string_view();
@@ -1054,7 +1054,7 @@ public:
 	//will use num_expected_elements for immediate values
 	//store_value takes in 3 parameters, the index, a bool if the value was found, and the EvaluableNode of the value
 	template<typename StoreValueFunction = void(size_t, bool, EvaluableNode *)>
-	static inline void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
+	inline static void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
 		size_t num_expected_elements, StoreValueFunction store_value)
 	{
 		if(EvaluableNode::IsNull(node) || node->IsImmediate())
@@ -1264,7 +1264,7 @@ public:
 	}
 
 	//registers and unregisters an EvaluableNode for debug watching
-	static inline void RegisterEvaluableNodeForDebugWatch(EvaluableNode *en)
+	inline static void RegisterEvaluableNodeForDebugWatch(EvaluableNode *en)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::SingleLock lock(debugWatchMutex);
@@ -1272,7 +1272,7 @@ public:
 		debugWatch.emplace(en);
 	}
 
-	static inline void UnregisterEvaluableNodeForDebugWatch(EvaluableNode *en)
+	inline static void UnregisterEvaluableNodeForDebugWatch(EvaluableNode *en)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::SingleLock lock(debugWatchMutex);
@@ -1281,7 +1281,7 @@ public:
 	}
 
 	//returns true if the EvaluableNode is in the debug watch
-	static inline void AssertIfInDebugWatch(EvaluableNode *en)
+	inline static void AssertIfInDebugWatch(EvaluableNode *en)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::SingleLock lock(debugWatchMutex);

@@ -531,6 +531,7 @@ static OpcodeInitializer _ENT_CALL_ENTITY_GET_CHANGES(ENT_CALL_ENTITY_GET_CHANGE
 	return d;
 });
 
+//TODO 25398: implement flag on call_entity / container
 static OpcodeInitializer _ENT_CALL_ON_ENTITY(ENT_CALL_ON_ENTITY, &Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY, []() {
 	OpcodeDetails d;
 	d.parameters = R"(id_path entity * code [assoc params] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings])";
@@ -744,6 +745,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		interpreter_constraints_ptr != nullptr ? interpreter_constraints_ptr : &interpreter_constraints);
 }
 
+//TODO 25398: implement flag on call_entity / container
 static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::InterpretNode_ENT_CALL_CONTAINER, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string parent_label_name [assoc params] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [bool return_warnings])";

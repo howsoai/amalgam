@@ -329,6 +329,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	return result;
 }
 
+//TODO 25398: evaluate how hard it would be to have assign/accum return the assigned values if fetched, and if so, do the same for entities (but make sure freed if not requested by immediate value)
 static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM, []() {
 	OpcodeDetails d;
 	d.parameters = R"(assoc|string variables [number index1|string index1|list walk_path1|* new_value1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...)";
@@ -936,8 +937,7 @@ static OpcodeInitializer _ENT_EXISTS(ENT_EXISTS, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EXISTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	size_t ocn_size = ocn.size();
-	if(ocn_size == 0)
+	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
@@ -949,9 +949,35 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXISTS(EvaluableNode *en, 
 	return AllocReturn(found, immediate_result);
 }
 
-//TODO 25398: implement this
-//TODO 25398: implement flag on call_entity / container
-EvaluableNodeReference InterpretNode_ENT_UNASSIGN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+static OpcodeInitializer _ENT_UNASSIGN(ENT_UNASSIGN, &Interpreter::InterpretNode_ENT_UNASSIGN, []() {
+	OpcodeDetails d;
+	d.parameters = R"(string variable1 [string variable2] ... [string variableN])";
+	d.returns = R"(bool)";
+	d.description = R"(Removes all variables that are parameters from the stack.  Returns true all variables previously existed and were unassigned.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((let
+	{foo 1}
+	(unassign "foo")
+	(exists "foo")
+))&", R"(.false)"}
+		});
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.frequencyPer10000Opcodes = 1.0;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_UNASSIGN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	bool all_unassigned = true;
+	for(auto &to_unassign : en->GetOrderedChildNodesReference())
+	{
+		//TODO 25398: implement this
+	}
+
+	return AllocReturn(all_unassigned, immediate_result);
+}
 
 static OpcodeInitializer _ENT_TARGET(ENT_TARGET, &Interpreter::InterpretNode_ENT_TARGET, []() {
 	OpcodeDetails d;

@@ -823,7 +823,12 @@ static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter:
 	{lock 0}
 	(declare { success (assign_if_equal "lock" 0 1) })
 	[success lock]
-))&", R"([.true 1])"}
+))&", R"([.true 1])"},
+		{ R"&((let
+	{lock 0}
+	(declare { success (assign_if_equal "lock" 1 1) })
+	[success lock]
+))&", R"([.false 0])" }
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::POSITION;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -845,14 +850,46 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableN
 	auto value_to_compare = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PushEvaluableNode(value_to_compare);
 
-	//TODO 25398: should this be immediate?  test w/ assign/accum
 	auto value_to_assign = InterpretNodeForImmediateUse(ocn[2]);
+
+	//retrieve the symbol location
+#ifdef MULTITHREAD_SUPPORT
+	//need to save variable_value_node because GetScopeStackSymbolLocationWithLock
+	// may collect garbage while waiting for the lock
+	//use a scope here to make it automatically destruct
 	node_stack.PushEvaluableNode(value_to_assign);
 
-	//TODO 25398: implement this
-	
+	Concurrency::SingleLock write_lock;
+	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+	if(write_lock.owns_lock())
+		RecordStackLockForProfiling(en, variable_sid);
 
-	return AllocReturn(true, immediate_result);
+	node_stack.PopEvaluableNode();
+#else
+	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+#endif
+
+	bool success = false;
+	if(EvaluableNode::AreDeepEqual(*value_destination, value_to_compare))
+	{
+		if(is_freeable)
+		{
+			EvaluableNodeReference value_destination_node(*value_destination, true);
+			evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
+		}
+
+		*value_destination = value_to_assign;
+
+		//if writing to an outer scope, can't guarantee the memory at this scope can be freed
+		if(!value_to_assign.unique || !top_of_stack)
+			SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
+
+		success = true;
+	}
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(variable_string_node);
+	evaluableNodeManager->FreeNodeTreeIfPossible(value_to_compare);
+	return AllocReturn(success, immediate_result);
 }
 
 static OpcodeInitializer _ENT_RETRIEVE(ENT_RETRIEVE, &Interpreter::InterpretNode_ENT_RETRIEVE, []() {

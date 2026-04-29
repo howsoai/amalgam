@@ -52,6 +52,8 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_ASSIGN, "assign");
 	EmplaceNodeTypeString(ENT_ACCUM, "accum");
 	EmplaceNodeTypeString(ENT_RETRIEVE, "retrieve");
+	EmplaceNodeTypeString(ENT_EXISTS, "exists");
+	EmplaceNodeTypeString(ENT_UNASSIGN, "unassign");
 		
 	//retrieval
 	EmplaceNodeTypeString(ENT_GET, "get");

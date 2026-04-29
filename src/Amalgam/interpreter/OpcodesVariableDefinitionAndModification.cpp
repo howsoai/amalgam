@@ -915,6 +915,44 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	}
 }
 
+static OpcodeInitializer _ENT_EXISTS(ENT_EXISTS, &Interpreter::InterpretNode_ENT_EXISTS, []() {
+	OpcodeDetails d;
+	d.parameters = R"(string variable)";
+	d.returns = R"(bool)";
+	d.description = R"(Returns true if variable exists within visibility, false if it does not.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((let
+	{foo 1}
+	[(exists "foo") (exists "bar")]
+))&", R"([.true .false])"}
+		});
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::POSITION;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.frequencyPer10000Opcodes = 1.0;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_EXISTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodesReference();
+	size_t ocn_size = ocn.size();
+	if(ocn_size == 0)
+		return EvaluableNodeReference::Null();
+
+	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
+	StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
+
+	auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid, false);
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
+	return AllocReturn(found, immediate_result);
+}
+
+//TODO 25398: implement this
+//TODO 25398: implement flag on call_entity / container
+EvaluableNodeReference InterpretNode_ENT_UNASSIGN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+
 static OpcodeInitializer _ENT_TARGET(ENT_TARGET, &Interpreter::InterpretNode_ENT_TARGET, []() {
 	OpcodeDetails d;
 	d.parameters = R"([number|bool stack_distance] [number|string|list walk_path])";

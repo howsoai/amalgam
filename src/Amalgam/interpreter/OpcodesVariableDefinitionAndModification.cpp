@@ -973,6 +973,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNASSIGN(EvaluableNode *en
 	bool all_unassigned = true;
 	for(auto &to_unassign : en->GetOrderedChildNodesReference())
 	{
+		auto string_node_to_unassign = InterpretNodeForImmediateUse(to_unassign);
+		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(string_node_to_unassign, true);
+
 		//TODO 25398: implement this
 	}
 

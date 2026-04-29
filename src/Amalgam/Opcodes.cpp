@@ -26,56 +26,67 @@ void StringInternPool::InitializeStaticStrings()
 
 	//opcodes
 
-	//built-in / system specific
-	EmplaceNodeTypeString(ENT_SYSTEM, "system");
+	//System and Runtime
 	EmplaceNodeTypeString(ENT_HELP, "help");
-	EmplaceNodeTypeString(ENT_GET_MUTATION_DEFAULTS, "get_mutation_defaults");
+	EmplaceNodeTypeString(ENT_PRINT, "print");
+	EmplaceNodeTypeString(ENT_SYSTEM_TIME, "system_time");
+	EmplaceNodeTypeString(ENT_SYSTEM, "system");
 	EmplaceNodeTypeString(ENT_RECLAIM_RESOURCES, "reclaim_resources");
 
-	//parsing
-	EmplaceNodeTypeString(ENT_PARSE, "parse");
-	EmplaceNodeTypeString(ENT_UNPARSE, "unparse");
+	//Primitive Types
+	EmplaceNodeTypeString(ENT_NULL, "null");
+	EmplaceNodeTypeString(ENT_BOOL, "bool");
+	EmplaceNodeTypeString(ENT_NUMBER, "number");
+	EmplaceNodeTypeString(ENT_STRING, "string");
+	EmplaceNodeTypeString(ENT_LIST, "list");
+	EmplaceNodeTypeString(ENT_UNORDERED_LIST, "unordered_list");
+	EmplaceNodeTypeString(ENT_ASSOC, "assoc");
 
-	//core control
-	EmplaceNodeTypeString(ENT_IF, "if");
-	EmplaceNodeTypeString(ENT_SEQUENCE, "seq");
-	EmplaceNodeTypeString(ENT_LAMBDA, "lambda");
-	EmplaceNodeTypeString(ENT_CONCLUDE, "conclude");
-	EmplaceNodeTypeString(ENT_RETURN, "return");
-	EmplaceNodeTypeString(ENT_CALL, "call");
-	EmplaceNodeTypeString(ENT_CALL_SANDBOXED, "call_sandboxed");
-	EmplaceNodeTypeString(ENT_WHILE, "while");
-
-	//definitions
+	//Variable Definition & Modification
+	EmplaceNodeTypeString(ENT_SYMBOL, "symbol");
 	EmplaceNodeTypeString(ENT_LET, "let");
 	EmplaceNodeTypeString(ENT_DECLARE, "declare");
 	EmplaceNodeTypeString(ENT_ASSIGN, "assign");
 	EmplaceNodeTypeString(ENT_ACCUM, "accum");
+	EmplaceNodeTypeString(ENT_ASSIGN_IF_EQUAL, "assign_if_equal");
 	EmplaceNodeTypeString(ENT_RETRIEVE, "retrieve");
 	EmplaceNodeTypeString(ENT_EXISTS, "exists");
 	EmplaceNodeTypeString(ENT_UNASSIGN, "unassign");
-		
-	//retrieval
-	EmplaceNodeTypeString(ENT_GET, "get");
-	EmplaceNodeTypeString(ENT_SET, "set");
-	EmplaceNodeTypeString(ENT_REPLACE, "replace");
-
-	//stack and node manipulation
 	EmplaceNodeTypeString(ENT_TARGET, "target");
-	EmplaceNodeTypeString(ENT_CURRENT_INDEX, "current_index");
-	EmplaceNodeTypeString(ENT_CURRENT_VALUE, "current_value");
-	EmplaceNodeTypeString(ENT_PREVIOUS_RESULT, "previous_result");
-	EmplaceNodeTypeString(ENT_OPCODE_STACK, "opcode_stack");
 	EmplaceNodeTypeString(ENT_STACK, "stack");
 	EmplaceNodeTypeString(ENT_ARGS, "args");
+	EmplaceNodeTypeString(ENT_GET_TYPE, "get_type");
+	EmplaceNodeTypeString(ENT_GET_TYPE_STRING, "get_type_string");
+	EmplaceNodeTypeString(ENT_SET_TYPE, "set_type");
+	EmplaceNodeTypeString(ENT_FORMAT, "format");
 
-	//simulation and operations
-	EmplaceNodeTypeString(ENT_RAND, "rand");
-	EmplaceNodeTypeString(ENT_GET_RAND_SEED, "get_rand_seed");
-	EmplaceNodeTypeString(ENT_SET_RAND_SEED, "set_rand_seed");
-	EmplaceNodeTypeString(ENT_SYSTEM_TIME, "system_time");
+	//Control Flow
+	EmplaceNodeTypeString(ENT_IF, "if");
+	EmplaceNodeTypeString(ENT_SEQUENCE, "seq");
+	EmplaceNodeTypeString(ENT_LAMBDA, "lambda");
+	EmplaceNodeTypeString(ENT_CALL, "call");
+	EmplaceNodeTypeString(ENT_CALL_SANDBOXED, "call_sandboxed");
+	EmplaceNodeTypeString(ENT_WHILE, "while");
+	EmplaceNodeTypeString(ENT_CONCLUDE, "conclude");
+	EmplaceNodeTypeString(ENT_RETURN, "return");
+	EmplaceNodeTypeString(ENT_APPLY, "apply");
+	EmplaceNodeTypeString(ENT_OPCODE_STACK, "opcode_stack");
 
-	//base math
+	//Logic & Comparison
+	EmplaceNodeTypeString(ENT_AND, "and");
+	EmplaceNodeTypeString(ENT_OR, "or");
+	EmplaceNodeTypeString(ENT_XOR, "xor");
+	EmplaceNodeTypeString(ENT_NOT, "not");
+	EmplaceNodeTypeString(ENT_EQUAL, "=");
+	EmplaceNodeTypeString(ENT_NEQUAL, "!=");
+	EmplaceNodeTypeString(ENT_LESS, "<");
+	EmplaceNodeTypeString(ENT_LEQUAL, "<=");
+	EmplaceNodeTypeString(ENT_GREATER, ">");
+	EmplaceNodeTypeString(ENT_GEQUAL, ">=");
+	EmplaceNodeTypeString(ENT_TYPE_EQUALS, "~");
+	EmplaceNodeTypeString(ENT_TYPE_NEQUALS, "!~");
+
+	//Basic Math
 	EmplaceNodeTypeString(ENT_ADD, "+");
 	EmplaceNodeTypeString(ENT_SUBTRACT, "-");
 	EmplaceNodeTypeString(ENT_MULTIPLY, "*");
@@ -86,18 +97,35 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_FLOOR, "floor");
 	EmplaceNodeTypeString(ENT_CEILING, "ceil");
 	EmplaceNodeTypeString(ENT_ROUND, "round");
+	EmplaceNodeTypeString(ENT_ABS, "abs");
+	EmplaceNodeTypeString(ENT_MAX, "max");
+	EmplaceNodeTypeString(ENT_MIN, "min");
+	EmplaceNodeTypeString(ENT_INDEX_MAX, "index_max");
+	EmplaceNodeTypeString(ENT_INDEX_MIN, "index_min");
 
-	//extended math
+	//Advanced Math
 	EmplaceNodeTypeString(ENT_EXPONENT, "exp");
 	EmplaceNodeTypeString(ENT_LOG, "log");
+	EmplaceNodeTypeString(ENT_ERF, "erf");
+	EmplaceNodeTypeString(ENT_TGAMMA, "tgamma");
+	EmplaceNodeTypeString(ENT_LGAMMA, "lgamma");
+	EmplaceNodeTypeString(ENT_SQRT, "sqrt");
+	EmplaceNodeTypeString(ENT_POW, "pow");
+	EmplaceNodeTypeString(ENT_DOT_PRODUCT, "dot_product");
+	EmplaceNodeTypeString(ENT_NORMALIZE, "normalize");
+	EmplaceNodeTypeString(ENT_MODE, "mode");
+	EmplaceNodeTypeString(ENT_QUANTILE, "quantile");
+	EmplaceNodeTypeString(ENT_GENERALIZED_MEAN, "generalized_mean");
+	EmplaceNodeTypeString(ENT_GENERALIZED_DISTANCE, "generalized_distance");
+	EmplaceNodeTypeString(ENT_ENTROPY, "entropy");
 
+	//Trigonometry
 	EmplaceNodeTypeString(ENT_SIN, "sin");
 	EmplaceNodeTypeString(ENT_ASIN, "asin");
 	EmplaceNodeTypeString(ENT_COS, "cos");
 	EmplaceNodeTypeString(ENT_ACOS, "acos");
 	EmplaceNodeTypeString(ENT_TAN, "tan");
 	EmplaceNodeTypeString(ENT_ATAN, "atan");
-
 	EmplaceNodeTypeString(ENT_SINH, "sinh");
 	EmplaceNodeTypeString(ENT_ASINH, "asinh");
 	EmplaceNodeTypeString(ENT_COSH, "cosh");
@@ -105,147 +133,48 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_TANH, "tanh");
 	EmplaceNodeTypeString(ENT_ATANH, "atanh");
 
-	EmplaceNodeTypeString(ENT_ERF, "erf");
-	EmplaceNodeTypeString(ENT_TGAMMA, "tgamma");
-	EmplaceNodeTypeString(ENT_LGAMMA, "lgamma");
+	//String Operations
+	EmplaceNodeTypeString(ENT_EXPLODE, "explode");
+	EmplaceNodeTypeString(ENT_SPLIT, "split");
+	EmplaceNodeTypeString(ENT_SUBSTR, "substr");
+	EmplaceNodeTypeString(ENT_CONCAT, "concat");
+	EmplaceNodeTypeString(ENT_PARSE, "parse");
+	EmplaceNodeTypeString(ENT_UNPARSE, "unparse");
 
-	EmplaceNodeTypeString(ENT_SQRT, "sqrt");
-	EmplaceNodeTypeString(ENT_POW, "pow");
-	EmplaceNodeTypeString(ENT_ABS, "abs");
-	EmplaceNodeTypeString(ENT_MAX, "max");
-	EmplaceNodeTypeString(ENT_MIN, "min");
-	EmplaceNodeTypeString(ENT_INDEX_MAX, "index_max");
-	EmplaceNodeTypeString(ENT_INDEX_MIN, "index_min");
-	EmplaceNodeTypeString(ENT_MODE, "mode");
-	EmplaceNodeTypeString(ENT_QUANTILE, "quantile");
-	EmplaceNodeTypeString(ENT_GENERALIZED_MEAN, "generalized_mean");
-	EmplaceNodeTypeString(ENT_GENERALIZED_DISTANCE, "generalized_distance");
-	EmplaceNodeTypeString(ENT_DOT_PRODUCT, "dot_product");
-	EmplaceNodeTypeString(ENT_NORMALIZE, "normalize");
-	EmplaceNodeTypeString(ENT_ENTROPY, "entropy");
-
-	//list manipulation
+	//Container Manipulation
 	EmplaceNodeTypeString(ENT_FIRST, "first");
 	EmplaceNodeTypeString(ENT_TAIL, "tail");
 	EmplaceNodeTypeString(ENT_LAST, "last");
 	EmplaceNodeTypeString(ENT_TRUNC, "trunc");
 	EmplaceNodeTypeString(ENT_APPEND, "append");
 	EmplaceNodeTypeString(ENT_SIZE, "size");
-	EmplaceNodeTypeString(ENT_RANGE, "range");
-
-	//transformation
-	EmplaceNodeTypeString(ENT_REWRITE, "rewrite");
-	EmplaceNodeTypeString(ENT_MAP, "map");
-	EmplaceNodeTypeString(ENT_FILTER, "filter");
-	EmplaceNodeTypeString(ENT_WEAVE, "weave");
-	EmplaceNodeTypeString(ENT_REDUCE, "reduce");
-	EmplaceNodeTypeString(ENT_APPLY, "apply");
-	EmplaceNodeTypeString(ENT_REVERSE, "reverse");
-	EmplaceNodeTypeString(ENT_SORT, "sort");
-
-	//associative list manipulation
+	EmplaceNodeTypeString(ENT_GET, "get");
+	EmplaceNodeTypeString(ENT_SET, "set");
+	EmplaceNodeTypeString(ENT_REPLACE, "replace");
 	EmplaceNodeTypeString(ENT_INDICES, "indices");
 	EmplaceNodeTypeString(ENT_VALUES, "values");
 	EmplaceNodeTypeString(ENT_CONTAINS_INDEX, "contains_index");
 	EmplaceNodeTypeString(ENT_CONTAINS_VALUE, "contains_value");
 	EmplaceNodeTypeString(ENT_REMOVE, "remove");
 	EmplaceNodeTypeString(ENT_KEEP, "keep");
+
+	//Iteration and Container Transformation
+	EmplaceNodeTypeString(ENT_RANGE, "range");
+	EmplaceNodeTypeString(ENT_REWRITE, "rewrite");
+	EmplaceNodeTypeString(ENT_MAP, "map");
+	EmplaceNodeTypeString(ENT_FILTER, "filter");
+	EmplaceNodeTypeString(ENT_WEAVE, "weave");
+	EmplaceNodeTypeString(ENT_REDUCE, "reduce");
 	EmplaceNodeTypeString(ENT_ASSOCIATE, "associate");
 	EmplaceNodeTypeString(ENT_ZIP, "zip");
 	EmplaceNodeTypeString(ENT_UNZIP, "unzip");
+	EmplaceNodeTypeString(ENT_REVERSE, "reverse");
+	EmplaceNodeTypeString(ENT_SORT, "sort");
+	EmplaceNodeTypeString(ENT_CURRENT_INDEX, "current_index");
+	EmplaceNodeTypeString(ENT_CURRENT_VALUE, "current_value");
+	EmplaceNodeTypeString(ENT_PREVIOUS_RESULT, "previous_result");
 
-	//logic
-	EmplaceNodeTypeString(ENT_AND, "and");
-	EmplaceNodeTypeString(ENT_OR, "or");
-	EmplaceNodeTypeString(ENT_XOR, "xor");
-	EmplaceNodeTypeString(ENT_NOT, "not");
-
-	//equivalence
-	EmplaceNodeTypeString(ENT_EQUAL, "=");
-	EmplaceNodeTypeString(ENT_NEQUAL, "!=");
-	EmplaceNodeTypeString(ENT_LESS, "<");
-	EmplaceNodeTypeString(ENT_LEQUAL, "<=");
-	EmplaceNodeTypeString(ENT_GREATER, ">");
-	EmplaceNodeTypeString(ENT_GEQUAL, ">=");
-	EmplaceNodeTypeString(ENT_TYPE_EQUALS, "~");
-	EmplaceNodeTypeString(ENT_TYPE_NEQUALS, "!~");
-
-	//built-in constants and variables
-	EmplaceNodeTypeString(ENT_NULL, "null");
-
-	//data types
-	EmplaceNodeTypeString(ENT_LIST, "list");
-	EmplaceNodeTypeString(ENT_UNORDERED_LIST, "unordered_list");
-	EmplaceNodeTypeString(ENT_ASSOC, "assoc");
-
-	//immediates - no associated keywords
-	EmplaceNodeTypeString(ENT_BOOL, "bool");
-	EmplaceNodeTypeString(ENT_NUMBER, "number");
-	EmplaceNodeTypeString(ENT_STRING, "string");
-	EmplaceNodeTypeString(ENT_SYMBOL, "symbol");
-
-	//node types
-	EmplaceNodeTypeString(ENT_GET_TYPE, "get_type");
-	EmplaceNodeTypeString(ENT_GET_TYPE_STRING, "get_type_string");
-	EmplaceNodeTypeString(ENT_SET_TYPE, "set_type");
-	EmplaceNodeTypeString(ENT_FORMAT, "format");
-
-	//labels and comments
-	EmplaceNodeTypeString(ENT_GET_ANNOTATIONS, "get_annotations");
-	EmplaceNodeTypeString(ENT_SET_ANNOTATIONS, "set_annotations");
-	EmplaceNodeTypeString(ENT_GET_COMMENTS, "get_comments");
-	EmplaceNodeTypeString(ENT_SET_COMMENTS, "set_comments");
-	EmplaceNodeTypeString(ENT_GET_CONCURRENCY, "get_concurrency");
-	EmplaceNodeTypeString(ENT_SET_CONCURRENCY, "set_concurrency");
-	EmplaceNodeTypeString(ENT_GET_VALUE, "get_value");
-	EmplaceNodeTypeString(ENT_SET_VALUE, "set_value");
-
-	//string
-	EmplaceNodeTypeString(ENT_EXPLODE, "explode");
-	EmplaceNodeTypeString(ENT_SPLIT, "split");
-	EmplaceNodeTypeString(ENT_SUBSTR, "substr");
-	EmplaceNodeTypeString(ENT_CONCAT, "concat");
-
-	EmplaceNodeTypeString(ENT_CRYPTO_SIGN, "crypto_sign");
-	EmplaceNodeTypeString(ENT_CRYPTO_SIGN_VERIFY, "crypto_sign_verify");
-	EmplaceNodeTypeString(ENT_ENCRYPT, "encrypt");
-	EmplaceNodeTypeString(ENT_DECRYPT, "decrypt");
-
-	//I/O
-	EmplaceNodeTypeString(ENT_PRINT, "print");
-
-	//tree merging
-	EmplaceNodeTypeString(ENT_TOTAL_SIZE, "total_size");
-	EmplaceNodeTypeString(ENT_COMMONALITY, "commonality");
-	EmplaceNodeTypeString(ENT_EDIT_DISTANCE, "edit_distance");
-	EmplaceNodeTypeString(ENT_MUTATE, "mutate");
-	EmplaceNodeTypeString(ENT_INTERSECT, "intersect");
-	EmplaceNodeTypeString(ENT_UNION, "union");
-	EmplaceNodeTypeString(ENT_DIFFERENCE, "difference");
-	EmplaceNodeTypeString(ENT_MIX, "mix");
-
-	//entity merging
-	EmplaceNodeTypeString(ENT_TOTAL_ENTITY_SIZE, "total_entity_size");
-	EmplaceNodeTypeString(ENT_FLATTEN_ENTITY, "flatten_entity");
-	EmplaceNodeTypeString(ENT_COMMONALITY_ENTITIES, "commonality_entities");
-	EmplaceNodeTypeString(ENT_EDIT_DISTANCE_ENTITIES, "edit_distance_entities");
-	EmplaceNodeTypeString(ENT_MUTATE_ENTITY, "mutate_entity");
-	EmplaceNodeTypeString(ENT_INTERSECT_ENTITIES, "intersect_entities");
-	EmplaceNodeTypeString(ENT_UNION_ENTITIES, "union_entities");
-	EmplaceNodeTypeString(ENT_DIFFERENCE_ENTITIES, "difference_entities");
-	EmplaceNodeTypeString(ENT_MIX_ENTITIES, "mix_entities");
-
-	//entity details
-	EmplaceNodeTypeString(ENT_GET_ENTITY_ANNOTATIONS, "get_entity_annotations");
-	EmplaceNodeTypeString(ENT_GET_ENTITY_COMMENTS, "get_entity_comments");
-	EmplaceNodeTypeString(ENT_RETRIEVE_ENTITY_ROOT, "retrieve_entity_root");
-	EmplaceNodeTypeString(ENT_ASSIGN_ENTITY_ROOTS, "assign_entity_roots");
-	EmplaceNodeTypeString(ENT_GET_ENTITY_RAND_SEED, "get_entity_rand_seed");
-	EmplaceNodeTypeString(ENT_SET_ENTITY_RAND_SEED, "set_entity_rand_seed");
-	EmplaceNodeTypeString(ENT_GET_ENTITY_PERMISSIONS, "get_entity_permissions");
-	EmplaceNodeTypeString(ENT_SET_ENTITY_PERMISSIONS, "set_entity_permissions");
-
-	//entity base actions
+	//Entity Lifecycle and Storage
 	EmplaceNodeTypeString(ENT_CREATE_ENTITIES, "create_entities");
 	EmplaceNodeTypeString(ENT_CLONE_ENTITIES, "clone_entities");
 	EmplaceNodeTypeString(ENT_MOVE_ENTITIES, "move_entities");
@@ -255,8 +184,24 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_STORE, "store");
 	EmplaceNodeTypeString(ENT_STORE_ENTITY, "store_entity");
 	EmplaceNodeTypeString(ENT_CONTAINS_ENTITY, "contains_entity");
+	EmplaceNodeTypeString(ENT_FLATTEN_ENTITY, "flatten_entity");
+	EmplaceNodeTypeString(ENT_RETRIEVE_ENTITY_ROOT, "retrieve_entity_root");
+	EmplaceNodeTypeString(ENT_ASSIGN_ENTITY_ROOTS, "assign_entity_roots");
+	EmplaceNodeTypeString(ENT_GET_ENTITY_PERMISSIONS, "get_entity_permissions");
+	EmplaceNodeTypeString(ENT_SET_ENTITY_PERMISSIONS, "set_entity_permissions");
 
-	//entity query
+	//Entity Access and Manipulation
+	EmplaceNodeTypeString(ENT_CONTAINS_LABEL, "contains_label");
+	EmplaceNodeTypeString(ENT_ASSIGN_TO_ENTITIES, "assign_to_entities");
+	EmplaceNodeTypeString(ENT_ACCUM_TO_ENTITIES, "accum_to_entities");
+	EmplaceNodeTypeString(ENT_REMOVE_FROM_ENTITIES, "remove_from_entities");
+	EmplaceNodeTypeString(ENT_RETRIEVE_FROM_ENTITY, "retrieve_from_entity");
+	EmplaceNodeTypeString(ENT_CALL_ENTITY, "call_entity");
+	EmplaceNodeTypeString(ENT_CALL_ENTITY_GET_CHANGES, "call_entity_get_changes");
+	EmplaceNodeTypeString(ENT_CALL_ON_ENTITY, "call_on_entity");
+	EmplaceNodeTypeString(ENT_CALL_CONTAINER, "call_container");
+
+	//Entity Query Engine
 	EmplaceNodeTypeString(ENT_CONTAINED_ENTITIES, "contained_entities");
 	EmplaceNodeTypeString(ENT_COMPUTE_ON_CONTAINED_ENTITIES, "compute_on_contained_entities");
 	EmplaceNodeTypeString(ENT_QUERY_SELECT, "query_select");
@@ -291,16 +236,51 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_QUERY_ENTITY_KL_DIVERGENCES, "query_entity_kl_divergences");
 	EmplaceNodeTypeString(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS, "query_entity_cumulative_nearest_entity_weights");
 
-	//entity access
-	EmplaceNodeTypeString(ENT_CONTAINS_LABEL, "contains_label");
-	EmplaceNodeTypeString(ENT_ASSIGN_TO_ENTITIES, "assign_to_entities");
-	EmplaceNodeTypeString(ENT_REMOVE_FROM_ENTITIES, "remove_from_entities");
-	EmplaceNodeTypeString(ENT_ACCUM_TO_ENTITIES, "accum_to_entities");
-	EmplaceNodeTypeString(ENT_RETRIEVE_FROM_ENTITY, "retrieve_from_entity");
-	EmplaceNodeTypeString(ENT_CALL_ENTITY, "call_entity");
-	EmplaceNodeTypeString(ENT_CALL_ENTITY_GET_CHANGES, "call_entity_get_changes");
-	EmplaceNodeTypeString(ENT_CALL_ON_ENTITY, "call_on_entity");
-	EmplaceNodeTypeString(ENT_CALL_CONTAINER, "call_container");
+	//Metadata
+	EmplaceNodeTypeString(ENT_GET_ANNOTATIONS, "get_annotations");
+	EmplaceNodeTypeString(ENT_SET_ANNOTATIONS, "set_annotations");
+	EmplaceNodeTypeString(ENT_GET_COMMENTS, "get_comments");
+	EmplaceNodeTypeString(ENT_SET_COMMENTS, "set_comments");
+	EmplaceNodeTypeString(ENT_GET_CONCURRENCY, "get_concurrency");
+	EmplaceNodeTypeString(ENT_SET_CONCURRENCY, "set_concurrency");
+	EmplaceNodeTypeString(ENT_GET_VALUE, "get_value");
+	EmplaceNodeTypeString(ENT_SET_VALUE, "set_value");
+	EmplaceNodeTypeString(ENT_GET_ENTITY_ANNOTATIONS, "get_entity_annotations");
+	EmplaceNodeTypeString(ENT_GET_ENTITY_COMMENTS, "get_entity_comments");
+
+	//Code Comparison and Evolution
+	EmplaceNodeTypeString(ENT_TOTAL_SIZE, "total_size");
+	EmplaceNodeTypeString(ENT_MUTATE, "mutate");
+	EmplaceNodeTypeString(ENT_GET_MUTATION_DEFAULTS, "get_mutation_defaults");
+	EmplaceNodeTypeString(ENT_COMMONALITY, "commonality");
+	EmplaceNodeTypeString(ENT_EDIT_DISTANCE, "edit_distance");
+	EmplaceNodeTypeString(ENT_INTERSECT, "intersect");
+	EmplaceNodeTypeString(ENT_UNION, "union");
+	EmplaceNodeTypeString(ENT_DIFFERENCE, "difference");
+	EmplaceNodeTypeString(ENT_MIX, "mix");
+
+	//Entity Comparison and Evolution
+	EmplaceNodeTypeString(ENT_TOTAL_ENTITY_SIZE, "total_entity_size");
+	EmplaceNodeTypeString(ENT_MUTATE_ENTITY, "mutate_entity");
+	EmplaceNodeTypeString(ENT_COMMONALITY_ENTITIES, "commonality_entities");
+	EmplaceNodeTypeString(ENT_EDIT_DISTANCE_ENTITIES, "edit_distance_entities");
+	EmplaceNodeTypeString(ENT_INTERSECT_ENTITIES, "intersect_entities");
+	EmplaceNodeTypeString(ENT_UNION_ENTITIES, "union_entities");
+	EmplaceNodeTypeString(ENT_DIFFERENCE_ENTITIES, "difference_entities");
+	EmplaceNodeTypeString(ENT_MIX_ENTITIES, "mix_entities");
+
+	//Random
+	EmplaceNodeTypeString(ENT_RAND, "rand");
+	EmplaceNodeTypeString(ENT_GET_RAND_SEED, "get_rand_seed");
+	EmplaceNodeTypeString(ENT_SET_RAND_SEED, "set_rand_seed");
+	EmplaceNodeTypeString(ENT_GET_ENTITY_RAND_SEED, "get_entity_rand_seed");
+	EmplaceNodeTypeString(ENT_SET_ENTITY_RAND_SEED, "set_entity_rand_seed");
+
+	//Cryptography
+	EmplaceNodeTypeString(ENT_CRYPTO_SIGN, "crypto_sign");
+	EmplaceNodeTypeString(ENT_CRYPTO_SIGN_VERIFY, "crypto_sign_verify");
+	EmplaceNodeTypeString(ENT_ENCRYPT, "encrypt");
+	EmplaceNodeTypeString(ENT_DECRYPT, "decrypt");
 
 	//end opcodes
 

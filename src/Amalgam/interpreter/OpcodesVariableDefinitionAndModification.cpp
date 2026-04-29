@@ -329,7 +329,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	return result;
 }
 
-//TODO 25398: add assign_if_equal which takes variable, comparison_value, new_value and performs the assignment if var is equal to comparison_value atomically
 static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM, []() {
 	OpcodeDetails d;
 	d.parameters = R"(assoc|string variables [number index1|string index1|list walk_path1|* new_value1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...)";
@@ -812,6 +811,57 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 
 	return EvaluableNodeReference::Null();
+}
+
+static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL, []() {
+	OpcodeDetails d;
+	d.parameters = R"(string variable * value_to_compare * value_to_assign)";
+	d.returns = R"(bool)";
+	d.description = R"(Compares the value in variable to value_to_compare, and if equal, assigns the variable atomically to value_to_assign.  Returns true if the value in variable is equal to value_to_compare and the assignment was successful, false otherwise.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((let
+	{lock 0}
+	(declare { success (assign_if_equal "lock" 0 1) })
+	[success lock]
+))&", R"([.true 1])"}
+		});
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::POSITION;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.frequencyPer10000Opcodes = 3.0;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	//TODO 25398: implement this
+	bool all_unassigned = true;
+	for(auto &to_unassign : en->GetOrderedChildNodesReference())
+	{
+		auto string_node_to_unassign = InterpretNodeForImmediateUse(to_unassign);
+		StringInternPool::StringID variable_sid = EvaluableNode::ToStringIDIfExists(string_node_to_unassign, true);
+
+		//retrieve the symbol location
+	#ifdef MULTITHREAD_SUPPORT
+		//need to save variable_value_node because GetScopeStackSymbolLocationWithLock
+		// may collect garbage while waiting for the lock, and it would be possible that variable_sid is removed
+		//use a scope here to make it automatically destruct
+		auto node_stack = CreateOpcodeStackStateSaver(string_node_to_unassign);
+
+		Concurrency::SingleLock write_lock;
+		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+		if(write_lock.owns_lock())
+			RecordStackLockForProfiling(en, variable_sid);
+
+		node_stack.PopEvaluableNode();
+	#else
+		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+	#endif
+
+		scope->erase(variable_sid);
+	}
+
+	return AllocReturn(all_unassigned, immediate_result);
 }
 
 static OpcodeInitializer _ENT_RETRIEVE(ENT_RETRIEVE, &Interpreter::InterpretNode_ENT_RETRIEVE, []() {

@@ -577,7 +577,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, Ev
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	auto values = InterpretNode(ocn[0]);
+	auto values = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(values) || values->IsImmediate())
 		return values;
 
@@ -585,7 +585,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, Ev
 	if(ocn.size() > 1)
 	{
 		auto node_stack = CreateOpcodeStackStateSaver(values);
-		weights = InterpretNode(ocn[1]);
+		weights = InterpretNodeForImmediateUse(ocn[1]);
 	}
 
 	bool found = false;
@@ -727,7 +727,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode *en
 
 	double quantile = InterpretNodeIntoNumberValue(ocn[1]);
 
-	auto values = InterpretNode(ocn[0]);
+	auto values = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(values) || values->IsImmediate())
 		return values;
 
@@ -735,7 +735,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode *en
 	if(ocn.size() > 2)
 	{
 		auto node_stack = CreateOpcodeStackStateSaver(values);
-		weights = InterpretNode(ocn[2]);
+		weights = InterpretNodeForImmediateUse(ocn[2]);
 	}
 
 	double result = 0.0;
@@ -899,7 +899,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	if(ocn.size() > 5)
 		absolute_value = InterpretNodeIntoBoolValue(ocn[5], false);
 
-	auto values = InterpretNode(ocn[0]);
+	auto values = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(values) || values->IsImmediate())
 		return values;
 
@@ -907,7 +907,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	if(ocn.size() > 2)
 	{
 		auto node_stack = CreateOpcodeStackStateSaver(values);
-		weights = InterpretNode(ocn[2]);
+		weights = InterpretNodeForImmediateUse(ocn[2]);
 	}
 
 	double result = 0.0;

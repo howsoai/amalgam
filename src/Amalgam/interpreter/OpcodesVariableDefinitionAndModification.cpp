@@ -329,7 +329,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	return result;
 }
 
-//TODO 25398: evaluate how hard it would be to have assign/accum return the assigned values if fetched, and if so, do the same for entities (but make sure freed if not requested by immediate value)
+//TODO 25398: add assign_if_equal which takes variable, comparison_value, new_value and performs the assignment if var is equal to comparison_value atomically
 static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM, []() {
 	OpcodeDetails d;
 	d.parameters = R"(assoc|string variables [number index1|string index1|list walk_path1|* new_value1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...)";
@@ -578,13 +578,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			node_stack.PushEvaluableNode(variable_value_node);
 
 			Concurrency::SingleLock write_lock;
-			auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+			auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 			if(write_lock.owns_lock())
 				RecordStackLockForProfiling(en, variable_sid);
 
 			node_stack.PopEvaluableNode();
 		#else
-			auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+			auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 		#endif
 
 			if(accum && !EvaluableNode::IsNull(*value_destination))
@@ -644,13 +644,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		auto node_stack = CreateOpcodeStackStateSaver(new_value);
 
 		Concurrency::SingleLock write_lock;
-		auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 		if(write_lock.owns_lock())
 			RecordStackLockForProfiling(en, variable_sid);
 
 		node_stack.PopEvaluableNode();
 	#else
-		auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
 		if(accum && !EvaluableNode::IsNull(*value_destination))
@@ -725,11 +725,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 #ifdef MULTITHREAD_SUPPORT
 	//node_stack already has everything saved in case garbage collection is called in GetScopeStackSymbolLocationWithLock
 	Concurrency::SingleLock write_lock;
-	auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 	if(write_lock.owns_lock())
 		RecordStackLockForProfiling(en, variable_sid);
 #else
-	auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 #endif
 
 	//if writing to an outer scope, can't guarantee the memory at this scope can be freed
@@ -974,9 +974,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNASSIGN(EvaluableNode *en
 	for(auto &to_unassign : en->GetOrderedChildNodesReference())
 	{
 		auto string_node_to_unassign = InterpretNodeForImmediateUse(to_unassign);
-		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(string_node_to_unassign, true);
+		StringInternPool::StringID variable_sid = EvaluableNode::ToStringIDIfExists(string_node_to_unassign, true);
 
-		//TODO 25398: implement this
+		//retrieve the symbol location
+	#ifdef MULTITHREAD_SUPPORT
+		//need to save variable_value_node because GetScopeStackSymbolLocationWithLock
+		// may collect garbage while waiting for the lock, and it would be possible that variable_sid is removed
+		//use a scope here to make it automatically destruct
+		auto node_stack = CreateOpcodeStackStateSaver(string_node_to_unassign);
+
+		Concurrency::SingleLock write_lock;
+		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+		if(write_lock.owns_lock())
+			RecordStackLockForProfiling(en, variable_sid);
+
+		node_stack.PopEvaluableNode();
+	#else
+		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+	#endif
+
+		scope->erase(variable_sid);
 	}
 
 	return AllocReturn(all_unassigned, immediate_result);

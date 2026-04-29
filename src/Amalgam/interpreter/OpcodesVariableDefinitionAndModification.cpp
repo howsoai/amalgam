@@ -834,34 +834,25 @@ static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter:
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
+	auto &ocn = en->GetOrderedChildNodesReference();
+	if(ocn.size() < 3)
+		return EvaluableNodeReference::Null();
+
+	auto variable_string_node = InterpretNodeForImmediateUse(ocn[0]);
+	StringInternPool::StringID variable_sid = EvaluableNode::ToStringIDIfExists(variable_string_node, true);
+	auto node_stack = CreateOpcodeStackStateSaver(variable_string_node);
+
+	auto value_to_compare = InterpretNodeForImmediateUse(ocn[1]);
+	node_stack.PushEvaluableNode(value_to_compare);
+
+	//TODO 25398: should this be immediate?  test w/ assign/accum
+	auto value_to_assign = InterpretNodeForImmediateUse(ocn[2]);
+	node_stack.PushEvaluableNode(value_to_assign);
+
 	//TODO 25398: implement this
-	bool all_unassigned = true;
-	for(auto &to_unassign : en->GetOrderedChildNodesReference())
-	{
-		auto string_node_to_unassign = InterpretNodeForImmediateUse(to_unassign);
-		StringInternPool::StringID variable_sid = EvaluableNode::ToStringIDIfExists(string_node_to_unassign, true);
+	
 
-		//retrieve the symbol location
-	#ifdef MULTITHREAD_SUPPORT
-		//need to save variable_value_node because GetScopeStackSymbolLocationWithLock
-		// may collect garbage while waiting for the lock, and it would be possible that variable_sid is removed
-		//use a scope here to make it automatically destruct
-		auto node_stack = CreateOpcodeStackStateSaver(string_node_to_unassign);
-
-		Concurrency::SingleLock write_lock;
-		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
-		if(write_lock.owns_lock())
-			RecordStackLockForProfiling(en, variable_sid);
-
-		node_stack.PopEvaluableNode();
-	#else
-		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
-	#endif
-
-		scope->erase(variable_sid);
-	}
-
-	return AllocReturn(all_unassigned, immediate_result);
+	return AllocReturn(true, immediate_result);
 }
 
 static OpcodeInitializer _ENT_RETRIEVE(ENT_RETRIEVE, &Interpreter::InterpretNode_ENT_RETRIEVE, []() {

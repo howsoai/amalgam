@@ -657,7 +657,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(Evaluabl
 	auto node_stack = CreateOpcodeStackStateSaver();
 	if(ocn.size() > 2)
 	{
-		clear_query_caches_node = InterpretNode(ocn[2]);
+		clear_query_caches_node = InterpretNodeForImmediateUse(ocn[2]);
 		node_stack.PushEvaluableNode(clear_query_caches_node);
 	}
 

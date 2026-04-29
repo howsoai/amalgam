@@ -540,7 +540,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		}
 		else //just need to interpret
 		{
-			assigned_vars = InterpretNode(assigned_vars_node);
+			assigned_vars = InterpretNodeForImmediateUse(assigned_vars_node);
 		}
 
 		if(!EvaluableNode::IsAssociativeArray(assigned_vars))
@@ -562,7 +562,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			if(need_to_interpret && cn != nullptr && !cn->GetIsIdempotent())
 			{
 				PushNewConstructionContext(assigned_vars, assigned_vars, EvaluableNodeImmediateValueWithType(variable_sid), nullptr);
-				variable_value_node = InterpretNode(cn);
+				variable_value_node = InterpretNodeForImmediateUse(cn);
 				if(PopConstructionContextAndGetExecutionSideEffectFlag())
 				{
 					assigned_vars.unique = false;
@@ -633,7 +633,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	//if only 2 params and not accumulating, then just assign/accum the destination
 	if(num_params == 2)
 	{
-		auto new_value = InterpretNode(ocn[1]);
+		auto new_value = InterpretNodeForImmediateUse(ocn[1]);
 
 		//retrieve the symbol location
 	#ifdef MULTITHREAD_SUPPORT
@@ -714,7 +714,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		node_stack.PushEvaluableNode(address);
 		is_value_unique[ocn_index - 1] = address.unique;
 
-		auto new_value = InterpretNode(ocn[ocn_index + 1]);
+		auto new_value = InterpretNodeForImmediateUse(ocn[ocn_index + 1]);
 		node_stack.PushEvaluableNode(new_value);
 		is_value_unique[ocn_index] = new_value.unique;
 	}

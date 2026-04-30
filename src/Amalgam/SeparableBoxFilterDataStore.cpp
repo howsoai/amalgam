@@ -1347,10 +1347,20 @@ void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature(
 	auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
 	auto &column_data = columnData[feature_attribs.featureIndex];
 
-	//TODO 25393: finish implementing the rest of the flow for call*, add new extended distance type
-
 	feature_data.Clear();
 	feature_data.targetValue = position_value;
+
+	if(feature_attribs.callEntity)
+	{
+		effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ENTITY;
+		return;
+	}
+
+	if(feature_attribs.callOnEntity)
+	{
+		effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ON_ENTITY;
+		return;
+	}
 
 	if(feature_attribs.IsFeatureNominal())
 		r_dist_eval.ComputeAndStoreNominalDistanceTerms<compute_surprisal>(query_feature_index);

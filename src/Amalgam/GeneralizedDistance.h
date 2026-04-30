@@ -212,12 +212,11 @@ public:
 		//the difference will be NaN if unknown
 		DistanceTermWithDeviation knownToUnknownDistanceTerm;
 
-		//if callEntity is set, it will call the entity before computing;
-		//if callOnEntity is not null, it will use that instead of calling the entity label
-		// distance, passing in callparams
+		//if either callEntity or callOnEntity is set, it will call the entity before computing;
+		//it will use the return value instead of calling the entity label distance, passing in callparams
 		EvaluableNode *callParams;
-		EvaluableNode *callOnEntity;
 		bool callEntity;
+		bool callOnEntity;
 	};
 
 	//initializes and precomputes relevant data including featureAttribs

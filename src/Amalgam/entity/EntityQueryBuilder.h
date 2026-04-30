@@ -414,8 +414,8 @@ namespace EntityQueryBuilder
 						feature_attribs.callOnEntity = false;
 						if(auto found_value = mcn.find(GetStringIdFromNodeType(ENT_CALL_ON_ENTITY)); found_value != end(mcn))
 						{
-							feature_attribs.callOnEntity = found_value->second;
-							feature_attribs.callEntity = true;
+							feature_attribs.callOnEntity = EvaluableNode::ToBool(found_value->second);
+							feature_attribs.callEntity = false;
 						}
 
 						feature_attribs.callParams = nullptr;

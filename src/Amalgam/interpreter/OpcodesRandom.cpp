@@ -609,14 +609,12 @@ static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &In
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
-	size_t num_params = ocn.size();
-
-	if(num_params < 1)
+	if(!CanModifyEntityFromConstraints())
 		return EvaluableNodeReference::Null();
 
-	//not allowed if don't have a Entity to retrieve others from
-	if(curEntity == nullptr)
+	auto &ocn = en->GetOrderedChildNodesReference();
+	size_t num_params = ocn.size();
+	if(num_params < 1)
 		return EvaluableNodeReference::Null();
 
 	//retrieve parameter to determine whether to deep set the seeds, if applicable

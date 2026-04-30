@@ -747,6 +747,9 @@ protected:
 		if(interpreterConstraints == nullptr)
 			return true;
 
+		if(interpreterConstraints->readOnlyEntities)
+			return false;
+
 		if(interpreterConstraints->maxEntityIdLength > 0
 				&& string_intern_pool.GetStringFromID(entity_id).size() > interpreterConstraints->maxEntityIdLength)
 			return false;

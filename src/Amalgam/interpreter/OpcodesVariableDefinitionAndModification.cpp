@@ -577,13 +577,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			node_stack.PushEvaluableNode(variable_value_node);
 
 			Concurrency::SingleLock write_lock;
-			auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+			auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 			if(write_lock.owns_lock())
 				RecordStackLockForProfiling(en, variable_sid);
 
 			node_stack.PopEvaluableNode();
 		#else
-			auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+			auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 		#endif
 
 			if(accum && !EvaluableNode::IsNull(*value_destination))
@@ -643,13 +643,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		auto node_stack = CreateOpcodeStackStateSaver(new_value);
 
 		Concurrency::SingleLock write_lock;
-		auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 		if(write_lock.owns_lock())
 			RecordStackLockForProfiling(en, variable_sid);
 
 		node_stack.PopEvaluableNode();
 	#else
-		auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
 		if(accum && !EvaluableNode::IsNull(*value_destination))
@@ -724,11 +724,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 #ifdef MULTITHREAD_SUPPORT
 	//node_stack already has everything saved in case garbage collection is called in GetScopeStackSymbolLocationWithLock
 	Concurrency::SingleLock write_lock;
-	auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 	if(write_lock.owns_lock())
 		RecordStackLockForProfiling(en, variable_sid);
 #else
-	auto [value_destination, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
 #endif
 
 	//if writing to an outer scope, can't guarantee the memory at this scope can be freed
@@ -811,6 +811,85 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 
 	return EvaluableNodeReference::Null();
+}
+
+static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL, []() {
+	OpcodeDetails d;
+	d.parameters = R"(string variable * value_to_compare * value_to_assign)";
+	d.returns = R"(bool)";
+	d.description = R"(Compares the value in variable to value_to_compare, and if equal, assigns the variable atomically to value_to_assign.  Returns true if the value in variable is equal to value_to_compare and the assignment was successful, false otherwise.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((let
+	{lock 0}
+	(declare { success (assign_if_equal "lock" 0 1) })
+	[success lock]
+))&", R"([.true 1])"},
+		{ R"&((let
+	{lock 0}
+	(declare { success (assign_if_equal "lock" 1 1) })
+	[success lock]
+))&", R"([.false 0])" }
+		});
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::POSITION;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.frequencyPer10000Opcodes = 3.0;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodesReference();
+	if(ocn.size() < 3)
+		return EvaluableNodeReference::Null();
+
+	auto variable_string_node = InterpretNodeForImmediateUse(ocn[0]);
+	StringInternPool::StringID variable_sid = EvaluableNode::ToStringIDIfExists(variable_string_node, true);
+	auto node_stack = CreateOpcodeStackStateSaver(variable_string_node);
+
+	auto value_to_compare = InterpretNodeForImmediateUse(ocn[1]);
+	node_stack.PushEvaluableNode(value_to_compare);
+
+	auto value_to_assign = InterpretNodeForImmediateUse(ocn[2]);
+
+	//retrieve the symbol location
+#ifdef MULTITHREAD_SUPPORT
+	//need to save variable_value_node because GetScopeStackSymbolLocationWithLock
+	// may collect garbage while waiting for the lock
+	//use a scope here to make it automatically destruct
+	node_stack.PushEvaluableNode(value_to_assign);
+
+	Concurrency::SingleLock write_lock;
+	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+	if(write_lock.owns_lock())
+		RecordStackLockForProfiling(en, variable_sid);
+
+	node_stack.PopEvaluableNode();
+#else
+	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+#endif
+
+	bool success = false;
+	if(EvaluableNode::AreDeepEqual(*value_destination, value_to_compare))
+	{
+		if(is_freeable)
+		{
+			EvaluableNodeReference value_destination_node(*value_destination, true);
+			evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
+		}
+
+		*value_destination = value_to_assign;
+
+		//if writing to an outer scope, can't guarantee the memory at this scope can be freed
+		if(!value_to_assign.unique || !top_of_stack)
+			SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
+
+		success = true;
+	}
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(variable_string_node);
+	evaluableNodeManager->FreeNodeTreeIfPossible(value_to_compare);
+	return AllocReturn(success, immediate_result);
 }
 
 static OpcodeInitializer _ENT_RETRIEVE(ENT_RETRIEVE, &Interpreter::InterpretNode_ENT_RETRIEVE, []() {
@@ -913,6 +992,89 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 
 		return EvaluableNodeReference(to_lookup, false);
 	}
+}
+
+static OpcodeInitializer _ENT_EXISTS(ENT_EXISTS, &Interpreter::InterpretNode_ENT_EXISTS, []() {
+	OpcodeDetails d;
+	d.parameters = R"(string variable)";
+	d.returns = R"(bool)";
+	d.description = R"(Returns true if variable exists within visibility, false if it does not.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((let
+	{foo 1}
+	[(exists "foo") (exists "bar")]
+))&", R"([.true .false])"}
+		});
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::POSITION;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.frequencyPer10000Opcodes = 1.0;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_EXISTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodesReference();
+	if(ocn.size() == 0)
+		return EvaluableNodeReference::Null();
+
+	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
+	StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
+
+	auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid, false);
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
+	return AllocReturn(found, immediate_result);
+}
+
+static OpcodeInitializer _ENT_UNASSIGN(ENT_UNASSIGN, &Interpreter::InterpretNode_ENT_UNASSIGN, []() {
+	OpcodeDetails d;
+	d.parameters = R"(string variable1 [string variable2] ... [string variableN])";
+	d.returns = R"(bool)";
+	d.description = R"(Removes all variables that are parameters from the stack.  Returns true all variables previously existed and were unassigned.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((let
+	{foo 1}
+	(unassign "foo")
+	(exists "foo")
+))&", R"(.false)"}
+		});
+	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.frequencyPer10000Opcodes = 1.0;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_UNASSIGN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	bool all_unassigned = true;
+	for(auto &to_unassign : en->GetOrderedChildNodesReference())
+	{
+		auto string_node_to_unassign = InterpretNodeForImmediateUse(to_unassign);
+		StringInternPool::StringID variable_sid = EvaluableNode::ToStringIDIfExists(string_node_to_unassign, true);
+
+		//retrieve the symbol location
+	#ifdef MULTITHREAD_SUPPORT
+		//need to save variable_value_node because GetScopeStackSymbolLocationWithLock
+		// may collect garbage while waiting for the lock, and it would be possible that variable_sid is removed
+		//use a scope here to make it automatically destruct
+		auto node_stack = CreateOpcodeStackStateSaver(string_node_to_unassign);
+
+		Concurrency::SingleLock write_lock;
+		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+		if(write_lock.owns_lock())
+			RecordStackLockForProfiling(en, variable_sid);
+
+		node_stack.PopEvaluableNode();
+	#else
+		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+	#endif
+
+		scope->erase(variable_sid);
+	}
+
+	return AllocReturn(all_unassigned, immediate_result);
 }
 
 static OpcodeInitializer _ENT_TARGET(ENT_TARGET, &Interpreter::InterpretNode_ENT_TARGET, []() {

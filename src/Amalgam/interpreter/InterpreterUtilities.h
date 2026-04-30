@@ -132,6 +132,9 @@ public:
 	//If 0, then unlimited
 	size_t maxEntityIdLength;
 
+	//if true, it will prevent any write or modification operations from happening to any entity
+	bool readOnlyEntities;
+
 	//if true, collect warnings, and return them with any constraint violations
 	bool collectWarnings;
 

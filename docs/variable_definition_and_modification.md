@@ -348,6 +348,46 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
+### Opcode: `assign_if_equal`
+#### Parameters
+`string variable * value_to_compare * value_to_assign`
+#### Description
+Compares the value in variable to value_to_compare, and if equal, assigns the variable atomically to value_to_assign.  Returns true if the value in variable is equal to value_to_compare and the assignment was successful, false otherwise.
+#### Details
+ - Permissions required:  none
+ - Allows concurrency: false
+ - Requires entity: false
+ - Creates new scope: false
+ - Creates new target scope: false
+ - Value newness (whether references existing node): new
+#### Examples
+Example:
+```amalgam
+(let
+	{lock 0}
+	(declare { success (assign_if_equal "lock" 0 1) })
+	[success lock]
+)
+```
+Output:
+```amalgam
+[.true 1]
+```
+Example:
+```amalgam
+(let
+	{lock 0}
+	(declare { success (assign_if_equal "lock" 1 1) })
+	[success lock]
+)
+```
+Output:
+```amalgam
+[.false 0]
+```
+
+[Amalgam Opcodes](./opcodes.md)
+
 ### Opcode: `retrieve`
 #### Parameters
 `[string|list|assoc variables]`
@@ -400,6 +440,61 @@ Output:
 	[@(target .true 0) 2]
 	{a @(target .true 0) b @(target .true [1 1])}
 ]
+```
+
+[Amalgam Opcodes](./opcodes.md)
+
+### Opcode: `exists`
+#### Parameters
+`string variable`
+#### Description
+Returns true if variable exists within visibility, false if it does not.
+#### Details
+ - Permissions required:  none
+ - Allows concurrency: false
+ - Requires entity: false
+ - Creates new scope: false
+ - Creates new target scope: false
+ - Value newness (whether references existing node): new
+#### Examples
+Example:
+```amalgam
+(let
+	{foo 1}
+	[(exists "foo") (exists "bar")]
+)
+```
+Output:
+```amalgam
+[.true .false]
+```
+
+[Amalgam Opcodes](./opcodes.md)
+
+### Opcode: `unassign`
+#### Parameters
+`string variable1 [string variable2] ... [string variableN]`
+#### Description
+Removes all variables that are parameters from the stack.  Returns true all variables previously existed and were unassigned.
+#### Details
+ - Permissions required:  none
+ - Allows concurrency: false
+ - Requires entity: false
+ - Creates new scope: false
+ - Creates new target scope: false
+ - Value newness (whether references existing node): new
+#### Examples
+Example:
+```amalgam
+(let
+	{foo 1}
+	(unassign "foo")
+	(exists "foo")
+)
+```
+Output:
+```amalgam
+.false
 ```
 
 [Amalgam Opcodes](./opcodes.md)

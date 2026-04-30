@@ -286,12 +286,14 @@ public:
 
 	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a
 	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
-	//additionally returns a bool which is true if the symbol location is at the top of the stack,
+	//additionally returns a pointer to the containing map,
+	// a bool which is true if the symbol location is at the top of the stack,
 	// followed by another bool indicating whether the symbol has been previously accessed
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
 	//if clear_freeable_flag is true, then it will mark the node as having been accessed and no longer freeable
 	//use_atomic_when_setting_access_flag is used for recursion and should not be modified by the caller
-	inline std::tuple<EvaluableNode **, bool, bool> GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid,
+	inline std::tuple<EvaluableNode **, EvaluableNode::AssocType *, bool, bool>
+		GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid,
 		bool create_if_nonexistent, bool clear_freeable_flag
 	#ifdef MULTITHREAD_SUPPORT
 		, bool use_atomic_when_setting_access_flag = false
@@ -327,7 +329,7 @@ public:
 					}
 				}
 
-				return std::make_tuple(&found->second, it == rbegin(scopeStack), is_freeable);
+				return std::make_tuple(&found->second, &mcn, it == rbegin(scopeStack), is_freeable);
 			}
 		}
 
@@ -336,21 +338,21 @@ public:
 		if(!bottomOfScopeStack && callingInterpreter != nullptr)
 		{
 			bool top_is_next_stack = (scopeStack.size() == 0);
-			auto [value_destination, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocation(
+			auto [value_destination, scope, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocation(
 				symbol_sid, top_is_next_stack && create_if_nonexistent, clear_freeable_flag, true);
 			if(value_destination != nullptr)
-				return std::make_tuple(value_destination, top_is_next_stack && top_of_stack, is_freeable);
+				return std::make_tuple(value_destination, scope, top_is_next_stack && top_of_stack, is_freeable);
 		}
 	#endif
 
 		if(!create_if_nonexistent)
-			return std::make_tuple(nullptr, false, false);
+			return std::make_tuple(nullptr, nullptr, false, false);
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
 		size_t scope_stack_index = scopeStack.size() - 1;
-		EvaluableNode *context_to_use = scopeStack[scope_stack_index];
-		auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
-		return std::make_tuple(new_location, true, false);
+		EvaluableNode *scope = scopeStack[scope_stack_index];
+		auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
+		return std::make_tuple(new_location, &scope->GetMappedChildNodesReference(), true, false);
 	}
 
 	//like the other type of GetScopeStackSymbolLocation,
@@ -359,7 +361,9 @@ public:
 	__forceinline std::tuple<EvaluableNode *, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid,
 		bool clear_freeable_flag)
 	{
-		auto [node_ptr, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(symbol_sid, false, clear_freeable_flag);
+		auto [node_ptr, scope, top_of_stack, is_freeable]
+			= GetScopeStackSymbolLocation(symbol_sid, false, clear_freeable_flag);
+
 		if(node_ptr == nullptr)
 			return std::make_tuple(nullptr, false);
 
@@ -369,12 +373,14 @@ public:
 #ifdef MULTITHREAD_SUPPORT
 	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a
 	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
-	//additionally returns a bool which is true if the symbol location is at the top of the stack,
+	//additionally returns a pointer to the containing map,
+	// a bool which is true if the symbol location is at the top of the stack,
 	// followed by another bool indicating whether the symbol has been previously accessed
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
 	//executing_interpreter is the interpreter that will be used for garbage collection if needed
 	//use_atomic_when_setting_access_flag is used for recursion and should not be modified by the caller
-	std::tuple<EvaluableNode **, bool, bool> GetScopeStackSymbolLocationWithLock(StringInternPool::StringID symbol_sid,
+	std::tuple<EvaluableNode **, EvaluableNode::AssocType *, bool, bool>
+		GetScopeStackSymbolLocationWithLock(StringInternPool::StringID symbol_sid,
 		bool create_if_nonexistent, Concurrency::SingleLock &lock, Interpreter *executing_interpreter = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, bool use_atomic_when_setting_access_flag = false
@@ -411,7 +417,7 @@ public:
 					is_freeable = found->second->GetIsFreeable();
 				}
 
-				return std::make_tuple(&found->second, scope_stack_index == cur_scope_stack_size, is_freeable);
+				return std::make_tuple(&found->second, &mcn, scope_stack_index == cur_scope_stack_size, is_freeable);
 			}
 		}
 
@@ -419,15 +425,15 @@ public:
 		if(!bottomOfScopeStack && callingInterpreter != nullptr)
 		{
 			bool top_is_next_stack = (cur_scope_stack_size == 0);
-			auto [value_destination, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocationWithLock(
+			auto [value_destination, scope, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocationWithLock(
 				symbol_sid, top_is_next_stack && create_if_nonexistent, lock, executing_interpreter == nullptr ? this : executing_interpreter);
 			
 			if(value_destination != nullptr)
-				return std::make_tuple(value_destination, top_is_next_stack && top_of_stack, is_freeable);
+				return std::make_tuple(value_destination, scope, top_is_next_stack && top_of_stack, is_freeable);
 		}
 
 		if(!create_if_nonexistent)
-			return std::make_tuple(nullptr, false, false);
+			return std::make_tuple(nullptr, nullptr, false, false);
 
 		Interpreter *interp_with_scope = LockScopeStackTop(lock, nullptr, executing_interpreter);
 
@@ -439,16 +445,16 @@ public:
 			//since all modern processors treat word writes as essentially atomic,
 			// though with no guarantees with regard to latency, we can use this behavior to not require
 			// locks for reading threads; assign this after updating the new context_to_use
-			EvaluableNode *context_to_use = evaluableNodeManager->AllocNode(interp_with_scope->scopeStack[scope_stack_index]);
-			auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
-			interp_with_scope->scopeStack[scope_stack_index] = context_to_use;
-			return std::make_tuple(new_location, false, false);
+			EvaluableNode *scope = evaluableNodeManager->AllocNode(interp_with_scope->scopeStack[scope_stack_index]);
+			auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
+			interp_with_scope->scopeStack[scope_stack_index] = scope;
+			return std::make_tuple(new_location, &scope->GetMappedChildNodesReference(), false, false);
 		}
 		else
 		{
-			EvaluableNode *context_to_use = interp_with_scope->scopeStack[scope_stack_index];
-			auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
-			return std::make_tuple(new_location, true, false);
+			EvaluableNode *scope = interp_with_scope->scopeStack[scope_stack_index];
+			auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
+			return std::make_tuple(new_location, &scope->GetMappedChildNodesReference(), true, false);
 		}
 	}
 #endif
@@ -741,6 +747,9 @@ protected:
 		if(interpreterConstraints == nullptr)
 			return true;
 
+		if(interpreterConstraints->readOnlyEntities)
+			return false;
+
 		if(interpreterConstraints->maxEntityIdLength > 0
 				&& string_intern_pool.GetStringFromID(entity_id).size() > interpreterConstraints->maxEntityIdLength)
 			return false;
@@ -764,6 +773,21 @@ protected:
 			if(1 + erbr.maxEntityPathDepth > interpreterConstraints->maxContainedEntityDepth)
 				return false;
 		}
+
+		return true;
+	}
+
+	//returns true if entity modifications are allowed (not in read-only)
+	__forceinline bool CanModifyEntityFromConstraints()
+	{
+		if(curEntity == nullptr)
+			return false;
+
+		if(interpreterConstraints == nullptr)
+			return true;
+
+		if(interpreterConstraints->readOnlyEntities)
+			return false;
 
 		return true;
 	}
@@ -848,7 +872,10 @@ public:
 	EvaluableNodeReference InterpretNode_ENT_LET(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_DECLARE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_ASSIGN_and_ACCUM(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_RETRIEVE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_EXISTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_UNASSIGN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_TARGET(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_STACK(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_ARGS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);

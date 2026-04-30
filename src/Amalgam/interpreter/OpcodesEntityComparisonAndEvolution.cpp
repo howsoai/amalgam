@@ -167,12 +167,11 @@ static OpcodeInitializer _ENT_MUTATE_ENTITY(ENT_MUTATE_ENTITY, &Interpreter::Int
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(!CanModifyEntityFromConstraints())
 		return EvaluableNodeReference::Null();
 
-	//not allowed if don't have a Entity to create within
-	if(curEntity == nullptr)
+	auto &ocn = en->GetOrderedChildNodesReference();
+	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
 	//get mutation rate if applicable
@@ -577,6 +576,9 @@ static OpcodeInitializer _ENT_INTERSECT_ENTITIES(ENT_INTERSECT_ENTITIES, &Interp
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
+	if(!CanModifyEntityFromConstraints())
+		return EvaluableNodeReference::Null();
+
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -598,10 +600,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 		}
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
-
-	//not allowed if don't have a Entity to create within
-	if(curEntity == nullptr)
-		return EvaluableNodeReference::Null();
 
 	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
 	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
@@ -740,6 +738,9 @@ static OpcodeInitializer _ENT_UNION_ENTITIES(ENT_UNION_ENTITIES, &Interpreter::I
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
+	if(!CanModifyEntityFromConstraints())
+		return EvaluableNodeReference::Null();
+
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
@@ -761,10 +762,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 		}
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
-
-	//not allowed if don't have a Entity to create within
-	if(curEntity == nullptr)
-		return EvaluableNodeReference::Null();
 
 	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
 	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
@@ -1073,12 +1070,11 @@ static OpcodeInitializer _ENT_MIX_ENTITIES(ENT_MIX_ENTITIES, &Interpreter::Inter
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(!CanModifyEntityFromConstraints())
 		return EvaluableNodeReference::Null();
 
-	//not allowed if don't have a Entity to create within
-	if(curEntity == nullptr)
+	auto &ocn = en->GetOrderedChildNodesReference();
+	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
 	double blend2 = 0.5; //default to half

@@ -777,6 +777,21 @@ protected:
 		return true;
 	}
 
+	//returns true if entity modifications are allowed (not in read-only)
+	__forceinline bool CanModifyEntityFromConstraints()
+	{
+		if(curEntity == nullptr)
+			return false;
+
+		if(interpreterConstraints == nullptr)
+			return true;
+
+		if(interpreterConstraints->readOnlyEntities)
+			return false;
+
+		return true;
+	}
+
 	//returns true if there's a max number of execution steps or nodes and at least one is exhausted
 	__forceinline bool AreExecutionResourcesExhausted(bool increment_performance_counters = false)
 	{

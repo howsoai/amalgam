@@ -52,8 +52,7 @@ static OpcodeInitializer _ENT_CREATE_ENTITIES(ENT_CREATE_ENTITIES, &Interpreter:
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	//not allowed if don't have a Entity to create within
-	if(curEntity == nullptr)
+	if(!CanModifyEntityFromConstraints())
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -161,8 +160,7 @@ static OpcodeInitializer _ENT_CLONE_ENTITIES(ENT_CLONE_ENTITIES, &Interpreter::I
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	//not allowed if don't have a Entity to create within
-	if(curEntity == nullptr)
+	if(!CanModifyEntityFromConstraints())
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -269,8 +267,7 @@ static OpcodeInitializer _ENT_MOVE_ENTITIES(ENT_MOVE_ENTITIES, &Interpreter::Int
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	//not allowed if don't have a Entity to create within
-	if(curEntity == nullptr)
+	if(!CanModifyEntityFromConstraints())
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -369,8 +366,7 @@ static OpcodeInitializer _ENT_DESTROY_ENTITIES(ENT_DESTROY_ENTITIES, &Interprete
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	//not allowed if don't have a Entity to create within
-	if(curEntity == nullptr)
+	if(!CanModifyEntityFromConstraints())
 		return EvaluableNodeReference::Null();
 
 	bool all_destroys_successful = true;
@@ -649,6 +645,9 @@ static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::Interpr
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
+	if(!CanModifyEntityFromConstraints())
+		return EvaluableNodeReference::Null();
+
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
@@ -1232,7 +1231,7 @@ static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Inte
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(curEntity == nullptr)
+	if(!CanModifyEntityFromConstraints())
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -1339,6 +1338,9 @@ static OpcodeInitializer _ENT_GET_ENTITY_PERMISSIONS(ENT_GET_ENTITY_PERMISSIONS,
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
+	if(curEntity == nullptr)
+		return EvaluableNodeReference::Null();
+
 	auto &ocn = en->GetOrderedChildNodesReference();
 
 	EntityReadReference entity;
@@ -1389,6 +1391,9 @@ static OpcodeInitializer _ENT_SET_ENTITY_PERMISSIONS(ENT_SET_ENTITY_PERMISSIONS,
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
+	if(!CanModifyEntityFromConstraints())
+		return EvaluableNodeReference::Null();
+
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();

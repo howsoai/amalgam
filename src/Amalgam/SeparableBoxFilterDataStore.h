@@ -1305,10 +1305,6 @@ public:
 		r_dist_eval.featureData.resize(num_features);
 		for(size_t query_feature_index = 0; query_feature_index < num_features; query_feature_index++)
 		{
-			auto column = labelIdToColumnIndex.find(position_label_sids[query_feature_index]);
-			if(column == end(labelIdToColumnIndex))
-				continue;
-
 			InitializeRepeatedDistanceEvaluatorForFeature<compute_surprisal>(
 				r_dist_eval, query_feature_index, position_values[query_feature_index]);
 		}
@@ -1324,13 +1320,8 @@ public:
 		r_dist_eval.featureData.resize(num_enabled_features);
 		for(size_t i = 0; i < num_enabled_features; i++)
 		{
-			auto found = labelIdToColumnIndex.find(position_label_sids[i]);
-			if(found == end(labelIdToColumnIndex))
-				continue;
-
-			size_t column_index = found->second;
+			size_t column_index = r_dist_eval.distEvaluator->featureAttribs[i].featureIndex;
 			auto value = columnData[column_index]->GetResolvedIndexValueWithType(entity_index);
-
 			InitializeRepeatedDistanceEvaluatorForFeature<compute_surprisal>(r_dist_eval, i, value);
 		}
 	}

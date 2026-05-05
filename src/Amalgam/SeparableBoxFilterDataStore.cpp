@@ -625,7 +625,18 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 		end_index = enabled_indices.GetEndInteger();
 
 		//pick up where left off, already have top_k in sorted_results or are out of entities
-		#pragma omp parallel shared(worst_candidate_distance) if(feature_attribs.callEntityOpcode == nullptr && end_index > 200)
+	#ifdef _OPENMP
+		bool any_call_entity_features = false;
+		for(size_t i = 0; i < num_enabled_features; i++)
+		{
+			if(dist_eval.featureAttribs[i].callEntityOpcode != nullptr)
+			{
+				any_call_entity_features = true;
+				break;
+			}
+		}
+	#endif
+		#pragma omp parallel shared(worst_candidate_distance) if(!any_call_entity_features && end_index > 500)
 		{
 			//iterate over all indices
 			#pragma omp for schedule(static)

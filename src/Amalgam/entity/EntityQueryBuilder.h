@@ -551,7 +551,8 @@ namespace EntityQueryBuilder
 
 	//interpret evaluable node as a distance query
 	inline void BuildDistanceCondition(EvaluableNode *cn, EvaluableNodeType condition_type,
-		std::vector<EntityQueryCondition> &conditions, RandomStream &rs, Interpreter *calling_interpreter)
+		std::vector<EntityQueryCondition> &conditions, RandomStream &rs,
+		Interpreter *calling_interpreter)
 	{
 		//cache ordered child nodes so don't need to keep fetching
 		auto &ocn = cn->GetOrderedChildNodes();
@@ -582,7 +583,7 @@ namespace EntityQueryBuilder
 		//set query condition type
 		cur_condition->queryType = condition_type;
 		cur_condition->useConcurrency = cn->GetConcurrency();
-		cur_condition->callingInterpreter = calling_interpreter;
+		cur_condition->interpreter = calling_interpreter;
 
 		//set maximum distance and max number of results (top_k) to find
 		cur_condition->maxToRetrieve = std::numeric_limits<size_t>::max();

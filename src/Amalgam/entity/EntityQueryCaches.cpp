@@ -347,13 +347,15 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 						size_t entity_index = container->GetContainedEntityIndex(cond->entityIdToExclude);
 						sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels, entity_index,
 							distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false, false,
-							compute_results, std::numeric_limits<size_t>::max(), cond->randomStream.CreateOtherStreamViaRand());
+							cond->interpreter, cond->entity, compute_results,
+							std::numeric_limits<size_t>::max(), cond->randomStream.CreateOtherStreamViaRand());
 					}
 					else
 					{
 						sbfds.FindEntitiesNearestToPosition(cond->distEvaluator, cond->positionLabels, cond->valuesToCompare,
-							distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->exclusionEntityIndex, matching_entities, false, false,
-							compute_results, cond->randomStream.CreateOtherStreamViaRand());
+							distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->exclusionEntityIndex,
+							matching_entities, false, false, cond->interpreter, cond->entity, compute_results,
+							cond->randomStream.CreateOtherStreamViaRand());
 					}
 				}
 				else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
@@ -361,13 +363,15 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					if(cond->distEvaluator.populateOmittedFeatureValues)
 					{
 						size_t entity_index = container->GetContainedEntityIndex(cond->entityIdToExclude);
-						sbfds.FindEntitiesWithinDistanceToIndexedEntity(cond->distEvaluator, cond->positionLabels, entity_index,
-							cond->maxDistance, cond->singleLabel, matching_entities, false, compute_results);
+						sbfds.FindEntitiesWithinDistanceToIndexedEntity(cond->distEvaluator, cond->positionLabels,
+							entity_index, cond->maxDistance, cond->singleLabel, matching_entities, false,
+							cond->interpreter, cond->entity, compute_results);
 					}
 					else
 					{
-						sbfds.FindEntitiesWithinDistanceToPosition(cond->distEvaluator, cond->positionLabels, cond->valuesToCompare,
-							cond->maxDistance, cond->singleLabel, matching_entities, false, compute_results);
+						sbfds.FindEntitiesWithinDistanceToPosition(cond->distEvaluator, cond->positionLabels,
+							cond->valuesToCompare, cond->maxDistance, cond->singleLabel, matching_entities, false,
+							cond->interpreter, cond->entity, compute_results);
 					}
 				}
 
@@ -432,7 +436,8 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				ConvictionProcessor conviction_processor(buffers.knnCache,
 					distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel);
 			#endif
-				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->positionLabels, cond->singleLabel);
+				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->interpreter, cond->entity,
+					cond->positionLabels, cond->singleLabel);
 
 				auto &results_buffer = buffers.doubleVector;
 				results_buffer.clear();
@@ -1323,6 +1328,9 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 
 		//reset to make sure it doesn't return an outdated list
 		query_return_value = EvaluableNodeReference::Null();
+
+		//populate here because now know container entity
+		conditions[cond_index].entity = container;
 
 		//check for any unsupported operations by brute force; if possible, use query caches, otherwise return null
 		if(conditions[cond_index].queryType == ENT_QUERY_DISTANCE_CONTRIBUTIONS

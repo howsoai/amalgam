@@ -324,16 +324,14 @@ void SeparableBoxFilterDataStore::RemoveEntityIndexValueFromLabelId(
 // and sets distances_out to the found entities.  Infinity is allowed to compute all distances.
 //if enabled_indices is not nullptr, it will only find distances to those entities, and it will modify enabled_indices in-place
 // removing entities that do not have the corresponding labels
-void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &dist_eval,
+void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	double max_dist, StringInternPool::StringID radius_label,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out)
 {
-	if(GetNumInsertedEntities() == 0 || dist_eval.featureAttribs.size() == 0)
+	if(GetNumInsertedEntities() == 0 || r_dist_eval.featureData.size() == 0)
 		return;
 
-	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
-	r_dist_eval.distEvaluator = &dist_eval;
-	
+	auto &dist_eval = *r_dist_eval.distEvaluator;
 	bool high_accuracy = dist_eval.highAccuracyDistances;
 	double max_dist_exponentiated = dist_eval.ExponentiateDifferenceTerm(max_dist, high_accuracy);
 	
@@ -1448,6 +1446,16 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 {
 	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 	auto &column_data = columnData[feature_attribs.featureIndex];
+	auto *enm = r_dist_eval.callingInterpreter->evaluableNodeManager;
+
+	EvaluableNodeReference modified_call = EvaluableNodeReference(
+		enm->AllocNode(feature_attribs.callEntityOpcode, false), false);
+
+	auto &mc_ocn = modified_call->GetOrderedChildNodesReference();
+	if(mc_ocn.size() < 1)
+		mc_ocn.resize(1);
+
+	mc_ocn[0] = enm->AllocNode(r_dist_eval.entity->GetContainedEntityIdFromIndex(entity_index));
 
 	EvaluableNodeReference result = r_dist_eval.callingInterpreter->InterpretNode(
 		feature_attribs.callEntityOpcode, EvaluableNodeRequestedValueTypes::Type::ALL);
@@ -1455,8 +1463,11 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 	double distance = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
 		result.GetValue(), query_feature_index, high_accuracy);
 
-	r_dist_eval.evaluableNodeManager->FreeNodeTreeIfPossible(result);
-	//TODO 25393: add this to other distance paths
+	enm->FreeNodeTreeIfPossible(result);
+	enm->FreeNode(mcn_ocn[0]);
+	enm->FreeNode(modified_call);
+	//TODO 25393: add this to other distance paths, including making special distance of 0 for nearest next case
+	//TODO 25393: ensure all open mp paths do not operate if calling on entity
 	return distance;
 }
 

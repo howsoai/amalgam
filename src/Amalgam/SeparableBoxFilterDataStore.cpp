@@ -1,5 +1,6 @@
 //project headers:
 #include "Entity.h"
+#include "EvaluableNodeReference.h"
 #include "Interpreter.h"
 #include "PerformanceProfiler.h"
 #include "SeparableBoxFilterDataStore.h"
@@ -1517,14 +1518,14 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 	if(call_type != ENT_CALL_ON_ENTITY)
 		result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
 			&scope_stack, false, &calling_interpreter, nullptr, nullptr,
-			&interpreter_constraints
+			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ALL
 		#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
 		#endif
 		);
 	else
 		result = called_entity->ExecuteOnEntity(function, &scope_stack, &calling_interpreter, nullptr, nullptr,
-			&interpreter_constraints
+			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ALL
 		#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
 		#endif

@@ -4,6 +4,7 @@
 #include "AssetManager.h"
 #include "Entity.h"
 #include "EntityWriteListener.h"
+#include "EvaluableNodeReference.h"
 #include "FileSupportCAML.h"
 #include "FileSupportJSON.h"
 #include "Interpreter.h"
@@ -381,7 +382,7 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
 	EvaluableNodeReference returned_value = bundle->entity->Execute(label, &scope_stack, false, nullptr,
-		&bundle->writeListeners, bundle->printListener, nullptr
+		&bundle->writeListeners, bundle->printListener, nullptr, EvaluableNodeRequestedValueTypes::Type::NONE
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif
@@ -414,7 +415,7 @@ std::pair<std::string, std::string> EntityExternalInterface::ExecuteEntityJSONLo
 	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
 	EvaluableNodeReference returned_value = bundle->entity->Execute(label, &scope_stack, false, nullptr,
-		&listeners, bundle->printListener, nullptr
+		&listeners, bundle->printListener, nullptr, EvaluableNodeRequestedValueTypes::Type::NONE
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif
@@ -452,7 +453,7 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
 	EvaluableNodeReference returned_value = bundle->entity->ExecuteOnEntity(code, &scope_stack, nullptr,
-		&bundle->writeListeners, bundle->printListener, nullptr
+		&bundle->writeListeners, bundle->printListener, nullptr, EvaluableNodeRequestedValueTypes::Type::NONE
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif

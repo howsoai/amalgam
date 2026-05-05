@@ -667,14 +667,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(call_type != ENT_CALL_ON_ENTITY)
 		result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
 			&scope_stack, called_entity == curEntity, this, cur_write_listeners, printListener,
-			interpreter_constraints_ptr
+			interpreter_constraints_ptr, immediate_result
 	#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
 	#endif
 		);
 	else
 		result = called_entity->ExecuteOnEntity(function, &scope_stack, this, cur_write_listeners, printListener,
-			interpreter_constraints_ptr
+			interpreter_constraints_ptr, immediate_result
 	#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
 	#endif
@@ -889,7 +889,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 #endif
 
 	EvaluableNodeReference result = container->Execute(container_label_sid,
-		&scope_stack, false, this, writeListeners, printListener, interpreter_constraints_ptr
+		&scope_stack, false, this, writeListeners, printListener, interpreter_constraints_ptr, immediate_result
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif

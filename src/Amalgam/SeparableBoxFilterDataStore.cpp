@@ -1462,8 +1462,6 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 	size_t query_feature_index, bool high_accuracy)
 {
 	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
-	auto &column_data = columnData[feature_attribs.featureIndex];
-	auto *enm = r_dist_eval.callingInterpreter->evaluableNodeManager;
 	auto &calling_interpreter = *r_dist_eval.callingInterpreter;
 
 	auto &ocn = feature_attribs.callEntityOpcode->GetOrderedChildNodes();

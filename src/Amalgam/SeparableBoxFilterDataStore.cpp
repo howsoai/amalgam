@@ -1350,15 +1350,9 @@ void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature(
 	feature_data.Clear();
 	feature_data.targetValue = position_value;
 
-	if(feature_attribs.callEntity)
+	if(feature_attribs.callEntityOpcode != nullptr)
 	{
 		effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ENTITY;
-		return;
-	}
-
-	if(feature_attribs.callOnEntity)
-	{
-		effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ON_ENTITY;
 		return;
 	}
 

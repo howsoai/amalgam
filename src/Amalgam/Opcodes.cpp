@@ -379,7 +379,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_data_type, "data_type");
 	EmplaceStaticString(ENBISI_nominal_count, "nominal_count");
 	EmplaceStaticString(ENBISI_cycle_range, "cycle_range");
-	EmplaceStaticString(ENBISI_params, "params");
 
 	//distance parameter values
 	EmplaceStaticString(ENBISI_surprisal, "surprisal");

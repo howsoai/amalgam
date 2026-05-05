@@ -161,7 +161,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		{
 			EvaluableNodeType type = cond_node->GetType();
 			if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
-				EntityQueryBuilder::BuildDistanceCondition(cond_node, type, conditions, randomStream);
+				EntityQueryBuilder::BuildDistanceCondition(cond_node, type, conditions, randomStream, this);
 			else
 				EntityQueryBuilder::BuildNonDistanceCondition(cond_node, type, conditions, randomStream);
 		}
@@ -174,7 +174,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 				EvaluableNodeType type = cn->GetType();
 				if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
-					EntityQueryBuilder::BuildDistanceCondition(cn, type, conditions, randomStream);
+					EntityQueryBuilder::BuildDistanceCondition(cn, type, conditions, randomStream, this);
 				else
 					EntityQueryBuilder::BuildNonDistanceCondition(cn, type, conditions, randomStream);
 			}

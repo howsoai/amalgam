@@ -1168,6 +1168,7 @@ protected:
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
 
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE:
 		{
@@ -1180,8 +1181,8 @@ protected:
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ENTITY:
-		case RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ON_ENTITY:
 		{
+			//EvaluableNodeReference result = 
 			//TODO 25393: finish this, use constraint parser for the params
 			return 0.0;
 		}

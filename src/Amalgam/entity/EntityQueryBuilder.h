@@ -407,19 +407,13 @@ namespace EntityQueryBuilder
 						StringInternPool::StringID data_type = string_intern_pool.NOT_A_STRING_ID;
 						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_data_type, data_type);
 
-						feature_attribs.callEntity = false;
+						feature_attribs.callEntityOpcode = nullptr;
 						if(auto found_value = mcn.find(GetStringIdFromNodeType(ENT_CALL_ENTITY)); found_value != end(mcn))
-							feature_attribs.callEntity = EvaluableNode::ToBool(found_value->second);
-
-						feature_attribs.callOnEntity = false;
-						if(auto found_value = mcn.find(GetStringIdFromNodeType(ENT_CALL_ON_ENTITY)); found_value != end(mcn))
 						{
-							feature_attribs.callOnEntity = EvaluableNode::ToBool(found_value->second);
-							feature_attribs.callEntity = false;
+							if(found_value->second != nullptr
+									&& found_value->second->GetType() == ENT_CALL_ENTITY || found_value->second->GetType() == ENT_CALL_ON_ENTITY)
+								feature_attribs.callEntityOpcode = found_value->second;
 						}
-
-						feature_attribs.callParams = nullptr;
-						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_params, feature_attribs.callParams);
 
 						auto feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 						if(difference_type == GetStringIdFromBuiltInStringId(ENBISI_nominal))
@@ -557,7 +551,7 @@ namespace EntityQueryBuilder
 
 	//interpret evaluable node as a distance query
 	inline void BuildDistanceCondition(EvaluableNode *cn, EvaluableNodeType condition_type,
-		std::vector<EntityQueryCondition> &conditions, RandomStream &rs)
+		std::vector<EntityQueryCondition> &conditions, RandomStream &rs, Interpreter *calling_interpreter)
 	{
 		//cache ordered child nodes so don't need to keep fetching
 		auto &ocn = cn->GetOrderedChildNodes();
@@ -588,6 +582,7 @@ namespace EntityQueryBuilder
 		//set query condition type
 		cur_condition->queryType = condition_type;
 		cur_condition->useConcurrency = cn->GetConcurrency();
+		cur_condition->callingInterpreter = calling_interpreter;
 
 		//set maximum distance and max number of results (top_k) to find
 		cur_condition->maxToRetrieve = std::numeric_limits<size_t>::max();

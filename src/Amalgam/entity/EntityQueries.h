@@ -142,4 +142,7 @@ public:
 
 	//if true, use concurrency if applicable
 	bool useConcurrency;
+
+	//the interpreter calling the query
+	Interpreter *callingInterpreter;
 };

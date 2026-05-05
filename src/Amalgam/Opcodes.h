@@ -393,7 +393,6 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_data_type,
 	ENBISI_nominal_count,
 	ENBISI_cycle_range,
-	ENBISI_params,
 
 	//distance parameter values
 	ENBISI_surprisal,

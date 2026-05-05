@@ -1547,8 +1547,7 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 		calling_interpreter.interpreterConstraints->AccruePerformanceCounters(&interpreter_constraints);
 
 	//ensure in immediate value form if possible since distance evaluation expects it for performance
-	EvaluableNodeImmediateValueWithType value_as_immediate_if_possible;
-	value_as_immediate_if_possible.CopyValueFromEvaluableNode(result);
+	auto value_as_immediate_if_possible = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(result);
 
 	double distance = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
 		value_as_immediate_if_possible, query_feature_index, high_accuracy);

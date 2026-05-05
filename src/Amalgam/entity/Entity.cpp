@@ -231,8 +231,7 @@ std::pair<EvaluableNodeImmediateValueWithType, bool> Entity::GetValueAtLabelAsIm
 	if(label == end(label_index))
 		return std::pair(EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST), false);
 
-	EvaluableNodeImmediateValueWithType retval;
-	retval.CopyValueFromEvaluableNode(label->second, destination_temp_enm);
+	auto retval = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(label->second, destination_temp_enm);
 	return std::pair(retval, true);
 }
 

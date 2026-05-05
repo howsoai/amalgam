@@ -1231,7 +1231,7 @@ public:
 	};
 
 	RepeatedGeneralizedDistanceEvaluator()
-		: distEvaluator(nullptr), callingInterpreter(nullptr), entity(nullptr)
+		: distEvaluator(nullptr), entity(nullptr), callingInterpreter(nullptr)
 	{	}
 
 	//computes the distance terms given the sdm for feature index, of type target_type and target_value,

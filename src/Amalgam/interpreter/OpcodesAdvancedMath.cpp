@@ -1698,8 +1698,7 @@ inline static void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std
 		else if(node->IsImmediate())
 		{
 			//fill in with the node's value
-			EvaluableNodeImmediateValueWithType value;
-			value.CopyValueFromEvaluableNode(node);
+			auto value = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(node);
 			out.assign(id_order.size(), value);
 		}
 		else //must be ordered

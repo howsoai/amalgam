@@ -959,6 +959,9 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			return EvaluableNodeReference(enm->AllocNode(ENT_LIST), true);
 		}
 
+		//populate here because now know container entity
+		cond.entity = container;
+
 		switch(cond.queryType)
 		{
 		case ENT_QUERY_IN_ENTITY_LIST:

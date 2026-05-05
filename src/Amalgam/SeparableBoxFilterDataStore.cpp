@@ -1471,6 +1471,7 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 	enm->FreeNode(mc_ocn[0]);
 	enm->FreeNode(modified_call);
 	//TODO 25393: add unit tests
+	//TODO 25393: ensure can only perform read-only operations on entity
 	return distance;
 }
 

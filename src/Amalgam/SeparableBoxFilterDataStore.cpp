@@ -623,7 +623,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 		end_index = enabled_indices.GetEndInteger();
 
 		//pick up where left off, already have top_k in sorted_results or are out of entities
-		#pragma omp parallel shared(worst_candidate_distance) if(end_index > 200)
+		#pragma omp parallel shared(worst_candidate_distance) if(feature_attribs.callEntityOpcode == nullptr && end_index > 200)
 		{
 			//iterate over all indices
 			#pragma omp for schedule(static)
@@ -723,6 +723,10 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	size_t query_feature_index, BitArrayIntegerSet &enabled_indices)
 {
 	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+	//if need to execute every node, can't precompute anything useful for this feature
+	if(feature_attribs.callEntityOpcode != nullptr)
+		return 0.0;
+
 	auto &feature_data = r_dist_eval.featureData[query_feature_index];
 	size_t absolute_feature_index = feature_attribs.featureIndex;
 	auto &column = columnData[absolute_feature_index];
@@ -1464,10 +1468,9 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 		result.GetValue(), query_feature_index, high_accuracy);
 
 	enm->FreeNodeTreeIfPossible(result);
-	enm->FreeNode(mcn_ocn[0]);
+	enm->FreeNode(mc_ocn[0]);
 	enm->FreeNode(modified_call);
-	//TODO 25393: add this to other distance paths, including making special distance of 0 for nearest next case
-	//TODO 25393: ensure all open mp paths do not operate if calling on entity
+	//TODO 25393: add unit tests
 	return distance;
 }
 

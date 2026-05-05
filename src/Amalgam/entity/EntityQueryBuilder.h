@@ -411,7 +411,8 @@ namespace EntityQueryBuilder
 						if(auto found_value = mcn.find(GetStringIdFromNodeType(ENT_CALL_ENTITY)); found_value != end(mcn))
 						{
 							if(found_value->second != nullptr
-									&& found_value->second->GetType() == ENT_CALL_ENTITY || found_value->second->GetType() == ENT_CALL_ON_ENTITY)
+									&& (found_value->second->GetType() == ENT_CALL_ENTITY
+										|| found_value->second->GetType() == ENT_CALL_ON_ENTITY))
 								feature_attribs.callEntityOpcode = found_value->second;
 						}
 

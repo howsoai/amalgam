@@ -22,6 +22,7 @@
 
 //forward declarations:
 class Entity;
+class Interpreter;
 
 //supports cheap modification of:
 //p-value, nominals, weights, distance accuracy, feature selections, case sub-selections
@@ -1034,6 +1035,11 @@ protected:
 		}
 	}
 
+	//interprets the code for the feature on the corresponding entity, then returns the evaluated distance term
+	template<bool compute_surprisal = false>
+	double ComputeDistanceTermFromEvaluatingOnEntity(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		size_t entity_index, size_t query_feature_index, bool high_accuracy);
+
 	//computes the distance term for the entity, query_feature_index, and feature_type,
 	//assumes that null values have already been taken care of for nominals
 	//if compute_surprisal is true, then it will use a faster code path
@@ -1182,12 +1188,13 @@ protected:
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ENTITY:
 		{
-			//EvaluableNodeReference result = 
-			//TODO 25393: finish this, use constraint parser for the params
-			return 0.0;
+			return ComputeDistanceTermFromEvaluatingOnEntity(r_dist_eval, entity_index, query_feature_index, high_accuracy);
 		}
 
 		}
+
+		//shouldn't make it here
+		return std::numeric_limits<double>::infinity();
 	}
 
 	//computes the distance term for value_entry, query_feature_index, and feature_type,

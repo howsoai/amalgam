@@ -1,5 +1,6 @@
 //project headers:
 #include "Entity.h"
+#include "Interpreter.h"
 #include "SeparableBoxFilterDataStore.h"
 
 //system headers
@@ -1431,8 +1432,38 @@ void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature(
 	}
 }
 
-template void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature<true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);
+template void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature<true>(
+	RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t query_feature_index,
+	const EvaluableNodeImmediateValueWithType &position_value);
 
-template void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature<false>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);
+template void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature<false>(
+	RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t query_feature_index,
+	const EvaluableNodeImmediateValueWithType &position_value);
+
+
+template<bool compute_surprisal>
+double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
+	RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t entity_index,
+	size_t query_feature_index, bool high_accuracy)
+{
+	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+	auto &column_data = columnData[feature_attribs.featureIndex];
+
+	EvaluableNodeReference result = r_dist_eval.callingInterpreter->InterpretNode(
+		feature_attribs.callEntityOpcode, EvaluableNodeRequestedValueTypes::Type::ALL);
+
+	double distance = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
+		result.GetValue(), query_feature_index, high_accuracy);
+
+	r_dist_eval.evaluableNodeManager->FreeNodeTreeIfPossible(result);
+	//TODO 25393: add this to other distance paths
+	return distance;
+}
+
+template double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity<true>(
+	RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t entity_index,
+	size_t query_feature_index, bool high_accuracy);
+
+template double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity<false>(
+	RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t entity_index,
+	size_t query_feature_index, bool high_accuracy);

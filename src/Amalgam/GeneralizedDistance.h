@@ -1230,12 +1230,12 @@ public:
 	};
 
 	RepeatedGeneralizedDistanceEvaluator()
-		: distEvaluator(nullptr), evaluableNodeManager(nullptr)
+		: distEvaluator(nullptr), evaluableNodeManager(nullptr), callingInterpreter(nullptr)
 	{	}
 
 	inline RepeatedGeneralizedDistanceEvaluator(GeneralizedDistanceEvaluator *dist_evaluator,
-		EvaluableNodeManager *enm, bool populate_omitted_feature_values)
-		: distEvaluator(dist_evaluator), evaluableNodeManager(enm)
+		EvaluableNodeManager *enm, Interpreter *calling_interpreter, bool populate_omitted_feature_values)
+		: distEvaluator(dist_evaluator), evaluableNodeManager(enm), callingInterpreter(calling_interpreter)
 	{	}
 
 	//computes the distance terms given the sdm for feature index, of type target_type and target_value,
@@ -1702,4 +1702,7 @@ public:
 
 	//node allocations in case unparsing is required
 	EvaluableNodeManager *evaluableNodeManager;
+
+	//interpreter computing the distances
+	Interpreter *callingInterpreter;
 };

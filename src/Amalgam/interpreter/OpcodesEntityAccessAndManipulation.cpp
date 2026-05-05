@@ -619,15 +619,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	//get a write lock on the entity
 	EntityReadReference called_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
-
 	if(called_entity == nullptr)
 		return EvaluableNodeReference::Null();
 
+	auto &ce_enm = called_entity->evaluableNodeManager;
+
 	if(_label_profiling_enabled)
 		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
-			evaluableNodeManager->GetNumberOfUsedNodes());
-
-	auto &ce_enm = called_entity->evaluableNodeManager;
+			ce_enm.GetNumberOfUsedNodes());
 
 #ifdef MULTITHREAD_SUPPORT
 	//lock memory before allocating scope stack, then can release the entity lock
@@ -692,7 +691,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
-		result = RemoveTopConcludeOrReturnNode(result, &called_entity->evaluableNodeManager);
+		result = RemoveTopConcludeOrReturnNode(result, &ce_enm);
 
 	if(called_entity != curEntity)
 	{
@@ -723,7 +722,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	}
 
 	if(_label_profiling_enabled)
-		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+		PerformanceProfiler::EndOperation(ce_enm.GetNumberOfUsedNodes());
 
 	if(interpreterConstraints != nullptr)
 		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
@@ -837,10 +836,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 			|| !Entity::IsLabelAccessibleToContainedEntities(container_label_sid))
 		return EvaluableNodeReference::Null();
 
-	if(_label_profiling_enabled)
-		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(container_label_sid),
-			evaluableNodeManager->GetNumberOfUsedNodes());
-
 	InterpreterConstraints interpreter_constraints;
 	InterpreterConstraints *interpreter_constraints_ptr = nullptr;
 	if(PopulateInterpreterConstraintsFromParams(ocn, 2, interpreter_constraints))
@@ -863,6 +858,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 		return EvaluableNodeReference::Null();
 	//don't need the curEntity as a reference anymore -- can free the lock
 	cur_entity = EntityReadReference();
+
+	if(_label_profiling_enabled)
+		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(container_label_sid),
+			container->evaluableNodeManager.GetNumberOfUsedNodes());
 
 #ifdef MULTITHREAD_SUPPORT
 	//lock memory before allocating scope stack, then can release the entity lock
@@ -912,7 +911,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	container->evaluableNodeManager.FreeNodeTreeIfPossible(result, false);
 
 	if(_label_profiling_enabled)
-		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+		PerformanceProfiler::EndOperation(container->evaluableNodeManager.GetNumberOfUsedNodes());
 
 	if(interpreterConstraints != nullptr)
 		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);

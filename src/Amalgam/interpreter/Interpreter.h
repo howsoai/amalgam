@@ -1085,6 +1085,8 @@ public:
 	friend class InterpreterConcurrencyManager;
 	//allow EvaluableNodeManager to access referencing nodes
 	friend class EvaluableNodeManager;
+	//allow SeparableBoxFilterDataStore to interpret
+	friend class SeparableBoxFilterDataStore;
 protected:
 
 	//ensures that there are no reachable nodes that are deallocated

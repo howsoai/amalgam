@@ -1,6 +1,7 @@
 //project headers:
 #include "Entity.h"
 #include "Interpreter.h"
+#include "PerformanceProfiler.h"
 #include "SeparableBoxFilterDataStore.h"
 
 //system headers
@@ -1451,27 +1452,110 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 	auto &column_data = columnData[feature_attribs.featureIndex];
 	auto *enm = r_dist_eval.callingInterpreter->evaluableNodeManager;
+	auto &calling_interpreter = *r_dist_eval.callingInterpreter;
 
-	EvaluableNodeReference modified_call = EvaluableNodeReference(
-		enm->AllocNode(feature_attribs.callEntityOpcode, false), false);
+	auto &ocn = feature_attribs.callEntityOpcode->GetOrderedChildNodes();
 
-	auto &mc_ocn = modified_call->GetOrderedChildNodesReference();
-	if(mc_ocn.size() < 1)
-		mc_ocn.resize(1);
+	InterpreterConstraints interpreter_constraints;
+	calling_interpreter.PopulateInterpreterConstraintsFromParams(ocn, 3, interpreter_constraints, true);
+	interpreter_constraints.readOnlyEntities = true;
+	interpreter_constraints.collectWarnings = false;
 
-	mc_ocn[0] = enm->AllocNode(r_dist_eval.entity->GetContainedEntityIdFromIndex(entity_index));
+	EvaluableNodeReference args = EvaluableNodeReference::Null();
+	if(ocn.size() > 2)
+		args = EvaluableNodeReference(ocn[2], false);
 
-	EvaluableNodeReference result = r_dist_eval.callingInterpreter->InterpretNode(
-		feature_attribs.callEntityOpcode, EvaluableNodeRequestedValueTypes::Type::ALL);
+	auto call_type = feature_attribs.callEntityOpcode->GetType();
+	StringRef entity_label_sid;
+	EvaluableNodeReference function = EvaluableNodeReference::Null();
+	if(ocn.size() > 1)
+	{
+		if(call_type == ENT_CALL_ON_ENTITY)
+			function = EvaluableNodeReference(ocn[1], false);
+		else
+			entity_label_sid.SetIDWithReferenceHandoff(EvaluableNode::ToStringIDWithReference(ocn[1]));
+	}
+
+	//get a write lock on the entity
+	EntityReadReference called_entity(r_dist_eval.entity->GetContainedEntityFromIndex(entity_index));
+	if(called_entity == nullptr)
+		return std::numeric_limits<double>::infinity();
+
+	auto &ce_enm = called_entity->evaluableNodeManager;
+
+	if(Interpreter::_label_profiling_enabled)
+		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
+			ce_enm.GetNumberOfUsedNodes());
+
+#ifdef MULTITHREAD_SUPPORT
+	//lock memory before allocating scope stack, then can release the entity lock
+	Concurrency::ReadLock enm_lock = ce_enm.AcquireMemoryModificationReadLock();
+	called_entity.lock.unlock();
+#endif
+
+	if(call_type == ENT_CALL_ON_ENTITY)
+	{
+		//copy function to called_entity, free function from this entity
+		EvaluableNodeReference called_entity_function(ce_enm.DeepAllocCopy(function), true);
+		function = called_entity_function;
+	}
+
+	//copy arguments to called_entity, free args from this entity
+	EvaluableNodeReference called_entity_args(ce_enm.DeepAllocCopy(args), true);
+	args = called_entity_args;
+
+	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, ce_enm);
+
+	calling_interpreter.PopulatePerformanceCounters(&interpreter_constraints, called_entity);
+
+#ifdef MULTITHREAD_SUPPORT
+	//this interpreter is no longer executing
+	calling_interpreter.memoryModificationLock.unlock();
+#endif
+
+	EvaluableNodeReference result;
+	if(call_type != ENT_CALL_ON_ENTITY)
+		result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
+			&scope_stack, false, &calling_interpreter, nullptr, nullptr,
+			&interpreter_constraints
+		#ifdef MULTITHREAD_SUPPORT
+			, &enm_lock
+		#endif
+		);
+	else
+		result = called_entity->ExecuteOnEntity(function, &scope_stack, &calling_interpreter, nullptr, nullptr,
+			&interpreter_constraints
+		#ifdef MULTITHREAD_SUPPORT
+			, &enm_lock
+		#endif
+		);
+
+#ifdef MULTITHREAD_SUPPORT
+	//this interpreter is executing again
+	calling_interpreter.memoryModificationLock
+		= calling_interpreter.evaluableNodeManager->AcquireMemoryModificationReadLock();
+#endif
+
+	//call opcodes should consume the outer return opcode if there is one
+	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
+		result = RemoveTopConcludeOrReturnNode(result, &ce_enm);
+
+	if(Interpreter::_label_profiling_enabled)
+		PerformanceProfiler::EndOperation(ce_enm.GetNumberOfUsedNodes());
+
+	if(calling_interpreter.interpreterConstraints != nullptr)
+		calling_interpreter.interpreterConstraints->AccruePerformanceCounters(&interpreter_constraints);
+
+	//ensure in immediate value form if possible since distance evaluation expects it for performance
+	EvaluableNodeImmediateValueWithType value_as_immediate_if_possible;
+	value_as_immediate_if_possible.CopyValueFromEvaluableNode(result);
 
 	double distance = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
-		result.GetValue(), query_feature_index, high_accuracy);
+		value_as_immediate_if_possible, query_feature_index, high_accuracy);
 
-	enm->FreeNodeTreeIfPossible(result);
-	enm->FreeNode(mc_ocn[0]);
-	enm->FreeNode(modified_call);
-	//TODO 25393: add unit tests
-	//TODO 25393: ensure can only perform read-only operations on entity
+	ce_enm.FreeNodeTreeIfPossible(result);
+	ce_enm.FreeNodeTreeIfPossible(args);
+
 	return distance;
 }
 

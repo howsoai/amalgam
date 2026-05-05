@@ -976,23 +976,31 @@ protected:
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
 	inline double GetDistanceBetween(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		size_t radius_column_index, size_t other_index, bool high_accuracy)
+		size_t radius_column_index, size_t other_entity_index, bool high_accuracy)
 	{
 		double dist_accum = 0.0;
 		for(size_t i = 0; i < r_dist_eval.featureData.size(); i++)
 		{
-			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
+			if(r_dist_eval.featureData[i].effectiveFeatureType
+				!= RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ENTITY)
+			{
+				auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
 
-			size_t column_index = feature_attribs.featureIndex;
-			auto other_value = columnData[column_index]->GetResolvedIndexValueWithType(other_index);
-			dist_accum += r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, i, high_accuracy);
+				size_t column_index = feature_attribs.featureIndex;
+				auto other_value = columnData[column_index]->GetResolvedIndexValueWithType(other_entity_index);
+				dist_accum += r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, i, high_accuracy);
+			}
+			else
+			{
+				dist_accum += ComputeDistanceTermFromEvaluatingOnEntity(r_dist_eval, other_entity_index, i, high_accuracy);
+			}
 		}
 
 		double dist = r_dist_eval.distEvaluator->InverseExponentiateDistance<compute_surprisal>(dist_accum, high_accuracy);
 
 		if(radius_column_index < columnData.size())
 		{
-			auto radius_value = columnData[radius_column_index]->GetResolvedIndexValueWithType(other_index);
+			auto radius_value = columnData[radius_column_index]->GetResolvedIndexValueWithType(other_entity_index);
 			if(radius_value.nodeType == ENIVT_NUMBER)
 				dist -= radius_value.nodeValue.number;
 		}

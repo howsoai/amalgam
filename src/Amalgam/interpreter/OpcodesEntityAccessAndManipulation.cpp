@@ -615,6 +615,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 			get_changes_write_listeners = *writeListeners;
 		get_changes_write_listeners.push_back(new EntityWriteListener(curEntity, std::unique_ptr<std::ostream>(), true));
 		cur_write_listeners = &get_changes_write_listeners;
+
+		//ensure not returning an immediate value
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
 	}
 
 	//get a write lock on the entity

@@ -100,7 +100,11 @@ public:
 		if(inserted.second)
 			inserted.first->second = std::make_unique<StringInternStringData>(str);
 		else
+		#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+			inserted.first->second->refCount.fetch_add(1, std::memory_order_acquire);
+		#else
 			inserted.first->second->refCount++;
+		#endif
 
 		StringID id = inserted.first->second.get();
 	#ifdef STRING_INTERN_POOL_VALIDATION
@@ -121,7 +125,11 @@ public:
 		if(inserted.second)
 			inserted.first->second = std::make_unique<StringInternStringData>(str);
 		else
+		#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+			inserted.first->second->refCount.fetch_add(1, std::memory_order_acquire);
+		#else
 			inserted.first->second->refCount++;
+		#endif
 
 		StringID id = inserted.first->second.get();
 	#ifdef STRING_INTERN_POOL_VALIDATION
@@ -139,7 +147,12 @@ public:
 		#ifdef STRING_INTERN_POOL_VALIDATION
 			ValidateStringIdExistence(id);
 		#endif
-			id->refCount++;
+
+		#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+			id->refCount.fetch_add(1, std::memory_order_acquire);
+		#else
+			id->second->refCount++;
+		#endif
 		}
 		return id;
 	}
@@ -159,7 +172,12 @@ public:
 			#ifdef STRING_INTERN_POOL_VALIDATION
 				ValidateStringIdExistence(id);
 			#endif
-				id->refCount++;
+
+			#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+				id->refCount.fetch_add(1, std::memory_order_acquire);
+			#else
+				id->second->refCount++;
+			#endif
 			}
 		}
 	}
@@ -181,7 +199,12 @@ public:
 			#ifdef STRING_INTERN_POOL_VALIDATION
 				ValidateStringIdExistence(id);
 			#endif
-				id->refCount += additional_reference_count;
+
+			#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+				id->refCount.fetch_add(additional_reference_count, std::memory_order_acquire);
+			#else
+				id->second->refCount += additional_reference_count;
+			#endif
 			}
 		}
 	}
@@ -202,7 +225,12 @@ public:
 			#ifdef STRING_INTERN_POOL_VALIDATION
 				ValidateStringIdExistence(id);
 			#endif
-				id->refCount++;
+
+			#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+				id->refCount.fetch_add(1, std::memory_order_acquire);
+			#else
+				id->second->refCount++;
+			#endif
 			}
 		}
 	}
@@ -224,19 +252,22 @@ public:
 		// lock and delete a reference, and now a double delete will occur.  
 		while(true)
 		{
-			size_t ref_count = id->refCount.load();
+			size_t ref_count = id->refCount.load(std::memory_order_relaxed);
 			if(ref_count <= 1)
 				break;
 
 			//if can decrement, return
-			if(std::atomic_compare_exchange_weak(&id->refCount, &ref_count, ref_count - 1))
+			//release order on the decrement, don't need ordering on the failure path
+			if(id->refCount.compare_exchange_weak(ref_count, ref_count - 1,
+				std::memory_order_release,
+				std::memory_order_relaxed))
 				return;
 		}
 
 		//lock this shard and double-check that it's the last reference before erasing
 		auto iterator_with_lock = stringToID.find(id->string);
 
-		size_t ref_count = id->refCount--;
+		size_t ref_count = id->refCount.fetch_sub(1, std::memory_order_release);
 		if(ref_count > 1)
 			return;
 

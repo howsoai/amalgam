@@ -98,7 +98,8 @@ public:
 			featureIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0),
 			deviationReciprocal(0.0), deviationReciprocalNegative(0.0), deviationTimesThree(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
-			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN())
+			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
+			callEntityOpcode(nullptr)
 		{
 			typeAttributes.cycleRange = std::numeric_limits<double>::quiet_NaN();
 		}
@@ -211,6 +212,10 @@ public:
 		//distance term to use if one value is known and the other is unknown
 		//the difference will be NaN if unknown
 		DistanceTermWithDeviation knownToUnknownDistanceTerm;
+
+		//if callEntityOpcode is not nullptr, it will call the entity before computing;
+		//it will use the return value instead of calling the entity label distance, passing in callparams
+		EvaluableNode *callEntityOpcode;
 	};
 
 	//initializes and precomputes relevant data including featureAttribs
@@ -1221,15 +1226,12 @@ public:
 		EFDT_CONTINUOUS_STRING,
 		//continuous measures of the number of nodes different between two sets of code
 		EFDT_CONTINUOUS_CODE,
+		//executes the call entity opcode, then evaluates distance using GeneralizedDistanceEvaluator::FeatureDifferenceType
+		EFDT_CALL_ENTITY
 	};
 
 	RepeatedGeneralizedDistanceEvaluator()
-		: distEvaluator(nullptr), evaluableNodeManager(nullptr)
-	{	}
-
-	inline RepeatedGeneralizedDistanceEvaluator(GeneralizedDistanceEvaluator *dist_evaluator,
-		EvaluableNodeManager *enm, bool populate_omitted_feature_values)
-		: distEvaluator(dist_evaluator), evaluableNodeManager(enm)
+		: distEvaluator(nullptr), entity(nullptr), callingInterpreter(nullptr)
 	{	}
 
 	//computes the distance terms given the sdm for feature index, of type target_type and target_value,
@@ -1694,6 +1696,9 @@ public:
 	//for each feature, precomputed distance terms for each interned value looked up by intern index
 	std::vector<FeatureData> featureData;
 
-	//node allocations in case unparsing is required
-	EvaluableNodeManager *evaluableNodeManager;
+	//entity the query is being called on
+	Entity *entity;
+
+	//interpreter computing the distances
+	Interpreter *callingInterpreter;
 };

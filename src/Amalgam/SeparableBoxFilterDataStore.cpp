@@ -1,5 +1,8 @@
 //project headers:
 #include "Entity.h"
+#include "EvaluableNodeReference.h"
+#include "Interpreter.h"
+#include "PerformanceProfiler.h"
 #include "SeparableBoxFilterDataStore.h"
 
 //system headers
@@ -323,16 +326,14 @@ void SeparableBoxFilterDataStore::RemoveEntityIndexValueFromLabelId(
 // and sets distances_out to the found entities.  Infinity is allowed to compute all distances.
 //if enabled_indices is not nullptr, it will only find distances to those entities, and it will modify enabled_indices in-place
 // removing entities that do not have the corresponding labels
-void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &dist_eval,
+void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	double max_dist, StringInternPool::StringID radius_label,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out)
 {
-	if(GetNumInsertedEntities() == 0 || dist_eval.featureAttribs.size() == 0)
+	if(GetNumInsertedEntities() == 0 || r_dist_eval.featureData.size() == 0)
 		return;
 
-	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
-	r_dist_eval.distEvaluator = &dist_eval;
-	
+	auto &dist_eval = *r_dist_eval.distEvaluator;
 	bool high_accuracy = dist_eval.highAccuracyDistances;
 	double max_dist_exponentiated = dist_eval.ExponentiateDifferenceTerm(max_dist, high_accuracy);
 	
@@ -624,7 +625,18 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 		end_index = enabled_indices.GetEndInteger();
 
 		//pick up where left off, already have top_k in sorted_results or are out of entities
-		#pragma omp parallel shared(worst_candidate_distance) if(end_index > 200)
+	#ifdef _OPENMP
+		bool any_call_entity_features = false;
+		for(size_t i = 0; i < num_enabled_features; i++)
+		{
+			if(dist_eval.featureAttribs[i].callEntityOpcode != nullptr)
+			{
+				any_call_entity_features = true;
+				break;
+			}
+		}
+	#endif
+		#pragma omp parallel shared(worst_candidate_distance) if(!any_call_entity_features && end_index > 500)
 		{
 			//iterate over all indices
 			#pragma omp for schedule(static)
@@ -724,6 +736,10 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	size_t query_feature_index, BitArrayIntegerSet &enabled_indices)
 {
 	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+	//if need to execute every node, can't precompute anything useful for this feature
+	if(feature_attribs.callEntityOpcode != nullptr)
+		return 0.0;
+
 	auto &feature_data = r_dist_eval.featureData[query_feature_index];
 	size_t absolute_feature_index = feature_attribs.featureIndex;
 	auto &column = columnData[absolute_feature_index];
@@ -1350,6 +1366,12 @@ void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature(
 	feature_data.Clear();
 	feature_data.targetValue = position_value;
 
+	if(feature_attribs.callEntityOpcode != nullptr)
+	{
+		effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ENTITY;
+		return;
+	}
+
 	if(feature_attribs.IsFeatureNominal())
 		r_dist_eval.ComputeAndStoreNominalDistanceTerms<compute_surprisal>(query_feature_index);
 
@@ -1425,8 +1447,126 @@ void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature(
 	}
 }
 
-template void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature<true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);
+template void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature<true>(
+	RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t query_feature_index,
+	const EvaluableNodeImmediateValueWithType &position_value);
 
-template void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature<false>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-	size_t query_feature_index, const EvaluableNodeImmediateValueWithType &position_value);
+template void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature<false>(
+	RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t query_feature_index,
+	const EvaluableNodeImmediateValueWithType &position_value);
+
+
+template<bool compute_surprisal>
+double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
+	RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t entity_index,
+	size_t query_feature_index, bool high_accuracy)
+{
+	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+	auto &calling_interpreter = *r_dist_eval.callingInterpreter;
+
+	auto &ocn = feature_attribs.callEntityOpcode->GetOrderedChildNodes();
+
+	InterpreterConstraints interpreter_constraints;
+	calling_interpreter.PopulateInterpreterConstraintsFromParams(ocn, 3, interpreter_constraints, true);
+	interpreter_constraints.readOnlyEntities = true;
+	interpreter_constraints.collectWarnings = false;
+
+	EvaluableNodeReference args = EvaluableNodeReference::Null();
+	if(ocn.size() > 2)
+		args = EvaluableNodeReference(ocn[2], false);
+
+	auto call_type = feature_attribs.callEntityOpcode->GetType();
+	StringRef entity_label_sid;
+	EvaluableNodeReference function = EvaluableNodeReference::Null();
+	if(ocn.size() > 1)
+	{
+		if(call_type == ENT_CALL_ON_ENTITY)
+			function = EvaluableNodeReference(ocn[1], false);
+		else
+			entity_label_sid.SetIDWithReferenceHandoff(EvaluableNode::ToStringIDWithReference(ocn[1]));
+	}
+
+	//get a write lock on the entity
+	EntityReadReference called_entity(r_dist_eval.entity->GetContainedEntityFromIndex(entity_index));
+	if(called_entity == nullptr)
+		return std::numeric_limits<double>::infinity();
+
+	auto &ce_enm = called_entity->evaluableNodeManager;
+
+	if(Interpreter::_label_profiling_enabled)
+		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
+			ce_enm.GetNumberOfUsedNodes());
+
+#ifdef MULTITHREAD_SUPPORT
+	//lock memory before allocating scope stack, then can release the entity lock
+	Concurrency::ReadLock enm_lock = ce_enm.AcquireMemoryModificationReadLock();
+	called_entity.lock.unlock();
+#endif
+
+	//copy function to called_entity if appropriate
+	if(call_type == ENT_CALL_ON_ENTITY)
+		function = EvaluableNodeReference(ce_enm.DeepAllocCopy(function), true);
+
+	//copy arguments to called_entity
+	args = EvaluableNodeReference(ce_enm.DeepAllocCopy(args), true);
+	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, ce_enm);
+
+	calling_interpreter.PopulatePerformanceCounters(&interpreter_constraints, called_entity);
+
+#ifdef MULTITHREAD_SUPPORT
+	//this interpreter is no longer executing
+	calling_interpreter.memoryModificationLock.unlock();
+#endif
+
+	EvaluableNodeReference result;
+	if(call_type != ENT_CALL_ON_ENTITY)
+		result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
+			&scope_stack, false, &calling_interpreter, nullptr, nullptr,
+			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ALL
+		#ifdef MULTITHREAD_SUPPORT
+			, &enm_lock
+		#endif
+		);
+	else
+		result = called_entity->ExecuteOnEntity(function, &scope_stack, &calling_interpreter, nullptr, nullptr,
+			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ALL
+		#ifdef MULTITHREAD_SUPPORT
+			, &enm_lock
+		#endif
+		);
+
+#ifdef MULTITHREAD_SUPPORT
+	//this interpreter is executing again
+	calling_interpreter.memoryModificationLock
+		= calling_interpreter.evaluableNodeManager->AcquireMemoryModificationReadLock();
+#endif
+
+	//call opcodes should consume the outer return opcode if there is one
+	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
+		result = RemoveTopConcludeOrReturnNode(result, &ce_enm);
+
+	if(Interpreter::_label_profiling_enabled)
+		PerformanceProfiler::EndOperation(ce_enm.GetNumberOfUsedNodes());
+
+	if(calling_interpreter.interpreterConstraints != nullptr)
+		calling_interpreter.interpreterConstraints->AccruePerformanceCounters(&interpreter_constraints);
+
+	//ensure in immediate value form if possible since distance evaluation expects it for performance
+	auto value_as_immediate_if_possible = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(result);
+
+	double distance = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
+		value_as_immediate_if_possible, query_feature_index, high_accuracy);
+
+	ce_enm.FreeNodeTreeIfPossible(result);
+	ce_enm.FreeNodeTreeIfPossible(args);
+
+	return distance;
+}
+
+template double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity<true>(
+	RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t entity_index,
+	size_t query_feature_index, bool high_accuracy);
+
+template double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity<false>(
+	RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t entity_index,
+	size_t query_feature_index, bool high_accuracy);

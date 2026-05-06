@@ -186,7 +186,8 @@ public:
 	EvaluableNodeReference ExecuteOnEntity(EvaluableNode *code,
 		std::vector<EvaluableNode *> *scope_stack, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		InterpreterConstraints *interpreter_constraints = nullptr
+		InterpreterConstraints *interpreter_constraints = nullptr,
+		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes()
 #ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 #endif
@@ -203,7 +204,8 @@ public:
 		std::vector<EvaluableNode *> *scope_stack,
 		bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		InterpreterConstraints *interpreter_constraints = nullptr
+		InterpreterConstraints *interpreter_constraints = nullptr,
+		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes()
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif
@@ -229,7 +231,7 @@ public:
 		}
 
 		return ExecuteOnEntity(node_to_execute, scope_stack, calling_interpreter,
-			write_listeners, print_listener, interpreter_constraints
+			write_listeners, print_listener, interpreter_constraints, immediate_result
 		#ifdef MULTITHREAD_SUPPORT
 			, enm_lock
 		#endif
@@ -241,7 +243,8 @@ public:
 		std::vector<EvaluableNode *> *scope_stack,
 		bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		InterpreterConstraints *interpreter_constraints = nullptr
+		InterpreterConstraints *interpreter_constraints = nullptr,
+		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes()
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif
@@ -249,7 +252,7 @@ public:
 	{
 		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
 		return Execute(label_sid, scope_stack, on_self, calling_interpreter,
-			write_listeners, print_listener, interpreter_constraints
+			write_listeners, print_listener, interpreter_constraints, immediate_result
 		#ifdef MULTITHREAD_SUPPORT
 			, enm_lock
 		#endif

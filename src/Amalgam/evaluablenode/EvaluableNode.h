@@ -1147,7 +1147,17 @@ public:
 	}
 	//if the id exists, returns a pointer to the pointer of the child node
 	// returns nullptr if the id doesn't exist
-	EvaluableNode **GetMappedChildNode(const StringInternPool::StringID sid);
+	inline EvaluableNode **GetMappedChildNode(const StringInternPool::StringID sid)
+	{
+		auto &mcn = GetMappedChildNodes();
+		auto node_iter = mcn.find(sid);
+		if(node_iter == end(mcn))
+			return nullptr;
+
+		//return the location of the child pointer
+		return &node_iter->second;
+	}
+
 	//returns a pointer to the pointer of the child node, creating it if necessary and populating it with a nullptr
 	EvaluableNode **GetOrCreateMappedChildNode(const std::string &id);
 	//returns a pointer to the pointer of the child node, creating it if necessary and populating it with a nullptr

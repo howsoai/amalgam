@@ -373,6 +373,15 @@ public:
 	//if enm is not nullptr, then it will make a copy of any code or string ids
 	void CopyValueFromEvaluableNode(EvaluableNode *en, EvaluableNodeManager *enm = nullptr);
 
+	//creates a new value, copying into an immediate value if possible
+	static inline EvaluableNodeImmediateValueWithType CreateValueFromEvaluableNode(
+		EvaluableNode *en, EvaluableNodeManager *enm = nullptr)
+	{
+		EvaluableNodeImmediateValueWithType return_value;
+		return_value.CopyValueFromEvaluableNode(en, enm);
+		return return_value;
+	}
+
 	bool GetValueAsBoolean(bool value_if_null = false);
 
 	double GetValueAsNumber(double value_if_null = std::numeric_limits<double>::quiet_NaN());
@@ -412,11 +421,7 @@ inline void CopyOrderedChildNodesToImmediateValuesAndTypes(std::vector<Evaluable
 	values.clear();
 	values.reserve(ocn.size());
 	for(EvaluableNode *en : ocn)
-	{
-		EvaluableNodeImmediateValueWithType imm_val;
-		imm_val.CopyValueFromEvaluableNode(en);
-		values.push_back(imm_val);
-	}
+		values.push_back(EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(en));
 }
 
 //describes an EvaluableNode value and whether it is uniquely referenced

@@ -136,6 +136,12 @@ public:
 	// additionally return these labels if valid
 	std::vector<StringInternPool::StringID> additionalSortedListLabels;
 
+	//interpreter calling the query
+	Interpreter *interpreter;
+
+	//containing entity
+	Entity *entity;
+
 	//if conviction_of_removal is true, then it will compute the conviction as if the entities were removed, if false,
 	// will compute added or included
 	bool convictionOfRemoval;

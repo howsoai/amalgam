@@ -19,11 +19,14 @@ public:
 	//clears all buffers and resizes and resets them based on the datastore of entities and the particular
 	// relevant_indices to use from the datastore
 	void ResetCache(SeparableBoxFilterDataStore &datastore, BitArrayIntegerSet &relevant_indices,
-		GeneralizedDistanceEvaluator &r_dist_eval, std::vector<StringInternPool::StringID> &position_label_ids, StringInternPool::StringID radius_label)
+		GeneralizedDistanceEvaluator &dist_eval, Interpreter *_interpreter, Entity *_entity,
+		std::vector<StringInternPool::StringID> &position_label_ids, StringInternPool::StringID radius_label)
 	{
 		sbfDataStore = &datastore;
 		relevantIndices = &relevant_indices;
-		distEvaluator = &r_dist_eval;
+		distEvaluator = &dist_eval;
+		interpreter = _interpreter;
+		entity = _entity;
 		positionLabelIds = &position_label_ids;
 		radiusLabelId = radius_label;
 
@@ -45,11 +48,12 @@ public:
 			entities_to_compute = relevantIndices;
 
 		IterateOverConcurrentlyIfPossible(*entities_to_compute,
-			[this, top_k, expand_to_first_nonzero_distance](auto index, auto entity)
+			[this, top_k, expand_to_first_nonzero_distance](auto index, auto entity_index)
 			{
-				cachedNeighbors[entity].clear();
+				cachedNeighbors[entity_index].clear();
 				sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-					*positionLabelIds, entity, top_k, radiusLabelId, *relevantIndices, true, expand_to_first_nonzero_distance, cachedNeighbors[entity]);
+					*positionLabelIds, entity_index, top_k, radiusLabelId, *relevantIndices, true, expand_to_first_nonzero_distance,
+					interpreter, entity, cachedNeighbors[entity_index]);
 			}
 		#ifdef MULTITHREAD_SUPPORT
 			,
@@ -82,7 +86,7 @@ public:
 		out.clear();
 		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
 			*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, true,
-			expand_to_first_nonzero_distance, out, additional_holdout_index);
+			expand_to_first_nonzero_distance, interpreter, entity, out, additional_holdout_index);
 	}
 
 	//gets the top_k nearest neighbor results of entities for the given position, sets out to the results
@@ -100,7 +104,8 @@ public:
 
 		sbfDataStore->FindEntitiesNearestToPosition(*distEvaluator,
 			*positionLabelIds, values, top_k, radiusLabelId,
-			additional_holdout_index, *relevantIndices, true, expand_to_first_nonzero_distance, out);
+			additional_holdout_index, *relevantIndices, true, expand_to_first_nonzero_distance,
+			interpreter, entity, out);
 	}
 
 	//gets the top_k nearest neighbor results of entities for the given index, excluding the additional_holdout_index, sets out to the results
@@ -126,7 +131,7 @@ public:
 		out.clear();
 		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
 			*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, true,
-			expand_to_first_nonzero_distance, out, additional_holdout_index);
+			expand_to_first_nonzero_distance, interpreter, entity, out, additional_holdout_index);
 	}
 
 	//like the other GetKnn, but only considers from_indices
@@ -147,7 +152,8 @@ public:
 		//there were not enough results for this search, just do a new search
 		out.clear();
 		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-			*positionLabelIds, index, top_k, radiusLabelId, from_indices, true, expand_to_first_nonzero_distance, out);
+			*positionLabelIds, index, top_k, radiusLabelId, from_indices, true, expand_to_first_nonzero_distance,
+			interpreter, entity, out);
 	}
 
 	//returns a pointer to the relevant indices of the cache
@@ -177,6 +183,12 @@ protected:
 
 	//distance parameters for the search
 	GeneralizedDistanceEvaluator *distEvaluator;
+
+	//calling interpreter
+	Interpreter *interpreter;
+
+	//containing entity being queried
+	Entity *entity;
 
 	//position labels
 	std::vector<StringInternPool::StringID> *positionLabelIds;

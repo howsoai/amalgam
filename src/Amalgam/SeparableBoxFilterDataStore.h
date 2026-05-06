@@ -22,6 +22,7 @@
 
 //forward declarations:
 class Entity;
+class Interpreter;
 
 //supports cheap modification of:
 //p-value, nominals, weights, distance accuracy, feature selections, case sub-selections
@@ -499,14 +500,16 @@ public:
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
 	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesWithinDistanceToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
-		size_t search_index, double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices,
+	void FindEntitiesWithinDistanceToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval,
+		std::vector<StringInternPool::StringID> &position_label_sids,
+		size_t search_index, double max_dist, StringInternPool::StringID radius_label,
+		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices,
+		Interpreter *interpreter, Entity *entity,
 		std::vector<DistanceReferencePair<size_t>> &distances_out)
 	{
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
-		r_dist_eval.distEvaluator = &dist_eval;
-
-		PopulateTargetValuesAndLabelIndicesFromEntityIndex(r_dist_eval, position_label_sids, search_index);
+		PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator(r_dist_eval,
+			position_label_sids, search_index, &dist_eval, interpreter, entity);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -523,24 +526,27 @@ public:
 		//remove search_index so it doesn't find itself
 		possible_knn_indices->erase(search_index);
 
-		FindEntitiesWithinDistance(dist_eval, max_dist, radius_label, *possible_knn_indices, distances_out);
+		FindEntitiesWithinDistance(r_dist_eval, max_dist, radius_label, *possible_knn_indices, distances_out);
 	}
 
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
 	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	inline void FindEntitiesWithinDistanceToPosition(GeneralizedDistanceEvaluator &dist_eval,
-		std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValueWithType> &position_values,
-		double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices,
+		std::vector<StringInternPool::StringID> &position_label_sids,
+		std::vector<EvaluableNodeImmediateValueWithType> &position_values,
+		double max_dist, StringInternPool::StringID radius_label,
+		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices,
+		Interpreter *interpreter, Entity *entity,
 		std::vector<DistanceReferencePair<size_t>> &distances_out)
 	{
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
-		r_dist_eval.distEvaluator = &dist_eval;
-
-		if(r_dist_eval.distEvaluator->computeSurprisal)
-			InitializeRepeatedDistanceEvaluator<true>(r_dist_eval, position_label_sids, position_values);
+		if(dist_eval.computeSurprisal)
+			InitializeRepeatedDistanceEvaluator<true>(r_dist_eval,
+				position_label_sids, position_values, &dist_eval, interpreter, entity);
 		else
-			InitializeRepeatedDistanceEvaluator<false>(r_dist_eval, position_label_sids, position_values);
+			InitializeRepeatedDistanceEvaluator<false>(r_dist_eval,
+				position_label_sids, position_values, &dist_eval, interpreter, entity);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -554,26 +560,28 @@ public:
 			possible_knn_indices = &enabled_indices;
 		}
 
-		FindEntitiesWithinDistance(dist_eval, max_dist, radius_label, *possible_knn_indices, distances_out);
+		FindEntitiesWithinDistance(r_dist_eval, max_dist, radius_label, *possible_knn_indices, distances_out);
 	}
 
 	//Finds the top_k nearest neighbors results to the entity at search_index.
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	inline void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+	inline void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval,
+		std::vector<StringInternPool::StringID> &position_label_sids,
 		size_t search_index, size_t top_k, StringInternPool::StringID radius_label,
 		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices, bool expand_to_first_nonzero_distance,
+		Interpreter *interpreter, Entity *entity,
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
 		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream())
 	{
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
-		r_dist_eval.distEvaluator = &dist_eval;
-
 		if(r_dist_eval.distEvaluator->computeSurprisal)
-			PopulateTargetValuesAndLabelIndicesFromEntityIndex<true>(r_dist_eval, position_label_sids, search_index);
+			PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator<true>(r_dist_eval,
+				position_label_sids, search_index, &dist_eval, interpreter, entity);
 		else
-			PopulateTargetValuesAndLabelIndicesFromEntityIndex<false>(r_dist_eval, position_label_sids, search_index);
+			PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator<false>(r_dist_eval,
+				position_label_sids, search_index, &dist_eval, interpreter, entity);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -617,12 +625,12 @@ public:
 		std::vector<EvaluableNodeImmediateValueWithType> &position_values, 
 		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
 		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices, bool expand_to_first_nonzero_distance,
+		Interpreter *interpreter, Entity *entity,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream())
 	{
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
-		r_dist_eval.distEvaluator = &dist_eval;
-
-		InitializeRepeatedDistanceEvaluator(r_dist_eval, position_label_sids, position_values);
+		InitializeRepeatedDistanceEvaluator(r_dist_eval,
+			position_label_sids, position_values, &dist_eval, interpreter, entity);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -663,14 +671,14 @@ public:
 			column_data->VerifyAllEntities(numEntities);
 	}
 
-protected:
-
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
 	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &dist_eval,
+	void FindEntitiesWithinDistance(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out);
+
+protected:
 
 	//Finds the top_k nearest neighbors results to the entity at search_index.
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
@@ -968,23 +976,31 @@ protected:
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
 	inline double GetDistanceBetween(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		size_t radius_column_index, size_t other_index, bool high_accuracy)
+		size_t radius_column_index, size_t other_entity_index, bool high_accuracy)
 	{
 		double dist_accum = 0.0;
 		for(size_t i = 0; i < r_dist_eval.featureData.size(); i++)
 		{
-			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
+			if(r_dist_eval.featureData[i].effectiveFeatureType
+				!= RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ENTITY)
+			{
+				auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
 
-			size_t column_index = feature_attribs.featureIndex;
-			auto other_value = columnData[column_index]->GetResolvedIndexValueWithType(other_index);
-			dist_accum += r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, i, high_accuracy);
+				size_t column_index = feature_attribs.featureIndex;
+				auto other_value = columnData[column_index]->GetResolvedIndexValueWithType(other_entity_index);
+				dist_accum += r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, i, high_accuracy);
+			}
+			else
+			{
+				dist_accum += ComputeDistanceTermFromEvaluatingOnEntity(r_dist_eval, other_entity_index, i, high_accuracy);
+			}
 		}
 
 		double dist = r_dist_eval.distEvaluator->InverseExponentiateDistance<compute_surprisal>(dist_accum, high_accuracy);
 
 		if(radius_column_index < columnData.size())
 		{
-			auto radius_value = columnData[radius_column_index]->GetResolvedIndexValueWithType(other_index);
+			auto radius_value = columnData[radius_column_index]->GetResolvedIndexValueWithType(other_entity_index);
 			if(radius_value.nodeType == ENIVT_NUMBER)
 				dist -= radius_value.nodeValue.number;
 		}
@@ -1033,6 +1049,11 @@ protected:
 			sorted_results.Pop();
 		}
 	}
+
+	//interprets the code for the feature on the corresponding entity, then returns the evaluated distance term
+	template<bool compute_surprisal = false>
+	double ComputeDistanceTermFromEvaluatingOnEntity(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		size_t entity_index, size_t query_feature_index, bool high_accuracy);
 
 	//computes the distance term for the entity, query_feature_index, and feature_type,
 	//assumes that null values have already been taken care of for nominals
@@ -1168,10 +1189,9 @@ protected:
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
 
-		default:
-			//RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING,
-			//RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING,
-			//or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
@@ -1180,7 +1200,16 @@ protected:
 			return r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
 				other_value, query_feature_index, high_accuracy);
 		}
+
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ENTITY:
+		{
+			return ComputeDistanceTermFromEvaluatingOnEntity(r_dist_eval, entity_index, query_feature_index, high_accuracy);
 		}
+
+		}
+
+		//shouldn't make it here
+		return std::numeric_limits<double>::infinity();
 	}
 
 	//computes the distance term for value_entry, query_feature_index, and feature_type,
@@ -1299,8 +1328,14 @@ public:
 	//if compute_surprisal is true, it will use a faster execution path
 	template<bool compute_surprisal = false>
 	void InitializeRepeatedDistanceEvaluator(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValueWithType> &position_values)
+		std::vector<StringInternPool::StringID> &position_label_sids,
+		std::vector<EvaluableNodeImmediateValueWithType> &position_values,
+		GeneralizedDistanceEvaluator *dist_eval, Interpreter *interpreter, Entity *entity)
 	{
+		r_dist_eval.distEvaluator = dist_eval;
+		r_dist_eval.callingInterpreter = interpreter;
+		r_dist_eval.entity = entity;
+
 		size_t num_features = position_values.size();
 		r_dist_eval.featureData.resize(num_features);
 		for(size_t query_feature_index = 0; query_feature_index < num_features; query_feature_index++)
@@ -1313,9 +1348,14 @@ public:
 	//populates all target values given the selected target values for each label stored in the entity of entity_index
 	//if compute_surprisal is true, it will use a faster execution path
 	template<bool compute_surprisal = false>
-	void PopulateTargetValuesAndLabelIndicesFromEntityIndex(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		std::vector<StringInternPool::StringID> &position_label_sids, size_t entity_index)
+	void PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		std::vector<StringInternPool::StringID> &position_label_sids, size_t entity_index,
+		GeneralizedDistanceEvaluator *dist_eval, Interpreter *interpreter, Entity *entity)
 	{
+		r_dist_eval.distEvaluator = dist_eval;
+		r_dist_eval.callingInterpreter = interpreter;
+		r_dist_eval.entity = entity;
+
 		size_t num_enabled_features = parametersAndBuffers.rDistEvaluator.distEvaluator->featureAttribs.size();
 		r_dist_eval.featureData.resize(num_enabled_features);
 		for(size_t i = 0; i < num_enabled_features; i++)

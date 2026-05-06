@@ -1559,6 +1559,76 @@ Output:
 	}
 ]
 ```
+Example:
+```amalgam
+(seq
+	(create_entities
+		"vert0"
+		{x 0 y 0}
+	)
+	(create_entities
+		"vert1"
+		{x 1 y 0}
+	)
+	(create_entities
+		"vert2"
+		{x 1 y 1}
+	)
+	(create_entities
+		"vert3"
+		{x 0 y 1}
+	)
+	(create_entities
+		"vert4"
+		{x 0.5 y 0.5}
+	)
+	(create_entities
+		"vert5"
+		{x 2 y 1}
+	)
+
+	(compute_on_contained_entities
+		(query_nearest_generalized_distance
+			3
+			["x" "y"]
+			[1 2]
+			1
+			.null
+			{
+				x
+				{
+					difference_type "continuous"
+					data_type "number"
+				}
+				y
+				{
+					difference_type "continuous"
+					data_type "number"
+					call_entity
+					(lambda 
+						(call_on_entity
+							.null 
+							(* y to_multiply)
+							{to_multiply 10}
+							20
+						)
+					)
+				}
+			}
+			.null
+			.null
+			.null
+			1
+			.null
+			"random seed 1234"
+		)
+	)
+)
+```
+Output:
+```amalgam
+{vert0 3 vert1 2 vert4 3.5}
+```
 
 [Amalgam Opcodes](./opcodes.md)
 

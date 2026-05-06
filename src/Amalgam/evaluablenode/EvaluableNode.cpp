@@ -864,17 +864,6 @@ void EvaluableNode::AppendOrderedChildNodes(const std::vector<EvaluableNode *> &
 	}
 }
 
-EvaluableNode **EvaluableNode::GetMappedChildNode(const StringInternPool::StringID sid)
-{
-	auto &mcn = GetMappedChildNodes();
-	auto node_iter = mcn.find(sid);
-	if(node_iter == end(mcn))
-		return nullptr;
-
-	//return the location of the child pointer
-	return &node_iter->second;
-}
-
 EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const std::string &id)
 {
 	auto &mcn = GetMappedChildNodesReference();

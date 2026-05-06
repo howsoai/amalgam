@@ -231,8 +231,7 @@ std::pair<EvaluableNodeImmediateValueWithType, bool> Entity::GetValueAtLabelAsIm
 	if(label == end(label_index))
 		return std::pair(EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST), false);
 
-	EvaluableNodeImmediateValueWithType retval;
-	retval.CopyValueFromEvaluableNode(label->second, destination_temp_enm);
+	auto retval = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(label->second, destination_temp_enm);
 	return std::pair(retval, true);
 }
 
@@ -437,7 +436,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
 	std::vector<EvaluableNode *> *scope_stack, Interpreter *calling_interpreter,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-	InterpreterConstraints *interpreter_constraints
+	InterpreterConstraints *interpreter_constraints, EvaluableNodeRequestedValueTypes immediate_result
 #ifdef MULTITHREAD_SUPPORT
 	, Concurrency::ReadLock *enm_lock
 #endif

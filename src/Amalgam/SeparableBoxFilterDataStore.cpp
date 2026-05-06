@@ -1503,17 +1503,12 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 	called_entity.lock.unlock();
 #endif
 
+	//copy function to called_entity if appropriate
 	if(call_type == ENT_CALL_ON_ENTITY)
-	{
-		//copy function to called_entity, free function from this entity
-		EvaluableNodeReference called_entity_function(ce_enm.DeepAllocCopy(function), true);
-		function = called_entity_function;
-	}
+		function = EvaluableNodeReference(ce_enm.DeepAllocCopy(function), true);
 
-	//copy arguments to called_entity, free args from this entity
-	EvaluableNodeReference called_entity_args(ce_enm.DeepAllocCopy(args), true);
-	args = called_entity_args;
-
+	//copy arguments to called_entity
+	args = EvaluableNodeReference(ce_enm.DeepAllocCopy(args), true);
 	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, ce_enm);
 
 	calling_interpreter.PopulatePerformanceCounters(&interpreter_constraints, called_entity);

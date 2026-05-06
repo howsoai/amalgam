@@ -151,7 +151,7 @@ public:
 		#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 			id->refCount.fetch_add(1, std::memory_order_acquire);
 		#else
-			id->second->refCount++;
+			id->refCount++;
 		#endif
 		}
 		return id;
@@ -176,7 +176,7 @@ public:
 			#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 				id->refCount.fetch_add(1, std::memory_order_acquire);
 			#else
-				id->second->refCount++;
+				id->refCount++;
 			#endif
 			}
 		}
@@ -203,7 +203,7 @@ public:
 			#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 				id->refCount.fetch_add(additional_reference_count, std::memory_order_acquire);
 			#else
-				id->second->refCount += additional_reference_count;
+				id->refCount += additional_reference_count;
 			#endif
 			}
 		}
@@ -229,7 +229,7 @@ public:
 			#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 				id->refCount.fetch_add(1, std::memory_order_acquire);
 			#else
-				id->second->refCount++;
+				id->refCount++;
 			#endif
 			}
 		}

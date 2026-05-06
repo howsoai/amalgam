@@ -508,8 +508,12 @@ public:
 		std::vector<DistanceReferencePair<size_t>> &distances_out)
 	{
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
-		PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator(r_dist_eval,
-			position_label_sids, search_index, &dist_eval, interpreter, entity);
+		if(dist_eval.computeSurprisal)
+			PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator<true>(r_dist_eval,
+				position_label_sids, search_index, &dist_eval, interpreter, entity);
+		else
+			PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator<false>(r_dist_eval,
+				position_label_sids, search_index, &dist_eval, interpreter, entity);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;
@@ -576,7 +580,7 @@ public:
 		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream())
 	{
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
-		if(r_dist_eval.distEvaluator->computeSurprisal)
+		if(dist_eval.computeSurprisal)
 			PopulateTargetValuesAndInitializeRepeatedDistanceEvaluator<true>(r_dist_eval,
 				position_label_sids, search_index, &dist_eval, interpreter, entity);
 		else
@@ -629,8 +633,12 @@ public:
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream())
 	{
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
-		InitializeRepeatedDistanceEvaluator(r_dist_eval,
-			position_label_sids, position_values, &dist_eval, interpreter, entity);
+		if(dist_eval.computeSurprisal)
+			InitializeRepeatedDistanceEvaluator<true>(r_dist_eval,
+				position_label_sids, position_values, &dist_eval, interpreter, entity);
+		else
+			InitializeRepeatedDistanceEvaluator<false>(r_dist_eval,
+				position_label_sids, position_values, &dist_eval, interpreter, entity);
 
 		//make a copy of the entities if enabled_indices is read-only
 		BitArrayIntegerSet *possible_knn_indices;

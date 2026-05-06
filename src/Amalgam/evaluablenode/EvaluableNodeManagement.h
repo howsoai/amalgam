@@ -856,13 +856,13 @@ protected:
 
 	//gets a pointer to the next available node from the local allocation buffer
 	//nullptr if it cannot
-	inline EvaluableNode *AllocNodeFromLocalAllocationBufferIfAvailable()
+	__forceinline EvaluableNode *AllocNodeFromLocalAllocationBufferIfAvailable()
 	{
 		return localAllocationBuffer.AllocNodeIfAvailable(this);
 	}
 
 	//adds en to the local allocation buffer
-	inline void AddNodeToLocalAllocationBuffer(EvaluableNode *en)
+	__forceinline void AddNodeToLocalAllocationBuffer(EvaluableNode *en)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		assert(en->IsNodeDeallocated());

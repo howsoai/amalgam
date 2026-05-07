@@ -959,7 +959,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		else //GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE_NO_RECURSIVE_MATCHING or GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE
 		{
 			//next most similar code must be at least a distance of 1 edit away
-			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular<compute_surprisal>(1.0, query_feature_index, high_accuracy);
+			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular<compute_surprisal>(1.0, query_feature_index,
+				feature_data.fastApproxDeviation, high_accuracy);
 		}
 	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
@@ -975,7 +976,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		}
 
 		//the next closest string will have an edit distance of 1
-		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular<compute_surprisal>(1.0, query_feature_index, high_accuracy);
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular<compute_surprisal>(1.0, query_feature_index,
+			feature_data.fastApproxDeviation, high_accuracy);
 	}
 	//else feature_type == FDT_CONTINUOUS_NUMBER or FDT_CONTINUOUS_NUMBER_CYCLIC
 
@@ -992,10 +994,12 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 	double term = 0.0;
 	if(value_entry_iter->first == value.nodeValue.number)
-		term = ComputeDistanceTermContinuousExactMatch<compute_surprisal>(r_dist_eval, value_entry_iter->second, query_feature_index, high_accuracy);
+		term = ComputeDistanceTermContinuousExactMatch<compute_surprisal>(r_dist_eval,
+			value_entry_iter->second, query_feature_index, high_accuracy);
 	else
 		term = ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(r_dist_eval,
-			value.nodeValue.number, value_entry_iter->second, query_feature_index, high_accuracy);
+			value.nodeValue.number, value_entry_iter->second, query_feature_index,
+			feature_data.fastApproxDeviation, high_accuracy);
 
 	size_t num_entities_computed = AccumulatePartialSums(enabled_indices, value_entry_iter->second.indicesWithValue, query_feature_index, term);
 
@@ -1158,7 +1162,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			else //exceeded the deviation expansion, so can enable fast surprisal computation
 			{	
 				if(r_dist_eval.distEvaluator->computeSurprisal)
-					r_dist_eval.distEvaluator->featureAttribs[query_feature_index].fastApproxDeviation = true;
+					r_dist_eval.featureData[query_feature_index].fastApproxDeviation = true;
 			}
 
 			if(!should_continue)
@@ -1166,8 +1170,11 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		}
 
 		term = ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(r_dist_eval,
-			value.nodeValue.number, next_closest_iter->second, query_feature_index, high_accuracy);
-		num_entities_computed += AccumulatePartialSums(enabled_indices, next_closest_iter->second.indicesWithValue, query_feature_index, term);
+			value.nodeValue.number, next_closest_iter->second, query_feature_index,
+			feature_data.fastApproxDeviation, high_accuracy);
+
+		num_entities_computed += AccumulatePartialSums(enabled_indices,
+			next_closest_iter->second.indicesWithValue, query_feature_index, term);
 
 		//track the rate of change of difference
 		if(next_closest_diff - last_diff > largest_diff_delta)

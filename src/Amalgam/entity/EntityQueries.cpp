@@ -184,7 +184,8 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 					radius = value;
 			}
 
-			double distance = distEvaluator.ComputeMinkowskiDistance(position, valuesToCompare, distEvaluator.highAccuracyDistances);
+			double distance = distEvaluator.ComputeMinkowskiDistance(position, valuesToCompare,
+				false, distEvaluator.highAccuracyDistances);
 			if(distance - radius > maxDistance)
 				return false;
 
@@ -237,7 +238,7 @@ double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e, bool high_ac
 			radius = value;
 	}
 		
-	double distance = distEvaluator.ComputeMinkowskiDistance(position, valuesToCompare, high_accuracy);
+	double distance = distEvaluator.ComputeMinkowskiDistance(position, valuesToCompare, false, high_accuracy);
 	return distance - radius;
 }
 

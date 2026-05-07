@@ -71,7 +71,7 @@ public:
 		double max_diff = columnData[absolute_feature_index]->GetMaxDifference(
 														r_dist_eval.distEvaluator->featureAttribs[query_feature_index]);
 		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(
-														max_diff, query_feature_index, high_accuracy);
+														max_diff, query_feature_index, false, high_accuracy);
 	}
 
 	//returns a reference to the element for index at absolute_feature_index, assuming both are valid values
@@ -1081,7 +1081,7 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular<compute_surprisal>(
 				feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
-				query_feature_index, high_accuracy);
+				query_feature_index, feature_data.fastApproxDeviation, high_accuracy);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED:
@@ -1098,7 +1098,7 @@ protected:
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular<compute_surprisal>(
 					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
-					query_feature_index, high_accuracy);
+					query_feature_index, feature_data.fastApproxDeviation, high_accuracy);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
@@ -1110,7 +1110,7 @@ protected:
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousOneNonNullRegular<compute_surprisal>(
 					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
-					query_feature_index, high_accuracy);
+					query_feature_index, feature_data.fastApproxDeviation, high_accuracy);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
@@ -1224,7 +1224,8 @@ protected:
 	//if compute_surprisal is true, it will use a faster execution path
 	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermContinuousNonNullRegular(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		double target_value, SBFDSColumnData::ValueEntry &value_entry, size_t query_feature_index, bool high_accuracy)
+		double target_value, SBFDSColumnData::ValueEntry &value_entry, size_t query_feature_index,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
 		auto &feature_data = r_dist_eval.featureData[query_feature_index];
 		if(feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED
@@ -1233,7 +1234,8 @@ protected:
 				value_entry.valueInternIndex, query_feature_index);
 
 		double diff = target_value - value_entry.value.number;
-		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(diff, query_feature_index, high_accuracy);
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(diff, query_feature_index,
+			fast_approx_deviation, high_accuracy);
 	}
 
 	//computes the inner term for a non-nominal with an exact match of values

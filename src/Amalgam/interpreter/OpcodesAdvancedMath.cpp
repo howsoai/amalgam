@@ -1846,7 +1846,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	dist_eval.recomputeAccurateDistances = false;
 	dist_eval.InitializeParametersAndFeatureParams();
 
-	double value = dist_eval.ComputeMinkowskiDistance(location, origin, true);
+	double value = dist_eval.ComputeMinkowskiDistance(location, origin, false, true);
 	evaluableNodeManager->FreeNodeTreeIfPossible(location_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(origin_node);
 	return AllocReturn(value, immediate_result);

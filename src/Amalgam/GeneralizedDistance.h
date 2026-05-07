@@ -94,7 +94,7 @@ public:
 	{
 	public:
 		inline FeatureAttributes()
-			: featureType(FDT_CONTINUOUS_NUMBER), fastApproxDeviation(false),
+			: featureType(FDT_CONTINUOUS_NUMBER),
 			featureIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0),
 			deviationReciprocal(0.0), deviationReciprocalNegative(0.0), deviationTimesThree(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
@@ -150,10 +150,6 @@ public:
 		//the type of comparison for each feature
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		FeatureDifferenceType featureType;
-
-		//if true and not highAccuracyDistances, will perform a shortcut surprisal computation skipping computation
-		// of Lukaszyk–Karmowski difference calculations and using a constant instead
-		bool fastApproxDeviation;
 
 		//index of the feature as stored in an external location
 		size_t featureIndex;
@@ -279,14 +275,15 @@ public:
 	// for Laplace, the Laplace distribution has 1 nat worth of information, but additionally, there is a 50/50 chance that the
 	// difference is within the mean absolute error, yielding an overcounting of an additional 1/2 nat.  So the total reduction is 1.5 nats
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
-	__forceinline double ComputeDifferenceWithDeviation(double diff, size_t feature_index, bool surprisal_transform, bool high_accuracy)
+	__forceinline double ComputeDifferenceWithDeviation(double diff, size_t feature_index, bool surprisal_transform,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
 		auto &feature_attribs = featureAttribs[feature_index];
 
 	#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
 		if(!high_accuracy)
 		{
-			if(feature_attribs.fastApproxDeviation)
+			if(fast_approx_deviation)
 			{
 				//use a fast approximation; see the s_deviation_expansion_lk_offset definition for details
 				diff += s_deviation_expansion_lk_offset;
@@ -765,7 +762,7 @@ public:
 			return 0.0;
 
 		//apply deviations -- if computeSurprisal, will be caught above and always return 0.0
-		double diff = ComputeDifferenceWithDeviation(0.0, index, false, high_accuracy);
+		double diff = ComputeDifferenceWithDeviation(0.0, index, false, false, high_accuracy);
 		
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
@@ -774,7 +771,8 @@ public:
 	//computes the base of the difference between two continuous values without exponentiation
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
-	__forceinline double ComputeDifferenceTermBaseContinuous(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDifferenceTermBaseContinuous(double diff, size_t index,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
 		//compute absolute value
 		diff = std::abs(diff);
@@ -785,10 +783,10 @@ public:
 
 		//apply deviations
 		if constexpr(compute_surprisal)
-			return ComputeDifferenceWithDeviation(diff, index, true, high_accuracy);
+			return ComputeDifferenceWithDeviation(diff, index, true, fast_approx_deviation, high_accuracy);
 
 		if(DoesFeatureHaveDeviation(index))
-			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal, high_accuracy);
+			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal, fast_approx_deviation, high_accuracy);
 		else
 			return diff;
 	}
@@ -796,17 +794,18 @@ public:
 	//computes the base of the difference between two values non-nominal (e.g., continuous) that isn't cyclic
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
-	__forceinline double ComputeDifferenceTermBaseContinuousNonCyclic(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDifferenceTermBaseContinuousNonCyclic(double diff, size_t index,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
 		//compute absolute value
 		diff = std::abs(diff);
 
 		//apply deviations
 		if constexpr(compute_surprisal)
-			return ComputeDifferenceWithDeviation(diff, index, true, high_accuracy);
+			return ComputeDifferenceWithDeviation(diff, index, true, fast_approx_deviation, high_accuracy);
 
 		if(DoesFeatureHaveDeviation(index))
-			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal, high_accuracy);
+			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal, fast_approx_deviation, high_accuracy);
 		else
 			return diff;
 	}
@@ -815,9 +814,10 @@ public:
 	// diff can be negative
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
-	__forceinline double ComputeDistanceTermContinuousNonNullRegular(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousNonNullRegular(double diff, size_t index,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
-		diff = ComputeDifferenceTermBaseContinuous<compute_surprisal>(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous<compute_surprisal>(diff, index, fast_approx_deviation, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm<compute_surprisal>(diff, high_accuracy) * featureAttribs[index].weight;
@@ -827,9 +827,10 @@ public:
 	// diff can be negative
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
-	__forceinline double ComputeDistanceTermContinuousOneNonNullRegular(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousOneNonNullRegular(double diff, size_t index,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
-		diff = ComputeDifferenceTermBaseContinuous<compute_surprisal>(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous<compute_surprisal>(diff, index, fast_approx_deviation, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm<compute_surprisal>(diff, high_accuracy) * featureAttribs[index].weight;
@@ -839,9 +840,10 @@ public:
 	// diff can be negative
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
-	__forceinline double ComputeDistanceTermContinuousNonCyclicNonNullRegular(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousNonCyclicNonNullRegular(double diff, size_t index,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
-		diff = ComputeDifferenceTermBaseContinuousNonCyclic<compute_surprisal>(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuousNonCyclic<compute_surprisal>(diff, index, fast_approx_deviation, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm<compute_surprisal>(diff, high_accuracy) * featureAttribs[index].weight;
@@ -851,12 +853,13 @@ public:
 	// diff can be negative
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
-	__forceinline double ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(double diff, size_t index,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
 		if(FastIsNaN(diff))
 			return ComputeDistanceTermKnownToUnknown(index);
 
-		diff = ComputeDifferenceTermBaseContinuousNonCyclic<compute_surprisal>(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuousNonCyclic<compute_surprisal>(diff, index, fast_approx_deviation, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm<compute_surprisal>(diff, high_accuracy) * featureAttribs[index].weight;
@@ -864,7 +867,8 @@ public:
 
 	//computes the inner term of the Minkowski norm summation for a single index for p=0
 	__forceinline double ComputeDistanceTermP0(const EvaluableNodeImmediateValueWithType &a,
-		const EvaluableNodeImmediateValueWithType &b, size_t index, bool high_accuracy)
+		const EvaluableNodeImmediateValueWithType &b, size_t index,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
@@ -874,14 +878,15 @@ public:
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, index, high_accuracy);
 
-		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous(diff, index, fast_approx_deviation, high_accuracy);
 
 		return ContextuallyExponentiateAndWeightDifferenceTerm(diff, index, high_accuracy);
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p=infinity or -infinity
 	__forceinline double ComputeDistanceTermPInf(const EvaluableNodeImmediateValueWithType &a,
-		const EvaluableNodeImmediateValueWithType &b, size_t index, bool high_accuracy)
+		const EvaluableNodeImmediateValueWithType &b, size_t index,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
@@ -891,14 +896,15 @@ public:
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, index, high_accuracy);
 
-		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous(diff, index, fast_approx_deviation, high_accuracy);
 
 		return ContextuallyExponentiateAndWeightDifferenceTerm(diff, index, high_accuracy);
 	}
 
 	//computes the inner term of the Minkowski norm when a term matches a null value
 	//for a given deviation with regard to the null
-	__forceinline double ComputeDistanceTermMatchOnNull(size_t index, double deviation, bool high_accuracy)
+	__forceinline double ComputeDistanceTermMatchOnNull(size_t index, double deviation,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
 		double diff = 0;
 		if(IsFeatureNominal(index))
@@ -916,7 +922,7 @@ public:
 		}
 		else
 		{
-			diff = ComputeDifferenceTermBaseContinuous(deviation, index, high_accuracy);
+			diff = ComputeDifferenceTermBaseContinuous(deviation, index, fast_approx_deviation, high_accuracy);
 		}
 
 		return ContextuallyExponentiateAndWeightDifferenceTerm(diff, index, high_accuracy);
@@ -926,7 +932,8 @@ public:
 	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
 	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermRegular(const EvaluableNodeImmediateValueWithType &a,
-		const EvaluableNodeImmediateValueWithType &b, size_t index, bool high_accuracy)
+		const EvaluableNodeImmediateValueWithType &b, size_t index,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
@@ -936,7 +943,7 @@ public:
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, index, high_accuracy);
 
-		return ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(diff, index, high_accuracy);
+		return ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(diff, index, fast_approx_deviation, high_accuracy);
 	}
 
 	//returns the distance term for the either one or two unknown values
@@ -1049,7 +1056,7 @@ public:
 	//if deviations.size() == 0, no deviations are used, else deviations.size() must == a.size() == b.size()
 	//	-uses per-feature deviations: per-feature deviation is added after the distance between ai and bi is computed
 	__forceinline double ComputeMinkowskiDistance(std::vector<EvaluableNodeImmediateValueWithType> &a,
-		std::vector<EvaluableNodeImmediateValueWithType> &b, bool high_accuracy)
+		std::vector<EvaluableNodeImmediateValueWithType> &b, bool fast_approx_deviation, bool high_accuracy)
 	{
 		if(a.size() != b.size())
 			return std::numeric_limits<double>::quiet_NaN();
@@ -1058,7 +1065,7 @@ public:
 		{
 			double dist_accum = 1.0;
 			for(size_t i = 0; i < a.size(); i++)
-				dist_accum *= ComputeDistanceTermP0(a[i], b[i], i, high_accuracy);
+				dist_accum *= ComputeDistanceTermP0(a[i], b[i], i, fast_approx_deviation, high_accuracy);
 
 			return dist_accum;
 		}
@@ -1068,7 +1075,7 @@ public:
 
 			for(size_t i = 0; i < a.size(); i++)
 			{
-				double term = ComputeDistanceTermPInf(a[i], b[i], i, high_accuracy);
+				double term = ComputeDistanceTermPInf(a[i], b[i], i, fast_approx_deviation, high_accuracy);
 
 				if(term > max_term)
 					max_term = term;
@@ -1082,7 +1089,7 @@ public:
 
 			for(size_t i = 0; i < a.size(); i++)
 			{
-				double term = ComputeDistanceTermPInf(a[i], b[i], i, high_accuracy);
+				double term = ComputeDistanceTermPInf(a[i], b[i], i, fast_approx_deviation, high_accuracy);
 
 				if(term < min_term)
 					min_term = term;
@@ -1094,7 +1101,7 @@ public:
 		{
 			double dist_accum = 0.0;
 			for(size_t i = 0; i < a.size(); i++)
-				dist_accum += ComputeDistanceTermRegular(a[i], b[i], i, high_accuracy);
+				dist_accum += ComputeDistanceTermRegular(a[i], b[i], i, fast_approx_deviation, high_accuracy);
 
 			return InverseExponentiateDistance(dist_accum, high_accuracy);
 		}
@@ -1142,7 +1149,7 @@ protected:
 			}
 
 			feature_attribs.unknownToUnknownDistanceTerm.distanceTerm
-				= ComputeDistanceTermMatchOnNull(i, feature_attribs.unknownToUnknownDistanceTerm.deviation, true);
+				= ComputeDistanceTermMatchOnNull(i, feature_attribs.unknownToUnknownDistanceTerm.deviation, false, true);
 
 			//if knownToUnknownDifference is same as unknownToUnknownDifference, can copy distance term instead of recomputing
 			if(feature_attribs.knownToUnknownDistanceTerm.deviation == feature_attribs.unknownToUnknownDistanceTerm.deviation)
@@ -1152,7 +1159,7 @@ protected:
 			else
 			{
 				feature_attribs.knownToUnknownDistanceTerm.distanceTerm
-					= ComputeDistanceTermMatchOnNull(i, feature_attribs.knownToUnknownDistanceTerm.deviation, true);
+					= ComputeDistanceTermMatchOnNull(i, feature_attribs.knownToUnknownDistanceTerm.deviation, false, true);
 			}
 		}
 	}
@@ -1391,7 +1398,7 @@ public:
 			{
 				feature_data.internedDistanceTerms[i] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
 						feature_data.targetValue, EvaluableNodeImmediateValueWithType(interned_values[i], immediate_type),
-						index, high_accuracy_interned_values);
+						index, false, high_accuracy_interned_values);
 			}
 		}
 	}
@@ -1425,11 +1432,11 @@ public:
 		{
 			feature_data.internedDistanceTerms[0] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
 						feature_data.targetValue, EvaluableNodeImmediateValueWithType(false),
-						index, high_accuracy_interned_values);
+						index, false, high_accuracy_interned_values);
 
 			feature_data.internedDistanceTerms[1] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
 						feature_data.targetValue, EvaluableNodeImmediateValueWithType(true),
-						index, high_accuracy_interned_values);
+						index, false, high_accuracy_interned_values);
 		}
 	}
 
@@ -1635,7 +1642,8 @@ public:
 		if(FastIsNaN(diff))
 			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue, other_value, index, high_accuracy);
 
-		return distEvaluator->ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(diff, index, high_accuracy);
+		return distEvaluator->ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(diff, index,
+			feature_data.fastApproxDeviation, high_accuracy);
 	}
 
 	//pointer to a valid, populated GeneralizedDistanceEvaluator
@@ -1653,6 +1661,7 @@ public:
 		void Clear()
 		{
 			effectiveFeatureType = EFDT_CONTINUOUS_NUMERIC;
+			fastApproxDeviation = false;
 			defaultNominalMatchDistanceTerm = 0.0;
 			defaultNominalNonMatchDistanceTerm = 0.0;
 			precomputedRemainingIdenticalDistanceTerm = 0.0;
@@ -1672,6 +1681,10 @@ public:
 		//the effective comparison for the feature type, specialized for performance
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		EffectiveFeatureDifferenceType effectiveFeatureType;
+
+		//if true and not highAccuracyDistances, will perform a shortcut surprisal computation skipping computation
+		// of Lukaszyk–Karmowski difference calculations and using a constant instead
+		bool fastApproxDeviation;
 
 		//target that the distance will be computed to
 		EvaluableNodeImmediateValueWithType targetValue;

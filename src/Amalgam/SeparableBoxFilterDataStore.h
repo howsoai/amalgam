@@ -1346,12 +1346,13 @@ public:
 		r_dist_eval.callingInterpreter = interpreter;
 		r_dist_eval.entity = entity;
 
-		size_t num_features = position_values.size();
+		size_t num_features = dist_eval->featureAttribs.size();
 		r_dist_eval.featurePrecomputedData.resize(num_features);
 		for(size_t query_feature_index = 0; query_feature_index < num_features; query_feature_index++)
 		{
+			size_t position_index = dist_eval->featureAttribs[query_feature_index].positionValueIndex;
 			InitializeRepeatedDistanceEvaluatorForFeature<compute_surprisal>(
-				r_dist_eval, query_feature_index, position_values[query_feature_index]);
+				r_dist_eval, query_feature_index, position_values[position_index]);
 		}
 	}
 
@@ -1366,7 +1367,7 @@ public:
 		r_dist_eval.callingInterpreter = interpreter;
 		r_dist_eval.entity = entity;
 
-		size_t num_enabled_features = parametersAndBuffers.rDistEvaluator.distEvaluator->featureAttribs.size();
+		size_t num_enabled_features = dist_eval->featureAttribs.size();
 		r_dist_eval.featurePrecomputedData.resize(num_enabled_features);
 		for(size_t i = 0; i < num_enabled_features; i++)
 		{
@@ -1380,15 +1381,29 @@ public:
 	inline void PopulateGeneralizedDistanceEvaluatorFromColumnData(
 		GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids)
 	{
-		for(size_t query_feature_index = 0; query_feature_index < position_label_sids.size(); query_feature_index++)
+		for(size_t position_feature_index = 0, query_feature_index = 0;
+			position_feature_index < position_label_sids.size();
+			position_feature_index++, query_feature_index++)
 		{
-			auto column = labelIdToColumnIndex.find(position_label_sids[query_feature_index]);
+			auto column = labelIdToColumnIndex.find(position_label_sids[position_feature_index]);
 			if(column == end(labelIdToColumnIndex))
+			{
+				dist_eval.featureAttribs.erase(begin(dist_eval.featureAttribs) + query_feature_index);
+				query_feature_index--;
 				continue;
+			}
 
+			//remove feature if not releveant to save compute cost
 			auto &feature_attribs = dist_eval.featureAttribs[query_feature_index];
+			if(feature_attribs.weight == 0.0)
+			{
+				dist_eval.featureAttribs.erase(begin(dist_eval.featureAttribs) + query_feature_index);
+				query_feature_index--;
+				continue;
+			}
+
 			feature_attribs.featureDataIndex = column->second;
-			feature_attribs.positionValueIndex = query_feature_index;
+			feature_attribs.positionValueIndex = position_feature_index;
 			auto &column_data = columnData[feature_attribs.featureDataIndex];
 
 			//estimate probability impact for compute cost of feature
@@ -1436,7 +1451,6 @@ public:
 			}
 		}
 
-		//TODO 25396: change places that obtain position data to use positionValueIndex
 		//TODO 25396: sort here
 	}
 

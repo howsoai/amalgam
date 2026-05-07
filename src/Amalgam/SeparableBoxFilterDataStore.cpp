@@ -845,7 +845,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//else value_type == ENIVT_NULL and already covered above
 
 		//return the value that the remainder of the entities have
-		double nonmatch_dist_term = feature_attribs.nominalSymmetricNonMatchDistanceTerm;
+		double nonmatch_dist_term = feature_attribs.typeAttributes.nominal.symmetricNonMatchDistanceTerm;
 		feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
 		return nonmatch_dist_term;
 	}

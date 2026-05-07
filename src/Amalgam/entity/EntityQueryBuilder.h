@@ -436,7 +436,7 @@ namespace EntityQueryBuilder
 								feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
 							}
 
-							auto &nominal_count = feature_attribs.typeAttributes.nominalCount;
+							auto &nominal_count = feature_attribs.typeAttributes.nominal.count;
 							nominal_count = std::numeric_limits<double>::quiet_NaN();
 							EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_count, nominal_count);
 						}

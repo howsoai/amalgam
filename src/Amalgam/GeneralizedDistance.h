@@ -157,15 +157,20 @@ public:
 		//weight of the feature
 		double weight;
 
-		//distance terms for nominals
-		double nominalSymmetricMatchDistanceTerm;
-		double nominalSymmetricNonMatchDistanceTerm;
-
 		//type attributes dependent on featureType
 		union
 		{
-			//number of relevant nominal values
-			double nominalCount;
+			//parameters for nominal matching
+			struct
+			{
+				//number of relevant nominal values
+				double count;
+
+				//distance terms for nominals
+				double symmetricMatchDistanceTerm;
+				double symmetricNonMatchDistanceTerm;
+
+			} nominal;
 
 			//maximum difference value of the feature for cyclic features (NaN if unknown)
 			double cycleRange;
@@ -513,8 +518,8 @@ public:
 			if(a_is_null || b_is_null)
 				return ComputeDistanceTermKnownToUnknown(index);
 
-			return are_equal ? feature_attribs.nominalSymmetricMatchDistanceTerm
-				: feature_attribs.nominalSymmetricNonMatchDistanceTerm;
+			return are_equal ? feature_attribs.typeAttributes.nominal.symmetricMatchDistanceTerm
+				: feature_attribs.typeAttributes.nominal.symmetricNonMatchDistanceTerm;
 		}
 
 		double prob_class_given_match = std::numeric_limits<double>::quiet_NaN();
@@ -643,7 +648,7 @@ public:
 	// num_classes_accounted_for
 	inline double GetNonmatchingNominalClassCount(size_t index, size_t num_classes_accounted_for = 0)
 	{
-		double nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount
+		double nonmatching_classes = featureAttribs[index].typeAttributes.nominal.count
 			- static_cast<double>(num_classes_accounted_for);
 
 		//ensure not NaN and at least 1
@@ -1134,12 +1139,12 @@ protected:
 				if(DoesFeatureHaveDeviation(i))
 				{
 					constexpr double smallest_delta = 1e-100;
-					if(feature_attribs.typeAttributes.nominalCount <= 1 && feature_attribs.deviation < smallest_delta)
+					if(feature_attribs.typeAttributes.nominal.count <= 1 && feature_attribs.deviation < smallest_delta)
 						feature_attribs.deviation = smallest_delta;
 				}
 
-				feature_attribs.nominalSymmetricMatchDistanceTerm = ComputeDistanceTermNominalUniversallySymmetricExactMatch(i);
-				feature_attribs.nominalSymmetricNonMatchDistanceTerm = ComputeDistanceTermNominalUniversallySymmetricNonMatch(i);
+				feature_attribs.typeAttributes.nominal.symmetricMatchDistanceTerm = ComputeDistanceTermNominalUniversallySymmetricExactMatch(i);
+				feature_attribs.typeAttributes.nominal.symmetricNonMatchDistanceTerm = ComputeDistanceTermNominalUniversallySymmetricNonMatch(i);
 			}
 			else if(DoesFeatureHaveDeviation(i))
 			{

@@ -462,7 +462,7 @@ namespace EntityQueryBuilder
 							}
 							else //treat as GetStringIdFromNodeType(ENT_NUMBER)
 							{
-								auto &cycle_range = feature_attribs.typeAttributes.cycleRange;
+								auto &cycle_range = feature_attribs.typeAttributes.continuous.cycleRange;
 								cycle_range = std::numeric_limits<double>::quiet_NaN();
 								EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_cycle_range, cycle_range);
 

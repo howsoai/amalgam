@@ -96,12 +96,11 @@ public:
 		inline FeatureAttributes()
 			: featureType(FDT_CONTINUOUS_NUMBER),
 			featureIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0),
-			deviationReciprocal(0.0), deviationReciprocalNegative(0.0), deviationTimesThree(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			callEntityOpcode(nullptr)
 		{
-			typeAttributes.cycleRange = std::numeric_limits<double>::quiet_NaN();
+			typeAttributes.continuous.cycleRange = std::numeric_limits<double>::quiet_NaN();
 		}
 
 		//returns true if the feature is nominal
@@ -172,8 +171,17 @@ public:
 
 			} nominal;
 
-			//maximum difference value of the feature for cyclic features (NaN if unknown)
-			double cycleRange;
+			//parameters for continuous matching
+			struct
+			{
+				//maximum difference value of the feature for cyclic features (NaN if unknown)
+				double cycleRange;
+
+				//cached computations from deviations for speed
+				double deviationReciprocal;
+				double deviationReciprocalNegative;
+				double deviationTimesThree;
+			} continuous;
 
 			//parameters for code matching
 			struct
@@ -189,10 +197,6 @@ public:
 		//mean absolute error of predicting the value
 		//if sparse deviation values are specified, this is the average value
 		double deviation;
-		//cached computations from deviations for speed
-		double deviationReciprocal;
-		double deviationReciprocalNegative;
-		double deviationTimesThree;
 
 		//sparse deviation matrix if the nominal is a string
 		//store as a vector of pairs instead of a map because either only one value will be looked up once,
@@ -299,14 +303,14 @@ public:
 				//cast to float before taking the exponent since it's faster than a double, and because if the
 				//difference divided by the deviation exceeds the single precision floating point range,
 				//it will just set the term to zero, which is appropriate
-				diff += std::exp(static_cast<float>(diff * feature_attribs.deviationReciprocalNegative))
-					* (feature_attribs.deviationTimesThree + diff) * 0.5;
+				diff += std::exp(static_cast<float>(diff * feature_attribs.typeAttributes.continuous.deviationReciprocalNegative))
+					* (feature_attribs.typeAttributes.continuous.deviationTimesThree + diff) * 0.5;
 			}
 
 			if(surprisal_transform)
 			{
 				//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
-				double difference = (diff * feature_attribs.deviationReciprocal) - s_surprisal_of_laplace;
+				double difference = (diff * feature_attribs.typeAttributes.continuous.deviationReciprocal) - s_surprisal_of_laplace;
 
 				//it is possible that the subtraction misses the least significant bit in the mantissa due
 				//to numerical precision, returning a negative number, which causes issues, so clamp to zero if below
@@ -322,7 +326,7 @@ public:
 		else //high_accuracy
 		{
 			double deviation = feature_attribs.deviation;
-			diff += std::exp(-diff / deviation) * (feature_attribs.deviationTimesThree + diff) * 0.5;
+			diff += std::exp(-diff / deviation) * (feature_attribs.typeAttributes.continuous.deviationTimesThree + diff) * 0.5;
 			if(surprisal_transform)
 			{
 				double difference = (diff / deviation) - s_surprisal_of_laplace;
@@ -630,7 +634,7 @@ public:
 		}
 
 		if(IsFeatureCyclic(index))
-			return featureAttribs[index].typeAttributes.cycleRange / 2;
+			return featureAttribs[index].typeAttributes.continuous.cycleRange / 2;
 
 		//if not theoretical, then not known
 		if(!theoretical_max_dist)
@@ -784,7 +788,8 @@ public:
 
 		//apply cyclic wrapping
 		if(IsFeatureCyclic(index))
-			diff = ConstrainDifferenceToCyclicDifference(diff, featureAttribs[index].typeAttributes.cycleRange);
+			diff = ConstrainDifferenceToCyclicDifference(diff,
+				featureAttribs[index].typeAttributes.continuous.cycleRange);
 
 		//apply deviations
 		if constexpr(compute_surprisal)
@@ -1148,9 +1153,9 @@ protected:
 			}
 			else if(DoesFeatureHaveDeviation(i))
 			{
-				feature_attribs.deviationReciprocal = 1.0 / feature_attribs.deviation;
-				feature_attribs.deviationReciprocalNegative = -feature_attribs.deviationReciprocal;
-				feature_attribs.deviationTimesThree = 3.0 * feature_attribs.deviation;
+				feature_attribs.typeAttributes.continuous.deviationReciprocal = 1.0 / feature_attribs.deviation;
+				feature_attribs.typeAttributes.continuous.deviationReciprocalNegative = -feature_attribs.typeAttributes.continuous.deviationReciprocal;
+				feature_attribs.typeAttributes.continuous.deviationTimesThree = 3.0 * feature_attribs.deviation;
 			}
 
 			feature_attribs.unknownToUnknownDistanceTerm.distanceTerm

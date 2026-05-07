@@ -1391,12 +1391,29 @@ public:
 			feature_attribs.positionValueIndex = query_feature_index;
 			auto &column_data = columnData[feature_attribs.featureDataIndex];
 
+			//estimate probability impact for compute cost of feature
+			double compute_cost_mult = 1.0;
+			if(!column_data->internedNumberValues.valueInterningEnabled)
+			{
+				if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER
+						|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC)
+					compute_cost_mult = 0.25;
+				else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
+						|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE
+						|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
+					compute_cost_mult = 0.0625;
+			}
+			feature_attribs.probabilityImpactForComputeCost = feature_attribs.weight * compute_cost_mult;
+			
+			//compute nominal count
 			if(feature_attribs.IsFeatureNominal())
 			{
 				//if nominal count is not specified, compute from the existing data
-				if(FastIsNaN(feature_attribs.typeAttributes.nominal.count) || feature_attribs.typeAttributes.nominal.count < 1)
+				if(FastIsNaN(feature_attribs.typeAttributes.nominal.count)
+					|| feature_attribs.typeAttributes.nominal.count < 1)
 				{
-					//account for the max-ent probability that there's a 50% chance that the next record observed will be a new class
+					//account for the max-ent probability that there's a 50% chance that
+					// the next record observed will be a new class
 					double num_potential_unseen_classes = 1 / (column_data->GetNumValidDataElements() + 0.5);
 					feature_attribs.typeAttributes.nominal.count
 						= static_cast<double>(column_data->GetNumUniqueValues()) + num_potential_unseen_classes;

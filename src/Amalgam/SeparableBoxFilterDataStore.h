@@ -1451,7 +1451,11 @@ public:
 			}
 		}
 
-		//TODO 25396: sort here
+		std::sort(begin(dist_eval.featureAttribs), end(dist_eval.featureAttribs),
+			[](const auto &a, const auto &b)
+			{
+				return a.probabilityImpactForComputeCost > b.probabilityImpactForComputeCost;
+			});
 	}
 
 	//returns all elements in the database that yield valid distances along with their sorted distances to the values for entity

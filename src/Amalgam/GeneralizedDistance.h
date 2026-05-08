@@ -95,7 +95,7 @@ public:
 	public:
 		inline FeatureAttributes()
 			: featureType(FDT_CONTINUOUS_NUMBER),
-			featureIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0),
+			featureDataIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			callEntityOpcode(nullptr)
@@ -150,8 +150,8 @@ public:
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		FeatureDifferenceType featureType;
 
-		//index of the feature as stored in an external location
-		size_t featureIndex;
+		//index of the feature data as stored in an external location
+		size_t featureDataIndex;
 
 		//weight of the feature
 		double weight;
@@ -221,6 +221,12 @@ public:
 		//if callEntityOpcode is not nullptr, it will call the entity before computing;
 		//it will use the return value instead of calling the entity label distance, passing in callparams
 		EvaluableNode *callEntityOpcode;
+
+		//index to the corresponding position value
+		size_t positionValueIndex;
+
+		//an estimate for how much this feature will impact the total probability divided by compute overhead
+		double probabilityImpactForComputeCost;
 	};
 
 	//initializes and precomputes relevant data including featureAttribs
@@ -1282,12 +1288,12 @@ public:
 				smallest_dist_term = dist_term;
 		}
 
-		auto &feature_data = featureData[index];
+		auto &feature_precomp_data = featurePrecomputedData[index];
 		double default_mismatch_deviation = deviations_for_value->second.defaultDeviation;
 		if(FastIsNaN(default_mismatch_deviation))
 		{
-			feature_data.defaultNominalMatchDistanceTerm = smallest_dist_term;
-			feature_data.defaultNominalNonMatchDistanceTerm
+			feature_precomp_data.defaultNominalMatchDistanceTerm = smallest_dist_term;
+			feature_precomp_data.defaultNominalNonMatchDistanceTerm
 				= distEvaluator->featureAttribs[index].knownToUnknownDistanceTerm.distanceTerm;
 		}
 		else
@@ -1305,11 +1311,11 @@ public:
 			//divide the probability among the other classes
 			double prob_class_given_nonmatch = (1 - default_mismatch_deviation) / nonmatching_classes;
 
-			feature_data.defaultNominalMatchDistanceTerm
+			feature_precomp_data.defaultNominalMatchDistanceTerm
 				= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities<compute_surprisal>(
 					index, prob_class_given_match);
 
-			feature_data.defaultNominalNonMatchDistanceTerm
+			feature_precomp_data.defaultNominalNonMatchDistanceTerm
 				= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities<compute_surprisal>(
 					index, prob_class_given_match, prob_class_given_nonmatch);
 		}
@@ -1323,42 +1329,42 @@ public:
 	inline void ComputeAndStoreNominalDistanceTerms(size_t index)
 	{
 		//make sure there's room for the interned index
-		if(featureData.size() <= index)
-			featureData.resize(index + 1);
+		if(featurePrecomputedData.size() <= index)
+			featurePrecomputedData.resize(index + 1);
 
-		auto &feature_data = featureData[index];
+		auto &feature_precomp_data = featurePrecomputedData[index];
 
-		if(feature_data.targetValue.nodeType == ENIVT_NUMBER)
+		if(feature_precomp_data.targetValue.nodeType == ENIVT_NUMBER)
 		{
 			if(ComputeAndStoreNominalDistanceTermsForSDM<compute_surprisal>(
 					distEvaluator->featureAttribs[index].nominalNumberSparseDeviationMatrix,
-					index, ENIVT_NUMBER, feature_data.targetValue.nodeValue.number,
-					feature_data.nominalNumberDistanceTerms))
+					index, ENIVT_NUMBER, feature_precomp_data.targetValue.nodeValue.number,
+					feature_precomp_data.nominalNumberDistanceTerms))
 				return;
 		}
-		else if(feature_data.targetValue.nodeType == ENIVT_STRING_ID)
+		else if(feature_precomp_data.targetValue.nodeType == ENIVT_STRING_ID)
 		{
 			if(ComputeAndStoreNominalDistanceTermsForSDM<compute_surprisal>(
 					distEvaluator->featureAttribs[index].nominalStringSparseDeviationMatrix,
-					index, ENIVT_STRING_ID, feature_data.targetValue.nodeValue.stringID,
-					feature_data.nominalStringDistanceTerms))
+					index, ENIVT_STRING_ID, feature_precomp_data.targetValue.nodeValue.stringID,
+					feature_precomp_data.nominalStringDistanceTerms))
 				return;
 		}
-		else if(feature_data.targetValue.nodeType == ENIVT_BOOL)
+		else if(feature_precomp_data.targetValue.nodeType == ENIVT_BOOL)
 		{
-			auto bool_value_sid = EvaluableNode::BoolToStringID(feature_data.targetValue.nodeValue.boolValue, true);
+			auto bool_value_sid = EvaluableNode::BoolToStringID(feature_precomp_data.targetValue.nodeValue.boolValue, true);
 			if(ComputeAndStoreNominalDistanceTermsForSDM<compute_surprisal>(
 					distEvaluator->featureAttribs[index].nominalStringSparseDeviationMatrix,
 					index, ENIVT_STRING_ID, bool_value_sid,
-					feature_data.nominalStringDistanceTerms))
+					feature_precomp_data.nominalStringDistanceTerms))
 				return;
 		}
 
 		//made it here, so didn't find anything in the SDM.  use fallback for default nominal terms
-		feature_data.defaultNominalMatchDistanceTerm
+		feature_precomp_data.defaultNominalMatchDistanceTerm
 			= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch<compute_surprisal>(index);
 
-		feature_data.defaultNominalNonMatchDistanceTerm
+		feature_precomp_data.defaultNominalNonMatchDistanceTerm
 			= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch<compute_surprisal>(index);
 	}
 
@@ -1371,30 +1377,30 @@ public:
 		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
 
 		//make sure there's room for the interned index
-		if(featureData.size() <= index)
-			featureData.resize(index + 1);
+		if(featurePrecomputedData.size() <= index)
+			featurePrecomputedData.resize(index + 1);
 
-		auto &feature_data = featureData[index];
+		auto &feature_precomp_data = featurePrecomputedData[index];
 
-		feature_data.internedDistanceTerms.resize(interned_values.size());
+		feature_precomp_data.internedDistanceTerms.resize(interned_values.size());
 
 		auto &feature_attribs = distEvaluator->featureAttribs[index];
 
 		bool high_accuracy_interned_values = (compute_accurate && !compute_approximate);
 
-		if(feature_data.targetValue.IsNull())
+		if(feature_precomp_data.targetValue.IsNull())
 		{
 			//first entry is unknown-unknown distance
-			feature_data.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm.distanceTerm;
+			feature_precomp_data.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm.distanceTerm;
 			
 			double k_to_unk = feature_attribs.knownToUnknownDistanceTerm.distanceTerm;
-			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
-				feature_data.internedDistanceTerms[i] = k_to_unk;
+			for(size_t i = 1; i < feature_precomp_data.internedDistanceTerms.size(); i++)
+				feature_precomp_data.internedDistanceTerms[i] = k_to_unk;
 		}
 		else
 		{
 			//first entry is known-unknown distance
-			feature_data.internedDistanceTerms[0] = feature_attribs.knownToUnknownDistanceTerm.distanceTerm;
+			feature_precomp_data.internedDistanceTerms[0] = feature_attribs.knownToUnknownDistanceTerm.distanceTerm;
 
 			EvaluableNodeImmediateValueType immediate_type = ENIVT_NULL;
 			if constexpr(std::is_same<ValueType, double>::value)
@@ -1404,10 +1410,10 @@ public:
 			else if constexpr(std::is_same<ValueType, bool>::value)
 				immediate_type = ENIVT_BOOL;
 
-			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
+			for(size_t i = 1; i < feature_precomp_data.internedDistanceTerms.size(); i++)
 			{
-				feature_data.internedDistanceTerms[i] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
-						feature_data.targetValue, EvaluableNodeImmediateValueWithType(interned_values[i], immediate_type),
+				feature_precomp_data.internedDistanceTerms[i] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
+						feature_precomp_data.targetValue, EvaluableNodeImmediateValueWithType(interned_values[i], immediate_type),
 						index, false, high_accuracy_interned_values);
 			}
 		}
@@ -1421,31 +1427,31 @@ public:
 		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
 
 		//make sure there's room for the interned index
-		if(featureData.size() <= index)
-			featureData.resize(index + 1);
+		if(featurePrecomputedData.size() <= index)
+			featurePrecomputedData.resize(index + 1);
 
-		auto &feature_data = featureData[index];
+		auto &feature_precomp_data = featurePrecomputedData[index];
 
-		feature_data.internedDistanceTerms.resize(3);
+		feature_precomp_data.internedDistanceTerms.resize(3);
 
 		auto &feature_attribs = distEvaluator->featureAttribs[index];
 
 		bool high_accuracy_interned_values = (compute_accurate && !compute_approximate);
 
-		if(feature_data.targetValue.IsNull())
+		if(feature_precomp_data.targetValue.IsNull())
 		{
 			double k_to_unk = feature_attribs.knownToUnknownDistanceTerm.distanceTerm;
 			for(size_t i = 0; i < 2; i++)
-				feature_data.internedDistanceTerms[i] = k_to_unk;
+				feature_precomp_data.internedDistanceTerms[i] = k_to_unk;
 		}
 		else
 		{
-			feature_data.internedDistanceTerms[0] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
-						feature_data.targetValue, EvaluableNodeImmediateValueWithType(false),
+			feature_precomp_data.internedDistanceTerms[0] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
+						feature_precomp_data.targetValue, EvaluableNodeImmediateValueWithType(false),
 						index, false, high_accuracy_interned_values);
 
-			feature_data.internedDistanceTerms[1] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
-						feature_data.targetValue, EvaluableNodeImmediateValueWithType(true),
+			feature_precomp_data.internedDistanceTerms[1] = distEvaluator->ComputeDistanceTermRegular<compute_surprisal>(
+						feature_precomp_data.targetValue, EvaluableNodeImmediateValueWithType(true),
 						index, false, high_accuracy_interned_values);
 		}
 	}
@@ -1453,67 +1459,67 @@ public:
 	//returns the precomputed distance term for the interned value with intern_value_index
 	__forceinline double ComputeDistanceTermInternedPrecomputed(size_t intern_value_index, size_t index)
 	{
-		return featureData[index].internedDistanceTerms[intern_value_index];
+		return featurePrecomputedData[index].internedDistanceTerms[intern_value_index];
 	}
 
 	//returns true if the nominal feature has a specific distance term when compared with unknown values
 	__forceinline bool HasNominalSpecificKnownToUnknownDistanceTerm(size_t index)
 	{
-		auto &feature_data = featureData[index];
+		auto &feature_precomp_data = featurePrecomputedData[index];
 		return
-			(	feature_data.nominalNumberDistanceTerms.find(std::numeric_limits<double>::quiet_NaN())
-					!= end(feature_data.nominalNumberDistanceTerms)
-				|| feature_data.nominalStringDistanceTerms.find(string_intern_pool.NOT_A_STRING_ID)
-					!= end(feature_data.nominalStringDistanceTerms) );
+			(	feature_precomp_data.nominalNumberDistanceTerms.find(std::numeric_limits<double>::quiet_NaN())
+					!= end(feature_precomp_data.nominalNumberDistanceTerms)
+				|| feature_precomp_data.nominalStringDistanceTerms.find(string_intern_pool.NOT_A_STRING_ID)
+					!= end(feature_precomp_data.nominalStringDistanceTerms) );
 	}
 
 	//returns the distance term given that it is nominal
 	__forceinline double ComputeDistanceTermNominal(const EvaluableNodeImmediateValueWithType &other_value, size_t index)
 	{
-		auto &feature_data = featureData[index];
+		auto &feature_precomp_data = featurePrecomputedData[index];
 		
 		if(other_value.nodeType == ENIVT_NUMBER)
 		{
-			auto dist_term_entry = feature_data.nominalNumberDistanceTerms.find(other_value.nodeValue.number);
-			if(dist_term_entry != end(feature_data.nominalNumberDistanceTerms))
+			auto dist_term_entry = feature_precomp_data.nominalNumberDistanceTerms.find(other_value.nodeValue.number);
+			if(dist_term_entry != end(feature_precomp_data.nominalNumberDistanceTerms))
 				return dist_term_entry->second;
 
-			if(other_value.nodeValue.number == feature_data.targetValue.GetValueAsNumber())
-				return feature_data.defaultNominalMatchDistanceTerm;
+			if(other_value.nodeValue.number == feature_precomp_data.targetValue.GetValueAsNumber())
+				return feature_precomp_data.defaultNominalMatchDistanceTerm;
 		}
 		else if(other_value.nodeType == ENIVT_STRING_ID)
 		{
-			auto dist_term_entry = feature_data.nominalStringDistanceTerms.find(other_value.nodeValue.stringID);
-			if(dist_term_entry != end(feature_data.nominalStringDistanceTerms))
+			auto dist_term_entry = feature_precomp_data.nominalStringDistanceTerms.find(other_value.nodeValue.stringID);
+			if(dist_term_entry != end(feature_precomp_data.nominalStringDistanceTerms))
 				return dist_term_entry->second;
 
-			if(other_value.nodeValue.stringID == feature_data.targetValue.GetValueAsStringIDIfExists())
-				return feature_data.defaultNominalMatchDistanceTerm;
+			if(other_value.nodeValue.stringID == feature_precomp_data.targetValue.GetValueAsStringIDIfExists())
+				return feature_precomp_data.defaultNominalMatchDistanceTerm;
 		}
 		else if(other_value.nodeType == ENIVT_BOOL)
 		{
 			StringInternPool::StringID other_sid = EvaluableNode::BoolToStringID(other_value.nodeValue.boolValue, true);
-			auto dist_term_entry = feature_data.nominalStringDistanceTerms.find(other_sid);
-			if(dist_term_entry != end(feature_data.nominalStringDistanceTerms))
+			auto dist_term_entry = feature_precomp_data.nominalStringDistanceTerms.find(other_sid);
+			if(dist_term_entry != end(feature_precomp_data.nominalStringDistanceTerms))
 				return dist_term_entry->second;
 
-			if(other_value.nodeValue.boolValue == feature_data.targetValue.GetValueAsBoolean())
-				return feature_data.defaultNominalMatchDistanceTerm;
+			if(other_value.nodeValue.boolValue == feature_precomp_data.targetValue.GetValueAsBoolean())
+				return feature_precomp_data.defaultNominalMatchDistanceTerm;
 		}
 		
 		if(other_value.IsNull())
 		{
-			if(feature_data.targetValue.IsNull())
+			if(feature_precomp_data.targetValue.IsNull())
 				return distEvaluator->ComputeDistanceTermUnknownToUnknown(index);
 			else
 				return distEvaluator->ComputeDistanceTermKnownToUnknown(index);
 		}
 		else
 		{
-			if(feature_data.targetValue.IsNull())
+			if(feature_precomp_data.targetValue.IsNull())
 				return distEvaluator->ComputeDistanceTermKnownToUnknown(index);
 			else
-				return feature_data.defaultNominalNonMatchDistanceTerm;
+				return feature_precomp_data.defaultNominalNonMatchDistanceTerm;
 		}
 	}
 
@@ -1537,8 +1543,8 @@ public:
 	{
 		double next_smallest_dist_term = std::numeric_limits<double>::infinity();
 		
-		auto &feature_data = featureData[index];
-		for(auto &entry : feature_data.nominalStringDistanceTerms)
+		auto &feature_precomp_data = featurePrecomputedData[index];
+		for(auto &entry : feature_precomp_data.nominalStringDistanceTerms)
 		{
 			if(entry.second > compared_dist_term)
 			{
@@ -1547,7 +1553,7 @@ public:
 			}
 		}
 
-		for(auto &entry : feature_data.nominalNumberDistanceTerms)
+		for(auto &entry : feature_precomp_data.nominalNumberDistanceTerms)
 		{
 			if(entry.second > compared_dist_term)
 			{
@@ -1557,9 +1563,9 @@ public:
 		}
 
 		//use defaultNominalNonMatchDistanceTerm if it isn't NaN and less than next_smallest_dist_term
-		if(feature_data.defaultNominalNonMatchDistanceTerm < next_smallest_dist_term
-				&& feature_data.defaultNominalNonMatchDistanceTerm > compared_dist_term)
-			next_smallest_dist_term = feature_data.defaultNominalNonMatchDistanceTerm;
+		if(feature_precomp_data.defaultNominalNonMatchDistanceTerm < next_smallest_dist_term
+				&& feature_precomp_data.defaultNominalNonMatchDistanceTerm > compared_dist_term)
+			next_smallest_dist_term = feature_precomp_data.defaultNominalNonMatchDistanceTerm;
 
 		//if found a distance term, return it, as that means there was a corresponding entry in the SDM
 		if(next_smallest_dist_term < std::numeric_limits<double>::infinity())
@@ -1580,11 +1586,11 @@ public:
 	{
 		double next_smallest_dist_term = std::numeric_limits<double>::infinity();
 
-		auto &feature_data = featureData[index];
-		if(feature_data.targetValue.nodeType == ENIVT_STRING_ID)
+		auto &feature_precomp_data = featurePrecomputedData[index];
+		if(feature_precomp_data.targetValue.nodeType == ENIVT_STRING_ID)
 		{
-			auto value_sid = feature_data.targetValue.GetValueAsStringIDIfExists();
-			for(auto &entry : feature_data.nominalStringDistanceTerms)
+			auto value_sid = feature_precomp_data.targetValue.GetValueAsStringIDIfExists();
+			for(auto &entry : feature_precomp_data.nominalStringDistanceTerms)
 			{
 				if(entry.first != value_sid)
 				{
@@ -1593,10 +1599,10 @@ public:
 				}
 			}
 		}
-		else if(feature_data.targetValue.nodeType == ENIVT_NUMBER)
+		else if(feature_precomp_data.targetValue.nodeType == ENIVT_NUMBER)
 		{
-			double value_number = feature_data.targetValue.GetValueAsNumber();
-			for(auto &entry : feature_data.nominalNumberDistanceTerms)
+			double value_number = feature_precomp_data.targetValue.GetValueAsNumber();
+			for(auto &entry : feature_precomp_data.nominalNumberDistanceTerms)
 			{
 				if(entry.second != value_number)
 				{
@@ -1605,10 +1611,10 @@ public:
 				}
 			}
 		}
-		if(feature_data.targetValue.nodeType == ENIVT_BOOL)
+		if(feature_precomp_data.targetValue.nodeType == ENIVT_BOOL)
 		{
-			auto value_sid = feature_data.targetValue.GetValueAsStringIDIfExists(true);
-			for(auto &entry : feature_data.nominalStringDistanceTerms)
+			auto value_sid = feature_precomp_data.targetValue.GetValueAsStringIDIfExists(true);
+			for(auto &entry : feature_precomp_data.nominalStringDistanceTerms)
 			{
 				if(entry.first != value_sid)
 				{
@@ -1619,8 +1625,8 @@ public:
 		}
 
 		//use defaultNominalNonMatchDistanceTerm if it isn't NaN and less than next_smallest_dist_term
-		if(feature_data.defaultNominalNonMatchDistanceTerm < next_smallest_dist_term)
-			next_smallest_dist_term = feature_data.defaultNominalNonMatchDistanceTerm;
+		if(feature_precomp_data.defaultNominalNonMatchDistanceTerm < next_smallest_dist_term)
+			next_smallest_dist_term = feature_precomp_data.defaultNominalNonMatchDistanceTerm;
 
 		//if found a distance term, return it, as that means there was a corresponding entry in the SDM
 		if(next_smallest_dist_term < std::numeric_limits<double>::infinity())
@@ -1640,30 +1646,30 @@ public:
 	__forceinline double ComputeDistanceTerm(const EvaluableNodeImmediateValueWithType &other_value,
 		size_t index, bool high_accuracy)
 	{
-		auto &feature_data = featureData[index];
+		auto &feature_precomp_data = featurePrecomputedData[index];
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(distEvaluator->IsFeatureNominal(index))
 			return ComputeDistanceTermNominal(other_value, index);
 
-		double diff = distEvaluator->ComputeDifference(feature_data.targetValue, other_value,
+		double diff = distEvaluator->ComputeDifference(feature_precomp_data.targetValue, other_value,
 			distEvaluator->featureAttribs[index]);
 
 		if(FastIsNaN(diff))
-			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue, other_value, index, high_accuracy);
+			return distEvaluator->LookupNullDistanceTerm(feature_precomp_data.targetValue, other_value, index, high_accuracy);
 
 		return distEvaluator->ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(diff, index,
-			feature_data.fastApproxDeviation, high_accuracy);
+			feature_precomp_data.fastApproxDeviation, high_accuracy);
 	}
 
 	//pointer to a valid, populated GeneralizedDistanceEvaluator
 	GeneralizedDistanceEvaluator *distEvaluator;
 
-	class FeatureData
+	class FeaturePrecomputedData
 	{
 	public:
 
-		FeatureData()
+		FeaturePrecomputedData()
 			: effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC)
 		{	}
 
@@ -1717,7 +1723,7 @@ public:
 	};
 
 	//for each feature, precomputed distance terms for each interned value looked up by intern index
-	std::vector<FeatureData> featureData;
+	std::vector<FeaturePrecomputedData> featurePrecomputedData;
 
 	//entity the query is being called on
 	Entity *entity;

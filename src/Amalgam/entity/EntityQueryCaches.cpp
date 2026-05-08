@@ -281,28 +281,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			//only keep entities that have all the correct features,
 			//but remove 0 weighted features for better performance
 			for(size_t i = 0; i < cond->positionLabels.size(); i++)
-			{
 				sbfds.IntersectEntitiesWithFeature(cond->positionLabels[i], matching_entities, true);
-				//remove feature if not relevant; however for ENT_QUERY_DISTANCE_CONTRIBUTIONS,
-				// they must be kept because the position buffers cannot be easily or quickly modified,
-				// so this optimization is not performed
-				if(cond->distEvaluator.featureAttribs[i].weight == 0.0
-					&& cond->queryType != ENT_QUERY_DISTANCE_CONTRIBUTIONS)
-				{
-					cond->positionLabels.erase(cond->positionLabels.begin() + i);
-					cond->distEvaluator.featureAttribs.erase(begin(cond->distEvaluator.featureAttribs) + i);
-
-					if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
-							|| cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
-					{
-						if(cond->valuesToCompare.size() > i)
-							cond->valuesToCompare.erase(cond->valuesToCompare.begin() + i);
-					}
-
-					//need to process the new value in this feature slot
-					i--;
-				}
-			}
 			matching_entities.UpdateNumElements();
 
 			if(matching_entities.size() == 0)

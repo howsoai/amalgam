@@ -330,7 +330,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(RepeatedGeneralized
 	double max_dist, StringInternPool::StringID radius_label,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out)
 {
-	if(GetNumInsertedEntities() == 0 || r_dist_eval.featureData.size() == 0)
+	if(GetNumInsertedEntities() == 0 || r_dist_eval.featurePrecomputedData.size() == 0)
 		return;
 
 	auto &dist_eval = *r_dist_eval.distEvaluator;
@@ -368,9 +368,9 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(RepeatedGeneralized
 	//for each desired feature, compute and add distance terms of possible window query candidate entities
 	for(size_t query_feature_index = 0; query_feature_index < dist_eval.featureAttribs.size(); query_feature_index++)
 	{
-		size_t absolute_feature_index = dist_eval.featureAttribs[query_feature_index].featureIndex;
+		size_t absolute_feature_index = dist_eval.featureAttribs[query_feature_index].featureDataIndex;
 		auto &column_data = columnData[absolute_feature_index];
-		auto &target_value = r_dist_eval.featureData[query_feature_index].targetValue;
+		auto &target_value = r_dist_eval.featurePrecomputedData[query_feature_index].targetValue;
 
 		if(target_value.IsNull())
 		{
@@ -600,13 +600,13 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 		{
 			//if the target_value is a null, unknown-unknown differences have already been accounted for
 			//since they are partial matches
-			auto &feature_data = r_dist_eval.featureData[i];
-			if(feature_data.targetValue.IsNull())
+			auto &feature_precomp_data = r_dist_eval.featurePrecomputedData[i];
+			if(feature_precomp_data.targetValue.IsNull())
 				continue;
 
 			if(dist_eval.ComputeDistanceTermKnownToUnknown(i) > worst_candidate_distance)
 			{
-				size_t column_index = dist_eval.featureAttribs[i].featureIndex;
+				size_t column_index = dist_eval.featureAttribs[i].featureDataIndex;
 				auto &column = columnData[column_index];
 				auto &null_indices = column->nullIndices;
 				//make sure there's enough nulls to justify running through all of enabled_indices
@@ -740,11 +740,11 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	if(feature_attribs.callEntityOpcode != nullptr)
 		return 0.0;
 
-	auto &feature_data = r_dist_eval.featureData[query_feature_index];
-	size_t absolute_feature_index = feature_attribs.featureIndex;
+	auto &feature_precomp_data = r_dist_eval.featurePrecomputedData[query_feature_index];
+	size_t absolute_feature_index = feature_attribs.featureDataIndex;
 	auto &column = columnData[absolute_feature_index];
 	auto feature_type = feature_attribs.featureType;
-	auto &value = feature_data.targetValue;
+	auto &value = feature_precomp_data.targetValue;
 
 	//need to accumulate values for nulls if the value is a null
 	if(value.IsNull())
@@ -783,7 +783,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				largest_term_not_computed = std::numeric_limits<double>::infinity();
 
 			//make computing the rest more efficient
-			feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(largest_term_not_computed);
+			feature_precomp_data.SetPrecomputedRemainingIdenticalDistanceTerm(largest_term_not_computed);
 			return largest_term_not_computed;
 		}
 		else //nonsymmetric nominal -- need to compute
@@ -797,14 +797,14 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 			//if there are terms smaller than unknown_unknown_term, then need to compute any other nominal values
 			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
-				feature_data.nominalNumberDistanceTerms, unknown_unknown_term,
+				feature_precomp_data.nominalNumberDistanceTerms, unknown_unknown_term,
 				[this, &r_dist_eval, &enabled_indices, &column, query_feature_index](double number_value)
 				{
 					AccumulatePartialSumsForNominalNumberValue(r_dist_eval, enabled_indices, number_value, query_feature_index, *column);
 				});
 
 			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
-				feature_data.nominalStringDistanceTerms, unknown_unknown_term,
+				feature_precomp_data.nominalStringDistanceTerms, unknown_unknown_term,
 				[this, &r_dist_eval, &enabled_indices, &column, query_feature_index](StringInternPool::StringID sid)
 				{
 					AccumulatePartialSumsForNominalStringIdValue(r_dist_eval, enabled_indices, sid, query_feature_index, *column);
@@ -846,7 +846,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		//return the value that the remainder of the entities have
 		double nonmatch_dist_term = feature_attribs.typeAttributes.nominal.symmetricNonMatchDistanceTerm;
-		feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
+		feature_precomp_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
 		return nonmatch_dist_term;
 	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
@@ -864,7 +864,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		if(num_non_bool == 0)
 		{
-			feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
+			feature_precomp_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
 			return nonmatch_dist_term;
 		}
 
@@ -875,7 +875,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		{
 			AccumulatePartialSumsForBoolValue(r_dist_eval, enabled_indices, !comparison_value, query_feature_index, *column);
 
-			feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(known_unknown_term);
+			feature_precomp_data.SetPrecomputedRemainingIdenticalDistanceTerm(known_unknown_term);
 			return known_unknown_term;
 		}
 
@@ -897,7 +897,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		//need to iterate over everything with the same distance term
 		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
-			feature_data.nominalStringDistanceTerms, accumulated_term,
+			feature_precomp_data.nominalStringDistanceTerms, accumulated_term,
 			[this, &value, &r_dist_eval, &enabled_indices, &column, query_feature_index](StringInternPool::StringID sid)
 			{
 				//don't want to double-accumulate the exact match
@@ -924,7 +924,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		//need to iterate over everything with the same distance term
 		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
-			feature_data.nominalNumberDistanceTerms, accumulated_term,
+			feature_precomp_data.nominalNumberDistanceTerms, accumulated_term,
 			[this, &value, &r_dist_eval, &enabled_indices, &column, query_feature_index](double number_value)
 			{
 				//don't want to double-accumulate the exact match
@@ -960,7 +960,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		{
 			//next most similar code must be at least a distance of 1 edit away
 			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular<compute_surprisal>(1.0, query_feature_index,
-				feature_data.fastApproxDeviation, high_accuracy);
+				feature_precomp_data.fastApproxDeviation, high_accuracy);
 		}
 	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
@@ -977,7 +977,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		//the next closest string will have an edit distance of 1
 		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular<compute_surprisal>(1.0, query_feature_index,
-			feature_data.fastApproxDeviation, high_accuracy);
+			feature_precomp_data.fastApproxDeviation, high_accuracy);
 	}
 	//else feature_type == FDT_CONTINUOUS_NUMBER or FDT_CONTINUOUS_NUMBER_CYCLIC
 
@@ -999,7 +999,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	else
 		term = ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(r_dist_eval,
 			value.nodeValue.number, value_entry_iter->second, query_feature_index,
-			feature_data.fastApproxDeviation, high_accuracy);
+			feature_precomp_data.fastApproxDeviation, high_accuracy);
 
 	size_t num_entities_computed = AccumulatePartialSums(enabled_indices, value_entry_iter->second.indicesWithValue, query_feature_index, term);
 
@@ -1162,7 +1162,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			else //exceeded the deviation expansion, so can enable fast surprisal computation
 			{	
 				if(r_dist_eval.distEvaluator->computeSurprisal)
-					r_dist_eval.featureData[query_feature_index].fastApproxDeviation = true;
+					r_dist_eval.featurePrecomputedData[query_feature_index].fastApproxDeviation = true;
 			}
 
 			if(!should_continue)
@@ -1171,7 +1171,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		term = ComputeDistanceTermContinuousNonNullRegular<compute_surprisal>(r_dist_eval,
 			value.nodeValue.number, next_closest_iter->second, query_feature_index,
-			feature_data.fastApproxDeviation, high_accuracy);
+			feature_precomp_data.fastApproxDeviation, high_accuracy);
 
 		num_entities_computed += AccumulatePartialSums(enabled_indices,
 			next_closest_iter->second.indicesWithValue, query_feature_index, term);
@@ -1223,7 +1223,7 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralized
 		}
 	}
 
-	size_t num_enabled_features = r_dist_eval.featureData.size();
+	size_t num_enabled_features = r_dist_eval.featurePrecomputedData.size();
 	size_t num_entities_to_populate = top_k;
 	//populate sqrt(2)^p * top_k, which will yield 2 for p=2, 1 for p=0, and about 1.2 for p=0.5
 	if(num_enabled_features > 1)
@@ -1239,7 +1239,7 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralized
 			i, enabled_indices);
 
 		//if value isn't null, may need to populate non-null values
-		if(!r_dist_eval.featureData[i].targetValue.IsNull())
+		if(!r_dist_eval.featurePrecomputedData[i].targetValue.IsNull())
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
 			//if the value is not a null, need to accumulate null distance terms if it's a symmetric nominal feature,
@@ -1248,7 +1248,7 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralized
 				|| feature_attribs.knownToUnknownDistanceTerm.deviation <= next_closest_distance)
 			{
 				double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(i);
-				AccumulatePartialSums(enabled_indices, columnData[feature_attribs.featureIndex]->nullIndices, i, known_unknown_term);
+				AccumulatePartialSums(enabled_indices, columnData[feature_attribs.featureDataIndex]->nullIndices, i, known_unknown_term);
 			}
 		}
 
@@ -1366,12 +1366,12 @@ void SeparableBoxFilterDataStore::InitializeRepeatedDistanceEvaluatorForFeature(
 {
 	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 	auto &feature_type = feature_attribs.featureType;
-	auto &feature_data = r_dist_eval.featureData[query_feature_index];
-	auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
-	auto &column_data = columnData[feature_attribs.featureIndex];
+	auto &feature_precomp_data = r_dist_eval.featurePrecomputedData[query_feature_index];
+	auto &effective_feature_type = r_dist_eval.featurePrecomputedData[query_feature_index].effectiveFeatureType;
+	auto &column_data = columnData[feature_attribs.featureDataIndex];
 
-	feature_data.Clear();
-	feature_data.targetValue = position_value;
+	feature_precomp_data.Clear();
+	feature_precomp_data.targetValue = position_value;
 
 	if(feature_attribs.callEntityOpcode != nullptr)
 	{

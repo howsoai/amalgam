@@ -987,14 +987,14 @@ protected:
 		size_t radius_column_index, size_t other_entity_index, bool high_accuracy)
 	{
 		double dist_accum = 0.0;
-		for(size_t i = 0; i < r_dist_eval.featureData.size(); i++)
+		for(size_t i = 0; i < r_dist_eval.featurePrecomputedData.size(); i++)
 		{
-			if(r_dist_eval.featureData[i].effectiveFeatureType
+			if(r_dist_eval.featurePrecomputedData[i].effectiveFeatureType
 				!= RepeatedGeneralizedDistanceEvaluator::EFDT_CALL_ENTITY)
 			{
 				auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
 
-				size_t column_index = feature_attribs.featureIndex;
+				size_t column_index = feature_attribs.featureDataIndex;
 				auto other_value = columnData[column_index]->GetResolvedIndexValueWithType(other_entity_index);
 				dist_accum += r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, i, high_accuracy);
 			}
@@ -1070,35 +1070,35 @@ protected:
 	__forceinline double ComputeDistanceTermNonMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t entity_index, size_t query_feature_index, bool high_accuracy)
 	{
-		auto &feature_data = r_dist_eval.featureData[query_feature_index];
-		switch(feature_data.effectiveFeatureType)
+		auto &feature_precomp_data = r_dist_eval.featurePrecomputedData[query_feature_index];
+		switch(feature_precomp_data.effectiveFeatureType)
 		{
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_REMAINING_IDENTICAL_PRECOMPUTED:
-			return feature_data.precomputedRemainingIdenticalDistanceTerm;
+			return feature_precomp_data.precomputedRemainingIdenticalDistanceTerm;
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular<compute_surprisal>(
-				feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
-				query_feature_index, feature_data.fastApproxDeviation, high_accuracy);
+				feature_precomp_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureDataIndex).number,
+				query_feature_index, feature_precomp_data.fastApproxDeviation, high_accuracy);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
-				GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index);
+				GetValue(entity_index, feature_attribs.featureDataIndex).indirectionIndex, query_feature_index);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
-			auto &column_data = columnData[feature_attribs.featureIndex];
+			auto &column_data = columnData[feature_attribs.featureDataIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular<compute_surprisal>(
-					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
-					query_feature_index, feature_data.fastApproxDeviation, high_accuracy);
+					feature_precomp_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureDataIndex).number,
+					query_feature_index, feature_precomp_data.fastApproxDeviation, high_accuracy);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
@@ -1106,11 +1106,11 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
-			auto &column_data = columnData[feature_attribs.featureIndex];
+			auto &column_data = columnData[feature_attribs.featureDataIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousOneNonNullRegular<compute_surprisal>(
-					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
-					query_feature_index, feature_data.fastApproxDeviation, high_accuracy);
+					feature_precomp_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureDataIndex).number,
+					query_feature_index, feature_precomp_data.fastApproxDeviation, high_accuracy);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
@@ -1118,10 +1118,10 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
-			auto &column_data = columnData[feature_attribs.featureIndex];
+			auto &column_data = columnData[feature_attribs.featureDataIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
-					GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index);
+					GetValue(entity_index, feature_attribs.featureDataIndex).indirectionIndex, query_feature_index);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
@@ -1129,10 +1129,10 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_STRING_INTERNED_PRECOMPUTED:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
-			auto &column_data = columnData[feature_attribs.featureIndex];
+			auto &column_data = columnData[feature_attribs.featureDataIndex];
 			if(column_data->stringIdIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
-					GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index);
+					GetValue(entity_index, feature_attribs.featureDataIndex).indirectionIndex, query_feature_index);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
@@ -1140,8 +1140,8 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_BOOL_PRECOMPUTED:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
-			auto &column_data = columnData[feature_attribs.featureIndex];
-			auto &target_value = r_dist_eval.featureData[query_feature_index].targetValue;
+			auto &column_data = columnData[feature_attribs.featureDataIndex];
+			auto &target_value = r_dist_eval.featurePrecomputedData[query_feature_index].targetValue;
 
 			if(target_value.nodeType == ENIVT_BOOL)
 			{
@@ -1161,10 +1161,10 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
-			auto &column_data = columnData[feature_attribs.featureIndex];
+			auto &column_data = columnData[feature_attribs.featureDataIndex];
 			if(column_data->stringIdIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
-					EvaluableNodeImmediateValueWithType(GetValue(entity_index, feature_attribs.featureIndex).stringID, ENIVT_STRING_ID),
+					EvaluableNodeImmediateValueWithType(GetValue(entity_index, feature_attribs.featureDataIndex).stringID, ENIVT_STRING_ID),
 					query_feature_index);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
@@ -1173,10 +1173,10 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
-			auto &column_data = columnData[feature_attribs.featureIndex];
+			auto &column_data = columnData[feature_attribs.featureDataIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
-					EvaluableNodeImmediateValueWithType(GetValue(entity_index, feature_attribs.featureIndex).number, ENIVT_NUMBER),
+					EvaluableNodeImmediateValueWithType(GetValue(entity_index, feature_attribs.featureDataIndex).number, ENIVT_NUMBER),
 					query_feature_index);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
@@ -1185,7 +1185,7 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_BOOL:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
-			auto &column_data = columnData[feature_attribs.featureIndex];
+			auto &column_data = columnData[feature_attribs.featureDataIndex];
 
 			if(column_data->trueBoolIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
@@ -1202,7 +1202,7 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
-			auto &column_data = columnData[feature_attribs.featureIndex];
+			auto &column_data = columnData[feature_attribs.featureDataIndex];
 
 			auto other_value = column_data->GetResolvedIndexValueWithType(entity_index);
 			return r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
@@ -1227,9 +1227,9 @@ protected:
 		double target_value, SBFDSColumnData::ValueEntry &value_entry, size_t query_feature_index,
 		bool fast_approx_deviation, bool high_accuracy)
 	{
-		auto &feature_data = r_dist_eval.featureData[query_feature_index];
-		if(feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED
-				|| feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED)
+		auto &feature_precomp_data = r_dist_eval.featurePrecomputedData[query_feature_index];
+		if(feature_precomp_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED
+				|| feature_precomp_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED)
 			return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
 				value_entry.valueInternIndex, query_feature_index);
 
@@ -1244,9 +1244,9 @@ protected:
 	__forceinline double ComputeDistanceTermContinuousExactMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		SBFDSColumnData::ValueEntry &value_entry, size_t query_feature_index, bool high_accuracy)
 	{
-		auto &feature_data = r_dist_eval.featureData[query_feature_index];
-		if(feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED
-				|| feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED)
+		auto &feature_precomp_data = r_dist_eval.featurePrecomputedData[query_feature_index];
+		if(feature_precomp_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED
+				|| feature_precomp_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED)
 			return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
 				value_entry.valueInternIndex, query_feature_index);
 
@@ -1346,12 +1346,13 @@ public:
 		r_dist_eval.callingInterpreter = interpreter;
 		r_dist_eval.entity = entity;
 
-		size_t num_features = position_values.size();
-		r_dist_eval.featureData.resize(num_features);
+		size_t num_features = dist_eval->featureAttribs.size();
+		r_dist_eval.featurePrecomputedData.resize(num_features);
 		for(size_t query_feature_index = 0; query_feature_index < num_features; query_feature_index++)
 		{
+			size_t position_index = dist_eval->featureAttribs[query_feature_index].positionValueIndex;
 			InitializeRepeatedDistanceEvaluatorForFeature<compute_surprisal>(
-				r_dist_eval, query_feature_index, position_values[query_feature_index]);
+				r_dist_eval, query_feature_index, position_values[position_index]);
 		}
 	}
 
@@ -1366,11 +1367,11 @@ public:
 		r_dist_eval.callingInterpreter = interpreter;
 		r_dist_eval.entity = entity;
 
-		size_t num_enabled_features = parametersAndBuffers.rDistEvaluator.distEvaluator->featureAttribs.size();
-		r_dist_eval.featureData.resize(num_enabled_features);
+		size_t num_enabled_features = dist_eval->featureAttribs.size();
+		r_dist_eval.featurePrecomputedData.resize(num_enabled_features);
 		for(size_t i = 0; i < num_enabled_features; i++)
 		{
-			size_t column_index = r_dist_eval.distEvaluator->featureAttribs[i].featureIndex;
+			size_t column_index = r_dist_eval.distEvaluator->featureAttribs[i].featureDataIndex;
 			auto value = columnData[column_index]->GetResolvedIndexValueWithType(entity_index);
 			InitializeRepeatedDistanceEvaluatorForFeature<compute_surprisal>(r_dist_eval, i, value);
 		}
@@ -1380,22 +1381,54 @@ public:
 	inline void PopulateGeneralizedDistanceEvaluatorFromColumnData(
 		GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids)
 	{
-		for(size_t query_feature_index = 0; query_feature_index < position_label_sids.size(); query_feature_index++)
+		for(size_t position_feature_index = 0, query_feature_index = 0;
+			position_feature_index < position_label_sids.size();
+			position_feature_index++, query_feature_index++)
 		{
-			auto column = labelIdToColumnIndex.find(position_label_sids[query_feature_index]);
+			auto column = labelIdToColumnIndex.find(position_label_sids[position_feature_index]);
 			if(column == end(labelIdToColumnIndex))
+			{
+				dist_eval.featureAttribs.erase(begin(dist_eval.featureAttribs) + query_feature_index);
+				query_feature_index--;
 				continue;
+			}
 
+			//remove feature if not releveant to save compute cost
 			auto &feature_attribs = dist_eval.featureAttribs[query_feature_index];
-			feature_attribs.featureIndex = column->second;
-			auto &column_data = columnData[feature_attribs.featureIndex];
+			if(feature_attribs.weight == 0.0)
+			{
+				dist_eval.featureAttribs.erase(begin(dist_eval.featureAttribs) + query_feature_index);
+				query_feature_index--;
+				continue;
+			}
 
+			feature_attribs.featureDataIndex = column->second;
+			feature_attribs.positionValueIndex = position_feature_index;
+			auto &column_data = columnData[feature_attribs.featureDataIndex];
+
+			//estimate probability impact for compute cost of feature
+			double compute_cost_mult = 1.0;
+			if(!column_data->internedNumberValues.valueInterningEnabled)
+			{
+				if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER
+						|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC)
+					compute_cost_mult = 0.25;
+				else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
+						|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE
+						|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
+					compute_cost_mult = 0.0625;
+			}
+			feature_attribs.probabilityImpactForComputeCost = feature_attribs.weight * compute_cost_mult;
+			
+			//compute nominal count
 			if(feature_attribs.IsFeatureNominal())
 			{
 				//if nominal count is not specified, compute from the existing data
-				if(FastIsNaN(feature_attribs.typeAttributes.nominal.count) || feature_attribs.typeAttributes.nominal.count < 1)
+				if(FastIsNaN(feature_attribs.typeAttributes.nominal.count)
+					|| feature_attribs.typeAttributes.nominal.count < 1)
 				{
-					//account for the max-ent probability that there's a 50% chance that the next record observed will be a new class
+					//account for the max-ent probability that there's a 50% chance that
+					// the next record observed will be a new class
 					double num_potential_unseen_classes = 1 / (column_data->GetNumValidDataElements() + 0.5);
 					feature_attribs.typeAttributes.nominal.count
 						= static_cast<double>(column_data->GetNumUniqueValues()) + num_potential_unseen_classes;
@@ -1417,6 +1450,12 @@ public:
 					feature_attribs.unknownToUnknownDistanceTerm.deviation = unknown_distance_deviation;
 			}
 		}
+
+		std::sort(begin(dist_eval.featureAttribs), end(dist_eval.featureAttribs),
+			[](const auto &a, const auto &b)
+			{
+				return a.probabilityImpactForComputeCost > b.probabilityImpactForComputeCost;
+			});
 	}
 
 	//returns all elements in the database that yield valid distances along with their sorted distances to the values for entity

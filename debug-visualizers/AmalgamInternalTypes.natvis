@@ -18,6 +18,7 @@
 			<Item Name="CONCURRENT">(attributes &amp; 8) != 0</Item>
 			<Item Name="FREEABLE">(attributes &amp; 16) != 0</Item>
 			<Item Name="KNOWN_TO_BE_IN_USE">(attributes &amp; 32) != 0</Item>
+			<Item Name="SCOPE_BREAK">(attributes &amp; 64) != 0</Item>
 			<Item Name="attributes">attributes</Item>
 		</Expand>
 	</Type>

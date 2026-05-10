@@ -300,10 +300,22 @@ public:
 	#endif
 	)
 	{
+	#ifdef MULTITHREAD_SUPPORT
+		bool hit_scope_break = false;
+	#endif
 		//find appropriate context for symbol by walking up the stack
 		for(auto it = rbegin(scopeStack); it != rend(scopeStack); ++it)
 		{
-			auto &mcn = (*it)->GetMappedChildNodesReference();
+			EvaluableNode *scope = *it;
+			if(scope->IsScopeBreak())
+			{
+			#ifdef MULTITHREAD_SUPPORT
+				hit_scope_break = true;
+			#endif
+				break;
+			}
+
+			auto &mcn = scope->GetMappedChildNodesReference();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
 				bool is_freeable = true;
@@ -335,7 +347,7 @@ public:
 
 	#ifdef MULTITHREAD_SUPPORT
 		//need to search further down the stack if appropriate
-		if(!bottomOfScopeStack && callingInterpreter != nullptr)
+		if(!hit_scope_break && !bottomOfScopeStack && callingInterpreter != nullptr)
 		{
 			bool top_is_next_stack = (scopeStack.size() == 0);
 			auto [value_destination, scope, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocation(

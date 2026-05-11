@@ -1257,8 +1257,6 @@ static OpcodeInitializer _ENT_STACK(ENT_STACK, &Interpreter::InterpretNode_ENT_S
 	)
 	{x 1}
 ))&", R"([
-	{}
-	{x 1}
 	{a 1}
 ])"}
 		});

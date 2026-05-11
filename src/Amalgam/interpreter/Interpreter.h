@@ -308,14 +308,6 @@ public:
 		for(auto it = rbegin(scopeStack); it != rend(scopeStack); ++it)
 		{
 			EvaluableNode *scope = *it;
-			if(scope->IsScopeBreak())
-			{
-			#ifdef MULTITHREAD_SUPPORT
-				hit_scope_break = true;
-			#endif
-				break;
-			}
-
 			auto &mcn = scope->GetMappedChildNodesReference();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
@@ -343,6 +335,14 @@ public:
 				}
 
 				return std::make_tuple(&found->second, &mcn, it == rbegin(scopeStack), is_freeable);
+			}
+
+			if(scope->IsScopeBreak())
+			{
+			#ifdef MULTITHREAD_SUPPORT
+				hit_scope_break = true;
+			#endif
+				break;
 			}
 		}
 

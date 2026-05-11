@@ -951,7 +951,6 @@ public:
 		return HasAttribute(Attribute::SCOPE_BREAK);
 	}
 
-	//TODO 25476: set this where appropriate and update documentation
 	//sets whether the scope stops at this node
 	__forceinline void SetScopeBreak(bool scope_break)
 	{

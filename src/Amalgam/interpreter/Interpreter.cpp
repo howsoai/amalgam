@@ -74,7 +74,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	return retval;
 }
 
-void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_node)
+void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_node, bool scope_break)
 {
 	EvaluableNodeReference new_scope = EvaluableNodeReference::Null();
 	bool need_to_interpret_new_scope = false;
@@ -171,6 +171,9 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 	new_scope->SetIsFreeable(true);
 	//just in case a variable is added which needs cycle checks
 	new_scope->SetNeedCycleCheck(true);
+
+	new_scope->SetScopeBreak(scope_break);
+
 	scopeStack.push_back(new_scope);
 }
 
@@ -225,6 +228,7 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 
 EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 {
+	//TODO 25476: make sure scope opcode respects scope break
 	EvaluableNode stack_top_holder(ENT_LIST);
 	stack_top_holder.SetOrderedChildNodes(scopeStack);
 	//set flags conservatively before copy

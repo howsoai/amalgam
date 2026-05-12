@@ -514,10 +514,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(num_params < 1)
 		return EvaluableNodeReference::Null();
 
-	//make sure there's at least a scopeStack to use
-	if(scopeStack.size() < 1)
-		return EvaluableNodeReference::Null();
-
 	bool accum = (en->GetType() == ENT_ACCUM);
 
 	//if only one parameter, then assume it is an assoc of variables to accum or assign

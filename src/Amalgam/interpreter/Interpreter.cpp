@@ -42,10 +42,19 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	//use specified or create new scopeStack
 	if(scope_stack == nullptr)
 	{
-		EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
-		new_context_entry->SetNeedCycleCheck(true);
-		scopeStack.clear();
-		scopeStack.push_back(new_context_entry);
+	#ifdef MULTITHREAD_SUPPORT
+		bottomOfScopeStack = new_scope_stack;
+		if(new_scope_stack)
+		{
+	#endif
+
+			EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
+			new_context_entry->SetNeedCycleCheck(true);
+			scopeStack.clear();
+			scopeStack.push_back(new_context_entry);
+	#ifdef MULTITHREAD_SUPPORT
+		}
+	#endif
 	}
 	else
 	{
@@ -62,10 +71,6 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		constructionStack.clear();
 	else
 		constructionStack = std::move(*construction_stack);
-
-#ifdef MULTITHREAD_SUPPORT
-	bottomOfScopeStack = new_scope_stack;
-#endif
 	
 	evaluableNodeManager->AddActiveInterpreter(this);
 	auto retval = InterpretNode(en, immediate_result);
@@ -255,11 +260,10 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 			size_t parent_scope_start_index = interp->scopeStack.size();
 			for(; parent_scope_start_index > 0; parent_scope_start_index--)
 			{
-				if(scopeStack[parent_scope_start_index]->IsScopeBreak())
+				if(interp->scopeStack[parent_scope_start_index - 1]->IsScopeBreak())
 					break;
 			}
 
-			//TODO 25476: add tests
 			stack_nodes_ocn.insert(begin(stack_nodes_ocn), interp->scopeStack.size() - parent_scope_start_index, nullptr);
 
 			for(size_t i = 0; i < interp->scopeStack.size() - parent_scope_start_index; i++)

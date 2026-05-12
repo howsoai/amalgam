@@ -2289,6 +2289,28 @@ AmalgamExample{ R"&((concat
 		)
 	)
 ))&", R"("filter assoc 2 : {10 1 20 2}")" },
+AmalgamExample{ R"&(;stack concurrency
+||(map
+	(lambda
+		(let
+			{a 1}
+			(size (stack))
+		)
+	)
+	(range 0 10)
+))&", R"([
+        2
+        2
+        2
+        2
+        2
+        2
+        2
+        2
+        2
+        2
+        2
+])"},
 AmalgamExample{ R"&(;nested concurrency
 (apply "+" ||(map
 			(lambda

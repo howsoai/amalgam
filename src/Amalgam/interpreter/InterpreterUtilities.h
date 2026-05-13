@@ -232,3 +232,23 @@ public:
 	std::vector<EvaluableNode *> *stack;
 	size_t originalStackSize;
 };
+
+class InterpreterIterator
+{
+public:
+	InterpreterIterator(Interpreter *_interpreter, EvaluableNodeReference _iter_code)
+		: interpreter(_interpreter), iter_code(_iter_code)
+	{	}
+
+	//free iter_code if possible
+	~InterpreterIterator();
+
+	bool NextIntoBool();
+	double NextIntoNumber();
+	StringInternPool::StringID NextIntoStringID();
+	StringInternPool::StringID NextIntoStringIDValueIfExists();
+	EvaluableNodeReference NextIntoCode();
+
+	Interpreter *interpreter;
+	EvaluableNodeReference iter_code;
+};

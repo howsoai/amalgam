@@ -320,7 +320,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 	}
 
 	auto container = InterpretNode(ocn[0]);
-	if(EvaluableNode::IsNull(container) || container->IsImmediate())
+	if(EvaluableNode::IsImmediate(container))
 		return EvaluableNodeReference::Null();
 
 	bool allocate_child_nodes = (!container.unique);
@@ -578,7 +578,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, Ev
 		return EvaluableNodeReference::Null();
 
 	auto values = InterpretNodeForImmediateUse(ocn[0]);
-	if(EvaluableNode::IsNull(values) || values->IsImmediate())
+	if(EvaluableNode::IsImmediate(values))
 		return values;
 
 	EvaluableNodeReference weights = EvaluableNodeReference::Null();
@@ -728,7 +728,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode *en
 	double quantile = InterpretNodeIntoNumberValue(ocn[1]);
 
 	auto values = InterpretNodeForImmediateUse(ocn[0]);
-	if(EvaluableNode::IsNull(values) || values->IsImmediate())
+	if(EvaluableNode::IsImmediate(values))
 		return values;
 
 	EvaluableNodeReference weights = EvaluableNodeReference::Null();
@@ -900,7 +900,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 		absolute_value = InterpretNodeIntoBoolValue(ocn[5], false);
 
 	auto values = InterpretNodeForImmediateUse(ocn[0]);
-	if(EvaluableNode::IsNull(values) || values->IsImmediate())
+	if(EvaluableNode::IsImmediate(values))
 		return values;
 
 	EvaluableNodeReference weights = EvaluableNodeReference::Null();
@@ -915,7 +915,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	{
 		auto &values_mcn = values->GetMappedChildNodesReference();
 
-		if(EvaluableNode::IsNull(weights) || weights->IsImmediate())
+		if(EvaluableNode::IsImmediate(weights))
 		{
 			result = GeneralizedMean(begin(values_mcn), end(values_mcn),
 				[](auto iter, auto &value) { return GetValueFromIter(iter, value);},
@@ -946,7 +946,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	{
 		auto &values_ocn = values->GetOrderedChildNodesReference();
 
-		if(EvaluableNode::IsNull(weights) || weights->IsImmediate())
+		if(EvaluableNode::IsImmediate(weights))
 		{
 			result = GeneralizedMean(size_t{ 0 }, values_ocn.size(),
 				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },

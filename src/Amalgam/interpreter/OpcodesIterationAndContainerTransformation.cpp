@@ -74,7 +74,47 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 		return EvaluableNodeReference::Null();
 
 	//get the index of the start index based on how many parameters there are, if there is a function
-	size_t index_of_start = (num_params < 4 ? 0 : 1);
+	bool has_function_param = (num_params < 4);
+	size_t index_of_start = (has_function_param ? 0 : 1);
+
+	//only perform this if it's requested and there is no function or it's trivial
+	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::ITERATOR_CODE)
+		&& (!has_function_param || EvaluableNode::IsImmediate(ocn[0])))
+	{
+		EvaluableNodeReference result(en, false);
+
+		//get the start
+		size_t range_start_index = index_of_start + 0;
+		if(!EvaluableNode::IsImmediate(ocn[range_start_index]))
+		{
+			evaluableNodeManager->EnsureNodeIsModifiable(result);
+			result->GetOrderedChildNodesReference()[range_start_index]
+				= InterpretNodeForImmediateUse(ocn[range_start_index]);
+		}
+
+		//get the end
+		size_t range_end_index = index_of_start + 1;
+		if(!EvaluableNode::IsImmediate(ocn[range_end_index]))
+		{
+			evaluableNodeManager->EnsureNodeIsModifiable(result);
+			result->GetOrderedChildNodesReference()[range_end_index]
+				= InterpretNodeForImmediateUse(ocn[range_end_index]);
+		}
+
+		//get the step
+		if(num_params > 2)
+		{
+			size_t step_index = index_of_start + 2;
+			if(!EvaluableNode::IsImmediate(ocn[step_index]))
+			{
+				evaluableNodeManager->EnsureNodeIsModifiable(result);
+				result->GetOrderedChildNodesReference()[step_index]
+					= InterpretNodeForImmediateUse(ocn[step_index]);
+			}
+		}
+
+		return result;
+	}
 
 	double range_start = InterpretNodeIntoNumberValue(ocn[index_of_start + 0]);
 	double range_end = InterpretNodeIntoNumberValue(ocn[index_of_start + 1]);
@@ -979,7 +1019,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		if(ocn.size() > 2)
 		{
 			auto match_on_value_param = InterpretNodeForImmediateUse(ocn[2],
-				EvaluableNodeRequestedValueTypes::Type::REQUEST_BOOL);
+				EvaluableNodeRequestedValueTypes::Type::BOOL_OR_NULL);
 			auto &match_on_value_ref = match_on_value_param.GetValue();
 
 			if(!match_on_value_ref.IsNull())

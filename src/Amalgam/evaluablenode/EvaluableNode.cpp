@@ -1196,8 +1196,7 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *
 		use_immediate_method = true;
 		for(size_t i = index; i < a_size; i++)
 		{
-			if((a_ocn[i] != nullptr && !a_ocn[i]->IsImmediate())
-				|| (b_ocn[i] != nullptr && !b_ocn[i]->IsImmediate()))
+			if(!EvaluableNode::IsImmediate(a_ocn[i]) || !EvaluableNode::IsImmediate(b_ocn[i]))
 			{
 				use_immediate_method = false;
 				break;

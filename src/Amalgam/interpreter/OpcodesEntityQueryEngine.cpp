@@ -151,7 +151,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	//one per thread to reuse memory
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	thread_local
-	#endif
+#endif
 		static std::vector<EntityQueryCondition> conditions;
 
 	conditions.clear();

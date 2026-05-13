@@ -326,8 +326,8 @@ std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(Evaluable
 		return std::make_pair(true, n->GetStringValue());
 
 	auto result = InterpretNodeForImmediateUse(n,
-		key_string ? EvaluableNodeRequestedValueTypes::Type::REQUEST_KEY_STRING_ID
-		: EvaluableNodeRequestedValueTypes::Type::REQUEST_STRING_ID);
+		key_string ? EvaluableNodeRequestedValueTypes::Type::KEY_STRING_ID_OR_NULL
+		: EvaluableNodeRequestedValueTypes::Type::STRING_ID_OR_NULL);
 	auto &result_value = result.GetValue();
 
 	auto [valid, str] = result_value.GetValueAsString(key_string);
@@ -342,7 +342,7 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(E
 	if(n != nullptr && n->GetType() == ENT_STRING)
 		return n->GetStringID();
 
-	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::REQUEST_EXISTING_STRING_ID);
+	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID_OR_NULL);
 	auto &result_value = result.GetValue();
 
 	auto sid = result_value.GetValueAsStringIDIfExists(key_string);
@@ -358,8 +358,8 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 		return string_intern_pool.CreateStringReference(n->GetStringID());
 
 	auto result = InterpretNodeForImmediateUse(n,
-		key_string ? EvaluableNodeRequestedValueTypes::Type::REQUEST_KEY_STRING_ID
-		: EvaluableNodeRequestedValueTypes::Type::REQUEST_STRING_ID);
+		key_string ? EvaluableNodeRequestedValueTypes::Type::KEY_STRING_ID_OR_NULL
+		: EvaluableNodeRequestedValueTypes::Type::STRING_ID_OR_NULL);
 
 	if(result.IsImmediateValue())
 	{
@@ -429,7 +429,7 @@ double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 	if(n != nullptr && n->GetType() == ENT_NUMBER)
 		return n->GetNumberValueReference();
 
-	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::REQUEST_NUMBER);
+	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::NUMBER_OR_NULL);
 	auto &result_value = result.GetValue();
 
 	double value = result_value.GetValueAsNumber();
@@ -462,7 +462,7 @@ bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_nul
 	if(n != nullptr && n->GetType() == ENT_BOOL)
 		return n->GetBoolValueReference();
 
-	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::REQUEST_BOOL);
+	auto result = InterpretNodeForImmediateUse(n, EvaluableNodeRequestedValueTypes::Type::BOOL_OR_NULL);
 	auto &result_value = result.GetValue();
 
 	bool value = result_value.GetValueAsBoolean(value_if_null);

@@ -979,7 +979,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		if(ocn.size() > 2)
 		{
 			auto match_on_value_param = InterpretNodeForImmediateUse(ocn[2],
-				EvaluableNodeRequestedValueTypes::Type::REQUEST_BOOL);
+				EvaluableNodeRequestedValueTypes::Type::BOOL_OR_NULL);
 			auto &match_on_value_ref = match_on_value_param.GetValue();
 
 			if(!match_on_value_ref.IsNull())

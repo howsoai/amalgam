@@ -239,6 +239,9 @@
       <Message>Creating Version header</Message>
       <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MT_Debug_EXE|x64'">
     <ClCompile>
@@ -266,6 +269,9 @@
       <Message>Creating Version header</Message>
       <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ST_Release_EXE|x64'">
     <ClCompile>
@@ -302,6 +308,9 @@
       <Message>Creating Version header</Message>
       <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OMP_Release_EXE|x64'">
     <ClCompile>
@@ -339,6 +348,9 @@
       <Message>Creating Version header</Message>
       <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MT_Release_EXE|x64'">
     <ClCompile>
@@ -375,6 +387,9 @@
       <Message>Creating Version header</Message>
       <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ST_Debug_DLL|x64'">
     <ClCompile>
@@ -402,6 +417,9 @@
       <Message>Creating Version header</Message>
       <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MT_Debug_DLL|x64'">
     <ClCompile>
@@ -431,6 +449,9 @@
       <Message>Creating Version header</Message>
       <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ST_Release_DLL|x64'">
     <ClCompile>
@@ -466,6 +487,9 @@
       <Message>Creating Version header</Message>
       <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OMP_Release_DLL|x64'">
     <ClCompile>
@@ -502,6 +526,9 @@
       <Message>Creating Version header</Message>
       <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MT_Release_DLL|x64'">
     <ClCompile>
@@ -537,6 +564,9 @@
       <Message>Creating Version header</Message>
       <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
+    <Manifest>
+      <EnableSegmentHeap>true</EnableSegmentHeap>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />

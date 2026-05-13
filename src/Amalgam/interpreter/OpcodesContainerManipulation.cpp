@@ -1697,7 +1697,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 	auto container = InterpretNode(ocn[0]);
 
 	//exit early if wrong type
-	if(container == nullptr || container->IsImmediate())
+	if(EvaluableNode::IsImmediate(container))
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(container);
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);

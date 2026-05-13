@@ -27,25 +27,32 @@ public:
 
 	enum class Type : StorageType
 	{
+		//there is nothing to even hold the data
 		NONE = 0,
+		//no data being held
 		NULL_VALUE = 1 << 0,
 		BOOL = 1 << 1,
 		NUMBER = 1 << 2,
+		//string_id that is currently defined elsewhere
 		EXISTING_STRING_ID = 1 << 3,
+		//string_id that may be newly defined
 		STRING_ID = 1 << 4,
+		//key string_id that is currently defined elsewhere (as a key)
 		EXISTING_KEY_STRING_ID = 1 << 5,
+		//key string_id that may be newly defined
 		KEY_STRING_ID = 1 << 6,
+		//code
 		CODE = 1 << 7,
 
 		//composite types which can include NULL_VALUE
-		REQUEST_BOOL = BOOL | NULL_VALUE,
-		REQUEST_NUMBER = NUMBER | NULL_VALUE,
-		REQUEST_EXISTING_STRING_ID = EXISTING_STRING_ID | NULL_VALUE,
-		REQUEST_STRING_ID = STRING_ID | NULL_VALUE,
-		REQUEST_EXISTING_KEY_STRING_ID = EXISTING_KEY_STRING_ID | NULL_VALUE,
-		REQUEST_KEY_STRING_ID = KEY_STRING_ID | NULL_VALUE,
+		BOOL_OR_NULL = BOOL | NULL_VALUE,
+		NUMBER_OR_NULL = NUMBER | NULL_VALUE,
+		EXISTING_STRING_ID_OR_NULL = EXISTING_STRING_ID | NULL_VALUE,
+		STRING_ID_OR_NULL = STRING_ID | NULL_VALUE,
+		EXISTING_KEY_STRING_ID_OR_NULL = EXISTING_KEY_STRING_ID | NULL_VALUE,
+		KEY_STRING_ID_OR_NULL = KEY_STRING_ID | NULL_VALUE,
 
-		ALL = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID | STRING_ID | CODE
+		ANY_STANDARD_IMMEDIATE = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID | STRING_ID | CODE
 	};
 
 	constexpr EvaluableNodeRequestedValueTypes() noexcept
@@ -62,7 +69,7 @@ public:
 
 	//boolean implies all or none
 	constexpr EvaluableNodeRequestedValueTypes(bool all_or_none) noexcept
-		: requestedValueTypes(all_or_none ? Type::ALL : Type::NONE)
+		: requestedValueTypes(all_or_none ? Type::ANY_STANDARD_IMMEDIATE : Type::NONE)
 	{}
 
 	//bit‑wise operators
@@ -720,7 +727,7 @@ public:
 		if(value.nodeType != ENIVT_CODE)
 			return true;
 
-		return (value.nodeValue.code == nullptr || value.nodeValue.code->IsImmediate());
+		return EvaluableNode::IsImmediate(value.nodeValue.code);
 	}
 
 	__forceinline bool IsNonNullNodeReference()

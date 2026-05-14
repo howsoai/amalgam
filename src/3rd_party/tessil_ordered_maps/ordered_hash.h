@@ -348,12 +348,10 @@ class ordered_hash : private Hash, private KeyEqual {
 
    public:
     using iterator_category = std::random_access_iterator_tag;
-//removed const from here
     using value_type = typename ordered_hash::value_type;
     using difference_type = typename iterator::difference_type;
 
-//updated these
-    //reference and pointer are dependent on IsConst
+    // reference and pointer are dependent on IsConst
     using reference = typename std::conditional<IsConst,
 		const value_type &, value_type &>::type;
     using pointer = typename std::conditional<IsConst,

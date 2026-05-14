@@ -277,7 +277,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 		if(lowest_common_node == nullptr)
 		{
 		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-			assert(false);
+			AmlgAssert(false);
 		#endif
 			return nullptr;
 		}
@@ -331,7 +331,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 		else //didn't work... odd/error condition
 		{
 		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-			assert(false);
+			AmlgAssert(false);
 		#endif
 			return nullptr;
 		}
@@ -1026,7 +1026,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 	size_t indentation_depth, bool need_initial_indent)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(!(upd.cycleFree && tree != nullptr && tree->GetNeedCycleCheck()));
+	AmlgAssert(!(upd.cycleFree && tree != nullptr && tree->GetNeedCycleCheck()));
 #endif
 
 	if(upd.result.size() > upd.maxLength)

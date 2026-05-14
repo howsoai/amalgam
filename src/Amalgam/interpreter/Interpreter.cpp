@@ -929,10 +929,10 @@ static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints
 		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Node allocation limit exceeded")), true);
 	default:
 		//cases should be exhaustive, so this is unreachable
-		assert(false);
+		AmlgAssert(false);
 	}
 
-	assert(false);
+	AmlgAssert(false);
 	return ""; //unreachable
 }
 
@@ -1002,7 +1002,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DEALLOCATED(EvaluableNode 
 {
 	std::cerr << "ERROR: attempt to use freed memory\n";
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(false);
+	AmlgAssert(false);
 #endif
 	return EvaluableNodeReference::Null();
 }
@@ -1011,7 +1011,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNINITIALIZED(EvaluableNod
 {
 	std::cerr << "ERROR: encountered an uninitialized node\n";
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(false);
+	AmlgAssert(false);
 #endif
 	return EvaluableNodeReference::Null();
 }
@@ -1020,7 +1020,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(Evalua
 {
 	std::cerr << "ERROR: encountered an invalid instruction\n";
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(false);
+	AmlgAssert(false);
 #endif
 	return EvaluableNodeReference::Null();
 }

@@ -250,7 +250,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 			auto old_value_entry = sortedNumberValueEntries.find(old_number_value);
 
 			if(old_value_entry == end(sortedNumberValueEntries))
-				assert(false);
+				AmlgAssert(false);
 
 			//if there are multiple entries for this number, just remove the id from the old value
 			if(old_value_entry->second.indicesWithValue.size() > 1)
@@ -290,7 +290,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 			size_t new_value_index = 0;
 			auto old_id_entry = stringIdValueEntries.find(old_sid_value);
 			if(old_id_entry == end(stringIdValueEntries))
-				assert(false);
+				AmlgAssert(false);
 
 			//if there are multiple entries for this string, just move the id
 			if(old_id_entry->second->indicesWithValue.size() > 1)
@@ -365,7 +365,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 				//need to emplace above before searching to ensure new_size_entry does not become invalidated
 				auto old_size_entry = valueCodeSizeToIndices.find(old_code_size);
 				if(old_size_entry == end(valueCodeSizeToIndices))
-					assert(false);
+					AmlgAssert(false);
 
 				//if there are multiple entries for this string, just move the id
 				if(old_size_entry->second->size() > 1)
@@ -442,7 +442,7 @@ void SBFDSColumnData::RemoveIndexValue(EvaluableNodeImmediateValueType value_typ
 		//look up value
 		auto value_entry = sortedNumberValueEntries.find(resolved_value.number);
 		if(value_entry == end(sortedNumberValueEntries))
-			assert(false);
+			AmlgAssert(false);
 
 		//if the bucket has only one entry, we must delete the entire bucket
 		if(value_entry->second.indicesWithValue.size() == 1)
@@ -467,7 +467,7 @@ void SBFDSColumnData::RemoveIndexValue(EvaluableNodeImmediateValueType value_typ
 
 		auto id_entry = stringIdValueEntries.find(resolved_value.stringID);
 		if(id_entry == end(stringIdValueEntries))
-			assert(false);
+			AmlgAssert(false);
 
 		auto &entities = id_entry->second->indicesWithValue;
 		entities.erase(index);
@@ -493,7 +493,7 @@ void SBFDSColumnData::RemoveIndexValue(EvaluableNodeImmediateValueType value_typ
 		size_t num_indices = EvaluableNode::GetDeepSize(value.code);
 		auto id_entry = valueCodeSizeToIndices.find(num_indices);
 		if(id_entry == end(valueCodeSizeToIndices))
-			assert(false);
+			AmlgAssert(false);
 
 		//remove the entity
 		auto &entities = *(id_entry->second);

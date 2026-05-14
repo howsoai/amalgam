@@ -172,7 +172,7 @@ public:
 		originalStackSize = stack->size();
 
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(initial_element == nullptr || initial_element->IsNodeValid());
+		AmlgAssert(initial_element == nullptr || initial_element->IsNodeValid());
 	#endif
 
 		stack->push_back(initial_element);
@@ -192,7 +192,7 @@ public:
 	__forceinline void PushEvaluableNode(EvaluableNode *n)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(n == nullptr || n->IsNodeValid());
+		AmlgAssert(n == nullptr || n->IsNodeValid());
 	#endif
 		stack->push_back(n);
 	}
@@ -224,7 +224,7 @@ public:
 	__forceinline void SetStackElement(size_t location, EvaluableNode *new_value)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(new_value == nullptr || new_value->IsNodeValid());
+		AmlgAssert(new_value == nullptr || new_value->IsNodeValid());
 	#endif
 		(*stack)[location] = new_value;
 	}

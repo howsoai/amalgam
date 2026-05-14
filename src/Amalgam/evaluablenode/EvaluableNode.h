@@ -40,10 +40,7 @@ public:
 	using KeywordLookupType = FastHashMap<std::string, EvaluableNodeType>;
 
 	//EvaluableNode assoc storage
-	using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
-
-	//Storage for labels
-	using LabelsAssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
+	using AssocType = OrderedHashMap<StringInternPool::StringID, EvaluableNode *>;
 
 	using AttributeStorageType = uint8_t;
 	enum class Attribute : AttributeStorageType
@@ -101,7 +98,7 @@ public:
 	inline void InitializeType(EvaluableNodeType _type, const std::string &string_value)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(IsEvaluableNodeTypeValid(_type));
+		AmlgAssert(IsEvaluableNodeTypeValid(_type));
 	#endif
 
 		type = _type;
@@ -116,7 +113,7 @@ public:
 	inline void InitializeType(EvaluableNodeType _type, const std::string_view string_value)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(IsEvaluableNodeTypeValid(_type));
+		AmlgAssert(IsEvaluableNodeTypeValid(_type));
 	#endif
 
 		type = _type;
@@ -131,7 +128,7 @@ public:
 	inline void InitializeType(EvaluableNodeType _type, StringInternPool::StringID string_id)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(IsEvaluableNodeTypeValid(_type));
+		AmlgAssert(IsEvaluableNodeTypeValid(_type));
 	#endif
 
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
@@ -155,7 +152,7 @@ public:
 	inline void InitializeTypeWithReferenceHandoff(EvaluableNodeType _type, StringInternPool::StringID string_id)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(IsEvaluableNodeTypeValid(_type));
+		AmlgAssert(IsEvaluableNodeTypeValid(_type));
 	#endif
 
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
@@ -216,7 +213,7 @@ public:
 	inline void InitializeType(EvaluableNodeType _type)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(IsEvaluableNodeTypeValid(_type) || _type == ENT_DEALLOCATED);
+		AmlgAssert(IsEvaluableNodeTypeValid(_type) || _type == ENT_DEALLOCATED);
 	#endif
 
 		type = _type;
@@ -582,7 +579,7 @@ public:
 	__forceinline EvaluableNodeType &GetType()
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(type != ENT_DEALLOCATED);
+		AmlgAssert(type != ENT_DEALLOCATED);
 	#endif
 		return type;
 	}
@@ -1303,7 +1300,7 @@ public:
 	#endif
 		if(debugWatch.find(en) != end(debugWatch))
 		{
-			assert(false);
+			AmlgAssert(false);
 		}
 	}
 

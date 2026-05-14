@@ -58,7 +58,7 @@ public:
 	//converts a [0-15] (4-bit) value to a single char of its associated hexidecimal character
 	static char DecimalToHex(const uint8_t c)
 	{
-		assert(c < 16); //value must be 4-bits only
+		AmlgAssert(c < 16); //value must be 4-bits only
 
 		if(c >= 10)
 			return c - 10 + 'a';
@@ -137,7 +137,7 @@ public:
 		{
 			if(a == escape_char)
 			{
-				assert(escape_index == 0); //must complete a previous escape before starting a new one
+				AmlgAssert(escape_index == 0); //must complete a previous escape before starting a new one
 				escape_index = num_hex_values_per_char;
 			}
 			else

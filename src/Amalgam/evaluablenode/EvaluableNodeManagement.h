@@ -429,7 +429,7 @@ public:
 			return;
 
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(en->IsNodeValid());
+		AmlgAssert(en->IsNodeValid());
 	#endif
 
 		en->Invalidate();
@@ -447,7 +447,7 @@ public:
 		}
 
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(enr == nullptr || enr->IsNodeValid());
+		AmlgAssert(enr == nullptr || enr->IsNodeValid());
 	#endif
 
 		if( (enr.unique || enr.uniqueUnreferencedTopNode) && enr != nullptr)
@@ -468,7 +468,7 @@ public:
 			return;
 
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(en->IsNodeValid());
+		AmlgAssert(en->IsNodeValid());
 	#endif
 
 		if(IsEvaluableNodeTypeImmediate(en->GetType()))
@@ -491,8 +491,8 @@ public:
 				node_stack.pop_back();
 
 			#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-				assert(cur->IsNodeValid());
-				assert(!cur->GetNeedCycleCheck());
+				AmlgAssert(cur->IsNodeValid());
+				AmlgAssert(!cur->GetNeedCycleCheck());
 			#endif
 
 				if(cur->IsAssociativeArray())
@@ -525,7 +525,7 @@ public:
 				node_stack.push_back(en);
 
 		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-			assert(en->IsNodeValid());
+			AmlgAssert(en->IsNodeValid());
 		#endif
 
 			//perform depth-first traversal
@@ -604,8 +604,8 @@ public:
 			node_stack.pop_back();
 
 		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-			assert(cur->IsNodeValid());
-			assert(!cur->GetNeedCycleCheck());
+			AmlgAssert(cur->IsNodeValid());
+			AmlgAssert(!cur->GetNeedCycleCheck());
 		#endif
 
 			if(cur->IsAssociativeArray())
@@ -865,7 +865,7 @@ protected:
 	__forceinline void AddNodeToLocalAllocationBuffer(EvaluableNode *en)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(en->IsNodeDeallocated());
+		AmlgAssert(en->IsNodeDeallocated());
 	#endif
 		localAllocationBuffer.AddNodeForReallocation(en, this);
 	}

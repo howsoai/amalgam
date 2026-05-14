@@ -210,7 +210,7 @@ std::string Platform_GetOperatingSystemName();
 #pragma GCC diagnostic ignored "-Wmacro-redefined"
 #endif
 
-#define assert(expr) Platform_Assert(expr, __FILE__, __LINE__)
+#define AmlgAssert(expr) Platform_Assert(expr, __FILE__, __LINE__)
 
 #ifdef OS_MAC
 // warnings thrown on OS_MAC

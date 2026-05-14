@@ -79,6 +79,7 @@ public:
 
 #include <array>
 #include <cstddef>
+#include <deque>
 #include <functional>
 #include <mutex>
 #include <utility>
@@ -87,6 +88,7 @@ public:
 //fast hash maps
 #include "skarupke_maps/bytell_hash_map.hpp"
 #include "skarupke_maps/flat_hash_map.hpp"
+#include "tessil_ordered_maps/ordered_map.h"
 
 template<typename T, typename H = std::hash<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
 using FastHashSet = ska::flat_hash_set<T, H, E, A>;
@@ -102,6 +104,10 @@ using CompactHashSet = ska::bytell_hash_set<T, H, E, A>;
 
 template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using CompactHashMap = ska::bytell_hash_map<K, V, H, E, A>;
+
+template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<K, V> >,
+	typename C = std::deque<std::pair<K, V>> >
+using OrderedHashMap = tsl::ordered_map<K, V, H, E, A, C, uint64_t>;
 
 #endif
 

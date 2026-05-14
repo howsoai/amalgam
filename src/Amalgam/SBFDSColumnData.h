@@ -439,15 +439,15 @@ public:
 		if(stringId != string_intern_pool.NOT_A_STRING_ID)
 		{
 			//make sure not extreme values
-			assert(stringId->string.size() < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
-			assert(stringId->refCount < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
+			AmlgAssert(stringId->string.size() < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
+			AmlgAssert(stringId->refCount < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
 		}
 
 		size_t num_entities = invalidIndices.size() + nullIndices.size() + falseBoolIndices.size() + trueBoolIndices.size()
 			+ numberIndices.size() + stringIdIndices.size() + codeIndices.size();
 
 		if(max_num_entities < std::numeric_limits<size_t>::max())
-			assert(num_entities == max_num_entities);
+			AmlgAssert(num_entities == max_num_entities);
 
 		for(auto &value_entry : sortedNumberValueEntries)
 		{
@@ -455,26 +455,26 @@ public:
 			if(internedNumberValues.valueInterningEnabled)
 			{
 				auto &interns = internedNumberValues;
-				assert(value_entry.second.valueInternIndex < interns.internedIndexToValue.size());
-				assert(!FastIsNaN(interns.internedIndexToValue[value_entry.second.valueInternIndex]));
+				AmlgAssert(value_entry.second.valueInternIndex < interns.internedIndexToValue.size());
+				AmlgAssert(!FastIsNaN(interns.internedIndexToValue[value_entry.second.valueInternIndex]));
 			}
 
 			//ensure all entity ids are not out of range
 			for(auto entity_index : value_entry.second.indicesWithValue)
-				assert(entity_index < max_num_entities);
+				AmlgAssert(entity_index < max_num_entities);
 		}
 
 		//ensure all bools are valid
 		for(auto entity_index : falseBoolIndices)
 		{
-			assert(!valueEntries[entity_index].boolValue);
-			assert(!trueBoolIndices.contains(entity_index));
+			AmlgAssert(!valueEntries[entity_index].boolValue);
+			AmlgAssert(!trueBoolIndices.contains(entity_index));
 		}
 
 		for(auto entity_index : trueBoolIndices)
 		{
-			assert(valueEntries[entity_index].boolValue);
-			assert(!falseBoolIndices.contains(entity_index));
+			AmlgAssert(valueEntries[entity_index].boolValue);
+			AmlgAssert(!falseBoolIndices.contains(entity_index));
 		}
 
 		//ensure all numbers are valid
@@ -482,11 +482,11 @@ public:
 		{
 			auto &feature_value = valueEntries[entity_index];
 			auto feature_type = GetIndexValueType(entity_index);
-			assert(feature_type == ENIVT_NUMBER || feature_type == ENIVT_NUMBER_INDIRECTION_INDEX);
+			AmlgAssert(feature_type == ENIVT_NUMBER || feature_type == ENIVT_NUMBER_INDIRECTION_INDEX);
 			if(feature_type == ENIVT_NUMBER_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
 			{
 				auto feature_value_resolved = ResolveValue(feature_type, feature_value);
-				assert(!FastIsNaN(feature_value_resolved.number));
+				AmlgAssert(!FastIsNaN(feature_value_resolved.number));
 			}
 		}
 
@@ -496,7 +496,7 @@ public:
 			if(internedStringIdValues.valueInterningEnabled)
 			{
 				auto &interns = internedStringIdValues;
-				assert(value_entry->valueInternIndex < interns.internedIndexToValue.size());
+				AmlgAssert(value_entry->valueInternIndex < interns.internedIndexToValue.size());
 			}
 		}
 
@@ -505,11 +505,11 @@ public:
 		{
 			auto &feature_value = valueEntries[entity_index];
 			auto feature_type = GetIndexValueType(entity_index);
-			assert(feature_type == ENIVT_STRING_ID || feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX);
+			AmlgAssert(feature_type == ENIVT_STRING_ID || feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX);
 			if(feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
 			{
 				auto feature_value_resolved = ResolveValue(feature_type, feature_value);
-				assert(feature_value_resolved.stringID != string_intern_pool.NOT_A_STRING_ID);
+				AmlgAssert(feature_value_resolved.stringID != string_intern_pool.NOT_A_STRING_ID);
 			}
 		}
 	}

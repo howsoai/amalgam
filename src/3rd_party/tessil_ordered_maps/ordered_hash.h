@@ -352,21 +352,12 @@ class ordered_hash : private Hash, private KeyEqual {
     using value_type = typename ordered_hash::value_type;
     using difference_type = typename iterator::difference_type;
 
-//replaced these with the below
-    //using reference = value_type&;
-    //using pointer = value_type*;
-
-	//reference / pointer dependent on IsConst
-	using reference = typename std::conditional<
-		IsConst,
-		const value_type &,          // const reference for const_iterator
-		value_type &                 // mutable reference for iterator
-	>::type;
-	using pointer = typename std::conditional<
-		IsConst,
-		const value_type *,          // const pointer for const_iterator
-		value_type *                 // mutable pointer for iterator
-	>::type;
+//updated these
+    //reference and pointer are dependent on IsConst
+    using reference = typename std::conditional<IsConst,
+		const value_type &, value_type &>::type;
+    using pointer = typename std::conditional<IsConst,
+		const value_type *, value_type *>::type;
 
     ordered_iterator() noexcept {}
 

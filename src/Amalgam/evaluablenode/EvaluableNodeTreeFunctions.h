@@ -417,11 +417,10 @@ inline EvaluableNodeReference CreateListOfNumbersFromIteratorAndFunction(ValueCo
 {
 	EvaluableNode *list = enm->AllocNode(ENT_LIST);
 	auto &ocn = list->GetOrderedChildNodesReference();
-	ocn.resize(value_container.size());
+	ocn.reserve(value_container.size());
 
-	size_t index = 0;
 	for(auto value_element : value_container)
-		ocn[index++] = enm->AllocNode(get_number(value_element));
+		ocn.push_back(enm->AllocNode(get_number(value_element)));
 
 	return EvaluableNodeReference(list, true);
 }
@@ -434,11 +433,10 @@ inline EvaluableNodeReference CreateListOfStringsIdsFromIteratorAndFunction(Stri
 {
 	EvaluableNode *list = enm->AllocNode(ENT_LIST);
 	auto &ocn = list->GetOrderedChildNodesReference();
-	ocn.resize(string_container.size());
+	ocn.reserve(string_container.size());
 
-	size_t index = 0;
 	for(auto string_element : string_container)
-		ocn[index++] = enm->AllocNode(ENT_STRING, get_string_id(string_element));
+		ocn.push_back(enm->AllocNode(ENT_STRING, get_string_id(string_element)));
 
 	return EvaluableNodeReference(list, true);
 }
@@ -451,11 +449,10 @@ inline EvaluableNodeReference CreateListOfStringsFromIteratorAndFunction(StringC
 {
 	EvaluableNode *list = enm->AllocNode(ENT_LIST);
 	auto &ocn = list->GetOrderedChildNodesReference();
-	ocn.resize(string_container.size());
+	ocn.reserve(string_container.size());
 
-	size_t index = 0;
 	for(auto string_element : string_container)
-		ocn[index++] = enm->AllocNode(ENT_STRING, get_string(string_element));
+		ocn.push_back(enm->AllocNode(ENT_STRING, get_string(string_element)));
 
 	return EvaluableNodeReference(list, true);
 }

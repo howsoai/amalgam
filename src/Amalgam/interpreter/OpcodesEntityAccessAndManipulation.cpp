@@ -337,7 +337,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 		return EvaluableNodeReference::Null();
 
 	//get the value(s)
-	if(to_lookup == nullptr || to_lookup->IsImmediate())
+	if(EvaluableNode::IsImmediate(to_lookup))
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
 		EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager,

@@ -177,6 +177,11 @@ function(add_compiled_target)
         target_compile_definitions(${TARGET_NAME} PUBLIC ${args_COMPILER_DEFINES})
     endif()
 
+    # If on Windows, make sure to use the segment heap for performance
+    if(MSVC)
+    set_target_properties(${TARGET_NAME} PROPERTIES VS_USER_PROG_MANIFESTS "src/Amalgam/segment_heap.manifest")
+    endif()
+
     # Link libraries:
     if(NOT "${args_LINK_LIBRARIES}" STREQUAL "")
         target_link_libraries(${TARGET_NAME} PUBLIC ${args_LINK_LIBRARIES})

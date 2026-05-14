@@ -399,6 +399,11 @@ public:
 		return IsEvaluableNodeTypeImmediate(GetType());
 	}
 
+	static __forceinline bool IsImmediate(EvaluableNode *n)
+	{
+		return ((n == nullptr) || IsEvaluableNodeTypeImmediate(n->GetType()));
+	}
+
 	//returns true if the node is some form of ordered array
 	__forceinline bool IsOrderedArray()
 	{
@@ -1071,7 +1076,7 @@ public:
 	inline static void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
 		size_t num_expected_elements, StoreValueFunction store_value)
 	{
-		if(EvaluableNode::IsNull(node) || node->IsImmediate())
+		if(EvaluableNode::IsImmediate(node))
 		{
 			//fill in with the node's value
 			for(size_t i = 0; i < num_expected_elements; i++)

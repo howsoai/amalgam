@@ -370,7 +370,7 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	type = n->GetType();
 
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(IsEvaluableNodeTypeValid(type));
+	AmlgAssert(IsEvaluableNodeTypeValid(type));
 #endif
 
 	if(DoesEvaluableNodeTypeUseAssocData(type))
@@ -466,7 +466,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 	auto cur_type = n->GetType();
 
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(IsEvaluableNodeTypeValid(cur_type));
+	AmlgAssert(IsEvaluableNodeTypeValid(cur_type));
 #endif
 
 	//doesn't need an EvaluableNodeManager because not converting child nodes from one type to another
@@ -529,7 +529,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	bool attempt_to_preserve_immediate_value)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(IsEvaluableNodeTypeValid(new_type));
+	AmlgAssert(IsEvaluableNodeTypeValid(new_type));
 #endif
 
 	EvaluableNodeType cur_type = GetType();

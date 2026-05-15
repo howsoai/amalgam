@@ -42,10 +42,19 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	//use specified or create new scopeStack
 	if(scope_stack == nullptr)
 	{
-		EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
-		new_context_entry->SetNeedCycleCheck(true);
-		scopeStack.clear();
-		scopeStack.push_back(new_context_entry);
+	#ifdef MULTITHREAD_SUPPORT
+		bottomOfScopeStack = new_scope_stack;
+		if(new_scope_stack)
+		{
+	#endif
+
+			EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
+			new_context_entry->SetNeedCycleCheck(true);
+			scopeStack.clear();
+			scopeStack.push_back(new_context_entry);
+	#ifdef MULTITHREAD_SUPPORT
+		}
+	#endif
 	}
 	else
 	{
@@ -62,10 +71,6 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		constructionStack.clear();
 	else
 		constructionStack = std::move(*construction_stack);
-
-#ifdef MULTITHREAD_SUPPORT
-	bottomOfScopeStack = new_scope_stack;
-#endif
 	
 	evaluableNodeManager->AddActiveInterpreter(this);
 	auto retval = InterpretNode(en, immediate_result);
@@ -285,16 +290,10 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNo
 	VerifyEvaluableNodeIntegrity();
 #endif
 
-	if(AreExecutionResourcesExhausted(true))
-	{
-		opcodeStackNodes.pop_back();
-		return EvaluableNodeReference::Null();
-	}
+	//get corresponding opcode taking into account resource constraints
+	EvaluableNodeType ent = (!AreExecutionResourcesExhausted(true) ? en->GetType() : ENT_NULL);
 
-	//get corresponding opcode
-	EvaluableNodeType ent = en->GetType();
 	auto oc = _opcodes[ent];
-
 	EvaluableNodeReference retval = (this->*oc)(en, immediate_result);
 
 #ifdef AMALGAM_MEMORY_INTEGRITY
@@ -929,10 +928,10 @@ static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints
 		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Node allocation limit exceeded")), true);
 	default:
 		//cases should be exhaustive, so this is unreachable
-		assert(false);
+		AmlgAssert(false);
 	}
 
-	assert(false);
+	AmlgAssert(false);
 	return ""; //unreachable
 }
 
@@ -1002,7 +1001,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DEALLOCATED(EvaluableNode 
 {
 	std::cerr << "ERROR: attempt to use freed memory\n";
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(false);
+	AmlgAssert(false);
 #endif
 	return EvaluableNodeReference::Null();
 }
@@ -1011,7 +1010,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNINITIALIZED(EvaluableNod
 {
 	std::cerr << "ERROR: encountered an uninitialized node\n";
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(false);
+	AmlgAssert(false);
 #endif
 	return EvaluableNodeReference::Null();
 }
@@ -1020,7 +1019,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(Evalua
 {
 	std::cerr << "ERROR: encountered an invalid instruction\n";
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(false);
+	AmlgAssert(false);
 #endif
 	return EvaluableNodeReference::Null();
 }

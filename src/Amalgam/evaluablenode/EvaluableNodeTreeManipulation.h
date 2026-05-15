@@ -515,14 +515,6 @@ public:
 	// KeepSomeNonMergeableValues is set and one node is null, it will return a copy of the non-null node
 	static EvaluableNode *CreateGeneralizedNode(NodesMergeMethod *mm, EvaluableNode *n1, EvaluableNode *n2);
 
-	//returns the union of the two sets of labels
-	static std::vector<StringInternPool::StringID> UnionStringIDVectors(
-		const std::vector<StringInternPool::StringID> &label_list_a, const std::vector<StringInternPool::StringID> &label_list_b);
-
-	//returns the intersection of the two sets of labels
-	static std::vector<StringInternPool::StringID> IntersectStringIDVectors(
-		const std::vector<StringInternPool::StringID> &label_list_a, const std::vector<StringInternPool::StringID> &label_list_b);
-
 	//returns a tree that consists of only nodes that are common across all of the trees specified,
 	// where all returned values are newly allocated and modifiable
 	//Note that MergeTrees does not guarantee that EvaluableNodeFlags will be set appropriately

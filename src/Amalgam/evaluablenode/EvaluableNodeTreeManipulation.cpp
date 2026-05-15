@@ -318,43 +318,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMe
 	return n;
 }
 
-std::vector<StringInternPool::StringID> EvaluableNodeTreeManipulation::UnionStringIDVectors(const std::vector<StringInternPool::StringID> &label_list_a, const std::vector<StringInternPool::StringID> &label_list_b)
-{
-	//quick shortcuts in case either list is empty
-	if(label_list_a.size() == 0)
-		return std::vector<StringInternPool::StringID>(label_list_b);
-	if(label_list_b.size() == 0)
-		return std::vector<StringInternPool::StringID>(label_list_a);
-
-	//create list of unique labels included in either
-	auto all_labels = CompactHashSet<StringInternPool::StringID>(label_list_a.size() + label_list_b.size());
-	all_labels.insert(begin(label_list_a), end(label_list_a));
-	all_labels.insert(begin(label_list_b), end(label_list_b));
-	return std::vector<StringInternPool::StringID>(begin(all_labels), end(all_labels));
-}
-
-std::vector<StringInternPool::StringID> EvaluableNodeTreeManipulation::IntersectStringIDVectors(const std::vector<StringInternPool::StringID> &label_list_a, const std::vector<StringInternPool::StringID> &label_list_b)
-{
-	//quick shortcut in case either list is empty
-	if(label_list_a.size() == 0 || label_list_b.size() == 0)
-		return std::vector<StringInternPool::StringID>();
-
-	std::vector<StringInternPool::StringID> labels_in_1(begin(label_list_a), end(label_list_a));
-	std::vector<StringInternPool::StringID> labels_in_2(begin(label_list_b), end(label_list_b));
-	std::vector<StringInternPool::StringID> common_labels(label_list_a.size() + label_list_b.size());	//hold enough in case all are unique
-
-	//sort both of the lists as required before passing into set_intersection
-	std::sort(begin(labels_in_1), end(labels_in_1));
-	std::sort(begin(labels_in_2), end(labels_in_2));
-
-	//create a new clean set and insert the set intersection
-	auto common_end = std::set_intersection(begin(labels_in_1), end(labels_in_1), begin(labels_in_2), end(labels_in_2), begin(common_labels));
-
-	//get rid of any unused entries
-	common_labels.resize(common_end - begin(common_labels));
-	return common_labels;
-}
-
 EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, EvaluableNode *tree1, EvaluableNode *tree2)
 {
 	//shortcut for merging empty trees

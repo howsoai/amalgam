@@ -323,7 +323,7 @@ inline std::string GetStringFromEvaluableNodeType(EvaluableNodeType t, bool get_
 
 	if(t >= NUM_VALID_ENT_OPCODES)
 	{
-		assert(false);
+		AmlgAssert(false);
 		return "";
 	}
 

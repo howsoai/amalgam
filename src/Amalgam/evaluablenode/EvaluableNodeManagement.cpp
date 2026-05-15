@@ -637,7 +637,7 @@ static void MarkAllReferencedNodesInUseForNode(EvaluableNode *tree)
 	{
 		auto *node = node_stack.back();
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(node->IsNodeValid());
+		AmlgAssert(node->IsNodeValid());
 	#endif
 		node_stack.pop_back();
 
@@ -672,7 +672,7 @@ static void MarkAllReferencedNodesInUseForNode(EvaluableNode *tree)
 static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(tree->IsNodeValid());
+	AmlgAssert(tree->IsNodeValid());
 #endif
 
 	tree->SetKnownToBeInUseAtomic(true);
@@ -683,7 +683,7 @@ static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
 	{
 		auto *node = node_stack.back();
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(node->IsNodeValid());
+		AmlgAssert(node->IsNodeValid());
 	#endif
 		node_stack.pop_back();
 
@@ -849,7 +849,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			auto parent_record = checked_to_parent.find(cur_node);
 			if(parent_record == end(checked_to_parent))
 			{
-				assert(false);
+				AmlgAssert(false);
 			}
 
 			cur_node = parent_record->second;
@@ -861,7 +861,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 	tree->SetIsIdempotent(is_idempotent);
 
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(tree->IsNodeValid());
+	AmlgAssert(tree->IsNodeValid());
 #endif
 	
 	if(tree->IsAssociativeArray())
@@ -932,12 +932,12 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 		return std::make_pair(true, en->GetIsIdempotent());
 
 	if(!en->IsNodeValid() || en->GetKnownToBeInUse())
-		assert(false);
+		AmlgAssert(false);
 
 	if(existing_nodes != nullptr)
 	{
 		if(existing_nodes->find(en) == end(*existing_nodes))
-			assert(false);
+			AmlgAssert(false);
 	}
 
 	bool child_nodes_cycle_free = true;
@@ -976,10 +976,10 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 	}
 
 	if(!child_nodes_idempotent && en->GetIsIdempotent())
-		assert(false);
+		AmlgAssert(false);
 
 	if(check_cycle_flag_consistency && !child_nodes_cycle_free && !en->GetNeedCycleCheck())
-		assert(false);
+		AmlgAssert(false);
 
 	return std::make_pair(!en->GetNeedCycleCheck(), en->GetIsIdempotent());
 }

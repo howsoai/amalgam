@@ -2299,17 +2299,17 @@ AmalgamExample{ R"&(;stack concurrency
 	)
 	(range 0 10)
 ))&", R"([
-        2
-        2
-        2
-        2
-        2
-        2
-        2
-        2
-        2
-        2
-        2
+		2
+		2
+		2
+		2
+		2
+		2
+		2
+		2
+		2
+		2
+		2
 ])"},
 AmalgamExample{ R"&(;nested concurrency
 (apply "+" ||(map

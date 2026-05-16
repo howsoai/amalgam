@@ -337,14 +337,14 @@ protected:
 		auto found = stringToID.find(sid->string);
 		if(found == end(stringToID))
 		{
-			assert(false);
+			AmlgAssert(false);
 			return;
 		}
 
 		StringID found_sid = found->second.get();
 		if(sid != found_sid)
 		{
-			assert(false);
+			AmlgAssert(false);
 		}
 	}
 

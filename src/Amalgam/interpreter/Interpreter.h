@@ -479,7 +479,7 @@ public:
 	}
 
 	//keeps the current node on the stack and calls InterpretNodeExecution
-	//if immediate_result is true, it will not allocate a node
+	//will allocated as instructed based on immediate_result
 	EvaluableNodeReference InterpretNode(EvaluableNode *en,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes());
 

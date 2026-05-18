@@ -1047,24 +1047,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, Ev
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto n = InterpretNodeForImmediateUse(ocn[0], true);
+	//TODO 25519: implement this in filter, values (with uniques), keep, remove, explode, split
+	auto n = InterpretNodeForImmediateUse(ocn[0], EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER);
 
 	double size = 0;
 	if(n.IsImmediateValue())
 	{
-		auto &value = n.GetValue();
-
-		if(value.nodeType == ENIVT_BOOL)
-			size = (value.nodeValue.boolValue ? 1 : 0);
-		else if(value.nodeType == ENIVT_NUMBER)
-			size = value.nodeValue.number;
-		else if(value.nodeType == ENIVT_STRING_ID)
-			size = static_cast<double>(StringManipulation::GetNumUTF8Characters(value.nodeValue.stringID->string));
-		else if(value.nodeType == ENIVT_CODE && value.nodeValue.code != nullptr)
-			size = static_cast<double>(value.nodeValue.code->GetNumChildNodes());
-
-		evaluableNodeManager->FreeNodeIfPossible(n);
-		return AllocReturn(size, immediate_result);
+		size = n.GetValue().GetValueAsNumber();
 	}
 	else if(n != nullptr)
 	{

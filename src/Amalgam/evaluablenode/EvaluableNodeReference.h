@@ -129,12 +129,6 @@ public:
 			& static_cast<RequestType>(Type::ANY_STANDARD_IMMEDIATE)) != 0;
 	}
 
-	//returns true if an immediate is allowed
-	constexpr bool ImmediateValue() const noexcept
-	{
-		return requestedValueTypes != Type::NONE;
-	}
-
 	constexpr bool NoValueRequested() const noexcept
 	{
 		return requestedValueTypes == Type::NULL_VALUE;

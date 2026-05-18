@@ -91,18 +91,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en,
 		//reserve enough space, and round up for any remainder
 		result->ReserveOrderedChildNodes((str.size() + (stride - 1)) / stride);
 
-		while(str.size() >= stride)
+		for(size_t pos = 0; pos < str.size(); pos += stride)
 		{
-			std::string substr(begin(str), begin(str) + stride);
+			size_t substr_len = std::min(stride, str.size() - pos);
+			std::string substr(begin(str) + pos, begin(str) + pos + substr_len);
 			result->AppendOrderedChildNode(evaluableNodeManager->AllocNode(ENT_STRING, substr));
-
-			str.erase(0, stride);
 		}
-
-		//some left over, but less than stride, so just append
-		if(str.size() > 0)
-			result->AppendOrderedChildNode(evaluableNodeManager->AllocNode(ENT_STRING, str));
-
 	}
 
 	return EvaluableNodeReference(result, true);

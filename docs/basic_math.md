@@ -2,7 +2,7 @@
 #### Parameters
 `[number x1] [number x2] ... [number xN]`
 #### Description
-Sums all numbers.
+Evaluates to the sum of all numbers.
 #### Details
  - Permissions required:  none
  - Allows concurrency: true
@@ -26,7 +26,7 @@ Output:
 #### Parameters
 `[number x1] [number x2] ... [number xN]`
 #### Description
-Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as negative
+Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative
 #### Details
  - Permissions required:  none
  - Allows concurrency: true

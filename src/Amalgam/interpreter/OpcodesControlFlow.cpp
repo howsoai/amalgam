@@ -497,10 +497,8 @@ static OpcodeInitializer _ENT_CONCLUDE(ENT_CONCLUDE, &Interpreter::InterpretNode
 ))&", R"("success")"},
 			{R"&((seq
 	1
-	(declare
-		{}
-		(while
-			1
+	(declare {}
+		(while .true
 			(if .true (conclude))
 		)
 		4

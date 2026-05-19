@@ -23,26 +23,30 @@ enum EvaluableNodeImmediateValueType : uint8_t
 class EvaluableNodeRequestedValueTypes
 {
 public:
-	using StorageType = uint8_t;
+	using RequestType = uint16_t;
 
-	enum class Type : StorageType
+	enum class Type : RequestType
 	{
 		//there is nothing to even hold the data
 		NONE = 0,
 		//no data being held
 		NULL_VALUE = 1 << 0,
+		//boolean value
 		BOOL = 1 << 1,
+		//numeric value
 		NUMBER = 1 << 2,
+		//the size of the container
+		SIZE_AS_NUMBER = 1 << 3,
 		//string_id that is currently defined elsewhere
-		EXISTING_STRING_ID = 1 << 3,
+		EXISTING_STRING_ID = 1 << 4,
 		//string_id that may be newly defined
-		STRING_ID = 1 << 4,
+		STRING_ID = 1 << 5,
 		//key string_id that is currently defined elsewhere (as a key)
-		EXISTING_KEY_STRING_ID = 1 << 5,
+		EXISTING_KEY_STRING_ID = 1 << 6,
 		//key string_id that may be newly defined
-		KEY_STRING_ID = 1 << 6,
+		KEY_STRING_ID = 1 << 7,
 		//code
-		CODE = 1 << 7,
+		CODE = 1 << 8,
 
 		//composite types which can include NULL_VALUE
 		BOOL_OR_NULL = BOOL | NULL_VALUE,
@@ -63,7 +67,7 @@ public:
 		: requestedValueTypes(t)
 	{}
 
-	constexpr EvaluableNodeRequestedValueTypes(StorageType raw) noexcept
+	constexpr EvaluableNodeRequestedValueTypes(RequestType raw) noexcept
 		: requestedValueTypes(static_cast<Type>(raw))
 	{}
 
@@ -75,15 +79,15 @@ public:
 	//bit‑wise operators
 	constexpr EvaluableNodeRequestedValueTypes &operator|=(EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
-		requestedValueTypes = static_cast<Type>(static_cast<StorageType>(requestedValueTypes) |
-								 static_cast<StorageType>(rhs.requestedValueTypes));
+		requestedValueTypes = static_cast<Type>(static_cast<RequestType>(requestedValueTypes) |
+								 static_cast<RequestType>(rhs.requestedValueTypes));
 		return *this;
 	}
 
 	constexpr EvaluableNodeRequestedValueTypes &operator&=(EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
-		requestedValueTypes = static_cast<Type>(static_cast<StorageType>(requestedValueTypes) &
-								 static_cast<StorageType>(rhs.requestedValueTypes));
+		requestedValueTypes = static_cast<Type>(static_cast<RequestType>(requestedValueTypes) &
+								 static_cast<RequestType>(rhs.requestedValueTypes));
 		return *this;
 	}
 
@@ -92,8 +96,8 @@ public:
 		EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
 		return EvaluableNodeRequestedValueTypes(
-			static_cast<Type>(static_cast<StorageType>(lhs.requestedValueTypes) |
-				static_cast<StorageType>(rhs.requestedValueTypes)));
+			static_cast<Type>(static_cast<RequestType>(lhs.requestedValueTypes) |
+				static_cast<RequestType>(rhs.requestedValueTypes)));
 	}
 
 	constexpr friend EvaluableNodeRequestedValueTypes operator&(
@@ -101,39 +105,28 @@ public:
 		EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
 		return EvaluableNodeRequestedValueTypes(
-			static_cast<Type>(static_cast<StorageType>(lhs.requestedValueTypes) &
-				static_cast<StorageType>(rhs.requestedValueTypes)));
+			static_cast<Type>(static_cast<RequestType>(lhs.requestedValueTypes) &
+				static_cast<RequestType>(rhs.requestedValueTypes)));
 	}
 
 	constexpr friend EvaluableNodeRequestedValueTypes operator~(
 		EvaluableNodeRequestedValueTypes v) noexcept
 	{
 		return EvaluableNodeRequestedValueTypes(
-			static_cast<Type>(~static_cast<StorageType>(v.requestedValueTypes)));
+			static_cast<Type>(~static_cast<RequestType>(v.requestedValueTypes)));
 	}
 
 	constexpr bool Allows(Type flag) const noexcept
 	{
-		return (static_cast<StorageType>(requestedValueTypes) &
-				static_cast<StorageType>(flag)) != 0;
+		return (static_cast<RequestType>(requestedValueTypes) &
+				static_cast<RequestType>(flag)) != 0;
 	}
 
 	//returns true if any immediate is allowed
 	constexpr bool AnyImmediateType() const noexcept
 	{
-		return (static_cast<StorageType>(requestedValueTypes) & ~static_cast<StorageType>(Type::CODE)) != 0;
-	}
-
-	//returns true if an immediate is allowed
-	constexpr bool ImmediateValue() const noexcept
-	{
-		return requestedValueTypes != Type::NONE;
-	}
-
-	//returns true if an immediate value is allowed but immediate types are not allowed
-	constexpr bool ImmediateValueButNotImmediateType() const noexcept
-	{
-		return (static_cast<StorageType>(requestedValueTypes) & ~static_cast<StorageType>(Type::CODE)) == 0;
+		return (static_cast<RequestType>(requestedValueTypes)
+			& static_cast<RequestType>(Type::ANY_STANDARD_IMMEDIATE)) != 0;
 	}
 
 	constexpr bool NoValueRequested() const noexcept

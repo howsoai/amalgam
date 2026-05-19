@@ -325,11 +325,11 @@ static OpcodeInitializer _ENT_SYSTEM_TIME(ENT_SYSTEM_TIME, &Interpreter::Interpr
 	d.examples = MakeAmalgamExamples({
 		{R"&((system_time))&", R"(1773855306.4474)",
 		R"&(^\s*
-    (                                   # start of the number
-        (?:\d+\.\d*|\.\d+|\d+)          # integer part with optional fraction
-        (?:[eE][+-]?\d+)?               # optional exponent
-    )
-    \s*$)&"
+	(                                   # start of the number
+		(?:\d+\.\d*|\.\d+|\d+)          # integer part with optional fraction
+		(?:[eE][+-]?\d+)?               # optional exponent
+	)
+	\s*$)&"
 }
 		});
 	d.permissions = ExecutionPermissions::Permission::ENVIRONMENT;

@@ -833,7 +833,7 @@ protected:
 		{
 			if(num_enabled_indices <= num_entity_indices / 8)
 				BitArrayIntegerSet::IterateOverIntersection(enabled_indices, entity_indices,
-					[&partial_sums, &accum_location, term]
+					[&, term]
 					(size_t entity_index)
 					{
 						partial_sums.Accum(entity_index, accum_location, term);
@@ -841,7 +841,7 @@ protected:
 					max_element);
 			else
 				entity_indices.IterateOver(
-					[&partial_sums, &accum_location, term]
+					[&, term]
 					(size_t entity_index)
 					{
 						partial_sums.Accum(entity_index, accum_location, term);
@@ -852,7 +852,7 @@ protected:
 		{
 			if(num_enabled_indices <= num_entity_indices / 8)
 				BitArrayIntegerSet::IterateOverIntersection(enabled_indices, entity_indices,
-					[&partial_sums, &accum_location]
+					[&]
 					(size_t entity_index)
 					{
 						partial_sums.AccumZero(entity_index, accum_location);
@@ -860,7 +860,7 @@ protected:
 					max_element);
 			else
 				entity_indices.IterateOver(
-					[&partial_sums, &accum_location]
+					[&]
 					(size_t entity_index)
 					{
 						partial_sums.AccumZero(entity_index, accum_location);

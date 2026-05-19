@@ -264,6 +264,3 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 }
 
 UninitializedArray<OpcodeDetails, NUM_ENT_OPCODES> _opcode_details;
-
-static std::string _opcode_group = "global";
-

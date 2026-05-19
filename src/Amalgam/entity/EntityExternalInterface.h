@@ -108,11 +108,7 @@ protected:
 
 		//the type of mutex is dependent on whether individual entities can be accessed concurrently
 	#ifdef MULTITHREAD_INTERFACE
-	#ifdef MULTITHREAD_ENTITY_CALL_MUTEX
-		Concurrency::SingleMutex mutex;
-	#else
 		Concurrency::ReadWriteMutex mutex;
-	#endif
 	#endif
 
 		Entity *entity;
@@ -129,13 +125,7 @@ protected:
 
 		#ifdef MULTITHREAD_INTERFACE
 			if(entityListenerBundle != nullptr)
-			{
-			#ifdef MULTITHREAD_ENTITY_CALL_MUTEX
-				lock = Concurrency::SingleLock(entityListenerBundle->mutex);
-			#else
 				readLock = Concurrency::ReadLock(entityListenerBundle->mutex);
-			#endif
-			}
 		#endif
 		}
 
@@ -151,11 +141,7 @@ protected:
 
 		//the type of mutex is dependent on whether individual entities can be accessed concurrently
 	#ifdef MULTITHREAD_INTERFACE
-	#ifdef MULTITHREAD_ENTITY_CALL_MUTEX
-		Concurrency::SingleLock lock;
-	#else
 		Concurrency::ReadLock readLock;
-	#endif
 	#endif
 	};
 
@@ -168,13 +154,7 @@ protected:
 
 		#ifdef MULTITHREAD_INTERFACE
 			if(entityListenerBundle != nullptr)
-			{
-			#ifdef MULTITHREAD_ENTITY_CALL_MUTEX
-				lock = Concurrency::SingleLock(entityListenerBundle->mutex);
-			#else
 				writeLock = Concurrency::WriteLock(entityListenerBundle->mutex);
-			#endif
-			}
 		#endif
 		}
 
@@ -190,11 +170,7 @@ protected:
 
 		//the type of mutex is dependent on whether individual entities can be accessed concurrently
 	#ifdef MULTITHREAD_INTERFACE
-	#ifdef MULTITHREAD_ENTITY_CALL_MUTEX
-		Concurrency::SingleLock lock;
-	#else
 		Concurrency::WriteLock writeLock;
-	#endif
 	#endif
 	};
 

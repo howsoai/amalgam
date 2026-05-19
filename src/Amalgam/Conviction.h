@@ -236,7 +236,7 @@ public:
 		entity_probabilities.assign(end_entity_index, 0.0);
 
 		IterateOverConcurrentlyIfPossible(*entities_to_compute,
-			[this, &entity_probabilities](auto index, auto entity)
+			[&](auto index, auto entity)
 		{
 			knnCache->GetKnnWithoutCache(entity, numNearestNeighbors, false, buffers.neighbors);
 
@@ -284,7 +284,7 @@ public:
 		entity_probabilities.assign(end_entity_index, 0.0);
 
 		IterateOverConcurrentlyIfPossible(positions_to_compare,
-			[this, &entity_probabilities](auto index, auto position)
+			[&](auto index, auto position)
 		{
 			if(!EvaluableNode::IsOrderedArray(position))
 				return;
@@ -455,8 +455,7 @@ public:
 		//compute the scaled distance contributions and sums when any 1 case is removed from the model
 		//note that the kl_divergence for every non-scaled set is 0, so the sum will not change except for when a case is actually removed from the model
 		IterateOverConcurrentlyIfPossible(entities_to_compute,
-			[this, &convictions_out, &num_relevant_entities, &contrib_sum, &probability_mass_of_non_holdouts,
-				&updated_contrib_to_contrib_scale_inverse, &conviction_of_removal, &base_dist_contribs, &base_dist_probs]
+			[&]
 			(auto convictions_out_index, auto entity_reference)
 			{
 				//compute distance contributions of the entities whose dcs will be changed by the removal of entity_reference

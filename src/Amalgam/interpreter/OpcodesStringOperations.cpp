@@ -55,9 +55,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en,
 	if(!valid)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNode *result = evaluableNodeManager->AllocNode(ENT_LIST);
-	auto node_stack = CreateOpcodeStackStateSaver(result);
-
 	//a stride of 0 means use variable width utf-8
 	size_t stride = 0;
 	if(ocn.size() > 1)
@@ -67,6 +64,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en,
 			stride = static_cast<size_t>(raw_stride);
 	}
 
+	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
+	{
+		size_t size = 0;
+		if(stride == 0)
+			size = StringManipulation::GetNumUTF8Characters(str);
+		else //round up for any remainder
+			size = str.size() + (stride - 1) / stride;
+
+		return EvaluableNodeReference(static_cast<double>(size));
+	}
+
+	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	if(stride == 0)
 	{
 		//pessimistically reserve enough space assuming worst case of each byte being its own character
@@ -99,7 +108,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en,
 		}
 	}
 
-	return EvaluableNodeReference(result, true);
+	return result;
 }
 
 static OpcodeInitializer _ENT_SPLIT(ENT_SPLIT, &Interpreter::InterpretNode_ENT_SPLIT, []() {

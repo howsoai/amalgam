@@ -1047,7 +1047,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, Ev
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	//TODO 25519: implement this in filter, values (with uniques), keep, remove, explode, split
+	//TODO 25519: implement this in filter, values (with uniques), keep, remove, split
 	auto n = InterpretNodeForImmediateUse(ocn[0], EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER);
 
 	double size = 0;

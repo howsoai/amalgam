@@ -479,7 +479,7 @@ public:
 	}
 
 	//keeps the current node on the stack and calls InterpretNodeExecution
-	//will allocated as instructed based on immediate_result
+	//will allocate as instructed based on immediate_result
 	EvaluableNodeReference InterpretNode(EvaluableNode *en,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes());
 
@@ -527,11 +527,11 @@ public:
 		return retval;
 	}
 
-	//Calls InterpretNode on n, converts to std::string and stores in value to return, then cleans up any resources used
+	//calls InterpretNode on n, converts to std::string and stores in value to return, then cleans up any resources used
 	//returns a pair of bool, whether it was a valid string (and not NaS), and the string
 	std::pair<bool, std::string> InterpretNodeIntoStringValue(EvaluableNode *n, bool key_string = false);
 
-	//Calls InterpretNode on n, converts to std::string and stores in value to return, then cleans up any resources used
+	//calls InterpretNode on n, converts to std::string and stores in value to return, then cleans up any resources used
 	// but if n is null, it will return an empty string
 	inline std::string InterpretNodeIntoStringValueEmptyNull(EvaluableNode *n, bool key_string = false)
 	{
@@ -554,14 +554,14 @@ public:
 	EvaluableNodeReference InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes());
 
-	//Calls InterpretNode on n, converts to double and returns, then cleans up any resources used
+	//calls InterpretNode on n, converts to double and returns, then cleans up any resources used
 	double InterpretNodeIntoNumberValue(EvaluableNode *n);
 
-	//Calls InterpretNode on n, convers to a double or null (representing NaN),
+	//calls InterpretNode on n, convers to a double or null (representing NaN),
 	//and makes sure that the node returned is new and unique so that it can be modified
 	EvaluableNodeReference InterpretNodeIntoUniqueNumberValueOrNullEvaluableNode(EvaluableNode *n);
 
-	//Calls InterpretNode on n, converts to boolean and returns, then cleans up any resources used
+	//calls InterpretNode on n, converts to boolean and returns, then cleans up any resources used
 	bool InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_null = false);
 
 	//Calls InterpretNode on n, converts n into a destination for an Entity, relative to curEntity.

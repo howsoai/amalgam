@@ -1053,7 +1053,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, Ev
 	double size = 0;
 	if(n.IsImmediateValue())
 	{
-		size = n.GetValue().GetValueAsNumber();
+		//TODO 25519: investigate why this isn't working
+		auto &value = n.GetValue();
+		if(value.nodeType == ENIVT_NUMBER)
+			size = value.nodeValue.number;
+		else
+			return EvaluableNodeReference::Null();
 	}
 	else if(n != nullptr)
 	{

@@ -347,10 +347,8 @@ Example:
 ```amalgam
 (seq
 	1
-	(declare
-		{}
-		(while
-			1
+	(declare {}
+		(while .true
 			(if .true (conclude))
 		)
 		4

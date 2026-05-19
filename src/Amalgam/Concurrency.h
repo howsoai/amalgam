@@ -4,7 +4,6 @@
 //MULTITHREAD_SUPPORT means multithreading will be enabled everywhere, including the appropriate locks
 //MULTITHREAD_INTERFACE means that multithreading will be enabled only for the interface,
 // which means that multithreaded applications can call this library.  This is a subset of MULTITHREAD_SUPPORT
-//MULTITHREAD_ENTITY_CALL_MUTEX will only allow one call per entity as an external library.
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -13,15 +12,6 @@
 #ifdef MULTITHREAD_SUPPORT
 	#include "ThreadPool.h"
 	#define MULTITHREAD_INTERFACE
-	#define MULTITHREAD_ENTITY_CALL_MUTEX
-#endif
-
-#ifndef NO_REENTRANCY_LOCKS
-	#define MULTITHREAD_INTERFACE
-
-	#ifndef NO_ENTITY_CALL_MUTEX
-		#define MULTITHREAD_ENTITY_CALL_MUTEX
-	#endif
 #endif
 
 //system headers:

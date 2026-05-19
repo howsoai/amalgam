@@ -66,10 +66,6 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" S
     if(IS_ARM64)
         # See for discussion why set: https://stackoverflow.com/questions/52020305/what-exactly-does-gccs-wpsabi-option-do-what-are-the-implications-of-supressi
         string(APPEND CMAKE_CXX_FLAGS " -Wno-psabi")
-
-        if(IS_ARM64_8A)
-            add_compile_definitions(NO_REENTRANCY_LOCKS)
-        endif()
     endif()
 
     # TODO 1599: WASM support is experimental, these flags will be cleaned up and auto-generated where possible

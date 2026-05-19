@@ -942,436 +942,466 @@ AmalgamExample{ R"&((seq
 	[
 		(concat
 			"dc: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_distance_contributions
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_distance_contributions
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"weighted dc: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_distance_contributions
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						"weight"
-						"fixed_seed"
-						.null
-						"recompute_precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_distance_contributions
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							"weight"
+							"fixed_seed"
+							.null
+							"recompute_precise"
+						)
+					]
+				)
 			)
 		)
 		"surprisal contributions"
 		(concat
 			"dc: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_distance_contributions
-						2
-						["x" "y"]
-						.null
-						3
-						.null
-						.null
-						[0.25 0.25]
-						.null
-						"surprisal"
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.true
-					)
-				]
+				(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_distance_contributions
+							2
+							["x" "y"]
+							.null
+							3
+							.null
+							.null
+							[0.25 0.25]
+							.null
+							"surprisal"
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"weighted surprisal contributions: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_distance_contributions
-						2
-						["x" "y"]
-						.null
-						3
-						.null
-						.null
-						[0.25 0.25]
-						.null
-						"surprisal"
-						"weight"
-						"fixed_seed"
-						.null
-						"recompute_precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_distance_contributions
+							2
+							["x" "y"]
+							.null
+							3
+							.null
+							.null
+							[0.25 0.25]
+							.null
+							"surprisal"
+							"weight"
+							"fixed_seed"
+							.null
+							"recompute_precise"
+						)
+					]
+				)
 			)
 		)
 		(concat "removal conviction\n")
 		(concat
 			"kl: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_kl_divergences
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_kl_divergences
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.true
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"weighted kl: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_kl_divergences
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						"weight"
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_kl_divergences
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							"weight"
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.true
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"convictions: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_convictions
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_convictions
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.true
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"further parameterized convictions: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_convictions
-						1
-						["x" "y"]
-						["vert0" "vert1" "vert2" "vert3"]
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_convictions
+							1
+							["x" "y"]
+							["vert0" "vert1" "vert2" "vert3"]
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.true
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"weighted convictions: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_convictions
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						"weight"
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_convictions
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							"weight"
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.true
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"group kl divergence: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_group_kl_divergence
-						1
-						["x" "y"]
-						["vert1"]
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.true
-					)
-				]
-			)
+			(round
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_group_kl_divergence
+							1
+							["x" "y"]
+							["vert1"]
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.true
+						)
+					]
+				) 4)
 		)
 		(concat
 			"weighted group kl divergence: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_group_kl_divergence
-						1
-						["x" "y"]
-						["vert1"]
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						"weight"
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.true
-					)
-				]
-			)
+			(round
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_group_kl_divergence
+							1
+							["x" "y"]
+							["vert1"]
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							"weight"
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.true
+						)
+					]
+				) 4)
 		)
 		(concat "addition conviction\n")
 		(concat
 			"kl: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_kl_divergences
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.false
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_kl_divergences
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.false
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"weighted kl: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_kl_divergences
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						"weight"
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.false
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_kl_divergences
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							"weight"
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.false
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"convictions: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_convictions
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.false
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_convictions
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.false
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"further parameterized convictions: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_convictions
-						1
-						["x" "y"]
-						["vert0" "vert1" "vert2" "vert3"]
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.false
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_convictions
+							1
+							["x" "y"]
+							["vert0" "vert1" "vert2" "vert3"]
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.false
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"weighted convictions: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_convictions
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						"weight"
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.false
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_convictions
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							"weight"
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.false
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"group kl divergence: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_group_kl_divergence
-						1
-						["x" "y"]
-						["vert1"]
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.false
-					)
-				]
-			)
+			(round
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_group_kl_divergence
+							1
+							["x" "y"]
+							["vert1"]
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.false
+						)
+					]
+				) 4)
 		)
 		(concat
 			"weighted group kl divergence: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_group_kl_divergence
-						1
-						["x" "y"]
-						["vert1"]
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						"weight"
-						"fixed_seed"
-						.null
-						"recompute_precise"
-						.false
-					)
-				]
-			)
+			(round
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_group_kl_divergence
+							1
+							["x" "y"]
+							["vert1"]
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							"weight"
+							"fixed_seed"
+							.null
+							"recompute_precise"
+							.false
+						)
+					]
+				) 4)
 		)
 		(concat "adding a case\n")
 		(create_entities
@@ -1382,160 +1412,168 @@ AmalgamExample{ R"&((seq
 		)
 		(concat
 			"noncyclic KL: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_kl_divergences
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_kl_divergences
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"noncyclic group kl divergence: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_group_kl_divergence
-						1
-						["x" "y"]
-						["vert4"]
-						2
-						.null
-						.null
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-					)
-				]
-			)
+			(round
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_group_kl_divergence
+							1
+							["x" "y"]
+							["vert4"]
+							2
+							.null
+							.null
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+						)
+					]
+				) 4)
 		)
 		(concat
 			"cyclic KL: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_kl_divergences
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						[
-							{difference_type "continuous" data_type "number" cycle_range 3.5}
-							{difference_type "continuous" data_type "number"}
-						]
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_kl_divergences
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							[
+								{difference_type "continuous" data_type "number" cycle_range 3.5}
+								{difference_type "continuous" data_type "number"}
+							]
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"cyclic conviction: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_convictions
-						1
-						["x" "y"]
-						.null
-						2
-						.null
-						[
-							{difference_type "continuous" data_type "number" cycle_range 3.5}
-							{difference_type "continuous" data_type "number"}
-						]
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_convictions
+							1
+							["x" "y"]
+							.null
+							2
+							.null
+							[
+								{difference_type "continuous" data_type "number" cycle_range 3.5}
+								{difference_type "continuous" data_type "number"}
+							]
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"cyclic group kl divergence: "
-			(compute_on_contained_entities
-				"BoxConvictionTestContainer"
-				[
-					(query_entity_group_kl_divergence
-						1
-						["x" "y"]
-						["vert4"]
-						2
-						.null
-						[
-							{difference_type "continuous" data_type "number" cycle_range 3.5}
-							{difference_type "continuous" data_type "number"}
-						]
-						.null
-						.null
-						-1
-						.null
-						"fixed_seed"
-						.null
-						"recompute_precise"
-					)
-				]
-			)
+			(round
+				(compute_on_contained_entities
+					"BoxConvictionTestContainer"
+					[
+						(query_entity_group_kl_divergence
+							1
+							["x" "y"]
+							["vert4"]
+							2
+							.null
+							[
+								{difference_type "continuous" data_type "number" cycle_range 3.5}
+								{difference_type "continuous" data_type "number"}
+							]
+							.null
+							.null
+							-1
+							.null
+							"fixed_seed"
+							.null
+							"recompute_precise"
+						)
+					]
+				) 4)
 		)
 	]
 ))&", R"([
-	"dc: 4"
-	"weighted dc: 4"
-	"surprisal contributions"
-	"dc: 4"
-	"weighted surprisal contributions: 4"
-	"removal conviction\n"
-	"kl: 4"
-	"weighted kl: 4"
-	"convictions: 4"
-	"further parameterized convictions: 4"
-	"weighted convictions: 4"
-	"group kl divergence: 0.0014999155151563318"
-	"weighted group kl divergence: 0.012150145528158986"
-	"addition conviction\n"
-	"kl: 4"
-	"weighted kl: 4"
-	"convictions: 4"
-	"further parameterized convictions: 4"
-	"weighted convictions: 4"
-	"group kl divergence: 0.0015341620278852813"
-	"weighted group kl divergence: 0.013070224898692494"
-	"adding a case\n"
-	[
-		["BoxConvictionTestContainer" "vert4"]
-	]
-	"noncyclic KL: 5"
-	"noncyclic group kl divergence: 0.005166280747839411"
-	"cyclic KL: 5"
-	"cyclic conviction: 5"
-	"cyclic group kl divergence: 0.06081391029364306"
+        "dc: {vert0 1 vert1 1 vert2 1 vert3 1.414}"
+        "weighted dc: {vert0 2 vert1 1 vert2 1 vert3 1.414}"
+        "surprisal contributions"
+        "dc: {vert0 2.035 vert1 2.284 vert2 2.284 vert3 3.638}"
+        "weighted surprisal contributions: {vert0 4.07 vert1 1.855 vert2 1.855 vert3 3.638}"
+        "removal conviction\n"
+        "kl: {vert0 0.0125 vert1 0.0015 vert2 0.01294 vert3 0.0125}"
+        "weighted kl: {vert0 0.04384 vert1 0.01215 vert2 0.02322 vert3 0.0003315}"
+        "convictions: {vert0 0.7888 vert1 6.573 vert2 0.7619 vert3 0.7888}"
+        "further parameterized convictions: {vert0 0.7888 vert1 6.573 vert2 0.7619 vert3 0.7888}"
+        "weighted convictions: {vert0 0.4536 vert1 1.637 vert2 0.8565 vert3 59.99}"
+        "group kl divergence: 0.0015"
+        "weighted group kl divergence: 0.01215"
+        "addition conviction\n"
+        "kl: {vert0 0.01189 vert1 0.001534 vert2 0.01274 vert3 0.01189}"
+        "weighted kl: {vert0 0.0428 vert1 0.01307 vert2 0.02359 vert3 0.0003283}"
+        "convictions: {vert0 0.8001 vert1 6.202 vert2 0.7469 vert3 0.8001}"
+        "further parameterized convictions: {vert0 0.8001 vert1 6.202 vert2 0.7469 vert3 0.8001}"
+        "weighted convictions: {vert0 0.466 vert1 1.526 vert2 0.8457 vert3 60.75}"
+        "group kl divergence: 0.001534"
+        "weighted group kl divergence: 0.01307"
+        "adding a case\n"
+        [
+                ["BoxConvictionTestContainer" "vert4"]
+        ]
+        "noncyclic KL: {vert0 0.01468 vert1 0.002728 vert2 0.002728 vert3 0.01638 vert4 0.005166}"
+        "noncyclic group kl divergence: 0.005166"
+        "cyclic KL: {vert0 0.0645 vert1 0.00207 vert2 0.00207 vert3 0.03622 vert4 0.06081}"
+        "cyclic conviction: {vert0 0.5137 vert1 16.01 vert2 16.01 vert3 0.9148 vert4 0.5449}"
+        "cyclic group kl divergence: 0.06081"
 ])", "", R"((apply "destroy_entities" (contained_entities)))"},
 AmalgamExample{ R"&((seq
 	(create_entities "SurprisalTransformContainer" .null)
@@ -1564,387 +1602,386 @@ AmalgamExample{ R"&((seq
 		)
 	)
 	[
-		
-		;(list "vert0" "vert1" "vert2" "vert3")
 		(concat
 			"probabilities: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_nearest_generalized_distance
-						;k
-						4
-						;features
-						["x"]
-						;values
-						[0]
-						;p
-						1
-						;weights
-						.null
-						;attributes
-						[{difference_type "continuous" data_type "number"}]						
-						;deviations
-						[0.25]
-						;weights selection
-						.null
-						;distance transform
-						"surprisal_to_prob"
-						;weight label
-						.null
-						;rand seed
-						(rand)
-						;radius
-						.null
-						;precision
-						"precise"
-						;output sorted list
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_nearest_generalized_distance
+							;k
+							4
+							;features
+							["x"]
+							;values
+							[0]
+							;p
+							1
+							;weights
+							.null
+							;attributes
+							[{difference_type "continuous" data_type "number"}]						
+							;deviations
+							[0.25]
+							;weights selection
+							.null
+							;distance transform
+							"surprisal_to_prob"
+							;weight label
+							.null
+							;rand seed
+							(rand)
+							;radius
+							.null
+							;precision
+							"precise"
+							;output sorted list
+						)
+					]
+				)
 			)
 		)
 		
 		;should be:
-		;(list "vert0" "vert1" "vert2" "vert3")
 		(concat
 			"surprisals: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_nearest_generalized_distance
-						;k
-						4
-						;features
-						["x"]
-						;values
-						[0]
-						;p
-						1
-						;weights
-						.null
-						;attributes
-						[{difference_type "continuous" data_type "number"}]						
-						;deviations
-						[0.25]
-						;weights selection
-						.null
-						;distance transform
-						"surprisal"
-						;weight label
-						.null
-						;rand seed
-						(rand)
-						;radius
-						.null
-						;precision
-						"precise"
-						;output sorted list
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_nearest_generalized_distance
+							;k
+							4
+							;features
+							["x"]
+							;values
+							[0]
+							;p
+							1
+							;weights
+							.null
+							;attributes
+							[{difference_type "continuous" data_type "number"}]						
+							;deviations
+							[0.25]
+							;weights selection
+							.null
+							;distance transform
+							"surprisal"
+							;weight label
+							.null
+							;rand seed
+							(rand)
+							;radius
+							.null
+							;precision
+							"precise"
+						)
+					]
+				)
 			)
 		)
-		
-		;should be
-		;(list "vert0" "vert2" "vert3" "vert1")
+
 		(concat
 			"weighted probabilities: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_nearest_generalized_distance
-						;k
-						4
-						;features
-						["x"]
-						;values
-						[0]
-						;p
-						1
-						;weights
-						.null
-						;attributes
-						[{difference_type "continuous" data_type "number"}]						
-						;deviations
-						[0.25]
-						;weights selection
-						.null
-						;distance transform
-						"surprisal_to_prob"
-						;weight label
-						"weight"
-						;rand seed
-						(rand)
-						;radius
-						.null
-						;precision
-						"precise"
-						;output sorted list
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_nearest_generalized_distance
+							;k
+							4
+							;features
+							["x"]
+							;values
+							[0]
+							;p
+							1
+							;weights
+							.null
+							;attributes
+							[{difference_type "continuous" data_type "number"}]						
+							;deviations
+							[0.25]
+							;weights selection
+							.null
+							;distance transform
+							"surprisal_to_prob"
+							;weight label
+							"weight"
+							;rand seed
+							(rand)
+							;radius
+							.null
+							;precision
+							"precise"
+						)
+					]
+				)
 			)
 		)
-		
-		;should be
-		;(list "vert0" "vert2" "vert3" "vert1")
+
 		(concat
 			"weighted surprisals: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_nearest_generalized_distance
-						;k
-						4
-						;features
-						["x"]
-						;values
-						[0]
-						;p
-						1
-						;weights
-						.null
-						;attributes
-						[{difference_type "continuous" data_type "number"}]						
-						;deviations
-						[0.25]
-						;weights selection
-						.null
-						;distance transform
-						"surprisal"
-						;weight label
-						"weight"
-						;rand seed
-						(rand)
-						;radius
-						.null
-						;precision
-						"precise"
-						;output sorted list
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_nearest_generalized_distance
+							;k
+							4
+							;features
+							["x"]
+							;values
+							[0]
+							;p
+							1
+							;weights
+							.null
+							;attributes
+							[{difference_type "continuous" data_type "number"}]						
+							;deviations
+							[0.25]
+							;weights selection
+							.null
+							;distance transform
+							"surprisal"
+							;weight label
+							"weight"
+							;rand seed
+							(rand)
+							;radius
+							.null
+							;precision
+							"precise"
+						)
+					]
+				)
 			)
 		)
-		
-		;(list "vert0" "vert1" "vert2")
+
 		(concat
 			"probabilities with dynamic selection: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_nearest_generalized_distance
-						;k
-						[0.01 1 20]
-						;features
-						["x"]
-						;values
-						[0]
-						;p
-						1
-						;weights
-						.null
-						;attributes
-						[{difference_type "continuous" data_type "number"}]						
-						;deviations
-						[0.25]
-						;weights selection
-						.null
-						;distance transform
-						"surprisal_to_prob"
-						;weight label
-						.null
-						;rand seed
-						(rand)
-						;radius
-						.null
-						;precision
-						"precise"
-						;output sorted list
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_nearest_generalized_distance
+							;k
+							[0.01 1 20]
+							;features
+							["x"]
+							;values
+							[0]
+							;p
+							1
+							;weights
+							.null
+							;attributes
+							[{difference_type "continuous" data_type "number"}]						
+							;deviations
+							[0.25]
+							;weights selection
+							.null
+							;distance transform
+							"surprisal_to_prob"
+							;weight label
+							.null
+							;rand seed
+							(rand)
+							;radius
+							.null
+							;precision
+							"precise"
+						)
+					]
+				)
 			)
 		)
-		
-		;(list "vert0" "vert1" "vert2")
+
 		(concat
 			"surprisals with dynamic selection: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_nearest_generalized_distance
-						;k
-						[0.01 1 20]
-						;features
-						["x"]
-						;values
-						[0]
-						;p
-						1
-						;weights
-						.null
-						;attributes
-						[{difference_type "continuous" data_type "number"}]						
-						;deviations
-						[0.25]
-						;weights selection
-						.null
-						;distance transform
-						"surprisal"
-						;weight label
-						.null
-						;rand seed
-						(rand)
-						;radius
-						.null
-						;precision
-						"precise"
-						;output sorted list
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_nearest_generalized_distance
+							;k
+							[0.01 1 20]
+							;features
+							["x"]
+							;values
+							[0]
+							;p
+							1
+							;weights
+							.null
+							;attributes
+							[{difference_type "continuous" data_type "number"}]						
+							;deviations
+							[0.25]
+							;weights selection
+							.null
+							;distance transform
+							"surprisal"
+							;weight label
+							.null
+							;rand seed
+							(rand)
+							;radius
+							.null
+							;precision
+							"precise"
+						)
+					]
+				)
 			)
 		)
-		
-		;(list "vert0" "vert1" "vert2" "vert3")
+
 		(concat
 			"surprisals with dynamic selection: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_nearest_generalized_distance
-						;k
-						[0.01 1 20 1]
-						;features
-						["x"]
-						;values
-						[0]
-						;p
-						1
-						;weights
-						.null
-						;attributes
-						[{difference_type "continuous" data_type "number"}]						
-						;deviations
-						[0.25]
-						;weights selection
-						.null
-						;distance transform
-						"surprisal"
-						;weight label
-						.null
-						;rand seed
-						(rand)
-						;radius
-						.null
-						;precision
-						"precise"
-						;output sorted list
-						.true
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_nearest_generalized_distance
+							;k
+							[0.01 1 20 1]
+							;features
+							["x"]
+							;values
+							[0]
+							;p
+							1
+							;weights
+							.null
+							;attributes
+							[{difference_type "continuous" data_type "number"}]						
+							;deviations
+							[0.25]
+							;weights selection
+							.null
+							;distance transform
+							"surprisal"
+							;weight label
+							.null
+							;rand seed
+							(rand)
+							;radius
+							.null
+							;precision
+							"precise"
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"surprisal contribution: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_distance_contributions
-						4
-						["x"]
-						[
-							[0]
-						]
-						1
-						.null
-						.null
-						[0.25]
-						.null
-						"surprisal"
-						.null
-						"fixed_seed"
-						.null
-						"precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_distance_contributions
+							4
+							["x"]
+							[
+								[0]
+							]
+							1
+							.null
+							.null
+							[0.25]
+							.null
+							"surprisal"
+							.null
+							"fixed_seed"
+							.null
+							"precise"
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"surprisal contribution: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_distance_contributions
-						[0.05 1 20]
-						["x"]
-						[
-							[0]
-						]
-						1
-						.null
-						.null
-						[0.25]
-						.null
-						"surprisal"
-						.null
-						"fixed_seed"
-						.null
-						"precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_distance_contributions
+							[0.05 1 20]
+							["x"]
+							[
+								[0]
+							]
+							1
+							.null
+							.null
+							[0.25]
+							.null
+							"surprisal"
+							.null
+							"fixed_seed"
+							.null
+							"precise"
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"weighted surprisal contribution: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_distance_contributions
-						4
-						["x"]
-						[
-							[0]
-						]
-						1
-						.null
-						.null
-						[0.25]
-						.null
-						"surprisal"
-						"weight"
-						"fixed_seed"
-						.null
-						"precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_distance_contributions
+							4
+							["x"]
+							[
+								[0]
+							]
+							1
+							.null
+							.null
+							[0.25]
+							.null
+							"surprisal"
+							"weight"
+							"fixed_seed"
+							.null
+							"precise"
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"weighted surprisal contribution: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_distance_contributions
-						[0.05 1 20]
-						["x"]
-						[
-							[0]
-						]
-						1
-						.null
-						.null
-						[0.25]
-						.null
-						"surprisal"
-						"weight"
-						"fixed_seed"
-						.null
-						"precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_distance_contributions
+							[0.05 1 20]
+							["x"]
+							[
+								[0]
+							]
+							1
+							.null
+							.null
+							[0.25]
+							.null
+							"surprisal"
+							"weight"
+							"fixed_seed"
+							.null
+							"precise"
+						)
+					]
+				)
 			)
 		)
 		(create_entities
@@ -1955,116 +1992,124 @@ AmalgamExample{ R"&((seq
 		)
 		(concat
 			"surprisal contribution: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_entity_distance_contributions
-						4
-						["x"]
-						["testvert"]
-						1
-						.null
-						.null
-						[0.25]
-						.null
-						"surprisal"
-						.null
-						"fixed_seed"
-						.null
-						"precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_entity_distance_contributions
+							4
+							["x"]
+							["testvert"]
+							1
+							.null
+							.null
+							[0.25]
+							.null
+							"surprisal"
+							.null
+							"fixed_seed"
+							.null
+							"precise"
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"surprisal contribution: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_entity_distance_contributions
-						[0.05 1 20]
-						["x"]
-						["testvert"]
-						1
-						.null
-						.null
-						[0.25]
-						.null
-						"surprisal"
-						.null
-						"fixed_seed"
-						.null
-						"precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_entity_distance_contributions
+							[0.05 1 20]
+							["x"]
+							["testvert"]
+							1
+							.null
+							.null
+							[0.25]
+							.null
+							"surprisal"
+							.null
+							"fixed_seed"
+							.null
+							"precise"
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"weighted surprisal contribution: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_entity_distance_contributions
-						4
-						["x"]
-						["testvert"]
-						1
-						.null
-						.null
-						[0.25]
-						.null
-						"surprisal"
-						"weight"
-						"fixed_seed"
-						.null
-						"precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_entity_distance_contributions
+							4
+							["x"]
+							["testvert"]
+							1
+							.null
+							.null
+							[0.25]
+							.null
+							"surprisal"
+							"weight"
+							"fixed_seed"
+							.null
+							"precise"
+						)
+					]
+				)
 			)
 		)
 		(concat
 			"weighted surprisal contribution: "
-			(compute_on_contained_entities
-				"SurprisalTransformContainer"
-				[
-					(query_entity_distance_contributions
-						[0.05 1 20]
-						["x"]
-						["testvert"]
-						1
-						.null
-						.null
-						[0.25]
-						.null
-						"surprisal"
-						"weight"
-						"fixed_seed"
-						.null
-						"precise"
-					)
-				]
+			(map (lambda (round (current_value) 4))
+				(compute_on_contained_entities
+					"SurprisalTransformContainer"
+					[
+						(query_entity_distance_contributions
+							[0.05 1 20]
+							["x"]
+							["testvert"]
+							1
+							.null
+							.null
+							[0.25]
+							.null
+							"surprisal"
+							"weight"
+							"fixed_seed"
+							.null
+							"precise"
+						)
+					]
+				)
 			)
 		)
 	]
 ))&", R"([
-	"probabilities: 4"
-	"surprisals: 4"
-	"weighted probabilities: 4"
-	"weighted surprisals: 4"
-	"probabilities with dynamic selection: 2"
-	"surprisals with dynamic selection: 2"
-	"surprisals with dynamic selection: 3"
-	"surprisal contribution: 1"
-	"surprisal contribution: 1"
-	"weighted surprisal contribution: 1"
-	"weighted surprisal contribution: 1"
-	[
-		["SurprisalTransformContainer" "testvert"]
-	]
-	"surprisal contribution: 1"
-	"surprisal contribution: 1"
-	"weighted surprisal contribution: 1"
-	"weighted surprisal contribution: 1"
+        "probabilities: {vert0 2.754e-05 vert1 2.754e-05 vert2 5.043e-07 vert3 9.237e-09}"
+        "surprisals: {vert0 10.5 vert1 10.5 vert2 14.5 vert3 18.5}"
+        "weighted probabilities: {vert0 5.507e-05 vert1 0 vert2 5.043e-07 vert3 9.237e-09}"
+        "weighted surprisals: {vert0 10.5 vert1 10.5 vert2 14.5 vert3 18.5}"
+        "probabilities with dynamic selection: {vert0 2.754e-05 vert1 2.754e-05}"
+        "surprisals with dynamic selection: {vert0 10.5 vert1 10.5}"
+        "surprisals with dynamic selection: {vert0 10.5 vert1 10.5 vert2 14.5}"
+        "surprisal contribution: [13.11]"
+        "surprisal contribution: [10.5]"
+        "weighted surprisal contribution: [13.8]"
+        "weighted surprisal contribution: [9.807]"
+        [
+                ["SurprisalTransformContainer" "testvert"]
+        ]
+        "surprisal contribution: {testvert 13.11}"
+        "surprisal contribution: {testvert 10.5}"
+        "weighted surprisal contribution: {testvert 13.8}"
+        "weighted surprisal contribution: {testvert 9.807}"
 ])", "", R"((apply "destroy_entities" (contained_entities)))"},
 AmalgamExample{ R"&((concat
 	"+ : "

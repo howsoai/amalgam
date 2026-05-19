@@ -9,7 +9,7 @@ static OpcodeInitializer _ENT_ADD(ENT_ADD, &Interpreter::InterpretNode_ENT_ADD, 
 	d.parameters = R"([number x1] [number x2] ... [number xN])";
 	d.returns = R"(number)";
 	d.allowsConcurrency = true;
-	d.description = R"(Sums all numbers.)";
+	d.description = R"(Evaluates to the sum of all numbers.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((+ 1 2 3 4))", R"(10)"}
 		});
@@ -53,7 +53,7 @@ static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode
 	d.parameters = R"([number x1] [number x2] ... [number xN])";
 	d.returns = R"(number)";
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as negative)";
+	d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative)";
 	d.examples = MakeAmalgamExamples({
 		{R"((- 1 2 3 4))", R"(-8)"},
 		{R"((- 3))", R"(-3)"}

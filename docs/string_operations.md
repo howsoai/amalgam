@@ -174,7 +174,7 @@ Output:
 #### Parameters
 `string str [number|string location] [number|string param] [string replacement] [number stride]`
 #### Description
-Finds a substring `str`.  If `location` is a number, then evaluates to a new string representing the substring starting at the offset specified by `location`.  If `location` is a string, then it will treat `location` as a regular expression.  If `param` is specified, then it may change the interpretation of `location`.  If `param` is specified and `location` is a number it will go until that length beyond the offset specified by `location`.  If `param` is specified and `location` is a regular expression, `param` will represent one of the following: if null or "first", then it will return the first match of the regular expression; or if `param` is a number or the string "all", then substr will evaluate to a list of up to param matches (which may be infinite yielding the same result as "all").  If `param` is a negative number or the string "submatches", then it will return a list of list of strings, for each match up to the count of the negative number or all matches.  If `param` is "submatches", each inner list will represent the full regular expression match followed by each submatch as captured by parenthesis in the regular expression, ordered from an outer to inner, left-to-right manner.  If `location` is a negative number, then it will measure from the end of the string rather than the beginning.  If `replacement` is specified and not null, it will return the original string rather than the substring, but the substring will be replaced by replacement regardless of what `location` is.  And if replacement is specified, then it will override some of the logic for the `param` type and always return just a string and not a list.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.
+Extracts and optionally replaces a substring of string `str`.  If `location` is a number, then evaluates to a new string representing the substring starting at the offset specified by `location`.  If `location` is a string, then it will treat `location` as a regular expression.  If `param` is specified, then it may change the interpretation of `location`.  If `param` is specified and `location` is a number it will go until that length beyond the offset specified by `location`.  If `param` is specified and `location` is a regular expression, `param` will represent one of the following: if null or "first", then it will return the first match of the regular expression; or if `param` is a number or the string "all", then substr will evaluate to a list of up to param matches (which may be infinite yielding the same result as "all").  If `param` is a negative number or the string "submatches", then it will return a list of list of strings, for each match up to the count of the negative number or all matches.  If `param` is "submatches", each inner list will represent the full regular expression match followed by each submatch as captured by parenthesis in the regular expression, ordered from an outer to inner, left-to-right manner.  If `location` is a negative number, then it will measure from the end of the string rather than the beginning.  If `replacement` is specified and not null, it will return the original string rather than the substring, but the substring will be replaced by replacement regardless of what `location` is.  And if replacement is specified, then it will override some of the logic for the `param` type and always return just a string and not a list.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -471,7 +471,7 @@ Output:
 ```
 Example:
 ```amalgam
-(parse "(seq (+ 1 2) (+ " .true))
+(parse "(seq (+ 1 2) (+ " .true)
 ```
 Output:
 ```amalgam
@@ -481,7 +481,7 @@ Output:
 ```
 Example:
 ```amalgam
-(parse "(seq (+ 1 2) (+ " .false .true))"
+(parse "(seq (+ 1 2) (+ " .false .true)"
 ```
 Output:
 ```amalgam
@@ -495,7 +495,7 @@ Output:
 ```
 Example:
 ```amalgam
-(parse "(seq (+ 1 2) (+ " .true .true))"
+(parse "(seq (+ 1 2) (+ " .true .true)"
 ```
 Output:
 ```amalgam
@@ -508,7 +508,7 @@ Output:
 ```
 Example:
 ```amalgam
-(parse "(seq (+ 1 2) (+ (a ) 3) " .true .true))"
+(parse "(seq (+ 1 2) (+ (a ) 3) " .true .true)"
 ```
 Output:
 ```amalgam

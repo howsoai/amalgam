@@ -17,8 +17,8 @@ class EvaluableNodeManager;
 class ExecutionPermissions
 {
 public:
-	using StorageType = uint8_t;
-	enum class Permission : StorageType
+	using PermissionType = uint8_t;
+	enum class Permission : PermissionType
 	{
 		NONE = 0,
 		STD_OUT_AND_STD_ERR = 1 << 0,
@@ -34,20 +34,20 @@ public:
 	ExecutionPermissions() = default;
 
 	explicit inline ExecutionPermissions(Permission initial_permissions)
-		: allPermissions(static_cast<StorageType>(initial_permissions))
+		: allPermissions(static_cast<PermissionType>(initial_permissions))
 	{}
 
 	inline bool HasPermission(Permission permission) const
 	{
-		return (allPermissions & static_cast<StorageType>(permission)) != 0;
+		return (allPermissions & static_cast<PermissionType>(permission)) != 0;
 	}
 
 	inline void SetPermission(Permission permission, bool enable = true)
 	{
 		if(enable)
-			allPermissions |= static_cast<StorageType>(permission);
+			allPermissions |= static_cast<PermissionType>(permission);
 		else
-			allPermissions &= ~static_cast<StorageType>(permission);
+			allPermissions &= ~static_cast<PermissionType>(permission);
 	}
 
 	static ExecutionPermissions AllPermissions()
@@ -71,7 +71,7 @@ public:
 	}
 
 	//permissions as a bit field for use with bitwise operations
-	StorageType allPermissions = static_cast<StorageType>(Permission::NONE);
+	PermissionType allPermissions = static_cast<PermissionType>(Permission::NONE);
 };
 
 class Entity;

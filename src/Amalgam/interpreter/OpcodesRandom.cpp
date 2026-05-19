@@ -8,7 +8,7 @@ static OpcodeInitializer _ENT_RAND(ENT_RAND, &Interpreter::InterpretNode_ENT_RAN
 	OpcodeDetails d;
 	d.parameters = R"([list|assoc|number range] [number number_to_generate] [bool unique])";
 	d.returns = R"(any)";
-	d.description = R"(Generates random values based on its parameters.  The random values are drawn from a random stream specific to each execution flow for each entity.  With no range, evaluates to a random number between 0.0 and 1.0.  If range is a list, it will uniformly randomly choose and evaluate to one element of the list.  If range is a number, it will evaluate to a value greater than or equal to zero and less than the number specified.  If range is an assoc, then it will randomly evaluate to one of the keys using the values as the weights for the probabilities.  If  number_to_generate is specified, it will generate a list of multiple values (even if number_to_generate is 1).  If unique is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.  Note that if unique only applies to list and assoc ranges.  If unique is true and there are not enough values in a list or assoc, it will only generate the number of elements in range.)";
+	d.description = R"(Generates random values based on the parameters.  The random values are drawn from a random stream specific to each execution flow for each entity.  When `range` is not specified, it evaluates to a random number between 0.0 and 1.0.  If `range` is a list, it will uniformly randomly choose and evaluate to one element of the list.  If `range` is a number, it will evaluate to a value greater than or equal to zero and less than the number specified.  If `range` is an assoc, then it will randomly evaluate to one of the keys using the values as the weights for the probabilities.  If  `number_to_generate` is specified, it will generate a list of multiple values (even if `number_to_generate` is 1).  If `unique` is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.  Note that the `unique` parameter only applies when `range` is a list or assoc.  If `unique` is true and there are not enough values in a list or assoc, it will only generate the number of elements in `range`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((rand))&", R"(0.4153759082605256)"},
 		{R"&((rand 50))&", R"(20.768795413026282)"},
@@ -50,7 +50,7 @@ static OpcodeInitializer _ENT_RAND(ENT_RAND, &Interpreter::InterpretNode_ENT_RAN
 	(associate "a" 0.25 "b" 0.75)
 	16
 ))&", "", R"&(\[\s*
-    "(?:a|b)"\s *
+	"(?:a|b)"\s *
 	"(?:a|b)"\s *
 	"(?:a|b)"\s *
 	"(?:a|b)"\s *
@@ -82,10 +82,10 @@ static OpcodeInitializer _ENT_RAND(ENT_RAND, &Interpreter::InterpretNode_ENT_RAN
 	4
 ))&", R"(["c" "c" "c" "d"])",
 R"&(\[\s*
-    "(?:c|d)"\s*
-    "(?:c|d)"\s*
-    "(?:c|d)"\s*
-    "(?:c|d)"\s*
+	"(?:c|d)"\s*
+	"(?:c|d)"\s*
+	"(?:c|d)"\s*
+	"(?:c|d)"\s*
 \])&"
 },
 			{R"&(;should come out somewhere near the correct proportion
@@ -103,9 +103,9 @@ R"&(\[\s*
 	1
 ))&", R"({a 30 b 50 c 20})",
 			R"&(\{\s*
-    a\s+(\d+)\s+
-    b\s+(\d+)\s+
-    c\s+(\d+)\s*
+	a\s+(\d+)\s+
+	b\s+(\d+)\s+
+	c\s+(\d+)\s*
 \})&"
 },
 			{R"&(;these should be weighted toward smaller numbers
@@ -126,9 +126,9 @@ R"&(\[\s*
 	.true
 ))&", R"([2 6 1])",
 			R"&(\[\s*
-    (\d+)\s*
-    (\d+)\s*
-    (\d+)\s*
+	(\d+)\s*
+	(\d+)\s*
+	(\d+)\s*
 \])&"
 }
 		});
@@ -549,7 +549,7 @@ static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &In
 	OpcodeDetails d;
 	d.parameters = R"([id_path entity] * node [bool deep])";
 	d.returns = R"(string)";
-	d.description = R"(Sets the random number seed and state for the random number generator of `entity`, or the current entity if null or not specified, to the state specified by `node`.  If `node` is already a string in the proper format output by `(get_entity_rand_seed)`, then it will set the random generator to that current state, picking up where the previous state left off.  If `node` is anything else, it uses the value as a random seed to start the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by `entity` for new calls.  The parameter `deep` defaults to false, but if it is true, all contained entities are recursively set with random seeds based on the specified random seed and a hash of their relative id path to the entity being set.)";
+	d.description = R"(Sets the random number seed and state for the random number generator of `entity`, or the current entity if null or not specified, to the state specified by `node`.  If `node` is already a string in the proper format output by `(get_entity_rand_seed)`, then it will set the random generator to that current state, picking up where the previous state left off.  If `node` is anything else, it uses the value as a random seed to start the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by `entity` for new calls.  The parameter `deep` defaults to false, but if it is true, all contained entities are recursively set with random seeds based on a hash of a combination of the specified random seed and their relative id path to the entity being set.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities

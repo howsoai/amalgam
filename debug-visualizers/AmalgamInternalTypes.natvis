@@ -28,14 +28,19 @@
 		<DisplayString Condition="requestedValueTypes == 1">NULL_VALUE</DisplayString>
 		<DisplayString Condition="requestedValueTypes == 2">BOOL</DisplayString>
 		<DisplayString Condition="requestedValueTypes == 4">NUMBER</DisplayString>
-		<DisplayString Condition="requestedValueTypes == 8">EXISTING_STRING_ID</DisplayString>
-		<DisplayString Condition="requestedValueTypes == 16">STRING_ID</DisplayString>
-		<DisplayString Condition="requestedValueTypes == 64">CODE</DisplayString>
-		<DisplayString Condition="requestedValueTypes == 3">REQUEST_BOOL</DisplayString>
-		<DisplayString Condition="requestedValueTypes == 5">REQUEST_NUMBER</DisplayString>
-		<DisplayString Condition="requestedValueTypes == 9">REQUEST_EXISTING_STRING_ID</DisplayString>
-		<DisplayString Condition="requestedValueTypes == 17">REQUEST_STRING_ID</DisplayString>		
-		<DisplayString Condition="requestedValueTypes == 63">ALL</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 8">SIZE_AS_NUMBER</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 16">EXISTING_STRING_ID</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 32">STRING_ID</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 64">EXISTING_KEY_STRING_ID</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 128">KEY_STRING_ID</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 256">CODE</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 3">BOOL_OR_NULL</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 5">NUMBER_OR_NULL</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 17">EXISTING_STRING_ID_OR_NULL</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 33">STRING_ID_OR_NULL</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 65">EXISTING_KEY_STRING_ID_OR_NULL</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 129">KEY_STRING_ID_OR_NULL</DisplayString>
+		<DisplayString Condition="requestedValueTypes == 311">ANY_STANDARD_IMMEDIATE</DisplayString>
 		<DisplayString>{requestedValueTypes}</DisplayString>
 
 		<Expand>
@@ -43,10 +48,12 @@
 			<Item Name="NULL_VALUE">(requestedValueTypes &amp; 1) != 0</Item>
 			<Item Name="BOOL">(requestedValueTypes &amp; 2) != 0</Item>
 			<Item Name="NUMBER">(requestedValueTypes &amp; 4) != 0</Item>
-			<Item Name="EXISTING_STRING_ID">(requestedValueTypes &amp; 8) != 0</Item>
-			<Item Name="STRING_ID">(requestedValueTypes &amp; 16) != 0</Item>
-			<Item Name="STRING">(requestedValueTypes &amp; 32) != 0</Item>
-			<Item Name="CODE">(requestedValueTypes &amp; 64) != 0</Item>
+			<Item Name="SIZE_AS_NUMBER">(requestedValueTypes &amp; 8) != 0</Item>
+			<Item Name="EXISTING_STRING_ID">(requestedValueTypes &amp; 16) != 0</Item>
+			<Item Name="STRING_ID">(requestedValueTypes &amp; 32) != 0</Item>
+			<Item Name="EXISTING_KEY_STRING_ID">(requestedValueTypes &amp; 64) != 0</Item>
+			<Item Name="KEY_STRING_ID">(requestedValueTypes &amp; 128) != 0</Item>
+			<Item Name="CODE">(requestedValueTypes &amp; 256) != 0</Item>
 		</Expand>
 	</Type>
 

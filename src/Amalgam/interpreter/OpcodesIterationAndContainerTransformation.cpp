@@ -994,8 +994,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 	if(match_on_value || match_on_not_value)
 	{
-		//specialized path for immediate result just getting the count
-		if(immediate_result.AnyImmediateType())
+		//specialized path for just getting the count
+		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
 		{
 			auto list = InterpretNode(ocn[list_index]);
 			if(EvaluableNode::IsNull(list))

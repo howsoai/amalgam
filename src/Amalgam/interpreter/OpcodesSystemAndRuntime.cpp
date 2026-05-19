@@ -17,7 +17,7 @@ static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HEL
 	d.examples = MakeAmalgamExamples({
 		{R"((help "+"))", R"&({
 	allows_concurrency .true
-	description "Sums all numbers."
+	description "Evaluates to the sum of all numbers."
 	examples [
 			{example "(+ 1 2 3 4)" output "10"}
 		]
@@ -325,11 +325,11 @@ static OpcodeInitializer _ENT_SYSTEM_TIME(ENT_SYSTEM_TIME, &Interpreter::Interpr
 	d.examples = MakeAmalgamExamples({
 		{R"&((system_time))&", R"(1773855306.4474)",
 		R"&(^\s*
-    (                                   # start of the number
-        (?:\d+\.\d*|\.\d+|\d+)          # integer part with optional fraction
-        (?:[eE][+-]?\d+)?               # optional exponent
-    )
-    \s*$)&"
+	(                                   # start of the number
+		(?:\d+\.\d*|\.\d+|\d+)          # integer part with optional fraction
+		(?:[eE][+-]?\d+)?               # optional exponent
+	)
+	\s*$)&"
 }
 		});
 	d.permissions = ExecutionPermissions::Permission::ENVIRONMENT;

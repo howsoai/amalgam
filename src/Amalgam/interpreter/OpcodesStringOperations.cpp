@@ -55,9 +55,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en,
 	if(!valid)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNode *result = evaluableNodeManager->AllocNode(ENT_LIST);
-	auto node_stack = CreateOpcodeStackStateSaver(result);
-
 	//a stride of 0 means use variable width utf-8
 	size_t stride = 0;
 	if(ocn.size() > 1)
@@ -67,6 +64,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en,
 			stride = static_cast<size_t>(raw_stride);
 	}
 
+	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
+	{
+		size_t size = 0;
+		if(stride == 0)
+			size = StringManipulation::GetNumUTF8Characters(str);
+		else //round up for any remainder
+			size = str.size() + (stride - 1) / stride;
+
+		return EvaluableNodeReference(static_cast<double>(size));
+	}
+
+	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	if(stride == 0)
 	{
 		//pessimistically reserve enough space assuming worst case of each byte being its own character
@@ -91,21 +100,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en,
 		//reserve enough space, and round up for any remainder
 		result->ReserveOrderedChildNodes((str.size() + (stride - 1)) / stride);
 
-		while(str.size() >= stride)
+		for(size_t pos = 0; pos < str.size(); pos += stride)
 		{
-			std::string substr(begin(str), begin(str) + stride);
+			size_t substr_len = std::min(stride, str.size() - pos);
+			std::string substr(begin(str) + pos, begin(str) + pos + substr_len);
 			result->AppendOrderedChildNode(evaluableNodeManager->AllocNode(ENT_STRING, substr));
-
-			str.erase(0, stride);
 		}
-
-		//some left over, but less than stride, so just append
-		if(str.size() > 0)
-			result->AppendOrderedChildNode(evaluableNodeManager->AllocNode(ENT_STRING, str));
-
 	}
 
-	return EvaluableNodeReference(result, true);
+	return result;
 }
 
 static OpcodeInitializer _ENT_SPLIT(ENT_SPLIT, &Interpreter::InterpretNode_ENT_SPLIT, []() {
@@ -269,7 +272,7 @@ static OpcodeInitializer _ENT_SUBSTR(ENT_SUBSTR, &Interpreter::InterpretNode_ENT
 	OpcodeDetails d;
 	d.parameters = R"(string str [number|string location] [number|string param] [string replacement] [number stride])";
 	d.returns = R"(string | list of string | list of list of string)";
-	d.description = R"(Finds a substring `str`.  If `location` is a number, then evaluates to a new string representing the substring starting at the offset specified by `location`.  If `location` is a string, then it will treat `location` as a regular expression.  If `param` is specified, then it may change the interpretation of `location`.  If `param` is specified and `location` is a number it will go until that length beyond the offset specified by `location`.  If `param` is specified and `location` is a regular expression, `param` will represent one of the following: if null or "first", then it will return the first match of the regular expression; or if `param` is a number or the string "all", then substr will evaluate to a list of up to param matches (which may be infinite yielding the same result as "all").  If `param` is a negative number or the string "submatches", then it will return a list of list of strings, for each match up to the count of the negative number or all matches.  If `param` is "submatches", each inner list will represent the full regular expression match followed by each submatch as captured by parenthesis in the regular expression, ordered from an outer to inner, left-to-right manner.  If `location` is a negative number, then it will measure from the end of the string rather than the beginning.  If `replacement` is specified and not null, it will return the original string rather than the substring, but the substring will be replaced by replacement regardless of what `location` is.  And if replacement is specified, then it will override some of the logic for the `param` type and always return just a string and not a list.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
+	d.description = R"(Extracts and optionally replaces a substring of string `str`.  If `location` is a number, then evaluates to a new string representing the substring starting at the offset specified by `location`.  If `location` is a string, then it will treat `location` as a regular expression.  If `param` is specified, then it may change the interpretation of `location`.  If `param` is specified and `location` is a number it will go until that length beyond the offset specified by `location`.  If `param` is specified and `location` is a regular expression, `param` will represent one of the following: if null or "first", then it will return the first match of the regular expression; or if `param` is a number or the string "all", then substr will evaluate to a list of up to param matches (which may be infinite yielding the same result as "all").  If `param` is a negative number or the string "submatches", then it will return a list of list of strings, for each match up to the count of the negative number or all matches.  If `param` is "submatches", each inner list will represent the full regular expression match followed by each submatch as captured by parenthesis in the regular expression, ordered from an outer to inner, left-to-right manner.  If `location` is a negative number, then it will measure from the end of the string rather than the beginning.  If `replacement` is specified and not null, it will return the original string rather than the substring, but the substring will be replaced by replacement regardless of what `location` is.  And if replacement is specified, then it will override some of the logic for the `param` type and always return just a string and not a list.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((substr "hello world"))&", R"("hello world")"},
 		{R"&((substr "hello world" 1))&", R"("ello world")"},
@@ -701,23 +704,23 @@ static OpcodeInitializer _ENT_PARSE(ENT_PARSE, &Interpreter::InterpretNode_ENT_P
 		{R"&((parse "(seq (+ 1 2))" .true)))&", R"&((seq
 	(+ 1 2)
 ))&"},
-			{R"&((parse "(seq (+ 1 2) (+ " .true)))&", R"&((seq
+			{R"&((parse "(seq (+ 1 2) (+ " .true))&", R"&((seq
 	(+ 1 2)
 ))&"},
-			{R"&((parse "(seq (+ 1 2) (+ " .false .true))")&", R"([
+			{R"&((parse "(seq (+ 1 2) (+ " .false .true)")&", R"([
 	(seq
 		(+ 1 2)
 		(+)
 	)
 	["Warning: 2 missing closing parenthesis at line 1, column 17"]
 ])"},
-			{R"&((parse "(seq (+ 1 2) (+ " .true .true))")&", R"([
+			{R"&((parse "(seq (+ 1 2) (+ " .true .true)")&", R"([
 	(seq
 		(+ 1 2)
 	)
 	["Warning: 1 missing closing parenthesis at line 1, column 17"]
 ])"},
-			{R"&((parse "(seq (+ 1 2) (+ (a ) 3) " .true .true))")&", R"([
+			{R"&((parse "(seq (+ 1 2) (+ (a ) 3) " .true .true)")&", R"([
 	(seq
 		(+ 1 2)
 	)

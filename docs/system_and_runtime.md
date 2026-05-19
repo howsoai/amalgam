@@ -19,7 +19,7 @@ Output:
 ```amalgam
 {
 	allows_concurrency .true
-	description "Sums all numbers."
+	description "Evaluates to the sum of all numbers."
 	examples [
 			{example "(+ 1 2 3 4)" output "10"}
 		]

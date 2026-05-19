@@ -83,7 +83,8 @@ static OpcodeInitializer _ENT_COMPUTE_ON_CONTAINED_ENTITIES(ENT_COMPUTE_ON_CONTA
 	return d;
 });
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES(
+	EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//not allowed if don't have a Entity to work within
 	if(curEntity == nullptr)
@@ -196,7 +197,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		auto &contained_entities = source_entity->GetContainedEntities();
 
 		//if only looking for how many entities are contained, quickly exit
-		if(immediate_result.AnyImmediateType())
+		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
 			return EvaluableNodeReference(static_cast<double>(contained_entities.size()));
 
 		//new list containing the contained entity ids to return

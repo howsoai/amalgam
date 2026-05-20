@@ -9,7 +9,6 @@
 
 #ifdef MULTITHREAD_SUPPORT
 	#include "ThreadPool.h"
-	#define MULTITHREAD_SUPPORT
 #endif
 
 //system headers:

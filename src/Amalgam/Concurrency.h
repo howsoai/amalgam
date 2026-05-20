@@ -1,9 +1,7 @@
 #pragma once
 
-//if MULTITHREAD_SUPPORT is defined, compiles code with multithreaded support, requires a C++0x17 or newer compiler
-//MULTITHREAD_SUPPORT means multithreading will be enabled everywhere, including the appropriate locks
-//MULTITHREAD_INTERFACE means that multithreading will be enabled only for the interface,
-// which means that multithreaded applications can call this library.  This is a subset of MULTITHREAD_SUPPORT
+//if MULTITHREAD_SUPPORT is defined, compiles code with multithreaded support and reentrancy
+//otherwise everything is considered not reentrant
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -11,14 +9,14 @@
 
 #ifdef MULTITHREAD_SUPPORT
 	#include "ThreadPool.h"
-	#define MULTITHREAD_INTERFACE
+	#define MULTITHREAD_SUPPORT
 #endif
 
 //system headers:
 #include <cstddef>
 #include <cstdint>
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE) || defined(_OPENMP)
+#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 
 //system headers:
 #include <atomic>

@@ -107,7 +107,7 @@ protected:
 		~EntityListenerBundle();
 
 		//the type of mutex is dependent on whether individual entities can be accessed concurrently
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadWriteMutex mutex;
 	#endif
 
@@ -123,7 +123,7 @@ protected:
 		{
 			entityListenerBundle = entity_listener_bundle;
 
-		#ifdef MULTITHREAD_INTERFACE
+		#ifdef MULTITHREAD_SUPPORT
 			if(entityListenerBundle != nullptr)
 				readLock = Concurrency::ReadLock(entityListenerBundle->mutex);
 		#endif
@@ -140,7 +140,7 @@ protected:
 		EntityListenerBundle *entityListenerBundle;
 
 		//the type of mutex is dependent on whether individual entities can be accessed concurrently
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock readLock;
 	#endif
 	};
@@ -152,7 +152,7 @@ protected:
 		{
 			entityListenerBundle = entity_listener_bundle;
 
-		#ifdef MULTITHREAD_INTERFACE
+		#ifdef MULTITHREAD_SUPPORT
 			if(entityListenerBundle != nullptr)
 				writeLock = Concurrency::WriteLock(entityListenerBundle->mutex);
 		#endif
@@ -169,7 +169,7 @@ protected:
 		EntityListenerBundle *entityListenerBundle;
 
 		//the type of mutex is dependent on whether individual entities can be accessed concurrently
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::WriteLock writeLock;
 	#endif
 	};
@@ -177,7 +177,7 @@ protected:
 	//looks up the bundle and returns it, will return nullptr if not found
 	inline EntityListenerBundleReadReference FindEntityBundle(const std::string &handle)
 	{
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock read_lock(mutex);
 	#endif
 
@@ -192,7 +192,7 @@ protected:
 	// will delete any if it already exists
 	inline void AddEntityBundle(std::string &handle, EntityListenerBundle *bundle)
 	{
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::WriteLock write_lock(mutex);
 	#endif
 
@@ -211,7 +211,7 @@ protected:
 	//erases the handle and returns the bundle reference.  Returns nullptr if not found.
 	inline void EraseEntityBundle(std::string &handle)
 	{
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::WriteLock write_lock(mutex);
 	#endif
 
@@ -228,7 +228,7 @@ protected:
 
 		handleToBundle.erase(handle);
 
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		//obtain a write lock and release it -- just make sure nothing else has the entity locked
 		EntityWriteReference ewr(elb->entity);
 		ewr.ReleaseReference();
@@ -238,7 +238,7 @@ protected:
 	}
 
 	//for concurrent reading and writing the interface management data below
-#ifdef MULTITHREAD_INTERFACE
+#ifdef MULTITHREAD_SUPPORT
 	Concurrency::ReadWriteMutex mutex;
 #endif
 

@@ -29,7 +29,7 @@ public:
 		: refCount(1), string(std::forward<T>(s))
 	{}
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	std::atomic<size_t> refCount;
 #else
 	size_t refCount;
@@ -100,7 +100,7 @@ public:
 		if(inserted.second)
 			inserted.first->second = std::make_unique<StringInternStringData>(str);
 		else
-		#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		#if defined(MULTITHREAD_SUPPORT)
 			inserted.first->second->refCount.fetch_add(1, std::memory_order_acquire);
 		#else
 			inserted.first->second->refCount++;
@@ -125,7 +125,7 @@ public:
 		if(inserted.second)
 			inserted.first->second = std::make_unique<StringInternStringData>(str);
 		else
-		#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		#if defined(MULTITHREAD_SUPPORT)
 			inserted.first->second->refCount.fetch_add(1, std::memory_order_acquire);
 		#else
 			inserted.first->second->refCount++;
@@ -148,7 +148,7 @@ public:
 			ValidateStringIdExistence(id);
 		#endif
 
-		#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		#if defined(MULTITHREAD_SUPPORT)
 			id->refCount.fetch_add(1, std::memory_order_acquire);
 		#else
 			id->refCount++;
@@ -173,7 +173,7 @@ public:
 				ValidateStringIdExistence(id);
 			#endif
 
-			#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+			#if defined(MULTITHREAD_SUPPORT)
 				id->refCount.fetch_add(1, std::memory_order_acquire);
 			#else
 				id->refCount++;
@@ -200,7 +200,7 @@ public:
 				ValidateStringIdExistence(id);
 			#endif
 
-			#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+			#if defined(MULTITHREAD_SUPPORT)
 				id->refCount.fetch_add(additional_reference_count, std::memory_order_acquire);
 			#else
 				id->refCount += additional_reference_count;
@@ -226,7 +226,7 @@ public:
 				ValidateStringIdExistence(id);
 			#endif
 
-			#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+			#if defined(MULTITHREAD_SUPPORT)
 				id->refCount.fetch_add(1, std::memory_order_acquire);
 			#else
 				id->refCount++;
@@ -245,7 +245,7 @@ public:
 		ValidateStringIdExistence(id);
 	#endif
 
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		//refCount must be decremented in an atomic fashion, but if down to the last reference,
 		//then don't want to decrement outside of a lock.  This is because if this thread decremented
 		//refCount, then another thread could acquire the lock, create a reference, then acquire the
@@ -352,7 +352,7 @@ protected:
 	void InitializeStaticStrings();
 
 	//mapping from string to ID (index of idToRefCountAndString)
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	ConcurrentFastHashMap<std::string, std::unique_ptr<StringInternStringData>> stringToID;
 #else
 	FastHashMap<std::string, std::unique_ptr<StringInternStringData>> stringToID;

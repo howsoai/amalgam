@@ -714,7 +714,7 @@ void AssetManager::CreateEntity(Entity *entity)
 	if(entity == nullptr)
 		return;
 
-#ifdef MULTITHREAD_INTERFACE
+#ifdef MULTITHREAD_SUPPORT
 	Concurrency::WriteLock lock(persistentEntitiesMutex);
 #endif
 
@@ -748,7 +748,7 @@ void AssetManager::SetEntityPermissions(Entity *entity,
 	if(entity == nullptr)
 		return;
 
-#ifdef MULTITHREAD_INTERFACE
+#ifdef MULTITHREAD_SUPPORT
 	Concurrency::WriteLock lock(entityPermissionsMutex);
 #endif
 

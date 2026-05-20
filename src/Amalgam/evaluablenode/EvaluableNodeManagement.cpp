@@ -183,7 +183,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 {
 #ifdef DEBUG_REPORT_LAB_USAGE
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(labCountMutex);
 	#endif
 	

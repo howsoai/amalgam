@@ -504,7 +504,7 @@ public:
 		if(!HasQueryCaches())
 			return;
 
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		//obtain a write lock and immediately release it to make sure there aren't any operations
 		//waiting to complete. don't need to worry about new operations as they will not be able
 		//to start with a write lock on this entity
@@ -989,14 +989,14 @@ protected:
 
 	//buffer to store read locks for deep locking entities
 	//one per thread to save memory on Interpreter objects
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	thread_local
 #endif
 	static std::vector<EntityReadReference> entityReadReferenceBuffer;
 
 	//buffer to store write locks for deep locking entities
 	//one per thread to save memory on Interpreter objects
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	thread_local
 #endif
 	static std::vector<EntityWriteReference> entityWriteReferenceBuffer;

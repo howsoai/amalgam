@@ -105,7 +105,7 @@ using CompactHashMap = ska::bytell_hash_map<K, V, H, E, A>;
 
 #endif
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 #include <mutex>
 #include <shared_mutex>
 

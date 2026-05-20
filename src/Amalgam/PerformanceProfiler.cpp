@@ -11,7 +11,7 @@
 //if true, then will record profiling data
 bool PerformanceProfiler::_profiler_enabled;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 Concurrency::SingleMutex performance_profiler_mutex;
 #endif
 
@@ -39,12 +39,12 @@ struct StartTimeAndMemUse
 
 FastHashMap<std::string, PerformanceCounters> _profiler_counters;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 FastHashMap<std::string, size_t> _lock_contention_counters;
 #endif
 
 //contains the type and start time of each instruction
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 thread_local
 #endif
 	std::vector<std::pair<std::string, StartTimeAndMemUse>> instructionStackTypeAndStartTimeAndMemUse;
@@ -82,7 +82,7 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 	double total_operation_time_inclusive = cur_time - counters.startTimeInclusive;
 	int64_t total_operation_memory_inclusive = memory_use - counters.memUseInclusive;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	Concurrency::Lock lock(performance_profiler_mutex);
 #endif
 
@@ -124,7 +124,7 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 	}
 }
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 void PerformanceProfiler::AccumulateLockContentionCount(std::string t)
 {
 	Concurrency::Lock lock(performance_profiler_mutex);
@@ -138,7 +138,7 @@ void PerformanceProfiler::AccumulateLockContentionCount(std::string t)
 
 void PerformanceProfiler::AccumulateTotalSideEffectMemoryWrites(std::string t)
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	Concurrency::Lock lock(performance_profiler_mutex);
 #endif
 
@@ -150,7 +150,7 @@ void PerformanceProfiler::AccumulateTotalSideEffectMemoryWrites(std::string t)
 
 void PerformanceProfiler::AccumulateInitialSideEffectMemoryWrites(std::string t)
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	Concurrency::Lock lock(performance_profiler_mutex);
 #endif
 
@@ -329,7 +329,7 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 
 size_t PerformanceProfiler::GetTotalNumCalls()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	Concurrency::Lock lock(performance_profiler_mutex);
 #endif
 
@@ -341,7 +341,7 @@ size_t PerformanceProfiler::GetTotalNumCalls()
 
 std::pair<int64_t, int64_t> PerformanceProfiler::GetTotalAndPositiveMemoryIncreases()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	Concurrency::Lock lock(performance_profiler_mutex);
 #endif
 
@@ -360,7 +360,7 @@ template<typename StatValueType, typename CounterValueType, typename CounterMapT
 inline std::vector<std::pair<std::string, StatValueType>> GetPerformanceStat(CounterMapType &counters,
 	std::function<StatValueType(CounterValueType &)> counter_function)
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	Concurrency::Lock lock(performance_profiler_mutex);
 #endif
 

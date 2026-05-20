@@ -385,7 +385,7 @@ public:
 	inline void UpdateEntityRandomSeed(Entity *entity, const std::string &rand_seed, bool deep_set,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock(persistentEntitiesMutex);
 	#endif
 
@@ -414,7 +414,7 @@ public:
 		ExecutionPermissions permissions_to_set, ExecutionPermissions permission_values, bool deep_set_permissions,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock(persistentEntitiesMutex);
 	#endif
 
@@ -444,7 +444,7 @@ public:
 		StringInternPool::StringID label_name, EvaluableNode *value,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock(persistentEntitiesMutex);
 	#endif
 
@@ -473,7 +473,7 @@ public:
 		EvaluableNode *label_value_pairs, bool accum_values,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock(persistentEntitiesMutex);
 	#endif
 
@@ -502,7 +502,7 @@ public:
 		EvaluableNode *labels,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock(persistentEntitiesMutex);
 	#endif
 
@@ -530,7 +530,7 @@ public:
 	inline void UpdateEntityRoot(Entity *entity,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock(persistentEntitiesMutex);
 	#endif
 
@@ -557,7 +557,7 @@ public:
 
 	inline void DestroyEntity(Entity *entity)
 	{
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::WriteLock lock(persistentEntitiesMutex);
 	#endif
 
@@ -583,7 +583,7 @@ public:
 		if(entity == nullptr)
 			return ExecutionPermissions();
 
-	#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock(entityPermissionsMutex);
 	#endif
 
@@ -720,7 +720,7 @@ private:
 	//entities that have root permissions
 	FastHashMap<Entity *, ExecutionPermissions> entityPermissions;
 
-#ifdef MULTITHREAD_INTERFACE
+#ifdef MULTITHREAD_SUPPORT
 	//mutexes for global data
 	Concurrency::ReadWriteMutex persistentEntitiesMutex;
 	Concurrency::ReadWriteMutex entityPermissionsMutex;

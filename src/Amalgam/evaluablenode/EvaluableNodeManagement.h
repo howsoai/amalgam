@@ -807,7 +807,7 @@ public:
 
 		//stores previous buffer
 		//one per thread to reduce memory churn
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		thread_local
 	#endif
 			static inline std::vector<EvaluableNode *> prevLocalAllocationBuffer;
@@ -902,14 +902,14 @@ protected:
 	static const int labBlockAllocationSize = 24;
 
 	//local memory pool for allocations
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	thread_local
 #endif
 		inline static LocalAllocationBuffer localAllocationBuffer;
 
 	//debug diagnostic variables for localAllocationBuffer
 #ifdef DEBUG_REPORT_LAB_USAGE
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	inline static Concurrency::SingleMutex labCountMutex;
 	inline static std::atomic<size_t> labSize = 0;
 	inline static std::atomic<size_t> labSizeCount = 0;

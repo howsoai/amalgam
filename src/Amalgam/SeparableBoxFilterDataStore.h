@@ -1485,7 +1485,7 @@ public:
 	std::vector<std::unique_ptr<SBFDSColumnData>> columnData;
 	
 	//for multithreading, there should be one of these per thread
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	thread_local
 #endif
 	static SBFDSParametersAndBuffers parametersAndBuffers;

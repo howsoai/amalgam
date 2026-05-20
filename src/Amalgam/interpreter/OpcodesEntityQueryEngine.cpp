@@ -150,7 +150,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	//build conditions from condition_nodes
 	//buffer to use as for parsing and querying conditions
 	//one per thread to reuse memory
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	thread_local
 #endif
 		static std::vector<EntityQueryCondition> conditions;

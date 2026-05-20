@@ -1533,7 +1533,7 @@ void EvaluableNodeTreeManipulation::GetStringsFromTree(EvaluableNode *tree, std:
 	}
 }
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 thread_local std::vector<uint32_t> EvaluableNodeTreeManipulation::aCharsBuffer;
 thread_local std::vector<uint32_t> EvaluableNodeTreeManipulation::bCharsBuffer;
 thread_local FlatMatrix<size_t> EvaluableNodeTreeManipulation::sequenceCommonalityBuffer;

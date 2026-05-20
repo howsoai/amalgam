@@ -577,7 +577,7 @@ protected:
 	static MutationParameters::WeightedRandMutationType mutationOperationTypeRandomStream;
 
 	//reusable buffers for string distance and mixing
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	thread_local static std::vector<uint32_t> aCharsBuffer;
 	thread_local static std::vector<uint32_t> bCharsBuffer;
 	thread_local static FlatMatrix<size_t> sequenceCommonalityBuffer;

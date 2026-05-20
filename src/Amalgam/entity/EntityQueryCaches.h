@@ -29,7 +29,7 @@ public:
 	// entity_index is the index that the entity should be stored as
 	inline void AddEntity(Entity *e, size_t entity_index, bool batch_add = false)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		//don't lock if batch_call is set
 		Concurrency::WriteLock write_lock(mutex, std::defer_lock);
 		if(!batch_add)
@@ -44,7 +44,7 @@ public:
 	// then this function will move the entity data that was previously in index 5 to be referenced by index 3 for all caches
 	inline void RemoveEntity(Entity *e, size_t entity_index, size_t entity_index_to_reassign, bool batch_remove = false)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		//don't lock if batch_call is set
 		Concurrency::WriteLock write_lock(mutex, std::defer_lock);
 		if(!batch_remove)
@@ -57,7 +57,7 @@ public:
 	//updates all of the label values for entity e with index entity_index
 	inline void UpdateAllEntityLabels(Entity *entity, size_t entity_index)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::WriteLock write_lock(mutex);
 	#endif
 
@@ -68,7 +68,7 @@ public:
 	//note that it obtains the entity's labels directly rather than using what is in new_values
 	inline void UpdateEntityLabels(Entity *entity, size_t entity_index, EvaluableNode::AssocType &new_values)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::WriteLock write_lock(mutex);
 	#endif
 
@@ -80,7 +80,7 @@ public:
 	inline void RemoveEntityLabels(Entity *entity, size_t entity_index,
 		std::vector<std::pair<StringInternPool::StringID, EvaluableNode *>> &label_sids_and_values_to_remove)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::WriteLock write_lock(mutex);
 	#endif
 
@@ -102,7 +102,7 @@ public:
 	}
 
 	//makes sure any labels needed for cond are in the cache
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	void EnsureLabelsAreCached(EntityQueryCondition *cond, Concurrency::ReadLock &lock);
 #else
 	void EnsureLabelsAreCached(EntityQueryCondition *cond);
@@ -111,7 +111,7 @@ public:
 	//removes label_sid from the cache
 	inline void RemoveLabelFromCache(StringInternPool::StringID label_sid)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::WriteLock write_lock(mutex);
 	#endif
 		sbfds.RemoveLabel(label_sid);
@@ -178,13 +178,13 @@ public:
 		KnnCache knnCache;
 	};
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	//mutex for operations that may edit or modify the query cache
 	Concurrency::ReadWriteMutex mutex;
 #endif
 
 	//for multithreading, there should be one of these per thread
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	thread_local
 #endif
 		//buffers that can be used for less memory churn (per-thread if multithreaded)

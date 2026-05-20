@@ -12,12 +12,12 @@
 #include "StringInternPool.h"
 #include "WeightedDiscreteRandomStream.h"
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 thread_local
 #endif
 EntityQueryCaches::QueryCachesBuffers EntityQueryCaches::buffers;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 thread_local
 #endif
 ConvictionProcessor::ConvictionProcessorBuffers ConvictionProcessor::buffers;
@@ -54,7 +54,7 @@ static bool CanUseQueryCaches(std::vector<EntityQueryCondition> &conditions)
 	return true;
 }
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond, Concurrency::ReadLock &lock)
 #else
 void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
@@ -175,7 +175,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 	if(labels_to_add.size() == 0)
 		return;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	lock.unlock();
 	Concurrency::WriteLock write_lock(mutex);
 
@@ -189,7 +189,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 #endif
 		sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	//release write lock and reacquire read lock
 	write_lock.unlock();
 	lock.lock();
@@ -199,7 +199,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
 	std::vector<DistanceReferencePair<size_t>> &compute_results, bool is_first, bool update_matching_entities)
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
 	EnsureLabelsAreCached(cond, lock);
 #else
@@ -741,7 +741,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 EvaluableNode *EntityQueryCaches::ComputeValueFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
 	EvaluableNodeManager *enm, bool is_first)
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
 	EnsureLabelsAreCached(cond, lock);
 #else
@@ -792,7 +792,7 @@ EvaluableNode *EntityQueryCaches::ComputeValueFromMatchingEntities(EntityQueryCo
 void EntityQueryCaches::ComputeValuesFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
 	FastHashMap<StringInternPool::StringID, double> &compute_results, bool is_first)
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
 	EnsureLabelsAreCached(cond, lock);
 #else
@@ -840,7 +840,7 @@ void EntityQueryCaches::ComputeValuesFromMatchingEntities(EntityQueryCondition *
 
 void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities, std::vector<size_t> &entity_indices_sampled, bool is_first, bool update_matching_entities)
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
 	EnsureLabelsAreCached(cond, lock);
 #else

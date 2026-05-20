@@ -20,12 +20,12 @@ EntityExternalInterface entint;
 std::string ConcurrencyType()
 {
 	return
-#if defined(MULTITHREAD_SUPPORT)
-		"MultiThreaded"
-#elif defined(_OPENMP)
-		"OpenMP"
-#elif defined(MULTITHREAD_SUPPORT) && defined(_OPENMP)
+#if defined(MULTITHREAD_SUPPORT) && defined(_OPENMP)
 		"MultiThreaded+OpenMP"
+#elif !defined(MULTITHREAD_SUPPORT) && defined(_OPENMP)
+		"SingleThreaded+OpenMP"
+#elif defined(MULTITHREAD_SUPPORT)
+		"MultiThreaded"
 #else
 		"SingleThreaded"
 #endif

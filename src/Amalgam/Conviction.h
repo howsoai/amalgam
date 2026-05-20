@@ -645,7 +645,7 @@ public:
 	#endif
 
 		//for multithreading, there should be one of these per thread
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		thread_local
 	#endif
 			//buffers that can be used for less memory churn (per-thread if multithreaded)

@@ -251,7 +251,7 @@ double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str
 	std::chrono::system_clock::time_point dt;
 	std::string in_date_timezone = "";
 
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 	thread_local
 	#endif
 		static CachedLocale cached_locale;
@@ -326,7 +326,7 @@ std::string ConvertZonedDateTimeToString(TimepointType datetime, const std::stri
 {
 	auto zoned_dt = date::make_zoned(tz, datetime);
 
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 	thread_local
 	#endif
 		static CachedLocale cached_locale;
@@ -404,7 +404,7 @@ std::string GetDateTimeStringFromNumSecondsSinceEpoch(double seconds_since_epoch
 //parses time_str based on format and locale and returns the number of seconds since midnight
 double GetNumSecondsSinceMidnight(const std::string &time_str, std::string format, std::string locale)
 {
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 	thread_local
 	#endif
 		static CachedLocale cached_locale;
@@ -463,7 +463,7 @@ std::string GetTimeStringFromNumSecondsSinceMidnight(double seconds_since_midnig
 
 	auto tp = std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::duration<double>(seconds_since_midnight));
 
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 	thread_local
 	#endif
 		static CachedLocale cached_locale;

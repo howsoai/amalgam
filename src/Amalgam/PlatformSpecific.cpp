@@ -246,7 +246,7 @@ void Platform_Sleep(std::chrono::microseconds sleep_time_usec)
 {
 	//std::this_thread lives in the thread header. Instead of including that for all builds, use OS
 	// sleep functions when not in multi-threaded builds.
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE) || defined(_OPENMP)
+#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 	std::this_thread::sleep_for(sleep_time_usec);
 #elif defined(OS_WINDOWS)
 	auto sleep_time = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time_usec).count();

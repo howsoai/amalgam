@@ -7,12 +7,12 @@
 #include "EvaluableNodeTreeFunctions.h"
 #include "Interpreter.h"
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 thread_local
 #endif
 std::vector<EntityReadReference> Entity::entityReadReferenceBuffer;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 thread_local
 #endif
 std::vector<EntityWriteReference> Entity::entityWriteReferenceBuffer;

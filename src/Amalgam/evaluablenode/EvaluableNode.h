@@ -1295,7 +1295,7 @@ public:
 	//registers and unregisters an EvaluableNode for debug watching
 	inline static void RegisterEvaluableNodeForDebugWatch(EvaluableNode *en)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(debugWatchMutex);
 	#endif
 		debugWatch.emplace(en);
@@ -1303,7 +1303,7 @@ public:
 
 	inline static void UnregisterEvaluableNodeForDebugWatch(EvaluableNode *en)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(debugWatchMutex);
 	#endif
 		debugWatch.erase(en);
@@ -1312,7 +1312,7 @@ public:
 	//returns true if the EvaluableNode is in the debug watch
 	inline static void AssertIfInDebugWatch(EvaluableNode *en)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(debugWatchMutex);
 	#endif
 		if(debugWatch.find(en) != end(debugWatch))
@@ -1646,7 +1646,7 @@ protected:
 
 public:
 	//reusable memory pool for local operations
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	thread_local
 	#endif
 		inline static std::vector<EvaluableNode *> reusableBuffer;
@@ -1654,7 +1654,7 @@ protected:
 
 	//field for watching EvaluableNodes for debugging
 	static FastHashSet<EvaluableNode *> debugWatch;
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	static Concurrency::SingleMutex debugWatchMutex;
 #endif
 };

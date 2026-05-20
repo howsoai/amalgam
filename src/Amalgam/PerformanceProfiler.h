@@ -27,7 +27,7 @@ namespace PerformanceProfiler
 	
 	void EndOperation(int64_t memory_use);
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	//accumulates lock contention for string t
 	void AccumulateLockContentionCount(std::string t);
 #endif

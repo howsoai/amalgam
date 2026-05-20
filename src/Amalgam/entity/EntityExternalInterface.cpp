@@ -327,7 +327,7 @@ bool EntityExternalInterface::SetRandomSeed(std::string &handle, std::string &ra
 std::vector<std::string> EntityExternalInterface::GetEntities()
 {
 	std::vector<std::string> entities;
-#ifdef MULTITHREAD_INTERFACE
+#ifdef MULTITHREAD_SUPPORT
 	Concurrency::ReadLock read_lock(mutex);
 #endif
 

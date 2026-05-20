@@ -14,7 +14,7 @@
 #include <vector>
 
 //per simdjson documentation, for multithreading, there should be one of these per thread
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 thread_local
 #endif
 simdjson::ondemand::parser json_parser;

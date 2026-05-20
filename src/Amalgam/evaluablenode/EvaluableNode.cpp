@@ -19,7 +19,7 @@ EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments
 
 //field for watching EvaluableNodes for debugging
 FastHashSet<EvaluableNode *> EvaluableNode::debugWatch;
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 Concurrency::SingleMutex EvaluableNode::debugWatchMutex;
 #endif
 

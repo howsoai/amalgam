@@ -15,9 +15,6 @@
 #define DIST_CONTRIBS_GEOMETRIC_MEAN
 //#define DIST_CONTRIBS_ARITHMETIC_MEAN
 
-//if enabled, will extra weight the distance contributions using entropy; it is orthogonal with the options above
-//#define DIST_CONTRIBS_ENTROPY
-
 //the following parameter is independent of those above and if defined, will change to use inverse surprisal weighting
 // rather than converting the surprisals to probabilities
 //#define BANDWIDTH_SELECTION_INVERSE_SURPRISAL
@@ -613,13 +610,8 @@ public:
 							}
 							else if(weight > 0.0)
 							{
-							#ifdef DIST_CONTRIBS_ENTROPY
+								accumulated_value += weighted_value;
 								total_probability += weight;
-								accumulated_value += weight * std::max(0.0, unweighted_value - std::log(weight));
-							#else
-								total_probability += 1.0;
-								accumulated_value += std::max(0.0, unweighted_value - std::log(weight));
-							#endif
 							}
 						});
 				else
@@ -628,8 +620,8 @@ public:
 						[&total_probability, &accumulated_value](auto ed_pair,
 							double weighted_value, double unweighted_value, double prob_mass, double weight)
 						{
+							accumulated_value += weighted_value;
 							total_probability += weight;
-							accumulated_value += weight * unweighted_value;
 						});
 
 				//normalize
@@ -660,14 +652,8 @@ public:
 							}
 							else if(weight > 0.0)
 							{
-								double surprisal = std::max(0.0, unweighted_value - std::log(weight));
-							#ifdef DIST_CONTRIBS_ENTROPY
+								accumulated_value += weight * std::log(unweighted_value);
 								total_probability += weight;
-								accumulated_value += weight * std::log(surprisal);
-							#else
-								total_probability += 1.0;
-								accumulated_value += std::log(surprisal);
-							#endif
 							}
 						});
 				else
@@ -676,8 +662,8 @@ public:
 						[&total_probability, &accumulated_value](auto ed_pair,
 							double weighted_value, double unweighted_value, double prob_mass, double weight)
 						{
-							total_probability += weight;
 							accumulated_value += weight * std::log(unweighted_value);
+							total_probability += weight;
 						});
 
 				//normalize

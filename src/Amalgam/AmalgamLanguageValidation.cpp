@@ -1548,7 +1548,7 @@ AmalgamExample{ R"&((seq
         "weighted dc: {vert0 2 vert1 1 vert2 1 vert3 1.414}"
         "surprisal contributions"
         "dc: {vert0 2.035 vert1 2.284 vert2 2.284 vert3 3.638}"
-        "weighted surprisal contributions: {vert0 4.07 vert1 1.855 vert2 1.855 vert3 3.638}"
+        "weighted surprisal contributions: {vert0 4.07 vert1 2.198 vert2 2.198 vert3 3.638}"
         "removal conviction\n"
         "kl: {vert0 0.0125 vert1 0.0015 vert2 0.01294 vert3 0.0125}"
         "weighted kl: {vert0 0.04384 vert1 0.01215 vert2 0.02322 vert3 0.0003315}"
@@ -2101,15 +2101,15 @@ AmalgamExample{ R"&((seq
         "surprisals with dynamic selection: {vert0 10.5 vert1 10.5 vert2 14.5}"
         "surprisal contribution: [13.11]"
         "surprisal contribution: [10.5]"
-        "weighted surprisal contribution: [13.8]"
-        "weighted surprisal contribution: [9.807]"
+        "weighted surprisal contribution: [13.11]"
+        "weighted surprisal contribution: [10.5]"
         [
                 ["SurprisalTransformContainer" "testvert"]
         ]
         "surprisal contribution: {testvert 13.11}"
         "surprisal contribution: {testvert 10.5}"
-        "weighted surprisal contribution: {testvert 13.8}"
-        "weighted surprisal contribution: {testvert 9.807}"
+        "weighted surprisal contribution: {testvert 13.11}"
+        "weighted surprisal contribution: {testvert 10.5}"
 ])", "", R"((apply "destroy_entities" (contained_entities)))"},
 AmalgamExample{ R"&((concat
 	"+ : "

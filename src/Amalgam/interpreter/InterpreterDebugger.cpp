@@ -775,13 +775,15 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en,
 		}
 
 		//break if finished opcode
-		if(_interpreter_debug_data.runUntilOpcode == en)
+		if(_interpreter_debug_data.runUntilOpcode != nullptr
+			&& _interpreter_debug_data.runUntilOpcode == en)
 		{
 			_interpreter_debug_data.runUntilOpcode = nullptr;
 			_interpreter_debug_data.EnableInteractiveMode();
 		}
 
-		if(_interpreter_debug_data.runUntilScopeStackSize == scopeStack.size())
+		if(_interpreter_debug_data.runUntilScopeStackSize != 0
+			&& _interpreter_debug_data.runUntilScopeStackSize == scopeStack.size())
 		{
 			_interpreter_debug_data.runUntilScopeStackSize = 0;
 			_interpreter_debug_data.EnableInteractiveMode();

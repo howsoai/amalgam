@@ -653,7 +653,7 @@ public:
 							else if(weight > 0.0)
 							{
 								accumulated_value += weight * std::log(unweighted_value);
-								total_probability += 1.0;
+								total_probability += weight;
 							}
 						});
 				else

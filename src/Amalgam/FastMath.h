@@ -844,6 +844,7 @@ __forceinline static double GeneralizedMean(ValueIterator first, ValueIterator l
 			}
 			else
 			{
+				mean /= weights_sum;
 				if(!calculate_moment)
 					mean = std::exp(mean);
 			}

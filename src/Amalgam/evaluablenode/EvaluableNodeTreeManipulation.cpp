@@ -395,7 +395,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 		return generalized_node;
 	}
 
-	std::vector<EvaluableNode *> empty_vector;
+	EvaluableNode::OrderedType empty_vector;
 
 	auto *tree1_ordered_childs = &empty_vector;
 	if(tree1 != nullptr && tree1->IsOrderedArray())
@@ -428,8 +428,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 			generalized_node->ClearOrderedChildNodes();
 
 			//make arrays of just the first node
-			std::vector<EvaluableNode *> a1;
-			std::vector<EvaluableNode *> a2;
+			EvaluableNode::OrderedType a1;
+			EvaluableNode::OrderedType a2;
 			if(tree1_ordered_childs->size() > 0)
 				a1.emplace_back((*tree1_ordered_childs)[0]);
 			if(tree2_ordered_childs->size() > 0)

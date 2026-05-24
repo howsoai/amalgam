@@ -261,7 +261,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	//keep track of nodes visited to make sure there's no cycle
 	EvaluableNode::ReferenceSetType b_nodes_visited;
 	//ids to traverse along the path
-	std::vector<EvaluableNode *> b_path_nodes;
+	EvaluableNode::OrderedType b_path_nodes;
 	//the current node from path lowest_common_node
 	EvaluableNode *lowest_common_node = shared_node;
 	while(b_nodes_visited.insert(b_parent).second == true) //make sure not visited yet

@@ -666,3 +666,28 @@ public:
 			return this->emplace_back(key, std::forward<Args>(args)...);
 	}
 };
+
+//TODO 25543: remove this
+template<typename T>
+class SpecialEVVector : public std::vector<T>
+{
+public:
+	using std::vector<T>::vector;
+
+	SpecialEVVector &operator=(const std::vector<T> &) = delete;   // copy‑assign
+	SpecialEVVector &operator=(std::vector<T> &&) = delete;   // move‑assign
+
+	explicit SpecialEVVector(const std::vector<T> &v) : std::vector<T>(v)
+	{}
+	explicit SpecialEVVector(std::vector<T> &&v) : std::vector<T>(std::move(v))
+	{}
+
+	explicit operator std::vector<T> &() noexcept
+	{
+		return *this;
+	}
+	explicit operator const std::vector<T> &() const noexcept
+	{
+		return *this;
+	}
+};

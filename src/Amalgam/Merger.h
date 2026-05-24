@@ -4,9 +4,6 @@
 #include "HashMaps.h"
 #include "StringInternPool.h"
 
-//system headers:
-#include <vector>
-
 //Contains the data from evaluating the goodness or commonality of merging two or more things,
 //but without the things merged
 class MergeMetricResultsBase
@@ -129,11 +126,11 @@ public:
 
 //computes the commonality matrix for computing edit distances between vectors a and b
 //the technique is similar to the Wagner–Fischer algorithm, except for commonality rather than distance
-//commonality_function is used to return the commonality of two given elements of ElementType,
+//commonality_function is used to return the commonality of two given elements in ContainerType,
 //and starting_index can be specified if some elements should be skipped before computing commonality
-template<typename ElementType, typename MergeResultType, typename CommonalityFunction>
+template<typename ContainerType, typename MergeResultType, typename CommonalityFunction>
 inline void ComputeSequenceCommonalityMatrix(FlatMatrix<MergeResultType> &sequence_commonality,
-	std::vector<ElementType> &a, std::vector<ElementType> &b,
+	ContainerType &a, ContainerType &b,
 	CommonalityFunction commonality_function, size_t starting_index = 0)
 {
 	size_t a_size = a.size();
@@ -176,6 +173,7 @@ inline void ComputeSequenceCommonalityMatrix(FlatMatrix<MergeResultType> &sequen
 // AssocType should be some map where the variables are pointers to T
 template<typename T,
 	T NullValue = nullptr,
+	typename OrderedType = SpecialEVVector<T>,
 	typename AssocType = CompactHashMap<StringInternPool::StringID, T*>>
 class Merger
 {
@@ -215,19 +213,19 @@ public:
 	virtual bool AreMergeable(T a, T b) = 0;
 
 	//Merges two unordered lists based on the specified MergeMethods
-	std::vector<T> MergeUnorderedSets(std::vector<T> &list_a, std::vector<T> &list_b)
+	OrderedType MergeUnorderedSets(OrderedType &list_a, OrderedType &list_b)
 	{
 		//return empty if nothing passed in
 		if(list_a.empty() && list_b.empty())
-			return std::vector<T>();
+			return OrderedType();
 
 		//copy over lists
-		std::vector<T> a1(list_a);
-		std::vector<T> a2(list_b);
+		OrderedType a1(list_a);
+		OrderedType a2(list_b);
 
-		std::vector<T> merged;
+		OrderedType merged;
 
-		std::vector<T> unmatched_a1;
+		OrderedType unmatched_a1;
 		if(KeepAllNonMergeableValues())
 		{
 			merged.reserve(std::max(a1.size(), a2.size()));
@@ -298,19 +296,19 @@ public:
 	}
 
 	//Merges two lists that are comprised of unordered sets of pairs based on the specified MergeMethods
-	std::vector<T> MergeUnorderedSetsOfPairs(std::vector<T> &list_a, std::vector<T> &list_b)
+	OrderedType MergeUnorderedSetsOfPairs(OrderedType &list_a, OrderedType &list_b)
 	{
 		//return empty if nothing passed in
 		if(list_a.empty() && list_b.empty())
-			return std::vector<T>();
+			return OrderedType();
 
 		//copy over lists
-		std::vector<T> a1(list_a);
-		std::vector<T> a2(list_b);
+		OrderedType a1(list_a);
+		OrderedType a2(list_b);
 
-		std::vector<T> merged;
+		OrderedType merged;
 
-		std::vector<T> unmatched_a1;
+		OrderedType unmatched_a1;
 		if(KeepAllNonMergeableValues())
 		{
 			merged.reserve(std::max(a1.size(), a2.size()));
@@ -426,11 +424,11 @@ public:
 	}
 
 	//Merges two ordered (sequence) lists based on the specified MergeMethods
-	std::vector<T> MergeSequences(std::vector<T> &list_a, std::vector<T> &list_b)
+	OrderedType MergeSequences(OrderedType &list_a, OrderedType &list_b)
 	{
 		//return empty if nothing passed in
 		if(list_a.empty() && list_b.empty())
-			return std::vector<T>();
+			return OrderedType();
 
 		//build sequence commonality matrix
 		FlatMatrix<MergeMetricResults<T>> sequence_commonality;
@@ -442,7 +440,7 @@ public:
 			});
 
 		//build a new list, in reverse
-		std::vector<T> merged;
+		OrderedType merged;
 		if(KeepAllNonMergeableValues())
 			merged.reserve(std::max(list_a.size(), list_b.size()));
 
@@ -533,14 +531,14 @@ public:
 	}
 
 	//Merges two position-based ordered lists based on the specified MergeMethods
-	std::vector<T> MergePositions(std::vector<T> &list_a, std::vector<T> &list_b)
+	OrderedType MergePositions(OrderedType &list_a, OrderedType &list_b)
 	{
 		//return empty if nothing passed in
 		if(list_a.empty() && list_b.empty())
-			return std::vector<T>();
+			return OrderedType();
 
 		//accumulate the array
-		std::vector<T> merged;
+		OrderedType merged;
 		if(KeepAllNonMergeableValues())
 			merged.reserve(std::max(list_a.size(), list_b.size()));
 

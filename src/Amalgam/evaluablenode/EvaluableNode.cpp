@@ -13,7 +13,7 @@
 bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
-std::vector<EvaluableNode *> EvaluableNode::emptyOrderedChildNodes;
+EvaluableNode::OrderedType EvaluableNode::emptyOrderedChildNodes;
 EvaluableNode::AssocType EvaluableNode::emptyMappedChildNodes;
 EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments;
 
@@ -778,8 +778,7 @@ size_t EvaluableNode::GetNumChildNodes()
 	return 0;
 }
 
-void EvaluableNode::SetOrderedChildNodes(const std::vector<EvaluableNode *> &ocn,
-	bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetOrderedChildNodes(const OrderedType &ocn, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsOrderedArray())
 		return;
@@ -794,8 +793,7 @@ void EvaluableNode::SetOrderedChildNodes(const std::vector<EvaluableNode *> &ocn
 		SetIsIdempotent(is_idempotent);
 }
 
-void EvaluableNode::SetOrderedChildNodes(std::vector<EvaluableNode *> &&ocn,
-	bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsOrderedArray())
 		return;
@@ -832,7 +830,7 @@ void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 	UpdateFlagsBasedOnNewChildNode(cn);
 }
 
-void EvaluableNode::AppendOrderedChildNodes(const std::vector<EvaluableNode *> &ocn_to_append)
+void EvaluableNode::AppendOrderedChildNodes(const OrderedType &ocn_to_append)
 {
 	if(!IsOrderedArray())
 		return;

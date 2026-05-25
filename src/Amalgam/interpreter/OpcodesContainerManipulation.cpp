@@ -2515,7 +2515,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			//sort to keep in order and remove duplicates
 			std::sort(begin(indices_to_keep), end(indices_to_keep));
 
-			std::vector<EvaluableNode *> new_container;
+			EvaluableNode::OrderedType new_container;
 			new_container.reserve(indices_to_keep.size());
 
 			//move indices over, but keep track of the previous one to skip duplicates

@@ -65,7 +65,7 @@ public:
 	std::vector<EvaluableNodeImmediateValueWithType> valuesToCompare;
 
 	//when initialized, points to an OrderedChildNodes vector of the values to compare
-	std::vector<EvaluableNode *> *positionsToCompare;
+	EvaluableNode::OrderedType *positionsToCompare;
 
 	GeneralizedDistanceEvaluator distEvaluator;
 

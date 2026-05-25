@@ -161,7 +161,7 @@ public:
 		);
 	}
 
-	inline void ComputeDistanceContributionsOnPositions(std::vector<EvaluableNode *> &positions_to_compare, std::vector<double> &contribs_out)
+	inline void ComputeDistanceContributionsOnPositions(EvaluableNode::OrderedType &positions_to_compare, std::vector<double> &contribs_out)
 	{
 		contribs_out.resize(positions_to_compare.size());
 		IterateOverConcurrentlyIfPossible(positions_to_compare,
@@ -271,7 +271,7 @@ public:
 
 	//computes cumulative neighbor influence weights for all positions_to_compare and returns the
 	//neighbor weights in neighbors_with_weights
-	inline void ComputeNeighborWeightsOnPositions(std::vector<EvaluableNode *> &positions_to_compare,
+	inline void ComputeNeighborWeightsOnPositions(EvaluableNode::OrderedType &positions_to_compare,
 		std::vector<DistanceReferencePair<size_t>> &neighbors_with_weights)
 	{
 		neighbors_with_weights.clear();

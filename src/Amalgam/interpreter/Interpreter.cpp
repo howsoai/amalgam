@@ -571,7 +571,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 	return InterpretNode(function);
 }
 
-bool Interpreter::PopulateInterpreterConstraintsFromParams(std::vector<EvaluableNode *> &params,
+bool Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
 	size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool include_entity_constraints)
 {
 	//start with constraints if there are already interpreter constraints

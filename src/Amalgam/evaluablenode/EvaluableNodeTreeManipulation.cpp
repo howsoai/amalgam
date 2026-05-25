@@ -592,7 +592,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 
 		case OpcodeDetails::OrderedChildNodeType::UNORDERED:
 		{
-			std::vector<EvaluableNode *> a2(tree2->GetOrderedChildNodesReference());
+			EvaluableNode::OrderedType a2(tree2->GetOrderedChildNodesReference());
 
 			//for every element in a1, check to see if there's any in a2
 			for(auto &a1_current : tree1->GetOrderedChildNodesReference())
@@ -664,8 +664,8 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		case OpcodeDetails::OrderedChildNodeType::PAIRED:
 		case OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED:
 		{
-			std::vector<EvaluableNode *> a1(tree1->GetOrderedChildNodesReference());
-			std::vector<EvaluableNode *> a2(tree2->GetOrderedChildNodesReference());
+			EvaluableNode::OrderedType a1(tree1->GetOrderedChildNodesReference());
+			EvaluableNode::OrderedType a2(tree2->GetOrderedChildNodesReference());
 
 			if(iocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED)
 			{

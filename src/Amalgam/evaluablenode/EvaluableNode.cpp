@@ -272,7 +272,7 @@ void EvaluableNode::ConvertAssocToList()
 	if(!IsAssociativeArray())
 		return;
 
-	std::vector<EvaluableNode *> new_ocn;
+	OrderedType new_ocn;
 
 	auto &mcn = GetMappedChildNodesReference();
 	new_ocn.reserve(mcn.size());
@@ -656,7 +656,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 		//will need a valid enm to convert this
 		if(DoesEvaluableNodeTypeUseAssocData(cur_type) && enm != nullptr)
 		{
-			std::vector<EvaluableNode *> new_ordered;
+			OrderedType new_ordered;
 			auto &mcn = GetMappedChildNodesReference();
 			new_ordered.reserve(2 * mcn.size());
 			for(auto &[cn_id, cn] : mcn)
@@ -1070,7 +1070,7 @@ void EvaluableNode::EnsureHasAnnotationsAndCommentsStorage()
 	}
 	else //ordered
 	{
-		std::vector<EvaluableNode *> temp_ocn = std::move(value.orderedChildNodes);
+		OrderedType temp_ocn = std::move(value.orderedChildNodes);
 		value.DestructOrderedChildNodes();
 		new (&value.extendedOrderedChildNodes.orderedChildNodes) std::unique_ptr<std::vector<EvaluableNode *>>(
 			std::make_unique<std::vector<EvaluableNode *>>(std::move(temp_ocn))

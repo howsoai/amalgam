@@ -159,7 +159,7 @@ public:
 
 	//the node for the id path and a pointer to its ordered child nodes
 	EvaluableNode *idPath;
-	std::vector<EvaluableNode *> *idPathEntries;
+	EvaluableNode::OrderedType *idPathEntries;
 
 	//current index in idPath
 	size_t curIndex;

@@ -173,7 +173,7 @@ inline void ComputeSequenceCommonalityMatrix(FlatMatrix<MergeResultType> &sequen
 // AssocType should be some map where the variables are pointers to T
 template<typename T,
 	T NullValue = nullptr,
-	typename OrderedType = SpecialEVVector<T>,
+	typename OrderedType = std::vector<T>,
 	typename AssocType = CompactHashMap<StringInternPool::StringID, T*>>
 class Merger
 {

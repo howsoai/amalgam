@@ -727,7 +727,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 		if(!no_child_nodes)
 		{
 			EvaluableNode stack_top_holder(ENT_LIST);
-			stack_top_holder.SetOrderedChildNodes(opcodeStackNodes);
+			stack_top_holder.SetOrderedChildNodes(begin(opcodeStackNodes), end(opcodeStackNodes), true, false);
 			return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 		}
 		else

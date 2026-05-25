@@ -231,7 +231,7 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 {
 	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetOrderedChildNodes(scopeStack);
+	stack_top_holder.SetOrderedChildNodes(begin(scopeStack), end(scopeStack), true, false);
 	//set flags conservatively before copy
 	stack_top_holder.SetNeedCycleCheck(true);
 	stack_top_holder.SetIsIdempotent(false);

@@ -2440,7 +2440,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 
 		//sort list; can't use the C++ sort function because it requires weak ordering and will crash otherwise
 		// the custom comparator does not guarantee this
-		std::vector<EvaluableNode *> sorted = CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodes(), comparator);
+		EvaluableNode::OrderedType sorted = CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodes(), comparator);
 
 		if(highest_k > 0 && highest_k < sorted.size())
 		{

@@ -43,7 +43,7 @@ public:
 	using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
 
 	//EvaluableNode ordered storage
-	using OrderedType = SpecialEVVector<EvaluableNode *>;
+	using OrderedType = std::vector<EvaluableNode *>;
 
 	//Storage for labels
 	using LabelsAssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
@@ -1109,6 +1109,23 @@ public:
 	//sets the ordered child nodes and updates flags, but can be used as an rvalue so that the memory doesn't
 	//need to be reallocated if std::move is used for the input
 	void SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check, bool is_idempotent);
+	template<typename ContainerIterator>
+	inline void SetOrderedChildNodes(ContainerIterator first, ContainerIterator last, bool need_cycle_check, bool is_idempotent)
+	{
+		if(!IsOrderedArray())
+			return;
+
+		auto &ocn = GetOrderedChildNodesReference();
+		ocn.assign(first, last);
+
+		SetNeedCycleCheck(need_cycle_check);
+
+		if(is_idempotent && !IsEvaluableNodeTypePotentiallyIdempotent(type))
+			SetIsIdempotent(false);
+		else
+			SetIsIdempotent(is_idempotent);
+	}
+
 	void ClearOrderedChildNodes();
 	void AppendOrderedChildNode(EvaluableNode *cn);
 	void AppendOrderedChildNodes(const OrderedType &ocn_to_append);

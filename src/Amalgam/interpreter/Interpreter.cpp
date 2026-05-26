@@ -31,8 +31,8 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 }
 
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	std::vector<EvaluableNode *> * scope_stack,
-	std::vector<EvaluableNode *> * opcode_stack, std::vector<ConstructionStackEntry> *construction_stack,
+	std::vector<EvaluableNode *> *scope_stack,
+	std::vector<EvaluableNode *> *opcode_stack, std::vector<ConstructionStackEntry> *construction_stack,
 	EvaluableNodeRequestedValueTypes immediate_result
 #ifdef MULTITHREAD_SUPPORT
 	, bool new_scope_stack
@@ -864,7 +864,7 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 #ifdef MULTITHREAD_SUPPORT
 
 bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
-	std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
+	EvaluableNode::OrderedType &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 	EvaluableNodeRequestedValueTypes immediate_results)
 {
 	if(!parent_node->GetConcurrency())

@@ -1072,8 +1072,8 @@ void EvaluableNode::EnsureHasAnnotationsAndCommentsStorage()
 	{
 		OrderedType temp_ocn = std::move(value.orderedChildNodes);
 		value.DestructOrderedChildNodes();
-		new (&value.extendedOrderedChildNodes.orderedChildNodes) std::unique_ptr<std::vector<EvaluableNode *>>(
-			std::make_unique<std::vector<EvaluableNode *>>(std::move(temp_ocn))
+		new (&value.extendedOrderedChildNodes.orderedChildNodes) std::unique_ptr<OrderedType>(
+			std::make_unique<OrderedType>(std::move(temp_ocn))
 		);
 
 		AnnotationsAndComments::Construct(value.extendedOrderedChildNodes.annotationsAndComments);

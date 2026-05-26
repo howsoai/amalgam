@@ -473,7 +473,7 @@ inline static bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, std
 	return true;
 };
 
-inline static bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, double &value)
+inline static bool GetValueFromIndex(EvaluableNode::OrderedType &ocn, size_t i, double &value)
 {
 	if(i >= ocn.size())
 		return false;
@@ -482,7 +482,7 @@ inline static bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i
 	return !FastIsNaN(value);
 };
 
-inline static bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, std::string &value)
+inline static bool GetValueFromIndex(EvaluableNode::OrderedType &ocn, size_t i, std::string &value)
 {
 	if(i >= ocn.size())
 		return false;
@@ -513,7 +513,7 @@ inline static bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
 	return true;
 };
 
-inline static bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
+inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedType &values_ocn,
 	EvaluableNode::AssocType::iterator iter, double &value)
 {
 	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
@@ -527,7 +527,7 @@ inline static bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_
 	return !FastIsNaN(value);
 };
 
-inline static bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
+inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedType &values_ocn,
 	EvaluableNode::AssocType::iterator iter, std::string &value)
 {
 	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);

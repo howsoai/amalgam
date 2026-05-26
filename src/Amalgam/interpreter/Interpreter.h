@@ -666,7 +666,7 @@ protected:
 	//if true, immediate_results allows the interpreted_nodes to be set to immediate values
 	//returns true if it is able to interpret the nodes concurrently
 	bool InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
-		std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
+		EvaluableNode::OrderedType &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 		EvaluableNodeRequestedValueTypes immediate_results = EvaluableNodeRequestedValueTypes());
 
 	//returns true if this Interpreter shares the stack with others

@@ -13,7 +13,7 @@
 bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
-std::vector<EvaluableNode *> EvaluableNode::emptyOrderedChildNodes;
+EvaluableNode::OrderedType EvaluableNode::emptyOrderedChildNodes;
 EvaluableNode::AssocType EvaluableNode::emptyMappedChildNodes;
 EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments;
 
@@ -272,7 +272,7 @@ void EvaluableNode::ConvertAssocToList()
 	if(!IsAssociativeArray())
 		return;
 
-	std::vector<EvaluableNode *> new_ocn;
+	OrderedType new_ocn;
 
 	auto &mcn = GetMappedChildNodesReference();
 	new_ocn.reserve(mcn.size());
@@ -656,7 +656,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 		//will need a valid enm to convert this
 		if(DoesEvaluableNodeTypeUseAssocData(cur_type) && enm != nullptr)
 		{
-			std::vector<EvaluableNode *> new_ordered;
+			OrderedType new_ordered;
 			auto &mcn = GetMappedChildNodesReference();
 			new_ordered.reserve(2 * mcn.size());
 			for(auto &[cn_id, cn] : mcn)
@@ -778,8 +778,7 @@ size_t EvaluableNode::GetNumChildNodes()
 	return 0;
 }
 
-void EvaluableNode::SetOrderedChildNodes(const std::vector<EvaluableNode *> &ocn,
-	bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetOrderedChildNodes(const OrderedType &ocn, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsOrderedArray())
 		return;
@@ -794,8 +793,7 @@ void EvaluableNode::SetOrderedChildNodes(const std::vector<EvaluableNode *> &ocn
 		SetIsIdempotent(is_idempotent);
 }
 
-void EvaluableNode::SetOrderedChildNodes(std::vector<EvaluableNode *> &&ocn,
-	bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsOrderedArray())
 		return;
@@ -832,7 +830,7 @@ void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 	UpdateFlagsBasedOnNewChildNode(cn);
 }
 
-void EvaluableNode::AppendOrderedChildNodes(const std::vector<EvaluableNode *> &ocn_to_append)
+void EvaluableNode::AppendOrderedChildNodes(const OrderedType &ocn_to_append)
 {
 	if(!IsOrderedArray())
 		return;
@@ -1072,10 +1070,10 @@ void EvaluableNode::EnsureHasAnnotationsAndCommentsStorage()
 	}
 	else //ordered
 	{
-		std::vector<EvaluableNode *> temp_ocn = std::move(value.orderedChildNodes);
+		OrderedType temp_ocn = std::move(value.orderedChildNodes);
 		value.DestructOrderedChildNodes();
-		new (&value.extendedOrderedChildNodes.orderedChildNodes) std::unique_ptr<std::vector<EvaluableNode *>>(
-			std::make_unique<std::vector<EvaluableNode *>>(std::move(temp_ocn))
+		new (&value.extendedOrderedChildNodes.orderedChildNodes) std::unique_ptr<OrderedType>(
+			std::make_unique<OrderedType>(std::move(temp_ocn))
 		);
 
 		AnnotationsAndComments::Construct(value.extendedOrderedChildNodes.annotationsAndComments);

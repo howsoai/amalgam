@@ -31,8 +31,8 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 }
 
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	std::vector<EvaluableNode *> * scope_stack,
-	std::vector<EvaluableNode *> * opcode_stack, std::vector<ConstructionStackEntry> *construction_stack,
+	std::vector<EvaluableNode *> *scope_stack,
+	std::vector<EvaluableNode *> *opcode_stack, std::vector<ConstructionStackEntry> *construction_stack,
 	EvaluableNodeRequestedValueTypes immediate_result
 #ifdef MULTITHREAD_SUPPORT
 	, bool new_scope_stack
@@ -231,7 +231,7 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 {
 	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetOrderedChildNodes(scopeStack);
+	stack_top_holder.SetOrderedChildNodes(begin(scopeStack), end(scopeStack), true, false);
 	//set flags conservatively before copy
 	stack_top_holder.SetNeedCycleCheck(true);
 	stack_top_holder.SetIsIdempotent(false);
@@ -571,7 +571,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 	return InterpretNode(function);
 }
 
-bool Interpreter::PopulateInterpreterConstraintsFromParams(std::vector<EvaluableNode *> &params,
+bool Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
 	size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool include_entity_constraints)
 {
 	//start with constraints if there are already interpreter constraints
@@ -864,7 +864,7 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 #ifdef MULTITHREAD_SUPPORT
 
 bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
-	std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
+	EvaluableNode::OrderedType &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 	EvaluableNodeRequestedValueTypes immediate_results)
 {
 	if(!parent_node->GetConcurrency())

@@ -395,7 +395,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 		return generalized_node;
 	}
 
-	std::vector<EvaluableNode *> empty_vector;
+	EvaluableNode::OrderedType empty_vector;
 
 	auto *tree1_ordered_childs = &empty_vector;
 	if(tree1 != nullptr && tree1->IsOrderedArray())
@@ -428,8 +428,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 			generalized_node->ClearOrderedChildNodes();
 
 			//make arrays of just the first node
-			std::vector<EvaluableNode *> a1;
-			std::vector<EvaluableNode *> a2;
+			EvaluableNode::OrderedType a1;
+			EvaluableNode::OrderedType a2;
 			if(tree1_ordered_childs->size() > 0)
 				a1.emplace_back((*tree1_ordered_childs)[0]);
 			if(tree2_ordered_childs->size() > 0)
@@ -592,7 +592,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 
 		case OpcodeDetails::OrderedChildNodeType::UNORDERED:
 		{
-			std::vector<EvaluableNode *> a2(tree2->GetOrderedChildNodesReference());
+			EvaluableNode::OrderedType a2(tree2->GetOrderedChildNodesReference());
 
 			//for every element in a1, check to see if there's any in a2
 			for(auto &a1_current : tree1->GetOrderedChildNodesReference())
@@ -664,8 +664,8 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		case OpcodeDetails::OrderedChildNodeType::PAIRED:
 		case OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED:
 		{
-			std::vector<EvaluableNode *> a1(tree1->GetOrderedChildNodesReference());
-			std::vector<EvaluableNode *> a2(tree2->GetOrderedChildNodesReference());
+			EvaluableNode::OrderedType a1(tree1->GetOrderedChildNodesReference());
+			EvaluableNode::OrderedType a2(tree2->GetOrderedChildNodesReference());
 
 			if(iocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED)
 			{

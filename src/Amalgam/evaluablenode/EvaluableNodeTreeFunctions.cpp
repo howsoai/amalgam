@@ -25,8 +25,8 @@ bool CustomEvaluableNodeComparator::operator()(EvaluableNode *a, EvaluableNode *
 
 //performs a top-down stable merge on the sub-lists from start_index to middle_index and middle_index to _end_index
 //  from source into destination using cenc
-static void CustomEvaluableNodeOrderedChildNodesTopDownMerge(std::vector<EvaluableNode *> &source,
-	size_t start_index, size_t middle_index, size_t end_index, std::vector<EvaluableNode *> &destination, CustomEvaluableNodeComparator &cenc)
+static void CustomEvaluableNodeOrderedChildNodesTopDownMerge(EvaluableNode::OrderedType &source,
+	size_t start_index, size_t middle_index, size_t end_index, EvaluableNode::OrderedType &destination, CustomEvaluableNodeComparator &cenc)
 {
 	size_t left_pos = start_index;
 	size_t right_pos = middle_index;
@@ -50,8 +50,8 @@ static void CustomEvaluableNodeOrderedChildNodesTopDownMerge(std::vector<Evaluab
 
 //performs a stable merge sort of source (which *will* be modified and is not constant)
 // from start_index to end_index into destination; uses cenc for comparison
-static void CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &source,
-	size_t start_index, size_t end_index, std::vector<EvaluableNode *> &destination, CustomEvaluableNodeComparator &cenc)
+static void CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedType &source,
+	size_t start_index, size_t end_index, EvaluableNode::OrderedType &destination, CustomEvaluableNodeComparator &cenc)
 {
 	//if one element, then sorted
 	if(start_index + 1 >= end_index)
@@ -68,12 +68,12 @@ static void CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *
 	CustomEvaluableNodeOrderedChildNodesTopDownMerge(source, start_index, middle_index, end_index, destination, cenc);
 }
 
-std::vector<EvaluableNode *> CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &list, CustomEvaluableNodeComparator &cenc)
+EvaluableNode::OrderedType CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedType &list, CustomEvaluableNodeComparator &cenc)
 {
 	//must make two copies of the list to edit, because switch back and forth and there is a chance that an element may be invalid
 	// in either list.  Therefore, can't use the original list in the off chance that something is garbage collected
-	std::vector<EvaluableNode *> list_copy_1(list);
-	std::vector<EvaluableNode *> list_copy_2(list);
+	EvaluableNode::OrderedType list_copy_1(list);
+	EvaluableNode::OrderedType list_copy_2(list);
 	CustomEvaluableNodeOrderedChildNodesSort(list_copy_1, 0, list.size(), list_copy_2, cenc);
 	return list_copy_2;
 }

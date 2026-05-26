@@ -6,7 +6,7 @@ Evaluates to true if the label represented by `label_name` exists for `entity`. 
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
- - Requires entity: false
+ - Requires entity: true
  - Creates new scope: false
  - Creates new target scope: false
  - Value newness (whether references existing node): new

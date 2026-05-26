@@ -42,6 +42,9 @@ public:
 	//EvaluableNode assoc storage
 	using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
 
+	//EvaluableNode ordered storage
+	using OrderedType = std::vector<EvaluableNode *>;
+
 	//Storage for labels
 	using LabelsAssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
 
@@ -296,9 +299,9 @@ public:
 			}
 			else //ordered
 			{
-				std::vector<EvaluableNode *> temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
-				value.extendedOrderedChildNodes.orderedChildNodes.~unique_ptr<std::vector<EvaluableNode *>>();
-				new (&value.orderedChildNodes) std::vector<EvaluableNode *>(std::move(temp_ocn));
+				OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
+				value.extendedOrderedChildNodes.orderedChildNodes.~unique_ptr<OrderedType>();
+				new (&value.orderedChildNodes) OrderedType(std::move(temp_ocn));
 			}
 
 			SetExtendedValue(false);
@@ -1046,7 +1049,7 @@ public:
 			GetOrderedChildNodesReference().reserve(to_reserve);
 	}
 
-	__forceinline std::vector<EvaluableNode *> &GetOrderedChildNodes()
+	__forceinline OrderedType &GetOrderedChildNodes()
 	{
 		if(IsOrderedArray())
 			return GetOrderedChildNodesReference();
@@ -1102,15 +1105,30 @@ public:
 	}
 
 	//sets the ordered child nodes and updates flags
-	void SetOrderedChildNodes(const std::vector<EvaluableNode *> &ocn,
-		bool need_cycle_check = true, bool is_idempotent = false);
+	void SetOrderedChildNodes(const OrderedType &ocn, bool need_cycle_check = true, bool is_idempotent = false);
 	//sets the ordered child nodes and updates flags, but can be used as an rvalue so that the memory doesn't
 	//need to be reallocated if std::move is used for the input
-	void SetOrderedChildNodes(std::vector<EvaluableNode *> &&ocn,
-		bool need_cycle_check, bool is_idempotent);
+	void SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check, bool is_idempotent);
+	template<typename ContainerIterator>
+	inline void SetOrderedChildNodes(ContainerIterator first, ContainerIterator last, bool need_cycle_check, bool is_idempotent)
+	{
+		if(!IsOrderedArray())
+			return;
+
+		auto &ocn = GetOrderedChildNodesReference();
+		ocn.assign(first, last);
+
+		SetNeedCycleCheck(need_cycle_check);
+
+		if(is_idempotent && !IsEvaluableNodeTypePotentiallyIdempotent(type))
+			SetIsIdempotent(false);
+		else
+			SetIsIdempotent(is_idempotent);
+	}
+
 	void ClearOrderedChildNodes();
 	void AppendOrderedChildNode(EvaluableNode *cn);
-	void AppendOrderedChildNodes(const std::vector<EvaluableNode *> &ocn_to_append);
+	void AppendOrderedChildNodes(const OrderedType &ocn_to_append);
 	//if the OrderedChildNodes list was using extra memory (if it were resized to be smaller), this would attempt to free extra memory
 	inline void ReleaseOrderedChildNodesExtraMemory()
 	{
@@ -1227,7 +1245,7 @@ public:
 	}
 
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
-	__forceinline std::vector<EvaluableNode *> &GetOrderedChildNodesReference()
+	__forceinline OrderedType &GetOrderedChildNodesReference()
 	{
 		if(!HasExtendedValue())
 			return value.orderedChildNodes;
@@ -1456,10 +1474,10 @@ protected:
 		__forceinline  ~EvaluableNodeValue() { }
 
 		__forceinline void ConstructOrderedChildNodes()
-		{	new (&orderedChildNodes) std::vector<EvaluableNode *>;	}
+		{	new (&orderedChildNodes) OrderedType;	}
 
 		__forceinline void DestructOrderedChildNodes()
-		{	orderedChildNodes.~vector();	}
+		{	orderedChildNodes.~OrderedType();	}
 
 		__forceinline void ConstructMappedChildNodes()
 		{	new (&mappedChildNodes) AssocType;	}
@@ -1471,7 +1489,7 @@ protected:
 		}
 
 		//ordered child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
-		std::vector<EvaluableNode *> orderedChildNodes;
+		OrderedType orderedChildNodes;
 
 		//hash-mapped child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
 		AssocType mappedChildNodes;
@@ -1508,20 +1526,19 @@ protected:
 		{
 			__forceinline void Construct()
 			{
-				new (&orderedChildNodes) std::unique_ptr<std::vector<EvaluableNode *>>(
-					std::make_unique<std::vector<EvaluableNode *>>());
+				new (&orderedChildNodes) std::unique_ptr<OrderedType>(std::make_unique<OrderedType>());
 
 				AnnotationsAndComments::Construct(annotationsAndComments);
 			}
 
 			__forceinline void Destruct()
 			{
-				orderedChildNodes.~unique_ptr<std::vector<EvaluableNode *>>();
+				orderedChildNodes.~unique_ptr<OrderedType>();
 				AnnotationsAndComments::Destruct(annotationsAndComments);
 			}
 
 			//external orderedChildNodes
-			std::unique_ptr<std::vector<EvaluableNode *>> orderedChildNodes;
+			std::unique_ptr<OrderedType> orderedChildNodes;
 
 			AnnotationsAndComments annotationsAndComments;
 		} extendedOrderedChildNodes;
@@ -1626,7 +1643,7 @@ protected:
 	static bool falseBoolValue;
 	static double nanNumberValue;
 	static std::string emptyStringValue;
-	static std::vector<EvaluableNode *> emptyOrderedChildNodes;
+	static OrderedType emptyOrderedChildNodes;
 	static AssocType emptyMappedChildNodes;
 	static AnnotationsAndComments emptyAnnotationsAndComments;
 

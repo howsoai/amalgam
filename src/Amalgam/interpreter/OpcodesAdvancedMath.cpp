@@ -473,7 +473,7 @@ inline static bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, std
 	return true;
 };
 
-inline static bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, double &value)
+inline static bool GetValueFromIndex(EvaluableNode::OrderedType &ocn, size_t i, double &value)
 {
 	if(i >= ocn.size())
 		return false;
@@ -482,7 +482,7 @@ inline static bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i
 	return !FastIsNaN(value);
 };
 
-inline static bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, std::string &value)
+inline static bool GetValueFromIndex(EvaluableNode::OrderedType &ocn, size_t i, std::string &value)
 {
 	if(i >= ocn.size())
 		return false;
@@ -513,7 +513,7 @@ inline static bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
 	return true;
 };
 
-inline static bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
+inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedType &values_ocn,
 	EvaluableNode::AssocType::iterator iter, double &value)
 {
 	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
@@ -527,7 +527,7 @@ inline static bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_
 	return !FastIsNaN(value);
 };
 
-inline static bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
+inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedType &values_ocn,
 	EvaluableNode::AssocType::iterator iter, std::string &value)
 {
 	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
@@ -1909,8 +1909,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 
 	//if the evaluable node for p is a list, then p_values will reference its list,
 	// otherwise if it is an assoc array, it will populate p_copied_values and have p_values point to it
-	std::vector<EvaluableNode *> *p_values = nullptr;
-	std::vector<EvaluableNode *> p_copied_values;
+	EvaluableNode::OrderedType *p_values = nullptr;
+	EvaluableNode::OrderedType p_copied_values;
 
 	auto p_node = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(p_node);
@@ -1949,8 +1949,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 
 	//if the evaluable node for q is a list, then q_values will reference its list,
 	// otherwise if it is an assoc array, it will populate q_copied_values and have q_values point to it
-	std::vector<EvaluableNode *> *q_values = nullptr;
-	std::vector<EvaluableNode *> q_copied_values;
+	EvaluableNode::OrderedType *q_values = nullptr;
+	EvaluableNode::OrderedType q_copied_values;
 
 	auto q_node = EvaluableNodeReference::Null();
 	if(ocn.size() >= 2)

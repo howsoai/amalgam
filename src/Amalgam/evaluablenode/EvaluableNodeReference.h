@@ -415,7 +415,7 @@ public:
 };
 
 //copies ocn into immediate values and value_types
-inline void CopyOrderedChildNodesToImmediateValuesAndTypes(std::vector<EvaluableNode *> &ocn,
+inline void CopyOrderedChildNodesToImmediateValuesAndTypes(EvaluableNode::OrderedType &ocn,
 	std::vector<EvaluableNodeImmediateValueWithType> &values)
 {
 	values.clear();

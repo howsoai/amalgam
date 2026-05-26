@@ -367,7 +367,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 	bool any_successful_remove = false;
 	bool all_successful_removes = true;
 
-	std::vector<EvaluableNode *> labels_to_remove_vector;
+	EvaluableNode::OrderedType labels_to_remove_vector;
 	auto &labels_to_remove_ocn = labels_to_remove_vector;
 	if(EvaluableNode::IsString(labels_to_remove))
 		labels_to_remove_ocn.emplace_back(labels_to_remove);

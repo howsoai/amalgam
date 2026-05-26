@@ -37,7 +37,7 @@ private:
 // does not require weak ordering from cenc
 // merge sort is the preferrable sort due to the lack of weak ordering and bottleneck being interpretation
 //returns a newly sorted list
-std::vector<EvaluableNode *> CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &list, CustomEvaluableNodeComparator &cenc);
+EvaluableNode::OrderedType CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedType &list, CustomEvaluableNodeComparator &cenc);
 
 class EvaluableNodeIDPathTraverser
 {
@@ -159,7 +159,7 @@ public:
 
 	//the node for the id path and a pointer to its ordered child nodes
 	EvaluableNode *idPath;
-	std::vector<EvaluableNode *> *idPathEntries;
+	EvaluableNode::OrderedType *idPathEntries;
 
 	//current index in idPath
 	size_t curIndex;

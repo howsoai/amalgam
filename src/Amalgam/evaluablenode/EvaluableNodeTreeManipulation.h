@@ -105,7 +105,7 @@ public:
 	static CompactHashMap<EvaluableNodeBuiltInStringId, double> mutationOperationTypeProbabilities;
 
 	//functionality to merge two nodes
-	class NodesMergeMethod : public Merger<EvaluableNode *, nullptr, EvaluableNode::AssocType>
+	class NodesMergeMethod : public Merger<EvaluableNode *, nullptr, EvaluableNode::OrderedType, EvaluableNode::AssocType>
 	{
 	public:
 		NodesMergeMethod(EvaluableNodeManager *_enm, bool keep_all_of_both,
@@ -222,7 +222,7 @@ public:
 	};
 
 	//functionality to merge sequences of strings (e.g., for comments)
-	class StringSequenceMergeMetric : public Merger<std::string *>
+	class StringSequenceMergeMetric : public Merger<std::string *, nullptr, std::vector<std::string *>>
 	{
 	public:
 		constexpr StringSequenceMergeMetric(bool keep_all_of_both)
@@ -262,7 +262,7 @@ public:
 	};
 	
 	//functionality to mix utf-8 strings
-	class StringsMixMethodUtf8 : public Merger<uint32_t, 0>
+	class StringsMixMethodUtf8 : public Merger<uint32_t, 0, std::vector<uint32_t>>
 	{
 	public:
 		StringsMixMethodUtf8(RandomStream random_stream, double fraction_a, double fraction_b);

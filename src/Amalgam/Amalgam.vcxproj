@@ -701,6 +701,7 @@
     <ClInclude Include="string\StringManipulation.h" />
     <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="UninitializedArray.h" />
+    <ClInclude Include="Vectors.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="out.txt" />

@@ -114,6 +114,7 @@ set(COMMON_SOURCE
     src/Amalgam/AssetManager.h
     src/Amalgam/BinaryPacking.cpp
     src/Amalgam/BinaryPacking.h
+    src/Amalgam/CompactVector.h
     src/Amalgam/Conviction.h
     src/Amalgam/Cryptography.cpp
     src/Amalgam/Cryptography.h

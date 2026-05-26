@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 //project headers:
+#include "CompactVector.h"
 #include "FastMath.h"
 #include "HashMaps.h"
 #include "OpcodeDetails.h"
@@ -43,7 +44,7 @@ public:
 	using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
 
 	//EvaluableNode ordered storage
-	using OrderedType = std::vector<EvaluableNode *>;
+	using OrderedType = CompactVector<EvaluableNode *>;
 
 	//Storage for labels
 	using LabelsAssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
@@ -141,7 +142,7 @@ public:
 		if(string_id == StringInternPool::NOT_A_STRING_ID)
 		{
 			type = ENT_NULL;
-			value.ConstructOrderedChildNodes();
+			value.orderedChildNodesContainer.Construct();
 		}
 		else
 		{
@@ -165,7 +166,7 @@ public:
 		if(string_id == StringInternPool::NOT_A_STRING_ID)
 		{
 			type = ENT_NULL;
-			value.ConstructOrderedChildNodes();
+			value.orderedChildNodesContainer.Construct();
 		}
 		else
 		{
@@ -184,7 +185,7 @@ public:
 		if(FastIsNaN(number_value))
 		{
 			type = ENT_NULL;
-			value.ConstructOrderedChildNodes();
+			value.orderedChildNodesContainer.Construct();
 		}
 		else
 		{
@@ -273,7 +274,7 @@ public:
 		}
 		else
 		{
-			value.ConstructOrderedChildNodes();
+			value.orderedChildNodesContainer.Construct();
 		}
 	}
 
@@ -296,12 +297,6 @@ public:
 				AssocType temp_mcn = std::move(*value.extendedMappedChildNodes.mappedChildNodes);
 				value.extendedMappedChildNodes.mappedChildNodes.~unique_ptr<AssocType>();
 				new (&value.mappedChildNodes) AssocType(std::move(temp_mcn));
-			}
-			else //ordered
-			{
-				OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
-				value.extendedOrderedChildNodes.orderedChildNodes.~unique_ptr<OrderedType>();
-				new (&value.orderedChildNodes) OrderedType(std::move(temp_ocn));
 			}
 
 			SetExtendedValue(false);
@@ -1035,11 +1030,7 @@ public:
 	inline void InitOrderedChildNodes()
 	{
 		DestructValue();
-
-		if(!HasExtendedValue())
-			value.ConstructOrderedChildNodes();
-		else
-			value.extendedOrderedChildNodes.Construct();
+		value.orderedChildNodesContainer.Construct();
 	}
 
 	//preallocates to_reserve for appending, etc.
@@ -1247,10 +1238,7 @@ public:
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
 	__forceinline OrderedType &GetOrderedChildNodesReference()
 	{
-		if(!HasExtendedValue())
-			return value.orderedChildNodes;
-		else
-			return *value.extendedOrderedChildNodes.orderedChildNodes.get();
+		return value.orderedChildNodesContainer.orderedChildNodes;
 	}
 
 	//assumes that the EvaluableNode is has mapped child nodes, and returns the value by reference
@@ -1265,7 +1253,7 @@ public:
 	//if it is storing an immediate value and has room to store a label
 	inline bool HasCompactAnnotationsAndCommentsStorage()
 	{
-		return (type == ENT_NULL || type == ENT_BOOL || type == ENT_NUMBER || type == ENT_STRING || type == ENT_SYMBOL);
+		return (type != ENT_ASSOC);
 	}
 
 	//returns a reference to the storage location for the annotation and comment storage
@@ -1289,10 +1277,7 @@ public:
 				return value.extendedMappedChildNodes.annotationsAndComments;
 		//otherwise ordered
 		default:
-			if(!HasExtendedValue())
-				return emptyAnnotationsAndComments;
-			else
-				return value.extendedOrderedChildNodes.annotationsAndComments;
+			return value.orderedChildNodesContainer.annotationsAndComments;
 		}
 	}
 
@@ -1473,12 +1458,6 @@ protected:
 		__forceinline  EvaluableNodeValue() { }
 		__forceinline  ~EvaluableNodeValue() { }
 
-		__forceinline void ConstructOrderedChildNodes()
-		{	new (&orderedChildNodes) OrderedType;	}
-
-		__forceinline void DestructOrderedChildNodes()
-		{	orderedChildNodes.~OrderedType();	}
-
 		__forceinline void ConstructMappedChildNodes()
 		{	new (&mappedChildNodes) AssocType;	}
 
@@ -1487,9 +1466,6 @@ protected:
 			string_intern_pool.DestroyStringReferences(mappedChildNodes, [](auto n) { return n.first; });
 			mappedChildNodes.~AssocType();
 		}
-
-		//ordered child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
-		OrderedType orderedChildNodes;
 
 		//hash-mapped child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
 		AssocType mappedChildNodes;
@@ -1522,26 +1498,24 @@ protected:
 			AnnotationsAndComments annotationsAndComments;
 		} boolValueContainer;
 
-		struct EvaluableNodeValueOrderedChildNodesWithAnnotationsAndComments
+		struct EvaluableNodeValueOrderedChildNodes
 		{
 			__forceinline void Construct()
 			{
-				new (&orderedChildNodes) std::unique_ptr<OrderedType>(std::make_unique<OrderedType>());
-
+				new (&orderedChildNodes) OrderedType;
 				AnnotationsAndComments::Construct(annotationsAndComments);
 			}
 
 			__forceinline void Destruct()
 			{
-				orderedChildNodes.~unique_ptr<OrderedType>();
+				orderedChildNodes.~OrderedType();
 				AnnotationsAndComments::Destruct(annotationsAndComments);
 			}
 
-			//external orderedChildNodes
-			std::unique_ptr<OrderedType> orderedChildNodes;
+			OrderedType orderedChildNodes;
 
 			AnnotationsAndComments annotationsAndComments;
-		} extendedOrderedChildNodes;
+		} orderedChildNodesContainer;
 
 		struct EvaluableNodeValueMappedChildNodesWithAnnotationsAndComments
 		{
@@ -1559,7 +1533,7 @@ protected:
 				AnnotationsAndComments::Destruct(annotationsAndComments);
 			}
 
-			//external orderedChildNodes
+			//external mappedChildNodes
 			std::unique_ptr<AssocType> mappedChildNodes;
 
 			AnnotationsAndComments annotationsAndComments;
@@ -1601,15 +1575,7 @@ protected:
 			break;
 			//otherwise ordered
 		default:
-			if(!HasExtendedValue())
-			{
-				value.DestructOrderedChildNodes();
-			}
-			else
-			{
-				value.extendedOrderedChildNodes.Destruct();
-				SetExtendedValue(false);
-			}
+			value.orderedChildNodesContainer.Destruct();
 			break;
 		}
 	}

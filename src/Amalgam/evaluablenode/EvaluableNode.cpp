@@ -363,7 +363,7 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	if(n == nullptr)
 	{
 		type = ENT_NULL;
-		value.ConstructOrderedChildNodes();
+		value.orderedChildNodesContainer.Construct();
 		return;
 	}
 
@@ -419,14 +419,14 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	}
 	else //ordered
 	{
-		value.ConstructOrderedChildNodes();
-		value.orderedChildNodes = n->GetOrderedChildNodesReference();
+		value.orderedChildNodesContainer.Construct();
+		value.orderedChildNodesContainer.orderedChildNodes = n->GetOrderedChildNodesReference();
 
 		//update idempotency
 		if(IsEvaluableNodeTypePotentiallyIdempotent(type))
 		{
 			SetIsIdempotent(true);
-			for(auto &cn : value.orderedChildNodes)
+			for(auto &cn : value.orderedChildNodesContainer.orderedChildNodes)
 			{
 				if(cn != nullptr && !cn->GetIsIdempotent())
 				{
@@ -1067,16 +1067,6 @@ void EvaluableNode::EnsureHasAnnotationsAndCommentsStorage()
 		);
 
 		AnnotationsAndComments::Construct(value.extendedMappedChildNodes.annotationsAndComments);
-	}
-	else //ordered
-	{
-		OrderedType temp_ocn = std::move(value.orderedChildNodes);
-		value.DestructOrderedChildNodes();
-		new (&value.extendedOrderedChildNodes.orderedChildNodes) std::unique_ptr<OrderedType>(
-			std::make_unique<OrderedType>(std::move(temp_ocn))
-		);
-
-		AnnotationsAndComments::Construct(value.extendedOrderedChildNodes.annotationsAndComments);
 	}
 
 	SetExtendedValue(true);

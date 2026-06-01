@@ -19,13 +19,13 @@ class RandomStream
 public:
 	constexpr RandomStream()
 		: increment(0), state(0)
-	{	}
+	{}
 
 	RandomStream(const std::string initial_state);
 
 	constexpr RandomStream(const RandomStream &stream)
-		: increment(stream.increment),  state(stream.state)
-	{	}
+		: increment(stream.increment), state(stream.state)
+	{}
 
 	//gets the current state of the random stream in string form
 	std::string GetState();
@@ -65,7 +65,7 @@ public:
 
 		if(max_size < std::numeric_limits<uint32_t>::max())
 			return (RandUInt32() % max_size);
-		
+
 		//else 64-bit
 		size_t r = ((static_cast<size_t>(RandUInt32()) << 32) | RandUInt32());
 		return r % max_size;
@@ -127,18 +127,18 @@ public:
 
 	typedef std::vector<std::pair<QueueElementType, uint32_t>> PriorityQueueContainerType;
 
-	StochasticTieBreakingPriorityQueue() : 
+	StochasticTieBreakingPriorityQueue() :
 		priorityQueue(StochasticTieBreakingComparator())
-	{	}
+	{}
 
 	//seeds the priority queue
 	StochasticTieBreakingPriorityQueue(std::string seed)
 		: priorityQueue(StochasticTieBreakingComparator()), randomStream(seed)
-	{	}
+	{}
 
 	StochasticTieBreakingPriorityQueue(RandomStream stream)
 		: priorityQueue(StochasticTieBreakingComparator()), randomStream(stream)
-	{	}
+	{}
 
 	__forceinline void SetSeed(std::string seed)
 	{

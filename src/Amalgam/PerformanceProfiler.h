@@ -19,12 +19,12 @@ namespace PerformanceProfiler
 	{
 		return _profiler_enabled;
 	}
-	
+
 	//begins performance timers for the specified operation type, specified by the string t
 	// pushes current instruction on the stack, such that it will be cleared when the
 	// corresponding EndOperation is called
 	void StartOperation(const std::string &t, int64_t memory_use);
-	
+
 	void EndOperation(int64_t memory_use);
 
 #if defined(MULTITHREAD_SUPPORT)
@@ -46,7 +46,7 @@ namespace PerformanceProfiler
 	size_t GetTotalNumCalls();
 
 	std::pair<int64_t, int64_t> GetTotalAndPositiveMemoryIncreases();
-	
+
 	std::vector<std::pair<std::string, size_t>> GetNumCallsByType();
 
 	std::vector<std::pair<std::string, double>> GetNumCallsByTotalTimeExclusive();

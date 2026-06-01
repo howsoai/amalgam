@@ -311,6 +311,6 @@ std::string DecompressString(BinaryData &encoded_string_library)
 		std::string cur_decoded = DecodeStringFromHuffmanTree(encoded_strings, huffman_tree);
 		decompressed_string += cur_decoded;
 	}
-	
+
 	return decompressed_string;
 }

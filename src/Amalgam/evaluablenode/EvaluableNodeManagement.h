@@ -22,8 +22,8 @@ struct ConstructionStackEntry
 {
 	inline ConstructionStackEntry(EvaluableNode *target_origin, EvaluableNode *_target,
 		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
-		EvaluableNodeReference previous_result)
-		: targetOrigin(target_origin), target(_target), index(current_index),
+		EvaluableNodeReference previous_result) :
+			targetOrigin(target_origin), target(_target), index(current_index),
 			currentValue(current_value), previousResult(previous_result),
 			previousResultUnique(previous_result.unique),
 			previousResultUniqueUnreferencedTopNode(previous_result.uniqueUnreferencedTopNode),
@@ -173,7 +173,7 @@ public:
 
 	EvaluableNodeManager() :
 		numNodesToRunGarbageCollection(200), firstUnusedNodeIndex(0)
-	{	}
+	{}
 
 	~EvaluableNodeManager();
 
@@ -223,7 +223,9 @@ public:
 	}
 
 	inline EvaluableNode *AllocNode(EvaluableNodeType type, StringRef &sir)
-	{	return AllocNode(type, static_cast<StringInternPool::StringID>(sir));	}
+	{
+		return AllocNode(type, static_cast<StringInternPool::StringID>(sir));
+	}
 
 	inline EvaluableNode *AllocNode(bool bool_value)
 	{
@@ -283,7 +285,7 @@ public:
 		bool copy_metadata = true)
 	{
 		if(original != nullptr
-				&& (original.uniqueUnreferencedTopNode || (original.unique && !ensure_copy_if_top_node_in_cycle) ) )
+				&& (original.uniqueUnreferencedTopNode || (original.unique && !ensure_copy_if_top_node_in_cycle)))
 			return;
 
 		EvaluableNode *copy = AllocNode(original.GetReference(), copy_metadata);
@@ -308,7 +310,7 @@ public:
 	{
 		inline DeepAllocCopyParams(bool copy_metadata = true)
 			: copyMetadata(copy_metadata)
-		{	}
+		{}
 
 		EvaluableNode::ReferenceAssocType references;
 		bool copyMetadata;
@@ -450,7 +452,7 @@ public:
 		AmlgAssert(enr == nullptr || enr->IsNodeValid());
 	#endif
 
-		if( (enr.unique || enr.uniqueUnreferencedTopNode) && enr != nullptr)
+		if((enr.unique || enr.uniqueUnreferencedTopNode) && enr != nullptr)
 		{
 			enr->Invalidate();
 			AddNodeToLocalAllocationBuffer(enr);
@@ -704,7 +706,7 @@ public:
 
 			//double check that it's still nullptr in case another thread created it
 			if(activeInterpreters.get() == nullptr)
-		#endif
+			#endif
 				activeInterpreters = std::make_unique<ActiveInterpreters>();
 		}
 
@@ -727,14 +729,20 @@ public:
 
 	//returns the number of nodes currently being used that have not been freed yet
 	__forceinline size_t GetNumberOfUsedNodes()
-	{	return firstUnusedNodeIndex;		}
+	{
+		return firstUnusedNodeIndex;
+	}
 
 	__forceinline size_t GetNumberOfUnusedNodes()
-	{	return nodes.size() - firstUnusedNodeIndex;		}
+	{
+		return nodes.size() - firstUnusedNodeIndex;
+	}
 
 	//returns all nodes still in use.  For debugging purposes
 	std::vector<EvaluableNode *> GetUsedNodes()
-	{	return std::vector<EvaluableNode *>(begin(nodes), begin(nodes) + firstUnusedNodeIndex);	}
+	{
+		return std::vector<EvaluableNode *>(begin(nodes), begin(nodes) + firstUnusedNodeIndex);
+	}
 
 	//returns an estimate of the amount of memory allocated by the nodes managed
 	// only an estimate because the platform's underlying memory management system may need to allocate additional
@@ -767,7 +775,7 @@ public:
 		inline LocalAllocationBufferPause()
 			: localAllocationBufferLocation(nullptr), lastEvaluableNodeManagerLocation(nullptr),
 			paused(false), prevLastEvaluableNodeManager(nullptr)
-		{	}
+		{}
 
 		inline LocalAllocationBufferPause(LocalAllocationBuffer &lab)
 		{
@@ -809,7 +817,7 @@ public:
 		//one per thread to reduce memory churn
 	#if defined(MULTITHREAD_SUPPORT)
 		thread_local
-	#endif
+		#endif
 			static inline std::vector<EvaluableNode *> prevLocalAllocationBuffer;
 	};
 
@@ -903,9 +911,10 @@ protected:
 
 	//local memory pool for allocations
 #if defined(MULTITHREAD_SUPPORT)
-	thread_local
-#endif
-		inline static LocalAllocationBuffer localAllocationBuffer;
+	thread_local inline static LocalAllocationBuffer localAllocationBuffer;
+#else
+	inline static LocalAllocationBuffer localAllocationBuffer;
+#endif		
 
 	//debug diagnostic variables for localAllocationBuffer
 #ifdef DEBUG_REPORT_LAB_USAGE

@@ -216,7 +216,7 @@ std::pair<StringInternPool::StringID, bool> Entity::GetValueAtLabelAsStringIdWit
 	const auto &label = label_index.find(label_sid);
 	if(label == end(label_index))
 		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
-	
+
 	return std::pair(EvaluableNode::ToStringIDWithReference(label->second, key_string), true);
 }
 
@@ -515,10 +515,10 @@ size_t Entity::GetDeepSizeInNodes()
 size_t Entity::GetEstimatedReservedDeepSizeInBytes()
 {
 	size_t total_size = evaluableNodeManager.GetEstimatedTotalReservedSizeInBytes();
-	
+
 	for(auto entity : GetContainedEntities())
 		total_size += entity->GetEstimatedReservedDeepSizeInBytes();
-	
+
 	return total_size;
 }
 
@@ -543,7 +543,7 @@ static constexpr std::array<char, 62> _base_62_digits = [] {
 	for(char c = 'A'; c <= 'Z'; c++)
 		a[i++] = c;
 	return a;
-}();
+	}();
 
 //powers of 62 for 62-base encoding
 static constexpr std::array<uint64_t, 11> _powers_of_62 = [] {
@@ -552,7 +552,7 @@ static constexpr std::array<uint64_t, 11> _powers_of_62 = [] {
 	for(std::size_t i = 1; i < powers.size(); i++)
 		powers[i] = powers[i - 1] * 62ULL;
 	return powers;
-}();
+	}();
 
 //encodes high_and low into a base 62 string starting with an underscore
 //this encoding uses only characters that are available across all major file systems and thus do not need escaping
@@ -591,7 +591,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 	size_t t_index = contained_entities.size();
 
 	StringInternPool::StringID previous_t_sid = t->idStringId;
-	
+
 	//autoassign an ID if not specified
 	if(id_sid == StringInternPool::NOT_A_STRING_ID)
 	{
@@ -601,7 +601,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 			new_id = EncodeBase62(randomStream.RandUInt32(), randomStream.RandUInt32());
 
 			t->idStringId = string_intern_pool.CreateStringReference(new_id);
-			
+
 			//if not currently in use, then use it and stop searching
 			if(id_to_index_lookup.emplace(t->idStringId, t_index).second == true)
 				break;
@@ -726,7 +726,7 @@ void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<En
 	size_t index_to_remove = id_to_index_it_to_remove->second;
 	size_t index_to_replace = contained_entities.size() - 1;
 	Entity *entity_to_remove = contained_entities[index_to_remove];
-		
+
 	//record the entity as being deleted
 	if(write_listeners != nullptr)
 	{

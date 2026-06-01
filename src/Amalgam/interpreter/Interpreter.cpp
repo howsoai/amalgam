@@ -37,7 +37,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 #ifdef MULTITHREAD_SUPPORT
 	, bool new_scope_stack
 #endif
-	)
+)
 {
 	//use specified or create new scopeStack
 	if(scope_stack == nullptr)
@@ -71,7 +71,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		constructionStack.clear();
 	else
 		constructionStack = std::move(*construction_stack);
-	
+
 	evaluableNodeManager->AddActiveInterpreter(this);
 	auto retval = InterpretNode(en, immediate_result);
 	evaluableNodeManager->RemoveActiveInterpreter(this);
@@ -436,7 +436,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluabl
 
 	if(result == nullptr || !result.unique)
 		return EvaluableNodeReference(evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
-												EvaluableNode::ToStringIDWithReference(result)), true);
+			EvaluableNode::ToStringIDWithReference(result)), true);
 
 	result->ClearMetadata();
 
@@ -470,7 +470,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueNumberValueOrNullEval
 
 	if(result == nullptr || !result.unique)
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(result)), true);
-	
+
 	result->ClearMetadata();
 
 	auto type = result->GetType();
@@ -722,7 +722,7 @@ bool Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 	{
 		interpreter_constraints.collectWarnings = any_constraints;
 	}
-	
+
 	return any_constraints;
 }
 

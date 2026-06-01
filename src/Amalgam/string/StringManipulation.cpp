@@ -128,7 +128,7 @@ std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_str
 std::vector<std::string> StringManipulation::Split(const std::string &s, char delim)
 {
 	std::vector<std::string> ret;
-	std::stringstream ss { s };
+	std::stringstream ss{ s };
 	std::string item;
 
 	while(std::getline(ss, item, delim))
@@ -256,7 +256,7 @@ std::string StringManipulation::Base64ToBinaryString(std::string &base64_string)
 
 	std::string binary_string;
 	//resize quads to triples
-	binary_string.reserve( ((known_full_quads + 2) * 3) / 4);
+	binary_string.reserve(((known_full_quads + 2) * 3) / 4);
 
 	//iterate over quads, but don't use <= because don't want to include last quad,
 	// same reasoning as known_full_quads
@@ -397,7 +397,7 @@ int StringManipulation::StringNaturalCompare(const std::string &a, const std::st
 		//skip over spaces
 		while(a_index < a.size() && std::isspace(static_cast<unsigned char>(a[a_index])))
 			a_index++;
-		
+
 		//skip over spaces
 		while(b_index < b.size() && std::isspace(static_cast<unsigned char>(b[b_index])))
 			b_index++;
@@ -417,7 +417,7 @@ int StringManipulation::StringNaturalCompare(const std::string &a, const std::st
 			return +1;
 
 		a_value = a[a_index];
-		b_value = b[b_index];			
+		b_value = b[b_index];
 
 		//check for group of digits
 		if(StringManipulation::IsUtf8ArabicNumerals(a_value)

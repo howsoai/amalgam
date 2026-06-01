@@ -13,8 +13,8 @@
 
 //system headers:
 #include <filesystem>
-#include <string>
 #include <sstream>
+#include <string>
 #include <tuple>
 
 const std::string FILE_EXTENSION_AMLG_METADATA("mdam");
@@ -181,9 +181,6 @@ public:
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity
 	//if the resource does not have a metadata file, will use default_random_seed as its seed
 	Entity *LoadEntityFromResource(AssetParametersRef &asset_params, bool persistent,
-		std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
-
-	Entity *LoadEntityFromMemory(void *data, size_t len, AssetParametersRef &asset_params, bool persistent,
 		std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Flattens entity piece-by-piece in a manner to reduce memory when storing
@@ -367,7 +364,7 @@ public:
 
 					//don't escape filename again because it's already escaped in this loop
 					if(!StoreEntityToResource(contained_entity, ce_asset_params,
-							update_persistence, persistent, true, all_contained_entities))
+						update_persistence, persistent, true, all_contained_entities))
 						return false;
 				}
 			}

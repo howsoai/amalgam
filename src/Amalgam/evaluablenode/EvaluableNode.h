@@ -71,11 +71,26 @@ public:
 	};
 
 	//constructors
-	__forceinline EvaluableNode() { InitializeUnallocated(); }
-	__forceinline EvaluableNode(EvaluableNodeType type, const std::string &string_value) { InitializeType(type, string_value); }
-	__forceinline EvaluableNode(double value) { InitializeType(value); }
-	__forceinline EvaluableNode(EvaluableNodeType type) { InitializeType(type); }
-	__forceinline EvaluableNode(EvaluableNode *n, bool copy_metadata = true) { InitializeType(n, copy_metadata); }
+	__forceinline EvaluableNode()
+	{
+		InitializeUnallocated();
+	}
+	__forceinline EvaluableNode(EvaluableNodeType type, const std::string &string_value)
+	{
+		InitializeType(type, string_value);
+	}
+	__forceinline EvaluableNode(double value)
+	{
+		InitializeType(value);
+	}
+	__forceinline EvaluableNode(EvaluableNodeType type)
+	{
+		InitializeType(type);
+	}
+	__forceinline EvaluableNode(EvaluableNode *n, bool copy_metadata = true)
+	{
+		InitializeType(n, copy_metadata);
+	}
 
 	__forceinline ~EvaluableNode()
 	{
@@ -325,7 +340,7 @@ public:
 	__forceinline bool HasMetadata()
 	{
 		auto &a_and_c = GetAnnotationsAndCommentsStorage();
-		return (a_and_c.HasCommentOrAnnotation()  || GetConcurrency());
+		return (a_and_c.HasCommentOrAnnotation() || GetConcurrency());
 	}
 
 	//Returns true if the immediate data structure of a is equal to b
@@ -1301,7 +1316,7 @@ public:
 				return emptyAnnotationsAndComments;
 			else
 				return value.extendedMappedChildNodes.annotationsAndComments;
-		//otherwise ordered
+			//otherwise ordered
 		default:
 			if(!HasExtendedValue())
 				return emptyAnnotationsAndComments;
@@ -1484,17 +1499,25 @@ protected:
 	{
 		//take care of all setup and cleanup outside of the union
 		// default to numberAndNullValueContainer constructor to allow constexpr
-		__forceinline  EvaluableNodeValue() { }
-		__forceinline  ~EvaluableNodeValue() { }
+		__forceinline  EvaluableNodeValue()
+		{}
+		__forceinline  ~EvaluableNodeValue()
+		{}
 
 		__forceinline void ConstructOrderedChildNodes()
-		{	new (&orderedChildNodes) OrderedType;	}
+		{
+			new (&orderedChildNodes) OrderedType;
+		}
 
 		__forceinline void DestructOrderedChildNodes()
-		{	orderedChildNodes.~OrderedType();	}
+		{
+			orderedChildNodes.~OrderedType();
+		}
 
 		__forceinline void ConstructMappedChildNodes()
-		{	new (&mappedChildNodes) AssocType;	}
+		{
+			new (&mappedChildNodes) AssocType;
+		}
 
 		__forceinline void DestructMappedChildNodes()
 		{

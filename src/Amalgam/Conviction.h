@@ -2,8 +2,10 @@
 
 //project headers:
 #include "EntityQueriesStatistics.h"
+#include "EvaluableNode.h"
+#include "EvaluableNodeReference.h"
+#include "IntegerSet.h"
 #include "KnnCache.h"
-#include "SeparableBoxFilterDataStore.h"
 
 //system headers:
 #include <numeric>

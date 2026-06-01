@@ -672,16 +672,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
 			&scope_stack, called_entity == curEntity, this, cur_write_listeners, printListener,
 			interpreter_constraints_ptr, immediate_result
-	#ifdef MULTITHREAD_SUPPORT
+#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
-	#endif
+#endif
 		);
 	else
 		result = called_entity->ExecuteOnEntity(function, &scope_stack, this, cur_write_listeners, printListener,
 			interpreter_constraints_ptr, immediate_result
-	#ifdef MULTITHREAD_SUPPORT
+#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
-	#endif
+#endif
 		);
 
 	//can't free args if the result might contain them

@@ -116,7 +116,7 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 				else
 					return new Entity(b);
 			}
-			
+
 			return nullptr;
 		}
 	}
@@ -434,7 +434,7 @@ MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *ent
 	{
 		commonality += NumberOfSharedNodes(entity1_unmatched[entity_name], entity2_unmatched[entity_name],
 			types_must_match, nominal_numbers, nominal_strings, recursive_matching);
-		
+
 		entity1_unmatched.erase(entity_name);
 		entity2_unmatched.erase(entity_name);
 	}
@@ -455,7 +455,7 @@ MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *ent
 			match_value.mustMatch = false;
 
 			if(match_value.IsNontrivialMatch()
-				&& (!best_match_found || match_value > best_match_value) )
+				&& (!best_match_found || match_value > best_match_value))
 			{
 				best_match_found = true;
 				best_match_value = match_value;
@@ -507,7 +507,7 @@ void EntityManipulation::MergeContainedEntities(EntitiesMergeMethod *mm, Entity 
 
 	//any entity that is renamed that may have references is stored here
 	CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> entities_renamed;
-	
+
 	//keep track of contained entities to merge
 	Entity::EntityLookupAssocType entity1_unmatched = CreateContainedEntityLookupByStringId(entity1);
 	Entity::EntityLookupAssocType entity2_unmatched = CreateContainedEntityLookupByStringId(entity2);
@@ -574,7 +574,7 @@ void EntityManipulation::MergeContainedEntities(EntitiesMergeMethod *mm, Entity 
 				mm->TypesMustMatch(), mm->NominalNumbers(), mm->NominalStrings(), mm->RecursiveMatching());
 
 			if(match_value.IsNontrivialMatch()
-				&& (!best_match_found || match_value > best_match_value) )
+				&& (!best_match_found || match_value > best_match_value))
 			{
 				best_match_found = true;
 				best_match_value = match_value;

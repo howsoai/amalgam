@@ -10,18 +10,21 @@ trim_trailing_whitespace = true
 
 # Visual C++ Code Style settings
 
-cpp_generate_documentation_comments = xml
+cpp_generate_documentation_comments = doxygen_triple_slash
 
 # Visual C++ Formatting settings
 
 cpp_indent_braces = false
+cpp_indent_constructor_initializers = true
+cpp_indent_template_declaration = false
+cpp_constructor_initializer_indent_style = double_indent
 cpp_indent_multi_line_relative_to = innermost_parenthesis
 cpp_indent_within_parentheses = indent
 cpp_indent_preserve_within_parentheses = true
 cpp_indent_case_contents = true
 cpp_indent_case_labels = false
 cpp_indent_case_contents_when_block = false
-cpp_indent_lambda_braces_when_parameter = false
+cpp_indent_lambda_braces_when_parameter = true
 cpp_indent_goto_labels = none
 cpp_indent_preprocessor = one_left
 cpp_indent_access_specifiers = false
@@ -31,7 +34,7 @@ cpp_new_line_before_open_brace_namespace = new_line
 cpp_new_line_before_open_brace_type = new_line
 cpp_new_line_before_open_brace_function = new_line
 cpp_new_line_before_open_brace_block = new_line
-cpp_new_line_before_open_brace_lambda = ignore
+cpp_new_line_before_open_brace_lambda = true
 cpp_new_line_scope_braces_on_separate_lines = false
 cpp_new_line_close_brace_same_line_empty_type = true
 cpp_new_line_close_brace_same_line_empty_function = true
@@ -74,14 +77,14 @@ cpp_space_around_ternary_operator = insert
 cpp_use_unreal_engine_macro_formatting = false
 cpp_wrap_preserve_blocks = never
 
-# Visual C++ Inlcude Cleanup settings
+# Visual C++ Include Cleanup settings
 
-cpp_include_cleanup_add_missing_error_tag_type = suggestion
+cpp_include_cleanup_add_missing_error_tag_type = none
 cpp_include_cleanup_remove_unused_error_tag_type = dimmed
 cpp_include_cleanup_optimize_unused_error_tag_type = suggestion
-cpp_include_cleanup_sort_after_edits = false
-cpp_sort_includes_error_tag_type = none
+cpp_include_cleanup_sort_after_edits = true
+cpp_sort_includes_error_tag_type = suggestion
 cpp_sort_includes_priority_case_sensitive = false
 cpp_sort_includes_priority_style = quoted
 cpp_includes_style = default
-cpp_includes_use_forward_slash = false
+cpp_includes_use_forward_slash = true

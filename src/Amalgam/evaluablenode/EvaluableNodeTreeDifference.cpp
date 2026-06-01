@@ -16,7 +16,7 @@ EvaluableNode *EvaluableNodeTreeDifference::NodesMergeForDifferenceMethod::Merge
 		if(b != nullptr)
 			bNodesIncluded[b] = result;
 	}
-	
+
 	return result;
 }
 
@@ -217,7 +217,7 @@ void EvaluableNodeTreeDifference::FindParentReferences(EvaluableNode *tree, Eval
 {
 	if(tree == nullptr)
 		return;
-	
+
 	//attempt to record the reference, but if already processed, skip
 	if(references_with_parents.emplace(tree, parent).second == false)
 		return;
@@ -243,7 +243,7 @@ void EvaluableNodeTreeDifference::FindTopNodesExcluded(EvaluableNode *tree, Eval
 	//attempt to record the reference, but if already processed, skip (also prevents infinite recursion in graph structures)
 	if(references_with_parents.emplace(tree, parent).second == false)
 		return;
-	
+
 	//if included, traverse tree, if not, insert as top excluded node
 	auto included_node_found = nodes_included.find(tree);
 	if(included_node_found == end(nodes_included))

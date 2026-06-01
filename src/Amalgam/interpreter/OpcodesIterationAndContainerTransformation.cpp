@@ -162,7 +162,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 		}
 
 		PopConstructionContextAndGetExecutionSideEffectFlag();
-		
+
 		return nullptr;
 	}
 

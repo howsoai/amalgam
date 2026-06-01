@@ -113,7 +113,7 @@ public:
 			: enm(_enm), keepAllOfBoth(keep_all_of_both),
 			typesMustMatch(types_must_match), nominalNumbers(nominal_numbers), nominalStrings(nominal_strings),
 			recursiveMatching(recursive_matching)
-		{	}
+		{}
 
 		virtual MergeMetricResults<EvaluableNode *> MergeMetric(EvaluableNode *a, EvaluableNode *b)
 		{
@@ -121,24 +121,38 @@ public:
 		}
 
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false)
-		{	return MergeTrees(this, a, b);	}
+		{
+			return MergeTrees(this, a, b);
+		}
 
 		virtual bool KeepAllNonMergeableValues()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool KeepSomeNonMergeableValues()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool KeepNonMergeableValue()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool KeepNonMergeableAInsteadOfB()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool KeepNonMergeableA()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 		virtual bool KeepNonMergeableB()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool AreMergeable(EvaluableNode *a, EvaluableNode *b)
 		{
@@ -147,19 +161,29 @@ public:
 		}
 
 		virtual EvaluableNode::ReferenceAssocType &GetReferences()
-		{	return references;	}
+		{
+			return references;
+		}
 
 		constexpr bool TypesMustMatch()
-		{	return typesMustMatch;		}
+		{
+			return typesMustMatch;
+		}
 
 		constexpr bool NominalNumbers()
-		{	return nominalNumbers;		}
+		{
+			return nominalNumbers;
+		}
 
 		constexpr bool NominalStrings()
-		{	return nominalStrings;		}
+		{
+			return nominalStrings;
+		}
 
 		constexpr bool RecursiveMatching()
-		{	return recursiveMatching;		}
+		{
+			return recursiveMatching;
+		}
 
 		//use for allocating
 		EvaluableNodeManager *enm;
@@ -184,10 +208,14 @@ public:
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false);
 
 		virtual bool KeepAllNonMergeableValues()
-		{	return false;	}
+		{
+			return false;
+		}
 
 		virtual bool KeepSomeNonMergeableValues()
-		{	return true;	}
+		{
+			return true;
+		}
 
 		virtual bool KeepNonMergeableValue()
 		{
@@ -227,28 +255,40 @@ public:
 	public:
 		constexpr StringSequenceMergeMetric(bool keep_all_of_both)
 			: keepAllOfBoth(keep_all_of_both)
-		{	}
+		{}
 
 		virtual MergeMetricResults<std::string *> MergeMetric(std::string *a, std::string *b);
 
 		virtual std::string *MergeValues(std::string *a, std::string *b, bool must_merge = false);
 
 		virtual bool KeepAllNonMergeableValues()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool KeepSomeNonMergeableValues()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool KeepNonMergeableValue()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool KeepNonMergeableAInsteadOfB()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool KeepNonMergeableA()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 		virtual bool KeepNonMergeableB()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool AreMergeable(std::string *a, std::string *b)
 		{
@@ -260,7 +300,7 @@ public:
 	protected:
 		bool keepAllOfBoth;
 	};
-	
+
 	//functionality to mix utf-8 strings
 	class StringsMixMethodUtf8 : public Merger<uint32_t, 0, std::vector<uint32_t>>
 	{
@@ -288,10 +328,14 @@ public:
 		}
 
 		virtual bool KeepAllNonMergeableValues()
-		{	return false;	}
+		{
+			return false;
+		}
 
 		virtual bool KeepSomeNonMergeableValues()
-		{	return true;	}
+		{
+			return true;
+		}
 
 		virtual bool KeepNonMergeableValue()
 		{
@@ -313,7 +357,9 @@ public:
 		}
 
 		virtual bool AreMergeable(uint32_t a, uint32_t b)
-		{	return a == b;	}
+		{
+			return a == b;
+		}
 
 	protected:
 		RandomStream randomStream;
@@ -373,7 +419,7 @@ public:
 
 		//prevent the relative term from blowing up when max_abs is tiny
 		const double abs_diff = std::fabs(n1 - n2);
-		
+
 		//blend the two differences
 		const double blended = 0.875 * rel_diff + 0.125 * std::min(abs_diff, 1.0);
 
@@ -422,7 +468,7 @@ public:
 			return a_size;
 
 		ComputeSequenceCommonalityMatrix(sequence_commonality_buffer, a, b,
-			[] (ElementType a, ElementType b)
+			[](ElementType a, ElementType b)
 			{
 				return (a == b ? 1 : 0);
 			});

@@ -120,7 +120,7 @@ public:
 
 	//like Parse, but applies on the current object and only returns the first node
 	std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> ParseFirstNode();
-	
+
 	//intended to be called after ParseFirstNode, returns the next transaction block
 	std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> ParseNextTransactionalBlock();
 
@@ -308,7 +308,7 @@ protected:
 	// if need_initial_indent is true, then it will perform an indentation before generating the first code,
 	// otherwise, will assume the indentation is already where it should be
 	static void Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *parent, bool expanded_whitespace, size_t indentation_depth, bool need_initial_indent);
-	
+
 	//given a path starting at path's parent, parses the path and returns the target location
 	EvaluableNode *GetNodeFromRelativeCodePath(EvaluableNode *path);
 

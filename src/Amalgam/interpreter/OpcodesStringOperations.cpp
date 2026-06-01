@@ -155,14 +155,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, E
 	auto [valid_string_to_split, string_to_split] = InterpretNodeIntoStringValue(ocn[0]);
 	if(!valid_string_to_split)
 	{
-		retval->SetType(ENT_NULL, nullptr, false);
+		retval->SetType(ENT_NULL, false);
 		return retval;
 	}
 
 	auto [valid_split_value, split_value] = InterpretNodeIntoStringValue(ocn[1]);
 	if(!valid_split_value)
 	{
-		retval->SetType(ENT_NULL, nullptr, false);
+		retval->SetType(ENT_NULL, false);
 		return retval;
 	}
 

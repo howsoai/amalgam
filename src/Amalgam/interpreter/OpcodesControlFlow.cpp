@@ -640,7 +640,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 	if(source == nullptr)
 		source.SetReference(evaluableNodeManager->AllocNode(ENT_NULL));
 	evaluableNodeManager->EnsureNodeIsModifiable(source);
-	source->SetType(new_type, evaluableNodeManager, true);
+	source->SetType(new_type, true);
 
 	//prepend any params
 	if(source->IsOrderedArray())

@@ -458,8 +458,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 	{
 		ClearOrderedChildNodes();
 		ClearMappedChildNodes();
-		//doesn't need an EvaluableNodeManager because not converting child nodes from one type to another
-		SetType(ENT_NULL, nullptr, false);
+		SetType(ENT_NULL, false);
 		return;
 	}
 
@@ -469,8 +468,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 	AmlgAssert(IsEvaluableNodeTypeValid(cur_type));
 #endif
 
-	//doesn't need an EvaluableNodeManager because not converting child nodes from one type to another
-	SetType(cur_type, nullptr, false);
+	SetType(cur_type, false);
 
 	if(DoesEvaluableNodeTypeUseAssocData(cur_type))
 	{
@@ -525,8 +523,7 @@ void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 	SetConcurrency(n->GetConcurrency());
 }
 
-void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm,
-	bool attempt_to_preserve_value)
+void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve_value)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	AmlgAssert(IsEvaluableNodeTypeValid(new_type));
@@ -650,7 +647,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	}
 	else //ordered pairs
 	{
-		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseAssocData(cur_type) && enm != nullptr)
+		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseAssocData(cur_type))
 		{
 			OrderedType new_ordered;
 			auto &mcn = GetMappedChildNodesReference();
@@ -690,7 +687,7 @@ void EvaluableNode::SetStringID(StringInternPool::StringID id)
 {
 	if(id == StringInternPool::NOT_A_STRING_ID)
 	{
-		SetType(ENT_NULL, nullptr, false);
+		SetType(ENT_NULL, false);
 	}
 	else
 	{
@@ -747,7 +744,7 @@ void EvaluableNode::SetStringIDWithReferenceHandoff(StringInternPool::StringID i
 {
 	if(id == StringInternPool::NOT_A_STRING_ID)
 	{
-		SetType(ENT_NULL, nullptr, false);
+		SetType(ENT_NULL, false);
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(GetType()))
 	{

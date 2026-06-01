@@ -1474,7 +1474,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en
 	if(new_type == ENT_NOT_A_BUILT_IN_TYPE)
 		new_type = ENT_NULL;
 
-	source->SetType(new_type, evaluableNodeManager, true);
+	source->SetType(new_type, true);
 
 	return source;
 }

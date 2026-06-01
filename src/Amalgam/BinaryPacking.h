@@ -17,8 +17,7 @@ public:
 	constexpr HuffmanTree(value_type value, size_t value_frequency, size_t node_index,
 		HuffmanTree<value_type> *left = nullptr, HuffmanTree<value_type> *right = nullptr)
 		: value(value), valueFrequency(value_frequency), nodeIndex(node_index), left(left), right(right)
-	{
-	}
+	{}
 
 	inline ~HuffmanTree()
 	{

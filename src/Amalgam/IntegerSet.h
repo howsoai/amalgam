@@ -17,7 +17,7 @@ class SortedIntegerSet
 public:
 
 	SortedIntegerSet()
-	{	}
+	{}
 
 	template<typename Collection>
 	SortedIntegerSet(const Collection &other)
@@ -233,7 +233,7 @@ public:
 
 	//does not need to do anything, just conforming to the interface
 	constexpr void UpdateNumElements()
-	{	}
+	{}
 
 	//sets this to the set that contains all elements of itself or other
 	template<typename Container>
@@ -342,11 +342,11 @@ public:
 	{
 		constexpr Iterator()
 			: bucket(0), bit(0), hash(nullptr)
-		{	}
+		{}
 
 		constexpr Iterator(BitArrayIntegerSet *_hash, size_t _bucket, size_t _bit)
 			: bucket(_bucket), bit(_bit), hash(_hash)
-		{	}
+		{}
 
 		constexpr Iterator operator =(const Iterator &other)
 		{
@@ -1267,7 +1267,7 @@ public:
 
 	EfficientIntegerSet()
 		: isSisContainer(true)
-	{	}
+	{}
 
 	//assignment operator, deep copies
 	inline void operator =(const EfficientIntegerSet &other)
@@ -1333,7 +1333,7 @@ public:
 		}
 
 		~Iterator()
-		{	}
+		{}
 
 		inline Iterator operator =(const Iterator &other)
 		{

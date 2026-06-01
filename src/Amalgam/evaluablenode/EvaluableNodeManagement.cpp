@@ -24,7 +24,7 @@ EvaluableNodeManager::~EvaluableNodeManager()
 #else
 	localAllocationBuffer.Clear(this);
 #endif
-	
+
 	for(auto &n : nodes)
 		delete n;
 }
@@ -91,7 +91,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 	//clear regardless of what's in the buffer
 	// the clear by the thread that gets selected for GC below will catch and clear any threads that have gone inactive
 	localAllocationBuffer.Clear();
-	
+
 	//free lock so can attempt to enter write lock to collect garbage
 	memory_modification_lock.unlock();
 
@@ -173,7 +173,7 @@ void EvaluableNodeManager::FreeAllNodes()
 	}
 
 	firstUnusedNodeIndex = 0;
-	
+
 	UpdateGarbageCollectionTrigger(original_num_nodes);
 
 	localAllocationBuffer.Clear(this);
@@ -186,7 +186,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(labCountMutex);
 	#endif
-	
+
 		labSize += localAllocationBuffer.buffer.size();
 		labSizeCount++;
 
@@ -236,7 +236,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	read_lock.unlock();
 
 	//don't have enough nodes, so need to attempt a write lock to allocate more
-	Concurrency::WriteLock write_lock(managerAttributesMutex);	
+	Concurrency::WriteLock write_lock(managerAttributesMutex);
 #endif
 
 	size_t num_nodes = nodes.size();
@@ -433,7 +433,7 @@ size_t EvaluableNodeManager::GetEstimatedTotalReservedSizeInBytes()
 	size_t total_size = 0;
 	for(auto &a : nodes)
 		total_size += EvaluableNode::GetEstimatedNodeSizeInBytes(a);
-	
+
 	return total_size;
 }
 
@@ -764,7 +764,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 						if(cs_entry.targetOrigin != nullptr && !cs_entry.targetOrigin->GetKnownToBeInUse())
 							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.targetOrigin);
 
-						if(cs_entry.target!= nullptr && !cs_entry.target->GetKnownToBeInUse())
+						if(cs_entry.target != nullptr && !cs_entry.target->GetKnownToBeInUse())
 							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.target);
 
 						if(cs_entry.currentValue != nullptr && !cs_entry.currentValue->GetKnownToBeInUse())
@@ -863,7 +863,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	AmlgAssert(tree->IsNodeValid());
 #endif
-	
+
 	if(tree->IsAssociativeArray())
 	{
 		bool need_cycle_check = false;

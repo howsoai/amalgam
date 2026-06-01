@@ -29,7 +29,7 @@ public:
 	{
 		__forceinline Iterator(size_t _index, SumOrMaskBucket *value_location)
 			: index(_index), valueLocation(value_location)
-		{	}
+		{}
 
 		__forceinline Iterator operator =(const Iterator &other)
 		{
@@ -65,7 +65,7 @@ public:
 		{
 			size_t bit = (index % 64);
 			size_t offset = (index / 64);
-			return ( (valueLocation + offset)->mask & (1ULL << bit));
+			return ((valueLocation + offset)->mask & (1ULL << bit));
 		}
 
 		size_t index;

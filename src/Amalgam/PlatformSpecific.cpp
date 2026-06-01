@@ -1,15 +1,14 @@
 //project headers:
-#include "PlatformSpecific.h"
-
 #include "Concurrency.h"
+#include "PlatformSpecific.h"
 
 //system headers:
 #include <algorithm>
 #include <array>
 #include <cfenv>
-#include <cstring>
 #include <codecvt>
 #include <cstdio>
+#include <cstring>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -27,16 +26,16 @@ PlatformSpecificStartup _platform_specific_startup;
 
 #ifdef OS_WINDOWS
 
-	#define NOMINMAX
-	#include <Windows.h>
+#define NOMINMAX
+#include <Windows.h>
 
 #else
-	#include <cstdlib>
-	#include <dirent.h>
-	#include <sys/types.h>
-	#include <sys/stat.h>
-	#include <string>
-	#include <unistd.h>
+#include <cstdlib>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string>
+#include <unistd.h>
 #endif
 
 void Platform_SeparatePathFileExtension(const std::string &combined, std::string &path, std::string &base_filename, std::string &extension)
@@ -135,7 +134,7 @@ void Platform_GetFileNamesOfType(std::vector<std::string> &file_names, const std
 			current_ext = current_ext.substr(1);
 
 			if(std::equal(begin(current_ext), end(current_ext), begin(clean_ext), end(clean_ext),
-					[](char a, char b) { return std::tolower(a) == std::tolower(b); }))
+				[](char a, char b) { return std::tolower(a) == std::tolower(b); }))
 				file_names.emplace_back(entry.path().filename().string());
 		}
 	}

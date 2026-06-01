@@ -26,12 +26,12 @@ void Concurrency::SetMaxNumThreads(size_t max_num_threads)
 		_max_num_threads = max_num_threads;
 	else
 	{
-#ifdef MULTITHREAD_SUPPORT
+	#ifdef MULTITHREAD_SUPPORT
 		_max_num_threads = std::thread::hardware_concurrency();
-#else //_OPENMP
+	#else //_OPENMP
 		//half rounded up if an odd number for some reason
 		_max_num_threads = (std::thread::hardware_concurrency() + 1) / 2;
-#endif
+	#endif
 	}
 
 #ifdef _OPENMP

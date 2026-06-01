@@ -6,8 +6,6 @@
 #include "GeneralizedDistance.h"
 
 //system headers:
-#include <list>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -22,7 +20,7 @@ class EntityQueryCondition
 public:
 	EntityQueryCondition()
 		: queryType(ENT_NULL)
-	{	}
+	{}
 
 	//returns true if the entity matches the condition
 	bool DoesEntityMatchCondition(Entity *e);
@@ -49,7 +47,7 @@ public:
 		LabelBetweenValues(StringInternPool::StringID _label, EvaluableNodeImmediateValueType value_type,
 			EvaluableNodeImmediateValue low_value, EvaluableNodeImmediateValue high_value)
 			: label(_label), valueType(value_type), lowValue(low_value), highValue(high_value)
-		{	}
+		{}
 
 		StringInternPool::StringID label;
 		EvaluableNodeImmediateValueType valueType;

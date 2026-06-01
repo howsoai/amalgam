@@ -205,7 +205,7 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 
 	if(remove_last_entity)
 		numEntities--;
-	
+
 	//clean up any labels that aren't relevant
 	RemoveAnyUnusedLabels();
 
@@ -336,7 +336,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(RepeatedGeneralized
 	auto &dist_eval = *r_dist_eval.distEvaluator;
 	bool high_accuracy = dist_eval.highAccuracyDistances;
 	double max_dist_exponentiated = dist_eval.ExponentiateDifferenceTerm(max_dist, high_accuracy);
-	
+
 	//initialize all distances to 0
 	auto &distances = parametersAndBuffers.entityDistances;
 	distances.assign(GetNumInsertedEntities(), 0.0);
@@ -440,7 +440,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(RepeatedGeneralized
 				continue;
 			}
 		}
-		
+
 		//if target_value_type == ENIVT_CODE or ENIVT_STRING_ID or ENIVT_BOOL, just compute all
 		// won't save much for code until cache equal values
 		// won't save much for string ids because it's just a lookup (though could make it a little faster by streamlining a specialized string loop)
@@ -495,7 +495,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 	//if num enabled indices < top_k, return sorted distances
 	if(enabled_indices.size() <= top_k)
 		return FindAllValidElementDistances<compute_surprisal>(r_dist_eval, radius_column_index, enabled_indices, distances_out, rand_stream);
-	
+
 	size_t end_index = enabled_indices.GetEndInteger();
 	bool high_accuracy = dist_eval.highAccuracyDistances;
 
@@ -509,7 +509,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 	auto &min_distance_by_unpopulated_count = parametersAndBuffers.minDistanceByUnpopulatedCount;
 	PopulateInitialPartialSums(r_dist_eval, top_k, radius_column_index, high_accuracy,
 		enabled_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
-	
+
 	auto &potential_good_matches = parametersAndBuffers.potentialGoodMatches;
 	PopulatePotentialGoodMatches(potential_good_matches, enabled_indices, partial_sums, top_k);
 
@@ -1160,7 +1160,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				should_continue = true;
 			}
 			else //exceeded the deviation expansion, so can enable fast surprisal computation
-			{	
+			{
 				if(r_dist_eval.distEvaluator->computeSurprisal)
 					r_dist_eval.featurePrecomputedData[query_feature_index].fastApproxDeviation = true;
 			}
@@ -1530,16 +1530,16 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 		result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
 			&scope_stack, false, &calling_interpreter, nullptr, nullptr,
 			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_STANDARD_IMMEDIATE
-		#ifdef MULTITHREAD_SUPPORT
+	#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
-		#endif
+	#endif
 		);
 	else
 		result = called_entity->ExecuteOnEntity(function, &scope_stack, &calling_interpreter, nullptr, nullptr,
 			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_STANDARD_IMMEDIATE
-		#ifdef MULTITHREAD_SUPPORT
+	#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
-		#endif
+	#endif
 		);
 
 #ifdef MULTITHREAD_SUPPORT

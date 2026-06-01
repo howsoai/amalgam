@@ -79,8 +79,8 @@ EvaluableNode::OrderedType CustomEvaluableNodeOrderedChildNodesSort(EvaluableNod
 }
 
 std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityReadReference>>
-	TraverseToDeeplyContainedEntityReadReferencesViaEvaluableNodeIDPath(Entity *from_entity,
-	EvaluableNode *id_path_1, EvaluableNode *id_path_2)
+TraverseToDeeplyContainedEntityReadReferencesViaEvaluableNodeIDPath(Entity *from_entity,
+EvaluableNode *id_path_1, EvaluableNode *id_path_2)
 {
 	if(from_entity == nullptr)
 		return std::make_tuple(nullptr, nullptr,
@@ -111,7 +111,7 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 	{
 		EvaluableNode *cur_node_id_1 = traverser_1.GetCurId();
 		StringInternPool::StringID sid_1 = EvaluableNode::ToStringIDIfExists(cur_node_id_1);
-		
+
 		EvaluableNode *cur_node_id_2 = traverser_2.GetCurId();
 		StringInternPool::StringID sid_2 = EvaluableNode::ToStringIDIfExists(cur_node_id_2);
 
@@ -284,7 +284,7 @@ EvaluableNode *GetTraversalPathListFromAToB(EvaluableNodeManager *enm, Evaluable
 		enm->FreeNodeTree(path_list);
 		return nullptr;
 	}
-	
+
 	//reverse because assembled in reverse order
 	auto &ocn = path_list->GetOrderedChildNodesReference();
 	std::reverse(begin(ocn), end(ocn));
@@ -344,7 +344,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 					destination = nullptr;
 					break;
 				}
-				
+
 				destination = &(found->second);
 			}
 			else //create entry if it doesn't exist
@@ -499,7 +499,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 				//expand out into pairs
 				value_destination_node->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size()
 																+ 2 * variable_value_node->GetMappedChildNodesReference().size());
-				
+
 				for(auto &[cn_id, cn] : variable_value_node->GetMappedChildNodesReference())
 				{
 					EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(cn_id, enm);

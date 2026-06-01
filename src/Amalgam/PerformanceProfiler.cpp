@@ -5,8 +5,8 @@
 //system headers:
 #include <algorithm>
 #include <chrono>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 //if true, then will record profiling data
 bool PerformanceProfiler::_profiler_enabled;
@@ -47,7 +47,7 @@ FastHashMap<std::string, size_t> _lock_contention_counters;
 #if defined(MULTITHREAD_SUPPORT)
 thread_local
 #endif
-	std::vector<std::pair<std::string, StartTimeAndMemUse>> instructionStackTypeAndStartTimeAndMemUse;
+std::vector<std::pair<std::string, StartTimeAndMemUse>> instructionStackTypeAndStartTimeAndMemUse;
 
 FastHashMap<std::string, size_t> _side_effect_total_memory_write_counters;
 FastHashMap<std::string, size_t> _side_effect_initial_memory_write_counters;
@@ -70,9 +70,7 @@ void PerformanceProfiler::StartOperation(const std::string &t, int64_t memory_us
 void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 {
 	//get and remove data from scope stack
-	auto type_and_time_and_mem = instructionStackTypeAndStartTimeAndMemUse.back();
-	auto operation_type = type_and_time_and_mem.first;
-	auto counters = type_and_time_and_mem.second;
+	auto [operation_type, counters] = instructionStackTypeAndStartTimeAndMemUse.back();
 	instructionStackTypeAndStartTimeAndMemUse.pop_back();
 
 	double cur_time = GetCurTime();
@@ -114,7 +112,7 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 			total_operation_time_inclusive, total_operation_memory_inclusive };
 		_profiler_counters[operation_type] = pc;
 	}
-	
+
 	//for exclusive counters, remove the time on this instruction for any that are currently pending
 	// on the stack by adding it to start time
 	for(auto &record : instructionStackTypeAndStartTimeAndMemUse)

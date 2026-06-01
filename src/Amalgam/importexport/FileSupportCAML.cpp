@@ -15,7 +15,7 @@
 //magic number written at beginning of CAML file
 static const uint8_t s_magic_number[] = { 'c', 'a', 'm', 'l' };
 
-bool ReadBigEndian(std::istream &stream, uint32_t &val)
+static bool ReadBigEndian(std::istream &stream, uint32_t &val)
 {
 	uint8_t buffer[4] = { 0 };
 	if(!stream.read(reinterpret_cast<char *>(buffer), sizeof(uint32_t)))
@@ -30,7 +30,7 @@ bool ReadBigEndian(std::istream &stream, uint32_t &val)
 	return true;
 }
 
-bool WriteBigEndian(std::ostream &stream, const uint32_t &val)
+static bool WriteBigEndian(std::ostream &stream, const uint32_t &val)
 {
 	uint8_t buffer[4] = { 0 };
 	buffer[0] = (val >> 24) & 0xFF;
@@ -42,7 +42,7 @@ bool WriteBigEndian(std::ostream &stream, const uint32_t &val)
 	return true;
 }
 
-bool ReadVersion(std::istream &stream, uint32_t &major, uint32_t &minor, uint32_t &patch)
+static bool ReadVersion(std::istream &stream, uint32_t &major, uint32_t &minor, uint32_t &patch)
 {
 	if(!ReadBigEndian(stream, major))
 		return false;
@@ -54,7 +54,7 @@ bool ReadVersion(std::istream &stream, uint32_t &major, uint32_t &minor, uint32_
 	return true;
 }
 
-bool WriteVersion(std::ostream &stream)
+static bool WriteVersion(std::ostream &stream)
 {
 	if(!WriteBigEndian(stream, AMALGAM_VERSION_MAJOR))
 		return false;

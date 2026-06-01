@@ -98,9 +98,9 @@ std::string Parser::Backslashify(const std::string &s)
 }
 
 std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t, bool>
-	Parser::Parse(std::string_view code_string,
-		EvaluableNodeManager *enm, bool transactional_parse,  std::string *original_source,
-		bool debug_sources, bool allow_file_loading)
+Parser::Parse(std::string_view code_string,
+	EvaluableNodeManager *enm, bool transactional_parse, std::string *original_source,
+	bool debug_sources, bool allow_file_loading)
 {
 	Parser pt(code_string, enm, transactional_parse, original_source, debug_sources, allow_file_loading);
 
@@ -1483,49 +1483,49 @@ void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 	bool any_nodes_changed = false;
 
 	auto replace_node = [this, &top_node, &any_nodes_changed](EvaluableNode *node, EvaluableNode *replacement)
-	{
-		//find the node's parent in order to set it to target
-		EvaluableNode *parent = nullptr;
-		parent = parentNodes[node];
-		if(parent == nullptr)
 		{
-			top_node = replacement;
-			return;
-		}
-
-		bool node_changed = false;
-
-		//copy reference of target to the parent's index of the target
-		if(parent->IsAssociativeArray())
-		{
-			for(auto &[_, cn] : parent->GetMappedChildNodesReference())
+			//find the node's parent in order to set it to target
+			EvaluableNode *parent = nullptr;
+			parent = parentNodes[node];
+			if(parent == nullptr)
 			{
-				if(cn == node)
+				top_node = replacement;
+				return;
+			}
+
+			bool node_changed = false;
+
+			//copy reference of target to the parent's index of the target
+			if(parent->IsAssociativeArray())
+			{
+				for(auto &[_, cn] : parent->GetMappedChildNodesReference())
 				{
-					cn = replacement;
-					node_changed = true;
-					break;
+					if(cn == node)
+					{
+						cn = replacement;
+						node_changed = true;
+						break;
+					}
 				}
 			}
-		}
-		else if(parent->IsOrderedArray())
-		{
-			for(auto &cn : parent->GetOrderedChildNodesReference())
+			else if(parent->IsOrderedArray())
 			{
-				if(cn == node)
+				for(auto &cn : parent->GetOrderedChildNodesReference())
 				{
-					cn = replacement;
-					node_changed = true;
-					break;
+					if(cn == node)
+					{
+						cn = replacement;
+						node_changed = true;
+						break;
+					}
 				}
 			}
-		}
 
-		if(node_changed)
-			any_nodes_changed = true;
-		else
-			EmitWarning("Could not find code to preevaluate, check to see if it has been overwritten");
-	};
+			if(node_changed)
+				any_nodes_changed = true;
+			else
+				EmitWarning("Could not find code to preevaluate, check to see if it has been overwritten");
+		};
 
 	//any appends that need to be applied at the end
 	std::vector<EvaluableNode *> post_eval_appends;
@@ -1557,7 +1557,7 @@ void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 				replace_node(n, nullptr);
 				continue;
 			}
-			
+
 			std::string path = EvaluableNode::ToString(ocn[0]);
 			if(path.empty())
 			{

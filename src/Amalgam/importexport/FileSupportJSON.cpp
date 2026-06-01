@@ -81,51 +81,51 @@ inline void EscapeAndAppendStringToJsonString(std::string_view str, std::string 
 		auto c = str[i];
 		switch(c)
 		{
-			case '"':	json_str += "\\\"";	break;
-			case '\\':	json_str += "\\\\";	break;
-			case '\b':	json_str += "\\b";	break;
-			case '\f':	json_str += "\\f";	break;
-			case '\n':	json_str += "\\n";	break;
-			case '\r':	json_str += "\\r";	break;
-			case '\t':	json_str += "\\t";	break;
-			default:
+		case '"':	json_str += "\\\"";	break;
+		case '\\':	json_str += "\\\\";	break;
+		case '\b':	json_str += "\\b";	break;
+		case '\f':	json_str += "\\f";	break;
+		case '\n':	json_str += "\\n";	break;
+		case '\r':	json_str += "\\r";	break;
+		case '\t':	json_str += "\\t";	break;
+		default:
+		{
+			if(static_cast<uint8_t>(c) <= 0x1f)
 			{
-				if(static_cast<uint8_t>(c) <= 0x1f)
+				//escape control characters
+				char buffer[8];
+				snprintf(&buffer[0], sizeof(buffer), "\\u%04x", c);
+				json_str += &buffer[0];
+				break;
+			}
+
+			//the ECMA 404 standard for json makes no mention about LS and PS characters, but they are known
+			// to be a problem with some systems that use ECMA 262 versions prior to 10 (released in the year 2019)
+			// so we escape these two code points just to be safe on all systems
+			if(i + 3 < str.size())
+			{
+				if(static_cast<uint8_t>(c) == 0xe2)
 				{
-					//escape control characters
-					char buffer[8];
-					snprintf(&buffer[0], sizeof(buffer), "\\u%04x", c);
-					json_str += &buffer[0];
-					break;
-				}
-				
-				//the ECMA 404 standard for json makes no mention about LS and PS characters, but they are known
-				// to be a problem with some systems that use ECMA 262 versions prior to 10 (released in the year 2019)
-				// so we escape these two code points just to be safe on all systems
-				if(i + 3 < str.size())
-				{
-					if(static_cast<uint8_t>(c) == 0xe2)
+					//escape utf-8 line separator https://www.fileformat.info/info/unicode/char/2028/index.htm
+					if(static_cast<uint8_t>(str[i + 1]) == 0x80 && static_cast<uint8_t>(str[i + 2]) == 0xa8)
 					{
-						//escape utf-8 line separator https://www.fileformat.info/info/unicode/char/2028/index.htm
-						if(static_cast<uint8_t>(str[i + 1]) == 0x80 && static_cast<uint8_t>(str[i + 2]) == 0xa8)
-						{
-							json_str += "\\u2028";
-							i += 2;
-							break;
-						}
-						//escape utf-8 paragraph separator https://www.fileformat.info/info/unicode/char/2029/index.htm
-						else if(static_cast<uint8_t>(str[i + 1]) == 0x80 && static_cast<uint8_t>(str[i + 2]) == 0xa9)
-						{
-							json_str += "\\u2029";
-							i += 2;
-							break;
-						}
+						json_str += "\\u2028";
+						i += 2;
+						break;
+					}
+					//escape utf-8 paragraph separator https://www.fileformat.info/info/unicode/char/2029/index.htm
+					else if(static_cast<uint8_t>(str[i + 1]) == 0x80 && static_cast<uint8_t>(str[i + 2]) == 0xa9)
+					{
+						json_str += "\\u2029";
+						i += 2;
+						break;
 					}
 				}
-
-				//wasn't a special character, just concatenate
-				json_str += c;
 			}
+
+			//wasn't a special character, just concatenate
+			json_str += c;
+		}
 		}
 	}
 
@@ -382,7 +382,7 @@ bool EvaluableNodeJSONTranslation::Store(EvaluableNode *code, const std::string 
 	std::ofstream file(resource_path);
 	if(!file.good())
 	{
-		std::cerr << "Error storing JSON: cannot write to file " +  resource_path << std::endl;
+		std::cerr << "Error storing JSON: cannot write to file " + resource_path << std::endl;
 		return false;
 	}
 

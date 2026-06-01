@@ -1,4 +1,5 @@
 //project headers:
+#include "FastMath.h"
 #include "Opcodes.h"
 #include "StringInternPool.h"
 

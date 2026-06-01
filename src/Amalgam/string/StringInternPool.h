@@ -4,7 +4,6 @@
 #include "Concurrency.h"
 #include "HashMaps.h"
 #include "PlatformSpecific.h"
-#include "StringManipulation.h"
 
 //system headers:
 #include <memory>

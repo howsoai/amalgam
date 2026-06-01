@@ -1,7 +1,7 @@
 //project headers:
 #include "EvaluableNode.h"
-#include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeManagement.h"
+#include "EvaluableNodeTreeFunctions.h"
 #include "FastMath.h"
 #include "Opcodes.h"
 #include "Parser.h"

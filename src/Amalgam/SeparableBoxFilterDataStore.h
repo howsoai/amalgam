@@ -8,8 +8,8 @@
 
 //project headers:
 #include "Concurrency.h"
-#include "FastMath.h"
 #include "EvaluableNode.h"
+#include "FastMath.h"
 #include "GeneralizedDistance.h"
 #include "IntegerSet.h"
 #include "PartialSum.h"

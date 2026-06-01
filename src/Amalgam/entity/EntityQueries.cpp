@@ -1,7 +1,8 @@
 //project headers:
-#include "EntityQueries.h"
 #include "Concurrency.h"
 #include "EntityManipulation.h"
+#include "EntityQueries.h"
+#include "EntityQueriesStatistics.h"
 #include "EntityQueryCaches.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "FastMath.h"

@@ -6,8 +6,6 @@
 #include "GeneralizedDistance.h"
 
 //system headers:
-#include <list>
-#include <string>
 #include <utility>
 #include <vector>
 

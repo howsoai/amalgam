@@ -1,12 +1,15 @@
 #pragma once
 
 //project headers:
-#include "Conviction.h"
 #include "DistanceReferencePair.h"
 #include "EvaluableNode.h"
+#include "HashMaps.h"
 #include "IntegerSet.h"
 #include "KnnCache.h"
 #include "SeparableBoxFilterDataStore.h"
+#include <EvaluableNodeManagement.h>
+#include <EvaluableNodeReference.h>
+#include <StringInternPool.h>
 
 //system headers:
 #include <vector>

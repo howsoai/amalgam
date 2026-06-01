@@ -1,10 +1,7 @@
 #pragma once
 
-//project headers:
-#include "FastMath.h"
-#include "StringInternPool.h"
-
-//system headers:
+//system headers
+#include <cstdint>
 
 //opcodes / commands / operations in Amalgam
 enum EvaluableNodeType : uint8_t

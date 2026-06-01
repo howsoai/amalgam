@@ -1,7 +1,6 @@
 #pragma once
 
 //project headers:
-#include "DistanceReferencePair.h"
 #include "EvaluableNode.h"
 #include "GeneralizedDistance.h"
 #include "HashMaps.h"

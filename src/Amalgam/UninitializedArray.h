@@ -1,9 +1,8 @@
 #pragma once
 #include <cstddef>
 #include <new>
-#include <type_traits>
-#include <iterator>
 #include <stdexcept>
+#include <type_traits>
 
 //holds raw, correctly-aligned storage for N objects of type T
 //does *not* invoke any constructors or destructors automatically

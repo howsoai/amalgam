@@ -165,14 +165,18 @@
     #ifdef C4CORE_SHARED
         #ifdef C4CORE_EXPORTS
             #define C4CORE_EXPORT __declspec(dllexport)
+            #define C4CORE_EXPORT_EXTERN
         #else
             #define C4CORE_EXPORT __declspec(dllimport)
+            #define C4CORE_EXPORT_EXTERN extern
         #endif
     #else
         #define C4CORE_EXPORT
+        #define C4CORE_EXPORT_EXTERN
     #endif
 #else
     #define C4CORE_EXPORT
+    #define C4CORE_EXPORT_EXTERN
 #endif
 
 #endif /* C4CORE_EXPORT_HPP_ */
@@ -193,10 +197,10 @@
 
 /** @file version.hpp */
 
-#define C4CORE_VERSION "0.2.12"
+#define C4CORE_VERSION "0.3.0"
 #define C4CORE_VERSION_MAJOR 0
-#define C4CORE_VERSION_MINOR 2
-#define C4CORE_VERSION_PATCH 12
+#define C4CORE_VERSION_MINOR 3
+#define C4CORE_VERSION_PATCH 0
 
 // amalgamate: removed include of
 // c4/export.hpp
@@ -903,6 +907,13 @@ typedef long double max_align_t ;
 #error "amalgamate: file c4/compiler.hpp must have been included at this point"
 #endif /* C4_COMPILER_HPP_ */
 
+// amalgamate: removed include of
+// c4/export.hpp
+//#include "c4/export.hpp"
+#if !defined(C4_EXPORT_HPP_) && !defined(_C4_EXPORT_HPP_)
+#error "amalgamate: file c4/export.hpp must have been included at this point"
+#endif /* C4_EXPORT_HPP_ */
+
 
 /* Detect C++ standard.
  * @see http://stackoverflow.com/a/7132549/5875572 */
@@ -1243,7 +1254,7 @@ template< class T >
 C4_ALWAYS_INLINE void dont_optimize(T const& value) { asm volatile("" : : "g"(value) : "memory"); } // NOLINT
 #else
 #   define C4_DONT_OPTIMIZE(var) c4::detail::use_char_pointer(reinterpret_cast< const char* >(&var))
-void use_char_pointer(char const volatile*);
+C4CORE_EXPORT void use_char_pointer(char const volatile*);
 #endif
 } // namespace detail
 } // namespace c4
@@ -1255,13 +1266,6 @@ void use_char_pointer(char const volatile*);
 #   define C4_KEEP_EMPTY_LOOP { char c; C4_DONT_OPTIMIZE(c); }
 #else
 #   define C4_KEEP_EMPTY_LOOP { asm(""); }
-#endif
-
-
-#if defined(__GNUC__) || defined(__DOXYGEN__)
-/** @def C4_VA_LIST_REUSE_MUST_COPY
- * @todo <jpmag> I strongly suspect that this is actually only in UNIX platforms. revisit this. */
-#   define C4_VA_LIST_REUSE_MUST_COPY
 #endif
 
 #endif /* _C4_LANGUAGE_HPP_ */
@@ -2648,7 +2652,7 @@ C4_ALWAYS_INLINE C4_CONST bool mem_overlaps(void const* a, void const* b, size_t
     return (((const char*)b + szb) > a && b < ((const char*)a+sza));
 }
 
-void mem_repeat(void* dest, void const* pattern, size_t pattern_size, size_t num_times);
+C4CORE_EXPORT void mem_repeat(void* dest, void const* pattern, size_t pattern_size, size_t num_times);
 
 
 //-----------------------------------------------------------------------------
@@ -3381,6 +3385,120 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
+// src/c4/alloc.hpp
+//--------------------------------------------------------------------------------
+//********************************************************************************
+
+#ifndef _C4_ALLOC_HPP_
+#define _C4_ALLOC_HPP_
+
+/** @file alloc.hpp Provides c-style facilities to allocate raw
+ *  memory. This API provides aligned allocation functions, forwarding
+ *  the call to a user-modifiable function. */
+
+/** @defgroup memory memory utilities */
+
+/** @defgroup raw_memory_alloc Raw memory allocation
+ * @ingroup memory
+ */
+
+// amalgamate: removed include of
+// c4/export.hpp
+//#include "c4/export.hpp"
+#if !defined(C4_EXPORT_HPP_) && !defined(_C4_EXPORT_HPP_)
+#error "amalgamate: file c4/export.hpp must have been included at this point"
+#endif /* C4_EXPORT_HPP_ */
+
+//included above:
+//#include <stddef.h>
+
+namespace c4 {
+
+
+// aligned allocation.
+
+/** Aligned allocation. Merely calls the current get_aalloc() function.
+ * @see get_aalloc()
+ * @ingroup raw_memory_alloc */
+C4CORE_EXPORT void* aalloc(size_t sz, size_t alignment);
+
+/** Aligned free. Merely calls the current get_afree() function.
+ * @see get_afree()
+ * @ingroup raw_memory_alloc */
+C4CORE_EXPORT void afree(void* ptr);
+
+/** Aligned reallocation. Merely calls the current get_arealloc() function.
+ * @see get_arealloc()
+ * @ingroup raw_memory_alloc */
+C4CORE_EXPORT void* arealloc(void* ptr, size_t oldsz, size_t newsz, size_t alignment);
+
+
+
+// allocation setup facilities: function pointer setters/getters
+
+/** Function pointer type for aligned allocation
+ * @see set_aalloc()
+ * @ingroup raw_memory_alloc */
+using aalloc_pfn = void* (*)(size_t size, size_t alignment);
+
+/** Function pointer type for aligned deallocation
+ * @see set_afree()
+ * @ingroup raw_memory_alloc */
+using afree_pfn = void  (*)(void *ptr);
+
+/** Function pointer type for aligned reallocation
+ * @see set_arealloc()
+ * @ingroup raw_memory_alloc */
+using arealloc_pfn = void* (*)(void *ptr, size_t oldsz, size_t newsz, size_t alignment);
+
+
+
+/** Set the global aligned allocation function.
+ * @see aalloc()
+ * @see get_aalloc()
+ * @ingroup raw_memory_alloc */
+C4CORE_EXPORT void set_aalloc(aalloc_pfn fn);
+
+/** Set the global aligned deallocation function.
+ * @see afree()
+ * @see get_afree()
+ * @ingroup raw_memory_alloc */
+C4CORE_EXPORT void set_afree(afree_pfn fn);
+
+/** Set the global aligned reallocation function.
+ * @see arealloc()
+ * @see get_arealloc()
+ * @ingroup raw_memory_alloc */
+C4CORE_EXPORT void set_arealloc(arealloc_pfn fn);
+
+
+
+/** Get the global aligned reallocation function.
+ * @see arealloc()
+ * @ingroup raw_memory_alloc */
+C4CORE_EXPORT aalloc_pfn get_aalloc();
+
+/** Get the global aligned deallocation function.
+ * @see afree()
+ * @ingroup raw_memory_alloc */
+C4CORE_EXPORT afree_pfn get_afree();
+
+/** Get the global aligned reallocation function.
+ * @see arealloc()
+ * @ingroup raw_memory_alloc */
+C4CORE_EXPORT arealloc_pfn get_arealloc();
+
+} // namespace c4
+
+#endif
+
+
+// (end src/c4/alloc.hpp)
+
+
+
+//********************************************************************************
+//--------------------------------------------------------------------------------
 // src/c4/memory_resource.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
@@ -3391,15 +3509,16 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 /** @file memory_resource.hpp Provides facilities to allocate typeless
  *  memory, via the memory resource model consecrated with C++17. */
 
-/** @defgroup memory memory utilities */
-
-/** @defgroup raw_memory_alloc Raw memory allocation
- * @ingroup memory
- */
-
 /** @defgroup memory_resources Memory resources
  * @ingroup memory
  */
+
+// amalgamate: removed include of
+// c4/alloc.hpp
+//#include "c4/alloc.hpp"
+#if !defined(C4_ALLOC_HPP_) && !defined(_C4_ALLOC_HPP_)
+#error "amalgamate: file c4/alloc.hpp must have been included at this point"
+#endif /* C4_ALLOC_HPP_ */
 
 // amalgamate: removed include of
 // c4/error.hpp
@@ -3421,102 +3540,29 @@ namespace c4 {
 // need these forward decls here
 struct MemoryResource;
 struct MemoryResourceMalloc;
-struct MemoryResourceStack;
-MemoryResourceMalloc* get_memory_resource_malloc();
-MemoryResourceStack* get_memory_resource_stack();
-namespace detail { MemoryResource*& get_memory_resource(); }
 
 
-// c-style allocation ---------------------------------------------------------
+/** get the current global memory resource. To avoid static initialization
+ * order problems, this is implemented using a function call to ensure
+ * that it is available when first used.
+ * @ingroup memory_resources */
+C4CORE_EXPORT MemoryResource* get_memory_resource();
 
-// this API provides aligned allocation functions.
-// These functions forward the call to a user-modifiable function.
-
-
-// aligned allocation.
-
-/** Aligned allocation. Merely calls the current get_aalloc() function.
- * @see get_aalloc()
- * @ingroup raw_memory_alloc */
-void* aalloc(size_t sz, size_t alignment);
-
-/** Aligned free. Merely calls the current get_afree() function.
- * @see get_afree()
- * @ingroup raw_memory_alloc */
-void afree(void* ptr);
-
-/** Aligned reallocation. Merely calls the current get_arealloc() function.
- * @see get_arealloc()
- * @ingroup raw_memory_alloc */
-void* arealloc(void* ptr, size_t oldsz, size_t newsz, size_t alignment);
+/** set the global memory resource
+ * @ingroup memory_resources */
+C4CORE_EXPORT void set_memory_resource(MemoryResource* mr);
 
 
-// allocation setup facilities.
-
-/** Function pointer type for aligned allocation
- * @see set_aalloc()
- * @ingroup raw_memory_alloc */
-using aalloc_pfn = void* (*)(size_t size, size_t alignment);
-
-/** Function pointer type for aligned deallocation
- * @see set_afree()
- * @ingroup raw_memory_alloc */
-using afree_pfn = void  (*)(void *ptr);
-
-/** Function pointer type for aligned reallocation
- * @see set_arealloc()
- * @ingroup raw_memory_alloc */
-using arealloc_pfn = void* (*)(void *ptr, size_t oldsz, size_t newsz, size_t alignment);
-
-
-// allocation function pointer setters/getters
-
-/** Set the global aligned allocation function.
- * @see aalloc()
- * @see get_aalloc()
- * @ingroup raw_memory_alloc */
-void set_aalloc(aalloc_pfn fn);
-
-/** Set the global aligned deallocation function.
- * @see afree()
- * @see get_afree()
- * @ingroup raw_memory_alloc */
-void set_afree(afree_pfn fn);
-
-/** Set the global aligned reallocation function.
- * @see arealloc()
- * @see get_arealloc()
- * @ingroup raw_memory_alloc */
-void set_arealloc(arealloc_pfn fn);
-
-
-/** Get the global aligned reallocation function.
- * @see arealloc()
- * @ingroup raw_memory_alloc */
-aalloc_pfn get_aalloc();
-
-/** Get the global aligned deallocation function.
- * @see afree()
- * @ingroup raw_memory_alloc */
-afree_pfn get_afree();
-
-/** Get the global aligned reallocation function.
- * @see arealloc()
- * @ingroup raw_memory_alloc */
-arealloc_pfn get_arealloc();
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 // c++-style allocation -------------------------------------------------------
+
 
 /** C++17-style memory_resource base class. See http://en.cppreference.com/w/cpp/experimental/memory_resource
  * @ingroup memory_resources */
-struct MemoryResource // NOLINT(*-member-functions)
+struct C4CORE_EXPORT MemoryResource // NOLINT(*-member-functions)
 {
     const char *name = nullptr;
-    virtual ~MemoryResource() = default;
+    MemoryResource(const char *name_=nullptr) noexcept : name(name_) {}
+    virtual ~MemoryResource() noexcept = default;
 
     void* allocate(size_t sz, size_t alignment=alignof(max_align_t), void *hint=nullptr)
     {
@@ -3545,23 +3591,6 @@ protected:
 
 };
 
-/** get the current global memory resource. To avoid static initialization
- * order problems, this is implemented using a function call to ensure
- * that it is available when first used.
- * @ingroup memory_resources */
-C4_ALWAYS_INLINE MemoryResource* get_memory_resource()
-{
-    return detail::get_memory_resource();
-}
-
-/** set the global memory resource
- * @ingroup memory_resources */
-C4_ALWAYS_INLINE void set_memory_resource(MemoryResource* mr)
-{
-    C4_ASSERT(mr != nullptr);
-    detail::get_memory_resource() = mr;
-}
-
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -3569,10 +3598,10 @@ C4_ALWAYS_INLINE void set_memory_resource(MemoryResource* mr)
 /** A c4::aalloc-based memory resource. Thread-safe if the implementation
  * called by c4::aalloc() is safe.
  * @ingroup memory_resources */
-struct MemoryResourceMalloc : public MemoryResource // NOLINT(*-member-functions)
+struct C4CORE_EXPORT MemoryResourceMalloc : public MemoryResource // NOLINT(*-member-functions)
 {
 
-    MemoryResourceMalloc() { name = "malloc"; }
+    MemoryResourceMalloc() noexcept : MemoryResource("malloc") {}
 
 protected:
 
@@ -3598,23 +3627,7 @@ protected:
 
 /** returns a malloc-based memory resource
  * @ingroup memory_resources */
-C4_ALWAYS_INLINE MemoryResourceMalloc* get_memory_resource_malloc()
-{
-    /** @todo use a nifty counter:
-     * https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Nifty_Counter */
-    static MemoryResourceMalloc mr;
-    return &mr;
-}
-
-namespace detail {
-C4_ALWAYS_INLINE MemoryResource* & get_memory_resource()
-{
-    /** @todo use a nifty counter:
-     * https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Nifty_Counter */
-    thread_local static MemoryResource* mr = get_memory_resource_malloc();
-    return mr;
-}
-} // namespace detail
+C4CORE_EXPORT MemoryResourceMalloc* get_memory_resource_malloc();
 
 
 //-----------------------------------------------------------------------------
@@ -3625,7 +3638,7 @@ namespace detail {
 
 /** Allows a memory resource to obtain its memory from another memory resource.
  * @ingroup memory_resources */
-struct DerivedMemoryResource : public MemoryResource
+struct C4CORE_EXPORT DerivedMemoryResource : public MemoryResource
 {
 public:
 
@@ -3655,7 +3668,7 @@ protected:
 
 /** Provides common facilities for memory resource consisting of a single memory block
  * @ingroup memory_resources */
-struct _MemoryResourceSingleChunk : public DerivedMemoryResource
+struct C4CORE_EXPORT _MemoryResourceSingleChunk : public DerivedMemoryResource
 {
 
     C4_NO_COPY_OR_MOVE(_MemoryResourceSingleChunk);
@@ -3715,32 +3728,10 @@ public:
  * malloc/free take place.
  *
  * @ingroup memory_resources */
-struct MemoryResourceLinear : public detail::_MemoryResourceSingleChunk // NOLINT(*-member-functions)
+struct C4CORE_EXPORT MemoryResourceLinear : public detail::_MemoryResourceSingleChunk // NOLINT(*-member-functions)
 {
 
     C4_NO_COPY_OR_MOVE(MemoryResourceLinear);
-
-public:
-
-    using detail::_MemoryResourceSingleChunk::_MemoryResourceSingleChunk;
-
-protected:
-
-    void* do_allocate(size_t sz, size_t alignment, void *hint) override;
-    void  do_deallocate(void* ptr, size_t sz, size_t alignment) override;
-    void* do_reallocate(void* ptr, size_t oldsz, size_t newsz, size_t alignment) override;
-};
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-/** provides a stack-type malloc-based memory resource.
- * @ingroup memory_resources */
-struct MemoryResourceStack : public detail::_MemoryResourceSingleChunk // NOLINT(*-member-functions)
-{
-
-    C4_NO_COPY_OR_MOVE(MemoryResourceStack);
 
 public:
 
@@ -3773,7 +3764,7 @@ struct MemoryResourceLinearArr : public MemoryResourceLinear
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-struct AllocationCounts
+struct C4CORE_EXPORT AllocationCounts
 {
     struct Item
     {
@@ -3866,7 +3857,7 @@ struct AllocationCounts
 /** a MemoryResource which latches onto another MemoryResource
  * and counts allocations and sizes.
  * @ingroup memory_resources */
-class MemoryResourceCounts : public MemoryResource
+class C4CORE_EXPORT MemoryResourceCounts : public MemoryResource
 {
 public:
 
@@ -3917,7 +3908,7 @@ protected:
 //-----------------------------------------------------------------------------
 /** RAII class which binds a memory resource with a scope duration.
  * @ingroup memory_resources */
-struct ScopedMemoryResource // NOLINT(*-member-functions)
+struct C4CORE_EXPORT ScopedMemoryResource // NOLINT(*-member-functions)
 {
     MemoryResource *m_original;
 
@@ -3938,7 +3929,7 @@ struct ScopedMemoryResource // NOLINT(*-member-functions)
 /** RAII class which counts allocations and frees inside a scope. Can
  * optionally set also the memory resource to be used.
  * @ingroup memory_resources */
-struct ScopedMemoryResourceCounts // NOLINT(*-member-functions)
+struct C4CORE_EXPORT ScopedMemoryResourceCounts // NOLINT(*-member-functions)
 {
     MemoryResourceCounts mr;
 
@@ -5407,16 +5398,10 @@ template<class T> struct is_writeable_string;
 #endif /* C4_SUBSTR_FWD_HPP_ */
 
 
-#ifdef __clang__
-#   pragma clang diagnostic push
-#   pragma clang diagnostic ignored "-Wold-style-cast"
-#elif defined(__GNUC__)
-#   pragma GCC diagnostic push
-#   pragma GCC diagnostic ignored "-Wtype-limits" // disable warnings on size_t>=0, used heavily in assertions below. These assertions are a preparation step for providing the index type as a template parameter.
-#   pragma GCC diagnostic ignored "-Wuseless-cast"
-#   pragma GCC diagnostic ignored "-Wold-style-cast"
-#endif
-
+C4_SUPPRESS_WARNING_GCC_CLANG_PUSH
+C4_SUPPRESS_WARNING_GCC_CLANG("-Wold-style-cast")
+C4_SUPPRESS_WARNING_GCC("-Wuseless-cast")
+C4_SUPPRESS_WARNING_GCC("-Wtype-limits") // disable warnings on size_t>=0, used heavily in assertions below. These assertions are a preparation step for providing the index type as a template parameter.
 
 namespace c4 {
 
@@ -5442,6 +5427,7 @@ static inline void _do_reverse(C *C4_RESTRICT first, C *C4_RESTRICT last)
 } // namespace detail
 /** @endcond */
 
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -5465,7 +5451,7 @@ static inline void _do_reverse(C *C4_RESTRICT first, C *C4_RESTRICT last)
  * in rapidyaml's documentation.
  */
 template<class C>
-struct C4CORE_EXPORT basic_substring // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-member-functions)
+struct basic_substring // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-member-functions)
 {
 public:
 
@@ -5559,12 +5545,12 @@ public:
      * @warning the end pointer MUST BE larger than or equal to the begin pointer
      * @warning the input string need not be zero terminated. */
     C4_ALWAYS_INLINE void assign(C *beg_, C *end_) noexcept { C4_ASSERT(end_ >= beg_); str = (beg_); len = static_cast<size_t>(end_ - beg_); }
-    /** Assign from a C-string (zero-terminated string)
+    /** Assign from a C-string (zero-terminated string of type const C* or C*)
      * @warning the input string must be zero terminated.
      * @warning will call strlen()
      * @note this overload uses SFINAE to prevent it from overriding the array ctor
-     * @see For a more detailed explanation on why the plain overloads cannot
-     * coexist, see http://cplusplus.bordoon.com/specializeForCharacterArrays.html */
+     * @see For a more detailed explanation on why the plain pointer overloads cannot
+     * coexist with the array overloads, see http://cplusplus.bordoon.com/specializeForCharacterArrays.html */
     template<class U, typename std::enable_if<std::is_same<U, C*>::value || std::is_same<U, NCC_*>::value, int>::type=0>
     C4_ALWAYS_INLINE void assign(U s_) noexcept { str = (s_); len = (s_ ? strlen(s_) : 0); }
 
@@ -5572,12 +5558,12 @@ public:
      * @warning the input string need not be zero terminated. */
     template<size_t N>
     C4_ALWAYS_INLINE basic_substring& operator= (C (&s_)[N]) noexcept { str = (s_); len = (N-1); return *this; }
-    /** Assign from a C-string (zero-terminated string)
+    /** Assign from a C-string (zero-terminated string of type const C* or C*)
      * @warning the input string MUST BE zero terminated.
      * @warning will call strlen()
      * @note this overload uses SFINAE to prevent it from overriding the array ctor
-     * @see For a more detailed explanation on why the plain overloads cannot
-     * coexist, see http://cplusplus.bordoon.com/specializeForCharacterArrays.html */
+     * @see For a more detailed explanation on why the plain pointer overloads cannot
+     * coexist with the array overloads, see http://cplusplus.bordoon.com/specializeForCharacterArrays.html */
     template<class U, typename std::enable_if<std::is_same<U, C*>::value || std::is_same<U, NCC_*>::value, int>::type=0>
     C4_ALWAYS_INLINE basic_substring& operator= (U s_) noexcept { str = s_; len = s_ ? strlen(s_) : 0; return *this; }
 
@@ -5618,7 +5604,7 @@ public:
     /** @name Comparison methods */
     /** @{ */
 
-    C4_PURE int compare(C const c) const noexcept
+    C4_ALWAYS_INLINE C4_PURE int compare(C const c) const noexcept
     {
         C4_XASSERT((str != nullptr) || len == 0);
         if(C4_LIKELY(str != nullptr && len > 0))
@@ -7582,7 +7568,6 @@ public:
 
 }; // template class basic_substring
 
-
 #undef C4_REQUIRE_RW
 
 
@@ -7741,11 +7726,7 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 } // namespace c4
 
 
-#ifdef __clang__
-#   pragma clang diagnostic pop
-#elif defined(__GNUC__)
-#   pragma GCC diagnostic pop
-#endif
+C4_SUPPRESS_WARNING_GCC_CLANG_POP
 
 #endif /* _C4_SUBSTR_HPP_ */
 
@@ -13887,36 +13868,36 @@ size_t write_num_digits(substr buf, T v, size_t num_digits) noexcept
 /** @endcond */
 
 
-/** same as c4::write_dec(), but pad with zeroes on the left
- * such that the resulting string is @p num_digits wide.
- * If the given number is requires more than num_digits, then the number prevails. */
+/** same as c4::write_dec(), but pad with zeroes on the left such that
+ * the resulting string is @p num_digits wide.  If the given number
+ * requires more than num_digits, then the number prevails. */
 template<class T>
 C4_ALWAYS_INLINE size_t write_dec(substr buf, T val, size_t num_digits) noexcept
 {
     return detail::write_num_digits<T, &write_dec<T>>(buf, val, num_digits);
 }
 
-/** same as c4::write_hex(), but pad with zeroes on the left
- * such that the resulting string is @p num_digits wide.
- * If the given number is requires more than num_digits, then the number prevails. */
+/** same as c4::write_hex(), but pad with zeroes on the left such that
+ * the resulting string is @p num_digits wide.  If the given number
+ * requires more than num_digits, then the number prevails. */
 template<class T>
 C4_ALWAYS_INLINE size_t write_hex(substr buf, T val, size_t num_digits) noexcept
 {
     return detail::write_num_digits<T, &write_hex<T>>(buf, val, num_digits);
 }
 
-/** same as c4::write_bin(), but pad with zeroes on the left
- * such that the resulting string is @p num_digits wide.
- * If the given number is requires more than num_digits, then the number prevails. */
+/** same as c4::write_bin(), but pad with zeroes on the left such that
+ * the resulting string is @p num_digits wide.  If the given number
+ * requires more than num_digits, then the number prevails. */
 template<class T>
 C4_ALWAYS_INLINE size_t write_bin(substr buf, T val, size_t num_digits) noexcept
 {
     return detail::write_num_digits<T, &write_bin<T>>(buf, val, num_digits);
 }
 
-/** same as c4::write_oct(), but pad with zeroes on the left
- * such that the resulting string is @p num_digits wide.
- * If the given number is requires more than num_digits, then the number prevails. */
+/** same as c4::write_oct(), but pad with zeroes on the left such that
+ * the resulting string is @p num_digits wide.  If the given number
+ * requires more than num_digits, then the number prevails. */
 template<class T>
 C4_ALWAYS_INLINE size_t write_oct(substr buf, T val, size_t num_digits) noexcept
 {
@@ -14602,9 +14583,7 @@ template<class T>
 C4_ALWAYS_INLINE size_t atoi_first(csubstr str, T * C4_RESTRICT v)
 {
     csubstr trimmed = str.first_int_span();
-    if(trimmed.len == 0)
-        return csubstr::npos;
-    if(atoi(trimmed, v))
+    if(trimmed.len && atoi(trimmed, v))
         return static_cast<size_t>(trimmed.end() - str.begin());
     return csubstr::npos;
 }
@@ -14683,9 +14662,7 @@ template<class T>
 C4_ALWAYS_INLINE size_t atou_first(csubstr str, T *v)
 {
     csubstr trimmed = str.first_uint_span();
-    if(trimmed.len == 0)
-        return csubstr::npos;
-    if(atou(trimmed, v))
+    if(trimmed.len && atou(trimmed, v))
         return static_cast<size_t>(trimmed.end() - str.begin());
     return csubstr::npos;
 }
@@ -15437,7 +15414,13 @@ C4_ALWAYS_INLINE size_t to_chars(substr buf,   double v) noexcept { return dtoa(
 template <class T> C4_ALWAYS_INLINE auto to_chars(substr buf, T v) noexcept -> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type { return itoa(buf, v); }
 template <class T> C4_ALWAYS_INLINE auto to_chars(substr buf, T v) noexcept -> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type { return write_dec(buf, v); }
 template <class T>
-C4_ALWAYS_INLINE size_t to_chars(substr s, T *v) noexcept { return itoa(s, (intptr_t)v, (intptr_t)16); }
+C4_ALWAYS_INLINE auto to_chars(substr s, T *v) noexcept
+    -> typename std::enable_if<!std::is_same<T, char>::value &&
+                               !std::is_same<T, const char>::value,
+                               size_t>::type
+{
+    return itoa(s, (intptr_t)v, (intptr_t)16);
+}
 
 /** @} */
 
@@ -15543,37 +15526,36 @@ C4_ALWAYS_INLINE size_t to_chars(substr buf, bool v) noexcept
 /** @ingroup doc_from_chars */
 inline bool from_chars(csubstr buf, bool * C4_RESTRICT v) noexcept
 {
-    if(buf == '0')
+    if(buf.len == 1)
     {
-        *v = false; return true;
+        if(buf.str[0] == '0')
+        {
+            *v = false; return true;
+        }
+        else if(buf.str[0] == '1')
+        {
+            *v = true; return true;
+        }
     }
-    else if(buf == '1')
+    else if(buf.len == 4)
     {
-        *v = true; return true;
+        if(((buf.str[0] == 't') && (0 == memcmp(buf.str + 1, "rue", 3)))
+           ||
+           ((buf.str[0] == 'T') && ((0 == memcmp(buf.str + 1, "rue", 3) ||
+                                     0 == memcmp(buf.str + 1, "RUE", 3)))))
+        {
+            *v = true; return true;
+        }
     }
-    else if(buf == "false")
+    else if(buf.len == 5)
     {
-        *v = false; return true;
-    }
-    else if(buf == "true")
-    {
-        *v = true; return true;
-    }
-    else if(buf == "False")
-    {
-        *v = false; return true;
-    }
-    else if(buf == "True")
-    {
-        *v = true; return true;
-    }
-    else if(buf == "FALSE")
-    {
-        *v = false; return true;
-    }
-    else if(buf == "TRUE")
-    {
-        *v = true; return true;
+        if(((buf.str[0] == 'f') && (0 == memcmp(buf.str + 1, "alse", 4)))
+           ||
+           ((buf.str[0] == 'F') && ((0 == memcmp(buf.str + 1, "alse", 4) ||
+                                     0 == memcmp(buf.str + 1, "ALSE", 4)))))
+        {
+            *v = false; return true;
+        }
     }
     // fallback to c-style int bools
     int val = 0;
@@ -15678,7 +15660,7 @@ inline size_t to_chars(substr buf, substr v) noexcept
 {
     C4_ASSERT(!buf.overlaps(v));
     size_t len = buf.len < v.len ? buf.len : v.len;
-    // calling memcpy with null strings is undefined behavior
+    // calling memcpy zero len is undefined behavior
     // and will wreak havoc in calling code's branches.
     // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
     if(len)
@@ -15697,7 +15679,7 @@ inline bool from_chars(csubstr buf, substr * C4_RESTRICT v) noexcept
     // is the destination buffer wide enough?
     if(v->len >= buf.len)
     {
-        // calling memcpy with null strings is undefined behavior
+        // calling memcpy with zero len is undefined behavior
         // and will wreak havoc in calling code's branches.
         // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
         if(buf.len)
@@ -15720,7 +15702,7 @@ inline size_t from_chars_first(csubstr buf, substr * C4_RESTRICT v) noexcept
     if(C4_UNLIKELY(trimmed.len == 0))
         return csubstr::npos;
     size_t len = trimmed.len > v->len ? v->len : trimmed.len;
-    // calling memcpy with null strings is undefined behavior
+    // calling memcpy with zero len is undefined behavior
     // and will wreak havoc in calling code's branches.
     // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
     if(len)
@@ -15737,19 +15719,41 @@ inline size_t from_chars_first(csubstr buf, substr * C4_RESTRICT v) noexcept
 
 //-----------------------------------------------------------------------------
 
-/** @ingroup doc_to_chars */
+/** @ingroup doc_to_chars
+ * (1) overload for `char(&)[N]` and `const char(&)[N]` */
 template<size_t N>
-inline size_t to_chars(substr buf, const char (& C4_RESTRICT v)[N]) noexcept
+size_t to_chars(substr buf, const char (& C4_RESTRICT v)[N]) noexcept
 {
-    csubstr sp(v);
-    return to_chars(buf, sp);
+    return to_chars(buf, csubstr{v, N-1});
 }
 
-/** @ingroup doc_to_chars */
-inline size_t to_chars(substr buf, const char * C4_RESTRICT v) noexcept
+/** @ingroup doc_to_chars
+ * (2) overload for `char*` and `const char*`. Must be zero-terminated!
+ * @warning will call strlen()
+ * @note this overload uses SFINAE to prevent it from overriding the array overload
+ * @see For a more detailed explanation on why the plain pointer overloads cannot
+ * coexist with the array overloads, see http://cplusplus.bordoon.com/specializeForCharacterArrays.html */
+template<class CharPtr>
+auto to_chars(substr buf, CharPtr v) noexcept
+    -> typename std::enable_if<std::is_same<CharPtr, char*>::value
+                               ||
+                               std::is_same<CharPtr, const char*>::value, size_t>::type
 {
-    return to_chars(buf, to_csubstr(v));
+    return v ? to_chars(buf, csubstr{v, strlen(v)}) : 0;
 }
+
+
+//-----------------------------------------------------------------------------
+// nullptr implementation
+
+/** @ingroup doc_to_chars */
+C4_ALWAYS_INLINE size_t to_chars(substr, std::nullptr_t) noexcept
+{
+    return 0;
+}
+
+// from_chars() and from_chars_sub() must not exist for nullptr
+
 
 /** @} */
 
@@ -15957,20 +15961,17 @@ namespace fmt {
 /** @defgroup doc_boolean_specifiers boolean specifiers
  * @{ */
 
-/** write a variable as an alphabetic boolean, ie as either true or false
- * @param strict_read */
-template<class T>
 struct boolalpha_
 {
-    boolalpha_(T val_, bool strict_read_=false) : val(val_ ? true : false), strict_read(strict_read_) {}
     bool val;
-    bool strict_read;
 };
 
+/** tag function to mark a variable to be written as an alphabetic
+ * boolean, ie as either true or false */
 template<class T>
-boolalpha_<T> boolalpha(T const& val, bool strict_read=false)
+boolalpha_ boolalpha(T const& val=false)
 {
-    return boolalpha_<T>(val, strict_read);
+    return boolalpha_{val ? true : false};
 }
 
 /** @} */
@@ -15982,8 +15983,7 @@ boolalpha_<T> boolalpha(T const& val, bool strict_read=false)
 /** write a variable as an alphabetic boolean, ie as either true or
  * false
  * @ingroup doc_to_chars */
-template<class T>
-inline size_t to_chars(substr buf, fmt::boolalpha_<T> fmt)
+inline size_t to_chars(substr buf, fmt::boolalpha_ fmt)
 {
     return to_chars(buf, fmt.val ? "true" : "false");
 }
@@ -16390,7 +16390,7 @@ inline size_t from_chars_first(csubstr buf, fmt::raw_wrapper r)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// formatting aligned to left/right
+// formatting aligned to left/right/center
 
 namespace fmt {
 
@@ -16400,32 +16400,61 @@ namespace fmt {
 /** @defgroup doc_alignment_specifiers Alignment specifiers
  * @{ */
 
-template<class T>
-struct left_
-{
-    T val;
-    size_t width;
-    char pad;
-    left_(T v, size_t w, char p) : val(v), width(w), pad(p) {}
-};
+template<class T> struct left_   { T val; size_t width; char padchar; C4_ALWAYS_INLINE left_  (T v, size_t w, char c) noexcept : val(v), width(w), padchar(c) {} };
+template<class T> struct center_ { T val; size_t width; char padchar; C4_ALWAYS_INLINE center_(T v, size_t w, char c) noexcept : val(v), width(w), padchar(c) {} };
+template<class T> struct right_  { T val; size_t width; char padchar; C4_ALWAYS_INLINE right_ (T v, size_t w, char c) noexcept : val(v), width(w), padchar(c) {} };
 
-template<class T>
-struct right_
-{
-    T val;
-    size_t width;
-    char pad;
-    right_(T v, size_t w, char p) : val(v), width(w), pad(p) {}
-};
-
-/** mark an argument to be aligned left */
+/** tag type to mark an argument to be aligned left.
+ * @param val the argument to be aligned left
+ * @param width the length of the field
+ * @param padchar the padding character, defaults to ' '
+ *
+ * @note This function (and the return structure) uses value semantics. To
+ * avoid copies on larger types, you can use std::cref(). For example:
+ * @code{.cpp}
+ * char buf[512];
+ * std::string large_string = .....;
+ * size_t len = cat(buf, fmt::left(std::cref(large_string), 100));
+ * @endcode
+ */
 template<class T>
 left_<T> left(T val, size_t width, char padchar=' ')
 {
     return left_<T>(val, width, padchar);
 }
 
-/** mark an argument to be aligned right */
+/** tag function to mark an argument to be aligned center
+ * @param val the argument to be aligned center
+ * @param width the length of the field
+ * @param padchar the padding character, defaults to ' '
+ *
+ * @note This function (and the return value) uses value semantics. To
+ * avoid copies on larger types, you can use std::cref(). For example:
+ * @code{.cpp}
+ * char buf[512];
+ * std::string large_string = .....;
+ * size_t len = cat(buf, fmt::center(std::cref(large_string), 100));
+ * @endcode
+ */
+template<class T>
+center_<T> center(T val, size_t width, char padchar=' ')
+{
+    return center_<T>(val, width, padchar);
+}
+
+/** tag function to mark an argument to be aligned right
+ * @param val the argument to be aligned right
+ * @param width the length of the field
+ * @param padchar the padding character, defaults to ' '
+ *
+ * @note This function (and the return value) uses value semantics. To
+ * avoid copies on larger types, you can use std::cref(). For example:
+ * @code{.cpp}
+ * char buf[512];
+ * std::string large_string = .....;
+ * size_t len = cat(buf, fmt::right(std::cref(large_string), 100));
+ * @endcode
+ */
 template<class T>
 right_<T> right(T val, size_t width, char padchar=' ')
 {
@@ -16446,8 +16475,7 @@ size_t to_chars(substr buf, fmt::left_<T> const& C4_RESTRICT align)
     size_t ret = to_chars(buf, align.val);
     if(ret >= buf.len || ret >= align.width)
         return ret > align.width ? ret : align.width;
-    buf.first(align.width).sub(ret).fill(align.pad);
-    to_chars(buf, align.val);
+    buf.first(align.width).sub(ret).fill(align.padchar);
     return align.width;
 }
 
@@ -16458,9 +16486,25 @@ size_t to_chars(substr buf, fmt::right_<T> const& C4_RESTRICT align)
     size_t ret = to_chars(buf, align.val);
     if(ret >= buf.len || ret >= align.width)
         return ret > align.width ? ret : align.width;
-    size_t rem = static_cast<size_t>(align.width - ret);
-    buf.first(rem).fill(align.pad);
-    to_chars(buf.sub(rem), align.val);
+    size_t rem = align.width - ret;
+    if(ret)
+        memmove(buf.str + rem, buf.str, ret);
+    buf.first(rem).fill(align.padchar);
+    return align.width;
+}
+
+/** @ingroup doc_to_chars */
+template<class T>
+size_t to_chars(substr buf, fmt::center_<T> const& C4_RESTRICT align)
+{
+    size_t ret = to_chars(buf, align.val);
+    if(ret >= buf.len || ret >= align.width)
+        return ret > align.width ? ret : align.width;
+    size_t first = (align.width - ret) / 2u;
+    if(ret)
+        memmove(buf.str + first, buf.str, ret);
+    buf.first(first).fill(align.padchar);
+    buf.sub(first + ret).fill(align.padchar);
     return align.width;
 }
 
@@ -16471,6 +16515,7 @@ size_t to_chars(substr buf, fmt::right_<T> const& C4_RESTRICT align)
 
 /** @defgroup doc_cat cat: concatenate arguments to string
  * @{ */
+
 
 /** @cond dev */
 // terminates the variadic recursion
@@ -16484,10 +16529,28 @@ inline size_t cat(substr /*buf*/)
 /** serialize the arguments, concatenating them to the given fixed-size buffer.
  * The buffer size is strictly respected: no writes will occur beyond its end.
  * @return the number of characters needed to write all the arguments into the buffer.
- * @see c4::catrs() if instead of a fixed-size buffer, a resizeable container is desired
- * @see c4::uncat() for the inverse function
- * @see c4::catsep() if a separator between each argument is to be used
- * @see c4::format() if a format string is desired */
+ * @see @ref c4::catrs() if instead of a fixed-size buffer, a resizeable container is desired
+ * @see @ref c4::uncat() for the inverse function
+ * @see @ref c4::catsep() if a separator between each argument is to be used
+ * @see @ref c4::format() if a format string is desired
+ *
+ * @note The arguments to format are restricted (legal because they
+ * are rvalues). This may require a workaround when arguments of type
+ * char[]/const char[] are passed repeatedly to the function. For
+ * example,
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * cat(buf, str, str, str); // compile error: 'passing argument 2 to ‘restrict’-qualified parameter aliases with arguments 3, 4'
+ * @endcode
+ * It is possible to work around the problem by suppressing -Wrestrict
+ * or by using the decayed type char* or const char*, or even wrapping
+ * the argument in a csubstr():
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * csubstr ss = to_csubstr(str);
+ * cat(buf, ss, ss, ss); // ok! compiles cleanly
+ * @endcode
+ */
 template<class Arg, class... Args>
 size_t cat(substr buf, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
 {
@@ -16497,11 +16560,11 @@ size_t cat(substr buf, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more
     return num;
 }
 
-/** like c4::cat() but return a substr instead of a size */
+/** like @ref c4::cat() but return a substr instead of a size */
 template<class... Args>
-substr cat_sub(substr buf, Args && ...args)
+substr cat_sub(substr buf, Args const& C4_RESTRICT ...args)
 {
-    size_t sz = cat(buf, std::forward<Args>(args)...);
+    size_t sz = cat(buf, args...);
     C4_CHECK(sz <= buf.len);
     return {buf.str, sz <= buf.len ? sz : buf.len};
 }
@@ -16528,7 +16591,7 @@ inline size_t uncat(csubstr /*buf*/)
  *
  * @return the number of characters read from the buffer, or csubstr::npos
  *   if a conversion was not successful.
- * @see c4::cat(). c4::uncat() is the inverse of c4::cat(). */
+ * @see @ref c4::cat(). @ref c4::uncat() is the inverse of @ref c4::cat(). */
 template<class Arg, class... Args>
 size_t uncat(csubstr buf, Arg & C4_RESTRICT a, Args & C4_RESTRICT ...more)
 {
@@ -16575,36 +16638,9 @@ size_t catsep_more(substr buf, Sep const& C4_RESTRICT sep, Arg const& C4_RESTRIC
     num += ret;
     return num;
 }
-
-
-template<class Sep>
-inline size_t uncatsep_more(csubstr /*buf*/, Sep & /*sep*/)
-{
-    return 0;
-}
-
-template<class Sep, class Arg, class... Args>
-size_t uncatsep_more(csubstr buf, Sep & C4_RESTRICT sep, Arg & C4_RESTRICT a, Args & C4_RESTRICT ...more)
-{
-    size_t ret = from_chars_first(buf, &sep);
-    size_t num = ret;
-    if(C4_UNLIKELY(ret == csubstr::npos))
-        return csubstr::npos;
-    buf  = buf.len >= ret ? buf.sub(ret) : substr{};
-    ret  = from_chars_first(buf, &a);
-    if(C4_UNLIKELY(ret == csubstr::npos))
-        return csubstr::npos;
-    num += ret;
-    buf  = buf.len >= ret ? buf.sub(ret) : substr{};
-    ret  = uncatsep_more(buf, sep, more...);
-    if(C4_UNLIKELY(ret == csubstr::npos))
-        return csubstr::npos;
-    num += ret;
-    return num;
-}
-
 } // namespace detail
 
+// terminates the variadic recursion
 template<class Sep>
 size_t catsep(substr /*buf*/, Sep const& C4_RESTRICT /*sep*/)
 {
@@ -16617,10 +16653,29 @@ size_t catsep(substr /*buf*/, Sep const& C4_RESTRICT /*sep*/)
  * buffer, using a separator between each argument.
  * The buffer size is strictly respected: no writes will occur beyond its end.
  * @return the number of characters needed to write all the arguments into the buffer.
- * @see c4::catseprs() if instead of a fixed-size buffer, a resizeable container is desired
- * @see c4::uncatsep() for the inverse function (ie, reading instead of writing)
- * @see c4::cat() if no separator is needed
- * @see c4::format() if a format string is desired */
+ * @see @ref c4::catseprs() if instead of a fixed-size buffer, a resizeable container is desired
+ * @see @ref c4::uncatsep() for the inverse function (ie, reading instead of writing)
+ * @see @ref c4::cat() if no separator is needed
+ * @see @ref c4::format() if a format string is desired
+ *
+ *
+ * @note The arguments to format are restricted (legal because they
+ * are rvalues). This may require a workaround when arguments of type
+ * char[]/const char[] are passed repeatedly to the function. For
+ * example,
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * cat(buf, str, str, str); // compile error: 'passing argument 2 to ‘restrict’-qualified parameter aliases with arguments 3, 4'
+ * @endcode
+ * It is possible to work around the problem by suppressing -Wrestrict
+ * or by using the decayed type char* or const char*, or even wrapping
+ * the argument in a csubstr():
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * csubstr ss = to_csubstr(str);
+ * cat(buf, ss, ss, ss); // ok! compiles cleanly
+ * @endcode
+ */
 template<class Sep, class Arg, class... Args>
 size_t catsep(substr buf, Sep const& C4_RESTRICT sep, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
 {
@@ -16630,8 +16685,9 @@ size_t catsep(substr buf, Sep const& C4_RESTRICT sep, Arg const& C4_RESTRICT a, 
     return num;
 }
 
-/** like c4::catsep() but return a substr instead of a size
- * @see c4::catsep(). c4::uncatsep() is the inverse of c4::catsep(). */
+/** like @ref c4::catsep() but return a substr instead of a size @see
+ * @ref c4::catsep(). @ref c4::uncatsep() is the inverse of @ref
+ * c4::catsep(). */
 template<class... Args>
 substr catsep_sub(substr buf, Args && ...args)
 {
@@ -16651,29 +16707,38 @@ substr catsep_sub(substr buf, Args && ...args)
 /** @defgroup doc_uncatsep uncatsep: deserialize the separated arguments from a string
  * @{ */
 
-/** deserialize the arguments from the given buffer.
- *
- * @return the number of characters read from the buffer, or csubstr::npos
- *   if a conversion was not successful.
- * @see c4::cat(). c4::uncat() is the inverse of c4::cat(). */
+/** @cond dev */
+template<class Arg>
+inline size_t uncatsep(csubstr buf, csubstr /*sep*/, Arg &C4_RESTRICT a)
+{
+    return from_chars(buf, &a) ? buf.len : csubstr::npos;
+}
+/** @endcond */
 
 /** deserialize the arguments from the given buffer, using a separator.
  *
  * @return the number of characters read from the buffer, or csubstr::npos
  *   if a conversion was not successful
- * @see c4::catsep(). c4::uncatsep() is the inverse of c4::catsep(). */
-template<class Sep, class Arg, class... Args>
-size_t uncatsep(csubstr buf, Sep & C4_RESTRICT sep, Arg & C4_RESTRICT a, Args & C4_RESTRICT ...more)
+ *
+ * @see c4::catsep(). @ref c4::uncatsep() is the inverse of @ref c4::catsep(). */
+template<class Arg, class... Args>
+size_t uncatsep(csubstr buf, csubstr sep, Arg & C4_RESTRICT a, Args & C4_RESTRICT ...more)
 {
-    size_t ret = from_chars_first(buf, &a), num = ret;
-    if(C4_UNLIKELY(ret == csubstr::npos))
-        return csubstr::npos;
-    buf  = buf.len >= ret ? buf.sub(ret) : substr{};
-    ret  = detail::uncatsep_more(buf, sep, more...);
-    if(C4_UNLIKELY(ret == csubstr::npos))
-        return csubstr::npos;
-    num += ret;
-    return num;
+    if(C4_LIKELY(sep.len > 0))
+    {
+        size_t pos = buf.find(sep);
+        if(C4_LIKELY(pos != csubstr::npos))
+        {
+            if(C4_LIKELY(from_chars(buf.first(pos), &a)))
+            {
+                pos += sep.len;
+                size_t num = uncatsep(buf.sub(pos), sep, more...);
+                if(C4_LIKELY(num != csubstr::npos))
+                    return pos + num;
+            }
+        }
+    }
+    return csubstr::npos;
 }
 
 /** @} */
@@ -16695,28 +16760,91 @@ inline size_t format(substr buf, csubstr fmt)
 /// @endcond
 
 
-/** using a format string, serialize the arguments into the given
- * fixed-size buffer.
- * The buffer size is strictly respected: no writes will occur beyond its end.
- * In the format string, each argument is marked with a compact
- * curly-bracket pair: {}. Arguments beyond the last curly bracket pair
- * are silently ignored. For example:
+/** Using a format string, serialize the arguments into the given
+ * fixed-size buffer. The buffer size is strictly respected: no writes
+ * will occur beyond its end. In the format string, each argument is
+ * marked with a compact curly-bracket pair "{}". This pair does not
+ * take any interior sequence numbers or extra formatting arguments
+ * inside it (contrary to eg the C++20 std::format implementation or
+ * the Python formatting facilities). To enable argument
+ * customization, use the formatting facilities in @ref
+ * doc_format_specifiers wrapping the arguments passed to this
+ * function.
+ *
+ * @return the number of bytes needed to write into the buffer.
+ *
+ * @see @ref c4::formatrs() if instead of a fixed-size buffer, a resizeable container is desired
+ * @see @ref c4::unformat() for the inverse function
+ * @see @ref c4::cat() if no format or separator is needed
+ * @see @ref c4::catsep() if no format is needed, but a separator must be used
+ *
+ * For example:
  * @code{.cpp}
  * c4::format(buf, "the {} drank {} {}", "partier", 5, "beers"); // the partier drank 5 beers
  * c4::format(buf, "the {} drank {} {}", "programmer", 6, "coffees"); // the programmer drank 6 coffees
  * @endcode
- * @return the number of characters needed to write into the buffer.
- * @see c4::formatrs() if instead of a fixed-size buffer, a resizeable container is desired
- * @see c4::unformat() for the inverse function
- * @see c4::cat() if no format or separator is needed
- * @see c4::catsep() if no format is needed, but a separator must be used */
+ *
+ * Using @ref
+ * doc_format_specifiers enables control of the result. For example:
+ * @code{.cpp}
+ * c4::format(buf, "the {} drank {} {}", "partier", c4::fmt::real(5, 3), "beers"); // the partier drank 5.000 beers
+ * c4::format(buf, "the {} drank {} {}", "partier", c4::fmt::zpad(5, 3), "beers"); // the partier drank 005 beers
+ * c4::format(buf, "the {} drank {} {}", "partier", c4::fmt::bin(5), "beers"); // the partier drank 0b101 beers
+ * c4::format(buf, "the {} drank {} {}", "partier", c4::fmt::oct(5), "beers"); // the partier drank 0o6 beers
+ * c4::format(buf, "the {} drank {} {}", "partier", c4::fmt::hex(5), "beers"); // the partier drank 0x6 beers
+ * c4::format(buf, "the {} drank {} {}", "programmer", c4::fmt::real(6, 3), "coffees"); // the programmer drank 6.000 coffees
+ * c4::format(buf, "the {} drank {} {}", "programmer", c4::fmt::zpad(6, 3), "coffees"); // the programmer drank 006 coffees
+ * c4::format(buf, "the {} drank {} {}", "programmer", c4::fmt::bin(6), "coffees"); // the programmer drank 0b110 coffees
+ * c4::format(buf, "the {} drank {} {}", "programmer", c4::fmt::oct(6), "coffees"); // the programmer drank 0o6 coffees
+ * c4::format(buf, "the {} drank {} {}", "programmer", c4::fmt::hex(6), "coffees"); // the programmer drank 0x6 coffees
+ * @endcode
+ *
+ * @note Arguments beyond the last curly bracket pair are silently
+ * ignored. Curly bracket pairs without a corresponding argument are
+ * printed as part of the result.
+ * @code{.cpp}
+ * // note "and nothing else" being ignored
+ * c4::format(buf, "the {} drank {} {}", "partier", 5, "beers", "and nothing else"); // the partier drank 5 beers
+ *
+ * // note "this is ignored {}" being part of the result
+ * c4::format(buf, "the {} drank {} {} this is ignored: {}", "programmer", 6, "coffees"); // the programmer drank 6 coffees this is ignored: {}
+ * @endcode
+ *
+ * @note The curly bracket pair cannot be escaped, but can of course
+ * be placed into the result by passing an "{}" argument in its place,
+ * or if it is provided beyond the last argument passed to the
+ * function (see prior note).
+ * @code{.cpp}
+ * // as above: no argument given, so no substitution made:
+ * c4::format(buf, "let's show {} on the result"); // let's show {} on the result
+ * // or just pass "{}" as an argument to force the substitution:
+ * c4::format(buf, "let's show {} on the result and then {}", "{}", "this"); // let's show {} on the result and then this
+ * @endcode
+ *
+ * @note The arguments to format are restricted (legal because they
+ * are rvalues). This may require a workaround when arguments of type
+ * char[]/const char[] are passed repeatedly to the function. For
+ * example,
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * cat(buf, str, str, str); // compile error: 'passing argument 2 to ‘restrict’-qualified parameter aliases with arguments 3, 4'
+ * @endcode
+ * It is possible to work around the problem by suppressing -Wrestrict
+ * or by using the decayed type char* or const char*, or even wrapping
+ * the argument in a csubstr():
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * csubstr ss = to_csubstr(str);
+ * cat(buf, ss, ss, ss); // ok! compiles cleanly
+ * @endcode
+ */
 template<class Arg, class... Args>
 size_t format(substr buf, csubstr fmt, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
 {
-    size_t pos = fmt.find("{}"); // @todo use _find_fmt()
+    size_t pos = fmt.find("{}");
     if(C4_UNLIKELY(pos == csubstr::npos))
         return to_chars(buf, fmt);
-    size_t num = to_chars(buf, fmt.sub(0, pos));
+    size_t num = to_chars(buf, fmt.first(pos));
     size_t out = num;
     buf  = buf.len >= num ? buf.sub(num) : substr{};
     num  = to_chars(buf, a);
@@ -16727,9 +16855,9 @@ size_t format(substr buf, csubstr fmt, Arg const& C4_RESTRICT a, Args const& C4_
     return out;
 }
 
-/** like c4::format() but return a substr instead of a size
+/** like @ref c4::format() but return a substr instead of a size
  * @see c4::format()
- * @see c4::catsep(). uncatsep() is the inverse of catsep(). */
+ * @see c4::catsep(). @ref c4::uncatsep() is the inverse of @ref c4::catsep(). */
 template<class... Args>
 substr format_sub(substr buf, csubstr fmt, Args const& C4_RESTRICT ...args)
 {
@@ -16756,9 +16884,11 @@ inline size_t unformat(csubstr /*buf*/, csubstr fmt)
 
 
 /** using a format string, deserialize the arguments from the given
- * buffer.
+ * buffer. This is the inverse function to @ref c4::format().
+ *
  * @return the number of characters read from the buffer, or npos if a conversion failed.
- * @see c4::format(). c4::unformat() is the inverse function to format(). */
+ *
+ * @see @ref c4::format(). */
 template<class Arg, class... Args>
 size_t unformat(csubstr buf, csubstr fmt, Arg & C4_RESTRICT a, Args & C4_RESTRICT ...more)
 {
@@ -16787,14 +16917,35 @@ size_t unformat(csubstr buf, csubstr fmt, Arg & C4_RESTRICT a, Args & C4_RESTRIC
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-/** cat+resize: like c4::cat(), but receives a container, and resizes
- * it as needed to contain the result. The container is
- * overwritten. To append to it, use the append overload.
- * @see c4::cat()
- * @ingroup doc_cat */
+/** cat+resize: like @ref c4::cat(), but receives a container, and
+ * resizes it as needed to contain the result. The container is
+ * overwritten. To append to it, use @ref c4::catrs_append().
+ *
+ * @see @ref c4::cat()
+ * @see @ref c4::catrs_append()
+ * @ingroup doc_cat
+ *
+ * @note The arguments to format are restricted (legal because they
+ * are rvalues). This may require a workaround when arguments of type
+ * char[]/const char[] are passed repeatedly to the function. For
+ * example,
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * cat(buf, str, str, str); // compile error: 'passing argument 2 to ‘restrict’-qualified parameter aliases with arguments 3, 4'
+ * @endcode
+ * It is possible to work around the problem by suppressing -Wrestrict
+ * or by using the decayed type char* or const char*, or even wrapping
+ * the argument in a csubstr():
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * csubstr ss = to_csubstr(str);
+ * cat(buf, ss, ss, ss); // ok! compiles cleanly
+ * @endcode
+ */
 template<class CharOwningContainer, class... Args>
 inline void catrs(CharOwningContainer * C4_RESTRICT cont, Args const& C4_RESTRICT ...args)
 {
+    cont->resize(cont->capacity()); // improve the odds of fitting in the original buffer
 retry:
     substr buf = to_substr(*cont);
     size_t ret = cat(buf, args...);
@@ -16803,10 +16954,29 @@ retry:
         goto retry;
 }
 
-/** cat+resize: like c4::cat(), but creates and returns a new
+/** cat+resize: like @ref c4::cat(), but creates and returns a new
  * container sized as needed to contain the result.
- * @see c4::cat()
- * @ingroup doc_cat */
+ *
+ * @see @ref c4::cat()
+ * @ingroup doc_cat
+ *
+ * @note The arguments to format are restricted (legal because they
+ * are rvalues). This may require a workaround when arguments of type
+ * char[]/const char[] are passed repeatedly to the function. For
+ * example,
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * cat(buf, str, str, str); // compile error: 'passing argument 2 to ‘restrict’-qualified parameter aliases with arguments 3, 4'
+ * @endcode
+ * It is possible to work around the problem by suppressing -Wrestrict
+ * or by using the decayed type char* or const char*, or even wrapping
+ * the argument in a csubstr():
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * csubstr ss = to_csubstr(str);
+ * cat(buf, ss, ss, ss); // ok! compiles cleanly
+ * @endcode
+ */
 template<class CharOwningContainer, class... Args>
 inline CharOwningContainer catrs(Args const& C4_RESTRICT ...args)
 {
@@ -16815,18 +16985,37 @@ inline CharOwningContainer catrs(Args const& C4_RESTRICT ...args)
     return cont;
 }
 
-/** cat+resize+append: like c4::cat(), but receives a container, and
- * appends to it instead of overwriting it. The container is resized
- * as needed to contain the result.
+/** cat+resize+append: like @ref c4::cat(), but receives a container,
+ * and appends to it instead of overwriting it. The container is
+ * resized as needed to contain the result.
  *
  * @return the region newly appended to the original container
- * @see c4::cat()
- * @see c4::catrs()
- * @ingroup doc_cat */
+ * @see @ref c4::cat()
+ * @see @ref c4::catrs()
+ * @ingroup doc_cat
+ *
+ * @note The arguments to format are restricted (legal because they
+ * are rvalues). This may require a workaround when arguments of type
+ * char[]/const char[] are passed repeatedly to the function. For
+ * example,
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * cat(buf, str, str, str); // compile error: 'passing argument 2 to ‘restrict’-qualified parameter aliases with arguments 3, 4'
+ * @endcode
+ * It is possible to work around the problem by suppressing -Wrestrict
+ * or by using the decayed type char* or const char*, or even wrapping
+ * the argument in a csubstr():
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * csubstr ss = to_csubstr(str);
+ * cat(buf, ss, ss, ss); // ok! compiles cleanly
+ * @endcode
+ */
 template<class CharOwningContainer, class... Args>
 inline csubstr catrs_append(CharOwningContainer * C4_RESTRICT cont, Args const& C4_RESTRICT ...args)
 {
     const size_t pos = cont->size();
+    cont->resize(cont->capacity()); // improve the odds of fitting in the original buffer
 retry:
     substr buf = to_substr(*cont).sub(pos);
     size_t ret = cat(buf, args...);
@@ -16839,15 +17028,36 @@ retry:
 
 //-----------------------------------------------------------------------------
 
-/** catsep+resize: like c4::catsep(), but receives a container, and
- * resizes it as needed to contain the result.  The container is
- * overwritten. To append to the container use the append overload.
+/** catsep+resize: like @ref c4::catsep(), but receives a container,
+ * and resizes it as needed to contain the result.  The container is
+ * overwritten. To append to the container use @ref
+ * c4::catseprs_append().
  *
- * @see c4::catsep()
- * @ingroup doc_catsep */
+ * @see @ref c4::catsep()
+ * @see @ref c4::catseprs_append()
+ * @ingroup doc_catsep
+ *
+ * @note The arguments to format are restricted (legal because they
+ * are rvalues). This may require a workaround when arguments of type
+ * char[]/const char[] are passed repeatedly to the function. For
+ * example,
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * cat(buf, str, str, str); // compile error: 'passing argument 2 to ‘restrict’-qualified parameter aliases with arguments 3, 4'
+ * @endcode
+ * It is possible to work around the problem by suppressing -Wrestrict
+ * or by using the decayed type char* or const char*, or even wrapping
+ * the argument in a csubstr():
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * csubstr ss = to_csubstr(str);
+ * cat(buf, ss, ss, ss); // ok! compiles cleanly
+ * @endcode
+ */
 template<class CharOwningContainer, class Sep, class... Args>
 inline void catseprs(CharOwningContainer * C4_RESTRICT cont, Sep const& C4_RESTRICT sep, Args const& C4_RESTRICT ...args)
 {
+    cont->resize(cont->capacity()); // improve the odds of fitting in the original buffer
 retry:
     substr buf = to_substr(*cont);
     size_t ret = catsep(buf, sep, args...);
@@ -16856,11 +17066,29 @@ retry:
         goto retry;
 }
 
-/** catsep+resize: like c4::catsep(), but create a new container with
- * the result.
+/** catsep+resize: like @ref c4::catsep(), but create a new container
+ * with the result.
  *
  * @return the requested container
- * @ingroup doc_catsep */
+ * @ingroup doc_catsep
+ *
+ * @note The arguments to format are restricted (legal because they
+ * are rvalues). This may require a workaround when arguments of type
+ * char[]/const char[] are passed repeatedly to the function. For
+ * example,
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * cat(buf, str, str, str); // compile error: 'passing argument 2 to ‘restrict’-qualified parameter aliases with arguments 3, 4'
+ * @endcode
+ * It is possible to work around the problem by suppressing -Wrestrict
+ * or by using the decayed type char* or const char*, or even wrapping
+ * the argument in a csubstr():
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * csubstr ss = to_csubstr(str);
+ * cat(buf, ss, ss, ss); // ok! compiles cleanly
+ * @endcode
+ */
 template<class CharOwningContainer, class Sep, class... Args>
 inline CharOwningContainer catseprs(Sep const& C4_RESTRICT sep, Args const& C4_RESTRICT ...args)
 {
@@ -16870,16 +17098,35 @@ inline CharOwningContainer catseprs(Sep const& C4_RESTRICT sep, Args const& C4_R
 }
 
 
-/** catsep+resize+append: like catsep(), but receives a container, and
- * appends the arguments, resizing the container as needed to contain
- * the result. The buffer is appended to.
+/** catsep+resize+append: like @ref c4::catsep(), but receives a
+ * container, and appends the arguments, resizing the container as
+ * needed to contain the result. The buffer is appended to.
  *
  * @return a csubstr of the appended part
- * @ingroup doc_catsep */
+ * @ingroup doc_catsep
+ *
+ * @note The arguments to format are restricted (legal because they
+ * are rvalues). This may require a workaround when arguments of type
+ * char[]/const char[] are passed repeatedly to the function. For
+ * example,
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * cat(buf, str, str, str); // compile error: 'passing argument 2 to ‘restrict’-qualified parameter aliases with arguments 3, 4'
+ * @endcode
+ * It is possible to work around the problem by suppressing -Wrestrict
+ * or by using the decayed type char* or const char*, or even wrapping
+ * the argument in a csubstr():
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * csubstr ss = to_csubstr(str);
+ * cat(buf, ss, ss, ss); // ok! compiles cleanly
+ * @endcode
+ */
 template<class CharOwningContainer, class Sep, class... Args>
 inline csubstr catseprs_append(CharOwningContainer * C4_RESTRICT cont, Sep const& C4_RESTRICT sep, Args const& C4_RESTRICT ...args)
 {
     const size_t pos = cont->size();
+    cont->resize(cont->capacity()); // improve the odds of fitting in the original buffer
 retry:
     substr buf = to_substr(*cont).sub(pos);
     size_t ret = catsep(buf, sep, args...);
@@ -16892,15 +17139,36 @@ retry:
 
 //-----------------------------------------------------------------------------
 
-/** format+resize: like c4::format(), but receives a container, and
- * resizes it as needed to contain the result.  The container is
- * overwritten. To append to the container use the append overload.
+/** format+resize: like @ref c4::format(), but receives a container,
+ * and resizes it as needed to contain the result.  The container is
+ * overwritten. To append to the container use @ref
+ * c4::formatrs_append().
  *
- * @see c4::format()
- * @ingroup doc_format */
+ * @see @ref c4::format()
+ * @see @ref c4::formatrs_append()
+ * @ingroup doc_format
+ *
+ * @note The arguments to format are restricted (legal because they
+ * are rvalues). This may require a workaround when arguments of type
+ * char[]/const char[] are passed repeatedly to the function. For
+ * example,
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * cat(buf, str, str, str); // compile error: 'passing argument 2 to ‘restrict’-qualified parameter aliases with arguments 3, 4'
+ * @endcode
+ * It is possible to work around the problem by suppressing -Wrestrict
+ * or by using the decayed type char* or const char*, or even wrapping
+ * the argument in a csubstr():
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * csubstr ss = to_csubstr(str);
+ * cat(buf, ss, ss, ss); // ok! compiles cleanly
+ * @endcode
+ */
 template<class CharOwningContainer, class... Args>
 inline void formatrs(CharOwningContainer * C4_RESTRICT cont, csubstr fmt, Args const& C4_RESTRICT ...args)
 {
+    cont->resize(cont->capacity()); // improve the odds of fitting in the original buffer
 retry:
     substr buf = to_substr(*cont);
     size_t ret = format(buf, fmt, args...);
@@ -16909,11 +17177,29 @@ retry:
         goto retry;
 }
 
-/** format+resize: like c4::format(), but create a new container with
- * the result.
+/** format+resize: like @ref c4::format(), but create a new container
+ * with the result.
  *
  * @return the requested container
- * @ingroup doc_format */
+ * @ingroup doc_format
+ *
+ * @note The arguments to format are restricted (legal because they
+ * are rvalues). This may require a workaround when arguments of type
+ * char[]/const char[] are passed repeatedly to the function. For
+ * example,
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * cat(buf, str, str, str); // compile error: 'passing argument 2 to ‘restrict’-qualified parameter aliases with arguments 3, 4'
+ * @endcode
+ * It is possible to work around the problem by suppressing -Wrestrict
+ * or by using the decayed type char* or const char*, or even wrapping
+ * the argument in a csubstr():
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * csubstr ss = to_csubstr(str);
+ * cat(buf, ss, ss, ss); // ok! compiles cleanly
+ * @endcode
+ */
 template<class CharOwningContainer, class... Args>
 inline CharOwningContainer formatrs(csubstr fmt, Args const& C4_RESTRICT ...args)
 {
@@ -16922,15 +17208,35 @@ inline CharOwningContainer formatrs(csubstr fmt, Args const& C4_RESTRICT ...args
     return cont;
 }
 
-/** format+resize+append: like format(), but receives a container, and appends the
- * arguments, resizing the container as needed to contain the
- * result. The buffer is appended to.
+/** format+resize+append: like @ref c4::format(), but receives a
+ * container, and appends the arguments, resizing the container as
+ * needed to contain the result. The buffer is appended to.
+ *
  * @return the region newly appended to the original container
- * @ingroup doc_format */
+ * @ingroup doc_format
+ *
+ * @note The arguments to format are restricted (legal because they
+ * are rvalues). This may require a workaround when arguments of type
+ * char[]/const char[] are passed repeatedly to the function. For
+ * example,
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * cat(buf, str, str, str); // compile error: 'passing argument 2 to ‘restrict’-qualified parameter aliases with arguments 3, 4'
+ * @endcode
+ * It is possible to work around the problem by suppressing -Wrestrict
+ * or by using the decayed type char* or const char*, or even wrapping
+ * the argument in a csubstr():
+ * @code{.cpp}
+ * const char str[] = "Hi! ";
+ * csubstr ss = to_csubstr(str);
+ * cat(buf, ss, ss, ss); // ok! compiles cleanly
+ * @endcode
+ */
 template<class CharOwningContainer, class... Args>
 inline csubstr formatrs_append(CharOwningContainer * C4_RESTRICT cont, csubstr fmt, Args const& C4_RESTRICT ...args)
 {
     const size_t pos = cont->size();
+    cont->resize(cont->capacity()); // improve the odds of fitting in the original buffer
 retry:
     substr buf = to_substr(*cont).sub(pos);
     size_t ret = format(buf, fmt, args...);
@@ -19732,6 +20038,152 @@ inline size_t to_chars(c4::substr buf, std::string_view s)
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
+// src/c4/std/span.hpp
+//--------------------------------------------------------------------------------
+//********************************************************************************
+
+#ifndef _C4_STD_SPAN_HPP_
+#define _C4_STD_SPAN_HPP_
+
+/** @file span.hpp */
+
+#ifndef C4CORE_SINGLE_HEADER
+// amalgamate: removed include of
+// c4/language.hpp
+//#include "c4/language.hpp"
+#if !defined(C4_LANGUAGE_HPP_) && !defined(_C4_LANGUAGE_HPP_)
+#error "amalgamate: file c4/language.hpp must have been included at this point"
+#endif /* C4_LANGUAGE_HPP_ */
+
+#endif
+
+
+#if (C4_CPP >= 20) || defined(__DOXYGEN__)
+
+#ifndef C4CORE_SINGLE_HEADER
+// amalgamate: removed include of
+// c4/substr.hpp
+//#include "c4/substr.hpp"
+#if !defined(C4_SUBSTR_HPP_) && !defined(_C4_SUBSTR_HPP_)
+#error "amalgamate: file c4/substr.hpp must have been included at this point"
+#endif /* C4_SUBSTR_HPP_ */
+
+#endif
+
+//included above:
+//#include <span>
+
+
+namespace c4 {
+
+template<class T> struct is_string;
+template<class T> struct is_writeable_string;
+
+// mark std::span<const char> as a string type
+template<> struct is_string<std::span<const char>> : public std::true_type {};
+
+// mark std::span<char> as a string type
+template<> struct is_string<std::span<char>> : public std::true_type {};
+template<> struct is_writeable_string<std::span<char>> : public std::true_type {};
+
+
+//-----------------------------------------------------------------------------
+
+/** create a csubstr from an existing std::span<const char> */
+C4_ALWAYS_INLINE c4::csubstr to_csubstr(std::span<const char> s) noexcept
+{
+    return c4::csubstr(s.data(), s.size());
+}
+
+/** create a csubstr from an existing std::span<char> */
+C4_ALWAYS_INLINE c4::csubstr to_csubstr(std::span<char> s) noexcept
+{
+    return c4::csubstr(s.data(), s.size());
+}
+/** create a substr from an existing std::span<char> */
+C4_ALWAYS_INLINE c4::substr to_substr(std::span<char> s) noexcept
+{
+    return c4::substr(s.data(), s.size());
+}
+
+
+//-----------------------------------------------------------------------------
+
+C4_ALWAYS_INLINE bool operator== (c4::csubstr ss, std::span<char> s) { return ss.compare(s.data(), s.size()) == 0; }
+C4_ALWAYS_INLINE bool operator!= (c4::csubstr ss, std::span<char> s) { return ss.compare(s.data(), s.size()) != 0; }
+C4_ALWAYS_INLINE bool operator>= (c4::csubstr ss, std::span<char> s) { return ss.compare(s.data(), s.size()) >= 0; }
+C4_ALWAYS_INLINE bool operator>  (c4::csubstr ss, std::span<char> s) { return ss.compare(s.data(), s.size()) >  0; }
+C4_ALWAYS_INLINE bool operator<= (c4::csubstr ss, std::span<char> s) { return ss.compare(s.data(), s.size()) <= 0; }
+C4_ALWAYS_INLINE bool operator<  (c4::csubstr ss, std::span<char> s) { return ss.compare(s.data(), s.size()) <  0; }
+
+C4_ALWAYS_INLINE bool operator== (std::span<char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) == 0; }
+C4_ALWAYS_INLINE bool operator!= (std::span<char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) != 0; }
+C4_ALWAYS_INLINE bool operator<= (std::span<char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) >= 0; }
+C4_ALWAYS_INLINE bool operator<  (std::span<char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) >  0; }
+C4_ALWAYS_INLINE bool operator>= (std::span<char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) <= 0; }
+C4_ALWAYS_INLINE bool operator>  (std::span<char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) <  0; }
+
+
+C4_ALWAYS_INLINE bool operator== (c4::csubstr ss, std::span<const char> s) { return ss.compare(s.data(), s.size()) == 0; }
+C4_ALWAYS_INLINE bool operator!= (c4::csubstr ss, std::span<const char> s) { return ss.compare(s.data(), s.size()) != 0; }
+C4_ALWAYS_INLINE bool operator>= (c4::csubstr ss, std::span<const char> s) { return ss.compare(s.data(), s.size()) >= 0; }
+C4_ALWAYS_INLINE bool operator>  (c4::csubstr ss, std::span<const char> s) { return ss.compare(s.data(), s.size()) >  0; }
+C4_ALWAYS_INLINE bool operator<= (c4::csubstr ss, std::span<const char> s) { return ss.compare(s.data(), s.size()) <= 0; }
+C4_ALWAYS_INLINE bool operator<  (c4::csubstr ss, std::span<const char> s) { return ss.compare(s.data(), s.size()) <  0; }
+
+C4_ALWAYS_INLINE bool operator== (std::span<const char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) == 0; }
+C4_ALWAYS_INLINE bool operator!= (std::span<const char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) != 0; }
+C4_ALWAYS_INLINE bool operator<= (std::span<const char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) >= 0; }
+C4_ALWAYS_INLINE bool operator<  (std::span<const char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) >  0; }
+C4_ALWAYS_INLINE bool operator>= (std::span<const char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) <= 0; }
+C4_ALWAYS_INLINE bool operator>  (std::span<const char> s, c4::csubstr ss) { return ss.compare(s.data(), s.size()) <  0; }
+
+
+//-----------------------------------------------------------------------------
+
+/** copy a std::span<const char> to a writeable substr */
+C4_ALWAYS_INLINE size_t to_chars(c4::substr buf, std::span<const char> s)
+{
+    size_t sz = s.size();
+    size_t len = buf.len < sz ? buf.len : sz;
+    buf.copy_from(csubstr(s.data(), len)); // copy only available chars
+    return sz; // return the number of needed chars
+}
+
+/** copy a std::span<char> to a writeable substr */
+inline size_t to_chars(c4::substr buf, std::span<char> s)
+{
+    size_t sz = s.size();
+    size_t len = buf.len < sz ? buf.len : sz;
+    buf.copy_from(csubstr(s.data(), len)); // copy only available chars
+    return sz; // return the number of needed chars
+}
+
+/** copy a csubstr to an existing std::span<char> */
+inline bool from_chars(c4::csubstr buf, std::span<char> * s)
+{
+    if(buf.len <= s->size())
+    {
+        substr(s->data(), buf.len).copy_from(buf);
+        *s = s->first(buf.len);
+        return true;
+    }
+    return false;
+}
+
+} // namespace c4
+
+#endif // SPAN_AVAILABLE
+
+#endif // _C4_STD_SPAN_HPP_
+
+
+// (end src/c4/std/span.hpp)
+
+
+
+//********************************************************************************
+//--------------------------------------------------------------------------------
 // src/c4/std/vector.hpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
@@ -20039,6 +20491,60 @@ inline size_t unformat(csubstr buf, csubstr fmt, std::tuple< Types... > & tp)
 
 
 // (end src/c4/std/tuple.hpp)
+
+
+
+//********************************************************************************
+//--------------------------------------------------------------------------------
+// src/c4/std/std.hpp
+//--------------------------------------------------------------------------------
+//********************************************************************************
+
+#ifndef _C4_STD_STD_HPP_
+#define _C4_STD_STD_HPP_
+
+/** @file std.hpp includes all c4-std interop files */
+
+// amalgamate: removed include of
+// c4/std/vector.hpp
+//#include "c4/std/vector.hpp"
+#if !defined(C4_STD_VECTOR_HPP_) && !defined(_C4_STD_VECTOR_HPP_)
+#error "amalgamate: file c4/std/vector.hpp must have been included at this point"
+#endif /* C4_STD_VECTOR_HPP_ */
+
+// amalgamate: removed include of
+// c4/std/string.hpp
+//#include "c4/std/string.hpp"
+#if !defined(C4_STD_STRING_HPP_) && !defined(_C4_STD_STRING_HPP_)
+#error "amalgamate: file c4/std/string.hpp must have been included at this point"
+#endif /* C4_STD_STRING_HPP_ */
+
+// amalgamate: removed include of
+// c4/std/span.hpp
+//#include "c4/std/span.hpp"
+#if !defined(C4_STD_SPAN_HPP_) && !defined(_C4_STD_SPAN_HPP_)
+#error "amalgamate: file c4/std/span.hpp must have been included at this point"
+#endif /* C4_STD_SPAN_HPP_ */
+
+// amalgamate: removed include of
+// c4/std/string_view.hpp
+//#include "c4/std/string_view.hpp"
+#if !defined(C4_STD_STRING_VIEW_HPP_) && !defined(_C4_STD_STRING_VIEW_HPP_)
+#error "amalgamate: file c4/std/string_view.hpp must have been included at this point"
+#endif /* C4_STD_STRING_VIEW_HPP_ */
+
+// amalgamate: removed include of
+// c4/std/tuple.hpp
+//#include "c4/std/tuple.hpp"
+#if !defined(C4_STD_TUPLE_HPP_) && !defined(_C4_STD_TUPLE_HPP_)
+#error "amalgamate: file c4/std/tuple.hpp must have been included at this point"
+#endif /* C4_STD_TUPLE_HPP_ */
+
+
+#endif // _C4_STD_STD_HPP_
+
+
+// (end src/c4/std/std.hpp)
 
 
 
@@ -20895,17 +21401,17 @@ constexpr const size_t char_traits< wchar_t >::num_whitespace_chars;
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
-// src/c4/memory_resource.cpp
+// src/c4/alloc.cpp
 //--------------------------------------------------------------------------------
 //********************************************************************************
 
 #ifdef C4CORE_SINGLE_HDR_DEFINE_NOW
 // amalgamate: removed include of
-// c4/memory_resource.hpp
-//#include "c4/memory_resource.hpp"
-#if !defined(C4_MEMORY_RESOURCE_HPP_) && !defined(_C4_MEMORY_RESOURCE_HPP_)
-#error "amalgamate: file c4/memory_resource.hpp must have been included at this point"
-#endif /* C4_MEMORY_RESOURCE_HPP_ */
+// c4/alloc.hpp
+//#include "c4/alloc.hpp"
+#if !defined(C4_ALLOC_HPP_) && !defined(_C4_ALLOC_HPP_)
+#error "amalgamate: file c4/alloc.hpp must have been included at this point"
+#endif /* C4_ALLOC_HPP_ */
 
 // amalgamate: removed include of
 // c4/memory_util.hpp
@@ -20925,9 +21431,6 @@ constexpr const size_t char_traits< wchar_t >::num_whitespace_chars;
 #if defined(C4_ARM)
 #   include <malloc.h>
 #endif
-
-//included above:
-//#include <memory>
 
 namespace c4 {
 
@@ -20976,7 +21479,7 @@ void* aalloc_impl(size_t size, size_t alignment) // NOLINT(misc-use-internal-lin
             C4_ERROR("There was insufficient memory to fulfill the "
                      "allocation request of %zu bytes (alignment=%lu)", size, size);
         }
-        return nullptr;
+        return nullptr; // LCOV_EXCL_LINE
     }
 #elif defined(C4_ARM) || defined(C4_ANDROID)
     // https://stackoverflow.com/questions/53614538/undefined-reference-to-posix-memalign-in-arm-gcc
@@ -20994,7 +21497,7 @@ void* aalloc_impl(size_t size, size_t alignment) // NOLINT(misc-use-internal-lin
 }
 
 
-void* arealloc_impl(void* ptr, size_t oldsz, size_t newsz, size_t alignment) // NOLINT(misc-use-internal-linkage)
+C4CORE_EXPORT void* arealloc_impl(void* ptr, size_t oldsz, size_t newsz, size_t alignment) // NOLINT(misc-use-internal-linkage)
 {
     /** @todo make this more efficient
      * @see https://stackoverflow.com/questions/9078259/does-realloc-keep-the-memory-alignment-of-posix-memalign
@@ -21004,7 +21507,7 @@ void* arealloc_impl(void* ptr, size_t oldsz, size_t newsz, size_t alignment) // 
     size_t min = newsz < oldsz ? newsz : oldsz;
     if(mem_overlaps(ptr, tmp, oldsz, newsz))
     {
-        ::memmove(tmp, ptr, min);
+        ::memmove(tmp, ptr, min); // LCOV_EXCL_LINE
     }
     else
     {
@@ -21072,6 +21575,80 @@ void* arealloc(void *ptr, size_t oldsz, size_t newsz, size_t alignment)
     auto fn = c4::get_arealloc();
     void* nptr = fn(ptr, oldsz, newsz, alignment);
     return nptr;
+}
+
+C4_SUPPRESS_WARNING_GCC_CLANG_POP
+
+} // namespace c4
+
+#endif /* C4CORE_SINGLE_HDR_DEFINE_NOW */
+
+
+// (end src/c4/alloc.cpp)
+
+
+
+//********************************************************************************
+//--------------------------------------------------------------------------------
+// src/c4/memory_resource.cpp
+//--------------------------------------------------------------------------------
+//********************************************************************************
+
+#ifdef C4CORE_SINGLE_HDR_DEFINE_NOW
+// amalgamate: removed include of
+// c4/memory_resource.hpp
+//#include "c4/memory_resource.hpp"
+#if !defined(C4_MEMORY_RESOURCE_HPP_) && !defined(_C4_MEMORY_RESOURCE_HPP_)
+#error "amalgamate: file c4/memory_resource.hpp must have been included at this point"
+#endif /* C4_MEMORY_RESOURCE_HPP_ */
+
+// amalgamate: removed include of
+// c4/memory_util.hpp
+//#include "c4/memory_util.hpp"
+#if !defined(C4_MEMORY_UTIL_HPP_) && !defined(_C4_MEMORY_UTIL_HPP_)
+#error "amalgamate: file c4/memory_util.hpp must have been included at this point"
+#endif /* C4_MEMORY_UTIL_HPP_ */
+
+
+//included above:
+//#include <stdlib.h>
+//included above:
+//#include <string.h>
+#if defined(C4_POSIX) || defined(C4_IOS) || defined(C4_MACOS) || defined(C4_ARM)
+//included above:
+//#   include <errno.h>
+#endif
+#if defined(C4_ARM)
+//included above:
+//#   include <malloc.h>
+#endif
+
+//included above:
+//#include <memory>
+
+namespace c4 {
+
+C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
+
+MemoryResourceMalloc s_mrmalloc; // NOLINT
+thread_local static MemoryResource* s_mrcurr = nullptr; // NOLINT
+
+void set_memory_resource(MemoryResource* mr)
+{
+    C4_ASSERT(mr != nullptr);
+    s_mrcurr = mr;
+}
+
+MemoryResource* get_memory_resource()
+{
+    if(!s_mrcurr)
+        s_mrcurr = &s_mrmalloc;
+    return s_mrcurr;
+}
+
+MemoryResourceMalloc* get_memory_resource_malloc()
+{
+    return &s_mrmalloc;
 }
 
 
@@ -21495,7 +22072,7 @@ constexpr static const char base64_char_to_sextet_[128] = {
 };
 
 #ifndef NDEBUG
-void base64_test_tables() // NOLINT(*use-internal-linkage*)
+C4CORE_EXPORT void base64_test_tables() // NOLINT(*use-internal-linkage*)
 {
     for(size_t i = 0; i < C4_COUNTOF(detail::base64_sextet_to_char_); ++i)
     {
@@ -22148,14 +22725,18 @@ bool is_debugger_attached()
     #ifdef RYML_SHARED
         #ifdef RYML_EXPORTS
             #define RYML_EXPORT __declspec(dllexport)
+            #define RYML_EXPORT_EXTERN
         #else
             #define RYML_EXPORT __declspec(dllimport)
+            #define RYML_EXPORT_EXTERN extern
         #endif
     #else
         #define RYML_EXPORT
+        #define RYML_EXPORT_EXTERN
     #endif
 #else
     #define RYML_EXPORT
+    #define RYML_EXPORT_EXTERN
 #endif
 
 #endif /* C4_YML_EXPORT_HPP_ */
@@ -22212,10 +22793,10 @@ using Parser = ParseEngine<EventHandlerTree>;
 
 /** @file version.hpp */
 
-#define RYML_VERSION "0.12.1"
+#define RYML_VERSION "0.13.0"
 #define RYML_VERSION_MAJOR 0
-#define RYML_VERSION_MINOR 12
-#define RYML_VERSION_PATCH 1
+#define RYML_VERSION_MINOR 13
+#define RYML_VERSION_PATCH 0
 
 // amalgamate: removed include of
 // c4/substr.hpp
@@ -22550,6 +23131,7 @@ typedef enum Encoding_ { // NOLINT
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+C4_SUPPRESS_WARNING_MSVC_WITH_PUSH(4251) // csubstr needs to have dll-interface to be used by clients of Location
 
 /** holds a source or yaml file position, for example when an error is
  * detected; See also @ref location_format() and @ref
@@ -22577,6 +23159,8 @@ struct RYML_EXPORT Location
     C4_NO_INLINE Location(const char *n, size_t b, size_t l, size_t c) noexcept : offset(b   ), line(l), col(c   ), name(to_csubstr(n)) {}
 };
 static_assert(std::is_standard_layout<Location>::value, "Location not trivial");
+
+C4_SUPPRESS_WARNING_MSVC_POP
 
 /// @cond dev
 #define RYML_LOC_HERE() (::c4::yml::Location(__FILE__, static_cast<size_t>(__LINE__)))
@@ -22954,6 +23538,9 @@ C4_SUPPRESS_WARNING_GCC_POP
 
 #endif
 
+//included above:
+//#include <cstdlib>
+
 /// @cond dev
 #if (defined(C4_EXCEPTIONS) && (!defined(RYML_NO_DEFAULT_CALLBACKS) && defined(RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS))) || defined(__DOXYGEN__)
 #define _RYML_WITH_EXCEPTIONS
@@ -23276,7 +23863,7 @@ C4_NORETURN C4_NO_INLINE void err_basic(Callbacks const& callbacks, ErrorDataBas
     char errbuf[RYML_ERRMSG_SIZE];
     csubstr msg = detail::_mk_err_msg(errbuf, to_csubstr(fmt), args...);
     callbacks.m_error_basic(msg, errdata, callbacks.m_user_data);
-    abort(); // the call above should not return, but force it here in case it does // LCOV_EXCL_LINE
+    std::abort(); // the call above should not return, but force it here in case it does // LCOV_EXCL_LINE
     C4_UNREACHABLE_AFTER_ERR();
 }
 /** trigger a basic error to its respective handler, with a formatted error message. Like (1), but use the current global callbacks. */
@@ -23335,7 +23922,7 @@ C4_NORETURN C4_NO_INLINE void err_parse(Callbacks const& callbacks, ErrorDataPar
     // fall to basic error if there is no parse handler set, but use errdata.ymlloc instead of errdata.cpploc
     else if(callbacks.m_error_basic)
         callbacks.m_error_basic(msg, errdata.ymlloc, callbacks.m_user_data);
-    abort(); // the call above should not return, so force it here in case it does // LCOV_EXCL_LINE
+    std::abort(); // the call above should not return, so force it here in case it does // LCOV_EXCL_LINE
     C4_UNREACHABLE_AFTER_ERR();
 }
 /** trigger a parse error to its respective handler, with a formatted error message. Like (1), but use the current global callbacks. */
@@ -23397,7 +23984,7 @@ C4_NORETURN C4_NO_INLINE void err_visit(Callbacks const& callbacks, ErrorDataVis
     // fall to basic error if there is no visit handler set
     else if(callbacks.m_error_basic)
         callbacks.m_error_basic(msg, errdata.cpploc, callbacks.m_user_data);
-    abort(); // the call above should not return, so force it here in case it does // LCOV_EXCL_LINE
+    std::abort(); // the call above should not return, so force it here in case it does // LCOV_EXCL_LINE
     C4_UNREACHABLE_AFTER_ERR();
 }
 /** trigger a visit error to its respective handler, with a formatted error message. Like (1), but use the current global callbacks. */
@@ -23757,6 +24344,9 @@ CharContainer format_exc(ExceptionT const& exc)
 #endif /* C4_YML_ERROR_HPP_ */
 
 #endif
+
+//included above:
+//#include <cassert>
 
 // NOLINTBEGIN(bugprone-use-after-move,hicpp-invalid-access-moved)
 
@@ -24399,6 +24989,7 @@ inline C4_NO_INLINE size_t adjust_pos_with_escapes(csubstr scalar, size_t pos, b
 inline C4_NO_INLINE size_t escape_scalar(substr buffer, csubstr scalar, bool keep_newlines=false)
 {
     size_t pos = 0;
+    C4_ASSERT(!buffer.overlaps(scalar));
     auto append_ = [&pos, &buffer](csubstr repl){
         if(repl.len && (pos + repl.len <= buffer.len))
             memcpy(buffer.str + pos, repl.str, repl.len);
@@ -24407,10 +24998,9 @@ inline C4_NO_INLINE size_t escape_scalar(substr buffer, csubstr scalar, bool kee
     escape_scalar_fn(append_, scalar, keep_newlines);
     return pos;
 }
-C4_SUPPRESS_WARNING_GCC_POP
 
 
-/** formatting helper to escape a scalar with @ref escape_scalar() */
+/** formatting helper to escape a scalar with @ref escape_scalar_fn() */
 struct escaped_scalar
 {
     escaped_scalar(csubstr s, bool keep_newl=false) : scalar(s), keep_newlines(keep_newl) {}
@@ -24432,6 +25022,8 @@ C4_NO_INLINE size_t dump(SinkPfn &&sinkfn, substr buf, escaped_scalar const& e)
     escape_scalar_fn(std::forward<SinkPfn>(sinkfn), e.scalar, e.keep_newlines);
     return 0;
 }
+
+C4_SUPPRESS_WARNING_GCC_POP
 
 } // namespace yml
 } // namespace c4
@@ -24465,7 +25057,7 @@ C4_NO_INLINE size_t dump(SinkPfn &&sinkfn, substr buf, escaped_scalar const& e)
 C4_SUPPRESS_WARNING_MSVC_PUSH
 C4_SUPPRESS_WARNING_GCC_CLANG_PUSH
 C4_SUPPRESS_WARNING_GCC_CLANG("-Wold-style-cast")
-#if __GNUC__ >= 6
+#if defined(__GNUC__) && __GNUC__ >= 6
 C4_SUPPRESS_WARNING_GCC("-Wnull-dereference")
 #endif
 // NOLINTBEGIN(modernize-avoid-c-style-cast)
@@ -24612,10 +25204,21 @@ public:
     /** return a preset string based on the node type */
     static const char* type_str(NodeType_e t) noexcept;
 
+    /** fill a string with the node type flags. */
+    C4_ALWAYS_INLINE size_t type_str(substr buf) const noexcept { return type_str(buf, type); }
+    /** fill a string with the node type flags. */
+    static size_t type_str(substr buf, NodeType_e t) noexcept;
+
     /** fill a string with the node type flags. If the string is small, returns {null, len} */
-    C4_ALWAYS_INLINE csubstr type_str(substr buf) const noexcept { return type_str(buf, type); }
+    C4_ALWAYS_INLINE csubstr type_str_sub(substr buf) const noexcept { return type_str_sub(buf, type); }
     /** fill a string with the node type flags. If the string is small, returns {null, len}  */
-    static csubstr type_str(substr buf, NodeType_e t) noexcept;
+    static csubstr type_str_sub(substr buf, NodeType_e t) noexcept
+    {
+        csubstr ret;
+        ret.len = type_str(buf, t);
+        ret.str = ret.len < buf.len ? buf.str : nullptr;
+        return ret;
+    }
 
 public:
 
@@ -24699,32 +25302,73 @@ public:
 /** @name scalar style helpers
  * @{ */
 
-/** choose a YAML emitting style based on the scalar's contents */
-RYML_EXPORT NodeType_e scalar_style_choose(csubstr scalar) noexcept;
+/** choose a YAML scalar style based on the scalar's contents, while
+ * in flow mode. Plain scalars [have more constraints in flow mode
+ * than in block
+ * mode](https://www.yaml.info/learn/quote.html#noplain). @ref
+ * scalar_style_choose_block() is the block mode analogous
+ * function. */
+RYML_EXPORT NodeType_e scalar_style_choose_flow(csubstr scalar) noexcept;
+/** choose a YAML scalar style based on the scalar's contents, while
+ * in block mode. Plain scalars [have more constraints in flow mode
+ * than in block
+ * mode](https://www.yaml.info/learn/quote.html#noplain). @ref
+ * scalar_style_choose_block() is the flow mode analogous function. */
+RYML_EXPORT NodeType_e scalar_style_choose_block(csubstr scalar) noexcept;
+/** choose a YAML emitting style based on the scalar's
+ * contents. Legacy compatibility function: assumes flow mode which is
+ * more constraining, and delegates to either @ref
+ * scalar_style_choose_flow() or @ref scalar_style_choose_block(). */
+inline NodeType_e scalar_style_choose(csubstr s, bool flow=true) noexcept
+{
+    return flow ? scalar_style_choose_flow(s) : scalar_style_choose_block(s);
+}
 
-/** choose a json style based on the scalar's contents */
-RYML_EXPORT NodeType_e scalar_style_json_choose(csubstr scalar) noexcept;
+
+/** choose a json scalar style based on the scalar's contents */
+RYML_EXPORT NodeType_e scalar_style_choose_json(csubstr scalar) noexcept;
+/** @cond dev */
+// LCOV_EXCL_START
+RYML_DEPRECATED("use scalar_style_choose_json()")
+inline NodeType_e scalar_style_json_choose(csubstr scalar) noexcept
+{
+    return scalar_style_choose_json(scalar);
+}
+// LCOV_EXCL_STOP
+/** @endcond */
+
 
 /** query whether a scalar can be encoded using single quotes.
  * It may not be possible, notably when there is leading
  * whitespace after a newline. */
 RYML_EXPORT bool scalar_style_query_squo(csubstr s) noexcept;
 
-/** query whether a scalar can be encoded using plain style (no
- * quotes, not a literal/folded block scalar). */
-RYML_EXPORT bool scalar_style_query_plain(csubstr s) noexcept;
+/** query whether a scalar can be encoded using plain style while in
+ * flow mode. Plain scalars [have more constraints in flow mode than
+ * in block
+ * mode](https://www.yaml.info/learn/quote.html#noplain). @ref
+ * scalar_style_query_plain_block() is the block mode analogous function.*/
+RYML_EXPORT bool scalar_style_query_plain_flow(csubstr s) noexcept;
+/** query whether a scalar can be encoded using plain style while in
+ * block mode. Plain scalars [have more constraints in flow mode than
+ * in block
+ * mode](https://www.yaml.info/learn/quote.html#noplain). @ref
+ * scalar_style_query_plain_flow() is the flow mode analogous function.*/
+RYML_EXPORT bool scalar_style_query_plain_block(csubstr s) noexcept;
+/** query whether a scalar can be encoded using plain style. Legacy
+ * compatibility function: assumes flow mode which is more
+ * constraining, and delegates to either @ref
+ * scalar_style_query_plain_flow() or @ref
+ * scalar_style_query_plain_block(). */
+inline bool scalar_style_query_plain(csubstr s, bool flow=true) noexcept
+{
+    return flow ? scalar_style_query_plain_flow(s) : scalar_style_query_plain_block(s);
+}
 
 /** YAML-sense query of nullity. returns true if the scalar points
  * to `nullptr` or is otherwise equal to one of the strings
  * `"~"`,`"null"`,`"Null"`,`"NULL"` */
-RYML_EXPORT inline C4_NO_INLINE bool scalar_is_null(csubstr s) noexcept
-{
-    return s.str == nullptr ||
-        s == "~" ||
-        s == "null" ||
-        s == "Null" ||
-        s == "NULL";
-}
+RYML_EXPORT bool scalar_is_null(csubstr s) noexcept;
 
 /** @} */
 
@@ -25076,6 +25720,8 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 namespace c4 {
 namespace yml {
 
+C4_SUPPRESS_WARNING_MSVC_WITH_PUSH(4251) // csubstr needs to have dll-interface to be used by clients of LookupResult
+
 class Tree;
 
 /** @addtogroup doc_tag_utils
@@ -25130,7 +25776,7 @@ RYML_EXPORT bool is_valid_tag_handle(csubstr handle);
 
 /** Accelerator structure to reduce memory requirements by enabling
  * reuse of resolved tags. */
-struct RYML_EXPORT TagCache
+struct TagCache
 {
     struct Entry
     {
@@ -25140,7 +25786,7 @@ struct RYML_EXPORT TagCache
     };
     using Entries = detail::stack<Entry>;
     using const_iterator = id_type;
-    struct LookupResult
+    struct RYML_EXPORT LookupResult
     {
         csubstr resolved;
         const_iterator pos;
@@ -25150,8 +25796,8 @@ struct RYML_EXPORT TagCache
 public:
 
     TagCache() noexcept : m_entries() {}
-    LookupResult find(csubstr tag, id_type doc_id, id_type linear_threshold=Entries::sso_size) const noexcept;
-    void add(csubstr tag, csubstr resolved, id_type doc_id, const_iterator pos) RYML_NOEXCEPT;
+    RYML_EXPORT LookupResult find(csubstr tag, id_type doc_id, id_type linear_threshold=Entries::sso_size) const noexcept;
+    RYML_EXPORT void add(csubstr tag, csubstr resolved, id_type doc_id, const_iterator pos) RYML_NOEXCEPT;
 
     void clear() noexcept { m_entries.clear(); }
 
@@ -25214,6 +25860,8 @@ RYML_EXPORT size_t transform_tag(substr output, csubstr handle, csubstr prefix, 
                                  bool with_brackets=true);
 
 /** @} */
+
+C4_SUPPRESS_WARNING_MSVC_POP
 
 } // namespace yml
 } // namespace c4
@@ -25939,10 +26587,11 @@ public:
     /** @name tags and tag directives */
     /** @{ */
 
-    /** Resolve tags in the tree such as `!!str` ->
-     * `<tag:yaml.org,2002:str>`, `!foo` -> `<!foo>` and custom tags
-     * as well, ie tags of the form `!handle!tag` for which there is a
-     * corresponding `%TAG` directive
+    /** Resolve tags in the tree such as `"!!str"` ->
+     * `"<tag:yaml.org,2002:str>"`, `"!foo"` ->
+     * `"<!foo>"` and custom tags as well, ie tags of the form
+     * `"!handle!tag"` for which there is a corresponding `"%%TAG"`
+     * directive
      *
      * @param cache an object of type @ref TagCache to minimize memory
      *        usage by avoiding repeated instantiation of the resolved
@@ -25950,7 +26599,7 @@ public:
      *
      * @param all if true, resolve all tags; if false resolve only
      *        custom tags, ie those that have a prefix such as
-     *        `!m!tag` with a matching `%TAG` directive */
+     *        `"!m!tag"` with a matching `"%TAG"` directive */
     void resolve_tags(TagCache &cache, bool all=true);
     void normalize_tags();
     void normalize_tags_long();
@@ -25971,8 +26620,10 @@ public:
 
     c4::yml::TagDirectiveRange tag_directives() const { return m_tag_directives.directives(); }
 
+    /** @cond dev */
     RYML_DEPRECATED("use c4::yml::tag_directive_const_iterator") typedef TagDirective const* tag_directive_const_iterator;
     RYML_DEPRECATED("use c4::yml::TagDirectiveRange") typedef c4::yml::TagDirectiveRange TagDirectiveProxy;
+    /** @endcond */
 
     /** @} */
 
@@ -26307,7 +26958,7 @@ public:
     /** @name lookup */
     /** @{ */
 
-    struct lookup_result
+    struct RYML_EXPORT lookup_result
     {
         id_type  target;
         id_type  closest;
@@ -26912,6 +27563,7 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #   pragma warning(push)
 #   pragma warning(disable: 4251/*needs to have dll-interface to be used by clients of struct*/)
 #   pragma warning(disable: 4296/*expression is always 'boolean_value'*/)
+#   pragma warning(disable: 4996/*deprecated*/)
 #endif
 
 // NOLINTBEGIN(modernize-avoid-c-style-cast)
@@ -30383,7 +31035,7 @@ void Emitter<Writer>::_visit_doc_val(id_type id)
     // appear at 0-indentation
     NodeType ty = m_tree->type(id);
     const csubstr val = m_tree->val(id);
-    const type_bits val_style = ty & VAL_STYLE;
+    type_bits val_style = ty & VAL_STYLE;
     const bool is_ambiguous = ((ty & VAL_PLAIN) || !val_style)
         && (val.begins_with("...") || val.begins_with("---"));
     if(is_ambiguous)
@@ -30402,7 +31054,7 @@ void Emitter<Writer>::_visit_doc_val(id_type id)
     else
     {
         if(!val_style)
-            ty = scalar_style_choose(val);
+            val_style = scalar_style_choose_block(val);
         _blck_write_scalar(val, val_style);
     }
     if(is_ambiguous)
@@ -30533,7 +31185,7 @@ void Emitter<Writer>::_flow_map_open_entry(id_type node)
         _write_pws_and_pend(_PWS_NONE);
         csubstr key = m_tree->key(node);
         if(!(ty & (NodeType_e)_styles_flow_key))
-            ty |= scalar_style_choose(key) & (NodeType_e)_styles_flow_key;
+            ty |= scalar_style_choose_flow(key) & (NodeType_e)_styles_flow_key;
         _flow_write_scalar(key, ty & (NodeType_e)_styles_flow_key);
     }
     _write_pws_and_pend(_PWS_SPACE);
@@ -30630,7 +31282,7 @@ void Emitter<Writer>::_blck_map_open_entry(id_type node)
     NodeType ty = m_tree->type(node);
     csubstr key = m_tree->key(node);
     if(!(ty & (KEY_STYLE|KEYREF)))
-        ty |= (scalar_style_choose(key) & KEY_STYLE);
+        ty |= (scalar_style_choose_block(key) & KEY_STYLE);
     _write_pws_and_pend(_PWS_NONE);
     if(ty & KEYANCH)
     {
@@ -30716,7 +31368,7 @@ void Emitter<Writer>::_visit_blck_seq(id_type node)
             if(!ty.is_val_ref())
             {
                 if(!(ty & VAL_STYLE))
-                    ty |= (scalar_style_choose(val) & VAL_STYLE);
+                    ty |= (scalar_style_choose_block(val) & VAL_STYLE);
                 _blck_write_scalar(val, ty & VAL_STYLE);
             }
             else
@@ -30762,7 +31414,7 @@ void Emitter<Writer>::_visit_blck_map(id_type node)
             if(!ty.is_val_ref())
             {
                 if(!(ty & VAL_STYLE))
-                    ty |= (scalar_style_choose(val) & VAL_STYLE);
+                    ty |= (scalar_style_choose_block(val) & VAL_STYLE);
                 _blck_write_scalar(val, ty & VAL_STYLE);
             }
             else
@@ -30807,7 +31459,7 @@ void Emitter<Writer>::_visit_flow_sl_seq(id_type node)
             if(!ty.is_val_ref())
             {
                 if(!(ty & (NodeType_e)_styles_flow_val))
-                    ty |= (scalar_style_choose(val) & (NodeType_e)_styles_flow_val);
+                    ty |= (scalar_style_choose_flow(val) & (NodeType_e)_styles_flow_val);
                 _flow_write_scalar(val, ty & (NodeType_e)_styles_flow_val);
             }
             else
@@ -30848,7 +31500,7 @@ void Emitter<Writer>::_visit_flow_ml_seq(id_type node)
             if(!ty.is_val_ref())
             {
                 if(!(ty & (NodeType_e)_styles_flow_val))
-                    ty |= (scalar_style_choose(val) & (NodeType_e)_styles_flow_val);
+                    ty |= (scalar_style_choose_flow(val) & (NodeType_e)_styles_flow_val);
                 _flow_write_scalar(val, ty & (NodeType_e)_styles_flow_val);
             }
             else
@@ -30889,7 +31541,7 @@ void Emitter<Writer>::_visit_flow_sl_map(id_type node)
             if(!ty.is_val_ref())
             {
                 if(!(ty & (NodeType_e)_styles_flow_val))
-                    ty |= (scalar_style_choose(val) & (NodeType_e)_styles_flow_val);
+                    ty |= (scalar_style_choose_flow(val) & (NodeType_e)_styles_flow_val);
                 _flow_write_scalar(val, ty & (NodeType_e)_styles_flow_val);
             }
             else
@@ -30931,7 +31583,7 @@ void Emitter<Writer>::_visit_flow_ml_map(id_type node)
             if(!ty.is_val_ref())
             {
                 if(!(ty & (NodeType_e)_styles_flow_val))
-                    ty |= (scalar_style_choose(val) & (NodeType_e)_styles_flow_val);
+                    ty |= (scalar_style_choose_flow(val) & (NodeType_e)_styles_flow_val);
                 _flow_write_scalar(val, ty & (NodeType_e)_styles_flow_val);
             }
             else
@@ -31585,7 +32237,7 @@ void Emitter<Writer>::_json_writev(id_type id, NodeType ty)
     {
         // use double quoted style if the style is marked quoted
         bool dquoted = ((ty & VALQUO)
-                        || (scalar_style_json_choose(val) & SCALAR_DQUO)); // choose the style
+                        || (scalar_style_choose_json(val) & SCALAR_DQUO)); // choose the style
         if(dquoted)
             _json_write_scalar_dquo(val);
         else if(_json_maybe_write_naninf(val))
@@ -32316,8 +32968,8 @@ typedef enum : ParserFlag_t { // NOLINT
     RUNK = 0x01 <<  1,   ///< reading unknown state (when starting): must determine whether scalar, map or seq
     RMAP = 0x01 <<  2,   ///< reading a map
     RSEQ = 0x01 <<  3,   ///< reading a seq
-    RFLOW = 0x01 <<  4,   ///< reading is inside explicit flow chars: [] or {}
-    RBLCK = 0x01 <<  5,   ///< reading in block mode
+    RFLOW = 0x01 <<  4,  ///< reading is inside explicit flow chars: [] or {}
+    RBLCK = 0x01 <<  5,  ///< reading in block mode
     QMRK = 0x01 <<  6,   ///< reading an explicit key (`? key`)
     RKEY = 0x01 <<  7,   ///< reading a key
     RVAL = 0x01 <<  9,   ///< reading a val
@@ -32330,7 +32982,7 @@ typedef enum : ParserFlag_t { // NOLINT
     NDOC = 0x01 << 15,   ///< no document mode. a document has ended and another has not started yet.
     USTY = 0x01 << 16,   ///< reading in unknown style mode - must determine FLOW or BLCK
     //! reading an implicit map nested in an explicit seq.
-    //! eg, {key: [key2: value2, key3: value3]}
+    //! eg,          {key: [key2: value2, key3: value3]}
     //! is parsed as {key: [{key2: value2}, {key3: value3}]}
     RSEQIMAP = 0x01 << 17,
 } ParserState_e;
@@ -32339,7 +32991,7 @@ typedef enum : ParserFlag_t { // NOLINT
 /** @cond dev */
 #ifdef RYML_DBG
 namespace detail {
-csubstr _parser_flags_to_str(substr buf, ParserFlag_t flags);
+RYML_EXPORT csubstr _parser_flags_to_str(substr buf, ParserFlag_t flags);
 } // namespace detail
 #endif
 /** @endcond */
@@ -32738,7 +33390,13 @@ protected:
 
 #endif
 
-C4_SUPPRESS_WARNING_MSVC_WITH_PUSH(4702) // unreachable code
+C4_SUPPRESS_WARNING_GCC_PUSH
+C4_SUPPRESS_WARNING_MSVC_PUSH
+C4_SUPPRESS_WARNING_MSVC(4702) // unreachable code
+#if defined(__GNUC__) && __GNUC__ >= 6
+C4_SUPPRESS_WARNING_GCC("-Wnull-dereference")
+#endif
+
 // NOLINTBEGIN(hicpp-signed-bitwise)
 
 namespace c4 {
@@ -33507,6 +34165,7 @@ public:
 
 // NOLINTEND(hicpp-signed-bitwise)
 C4_SUPPRESS_WARNING_MSVC_POP
+C4_SUPPRESS_WARNING_GCC_POP
 
 #endif /* _C4_YML_EVENT_HANDLER_TREE_HPP_ */
 
@@ -34444,7 +35103,7 @@ namespace yml {
  */
 
 /** Reusable object to resolve references/aliases in a @ref Tree. */
-struct RYML_EXPORT ReferenceResolver
+struct ReferenceResolver
 {
     ReferenceResolver() = default;
 
@@ -34479,7 +35138,7 @@ struct RYML_EXPORT ReferenceResolver
      * Attack](https://en.wikipedia.org/wiki/Billion_laughs_attack).
      *
      */
-    void resolve(Tree *tree, bool clear_anchors=true);
+    RYML_EXPORT void resolve(Tree *tree, bool clear_anchors=true);
 
 public:
 
@@ -34568,7 +35227,7 @@ RYML_EXPORT id_type estimate_tree_capacity(csubstr src); // NOLINT
  * @see ParseEngine
  * @see EventHandlerTree
  * */
-using Parser = RYML_EXPORT ParseEngine<EventHandlerTree>;
+using Parser = ParseEngine<EventHandlerTree>;
 
 
 //-----------------------------------------------------------------------------
@@ -35049,6 +35708,18 @@ bool read(c4::yml::ConstNodeRef const& n, std::vector<bool, Alloc> *vec)
 #ifndef _C4_YML_STD_STD_HPP_
 #define _C4_YML_STD_STD_HPP_
 
+/** @file std.hpp includes all rapidyaml-std interop files */
+
+// bring all of c4core interop
+// amalgamate: removed include of
+// c4/std/std.hpp
+//#include "c4/std/std.hpp"
+#if !defined(C4_STD_STD_HPP_) && !defined(_C4_STD_STD_HPP_)
+#error "amalgamate: file c4/std/std.hpp must have been included at this point"
+#endif /* C4_STD_STD_HPP_ */
+
+
+// bring all of rapidyaml interop
 // amalgamate: removed include of
 // c4/yml/std/string.hpp
 //#include "c4/yml/std/string.hpp"
@@ -35482,12 +36153,24 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 //********************************************************************************
 
 #ifdef RYML_SINGLE_HDR_DEFINE_NOW
+#ifndef _C4_YML_NODE_TYPE_HPP_
 // amalgamate: removed include of
 // c4/yml/node_type.hpp
 //#include "c4/yml/node_type.hpp"
 #if !defined(C4_YML_NODE_TYPE_HPP_) && !defined(_C4_YML_NODE_TYPE_HPP_)
 #error "amalgamate: file c4/yml/node_type.hpp must have been included at this point"
 #endif /* C4_YML_NODE_TYPE_HPP_ */
+
+#endif
+#ifndef _C4_YML_ERROR_HPP_
+// amalgamate: removed include of
+// c4/yml/error.hpp
+//#include "c4/yml/error.hpp"
+#if !defined(C4_YML_ERROR_HPP_) && !defined(_C4_YML_ERROR_HPP_)
+#error "amalgamate: file c4/yml/error.hpp must have been included at this point"
+#endif /* C4_YML_ERROR_HPP_ */
+
+#endif
 
 
 namespace c4 {
@@ -35550,7 +36233,7 @@ const char* NodeType::type_str(NodeType_e ty) noexcept
     }
 }
 
-csubstr NodeType::type_str(substr buf, NodeType_e flags) noexcept
+size_t NodeType::type_str(substr buf, NodeType_e flags) noexcept
 {
     size_t pos = 0;
     bool gotone = false;
@@ -35612,18 +36295,7 @@ csubstr NodeType::type_str(substr buf, NodeType_e flags) noexcept
 
     #undef _prflag
 
-    if(pos < buf.len)
-    {
-        buf[pos] = '\0';
-        return buf.first(pos);
-    }
-    else
-    {
-        csubstr failed;
-        failed.len = pos + 1;
-        failed.str = nullptr;
-        return failed;
-    }
+    return pos;
 }
 
 
@@ -35632,86 +36304,229 @@ csubstr NodeType::type_str(substr buf, NodeType_e flags) noexcept
 // see https://www.yaml.info/learn/quote.html#noplain
 bool scalar_style_query_squo(csubstr s) noexcept
 {
-    return ! s.first_of_any("\n ", "\n\t");
+    // cannot have leading whitespace after a newline
+    for(size_t i = 0; i < s.len; ++i)
+    {
+        if(s.str[i] == '\n' && i + 1 < s.len)
+        {
+            char next = s.str[i + 1];
+            if(next == ' ' || next == '\t')
+                return false;
+        }
+    }
+    return true;
 }
 
-// see https://www.yaml.info/learn/quote.html#noplain
-bool scalar_style_query_plain(csubstr s) noexcept
+namespace {
+bool _is_wsnl(char c) noexcept
 {
-    if(s.begins_with("-."))
+    return c == ' ' || c == '\n' || c == '\t' || c == '\r';
+}
+bool _is_valid_bulk(csubstr s, size_t i)
+{
+    C4_ASSERT(i >= 1 && i+1 < s.len);
+    C4_ASSERT(s.str[i] == ':' || s.str[i] == '#');
+    switch(s.str[i])
     {
-        if(s == "-.inf" || s == "-.INF")
-            return true;
-        else if(s.sub(2).is_number())
-            return true;
+    case ':': return !_is_wsnl(s.str[i+1]);
+    case '#': return !_is_wsnl(s.str[i-1]);
     }
-    else if(s.begins_with_any("0123456789.-+") && s.is_number())
+    C4_UNREACHABLE(); // LCOV_EXCL_LINE
+}
+} // namespace
+// see https://www.yaml.info/learn/quote.html#noplain
+bool scalar_style_query_plain_flow(csubstr s) noexcept
+{
+    if(!s.len)
+        return !s.str;
+    // first
+    switch(s.str[0])
     {
-        return true;
+    case ' ': case '\n': case '\t': case '\r':
+    case '!': case '&': case '*': case ',':
+    case '"': case '\'': case '|': case '>':
+    case '{': case '}': case '[': case ']':
+    case '#': case '`': case '%': case '@':
+        return false;
+    case '-': case ':': case '?':
+        if(s.len == 1 || (s.str[1] == ' ' || s.str[1] == '\t'))
+            return false;
+        break;
     }
-    return ( ! s.begins_with_any("-:?*&,'\"{}[]|>%#@`\r")) // @ and ` are reserved characters
-        && ( ! s.ends_with_any(":#"))
-             // make this check in the last place, as it has linear
-             // complexity, while the previous ones are
-             // constant-time
-        && (s.first_of("\n#:[]{},") == npos);
+    // bulk
+    for(size_t i = 1; i + 1 < s.len; ++i)
+    {
+        switch(s.str[i])
+        {
+        case ',': case '{': case '}': case '[': case ']':
+            return false;
+        case ':': case '#':
+            if(!_is_valid_bulk(s, i))
+                return false;
+            break;
+        }
+    }
+    // last
+    if(s.len > 1)
+    {
+        switch(s.back())
+        {
+        case ' ': case '\n': case '\t': case '\r':
+        case ',':
+        case '{': case '}':
+        case '[': case ']':
+        case '#':
+        case ':':
+            return false;
+        }
+    }
+    return true;
 }
 
-NodeType_e scalar_style_choose(csubstr s) noexcept
+bool scalar_style_query_plain_block(csubstr s) noexcept
+{
+    if(!s.len)
+        return !s.str;
+    // first
+    switch(s.str[0])
+    {
+    case ' ': case '\n': case '\t': case '\r':
+    case '!': case '&': case '*': case ',':
+    case '"': case '\'': case '|': case '>':
+    case '{': case '}': case '[': case ']':
+    case '#': case '`': case '%': case '@':
+        return false;
+    case '-': case ':': case '?':
+        if (s.len == 1 || (s.str[1] == ' ' || s.str[1] == '\t'))
+            return false;
+        break;
+    }
+    // bulk
+    for(size_t i = 1; i + 1 < s.len; ++i)
+    {
+        switch(s.str[i])
+        {
+        case ':': case '#':
+            if(!_is_valid_bulk(s, i))
+                return false;
+            break;
+        }
+    }
+    // last
+    if(s.len > 1)
+    {
+        switch(s.back())
+        {
+        case ' ': case '\n': case '\t': case '\r':
+        case '#':
+        case ':':
+            return false;
+        }
+    }
+    return true;
+}
+
+NodeType_e scalar_style_choose_flow(csubstr s) noexcept
 {
     if(s.len)
     {
-        if(s.begins_with_any(" \n\t")
-           ||
-           s.ends_with_any(" \n\t"))
-        {
-            return SCALAR_DQUO;
-        }
-        else if( ! scalar_style_query_plain(s))
-        {
-            return scalar_style_query_squo(s) ? SCALAR_SQUO : SCALAR_DQUO;
-        }
-        // nothing remarkable - use plain
-        return SCALAR_PLAIN;
+        if(scalar_style_query_plain_flow(s))
+            return SCALAR_PLAIN;
+        else if(scalar_style_query_squo(s))
+            return SCALAR_SQUO;
+        return SCALAR_DQUO;
     }
     return s.str ? SCALAR_SQUO : SCALAR_PLAIN;
 }
 
-NodeType_e scalar_style_json_choose(csubstr s) noexcept
+NodeType_e scalar_style_choose_block(csubstr s) noexcept
 {
-    // do not quote special cases
-    bool plain = (
-        (s == "true" || s == "false" || s == "null")
-        ||
+    if(s.len)
+    {
+        if(scalar_style_query_plain_block(s))
+            return SCALAR_PLAIN;
+        _RYML_ASSERT_BASIC(scalar_style_query_squo(s)
+                           && "if this assertion fires, please submit an issue!");
+        return SCALAR_SQUO;
+    }
+    return s.str ? SCALAR_SQUO : SCALAR_PLAIN;
+}
+
+
+bool scalar_is_null(csubstr s) noexcept
+{
+    return s.str == nullptr ||
+        (s.len == 1 && (s.str[0] == '~')) ||
+        (s.len == 4 && ((0 == memcmp("null", s.str, 4))
+                        || (0 == memcmp("Null", s.str, 4))
+                        || (0 == memcmp("NULL", s.str, 4))));
+}
+
+
+//-----------------------------------------------------------------------------
+
+namespace {
+
+#define rest_is(c1, c2) ((s.str[1] == (c1)) && (s.str[2] == (c2)))
+bool is_inf_or_nan(csubstr s) noexcept
+{
+    _RYML_ASSERT_BASIC(!s.begins_with("-."));
+    _RYML_ASSERT_BASIC(!s.begins_with("+."));
+    _RYML_ASSERT_BASIC(!s.begins_with("."));
+    _RYML_ASSERT_BASIC(s.len == 3);
+    switch(s.str[0])
+    {
+    case 'i': return rest_is('n', 'f');
+    case 'I': return rest_is('n', 'f') || rest_is('N', 'F');
+    case 'n': return rest_is('a', 'n');
+    case 'N': return rest_is('a', 'n') || rest_is('A', 'N') || rest_is('a', 'N');
+    }
+    return false;
+}
+bool is_inf(csubstr s) noexcept
+{
+    _RYML_ASSERT_BASIC(!s.begins_with("-."));
+    _RYML_ASSERT_BASIC(!s.begins_with("+."));
+    _RYML_ASSERT_BASIC(!s.begins_with("."));
+    _RYML_ASSERT_BASIC(s.len == 3);
+    switch(s.str[0])
+    {
+    case 'i': return rest_is('n', 'f');
+    case 'I': return rest_is('n', 'f') || rest_is('N', 'F');
+    }
+    return false;
+}
+#undef rest_is
+
+bool json_is_plain_number(csubstr s) noexcept
+{
+    return s.is_number()
+        &&
         (
-            // do not quote numbers
-            s.is_number()
-            &&
-            (
-                (
-                    // quote integral numbers if they have a leading 0
-                    // https://github.com/biojppm/rapidyaml/issues/291
-                    (!(s.len > 1 && s.begins_with('0')))
-                    // do not quote reals with leading 0
-                    // https://github.com/biojppm/rapidyaml/issues/313
-                    || (s.find('.') != csubstr::npos)
-                )
-            )
-        )
-        ||
-        (
-            (s.len > 3)
-            &&
-            (
-                (s[0] == '.' && (s == ".inf" || s == ".Inf" || s == ".INF"
-                                 ||
-                                 s == ".nan" || s == ".NaN" || s == ".NAN"))
-                ||
-                (s[0] == '-' && (s == "-.inf" || s == "-.Inf" || s == "-.INF"))
-            )
-        )
-    );
-    return plain ? SCALAR_PLAIN : SCALAR_DQUO;
+            // quote integral numbers if they have a leading 0
+            // https://github.com/biojppm/rapidyaml/issues/291
+            (!(s.len > 1 && s.begins_with('0')))
+            // do not quote reals with leading 0
+            // https://github.com/biojppm/rapidyaml/issues/313
+            || (s.find('.') != csubstr::npos)
+        );
+}
+bool json_is_special_scalar(csubstr s)  noexcept
+{
+    if(s.len == 4)
+        return 0 == memcmp("true", s.str, 4)
+            || 0 == memcmp("null", s.str, 4)
+            || (s[0] == '.' && is_inf_or_nan(s.sub(1)));
+    else if(s.len == 5)
+        return 0 == memcmp("false", s.str, 5)
+            || ((s[0] == '-' || s[0] == '+') && s[1] == '.' && is_inf(s.sub(2)));
+    return false;
+}
+} // namespace
+NodeType_e scalar_style_choose_json(csubstr s) noexcept
+{
+    // do not quote numbers or special scalars
+    return json_is_plain_number(s) || json_is_special_scalar(s) ? SCALAR_PLAIN : SCALAR_DQUO;
 }
 
 } // namespace yml
@@ -36496,23 +37311,18 @@ void ryml_save_test_json(csubstr filename, csubstr src);
     } while(0)
 
 
-#if defined(_MSC_VER)
-#   pragma warning(push)
-#   pragma warning(disable: 4296/*expression is always 'boolean_value'*/)
-#   pragma warning(disable: 4702/*unreachable code*/)
-#elif defined(__clang__)
-#   pragma clang diagnostic push
-#   pragma clang diagnostic ignored "-Wtype-limits" // to remove a warning on an assertion that a size_t >= 0. Later on, this size_t will turn into a template argument, and then it can become < 0.
-#   pragma clang diagnostic ignored "-Wformat-nonliteral"
-#   pragma clang diagnostic ignored "-Wold-style-cast"
-#elif defined(__GNUC__)
-#   pragma GCC diagnostic push
-#   pragma GCC diagnostic ignored "-Wtype-limits" // to remove a warning on an assertion that a size_t >= 0. Later on, this size_t will turn into a template argument, and then it can become < 0.
-#   pragma GCC diagnostic ignored "-Wformat-nonliteral"
-#   pragma GCC diagnostic ignored "-Wold-style-cast"
-#   if __GNUC__ >= 7
-#       pragma GCC diagnostic ignored "-Wduplicated-branches"
-#   endif
+C4_SUPPRESS_WARNING_MSVC_PUSH
+C4_SUPPRESS_WARNING_MSVC(4296) // expression is always 'boolean_value'
+C4_SUPPRESS_WARNING_MSVC(4702) // unreachable code
+C4_SUPPRESS_WARNING_GCC_CLANG_PUSH
+C4_SUPPRESS_WARNING_GCC_CLANG("-Wtype-limits") // to remove a warning on an assertion that a size_t >= 0. Later on, this size_t will turn into a template argument, and then it can become < 0.
+C4_SUPPRESS_WARNING_GCC_CLANG("-Wformat-nonliteral")
+C4_SUPPRESS_WARNING_GCC_CLANG("-Wold-style-cast")
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+C4_SUPPRESS_WARNING_GCC("-Wnull-dereference")
+#endif
+#if defined(__GNUC__) && (__GNUC__ >= 7)
+C4_SUPPRESS_WARNING_GCC("-Wduplicated-branches")
 #endif
 
 // NOLINTBEGIN(hicpp-signed-bitwise,cppcoreguidelines-avoid-goto,hicpp-avoid-goto,hicpp-multiway-paths-covered,modernize-avoid-c-style-cast)
@@ -37428,11 +38238,24 @@ bool ParseEngine<EventHandler>::_scan_scalar_plain_handle_newline(csubstr s, siz
             _c4dbgpf("newl[PLAIN]: next_line.len={}", next_line.len);
             if(next_line.len)
             {
-                next_line = next_line.triml(" \t");
-                if(next_line.begins_with_any(",]#:")) // any of the characters we're interested in
+                size_t fno = next_line.first_not_of(" \t");
+                if(fno != csubstr::npos)
                 {
-                    _c4dbgpf("newl[PLAIN]: found terminating character beginning next line: '{}'", next_line.str[0]);
-                    return false;
+                    _c4assert(fno < next_line.len);
+                    switch(next_line.str[fno])
+                    {
+                    case ',': case ']': case '#':
+                        _c4dbgpf("newl[PLAIN]: found terminating character beginning next line: '{}'", next_line.str[fno]);
+                        return false;
+                    case ':': // cannot be succeeded by whitespace
+                        _c4dbgp("newl[PLAIN]: found :");
+                        if(fno + 1 == next_line.len || _is_blck_token(next_line.sub(fno)))
+                        {
+                            _c4dbgpf("newl[PLAIN]: found terminating character beginning next line: '{}'", next_line.str[fno]);
+                            return false;
+                        }
+                        break;
+                    }
                 }
             }
         }
@@ -40716,8 +41539,14 @@ void ParseEngine<EventHandler>::_handle_block_check_leading_tabs(size_t start_ma
     {
         csubstr leading = _buf().range(start_mark, end_mark);
         _c4dbgpf("block: leading[{}-{}]={}", start_mark, end_mark, _prs(leading, true));
-        if(leading.find('\t') != npos)
-            _c4err("invalid tab character to the left");
+        size_t pos = leading.find('\t');
+        if(pos != npos)
+        {
+            size_t fno = leading.first_not_of(" \t");
+            if(fno == npos || pos < fno)
+                _c4err("invalid tab character to the left");
+        }
+        (void)leading;
     }
 }
 
@@ -44712,6 +45541,7 @@ uint32_t ParseEngine<EventHandler>::_get_annotations_same_line(csubstr token_sou
                 if(&m_pending_tags.annotations[i] != not_this_one
                    && m_pending_tags.annotations[i].line == m_evt_handler->m_curr->pos.line)
                     return &m_pending_tags.annotations[i];
+            C4_UNREACHABLE();
             return (EntryPtr)nullptr; // LCOV_EXCL_LINE
         };
         _c4assert(total >= 1);
@@ -45338,13 +46168,8 @@ void ParseEngine<EventHandler>::parse_in_place_ev(csubstr filename, substr src)
 #undef _c4assert
 #undef _c4err
 
-#if defined(_MSC_VER)
-#   pragma warning(pop)
-#elif defined(__clang__)
-#   pragma clang diagnostic pop
-#elif defined(__GNUC__)
-#   pragma GCC diagnostic pop
-#endif
+C4_SUPPRESS_WARNING_MSVC_POP
+C4_SUPPRESS_WARNING_GCC_CLANG_POP
 
 #endif // _C4_YML_PARSE_ENGINE_DEF_HPP_
 
@@ -46304,13 +47129,11 @@ void Tree::set_root_as_stream()
 void Tree::remove_children(id_type node)
 {
     _RYML_ASSERT_VISIT_(m_callbacks, get(node) != nullptr, this, node);
-    #if __GNUC__ >= 6
-    C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wnull-dereference")
+    C4_SUPPRESS_WARNING_GCC_PUSH
+    #if defined(__GNUC__) && __GNUC__ >= 6
+    C4_SUPPRESS_WARNING_GCC("-Wnull-dereference")
     #endif
     id_type ich = get(node)->m_first_child;
-    #if __GNUC__ >= 6
-    C4_SUPPRESS_WARNING_GCC_POP
-    #endif
     while(ich != NONE)
     {
         remove_children(ich);
@@ -46321,6 +47144,7 @@ void Tree::remove_children(id_type node)
             break;
         ich = next;
     }
+    C4_SUPPRESS_WARNING_GCC_POP
 }
 
 bool Tree::change_type(id_type node, NodeType type)
@@ -47859,7 +48683,8 @@ namespace c4 {
 namespace yml {
 
 // instantiate the parser class
-template class ParseEngine<EventHandlerTree>;
+template class RYML_EXPORT ParseEngine<EventHandlerTree>;
+
 
 namespace {
 void _reset_tree_handler(Parser *parser, Tree *t, id_type node_id)
@@ -48514,7 +49339,7 @@ inline C4_NO_INLINE id_type print_node(Tree const& p, id_type node, int level, i
     if(print_address) printf(" %p", (void const*)p.get(node));
     if(p.is_root(node)) printf(" [ROOT]");
     char typebuf[128];
-    csubstr typestr = type.type_str(typebuf);
+    csubstr typestr = type.type_str_sub(typebuf);
     _RYML_CHECK_BASIC(typestr.str);
     printf(" %.*s", (int)typestr.len, typestr.str);
     if(p.has_key(node))

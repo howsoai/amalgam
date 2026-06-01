@@ -25,7 +25,7 @@ class EntityQueryCaches
 public:
 
 	EntityQueryCaches(Entity *_container) : container(_container)
-	{	}
+	{}
 
 	//adds the entity to the cache
 	// container should contain entity
@@ -175,7 +175,7 @@ public:
 		std::vector<double> doubleVector;
 
 		//buffer for doubles pairs
-		std::vector<std::pair<double,double>> pairDoubleVector;
+		std::vector<std::pair<double, double>> pairDoubleVector;
 
 		//nearest neighbors cache
 		KnnCache knnCache;

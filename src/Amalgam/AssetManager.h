@@ -364,7 +364,7 @@ public:
 
 					//don't escape filename again because it's already escaped in this loop
 					if(!StoreEntityToResource(contained_entity, ce_asset_params,
-							update_persistence, persistent, true, all_contained_entities))
+						update_persistence, persistent, true, all_contained_entities))
 						return false;
 				}
 			}

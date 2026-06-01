@@ -84,7 +84,7 @@ std::string SetTimeZoneDatabasePath(std::string path)
 inline bool IsFormatMonthAndYearOnly(const std::string &s)
 {
 	//expected formats should be length of 5, e.g., "%m-%Y"
-	if(s.size() != 5) 
+	if(s.size() != 5)
 		return false;
 
 	if(s[1] == 'Y' && (s[4] == 'm' || s[4] == 'b' || s[4] == 'B' || s[4] == 'h'))
@@ -92,7 +92,7 @@ inline bool IsFormatMonthAndYearOnly(const std::string &s)
 
 	if(s[4] == 'Y' && (s[1] == 'm' || s[1] == 'b' || s[1] == 'B' || s[1] == 'h'))
 		return true;
-	
+
 	return false;
 }
 
@@ -117,9 +117,9 @@ inline bool ConstrainDateTimeStringToValidFormat(std::string &s)
 			break;
 		}
 
+		//check for valid single-character format specifiers
 		switch(s[index + 1])
 		{
-		//valid single-character format specifiers
 		case 'z':
 		{
 			index++;
@@ -251,10 +251,11 @@ double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str
 	std::chrono::system_clock::time_point dt;
 	std::string in_date_timezone = "";
 
-	#if defined(MULTITHREAD_SUPPORT)
-	thread_local
-	#endif
-		static CachedLocale cached_locale;
+#if defined(MULTITHREAD_SUPPORT)
+	thread_local static CachedLocale cached_locale;
+#else
+	static CachedLocale cached_locale;
+#endif
 
 	cached_locale.ResetStringStream(datetime_str);
 
@@ -299,7 +300,7 @@ double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str
 	else if(has_time_offset)
 		timezone = "UTC";
 
-	const date::time_zone* t_z = GetTimeZoneFromString(timezone);
+	const date::time_zone *t_z = GetTimeZoneFromString(timezone);
 
 	// convert parsed date to the specified timezone
 	auto zoned_datetime = date::make_zoned(t_z, dt);
@@ -326,10 +327,12 @@ std::string ConvertZonedDateTimeToString(TimepointType datetime, const std::stri
 {
 	auto zoned_dt = date::make_zoned(tz, datetime);
 
-	#if defined(MULTITHREAD_SUPPORT)
-	thread_local
-	#endif
-		static CachedLocale cached_locale;
+#if defined(MULTITHREAD_SUPPORT)
+	thread_local static CachedLocale cached_locale;
+#else
+	static CachedLocale cached_locale;
+#endif
+
 
 	cached_locale.ResetStringStream();
 	if(locale.empty())
@@ -404,10 +407,12 @@ std::string GetDateTimeStringFromNumSecondsSinceEpoch(double seconds_since_epoch
 //parses time_str based on format and locale and returns the number of seconds since midnight
 double GetNumSecondsSinceMidnight(const std::string &time_str, std::string format, std::string locale)
 {
-	#if defined(MULTITHREAD_SUPPORT)
-	thread_local
-	#endif
-		static CachedLocale cached_locale;
+#if defined(MULTITHREAD_SUPPORT)
+	thread_local static CachedLocale cached_locale;
+#else
+	static CachedLocale cached_locale;
+#endif
+		
 
 	cached_locale.ResetStringStream(time_str);
 
@@ -463,10 +468,12 @@ std::string GetTimeStringFromNumSecondsSinceMidnight(double seconds_since_midnig
 
 	auto tp = std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::duration<double>(seconds_since_midnight));
 
-	#if defined(MULTITHREAD_SUPPORT)
-	thread_local
-	#endif
-		static CachedLocale cached_locale;
+#if defined(MULTITHREAD_SUPPORT)
+	thread_local static CachedLocale cached_locale;
+#else
+	static CachedLocale cached_locale;
+#endif
+
 
 	cached_locale.ResetStringStream();
 	if(!locale.empty())

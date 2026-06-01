@@ -268,7 +268,7 @@ public:
 			size_t min_to_retrieve, size_t max_to_retrieve,
 			double num_to_retrieve_min_increment_prob,
 			size_t extra_to_retrieve,
-			bool has_weight, double min_weight, std::function<bool (EntityReference, double &)> get_weight)
+			bool has_weight, double min_weight, std::function<bool(EntityReference, double &)> get_weight)
 		{
 			distanceWeightExponent = distance_weight_exponent;
 			computeSurprisal = compute_surprisal;
@@ -338,7 +338,7 @@ public:
 				//if no elements, just return zero
 				if(entity_distance_pair_container_begin == entity_distance_pair_container_end)
 					return 0;
-				
+
 				auto [first_weighted_value, first_unweighted_value, first_prob_same, first_prob_mass, first_weight]
 					= transform_func(entity_distance_pair_container_begin);
 				result_func(entity_distance_pair_container_begin, first_weighted_value, first_unweighted_value, first_prob_mass, first_weight);
@@ -615,14 +615,14 @@ public:
 							}
 						});
 				else
-						TransformDistancesWithBandwidthSelectionAndResultFunction(
-						entity_distance_pair_container_begin, entity_distance_pair_container_end,
-						[&total_probability, &accumulated_value](auto ed_pair,
-							double weighted_value, double unweighted_value, double prob_mass, double weight)
-						{
-							accumulated_value += weighted_value;
-							total_probability += weight;
-						});
+					TransformDistancesWithBandwidthSelectionAndResultFunction(
+					entity_distance_pair_container_begin, entity_distance_pair_container_end,
+					[&total_probability, &accumulated_value](auto ed_pair,
+						double weighted_value, double unweighted_value, double prob_mass, double weight)
+					{
+					accumulated_value += weighted_value;
+					total_probability += weight;
+					});
 
 				//normalize
 				double ave = accumulated_value / total_probability;
@@ -657,14 +657,14 @@ public:
 							}
 						});
 				else
-						TransformDistancesWithBandwidthSelectionAndResultFunction(
-						entity_distance_pair_container_begin, entity_distance_pair_container_end,
-						[&total_probability, &accumulated_value](auto ed_pair,
-							double weighted_value, double unweighted_value, double prob_mass, double weight)
-						{
-							accumulated_value += weight * std::log(unweighted_value);
-							total_probability += weight;
-						});
+					TransformDistancesWithBandwidthSelectionAndResultFunction(
+					entity_distance_pair_container_begin, entity_distance_pair_container_end,
+					[&total_probability, &accumulated_value](auto ed_pair,
+						double weighted_value, double unweighted_value, double prob_mass, double weight)
+					{
+					accumulated_value += weight * std::log(unweighted_value);
+					total_probability += weight;
+					});
 
 				//normalize
 				double ave_log = accumulated_value / total_probability;
@@ -704,11 +704,11 @@ public:
 				}
 
 				distance_contribution = TransformDistancesToExpectedValueForDistanceContribution(entity_distance_iter, end(entity_distance_pair_container));
-			
+
 				//split the distance contribution among the identical entities
 				return distance_contribution / num_identical_entities;
 			}
-			
+
 			double weight_of_identical_entities = 0.0;
 
 			//count the number of zero distances and get the associated weight,
@@ -739,7 +739,7 @@ public:
 		//return the entity weight for the entity reference if it exists, 1.0 if it does not
 		std::function<bool(EntityReference, double &)> getEntityWeightFunction;
 
-protected:
+	protected:
 
 		//exponent by which to scale the distances
 		//only applicable when computeSurprisal is false

@@ -17,7 +17,7 @@ class CustomEvaluableNodeComparator
 public:
 	constexpr CustomEvaluableNodeComparator(Interpreter *_interpreter, EvaluableNode *_function, EvaluableNode *target_list)
 		: interpreter(_interpreter), function(_function), targetList(target_list), hadExecutionSideEffects(false)
-	{ }
+	{}
 
 	bool operator()(EvaluableNode *a, EvaluableNode *b);
 
@@ -44,7 +44,7 @@ class EvaluableNodeIDPathTraverser
 public:
 	inline EvaluableNodeIDPathTraverser()
 		: idPath(nullptr), idPathEntries(nullptr), curIndex(0), destSidReference(nullptr)
-	{	}
+	{}
 
 	//calls AnalyzeIDPath with the same parameters
 	inline EvaluableNodeIDPathTraverser(EvaluableNode *id_path, StringRef *dest_sid_ref)
@@ -125,13 +125,19 @@ public:
 	}
 
 	constexpr bool IsContainer()
-	{	return (curIndex == containerIdIndex);	}
+	{
+		return (curIndex == containerIdIndex);
+	}
 
 	constexpr bool IsEntity()
-	{	return (curIndex == entityIdIndex);	}
+	{
+		return (curIndex == entityIdIndex);
+	}
 
 	constexpr bool IsLastIndex()
-	{	return (curIndex == lastIdIndex);	}
+	{
+		return (curIndex == lastIdIndex);
+	}
 
 	inline void AdvanceIndex()
 	{
@@ -315,7 +321,7 @@ TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath(
 		}
 
 		//traverse the id path for the next loop
-		
+
 		relative_entity_container = EntityReadReference(next_entity);
 	}
 
@@ -369,8 +375,8 @@ inline EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPa
 //traverses id_path_1 and id_path_2 from from_entity, returns the corresponding entities, as well as
 //read references to those entities and all entities they contain
 std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityReadReference>>
-	TraverseToDeeplyContainedEntityReadReferencesViaEvaluableNodeIDPath(Entity *from_entity,
-		EvaluableNode *id_path_1, EvaluableNode *id_path_2);
+TraverseToDeeplyContainedEntityReadReferencesViaEvaluableNodeIDPath(Entity *from_entity,
+	EvaluableNode *id_path_1, EvaluableNode *id_path_2);
 
 //constructs an ID or list of IDs that will traverse from a to b, assuming that b is contained somewhere within a
 EvaluableNode *GetTraversalIDPathFromAToB(EvaluableNodeManager *enm, Entity *a, Entity *b);

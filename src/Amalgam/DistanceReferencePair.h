@@ -12,11 +12,11 @@ class DistanceReferencePair
 public:
 	constexpr DistanceReferencePair()
 		: distance(0), reference(0)
-	{	}
+	{}
 
 	constexpr DistanceReferencePair(double _distance, ReferenceType _reference)
 		: distance(_distance), reference(_reference)
-	{	}
+	{}
 
 	constexpr bool operator <(const DistanceReferencePair<ReferenceType> &drp) const
 	{
@@ -91,7 +91,7 @@ class CountDistanceReferencePair
 public:
 	constexpr CountDistanceReferencePair(size_t _count, double _distance, ReferenceType _reference)
 		: count(_count), distance(_distance), reference(_reference)
-	{	}
+	{}
 
 	//a larger count means more has been computed, and minimum distance should be found
 	// with the largest number of computed features

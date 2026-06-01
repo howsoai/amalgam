@@ -64,7 +64,7 @@ bool IsSignatureValid(std::string &message, std::string &public_key, std::string
 
 	if(signature.size() != crypto_sign_BYTES)
 		return false;
-	
+
 	//prepend the signature
 	std::string signed_message = signature + message;
 

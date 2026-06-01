@@ -17,7 +17,7 @@ public:
 			: interpreter(_interpreter), keepAllOfBoth(keep_all_of_both),
 			typesMustMatch(types_must_match), nominalNumbers(nominal_numbers), nominalStrings(nominal_strings),
 			recursiveMatching(recursive_matching)
-		{	}
+		{}
 
 		virtual MergeMetricResults<Entity *> MergeMetric(Entity *a, Entity *b)
 		{
@@ -27,36 +27,58 @@ public:
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge = false);
 
 		virtual bool KeepAllNonMergeableValues()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool KeepSomeNonMergeableValues()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool KeepNonMergeableValue()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool KeepNonMergeableAInsteadOfB()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool KeepNonMergeableA()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 		virtual bool KeepNonMergeableB()
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		virtual bool AreMergeable(Entity *a, Entity *b)
-		{	return keepAllOfBoth;	}
+		{
+			return keepAllOfBoth;
+		}
 
 		constexpr bool TypesMustMatch()
-		{	return typesMustMatch;		}
+		{
+			return typesMustMatch;
+		}
 
 		constexpr bool NominalNumbers()
-		{	return nominalNumbers;		}
+		{
+			return nominalNumbers;
+		}
 
 		constexpr bool NominalStrings()
-		{	return nominalStrings;		}
+		{
+			return nominalStrings;
+		}
 
 		constexpr bool RecursiveMatching()
-		{	return recursiveMatching;		}
+		{
+			return recursiveMatching;
+		}
 
 		Interpreter *interpreter;
 
@@ -75,14 +97,18 @@ public:
 	public:
 		inline EntitiesMergeForDifferenceMethod(Interpreter *_interpreter)
 			: EntitiesMergeMethod(_interpreter, false, true, true, true, false)
-		{	}
+		{}
 
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge = false);
 
 		constexpr CompactHashMap<Entity *, Entity *> &GetAEntitiesIncludedFromB()
-		{	return aEntitiesIncludedFromB;		}
+		{
+			return aEntitiesIncludedFromB;
+		}
 		constexpr CompactHashMap<Entity *, std::pair<Entity *, bool>> &GetMergedEntitiesIncludedFromB()
-		{	return mergedEntitiesIncludedFromB;		}
+		{
+			return mergedEntitiesIncludedFromB;
+		}
 
 	protected:
 		//key is the entity contained (perhaps deeply) by b
@@ -104,10 +130,14 @@ public:
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge);
 
 		virtual bool KeepAllNonMergeableValues()
-		{	return false;	}
+		{
+			return false;
+		}
 
 		virtual bool KeepSomeNonMergeableValues()
-		{	return true;	}
+		{
+			return true;
+		}
 
 		virtual bool KeepNonMergeableValue();
 		virtual bool KeepNonMergeableAInsteadOfB();

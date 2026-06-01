@@ -67,108 +67,108 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 	//add label to cache if missing
 	switch(cond->queryType)
 	{
-		case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
-		case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
-		case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
-		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
-		case ENT_QUERY_ENTITY_CONVICTIONS:
-		case ENT_QUERY_ENTITY_KL_DIVERGENCES:
-		case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
-		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
+	case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
+	case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
+	case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
+	case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
+	case ENT_QUERY_ENTITY_CONVICTIONS:
+	case ENT_QUERY_ENTITY_KL_DIVERGENCES:
+	case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
+	case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
+	{
+		for(auto label : cond->positionLabels)
 		{
-			for(auto label : cond->positionLabels)
-			{
-				if(!DoesHaveLabel(label))
-					labels_to_add.push_back(label);
-			}
-
-			if(cond->weightLabel != StringInternPool::NOT_A_STRING_ID)
-			{
-				if(!DoesHaveLabel(cond->weightLabel))
-					labels_to_add.push_back(cond->weightLabel);
-			}
-
-			//radius
-			if(cond->singleLabel != StringInternPool::NOT_A_STRING_ID)
-			{
-				if(!DoesHaveLabel(cond->singleLabel))
-					labels_to_add.push_back(cond->singleLabel);
-			}
-
-			for(auto label : cond->additionalSortedListLabels)
-			{
-				if(!DoesHaveLabel(label))
-					labels_to_add.push_back(label);
-			}
-
-			break;
+			if(!DoesHaveLabel(label))
+				labels_to_add.push_back(label);
 		}
 
-		case ENT_QUERY_SAMPLE:
-		case ENT_QUERY_AMONG:
-		case ENT_QUERY_NOT_AMONG:
-		case ENT_QUERY_MIN:
-		case ENT_QUERY_MAX:
-		case ENT_QUERY_MIN_DIFFERENCE:
-		case ENT_QUERY_MAX_DIFFERENCE:
+		if(cond->weightLabel != StringInternPool::NOT_A_STRING_ID)
 		{
-			if(cond->singleLabel != StringInternPool::NOT_A_STRING_ID)
-			{
-				if(!DoesHaveLabel(cond->singleLabel))
-					labels_to_add.push_back(cond->singleLabel);
-			}
-
-			break;
+			if(!DoesHaveLabel(cond->weightLabel))
+				labels_to_add.push_back(cond->weightLabel);
 		}
 
-		case ENT_QUERY_SUM:
-		case ENT_QUERY_MODE:
-		case ENT_QUERY_QUANTILE:
-		case ENT_QUERY_GENERALIZED_MEAN:
-		case ENT_QUERY_VALUE_MASSES:
+		//radius
+		if(cond->singleLabel != StringInternPool::NOT_A_STRING_ID)
 		{
 			if(!DoesHaveLabel(cond->singleLabel))
 				labels_to_add.push_back(cond->singleLabel);
-
-			if(cond->weightLabel != StringInternPool::NOT_A_STRING_ID)
-			{
-				if(!DoesHaveLabel(cond->weightLabel))
-					labels_to_add.push_back(cond->weightLabel);
-			}
-
-			break;
 		}
 
-		case ENT_QUERY_EXISTS:
-		case ENT_QUERY_NOT_EXISTS:
+		for(auto label : cond->additionalSortedListLabels)
 		{
-			for(auto label : cond->existLabels)
-			{
-				if(!DoesHaveLabel(label))
-					labels_to_add.push_back(label);
-			}
-			break;
+			if(!DoesHaveLabel(label))
+				labels_to_add.push_back(label);
 		}
 
-		case ENT_QUERY_EQUALS:
-		case ENT_QUERY_NOT_EQUALS:
+		break;
+	}
+
+	case ENT_QUERY_SAMPLE:
+	case ENT_QUERY_AMONG:
+	case ENT_QUERY_NOT_AMONG:
+	case ENT_QUERY_MIN:
+	case ENT_QUERY_MAX:
+	case ENT_QUERY_MIN_DIFFERENCE:
+	case ENT_QUERY_MAX_DIFFERENCE:
+	{
+		if(cond->singleLabel != StringInternPool::NOT_A_STRING_ID)
 		{
-			for(auto &[label_id, _] : cond->singleLabels)
-			{
-				if(!DoesHaveLabel(label_id))
-					labels_to_add.push_back(label_id);
-			}
-			break;
+			if(!DoesHaveLabel(cond->singleLabel))
+				labels_to_add.push_back(cond->singleLabel);
 		}
 
-		default:
+		break;
+	}
+
+	case ENT_QUERY_SUM:
+	case ENT_QUERY_MODE:
+	case ENT_QUERY_QUANTILE:
+	case ENT_QUERY_GENERALIZED_MEAN:
+	case ENT_QUERY_VALUE_MASSES:
+	{
+		if(!DoesHaveLabel(cond->singleLabel))
+			labels_to_add.push_back(cond->singleLabel);
+
+		if(cond->weightLabel != StringInternPool::NOT_A_STRING_ID)
 		{
-			for(auto &lbv : cond->labelBetweenValues)
-			{
-				if(!DoesHaveLabel(lbv.label))
-					labels_to_add.push_back(lbv.label);
-			}
+			if(!DoesHaveLabel(cond->weightLabel))
+				labels_to_add.push_back(cond->weightLabel);
 		}
+
+		break;
+	}
+
+	case ENT_QUERY_EXISTS:
+	case ENT_QUERY_NOT_EXISTS:
+	{
+		for(auto label : cond->existLabels)
+		{
+			if(!DoesHaveLabel(label))
+				labels_to_add.push_back(label);
+		}
+		break;
+	}
+
+	case ENT_QUERY_EQUALS:
+	case ENT_QUERY_NOT_EQUALS:
+	{
+		for(auto &[label_id, _] : cond->singleLabels)
+		{
+			if(!DoesHaveLabel(label_id))
+				labels_to_add.push_back(label_id);
+		}
+		break;
+	}
+
+	default:
+	{
+		for(auto &lbv : cond->labelBetweenValues)
+		{
+			if(!DoesHaveLabel(lbv.label))
+				labels_to_add.push_back(lbv.label);
+		}
+	}
 	}
 
 
@@ -186,7 +186,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 
 	//need to double-check to make sure that another thread didn't already rebuild
 	if(labels_to_add.size() > 0)
-#endif
+	#endif
 		sbfds.AddLabels(labels_to_add, container->GetContainedEntities());
 
 #if defined(MULTITHREAD_SUPPORT)
@@ -208,533 +208,533 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 	switch(cond->queryType)
 	{
-		case ENT_QUERY_EXISTS:
+	case ENT_QUERY_EXISTS:
+	{
+		for(auto label : cond->existLabels)
 		{
-			for(auto label : cond->existLabels)
-			{
-				if(is_first)
-				{
-					sbfds.FindAllEntitiesWithFeature(label, matching_entities);
-					is_first = false;
-				}
-				else
-					sbfds.IntersectEntitiesWithFeature(label, matching_entities, true);
-			}
-
-			if(!is_first || cond->existLabels.size() > 0)
-				matching_entities.UpdateNumElements();
-
-			return;
-		}
-
-		case ENT_QUERY_NOT_EXISTS:
-		{
-			for(auto label : cond->existLabels)
-			{
-				if(is_first)
-				{
-					sbfds.FindAllEntitiesWithoutFeature(label, matching_entities);
-					is_first = false;
-				}
-				else
-					sbfds.IntersectEntitiesWithoutFeature(label, matching_entities, true);
-			}
-
-			if(!is_first || cond->existLabels.size() > 0)
-				matching_entities.UpdateNumElements();
-
-			return;
-		}
-
-		case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
-		case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
-		case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
-		case ENT_QUERY_ENTITY_CONVICTIONS:
-		case ENT_QUERY_ENTITY_KL_DIVERGENCES:
-		case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
-		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
-		case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
-		{
-			//get entity (case) weighting if applicable
-			bool use_entity_weights = (cond->weightLabel != StringInternPool::NOT_A_STRING_ID);
-			size_t weight_column = std::numeric_limits<size_t>::max();
-			double min_weight = 1.0;
-			if(use_entity_weights)
-			{
-				weight_column = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
-				min_weight = sbfds.GetMinValueForColumnAsWeight(weight_column);
-			}
-
-			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<size_t>(weight_column, true);
-			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distEvaluator.computeSurprisal,
-				cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent,
-				cond->minToRetrieve, cond->maxToRetrieve, cond->numToRetrieveMinIncrementalProbability, cond->extraToRetrieve,
-				use_entity_weights, min_weight, get_weight);
-
-			//if first, need to populate with all entities
 			if(is_first)
 			{
-				matching_entities.clear();
-				matching_entities.SetAllIds(sbfds.GetNumInsertedEntities());
+				sbfds.FindAllEntitiesWithFeature(label, matching_entities);
+				is_first = false;
 			}
+			else
+				sbfds.IntersectEntitiesWithFeature(label, matching_entities, true);
+		}
 
-			//only keep entities that have all the correct features,
-			//but remove 0 weighted features for better performance
-			for(size_t i = 0; i < cond->positionLabels.size(); i++)
-				sbfds.IntersectEntitiesWithFeature(cond->positionLabels[i], matching_entities, true);
+		if(!is_first || cond->existLabels.size() > 0)
 			matching_entities.UpdateNumElements();
 
-			if(matching_entities.size() == 0)
-				return;
+		return;
+	}
 
-			sbfds.PopulateGeneralizedDistanceEvaluatorFromColumnData(cond->distEvaluator, cond->positionLabels);
-			cond->distEvaluator.InitializeParametersAndFeatureParams(cond->populateOmittedFeatureValues);
-
-			if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
+	case ENT_QUERY_NOT_EXISTS:
+	{
+		for(auto label : cond->existLabels)
+		{
+			if(is_first)
 			{
+				sbfds.FindAllEntitiesWithoutFeature(label, matching_entities);
+				is_first = false;
+			}
+			else
+				sbfds.IntersectEntitiesWithoutFeature(label, matching_entities, true);
+		}
 
-				//labels and values must have the same size if they're prepopulated
-				if(!cond->distEvaluator.populateOmittedFeatureValues && cond->valuesToCompare.size() != cond->positionLabels.size())
+		if(!is_first || cond->existLabels.size() > 0)
+			matching_entities.UpdateNumElements();
+
+		return;
+	}
+
+	case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
+	case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
+	case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
+	case ENT_QUERY_ENTITY_CONVICTIONS:
+	case ENT_QUERY_ENTITY_KL_DIVERGENCES:
+	case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
+	case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
+	case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
+	{
+		//get entity (case) weighting if applicable
+		bool use_entity_weights = (cond->weightLabel != StringInternPool::NOT_A_STRING_ID);
+		size_t weight_column = std::numeric_limits<size_t>::max();
+		double min_weight = 1.0;
+		if(use_entity_weights)
+		{
+			weight_column = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
+			min_weight = sbfds.GetMinValueForColumnAsWeight(weight_column);
+		}
+
+		auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<size_t>(weight_column, true);
+		EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distEvaluator.computeSurprisal,
+			cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent,
+			cond->minToRetrieve, cond->maxToRetrieve, cond->numToRetrieveMinIncrementalProbability, cond->extraToRetrieve,
+			use_entity_weights, min_weight, get_weight);
+
+		//if first, need to populate with all entities
+		if(is_first)
+		{
+			matching_entities.clear();
+			matching_entities.SetAllIds(sbfds.GetNumInsertedEntities());
+		}
+
+		//only keep entities that have all the correct features,
+		//but remove 0 weighted features for better performance
+		for(size_t i = 0; i < cond->positionLabels.size(); i++)
+			sbfds.IntersectEntitiesWithFeature(cond->positionLabels[i], matching_entities, true);
+		matching_entities.UpdateNumElements();
+
+		if(matching_entities.size() == 0)
+			return;
+
+		sbfds.PopulateGeneralizedDistanceEvaluatorFromColumnData(cond->distEvaluator, cond->positionLabels);
+		cond->distEvaluator.InitializeParametersAndFeatureParams(cond->populateOmittedFeatureValues);
+
+		if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
+		{
+
+			//labels and values must have the same size if they're prepopulated
+			if(!cond->distEvaluator.populateOmittedFeatureValues && cond->valuesToCompare.size() != cond->positionLabels.size())
+			{
+				matching_entities.clear();
+				return;
+			}
+
+			//if no position labels, then the weight must be zero so just randomly choose k
+			if(cond->positionLabels.size() == 0)
+			{
+				BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
+				temp = matching_entities;
+				matching_entities.clear();
+
+				auto rand_stream = cond->randomStream.CreateOtherStreamViaRand();
+
+				//insert each case and compute to zero distance because the distance because weight was zero to get here
+				size_t num_to_retrieve = std::min(cond->maxToRetrieve, temp.size());
+				for(size_t i = 0; i < num_to_retrieve; i++)
 				{
-					matching_entities.clear();
-					return;
-				}
-
-				//if no position labels, then the weight must be zero so just randomly choose k
-				if(cond->positionLabels.size() == 0)
-				{
-					BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
-					temp = matching_entities;
-					matching_entities.clear();
-
-					auto rand_stream = cond->randomStream.CreateOtherStreamViaRand();
-
-					//insert each case and compute to zero distance because the distance because weight was zero to get here
-					size_t num_to_retrieve = std::min(cond->maxToRetrieve, temp.size());
-					for(size_t i = 0; i < num_to_retrieve; i++)
-					{
-						size_t rand_index = temp.GetRandomElement(rand_stream);
-						temp.erase(rand_index);
-						matching_entities.insert(rand_index);
-						compute_results.emplace_back(0.0, rand_index);
-					}
-				}
-				else if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
-				{
-					if(cond->distEvaluator.populateOmittedFeatureValues)
-					{
-						size_t entity_index = container->GetContainedEntityIndex(cond->entityIdToExclude);
-						sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels, entity_index,
-							distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false, false,
-							cond->interpreter, cond->entity, compute_results,
-							std::numeric_limits<size_t>::max(), cond->randomStream.CreateOtherStreamViaRand());
-					}
-					else
-					{
-						sbfds.FindEntitiesNearestToPosition(cond->distEvaluator, cond->positionLabels, cond->valuesToCompare,
-							distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->exclusionEntityIndex,
-							matching_entities, false, false, cond->interpreter, cond->entity, compute_results,
-							cond->randomStream.CreateOtherStreamViaRand());
-					}
-				}
-				else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
-				{
-					if(cond->distEvaluator.populateOmittedFeatureValues)
-					{
-						size_t entity_index = container->GetContainedEntityIndex(cond->entityIdToExclude);
-						sbfds.FindEntitiesWithinDistanceToIndexedEntity(cond->distEvaluator, cond->positionLabels,
-							entity_index, cond->maxDistance, cond->singleLabel, matching_entities, false,
-							cond->interpreter, cond->entity, compute_results);
-					}
-					else
-					{
-						sbfds.FindEntitiesWithinDistanceToPosition(cond->distEvaluator, cond->positionLabels,
-							cond->valuesToCompare, cond->maxDistance, cond->singleLabel, matching_entities, false,
-							cond->interpreter, cond->entity, compute_results);
-					}
-				}
-
-				distance_transform.TransformDistances(compute_results, cond->returnSortedList);
-
-				//populate matching_entities if needed
-				if(update_matching_entities)
-				{
-					matching_entities.clear();
-					for(auto &it : compute_results)
-						matching_entities.insert(it.reference);
+					size_t rand_index = temp.GetRandomElement(rand_stream);
+					temp.erase(rand_index);
+					matching_entities.insert(rand_index);
+					compute_results.emplace_back(0.0, rand_index);
 				}
 			}
-			else //cond->queryType in ENT_QUERY_DISTANCE_CONTRIBUTIONS, ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS,
-				//ENT_QUERY_ENTITY_CONVICTIONS, ENT_QUERY_ENTITY_KL_DIVERGENCES, ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE,
-				//ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+			else if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
 			{
-				BitArrayIntegerSet *ents_to_compute_ptr = nullptr; //if nullptr, compute is done on all entities in the cache
-
-				if(cond->queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
-					|| cond->queryType == ENT_QUERY_ENTITY_CONVICTIONS
-					|| cond->queryType == ENT_QUERY_ENTITY_KL_DIVERGENCES
-					|| cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
-					|| cond->queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
+				if(cond->distEvaluator.populateOmittedFeatureValues)
 				{
-					if(cond->existLabels.size() != 0) //if subset is specified, set ents_to_compute_ptr to set of ents_to_compute
-					{
-						ents_to_compute_ptr = &buffers.tempMatchingEntityIndices;
-						ents_to_compute_ptr->clear();
+					size_t entity_index = container->GetContainedEntityIndex(cond->entityIdToExclude);
+					sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels, entity_index,
+						distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false, false,
+						cond->interpreter, cond->entity, compute_results,
+						std::numeric_limits<size_t>::max(), cond->randomStream.CreateOtherStreamViaRand());
+				}
+				else
+				{
+					sbfds.FindEntitiesNearestToPosition(cond->distEvaluator, cond->positionLabels, cond->valuesToCompare,
+						distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->exclusionEntityIndex,
+						matching_entities, false, false, cond->interpreter, cond->entity, compute_results,
+						cond->randomStream.CreateOtherStreamViaRand());
+				}
+			}
+			else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
+			{
+				if(cond->distEvaluator.populateOmittedFeatureValues)
+				{
+					size_t entity_index = container->GetContainedEntityIndex(cond->entityIdToExclude);
+					sbfds.FindEntitiesWithinDistanceToIndexedEntity(cond->distEvaluator, cond->positionLabels,
+						entity_index, cond->maxDistance, cond->singleLabel, matching_entities, false,
+						cond->interpreter, cond->entity, compute_results);
+				}
+				else
+				{
+					sbfds.FindEntitiesWithinDistanceToPosition(cond->distEvaluator, cond->positionLabels,
+						cond->valuesToCompare, cond->maxDistance, cond->singleLabel, matching_entities, false,
+						cond->interpreter, cond->entity, compute_results);
+				}
+			}
 
-						if(cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
+			distance_transform.TransformDistances(compute_results, cond->returnSortedList);
+
+			//populate matching_entities if needed
+			if(update_matching_entities)
+			{
+				matching_entities.clear();
+				for(auto &it : compute_results)
+					matching_entities.insert(it.reference);
+			}
+		}
+		else //cond->queryType in ENT_QUERY_DISTANCE_CONTRIBUTIONS, ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS,
+			//ENT_QUERY_ENTITY_CONVICTIONS, ENT_QUERY_ENTITY_KL_DIVERGENCES, ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE,
+			//ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+		{
+			BitArrayIntegerSet *ents_to_compute_ptr = nullptr; //if nullptr, compute is done on all entities in the cache
+
+			if(cond->queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+				|| cond->queryType == ENT_QUERY_ENTITY_CONVICTIONS
+				|| cond->queryType == ENT_QUERY_ENTITY_KL_DIVERGENCES
+				|| cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+				|| cond->queryType == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
+			{
+				if(cond->existLabels.size() != 0) //if subset is specified, set ents_to_compute_ptr to set of ents_to_compute
+				{
+					ents_to_compute_ptr = &buffers.tempMatchingEntityIndices;
+					ents_to_compute_ptr->clear();
+
+					if(cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
+					{
+						//determine the base entities by everything not in the list
+						*ents_to_compute_ptr = matching_entities;
+
+						for(auto entity_sid : cond->existLabels)
 						{
-							//determine the base entities by everything not in the list
-							*ents_to_compute_ptr = matching_entities;
-
-							for(auto entity_sid : cond->existLabels)
-							{
-								size_t entity_index = container->GetContainedEntityIndex(entity_sid);
-								ents_to_compute_ptr->erase(entity_index);
-							}
+							size_t entity_index = container->GetContainedEntityIndex(entity_sid);
+							ents_to_compute_ptr->erase(entity_index);
 						}
-						else
+					}
+					else
+					{
+						for(auto entity_sid : cond->existLabels)
 						{
-							for(auto entity_sid : cond->existLabels)
-							{
-								size_t entity_index = container->GetContainedEntityIndex(entity_sid);
-								if(entity_index != std::numeric_limits<size_t>::max())
-									ents_to_compute_ptr->insert(entity_index);
-							}
+							size_t entity_index = container->GetContainedEntityIndex(entity_sid);
+							if(entity_index != std::numeric_limits<size_t>::max())
+								ents_to_compute_ptr->insert(entity_index);
 						}
 					}
-					else //compute on all
-					{
-						ents_to_compute_ptr = &matching_entities;
-					}
 				}
-
-			#ifdef MULTITHREAD_SUPPORT
-				ConvictionProcessor conviction_processor(buffers.knnCache,
-					distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->useConcurrency);
-			#else
-				ConvictionProcessor conviction_processor(buffers.knnCache,
-					distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel);
-			#endif
-				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->interpreter, cond->entity,
-					cond->positionLabels, cond->singleLabel);
-
-				auto &results_buffer = buffers.doubleVector;
-				results_buffer.clear();
-
-				if(cond->queryType == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
+				else //compute on all
 				{
-					conviction_processor.ComputeDistanceContributionsOnPositions(*cond->positionsToCompare, results_buffer);
+					ents_to_compute_ptr = &matching_entities;
 				}
-				else if(cond->queryType == ENT_QUERY_ENTITY_CONVICTIONS)
-				{
-					conviction_processor.ComputeCaseKLDivergences(*ents_to_compute_ptr, results_buffer, true, cond->convictionOfRemoval);
-				}
-				else if(cond->queryType == ENT_QUERY_ENTITY_KL_DIVERGENCES)
-				{
-					conviction_processor.ComputeCaseKLDivergences(*ents_to_compute_ptr, results_buffer, false, cond->convictionOfRemoval);
-				}
-				else if(cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
-				{
-					double group_conviction = conviction_processor.ComputeCaseGroupKLDivergence(*ents_to_compute_ptr, cond->convictionOfRemoval);
+			}
 
-					compute_results.clear();
-					compute_results.emplace_back(group_conviction, 0);
+		#ifdef MULTITHREAD_SUPPORT
+			ConvictionProcessor conviction_processor(buffers.knnCache,
+				distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->useConcurrency);
+		#else
+			ConvictionProcessor conviction_processor(buffers.knnCache,
+				distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel);
+		#endif
+			buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->interpreter, cond->entity,
+				cond->positionLabels, cond->singleLabel);
 
-					//early exit because don't need to translate distances
-					return;
-				}
-				else if(cond->queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)
-				{
-					conviction_processor.ComputeDistanceContributionsWithoutCache(ents_to_compute_ptr, results_buffer);
-				}
-				else //ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
-				{
-					conviction_processor.ComputeNeighborWeightsForEntities(ents_to_compute_ptr, compute_results);
+			auto &results_buffer = buffers.doubleVector;
+			results_buffer.clear();
 
-					if(cond->returnSortedList)
-					{
-						std::sort(begin(compute_results), end(compute_results),
-							[](auto a, auto b) {return a.distance > b.distance; }
-						);
-					}
+			if(cond->queryType == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
+			{
+				conviction_processor.ComputeDistanceContributionsOnPositions(*cond->positionsToCompare, results_buffer);
+			}
+			else if(cond->queryType == ENT_QUERY_ENTITY_CONVICTIONS)
+			{
+				conviction_processor.ComputeCaseKLDivergences(*ents_to_compute_ptr, results_buffer, true, cond->convictionOfRemoval);
+			}
+			else if(cond->queryType == ENT_QUERY_ENTITY_KL_DIVERGENCES)
+			{
+				conviction_processor.ComputeCaseKLDivergences(*ents_to_compute_ptr, results_buffer, false, cond->convictionOfRemoval);
+			}
+			else if(cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
+			{
+				double group_conviction = conviction_processor.ComputeCaseGroupKLDivergence(*ents_to_compute_ptr, cond->convictionOfRemoval);
 
-					//early exit because don't need to translate distances
-					return;
-				}
-
-				//clear compute_results as it may have been used for intermediate results
 				compute_results.clear();
-				if(ents_to_compute_ptr == nullptr)
-				{
-					//computed on globals, so convert results to global coordinates paired with their contributions
-					compute_results.reserve(results_buffer.size());
+				compute_results.emplace_back(group_conviction, 0);
 
-					for(size_t i = 0; i < results_buffer.size(); i++)
-						compute_results.emplace_back(results_buffer[i], i);
-				}
-				else //computed on a subset; use ents_to_compute_ptr because don't know what it points to
-				{
-					compute_results.reserve(ents_to_compute_ptr->size());
-					size_t i = 0;
-					for(const auto &ent_index : *ents_to_compute_ptr)
-						compute_results.emplace_back(results_buffer[i++], ent_index);
-				}
+				//early exit because don't need to translate distances
+				return;
+			}
+			else if(cond->queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)
+			{
+				conviction_processor.ComputeDistanceContributionsWithoutCache(ents_to_compute_ptr, results_buffer);
+			}
+			else //ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+			{
+				conviction_processor.ComputeNeighborWeightsForEntities(ents_to_compute_ptr, compute_results);
 
 				if(cond->returnSortedList)
 				{
 					std::sort(begin(compute_results), end(compute_results),
-						[](auto a, auto b) {return a.distance < b.distance; }
+						[](auto a, auto b) {return a.distance > b.distance; }
 					);
 				}
+
+				//early exit because don't need to translate distances
+				return;
 			}
 
-			break;
+			//clear compute_results as it may have been used for intermediate results
+			compute_results.clear();
+			if(ents_to_compute_ptr == nullptr)
+			{
+				//computed on globals, so convert results to global coordinates paired with their contributions
+				compute_results.reserve(results_buffer.size());
+
+				for(size_t i = 0; i < results_buffer.size(); i++)
+					compute_results.emplace_back(results_buffer[i], i);
+			}
+			else //computed on a subset; use ents_to_compute_ptr because don't know what it points to
+			{
+				compute_results.reserve(ents_to_compute_ptr->size());
+				size_t i = 0;
+				for(const auto &ent_index : *ents_to_compute_ptr)
+					compute_results.emplace_back(results_buffer[i++], ent_index);
+			}
+
+			if(cond->returnSortedList)
+			{
+				std::sort(begin(compute_results), end(compute_results),
+					[](auto a, auto b) {return a.distance < b.distance; }
+				);
+			}
 		}
 
-		case ENT_QUERY_EQUALS:
-			{
-				bool first_feature = is_first;
+		break;
+	}
 
-				//loop over all features
-				for(size_t i = 0; i < cond->singleLabels.size(); i++)
-				{
-					auto &[label_id, compare_value] = cond->singleLabels[i];
-					if(first_feature)
-					{
-						matching_entities.clear();
-						sbfds.UnionAllEntitiesWithValue(label_id, compare_value, matching_entities);
-						first_feature = false;
-					}
-					else //get corresponding indices and intersect with results
-					{
-						BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
-						temp.clear();
-						sbfds.UnionAllEntitiesWithValue(label_id, compare_value, temp);
-						matching_entities.Intersect(temp);
-					}
-				}
+	case ENT_QUERY_EQUALS:
+	{
+		bool first_feature = is_first;
 
-				break;
-			}
-
-		case ENT_QUERY_NOT_EQUALS:
+		//loop over all features
+		for(size_t i = 0; i < cond->singleLabels.size(); i++)
 		{
-			bool first_feature = is_first;
-
-			//loop over all features
-			for(size_t i = 0; i < cond->singleLabels.size(); i++)
+			auto &[label_id, compare_value] = cond->singleLabels[i];
+			if(first_feature)
 			{
-				auto &[label_id, compare_value] = cond->singleLabels[i];
-
-				if(first_feature)
-				{
-					matching_entities.clear();
-					sbfds.FindAllEntitiesWithFeature(label_id, matching_entities);
-					first_feature = false;
-				}
-
+				matching_entities.clear();
+				sbfds.UnionAllEntitiesWithValue(label_id, compare_value, matching_entities);
+				first_feature = false;
+			}
+			else //get corresponding indices and intersect with results
+			{
 				BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
 				temp.clear();
 				sbfds.UnionAllEntitiesWithValue(label_id, compare_value, temp);
-				matching_entities.EraseInBatch(temp);
-			}
-			matching_entities.UpdateNumElements();
-
-			break;
-		}
-
-		case ENT_QUERY_BETWEEN:
-		case ENT_QUERY_NOT_BETWEEN:
-			{
-				bool first_feature = is_first;
-				BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
-
-				//loop over all features
-				for(auto &lbv : cond->labelBetweenValues)
-				{
-					if(first_feature)
-					{
-						sbfds.FindAllEntitiesWithinRange(lbv.label, lbv.valueType,
-							lbv.lowValue, lbv.highValue, matching_entities, cond->queryType == ENT_QUERY_BETWEEN);
-						first_feature = false;
-					}
-					else //get corresponding indices and intersect with results
-					{
-						temp.clear();
-						sbfds.FindAllEntitiesWithinRange(lbv.label, lbv.valueType,
-							lbv.lowValue, lbv.highValue, temp, cond->queryType == ENT_QUERY_BETWEEN);
-						matching_entities.Intersect(temp);
-					}
-				}
-
-				break;
-			}
-
-		case ENT_QUERY_MIN:
-		case ENT_QUERY_MAX:
-		{
-			if(is_first)
-			{
-				sbfds.FindMinMax(cond->singleLabel, cond->singleLabelType, cond->maxToRetrieve,
-									(cond->queryType == ENT_QUERY_MAX), nullptr, matching_entities);
-			}
-			else
-			{
-				//move data to temp and compute into matching_entities
-				BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
-				temp = matching_entities;
-				matching_entities.clear();
-				sbfds.FindMinMax(cond->singleLabel, cond->singleLabelType, cond->maxToRetrieve,
-									(cond->queryType == ENT_QUERY_MAX), &temp, matching_entities);
-			}
-			break;
-		}
-
-		case ENT_QUERY_AMONG:
-		{
-			if(is_first)
-			{
-				for(size_t i = 0; i < cond->valuesToCompare.size(); i++)
-					sbfds.UnionAllEntitiesWithValue(cond->singleLabel, cond->valuesToCompare[i], matching_entities);
-			}
-			else
-			{
-				//get set of entities that are valid
-				BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
-				temp.clear();
-				for(size_t i = 0; i < cond->valuesToCompare.size(); i++)
-					sbfds.UnionAllEntitiesWithValue(cond->singleLabel, cond->valuesToCompare[i], temp);
-
-				//only keep those that have a matching value
 				matching_entities.Intersect(temp);
 			}
-
-			break;
 		}
 
-		case ENT_QUERY_NOT_AMONG:
+		break;
+	}
+
+	case ENT_QUERY_NOT_EQUALS:
+	{
+		bool first_feature = is_first;
+
+		//loop over all features
+		for(size_t i = 0; i < cond->singleLabels.size(); i++)
 		{
-			//ensure that the feature exists
-			if(is_first)
-				sbfds.FindAllEntitiesWithFeature(cond->singleLabel, matching_entities);
-			else
-				sbfds.IntersectEntitiesWithFeature(cond->singleLabel, matching_entities, false);
+			auto &[label_id, compare_value] = cond->singleLabels[i];
+
+			if(first_feature)
+			{
+				matching_entities.clear();
+				sbfds.FindAllEntitiesWithFeature(label_id, matching_entities);
+				first_feature = false;
+			}
 
 			BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
 			temp.clear();
+			sbfds.UnionAllEntitiesWithValue(label_id, compare_value, temp);
+			matching_entities.EraseInBatch(temp);
+		}
+		matching_entities.UpdateNumElements();
+
+		break;
+	}
+
+	case ENT_QUERY_BETWEEN:
+	case ENT_QUERY_NOT_BETWEEN:
+	{
+		bool first_feature = is_first;
+		BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
+
+		//loop over all features
+		for(auto &lbv : cond->labelBetweenValues)
+		{
+			if(first_feature)
+			{
+				sbfds.FindAllEntitiesWithinRange(lbv.label, lbv.valueType,
+					lbv.lowValue, lbv.highValue, matching_entities, cond->queryType == ENT_QUERY_BETWEEN);
+				first_feature = false;
+			}
+			else //get corresponding indices and intersect with results
+			{
+				temp.clear();
+				sbfds.FindAllEntitiesWithinRange(lbv.label, lbv.valueType,
+					lbv.lowValue, lbv.highValue, temp, cond->queryType == ENT_QUERY_BETWEEN);
+				matching_entities.Intersect(temp);
+			}
+		}
+
+		break;
+	}
+
+	case ENT_QUERY_MIN:
+	case ENT_QUERY_MAX:
+	{
+		if(is_first)
+		{
+			sbfds.FindMinMax(cond->singleLabel, cond->singleLabelType, cond->maxToRetrieve,
+								(cond->queryType == ENT_QUERY_MAX), nullptr, matching_entities);
+		}
+		else
+		{
+			//move data to temp and compute into matching_entities
+			BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
+			temp = matching_entities;
+			matching_entities.clear();
+			sbfds.FindMinMax(cond->singleLabel, cond->singleLabelType, cond->maxToRetrieve,
+								(cond->queryType == ENT_QUERY_MAX), &temp, matching_entities);
+		}
+		break;
+	}
+
+	case ENT_QUERY_AMONG:
+	{
+		if(is_first)
+		{
+			for(size_t i = 0; i < cond->valuesToCompare.size(); i++)
+				sbfds.UnionAllEntitiesWithValue(cond->singleLabel, cond->valuesToCompare[i], matching_entities);
+		}
+		else
+		{
 			//get set of entities that are valid
+			BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
+			temp.clear();
 			for(size_t i = 0; i < cond->valuesToCompare.size(); i++)
 				sbfds.UnionAllEntitiesWithValue(cond->singleLabel, cond->valuesToCompare[i], temp);
 
 			//only keep those that have a matching value
-			matching_entities.erase(temp);
-
-			break;
+			matching_entities.Intersect(temp);
 		}
 
-		case ENT_QUERY_SUM:
-		case ENT_QUERY_QUANTILE:
-		case ENT_QUERY_GENERALIZED_MEAN:
-		case ENT_QUERY_MIN_DIFFERENCE:
-		case ENT_QUERY_MAX_DIFFERENCE:
+		break;
+	}
+
+	case ENT_QUERY_NOT_AMONG:
+	{
+		//ensure that the feature exists
+		if(is_first)
+			sbfds.FindAllEntitiesWithFeature(cond->singleLabel, matching_entities);
+		else
+			sbfds.IntersectEntitiesWithFeature(cond->singleLabel, matching_entities, false);
+
+		BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
+		temp.clear();
+		//get set of entities that are valid
+		for(size_t i = 0; i < cond->valuesToCompare.size(); i++)
+			sbfds.UnionAllEntitiesWithValue(cond->singleLabel, cond->valuesToCompare[i], temp);
+
+		//only keep those that have a matching value
+		matching_entities.erase(temp);
+
+		break;
+	}
+
+	case ENT_QUERY_SUM:
+	case ENT_QUERY_QUANTILE:
+	case ENT_QUERY_GENERALIZED_MEAN:
+	case ENT_QUERY_MIN_DIFFERENCE:
+	case ENT_QUERY_MAX_DIFFERENCE:
+	{
+		size_t column_index = sbfds.GetColumnIndexFromLabelId(cond->singleLabel);
+		if(column_index == std::numeric_limits<size_t>::max())
 		{
-			size_t column_index = sbfds.GetColumnIndexFromLabelId(cond->singleLabel);
-			if(column_index == std::numeric_limits<size_t>::max())
-			{
-				compute_results.emplace_back(std::numeric_limits<double>::quiet_NaN(), 0);
-				return;
-			}
-
-			size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
-			bool has_weight = false;
-			if(weight_column_index != std::numeric_limits<size_t>::max())
-				has_weight = true;
-			else //just use a valid column
-				weight_column_index = 0;
-
-			double result = 0.0;
-
-			if(is_first)
-			{
-				EfficientIntegerSet &entities = sbfds.GetEntitiesWithValidNumbers(column_index);
-				auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(column_index, false);
-				auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(weight_column_index, true);
-
-				switch(cond->queryType)
-				{
-				case ENT_QUERY_SUM:
-					result = EntityQueriesStatistics::Sum(entities.begin(), entities.end(), get_value, has_weight, get_weight);
-					break;
-
-				case ENT_QUERY_QUANTILE:
-					result = Quantile(entities.begin(), entities.end(), get_value,
-						has_weight, get_weight, cond->qPercentage, &EntityQueryCaches::buffers.pairDoubleVector);
-					break;
-
-				case ENT_QUERY_GENERALIZED_MEAN:
-					result = GeneralizedMean(entities.begin(), entities.end(), get_value,
-						has_weight, get_weight, cond->distEvaluator.pValue, cond->center,
-						cond->calculateMoment, cond->absoluteValue);
-					break;
-
-				case ENT_QUERY_MIN_DIFFERENCE:
-					result = EntityQueriesStatistics::ExtremeDifference(entities.begin(), entities.end(), get_value, true,
-						cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
-					break;
-
-				case ENT_QUERY_MAX_DIFFERENCE:
-					result = EntityQueriesStatistics::ExtremeDifference(entities.begin(), entities.end(), get_value, false,
-						cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
-					break;
-
-				default:
-					break;
-				}
-			}
-			else
-			{
-				auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index, false);
-				auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index, true);
-
-				switch(cond->queryType)
-				{
-				case ENT_QUERY_SUM:
-					result = EntityQueriesStatistics::Sum(matching_entities.begin(), matching_entities.end(), get_value, has_weight, get_weight);
-					break;
-
-				case ENT_QUERY_QUANTILE:
-					result = Quantile(matching_entities.begin(), matching_entities.end(), get_value,
-						has_weight, get_weight, cond->qPercentage, &EntityQueryCaches::buffers.pairDoubleVector);
-					break;
-
-				case ENT_QUERY_GENERALIZED_MEAN:
-					result = GeneralizedMean(matching_entities.begin(), matching_entities.end(), get_value,
-						has_weight, get_weight, cond->distEvaluator.pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
-					break;
-
-				case ENT_QUERY_MIN_DIFFERENCE:
-					result = EntityQueriesStatistics::ExtremeDifference(matching_entities.begin(), matching_entities.end(), get_value, true,
-						cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
-					break;
-
-				case ENT_QUERY_MAX_DIFFERENCE:
-					result = EntityQueriesStatistics::ExtremeDifference(matching_entities.begin(), matching_entities.end(), get_value, false,
-						cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
-					break;
-
-				default:
-					break;
-				}
-			}
-
-			compute_results.emplace_back(result, 0);
+			compute_results.emplace_back(std::numeric_limits<double>::quiet_NaN(), 0);
 			return;
 		}
 
-		default:  // Other Enum value not handled
+		size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
+		bool has_weight = false;
+		if(weight_column_index != std::numeric_limits<size_t>::max())
+			has_weight = true;
+		else //just use a valid column
+			weight_column_index = 0;
+
+		double result = 0.0;
+
+		if(is_first)
 		{
-			break;
+			EfficientIntegerSet &entities = sbfds.GetEntitiesWithValidNumbers(column_index);
+			auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(column_index, false);
+			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(weight_column_index, true);
+
+			switch(cond->queryType)
+			{
+			case ENT_QUERY_SUM:
+				result = EntityQueriesStatistics::Sum(entities.begin(), entities.end(), get_value, has_weight, get_weight);
+				break;
+
+			case ENT_QUERY_QUANTILE:
+				result = Quantile(entities.begin(), entities.end(), get_value,
+					has_weight, get_weight, cond->qPercentage, &EntityQueryCaches::buffers.pairDoubleVector);
+				break;
+
+			case ENT_QUERY_GENERALIZED_MEAN:
+				result = GeneralizedMean(entities.begin(), entities.end(), get_value,
+					has_weight, get_weight, cond->distEvaluator.pValue, cond->center,
+					cond->calculateMoment, cond->absoluteValue);
+				break;
+
+			case ENT_QUERY_MIN_DIFFERENCE:
+				result = EntityQueriesStatistics::ExtremeDifference(entities.begin(), entities.end(), get_value, true,
+					cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
+				break;
+
+			case ENT_QUERY_MAX_DIFFERENCE:
+				result = EntityQueriesStatistics::ExtremeDifference(entities.begin(), entities.end(), get_value, false,
+					cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
+				break;
+
+			default:
+				break;
+			}
 		}
+		else
+		{
+			auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index, false);
+			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index, true);
+
+			switch(cond->queryType)
+			{
+			case ENT_QUERY_SUM:
+				result = EntityQueriesStatistics::Sum(matching_entities.begin(), matching_entities.end(), get_value, has_weight, get_weight);
+				break;
+
+			case ENT_QUERY_QUANTILE:
+				result = Quantile(matching_entities.begin(), matching_entities.end(), get_value,
+					has_weight, get_weight, cond->qPercentage, &EntityQueryCaches::buffers.pairDoubleVector);
+				break;
+
+			case ENT_QUERY_GENERALIZED_MEAN:
+				result = GeneralizedMean(matching_entities.begin(), matching_entities.end(), get_value,
+					has_weight, get_weight, cond->distEvaluator.pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
+				break;
+
+			case ENT_QUERY_MIN_DIFFERENCE:
+				result = EntityQueriesStatistics::ExtremeDifference(matching_entities.begin(), matching_entities.end(), get_value, true,
+					cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
+				break;
+
+			case ENT_QUERY_MAX_DIFFERENCE:
+				result = EntityQueriesStatistics::ExtremeDifference(matching_entities.begin(), matching_entities.end(), get_value, false,
+					cond->maxDistance, cond->includeZeroDifferences, EntityQueryCaches::buffers.doubleVector);
+				break;
+
+			default:
+				break;
+			}
+		}
+
+		compute_results.emplace_back(result, 0);
+		return;
+	}
+
+	default:  // Other Enum value not handled
+	{
+		break;
+	}
 	}
 }
 
@@ -806,16 +806,16 @@ void EntityQueryCaches::ComputeValuesFromMatchingEntities(EntityQueryCondition *
 		size_t column_index = sbfds.GetColumnIndexFromLabelId(cond->singleLabel);
 		if(column_index == std::numeric_limits<size_t>::max())
 			return;
-	
+
 		size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
 		bool has_weight = false;
 		if(weight_column_index != std::numeric_limits<size_t>::max())
 			has_weight = true;
 		else //just use a valid column
 			weight_column_index = 0;
-	
+
 		size_t num_unique_values = sbfds.GetNumUniqueValuesForColumn(column_index, ENIVT_STRING_ID);
-	
+
 		if(is_first)
 		{
 			auto get_value = sbfds.GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction<size_t>(column_index);
@@ -830,7 +830,7 @@ void EntityQueryCaches::ComputeValuesFromMatchingEntities(EntityQueryCondition *
 			compute_results = EntityQueriesStatistics::ValueMassesStringId(matching_entities.begin(), matching_entities.end(),
 				num_unique_values, get_value, has_weight, get_weight);
 		}
-	
+
 		return;
 	}
 	default:
@@ -859,7 +859,7 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 
 	//don't attempt to continue if no elements
 	if(matching_entities.size() == 0)
-		return;		
+		return;
 
 	if(update_matching_entities)
 		matching_entities.clear();
@@ -1340,7 +1340,7 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			#endif
 			}
 
-			return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value, immediate_result);	
+			return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value, immediate_result);
 		}
 
 		query_return_value = conditions[cond_index].GetMatchingEntities(container, matching_entities, first_condition, (return_query_value && last_condition) ? enm : nullptr);

@@ -651,7 +651,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 		entity->SetRandomState(seed_string, true, writeListeners, &contained_entities);
 	}
 	else
-	#endif
+#endif
 		entity->SetRandomState(seed_string, deep_set, writeListeners);
 
 	return seed_node;

@@ -39,12 +39,24 @@ public:
 	};
 
 	//load/store destinations:
-	struct LoadFromFile { const std::string &path; };
-	struct LoadFromMemory { const std::string &&data; };
+	struct LoadFromFile
+	{
+		const std::string &path;
+	};
+	struct LoadFromMemory
+	{
+		const std::string &&data;
+	};
 	using LoadSource = std::variant<LoadFromFile, LoadFromMemory>;
 
-	struct StoreToFile { const std::string &path; };
-	struct StoreToMemory { std::string &data; };
+	struct StoreToFile
+	{
+		const std::string &path;
+	};
+	struct StoreToMemory
+	{
+		std::string &data;
+	};
 	using StoreSource = std::variant<StoreToFile, StoreToMemory>;
 
 	// Load an entity from some source into a handle.
@@ -131,11 +143,15 @@ protected:
 
 		//allow to use as an EntityListenerBundle *
 		constexpr operator EntityListenerBundle *()
-		{	return entityListenerBundle;	}
+		{
+			return entityListenerBundle;
+		}
 
 		//allow to use as an EntityListenerBundle *
 		constexpr EntityListenerBundle *operator->()
-		{	return entityListenerBundle;	}
+		{
+			return entityListenerBundle;
+		}
 
 		EntityListenerBundle *entityListenerBundle;
 
@@ -160,11 +176,15 @@ protected:
 
 		//allow to use as an EntityListenerBundle *
 		constexpr operator EntityListenerBundle *()
-		{	return entityListenerBundle;	}
+		{
+			return entityListenerBundle;
+		}
 
 		//allow to use as an EntityListenerBundle *
 		constexpr EntityListenerBundle *operator->()
-		{	return entityListenerBundle;	}
+		{
+			return entityListenerBundle;
+		}
 
 		EntityListenerBundle *entityListenerBundle;
 

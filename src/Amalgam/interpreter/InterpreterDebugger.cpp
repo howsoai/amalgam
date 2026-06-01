@@ -887,7 +887,7 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en,
 		}
 
 		//if breaking on a label and in a valid entity
-		if( (!_interpreter_debug_data.runUntilLabel.empty() || _interpreter_debug_data.breakLabels.size() > 0)
+		if((!_interpreter_debug_data.runUntilLabel.empty() || _interpreter_debug_data.breakLabels.size() > 0)
 			&& curEntity != nullptr && en != nullptr)
 		{
 			auto [label_sid, found] = curEntity->GetLabelForNodeIfExists(en);

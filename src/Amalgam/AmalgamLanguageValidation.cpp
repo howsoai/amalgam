@@ -216,7 +216,7 @@ AmalgamExample{ R"&((seq
 		)
 	)
 	new_entity
-))", "", R"((apply "destroy_entities" (contained_entities)))"},
+))", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(declare
 		{id "id"}
@@ -323,7 +323,7 @@ AmalgamExample{ R"&((seq
 	["EntityNull" "EntityNaN"]
 	["EntityNull" "EntityNaN"]
 	["Entity3" "EntityNull" "EntityNaN"]
-])", "", R"((apply "destroy_entities" (contained_entities)))"},
+])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((call
 	(set_type
 		[1 0.5 "3"]
@@ -400,7 +400,7 @@ AmalgamExample{ R"&((seq
 			(query_greater_or_equal_to "C" 18)
 		]
 	)
-))&", R"(["hello" "!"])", "", R"((apply "destroy_entities" (contained_entities)))"},
+))&", R"(["hello" "!"])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "nan_queries" .null)
 	(create_entities
@@ -527,7 +527,7 @@ AmalgamExample{ R"&((seq
 		["nan_queries" "a4"]
 	]
 	{a1 1 a3 1 a4 0}
-])", "", R"((apply "destroy_entities" (contained_entities)))"},
+])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "bool_test" .null)
 	(create_entities
@@ -746,7 +746,7 @@ AmalgamExample{ R"&((seq
 			)
 		]
 	)
-))&", R"({point1 1036.1581794564518 point2 978.5569789822398 point3 1036.1581794564518})", "", R"((apply "destroy_entities" (contained_entities)))"},
+))&", R"({point1 1036.1581794564518 point2 978.5569789822398 point3 1036.1581794564518})", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "DistanceSymmetryContainer" .null)
 	(create_entities
@@ -912,7 +912,7 @@ AmalgamExample{ R"&((seq
 			1024
 		]
 	]
-])", "", R"((apply "destroy_entities" (contained_entities)))"},
+])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "BoxConvictionTestContainer" .null)
 	(create_entities
@@ -1574,7 +1574,7 @@ AmalgamExample{ R"&((seq
         "cyclic KL: {vert0 0.0645 vert1 0.00207 vert2 0.00207 vert3 0.03622 vert4 0.06081}"
         "cyclic conviction: {vert0 0.5137 vert1 16.01 vert2 16.01 vert3 0.9148 vert4 0.5449}"
         "cyclic group kl divergence: 0.06081"
-])", "", R"((apply "destroy_entities" (contained_entities)))"},
+])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "SurprisalTransformContainer" .null)
 	(create_entities
@@ -2110,7 +2110,7 @@ AmalgamExample{ R"&((seq
         "surprisal contribution: {testvert 10.5}"
         "weighted surprisal contribution: {testvert 13.11}"
         "weighted surprisal contribution: {testvert 10.5}"
-])", "", R"((apply "destroy_entities" (contained_entities)))"},
+])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((concat
 	"+ : "
 	||(+
@@ -2355,7 +2355,7 @@ AmalgamExample{ R"&(;stack concurrency
 		2
 		2
 		2
-])"},
+])" },
 AmalgamExample{ R"&(;nested concurrency
 (apply "+" ||(map
 			(lambda
@@ -2558,7 +2558,7 @@ AmalgamExample{ R"&((seq
 		{x 0 y 0}
 		{x 0 y 1}
 	]
-])"},
+])" },
 AmalgamExample{ R"&((seq
 	(create_entities "CyclicTestEntity" .null)
 	(create_entities

@@ -20,15 +20,15 @@ EntityExternalInterface entint;
 std::string ConcurrencyType()
 {
 	return
-#if defined(MULTITHREAD_SUPPORT) && defined(_OPENMP)
+	#if defined(MULTITHREAD_SUPPORT) && defined(_OPENMP)
 		"MultiThreaded+OpenMP"
-#elif !defined(MULTITHREAD_SUPPORT) && defined(_OPENMP)
+	#elif !defined(MULTITHREAD_SUPPORT) && defined(_OPENMP)
 		"SingleThreaded+OpenMP"
-#elif defined(MULTITHREAD_SUPPORT)
+	#elif defined(MULTITHREAD_SUPPORT)
 		"MultiThreaded"
-#else
+	#else
 		"SingleThreaded"
-#endif
+	#endif
 		;
 }
 
@@ -43,14 +43,14 @@ extern "C"
 	//          across the library boundary, the callers must free the
 	//          memory using 'DeleteString', otherwise a leak occurs.
 
-	char *StringToCharPtr(std::string& value)
+	char *StringToCharPtr(std::string &value)
 	{
 		char *out = new char[value.length() + 1];
 		strcpy_s(out, value.length() + 1, value.c_str());
 		return out;
 	}
 
-	wchar_t *StringToWCharPtr(std::string& value)
+	wchar_t *StringToWCharPtr(std::string &value)
 	{
 		std::wstring widestr = std::wstring(value.begin(), value.end());
 		widestr += (wchar_t)0;
@@ -83,7 +83,7 @@ extern "C"
 			//using plain-C malloc()) and then turn that into the pointer type we need.
 			char *entity_path_alloc = new char[sizeof(char *) * entity_path_len];
 			entity_path = reinterpret_cast<char **>(entity_path_alloc);
-			for (size_t i = 0; i < entity_path_len; i++)
+			for(size_t i = 0; i < entity_path_len; i++)
 				entity_path[i] = StringToCharPtr(status.entity_path[i]);
 		}
 		return {

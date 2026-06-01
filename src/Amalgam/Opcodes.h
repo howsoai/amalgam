@@ -2,6 +2,7 @@
 
 //system headers
 #include <cstdint>
+#include <stddef.h>
 
 //opcodes / commands / operations in Amalgam
 enum EvaluableNodeType : uint8_t

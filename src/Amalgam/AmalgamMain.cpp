@@ -33,7 +33,7 @@ static std::string GetUsage()
 	usage
 		<< "Amalgam Interpreter (" << AMALGAM_VERSION_STRING << ") - " << GetConcurrencyTypeString() << std::endl
 		<<
-R"(Usage: amalgam [options] [file]
+		R"(Usage: amalgam [options] [file]
 
 Options:
     -h, --help       Show help
@@ -104,11 +104,11 @@ Options:
 
 	//additional compiler defined options
 	usage
-#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
+	#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 		<< std::endl
 		<< "    --numthreads [number]" << std::endl
 		<< "                     Maximum number of threads to use (if unspecified or set to zero, may use unlimited)" << std::endl
-#endif
+	#endif
 		<< std::endl;
 
 	return usage.str();
@@ -159,24 +159,24 @@ PLATFORM_MAIN_CONSOLE
 {
 	PLATFORM_ARGS_CONSOLE;
 
-	//run options
-	bool debug_state = false;
-	bool debug_minimal = false;
-	bool debug_sources = false;
-	bool warn_on_undefined = false;
-	bool profile_opcodes = false;
-	bool profile_labels = false;
-	bool run_as_repl = false;
-	size_t profile_count = 0;
-	std::string profile_out_file;
-	bool run_trace = false;
-	bool run_tracefile = false;
-	bool run_validate_amalgam = false;
-	std::string tracefile;
-	std::string amlg_file_to_run;
-	bool print_to_stdio = true;
-	std::string write_log_filename;
-	std::string print_log_filename;
+//run options
+bool debug_state = false;
+bool debug_minimal = false;
+bool debug_sources = false;
+bool warn_on_undefined = false;
+bool profile_opcodes = false;
+bool profile_labels = false;
+bool run_as_repl = false;
+size_t profile_count = 0;
+std::string profile_out_file;
+bool run_trace = false;
+bool run_tracefile = false;
+bool run_validate_amalgam = false;
+std::string tracefile;
+std::string amlg_file_to_run;
+bool print_to_stdio = true;
+std::string write_log_filename;
+std::string print_log_filename;
 #if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 	size_t num_threads = 0;
 #endif

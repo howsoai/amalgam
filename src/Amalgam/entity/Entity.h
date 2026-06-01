@@ -32,11 +32,11 @@ class EntityReference
 public:
 	constexpr EntityReference()
 		: entity(nullptr)
-	{	}
+	{}
 
 	constexpr EntityReference(EntityType *e)
 		: entity(e)
-	{	}
+	{}
 
 	//allow to use as an Entity *
 	constexpr operator EntityType *()
@@ -80,7 +80,7 @@ class EntityReferenceWithLock : public EntityReference<EntityType>
 {
 public:
 	inline EntityReferenceWithLock() : EntityReference<EntityType>()
-	{	}
+	{}
 
 	inline EntityReferenceWithLock(EntityType *e) : EntityReference<EntityType>(e)
 	{
@@ -206,10 +206,10 @@ public:
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		InterpreterConstraints *interpreter_constraints = nullptr,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes()
-	#ifdef MULTITHREAD_SUPPORT
+#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
-	#endif
-		)
+#endif
+	)
 	{
 		if(!on_self && IsLabelPrivate(label_sid))
 			return EvaluableNodeReference::Null();
@@ -232,10 +232,10 @@ public:
 
 		return ExecuteOnEntity(node_to_execute, scope_stack, calling_interpreter,
 			write_listeners, print_listener, interpreter_constraints, immediate_result
-		#ifdef MULTITHREAD_SUPPORT
+#ifdef MULTITHREAD_SUPPORT
 			, enm_lock
-		#endif
-			);
+#endif
+		);
 	}
 
 	//same as Execute but accepts a string for label name
@@ -245,18 +245,18 @@ public:
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		InterpreterConstraints *interpreter_constraints = nullptr,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes()
-	#ifdef MULTITHREAD_SUPPORT
+#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
-	#endif
-		)
+#endif
+	)
 	{
 		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
 		return Execute(label_sid, scope_stack, on_self, calling_interpreter,
 			write_listeners, print_listener, interpreter_constraints, immediate_result
-		#ifdef MULTITHREAD_SUPPORT
+#ifdef MULTITHREAD_SUPPORT
 			, enm_lock
-		#endif
-			);
+#endif
+		);
 	}
 
 	//returns true if the entity or any of its contained entities are currently being executed, either because of multiple threads executing on it
@@ -579,11 +579,11 @@ public:
 	public:
 		inline EntityReferenceBufferReference()
 			: maxEntityPathDepth(0), bufferReference(nullptr)
-		{ }
+		{}
 
 		inline EntityReferenceBufferReference(std::vector<EntityReferenceType> &buffer)
 			: maxEntityPathDepth(0), bufferReference(&buffer)
-		{ }
+		{}
 
 		inline EntityReferenceBufferReference(EntityReferenceBufferReference &&erbr)
 		{
@@ -914,7 +914,7 @@ protected:
 		for(auto &ce : contained_entities)
 		{
 			if(!ce->GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>(cur_depth + 1,
-					max_depth, exclude_entity))
+				max_depth, exclude_entity))
 				return false;
 		}
 
@@ -991,15 +991,15 @@ protected:
 	//one per thread to save memory on Interpreter objects
 #if defined(MULTITHREAD_SUPPORT)
 	thread_local
-#endif
-	static std::vector<EntityReadReference> entityReadReferenceBuffer;
+	#endif
+		static std::vector<EntityReadReference> entityReadReferenceBuffer;
 
 	//buffer to store write locks for deep locking entities
 	//one per thread to save memory on Interpreter objects
 #if defined(MULTITHREAD_SUPPORT)
 	thread_local
-#endif
-	static std::vector<EntityWriteReference> entityWriteReferenceBuffer;
+	#endif
+		static std::vector<EntityWriteReference> entityWriteReferenceBuffer;
 
 	//container for when there are no contained entities but need to iterate over them
 	static std::vector<Entity *> emptyContainedEntities;

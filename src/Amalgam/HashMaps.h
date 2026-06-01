@@ -374,8 +374,7 @@ public:
 		const E &equal = E(),
 		const A &alloc = A())
 		: hash(hash), equal(equal), alloc(alloc)
-	{
-	}
+	{}
 
 	bool empty() const
 	{

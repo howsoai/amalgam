@@ -1,12 +1,15 @@
 #pragma once
 
 //project headers:
-#include "Conviction.h"
 #include "DistanceReferencePair.h"
 #include "EvaluableNode.h"
+#include "HashMaps.h"
 #include "IntegerSet.h"
 #include "KnnCache.h"
 #include "SeparableBoxFilterDataStore.h"
+#include <EvaluableNodeManagement.h>
+#include <EvaluableNodeReference.h>
+#include <StringInternPool.h>
 
 //system headers:
 #include <vector>
@@ -22,7 +25,7 @@ class EntityQueryCaches
 public:
 
 	EntityQueryCaches(Entity *_container) : container(_container)
-	{	}
+	{}
 
 	//adds the entity to the cache
 	// container should contain entity
@@ -172,7 +175,7 @@ public:
 		std::vector<double> doubleVector;
 
 		//buffer for doubles pairs
-		std::vector<std::pair<double,double>> pairDoubleVector;
+		std::vector<std::pair<double, double>> pairDoubleVector;
 
 		//nearest neighbors cache
 		KnnCache knnCache;
@@ -183,10 +186,11 @@ public:
 	Concurrency::ReadWriteMutex mutex;
 #endif
 
+	//buffers that can be used for less memory churn (per-thread if multithreaded)
 	//for multithreading, there should be one of these per thread
 #if defined(MULTITHREAD_SUPPORT)
-	thread_local
+	thread_local static QueryCachesBuffers buffers;
+#else
+	static QueryCachesBuffers buffers;
 #endif
-		//buffers that can be used for less memory churn (per-thread if multithreaded)
-		static QueryCachesBuffers buffers;
 };

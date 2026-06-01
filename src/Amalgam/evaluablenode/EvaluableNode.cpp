@@ -1,7 +1,7 @@
 //project headers:
 #include "EvaluableNode.h"
-#include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeManagement.h"
+#include "EvaluableNodeTreeFunctions.h"
 #include "FastMath.h"
 #include "Opcodes.h"
 #include "Parser.h"
@@ -120,23 +120,23 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 
 	switch(e_type)
 	{
-		case ENT_BOOL:
-			return (e->GetBoolValueReference() ? 1 : 0);
-		case ENT_NULL:
+	case ENT_BOOL:
+		return (e->GetBoolValueReference() ? 1 : 0);
+	case ENT_NULL:
+		return value_if_null;
+	case ENT_STRING:
+	{
+		auto sid = e->GetStringIDReference();
+		if(sid == string_intern_pool.NOT_A_STRING_ID)
 			return value_if_null;
-		case ENT_STRING:
-		{
-			auto sid = e->GetStringIDReference();
-			if(sid == string_intern_pool.NOT_A_STRING_ID)
-				return value_if_null;
-			auto &str = string_intern_pool.GetStringFromID(sid);
-			auto [value, success] = Platform_StringToNumber(str);
-			if(success)
-				return value;
-			return value_if_null;
-		}
-		default:
-			return value_if_null;
+		auto &str = string_intern_pool.GetStringFromID(sid);
+		auto [value, success] = Platform_StringToNumber(str);
+		if(success)
+			return value;
+		return value_if_null;
+	}
+	default:
+		return value_if_null;
 	}
 }
 
@@ -1442,7 +1442,7 @@ void EvaluableNodeImmediateValueWithType::CopyValueFromEvaluableNode(EvaluableNo
 	{
 		nodeType = ENIVT_STRING_ID;
 		nodeValue = EvaluableNodeImmediateValue(en->GetStringIDReference());
-		
+
 		//create copy
 		if(enm != nullptr)
 			string_intern_pool.CreateStringReference(nodeValue.stringID);

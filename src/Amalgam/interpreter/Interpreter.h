@@ -13,7 +13,6 @@
 
 //system headers:
 #include <array>
-#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -29,7 +28,7 @@ public:
 		Entity *t, Interpreter *calling_interpreter);
 
 	~Interpreter()
-	{	}
+	{}
 
 	//Executes the current Entity that this Interpreter is contained by
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
@@ -427,7 +426,7 @@ public:
 			bool top_is_next_stack = (cur_scope_stack_size == 0);
 			auto [value_destination, scope, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocationWithLock(
 				symbol_sid, top_is_next_stack && create_if_nonexistent, lock, executing_interpreter == nullptr ? this : executing_interpreter);
-			
+
 			if(value_destination != nullptr)
 				return std::make_tuple(value_destination, scope, top_is_next_stack && top_of_stack, is_freeable);
 		}
@@ -835,7 +834,7 @@ protected:
 		//return whether they have ever been exceeded
 		return interpreterConstraints->constraintsExceeded;
 	}
-	
+
 	//If interpreter_constraints is non-null, and interpreter_constraints->collect warnings is true,
 	//creates a tuple with result, a list of all warnings, and constraint violations. Otherwise, it returns result.
 	EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints);

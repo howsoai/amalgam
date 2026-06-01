@@ -18,50 +18,50 @@
 #define PLATFORM_ARGS_CONSOLE auto args = Platform_ArgvToStringViews(argc, argv);
 
 #ifdef _WIN32
-	#define OS_WINDOWS
+#define OS_WINDOWS
 
-	#define NOMINMAX
-	#include <Windows.h>
+#define NOMINMAX
+#include <Windows.h>
 
-	#define PLATFORM_MAIN_NO_CONSOLE int APIENTRY WinMain(HINSTANCE hCurrentInst, HINSTANCE hPreviousInst, LPSTR lpszCmdLine, int nCmdShow)
+#define PLATFORM_MAIN_NO_CONSOLE int APIENTRY WinMain(HINSTANCE hCurrentInst, HINSTANCE hPreviousInst, LPSTR lpszCmdLine, int nCmdShow)
 
-	#define PLATFORM_ARGS_NO_CONSOLE			\
+#define PLATFORM_ARGS_NO_CONSOLE			\
 		std::string arg_string(lpszCmdLine);	\
 		auto args = StringManipulation::SplitArgString(arg_string);
 
 #else
-	#ifdef __linux__
-		#define OS_LINUX
-	#elif defined(__APPLE__) || defined(__MACH__)
-		#define OS_MAC
-	#endif
+#ifdef __linux__
+#define OS_LINUX
+#elif defined(__APPLE__) || defined(__MACH__)
+#define OS_MAC
+#endif
 
-	#define PLATFORM_MAIN_NO_CONSOLE PLATFORM_MAIN_CONSOLE
+#define PLATFORM_MAIN_NO_CONSOLE PLATFORM_MAIN_CONSOLE
 
-	#define PLATFORM_ARGS_NO_CONSOLE PLATFORM_ARGS_CONSOLE
+#define PLATFORM_ARGS_NO_CONSOLE PLATFORM_ARGS_CONSOLE
 
-	//include signal to raise exception in linux
-	#include <signal.h>
+//include signal to raise exception in linux
+#include <signal.h>
 
 #endif
 
 //defines __popcnt64 if it doesn't exist
 //platform independent intrinsic for bit count on a 64-bit var
 #if defined(__GNUC__)
-	#define __popcnt64 __builtin_popcountll
+#define __popcnt64 __builtin_popcountll
 #elif !defined(_MSC_VER)
-	size_t __popcnt64(uint64_t x)
+size_t __popcnt64(uint64_t x)
+{
+	size_t bit_count = 0;
+	while(x > 0)
 	{
-		size_t bit_count = 0;
-		while(x > 0)
-		{
-			if(x & 1)
-				bit_count++;
+		if(x & 1)
+			bit_count++;
 
-			x <<= 1;
-		}
-		return bit_count;
+		x <<= 1;
 	}
+	return bit_count;
+}
 #endif
 
 //returns the offset of the first bit set in x, starting at 0 as the least significant bit
@@ -223,7 +223,7 @@ inline void Platform_Assert(bool expr, const char *file, int line)
 	{
 		std::cerr << "Runtime Exception: Debug Assertion Failed at line " << line << " of " << file << "\n";
 
-	//platform dependent assertion function
+		//platform dependent assertion function
 	#ifdef OS_WINDOWS
 		_ASSERT(expr);
 	#else

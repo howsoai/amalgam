@@ -1,10 +1,8 @@
 #pragma once
 
-//project headers:
-#include "FastMath.h"
-#include "StringInternPool.h"
-
-//system headers:
+//system headers
+#include <cstdint>
+#include <stddef.h>
 
 //opcodes / commands / operations in Amalgam
 enum EvaluableNodeType : uint8_t
@@ -452,7 +450,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_swap_elements,
 	ENBISI_deep_copy_elements,
 	ENBISI_delete_elements,
-	
+
 	//mix parameters
 	ENBISI_string_edit_distance,
 	ENBISI_types_must_match,

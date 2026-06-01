@@ -5,7 +5,7 @@
 
 //3rd party headers:
 #define RYML_SINGLE_HDR_DEFINE_NOW
-#include "rapidyaml/rapidyaml-0.12.1.hpp"
+#include "rapidyaml/rapidyaml-0.13.0.hpp"
 
 //system headers:
 #include <iostream>
@@ -67,7 +67,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 		built_element << nullptr;
 		return true;
 	}
-	
+
 	if(en->IsAssociativeArray())
 	{
 		built_element |= ryml::MAP;

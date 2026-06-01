@@ -165,7 +165,7 @@ public:
 		// and this function will need to clean up the memory, but both need a valid reference
 		auto task = std::make_shared< std::packaged_task<return_type()> >(
 										std::bind(std::forward<FunctionType>(function), std::forward<ArgsType>(args) ...)
-									);
+		);
 
 		//hold the future to return
 		std::future<return_type> result = task->get_future();
@@ -219,7 +219,7 @@ public:
 		// and this function will need to clean up the memory, but both need a valid reference
 		auto task = std::make_shared< std::packaged_task<return_type()> >(
 										std::bind(std::forward<FunctionType>(function), std::forward<ArgsType>(args) ...)
-									);
+		);
 
 		//hold the future to return
 		std::future<return_type> result = task->get_future();
@@ -241,7 +241,7 @@ public:
 	public:
 		inline CountableTaskSet(ThreadPool *thread_pool, size_t num_tasks = 0)
 			: numTasks(num_tasks), numTasksCompleted(0), threadPool(thread_pool)
-		{	}
+		{}
 
 		//increments the number of tasks by num_new_tasks
 		inline void AddTask(size_t num_new_tasks = 1)
@@ -261,7 +261,7 @@ public:
 			}
 
 			threadPool->ChangeCurrentThreadStateFromActiveToWaiting();
-			
+
 			{
 				std::unique_lock<std::mutex> task_lock(mutex);
 				condVar.wait(task_lock, [this] { return numTasksCompleted >= numTasks; });

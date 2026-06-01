@@ -1,7 +1,6 @@
 #pragma once
 
 //project headers:
-#include "DistanceReferencePair.h"
 #include "EvaluableNode.h"
 #include "GeneralizedDistance.h"
 #include "HashMaps.h"
@@ -35,21 +34,21 @@ public:
 		ValueEntry()
 			: value(), indicesWithValue(),
 			valueInternIndex(NO_INDEX)
-		{	}
+		{}
 
 		ValueEntry(double number_value, size_t intern_index = NO_INDEX)
 			: value(number_value), indicesWithValue(),
 			valueInternIndex(intern_index)
-		{	}
+		{}
 
 		ValueEntry(StringInternPool::StringID sid_value, size_t intern_index = NO_INDEX)
 			: value(sid_value), indicesWithValue(),
 			valueInternIndex(intern_index)
-		{	}
+		{}
 
 		ValueEntry(const ValueEntry &ve)
 			: value(ve.value), indicesWithValue(ve.indicesWithValue), valueInternIndex(ve.valueInternIndex)
-		{	}
+		{}
 
 		EvaluableNodeImmediateValue value;
 		SortedIntegerSet indicesWithValue;
@@ -60,7 +59,7 @@ public:
 	inline SBFDSColumnData(StringInternPool::StringID sid)
 		: stringId(sid), indexWithLongestString(0), longestStringLength(0),
 		indexWithLargestCode(0), largestCodeSize(0)
-	{	}
+	{}
 
 	//returns the value type of the given index given the value
 	__forceinline EvaluableNodeImmediateValueType GetIndexValueType(size_t index)
@@ -416,7 +415,7 @@ public:
 	inline void ConvertNumberValuesToInterns()
 	{
 		internedNumberValues.ConvertValueCollectionToInterns(sortedNumberValueEntries,
-			[](auto &value_entry_iter) -> ValueEntry & { return value_entry_iter.second; });
+			[](auto &value_entry_iter) -> ValueEntry &{ return value_entry_iter.second; });
 	}
 
 	//clears string intern caches and changes state to not perform interning for StringIds
@@ -429,7 +428,7 @@ public:
 	inline void ConvertStringIdValuesToInterns()
 	{
 		internedStringIdValues.ConvertValueCollectionToInterns(stringIdValueEntries,
-			[](auto &value_entry_iter) -> ValueEntry & { return *(value_entry_iter.second.get()); });
+			[](auto &value_entry_iter) -> ValueEntry &{ return *(value_entry_iter.second.get()); });
 	}
 
 	//used for debugging to make sure all entities are valid
@@ -613,7 +612,7 @@ public:
 	public:
 		InternedValues()
 			: valueInterningEnabled(false)
-		{	}
+		{}
 
 		//clears all interning and cleans up data structures
 		inline void ClearInterning()

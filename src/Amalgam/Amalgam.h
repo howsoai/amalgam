@@ -97,8 +97,8 @@ extern "C"
 	AMALGAM_EXPORT wchar_t *GetVersionStringWide();
 	AMALGAM_EXPORT char *GetVersionString();
 
-	AMALGAM_EXPORT wchar_t* GetConcurrencyTypeStringWide();
-	AMALGAM_EXPORT char* GetConcurrencyTypeString();
+	AMALGAM_EXPORT wchar_t *GetConcurrencyTypeStringWide();
+	AMALGAM_EXPORT char *GetConcurrencyTypeString();
 
 	AMALGAM_EXPORT void SetSBFDataStoreEnabled(bool enable_SBF_datastore);
 	AMALGAM_EXPORT bool IsSBFDataStoreEnabled();

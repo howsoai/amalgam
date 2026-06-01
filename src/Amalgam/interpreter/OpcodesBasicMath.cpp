@@ -1074,13 +1074,13 @@ template<typename Compare>
 EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc,
 	EvaluableNodeManager *enm, Compare compare, double compare_limit, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto &mapped_child_nodes = interpreted_assoc->GetMappedChildNodesReference();
+	auto &mcn = interpreted_assoc->GetMappedChildNodesReference();
 	double candidate_value = compare_limit;
 	bool value_found = false;
 
 	std::vector<StringInternPool::StringID> max_keys;
 
-	for(auto [cur_key, cur_child] : mapped_child_nodes)
+	for(auto [cur_key, cur_child] : mcn)
 	{
 		double cur_value = EvaluableNode::ToNumber(cur_child);
 
@@ -1127,14 +1127,14 @@ EvaluableNodeReference GetIndexMinMaxFromList(EvaluableNode *en, EvaluableNodeMa
 	double result_value = compare_limit;
 	std::vector<size_t> max_indices;
 
-	auto &orderedChildNodes = en->GetOrderedChildNodesReference();
+	auto &ocn = en->GetOrderedChildNodesReference();
 
-	if(orderedChildNodes.size() == 0)
+	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	for(size_t i = 0; i < orderedChildNodes.size(); i++)
+	for(size_t i = 0; i < ocn.size(); i++)
 	{
-		double cur_value = EvaluableNode::ToNumber(orderedChildNodes[i]);
+		double cur_value = EvaluableNode::ToNumber(ocn[i]);
 
 		if(cur_value == result_value)
 		{

@@ -415,27 +415,27 @@ public:
 		size_t cur_num_entities = numEntities;
 		return [&, number_indices_ptr, column_data, column_as_weight, cur_num_entities]
 		(Iter i, double &value)
-		{
-			size_t entity_index;
-			if constexpr(std::is_same<size_t, Iter>::value)
-				entity_index = i;
-			else
-				entity_index = *i;
-
-			if(entity_index >= cur_num_entities
-				|| !number_indices_ptr->contains(entity_index))
 			{
-				if(column_as_weight)
-				{
-					value = 1.0;
-					return true;
-				}
-				return false;
-			}
+				size_t entity_index;
+				if constexpr(std::is_same<size_t, Iter>::value)
+					entity_index = i;
+				else
+					entity_index = *i;
 
-			value = column_data->GetResolvedIndexValue(entity_index).number;
-			return true;
-		};
+				if(entity_index >= cur_num_entities
+					|| !number_indices_ptr->contains(entity_index))
+				{
+					if(column_as_weight)
+					{
+						value = 1.0;
+						return true;
+					}
+					return false;
+				}
+
+				value = column_data->GetResolvedIndexValue(entity_index).number;
+				return true;
+			};
 	}
 
 	//returns a function that will take in an entity index iterator and reference to a string id to store the value and return true if the value is found
@@ -450,21 +450,21 @@ public:
 		size_t cur_num_entities = numEntities;
 		return [&, invalid_indices_ptr, column_data, cur_num_entities]
 		(Iter i, StringInternPool::StringID &value)
-		{
-			size_t entity_index;
-			if constexpr(std::is_same<size_t, Iter>::value)
-				entity_index = i;
-			else
-				entity_index = *i;
+			{
+				size_t entity_index;
+				if constexpr(std::is_same<size_t, Iter>::value)
+					entity_index = i;
+				else
+					entity_index = *i;
 
-			if(entity_index >= cur_num_entities
-					|| invalid_indices_ptr->contains(entity_index))
-				return false;
+				if(entity_index >= cur_num_entities
+						|| invalid_indices_ptr->contains(entity_index))
+					return false;
 
-			auto immediate_value = column_data->GetResolvedIndexValueWithType(entity_index);
-			value = immediate_value.GetValueAsStringIDWithReference(true);
-			return true;
-		};
+				auto immediate_value = column_data->GetResolvedIndexValueWithType(entity_index);
+				value = immediate_value.GetValueAsStringIDWithReference(true);
+				return true;
+			};
 	}
 
 	//returns a function that will take in an entity index iterator and reference to a string id to store the value and return true if the value is found
@@ -479,22 +479,22 @@ public:
 		size_t cur_num_entities = numEntities;
 		return [&, invalid_indices_ptr, column_data, cur_num_entities]
 		(Iter i, std::string &value)
-		{
-			size_t entity_index;
-			if constexpr(std::is_same<size_t, Iter>::value)
-				entity_index = i;
-			else
-				entity_index = *i;
+			{
+				size_t entity_index;
+				if constexpr(std::is_same<size_t, Iter>::value)
+					entity_index = i;
+				else
+					entity_index = *i;
 
-			if(entity_index >= cur_num_entities
-					|| invalid_indices_ptr->contains(entity_index))
-				return false;
+				if(entity_index >= cur_num_entities
+						|| invalid_indices_ptr->contains(entity_index))
+					return false;
 
-			auto immediate_value = column_data->GetResolvedIndexValueWithType(entity_index);
-			bool valid = true;
-			std::tie(valid, value) = immediate_value.GetValueAsString(true);
-			return valid;
-		};
+				auto immediate_value = column_data->GetResolvedIndexValueWithType(entity_index);
+				bool valid = true;
+				std::tie(valid, value) = immediate_value.GetValueAsString(true);
+				return valid;
+			};
 	}
 
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
@@ -621,12 +621,12 @@ public:
 					radius_label, *possible_knn_indices, distances_out, ignore_index, rand_stream);
 		}
 	}
-	
+
 	//Finds the nearest neighbors
 	//enabled_indices is the set of entities to find from, and will be modified
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	inline void FindEntitiesNearestToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
-		std::vector<EvaluableNodeImmediateValueWithType> &position_values, 
+		std::vector<EvaluableNodeImmediateValueWithType> &position_values,
 		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
 		BitArrayIntegerSet &enabled_indices, bool read_only_enabled_indices, bool expand_to_first_nonzero_distance,
 		Interpreter *interpreter, Entity *entity,
@@ -1154,7 +1154,7 @@ protected:
 					return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
 						1, query_feature_index);
 			}
-			
+
 			return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
 
@@ -1419,7 +1419,7 @@ public:
 					compute_cost_mult = 0.0625;
 			}
 			feature_attribs.probabilityImpactForComputeCost = feature_attribs.weight * compute_cost_mult;
-			
+
 			//compute nominal count
 			if(feature_attribs.IsFeatureNominal())
 			{
@@ -1483,13 +1483,14 @@ public:
 
 	//contains entity lookups for each of the values for each of the columns
 	std::vector<std::unique_ptr<SBFDSColumnData>> columnData;
-	
+
 	//for multithreading, there should be one of these per thread
 #if defined(MULTITHREAD_SUPPORT)
-	thread_local
-#endif
+	thread_local static SBFDSParametersAndBuffers parametersAndBuffers;
+#else
 	static SBFDSParametersAndBuffers parametersAndBuffers;
-	
+#endif
+
 	//map from label id to column index
 	FastHashMap<StringInternPool::StringID, size_t> labelIdToColumnIndex;
 

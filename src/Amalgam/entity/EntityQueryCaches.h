@@ -186,10 +186,11 @@ public:
 	Concurrency::ReadWriteMutex mutex;
 #endif
 
+	//buffers that can be used for less memory churn (per-thread if multithreaded)
 	//for multithreading, there should be one of these per thread
 #if defined(MULTITHREAD_SUPPORT)
-	thread_local
+	thread_local static QueryCachesBuffers buffers;
+#else
+	static QueryCachesBuffers buffers;
 #endif
-		//buffers that can be used for less memory churn (per-thread if multithreaded)
-		static QueryCachesBuffers buffers;
 };

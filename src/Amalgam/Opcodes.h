@@ -450,7 +450,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_swap_elements,
 	ENBISI_deep_copy_elements,
 	ENBISI_delete_elements,
-	
+
 	//mix parameters
 	ENBISI_string_edit_distance,
 	ENBISI_types_must_match,

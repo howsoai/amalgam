@@ -232,9 +232,9 @@ public:
 
 		return ExecuteOnEntity(node_to_execute, scope_stack, calling_interpreter,
 			write_listeners, print_listener, interpreter_constraints, immediate_result
-	#ifdef MULTITHREAD_SUPPORT
+#ifdef MULTITHREAD_SUPPORT
 			, enm_lock
-	#endif
+#endif
 		);
 	}
 
@@ -253,9 +253,9 @@ public:
 		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
 		return Execute(label_sid, scope_stack, on_self, calling_interpreter,
 			write_listeners, print_listener, interpreter_constraints, immediate_result
-	#ifdef MULTITHREAD_SUPPORT
+#ifdef MULTITHREAD_SUPPORT
 			, enm_lock
-	#endif
+#endif
 		);
 	}
 
@@ -991,15 +991,15 @@ protected:
 	//one per thread to save memory on Interpreter objects
 #if defined(MULTITHREAD_SUPPORT)
 	thread_local
-#endif
-	static std::vector<EntityReadReference> entityReadReferenceBuffer;
+	#endif
+		static std::vector<EntityReadReference> entityReadReferenceBuffer;
 
 	//buffer to store write locks for deep locking entities
 	//one per thread to save memory on Interpreter objects
 #if defined(MULTITHREAD_SUPPORT)
 	thread_local
-#endif
-	static std::vector<EntityWriteReference> entityWriteReferenceBuffer;
+	#endif
+		static std::vector<EntityWriteReference> entityWriteReferenceBuffer;
 
 	//container for when there are no contained entities but need to iterate over them
 	static std::vector<Entity *> emptyContainedEntities;

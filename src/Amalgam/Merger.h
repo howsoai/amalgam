@@ -12,11 +12,11 @@ public:
 	//starts off with an exact match of nothing
 	inline MergeMetricResultsBase()
 		: commonality(0.0), mustMatch(false), exactMatch(true)
-	{	}
+	{}
 
 	inline MergeMetricResultsBase(double _similarity, bool must_match = false, bool exact_match = true)
 		: commonality(_similarity), mustMatch(must_match), exactMatch(exact_match)
-	{	}
+	{}
 
 	//adds the commonality and keeps track of whether it is an exact match
 	inline void AccumulateResults(const MergeMetricResultsBase &mmr)
@@ -86,11 +86,11 @@ public:
 	//C++ initializes to 0 or nullptr
 	inline MergeMetricResults()
 		: MergeMetricResultsBase(), elementA(), elementB()
-	{	}
+	{}
 
 	inline MergeMetricResults(double _similarity, ElementType a, ElementType b, bool must_match = false, bool exact_match = true)
 		: MergeMetricResultsBase(_similarity, must_match, exact_match), elementA(a), elementB(b)
-	{	}
+	{}
 
 	//the two elements being compared
 	ElementType elementA;
@@ -174,7 +174,7 @@ inline void ComputeSequenceCommonalityMatrix(FlatMatrix<MergeResultType> &sequen
 template<typename T,
 	T NullValue = nullptr,
 	typename OrderedType = std::vector<T>,
-	typename AssocType = CompactHashMap<StringInternPool::StringID, T*>>
+	typename AssocType = CompactHashMap<StringInternPool::StringID, T *>>
 class Merger
 {
 public:
@@ -381,7 +381,7 @@ public:
 		//add on remainder if keeping all or some that weren't mergeable
 		if(KeepSomeNonMergeableValues())
 		{
-			for(size_t i = 0; i < unmatched_a1.size(); i+= 2)
+			for(size_t i = 0; i < unmatched_a1.size(); i += 2)
 			{
 				if(!KeepNonMergeableA())
 					continue;
@@ -516,7 +516,7 @@ public:
 			while(b_index > 0)
 			{
 				b_index--;
-				
+
 				if(!KeepNonMergeableB())
 					continue;
 
@@ -616,7 +616,7 @@ public:
 			return merged;
 		}
 		//else need to track some that might be in either or both
-		
+
 		//fast iteration if one element doesn't have any nodes
 		if(map_a.size() > 0 && map_b.empty())
 		{

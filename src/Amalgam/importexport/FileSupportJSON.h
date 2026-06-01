@@ -19,7 +19,7 @@ namespace EvaluableNodeJSONTranslation
 
 	//loads json file to EvaluableNode tree
 	EvaluableNode *Load(const std::string &resource_path, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status);
-	
+
 	//stores EvaluableNode tree to json file
 	bool Store(EvaluableNode *code, const std::string &resource_path, EvaluableNodeManager *enm, bool sort_keys);
 };

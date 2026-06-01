@@ -40,9 +40,9 @@ public:
 	// or return until all entities are included
 #ifdef MULTITHREAD_SUPPORT
 	void PreCacheKnn(BitArrayIntegerSet *entities_to_compute, size_t top_k, bool expand_to_first_nonzero_distance, bool run_concurrently)
-#else
+	#else
 	void PreCacheKnn(BitArrayIntegerSet *entities_to_compute, size_t top_k, bool expand_to_first_nonzero_distance)
-#endif
+	#endif
 	{
 		if(entities_to_compute == nullptr)
 			entities_to_compute = relevantIndices;
@@ -55,11 +55,11 @@ public:
 					*positionLabelIds, entity_index, top_k, radiusLabelId, *relevantIndices, true, expand_to_first_nonzero_distance,
 					interpreter, entity, cachedNeighbors[entity_index]);
 			}
-		#ifdef MULTITHREAD_SUPPORT
+	#ifdef MULTITHREAD_SUPPORT
 			,
 			run_concurrently
-		#endif
-			);
+	#endif
+		);
 	}
 
 	//returns true if the cached entities nearest to index contain other_index within top_k

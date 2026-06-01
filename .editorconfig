@@ -15,6 +15,9 @@ cpp_generate_documentation_comments = doxygen_triple_slash
 # Visual C++ Formatting settings
 
 cpp_indent_braces = false
+cpp_indent_constructor_initializers = true
+cpp_indent_template_declaration = false
+cpp_constructor_initializer_indent_style = double_indent
 cpp_indent_multi_line_relative_to = innermost_parenthesis
 cpp_indent_within_parentheses = indent
 cpp_indent_preserve_within_parentheses = true
@@ -74,7 +77,7 @@ cpp_space_around_ternary_operator = insert
 cpp_use_unreal_engine_macro_formatting = false
 cpp_wrap_preserve_blocks = never
 
-# Visual C++ Inlcude Cleanup settings
+# Visual C++ Include Cleanup settings
 
 cpp_include_cleanup_add_missing_error_tag_type = none
 cpp_include_cleanup_remove_unused_error_tag_type = dimmed

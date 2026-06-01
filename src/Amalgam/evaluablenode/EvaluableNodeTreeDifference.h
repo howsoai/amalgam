@@ -13,14 +13,18 @@ public:
 	public:
 		NodesMergeForDifferenceMethod(EvaluableNodeManager *_enm)
 			: NodesMergeMethod(_enm, false, true, true, true, false)
-		{	}
+		{}
 
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false);
 
 		constexpr EvaluableNode::ReferenceAssocType &GetANodesIncluded()
-		{		return aNodesIncluded;		}
+		{
+			return aNodesIncluded;
+		}
 		constexpr EvaluableNode::ReferenceAssocType &GetBNodesIncluded()
-		{		return bNodesIncluded;		}
+		{
+			return bNodesIncluded;
+		}
 
 	protected:
 		//key is the node from tree a or b, value is the node from the merged tree

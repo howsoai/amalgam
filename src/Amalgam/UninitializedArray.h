@@ -13,10 +13,10 @@ class UninitializedArray
 {
 public:
 	UninitializedArray()
-	{ }
+	{}
 
 	~UninitializedArray()
-	{ }
+	{}
 
 	using value_type = T;
 	using size_type = std::size_t;

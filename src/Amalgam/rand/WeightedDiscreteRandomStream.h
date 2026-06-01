@@ -78,9 +78,9 @@ template<typename ValueType, typename MapType = std::map<ValueType, double>, typ
 class WeightedDiscreteRandomStreamTransform
 {
 public:
-	
+
 	inline WeightedDiscreteRandomStreamTransform()
-	{ }
+	{}
 
 	inline WeightedDiscreteRandomStreamTransform(const MapType &map, bool normalize = false)
 	{
@@ -129,7 +129,7 @@ public:
 		valueTable = values;
 		InitializeAliasTable(probabilities, normalize);
 	}
-	
+
 	//pre-computes the alias tables given a probability distribution
 	// if normalize is true, then it will sum all probabilities and divide by the sum such that they sum to 1.0
 	// if num_elements is nonzero, then it will preallocate that number of elements

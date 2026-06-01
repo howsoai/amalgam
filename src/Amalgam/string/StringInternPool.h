@@ -20,7 +20,7 @@ class StringInternStringData
 public:
 	inline StringInternStringData()
 		: refCount(0), string()
-	{	}
+	{}
 
 	//forwarding constructor – works for std::string, std::string_view, const char*, char array, etc.
 	template<class T, class = std::enable_if_t<std::is_constructible_v<std::string, T>>>
@@ -101,9 +101,9 @@ public:
 		else
 		#if defined(MULTITHREAD_SUPPORT)
 			inserted.first->second->refCount.fetch_add(1, std::memory_order_acquire);
-		#else
+	#else
 			inserted.first->second->refCount++;
-		#endif
+	#endif
 
 		StringID id = inserted.first->second.get();
 	#ifdef STRING_INTERN_POOL_VALIDATION
@@ -126,9 +126,9 @@ public:
 		else
 		#if defined(MULTITHREAD_SUPPORT)
 			inserted.first->second->refCount.fetch_add(1, std::memory_order_acquire);
-		#else
+	#else
 			inserted.first->second->refCount++;
-		#endif
+	#endif
 
 		StringID id = inserted.first->second.get();
 	#ifdef STRING_INTERN_POOL_VALIDATION
@@ -375,7 +375,7 @@ class StringRef
 public:
 	inline StringRef()
 		: id(StringInternPool::NOT_A_STRING_ID)
-	{	}
+	{}
 
 	inline StringRef(StringInternPool::StringID sid)
 	{
@@ -425,7 +425,9 @@ public:
 
 	//easy-to-read way of creating an empty string
 	inline static StringRef EmptyString()
-	{	return StringRef();	}
+	{
+		return StringRef();
+	}
 
 	//assign another string reference
 	inline StringRef &operator =(const StringRef &sir)
@@ -477,7 +479,7 @@ public:
 	#ifdef STRING_INTERN_POOL_VALIDATION
 		string_intern_pool.ValidateStringIdExistence(sid);
 	#endif
-		
+
 		//if the ids are different, then need to delete old
 		//if the ids are the same, then have a duplicate reference, so need to delete one
 		//so delete a reference either way

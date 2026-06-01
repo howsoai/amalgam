@@ -454,10 +454,10 @@ namespace StringManipulation
 	//converts 4 chars into 3 binary bytes for Base64 encoding
 	inline std::array<uint8_t, 3> Base64FourCharsToThreeBytes(char a, char b, char c, char d)
 	{
-		std::uint32_t value_of_quad = ( (Base64CharToVal(a) << 18)
+		std::uint32_t value_of_quad = ((Base64CharToVal(a) << 18)
 										| (Base64CharToVal(b) << 12)
 										| (Base64CharToVal(c) << 6)
-										| Base64CharToVal(d) );
+										| Base64CharToVal(d));
 
 		uint8_t value1 = (value_of_quad >> 16) & 255;
 		uint8_t value2 = (value_of_quad >> 8) & 255;

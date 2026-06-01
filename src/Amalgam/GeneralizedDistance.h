@@ -46,7 +46,7 @@ public:
 	public:
 		__forceinline DistanceTermWithDeviation(double initial_value = 0.0)
 			: distanceTerm(initial_value), deviation(initial_value)
-		{	}
+		{}
 
 		double distanceTerm;
 		double deviation;
@@ -631,11 +631,11 @@ public:
 
 			feature_attributes.nominalNumberSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
 			feature_attributes.nominalStringSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
-			
+
 			//find the probability that any other class besides the correct class was selected
 			//divide the probability among the other classes
 			double prob_class_given_nonmatch = smallest_deviation / GetNonmatchingNominalClassCount(index);
-			
+
 			return 1.0 - prob_class_given_nonmatch;
 		}
 
@@ -778,7 +778,7 @@ public:
 
 		//apply deviations -- if computeSurprisal, will be caught above and always return 0.0
 		double diff = ComputeDifferenceWithDeviation(0.0, index, false, false, high_accuracy);
-		
+
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
 	}
@@ -1255,7 +1255,7 @@ public:
 
 	RepeatedGeneralizedDistanceEvaluator()
 		: distEvaluator(nullptr), entity(nullptr), callingInterpreter(nullptr)
-	{	}
+	{}
 
 	//computes the distance terms given the sdm for feature index, of type target_type and target_value,
 	// and populates nominal_distance_terms
@@ -1270,7 +1270,7 @@ public:
 		auto deviations_for_value = sdm.find(target_value);
 		if(deviations_for_value == end(sdm))
 			return false;
-		
+
 		auto &deviations = deviations_for_value->second;
 
 		double nonmatching_classes = distEvaluator->GetNonmatchingNominalClassCount(index,
@@ -1283,7 +1283,7 @@ public:
 				EvaluableNodeImmediateValueWithType(target_value, target_type),
 				EvaluableNodeImmediateValueWithType(value, target_type), index);
 			nominal_distance_terms.emplace(value, dist_term);
-				
+
 			if(dist_term < smallest_dist_term)
 				smallest_dist_term = dist_term;
 		}
@@ -1392,7 +1392,7 @@ public:
 		{
 			//first entry is unknown-unknown distance
 			feature_precomp_data.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm.distanceTerm;
-			
+
 			double k_to_unk = feature_attribs.knownToUnknownDistanceTerm.distanceTerm;
 			for(size_t i = 1; i < feature_precomp_data.internedDistanceTerms.size(); i++)
 				feature_precomp_data.internedDistanceTerms[i] = k_to_unk;
@@ -1467,17 +1467,17 @@ public:
 	{
 		auto &feature_precomp_data = featurePrecomputedData[index];
 		return
-			(	feature_precomp_data.nominalNumberDistanceTerms.find(std::numeric_limits<double>::quiet_NaN())
+			(feature_precomp_data.nominalNumberDistanceTerms.find(std::numeric_limits<double>::quiet_NaN())
 					!= end(feature_precomp_data.nominalNumberDistanceTerms)
 				|| feature_precomp_data.nominalStringDistanceTerms.find(string_intern_pool.NOT_A_STRING_ID)
-					!= end(feature_precomp_data.nominalStringDistanceTerms) );
+					!= end(feature_precomp_data.nominalStringDistanceTerms));
 	}
 
 	//returns the distance term given that it is nominal
 	__forceinline double ComputeDistanceTermNominal(const EvaluableNodeImmediateValueWithType &other_value, size_t index)
 	{
 		auto &feature_precomp_data = featurePrecomputedData[index];
-		
+
 		if(other_value.nodeType == ENIVT_NUMBER)
 		{
 			auto dist_term_entry = feature_precomp_data.nominalNumberDistanceTerms.find(other_value.nodeValue.number);
@@ -1506,7 +1506,7 @@ public:
 			if(other_value.nodeValue.boolValue == feature_precomp_data.targetValue.GetValueAsBoolean())
 				return feature_precomp_data.defaultNominalMatchDistanceTerm;
 		}
-		
+
 		if(other_value.IsNull())
 		{
 			if(feature_precomp_data.targetValue.IsNull())
@@ -1542,7 +1542,7 @@ public:
 	__forceinline double ComputeDistanceTermNonNullNominalNextSmallest(double compared_dist_term, size_t index)
 	{
 		double next_smallest_dist_term = std::numeric_limits<double>::infinity();
-		
+
 		auto &feature_precomp_data = featurePrecomputedData[index];
 		for(auto &entry : feature_precomp_data.nominalStringDistanceTerms)
 		{
@@ -1671,7 +1671,7 @@ public:
 
 		FeaturePrecomputedData()
 			: effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC)
-		{	}
+		{}
 
 		//clears all the feature data
 		void Clear()

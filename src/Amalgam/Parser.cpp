@@ -598,23 +598,23 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 
 			if(IsEvaluableNodeTypeValid(token_type) && !IsEvaluableNodeTypeImmediate(token_type))
 			{
-				new_token->SetType(token_type, evaluableNodeManager, false);
+				new_token->SetType(token_type, false);
 			}
 			else
 			{
 				EmitWarning("Invalid opcode \"" + token + "\"; transforming to apply opcode using the invalid opcode type");
 
-				new_token->SetType(ENT_APPLY, evaluableNodeManager, false);
+				new_token->SetType(ENT_APPLY, false);
 				new_token->AppendOrderedChildNode(evaluableNodeManager->AllocNode(token));
 			}
 		}
 		else if(cur_char == '[')
 		{
-			new_token->SetType(ENT_LIST, evaluableNodeManager, false);
+			new_token->SetType(ENT_LIST, false);
 		}
 		else if(cur_char == '{')
 		{
-			new_token->SetType(ENT_ASSOC, evaluableNodeManager, false);
+			new_token->SetType(ENT_ASSOC, false);
 		}
 
 		return new_token;
@@ -685,14 +685,14 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 	}
 	else if(cur_char == '"')
 	{
-		new_token->SetType(ENT_STRING, evaluableNodeManager, false);
+		new_token->SetType(ENT_STRING, false);
 		new_token->SetStringValue(ParseString());
 		return new_token;
 	}
 	else //identifier
 	{
 		//store the identifier
-		new_token->SetType(ENT_SYMBOL, evaluableNodeManager, false);
+		new_token->SetType(ENT_SYMBOL, false);
 		new_token->SetStringValue(GetNextIdentifier());
 		return new_token;
 	}
@@ -852,7 +852,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 			//if specifying something unusual, then assume it's just a null
 			if(n->GetType() == ENT_NOT_A_BUILT_IN_TYPE)
 			{
-				n->SetType(ENT_NULL, nullptr, false);
+				n->SetType(ENT_NULL, false);
 				EmitWarning("Invalid opcode");
 			}
 		}

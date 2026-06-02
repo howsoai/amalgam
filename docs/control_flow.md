@@ -401,7 +401,7 @@ Output:
 #### Parameters
 `* to_apply [list|assoc collection]`
 #### Description
-Creates a new list of the values of the elements of the `collection`, applies the type specified by `to_apply`, which is either the type corresponding to a string or the type of `to_apply`, and then evaluates it.  If `to_apply` has any parameters, i.e., it is a node with one or more elements, these are prepended to the `collection` as the first parameters.  When no extra parameters are passed, it is a more efficient equivalent to `(call (set_type type collection))`.
+Creates a new list of the values of the elements of the `collection`, and changes the type to that specified by `to_apply` and then evaluates it.  The parameter `to_apply` can either be a string representing the type or an opcode of the specified type.  If `to_apply` is an opcode and has parameters, i.e., it is a node with one or more elements, these are prepended to the `collection` as the first parameters.  When no extra parameters are passed, it is a more efficient equivalent to `(call (set_type type collection))`.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

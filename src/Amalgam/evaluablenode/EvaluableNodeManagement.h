@@ -761,7 +761,7 @@ public:
 		EvaluableNodeManager *ensure_nodes_in_enm = nullptr, bool check_cycle_flag_consistency = true);
 
 	//verifies integrity of all referenced nodes
-	void VerifyEvaluableNodeIntegretyForAllReferencedNodes();
+	void VerifyEvaluableNodeIntegrityForAllReferencedNodes();
 
 	//when numNodesToRunGarbageCollection are allocated, then it is time to run garbage collection
 	size_t numNodesToRunGarbageCollection;
@@ -771,7 +771,7 @@ public:
 	class LocalAllocationBufferPause
 	{
 	public:
-		//if initialized without params, just leave unpaused
+		//if initialized without params, just leave active (not paused)
 		inline LocalAllocationBufferPause()
 			: localAllocationBufferLocation(nullptr), lastEvaluableNodeManagerLocation(nullptr),
 			paused(false), prevLastEvaluableNodeManager(nullptr)

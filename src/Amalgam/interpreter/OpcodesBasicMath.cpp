@@ -222,7 +222,7 @@ static OpcodeInitializer _ENT_MODULUS(ENT_MODULUS, &Interpreter::InterpretNode_E
 	d.parameters = R"([number x1] [number x2] ... [number xN])";
 	d.returns = R"(number)";
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates the modulus of `x1` % `x2` % ... % `xN`.)";
+	d.description = R"(Evaluates the modulus of `x1` mod `x2` mod ... mod `xN`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((mod 1 2 3 4))", R"(1)"},
 		{R"((mod 5 3))", R"(2)"},

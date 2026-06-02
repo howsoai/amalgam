@@ -438,7 +438,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 			{
 				first_node->AppendOrderedChildNode(assoc_node);
 
-				//make a copy of scope_stack siynce ExecuteOnEntity will consume it
+				//make a copy of scope_stack since ExecuteOnEntity will consume it
 				std::vector<EvaluableNode *> scope_stack_copy(scope_stack);
 				entity->ExecuteOnEntity(first_node, &scope_stack_copy, calling_interpreter);
 			}
@@ -453,7 +453,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 
-		//make a copy of scope_stack siynce ExecuteOnEntity will consume it
+		//make a copy of scope_stack since ExecuteOnEntity will consume it
 		std::vector<EvaluableNode *> scope_stack_copy(scope_stack);
 		entity->ExecuteOnEntity(node, &scope_stack_copy, calling_interpreter);
 	}

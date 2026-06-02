@@ -477,7 +477,7 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNod
 	}
 }
 
-void EvaluableNodeManager::VerifyEvaluableNodeIntegretyForAllReferencedNodes()
+void EvaluableNodeManager::VerifyEvaluableNodeIntegrityForAllReferencedNodes()
 {
 	ValidateEvaluableNodeTreeMemoryIntegrity(rootNode, this);
 

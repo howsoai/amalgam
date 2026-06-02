@@ -551,7 +551,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 
 	//preserve non-flag metadata if exists
 	auto [annotations_view, comments_view] = GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
-	//make copies of metadata because it will be distructed if changing storage location
+	//make copies of metadata because it will be destructed if changing storage location
 	std::string annotations(annotations_view);
 	std::string comments(comments_view);
 

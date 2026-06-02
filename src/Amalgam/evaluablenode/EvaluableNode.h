@@ -292,7 +292,7 @@ public:
 		}
 	}
 
-	//sets the value of the node to that of n and coppies metadata if copy_metadata is true
+	//sets the value of the node to that of n and copies metadata if copy_metadata is true
 	void InitializeType(EvaluableNode *n, bool copy_metadata = true);
 
 	//copies the EvaluableNode n into this.  Does not overwrite labels or comments.
@@ -886,7 +886,7 @@ public:
 		return HasAttribute(Attribute::IDEMPOTENT);
 	}
 
-	//sets the EvaluableNode's idempotentcy flag
+	//sets the EvaluableNode's idempotency flag
 	__forceinline void SetIsIdempotent(bool is_idempotent)
 	{
 		SetAttribute(Attribute::IDEMPOTENT, is_idempotent);

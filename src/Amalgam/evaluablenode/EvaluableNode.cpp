@@ -458,8 +458,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 	{
 		ClearOrderedChildNodes();
 		ClearMappedChildNodes();
-		//doesn't need an EvaluableNodeManager because not converting child nodes from one type to another
-		SetType(ENT_NULL, nullptr, false);
+		SetType(ENT_NULL, false);
 		return;
 	}
 
@@ -469,8 +468,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 	AmlgAssert(IsEvaluableNodeTypeValid(cur_type));
 #endif
 
-	//doesn't need an EvaluableNodeManager because not converting child nodes from one type to another
-	SetType(cur_type, nullptr, false);
+	SetType(cur_type, false);
 
 	if(DoesEvaluableNodeTypeUseAssocData(cur_type))
 	{
@@ -525,8 +523,7 @@ void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 	SetConcurrency(n->GetConcurrency());
 }
 
-void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm,
-	bool attempt_to_preserve_immediate_value)
+void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve_value)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	AmlgAssert(IsEvaluableNodeTypeValid(new_type));
@@ -568,7 +565,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	else if(DoesEvaluableNodeTypeUseBoolData(new_type))
 	{
 		bool bool_value = false;
-		if(attempt_to_preserve_immediate_value)
+		if(attempt_to_preserve_value)
 			bool_value = EvaluableNode::ToBool(this);
 
 		InitBoolValue();
@@ -581,7 +578,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	else if(DoesEvaluableNodeTypeUseNumberData(new_type))
 	{
 		double number_value = 0.0;
-		if(attempt_to_preserve_immediate_value)
+		if(attempt_to_preserve_value)
 			number_value = EvaluableNode::ToNumber(this);
 
 		if(FastIsNaN(number_value))
@@ -601,7 +598,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	else if(DoesEvaluableNodeTypeUseStringData(new_type))
 	{
 		StringInternPool::StringID sid = string_intern_pool.emptyStringId;
-		if(attempt_to_preserve_immediate_value)
+		if(attempt_to_preserve_value)
 			sid = EvaluableNode::ToStringIDWithReference(this);
 
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
@@ -620,23 +617,20 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	}
 	else if(DoesEvaluableNodeTypeUseAssocData(new_type))
 	{
-		if(DoesEvaluableNodeTypeUseOrderedData(cur_type))
+		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseOrderedData(cur_type))
 		{
 			//convert ordered pairs to assoc
 			AssocType new_map;
 
 			auto &ocn = GetOrderedChildNodesReference();
-			new_map.reserve((ocn.size() + 1) / 2);
-			for(size_t i = 0; i < ocn.size(); i += 2)
+			new_map.reserve(ocn.size());
+			for(size_t i = 0; i < ocn.size(); i++)
 			{
-				auto sid = ToStringIDWithReference(ocn[i], true);
+				std::string index_string = EvaluableNode::NumberToString(i, true);
+				StringInternPool::StringID sid = string_intern_pool.CreateStringReference(index_string);
 
-				EvaluableNode *value = nullptr;
-				if(i + 1 < ocn.size())
-					value = ocn[i + 1];
-
-				//try to insert, but drop reference if couldn't
-				if(!new_map.emplace(sid, value).second)
+				//this should never fail since every number is unique
+				if(!new_map.emplace(sid, ocn[i]).second)
 					string_intern_pool.DestroyStringReference(sid);
 			}
 
@@ -653,18 +647,13 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	}
 	else //ordered pairs
 	{
-		//will need a valid enm to convert this
-		if(DoesEvaluableNodeTypeUseAssocData(cur_type) && enm != nullptr)
+		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseAssocData(cur_type))
 		{
 			OrderedType new_ordered;
 			auto &mcn = GetMappedChildNodesReference();
-			new_ordered.reserve(2 * mcn.size());
+			new_ordered.reserve(mcn.size());
 			for(auto &[cn_id, cn] : mcn)
-			{
-				EvaluableNode *key = Parser::ParseFromKeyStringId(cn_id, enm);
-				new_ordered.emplace_back(key);
 				new_ordered.emplace_back(cn);
-			}
 
 			InitOrderedChildNodes();
 			//swap for efficiency
@@ -698,7 +687,7 @@ void EvaluableNode::SetStringID(StringInternPool::StringID id)
 {
 	if(id == StringInternPool::NOT_A_STRING_ID)
 	{
-		SetType(ENT_NULL, nullptr, false);
+		SetType(ENT_NULL, false);
 	}
 	else
 	{
@@ -755,7 +744,7 @@ void EvaluableNode::SetStringIDWithReferenceHandoff(StringInternPool::StringID i
 {
 	if(id == StringInternPool::NOT_A_STRING_ID)
 	{
-		SetType(ENT_NULL, nullptr, false);
+		SetType(ENT_NULL, false);
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(GetType()))
 	{

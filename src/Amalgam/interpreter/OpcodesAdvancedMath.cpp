@@ -328,7 +328,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 
 	//ensure it's a list
 	if(container->IsOrderedArray())
-		container->SetType(ENT_LIST, evaluableNodeManager, false);
+		container->SetType(ENT_LIST, false);
 	container->SetIsIdempotent(true);
 	container->SetNeedCycleCheck(false);
 

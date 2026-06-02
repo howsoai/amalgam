@@ -1705,7 +1705,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			if(container.uniqueUnreferencedTopNode)
 			{
 				container->ClearMetadata();
-				container->SetType(ENT_LIST, evaluableNodeManager, false);
+				container->SetType(ENT_LIST, false);
 				return container;
 			}
 

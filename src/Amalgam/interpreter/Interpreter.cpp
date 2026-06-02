@@ -442,7 +442,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluabl
 
 	auto type = result->GetType();
 	if(type != ENT_STRING && type != ENT_NULL)
-		result->SetType(ENT_STRING, evaluableNodeManager, true);
+		result->SetType(ENT_STRING, true);
 
 	return result;
 }
@@ -475,7 +475,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueNumberValueOrNullEval
 
 	auto type = result->GetType();
 	if(type != ENT_NUMBER && type != ENT_NULL)
-		result->SetType(ENT_NUMBER, evaluableNodeManager, true);
+		result->SetType(ENT_NUMBER, true);
 
 	return result;
 }

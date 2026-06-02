@@ -862,7 +862,7 @@ public:
 	//ensures that there are no reachable nodes that are deallocated
 	inline void VerifyEvaluableNodeIntegrity()
 	{
-		evaluableNodeManager.VerifyEvaluableNodeIntegretyForAllReferencedNodes();
+		evaluableNodeManager.VerifyEvaluableNodeIntegrityForAllReferencedNodes();
 	}
 
 	//like VerifyEvaluableNodeIntegrity but includes all contained

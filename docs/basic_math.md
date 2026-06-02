@@ -106,7 +106,7 @@ Output:
 #### Parameters
 `[number x1] [number x2] ... [number xN]`
 #### Description
-Evaluates the modulus of `x1` % `x2` % ... % `xN`.
+Evaluates the modulus of `x1` mod `x2` mod ... mod `xN`.
 #### Details
  - Permissions required:  none
  - Allows concurrency: true

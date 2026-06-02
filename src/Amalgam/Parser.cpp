@@ -141,7 +141,7 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::Par
 
 std::string Parser::Unparse(EvaluableNode *tree,
 	bool expanded_whitespace, bool emit_attributes, bool sort_keys,
-	bool first_of_transactional_unparse, size_t starting_indendation, size_t max_length)
+	bool first_of_transactional_unparse, size_t starting_indentation, size_t max_length)
 {
 	UnparseData upd;
 	upd.topNode = tree;
@@ -153,7 +153,7 @@ std::string Parser::Unparse(EvaluableNode *tree,
 	upd.sortKeys = sort_keys;
 	upd.transaction = first_of_transactional_unparse;
 	upd.maxLength = max_length;
-	Unparse(upd, tree, nullptr, expanded_whitespace, starting_indendation, starting_indendation > 0);
+	Unparse(upd, tree, nullptr, expanded_whitespace, starting_indentation, starting_indentation > 0);
 	return upd.result;
 }
 
@@ -1283,7 +1283,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				{
 					for(size_t i = 0; i < tree_ocn.size(); i++)
 					{
-						//if not the first or if it's not a type with a special delimeter, insert a space
+						//if not the first or if it's not a type with a special delimiter, insert a space
 						if(i > 0 || type_with_special_delimiter)
 							upd.result.push_back(' ');
 						Unparse(upd, tree_ocn[i], tree, false, indentation_depth + 1, true);

@@ -1026,7 +1026,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(Evalua
 
 void Interpreter::VerifyEvaluableNodeIntegrity()
 {
-	evaluableNodeManager->VerifyEvaluableNodeIntegretyForAllReferencedNodes();
+	evaluableNodeManager->VerifyEvaluableNodeIntegrityForAllReferencedNodes();
 
 	//traverse stack to next calling evaluableNodeManager so don't duplicate validation effort on the same one
 	auto next_calling_interpreter_on_other_enm = callingInterpreter;

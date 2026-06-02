@@ -878,7 +878,6 @@ Example:
 Output:
 ```amalgam
 (unordered_list
-	
 	#react
 	(+ 3 4)
 )

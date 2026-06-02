@@ -453,7 +453,6 @@ double GetNumSecondsSinceMidnight(const std::string &time_str, std::string forma
 	return 0.0;
 }
 
-//transfroms num_secs_from_midnight into a string representing the time of day
 std::string GetTimeStringFromNumSecondsSinceMidnight(double seconds_since_midnight, std::string format, std::string locale)
 {
 	if(seconds_since_midnight != seconds_since_midnight

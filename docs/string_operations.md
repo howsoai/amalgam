@@ -542,7 +542,7 @@ Output:
 #### Parameters
 `code c [bool pretty_print] [bool sort_keys] [bool include_attributes]`
 #### Description
-Code is unparsed and the representative string is returned. If `pretty_print` is true, the output will be in pretty-print format, otherwise by default it will be inlined.  If `sort_keys` is true, the default, then it will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to whatever order it is stored in memory.  If `include_attributes` is true, it will print out attributes like comments, but by default it will not.
+Code is unparsed and the representative string is returned. If `pretty_print` is true, the output will be in pretty-print format, otherwise by default it will be inlined.  If `sort_keys` is true, the default, then it will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to whatever order it is stored in memory.  If `include_attributes` is true, it will print out attributes like comments, but by default it will not.  Unparsing is safe for cyclic and graph data structures and will emit appropriate opcodes using the `@` prefix so that parsing will reconstruct the cyclic or graph relationships.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

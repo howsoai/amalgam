@@ -136,7 +136,7 @@ Output:
 #### Parameters
 `* node`
 #### Description
-Returns true if `node` has a preference to be processed in a manner where its operations are run concurrentl, false if it is not.  Note that concurrency is potentially subject to race conditions or inconsistent results if tasks write to the same locations without synchronization.
+Returns true if `node` has a preference to be processed in a manner where its operations are run concurrently, false if it is not.  Note that concurrency is potentially subject to race conditions or inconsistent results if tasks write to the same locations without synchronization.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

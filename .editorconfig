@@ -8,6 +8,8 @@ trim_trailing_whitespace = true
 
 [*.{c++,cc,cl,cpp,cppm,cu,cuh,cxx,fx,fxh,glsl,h,h++,hh,hlsl,hpp,hxx,inl,ipp,ixx,shdbg,tlh,tli}]
 
+spelling_exclusion_path = ./exclusion.dic
+
 # Visual C++ Code Style settings
 
 cpp_generate_documentation_comments = doxygen_triple_slash

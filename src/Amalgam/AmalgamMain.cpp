@@ -90,7 +90,7 @@ Options:
     --warn-on-undefined
                      When specified, amalgam will emit warnings for undefined variables
 
-    --nosbfds        Disables the Seperable Box Filter Data Store acceleration (only for debugging)
+    --nosbfds        Disables the Separable Box Filter Data Store acceleration (only for debugging)
 
     --trace          Uses commands via stdio to act as if it were being called as a library
 

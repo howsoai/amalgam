@@ -41,7 +41,7 @@ Output:
 #### Parameters
 `[* node1] [* node2] ... [* nodeN]`
 #### Description
-Prints each of the parameters in order in a manner interpretable as if they were code, except strings are printed without quotes.  Output is pretty-printed.
+Prints each of the parameters in order in a manner interpretable as if they were code, except strings are printed without quotes.  Output is pretty-printed.  Printing is safe for cyclic and graph data structures and will emit appropriate opcodes using the `@` prefix so that parsing will reconstruct the cyclic or graph relationships.
 #### Details
  - Permissions required:  std_out_and_std_err
  - Allows concurrency: false

@@ -418,7 +418,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluabl
 
 	auto type = result->GetType();
 	if(type != ENT_STRING && type != ENT_NULL)
-		result->SetType(ENT_STRING, evaluableNodeManager, true);
+		result->SetType(ENT_STRING, true);
 
 	return result;
 }
@@ -451,7 +451,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueNumberValueOrNullEval
 
 	auto type = result->GetType();
 	if(type != ENT_NUMBER && type != ENT_NULL)
-		result->SetType(ENT_NUMBER, evaluableNodeManager, true);
+		result->SetType(ENT_NUMBER, true);
 
 	return result;
 }
@@ -1026,7 +1026,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(Evalua
 
 void Interpreter::VerifyEvaluableNodeIntegrity()
 {
-	evaluableNodeManager->VerifyEvaluableNodeIntegretyForAllReferencedNodes();
+	evaluableNodeManager->VerifyEvaluableNodeIntegrityForAllReferencedNodes();
 
 	//traverse stack to next calling evaluableNodeManager so don't duplicate validation effort on the same one
 	auto next_calling_interpreter_on_other_enm = callingInterpreter;

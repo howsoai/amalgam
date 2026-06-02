@@ -481,13 +481,13 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			//concatenate a string only if it is a valid string
 			if(variable_value_node != nullptr && variable_value_node->GetType() == ENT_STRING)
 			{
-				value_destination_node->SetType(ENT_STRING, nullptr, false);
+				value_destination_node->SetType(ENT_STRING, false);
 				std::string result = value_destination_node->GetStringValue() + variable_value_node->GetStringValue();
 				value_destination_node->SetStringValue(result);
 			}
 			else
 			{
-				value_destination_node->SetType(ENT_NULL, nullptr, false);
+				value_destination_node->SetType(ENT_NULL, false);
 			}
 
 			enm->FreeNodeTreeIfPossible(variable_value_node);
@@ -569,7 +569,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		//concatenate a string only if it is a valid string
 		if(variable_value_node != nullptr && variable_value_node->GetType() == ENT_STRING)
 		{
-			value_destination_node->SetType(ENT_STRING, nullptr, false);
+			value_destination_node->SetType(ENT_STRING, false);
 			std::string result = value_destination_node->GetStringValue() + variable_value_node->GetStringValue();
 			value_destination_node->SetStringValue(result);
 			value_destination_node.SetReference(enm->AllocNode(ENT_STRING, result), true);

@@ -177,7 +177,7 @@ static OpcodeInitializer _ENT_GET_CONCURRENCY(ENT_GET_CONCURRENCY, &Interpreter:
 	OpcodeDetails d;
 	d.parameters = R"(* node)";
 	d.returns = R"(bool)";
-	d.description = R"(Returns true if `node` has a preference to be processed in a manner where its operations are run concurrentl, false if it is not.  Note that concurrency is potentially subject to race conditions or inconsistent results if tasks write to the same locations without synchronization.)";
+	d.description = R"(Returns true if `node` has a preference to be processed in a manner where its operations are run concurrently, false if it is not.  Note that concurrency is potentially subject to race conditions or inconsistent results if tasks write to the same locations without synchronization.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((get_concurrency
 	(lambda

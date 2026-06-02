@@ -787,7 +787,7 @@ Output:
 #### Parameters
 `* node [string|* type]`
 #### Description
-Creates a copy of `node`, setting the type of the node of to `type`.  If `type` is a string, it will look that up as the type, or if `type` is a node that is not a string, it will set the type to match the top node of `type`.  It will convert opcode parameters as necessary.
+Creates a copy of `node`, setting the type of the node of to `type`.  If `type` is a string, it will look that up as the type, or if `type` is a node that is not a string, it will set the type to match the top node of `type`.  It will convert opcode parameters as necessary.  If `node` is an immediate type being changed to another immediate type, it will attempt to coerce the value.  If `node` is not an immediate type, such as a `list` or `assoc` or other opcode, and is being changed to another non-immediate type, it will preserve all of values.  That is, a list's first element will be the key of the number 0, second element will be the key of the number 1, etc.  If converting from an `assoc` to a type with ordered values, it will set the values in the same order as the `values` opcode.  If one of `node` and `type` is immediate and the other not, it will yield null.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -820,7 +820,7 @@ Example:
 ```
 Output:
 ```amalgam
-[3 4 "a" "b"]
+[3 4]
 ```
 Example:
 ```amalgam
@@ -833,20 +833,20 @@ Example:
 ```
 Output:
 ```amalgam
-[3 4 "a" "b"]
+[3 4]
 ```
 Example:
 ```amalgam
 (unparse
 	(set_type
-		["a" 4 "b" 3]
+		[3 4]
 		"assoc"
 	)
 )
 ```
 Output:
 ```amalgam
-"{a 4 b 3}"
+"{0 3 1 4}"
 ```
 Example:
 ```amalgam
@@ -878,7 +878,6 @@ Example:
 Output:
 ```amalgam
 (unordered_list
-	
 	#react
 	(+ 3 4)
 )

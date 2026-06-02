@@ -1,4 +1,9 @@
 {
-  "cSpell.words": ["amlg", "cwrap", "KullbackLeibler"],
+  "cSpell.words": ["amlg", "mdam", "caml", "accum", "assocs", "KullbackLeibler", "freeable", "surprisals",
+    "Howso", "Diveplane", "submatch", "submatches", "unparse", "unparsing", "preevaluate", "preevaluation",
+    "preevaluations", "stringified", "anded", "ored",
+    "Minkowski", "Lukaszyk", "Karmowski", "surprisal", "surprisals", "attrib", "attribs", "cyclics",
+    "laplace", "yaml", "Huffman", "Levenshtein", "Vose", "contrib", "contribs", "sid", "sids", "sbfds", "preallocates",
+    "nat", "nats", "bais", "backslashified", "backslashify", "repl", "immediates", "erbr", "memoize", "memoized"],
   "files.trimTrailingWhitespace": false
 }

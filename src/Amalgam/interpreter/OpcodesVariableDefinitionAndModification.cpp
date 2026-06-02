@@ -694,7 +694,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	//keeps track of whether each address is unique so they can be freed if relevant
 	std::vector<bool> is_value_unique;
 	is_value_unique.resize(num_params - 1);
-	//keeps track of whether all new values assigned or accumed are unique, cycle free, etc.
+	//keeps track of whether all new values assigned or accumulated are unique, cycle free, etc.
 	bool result_flags_need_updates = false;
 
 	bool any_nonunique_assignments = false;
@@ -1387,7 +1387,7 @@ static OpcodeInitializer _ENT_SET_TYPE(ENT_SET_TYPE, &Interpreter::InterpretNode
 	OpcodeDetails d;
 	d.parameters = R"(* node [string|* type])";
 	d.returns = R"(any)";
-	d.description = R"(Creates a copy of `node`, setting the type of the node of to `type`.  If `type` is a string, it will look that up as the type, or if `type` is a node that is not a string, it will set the type to match the top node of `type`.  It will convert opcode parameters as necessary.)";
+	d.description = R"(Creates a copy of `node`, setting the type of the node of to `type`.  If `type` is a string, it will look that up as the type, or if `type` is a node that is not a string, it will set the type to match the top node of `type`.  It will convert opcode parameters as necessary.  If `node` is an immediate type being changed to another immediate type, it will attempt to coerce the value.  If `node` is not an immediate type, such as a `list` or `assoc` or other opcode, and is being changed to another non-immediate type, it will preserve all of values.  That is, a list's first element will be the key of the number 0, second element will be the key of the number 1, etc.  If converting from an `assoc` to a type with ordered values, it will set the values in the same order as the `values` opcode.  If one of `node` and `type` is immediate and the other not, it will yield null.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((set_type
 	(lambda
@@ -1400,19 +1400,19 @@ static OpcodeInitializer _ENT_SET_TYPE(ENT_SET_TYPE, &Interpreter::InterpretNode
 		(associate "a" 4 "b" 3)
 		"list"
 	)
-))&", R"([3 4 "a" "b"])"},
+))&", R"([3 4])"},
 			{R"&((sort
 	(set_type
 		(associate "a" 4 "b" 3)
 		[]
 	)
-))&", R"([3 4 "a" "b"])"},
+))&", R"([3 4])"},
 			{R"&((unparse
 	(set_type
-		["a" 4 "b" 3]
+		[3 4]
 		"assoc"
 	)
-))&", R"("{a 4 b 3}")"},
+))&", R"("{0 3 1 4}")"},
 			{R"&((call
 	(set_type
 		[1 0.5 "3.2" 4]
@@ -1430,7 +1430,6 @@ static OpcodeInitializer _ENT_SET_TYPE(ENT_SET_TYPE, &Interpreter::InterpretNode
 	]
 	"unordered_list"
 ))&", R"((unordered_list
-	
 	#react
 	(+ 3 4)
 ))"}
@@ -1474,7 +1473,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en
 	if(new_type == ENT_NOT_A_BUILT_IN_TYPE)
 		new_type = ENT_NULL;
 
-	source->SetType(new_type, evaluableNodeManager, true);
+	source->SetType(new_type, true);
 
 	return source;
 }

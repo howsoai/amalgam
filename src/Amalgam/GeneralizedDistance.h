@@ -219,7 +219,7 @@ public:
 		DistanceTermWithDeviation knownToUnknownDistanceTerm;
 
 		//if callEntityOpcode is not nullptr, it will call the entity before computing;
-		//it will use the return value instead of calling the entity label distance, passing in callparams
+		//it will use the return value instead of calling the entity label distance, passing in the calling params
 		EvaluableNode *callEntityOpcode;
 
 		//index to the corresponding position value
@@ -931,7 +931,7 @@ public:
 				double prob_class_given_match = 1 - deviation;
 				diff = -std::log(prob_class_given_match);
 			}
-			else //nonsurprisal nominals just use the deviation as provided
+			else //nominals just use the deviation as provided
 			{
 				diff = deviation;
 			}
@@ -1299,7 +1299,7 @@ public:
 		else
 		{
 			//find probability that the correct class was selected
-			//set it to the low value of 1 - default_devation for the row, assuming the self deviation doesn't exist
+			//set it to the low value of 1 - default_deviation for the row, assuming the self deviation doesn't exist
 			double prob_class_given_match = 1 - default_mismatch_deviation;
 
 			//if self_deviation exists, it should be the smallest value in the row and result in the higher probability given match

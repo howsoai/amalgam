@@ -339,7 +339,7 @@ protected:
 	//if true, will allow loading of files
 	bool allowFileLoading;
 
-	//contains a list of nodes that need to be preevaluated on parsing
+	//contains a list of nodes that need to be preevaluate on parsing
 	std::vector<EvaluableNode *> preevaluationNodes;
 
 	//any warnings from parsing

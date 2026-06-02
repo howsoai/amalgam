@@ -257,7 +257,7 @@ public:
 	//if compute_surprisal  is false, distance_weight_exponent is the exponent each distance is raised to
 	//uses min_to_retrieve and max_to_retrieve to determine how many entities to keep, stopping when the first
 	// entity's marginal probability falls below the num_to_retrieve_min_increment_prob threshold
-	//has_weight, if set, will use the function get_weight to deterimne the given entity's weight
+	//has_weight, if set, will use the function get_weight to determine the given entity's weight
 	// double to set the weight, and should return true if the entity has a weight, false if not
 	template<typename EntityReference>
 	class DistanceTransform

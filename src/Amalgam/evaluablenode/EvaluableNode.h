@@ -293,7 +293,7 @@ public:
 		}
 	}
 
-	//sets the value of the node to that of n and coppies metadata if copy_metadata is true
+	//sets the value of the node to that of n and copies metadata if copy_metadata is true
 	void InitializeType(EvaluableNode *n, bool copy_metadata = true);
 
 	//copies the EvaluableNode n into this.  Does not overwrite labels or comments.
@@ -610,12 +610,9 @@ public:
 	bool IsNodeValid();
 
 	//transforms node to new_type, converting data if types are different
-	// enm is used if it needs to allocate nodes when changing types
-	// if enm is nullptr, then it will not necessarily keep child nodes
-	//if attempt_to_preserve_immediate_value is true, then it will try to preserve any relevant immediate value
-	// attempt_to_preserve_immediate_value should be set to false if the value will be immediately overwritten
-	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm,
-		bool attempt_to_preserve_immediate_value);
+	//if attempt_to_preserve_value is true, then it will try to preserve any relevant value or values
+	// attempt_to_preserve_value should be set to false if the value will be immediately overwritten
+	void SetType(EvaluableNodeType new_type, bool attempt_to_preserve_value);
 
 	//sets up null value
 	inline void InitNullValue()
@@ -646,7 +643,7 @@ public:
 	//changes the type by setting it to the number value specified
 	inline void SetTypeViaBoolValue(bool v)
 	{
-		SetType(ENT_BOOL, nullptr, false);
+		SetType(ENT_BOOL, false);
 		GetBoolValueReference() = v;
 	}
 
@@ -673,11 +670,11 @@ public:
 	{
 		if(FastIsNaN(v))
 		{
-			SetType(ENT_NULL, nullptr, false);
+			SetType(ENT_NULL, false);
 		}
 		else
 		{
-			SetType(ENT_NUMBER, nullptr, false);
+			SetType(ENT_NUMBER, false);
 			GetNumberValueReference() = v;
 		}
 	}
@@ -687,11 +684,11 @@ public:
 	{
 		if(v == string_intern_pool.NOT_A_STRING_ID)
 		{
-			SetType(ENT_NULL, nullptr, false);
+			SetType(ENT_NULL, false);
 		}
 		else
 		{
-			SetType(ENT_STRING, nullptr, false);
+			SetType(ENT_STRING, false);
 			GetStringIDReference() = string_intern_pool.CreateStringReference(v);
 		}
 	}
@@ -701,11 +698,11 @@ public:
 	{
 		if(v == string_intern_pool.NOT_A_STRING_ID)
 		{
-			SetType(ENT_NULL, nullptr, false);
+			SetType(ENT_NULL, false);
 		}
 		else
 		{
-			SetType(ENT_STRING, nullptr, false);
+			SetType(ENT_STRING, false);
 			GetStringIDReference() = v;
 		}
 	}
@@ -884,7 +881,7 @@ public:
 		return HasAttribute(Attribute::IDEMPOTENT);
 	}
 
-	//sets the EvaluableNode's idempotentcy flag
+	//sets the EvaluableNode's idempotency flag
 	__forceinline void SetIsIdempotent(bool is_idempotent)
 	{
 		SetAttribute(Attribute::IDEMPOTENT, is_idempotent);

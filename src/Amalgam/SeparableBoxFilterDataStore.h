@@ -1393,7 +1393,7 @@ public:
 				continue;
 			}
 
-			//remove feature if not releveant to save compute cost
+			//remove feature if not relevant to save compute cost
 			auto &feature_attribs = dist_eval.featureAttribs[query_feature_index];
 			if(feature_attribs.weight == 0.0)
 			{

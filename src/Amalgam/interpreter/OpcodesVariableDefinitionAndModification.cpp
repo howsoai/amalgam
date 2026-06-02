@@ -1430,7 +1430,6 @@ static OpcodeInitializer _ENT_SET_TYPE(ENT_SET_TYPE, &Interpreter::InterpretNode
 	]
 	"unordered_list"
 ))&", R"((unordered_list
-	
 	#react
 	(+ 3 4)
 ))"}

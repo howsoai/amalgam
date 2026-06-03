@@ -37,7 +37,7 @@ AmalgamExample{ R"&((get
 	)
 	"a"
 ))&", R"(.null)" },
-AmalgamExample{ R"&((replace
+AmalgamExample{ R"&((modify
 	[
 		(associate "a" 1)
 	]

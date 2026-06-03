@@ -647,12 +647,12 @@ static OpcodeInitializer _ENT_INTERSECT(ENT_INTERSECT, &Interpreter::InterpretNo
 ])"},
 			{R"&((intersect
 	(lambda
-		(replace 4 2 6 1 7)
+		(modify 4 2 6 1 7)
 	)
 	(lambda
-		(replace 4 1 7 2 6)
+		(modify 4 1 7 2 6)
 	)
-))&", R"((replace 4 2 6 1 7))"},
+))&", R"((modify 4 2 6 1 7))"},
 			{R"&((unparse
 	(intersect
 		(lambda
@@ -1023,7 +1023,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	)
 ))&", R"((declare
 	{_ .null}
-	(replace
+	(modify
 		_
 		[]
 		(lambda
@@ -1067,7 +1067,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	}
 ))&", R"((declare
 	{_ .null}
-	(replace
+	(modify
 		_
 		[]
 		(lambda
@@ -1117,7 +1117,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	)
 ))&", R"((declare
 	{_ .null}
-	(replace
+	(modify
 		_
 		[]
 		(lambda
@@ -1173,7 +1173,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	.true
 	.true
 	.true
-))&", R"("(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\ta 2\r\n\t\t\t\tc (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"c\"\r\n\t\t\t\t\t)\r\n\t\t\t\td 6\r\n\t\t\t\te (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"e\"\r\n\t\t\t\t\t)\r\n\t\t\t\tf (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"f\"\r\n\t\t\t\t\t)\r\n\t\t\t\tg 14\r\n\t\t\t\tq 8\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
+))&", R"("(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\ta 2\r\n\t\t\t\tc (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"c\"\r\n\t\t\t\t\t)\r\n\t\t\t\td 6\r\n\t\t\t\te (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"e\"\r\n\t\t\t\t\t)\r\n\t\t\t\tf (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"f\"\r\n\t\t\t\t\t)\r\n\t\t\t\tg 14\r\n\t\t\t\tq 8\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
 			{R"&((unparse
 	(difference
 		(lambda
@@ -1196,7 +1196,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	.true
 	.true
 	.true
-))&", R"("(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[3]\r\n\t\t(lambda\r\n\t\t\t[\r\n\t\t\t\t(get\r\n\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t0\r\n\t\t\t\t)\r\n\t\t\t\t4\r\n\t\t\t]\r\n\t\t)\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t(set_type\r\n\t\t\t\t[\r\n\t\t\t\t\ta\r\n\t\t\t\t\t2\r\n\t\t\t\t\tg\r\n\t\t\t\t\t(get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t3\r\n\t\t\t\t\t)\r\n\t\t\t\t]\r\n\t\t\t\t\"associate\"\r\n\t\t\t)\r\n\t\t)\r\n\t)\r\n)\r\n")"},
+))&", R"("(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[3]\r\n\t\t(lambda\r\n\t\t\t[\r\n\t\t\t\t(get\r\n\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t0\r\n\t\t\t\t)\r\n\t\t\t\t4\r\n\t\t\t]\r\n\t\t)\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t(set_type\r\n\t\t\t\t[\r\n\t\t\t\t\ta\r\n\t\t\t\t\t2\r\n\t\t\t\t\tg\r\n\t\t\t\t\t(get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t3\r\n\t\t\t\t\t)\r\n\t\t\t\t]\r\n\t\t\t\t\"associate\"\r\n\t\t\t)\r\n\t\t)\r\n\t)\r\n)\r\n")"},
 			{R"&((unparse
 	(difference
 		(zip
@@ -1212,7 +1212,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	.true
 	.true
 	.true
-))&", R"("(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\t2 .null\r\n\t\t\t\t5 .null\r\n\t\t\t\t6 .null\r\n\t\t\t\ta 1\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
+))&", R"("(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\t2 .null\r\n\t\t\t\t5 .null\r\n\t\t\t\t6 .null\r\n\t\t\t\ta 1\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
 			{R"&((unparse
 	(difference
 		(zip
@@ -1225,7 +1225,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	.true
 	.true
 	.true
-))&", R"("(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
+))&", R"("(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
 			{R"&((unparse
 	(difference
 		(zip
@@ -1238,7 +1238,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	.true
 	.true
 	.true
-))&", R"("(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
+))&", R"("(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
 			{R"&((let
 	{
 		x (lambda

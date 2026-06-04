@@ -51,7 +51,7 @@ All regular expressions are EMCA-standard regular expressions.  See https://en.c
 
 The argument vector passed in on the command line is passed in as the variable argv, with any arguments consumed by the interpreter removed. This includes the standard 0th argument which is the Amalgam script being run. The interpreter path and name are passed in as the variable interpreter.
 
-When attempting to load an asset, whether a .amlg file or another type, the interpreter will look for a file of the same name but with the extension .madm. The .mdam extension stands for metadata of Amalgam. This file consists of simple code of an associative array where the data within is immediate values representing the metadata.
+When attempting to load an asset, whether a .amlg file or another type, the interpreter will look for a file of the same name but with the extension .mdam. The .mdam extension stands for metadata of Amalgam. This file consists of simple code of an associative array where the data within is immediate values representing the metadata.
 
 File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string. Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings. 
 For file I/O, the following parameters apply to load and store opcodes and API calls:

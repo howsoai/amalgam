@@ -1364,13 +1364,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODIFY(EvaluableNode *en, 
 		if(copy_destination == nullptr)
 			continue;
 
-		//compute new value
-		//if it's immediate, don't need to call it as a function
-		if(EvaluableNode::IsImmediate(ocn[replace_change_index + 1]))
-		{
-			//just in case copy_destination points to result
-			auto new_value = InterpretNode(ocn[replace_change_index + 1]);
+		auto new_value = InterpretNode(ocn[replace_change_index + 1]);
 
+		//if it's immediate, don't need to call it as a function
+		if(EvaluableNode::IsImmediate(new_value))
+		{
 			if(*copy_destination != result) //normal replacement
 			{
 				if(result.unique && !result.GetNeedCycleCheck())
@@ -1387,20 +1385,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODIFY(EvaluableNode *en, 
 			if(result.NeedAllFlagsRecheckedAfterNodeAttachedAndUpdateUniqueness(new_value))
 				result_flags_need_updates = true;
 		}
-		else //not immediate, need to call function
+		else //not immediate, need to call new_value as a function
 		{
-			//replace copy_destination (a part of result) with the new value
-			auto function = InterpretNodeForImmediateUse(ocn[replace_change_index + 1]);
-			if(EvaluableNode::IsNull(function))
+			if(EvaluableNode::IsNull(new_value))
 			{
 				(*copy_destination) = nullptr;
 				continue;
 			}
 
-			node_stack.PushEvaluableNode(function);
+			node_stack.PushEvaluableNode(new_value);
 			PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(), *copy_destination);
 
-			EvaluableNodeReference new_value = InterpretNodeForImmediateUse(function);
+			new_value = InterpretNodeForImmediateUse(new_value);
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{

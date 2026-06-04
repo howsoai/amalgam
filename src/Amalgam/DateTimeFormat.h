@@ -12,11 +12,11 @@ std::string SetTimeZoneDatabasePath(std::string path = "");
 double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str, std::string format, std::string locale, std::string timezone);
 
 //transforms seconds_since_epoch into the datetime string specified by format and locale based on "Epoch" (January 1, 1970)
-// positive and negative values of num_secs_from_epoc are allowed
+// positive and negative values of num_secs_from_epoch are allowed
 std::string GetDateTimeStringFromNumSecondsSinceEpoch(double seconds_since_epoch, std::string format, const std::string &locale, const std::string &timezone);
 
 //parses time_str based on format and locale and returns the number of seconds since midnight
 double GetNumSecondsSinceMidnight(const std::string &time_str, std::string format, std::string locale);
 
-//transfroms seconds_since_midnight into a string representing the time of day
+//transforms seconds_since_midnight into a string representing the time of day
 std::string GetTimeStringFromNumSecondsSinceMidnight(double seconds_since_midnight, std::string format, std::string locale);

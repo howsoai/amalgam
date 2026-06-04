@@ -172,7 +172,7 @@ bool EntityManipulation::EntitiesMixMethod::AreMergeable(Entity *a, Entity *b)
 // are identical to those matched in entities_included
 // regardless, it will accumulate contained entities examined into top_entities_identical if they
 // can be deep copied and different_entities otherwise
-bool IsEntityIdenticalToComparedEntity(Entity *root_entity,
+static bool IsEntityIdenticalToComparedEntity(Entity *root_entity,
 	CompactHashMap<Entity *, std::pair<Entity *, bool>> &entities_included,
 	std::vector<Entity *> &top_entities_identical, std::vector<Entity *> &different_entities)
 {

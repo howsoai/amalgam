@@ -39,8 +39,8 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 	df_vars->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI__), enm->AllocNode(ENT_NULL));
 	difference_function->AppendOrderedChildNode(df_vars);
 
-	//update difference function to: (declare (assoc _ null) (replace _ ) )
-	EvaluableNode *df_replace = enm->AllocNode(ENT_REPLACE);
+	//update difference function to: (declare (assoc _ null) (modify _ ) )
+	EvaluableNode *df_replace = enm->AllocNode(ENT_MODIFY);
 	difference_function->AppendOrderedChildNode(df_replace);
 	df_replace->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI__)));
 

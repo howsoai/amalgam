@@ -777,7 +777,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 			double largest_term_not_computed = std::max(known_unknown_term, unknown_unknown_term);
 			//if the largest term not computed is zero, then have computed everything,
-			// so set the remaining value to infinity to push this term off sorting of uncomputed distances
+			// so set the remaining value to infinity to push this term off sorting of noncomputed distances
 			// and make search more efficient
 			if(largest_term_not_computed == 0.0)
 				largest_term_not_computed = std::numeric_limits<double>::infinity();

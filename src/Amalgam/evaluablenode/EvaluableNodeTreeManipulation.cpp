@@ -973,14 +973,6 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		if(n2_type == ENT_REDUCE)				return std::make_pair(n2, 0.125);
 		return std::make_pair(nullptr, 0.0);
 
-	case ENT_SET:
-		if(n2_type == ENT_REPLACE)				return std::make_pair(n2, 0.5);
-		return std::make_pair(nullptr, 0.0);
-
-	case ENT_REPLACE:
-		if(n2_type == ENT_SET)					return std::make_pair(n1, 0.5);
-		return std::make_pair(nullptr, 0.0);
-
 	case ENT_ASSOC:
 		if(n2_type == ENT_ASSOCIATE)			return std::make_pair(n1, 0.25);
 		return std::make_pair(nullptr, 0.0);

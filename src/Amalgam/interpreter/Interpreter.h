@@ -416,7 +416,7 @@ public:
 					else
 						LockMutexWithoutBlockingGarbageCollection(lock, *scopeStackMutex);
 
-					//need to refetch after lock in case object has changed
+					//need to fetch again after lock in case object has changed
 					cur_context = scopeStack[scope_stack_index - 1];
 					mcn = cur_context->GetMappedChildNodesReference();
 					found = mcn.find(symbol_sid);
@@ -982,7 +982,7 @@ public:
 	EvaluableNodeReference InterpretNode_ENT_APPEND(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_GET(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_SET_and_REPLACE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MODIFY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_INDICES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_VALUES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CONTAINS_INDEX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);

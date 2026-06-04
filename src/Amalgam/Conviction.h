@@ -23,7 +23,7 @@ inline double KullbackLeiblerDivergence(const std::vector<double> &p, const std:
 }
 
 //computes the KL divergence between p and q.distance only for features specified by the indices given by q.reference
-//i.e. this will give equivelent value if calling normal KL on p and q if p and q are the same value at indices oother than those in q.reference
+//i.e. this will give equivalent value if calling normal KL on p and q if p and q are the same value at indices other than those in q.reference
 //note that there are two versions of this function with the DistanceReferencePair parameters flipped
 inline double PartialKullbackLeiblerDivergenceFromIndices(const std::vector<double> &p, const std::vector<DistanceReferencePair<size_t>> &q)
 {
@@ -39,7 +39,7 @@ inline double PartialKullbackLeiblerDivergenceFromIndices(const std::vector<doub
 }
 
 //computes the KL divergence between p.distance and q only for features specified by the indices given by p.reference
-//i.e. this will give equivelent value if calling normal KL on p and q if p and q are the same value at indices other than those in p.reference
+//i.e. this will give equivalent value if calling normal KL on p and q if p and q are the same value at indices other than those in p.reference
 //note that there are two versions of this function with the DistanceReferencePair parameters flipped
 inline double PartialKullbackLeiblerDivergenceFromIndices(const std::vector<DistanceReferencePair<size_t>> &p, const std::vector<double> &q)
 {

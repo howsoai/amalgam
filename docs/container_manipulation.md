@@ -776,7 +776,7 @@ Output:
 #### Parameters
 `[list|assoc|* collection1] [list|assoc|* collection2] ... [list|assoc|* collectionN]`
 #### Description
-Evaluates to a new list or assoc which merges all lists, `collection1` through `collectionN`, based on parameter order. If any assoc is passed in, then returns an assoc (lists will be automatically converted to an assoc with the indices as keys and the list elements as values). If a non-list and non-assoc is specified, then it just adds that one element to the list
+Evaluates to a new list or assoc which merges all lists, `collection1` through `collectionN`, based on parameter order. If any assoc is passed in, then returns an assoc (lists will be automatically converted to an assoc with the indices as keys and the list elements as values). If a non-list and non-assoc is specified, then it just adds that one element to the list.  In order to append a list or assoc to the first collection, it must be wrapped in an additional layer.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -1091,22 +1091,22 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `set`
+### Opcode: `modify`
 #### Parameters
-`* data [number|string|list walk_path1] [* new_value1] [number|string|list walk_path2] [* new_value2] ... [number|string|list walk_pathN] [* new_valueN]`
+`* data [number|string|list walk_path1] [* function1] [number|string|list walk_path2] [* function2] ... [number|string|list walk_pathN] [* functionN]`
 #### Description
-Performs a deep copy on `data` (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values as a walk path of indices. `new_value1` to `new_valueN` represent a value that will be used to replace  whatever is in the location the preceding location parameter specifies.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc); however, it will not change the type of immediate values to an assoc or list. Note that `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.
+Performs a deep copy on `data` (a copy of all data structures referenced by it and its references).  If any additional parameters are specified, it treats them as pairs of locations and values or functions to replace within the new copy.  For each pair of replacements, the first element is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
  - Requires entity: false
  - Creates new scope: false
- - Creates new target scope: false
+ - Creates new target scope: true
  - Value newness (whether references existing node): new
 #### Examples
 Example:
 ```amalgam
-(set
+(modify
 	(associate
 		"a"
 		1
@@ -1133,7 +1133,7 @@ Output:
 ```
 Example:
 ```amalgam
-(set
+(modify
 	[0 1 2 3 4]
 	2
 	10
@@ -1145,7 +1145,7 @@ Output:
 ```
 Example:
 ```amalgam
-(set
+(modify
 	(associate "a" 1 "b" 2)
 	"a"
 	3
@@ -1155,25 +1155,9 @@ Output:
 ```amalgam
 {a 3 b 2}
 ```
-
-[Amalgam Opcodes](./opcodes.md)
-
-### Opcode: `replace`
-#### Parameters
-`* data [number|string|list walk_path1] [* function1] [number|string|list walk_path2] [* function2] ... [number|string|list walk_pathN] [* functionN]`
-#### Description
-Performs a deep copy on `data` (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.
-#### Details
- - Permissions required:  none
- - Allows concurrency: false
- - Requires entity: false
- - Creates new scope: false
- - Creates new target scope: true
- - Value newness (whether references existing node): new
-#### Examples
 Example:
 ```amalgam
-(replace
+(modify
 	[
 		(associate "a" 13)
 	]
@@ -1187,7 +1171,7 @@ Output:
 ```
 Example:
 ```amalgam
-(replace
+(modify
 	[
 		(associate "a" 1)
 	]
@@ -1207,7 +1191,7 @@ Output:
 ```
 Example:
 ```amalgam
-(replace
+(modify
 	[
 		(associate "a" 1)
 	]
@@ -1227,13 +1211,13 @@ Output:
 ```
 Example:
 ```amalgam
-(replace
+(modify
 	[
 		(associate "a" 1)
 	]
 	[0]
 	(lambda
-		(set (current_value) "b" 2)
+		(modify (current_value) "b" 2)
 	)
 )
 ```

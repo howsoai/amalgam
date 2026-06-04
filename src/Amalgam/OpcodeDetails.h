@@ -286,11 +286,11 @@ inline EvaluableNodeBuiltInStringId GetBuiltInStringIdFromStringId(StringInternP
 	if(found == end(string_intern_pool.staticStringIDToIndex))
 		return ENBISI_NOT_A_STRING;
 
-	EvaluableNodeBuiltInStringId bisid = static_cast<EvaluableNodeBuiltInStringId>(found->second);
-	if(bisid >= ENBISI_FIRST_DYNAMIC_STRING)
+	EvaluableNodeBuiltInStringId builtin_sid = static_cast<EvaluableNodeBuiltInStringId>(found->second);
+	if(builtin_sid >= ENBISI_FIRST_DYNAMIC_STRING)
 		return ENBISI_NOT_A_STRING;
 
-	return bisid;
+	return builtin_sid;
 }
 
 //returns the string id representing EvaluableNodeType t

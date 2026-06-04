@@ -204,8 +204,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 			mtw_exists = true;
 			for(auto &[node_id, node] : mutation_weights_node->GetMappedChildNodes())
 			{
-				auto bisid = GetBuiltInStringIdFromStringId(node_id);
-				mutation_type_weights[bisid] = EvaluableNode::ToNumber(node);
+				auto sid = GetBuiltInStringIdFromStringId(node_id);
+				mutation_type_weights[sid] = EvaluableNode::ToNumber(node);
 			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(mutation_weights_node);

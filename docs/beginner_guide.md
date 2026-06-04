@@ -302,7 +302,7 @@ followed by an *optional* default action.
 
 # Loops and Maps
 
-The amalgam syntax is a little different than some other languages,
+The Amalgam syntax is a little different than some other languages,
 but the overall idea is the same.  However, functional programming is strongly recommended,
 as while loops containing an accum can be considerably slower and consume notably more memory.
 
@@ -324,16 +324,16 @@ as while loops containing an accum can be considerably slower and consume notabl
 >     )
 >
 >
->     ;Maps:
->     ;Maps serve the same purpose as loops, but in a more functional way.  Maps are also an easy and efficient
+>     ;Maps and Ranges:
+>     ;Maps and Ranges serve the same purpose as loops, but in a more functional way.  Maps are also an easy and efficient
 >     ;way to iterate over a series of values that may not be a sequence but are not guaranteed to execute in order
->     ;(i.e., map may utilize parallel processing, especially if preceeded by ||), but do guarantee ordered output.
+>     ;(i.e., map may utilize parallel processing, especially if preceded by ||), but do guarantee ordered output.
 >     ; Print multiples of 10 up to to 100
->     (map
+>     (range
 >         (lambda
 >             (print (current_value)) ;run this on each item from the list
 >         )
->         (range 0 100 10) ;generate a list from 0 through 100, going up by 10
+>         0 100 10 ;generate a list from 0 through 100, going up by 10
 >     )
 
 
@@ -614,11 +614,11 @@ using a list as the parameter:
 
 
 
-### Set
+### Modify
 
-Set is the same as **(get** above, except you pass in one more parameter specifying what to set the value to, instead of returning it.
+Modify works similar to **(get** above, except you pass in one more parameter specifying what to set the value to, instead of returning it.  Note that the value itself can be a function.
 
-usage: *(set &lt;code&gt; &lt;index&gt; &lt;new\_code&gt;)*
+usage: *(modify &lt;code&gt; &lt;index&gt; &lt;new\_code&gt;)*
 
     (seq
         (declare (assoc
@@ -628,10 +628,10 @@ usage: *(set &lt;code&gt; &lt;index&gt; &lt;new\_code&gt;)*
 
         (declare (assoc
             ;returns (list 10 20 33 40 50) since we've set the value that's at at index 2
-            changed_third_value (set numbers 2 33)
+            changed_third_value (modify numbers 2 33)
 
            ;returns (assoc "a" 10 "b" 22 "c" 30) since we've set the value for key "b"
-            changed_value_for_key_b_map (set numbers_map "b" 22)
+            changed_value_for_key_b_map (modify numbers_map "b" 22)
         ))
     )
 
@@ -804,7 +804,7 @@ The following opcodes each have their own scope stack (in the Amalgam reference 
     list
     map
     reduce
-    replace
+    modify
     rewrite
     sort
     weave

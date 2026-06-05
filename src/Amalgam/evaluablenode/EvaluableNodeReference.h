@@ -37,16 +37,26 @@ public:
 		NUMBER = 1 << 2,
 		//the size of the container
 		SIZE_AS_NUMBER = 1 << 3,
+		//the sum of the values
+		SUM_AS_NUMBER = 1 << 4,
+		//the product of the values
+		PRODUCT_AS_NUMBER = 1 << 5,
+		//minimum of the values
+		MIN_AS_NUMBER = 1 << 6,
+		//maximum of the values
+		MAX_AS_NUMBER = 1 << 7,
 		//string_id that is currently defined elsewhere
-		EXISTING_STRING_ID = 1 << 4,
+		EXISTING_STRING_ID = 1 << 8,
 		//string_id that may be newly defined
-		STRING_ID = 1 << 5,
+		STRING_ID = 1 << 9,
 		//key string_id that is currently defined elsewhere (as a key)
-		EXISTING_KEY_STRING_ID = 1 << 6,
+		EXISTING_KEY_STRING_ID = 1 << 10,
 		//key string_id that may be newly defined
-		KEY_STRING_ID = 1 << 7,
+		KEY_STRING_ID = 1 << 11,
+		//concat of string ids
+		CONCAT_AS_STRING_ID = 1 << 12,
 		//code
-		CODE = 1 << 8,
+		CODE = 1 << 13,
 
 		//composite types which can include NULL_VALUE
 		BOOL_OR_NULL = BOOL | NULL_VALUE,

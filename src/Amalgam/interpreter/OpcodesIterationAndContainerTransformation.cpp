@@ -559,6 +559,28 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
+			//TODO 25595: add support for product, min, max, concat
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
+			{
+				double sum = 0.0;
+				for(size_t i = 0; i < num_nodes; i++)
+				{
+					//pass value of list to be mapped
+					SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+					SetTopCurrentValueInConstructionStack(list_ocn[i]);
+
+					sum += InterpretNodeIntoNumberValue(function);
+				}
+
+				if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+				{
+					evaluableNodeManager->FreeNodeTreeIfPossible(result);
+					evaluableNodeManager->FreeNodeTreeIfPossible(list);
+				}
+
+				return EvaluableNodeReference(sum);
+			}
+
 			for(size_t i = 0; i < num_nodes; i++)
 			{
 				//pass value of list to be mapped
@@ -627,6 +649,31 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		#endif
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
+
+			//TODO 25595: add support for product, min, max, concat, also update other opcodes such as range, filter, etc.
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
+			{
+				double sum = 0.0;
+				for(auto &[result_id, result_node] : result_mcn)
+				{
+					SetTopCurrentIndexInConstructionStack(result_id);
+
+					//get the original data element
+					auto list_node_entry = list_mcn.find(result_id);
+					if(list_node_entry != end(list_mcn))
+						SetTopCurrentValueInConstructionStack(list_node_entry->second);
+
+					sum += InterpretNodeIntoNumberValue(function);
+				}
+
+				if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+				{
+					evaluableNodeManager->FreeNodeTreeIfPossible(result);
+					evaluableNodeManager->FreeNodeTreeIfPossible(list);
+				}
+
+				return EvaluableNodeReference(sum);
+			}
 
 			for(auto &[result_id, result_node] : result_mcn)
 			{

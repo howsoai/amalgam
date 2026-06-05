@@ -430,30 +430,6 @@ public:
 		return std::clamp(similarity, 0.0, 1.0);
 	}
 
-	//returns the commonality between two strings that are different
-	static inline double RelativeCommonalityBetweenStrings(StringInternPool::StringID sid1, StringInternPool::StringID sid2)
-	{
-		if(sid1 == sid2)
-			return 1.0;
-
-		if(sid1 == string_intern_pool.NOT_A_STRING_ID || sid2 == string_intern_pool.NOT_A_STRING_ID)
-			return 0.0;
-
-		const auto &s1 = string_intern_pool.GetStringFromID(sid1);
-		const auto &s2 = string_intern_pool.GetStringFromID(sid2);
-
-		size_t len1 = s1.size();
-		size_t len2 = s2.size();
-
-		size_t diff = EditDistance(s1, s2, len1, len2);
-
-		double avg_len = (len1 + len2) * 0.5;
-		double length_ratio = std::min(len1, len2) / static_cast<double>(std::max(len1, len2));
-
-		double edit_score = std::exp(-static_cast<double>(diff) / avg_len);
-		return 0.75 * edit_score + 0.25 * length_ratio;
-	}
-
 	//returns the commonality between the sequences a and b using the specified sequence_commonality_buffer
 	template<typename ElementType>
 	static size_t CommonalityBetweenVectors(std::vector<ElementType> &a, std::vector<ElementType> &b,
@@ -482,6 +458,32 @@ public:
 		StringManipulation::ExplodeUTF8Characters(a, aCharsBuffer);
 		StringManipulation::ExplodeUTF8Characters(b, bCharsBuffer);
 		return CommonalityBetweenVectors(aCharsBuffer, bCharsBuffer, sequenceCommonalityBuffer);
+	}
+
+	//returns the commonality between two strings that are different
+	static inline double RelativeCommonalityBetweenStrings(StringInternPool::StringID sid1, StringInternPool::StringID sid2)
+	{
+		if(sid1 == sid2)
+			return 1.0;
+
+		if(sid1 == string_intern_pool.NOT_A_STRING_ID || sid2 == string_intern_pool.NOT_A_STRING_ID)
+			return 0.0;
+
+		const auto &s1 = string_intern_pool.GetStringFromID(sid1);
+		const auto &s2 = string_intern_pool.GetStringFromID(sid2);
+
+		StringManipulation::ExplodeUTF8Characters(s1, aCharsBuffer);
+		StringManipulation::ExplodeUTF8Characters(s2, bCharsBuffer);
+		size_t commonality = CommonalityBetweenVectors(aCharsBuffer, bCharsBuffer, sequenceCommonalityBuffer);
+
+		size_t len1 = aCharsBuffer.size();
+		size_t len2 = bCharsBuffer.size();
+
+		double avg_len = (len1 + len2) * 0.5;
+		double length_ratio = std::min(len1, len2) / static_cast<double>(std::max(len1, len2));
+
+		double edit_score = std::exp(-static_cast<double>(commonality) / avg_len);
+		return 0.75 * edit_score + 0.25 * length_ratio;
 	}
 
 	//returns the edit distance between the sequences a and b using the specified sequence_commonality_buffer

@@ -559,26 +559,31 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
+			//TODO 25595: add support for immediate_result.NoValueRequested() for map
 			//TODO 25595: add support for product, min, max, concat
-			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
+			//TODO 25595: handle empty ordered child nodes appropriately
+			if(immediate_result.AnyImmediateType())
 			{
-				double sum = 0.0;
-				for(size_t i = 0; i < num_nodes; i++)
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
 				{
-					//pass value of list to be mapped
-					SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
-					SetTopCurrentValueInConstructionStack(list_ocn[i]);
+					double sum = 0.0;
+					for(size_t i = 0; i < num_nodes; i++)
+					{
+						//pass value of list to be mapped
+						SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+						SetTopCurrentValueInConstructionStack(list_ocn[i]);
 
-					sum += InterpretNodeIntoNumberValue(function);
+						sum += InterpretNodeIntoNumberValue(function);
+					}
+
+					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+					{
+						evaluableNodeManager->FreeNodeTreeIfPossible(result);
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+					}
+
+					return EvaluableNodeReference(sum);
 				}
-
-				if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-				{
-					evaluableNodeManager->FreeNodeTreeIfPossible(result);
-					evaluableNodeManager->FreeNodeTreeIfPossible(list);
-				}
-
-				return EvaluableNodeReference(sum);
 			}
 
 			for(size_t i = 0; i < num_nodes; i++)

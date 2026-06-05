@@ -431,7 +431,7 @@ public:
 	}
 
 	//returns the commonality between two strings that are different
-	static inline double CommonalityBetweenStrings(StringInternPool::StringID sid1, StringInternPool::StringID sid2)
+	static inline double RelativeCommonalityBetweenStrings(StringInternPool::StringID sid1, StringInternPool::StringID sid2)
 	{
 		if(sid1 == sid2)
 			return 1.0;
@@ -454,9 +454,9 @@ public:
 		return 0.75 * edit_score + 0.25 * length_ratio;
 	}
 
-	//returns the EditDistance between the sequences a and b using the specified sequence_commonality_buffer
+	//returns the commonality between the sequences a and b using the specified sequence_commonality_buffer
 	template<typename ElementType>
-	static size_t EditDistance(std::vector<ElementType> &a, std::vector<ElementType> &b,
+	static size_t CommonalityBetweenVectors(std::vector<ElementType> &a, std::vector<ElementType> &b,
 		FlatMatrix<size_t> &sequence_commonality_buffer)
 	{
 		//if either string is empty, return the other
@@ -473,16 +473,27 @@ public:
 				return (a == b ? 1 : 0);
 			});
 
-		//edit distance is the longest sequence's size minus the commonality
-		return std::max(a_size, b_size) - sequence_commonality_buffer.At(a_size, b_size);
+		return sequence_commonality_buffer.At(a_size, b_size);
 	}
 
-	//returns the EditDistance between the sequences a and b
-	template<typename ElementType>
-	inline static size_t EditDistance(std::vector<ElementType> &a, std::vector<ElementType> &b)
+	//computes the commonality between the two utf-8 strings
+	inline static size_t CommonalityBetweenStrings(const std::string &a, const std::string &b)
 	{
-		FlatMatrix<size_t> sequence_commonality;
-		return EditDistance(a, b, sequence_commonality);
+		StringManipulation::ExplodeUTF8Characters(a, aCharsBuffer);
+		StringManipulation::ExplodeUTF8Characters(b, bCharsBuffer);
+		return CommonalityBetweenVectors(aCharsBuffer, bCharsBuffer, sequenceCommonalityBuffer);
+	}
+
+	//returns the edit distance between the sequences a and b using the specified sequence_commonality_buffer
+	template<typename ElementType>
+	static size_t EditDistance(std::vector<ElementType> &a, std::vector<ElementType> &b,
+		FlatMatrix<size_t> &sequence_commonality_buffer)
+	{
+		size_t commonality = CommonalityBetweenVectors(a, b, sequence_commonality_buffer);
+
+		//edit distance is the difference between a_size and commonality and b_size and commonality,
+		//which can be written more succinctly with a * 2
+		return a.size() + b.size() - 2 * commonality;
 	}
 
 	//computes the edit distance (Levenshtein distance) between the two utf-8 strings
@@ -490,7 +501,7 @@ public:
 	{
 		StringManipulation::ExplodeUTF8Characters(a, aCharsBuffer);
 		StringManipulation::ExplodeUTF8Characters(b, bCharsBuffer);
-		return EvaluableNodeTreeManipulation::EditDistance(aCharsBuffer, bCharsBuffer, sequenceCommonalityBuffer);
+		return EditDistance(aCharsBuffer, bCharsBuffer, sequenceCommonalityBuffer);
 	}
 
 	//computes the edit distance (Levenshtein distance) between the two utf-8 strings

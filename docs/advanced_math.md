@@ -1635,7 +1635,7 @@ Example:
 ```
 Output:
 ```amalgam
-3.697640774259515
+3.9642281506573376
 ```
 Example:
 ```amalgam

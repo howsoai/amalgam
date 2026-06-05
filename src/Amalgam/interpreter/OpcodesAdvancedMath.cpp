@@ -1601,7 +1601,7 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	1
 	[1]
 	[{difference_type "continuous" data_type "code" nominal_strings .false types_must_match .false}]
-))&", R"(3.697640774259515)"},
+))&", R"(3.9642281506573376)"},
 			{R"&((generalized_distance
 	;vector1
 	{

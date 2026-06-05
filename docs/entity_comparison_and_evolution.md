@@ -246,7 +246,7 @@ Example:
 ```
 Output:
 ```amalgam
-[64 64.58517088326876]
+[64 64.74178574543642]
 ```
 
 [Amalgam Opcodes](./opcodes.md)
@@ -337,7 +337,7 @@ Example:
 ```
 Output:
 ```amalgam
-[11 9.829658233462482]
+[11 9.516428509127167]
 ```
 
 [Amalgam Opcodes](./opcodes.md)

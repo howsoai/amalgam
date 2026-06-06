@@ -517,16 +517,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		if(list == nullptr)
 			return EvaluableNodeReference::Null();
 
-		//create result_list as a copy of the current list, but without child nodes
-		result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
-
 		if(list->IsOrderedArray())
 		{
 			auto &list_ocn = list->GetOrderedChildNodesReference();
 			size_t num_nodes = list_ocn.size();
-
-			auto &result_ocn = result->GetOrderedChildNodesReference();
-			result_ocn.resize(num_nodes);
 
 		#ifdef MULTITHREAD_SUPPORT
 			if(en->GetConcurrency() && num_nodes > 1)
@@ -535,37 +529,72 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				if(Concurrency::threadPool.AreThreadsAvailable())
 				{
 					node_stack.PushEvaluableNode(list);
-					node_stack.PushEvaluableNode(result);
-					//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
-					result->SetNeedCycleCheck(true);
-
 					InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
-					for(size_t node_index = 0; node_index < num_nodes; node_index++)
-						concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
-							list, result, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
-							list_ocn[node_index], result_ocn[node_index]);
+					if(immediate_result.NoValueRequested())
+					{
+						for(size_t node_index = 0; node_index < num_nodes; node_index++)
+							concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
+								EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), list_ocn[node_index]);
 
-					concurrency_manager.EndConcurrency();
+						concurrency_manager.EndConcurrency();
 
-					concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
-					if(result.unique && !concurrency_manager.HadSideEffects())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+						return EvaluableNodeReference::Null();
+					}
+					else //not immediate
+					{
+						//create result_list as a copy of the current list, but without child nodes
+						result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
+						auto &result_ocn = result->GetOrderedChildNodesReference();
+						result_ocn.resize(num_nodes);
+						//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+						result->SetNeedCycleCheck(true);
+						node_stack.PushEvaluableNode(result);
 
-					return result;
+						for(size_t node_index = 0; node_index < num_nodes; node_index++)
+							concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
+								list, result, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
+								list_ocn[node_index], result_ocn[node_index]);
+
+						concurrency_manager.EndConcurrency();
+
+						concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
+						if(result.unique && !concurrency_manager.HadSideEffects())
+							evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
+						return result;
+					}
 				}
 			}
 		#endif
 
-			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
-
-			//TODO 25595: add support for immediate_result.NoValueRequested() for map
-
 			//don't apply optimizations if there are no nodes, and let calling opcodes handle edge cases
 			if(immediate_result.AnyImmediateType() && num_nodes > 0)
 			{
+				if(immediate_result.NoValueRequested())
+				{
+					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+					for(size_t i = 0; i < num_nodes; i++)
+					{
+						//pass value of list to be mapped
+						SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+						SetTopCurrentValueInConstructionStack(list_ocn[i]);
+
+						InterpretNodeForImmediateUse(function, EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
+					}
+
+					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+					{
+						evaluableNodeManager->FreeNodeTreeIfPossible(result);
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+					}
+
+					return EvaluableNodeReference::Null();
+				}
+
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
 				{
+					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 					double sum = 0.0;
 					for(size_t i = 0; i < num_nodes; i++)
 					{
@@ -587,6 +616,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::PRODUCT_AS_NUMBER))
 				{
+					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 					double product = 1.0;
 					for(size_t i = 0; i < num_nodes; i++)
 					{
@@ -608,6 +638,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 				//TODO 25595: add support for min, max, concat
 			}
+
+			//create result_list as a copy of the current list, but without child nodes
+			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
+			auto &result_ocn = result->GetOrderedChildNodesReference();
+			result_ocn.resize(num_nodes);
+
+			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
 			for(size_t i = 0; i < num_nodes; i++)
 			{
@@ -631,14 +668,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			auto &list_mcn = list->GetMappedChildNodesReference();
 			size_t num_nodes = list_mcn.size();
 
-			//populate result_mcn with all a slot for each child node,
-			//as do not want to change this allocation during potential concurrent execution
-			//and because iterators may be invalidated when the map is changed
-			auto &result_mcn = result->GetMappedChildNodesReference();
-			result_mcn.reserve(num_nodes);
-			for(auto &[sid, cn] : list_mcn)
-				result_mcn.emplace(string_intern_pool.CreateStringReference(sid), nullptr);
-
 		#ifdef MULTITHREAD_SUPPORT
 			if(en->GetConcurrency() && num_nodes > 1)
 			{
@@ -646,50 +675,95 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				if(Concurrency::threadPool.AreThreadsAvailable())
 				{
 					node_stack.PushEvaluableNode(list);
-					node_stack.PushEvaluableNode(result);
-					//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
-					result->SetNeedCycleCheck(true);
-
 					InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
-					for(auto &[result_id, result_node] : result_mcn)
+					if(immediate_result.NoValueRequested())
 					{
-						//get the original data element
-						auto list_node_entry = list_mcn.find(result_id);
-						EvaluableNode *list_node = nullptr;
-						if(list_node_entry != end(list_mcn))
-							list_node = list_node_entry->second;
+						for(auto &[list_id, list_node] : list_mcn)
+							concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
+								EvaluableNodeImmediateValueWithType(list_id), list_node);
 
-						concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
-							list, result, EvaluableNodeImmediateValueWithType(result_id),
-							list_node, result_node);
+						concurrency_manager.EndConcurrency();
+
+						return EvaluableNodeReference::Null();
 					}
+					else //not immediate
+					{
+						//create result_list as a copy of the current list, but without child nodes
+						result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
+						//populate result_mcn with all a slot for each child node,
+						//as do not want to change this allocation during potential concurrent execution
+						//and because iterators may be invalidated when the map is changed
+						auto &result_mcn = result->GetMappedChildNodesReference();
+						result_mcn.reserve(num_nodes);
+						for(auto &[sid, cn] : list_mcn)
+							result_mcn.emplace(string_intern_pool.CreateStringReference(sid), nullptr);
+						node_stack.PushEvaluableNode(result);
+						//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+						result->SetNeedCycleCheck(true);
 
-					concurrency_manager.EndConcurrency();
+						for(auto &[result_id, result_node] : result_mcn)
+						{
+							//get the original data element
+							auto list_node_entry = list_mcn.find(result_id);
+							EvaluableNode *list_node = nullptr;
+							if(list_node_entry != end(list_mcn))
+								list_node = list_node_entry->second;
 
-					concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
-					if(result.unique && !concurrency_manager.HadSideEffects())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+							concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
+								list, result, EvaluableNodeImmediateValueWithType(result_id),
+								list_node, result_node);
+						}
 
-					return result;
+						concurrency_manager.EndConcurrency();
+
+						concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
+						if(result.unique && !concurrency_manager.HadSideEffects())
+							evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
+						return result;
+					}
 				}
 			}
 		#endif
 
-			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
-
 			//don't apply optimizations if there are no nodes, and let calling opcodes handle edge cases
 			if(immediate_result.AnyImmediateType() && num_nodes > 0)
 			{
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
+				if(immediate_result.NoValueRequested())
 				{
-					double sum = 0.0;
-					for(auto &[result_id, result_node] : result_mcn)
+					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+					for(auto &[list_id, list_node] : list_mcn)
 					{
-						SetTopCurrentIndexInConstructionStack(result_id);
+						SetTopCurrentIndexInConstructionStack(list_id);
 
 						//get the original data element
-						auto list_node_entry = list_mcn.find(result_id);
+						auto list_node_entry = list_mcn.find(list_id);
+						if(list_node_entry != end(list_mcn))
+							SetTopCurrentValueInConstructionStack(list_node_entry->second);
+
+						InterpretNodeForImmediateUse(function, EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
+					}
+
+					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+					{
+						evaluableNodeManager->FreeNodeTreeIfPossible(result);
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+					}
+
+					return EvaluableNodeReference::Null();
+				}
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
+				{
+					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+					double sum = 0.0;
+					for(auto &[list_id, list_node] : list_mcn)
+					{
+						SetTopCurrentIndexInConstructionStack(list_id);
+
+						//get the original data element
+						auto list_node_entry = list_mcn.find(list_id);
 						if(list_node_entry != end(list_mcn))
 							SetTopCurrentValueInConstructionStack(list_node_entry->second);
 
@@ -707,13 +781,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::PRODUCT_AS_NUMBER))
 				{
+					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 					double product = 1.0;
-					for(auto &[result_id, result_node] : result_mcn)
+					for(auto &[list_id, list_node] : list_mcn)
 					{
-						SetTopCurrentIndexInConstructionStack(result_id);
+						SetTopCurrentIndexInConstructionStack(list_id);
 
 						//get the original data element
-						auto list_node_entry = list_mcn.find(result_id);
+						auto list_node_entry = list_mcn.find(list_id);
 						if(list_node_entry != end(list_mcn))
 							SetTopCurrentValueInConstructionStack(list_node_entry->second);
 
@@ -731,6 +806,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 				//TODO 25595: add support for min, max, concat, also update other opcodes such as range, filter, etc.
 			}
+
+			//create result_list as a copy of the current list, but without child nodes
+			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
+			//populate result_mcn with all a slot for each child node,
+			//as do not want to change this allocation during potential concurrent execution
+			//and because iterators may be invalidated when the map is changed
+			auto &result_mcn = result->GetMappedChildNodesReference();
+			result_mcn.reserve(num_nodes);
+			for(auto &[sid, cn] : list_mcn)
+				result_mcn.emplace(string_intern_pool.CreateStringReference(sid), nullptr);
+			node_stack.PushEvaluableNode(result);
+			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+			result->SetNeedCycleCheck(true);
+
+			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
 			for(auto &[result_id, result_node] : result_mcn)
 			{

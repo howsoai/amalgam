@@ -560,9 +560,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
 			//TODO 25595: add support for immediate_result.NoValueRequested() for map
-			//TODO 25595: add support for product, min, max, concat
-			//TODO 25595: handle empty ordered child nodes appropriately
-			if(immediate_result.AnyImmediateType())
+
+			//don't apply optimizations if there are no nodes, and let calling opcodes handle edge cases
+			if(immediate_result.AnyImmediateType() && num_nodes > 0)
 			{
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
 				{
@@ -584,6 +584,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 					return EvaluableNodeReference(sum);
 				}
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::PRODUCT_AS_NUMBER))
+				{
+					double product = 1.0;
+					for(size_t i = 0; i < num_nodes; i++)
+					{
+						//pass value of list to be mapped
+						SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+						SetTopCurrentValueInConstructionStack(list_ocn[i]);
+
+						product *= InterpretNodeIntoNumberValue(function);
+					}
+
+					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+					{
+						evaluableNodeManager->FreeNodeTreeIfPossible(result);
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+					}
+
+					return EvaluableNodeReference(product);
+				}
+
+				//TODO 25595: add support for min, max, concat
 			}
 
 			for(size_t i = 0; i < num_nodes; i++)
@@ -655,29 +678,58 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-			//TODO 25595: add support for product, min, max, concat, also update other opcodes such as range, filter, etc.
-			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
+			//don't apply optimizations if there are no nodes, and let calling opcodes handle edge cases
+			if(immediate_result.AnyImmediateType() && num_nodes > 0)
 			{
-				double sum = 0.0;
-				for(auto &[result_id, result_node] : result_mcn)
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
 				{
-					SetTopCurrentIndexInConstructionStack(result_id);
+					double sum = 0.0;
+					for(auto &[result_id, result_node] : result_mcn)
+					{
+						SetTopCurrentIndexInConstructionStack(result_id);
 
-					//get the original data element
-					auto list_node_entry = list_mcn.find(result_id);
-					if(list_node_entry != end(list_mcn))
-						SetTopCurrentValueInConstructionStack(list_node_entry->second);
+						//get the original data element
+						auto list_node_entry = list_mcn.find(result_id);
+						if(list_node_entry != end(list_mcn))
+							SetTopCurrentValueInConstructionStack(list_node_entry->second);
 
-					sum += InterpretNodeIntoNumberValue(function);
+						sum += InterpretNodeIntoNumberValue(function);
+					}
+
+					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+					{
+						evaluableNodeManager->FreeNodeTreeIfPossible(result);
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+					}
+
+					return EvaluableNodeReference(sum);
 				}
 
-				if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::PRODUCT_AS_NUMBER))
 				{
-					evaluableNodeManager->FreeNodeTreeIfPossible(result);
-					evaluableNodeManager->FreeNodeTreeIfPossible(list);
+					double product = 1.0;
+					for(auto &[result_id, result_node] : result_mcn)
+					{
+						SetTopCurrentIndexInConstructionStack(result_id);
+
+						//get the original data element
+						auto list_node_entry = list_mcn.find(result_id);
+						if(list_node_entry != end(list_mcn))
+							SetTopCurrentValueInConstructionStack(list_node_entry->second);
+
+						product *= InterpretNodeIntoNumberValue(function);
+					}
+
+					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+					{
+						evaluableNodeManager->FreeNodeTreeIfPossible(result);
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+					}
+
+					return EvaluableNodeReference(product);
 				}
 
-				return EvaluableNodeReference(sum);
+				//TODO 25595: add support for min, max, concat, also update other opcodes such as range, filter, etc.
 			}
 
 			for(auto &[result_id, result_node] : result_mcn)

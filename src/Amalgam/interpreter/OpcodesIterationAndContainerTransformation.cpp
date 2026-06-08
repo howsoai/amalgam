@@ -167,16 +167,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 		return nullptr;
 	}
 
-	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto &result_ocn = result->GetOrderedChildNodesReference();
-	result_ocn.resize(num_nodes);
-
 #ifdef MULTITHREAD_SUPPORT
 	if(en->GetConcurrency() && num_nodes > 1)
 	{
 		auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
 		if(Concurrency::threadPool.AreThreadsAvailable())
 		{
+			EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
+			auto &result_ocn = result->GetOrderedChildNodesReference();
+			result_ocn.resize(num_nodes);
 			node_stack.PushEvaluableNode(result);
 			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
 			result->SetNeedCycleCheck(true);
@@ -196,6 +195,35 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	}
 #endif
 
+	//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
+	if(immediate_result.AnyImmediateType())
+	{
+		auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
+			[&](auto operation)
+			{
+				PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+
+				auto acc = operation.Init();
+
+				for(size_t i = 0; i < num_nodes; ++i)
+				{
+					//pass index of list to be mapped -- leave value at nullptr
+					SetTopCurrentIndexInConstructionStack(i * range_step_size + range_start);
+
+					if(!operation.Step(*this, function, acc))
+						return EvaluableNodeReference::Null();
+				}
+
+				return operation.Finish(acc);
+			});
+
+		if(computed)
+			return retval;
+	}
+
+	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
+	auto &result_ocn = result->GetOrderedChildNodesReference();
+	result_ocn.resize(num_nodes);
 	PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
 	for(size_t i = 0; i < num_nodes; i++)
@@ -717,7 +745,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 				if(computed)
 					return retval;
-				//TODO 25595: add support to other opcodes such as range, filter, etc.
+				//TODO 25595: add support to other opcodes such as filter, etc.
 			}
 
 			//create result_list as a copy of the current list, but without child nodes

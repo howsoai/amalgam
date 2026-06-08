@@ -2,21 +2,21 @@
 
 struct NoValueOp
 {
-	using Acc = bool;
+	using AccumType = bool;
 
-	inline Acc Init() const
+	inline AccumType Init() const
 	{
 		return true;
 	}
 
-	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, Acc & /*acc*/) const
+	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, AccumType & /*acc*/) const
 	{
 		interpreter.InterpretNodeForImmediateUse(function,
 			EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
 		return true;
 	}
 
-	inline EvaluableNodeReference Finish(Acc /*acc*/) const
+	inline EvaluableNodeReference Finish(AccumType /*acc*/) const
 	{
 		return EvaluableNodeReference::Null();
 	}
@@ -143,84 +143,27 @@ struct ConcatOp
 	}
 };
 
-
-template<class OperationFunction>
-EvaluableNodeReference IterateAndReduceOrdered(Step(Interpreter &interpreter, EvaluableNodeReference &function,
-	EvaluableNodeReference list, OperationFunction &&operation)
+template<typename IterationFunction>
+inline std::pair<bool, EvaluableNodeReference> AttemptSpecializedInterpret(
+	EvaluableNodeRequestedValueTypes immediate_result, IterationFunction &&iteration_function)
 {
-	interpreter.PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
-
-	using ReturnType = decltype(operation(0));
-	ReturnType acc = operation.Init();
-
-	auto &list_mcn = list->GetMappedChildNodesReference();
-	size_t num_nodes = list_mcn.size();
-	for(size_t i = 0; i < num_nodes; ++i)
-	{
-		interpreter.SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
-		interpreter.SetTopCurrentValueInConstructionStack(list_ocn[i]);
-
-		if(!operation.Step(interpreter, function, acc))
-			return EvaluableNodeReference::Null();
-	}
-
-	if(!interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
-	{
-		interpreter.evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		interpreter.evaluableNodeManager->FreeNodeTreeIfPossible(list);
-	}
-
-	return operation.Finish(acc);
-}
-
-template<class OperationFunction>
-EvaluableNodeReference IterateAndReduceMapped(Step(Interpreter &interpreter, EvaluableNodeReference &function,
-	EvaluableNodeReference map, OperationFunction &&operation)
-{
-	interpreter.PushNewConstructionContext(
-		map, nullptr, EvaluableNodeImmediateValueWithType(string_intern_pool.NOT_A_STRING_ID), nullptr);
-
-	using ReturnType = decltype(operation(0));
-	ReturnType acc = operation.Init();
-
-	auto &list_mcn = list->GetMappedChildNodesReference();
-	for(auto &[list_id, list_node] : list_mcn)
-	{
-		interpreter.SetTopCurrentIndexInConstructionStack(list_id);
-		interpreter.SetTopCurrentValueInConstructionStack(list_node_entry->second);
-
-		if(!operation.Step(interpreter, function, acc))
-			return EvaluableNodeReference::Null();
-	}
-
-	if(!interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
-	{
-		interpreter.evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		interpreter.evaluableNodeManager->FreeNodeTreeIfPossible(list);
-	}
-
-	return operation.Finish(acc);
-}
-
-//use via:
-if(immediate_result.AnyImmediateType() && num_nodes > 0)
-{
-
 	if(immediate_result.NoValueRequested())
-		return IterateAndReduce(this, function, list, NoValueOp{});
+		return std::make_pair(true, iteration_function(NoValueOp{}));
 
 	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
-		return IterateAndReduce(this, function, list, SumOp{});
+		return std::make_pair(true, iteration_function(SumOp{}));
 
 	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::PRODUCT_AS_NUMBER))
-		return IterateAndReduce(this, function, list, ProductOp{});
+		return std::make_pair(true, iteration_function(ProductOp{}));
 
 	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::MIN_AS_NUMBER))
-		return IterateAndReduce(this, function, list, MinOp{});
+		return std::make_pair(true, iteration_function(MinOp{}));
 
 	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::MAX_AS_NUMBER))
-		return IterateAndReduce(this, function, list, MaxOp{});
+		return std::make_pair(true, iteration_function(MaxOp{}));
 
 	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::CONCAT_AS_STRING_ID))
-		return IterateAndReduce(this, function, list, ConcatOp{});
+		return std::make_pair(true, iteration_function(ConcatOp{}));
+
+	return std::make_pair(false, EvaluableNodeReference::Null());
 }

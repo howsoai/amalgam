@@ -1,6 +1,6 @@
 //project headers:
 #include "Interpreter.h"
-//#include "InterpreterApplySpecializations.h"
+#include "InterpreterApplySpecializations.h"
 #include "InterpreterConcurrencyManager.h"
 #include "OpcodeDetails.h"
 
@@ -569,163 +569,35 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			}
 		#endif
 
-			//TODO 25595: make this code generic
-			//don't apply optimizations if there are no nodes, and let calling opcodes handle edge cases
+			//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
 			if(immediate_result.AnyImmediateType() && num_nodes > 0)
 			{
-				if(immediate_result.NoValueRequested())
-				{
-					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
-					for(size_t i = 0; i < num_nodes; i++)
+				auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
+					[&](auto operation)
 					{
-						//pass value of list to be mapped
-						SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
-						SetTopCurrentValueInConstructionStack(list_ocn[i]);
+						PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
-						InterpretNodeForImmediateUse(function, EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
-					}
+						auto acc = operation.Init();
 
-					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-					return EvaluableNodeReference::Null();
-				}
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
-				{
-					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
-					double sum = 0.0;
-					for(size_t i = 0; i < num_nodes; i++)
-					{
-						//pass value of list to be mapped
-						SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
-						SetTopCurrentValueInConstructionStack(list_ocn[i]);
-
-						sum += InterpretNodeIntoNumberValue(function);
-					}
-
-					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-					return EvaluableNodeReference(sum);
-				}
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::PRODUCT_AS_NUMBER))
-				{
-					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
-					double product = 1.0;
-					for(size_t i = 0; i < num_nodes; i++)
-					{
-						//pass value of list to be mapped
-						SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
-						SetTopCurrentValueInConstructionStack(list_ocn[i]);
-
-						product *= InterpretNodeIntoNumberValue(function);
-					}
-
-					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-					return EvaluableNodeReference(product);
-				}
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::MIN_AS_NUMBER))
-				{
-					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
-					double min = std::numeric_limits<double>::infinity();
-					bool value_found = false;
-					for(size_t i = 0; i < num_nodes; i++)
-					{
-						//pass value of list to be mapped
-						SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
-						SetTopCurrentValueInConstructionStack(list_ocn[i]);
-
-						double value = InterpretNodeIntoNumberValue(function);
-						if(!FastIsNaN(value))
+						auto &list_ocn = list->GetOrderedChildNodesReference();
+						size_t num_nodes = list_ocn.size();
+						for(size_t i = 0; i < num_nodes; ++i)
 						{
-							value_found = true;
-							min = std::min(value, min);
+							SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+							SetTopCurrentValueInConstructionStack(list_ocn[i]);
+
+							if(!operation.Step(*this, function, acc))
+								return EvaluableNodeReference::Null();
 						}
-					}
 
-					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+						if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+							evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
-					if(value_found)
-						return EvaluableNodeReference(min);
-					else
-						return EvaluableNodeReference::Null();
-				}
+						return operation.Finish(acc);
+					});
 
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::MAX_AS_NUMBER))
-				{
-					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
-					double max = std::numeric_limits<double>::infinity();
-					bool value_found = false;
-					for(size_t i = 0; i < num_nodes; i++)
-					{
-						//pass value of list to be mapped
-						SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
-						SetTopCurrentValueInConstructionStack(list_ocn[i]);
-
-						double value = InterpretNodeIntoNumberValue(function);
-						if(!FastIsNaN(value))
-						{
-							value_found = true;
-							max = std::max(value, max);
-						}
-					}
-
-					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-					if(value_found)
-						return EvaluableNodeReference(max);
-					else
-						return EvaluableNodeReference::Null();
-				}
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::CONCAT_AS_STRING_ID))
-				{
-					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
-					bool concat_string_valid = true;
-					std::string concat_string;
-					for(size_t i = 0; i < num_nodes; i++)
-					{
-						//pass value of list to be mapped
-						SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
-						SetTopCurrentValueInConstructionStack(list_ocn[i]);
-
-						auto [valid, s] = InterpretNodeIntoStringValue(function);
-						if(valid)
-						{
-							//want to exit early if out of resources because
-							//this opcode can chew through memory with string concatenation via returned nulls
-							if(AreExecutionResourcesExhausted() ||
-								(interpreterConstraints != nullptr &&
-									s.size() > interpreterConstraints->maxNumAllocatedNodes))
-							{
-								concat_string_valid = false;
-								break;
-							}
-
-							concat_string += s;
-						}
-						else
-						{
-							concat_string_valid = false;
-							break;
-						}
-					}
-
-					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-					if(concat_string_valid)
-						return EvaluableNodeReference(concat_string);
-					else
-						return EvaluableNodeReference::Null();
-				}
+				if(computed)
+					return retval;
 			}
 
 			//create result_list as a copy of the current list, but without child nodes
@@ -816,63 +688,36 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			}
 		#endif
 
-			//don't apply optimizations if there are no nodes, and let calling opcodes handle edge cases
+			//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
 			if(immediate_result.AnyImmediateType() && num_nodes > 0)
 			{
-				if(immediate_result.NoValueRequested())
-				{
-					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
-					for(auto &[list_id, list_node] : list_mcn)
+				auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
+					[&](auto operation)
 					{
-						SetTopCurrentIndexInConstructionStack(list_id);
-						SetTopCurrentValueInConstructionStack(list_node);
+						PushNewConstructionContext(list, nullptr,
+							EvaluableNodeImmediateValueWithType(string_intern_pool.NOT_A_STRING_ID), nullptr);
 
-						InterpretNodeForImmediateUse(function, EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
-					}
+						auto acc = operation.Init();
 
-					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+						auto &map_mcn = list->GetMappedChildNodesReference();
+						for(auto &[map_id, map_node] : map_mcn)
+						{
+							SetTopCurrentIndexInConstructionStack(map_id);
+							SetTopCurrentValueInConstructionStack(map_node);
 
-					return EvaluableNodeReference::Null();
-				}
+							if(!operation.Step(*this, function, acc))
+								return EvaluableNodeReference::Null();
+						}
 
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
-				{
-					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
-					double sum = 0.0;
-					for(auto &[list_id, list_node] : list_mcn)
-					{
-						SetTopCurrentIndexInConstructionStack(list_id);
-						SetTopCurrentValueInConstructionStack(list_node);
+						if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+							evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
-						sum += InterpretNodeIntoNumberValue(function);
-					}
+						return operation.Finish(acc);
+					});
 
-					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-					return EvaluableNodeReference(sum);
-				}
-
-				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::PRODUCT_AS_NUMBER))
-				{
-					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
-					double product = 1.0;
-					for(auto &[list_id, list_node] : list_mcn)
-					{
-						SetTopCurrentIndexInConstructionStack(list_id);
-						SetTopCurrentValueInConstructionStack(list_node);
-
-						product *= InterpretNodeIntoNumberValue(function);
-					}
-
-					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-					return EvaluableNodeReference(product);
-				}
-
-				//TODO 25595: add support for min, max, concat, also update other opcodes such as range, filter, etc.
+				if(computed)
+					return retval;
+				//TODO 25595: add support to other opcodes such as range, filter, etc.
 			}
 
 			//create result_list as a copy of the current list, but without child nodes

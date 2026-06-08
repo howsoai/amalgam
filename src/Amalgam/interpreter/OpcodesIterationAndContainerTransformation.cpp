@@ -1132,7 +1132,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		//specialized path for just getting the count
 		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
 		{
-			auto list = InterpretNode(ocn[list_index]);
+			auto list = InterpretNodeForImmediateUse(ocn[list_index]);
 			if(EvaluableNode::IsNull(list))
 				return EvaluableNodeReference::Null();
 

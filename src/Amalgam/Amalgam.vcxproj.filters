@@ -389,6 +389,9 @@
     <ClInclude Include="interpreter\InterpreterUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="interpreter\InterpreterApplySpecializations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

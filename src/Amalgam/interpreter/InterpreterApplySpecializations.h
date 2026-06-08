@@ -4,42 +4,39 @@ struct NoValueOp
 {
 	using Acc = bool;
 
-	Acc Init() const
+	inline Acc Init() const
 	{
 		return true;
 	}
 
-	bool Step(Step(Interpreter &interpreter, EvaluableNodeReference &function,
-		const auto & /*key*/, Acc & /*acc*/) const
+	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, Acc & /*acc*/) const
 	{
 		interpreter.InterpretNodeForImmediateUse(function,
 			EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
 		return true;
 	}
 
-	EvaluableNodeReference Finish(Acc /*acc*/) const
+	inline EvaluableNodeReference Finish(Acc /*acc*/) const
 	{
 		return EvaluableNodeReference::Null();
 	}
 };
 
-
 struct SumOp
 {
-	double Init() const
+	inline double Init() const
 	{
 		return 0.0;
 	}
 
-	bool Step(Step(Interpreter &interpreter, EvaluableNodeReference &function,
-		size_t /*i*/, double &acc) const
+	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, double &acc) const
 	{
 		double v = interpreter.InterpretNodeIntoNumberValue(function);
 		acc += v;
 		return true; //never aborts early
 	}
 
-	EvaluableNodeReference Finish(double acc) const
+	inline EvaluableNodeReference Finish(double acc) const
 	{
 		return EvaluableNodeReference(acc);
 	}
@@ -47,20 +44,19 @@ struct SumOp
 
 struct ProductOp
 {
-	double Init() const
+	inline double Init() const
 	{
 		return 1.0;
 	}
 
-	bool Step(Step(Interpreter &interpreter, EvaluableNodeReference &function,
-		size_t /*i*/, double &acc) const
+	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, double &acc) const
 	{
 		double v = interpreter.InterpretNodeIntoNumberValue(function);
 		acc *= v;
 		return true;
 	}
 
-	EvaluableNodeReference Finish(double acc) const
+	inline EvaluableNodeReference Finish(double acc) const
 	{
 		return EvaluableNodeReference(acc);
 	}
@@ -68,14 +64,14 @@ struct ProductOp
 
 struct MinOp
 {
-	double Init() const
+	inline double Init() const
 	{
 		return std::numeric_limits<double>::infinity();
 	}
+
 	bool value_found = false;
 
-	bool Step(Step(Interpreter &interpreter, EvaluableNodeReference &function,
-		size_t /*i*/, double &acc) const
+	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, double &acc)
 	{
 		double v = interpreter.InterpretNodeIntoNumberValue(function);
 		if(!FastIsNaN(v))
@@ -86,7 +82,7 @@ struct MinOp
 		return true;
 	}
 
-	EvaluableNodeReference Finish(double acc) const
+	inline EvaluableNodeReference Finish(double acc) const
 	{
 		return value_found ? EvaluableNodeReference(acc) : EvaluableNodeReference::Null();
 	}
@@ -94,14 +90,14 @@ struct MinOp
 
 struct MaxOp
 {
-	double Init() const
+	inline double Init() const
 	{
 		return -std::numeric_limits<double>::infinity();
 	}
+
 	bool value_found = false;
 
-	bool Step(Step(Interpreter &interpreter, EvaluableNodeReference &function,
-		size_t /*i*/, double &acc) const
+	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, double &acc)
 	{
 		double v = interpreter.InterpretNodeIntoNumberValue(function);
 		if(!FastIsNaN(v))
@@ -112,7 +108,7 @@ struct MaxOp
 		return true;
 	}
 
-	EvaluableNodeReference Finish(double acc) const
+	inline EvaluableNodeReference Finish(double acc) const
 	{
 		return value_found ? EvaluableNodeReference(acc) : EvaluableNodeReference::Null();
 	}
@@ -120,14 +116,14 @@ struct MaxOp
 
 struct ConcatOp
 {
-	std::string Init() const
+	inline std::string Init() const
 	{
 		return {};
 	}
+
 	bool valid = true;
 
-	bool Step(Step(Interpreter &interpreter, EvaluableNodeReference &function,
-		size_t /*i*/, std::string &acc) const
+	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, std::string &acc) const
 	{
 		auto [valid, s] = interpreter.InterpretNodeIntoStringValue(function);
 		if(!valid)
@@ -135,19 +131,13 @@ struct ConcatOp
 			valid = false;
 			return false;
 		}
-
-		if(interpreter.AreExecutionResourcesExhausted() ||
-			(interpreter.interpreterConstraints && s.size() > interpreter.interpreterConstraints->maxNumAllocatedNodes))
-		{
-			valid = false;
-			return false;
-		}
+		//don't need to check performance counters like regular concat because the nodes can't be evaluated recursively
 
 		acc += s;
 		return true;
 	}
 
-	EvaluableNodeReference Finish(const std::string &acc) const
+	inline EvaluableNodeReference Finish(const std::string &acc) const
 	{
 		return valid ? EvaluableNodeReference(acc) : EvaluableNodeReference::Null();
 	}
@@ -167,10 +157,10 @@ EvaluableNodeReference IterateAndReduceOrdered(Step(Interpreter &interpreter, Ev
 	size_t num_nodes = list_mcn.size();
 	for(size_t i = 0; i < num_nodes; ++i)
 	{
-		SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
-		SetTopCurrentValueInConstructionStack(list_ocn[i]);
+		interpreter.SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+		interpreter.SetTopCurrentValueInConstructionStack(list_ocn[i]);
 
-		if(!operation.Step(interpreter, function, i, acc))
+		if(!operation.Step(interpreter, function, acc))
 			return EvaluableNodeReference::Null();
 	}
 
@@ -196,10 +186,10 @@ EvaluableNodeReference IterateAndReduceMapped(Step(Interpreter &interpreter, Eva
 	auto &list_mcn = list->GetMappedChildNodesReference();
 	for(auto &[list_id, list_node] : list_mcn)
 	{
-		SetTopCurrentIndexInConstructionStack(list_id);
-		SetTopCurrentValueInConstructionStack(list_node_entry->second);
+		interpreter.SetTopCurrentIndexInConstructionStack(list_id);
+		interpreter.SetTopCurrentValueInConstructionStack(list_node_entry->second);
 
-		if(!operation.Step(interpreter, function, i, acc))
+		if(!operation.Step(interpreter, function, acc))
 			return EvaluableNodeReference::Null();
 	}
 

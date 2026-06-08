@@ -681,6 +681,7 @@
     <ClInclude Include="importexport\FileSupportYAML.h" />
     <ClInclude Include="IntegerSet.h" />
     <ClInclude Include="interpreter\Interpreter.h" />
+    <ClInclude Include="interpreter\InterpreterApplySpecializations.h" />
     <ClInclude Include="interpreter\InterpreterConcurrencyManager.h" />
     <ClInclude Include="interpreter\InterpreterUtilities.h" />
     <ClInclude Include="KnnCache.h" />

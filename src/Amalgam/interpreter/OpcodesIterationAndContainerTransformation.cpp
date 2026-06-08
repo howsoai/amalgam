@@ -825,7 +825,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					for(auto &[list_id, list_node] : list_mcn)
 					{
 						SetTopCurrentIndexInConstructionStack(list_id);
-						SetTopCurrentValueInConstructionStack(list_node_entry->second);
+						SetTopCurrentValueInConstructionStack(list_node);
 
 						InterpretNodeForImmediateUse(function, EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
 					}
@@ -843,7 +843,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					for(auto &[list_id, list_node] : list_mcn)
 					{
 						SetTopCurrentIndexInConstructionStack(list_id);
-						SetTopCurrentValueInConstructionStack(list_node_entry->second);
+						SetTopCurrentValueInConstructionStack(list_node);
 
 						sum += InterpretNodeIntoNumberValue(function);
 					}
@@ -861,7 +861,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					for(auto &[list_id, list_node] : list_mcn)
 					{
 						SetTopCurrentIndexInConstructionStack(list_id);
-						SetTopCurrentValueInConstructionStack(list_node_entry->second);
+						SetTopCurrentValueInConstructionStack(list_node);
 
 						product *= InterpretNodeIntoNumberValue(function);
 					}

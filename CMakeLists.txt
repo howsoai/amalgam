@@ -160,6 +160,7 @@ set(COMMON_SOURCE
     src/Amalgam/IntegerSet.h
     src/Amalgam/interpreter/Interpreter.cpp
     src/Amalgam/interpreter/Interpreter.h
+    src/Amalgam/interpreter/InterpreterApplySpecializations.h
     src/Amalgam/interpreter/InterpreterConcurrencyManager.h
     src/Amalgam/interpreter/InterpreterDebugger.cpp
     src/Amalgam/interpreter/InterpreterUtilities.h

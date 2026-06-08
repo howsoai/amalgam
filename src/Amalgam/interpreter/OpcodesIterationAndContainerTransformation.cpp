@@ -1,5 +1,6 @@
 //project headers:
 #include "Interpreter.h"
+//#include "InterpreterApplySpecializations.h"
 #include "InterpreterConcurrencyManager.h"
 #include "OpcodeDetails.h"
 
@@ -585,10 +586,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					}
 
 					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-					{
-						evaluableNodeManager->FreeNodeTreeIfPossible(result);
 						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-					}
 
 					return EvaluableNodeReference::Null();
 				}
@@ -607,10 +605,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					}
 
 					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-					{
-						evaluableNodeManager->FreeNodeTreeIfPossible(result);
 						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-					}
 
 					return EvaluableNodeReference(sum);
 				}
@@ -629,10 +624,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					}
 
 					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-					{
-						evaluableNodeManager->FreeNodeTreeIfPossible(result);
 						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-					}
 
 					return EvaluableNodeReference(product);
 				}
@@ -657,10 +649,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					}
 
 					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-					{
-						evaluableNodeManager->FreeNodeTreeIfPossible(result);
 						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-					}
 
 					if(value_found)
 						return EvaluableNodeReference(min);
@@ -688,10 +677,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					}
 
 					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-					{
-						evaluableNodeManager->FreeNodeTreeIfPossible(result);
 						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-					}
 
 					if(value_found)
 						return EvaluableNodeReference(max);
@@ -733,10 +719,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					}
 
 					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-					{
-						evaluableNodeManager->FreeNodeTreeIfPossible(result);
 						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-					}
 
 					if(concat_string_valid)
 						return EvaluableNodeReference(concat_string);
@@ -842,20 +825,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					for(auto &[list_id, list_node] : list_mcn)
 					{
 						SetTopCurrentIndexInConstructionStack(list_id);
-
-						//get the original data element
-						auto list_node_entry = list_mcn.find(list_id);
-						if(list_node_entry != end(list_mcn))
-							SetTopCurrentValueInConstructionStack(list_node_entry->second);
+						SetTopCurrentValueInConstructionStack(list_node_entry->second);
 
 						InterpretNodeForImmediateUse(function, EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
 					}
 
 					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-					{
-						evaluableNodeManager->FreeNodeTreeIfPossible(result);
 						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-					}
 
 					return EvaluableNodeReference::Null();
 				}
@@ -867,20 +843,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					for(auto &[list_id, list_node] : list_mcn)
 					{
 						SetTopCurrentIndexInConstructionStack(list_id);
-
-						//get the original data element
-						auto list_node_entry = list_mcn.find(list_id);
-						if(list_node_entry != end(list_mcn))
-							SetTopCurrentValueInConstructionStack(list_node_entry->second);
+						SetTopCurrentValueInConstructionStack(list_node_entry->second);
 
 						sum += InterpretNodeIntoNumberValue(function);
 					}
 
 					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-					{
-						evaluableNodeManager->FreeNodeTreeIfPossible(result);
 						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-					}
 
 					return EvaluableNodeReference(sum);
 				}
@@ -892,20 +861,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					for(auto &[list_id, list_node] : list_mcn)
 					{
 						SetTopCurrentIndexInConstructionStack(list_id);
-
-						//get the original data element
-						auto list_node_entry = list_mcn.find(list_id);
-						if(list_node_entry != end(list_mcn))
-							SetTopCurrentValueInConstructionStack(list_node_entry->second);
+						SetTopCurrentValueInConstructionStack(list_node_entry->second);
 
 						product *= InterpretNodeIntoNumberValue(function);
 					}
 
 					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
-					{
-						evaluableNodeManager->FreeNodeTreeIfPossible(result);
 						evaluableNodeManager->FreeNodeTreeIfPossible(list);
-					}
 
 					return EvaluableNodeReference(product);
 				}

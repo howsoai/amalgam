@@ -568,6 +568,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			}
 		#endif
 
+			//TODO 25595: make this code generic
 			//don't apply optimizations if there are no nodes, and let calling opcodes handle edge cases
 			if(immediate_result.AnyImmediateType() && num_nodes > 0)
 			{
@@ -636,7 +637,112 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 					return EvaluableNodeReference(product);
 				}
 
-				//TODO 25595: add support for min, max, concat
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::MIN_AS_NUMBER))
+				{
+					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+					double min = std::numeric_limits<double>::infinity();
+					bool value_found = false;
+					for(size_t i = 0; i < num_nodes; i++)
+					{
+						//pass value of list to be mapped
+						SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+						SetTopCurrentValueInConstructionStack(list_ocn[i]);
+
+						double value = InterpretNodeIntoNumberValue(function);
+						if(!FastIsNaN(value))
+						{
+							value_found = true;
+							min = std::min(value, min);
+						}
+					}
+
+					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+					{
+						evaluableNodeManager->FreeNodeTreeIfPossible(result);
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+					}
+
+					if(value_found)
+						return EvaluableNodeReference(min);
+					else
+						return EvaluableNodeReference::Null();
+				}
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::MAX_AS_NUMBER))
+				{
+					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+					double max = std::numeric_limits<double>::infinity();
+					bool value_found = false;
+					for(size_t i = 0; i < num_nodes; i++)
+					{
+						//pass value of list to be mapped
+						SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+						SetTopCurrentValueInConstructionStack(list_ocn[i]);
+
+						double value = InterpretNodeIntoNumberValue(function);
+						if(!FastIsNaN(value))
+						{
+							value_found = true;
+							max = std::max(value, max);
+						}
+					}
+
+					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+					{
+						evaluableNodeManager->FreeNodeTreeIfPossible(result);
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+					}
+
+					if(value_found)
+						return EvaluableNodeReference(max);
+					else
+						return EvaluableNodeReference::Null();
+				}
+
+				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::CONCAT_AS_STRING_ID))
+				{
+					PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+					bool concat_string_valid = true;
+					std::string concat_string;
+					for(size_t i = 0; i < num_nodes; i++)
+					{
+						//pass value of list to be mapped
+						SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+						SetTopCurrentValueInConstructionStack(list_ocn[i]);
+
+						auto [valid, s] = InterpretNodeIntoStringValue(function);
+						if(valid)
+						{
+							//want to exit early if out of resources because
+							//this opcode can chew through memory with string concatenation via returned nulls
+							if(AreExecutionResourcesExhausted() ||
+								(interpreterConstraints != nullptr &&
+									s.size() > interpreterConstraints->maxNumAllocatedNodes))
+							{
+								concat_string_valid = false;
+								break;
+							}
+
+							concat_string += s;
+						}
+						else
+						{
+							concat_string_valid = false;
+							break;
+						}
+					}
+
+					if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+					{
+						evaluableNodeManager->FreeNodeTreeIfPossible(result);
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+					}
+
+					if(concat_string_valid)
+						return EvaluableNodeReference(concat_string);
+					else
+						return EvaluableNodeReference::Null();
+				}
 			}
 
 			//create result_list as a copy of the current list, but without child nodes

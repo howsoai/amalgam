@@ -1129,37 +1129,78 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 	if(match_on_value || match_on_not_value)
 	{
-		//specialized path for just getting the count
-		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
+		//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
+		if(immediate_result.AnyImmediateType())
 		{
-			auto list = InterpretNodeForImmediateUse(ocn[list_index]);
-			if(EvaluableNode::IsNull(list))
-				return EvaluableNodeReference::Null();
-
-			size_t num_elements_not_filtered = 0;
-			if(list->IsAssociativeArray())
+			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
 			{
-				auto &list_mcn = list->GetMappedChildNodesReference();
-				for(auto &[cn_id, cn] : list_mcn)
+				auto list = InterpretNodeForImmediateUse(ocn[list_index]);
+				if(EvaluableNode::IsNull(list))
+					return EvaluableNodeReference::Null();
+
+				size_t num_elements_not_filtered = 0;
+				if(list->IsAssociativeArray())
 				{
-					//want either to be equal or match_on_not_value, but not both or neither
-					if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
-						num_elements_not_filtered++;
+					auto &list_mcn = list->GetMappedChildNodesReference();
+					for(auto &[cn_id, cn] : list_mcn)
+					{
+						//want either to be equal or match_on_not_value, but not both or neither
+						if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
+							num_elements_not_filtered++;
+					}
+
+				}
+				else if(list->IsOrderedArray())
+				{
+					auto &list_ocn = list->GetOrderedChildNodesReference();
+					for(auto &cn : list_ocn)
+					{
+						if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
+							num_elements_not_filtered++;
+					}
 				}
 
-			}
-			else if(list->IsOrderedArray())
-			{
-				auto &list_ocn = list->GetOrderedChildNodesReference();
-				for(auto &cn : list_ocn)
-				{
-					if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
-						num_elements_not_filtered++;
-				}
+				evaluableNodeManager->FreeNodeTreeIfPossible(list);
+				return EvaluableNodeReference(static_cast<double>(num_elements_not_filtered));
 			}
 
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-			return EvaluableNodeReference(static_cast<double>(num_elements_not_filtered));
+			auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
+					[&](auto operation)
+					{
+						auto list = InterpretNodeForImmediateUse(ocn[list_index]);
+						if(EvaluableNode::IsNull(list))
+							return EvaluableNodeReference::Null();
+
+						auto acc = operation.Init();
+
+						if(list->IsAssociativeArray())
+						{
+							auto &list_mcn = list->GetMappedChildNodesReference();
+							for(auto &[cn_id, cn] : list_mcn)
+							{
+								//want either to be equal or match_on_not_value, but not both or neither
+								if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
+									operation.Step<false>(*this, function, acc);
+							}
+
+						}
+						else if(list->IsOrderedArray())
+						{
+							auto &list_ocn = list->GetOrderedChildNodesReference();
+							for(auto &cn : list_ocn)
+							{
+								if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
+									operation.Step<false>(*this, function, acc);
+							}
+						}
+
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
+						return operation.Finish(acc);
+					});
+
+			if(computed)
+				return retval;
 		}
 
 		auto list = InterpretNode(ocn[list_index]);

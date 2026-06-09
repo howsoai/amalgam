@@ -154,7 +154,7 @@ struct ConcatOp
 		if constexpr(interpret_result)
 			std::tie(valid, s) = interpreter.InterpretNodeIntoStringValue(function);
 		else
-			std::tie(valid, s) = EvaluableNode::ToString(function);
+			std::tie(valid, s) = EvaluableNode::ToValidString(function);
 
 		if(!valid)
 		{

@@ -10,7 +10,7 @@ struct NoValueOp
 	}
 
 	template<bool interpret_result>
-	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, AccumType & /*acc*/) const
+	inline bool Step(Interpreter &interpreter, EvaluableNode *function, AccumType & /*acc*/) const
 	{
 		if constexpr(interpret_result)
 			interpreter.InterpretNodeForImmediateUse(function,
@@ -32,7 +32,7 @@ struct SumOp
 	}
 
 	template<bool interpret_result>
-	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, double &acc) const
+	inline bool Step(Interpreter &interpreter, EvaluableNode *function, double &acc) const
 	{
 		if constexpr(interpret_result)
 			acc += interpreter.InterpretNodeIntoNumberValue(function);
@@ -56,7 +56,7 @@ struct ProductOp
 	}
 
 	template<bool interpret_result>
-	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, double &acc) const
+	inline bool Step(Interpreter &interpreter, EvaluableNode *function, double &acc) const
 	{
 		if constexpr(interpret_result)
 			acc *= interpreter.InterpretNodeIntoNumberValue(function);
@@ -82,7 +82,7 @@ struct MinOp
 	bool value_found = false;
 
 	template<bool interpret_result>
-	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, double &acc)
+	inline bool Step(Interpreter &interpreter, EvaluableNode *function, double &acc)
 	{
 		double v;
 		if constexpr(interpret_result)
@@ -114,7 +114,7 @@ struct MaxOp
 	bool value_found = false;
 
 	template<bool interpret_result>
-	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, double &acc)
+	inline bool Step(Interpreter &interpreter, EvaluableNode *function, double &acc)
 	{
 		double v;
 		if constexpr(interpret_result)
@@ -146,7 +146,7 @@ struct ConcatOp
 	bool valid = true;
 
 	template<bool interpret_result>
-	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, std::string &acc) const
+	inline bool Step(Interpreter &interpreter, EvaluableNode *function, std::string &acc) const
 	{
 		bool valid;
 		std::string s;

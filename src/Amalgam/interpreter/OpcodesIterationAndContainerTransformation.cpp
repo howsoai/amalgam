@@ -997,7 +997,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		//specialized path for just getting the count
 		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
 		{
-			auto list = InterpretNode(ocn[list_index]);
+			auto list = InterpretNodeForImmediateUse(ocn[list_index]);
 			if(EvaluableNode::IsNull(list))
 				return EvaluableNodeReference::Null();
 
@@ -1103,8 +1103,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	//get list
 	auto list = InterpretNode(ocn[list_index]);
 	//if null, just return a new null, since it has no child nodes
-	if(EvaluableNode::IsNull(list))
+	if(EvaluableNode::IsNull(list) || list->IsImmediate())
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(list);
 		return EvaluableNodeReference::Null();
+	}
 
 	//create result_list as a copy of the current list, but without child nodes
 	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()),
@@ -1116,7 +1119,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	if(EvaluableNode::IsNull(function))
 		return result_list;
 
-	if(list->GetOrderedChildNodes().size() > 0)
+	if(list->IsOrderedArray())
 	{
 		auto &list_ocn = list->GetOrderedChildNodesReference();
 		auto &result_ocn = result_list->GetOrderedChildNodesReference();
@@ -1157,48 +1160,48 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 					if(!had_side_effects)
 						evaluableNodeManager->FreeNodeTreeIfPossible(evaluations[i]);
 				}
+
+				evaluableNodeManager->FreeNodeIfPossible(list);
+				return result_list;
 			}
 		}
-		else
-		#endif
-			//need this in a block for multithreading above
-		{
-			PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+	#endif
 
-			//iterate over all child nodes
+		PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+
+		//iterate over all child nodes
+		for(size_t i = 0; i < list_ocn.size(); i++)
+		{
+			EvaluableNode *cur_value = list_ocn[i];
+
+			SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+			SetTopCurrentValueInConstructionStack(cur_value);
+
+			//check current element
+			if(InterpretNodeIntoBoolValue(function))
+				result_ocn.push_back(cur_value);
+		}
+
+		had_side_effects = PopConstructionContextAndGetExecutionSideEffectFlag();
+		if(had_side_effects)
+		{
+			result_list.unique = false;
+			result_list.uniqueUnreferencedTopNode = false;
+		}
+
+		//free anything not in filtered list,
+		// but only free nodes if the result is still unique, and it won't be if it was accessed
+		// need to do this outside of the iteration loop in case anything is accessing the original list
+		if(list.unique && !list->GetNeedCycleCheck() && !had_side_effects)
+		{
+			size_t result_index = 0;
 			for(size_t i = 0; i < list_ocn.size(); i++)
 			{
-				EvaluableNode *cur_value = list_ocn[i];
-
-				SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
-				SetTopCurrentValueInConstructionStack(cur_value);
-
-				//check current element
-				if(InterpretNodeIntoBoolValue(function))
-					result_ocn.push_back(cur_value);
-			}
-
-			had_side_effects = PopConstructionContextAndGetExecutionSideEffectFlag();
-			if(had_side_effects)
-			{
-				result_list.unique = false;
-				result_list.uniqueUnreferencedTopNode = false;
-			}
-
-			//free anything not in filtered list,
-			// but only free nodes if the result is still unique, and it won't be if it was accessed
-			// need to do this outside of the iteration loop in case anything is accessing the original list
-			if(list.unique && !list->GetNeedCycleCheck() && !had_side_effects)
-			{
-				size_t result_index = 0;
-				for(size_t i = 0; i < list_ocn.size(); i++)
-				{
-					//if there are still results left, check if it matches
-					if(result_index < result_ocn.size() && list_ocn[i] == result_ocn[result_index])
-						result_index++;
-					else //free it
-						evaluableNodeManager->FreeNodeTree(list_ocn[i]);
-				}
+				//if there are still results left, check if it matches
+				if(result_index < result_ocn.size() && list_ocn[i] == result_ocn[result_index])
+					result_index++;
+				else //free it
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
 			}
 		}
 
@@ -1206,75 +1209,73 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		return result_list;
 	}
 
-	if(list->IsAssociativeArray())
+	//if made it here, then list is an assoc
+	auto &list_mcn = list->GetMappedChildNodesReference();
+
+#ifdef MULTITHREAD_SUPPORT
+	size_t num_nodes = list_mcn.size();
+	if(en->GetConcurrency() && num_nodes > 1)
 	{
-		auto &list_mcn = list->GetMappedChildNodesReference();
-
-	#ifdef MULTITHREAD_SUPPORT
-		size_t num_nodes = list_mcn.size();
-		if(en->GetConcurrency() && num_nodes > 1)
+		auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
+		if(Concurrency::threadPool.AreThreadsAvailable())
 		{
-			auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
-			if(Concurrency::threadPool.AreThreadsAvailable())
+			node_stack.PushEvaluableNode(list);
+			node_stack.PushEvaluableNode(result_list);
+			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+			result_list->SetNeedCycleCheck(true);
+
+			std::vector<EvaluableNodeReference> evaluations(num_nodes);
+
+			InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+
+			//kick off interpreters
+			size_t node_index = 0;
+			for(auto &[node_id, node] : list_mcn)
+				concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(function, list,
+					result_list, EvaluableNodeImmediateValueWithType(node_id), node, evaluations[node_index++]);
+
+			concurrency_manager.EndConcurrency();
+
+			concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result_list);
+			had_side_effects = concurrency_manager.HadSideEffects();
+
+			//iterate in same order with same node_index
+			node_index = 0;
+			for(auto &[node_id, node] : list_mcn)
 			{
-				node_stack.PushEvaluableNode(list);
-				node_stack.PushEvaluableNode(result_list);
-				//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
-				result_list->SetNeedCycleCheck(true);
+				if(EvaluableNode::ToBool(evaluations[node_index]))
+					result_list->SetMappedChildNode(node_id, node);
 
-				std::vector<EvaluableNodeReference> evaluations(num_nodes);
+				//only free nodes if the result is still unique, and it won't be if it was accessed
+				if(!had_side_effects)
+					evaluableNodeManager->FreeNodeTreeIfPossible(evaluations[node_index]);
 
-				InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
-
-				//kick off interpreters
-				size_t node_index = 0;
-				for(auto &[node_id, node] : list_mcn)
-					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(function,
-						list, result_list, EvaluableNodeImmediateValueWithType(node_id),
-						node, evaluations[node_index++]);
-
-				concurrency_manager.EndConcurrency();
-
-				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result_list);
-				had_side_effects = concurrency_manager.HadSideEffects();
-
-				//iterate in same order with same node_index
-				node_index = 0;
-				for(auto &[node_id, node] : list_mcn)
-				{
-					if(EvaluableNode::ToBool(evaluations[node_index]))
-						result_list->SetMappedChildNode(node_id, node);
-
-					//only free nodes if the result is still unique, and it won't be if it was accessed
-					if(!had_side_effects)
-						evaluableNodeManager->FreeNodeTreeIfPossible(evaluations[node_index]);
-
-					node_index++;
-				}
+				node_index++;
 			}
+
+			evaluableNodeManager->FreeNodeIfPossible(list);
+			return result_list;
 		}
-		else
-		#endif
-		{
-			PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
+	}
+#endif
 
-			//result_list is a copy of list, so it should already be the same size (no need to reserve)
-			for(auto &[cn_id, cn] : list_mcn)
-			{
-				SetTopCurrentIndexInConstructionStack(cn_id);
-				SetTopCurrentValueInConstructionStack(cn);
+	PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-				//if contained, add to result_list (and let SetMappedChildNode create the string reference)
-				if(InterpretNodeIntoBoolValue(function))
-					result_list->SetMappedChildNode(cn_id, cn);
-			}
+	//result_list is a copy of list, so it should already be the same size (no need to reserve)
+	for(auto &[cn_id, cn] : list_mcn)
+	{
+		SetTopCurrentIndexInConstructionStack(cn_id);
+		SetTopCurrentValueInConstructionStack(cn);
 
-			if(PopConstructionContextAndGetExecutionSideEffectFlag())
-			{
-				result_list.unique = false;
-				result_list.uniqueUnreferencedTopNode = false;
-			}
-		}
+		//if contained, add to result_list (and let SetMappedChildNode create the string reference)
+		if(InterpretNodeIntoBoolValue(function))
+			result_list->SetMappedChildNode(cn_id, cn);
+	}
+
+	if(PopConstructionContextAndGetExecutionSideEffectFlag())
+	{
+		result_list.unique = false;
+		result_list.uniqueUnreferencedTopNode = false;
 	}
 
 	evaluableNodeManager->FreeNodeIfPossible(list);

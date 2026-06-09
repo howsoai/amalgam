@@ -196,7 +196,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 #endif
 
 	//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
-	if(immediate_result.AnyImmediateType())
+	if(immediate_result.AnyComplexImmediateType())
 	{
 		auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
 			[&](auto operation)
@@ -598,7 +598,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		#endif
 
 			//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
-			if(immediate_result.AnyImmediateType() && num_nodes > 0)
+			if(immediate_result.AnyComplexImmediateType() && num_nodes > 0)
 			{
 				auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
 					[&](auto operation)
@@ -717,7 +717,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		#endif
 
 			//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
-			if(immediate_result.AnyImmediateType() && num_nodes > 0)
+			if(immediate_result.AnyComplexImmediateType() && num_nodes > 0)
 			{
 				auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
 					[&](auto operation)
@@ -1130,7 +1130,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	if(match_on_value || match_on_not_value)
 	{
 		//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
-		if(immediate_result.AnyImmediateType())
+		if(immediate_result.AnyComplexImmediateType())
 		{
 			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
 			{
@@ -2700,7 +2700,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	}
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
 	{
-		if(immediate_result.AnyImmediateType())
+		if(immediate_result.AnyPrimitiveImmediateType())
 		{
 			//parse into key, which may be the same StringID if not escaped and desired to be in an immediate format
 			auto cur_index_sid = Parser::ParseFromKeyStringIdToStringIdWithReference(enivwt.nodeValue.stringID);

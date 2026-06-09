@@ -210,7 +210,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 					//pass index of list to be mapped -- leave value at nullptr
 					SetTopCurrentIndexInConstructionStack(i * range_step_size + range_start);
 
-					if(!operation.Step(*this, function, acc))
+					if(!operation.Step<true>(*this, function, acc))
 						return EvaluableNodeReference::Null();
 				}
 
@@ -614,7 +614,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 							SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
 							SetTopCurrentValueInConstructionStack(list_ocn[i]);
 
-							if(!operation.Step(*this, function, acc))
+							if(!operation.Step<true>(*this, function, acc))
 								return EvaluableNodeReference::Null();
 						}
 
@@ -733,7 +733,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 							SetTopCurrentIndexInConstructionStack(map_id);
 							SetTopCurrentValueInConstructionStack(map_node);
 
-							if(!operation.Step(*this, function, acc))
+							if(!operation.Step<true>(*this, function, acc))
 								return EvaluableNodeReference::Null();
 						}
 

@@ -9,10 +9,12 @@ struct NoValueOp
 		return true;
 	}
 
+	template<bool interpret_result>
 	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, AccumType & /*acc*/) const
 	{
-		interpreter.InterpretNodeForImmediateUse(function,
-			EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
+		if constexpr(interpret_result)
+			interpreter.InterpretNodeForImmediateUse(function,
+				EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
 		return true;
 	}
 
@@ -29,11 +31,15 @@ struct SumOp
 		return 0.0;
 	}
 
+	template<bool interpret_result>
 	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, double &acc) const
 	{
-		double v = interpreter.InterpretNodeIntoNumberValue(function);
-		acc += v;
-		return true; //never aborts early
+		if constexpr(interpret_result)
+			acc += interpreter.InterpretNodeIntoNumberValue(function);
+		else
+			acc += EvaluableNode::ToNumber(function);
+
+		return true;
 	}
 
 	inline EvaluableNodeReference Finish(double acc) const
@@ -49,10 +55,14 @@ struct ProductOp
 		return 1.0;
 	}
 
+	template<bool interpret_result>
 	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, double &acc) const
 	{
-		double v = interpreter.InterpretNodeIntoNumberValue(function);
-		acc *= v;
+		if constexpr(interpret_result)
+			acc *= interpreter.InterpretNodeIntoNumberValue(function);
+		else
+			acc *= EvaluableNode::ToNumber(function);
+
 		return true;
 	}
 
@@ -71,9 +81,15 @@ struct MinOp
 
 	bool value_found = false;
 
+	template<bool interpret_result>
 	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, double &acc)
 	{
-		double v = interpreter.InterpretNodeIntoNumberValue(function);
+		double v;
+		if constexpr(interpret_result)
+			v = interpreter.InterpretNodeIntoNumberValue(function);
+		else
+			v = EvaluableNode::ToNumber(function);
+
 		if(!FastIsNaN(v))
 		{
 			value_found = true;
@@ -97,9 +113,15 @@ struct MaxOp
 
 	bool value_found = false;
 
+	template<bool interpret_result>
 	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, double &acc)
 	{
-		double v = interpreter.InterpretNodeIntoNumberValue(function);
+		double v;
+		if constexpr(interpret_result)
+			v = interpreter.InterpretNodeIntoNumberValue(function);
+		else
+			v = EvaluableNode::ToNumber(function);
+
 		if(!FastIsNaN(v))
 		{
 			value_found = true;
@@ -123,9 +145,17 @@ struct ConcatOp
 
 	bool valid = true;
 
+	template<bool interpret_result>
 	inline bool Step(Interpreter &interpreter, EvaluableNodeReference &function, std::string &acc) const
 	{
-		auto [valid, s] = interpreter.InterpretNodeIntoStringValue(function);
+		bool valid;
+		std::string s;
+
+		if constexpr(interpret_result)
+			std::tie(valid, s) = interpreter.InterpretNodeIntoStringValue(function);
+		else
+			std::tie(valid, s) = EvaluableNode::ToString(function);
+
 		if(!valid)
 		{
 			valid = false;

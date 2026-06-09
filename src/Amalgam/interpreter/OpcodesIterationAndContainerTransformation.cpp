@@ -210,7 +210,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 					//pass index of list to be mapped -- leave value at nullptr
 					SetTopCurrentIndexInConstructionStack(i * range_step_size + range_start);
 
-					if(!operation.Step<true>(*this, function, acc))
+					if(!operation.template Step<true>(*this, function, acc))
 						return EvaluableNodeReference::Null();
 				}
 
@@ -614,7 +614,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 							SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
 							SetTopCurrentValueInConstructionStack(list_ocn[i]);
 
-							if(!operation.Step<true>(*this, function, acc))
+							if(!operation.template Step<true>(*this, function, acc))
 								return EvaluableNodeReference::Null();
 						}
 
@@ -733,7 +733,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 							SetTopCurrentIndexInConstructionStack(map_id);
 							SetTopCurrentValueInConstructionStack(map_node);
 
-							if(!operation.Step<true>(*this, function, acc))
+							if(!operation.template Step<true>(*this, function, acc))
 								return EvaluableNodeReference::Null();
 						}
 
@@ -1180,7 +1180,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 							{
 								//want either to be equal or match_on_not_value, but not both or neither
 								if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
-									operation.Step<false>(*this, function, acc);
+									operation.template Step<false>(*this, function, acc);
 							}
 
 						}
@@ -1190,7 +1190,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 							for(auto &cn : list_ocn)
 							{
 								if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
-									operation.Step<false>(*this, function, acc);
+									operation.template Step<false>(*this, function, acc);
 							}
 						}
 

@@ -1180,9 +1180,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 							{
 								//want either to be equal or match_on_not_value, but not both or neither
 								if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
-									operation.template Step<false>(*this, function, acc);
+									operation.template Step<false>(*this, cn, acc);
 							}
-
 						}
 						else if(list->IsOrderedArray())
 						{
@@ -1190,7 +1189,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 							for(auto &cn : list_ocn)
 							{
 								if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
-									operation.template Step<false>(*this, function, acc);
+									operation.template Step<false>(*this, cn, acc);
 							}
 						}
 

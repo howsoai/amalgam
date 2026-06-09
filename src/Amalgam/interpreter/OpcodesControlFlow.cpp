@@ -712,17 +712,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 		{
 			if(new_type == ENT_CONCAT)
 			{
-				if(type_node->GetType() == ENT_CONCAT && type_node->GetOrderedChildNodesReference().size() > 0)
+				if(result_value.stringID == string_intern_pool.NOT_A_STRING_ID)
+					return EvaluableNodeReference::Null();
+
+				std::string combined_string;
+				if(type_node->GetType() == ENT_CONCAT)
 				{
-					auto [success, combined_string] = InterpretNodeIntoStringValue(type_node);
+					bool success = true;
+					std::tie(success, combined_string) = InterpretNodeIntoStringValue(type_node);
 					evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
 
-					if(!success || result_value.stringID == string_intern_pool.NOT_A_STRING_ID)
+					if(!success)
+					{
+						string_intern_pool.DestroyStringReference(result_value.stringID);
 						return EvaluableNodeReference::Null();
-
-					combined_string += result_value.stringID->string;
-					return AllocReturn(combined_string, immediate_result);
+					}
 				}
+
+				combined_string += result_value.stringID->string;
+				string_intern_pool.DestroyStringReference(result_value.stringID);
+				return AllocReturn(combined_string, immediate_result);
 			}
 		}
 	}

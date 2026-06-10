@@ -196,7 +196,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 #endif
 
 	//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
-	if(immediate_result.AnyComplexImmediateType())
+	if(immediate_result.AnyComplexImmediateType() && num_nodes > 0)
 	{
 		auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
 			[&](auto operation)
@@ -1129,7 +1129,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 	if(match_on_value || match_on_not_value)
 	{
-		//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
 		if(immediate_result.AnyComplexImmediateType())
 		{
 			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
@@ -2210,12 +2209,66 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 	auto index_list = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PopEvaluableNode();
 
-	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
-
 	if(EvaluableNode::IsNull(index_list))
-		return result;
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	auto &index_list_ocn = index_list->GetOrderedChildNodes();
+
+	//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
+	if(immediate_result.AnyComplexImmediateType() && index_list_ocn.size() > 0)
+	{
+		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
+			return AllocReturn(static_cast<double>(index_list_ocn.size()), immediate_result);
+
+		auto [computed, retval] = AttemptSpecializedInterpret(immediate_result, [&](auto operation)
+			{
+				auto acc = operation.Init();
+
+				if(zipped->IsAssociativeArray())
+				{
+					auto &zipped_mcn = zipped->GetMappedChildNodesReference();
+					for(auto &index : index_list_ocn)
+					{
+						StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index, true);
+
+						auto found_index = zipped_mcn.find(index_sid);
+						if(found_index != end(zipped_mcn))
+							operation.template Step<false>(*this, found_index->second, acc);
+						else
+							operation.template Step<false>(*this, nullptr, acc);
+					}
+				}
+				else if(zipped->IsOrderedArray())
+				{
+					auto &zipped_ocn = zipped->GetOrderedChildNodes();
+					for(auto &index : index_list_ocn)
+					{
+						double index_value = EvaluableNode::ToNumber(index);
+						if(index_value < 0)
+						{
+							index_value += zipped_ocn.size();
+							if(index_value < 0) //clamp at zero
+								index_value = 0;
+						}
+
+						if(index_value < zipped_ocn.size())
+							operation.template Step<false>(*this, zipped_ocn[static_cast<size_t>(index_value)], acc);
+						else
+							operation.template Step<false>(*this, nullptr, acc);
+					}
+				}
+
+				evaluableNodeManager->FreeNodeTreeIfPossible(index_list);
+				evaluableNodeManager->FreeNodeTreeIfPossible(zipped);
+				return operation.Finish(acc);
+			});
+
+		if(computed)
+			return retval;
+	}
+
+	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
+
 	result.UpdatePropertiesBasedOnAttachedNode(zipped, true);
 	size_t num_indices = index_list_ocn.size();
 	//can't guarantee cycle free since an index could be duplicated

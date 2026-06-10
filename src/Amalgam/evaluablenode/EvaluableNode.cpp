@@ -194,6 +194,20 @@ std::string EvaluableNode::ToString(EvaluableNode *e, bool key_string)
 	return Parser::Unparse(e, false, false, true);
 }
 
+std::pair<bool, std::string> EvaluableNode::ToValidString(EvaluableNode *e)
+{
+	if(EvaluableNode::IsNull(e))
+		return std::make_pair(false, "");
+
+	if(e->GetType() == ENT_STRING)
+		return std::make_pair(true, e->GetStringValue());
+
+	if(e->GetType() == ENT_NUMBER)
+		return std::make_pair(true, StringManipulation::NumberToString(e->GetNumberValueReference()));
+
+	return std::make_pair(true, Parser::Unparse(e, false, false, true));
+}
+
 StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e, bool key_string)
 {
 	if(EvaluableNode::IsNull(e))

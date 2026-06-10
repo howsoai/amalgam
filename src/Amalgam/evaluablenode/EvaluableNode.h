@@ -540,12 +540,7 @@ public:
 	static std::string ToString(EvaluableNode *e, bool key_string = false);
 
 	//converts the node to a string, returning true if it is a valid string
-	static std::pair<bool, std::string> ToValidString(EvaluableNode *e)
-	{
-		if(e != nullptr && e->GetType() == ENT_STRING)
-			return std::make_pair(true, e->GetStringValue());
-		return std::make_pair(false, "");
-	}
+	static std::pair<bool, std::string> ToValidString(EvaluableNode *e);
 
 	//converts node to an existing string. If it doesn't exist or it's null, it returns NOT_A_STRING_ID
 	//if key_string is true, then it will generate a string used for comparing in assoc keys

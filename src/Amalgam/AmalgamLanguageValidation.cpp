@@ -15,6 +15,7 @@ MakeAmalgamUnitTests(Ts... elems)
 }
 
 auto _amalgam_unit_tests = MakeAmalgamUnitTests(
+	AmalgamExample{ R"&((apply "concat" (unzip {a 1 b 2 c 3} ["a" "b" "c"])))&", R"("123")" },
 	AmalgamExample{ R"&((associate "a" 1 "b" 2))&", R"({a 1 b 2})" },
 	AmalgamExample{ R"&((lambda
 	(associate "a" 1 "b" 2)

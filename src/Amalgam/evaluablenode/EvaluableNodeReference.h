@@ -786,12 +786,9 @@ public:
 		return *this;
 	}
 
-protected:
 	//align so the entire data structure takes up 16 bytes
 #pragma pack(push, 4)
 	EvaluableNodeImmediateValueWithType value;
-
-public:
 
 	//true if this is the only reference to the result
 	bool unique;

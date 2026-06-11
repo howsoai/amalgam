@@ -216,7 +216,9 @@ jobs:
           echo "Build preset: $PRESET"
 
       - name: Enable developer commandline tools
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: TheMrMilchmann/setup-msvc-dev@v4
+        with:
+          arch: x86_amd64
 
       - name: Download tz data
         shell: pwsh

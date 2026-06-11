@@ -7,10 +7,11 @@
     * [IDE Syntax Highlighting](#ide-syntax-highlighting)
     * [IDE Debugging](#ide-debugging)
 1. [Amalgam Interpreter](#amalgam-interpreter)
-    * [Recommended System Specs](#recommended-system-specs)
-    * [Pre-built Binaries](#pre-built-binaries)
+    * [Build Matrix](#build-matrix)
     * [Dev/local Builds](#devlocal-builds)
+    * [Runtime Requirements](#runtime-requirements)
     * [Usage](#usage)
+1. [License](#license)
 1. [Contributing](#contributing)
 
 ## Introduction
@@ -29,7 +30,7 @@ Initial development on Amalgam began in 2011. It was first offered as a commerci
 
 When referencing the language: 'Amalgam', 'amalgam', 'amalgam-lang', and 'amalgam language' are used interchangeably with **Amalgam** being preferred. When referencing the interpreter: 'Amalgam interpreter', 'interpreter', 'Amalgam app', and 'Amalgam lib' are used interchangeably.
 
-### Programming in Amalgam
+## Programming in Amalgam
 
 See the [Amalgam beginner's guide](docs/beginner_guide.md) to get started.
 
@@ -57,13 +58,9 @@ Debugging Amalgam is supported through the [VSCode Plugin](https://github.com/ho
 
 ## Amalgam Interpreter
 
-The Amalgam interpreter is written in C++ and uses the newest standards to create a fast, cross-platform experience when running Amalgam code.
+The Amalgam interpreter is written conforming to the C++ 17 standard so theoretically should be compilable on virtually any modern system.
 
-### Pre-built Binaries
-
-Amalgam is designed to be platform agnostic but binaries are provided for common systems.
-
-#### Build Matrix
+### Build Matrix
 
 An interpreter application and shared library (dll/so/dylib) are built for each release. A versioned tarball is created for each target platform in the build matrix:
 
@@ -89,6 +86,7 @@ An interpreter application and shared library (dll/so/dylib) are built for each 
         * [OpenMP](https://en.wikipedia.org/wiki/OpenMP)
         * Binary postfix: '-omp'
         * Interpreter uses OpenMP threading internally to minimize latency of query operations
+		* Can be built with single-threaded or multi-threaded
     * MT-NoAVX
         * Multi-threaded but without AVX intrinsics
         * Binary postfix: '-mt-noavx'
@@ -160,7 +158,7 @@ WASM support is still experimental.
 
 * No specific runtime requirements at this time
 
-### Dev/local Builds
+## Dev/local Builds
 
 Dev and local builds can be either run using a CLI or IDE.
 
@@ -212,7 +210,7 @@ Automation uses the CMake generated build system (ninja), but Visual Studio or V
 1. vs_static : Visual Studio solution (local static non-CMake generated: [Amalgam.sln](Amalgam.sln))
     * `open-in-vs.bat vs_static`
 
-Note: on Windows, some issues have been found with using the CMake generated VS solutions and the native CMake support in Visual Studio and VSCode. If the developer experience is unstable, it is recommended that the `vs_static` build be used instead of the CMake generated build. It is planned to (eventually) deprecate this static VS solution when CMake support in VS becomes more stable.
+Note: on Windows, some issues have been found with using the CMake generated VS solutions and the native CMake support in Visual Studio and VSCode.  If the developer experience is unstable, it is recommended that the `vs_static` build be used instead of the CMake generated build.
 
 #### Build Customizations
 
@@ -236,7 +234,7 @@ Unit tests can be run via an amalgam executable via the `--validate-amalgam` par
 ./amalgam-mt --validate-amalgam
 ```
 
-### Usage
+## Usage
 
 Running the binary without any parameters is typical of many interpreters and yields a read-execute-print loop.  Help is available from within:
 

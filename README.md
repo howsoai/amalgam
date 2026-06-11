@@ -15,15 +15,15 @@
 
 ## Introduction
 
-Amalgam&reg; is a domain specific language ([DSL](https://en.wikipedia.org/wiki/Domain-specific_language)) developed primarily for [genetic programming](https://en.wikipedia.org/wiki/Genetic_programming) and [instance based machine learning](https://en.wikipedia.org/wiki/Instance-based_learning), but also for simulation, agent based modeling, data storage and retrieval, the mathematics of probability theory and information theory, and game content and AI. The language format is somewhat LISP-like in that it uses parenthesized list format with prefix notation and is geared toward functional programming, where there is a one-to-one mapping between the code and the corresponding parse tree.
+Amalgam&reg; is a programming language developed for [genetic programming](https://en.wikipedia.org/wiki/Genetic_programming) and [instance based machine learning](https://en.wikipedia.org/wiki/Instance-based_learning), as well as for simulation, agent based modeling, data storage and retrieval, the mathematics of probability theory and information theory, and game content and AI.  The language format is somewhat LISP-like in that it uses parenthesized list format with prefix notation and is designed for functional programming.  There is a one-to-one mapping between the code and the corresponding parse tree.  Its one-to-one parse-tree design coupled with its ability to sandbox execution makes it well suited for LLMs.  
 
-Whereas virtually all practical programming languages are primarily designed for some combination of programmer productivity and computational performance, Amalgam prioritizes code matching and merging, as well as a deep equivalence of code and data. Amalgam uses _entities_ to store code and data, with a rich query system to find entities by their _labels_. The language uses a variable stack, but all attributes and methods are stored directly as labels in entities. There is no separate class versus instance, but entities can be used as prototypes to be copied and modified. Though code and data are represented as trees from the root of each entity, graphs in code and data structures are permitted and are flattened to code using special references. Further, instead of failing early when there is an error, Amalgam supports genetic programming and code mixing by being extremely weakly typed, and attempts to find a way to execute code no matter whether types match or not.
+Whereas virtually all practical programming languages are primarily designed for some combination of programmer productivity and computational performance, Amalgam prioritizes code matching and merging, as well as a deep equivalence of code and data.  Amalgam uses _entities_ to store code and data, with a rich query system to find entities by their _labels_, which are roughly equivalent to attributes in object oriented programming.  There is no separate class versus instance; entities can be used as prototypes to be copied and modified.  Though code and data are represented as trees from the root of each entity, graphs in code and data structures are permitted and are automatically flattened to code using special references.  Amalgam supports genetic programming and code mixing by being weakly typed, and attempts to find a way to execute code no matter whether types match or not.
 
-Amalgam takes inspiration from many programming languages, but those with the largest influence are LISP, Scheme, Haskell, Perl, Smalltalk, and Python. Despite being much like LISP, there is deliberately no macro system. This is to make sure that code is semantically similar whenever the code is similar, regardless of context. It makes it easy to find the difference between x and y as an executable patch, and then apply that patch to z as `(call (difference x y) {_ z})`, or semantically mix blocks of code a and b as `(mix a b)`. Amalgam is not a purely functional language. It has imperative and object oriented capabilities, but is primarily optimized for functional programming with relatively few opcodes that are functionally flexible based on parameters to maximize flexibility with code mixing and matching.
+Amalgam takes inspiration from many programming languages, but the largest influences are LISP, Scheme, Haskell, Perl, Smalltalk, and Python.  Despite being much like LISP, there is deliberately no macro system. This is to make sure that code is semantically similar whenever the code is similar, regardless of context.  This makes it easy to find the difference between x and y as an executable patch, and then apply that patch to z as `(call (difference x y) {_ z})`, or semantically mix blocks of code a and b as `(mix a b)`.  Though Amalgam is optimized for functional programming, it is not a purely functional language.  It has imperative and object-oriented capabilities.
 
-Genetic programming can create arbitrary code, so there is always a chance that an evolved program ends up consuming more CPU or memory resources than desired, or may attempt to affect the system outside of the interpreter.  For these reasons, there are many strict sandboxing aspects of the language with optional constraints on access, CPU, and memory.  Amalgam also has a rich permissions system, which controls what entities and code are able to do, whether writing to the console or executing system commands.
+Genetic programming can create arbitrary code, so there is always a chance that an evolved program consumes considerable CPU or memory resources, or may attempt to affect the system outside of the interpreter.  For these reasons, there are many strict sandboxing aspects of the language with optional constraints on access, CPU, and memory.  Amalgam has a rich permissions system, which controls what entities and code are able to do, whether writing to the console or executing system commands.
 
-The Amalgam interpreter was designed to be used a standalone interpreter and to build functionality for other programming languages and environments. It does not currently have rich support for linking C libraries into the language, but that is planned for future functionality.
+The Amalgam interpreter does not currently have rich support for linking C libraries into the language, but that is planned for future functionality.
 
 Initial development on Amalgam began in 2011. It was first offered as a commercial product in 2014 at Hazardous Software Inc. and was open sourced in September 2023 by Howso Incorporated (formerly known as Diveplane Corporation, a company spun out of Hazardous Software Inc.).
 
@@ -59,15 +59,9 @@ Debugging Amalgam is supported through the [VSCode Plugin](https://github.com/ho
 
 The Amalgam interpreter is written in C++ and uses the newest standards to create a fast, cross-platform experience when running Amalgam code.
 
-### Recommended System Specs
-
-At least 8 physical cores and 16GB of RAM.
-
-Although the interpreter itself can run on very few system resources, the above recommendation is based on the typical type of workloads that are compute and memory intensive.
-
 ### Pre-built Binaries
 
-Pre-built binaries are provided for specific target systems. They are as statically linked as possible without overly complicating the build.
+Amalgam is designed to be platform agnostic but binaries are provided for common systems.
 
 #### Build Matrix
 
@@ -207,9 +201,7 @@ All CTest run options can be on the [CMake website](https://cmake.org/cmake/help
 
 #### IDE
 
-Automation uses the CMake generated build system (ninja), but Visual Studio or VSCode are the best options for local development. In general, VScode is recommended as it provides the most uniform developer experience across platforms.
-
-For the best C++ developer experience, Visual Studio on Windows is the ideal development environment (no paid features needed, VS Community edition works). A helper script [open-in-vs.bat](open-in-vs.bat) is provided to set-up the CLI with VS build tools and open the IDE. It can be used to open multiple variants of the Windows build:
+Automation uses the CMake generated build system (ninja), but Visual Studio or VSCode are the best options for local development.  A helper script [open-in-vs.bat](open-in-vs.bat) is provided to set-up the CLI with VS build tools and open the IDE.  On Windows, it can be used via:
 
 1. Default (no args) : Visual Studio solution (CMake generated, "amd64-windows-vs" preset)
     * `open-in-vs.bat`
@@ -246,9 +238,7 @@ Unit tests can be run via an amalgam executable via the `--validate-amalgam` par
 
 ### Usage
 
-Given an Amalgam interpreter, usage is similar to other popular interpreters.
-
-Running the binary without any parameters yields a read-execute-print loop, and help is available from within:
+Running the binary without any parameters is typical of many interpreters and yields a read-execute-print loop.  Help is available from within:
 
 ```bash
 ./amalgam-mt

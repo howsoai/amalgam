@@ -111,7 +111,7 @@ Though Amalgam is intended to support any C++17 compliant compiler, the current 
 * CMake 3.30
 * Ninja 1.10
 * Windows:
-    * Visual Studio 2022 v143
+    * Visual Studio 2026 v145
 * Linux:
     * Ubuntu 20.04, gcc-10
 * macOS (Darwin):

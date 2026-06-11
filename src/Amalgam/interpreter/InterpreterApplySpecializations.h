@@ -24,6 +24,26 @@ struct NoValueOp
 	}
 };
 
+struct SizeOp
+{
+	inline size_t Init() const
+	{
+		return 0;
+	}
+
+	template<bool interpret_result>
+	inline bool Step(Interpreter &interpreter, EvaluableNode *function, size_t &acc) const
+	{
+		acc++;
+		return true;
+	}
+
+	inline EvaluableNodeReference Finish(size_t acc) const
+	{
+		return EvaluableNodeReference(static_cast<double>(acc));
+	}
+};
+
 struct SumOp
 {
 	inline double Init() const
@@ -177,23 +197,31 @@ template<typename IterationFunction>
 inline std::pair<bool, EvaluableNodeReference> AttemptSpecializedInterpret(
 	EvaluableNodeRequestedValueTypes immediate_result, IterationFunction &&iteration_function)
 {
-	if(immediate_result.NoValueRequested())
+	//use a switch statement because the specialized interpret requests must only allow a single type
+	switch(immediate_result.requestedValueTypes)
+	{
+	case EvaluableNodeRequestedValueTypes::Type::NULL_VALUE:
 		return std::make_pair(true, iteration_function(NoValueOp{}));
 
-	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER))
+	case EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER:
+		return std::make_pair(true, iteration_function(SizeOp{}));
+
+	case EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER:
 		return std::make_pair(true, iteration_function(SumOp{}));
 
-	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::PRODUCT_AS_NUMBER))
+	case EvaluableNodeRequestedValueTypes::Type::PRODUCT_AS_NUMBER:
 		return std::make_pair(true, iteration_function(ProductOp{}));
 
-	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::MIN_AS_NUMBER))
+	case EvaluableNodeRequestedValueTypes::Type::MIN_AS_NUMBER:
 		return std::make_pair(true, iteration_function(MinOp{}));
 
-	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::MAX_AS_NUMBER))
+	case EvaluableNodeRequestedValueTypes::Type::MAX_AS_NUMBER:
 		return std::make_pair(true, iteration_function(MaxOp{}));
 
-	if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::CONCAT_AS_STRING_ID))
+	case EvaluableNodeRequestedValueTypes::Type::CONCAT_AS_STRING_ID:
 		return std::make_pair(true, iteration_function(ConcatOp{}));
 
-	return std::make_pair(false, EvaluableNodeReference::Null());
+	default:
+		return std::make_pair(false, EvaluableNodeReference::Null());
+	}
 }

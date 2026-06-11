@@ -150,7 +150,6 @@ public:
 		return requestedValueTypes == Type::NULL_VALUE;
 	}
 
-private:
 	Type requestedValueTypes;
 };
 

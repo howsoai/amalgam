@@ -1307,6 +1307,38 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		}
 	#endif
 
+		if(immediate_result.AnyComplexImmediateType())
+		{
+			auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
+					[&](auto operation)
+					{
+						PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+
+						auto acc = operation.Init();
+
+						//iterate over all child nodes
+						for(size_t i = 0; i < list_ocn.size(); i++)
+						{
+							EvaluableNode *cur_value = list_ocn[i];
+
+							SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+							SetTopCurrentValueInConstructionStack(cur_value);
+
+							//check current element
+							if(InterpretNodeIntoBoolValue(function))
+								operation.template Step<false>(*this, cur_value, acc);
+						}
+
+						if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+							evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
+						return operation.Finish(acc);
+					});
+
+			if(computed)
+				return retval;
+		}
+
 		PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
 		//iterate over all child nodes
@@ -1398,6 +1430,36 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		}
 	}
 #endif
+
+	if(immediate_result.AnyComplexImmediateType())
+	{
+		auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
+				[&](auto operation)
+				{
+				PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+
+				auto acc = operation.Init();
+
+				//iterate over all child nodes
+				for(auto &[cn_id, cn] : list_mcn)
+				{
+					SetTopCurrentIndexInConstructionStack(cn_id);
+					SetTopCurrentValueInConstructionStack(cn);
+
+					//if contained, add to result_list (and let SetMappedChildNode create the string reference)
+					if(InterpretNodeIntoBoolValue(function))
+						operation.template Step<false>(*this, cn, acc);
+				}
+
+				if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+					evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
+				return operation.Finish(acc);
+				});
+
+		if(computed)
+			return retval;
+	}
 
 	PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 

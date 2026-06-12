@@ -671,6 +671,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, 
 	//build string from all child nodes
 	auto &ocn = en->GetOrderedChildNodesReference();
 
+	if(ocn.size() == 0)
+		return EvaluableNodeReference::Null();
+
 	//if only one parameter is specified, do a fast shortcut
 	if(ocn.size() == 1)
 		return InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0], immediate_result);

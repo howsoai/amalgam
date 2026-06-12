@@ -36,7 +36,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	//when retrieving symbol, only need to retain the node if it's not an immediate type
-	bool retain_node = !immediate_result.AnyImmediateType();
+	bool retain_node = !immediate_result.AnyPrimitiveImmediateType();
 	auto [symbol_value, found] = GetScopeStackSymbol(sid, retain_node);
 	if(found)
 		return EvaluableNodeReference::CoerceNonUniqueEvaluableNodeToImmediateIfPossible(symbol_value, immediate_result);
@@ -941,7 +941,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
 
 		//when retrieving symbol, only need to retain the node if it's not an immediate type
-		bool retain_node = !immediate_result.AnyImmediateType();
+		bool retain_node = !immediate_result.AnyPrimitiveImmediateType();
 		auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid, retain_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 		return EvaluableNodeReference::CoerceNonUniqueEvaluableNodeToImmediateIfPossible(symbol_value, immediate_result);

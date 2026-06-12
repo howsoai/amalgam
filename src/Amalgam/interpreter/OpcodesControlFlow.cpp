@@ -630,14 +630,114 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 	auto opcode_new_value_return_type = GetOpcodeNewValueReturnType(new_type);
 	bool may_opcode_cause_node_update_in_current_entity = MayOpcodeCauseNodeUpdateInCurrentEntity(new_type);
 
+	EvaluableNodeRequestedValueTypes immediate_types;
+	switch(new_type)
+	{
+	case ENT_ADD:
+		immediate_types = EvaluableNodeRequestedValueTypes(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER);
+		break;
+	case ENT_MULTIPLY:
+		immediate_types = EvaluableNodeRequestedValueTypes(EvaluableNodeRequestedValueTypes::Type::PRODUCT_AS_NUMBER);
+		break;
+	case ENT_MIN:
+		immediate_types = EvaluableNodeRequestedValueTypes(EvaluableNodeRequestedValueTypes::Type::MIN_AS_NUMBER);
+		break;
+	case ENT_MAX:
+		immediate_types = EvaluableNodeRequestedValueTypes(EvaluableNodeRequestedValueTypes::Type::MAX_AS_NUMBER);
+		break;
+	case ENT_CONCAT:
+		immediate_types = EvaluableNodeRequestedValueTypes(EvaluableNodeRequestedValueTypes::Type::CONCAT_AS_STRING_ID);
+		break;
+	default:
+		break;
+	}	
+
 	EvaluableNodeReference source;
 	if(may_opcode_cause_node_update_in_current_entity
 			|| opcode_new_value_return_type == OpcodeDetails::OpcodeReturnNewnessType::PARTIAL
 			|| opcode_new_value_return_type == OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL
 			|| opcode_new_value_return_type == OpcodeDetails::OpcodeReturnNewnessType::EXISTING)
-		source = InterpretNode(ocn[1]);
+		source = InterpretNode(ocn[1], immediate_types);
 	else //returns a new value without affecting anything else, can call potentially faster interpret
-		source = InterpretNodeForImmediateUse(ocn[1]);
+		source = InterpretNodeForImmediateUse(ocn[1], immediate_types);
+
+	if(source.IsImmediateValue())
+	{
+		auto &result_value = source.GetValue().nodeValue;
+		auto &result_type = source.GetValue().nodeType;
+		if(result_type == ENIVT_NUMBER)
+		{
+			if(new_type == ENT_ADD)
+			{
+				double sum = result_value.number;
+				//if there are further parameters, need to add them to the sum
+				if(type_node->GetType() == ENT_ADD && type_node->GetOrderedChildNodesReference().size() > 0)
+					sum += InterpretNodeIntoNumberValue(type_node);
+				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+
+				return AllocReturn(sum, immediate_result);
+			}
+
+			if(new_type == ENT_MULTIPLY)
+			{
+				double product = result_value.number;
+				//if there are further parameters, need to multiply them to the product
+				if(type_node->GetType() == ENT_MULTIPLY && type_node->GetOrderedChildNodesReference().size() > 0)
+					product *= InterpretNodeIntoNumberValue(type_node);
+				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+
+				return AllocReturn(product, immediate_result);
+			}
+
+			if(new_type == ENT_MIN)
+			{
+				double min = result_value.number;
+				//if there are further parameters, need to consider them
+				if(type_node->GetType() == ENT_MIN && type_node->GetOrderedChildNodesReference().size() > 0)
+					min = std::min(min, InterpretNodeIntoNumberValue(type_node));
+				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+
+				return AllocReturn(min, immediate_result);
+			}
+
+			if(new_type == ENT_MAX)
+			{
+				double max = result_value.number;
+				//if there are further parameters, need to consider them
+				if(type_node->GetType() == ENT_MAX && type_node->GetOrderedChildNodesReference().size() > 0)
+					max = std::max(max, InterpretNodeIntoNumberValue(type_node));
+				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+
+				return AllocReturn(max, immediate_result);
+			}
+		}
+		else if(result_type == ENIVT_STRING_ID)
+		{
+			if(new_type == ENT_CONCAT)
+			{
+				if(result_value.stringID == string_intern_pool.NOT_A_STRING_ID)
+					return EvaluableNodeReference::Null();
+
+				std::string combined_string;
+				if(type_node->GetType() == ENT_CONCAT)
+				{
+					bool success = true;
+					std::tie(success, combined_string) = InterpretNodeIntoStringValue(type_node);
+					evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+
+					if(!success)
+					{
+						string_intern_pool.DestroyStringReference(result_value.stringID);
+						return EvaluableNodeReference::Null();
+					}
+				}
+
+				combined_string += result_value.stringID->string;
+				string_intern_pool.DestroyStringReference(result_value.stringID);
+				return AllocReturn(combined_string, immediate_result);
+			}
+		}
+	}
 
 	//change source type
 	if(source == nullptr)

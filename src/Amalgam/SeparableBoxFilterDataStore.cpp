@@ -1529,14 +1529,14 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 	if(call_type != ENT_CALL_ON_ENTITY)
 		result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
 			&scope_stack, false, &calling_interpreter, nullptr, nullptr,
-			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_STANDARD_IMMEDIATE
+			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_PRIMITIVE_IMMEDIATE
 	#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
 	#endif
 		);
 	else
 		result = called_entity->ExecuteOnEntity(function, &scope_stack, &calling_interpreter, nullptr, nullptr,
-			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_STANDARD_IMMEDIATE
+			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_PRIMITIVE_IMMEDIATE
 	#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
 	#endif
@@ -1559,7 +1559,11 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 		calling_interpreter.interpreterConstraints->AccruePerformanceCounters(&interpreter_constraints);
 
 	//ensure in immediate value form if possible since distance evaluation expects it for performance
-	auto value_as_immediate_if_possible = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(result);
+	EvaluableNodeImmediateValueWithType value_as_immediate_if_possible;
+	if(result.IsImmediateValue())
+		value_as_immediate_if_possible = result.value;
+	else
+		value_as_immediate_if_possible = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(result);
 
 	double distance = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
 		value_as_immediate_if_possible, query_feature_index, high_accuracy);

@@ -126,7 +126,7 @@ Output:
 #### Parameters
 `* function [assoc params]`
 #### Description
-Evaluates `function` after pushing the `params` assoc onto the scope stack.
+Evaluates `function` after pushing the `params` assoc onto the scope stack.  If `params` is missing or null, then it will allow access to the scope stack of the caller.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

@@ -65,7 +65,9 @@ public:
 		FREEABLE = 1 << 4,
 		//if true, then known to be in use with regard to garbage collection
 		KNOWN_TO_BE_IN_USE = 1 << 5,
-		ALL = HAS_EXTENDED_VALUE | NEED_CYCLE_CHECK | IDEMPOTENT | CONCURRENT | FREEABLE | KNOWN_TO_BE_IN_USE
+		//if true, then the scope stops at this node
+		SCOPE_BREAK = 1 << 6,
+		ALL = HAS_EXTENDED_VALUE | NEED_CYCLE_CHECK | IDEMPOTENT | CONCURRENT | FREEABLE | KNOWN_TO_BE_IN_USE | SCOPE_BREAK
 	};
 
 	//constructors
@@ -965,6 +967,18 @@ public:
 		SetAttributeAtomic(Attribute::KNOWN_TO_BE_IN_USE, in_use);
 	}
 #endif
+
+	//if true, then the scope stops at this node
+	__forceinline bool IsScopeBreak()
+	{
+		return HasAttribute(Attribute::SCOPE_BREAK);
+	}
+
+	//sets whether the scope stops at this node
+	__forceinline void SetScopeBreak(bool scope_break)
+	{
+		SetAttribute(Attribute::SCOPE_BREAK, scope_break);
+	}
 
 	//returns true if value contains an extended type
 	__forceinline bool HasExtendedValue()

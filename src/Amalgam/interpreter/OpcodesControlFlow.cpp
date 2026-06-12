@@ -145,7 +145,7 @@ static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CAL
 	OpcodeDetails d;
 	d.parameters = R"(* function [assoc params])";
 	d.returns = R"(any)";
-	d.description = R"(Evaluates `function` after pushing the `params` assoc onto the scope stack.)";
+	d.description = R"(Evaluates `function` after pushing the `params` assoc onto the scope stack.  If `params` is missing or null, then it will allow access to the scope stack of the caller.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
 	{
@@ -203,7 +203,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 		profiling_call = true;
 	}
 
-	InterpretAndPushNewScopeStackNode(ocn.size() > 1 ? ocn[1] : nullptr);
+	if(ocn.size() > 1 && !EvaluableNode::IsNull(ocn[1]))
+		InterpretAndPushNewScopeStackNode(ocn[1], true);
+	else
+		InterpretAndPushNewScopeStackNode(nullptr, false);
 
 	//call the code
 	auto result = InterpretNode(function, immediate_result);

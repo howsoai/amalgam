@@ -156,6 +156,13 @@ public:
 			interpreter, entity, out);
 	}
 
+	//returns the container for the knn cache for index
+	//note that this should only be called after PreCacheKnn has been called
+	std::vector<DistanceReferencePair<size_t>> &GetKnnCache(size_t index)
+	{
+		return cachedNeighbors[index];
+	}
+
 	//returns a pointer to the relevant indices of the cache
 	constexpr BitArrayIntegerSet *GetRelevantEntities()
 	{
@@ -172,6 +179,12 @@ public:
 	inline size_t GetEndEntityIndex()
 	{
 		return relevantIndices->GetEndInteger();
+	}
+
+	//returns the generalized distance evaluator
+	inline GeneralizedDistanceEvaluator *GetDistanceEvaluator()
+	{
+		return distEvaluator;
 	}
 
 protected:

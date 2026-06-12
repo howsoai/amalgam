@@ -472,7 +472,7 @@ EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
 		interpreter.memoryModificationLock = std::move(*enm_lock);
 #endif
 
-	EvaluableNodeReference retval = interpreter.ExecuteNode(code, scope_stack);
+	EvaluableNodeReference retval = interpreter.ExecuteNode(code, scope_stack, nullptr, nullptr, immediate_result);
 
 #ifdef MULTITHREAD_SUPPORT
 	if(enm_lock != nullptr)

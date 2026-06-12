@@ -387,75 +387,42 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	AmlgAssert(IsEvaluableNodeTypeValid(type));
 #endif
 
+	//child nodes were copied, so propagate flags
+	SetIsIdempotent(n->GetIsIdempotent());
+	SetNeedCycleCheck(n->GetNeedCycleCheck());
+
 	if(DoesEvaluableNodeTypeUseAssocData(type))
 	{
 		value.ConstructMappedChildNodes();
 		value.mappedChildNodes = n->GetMappedChildNodesReference();
 
-		SetIsIdempotent(true);
 		for(auto &[sid, cn] : value.mappedChildNodes)
-		{
 			string_intern_pool.CreateStringReference(sid);
-			if(cn != nullptr && !cn->GetIsIdempotent())
-				SetIsIdempotent(false);
-		}
-
-		//child nodes were copied, so propagate whether cycle free
-		SetNeedCycleCheck(n->GetNeedCycleCheck());
 	}
 	else if(DoesEvaluableNodeTypeUseNullData(type))
 	{
 		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 		value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-		SetIsIdempotent(true);
-		SetNeedCycleCheck(false);
 	}
 	else if(DoesEvaluableNodeTypeUseBoolData(type))
 	{
 		AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
 		value.boolValueContainer.boolValue = n->GetBoolValueReference();
-		SetIsIdempotent(true);
-		SetNeedCycleCheck(false);
 	}
 	else if(DoesEvaluableNodeTypeUseNumberData(type))
 	{
 		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 		value.numberAndNullValueContainer.numberValue = n->GetNumberValueReference();
-		SetIsIdempotent(true);
-		SetNeedCycleCheck(false);
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(type))
 	{
 		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(n->GetStringIDReference());
 		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
-		SetIsIdempotent(type == ENT_STRING);
-		SetNeedCycleCheck(false);
 	}
 	else //ordered
 	{
 		value.ConstructOrderedChildNodes();
 		value.orderedChildNodes = n->GetOrderedChildNodesReference();
-
-		//update idempotency
-		if(IsEvaluableNodeTypePotentiallyIdempotent(type))
-		{
-			SetIsIdempotent(true);
-			for(auto &cn : value.orderedChildNodes)
-			{
-				if(cn != nullptr && !cn->GetIsIdempotent())
-				{
-					SetIsIdempotent(false);
-					break;
-				}
-			}
-		}
-		else
-		{
-			SetIsIdempotent(false);
-		}
-
-		//child nodes were copied, so propagate whether cycle free
-		SetNeedCycleCheck(n->GetNeedCycleCheck());
 	}
 
 	if(copy_metadata)

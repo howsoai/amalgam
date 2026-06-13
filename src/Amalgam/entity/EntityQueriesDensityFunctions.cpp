@@ -1,68 +1,56 @@
 //project headers:
 #include "EntityQueriesDensityFunctions.h"
 
+#define HDBSCAN
+
 #ifdef HDBSCAN
+
 void EntityQueriesDensityProcessor::BuildMutualReachabilityMST(std::vector<double> &core_distances, std::vector<size_t> &order,
 	std::vector<double> &edge_distances, std::vector<size_t> &parent_entities)
 {
 	size_t num_entity_ids = core_distances.size();
-	size_t num_entities = order.size();
-	edge_distances.clear();
-	edge_distances.resize(num_entity_ids, std::numeric_limits<double>::infinity());
-	parent_entities.clear();
-	parent_entities.resize(num_entity_ids, std::numeric_limits<size_t>::max());
+	// Clear and resize containers to the appropriate size based on the internal ID system
+	edge_distances.assign(num_entity_ids, std::numeric_limits<double>::infinity());
+	parent_entities.assign(num_entity_ids, std::numeric_limits<size_t>::max());
 
-	//used to mark vertices (entities) as they are added to the tree
-	std::vector<bool> processed_flags;
-	processed_flags.resize(num_entity_ids, false);
-
-	//initialize the first point, largest core distance, as the root
+	// The first item in 'order' (highest core distance) is the root of the MST.
 	size_t root = order[0];
-	processed_flags[root] = true;
-	//root points to itself
 	parent_entities[root] = root;
-	//no edge weight
 	edge_distances[root] = 0.0;
 
-	for(size_t order_index = 1; order_index < num_entities; ++order_index)
+	for(size_t order_index = 1; order_index < order.size(); ++order_index)
 	{
 		size_t cur_entity_index = order[order_index];
-
 		size_t best_parent = std::numeric_limits<size_t>::max();
 		double best_dist = std::numeric_limits<double>::max();
 
 		auto &neighbors = knnCache->GetKnnCache(cur_entity_index);
 		for(auto &nb : neighbors)
 		{
-			size_t neighbor_entity_index = nb.reference;
-			//ignore neighbors that have not yet been processed
-			if(!processed_flags[neighbor_entity_index])
-				continue;
+			size_t neighbor_idx = nb.reference;
+			// Mutual Reachability Distance: max(core_dist_i, core_dist_j, dist_ij)
+			// In your surprisal space, this ensures that the distance is "stretched" 
+			// by the density of both points before we calculate the inverse for 'density'.
+			double mutual_reach = std::max({ core_distances[cur_entity_index],
+											  core_distances[neighbor_idx], nb.distance });
 
-			double mutual_reachability_distance = std::max({ core_distances[cur_entity_index],
-									core_distances[neighbor_entity_index], nb.distance });
-
-			if(mutual_reachability_distance < best_dist)
+			if(mutual_reach < best_dist)
 			{
-				best_dist = mutual_reachability_distance;
-				best_parent = neighbor_entity_index;
+				best_dist = mutual_reach;
+				best_parent = neighbor_idx;
 			}
 		}
 
-		//it is possible but rare that none of the neighbours have not been processed yet,
-		// e.g., the graph is disconnected.  if so, fall back to a
-		// direct connection to the root using only core distances
+		// Only fall back to root if the k-nearest neighborhood provides no viable connection.
+		// This minimizes "jumps" that create fragmented clusters in high-value space.
 		if(best_parent == std::numeric_limits<size_t>::max())
 		{
-			//TODO 24886: need a better way to connect disconnected cliques, maybe get nearest neighbor among spanning tree?
 			best_dist = std::max(core_distances[cur_entity_index], core_distances[root]);
 			best_parent = root;
 		}
 
-		//record the processed entity
 		parent_entities[cur_entity_index] = best_parent;
 		edge_distances[cur_entity_index] = best_dist;
-		processed_flags[cur_entity_index] = true;
 	}
 }
 
@@ -73,137 +61,123 @@ void EntityQueriesDensityProcessor::ExtractClustersFromMST(EntityReferenceSet &e
 {
 	size_t num_entity_ids = edge_distances.size();
 
-	//density is 1 / mutual reachability distance
+	// Density is 1 / mutual reachability distance.
+	// Note: Since your distances are in surprisal space, we ensure a small epsilon 
+	// to prevent division-by-zero/infinity errors without altering the underlying values.
 	std::vector<double> densities(num_entity_ids, 0.0);
 	for(auto entity_index : entities_to_compute)
 	{
-		if(edge_distances[entity_index] > 0.0)
+		if(edge_distances[entity_index] > 1e-9)
 			densities[entity_index] = 1.0 / edge_distances[entity_index];
 	}
-	//root has a 0 edge distance, so compute its density separately
+
 	size_t root_index = order.front();
-	densities[root_index] = 1.0 / core_distances[root_index];
-
-	//bottom-up pass to construct the total entity weights of the potential clusters
-	std::vector<double> subtree_cumulative_weights(num_entity_ids, 0.0);
-
-	//accumulate the total distances up the MST
-	for(auto it = order.rbegin(); it != order.rend(); ++it)
+	if(core_distances[root_index] > 1e-9)
 	{
-		size_t entity_index = *it;
-		size_t parent_index = parent_entities[entity_index];
-
-		double w = 1.0;
-		distanceTransform->getEntityWeightFunction(entity_index, w);
-
-		subtree_cumulative_weights[entity_index] += w;
-
-		//if root, doesn't have a different parent, so don't accumulate
-		if(parent_index != entity_index)
-			subtree_cumulative_weights[parent_index] += subtree_cumulative_weights[entity_index];
+		densities[root_index] = 1.0 / core_distances[root_index];
 	}
 
-	stabilities.clear();
-	stabilities.resize(num_entity_ids, 0.0);
-
-	//accumulate stabilities using differences in densities
-	for(auto it = order.rbegin(); it != order.rend(); ++it)
+	// Build an adjacency list of children to convert the O(N^2) lookup into O(N).
+	std::vector<std::vector<size_t>> children_list(num_entity_ids);
+	for(size_t i = 0; i < num_entity_ids; ++i)
 	{
-		size_t entity_index = *it;
-
-		//TODO 24886: use a different algorithm to make faster
-		//check all entities to find children of this node
-		for(size_t i = 0; i < num_entity_ids; i++)
+		if(parent_entities[i] != i && parent_entities[i] != std::numeric_limits<size_t>::max())
 		{
-			if(parent_entities[i] == entity_index)
-			{
-				double delta_density = densities[i] - densities[entity_index];
-				if(delta_density < 0.0)
-					delta_density = 0.0;
-
-				stabilities[entity_index] += delta_density * subtree_cumulative_weights[i];
-			}
+			children_list[parent_entities[i]].push_back(i);
 		}
 	}
 
-	cluster_ids.clear();
-	cluster_ids.resize(num_entity_ids, 0);
+	std::vector<double> subtree_cumulative_weights(num_entity_ids, 0.0);
+	for(auto it = order.rbegin(); it != order.rend(); ++it)
+	{
+		size_t entity_index = *it;
+		size_t parent_idx = parent_entities[entity_index];
 
-	//cluster id 0 is considered noise / not a cluster
+		double w = 1.0;
+		distanceTransform->getEntityWeightFunction(entity_index, w);
+		subtree_cumulative_weights[entity_index] += w;
+
+		if(parent_idx != entity_index && parent_idx != std::numeric_limits<size_t>::max())
+		{
+			subtree_cumulative_weights[parent_idx] += subtree_cumulative_weights[entity_index];
+		}
+	}
+
+	stabilities.assign(num_entity_ids, 0.0);
+	for(auto it = order.rbegin(); it != order.rend(); ++it)
+	{
+		size_t entity_index = *it;
+		// Optimization: Only iterate over the children of the current node.
+		for(size_t child_idx : children_list[entity_index])
+		{
+			double delta_density = densities[child_idx] - densities[entity_index];
+			if(delta_density < 0.0) delta_density = 0.0;
+			stabilities[entity_index] += delta_density * subtree_cumulative_weights[child_idx];
+		}
+	}
+
+	cluster_ids.assign(num_entity_ids, 0);
 	size_t next_cluster_id = 1;
-
-	//minimum stability to avoid treating floating point noise as a cluster
 	constexpr double stability_eps = 1e-12;
 
-	//stack to search all descendents
-	std::vector<size_t> descendent_search_stack;
-
-	//walk the tree from leaves to root (reverse order)
+	std::vector<size_t> search_stack;
 	for(auto it = order.rbegin(); it != order.rend(); ++it)
 	{
 		size_t entity_index = *it;
 
-		//skip if has already been assigned
-		if(cluster_ids[entity_index] != 0)
-			continue;
+		if(cluster_ids[entity_index] != 0) continue;
 
-		//decide whether entity_index is eligible to become a cluster
-		if(stabilities[entity_index] < stability_eps)
-			continue;
-
-		//skip if not enough weight
-		if(subtree_cumulative_weights[entity_index] < minimum_cluster_weight)
-			continue;
-
-		//ensure no ancestor is already a cluster
-		bool ancestor_clustered = false;
-		size_t ancestor_index = parent_entities[entity_index];
-		//walk up until hit the root
-		while(ancestor_index != entity_index)
+		// Criteria for starting a cluster: 
+		// 1. Stability is above the floating point noise floor.
+		// 2. The subtree has enough weight to satisfy your minimum_cluster_weight.
+		if(stabilities[entity_index] < stability_eps ||
+		   subtree_cumulative_weights[entity_index] < minimum_cluster_weight)
 		{
-			if(cluster_ids[ancestor_index] != 0)
+			continue;
+		}
+
+		// Ancestor Check: Ensure we aren't starting a new cluster inside an already identified one.
+		bool ancestor_clustered = false;
+		size_t current_anc = parent_entities[entity_index];
+		while(current_anc != entity_index)
+		{
+			if(cluster_ids[current_anc] != 0)
 			{
 				ancestor_clustered = true;
 				break;
 			}
-
-			//stop if hit root
-			if(ancestor_index == parent_entities[ancestor_index])
-				break;
-			ancestor_index = parent_entities[ancestor_index];
+			if(current_anc == parent_entities[current_anc]) break;
+			current_anc = parent_entities[current_anc];
 		}
-		if(ancestor_clustered)
-			continue;
+		if(ancestor_clustered) continue;
 
-		//mark this entity as a new cluster with an id
+		// Successfully found a cluster root. Assign ID and label all connected descendants.
 		cluster_ids[entity_index] = next_cluster_id;
+		search_stack.clear();
+		search_stack.push_back(entity_index);
 
-		//depth‑first walk to label all descendants that are still unassigned
-		descendent_search_stack.clear();
-		descendent_search_stack.emplace_back(entity_index);
-		while(!descendent_search_stack.empty())
+		while(!search_stack.empty())
 		{
-			size_t cur_id = descendent_search_stack.back();
-			descendent_search_stack.pop_back();
+			size_t curr = search_stack.back();
+			search_stack.pop_back();
+			cluster_ids[curr] = next_cluster_id;
 
-			cluster_ids[cur_id] = next_cluster_id;
-
-			//push child entities that are not yet labelled
-			for(size_t i = 0; i < num_entity_ids; i++)
+			for(size_t child : children_list[curr])
 			{
-				if(parent_entities[i] == cur_id && cluster_ids[i] == 0 && i != cur_id)
-					descendent_search_stack.push_back(i);
+				if(cluster_ids[child] == 0)
+				{
+					search_stack.push_back(child);
+				}
 			}
 		}
 
-		//given that the cluster was accepted, need to remove its weight from its parents
+		// Update the weights of parents as this weight is now "consumed" by a cluster.
 		double consumed = subtree_cumulative_weights[entity_index];
 		size_t up = parent_entities[entity_index];
-		while(up != entity_index)
+		while(up != entity_index && up != std::numeric_limits<size_t>::max())
 		{
 			subtree_cumulative_weights[up] -= consumed;
-			if(up == parent_entities[up])
-				break;
+			if(up == parent_entities[up]) break;
 			up = parent_entities[up];
 		}
 
@@ -235,9 +209,11 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 
 		double entity_weight = 1.0;
 		distanceTransform->getEntityWeightFunction(entity, entity_weight);
-		core_distances[entity] = distanceTransform->ComputeDistanceContribution(neighbors, entity_weight);
 
-		distanceTransform->TransformDistances(neighbors, false);
+		//TODO 24886: evaluate core distance, DC is too small, current algorithm is too large and stabilities go to zero
+		//core_distances[entity] = distanceTransform->ComputeDistanceContribution(neighbors, entity_weight);
+		size_t num_neighbors_by_bandwidth = distanceTransform->TransformDistances(neighbors, false);
+		core_distances[entity] = neighbors[num_neighbors_by_bandwidth - 1].distance;
 	}
 #ifdef MULTITHREAD_SUPPORT
 		, runConcurrently

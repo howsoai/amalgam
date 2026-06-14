@@ -158,7 +158,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 		{
 			ow_exists = true;
 			for(auto &[node_id, node] : opcode_weights_node->GetMappedChildNodes())
-				opcode_weights[GetEvaluableNodeTypeFromStringId(node_id)] = EvaluableNode::ToNumber(node);
+			{
+				EvaluableNodeType t = GetEvaluableNodeTypeFromStringId(node_id);
+				if(IsEvaluableNodeTypeValid(t))
+					opcode_weights[t] = EvaluableNode::ToNumber(node);
+			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(opcode_weights_node);
 		}
@@ -175,7 +179,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 			for(auto &[node_id, node] : mutation_weights_node->GetMappedChildNodes())
 			{
 				auto bisid = GetBuiltInStringIdFromStringId(node_id);
-				mutation_type_weights[bisid] = EvaluableNode::ToNumber(node);
+				if(bisid != ENBISI_NOT_A_STRING)
+					mutation_type_weights[bisid] = EvaluableNode::ToNumber(node);
 			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(mutation_weights_node);

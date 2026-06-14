@@ -848,7 +848,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, E
 	EvaluableNodeReference retval = EvaluableNodeReference::Null();
 	double number_value = 0.0;
 
-	if(immediate_result.AnyImmediateType())
+	if(immediate_result.AnyPrimitiveImmediateType())
 	{
 		number_value = InterpretNodeIntoNumberValue(ocn[0]);
 	}

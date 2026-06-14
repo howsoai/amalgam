@@ -150,8 +150,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_APPEND, "append");
 	EmplaceNodeTypeString(ENT_SIZE, "size");
 	EmplaceNodeTypeString(ENT_GET, "get");
-	EmplaceNodeTypeString(ENT_SET, "set");
-	EmplaceNodeTypeString(ENT_REPLACE, "replace");
+	EmplaceNodeTypeString(ENT_MODIFY, "modify");
 	EmplaceNodeTypeString(ENT_INDICES, "indices");
 	EmplaceNodeTypeString(ENT_VALUES, "values");
 	EmplaceNodeTypeString(ENT_CONTAINS_INDEX, "contains_index");

@@ -1,8 +1,8 @@
 //project headers:
-#include "Conviction.h"
 #include "Entity.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
+#include "EntityQueriesDensityFunctions.h"
 #include "EntityQueryCaches.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "HashMaps.h"

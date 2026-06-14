@@ -15,6 +15,7 @@ MakeAmalgamUnitTests(Ts... elems)
 }
 
 auto _amalgam_unit_tests = MakeAmalgamUnitTests(
+	AmalgamExample{ R"&((apply "concat" (unzip {a 1 b 2 c 3} ["a" "b" "c"])))&", R"("123")" },
 	AmalgamExample{ R"&((associate "a" 1 "b" 2))&", R"({a 1 b 2})" },
 	AmalgamExample{ R"&((lambda
 	(associate "a" 1 "b" 2)
@@ -37,7 +38,7 @@ AmalgamExample{ R"&((get
 	)
 	"a"
 ))&", R"(.null)" },
-AmalgamExample{ R"&((replace
+AmalgamExample{ R"&((modify
 	[
 		(associate "a" 1)
 	]
@@ -1544,36 +1545,36 @@ AmalgamExample{ R"&((seq
 		)
 	]
 ))&", R"([
-        "dc: {vert0 1 vert1 1 vert2 1 vert3 1.414}"
-        "weighted dc: {vert0 2 vert1 1 vert2 1 vert3 1.414}"
-        "surprisal contributions"
-        "dc: {vert0 2.035 vert1 2.284 vert2 2.284 vert3 3.638}"
-        "weighted surprisal contributions: {vert0 4.07 vert1 2.198 vert2 2.198 vert3 3.638}"
-        "removal conviction\n"
-        "kl: {vert0 0.0125 vert1 0.0015 vert2 0.01294 vert3 0.0125}"
-        "weighted kl: {vert0 0.04384 vert1 0.01215 vert2 0.02322 vert3 0.0003315}"
-        "convictions: {vert0 0.7888 vert1 6.573 vert2 0.7619 vert3 0.7888}"
-        "further parameterized convictions: {vert0 0.7888 vert1 6.573 vert2 0.7619 vert3 0.7888}"
-        "weighted convictions: {vert0 0.4536 vert1 1.637 vert2 0.8565 vert3 59.99}"
-        "group kl divergence: 0.0015"
-        "weighted group kl divergence: 0.01215"
-        "addition conviction\n"
-        "kl: {vert0 0.01189 vert1 0.001534 vert2 0.01274 vert3 0.01189}"
-        "weighted kl: {vert0 0.0428 vert1 0.01307 vert2 0.02359 vert3 0.0003283}"
-        "convictions: {vert0 0.8001 vert1 6.202 vert2 0.7469 vert3 0.8001}"
-        "further parameterized convictions: {vert0 0.8001 vert1 6.202 vert2 0.7469 vert3 0.8001}"
-        "weighted convictions: {vert0 0.466 vert1 1.526 vert2 0.8457 vert3 60.75}"
-        "group kl divergence: 0.001534"
-        "weighted group kl divergence: 0.01307"
-        "adding a case\n"
-        [
-                ["BoxConvictionTestContainer" "vert4"]
-        ]
-        "noncyclic KL: {vert0 0.01468 vert1 0.002728 vert2 0.002728 vert3 0.01638 vert4 0.005166}"
-        "noncyclic group kl divergence: 0.005166"
-        "cyclic KL: {vert0 0.0645 vert1 0.00207 vert2 0.00207 vert3 0.03622 vert4 0.06081}"
-        "cyclic conviction: {vert0 0.5137 vert1 16.01 vert2 16.01 vert3 0.9148 vert4 0.5449}"
-        "cyclic group kl divergence: 0.06081"
+		"dc: {vert0 1 vert1 1 vert2 1 vert3 1.414}"
+		"weighted dc: {vert0 2 vert1 1 vert2 1 vert3 1.414}"
+		"surprisal contributions"
+		"dc: {vert0 2.035 vert1 2.284 vert2 2.284 vert3 3.638}"
+		"weighted surprisal contributions: {vert0 4.07 vert1 2.198 vert2 2.198 vert3 3.638}"
+		"removal conviction\n"
+		"kl: {vert0 0.0125 vert1 0.0015 vert2 0.01294 vert3 0.0125}"
+		"weighted kl: {vert0 0.04384 vert1 0.01215 vert2 0.02322 vert3 0.0003315}"
+		"convictions: {vert0 0.7888 vert1 6.573 vert2 0.7619 vert3 0.7888}"
+		"further parameterized convictions: {vert0 0.7888 vert1 6.573 vert2 0.7619 vert3 0.7888}"
+		"weighted convictions: {vert0 0.4536 vert1 1.637 vert2 0.8565 vert3 59.99}"
+		"group kl divergence: 0.0015"
+		"weighted group kl divergence: 0.01215"
+		"addition conviction\n"
+		"kl: {vert0 0.01189 vert1 0.001534 vert2 0.01274 vert3 0.01189}"
+		"weighted kl: {vert0 0.0428 vert1 0.01307 vert2 0.02359 vert3 0.0003283}"
+		"convictions: {vert0 0.8001 vert1 6.202 vert2 0.7469 vert3 0.8001}"
+		"further parameterized convictions: {vert0 0.8001 vert1 6.202 vert2 0.7469 vert3 0.8001}"
+		"weighted convictions: {vert0 0.466 vert1 1.526 vert2 0.8457 vert3 60.75}"
+		"group kl divergence: 0.001534"
+		"weighted group kl divergence: 0.01307"
+		"adding a case\n"
+		[
+				["BoxConvictionTestContainer" "vert4"]
+		]
+		"noncyclic KL: {vert0 0.01468 vert1 0.002728 vert2 0.002728 vert3 0.01638 vert4 0.005166}"
+		"noncyclic group kl divergence: 0.005166"
+		"cyclic KL: {vert0 0.0645 vert1 0.00207 vert2 0.00207 vert3 0.03622 vert4 0.06081}"
+		"cyclic conviction: {vert0 0.5137 vert1 16.01 vert2 16.01 vert3 0.9148 vert4 0.5449}"
+		"cyclic group kl divergence: 0.06081"
 ])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "SurprisalTransformContainer" .null)
@@ -2092,24 +2093,24 @@ AmalgamExample{ R"&((seq
 		)
 	]
 ))&", R"([
-        "probabilities: {vert0 2.754e-05 vert1 2.754e-05 vert2 5.043e-07 vert3 9.237e-09}"
-        "surprisals: {vert0 10.5 vert1 10.5 vert2 14.5 vert3 18.5}"
-        "weighted probabilities: {vert0 5.507e-05 vert1 0 vert2 5.043e-07 vert3 9.237e-09}"
-        "weighted surprisals: {vert0 10.5 vert1 10.5 vert2 14.5 vert3 18.5}"
-        "probabilities with dynamic selection: {vert0 2.754e-05 vert1 2.754e-05}"
-        "surprisals with dynamic selection: {vert0 10.5 vert1 10.5}"
-        "surprisals with dynamic selection: {vert0 10.5 vert1 10.5 vert2 14.5}"
-        "surprisal contribution: [13.11]"
-        "surprisal contribution: [10.5]"
-        "weighted surprisal contribution: [13.11]"
-        "weighted surprisal contribution: [10.5]"
-        [
-                ["SurprisalTransformContainer" "testvert"]
-        ]
-        "surprisal contribution: {testvert 13.11}"
-        "surprisal contribution: {testvert 10.5}"
-        "weighted surprisal contribution: {testvert 13.11}"
-        "weighted surprisal contribution: {testvert 10.5}"
+		"probabilities: {vert0 2.754e-05 vert1 2.754e-05 vert2 5.043e-07 vert3 9.237e-09}"
+		"surprisals: {vert0 10.5 vert1 10.5 vert2 14.5 vert3 18.5}"
+		"weighted probabilities: {vert0 5.507e-05 vert1 0 vert2 5.043e-07 vert3 9.237e-09}"
+		"weighted surprisals: {vert0 10.5 vert1 10.5 vert2 14.5 vert3 18.5}"
+		"probabilities with dynamic selection: {vert0 2.754e-05 vert1 2.754e-05}"
+		"surprisals with dynamic selection: {vert0 10.5 vert1 10.5}"
+		"surprisals with dynamic selection: {vert0 10.5 vert1 10.5 vert2 14.5}"
+		"surprisal contribution: [13.11]"
+		"surprisal contribution: [10.5]"
+		"weighted surprisal contribution: [13.11]"
+		"weighted surprisal contribution: [10.5]"
+		[
+				["SurprisalTransformContainer" "testvert"]
+		]
+		"surprisal contribution: {testvert 13.11}"
+		"surprisal contribution: {testvert 10.5}"
+		"weighted surprisal contribution: {testvert 13.11}"
+		"weighted surprisal contribution: {testvert 10.5}"
 ])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((concat
 	"+ : "

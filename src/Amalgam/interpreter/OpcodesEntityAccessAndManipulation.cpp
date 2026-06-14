@@ -697,7 +697,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
 		result = RemoveTopConcludeOrReturnNode(result, &ce_enm);
 
-	if(called_entity != curEntity)
+	//need to copy the value if nodes
+	if(called_entity != curEntity && !result.IsImmediateValue())
 	{
 		EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(result);
 		//don't put freed nodes in local allocation buffer, because that will increase memory churn

@@ -37,16 +37,26 @@ public:
 		NUMBER = 1 << 2,
 		//the size of the container
 		SIZE_AS_NUMBER = 1 << 3,
+		//the sum of the values
+		SUM_AS_NUMBER = 1 << 4,
+		//the product of the values
+		PRODUCT_AS_NUMBER = 1 << 5,
+		//minimum of the values
+		MIN_AS_NUMBER = 1 << 6,
+		//maximum of the values
+		MAX_AS_NUMBER = 1 << 7,
 		//string_id that is currently defined elsewhere
-		EXISTING_STRING_ID = 1 << 4,
+		EXISTING_STRING_ID = 1 << 8,
 		//string_id that may be newly defined
-		STRING_ID = 1 << 5,
+		STRING_ID = 1 << 9,
 		//key string_id that is currently defined elsewhere (as a key)
-		EXISTING_KEY_STRING_ID = 1 << 6,
+		EXISTING_KEY_STRING_ID = 1 << 10,
 		//key string_id that may be newly defined
-		KEY_STRING_ID = 1 << 7,
+		KEY_STRING_ID = 1 << 11,
+		//concat of string ids
+		CONCAT_AS_STRING_ID = 1 << 12,
 		//code
-		CODE = 1 << 8,
+		CODE = 1 << 13,
 
 		//composite types which can include NULL_VALUE
 		BOOL_OR_NULL = BOOL | NULL_VALUE,
@@ -56,7 +66,8 @@ public:
 		EXISTING_KEY_STRING_ID_OR_NULL = EXISTING_KEY_STRING_ID | NULL_VALUE,
 		KEY_STRING_ID_OR_NULL = KEY_STRING_ID | NULL_VALUE,
 
-		ANY_STANDARD_IMMEDIATE = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID | STRING_ID | CODE
+		ANY_PRIMITIVE_IMMEDIATE = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID | STRING_ID | CODE,
+		ANY_COMPLEX_IMMEDIATE = SIZE_AS_NUMBER | SUM_AS_NUMBER | PRODUCT_AS_NUMBER | MIN_AS_NUMBER | MAX_AS_NUMBER | CONCAT_AS_STRING_ID
 	};
 
 	constexpr EvaluableNodeRequestedValueTypes() noexcept
@@ -73,7 +84,7 @@ public:
 
 	//boolean implies all or none
 	constexpr EvaluableNodeRequestedValueTypes(bool all_or_none) noexcept
-		: requestedValueTypes(all_or_none ? Type::ANY_STANDARD_IMMEDIATE : Type::NONE)
+		: requestedValueTypes(all_or_none ? Type::ANY_PRIMITIVE_IMMEDIATE : Type::NONE)
 	{}
 
 	//bit‑wise operators
@@ -122,11 +133,16 @@ public:
 				static_cast<RequestType>(flag)) != 0;
 	}
 
-	//returns true if any immediate is allowed
-	constexpr bool AnyImmediateType() const noexcept
+	constexpr bool AnyPrimitiveImmediateType() const noexcept
 	{
 		return (static_cast<RequestType>(requestedValueTypes)
-			& static_cast<RequestType>(Type::ANY_STANDARD_IMMEDIATE)) != 0;
+			& static_cast<RequestType>(Type::ANY_PRIMITIVE_IMMEDIATE)) != 0;
+	}
+
+	constexpr bool AnyComplexImmediateType() const noexcept
+	{
+		return (static_cast<RequestType>(requestedValueTypes)
+			& static_cast<RequestType>(Type::ANY_COMPLEX_IMMEDIATE)) != 0;
 	}
 
 	constexpr bool NoValueRequested() const noexcept
@@ -134,7 +150,6 @@ public:
 		return requestedValueTypes == Type::NULL_VALUE;
 	}
 
-private:
 	Type requestedValueTypes;
 };
 
@@ -484,7 +499,7 @@ public:
 			return EvaluableNodeReference::Null();
 		}
 
-		if(immediate_result.AnyImmediateType())
+		if(immediate_result.AnyPrimitiveImmediateType())
 		{
 			//first check for null, since it's not an immediate value
 			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
@@ -771,12 +786,9 @@ public:
 		return *this;
 	}
 
-protected:
 	//align so the entire data structure takes up 16 bytes
 #pragma pack(push, 4)
 	EvaluableNodeImmediateValueWithType value;
-
-public:
 
 	//true if this is the only reference to the result
 	bool unique;

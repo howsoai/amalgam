@@ -924,7 +924,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 			{
 				auto n1sid = n1->GetStringIDReference();
 				auto n2sid = n2->GetStringIDReference();
-				double commonality = CommonalityBetweenStrings(n1sid, n2sid);
+				double commonality = RelativeCommonalityBetweenStrings(n1sid, n2sid);
 				double commonality_including_type = std::min(0.125 + 0.875 * commonality, 1.0);
 				return std::make_pair(n1, commonality_including_type);
 			}
@@ -971,14 +971,6 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 
 	case ENT_APPLY:
 		if(n2_type == ENT_REDUCE)				return std::make_pair(n2, 0.125);
-		return std::make_pair(nullptr, 0.0);
-
-	case ENT_SET:
-		if(n2_type == ENT_REPLACE)				return std::make_pair(n2, 0.5);
-		return std::make_pair(nullptr, 0.0);
-
-	case ENT_REPLACE:
-		if(n2_type == ENT_SET)					return std::make_pair(n1, 0.5);
 		return std::make_pair(nullptr, 0.0);
 
 	case ENT_ASSOC:

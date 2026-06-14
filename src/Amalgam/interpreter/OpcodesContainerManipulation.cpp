@@ -1242,13 +1242,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, Eva
 	return retrieved_list;
 }
 
-static OpcodeInitializer _ENT_SET(ENT_SET, &Interpreter::InterpretNode_ENT_SET_and_REPLACE, []() {
+static OpcodeInitializer _ENT_MODIFY(ENT_MODIFY, &Interpreter::InterpretNode_ENT_MODIFY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* data [number|string|list walk_path1] [* new_value1] [number|string|list walk_path2] [* new_value2] ... [number|string|list walk_pathN] [* new_valueN])";
+	d.parameters = R"(* data [number|string|list walk_path1] [* function1] [number|string|list walk_path2] [* function2] ... [number|string|list walk_pathN] [* functionN])";
 	d.returns = R"(any)";
-	d.description = R"(Performs a deep copy on `data` (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values as a walk path of indices. `new_value1` to `new_valueN` represent a value that will be used to replace  whatever is in the location the preceding location parameter specifies.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc); however, it will not change the type of immediate values to an assoc or list. Note that `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
+	d.description = R"(Performs a deep copy on `data` (a copy of all data structures referenced by it and its references).  If any additional parameters are specified, it treats them as pairs of locations and values or functions to replace within the new copy.  For each pair of replacements, the first element is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
 	d.examples = MakeAmalgamExamples({
-		{R"&((set
+		{R"&((modify
 	(associate
 		"a"
 		1
@@ -1268,38 +1268,24 @@ static OpcodeInitializer _ENT_SET(ENT_SET, &Interpreter::InterpretNode_ENT_SET_a
 	c 3
 	e 5
 })"},
-			{R"&((set
+			{R"&((modify
 	[0 1 2 3 4]
 	2
 	10
 ))&", R"([0 1 10 3 4])"},
-			{R"&((set
+			{R"&((modify
 	(associate "a" 1 "b" 2)
 	"a"
 	3
-))&", R"({a 3 b 2})"}
-		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-	d.frequencyPer10000Opcodes = 3.0;
-	d.opcodeGroup = _opcode_group;
-	return d;
-});
-
-static OpcodeInitializer _ENT_REPLACE(ENT_REPLACE, &Interpreter::InterpretNode_ENT_SET_and_REPLACE, []() {
-	OpcodeDetails d;
-	d.parameters = R"(* data [number|string|list walk_path1] [* function1] [number|string|list walk_path2] [* function2] ... [number|string|list walk_pathN] [* functionN])";
-	d.returns = R"(any)";
-	d.description = R"(Performs a deep copy on `data` (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
-	d.examples = MakeAmalgamExamples({
-		{R"&((replace
+))&", R"({a 3 b 2})"},
+		{R"&((modify
 	[
 		(associate "a" 13)
 	]
 ))&", R"([
 	{a 13}
 ])"},
-			{R"&((replace
+			{R"&((modify
 	[
 		(associate "a" 1)
 	]
@@ -1312,7 +1298,7 @@ static OpcodeInitializer _ENT_REPLACE(ENT_REPLACE, &Interpreter::InterpretNode_E
 	.null
 	1
 ])"},
-			{R"&((replace
+			{R"&((modify
 	[
 		(associate "a" 1)
 	]
@@ -1325,13 +1311,13 @@ static OpcodeInitializer _ENT_REPLACE(ENT_REPLACE, &Interpreter::InterpretNode_E
 	.null
 	1
 ])"},
-			{R"&((replace
+			{R"&((modify
 	[
 		(associate "a" 1)
 	]
 	[0]
 	(lambda
-		(set (current_value) "b" 2)
+		(modify (current_value) "b" 2)
 	)
 ))&", R"([
 	{a 1 b 2}
@@ -1340,12 +1326,12 @@ static OpcodeInitializer _ENT_REPLACE(ENT_REPLACE, &Interpreter::InterpretNode_E
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-	d.frequencyPer10000Opcodes = 5.5;
+	d.frequencyPer10000Opcodes = 8.3;
 	d.opcodeGroup = _opcode_group;
 	return d;
 });
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_MODIFY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
@@ -1378,14 +1364,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 		if(copy_destination == nullptr)
 			continue;
 
-		////////////////////
-		//compute new value
+		auto new_value = InterpretNode(ocn[replace_change_index + 1]);
 
-		if(en->GetType() == ENT_SET)
+		//if it's immediate, don't need to call it as a function
+		if(EvaluableNode::IsImmediate(new_value))
 		{
-			//just in case copy_destination points to result
-			auto new_value = InterpretNode(ocn[replace_change_index + 1]);
-
 			if(*copy_destination != result) //normal replacement
 			{
 				if(result.unique && !result.GetNeedCycleCheck())
@@ -1402,20 +1385,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 			if(result.NeedAllFlagsRecheckedAfterNodeAttachedAndUpdateUniqueness(new_value))
 				result_flags_need_updates = true;
 		}
-		else //en->GetType() == ENT_REPLACE
+		else //not immediate, need to call new_value as a function
 		{
-			//replace copy_destination (a part of result) with the new value
-			auto function = InterpretNodeForImmediateUse(ocn[replace_change_index + 1]);
-			if(EvaluableNode::IsNull(function))
+			if(EvaluableNode::IsNull(new_value))
 			{
 				(*copy_destination) = nullptr;
 				continue;
 			}
 
-			node_stack.PushEvaluableNode(function);
+			node_stack.PushEvaluableNode(new_value);
 			PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(), *copy_destination);
 
-			EvaluableNodeReference new_value = InterpretNodeForImmediateUse(function);
+			new_value = InterpretNodeForImmediateUse(new_value);
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{

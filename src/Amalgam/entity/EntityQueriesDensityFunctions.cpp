@@ -15,7 +15,10 @@
 //  The function fills `parent_entities` such that for every i (except the
 //  global root)   parent_entities[i] = the vertex that i was attached to
 //  when its edge was added to the MST.  The root points to itself.
-void EntityQueriesDensityProcessor::BuildMutualReachabilityMST(std::vector<double> &core_distances,
+static void BuildMutualReachabilityMST(
+	size_t num_nearest_neighbors,
+	std::vector<std::vector<DistanceReferencePair<size_t>>> &nearest_neighbors_cache,
+	std::vector<double> &core_distances,
 	std::vector<size_t> &order,			  //vertices sorted by decreasing core‑distance
 	std::vector<size_t> &parent_entities) //output: MST parent for each vertex
 {
@@ -68,12 +71,11 @@ void EntityQueriesDensityProcessor::BuildMutualReachabilityMST(std::vector<doubl
 		}
 	};
 	std::vector<Edge> edges;
-	edges.reserve(N * numNearestNeighbors); //rough upper bound
+	edges.reserve(N * num_nearest_neighbors); //rough upper bound
 
 	for(size_t i : order)
 	{
-		const auto &neigh = knnCache->GetKnnCache(i);
-		for(const auto &n : neigh)
+		for(auto &n : nearest_neighbors_cache[i])
 		{
 			//skip self‑loops that may appear in the cache
 			if(n.reference == i)
@@ -438,7 +440,8 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	//reuse baseDistanceProbabilities, but because clustering is not typically done repeatedly,
 	//don't reuse any of the other buffers
 	std::vector<size_t> parent_entities;
-	BuildMutualReachabilityMST(core_distances, order, parent_entities);
+	BuildMutualReachabilityMST(
+		numNearestNeighbors, knnCache->GetFullKnnCache(), core_distances, order, parent_entities);
 
 	//a condensed tree removes redundant edges where both nodes have the same core distance (or very similar ones),
 	// simplifying the hierarchy into distinct levels of density

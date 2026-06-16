@@ -634,7 +634,7 @@ public:
 	//builds the minimum spanning tree (MST) on the mutual reachability graph.
 	//The algorithm is a Prim‑like sweep over the entities sorted by core distance.
 	//Each point only considers relevant neighbors, and the smallest mutual reachability
-	// distance among those neighbours becomes the edge that connects the
+	// distance among those neighbors becomes the edge that connects the
 	// point to the growing tree.
 	//core_distances is the vector of core distances for each entity, infinity for entities not considered
 	//order is the list of entities sorted by descending core distance
@@ -642,7 +642,7 @@ public:
 	//its parent in the MST (root gets distance = 0)
 	//parent_entities will contain the parent index for each entity (root points to itself)
 	void BuildMutualReachabilityMST(std::vector<double> &core_distances, std::vector<size_t> &order,
-		std::vector<double> &edge_distances, std::vector<size_t> &parent_entities);
+		std::vector<size_t> &parent_entities);
 
 	//extracts clusters from the minimum spanning tree (MST)
 	//entities_to_compute is the set of entities to consider

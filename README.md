@@ -19,7 +19,7 @@ An LLM-ready, tree-structured language for safe, sandboxed code generation, mani
 
 ## Introduction
 
-Amalgam&reg; is an LLM-ready, tree-structured language for safe, sandboxed code generation, manipulation, and advanced information-theoretic inference.  Unlike traditional languages that prioritize developer shorthand, Amalgam focuses on code-data symmetry and semantic consistency.
+Amalgam&reg; is an LLM-ready, tree-structured language for safe, sandboxed code generation, manipulation, and advanced information-theoretic inference.  Unlike traditional languages that prioritize developer shorthand, Amalgam focuses on code-data symmetry and semantic consistency.  These properties give it unique strengths in a wide variety of domains, including [genetic programming](https://en.wikipedia.org/wiki/Generic_programming), [instance based machine learning](https://en.wikipedia.org/wiki/Instance-based_learning), simulation, agent-based modeling, data storage and retrieval, the mathematics of probability theory and information theory, and game content and AI.
 
 ### Key Features
   - LLM-Ready By Design: By intentionally omitting a macro system, Amalgam ensures that visual similarity equals functional identity.  This structure allows LLMs to perform precise code generation, "patching" (identifying the exact difference between two scripts), and merging operations with high reliability.
@@ -31,7 +31,7 @@ Amalgam&reg; is an LLM-ready, tree-structured language for safe, sandboxed code 
 
 While influenced by LISP (prefix notation) and Smalltalk (object-oriented capabilities and embedded environment), Amalgam intentionally excludes a macro system.  This ensures that similar code is semantically identical.  By removing context-dependent transformations, it ensures that if two snippets look alike, they behave identically—a critical requirement for automated inference and "patching" via `(call (difference x y) {_ z})`.
 
-Amalgam supports genetic programming and intentional loose typing to facilitate flexible execution, while its underlying tree structure maintains the integrity of the logic.  It is optimized for functional-style coding though supports procedural and object oriented programming.
+Amalgam supports genetic programming and loose typing to facilitate flexible execution, while its underlying tree structure maintains the integrity of the logic.  It is optimized for functional-style coding though supports procedural and object oriented programming.
 
 ### Example Uses
 

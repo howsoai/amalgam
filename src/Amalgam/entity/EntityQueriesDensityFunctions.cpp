@@ -419,6 +419,11 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 		//experimental algorithm, leave out for now
 		//core_distances[entity] = distanceTransform->ComputeDistanceContribution(neighbors, entity_weight);
 		size_t num_neighbors_by_bandwidth = distanceTransform->TransformDistances(neighbors, false);
+
+		//TODO 24886: remove this once the clustering algorithm is ready and known to be able to
+		// handle slight discrepancies in sorting due to numeric precision during distance recomputations
+		std::stable_sort(neighbors.begin(), neighbors.end());
+
 		if(num_neighbors_by_bandwidth > 0)
 			core_distances[entity] = neighbors[num_neighbors_by_bandwidth - 1].distance;
 		else //treat as infinite distance if no neighbors (not included in query)

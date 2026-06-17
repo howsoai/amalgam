@@ -95,6 +95,21 @@ foreach(TEST_TARGET ${ALL_SHAREDLIB_TARGETS})
 
 endforeach()
 
+# Standalone pure-algorithm unit tests (no Amalgam library link).
+# Skipped under WASM: the global emscripten linker flags export the C API
+# symbols (LoadEntity, etc.), which this library-free executable cannot supply.
+if(NOT IS_WASM)
+    add_executable(hdbscan-unit-test "test/unit_test/hdbscan_test.cpp")
+    target_include_directories(hdbscan-unit-test PRIVATE "${CMAKE_SOURCE_DIR}/src/Amalgam/entity")
+    target_compile_features(hdbscan-unit-test PRIVATE cxx_std_17)
+    set_target_properties(hdbscan-unit-test PROPERTIES
+        FOLDER "Testing"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test_bin")
+    add_test(NAME Lib.UnitTest.HDBSCAN
+        COMMAND ${TEST_RUNNER} "$<TARGET_FILE:hdbscan-unit-test>")
+    list(APPEND ALL_TEST_TARGETS Lib.UnitTest.HDBSCAN)
+endif()
+
 # Add common test labels:
 foreach(TEST_TARGET ${ALL_TEST_TARGETS})
     set(TEST_LABELS smoke_test)

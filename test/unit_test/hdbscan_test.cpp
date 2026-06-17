@@ -44,9 +44,28 @@ static void TestBuildMST()
 	CHECK(forest.size() == 2);
 }
 
+static void TestBuildSingleLinkageTree()
+{
+	// 3 points on a line: 0--(1.0)--1--(2.0)--2, weights all 1.0.
+	std::vector<HDBSCAN::Edge> mst = { {0, 1, 1.0}, {1, 2, 2.0} };
+	std::vector<double> w = {1.0, 1.0, 1.0};
+	auto slt = HDBSCAN::BuildSingleLinkageTree(3, mst, w);
+
+	CHECK(slt.size() == 2);
+	// First merge joins points 0 and 1 at weight 1.0, mass 2.0 -> node id 3.
+	CHECK(slt[0].weight == 1.0);
+	CHECK(slt[0].mass == 2.0);
+	// Second merge joins node 3 with point 2 at weight 2.0, mass 3.0 -> node id 4.
+	CHECK(slt[1].weight == 2.0);
+	CHECK(slt[1].mass == 3.0);
+	CHECK((slt[1].left == 3 || slt[1].right == 3));
+	CHECK((slt[1].left == 2 || slt[1].right == 2));
+}
+
 int main()
 {
 	TestBuildMST();
+	TestBuildSingleLinkageTree();
 
 	std::cout << (g_checks - g_failures) << "/" << g_checks << " checks passed" << std::endl;
 	return g_failures == 0 ? 0 : 1;

@@ -77,4 +77,59 @@ namespace HDBSCAN
 		}
 		return mst;
 	}
+
+	//Summed point weight of a node (point if < m, else internal subtree).
+	inline double NodeMass(size_t node, size_t m,
+		const std::vector<double> &point_weights,
+		const std::vector<SingleLinkageNode> &nodes)
+	{
+		return node < m ? point_weights[node] : nodes[node - m].mass;
+	}
+
+	//Builds the single-linkage dendrogram from the (ascending) MST edges.
+	//Each accepted merge becomes node id m + k with summed-weight mass.
+	inline std::vector<SingleLinkageNode> BuildSingleLinkageTree(size_t m,
+		const std::vector<Edge> &mst, const std::vector<double> &point_weights)
+	{
+		std::vector<SingleLinkageNode> nodes;
+		nodes.reserve(mst.size());
+
+		std::vector<size_t> parent(m);
+		for(size_t i = 0; i < m; ++i)
+			parent[i] = i;
+		std::function<size_t(size_t)> find = [&](size_t x) -> size_t
+		{
+			while(parent[x] != x)
+			{
+				parent[x] = parent[parent[x]];
+				x = parent[x];
+			}
+			return x;
+		};
+
+		//top node id currently representing each component (indexed by point id)
+		std::vector<size_t> comp_node(m);
+		for(size_t i = 0; i < m; ++i)
+			comp_node[i] = i;
+
+		for(const Edge &e : mst)
+		{
+			size_t ra = find(e.u);
+			size_t rb = find(e.v);
+			size_t na = comp_node[ra];
+			size_t nb = comp_node[rb];
+
+			SingleLinkageNode node;
+			node.left = na;
+			node.right = nb;
+			node.weight = e.weight;
+			node.mass = NodeMass(na, m, point_weights, nodes) + NodeMass(nb, m, point_weights, nodes);
+			size_t new_id = m + nodes.size();
+			nodes.push_back(node);
+
+			parent[rb] = ra;
+			comp_node[ra] = new_id;
+		}
+		return nodes;
+	}
 }

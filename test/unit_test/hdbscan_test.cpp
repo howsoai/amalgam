@@ -62,10 +62,52 @@ static void TestBuildSingleLinkageTree()
 	CHECK((slt[1].left == 2 || slt[1].right == 2));
 }
 
+//Count, in a condensed tree, how many distinct points fall out of each parent.
+static size_t CountPointChildren(const std::vector<HDBSCAN::CondensedEdge> &c, size_t m)
+{
+	std::set<size_t> pts;
+	for(const auto &e : c)
+		if(e.child < m)
+			pts.insert(e.child);
+	return pts.size();
+}
+
+static void TestCondenseTree()
+{
+	// Two tight pairs joined by a long edge:
+	//   0-1 : 1.0  (tight)        2-3 : 1.0  (tight)
+	//   then {0,1}-{2,3} : 10.0   (the split)
+	// weights all 1.0; min_cluster_weight = 2.0
+	std::vector<HDBSCAN::Edge> mst = { {0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0} };
+	std::vector<double> w = {1.0, 1.0, 1.0, 1.0};
+	auto slt = HDBSCAN::BuildSingleLinkageTree(4, mst, w);
+	auto condensed = HDBSCAN::CondenseTree(4, slt, w, 2.0);
+
+	// Every one of the 4 points eventually falls out / is placed.
+	CHECK(CountPointChildren(condensed, 4) == 4);
+	// The top split (weight 10 -> lambda 0.1) is a genuine split: two child clusters
+	// are born, so there are >= 2 sub-cluster edges (child >= m).
+	size_t subcluster_edges = 0;
+	for(const auto &e : condensed)
+		if(e.child >= 4)
+			++subcluster_edges;
+	CHECK(subcluster_edges == 2);
+
+	// With min_cluster_weight = 3.0, neither side of the top split (mass 2 each)
+	// qualifies, so there is no genuine split: 0 sub-cluster edges.
+	auto condensed2 = HDBSCAN::CondenseTree(4, slt, w, 3.0);
+	size_t subcluster_edges2 = 0;
+	for(const auto &e : condensed2)
+		if(e.child >= 4)
+			++subcluster_edges2;
+	CHECK(subcluster_edges2 == 0);
+}
+
 int main()
 {
 	TestBuildMST();
 	TestBuildSingleLinkageTree();
+	TestCondenseTree();
 
 	std::cout << (g_checks - g_failures) << "/" << g_checks << " checks passed" << std::endl;
 	return g_failures == 0 ? 0 : 1;

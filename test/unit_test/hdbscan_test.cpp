@@ -103,11 +103,40 @@ static void TestCondenseTree()
 	CHECK(subcluster_edges2 == 0);
 }
 
+static void TestComputeStabilities()
+{
+	// Same two-tight-pairs tree as TestCondenseTree, min_cluster_weight = 2.0.
+	std::vector<HDBSCAN::Edge> mst = { {0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0} };
+	std::vector<double> w = {1.0, 1.0, 1.0, 1.0};
+	auto slt = HDBSCAN::BuildSingleLinkageTree(4, mst, w);
+	auto condensed = HDBSCAN::CondenseTree(4, slt, w, 2.0);
+	auto stab = HDBSCAN::ComputeStabilities(4, condensed);
+
+	// There is a root cluster plus two children. Each child cluster is born at
+	// lambda 0.1 (1/10) and loses its 2 points at lambda 1.0 (1/1):
+	//   S(child) = 2 * (1.0 - 0.1) = 1.8
+	// Find the two non-root clusters (they have positive birth lambda).
+	auto birth = HDBSCAN::ClusterBirthLambdas(4, condensed);
+	double child_stability_sum = 0.0;
+	size_t child_count = 0;
+	for(const auto &kv : stab)
+	{
+		if(birth[kv.first] > 0.0)	//a child (non-root) cluster
+		{
+			child_stability_sum += kv.second;
+			++child_count;
+		}
+	}
+	CHECK(child_count == 2);
+	CHECK(child_stability_sum > 3.5 && child_stability_sum < 3.7);	//~3.6
+}
+
 int main()
 {
 	TestBuildMST();
 	TestBuildSingleLinkageTree();
 	TestCondenseTree();
+	TestComputeStabilities();
 
 	std::cout << (g_checks - g_failures) << "/" << g_checks << " checks passed" << std::endl;
 	return g_failures == 0 ? 0 : 1;

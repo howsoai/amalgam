@@ -251,4 +251,42 @@ namespace HDBSCAN
 		}
 		return result;
 	}
+
+	//Birth lambda for every cluster label.  A cluster is born at the lambda of
+	//the edge that split it off its parent; roots are born at lambda 0.
+	inline std::unordered_map<size_t, double> ClusterBirthLambdas(size_t m,
+		const std::vector<CondensedEdge> &condensed)
+	{
+		std::unordered_map<size_t, double> birth;
+		std::unordered_set<size_t> clusters;
+		for(const CondensedEdge &e : condensed)
+		{
+			clusters.insert(e.parent);
+			if(e.child >= m)
+			{
+				clusters.insert(e.child);
+				birth[e.child] = e.lambda;
+			}
+		}
+		for(size_t c : clusters)
+		{
+			if(birth.find(c) == birth.end())
+				birth[c] = 0.0;
+		}
+		return birth;
+	}
+
+	//Stability of each cluster: sum over its departing children of
+	//child_mass * (lambda_leave - lambda_birth).
+	inline std::unordered_map<size_t, double> ComputeStabilities(size_t m,
+		const std::vector<CondensedEdge> &condensed)
+	{
+		std::unordered_map<size_t, double> birth = ClusterBirthLambdas(m, condensed);
+		std::unordered_map<size_t, double> stability;
+		for(const auto &kv : birth)
+			stability[kv.first] = 0.0;
+		for(const CondensedEdge &e : condensed)
+			stability[e.parent] += e.child_mass * (e.lambda - birth[e.parent]);
+		return stability;
+	}
 }

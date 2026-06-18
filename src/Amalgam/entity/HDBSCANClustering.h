@@ -187,10 +187,15 @@ namespace HDBSCAN
 		for(size_t k = 0; k < nodes.size(); ++k)
 		{
 			size_t id = m + k;
-			if(!is_child[id])	//a root of the forest
+			if(!is_child[id])	//a root of the forest (one connected component)
 			{
-				node_label[id] = next_label++;
-				work.push_back(id);
+				//a component only becomes a cluster if its total mass meets the
+				//threshold; smaller components (e.g. scattered outliers) stay noise
+				if(NodeMass(id, m, point_weights, nodes) >= min_cluster_weight)
+				{
+					node_label[id] = next_label++;
+					work.push_back(id);
+				}
 			}
 		}
 
@@ -334,9 +339,13 @@ namespace HDBSCAN
 			}
 		};
 
+		//allow_single_cluster = true: a root (whole connected component) competes in
+		//excess-of-mass like any other cluster.  This is required because the KNN
+		//candidate graph disconnects well-separated clusters into separate components
+		//(a spanning forest); each component is a root, and must be selectable for its
+		//points to be clustered rather than dropped as noise.
 		for(size_t c : order)
 		{
-			bool is_root = !(birth[c] > 0.0);	//roots born at lambda 0
 			double sum_child = 0.0;
 			auto it = children.find(c);
 			if(it != children.end())
@@ -347,7 +356,7 @@ namespace HDBSCAN
 
 			double own = stability.count(c) ? stability.at(c) : 0.0;
 
-			if(!is_root && own >= sum_child)
+			if(own >= sum_child)
 			{
 				selected.insert(c);
 				deselect_descendants(c);
@@ -355,7 +364,7 @@ namespace HDBSCAN
 			}
 			else
 			{
-				//root, or children win: keep descendants, propagate their mass up
+				//children win: keep descendants, propagate their mass up
 				propagated[c] = sum_child;
 			}
 		}

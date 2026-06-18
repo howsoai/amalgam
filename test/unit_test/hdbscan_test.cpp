@@ -172,12 +172,16 @@ static void TestClusterEndToEnd()
 	CHECK(labels[2] == labels[3]);
 	CHECK(labels[0] != labels[2]);
 
-	// One tight group of 4 with no genuine sub-split: the only cluster is the
-	// root, which is never selected (allow_single_cluster = false), so every
-	// point is noise.
+	// One tight group of 4 with no genuine sub-split (a single connected
+	// component).  With allow_single_cluster = true the component's root is
+	// selected, so the whole group is one cluster and every point shares it.
 	std::vector<HDBSCAN::Edge> one = { {0, 1, 1.0}, {1, 2, 1.0}, {2, 3, 1.0} };
 	auto labels_one = HDBSCAN::Cluster(4, one, w4, 2.0);
-	CHECK(DistinctNonzero(labels_one) == 0);
+	CHECK(DistinctNonzero(labels_one) == 1);
+	CHECK(labels_one[0] != 0);
+	CHECK(labels_one[0] == labels_one[1]);
+	CHECK(labels_one[1] == labels_one[2]);
+	CHECK(labels_one[2] == labels_one[3]);
 
 	// Two well-separated pairs plus one far outlier (index 4).  The two pairs are
 	// genuine sibling clusters; the outlier falls out of the unselected root, so
@@ -216,6 +220,36 @@ static void TestWeightThreshold()
 	CHECK(labels[5] == 0);
 }
 
+static void TestDisconnectedComponents()
+{
+	// Two tight groups with NO edge between them -> the candidate graph is a
+	// spanning forest of two components (exactly what the KNN glue produces for
+	// well-separated clusters).  Each component must become its own cluster, not
+	// be dropped as noise.  Group A = {0,1,2}, group B = {3,4,5}.
+	std::vector<double> w(6, 1.0);
+	std::vector<HDBSCAN::Edge> edges = {
+		{0, 1, 1.0}, {1, 2, 1.0}, {3, 4, 1.0}, {4, 5, 1.0}
+	};
+	auto labels = HDBSCAN::Cluster(6, edges, w, 2.0);
+	CHECK(DistinctNonzero(labels) == 2);
+	CHECK(labels[0] != 0);
+	CHECK(labels[0] == labels[1]);
+	CHECK(labels[1] == labels[2]);
+	CHECK(labels[3] != 0);
+	CHECK(labels[3] == labels[4]);
+	CHECK(labels[4] == labels[5]);
+	CHECK(labels[0] != labels[3]);
+
+	// A component below the weight threshold stays noise: drop one group to a
+	// single point (mass 1) with minimum_cluster_weight 2.
+	std::vector<HDBSCAN::Edge> edges2 = { {0, 1, 1.0}, {1, 2, 1.0} };
+	auto labels2 = HDBSCAN::Cluster(4, edges2, w, 2.0);  // point 3 is isolated
+	CHECK(labels2[0] != 0);
+	CHECK(labels2[0] == labels2[1]);
+	CHECK(labels2[1] == labels2[2]);
+	CHECK(labels2[3] == 0);  // isolated point -> noise
+}
+
 int main()
 {
 	TestBuildMST();
@@ -225,6 +259,7 @@ int main()
 	TestSelectClusters();
 	TestClusterEndToEnd();
 	TestWeightThreshold();
+	TestDisconnectedComponents();
 
 	std::cout << (g_checks - g_failures) << "/" << g_checks << " checks passed" << std::endl;
 	return g_failures == 0 ? 0 : 1;

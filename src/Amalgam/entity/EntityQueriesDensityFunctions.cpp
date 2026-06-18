@@ -538,149 +538,274 @@ static void ExtractStableClusters(const std::vector<size_t> &condensed_nodes, co
 	const std::vector<size_t> &parent_entities, const std::vector<double> &point_weights, double minimum_cluster_weight,
 	std::vector<size_t> &cluster_ids, std::vector<double> &stabilities)
 {
-	const double EPS_CORE = 1e-9;	//tolerance for core‑distance equality
-	const double SEGMENT_EPS = 4; //groups “nearby” core distances
-
-	const size_t N = core_distances.size();
-
-	cluster_ids.assign(N, 0);
+	//--------------------------------------------------------------
+	//1. Initialise outputs
+	//--------------------------------------------------------------
+	const size_t num_points = core_distances.size();
+	cluster_ids.assign(num_points, 0);
 	stabilities.clear();
 
-	if(condensed_nodes.empty())
-		return; //nothing to cluster – everything stays noise
+	//point weights – default = 1.0
+	std::vector<double> weights = point_weights;
+	if(weights.empty())
+		weights.assign(num_points, 1.0);
 
-	//1.  Sort condensed nodes by increasing core distance – this is the
-	//    order in which HDBSCAN sweeps density levels.
-	std::vector<size_t> sorted = condensed_nodes;
-	std::stable_sort(
-		sorted.begin(), sorted.end(), [&](size_t a, size_t b) { return core_distances[a] < core_distances[b]; });
+	//--------------------------------------------------------------
+	//2. Build a mapping: original‑point‑index → position‑in‑condensed‑array
+	//--------------------------------------------------------------
+	const size_t num_condensed = condensed_nodes.size();
+	//map[original_index] = position in condensed_nodes (0 … num_condensed‑1)
+	std::unordered_map<size_t, size_t> orig_to_condensed;
+	orig_to_condensed.reserve(num_condensed);
+	for(size_t i = 0; i < num_condensed; ++i)
+		orig_to_condensed[condensed_nodes[i]] = i;
 
-	//2.  Build segments (connected components) where successive nodes
-	//    have core distances within SEGMENT_EPS.
-	struct SegmentInfo
+	//--------------------------------------------------------------
+	//3. Tree node definition (unchanged)
+	//--------------------------------------------------------------
+	struct Node
 	{
-		std::vector<size_t> members; //point indices belonging to this segment
-		double weight = 0.0;
-		double lambda_start = 0.0;	  //core distance where segment appears
-		double lambda_end = 0.0;	  //core distance where it merges upward
-		size_t parent_seg = SIZE_MAX; //index of parent segment (if any)
-		size_t cluster_id = 0;		  //final id (0 = noise)
+		std::vector<size_t> children; //positions in the condensed array
+		size_t parent = SIZE_MAX;	  //position in the condensed array
+		double lambda = 0.0;		  //1 / core distance
+		double total_weight = 0.0;	  //weight of the whole subtree
+		bool is_leaf = true;		  //true for original points
 		double stability = 0.0;
 	};
+	std::vector<Node> tree(num_condensed);
 
-	std::vector<SegmentInfo> segments;
-	std::unordered_map<size_t, size_t> node_to_seg; //point → segment index
-
-	size_t cur_seg = SIZE_MAX;
-	for(size_t idx = 0; idx < sorted.size(); ++idx)
+	//--------------------------------------------------------------
+	//4. Initialise each node (lambda, weight, leaf flag)
+	//--------------------------------------------------------------
+	for(size_t i = 0; i < num_condensed; ++i)
 	{
-		size_t node = sorted[idx];
-		double lambda = core_distances[node];
+		const size_t orig_idx = condensed_nodes[i];
+		tree[i].lambda = 1.0 / core_distances[orig_idx];
+		tree[i].total_weight = weights[orig_idx];
+		tree[i].is_leaf = true; //will be corrected later
+	}
 
-		//start a new segment if this is the first node or the distance jumps
-		if(cur_seg == SIZE_MAX || std::abs(lambda - segments[cur_seg].lambda_start) > SEGMENT_EPS)
+	//--------------------------------------------------------------
+	//5. Build parent‑child relationships using the mapping from step 2
+	//--------------------------------------------------------------
+	for(size_t i = 0; i < num_condensed; ++i)
+	{
+		const size_t orig_idx = condensed_nodes[i];
+		const size_t orig_parent = parent_entities[orig_idx];
+
+		//The root of the MST has no parent (often set to itself or SIZE_MAX)
+		if(orig_parent == orig_idx || orig_parent == SIZE_MAX)
+			continue;
+
+		//If the parent is also part of the condensed tree, translate it
+		//to the condensed‑array index; otherwise the parent is a leaf that
+		//will be visited later when we walk upward.
+		auto it = orig_to_condensed.find(orig_parent);
+		if(it != orig_to_condensed.end())
 		{
-			SegmentInfo seg;
-			seg.lambda_start = lambda;
-			seg.members.push_back(node);
-			seg.weight = point_weights.empty() ? 1.0 : point_weights[node];
-			cur_seg = segments.size();
-			segments.push_back(std::move(seg));
+			const size_t parent_pos = it->second;
+			tree[i].parent = parent_pos;
+			tree[parent_pos].children.push_back(i);
+			tree[i].is_leaf = false;
+			tree[parent_pos].is_leaf = false;
+		}
+		//If the parent is NOT in the condensed set, we keep tree[i].parent
+		//as SIZE_MAX – the upward walk will stop at that point.
+	}
+
+	//--------------------------------------------------------------
+	//6. Compute subtree weights bottom‑up (process nodes in decreasing λ)
+	//--------------------------------------------------------------
+	std::vector<size_t> order(num_condensed);
+	std::iota(order.begin(), order.end(), 0);
+	std::sort(order.begin(), order.end(), [&](size_t a, size_t b) { return tree[a].lambda > tree[b].lambda; });
+
+	for(auto it = order.rbegin(); it != order.rend(); ++it)
+	{
+		const size_t idx = *it;
+		const size_t parent = tree[idx].parent;
+		if(parent != SIZE_MAX)
+			tree[parent].total_weight += tree[idx].total_weight;
+	}
+
+	//--------------------------------------------------------------
+	//7. Compute stability for every node
+	//--------------------------------------------------------------
+	for(size_t i = 0; i < num_condensed; ++i)
+	{
+		if(tree[i].is_leaf)
+		{
+			//Leaf stability = λ * weight
+			tree[i].stability = tree[i].lambda * tree[i].total_weight;
 		}
 		else
 		{
-			//extend current segment
-			segments[cur_seg].members.push_back(node);
-			segments[cur_seg].weight += point_weights.empty() ? 1.0 : point_weights[node];
+			double child_stab = 0.0;
+			for(size_t c : tree[i].children)
+				child_stab += tree[c].stability;
+			tree[i].stability = tree[i].lambda * tree[i].total_weight - child_stab;
 		}
-		node_to_seg[node] = cur_seg;
 	}
 
-	//3.  Determine the parent segment for each segment by climbing the
-	//    MST until we hit a node that belongs to a *different* segment.
-	for(size_t s = 0; s < segments.size(); ++s)
-	{
-		//all members share the same lambda_start; pick the first member.
-		size_t exemplar = segments[s].members.front();
-		size_t parent = parent_entities[exemplar];
+	//--------------------------------------------------------------
+	//8. Greedy selection of clusters (bottom‑up scan)
+	//--------------------------------------------------------------
+	std::vector<bool> selected(num_condensed, false);
+	std::vector<bool> processed(num_condensed, false);
+	size_t next_cluster_id = 1;
 
-		while(parent != exemplar) //walk upward in the MST
+	for(size_t idx : order)
+	{ //highest λ → lowest
+		if(processed[idx])
+			continue;
+
+		//Too small → discard whole subtree
+		if(tree[idx].total_weight < minimum_cluster_weight)
 		{
-			auto it = node_to_seg.find(parent);
-			if(it != node_to_seg.end() && it->second != s) //found a different segment
+			std::function<void(size_t)> mark = [&](size_t n) {
+				if(processed[n])
+					return;
+				processed[n] = true;
+				for(size_t ch : tree[n].children)
+					mark(ch);
+			};
+			mark(idx);
+			continue;
+		}
+
+		//Walk upward to find the node with maximal stability that also
+		//satisfies the weight constraint.
+		size_t best = idx;
+		double best_stab = tree[idx].stability;
+		size_t cur = idx;
+		while(tree[cur].parent != SIZE_MAX)
+		{
+			size_t p = tree[cur].parent;
+			if(tree[p].total_weight >= minimum_cluster_weight && tree[p].stability > best_stab)
 			{
-				segments[s].parent_seg = it->second;
-				break;
+				best = p;
+				best_stab = tree[p].stability;
 			}
-			//otherwise keep climbing
-			if(parent == parent_entities[parent]) //reached ultimate root
-				break;
-			exemplar = parent;
-			parent = parent_entities[parent];
+			cur = p;
 		}
 
-		//lambda_end is the core distance of the parent segment (or INF for root)
-		if(segments[s].parent_seg != SIZE_MAX)
-			segments[s].lambda_end = core_distances[segments[segments[s].parent_seg].members.front()];
-		else
-			segments[s].lambda_end = std::numeric_limits<double>::infinity();
-	}
-
-	//4.  Compute stability for every segment.
-	//   stability = Σ (λ_parent – λ_child) * weight_child
-	for(auto &seg : segments)
-	{
-		double delta = seg.lambda_end - seg.lambda_start;
-		if(delta < 0)
-			delta = 0; //safety (should not happen)
-		seg.stability = delta * seg.weight;
-	}
-
-	//5.  Choose which segments become genuine clusters.
-	//   A segment is kept if its weight ≥ minimum_cluster_weight.
-	//   Cluster ids are assigned in a bottom‑up pass so that a child
-	//   inherits the id of the deepest qualified ancestor.
-	size_t next_cluster_id = 1; //0 is reserved for noise
-	for(size_t s = 0; s < segments.size(); ++s)
-	{
-		//If this segment itself meets the weight requirement, it becomes a cluster.
-		if(segments[s].weight >= minimum_cluster_weight)
+		if(!selected[best])
 		{
-			segments[s].cluster_id = next_cluster_id++;
+			selected[best] = true;
+			stabilities.push_back(best_stab);
+
+			//Assign cluster ID to every original point that belongs to this
+			//subtree and has not already been processed.
+			std::function<void(size_t)> assign = [&](size_t n) {
+				if(processed[n])
+					return;
+				processed[n] = true;
+
+				const size_t orig = condensed_nodes[n];
+				//If the node corresponds to an original data point, label it.
+				if(orig < num_points)
+					cluster_ids[orig] = next_cluster_id;
+
+				for(size_t ch : tree[n].children)
+					if(!selected[ch]) //do not descend into already‑selected clusters
+						assign(ch);
+			};
+			assign(best);
+			++next_cluster_id;
 		}
-		else
-		{
-			//Otherwise inherit the id of the nearest ancestor that is a cluster.
-			size_t anc = segments[s].parent_seg;
-			while(anc != SIZE_MAX && segments[anc].cluster_id == 0)
-				anc = segments[anc].parent_seg;
-			segments[s].cluster_id = (anc == SIZE_MAX) ? 0 : segments[anc].cluster_id;
-		}
 	}
 
-	//6.  Populate the final per‑point label vector.
-	for(size_t s = 0; s < segments.size(); ++s)
-	{
-		for(size_t pt : segments[s].members)
-			cluster_ids[pt] = segments[s].cluster_id;
-	}
+	//--------------------------------------------------------------
+	//9. Anything still labelled 0 stays noise – no extra work needed.
+	//--------------------------------------------------------------
+}
 
-	//Optional: expose stability per cluster (useful for debugging)
-	//Build a map from cluster_id → total stability.
-	std::unordered_map<size_t, double> cluster_stab;
-	for(const auto &seg : segments)
-	{
-		if(seg.cluster_id != 0)
-			cluster_stab[seg.cluster_id] += seg.stability;
-	}
+//Test 1: Single cluster with all points stable
+bool TestSingleStableCluster()
+{
+	//4 points in a single cluster, all with equal weight
+	std::vector<size_t> condensed_nodes = {0, 1, 2, 3};
+	std::vector<double> core_distances = {1.0, 1.0, 1.0, 1.0};
+	std::vector<size_t> parent_entities = {0, 0, 0, 0}; //All point to root (0)
+	std::vector<double> point_weights = {1.0, 1.0, 1.0, 1.0};
+	double minimum_cluster_weight = 2.0;
 
-	//Convert map to the output vector ordered by cluster id (1‑based).
-	if(!cluster_stab.empty())
-	{
-		stabilities.resize(next_cluster_id - 1, 0.0); //index 0 unused (noise)
-		for(const auto &kv : cluster_stab)
-			stabilities[kv.first - 1] = kv.second;
-	}
+	std::vector<size_t> cluster_ids(4, 0);
+	std::vector<double> stabilities;
+
+	ExtractStableClusters(condensed_nodes, core_distances, parent_entities, point_weights, minimum_cluster_weight,
+		cluster_ids, stabilities);
+
+	//All points should be in cluster 1 (not noise)
+	bool all_clustered = std::all_of(cluster_ids.begin(), cluster_ids.end(), [](size_t id) { return id > 0; });
+
+	//All should have the same cluster ID
+	bool same_cluster =
+		std::adjacent_find(cluster_ids.begin(), cluster_ids.end(), std::not_equal_to<>()) == cluster_ids.end();
+
+	//Should have exactly 1 cluster
+	bool one_cluster = stabilities.size() == 1;
+
+	return all_clustered && same_cluster && one_cluster;
+}
+
+//Test 2: Two separate clusters with different stabilities
+bool TestTwoClustersOneNoise()
+{
+	//Points 0-1 form one cluster, points 2-3 form another, point 4 is noise
+	std::vector<size_t> condensed_nodes = {0, 1, 2, 3};
+	std::vector<double> core_distances = {0.5, 0.5, 2.0, 2.0, 5.0};
+	std::vector<size_t> parent_entities = {0, 0, 2, 2, 4};
+	std::vector<double> point_weights = {1.0, 1.0, 1.0, 1.0, 1.0};
+	double minimum_cluster_weight = 1.5;
+
+	std::vector<size_t> cluster_ids(5, 0);
+	std::vector<double> stabilities;
+
+	ExtractStableClusters(condensed_nodes, core_distances, parent_entities, point_weights, minimum_cluster_weight,
+		cluster_ids, stabilities);
+
+	//Point 4 should be noise (cluster 0)
+	bool noise_correct = (cluster_ids[4] == 0);
+
+	//Points 0-1 should be in same cluster
+	bool cluster1_correct = (cluster_ids[0] == cluster_ids[1]) && (cluster_ids[0] > 0);
+
+	//Points 2-3 should be in same cluster (different from cluster 1)
+	bool cluster2_correct = (cluster_ids[2] == cluster_ids[3]) && (cluster_ids[2] > 0);
+
+	//The two clusters should be different
+	bool different_clusters = (cluster_ids[0] != cluster_ids[2]);
+
+	return noise_correct && cluster1_correct && cluster2_correct && different_clusters;
+}
+
+//Test 3: Weight-based filtering with minimum_cluster_weight
+bool TestMinimumWeightFiltering()
+{
+	//4 points where one cluster has insufficient total weight
+	std::vector<size_t> condensed_nodes = {0, 1, 2, 3};
+	std::vector<double> core_distances = {1.0, 1.0, 1.0, 1.0};
+	std::vector<size_t> parent_entities = {0, 0, 2, 2};		  //Two separate clusters
+	std::vector<double> point_weights = {0.5, 0.5, 2.0, 2.0}; //First cluster weight = 1.0, second = 4.0
+	double minimum_cluster_weight = 3.0;					  //First cluster fails, second passes
+
+	std::vector<size_t> cluster_ids(4, 0);
+	std::vector<double> stabilities;
+
+	ExtractStableClusters(condensed_nodes, core_distances, parent_entities, point_weights, minimum_cluster_weight,
+		cluster_ids, stabilities);
+
+	//Points 0-1 should be noise (insufficient weight)
+	bool first_cluster_noise = (cluster_ids[0] == 0) && (cluster_ids[1] == 0);
+
+	//Points 2-3 should form a cluster
+	bool second_cluster_valid = (cluster_ids[2] == cluster_ids[3]) && (cluster_ids[2] > 0);
+
+	//Should have exactly 1 cluster
+	bool one_cluster = (stabilities.size() == 1);
+
+	return first_cluster_noise && second_cluster_valid && one_cluster;
 }
 
 void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &entities_to_compute,

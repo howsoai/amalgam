@@ -52,6 +52,13 @@ struct DisjointSetUnion
 	std::vector<size_t> p, r;
 };
 
+struct Edge
+{
+	size_t from;
+	size_t to;
+	double weight;
+};
+
 //Build the minimum spanning tree on the mutual‑reachability graph using Kruskal’s algorithm.
 //Edge weight = max(core_dist[i], core_dist[j])  (the mutual‑reachability distance)
 //nearest_neighbors_cache supplies the candidate edges; we keep only the smallest
@@ -66,7 +73,7 @@ struct DisjointSetUnion
 // when its edge was added to the MST.  The root points to itself.
 void BuildMutualReachabilityMST(size_t num_nearest_neighbors,
 	std::vector<std::vector<DistanceReferencePair<size_t>>> &nearest_neighbors_cache,
-	std::vector<double> &core_distances, std::vector<size_t> &order, std::vector<size_t> &parent_entities)
+	std::vector<double> &core_distances, std::vector<size_t> &parent_entities)
 {
 	const size_t n = nearest_neighbors_cache.size();
 	DisjointSetUnion dsu(n);
@@ -74,57 +81,51 @@ void BuildMutualReachabilityMST(size_t num_nearest_neighbors,
 	for(size_t i = 0; i < n; ++i)
 		parent_entities[i] = i;
 
-	size_t components = n;
+	//Build all candidate edges with their mutual reachability distances
+	std::vector<Edge> edges;
+	edges.reserve(n * num_nearest_neighbors);
 
-	for(size_t index : order)
+	for(size_t i = 0; i < n; ++i)
+	{
+		for(const auto &candidate : nearest_neighbors_cache[i])
+		{
+			size_t j = candidate.reference;
+			if(j >= n || i >= j) //avoid duplicates
+				continue;
+
+			double mutual_reachability = std::max({
+				candidate.distance, //actual distance between i and j
+				core_distances[i],	//core distance of i
+				core_distances[j]	//core distance of j
+			});
+
+			edges.push_back({i, j, mutual_reachability});
+		}
+	}
+
+	//Sort edges by mutual reachability distance (ascending for Kruskal's)
+	std::sort(edges.begin(), edges.end(), [](const Edge &a, const Edge &b) { return a.weight < b.weight; });
+
+	//Kruskal's algorithm
+	size_t components = n;
+	for(const auto &edge : edges)
 	{
 		if(components <= 1)
 			break;
 
-		if(index >= n)
-			continue;
+		size_t ri = dsu.Find(edge.from);
+		size_t rj = dsu.Find(edge.to);
 
-		for(const auto &candidate : nearest_neighbors_cache[index])
+		if(ri != rj)
 		{
-			size_t j = candidate.reference;
-			if(j >= n)
-				continue;
+			//Record parent relationship before union
+			size_t parent = dsu.Unite(ri, rj) ? dsu.Find(ri) : ri;
 
-			size_t ri = dsu.Find(index);
-			size_t rj = dsu.Find(j);
+			//The non-root component's representative gets attached
+			size_t child = (parent == ri) ? rj : ri;
+			parent_entities[child] = parent;
 
-			if(ri != rj)
-			{
-				//pre-union roots
-				size_t root_index = ri; size_t root_j = rj;
-
-				//union components
-				bool merged = dsu.Unite(ri, rj);
-				if(!merged)
-					continue;
-
-				//after union, find the new root of the merged component
-				//ri may have changed if it was attached to rj
-				size_t new_root = dsu.Find(ri);
-
-				//attach the non-surviving root to the surviving root after the merge,
-				//but do not change the surviving root to an endpoint; keep one root per component
-				if(new_root == root_index)
-				{
-					//surviving root is the index side; ensure the other root points into it
-					parent_entities[root_j] = new_root;
-				}
-				else
-				{
-					//surviving root is the j side; ensure the other root points into it
-					parent_entities[root_index] = new_root;
-				}
-
-				components--;
-
-				if(components == 1)
-					break;
-			}
+			components--;
 		}
 	}
 }
@@ -149,8 +150,7 @@ template<typename T> bool VectorsEqual(const std::vector<T> &a, const std::vecto
 
 //Robust verification that parent array represents a valid Kruskal forest
 bool VerifyMSTRobust(const std::vector<size_t> &parent,
-	const std::vector<std::vector<DistanceReferencePair<size_t>>> &nbrs, const std::vector<double> &core,
-	const std::vector<size_t> &order)
+	const std::vector<std::vector<DistanceReferencePair<size_t>>> &nbrs, const std::vector<double> &core)
 {
 	const size_t n = parent.size();
 
@@ -231,7 +231,6 @@ bool TestBuildMutualReachabilityMST_Robust_Test1()
 	const size_t V = 3;
 	const size_t K = 2;
 	std::vector<double> core = {0.5, 1.0, 2.0};
-	std::vector<size_t> order = {2, 1, 0};
 
 	std::vector<std::vector<DistanceReferencePair<size_t>>> nbrs(V);
 	nbrs[0] = {{1.0, 1}, {2.0, 2}};
@@ -239,10 +238,10 @@ bool TestBuildMutualReachabilityMST_Robust_Test1()
 	nbrs[2] = {{2.0, 0}, {2.0, 1}};
 
 	std::vector<size_t> parent(V, V);
-	BuildMutualReachabilityMST(K, nbrs, core, order, parent);
+	BuildMutualReachabilityMST(K, nbrs, core, parent);
 
 	//Check invariants
-	if(!VerifyMSTRobust(parent, nbrs, core, order))
+	if(!VerifyMSTRobust(parent, nbrs, core))
 	{
 		std::cout << "Test1 robustness failed\n";
 		return false;
@@ -269,7 +268,6 @@ bool TestBuildMutualReachabilityMST_Robust_Test2()
 	const size_t V = 4;
 	const size_t K = 1;
 	std::vector<double> core = {0.2, 0.4, 1.0, 1.5};
-	std::vector<size_t> order = {3, 2, 1, 0};
 
 	std::vector<std::vector<DistanceReferencePair<size_t>>> nbrs(V);
 	nbrs[0] = {{0.4, 1}};
@@ -278,9 +276,9 @@ bool TestBuildMutualReachabilityMST_Robust_Test2()
 	nbrs[3] = {{1.5, 2}};
 
 	std::vector<size_t> parent(V, V);
-	BuildMutualReachabilityMST(K, nbrs, core, order, parent);
+	BuildMutualReachabilityMST(K, nbrs, core, parent);
 
-	if(!VerifyMSTRobust(parent, nbrs, core, order))
+	if(!VerifyMSTRobust(parent, nbrs, core))
 	{
 		std::cout << "Test2 robustness failed\n";
 		return false;
@@ -747,19 +745,11 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	#endif
 	);
 
-	//entity indices, sorted descending by core distance
-	std::vector<size_t> order;
-	order.reserve(num_entities);
-	for(auto entity : entities_to_compute)
-		order.push_back(entity);
-	std::stable_sort(order.begin(), order.end(),
-		[&](size_t i, size_t j) { return core_distances[i] > core_distances[j]; });
-
 	//reuse baseDistanceProbabilities, but because clustering is not typically done repeatedly,
 	//don't reuse any of the other buffers
 	std::vector<size_t> parent_entities;
 	BuildMutualReachabilityMST(
-		numNearestNeighbors, knnCache->GetFullKnnCache(), core_distances, order, parent_entities);
+		numNearestNeighbors, knnCache->GetFullKnnCache(), core_distances, parent_entities);
 
 	//a condensed tree removes redundant edges where both nodes have the same core distance (or very similar ones),
 	// simplifying the hierarchy into distinct levels of density

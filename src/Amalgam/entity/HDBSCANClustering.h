@@ -318,7 +318,11 @@ namespace HDBSCAN
 
 		std::unordered_map<size_t, double> birth = ClusterBirthLambdas(m, condensed);
 
-		//process children before parents: descending birth lambda
+		//process children before parents by descending birth lambda.  A child is
+		//born where it splits off its parent (a deeper, denser level), so its birth
+		//lambda is strictly greater than its parent's; sorting descending therefore
+		//guarantees every child is processed (and its propagated stability set)
+		//before its parent reads it.
 		std::vector<size_t> order(all_clusters.begin(), all_clusters.end());
 		std::sort(order.begin(), order.end(),
 			[&](size_t a, size_t b) { return birth[a] > birth[b]; });

@@ -250,6 +250,30 @@ static void TestDisconnectedComponents()
 	CHECK(labels2[3] == 0);  // isolated point -> noise
 }
 
+static void TestExcessOfMassParentWins()
+{
+	// Two parent clusters P={0,1,2,3} and Q={4,5,6,7}, each of which splits into
+	// two tight sub-pairs.  Each parent persists over a WIDE lambda range before
+	// splitting (born at the root weight 10 -> lambda 0.1, splits at weight 1.0 ->
+	// lambda 1.0), while the sub-pairs dissolve almost immediately after forming
+	// (weight 0.95 -> lambda ~1.053).  Excess of mass therefore prefers each
+	// PARENT over its two children: the result is 2 clusters, not 4.
+	std::vector<double> w(8, 1.0);
+	std::vector<HDBSCAN::Edge> edges = {
+		{0, 1, 0.95}, {2, 3, 0.95}, {1, 2, 1.0},   // P and its split
+		{4, 5, 0.95}, {6, 7, 0.95}, {5, 6, 1.0},   // Q and its split
+		{3, 4, 10.0}                                // P-Q join (root)
+	};
+	auto labels = HDBSCAN::Cluster(8, edges, w, 2.0);
+	CHECK(DistinctNonzero(labels) == 2);            // parents selected, not the 4 children
+	for(int i = 1; i < 4; ++i)
+		CHECK(labels[i] == labels[0]);              // all of P shares one label
+	for(int i = 5; i < 8; ++i)
+		CHECK(labels[i] == labels[4]);              // all of Q shares one label
+	CHECK(labels[0] != 0 && labels[4] != 0);
+	CHECK(labels[0] != labels[4]);
+}
+
 int main()
 {
 	TestBuildMST();
@@ -260,6 +284,7 @@ int main()
 	TestClusterEndToEnd();
 	TestWeightThreshold();
 	TestDisconnectedComponents();
+	TestExcessOfMassParentWins();
 
 	std::cout << (g_checks - g_failures) << "/" << g_checks << " checks passed" << std::endl;
 	return g_failures == 0 ? 0 : 1;

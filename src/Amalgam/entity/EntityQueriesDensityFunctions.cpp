@@ -300,124 +300,242 @@ bool TestBuildMutualReachabilityMST_Robust_Test2()
 	return true;
 }
 
-/**
- * Build the condensed tree from the MST that was created with Kruskal’s
- * algorithm (i.e. from a true parent list, not just a Union‑Find set
- * representative).  The condensed tree contains only the edges that
- * change the core‑distance level – edges whose two endpoints have the
- * same core distance are omitted because they do not create a new
- * density level.
- *
- * Parameters
- * ----------
- * parent_entities :  vector<size_t>
- *     For every point *i*, `parent_entities[i]` must be the index of its
- *     parent in the mutual‑reachability MST (the root points to itself).
- *
- * core_distances :  vector<double>
- *     Pre‑computed core distance for each point.
- *
- * condensed_nodes :  vector<size_t>
- *     Output container – after the call it holds the indices of the
- *     points that represent a distinct density level (i.e. nodes whose
- *     core distance differs from their parent's core distance by more
- *     than a tiny epsilon).
- */
-static void GenerateCondensedTree(const std::vector<size_t> &parent_entities, const std::vector<double> &core_distances,
-	std::vector<size_t> &condensed_nodes)
+//Builds the condensed tree from the MST that was created with Kruskal’s algorithm
+//The condensed tree contains only the edges that change the core‑distance level,
+// edges whose two endpoints have the same core distance are omitted because they
+// do not create a new density level.
+//For every point *i*, `parent_entities[i]` must be the index of its
+// parent in the mutual‑reachability MST (the root points to itself).
+//core_distances correspond to each point
+//condensed_nodes will contain the the indices of the points that represent a
+// distinct density level (i.e. nodes whose core distance differs from their
+// parent's core distance by more than a tiny epsilon)
+static void GenerateCondensedTree(const std::vector<size_t> &parent_entities,
+	const std::vector<double> &core_distances, std::vector<size_t> &condensed_nodes)
 {
+	constexpr double epsilon = 1e-10;
 	condensed_nodes.clear();
 
-	//Small tolerance for floating‑point noise – the same value used
-	//later in the original implementation.
-	constexpr double epsilon = 1e-9;
+	if(parent_entities.empty())
+		return;
 
-	//1.  Verify that the parent list really describes a tree.
-	//    (In production code you may want to assert this, but for
-	//    performance we simply skip invalid entries.)
+	//find all roots
 	for(size_t i = 0; i < parent_entities.size(); ++i)
 	{
-		//A root points to itself; it never creates a new density level.
+		if(parent_entities[i] == i)
+			condensed_nodes.push_back(i);
+	}
+
+	//include any node whose core distance differs from its parent's
+	for(size_t i = 0; i < parent_entities.size(); ++i)
+	{
 		if(parent_entities[i] == i)
 			continue;
 
-		//Guard against out‑of‑range indices that could arise from a
-		//buggy MST construction.
-		if(parent_entities[i] >= parent_entities.size())
-			continue;
-
-		//2.  Add node *i* to the condensed tree only if its core distance
-		//    is meaningfully different from that of its parent.
-		double diff = std::abs(core_distances[i] - core_distances[parent_entities[i]]);
-
-		if(diff > epsilon)
+		size_t parent = parent_entities[i];
+		if(std::abs(core_distances[i] - core_distances[parent]) > epsilon)
 			condensed_nodes.push_back(i);
 	}
 }
 
-/**
- *  Extract the most stable clusters from the condensed‐tree produced by
- *  GenerateCondensedTree.
- *
- *  The original implementation had three fatal problems:
- *   1. It used a huge SEGMENT_THRESHOLD (1.5) which merged almost every
- *      node into a single segment.
- *   2. It never computed a real segment weight – it always used the
- *      constant 1.0, so any `minimum_cluster_weight` > 1 forced every
- *      segment to become noise.
- *   3. It never examined the hierarchy (child → parent edges) that the
- *      condensed tree encodes; it simply assigned the segment id of the
- *      current node.
- *
- *  The rewritten version:
- *   •   Sorts the condensed nodes by core distance (ascending) – this is
- *       the order HDBSCAN uses when sweeping the density levels.
- *   •   Forms *segments* by grouping nodes whose core distances differ
- *       by at most a small `SEGMENT_EPS` (default 1e‑3).  This keeps
- *       genuine density levels separate while still being tolerant to
- *       floating‑point jitter.
- *   •   Computes the **true weight** of each segment as the sum of the
- *       per‑point weights (here we fall back to 1.0 when no external
- *       weight is supplied).
- *   •   Determines stability for every segment using the standard HDBSCAN
- *       “stability = Σ ( λ_parent – λ_child ) * weight ” formula.
- *   •   Keeps only segments whose weight ≥ `minimum_cluster_weight`; all
- *       others become noise (cluster‑id 0).
- *   •   Propagates the selected cluster‑id from a parent segment down to
- *       its children so that points that belong to the same dense
- *       region receive the same final label.
- *
- *  Parameters
- *  ----------
- *  condensed_nodes : vector<size_t>
- *      Indices of the points that constitute the condensed tree (output
- *      of GenerateCondensedTree).  The corresponding parent relationship
- *      is stored implicitly in `parent_entities` – the caller must have
- *      built that tree correctly.
- *
- *  core_distances   : vector<double>
- *      Core distance for every point (size == number of entities).
- *
- *  parent_entities  : vector<size_t>
- *      MST parent for each point (same vector that was passed to
- *      GenerateCondensedTree).  Required to walk the hierarchy.
- *
- *  point_weights    : vector<double>
- *      Optional per‑point weight (size == number of entities).  If empty
- *      the function assumes a weight of 1.0 for each point.
- *
- *  minimum_cluster_weight : double
- *      Minimum total weight a segment must have to be considered a
- *      cluster.
- *
- *  cluster_ids      : vector<size_t>
- *      Output – cluster label for every point (0 = noise).
- *
- *  stabilities      : vector<double>
- *      Output – stability value for each cluster (useful for diagnostics;
- *      not used by the caller in the current code path but kept for
- *      compatibility).
- */
+//Tests for GenerateCondensedTree
+
+struct TestCase
+{
+	std::string name;
+	std::vector<size_t> parents;
+	std::vector<double> core_distances;
+	std::vector<size_t> expected_condensed;
+};
+
+static bool run_test(const TestCase &tc)
+{
+	std::vector<size_t> result;
+	GenerateCondensedTree(tc.parents, tc.core_distances, result);
+
+	//Sort both for comparison (order doesn't matter for condensed nodes)
+	std::vector<size_t> sorted_result = result;
+	std::vector<size_t> sorted_expected = tc.expected_condensed;
+	std::sort(sorted_result.begin(), sorted_result.end());
+	std::sort(sorted_expected.begin(), sorted_expected.end());
+
+	bool pass = (sorted_result == sorted_expected);
+
+	std::cout << (pass ? "PASS" : "FAIL") << " | " << tc.name << std::endl;
+	if(!pass)
+	{
+		std::cout << "  Expected: {";
+		for(size_t i = 0; i < tc.expected_condensed.size(); ++i)
+		{
+			if(i > 0)
+				std::cout << ", ";
+			std::cout << tc.expected_condensed[i];
+		}
+		std::cout << "}" << std::endl;
+
+		std::cout << "  Got:      {";
+		for(size_t i = 0; i < result.size(); ++i)
+		{
+			if(i > 0)
+				std::cout << ", ";
+			std::cout << result[i];
+		}
+		std::cout << "}" << std::endl;
+	}
+
+	return pass;
+}
+
+bool run_tests()
+{
+	std::vector<TestCase> tests;
+	int passed = 0;
+	int failed = 0;
+
+	//Test 1: Single point (trivial case)
+	tests.push_back({
+		"Single point - root only", {0}, //parent_entities: point 0 is its own parent (root)
+		{1.0},							 //core_distances
+		{0}								 //expected: only root is a condensed node
+	});
+
+	//Test 2: Two points, different core distances
+	tests.push_back({
+		"Two points - different core distances", {0, 0}, //point 0 is root, point 1's parent is 0
+		{1.0, 2.0},										 //different core distances
+		{0, 1}											 //both should be condensed nodes
+	});
+
+	//Test 3: Two points, same core distance
+	tests.push_back({
+		"Two points - same core distance", {0, 0}, //point 0 is root, point 1's parent is 0
+		{1.0, 1.0},								   //identical core distances
+		{0}										   //only root should be condensed (child is redundant)
+	});
+
+	//Test 4: Chain of 4 points, all different core distances
+	tests.push_back({
+		"Chain - all different core distances", {0, 0, 1, 2}, //0 is root, 1->0, 2->1, 3->2
+		{1.0, 2.0, 3.0, 4.0}, {0, 1, 2, 3}					  //all should be condensed
+	});
+
+	//Test 5: Chain of 4 points, some redundant
+	tests.push_back({
+		"Chain - some redundant core distances", {0, 0, 1, 2}, //0 is root, 1->0, 2->1, 3->2
+		{1.0, 1.0, 2.0, 2.0},								   //0 and 1 same, 2 and 3 same
+		{0, 2}												   //only root and first node of each level
+	});
+
+	//Test 6: Tree with branching
+	tests.push_back({
+		"Tree with branching - all different", {0, 0, 0, 1, 2}, //0 is root, 1->0, 2->0, 3->1, 4->2
+		{1.0, 2.0, 3.0, 4.0, 5.0}, {0, 1, 2, 3, 4}				//all should be condensed
+	});
+
+	//Test 7: Tree with branching, some redundant
+	tests.push_back({
+		"Tree with branching - some redundant", {0, 0, 0, 1, 2}, //0 is root, 1->0, 2->0, 3->1, 4->2
+		{1.0, 1.0, 1.0, 2.0, 2.0},								 //root and children same, grandchildren same
+		{0, 3, 4}												 //only root and grandchildren (first of each level)
+	});
+
+	//Test 8: Empty input
+	tests.push_back({
+		"Empty input", {}, {}, {} //no condensed nodes
+	});
+
+	//Test 9: Root is not first element
+	tests.push_back({
+		"Root is not first element", {1, 1, 1}, //point 1 is root (points to itself), 0->1, 2->1
+		{2.0, 1.0, 2.0},						//root at index 1
+		{1, 0, 2}								//root and both children have different core distances
+	});
+
+	//Test 10: Very close but not equal (within epsilon)
+	tests.push_back({
+		"Very close core distances - within epsilon", {0, 0, 1},
+		{1.0, 1.0 + 1e-12, 2.0}, //1e-12 < 1e-10 epsilon? No, 1e-12 < 1e-10, so they're "equal"
+		{0, 2}					 //child 1 is redundant, child 2 is not
+	});
+
+	//Test 11: Very close but outside epsilon
+	tests.push_back({
+		"Very close core distances - outside epsilon", {0, 0, 1},
+		{1.0, 1.0 + 1e-8, 2.0}, //1e-8 > 1e-10 epsilon, so they're different
+		{0, 1, 2}				//all should be condensed
+	});
+
+	//Test 12: Deep chain with alternating redundancy
+	tests.push_back({
+		"Deep chain with alternating redundancy", {0, 0, 1, 2, 3, 4}, //0 root, 1->0, 2->1, 3->2, 4->3, 5->4
+		{1.0, 1.0, 2.0, 2.0, 3.0, 3.0}, {0, 2, 4}					  //only first node of each density level
+	});
+
+	//Test 13: All same core distance (fully redundant tree)
+	tests.push_back({
+		"All same core distance - fully redundant", {0, 0, 0, 0, 0}, //star topology, root is 0
+		{5.0, 5.0, 5.0, 5.0, 5.0}, {0}								 //only root should be condensed
+	});
+
+	//Test 14: Single child chain, all different
+	tests.push_back(
+		{"Single child chain - all different", {0, 0, 1, 2, 3}, {0.5, 1.0, 1.5, 2.0, 2.5}, {0, 1, 2, 3, 4}});
+
+	//Test 15: Two separate trees (should not happen in MST, but test robustness)
+	tests.push_back({
+		"Two separate trees - robustness check", {0, 0, 2, 2}, //tree 1: 0 root, 1->0; tree 2: 2 root, 3->2
+		{1.0, 2.0, 3.0, 4.0}, {0, 1, 2, 3}					   //all should be condensed (no redundant pairs)
+	});
+
+	std::cout << "=== HDBSCAN GenerateCondensedTree Unit Tests ===" << std::endl;
+	std::cout << "================================================" << std::endl;
+	std::cout << std::endl;
+
+	for(const auto &test : tests)
+	{
+		if(run_test(test))
+			passed++;
+		else
+			failed++;
+	}
+
+	std::cout << std::endl;
+	std::cout << "================================================" << std::endl;
+	std::cout << "Results: " << passed << " passed, " << failed << " failed, " << (passed + failed) << " total"
+			  << std::endl;
+
+	return (failed == 0);
+}
+
+//Extract the most stable clusters from the condensed‐tree produced by GenerateCondensedTree
+//condensed_nodes:
+//    Indices of the points that constitute the condensed tree (output
+//    of GenerateCondensedTree).  The corresponding parent relationship
+//    is stored implicitly in `parent_entities` – the caller must have
+//    built that tree correctly.
+//
+//core_distances:
+//    Core distance for every point (size == number of entities).
+//
+//parent_entities  : vector<size_t>
+//    MST parent for each point (same vector that was passed to
+//    GenerateCondensedTree).  Required to walk the hierarchy.
+//
+//point_weights:
+//    Optional per‑point weight (size == number of entities).  If empty
+//    the function assumes a weight of 1.0 for each point.
+//
+//minimum_cluster_weight:
+//    Minimum total weight a segment must have to be considered a
+//    cluster.
+//
+//cluster_ids:
+//    Output, cluster label for every point (0 = noise).
+//
+//stabilities:
+//    Output, stability value for each cluster (useful for diagnostics;
+//    not used by the caller in the current code path but kept for
+//    compatibility).
 static void ExtractStableClusters(const std::vector<size_t> &condensed_nodes, const std::vector<double> &core_distances,
 	const std::vector<size_t> &parent_entities, const std::vector<double> &point_weights, double minimum_cluster_weight,
 	std::vector<size_t> &cluster_ids, std::vector<double> &stabilities)

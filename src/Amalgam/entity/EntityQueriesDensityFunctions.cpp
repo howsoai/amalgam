@@ -538,9 +538,7 @@ static void ExtractStableClusters(const std::vector<size_t> &condensed_nodes, co
 	const std::vector<size_t> &parent_entities, const std::vector<double> &point_weights, double minimum_cluster_weight,
 	std::vector<size_t> &cluster_ids, std::vector<double> &stabilities)
 {
-	//--------------------------------------------------------------
-	//1. Initialise outputs
-	//--------------------------------------------------------------
+	//1. Initialize outputs
 	const size_t num_points = core_distances.size();
 	cluster_ids.assign(num_points, 0);
 	stabilities.clear();
@@ -550,56 +548,44 @@ static void ExtractStableClusters(const std::vector<size_t> &condensed_nodes, co
 	if(weights.empty())
 		weights.assign(num_points, 1.0);
 
-	//--------------------------------------------------------------
-	//2. Build a mapping: original‑point‑index → position‑in‑condensed‑array
-	//--------------------------------------------------------------
+	//2. Mapping: original point index → position in condensed array
 	const size_t num_condensed = condensed_nodes.size();
-	//map[original_index] = position in condensed_nodes (0 … num_condensed‑1)
 	std::unordered_map<size_t, size_t> orig_to_condensed;
 	orig_to_condensed.reserve(num_condensed);
 	for(size_t i = 0; i < num_condensed; ++i)
 		orig_to_condensed[condensed_nodes[i]] = i;
 
-	//--------------------------------------------------------------
-	//3. Tree node definition (unchanged)
-	//--------------------------------------------------------------
+	//3. Node structure
 	struct Node
 	{
-		std::vector<size_t> children; //positions in the condensed array
-		size_t parent = SIZE_MAX;	  //position in the condensed array
+		std::vector<size_t> children; //positions in condensed array
+		size_t parent = SIZE_MAX;	  //sentinel for “no parent in tree”
 		double lambda = 0.0;		  //1 / core distance
-		double total_weight = 0.0;	  //weight of the whole subtree
-		bool is_leaf = true;		  //true for original points
+		double total_weight = 0.0;	  //sum of weights in subtree
+		bool is_leaf = true;
 		double stability = 0.0;
 	};
 	std::vector<Node> tree(num_condensed);
 
-	//--------------------------------------------------------------
-	//4. Initialise each node (lambda, weight, leaf flag)
-	//--------------------------------------------------------------
+	//4. Initialize per‑node data (lambda, weight, leaf flag)
 	for(size_t i = 0; i < num_condensed; ++i)
 	{
-		const size_t orig_idx = condensed_nodes[i];
-		tree[i].lambda = 1.0 / core_distances[orig_idx];
-		tree[i].total_weight = weights[orig_idx];
+		const size_t orig = condensed_nodes[i];
+		tree[i].lambda = 1.0 / core_distances[orig];
+		tree[i].total_weight = weights[orig];
 		tree[i].is_leaf = true; //will be corrected later
 	}
 
-	//--------------------------------------------------------------
-	//5. Build parent‑child relationships using the mapping from step 2
-	//--------------------------------------------------------------
+	//5. Build parent‑child links using the mapping
 	for(size_t i = 0; i < num_condensed; ++i)
 	{
-		const size_t orig_idx = condensed_nodes[i];
-		const size_t orig_parent = parent_entities[orig_idx];
+		const size_t orig = condensed_nodes[i];
+		const size_t orig_parent = parent_entities[orig];
 
-		//The root of the MST has no parent (often set to itself or SIZE_MAX)
-		if(orig_parent == orig_idx || orig_parent == SIZE_MAX)
+		//root of the MST (self‑link or sentinel) → no parent in tree
+		if(orig_parent == orig || orig_parent == SIZE_MAX)
 			continue;
 
-		//If the parent is also part of the condensed tree, translate it
-		//to the condensed‑array index; otherwise the parent is a leaf that
-		//will be visited later when we walk upward.
 		auto it = orig_to_condensed.find(orig_parent);
 		if(it != orig_to_condensed.end())
 		{
@@ -609,13 +595,10 @@ static void ExtractStableClusters(const std::vector<size_t> &condensed_nodes, co
 			tree[i].is_leaf = false;
 			tree[parent_pos].is_leaf = false;
 		}
-		//If the parent is NOT in the condensed set, we keep tree[i].parent
-		//as SIZE_MAX – the upward walk will stop at that point.
+		//else: parent not in condensed set → keep parent = SIZE_MAX
 	}
 
-	//--------------------------------------------------------------
-	//6. Compute subtree weights bottom‑up (process nodes in decreasing λ)
-	//--------------------------------------------------------------
+	//6. Bottom‑up weight accumulation (process in decreasing λ)
 	std::vector<size_t> order(num_condensed);
 	std::iota(order.begin(), order.end(), 0);
 	std::sort(order.begin(), order.end(), [&](size_t a, size_t b) { return tree[a].lambda > tree[b].lambda; });
@@ -628,28 +611,31 @@ static void ExtractStableClusters(const std::vector<size_t> &condensed_nodes, co
 			tree[parent].total_weight += tree[idx].total_weight;
 	}
 
-	//--------------------------------------------------------------
-	//7. Compute stability for every node
-	//--------------------------------------------------------------
+	//7. Exact stability computation (edge‑based, per the paper)
+	//initialize to zero
+	for(auto &n : tree)
+		n.stability = 0.0;
+
+	//walk children → parent, adding (Δλ * subtree_weight) to the parent
+	for(size_t idx : order)
+	{
+		size_t parent = tree[idx].parent;
+		if(parent == SIZE_MAX)
+			continue;												  //root has no edge
+		double delta_lambda = tree[idx].lambda - tree[parent].lambda; //>0
+		tree[parent].stability += delta_lambda * tree[idx].total_weight;
+	}
+	//add leaf self‑contribution
 	for(size_t i = 0; i < num_condensed; ++i)
 	{
-		if(tree[i].is_leaf)
-		{
-			//Leaf stability = λ * weight
-			tree[i].stability = tree[i].lambda * tree[i].total_weight;
-		}
-		else
-		{
-			double child_stab = 0.0;
-			for(size_t c : tree[i].children)
-				child_stab += tree[c].stability;
-			tree[i].stability = tree[i].lambda * tree[i].total_weight - child_stab;
+		if(tree[i].children.empty())
+		{ //leaf
+			tree[i].stability += tree[i].lambda * tree[i].total_weight;
 		}
 	}
 
-	//--------------------------------------------------------------
-	//8. Greedy selection of clusters (bottom‑up scan)
-	//--------------------------------------------------------------
+	//8. Greedy cluster selection (with optional λ‑gap guard)
+	constexpr double LAMBDA_GAP_REL = 0.10; //10 % relative drop (tunable)
 	std::vector<bool> selected(num_condensed, false);
 	std::vector<bool> processed(num_condensed, false);
 	size_t next_cluster_id = 1;
@@ -659,65 +645,68 @@ static void ExtractStableClusters(const std::vector<size_t> &condensed_nodes, co
 		if(processed[idx])
 			continue;
 
-		//Too small → discard whole subtree
+		//discard sub‑trees that are too light
 		if(tree[idx].total_weight < minimum_cluster_weight)
 		{
-			std::function<void(size_t)> mark = [&](size_t n) {
-				if(processed[n])
-					return;
-				processed[n] = true;
-				for(size_t ch : tree[n].children)
-					mark(ch);
-			};
-			mark(idx);
+			processed[idx] = true;  
 			continue;
 		}
 
-		//Walk upward to find the node with maximal stability that also
-		//satisfies the weight constraint.
-		size_t best = idx;
+		//walk upward, respecting λ‑gap and already‑selected ancestors
+		size_t best_node = idx;
 		double best_stab = tree[idx].stability;
 		size_t cur = idx;
+
 		while(tree[cur].parent != SIZE_MAX)
 		{
-			size_t p = tree[cur].parent;
-			if(tree[p].total_weight >= minimum_cluster_weight && tree[p].stability > best_stab)
+			size_t parent = tree[cur].parent;
+
+			//stop if parent already selected (prevent later merge)
+			if(selected[parent])
+				break;
+
+			//λ‑gap guard
+			double lambda_gap = tree[cur].lambda - tree[parent].lambda;
+			if(lambda_gap > LAMBDA_GAP_REL * tree[cur].lambda)
+				break; //too big a jump → stop climb
+
+			if(tree[parent].total_weight >= minimum_cluster_weight && tree[parent].stability > best_stab)
 			{
-				best = p;
-				best_stab = tree[p].stability;
+				best_node = parent;
+				best_stab = tree[parent].stability;
 			}
-			cur = p;
+			cur = parent;
 		}
 
-		if(!selected[best])
+		//9. Accept the best node as a new cluster
+		if(!selected[best_node])
 		{
-			selected[best] = true;
+			selected[best_node] = true;
 			stabilities.push_back(best_stab);
 
-			//Assign cluster ID to every original point that belongs to this
-			//subtree and has not already been processed.
+			//assign cluster id to every original point in this subtree
 			std::function<void(size_t)> assign = [&](size_t n) {
 				if(processed[n])
 					return;
 				processed[n] = true;
 
 				const size_t orig = condensed_nodes[n];
-				//If the node corresponds to an original data point, label it.
-				if(orig < num_points)
+				if(orig < num_points) //original data point
 					cluster_ids[orig] = next_cluster_id;
 
-				for(size_t ch : tree[n].children)
-					if(!selected[ch]) //do not descend into already‑selected clusters
-						assign(ch);
+				for(size_t c : tree[n].children)
+				{
+					//do NOT descend into a child that has already been selected
+					if(!selected[c])
+						assign(c);
+				}
 			};
-			assign(best);
+			assign(best_node);
 			++next_cluster_id;
 		}
 	}
 
-	//--------------------------------------------------------------
-	//9. Anything still labelled 0 stays noise – no extra work needed.
-	//--------------------------------------------------------------
+	//10. Anything still labeled 0 stays noise (no extra work needed)
 }
 
 //Test 1: Single cluster with all points stable

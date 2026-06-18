@@ -725,6 +725,28 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 #endif
 	);
 
+	//update core distances to be the max of the entity's own core distance
+	//and the core distance of its nearest neighbor (for mutual reachability)
+	IterateOverConcurrentlyIfPossible(
+		entities_to_compute,
+		[this, &core_distances](auto /*unused index*/, auto entity)
+		{
+			auto &neighbors = knnCache->GetKnnCache(entity);
+			double own_core = core_distances[entity];
+			double max_core = own_core;
+
+			//find the maximum core distance among neighbors
+			for(auto &neighbor : neighbors)
+				max_core = std::max(max_core, core_distances[neighbor.reference]);
+
+			core_distances[entity] = max_core;
+		}
+	#ifdef MULTITHREAD_SUPPORT
+		,
+		runConcurrently
+	#endif
+	);
+
 	//entity indices, sorted descending by core distance
 	std::vector<size_t> order;
 	order.reserve(num_entities);

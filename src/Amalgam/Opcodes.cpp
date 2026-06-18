@@ -336,6 +336,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_syntax, "syntax");
 	EmplaceStaticString(ENBISI_distance, "distance");
 	EmplaceStaticString(ENBISI_opcodes, "opcodes");
+	EmplaceStaticString(ENBISI_idioms, "idioms");
 
 	//file storage options
 	EmplaceStaticString(ENBISI_include_rand_seeds, "include_rand_seeds");

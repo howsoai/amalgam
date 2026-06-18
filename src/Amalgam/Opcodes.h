@@ -346,6 +346,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_syntax,
 	ENBISI_distance,
 	ENBISI_opcodes,
+	ENBISI_idioms,
 
 	//file storage options
 	ENBISI_include_rand_seeds,

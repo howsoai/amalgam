@@ -289,4 +289,76 @@ namespace HDBSCAN
 			stability[e.parent] += e.child_mass * (e.lambda - birth[e.parent]);
 		return stability;
 	}
+
+	//Excess-of-mass cluster selection.  Returns the set of kept cluster labels.
+	//Root (whole-component) clusters are never selected.
+	inline std::unordered_set<size_t> SelectClusters(size_t m,
+		const std::vector<CondensedEdge> &condensed,
+		const std::unordered_map<size_t, double> &stability)
+	{
+		//cluster -> parent cluster, and cluster -> child clusters
+		std::unordered_map<size_t, size_t> cluster_parent;
+		std::unordered_map<size_t, std::vector<size_t>> children;
+		std::unordered_set<size_t> all_clusters;
+		for(const CondensedEdge &e : condensed)
+		{
+			all_clusters.insert(e.parent);
+			if(e.child >= m)
+			{
+				all_clusters.insert(e.child);
+				cluster_parent[e.child] = e.parent;
+				children[e.parent].push_back(e.child);
+			}
+		}
+
+		std::unordered_map<size_t, double> birth = ClusterBirthLambdas(m, condensed);
+
+		//process children before parents: descending birth lambda
+		std::vector<size_t> order(all_clusters.begin(), all_clusters.end());
+		std::sort(order.begin(), order.end(),
+			[&](size_t a, size_t b) { return birth[a] > birth[b]; });
+
+		std::unordered_map<size_t, double> propagated;
+		std::unordered_set<size_t> selected;
+
+		auto deselect_descendants = [&](size_t c)
+		{
+			std::vector<size_t> stack(children[c].begin(), children[c].end());
+			while(!stack.empty())
+			{
+				size_t d = stack.back();
+				stack.pop_back();
+				selected.erase(d);
+				for(size_t g : children[d])
+					stack.push_back(g);
+			}
+		};
+
+		for(size_t c : order)
+		{
+			bool is_root = !(birth[c] > 0.0);	//roots born at lambda 0
+			double sum_child = 0.0;
+			auto it = children.find(c);
+			if(it != children.end())
+			{
+				for(size_t ch : it->second)
+					sum_child += propagated[ch];
+			}
+
+			double own = stability.count(c) ? stability.at(c) : 0.0;
+
+			if(!is_root && own >= sum_child)
+			{
+				selected.insert(c);
+				deselect_descendants(c);
+				propagated[c] = own;
+			}
+			else
+			{
+				//root, or children win: keep descendants, propagate their mass up
+				propagated[c] = sum_child;
+			}
+		}
+		return selected;
+	}
 }

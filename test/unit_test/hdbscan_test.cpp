@@ -131,12 +131,32 @@ static void TestComputeStabilities()
 	CHECK(child_stability_sum > 3.5 && child_stability_sum < 3.7);	//~3.6
 }
 
+static void TestSelectClusters()
+{
+	// Two well-separated tight pairs -> the two child clusters should be selected,
+	// the root should not.
+	std::vector<HDBSCAN::Edge> mst = { {0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0} };
+	std::vector<double> w = {1.0, 1.0, 1.0, 1.0};
+	auto slt = HDBSCAN::BuildSingleLinkageTree(4, mst, w);
+	auto condensed = HDBSCAN::CondenseTree(4, slt, w, 2.0);
+	auto stab = HDBSCAN::ComputeStabilities(4, condensed);
+	auto selected = HDBSCAN::SelectClusters(4, condensed, stab);
+
+	CHECK(selected.size() == 2);
+
+	// The root cluster (birth lambda 0) must NOT be selected.
+	auto birth = HDBSCAN::ClusterBirthLambdas(4, condensed);
+	for(size_t c : selected)
+		CHECK(birth[c] > 0.0);
+}
+
 int main()
 {
 	TestBuildMST();
 	TestBuildSingleLinkageTree();
 	TestCondenseTree();
 	TestComputeStabilities();
+	TestSelectClusters();
 
 	std::cout << (g_checks - g_failures) << "/" << g_checks << " checks passed" << std::endl;
 	return g_failures == 0 ? 0 : 1;

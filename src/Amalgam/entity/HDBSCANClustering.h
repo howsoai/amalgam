@@ -361,4 +361,62 @@ namespace HDBSCAN
 		}
 		return selected;
 	}
+
+	//Assigns a 1-based label to each point: the nearest selected ancestor cluster
+	//of the cluster it falls out of, or 0 (noise) if none is selected.
+	inline std::vector<size_t> LabelPoints(size_t m,
+		const std::vector<CondensedEdge> &condensed,
+		const std::unordered_set<size_t> &selected)
+	{
+		std::vector<size_t> labels(m, 0);
+		if(selected.empty())
+			return labels;
+
+		//compact, deterministic 1-based ids in ascending cluster-label order
+		std::vector<size_t> sel(selected.begin(), selected.end());
+		std::sort(sel.begin(), sel.end());
+		std::unordered_map<size_t, size_t> cluster_to_id;
+		for(size_t i = 0; i < sel.size(); ++i)
+			cluster_to_id[sel[i]] = i + 1;
+
+		std::unordered_map<size_t, size_t> cluster_parent;
+		for(const CondensedEdge &e : condensed)
+		{
+			if(e.child >= m)
+				cluster_parent[e.child] = e.parent;
+		}
+
+		for(const CondensedEdge &e : condensed)
+		{
+			if(e.child >= m)	//sub-cluster edge, not a point
+				continue;
+			size_t p = e.child;
+			size_t c = e.parent;
+			while(true)
+			{
+				if(selected.find(c) != selected.end())
+				{
+					labels[p] = cluster_to_id[c];
+					break;
+				}
+				auto it = cluster_parent.find(c);
+				if(it == cluster_parent.end())
+					break;	//reached a root with no selected ancestor -> noise
+				c = it->second;
+			}
+		}
+		return labels;
+	}
+
+	//Full pipeline: candidate edges + point weights -> per-point labels (0 = noise).
+	inline std::vector<size_t> Cluster(size_t m, std::vector<Edge> edges,
+		const std::vector<double> &point_weights, double min_cluster_weight)
+	{
+		std::vector<Edge> mst = BuildMST(m, std::move(edges));
+		std::vector<SingleLinkageNode> slt = BuildSingleLinkageTree(m, mst, point_weights);
+		std::vector<CondensedEdge> condensed = CondenseTree(m, slt, point_weights, min_cluster_weight);
+		std::unordered_map<size_t, double> stability = ComputeStabilities(m, condensed);
+		std::unordered_set<size_t> selected = SelectClusters(m, condensed, stability);
+		return LabelPoints(m, condensed, selected);
+	}
 }

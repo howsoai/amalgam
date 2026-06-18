@@ -150,6 +150,72 @@ static void TestSelectClusters()
 		CHECK(birth[c] > 0.0);
 }
 
+static size_t DistinctNonzero(const std::vector<size_t> &labels)
+{
+	std::set<size_t> s;
+	for(size_t v : labels)
+		if(v != 0)
+			s.insert(v);
+	return s.size();
+}
+
+static void TestClusterEndToEnd()
+{
+	std::vector<double> w4(4, 1.0);
+
+	// Two well-separated pairs -> exactly 2 clusters, no noise, pair-mates share a label.
+	std::vector<HDBSCAN::Edge> two = { {0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0} };
+	auto labels = HDBSCAN::Cluster(4, two, w4, 2.0);
+	CHECK(labels.size() == 4);
+	CHECK(DistinctNonzero(labels) == 2);
+	CHECK(labels[0] == labels[1]);
+	CHECK(labels[2] == labels[3]);
+	CHECK(labels[0] != labels[2]);
+
+	// One tight group of 4 with no genuine sub-split: the only cluster is the
+	// root, which is never selected (allow_single_cluster = false), so every
+	// point is noise.
+	std::vector<HDBSCAN::Edge> one = { {0, 1, 1.0}, {1, 2, 1.0}, {2, 3, 1.0} };
+	auto labels_one = HDBSCAN::Cluster(4, one, w4, 2.0);
+	CHECK(DistinctNonzero(labels_one) == 0);
+
+	// Two well-separated pairs plus one far outlier (index 4).  The two pairs are
+	// genuine sibling clusters; the outlier falls out of the unselected root, so
+	// it is noise while the pairs are clustered.
+	std::vector<double> w5(5, 1.0);
+	std::vector<HDBSCAN::Edge> outlier = {
+		{0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0}, {3, 4, 50.0}
+	};
+	auto labels_out = HDBSCAN::Cluster(5, outlier, w5, 2.0);
+	CHECK(DistinctNonzero(labels_out) == 2);
+	CHECK(labels_out[4] == 0);
+	CHECK(labels_out[0] != 0);
+	CHECK(labels_out[0] == labels_out[1]);
+	CHECK(labels_out[2] == labels_out[3]);
+	CHECK(labels_out[0] != labels_out[2]);
+}
+
+static void TestWeightThreshold()
+{
+	// Three sibling pairs.  Two heavy pairs (point weight 0.8 -> pair mass 1.6)
+	// clear minimum_cluster_weight = 1.0; the light pair (point weight 0.4 ->
+	// pair mass 0.8) falls below it and becomes noise.  A single point (0.8 or
+	// 0.4) never clears the threshold alone, so the heavy pairs stay intact
+	// rather than splitting into singletons.
+	std::vector<double> w = {0.8, 0.8, 0.8, 0.8, 0.4, 0.4};
+	std::vector<HDBSCAN::Edge> edges = {
+		{0, 1, 1.0}, {2, 3, 1.0}, {4, 5, 1.0}, {1, 2, 10.0}, {3, 4, 20.0}
+	};
+	auto labels = HDBSCAN::Cluster(6, edges, w, 1.0);
+	CHECK(DistinctNonzero(labels) == 2);
+	CHECK(labels[0] != 0);
+	CHECK(labels[0] == labels[1]);
+	CHECK(labels[2] == labels[3]);
+	CHECK(labels[0] != labels[2]);
+	CHECK(labels[4] == 0);
+	CHECK(labels[5] == 0);
+}
+
 int main()
 {
 	TestBuildMST();
@@ -157,6 +223,8 @@ int main()
 	TestCondenseTree();
 	TestComputeStabilities();
 	TestSelectClusters();
+	TestClusterEndToEnd();
+	TestWeightThreshold();
 
 	std::cout << (g_checks - g_failures) << "/" << g_checks << " checks passed" << std::endl;
 	return g_failures == 0 ? 0 : 1;

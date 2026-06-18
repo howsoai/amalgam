@@ -12,3 +12,5 @@ The Amalgam interpreter was designed to be used a standalone interpreter and to 
 Initial development on Amalgam began in 2011. It was first offered as a commercial product in 2014 at Hazardous Software Inc. and was open sourced in September 2023 by Howso Incorporated (formerly known as Diveplane Corporation, a company spun out of Hazardous Software Inc.).
 
 When referencing the language: "Amalgam", "amalgam", "amalgam-lang", and "amalgam language" are used interchangeably with Amalgam being preferred. When referencing the interpreter: "Amalgam interpreter", "interpreter", "Amalgam app", and "Amalgam lib" are used interchangeably.
+
+For guidance on writing idiomatic, value-oriented Amalgam, see the [Amalgam Idioms](./idioms.md) guide.

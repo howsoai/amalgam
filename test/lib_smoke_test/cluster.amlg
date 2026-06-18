@@ -1,0 +1,56 @@
+;
+; Clustering integration test: two well-separated 2-D blobs.
+;
+; "setup" creates 12 case entities: 6 tightly grouped near the origin and 6
+; near (10,10).  "run" invokes query_entity_clusters and returns an assoc of
+;   entity-id -> cluster-id   (a positive integer per cluster; 0 means noise).
+;
+; query_entity_clusters positional arguments (EntityQueryBuilder indices):
+;   arg0: k                 (neighbors used for the core distance)
+;   arg1: feature_labels    (list of label names)
+;   arg2: min_cluster_weight (minimum summed weight for a cluster)
+;   arg3: p_value           (Minkowski p; 2 = Euclidean)
+;   arg4: weights           (.null = uniform)
+;   arg5: attributes        (distance_types assoc)
+;
+; k=3 is deliberately smaller than the 6-point blobs: the core distance then
+; stays inside a blob (sharp density), and the KNN candidate graph for two
+; well-separated blobs is a disconnected forest of two components.  HDBSCAN
+; clusters each component on its own, yielding exactly two clusters with no
+; noise.
+;
+{
+	setup
+	(map
+		(lambda (create_entities
+			(concat "case_" (current_index))
+			(zip (list "X" "Y") (current_value))
+		))
+		(list
+			(list 0.0  0.0)
+			(list 0.1  0.0)
+			(list 0.0  0.1)
+			(list 0.1  0.1)
+			(list 0.05 0.05)
+			(list 0.05 0.1)
+			(list 10.0  10.0)
+			(list 10.1  10.0)
+			(list 10.0  10.1)
+			(list 10.1  10.1)
+			(list 10.05 10.05)
+			(list 10.05 10.1)
+		)
+	)
+
+	run
+	(compute_on_contained_entities (list
+		(query_entity_clusters
+			3
+			(list "X" "Y")
+			2
+			2
+			.null
+			(assoc "X" "continuous" "Y" "continuous")
+		)
+	))
+}

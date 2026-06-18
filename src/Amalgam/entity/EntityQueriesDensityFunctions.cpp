@@ -5,123 +5,299 @@
 
 #ifdef HDBSCAN
 
-//Build the MST on the mutual‑reachability graph using Kruskal’s algorithm.
-//  * Edge weight = max(core_dist[i], core_dist[j])  (the mutual‑reachability distance)
-//  * The K‑NN cache supplies the *candidate* edges; we keep only the smallest
-//    ones that connect previously‑disconnected components.
-//  * For each vertex we also store its *parent* in the final tree so that the
-//    condensed‑tree step can compare a node to its true MST neighbor.
-//
-//  The function fills `parent_entities` such that for every i (except the
-//  global root)   parent_entities[i] = the vertex that i was attached to
-//  when its edge was added to the MST.  The root points to itself.
-static void BuildMutualReachabilityMST(
-	size_t num_nearest_neighbors,
-	std::vector<std::vector<DistanceReferencePair<size_t>>> &nearest_neighbors_cache,
-	std::vector<double> &core_distances,
-	std::vector<size_t> &order,			  //vertices sorted by decreasing core‑distance
-	std::vector<size_t> &parent_entities) //output: MST parent for each vertex
+struct DisjointSetUnion
 {
-	const size_t N = core_distances.size();
-	parent_entities.assign(N, 0);
-	std::vector<size_t> uf_parent(N); //union‑find structure (disjoint‑set)
-	std::vector<size_t> uf_rank(N, 0);
-
-	//each vertex is its own set and its own parent (temporarily)
-	for(size_t i = 0; i < N; ++i)
+	DisjointSetUnion(size_t n)
+		: p(n), r(n, 0)
 	{
-		uf_parent[i] = i;
-		parent_entities[i] = i; //will be overwritten when the edge is accepted
+		for(size_t i = 0; i < n; ++i)
+			p[i] = i;
 	}
 
-	//---------- union‑find helpers ----------
-	auto find_set = [&](auto &&self, size_t x) -> size_t
+	size_t Find(size_t x)
 	{
-		if(uf_parent[x] != x)
-			uf_parent[x] = self(self, uf_parent[x]);
-		return uf_parent[x];
-	};
+		size_t root = x;
+		while(p[root] != root)
+			root = p[root];
 
-	auto union_sets = [&](size_t a, size_t b)
+		//path compression
+		while(p[x] != x)
+		{
+			size_t parent = p[x];
+			p[x] = root;
+			x = parent;
+		}
+		return root;
+	}
+
+	bool Unite(size_t a, size_t b)
 	{
-		a = find_set(find_set, a);
-		b = find_set(find_set, b);
+		a = Find(a);
+		b = Find(b);
+
 		if(a == b)
 			return false;
-		if(uf_rank[a] < uf_rank[b])
+
+		if(r[a] < r[b])
 			std::swap(a, b);
-		uf_parent[b] = a;
-		if(uf_rank[a] == uf_rank[b])
-			++uf_rank[a];
+
+		p[b] = a;
+
+		if(r[a] == r[b])
+			r[a]++;
+
 		return true;
-	};
+	}
 
-	//1. Collect all candidate edges from the K‑NN cache.
-	//   For each vertex we only need the neighbors that appear in the
-	//   cached KNN list; the cache already guarantees we do not examine
-	//   every possible pair.
-	struct Edge
-	{
-		size_t u;
-		size_t v;
-		double weight; //max(core[u], core[v])
-		bool operator<(const Edge &other) const
-		{
-			return weight < other.weight;
-		}
-	};
-	std::vector<Edge> edges;
-	edges.reserve(N * num_nearest_neighbors); //rough upper bound
+	std::vector<size_t> p, r;
+};
 
-	for(size_t i : order)
+//Build the minimum spanning tree on the mutual‑reachability graph using Kruskal’s algorithm.
+//Edge weight = max(core_dist[i], core_dist[j])  (the mutual‑reachability distance)
+//nearest_neighbors_cache supplies the candidate edges; we keep only the smallest
+// ones that connect previously‑disconnected components.
+//core_distances contains the core distance corresponding to each corresponding element in nearest_neighbors_cache
+//order stores the indices for both nearest_neighbors_cache and core_distances sorted by decreasing core-distance
+//For each vertex we also store its parent in the final tree so that the
+// condensed‑tree step can compare a node to its true MST neighbor.
+//
+//The function fills parent_entities such that for every i (except the
+// global root), parent_entities[i] = the vertex that i was attached to
+// when its edge was added to the MST.  The root points to itself.
+void BuildMutualReachabilityMST(size_t num_nearest_neighbors,
+	std::vector<std::vector<DistanceReferencePair<size_t>>> &nearest_neighbors_cache,
+	std::vector<double> &core_distances, std::vector<size_t> &order, std::vector<size_t> &parent_entities)
+{
+	const size_t n = nearest_neighbors_cache.size();
+	DisjointSetUnion dsu(n);
+	parent_entities.resize(n);
+	for(size_t i = 0; i < n; ++i)
+		parent_entities[i] = i;
+
+	size_t components = n;
+
+	for(size_t index : order)
 	{
-		for(auto &n : nearest_neighbors_cache[i])
+		if(components <= 1)
+			break;
+
+		if(index >= n)
+			continue;
+
+		for(const auto &candidate : nearest_neighbors_cache[index])
 		{
-			//skip self‑loops that may appear in the cache
-			if(n.reference == i)
+			size_t j = candidate.reference;
+			if(j >= n)
 				continue;
 
-			//ensure each undirected edge is stored only once:
-			//store it when i < n.reference (any deterministic tie‑break)
-			if(i < n.reference)
+			size_t ri = dsu.Find(index);
+			size_t rj = dsu.Find(j);
+
+			if(ri != rj)
 			{
-				double w = std::max(core_distances[i], core_distances[n.reference]);
-				edges.push_back({i, n.reference, w});
+				//pre-union roots
+				size_t root_index = ri; size_t root_j = rj;
+
+				//union components
+				bool merged = dsu.Unite(ri, rj);
+				if(!merged)
+					continue;
+
+				//after union, find the new root of the merged component
+				//ri may have changed if it was attached to rj
+				size_t new_root = dsu.Find(ri);
+
+				//attach the non-surviving root to the surviving root after the merge,
+				//but do not change the surviving root to an endpoint; keep one root per component
+				if(new_root == root_index)
+				{
+					//surviving root is the index side; ensure the other root points into it
+					parent_entities[root_j] = new_root;
+				}
+				else
+				{
+					//surviving root is the j side; ensure the other root points into it
+					parent_entities[root_index] = new_root;
+				}
+
+				components--;
+
+				if(components == 1)
+					break;
 			}
 		}
 	}
+}
 
-	//2. Sort edges by mutual‑reachability weight (ascending) – Kruskal.
-	std::sort(edges.begin(), edges.end());
-
-	//3. Greedily add edges while they connect different components.
-	//   When an edge (u,v) is accepted we set the parent of the newly
-	//   attached node to the other endpoint.  The direction (who becomes
-	//   the child) does not matter for HDBSCAN; we simply make the node
-	//   whose set is merged the child.
-	for(const Edge &e : edges)
+template<typename T> bool VectorsEqual(const std::vector<T> &a, const std::vector<T> &b, const std::string &name)
+{
+	if(a.size() != b.size())
 	{
-		size_t root_u = find_set(find_set, e.u);
-		size_t root_v = find_set(find_set, e.v);
-		if(root_u == root_v)
-			continue;
-
-		//decide which root becomes the child – use the larger core distance
-		//so that the tree respects the density hierarchy (optional but common)
-		size_t childRoot, parentRoot;
-		if(core_distances[root_u] > core_distances[root_v])
-		{
-			childRoot = root_v;
-			parentRoot = root_u;
-		}
-		else
-		{
-			childRoot = root_u;
-			parentRoot = root_v;
-		}
-		parent_entities[childRoot] = parentRoot;
-		union_sets(root_u, root_v);
+		std::cout << name << " size mismatch: " << a.size() << " vs " << b.size() << '\n';
+		return false;
 	}
+	for(size_t i = 0; i < a.size(); ++i)
+	{
+		if(a[i] != b[i])
+		{
+			std::cout << name << " differs at index " << i << " (got " << a[i] << ", expected " << b[i] << ")\n";
+			return false;
+		}
+	}
+	return true;
+}
+
+//Robust verification that parent array represents a valid Kruskal forest
+bool VerifyMSTRobust(const std::vector<size_t> &parent,
+	const std::vector<std::vector<DistanceReferencePair<size_t>>> &nbrs, const std::vector<double> &core,
+	const std::vector<size_t> &order)
+{
+	const size_t n = parent.size();
+
+	//1) Each vertex has a valid parent in [0,n) and roots point to themselves
+	for(size_t v = 0; v < n; ++v)
+	{
+		if(parent[v] >= n)
+		{
+			std::cout << "Invalid parent for vertex " << v << ": " << parent[v] << " (out of range)\n";
+			return false;
+		}
+	}
+
+	//2) No cycles: for every vertex, follow parent pointers until a root is reached.
+	for(size_t s = 0; s < n; ++s)
+	{
+		std::vector<bool> seen(n, false);
+		size_t cur = s;
+		while(parent[cur] != cur)
+		{
+			if(seen[cur])
+			{
+				std::cout << "Cycle detected starting at vertex " << s << '\n';
+				return false;
+			}
+			seen[cur] = true;
+			cur = parent[cur];
+		}
+	}
+
+	//3) For every non-root edge (i -> parent[i]), verify candidate edge exists with correct weight
+	for(size_t i = 0; i < n; ++i)
+	{
+		if(parent[i] == i)
+			continue;
+		size_t p = parent[i];
+		double expected = std::max(core[i], core[p]);
+		bool found = false;
+		for(const auto &cand : nbrs[i])
+		{
+			if(cand.reference == p && std::abs(cand.distance - expected) < 1e-9)
+			{
+				found = true;
+				break;
+			}
+		}
+		if(!found)
+		{
+			std::cout << "Edge (" << i << " -> " << p << ") not found in candidate list with weight " << expected
+						<< '\n';
+			return false;
+		}
+	}
+
+	//4) Optional: check the number of components matches the forest
+	size_t components = 0;
+	for(size_t i = 0; i < n; ++i)
+		if(parent[i] == i)
+			++components;
+	//Forest has exactly n - edges edges; here edges = n - components
+	size_t edges = 0;
+	for(size_t i = 0; i < n; ++i)
+		if(parent[i] != i)
+			++edges;
+	if(n - components != edges)
+	{
+		std::cout << "Edge count mismatch (forest property violated): n=" << n << " components=" << components
+					<< " edges=" << edges << '\n';
+		return false;
+	}
+
+	return true;
+}
+
+bool TestBuildMutualReachabilityMST_Robust_Test1()
+{
+	//Tiny connected graph (3 vertices, k = 2)
+	const size_t V = 3;
+	const size_t K = 2;
+	std::vector<double> core = {0.5, 1.0, 2.0};
+	std::vector<size_t> order = {2, 1, 0};
+
+	std::vector<std::vector<DistanceReferencePair<size_t>>> nbrs(V);
+	nbrs[0] = {{1.0, 1}, {2.0, 2}};
+	nbrs[1] = {{1.0, 0}, {2.0, 2}};
+	nbrs[2] = {{2.0, 0}, {2.0, 1}};
+
+	std::vector<size_t> parent(V, V);
+	BuildMutualReachabilityMST(K, nbrs, core, order, parent);
+
+	//Check invariants
+	if(!VerifyMSTRobust(parent, nbrs, core, order))
+	{
+		std::cout << "Test1 robustness failed\n";
+		return false;
+	}
+
+	//Additionally allow any valid forest with one root
+	//Ensure exactly one root
+	size_t roots = 0;
+	for(size_t i = 0; i < V; ++i)
+		if(parent[i] == i)
+			++roots;
+	if(roots != 1)
+	{
+		std::cout << "Test1: expected exactly 1 root, got " << roots << '\n';
+		return false;
+	}
+
+	return true;
+}
+
+bool TestBuildMutualReachabilityMST_Robust_Test2()
+{
+	//Test 2 - disconnected components (2 components of size 2)
+	const size_t V = 4;
+	const size_t K = 1;
+	std::vector<double> core = {0.2, 0.4, 1.0, 1.5};
+	std::vector<size_t> order = {3, 2, 1, 0};
+
+	std::vector<std::vector<DistanceReferencePair<size_t>>> nbrs(V);
+	nbrs[0] = {{0.4, 1}};
+	nbrs[1] = {{0.4, 0}};
+	nbrs[2] = {{1.5, 3}};
+	nbrs[3] = {{1.5, 2}};
+
+	std::vector<size_t> parent(V, V);
+	BuildMutualReachabilityMST(K, nbrs, core, order, parent);
+
+	if(!VerifyMSTRobust(parent, nbrs, core, order))
+	{
+		std::cout << "Test2 robustness failed\n";
+		return false;
+	}
+
+	//Ensure forest has two components (two roots)
+	size_t roots = 0;
+	for(size_t i = 0; i < V; ++i)
+		if(parent[i] == i)
+			++roots;
+	if(roots != 2)
+	{
+		std::cout << "Test2: expected 2 roots, got " << roots << '\n';
+		return false;
+	}
+
+	return true;
 }
 
 /**

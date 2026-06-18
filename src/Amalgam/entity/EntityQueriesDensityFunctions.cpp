@@ -718,10 +718,7 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 		// handle slight discrepancies in sorting due to numeric precision during distance recomputations
 		std::stable_sort(neighbors.begin(), neighbors.end());
 
-		if(num_neighbors_by_bandwidth > 0)
-			core_distances[entity] = neighbors[num_neighbors_by_bandwidth - 1].distance;
-		else //treat as infinite distance if no neighbors (not included in query)
-			core_distances[entity] = std::numeric_limits<double>::infinity();
+		core_distances[entity] = neighbors[num_neighbors_by_bandwidth - 1].distance;
 	}
 #ifdef MULTITHREAD_SUPPORT
 		, runConcurrently

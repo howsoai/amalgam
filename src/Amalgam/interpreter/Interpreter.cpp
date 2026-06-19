@@ -631,7 +631,6 @@ bool Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 	interpreter_constraints.maxContainedEntityDepth = 0;
 	interpreter_constraints.maxEntityIdLength = 0;
 	interpreter_constraints.readOnlyEntities = false;
-	//TODO 25398: use readOnlyEntities where appropriate
 
 	size_t warning_override_offset = perf_constraint_param_offset + 3;
 

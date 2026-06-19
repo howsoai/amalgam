@@ -130,6 +130,12 @@ struct sherwood_v8_block
 		return make_filled_array_impl(std::make_index_sequence<BlockSize>{});
 	}
 
+	//the index starts one prior to the actual location, and GCC 10 does not recognize this pattern
+	//this was addressed in GCC 11
+	//these pragmas disable the incorrect error
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+
 	static sherwood_v8_block *empty_block()
 	{
 		alignas(sherwood_v8_block) static const std::array<std::uint8_t, BlockSize>
@@ -148,6 +154,8 @@ struct sherwood_v8_block
         }
         return -1;
     }
+
+#pragma GCC diagnostic pop
 
     void fill_control_bytes(int8_t value)
     {

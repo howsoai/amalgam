@@ -86,7 +86,19 @@ public:
 #include <vector>
 
 #include "rapidhash/rapidhash.h"
+
+//TODO 15993: once C++20 is allowed, change the function to the code below
+//the index starts one prior to the actual location, and GCC 10 does not recognize this pattern
+// this was addressed in GCC 11; need to disable warnings for now
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
 #include "skarupke_maps/bytell_hash_map.hpp"
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
 #include "skarupke_maps/flat_hash_map.hpp"
 
 

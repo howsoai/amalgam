@@ -132,39 +132,11 @@ struct sherwood_v8_block
 
 	static sherwood_v8_block *empty_block()
 	{
-	#if defined(__GNUC__) && !defined(__clang__)
-		// ---- GCC only -----------------
-		// Suppress the false‑positive warning that GCC 10 emits for the
-		// “--current” pointer decrement performed by the hash‑map.
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Warray-bounds"
-
-	// 1 guard byte + storage for a full sherwood_v8_block, correctly aligned
-		alignas(sherwood_v8_block) static std::uint8_t raw[1 + sizeof(sherwood_v8_block)] = {};
-
-		// Construct the block object at offset 1 (placement‑new)
-		sherwood_v8_block *sentinel = new (raw + 1) sherwood_v8_block();
-
-		// Initialise the control bytes with the “empty” magic value
-		sentinel->fill_control_bytes(
-			static_cast<int8_t>(sherwood_v8_constants<>::magic_for_empty));
-
-	#pragma GCC diagnostic pop    // restore normal warnings
-
-		// The map will decrement the pointer once and land on raw[0],
-		// which is still inside the static array.
-		return sentinel;
-
-	#else   // ---- non‑GCC (Clang, MSVC, etc.) ------------------------------
-		// Original pattern that works on the other compilers:
-		// the map expects a pointer that is one byte *past* the start of the
-		// static byte array.
-		alignas(sherwood_v8_block) static const std::array<std::uint8_t, BlockSize>
+		alignas(sherwood_v8_block) static constexpr std::array<std::uint8_t, BlockSize>
 			empty_bytes = make_filled_array();
 
 		return reinterpret_cast<sherwood_v8_block *>(
 			const_cast<std::uint8_t *>(&empty_bytes[0]));
-	#endif
 	}
 
     int first_empty_index() const
@@ -182,7 +154,6 @@ struct sherwood_v8_block
         std::fill(std::begin(control_bytes), std::end(control_bytes), value);
     }
 };
-
 
 template<typename T, typename FindKey, typename ArgumentHash, typename Hasher, typename ArgumentEqual, typename Equal, typename ArgumentAlloc, typename ByteAlloc, uint8_t BlockSize>
 class sherwood_v8_table : private ByteAlloc, private Hasher, private Equal

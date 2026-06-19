@@ -132,7 +132,7 @@ struct sherwood_v8_block
 
 	static sherwood_v8_block *empty_block()
 	{
-		alignas(sherwood_v8_block) static constexpr std::array<std::uint8_t, BlockSize>
+		alignas(sherwood_v8_block) static const std::array<std::uint8_t, BlockSize>
 			empty_bytes = make_filled_array();
 
 		return reinterpret_cast<sherwood_v8_block *>(

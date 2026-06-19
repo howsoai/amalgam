@@ -26,18 +26,6 @@ public:
 	}
 };
 
-//hashing for pairs of pointers
-template<typename T>
-struct std::hash<std::pair<T *, T *>>
-{
-	inline size_t operator()(std::pair<T *, T *> const &pointer_pair) const
-	{
-		size_t h1 = std::hash<T *>{}(pointer_pair.first);
-		size_t h2 = std::hash<T *>{}(pointer_pair.second);
-		return h1 ^ (h2 << 1);
-	}
-};
-
 //equality for pairs of pointers
 template<typename T>
 constexpr bool operator==(const std::pair<T *, T *> &a, const std::pair<T *, T *> &b)

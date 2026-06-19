@@ -1,5 +1,7 @@
 # Amalgam&reg;
 
+An LLM-ready, tree-structured language for safe, sandboxed code generation, manipulation, and advanced information-theoretic inference. 
+
 **Table of Contents**
 
 1. [Introduction](#introduction)
@@ -11,24 +13,29 @@
     * [Dev/local Builds](#devlocal-builds)
     * [Runtime Requirements](#runtime-requirements)
     * [Usage](#usage)
+1. [History and Roadmap](#history-and-roadmap)
 1. [License](#license)
 1. [Contributing](#contributing)
 
 ## Introduction
 
-Amalgam&reg; is a programming language developed for [genetic programming](https://en.wikipedia.org/wiki/Genetic_programming) and [instance based machine learning](https://en.wikipedia.org/wiki/Instance-based_learning), as well as for simulation, agent based modeling, data storage and retrieval, the mathematics of probability theory and information theory, and game content and AI.  The language format is somewhat LISP-like in that it uses parenthesized list format with prefix notation and is designed for functional programming.  There is a one-to-one mapping between the code and the corresponding parse tree.  Its one-to-one parse-tree design coupled with its ability to sandbox execution makes it well suited for LLMs.  
+Amalgam&reg; is an LLM-ready, tree-structured language for safe, sandboxed code generation, manipulation, and advanced information-theoretic inference.  Unlike traditional languages that prioritize developer shorthand, Amalgam focuses on code-data symmetry and semantic consistency.  These properties give it unique strengths in a wide variety of domains, including [genetic programming](https://en.wikipedia.org/wiki/Generic_programming), [instance based machine learning](https://en.wikipedia.org/wiki/Instance-based_learning), simulation, agent-based modeling, data storage and retrieval, the mathematics of probability theory and information theory, and game content and AI.
 
-Whereas virtually all practical programming languages are primarily designed for some combination of programmer productivity and computational performance, Amalgam prioritizes code matching and merging, as well as a deep equivalence of code and data.  Amalgam uses _entities_ to store code and data, with a rich query system to find entities by their _labels_, which are roughly equivalent to attributes in object oriented programming.  There is no separate class versus instance; entities can be used as prototypes to be copied and modified.  Though code and data are represented as trees from the root of each entity, graphs in code and data structures are permitted and are automatically flattened to code using special references.  Amalgam supports genetic programming and code mixing by being weakly typed, and attempts to find a way to execute code no matter whether types match or not.
+### Key Features
+  - LLM-Ready By Design: By intentionally omitting a macro system, Amalgam ensures that visual similarity equals functional identity.  This structure allows LLMs to perform precise code generation, "patching" (identifying the exact difference between two scripts), and merging operations with high reliability.
+  - Robust Sandboxing: Built with an inherent focus on sandboxing, Amalgam provides a robust permission and execution constraints system.  This makes it ideal for executing AI-generated code where safety, CPU limits, and memory constraints are paramount.  It has been hardened by a over a decade of evolutionary fuzz testing.
+  - Universal Data/Code Unity: In Amalgam, there is no distinction between a "class" and an "instance" or "data" and "code".  Everything is code.  Amalgam allows for sophisticated querying of capabilities and easy reproduction of behaviors through copying and modification.
+  - Rich Querying System: Subdividing code into "entities", Amalgam supports fast similarity search of code and data, as well as a rich information theoretic foundation for determining similarity.
 
-Amalgam takes inspiration from many programming languages, but the largest influences are LISP, Scheme, Haskell, Perl, Smalltalk, and Python.  Despite being much like LISP, there is deliberately no macro system. This is to make sure that code is semantically similar whenever the code is similar, regardless of context.  This makes it easy to find the difference between x and y as an executable patch, and then apply that patch to z as `(call (difference x y) {_ z})`, or semantically mix blocks of code a and b as `(mix a b)`.  Though Amalgam is optimized for functional programming, it is not a purely functional language.  It has imperative and object-oriented capabilities.
+### Design Philosophy
 
-Genetic programming can create arbitrary code, so there is always a chance that an evolved program consumes considerable CPU or memory resources, or may attempt to affect the system outside of the interpreter.  For these reasons, there are many strict sandboxing aspects of the language with optional constraints on access, CPU, and memory.  Amalgam has a rich permissions system, which controls what entities and code are able to do, whether writing to the console or executing system commands.
+While influenced by LISP (prefix notation) and Smalltalk (object-oriented capabilities and embedded environment), Amalgam intentionally excludes a macro system.  This ensures that similar code is semantically identical.  By removing context-dependent transformations, it ensures that if two snippets look alike, they behave identically—a critical requirement for automated inference and "patching" via `(call (difference x y) {_ z})`.
 
-The Amalgam interpreter does not currently have rich support for linking C libraries into the language, but that is planned for future functionality.
+Amalgam supports genetic programming and loose typing to facilitate flexible execution, while its underlying tree structure maintains the integrity of the logic.  It is optimized for functional-style coding though supports procedural and object oriented programming.
 
-Initial development on Amalgam began in 2011. It was first offered as a commercial product in 2014 at Hazardous Software Inc. and was open sourced in September 2023 by Howso Incorporated (formerly known as Diveplane Corporation, a company spun out of Hazardous Software Inc.).
+### Example Uses
 
-When referencing the language: 'Amalgam', 'amalgam', 'amalgam-lang', and 'amalgam language' are used interchangeably with **Amalgam** being preferred. When referencing the interpreter: 'Amalgam interpreter', 'interpreter', 'Amalgam app', and 'Amalgam lib' are used interchangeably.
+Amalgam is used in production systems driving the [Howso Engine](https://github.com/howsoai/howso-engine-py) allowing for rich data and code to be used and executed during inference, as well as evolutionary programming systems like [Evolver](https://github.com/howsoai/evolver).  Code can be called natively via Python via the [amalgam-lang-py](https://github.com/howsoai/amalgam-lang-py) package.
 
 ## Programming in Amalgam
 
@@ -258,6 +265,12 @@ To run an Amalgam script:
  ```bash
  ./test.amlg
  ```
+
+## History and Roadmap
+
+Initial development on Amalgam began in 2011. It was first offered as a commercial product in 2014 at Hazardous Software Inc. and was open sourced in September 2023 by Howso Incorporated (formerly known as Diveplane Corporation, a company spun out of Hazardous Software Inc.).  Amalgam takes inspiration from many programming languages, but the largest influences are LISP, Scheme, Haskell, Perl, Smalltalk, and Python.
+
+The Amalgam interpreter does not currently have rich support for linking C libraries into the language, but that is planned for future functionality.  The roadmap also includes eventually disolving the query opcodes in favor of efficient specialized code paths using other opcodes such as `map` and `filter`.
 
 ## License
 

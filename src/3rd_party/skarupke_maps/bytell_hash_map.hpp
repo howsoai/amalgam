@@ -130,19 +130,26 @@ struct sherwood_v8_block
 		return make_filled_array_impl(std::make_index_sequence<BlockSize>{});
 	}
 
-	//the index starts one prior to the actual location, and GCC 10 does not recognize this pattern
-	//this was addressed in GCC 11
-	//these pragmas disable the incorrect error
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-
 	static sherwood_v8_block *empty_block()
 	{
-		alignas(sherwood_v8_block) static const std::array<std::uint8_t, BlockSize>
-			empty_bytes = make_filled_array();
+		//TODO 15993: once C++20 is allowed, change the function to the code below
+		//the index starts one prior to the actual location, and GCC 10 does not recognize this pattern
+		// this was addressed in GCC 11
+		//
+		//alignas(sherwood_v8_block) static const std::array<std::uint8_t, BlockSize>
+		//empty_bytes = make_filled_array();
+		//
+		//return reinterpret_cast<sherwood_v8_block *>(
+		//	const_cast<std::uint8_t *>(&empty_bytes[0]));
 
-		return reinterpret_cast<sherwood_v8_block *>(
-			const_cast<std::uint8_t *>(&empty_bytes[0]));
+		//one guard byte + the actual block storage.
+		alignas(sherwood_v8_block) static std::uint8_t raw[1 + sizeof(sherwood_v8_block)] = {};
+		sherwood_v8_block *sentinel = new (raw + 1) sherwood_v8_block();
+
+		sentinel->fill_control_bytes(
+			static_cast<int8_t>(sherwood_v8_constants<>::magic_for_empty));
+
+		return sentinel;
 	}
 
     int first_empty_index() const
@@ -155,13 +162,12 @@ struct sherwood_v8_block
         return -1;
     }
 
-#pragma GCC diagnostic pop
-
     void fill_control_bytes(int8_t value)
     {
         std::fill(std::begin(control_bytes), std::end(control_bytes), value);
     }
 };
+
 
 template<typename T, typename FindKey, typename ArgumentHash, typename Hasher, typename ArgumentEqual, typename Equal, typename ArgumentAlloc, typename ByteAlloc, uint8_t BlockSize>
 class sherwood_v8_table : private ByteAlloc, private Hasher, private Equal

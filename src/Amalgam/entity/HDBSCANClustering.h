@@ -90,8 +90,10 @@ namespace HDBSCAN
 
 	//Builds the single-linkage dendrogram from the (ascending) MST edges.
 	//Each accepted merge becomes node id m + k with summed-weight mass.
+	//`mst` is taken by value: a moved-in argument is consumed and freed when this
+	//returns, so the caller need not hold the MST alive past this stage.
 	inline std::vector<SingleLinkageNode> BuildSingleLinkageTree(size_t m,
-		const std::vector<Edge> &mst, const std::vector<double> &point_weights)
+		std::vector<Edge> mst, const std::vector<double> &point_weights)
 	{
 		std::vector<SingleLinkageNode> nodes;
 		nodes.reserve(mst.size());
@@ -158,8 +160,10 @@ namespace HDBSCAN
 
 	//Condenses the dendrogram: small branches fall out as noise, balanced splits
 	//create child clusters, single big branches continue the parent cluster.
+	//`nodes` is taken by value: a moved-in single-linkage tree is consumed and freed
+	//when this returns, so the caller need not hold it alive past this stage.
 	inline std::vector<CondensedEdge> CondenseTree(size_t m,
-		const std::vector<SingleLinkageNode> &nodes,
+		std::vector<SingleLinkageNode> nodes,
 		const std::vector<double> &point_weights, double min_cluster_weight)
 	{
 		std::vector<CondensedEdge> result;
@@ -284,24 +288,30 @@ namespace HDBSCAN
 	}
 
 	//Stability of each cluster: sum over its departing children of
-	//child_mass * (lambda_leave - lambda_birth).
-	inline FastHashMap<size_t, double> ComputeStabilities(size_t m,
-		const std::vector<CondensedEdge> &condensed)
+	//child_mass * (lambda_leave - lambda_birth).  `birth` is the map returned by
+	//ClusterBirthLambdas; it is passed in so the pipeline computes it only once and
+	//shares it with SelectClusters.
+	inline FastHashMap<size_t, double> ComputeStabilities(
+		const std::vector<CondensedEdge> &condensed,
+		const FastHashMap<size_t, double> &birth)
 	{
-		FastHashMap<size_t, double> birth = ClusterBirthLambdas(m, condensed);
 		FastHashMap<size_t, double> stability;
 		for(const auto &kv : birth)
 			stability[kv.first] = 0.0;
 		for(const CondensedEdge &e : condensed)
-			stability[e.parent] += e.child_mass * (e.lambda - birth[e.parent]);
+			stability[e.parent] += e.child_mass * (e.lambda - birth.at(e.parent));
 		return stability;
 	}
 
 	//Excess-of-mass cluster selection.  Returns the set of kept cluster labels.
 	//Root (whole-component) clusters are never selected.
+	//`stability` and `birth` are taken by value: both are moved-in maps consumed and
+	//freed when this returns, since selection is their last reader.  `birth` is the
+	//ClusterBirthLambdas map, shared with ComputeStabilities so it is computed once.
 	inline FastHashSet<size_t> SelectClusters(size_t m,
 		const std::vector<CondensedEdge> &condensed,
-		const FastHashMap<size_t, double> &stability)
+		FastHashMap<size_t, double> stability,
+		FastHashMap<size_t, double> birth)
 	{
 		//cluster -> parent cluster, and cluster -> child clusters
 		FastHashMap<size_t, size_t> cluster_parent;
@@ -317,8 +327,6 @@ namespace HDBSCAN
 				children[e.parent].push_back(e.child);
 			}
 		}
-
-		FastHashMap<size_t, double> birth = ClusterBirthLambdas(m, condensed);
 
 		//process children before parents by descending birth lambda.  A child is
 		//born where it splits off its parent (a deeper, denser level), so its birth
@@ -446,14 +454,21 @@ namespace HDBSCAN
 	//share no candidate edge); BuildMST returns one tree per component and the forest
 	//roots are selected directly by SelectClusters (the "multiple tree roots" approach),
 	//so no artificial bridge edges are introduced.
+	//
+	//Each single-use intermediate (the MST, the single-linkage tree, the stability
+	//map) is std::move()d into the stage that consumes it; those stages take their
+	//argument by value, so each structure is freed when that stage returns rather
+	//than living until the whole pipeline finishes.  Only `condensed` has more than
+	//one downstream reader, so it alone is kept by reference until the end.
 	inline std::vector<size_t> Cluster(size_t m, std::vector<Edge> edges,
 		const std::vector<double> &point_weights, double min_cluster_weight)
 	{
 		std::vector<Edge> mst = BuildMST(m, std::move(edges));
-		std::vector<SingleLinkageNode> slt = BuildSingleLinkageTree(m, mst, point_weights);
-		std::vector<CondensedEdge> condensed = CondenseTree(m, slt, point_weights, min_cluster_weight);
-		FastHashMap<size_t, double> stability = ComputeStabilities(m, condensed);
-		FastHashSet<size_t> selected = SelectClusters(m, condensed, stability);
+		std::vector<SingleLinkageNode> slt = BuildSingleLinkageTree(m, std::move(mst), point_weights);
+		std::vector<CondensedEdge> condensed = CondenseTree(m, std::move(slt), point_weights, min_cluster_weight);
+		FastHashMap<size_t, double> birth = ClusterBirthLambdas(m, condensed);
+		FastHashMap<size_t, double> stability = ComputeStabilities(condensed, birth);
+		FastHashSet<size_t> selected = SelectClusters(m, condensed, std::move(stability), std::move(birth));
 		return LabelPoints(m, condensed, selected);
 	}
 }

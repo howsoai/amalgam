@@ -110,13 +110,13 @@ static void TestComputeStabilities()
 	std::vector<double> w = {1.0, 1.0, 1.0, 1.0};
 	auto slt = HDBSCAN::BuildSingleLinkageTree(4, mst, w);
 	auto condensed = HDBSCAN::CondenseTree(4, slt, w, 2.0);
-	auto stab = HDBSCAN::ComputeStabilities(4, condensed);
+	auto birth = HDBSCAN::ClusterBirthLambdas(4, condensed);
+	auto stab = HDBSCAN::ComputeStabilities(condensed, birth);
 
 	// There is a root cluster plus two children. Each child cluster is born at
 	// lambda 0.1 (1/10) and loses its 2 points at lambda 1.0 (1/1):
 	//   S(child) = 2 * (1.0 - 0.1) = 1.8
 	// Find the two non-root clusters (they have positive birth lambda).
-	auto birth = HDBSCAN::ClusterBirthLambdas(4, condensed);
 	double child_stability_sum = 0.0;
 	size_t child_count = 0;
 	for(const auto &kv : stab)
@@ -139,13 +139,13 @@ static void TestSelectClusters()
 	std::vector<double> w = {1.0, 1.0, 1.0, 1.0};
 	auto slt = HDBSCAN::BuildSingleLinkageTree(4, mst, w);
 	auto condensed = HDBSCAN::CondenseTree(4, slt, w, 2.0);
-	auto stab = HDBSCAN::ComputeStabilities(4, condensed);
-	auto selected = HDBSCAN::SelectClusters(4, condensed, stab);
+	auto birth = HDBSCAN::ClusterBirthLambdas(4, condensed);
+	auto stab = HDBSCAN::ComputeStabilities(condensed, birth);
+	auto selected = HDBSCAN::SelectClusters(4, condensed, stab, birth);
 
 	CHECK(selected.size() == 2);
 
 	// The root cluster (birth lambda 0) must NOT be selected.
-	auto birth = HDBSCAN::ClusterBirthLambdas(4, condensed);
 	for(size_t c : selected)
 		CHECK(birth[c] > 0.0);
 }

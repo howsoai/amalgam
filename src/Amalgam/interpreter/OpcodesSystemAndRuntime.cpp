@@ -168,7 +168,7 @@ A transform body that is just a constant does not need a `lambda` wrapper; `(map
 ```
 
 ## Container updates return new values
-Amalgam containers are values. `modify` (create/update/deep-copy) and `remove` do not mutate in place; each returns a **new** container that you must rebind:
+Amalgam containers are values. `modify` (create/update/deep-copy) and `remove` do not mutate in place; each returns a **new** container that you must rebind if you want to maintain it beyond its current use:
 ```amalgam
 (assign "seen" (modify seen key value))   ; insert/update an entry
 (assign "items" (modify items 0 value))   ; replace a list slot by index
@@ -201,18 +201,17 @@ When traversing a string by character repeatedly, `explode` it once into a list 
 ```
 
 ## Sibling bindings are not visible to each other
-Within a single `let` or `declare` binding block, the key-value pairs are pushed onto the scope stack as a set: one value's expression cannot see a sibling key being defined in the same block, and there is no guaranteed order of evaluation among siblings. Nest a second scope when a binding depends on an earlier one:
+Within a single `let` or `declare` binding block, the key-value pairs are pushed onto the scope stack as a set: one value's expression cannot see a sibling key being defined in the same block, and there is no guaranteed order of evaluation among siblings. Use `declare` to extend the current scope when a binding depends on an earlier one; a sequence of `declare`s is preferable to nested `let`s:
 ```amalgam
 ; Wrong: `need` cannot see the sibling `base`
 (let {base (get nums i) need (- target base)}
 	; ...
 )
 
-; Right: nest so `base` is in scope before `need` is computed
+; Right: `declare` extends the scope so `base` is visible before `need` is computed
 (let {base (get nums i)}
-	(let {need (- target base)}
-		; ...
-	)
+	(declare {need (- target base)})
+	; ...
 )
 ```
 The same rule applies to grouped `assign` and `accum`: group only independent updates, and split dependent ones into ordered steps.
@@ -238,6 +237,8 @@ Reach for `seq` only where a single expression position must perform several ste
 To stop early, choose the right opcode:
  - `return` propagates up through enclosing forms until it reaches a `call` (or `call_entity`, etc.), then evaluates to its value — use it for an early exit out of a whole method or call.
  - `conclude` exits only the nearest consuming `seq`/`let`/`declare`/`while`; an inner scope can swallow it, so it is for breaking out of one local form.
+
+When running untrusted code — such as genetic programming or otherwise generated code, or untrusted user code — use `call_sandboxed`, or `call_entity` with its sandboxing parameters, to constrain what that code can do.
 
 An `if` without an else branch evaluates to `.null` when the condition is false, so omit a redundant explicit `.null` else in side-effect-only branches. Keep an explicit `.null` only when it is a meaningful part of a return contract — and when `.null` is itself a valid value, use a wrapper such as `[found value]` or a distinct sentinel rather than overloading `.null`.
 
@@ -267,10 +268,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 	{
 		return AllocReturn(_help_distance, immediate_result);
 	}
-	else if(help_command_sid == GetStringIdFromBuiltInStringId(ENBISI_idioms))
-	{
-		return AllocReturn(_help_idioms, immediate_result);
-	}
 	else if(help_command_sid == GetStringIdFromBuiltInStringId(ENBISI_opcodes))
 	{
 		EvaluableNodeReference opcode_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
@@ -282,6 +279,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 				static_cast<EvaluableNodeType>(opcode_index)));
 
 		return opcode_list;
+	}
+	else if(help_command_sid == GetStringIdFromBuiltInStringId(ENBISI_idioms))
+	{
+		return AllocReturn(_help_idioms, immediate_result);
 	}
 	else if(auto opcode_type = GetEvaluableNodeTypeFromStringId(help_command_sid);
 		IsEvaluableNodeTypeValid(opcode_type))

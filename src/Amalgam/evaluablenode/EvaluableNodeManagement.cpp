@@ -9,6 +9,8 @@
 #include <utility>
 
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
+//tunable parameter for how many nodes to have a garbage collection sweep perform at a time
+constexpr size_t invalidate_nodes_task_size = 8000;
 
 EvaluableNodeManager::~EvaluableNodeManager()
 {
@@ -302,21 +304,19 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	}
 
 #ifdef MULTITHREAD_SUPPORT
-	//tunable parameter for how much to have a thread do at a time
-	constexpr size_t invalidate_task_size = 8000;
 	size_t num_nodes_to_invalidate = last_active_index - next_write_index;
-	if(Concurrency::GetMaxNumThreads() > 1 && num_nodes_to_invalidate > 2 * invalidate_task_size)
+	if(Concurrency::GetMaxNumThreads() > 1 && num_nodes_to_invalidate > 2 * invalidate_nodes_task_size)
 	{
-		size_t num_tasks = (num_nodes_to_invalidate + (invalidate_task_size - 1)) / invalidate_task_size;
+		size_t num_tasks = (num_nodes_to_invalidate + (invalidate_nodes_task_size - 1)) / invalidate_nodes_task_size;
 		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_tasks);
 
-		//free each full block of invalidate_task_size
+		//free each full block of invalidate_nodes_task_size
 		size_t start_index = next_write_index;
-		for(; start_index + invalidate_task_size < last_active_index; start_index += invalidate_task_size)
+		for(; start_index + invalidate_nodes_task_size < last_active_index; start_index += invalidate_nodes_task_size)
 			Concurrency::urgentThreadPool.EnqueueTask(
-				[this, &task_set, start_index, invalidate_task_size]
+				[this, &task_set, start_index]
 				{
-					size_t end_index = start_index + invalidate_task_size;
+					size_t end_index = start_index + invalidate_nodes_task_size;
 					for(size_t i = start_index; i < end_index; i++)
 					{
 						if(!nodes[i]->IsNodeDeallocated())
@@ -325,7 +325,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 					task_set.MarkTaskCompleted();
 				});
 
-		//invalidate any remaining that are fewer than invalidate_task_size
+		//invalidate any remaining that are fewer than invalidate_nodes_task_size
 		if(start_index < last_active_index)
 			Concurrency::urgentThreadPool.EnqueueTask(
 				[this, &task_set, start_index, last_active_index]

@@ -302,17 +302,48 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	}
 
 #ifdef MULTITHREAD_SUPPORT
-	if(false) //Concurrency::GetMaxNumThreads() > 1 && cur_first_unused_node_index > 10000)
+	//tunable parameter for how much to have a thread do at a time
+	constexpr size_t invalidate_task_size = 8000;
+	size_t num_nodes_to_invalidate = last_active_index - next_write_index;
+	if(Concurrency::GetMaxNumThreads() > 1 && num_nodes_to_invalidate > 2 * invalidate_task_size)
 	{
-		std::atomic<size_t> current_process_idx{ last_active_index };
-		std::atomic<bool> all_done{ false };
+		size_t num_tasks = (num_nodes_to_invalidate + (invalidate_task_size - 1)) / invalidate_task_size;
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_tasks);
 
-		//TODO 25648: implement this
+		//free each full block of invalidate_task_size
+		size_t start_index = next_write_index;
+		for(; start_index + invalidate_task_size < last_active_index; start_index += invalidate_task_size)
+			Concurrency::urgentThreadPool.EnqueueTask(
+				[this, &task_set, start_index, invalidate_task_size]
+				{
+					size_t end_index = start_index + invalidate_task_size;
+					for(size_t i = start_index; i < end_index; i++)
+					{
+						if(!nodes[i]->IsNodeDeallocated())
+							nodes[i]->Invalidate();
+					}
+					task_set.MarkTaskCompleted();
+				});
+
+		//invalidate any remaining that are fewer than invalidate_task_size
+		if(start_index < last_active_index)
+			Concurrency::urgentThreadPool.EnqueueTask(
+				[this, &task_set, start_index, last_active_index]
+				{
+					for(size_t i = start_index; i < last_active_index; i++)
+					{
+						if(!nodes[i]->IsNodeDeallocated())
+							nodes[i]->Invalidate();
+					}
+					task_set.MarkTaskCompleted();
+				});
+
+		task_set.WaitForTasks();
 	}
 	else
 #endif
 	{
-		for(size_t i = next_write_index; i < last_active_index; ++i)
+		for(size_t i = next_write_index; i < last_active_index; i++)
 		{
 			if(!nodes[i]->IsNodeDeallocated())
 				nodes[i]->Invalidate();

@@ -9,7 +9,7 @@ static OpcodeInitializer _ENT_NULL(ENT_NULL, &Interpreter::InterpretNode_ENT_NUL
 	OpcodeDetails d;
 	d.parameters = R"()";
 	d.returns = R"(.null)";
-	d.description = R"(Evaluates to the immediate null value, regardless of any parameters.)";
+	d.description = R"(Evaluates to the immediate null value and cannot have any parameters.  Null is returned any time there would be a not-a-number result (NaN), such as dividing zero by zero or adding null to a number, or when intermixed with string operations.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&(.null)&", R"(.null)"},
 		{R"&((lambda .null ))&", R"(.null)"},
@@ -88,7 +88,7 @@ static OpcodeInitializer _ENT_STRING(ENT_STRING, &Interpreter::InterpretNode_ENT
 	OpcodeDetails d;
 	d.parameters = R"()";
 	d.returns = R"(string)";
-	d.description = R"(A string.  Many opcodes assume UTF-8 formatted strings, but many, such as `format`, can work with any bytes.  Any non double-quote character is considered valid.)";
+	d.description = R"(A string.  Many opcodes assume UTF-8 formatted strings, but many, such as `format`, can work with any bytes.  Internally, the string is just a sequence of bytes, but when specifying a string to be parsed, `\\` is the escape character and the values that can be escaped are null character as `\\0`, `\\` as `\\\\`, `"` as `\\"`, tab as `\\t`, newline as `\\n`, and carriage return as `\\r`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&("hello")&", R"("hello")"},
 		{R"&("\tHello\n\"Hello\"")&", R"("\tHello\n\"Hello\"")"}

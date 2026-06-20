@@ -316,6 +316,9 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 			{
 				cur_node_ptr->SetKnownToBeInUse(false);
 				first_unused_node_index_temp++;
+
+				//can exit this loop and fall to the next to remove the extra condition in the collection step
+				break;
 			}
 			else //collect the node
 			{
@@ -378,6 +381,9 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 		{
 			cur_node_ptr->SetKnownToBeInUse(false);
 			first_unused_node_index_temp++;
+
+			//can exit this loop and fall to the next to remove the extra condition in the collection step
+			break;
 		}
 		else //collect the node
 		{
@@ -385,7 +391,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 			if(!cur_node_ptr->IsNodeDeallocated())
 				cur_node_ptr->Invalidate();
 
-			//see if out of things to free; if so exit early
+			//see if out of things to free; if so exit before attempting to swap
 			if(lowest_known_unused_index == 0)
 				break;
 
@@ -692,22 +698,16 @@ static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
 		{
 			for(auto &[_, cn] : node->GetMappedChildNodesReference())
 			{
-				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
-				{
-					cn->SetKnownToBeInUseAtomic(true);
+				if(cn != nullptr && cn->TrySetKnownToBeInUseAtomic())
 					node_stack.push_back(cn);
-				}
 			}
 		}
 		else if(!IsEvaluableNodeTypeImmediate(type))
 		{
 			for(auto &cn : node->GetOrderedChildNodesReference())
 			{
-				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
-				{
-					cn->SetKnownToBeInUseAtomic(true);
+				if(cn != nullptr && cn->TrySetKnownToBeInUseAtomic())
 					node_stack.push_back(cn);
-				}
 			}
 		}
 	}

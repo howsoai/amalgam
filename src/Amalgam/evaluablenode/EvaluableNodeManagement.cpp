@@ -9,8 +9,11 @@
 #include <utility>
 
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
+
+#ifdef MULTITHREAD_SUPPORT
 //tunable parameter for how many nodes to have a garbage collection sweep perform at a time
 constexpr size_t invalidate_nodes_task_size = 8000;
+#endif
 
 EvaluableNodeManager::~EvaluableNodeManager()
 {

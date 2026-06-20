@@ -872,7 +872,7 @@ public:
 		if(current_flags & mask)
 			return false;
 
-		// Slow path: CAS to actually set it
+		//slow path to actually set the value
 		while(!atomic_ref->compare_exchange_weak(current_flags, current_flags | mask,
 			std::memory_order_acquire, std::memory_order_relaxed))
 		{

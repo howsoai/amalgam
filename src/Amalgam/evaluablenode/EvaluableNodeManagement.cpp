@@ -269,20 +269,34 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 {
 	//move all nodes in use to the front and unused ones to the back
 	size_t last_active_index = cur_first_unused_node_index;
-	//the next index that can be written to in a swap
+	//index that is being considered
+	size_t cur_candidate_index = 0;
+	//next index that can be written to in a swap
 	size_t next_write_index = 0;
-	for(size_t i = 0; i < last_active_index; i++)
+
+	//traverse nodes until find the first unused
+	for(; cur_candidate_index < last_active_index; cur_candidate_index++)
 	{
-		auto &current_node = nodes[i];
+		auto &current_node = nodes[cur_candidate_index];
+		if(!current_node->GetKnownToBeInUse())
+			break;
+
+		current_node->SetKnownToBeInUse(false);
+	}
+
+	//move to the next node, leaving the previous one behind
+	next_write_index = cur_candidate_index;
+	cur_candidate_index++;
+
+	//move unused back into the next_write_index
+	for(; cur_candidate_index < last_active_index; cur_candidate_index++)
+	{
+		auto &current_node = nodes[cur_candidate_index];
 
 		if(current_node->GetKnownToBeInUse())
 		{
 			current_node->SetKnownToBeInUse(false);
-
-			if(i != next_write_index)
-				std::swap(current_node, nodes[next_write_index]);
-
-			//increment index if the node is in use
+			std::swap(current_node, nodes[next_write_index]);
 			next_write_index++;
 		}
 	}

@@ -17,6 +17,14 @@ public:
 		ContainedEntitiesDepth
 	};
 
+	InterpreterConstraints()
+		: maxNumExecutionSteps(0), maxOpcodeExecutionDepth(0), curNumAllocatedNodesAllocatedToEntities(0),
+		  maxNumAllocatedNodes(0), entityToConstrainFrom(nullptr), constraintsExceeded(false),
+		  constrainMaxContainedEntities(false), constrainMaxContainedEntityDepth(false), maxContainedEntities(0),
+		  maxContainedEntityDepth(0), maxEntityIdLength(0), readOnlyEntities(false), collectWarnings(false),
+		  constraintViolation(ViolationType::NoViolation)
+	{}
+
 	//Adds the string specified by warning to the list of warnings. Takes warning as an rvalue reference.
 	void AddWarning(std::string &&warning)
 	{
@@ -24,6 +32,14 @@ public:
 		Concurrency::WriteLock warningLock(warningMutex);
 	#endif
 		warnings[warning]++;
+	}
+
+	//returns true if there are any active constraints
+	inline bool AnyActiveConstraints()
+	{
+		return (maxNumExecutionSteps > 0 || maxOpcodeExecutionDepth > 0 || maxNumAllocatedNodes > 0 ||
+				constrainMaxContainedEntities || constrainMaxContainedEntityDepth || maxEntityIdLength > 0 ||
+				readOnlyEntities);
 	}
 
 	//if true, there is a limit to how long can utilize CPU

@@ -650,9 +650,7 @@ protected:
 
 	//populates interpreter_constraints from params starting at the offset perf_constraint_param_offset,
 	// in the order of execution cycles, maximum memory, maximum stack depth
-	//returns true if there are any performance constraints, false if not
-	//if include_entity_constraints is true, it will include constraints regarding entities
-	bool PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
+	void PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
 		size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool include_entity_constraints = false);
 
 	//if interpreter_constraints is not null, populates the counters representing the current state of the interpreter

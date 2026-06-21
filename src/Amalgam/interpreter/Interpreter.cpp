@@ -571,12 +571,9 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 	return InterpretNode(function);
 }
 
-bool Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
+void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
 	size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool include_entity_constraints)
 {
-	//start with constraints if there are already interpreter constraints
-	bool any_constraints = (interpreterConstraints != nullptr);
-
 	interpreter_constraints.constraintViolation = InterpreterConstraints::ViolationType::NoViolation;
 
 	//for each of the three parameters below, values of zero indicate no limit
@@ -590,10 +587,7 @@ bool Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 		double value = InterpretNodeIntoNumberValue(params[execution_steps_offset]);
 		//nan will fail, so don't need a separate nan check
 		if(value >= 1.0)
-		{
 			interpreter_constraints.maxNumExecutionSteps = static_cast<ExecutionCycleCount>(value);
-			any_constraints = true;
-		}
 	}
 
 	//populate maxNumAllocatedNodes
@@ -605,10 +599,7 @@ bool Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 		double value = InterpretNodeIntoNumberValue(params[max_num_allocated_nodes_offset]);
 		//nan will fail, so don't need a separate nan check
 		if(value >= 1.0)
-		{
 			interpreter_constraints.maxNumAllocatedNodes = static_cast<ExecutionCycleCount>(value);
-			any_constraints = true;
-		}
 	}
 	//populate maxOpcodeExecutionDepth
 	interpreter_constraints.maxOpcodeExecutionDepth = 0;
@@ -618,10 +609,7 @@ bool Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 		double value = InterpretNodeIntoNumberValue(params[max_opcode_execution_depth_offset]);
 		//nan will fail, so don't need a separate nan check
 		if(value >= 1.0)
-		{
 			interpreter_constraints.maxOpcodeExecutionDepth = static_cast<ExecutionCycleCount>(value);
-			any_constraints = true;
-		}
 	}
 
 	interpreter_constraints.entityToConstrainFrom = nullptr;
@@ -648,7 +636,6 @@ bool Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 			{
 				interpreter_constraints.constrainMaxContainedEntities = true;
 				interpreter_constraints.maxContainedEntities = static_cast<ExecutionCycleCount>(value);
-				any_constraints = true;
 			}
 		}
 
@@ -662,7 +649,6 @@ bool Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 			{
 				interpreter_constraints.constrainMaxContainedEntityDepth = true;
 				interpreter_constraints.maxContainedEntityDepth = static_cast<ExecutionCycleCount>(value);
-				any_constraints = true;
 			}
 		}
 
@@ -673,32 +659,17 @@ bool Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 			double value = InterpretNodeIntoNumberValue(params[max_entity_id_length_offset]);
 			//nan will fail, so don't need a separate nan check
 			if(value >= 1.0)
-			{
 				interpreter_constraints.maxEntityIdLength = static_cast<ExecutionCycleCount>(value);
-				any_constraints = true;
-			}
 		}
 
 		size_t allow_entity_writes_offset = perf_constraint_param_offset + 6;
 		if(params.size() > allow_entity_writes_offset)
-		{
 			interpreter_constraints.readOnlyEntities = InterpretNodeIntoBoolValue(params[allow_entity_writes_offset]);
-			any_constraints |= interpreter_constraints.readOnlyEntities;
-		}
 	}
 
-	//check if caller specifed override of the default warning collections behavior
+	//check if caller specified override of the default warning collections behavior
 	if(params.size() > warning_override_offset)
-	{
-		interpreter_constraints.collectWarnings = InterpretNodeIntoBoolValue(params[warning_override_offset], any_constraints);
-		any_constraints |= interpreter_constraints.collectWarnings;
-	}
-	else
-	{
-		interpreter_constraints.collectWarnings = any_constraints;
-	}
-
-	return any_constraints;
+		interpreter_constraints.collectWarnings = InterpretNodeIntoBoolValue(params[warning_override_offset], false);
 }
 
 void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interpreter_constraints, Entity *entity_to_constrain_from)

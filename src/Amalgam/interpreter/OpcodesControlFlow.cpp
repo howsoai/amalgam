@@ -306,7 +306,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	InterpreterConstraints interpreter_constraints;
 	InterpreterConstraints *interpreter_constraints_ptr = nullptr;
 
-	if(PopulateInterpreterConstraintsFromParams(ocn, 2, interpreter_constraints))
+	PopulateInterpreterConstraintsFromParams(ocn, 2, interpreter_constraints);
+	if(interpreter_constraints.AnyActiveConstraints())
 		interpreter_constraints_ptr = &interpreter_constraints;
 
 	//need to return a more complex data structure, can't return immediate

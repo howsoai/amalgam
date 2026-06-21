@@ -22,7 +22,7 @@ jobs:
       skip-build: ${{ steps.check.outputs.skip-build }}
     steps:
 
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 2
 
@@ -48,7 +48,7 @@ jobs:
       version: ${{ steps.set-pr-version.outputs.version }}
     steps:
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 

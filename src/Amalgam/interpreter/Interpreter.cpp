@@ -687,7 +687,7 @@ bool Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 		}
 	}
 
-	//check if caller specifed override of the default warning collections behavior
+	//check if caller specified override of the default warning collections behavior
 	if(params.size() > warning_override_offset)
 	{
 		interpreter_constraints.collectWarnings = InterpretNodeIntoBoolValue(params[warning_override_offset], any_constraints);
@@ -918,7 +918,7 @@ static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints
 	case InterpreterConstraints::ViolationType::ContainedEntitiesDepth:
 		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Contained entities depth exceeded")), true);
 	case InterpreterConstraints::ViolationType::ContainedEntitiesNumber:
-		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Contained entities number l)imit exceeded")), true);
+		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Contained entities number limit exceeded")), true);
 	case InterpreterConstraints::ViolationType::ExecutionDepth:
 		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Execution depth exceeded")), true);
 	case InterpreterConstraints::ViolationType::ExecutionStep:

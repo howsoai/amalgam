@@ -88,7 +88,7 @@ static OpcodeInitializer _ENT_STRING(ENT_STRING, &Interpreter::InterpretNode_ENT
 	OpcodeDetails d;
 	d.parameters = R"()";
 	d.returns = R"(string)";
-	d.description = R"(A string.  Many opcodes assume UTF-8 formatted strings, but many, such as `format`, can work with any bytes.  Internally, the string is just a sequence of bytes, but when specifying a string to be parsed, `\\` is the escape character and the values that can be escaped are null character as `\\0`, `\\` as `\\\\`, `"` as `\\"`, tab as `\\t`, newline as `\\n`, and carriage return as `\\r`.)";
+	d.description = R"(A string.  Many opcodes assume UTF-8 formatted strings, but many, such as `format`, can work with any bytes.  Internally, the string is just a sequence of bytes, but when specifying a string to be parsed, `\` is the escape character and the values that can be escaped are null character as `\0`, `\` as `\\`, `"` as `\"`, tab as `\t`, newline as `\n`, and carriage return as `\r`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&("hello")&", R"("hello")"},
 		{R"&("\tHello\n\"Hello\"")&", R"("\tHello\n\"Hello\"")"}

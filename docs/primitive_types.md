@@ -2,7 +2,7 @@
 #### Parameters
 ``
 #### Description
-Evaluates to the immediate null value, regardless of any parameters.
+Evaluates to the immediate null value and cannot have any parameters.  Null is returned any time there would be a not-a-number result (NaN), such as dividing zero by zero or adding null to a number, or when intermixed with string operations.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -137,7 +137,7 @@ Output:
 #### Parameters
 ``
 #### Description
-A string.  Many opcodes assume UTF-8 formatted strings, but many, such as `format`, can work with any bytes.  Any non double-quote character is considered valid.
+A string.  Many opcodes assume UTF-8 formatted strings, but many, such as `format`, can work with any bytes.  Internally, the string is just a sequence of bytes, but when specifying a string to be parsed, `\` is the escape character and the values that can be escaped are null character as `\0`, `\` as `\\`, `"` as `\"`, tab as `\t`, newline as `\n`, and carriage return as `\r`.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

@@ -224,7 +224,7 @@ static OpcodeInitializer _ENT_CALL_SANDBOXED(ENT_CALL_SANDBOXED, &Interpreter::I
 	OpcodeDetails d;
 	d.parameters = R"(* function assoc params [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [bool return_warnings])";
 	d.returns = R"(any)";
-	d.description = R"(Evaluates the code specified by function, isolating it from everything except for params, which is used as a single layer of the scope stack.  This is useful when evaluating code passed by other entities that may or may not be trusted.  Opcodes run from within call_sandboxed that require any form of permissions will not perform any action and will evaluate to null.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed. If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted, up to the limits of the current calling context. If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If `max_node_allocations` is 0 or infinite and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if `max_node_allocations` is specified while call_sandboxed is being called in a multithreaded environment, if the collective memory from all the related threads exceeds the average memory specified by call_sandboxed, that may trigger a memory limit for the call_sandboxed.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called. If `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  If `return_warnings` is false, just the value will be returned.)";
+	d.description = R"(Evaluates the code specified by function, isolating it from everything except for params, which is used as a single layer of the scope stack.  This is useful when evaluating code passed by other entities that may or may not be trusted.  Opcodes run from within call_sandboxed that require any form of permissions will not perform any action and will evaluate to null.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed. If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted, up to the limits of the current calling context. If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If `max_node_allocations` is 0 or infinite and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if `max_node_allocations` is specified while call_sandboxed is being called in a multithreaded environment, if the collective memory from all the related threads exceeds the average memory specified by call_sandboxed, that may trigger a memory limit for the call_sandboxed.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called. If `return_warnings` is true (default is false), the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  If `return_warnings` is false, just the value will be returned.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((call_sandboxed
 	(lambda
@@ -237,7 +237,7 @@ static OpcodeInitializer _ENT_CALL_SANDBOXED(ENT_CALL_SANDBOXED, &Interpreter::I
 	.null
 	.null
 	50
-))&", R"([11 {} .null])"},
+))&", R"(11)"},
 			{R"&((call_sandboxed
 	(lambda
 		(+
@@ -249,6 +249,7 @@ static OpcodeInitializer _ENT_CALL_SANDBOXED(ENT_CALL_SANDBOXED, &Interpreter::I
 	.null
 	.null
 	1
+	.true
 ))&", R"([.null {} "Execution depth exceeded"])"},
 			{R"&((call_sandboxed
 	(lambda
@@ -263,12 +264,14 @@ static OpcodeInitializer _ENT_CALL_SANDBOXED(ENT_CALL_SANDBOXED, &Interpreter::I
 			.null
 			.null
 			2
+			.true
 		)
 	)
 	{y 3}
 	.null
 	.null
 	50
+	.true
 ))&", R"([
 	[.null {} "Execution depth exceeded"]
 	{}

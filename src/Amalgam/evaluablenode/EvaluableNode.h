@@ -839,7 +839,7 @@ public:
 #ifdef MULTITHREAD_SUPPORT
 	__forceinline bool HasAttributeAtomic(Attribute attr)
 	{
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		//TODO 15993: once C++20 is allowed, change type to atomic_ref
 		const std::atomic<AttributeStorageType> *atomic_ref
 			= reinterpret_cast<const std::atomic<AttributeStorageType>*>(&attributes);
 		AttributeStorageType cur = atomic_ref->load(std::memory_order_seq_cst);
@@ -849,13 +849,39 @@ public:
 	__forceinline void SetAttributeAtomic(Attribute attr, bool enable = true)
 	{
 		AttributeStorageType mask = static_cast<AttributeStorageType>(attr);
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		//TODO 15993: once C++20 is allowed, change type to atomic_ref
 		std::atomic<AttributeStorageType> *atomic_ref
 			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
 		if(enable)
 			atomic_ref->fetch_or(mask, std::memory_order_seq_cst);
 		else
 			atomic_ref->fetch_and(~mask, std::memory_order_seq_cst);
+	}
+
+	//returns true if the bit was successfully set (was previously unset)
+	//returns false if the bit was already set
+	__forceinline bool TrySetAttributeAtomic(Attribute attr)
+	{
+		constexpr AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::KNOWN_TO_BE_IN_USE);
+		//TODO 15993: once C++20 is allowed, change type to atomic_ref
+		std::atomic<AttributeStorageType> *atomic_ref
+			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
+
+		//check if already set, relaxed is fine for early-out
+		AttributeStorageType current_flags = atomic_ref->load(std::memory_order_relaxed);
+		if(current_flags & mask)
+			return false;
+
+		//slow path to actually set the value
+		while(!atomic_ref->compare_exchange_weak(current_flags, current_flags | mask,
+			std::memory_order_acquire, std::memory_order_relaxed))
+		{
+			//see if another thread set it
+			if(current_flags & mask)
+				return false;
+		}
+
+		return true;
 	}
 #endif
 
@@ -963,6 +989,13 @@ public:
 	__forceinline void SetKnownToBeInUseAtomic(bool in_use)
 	{
 		SetAttributeAtomic(Attribute::KNOWN_TO_BE_IN_USE, in_use);
+	}
+
+	//returns true if the bit was successfully set (was previously unset)
+	//returns false if the bit was already set
+	__forceinline bool TrySetKnownToBeInUseAtomic()
+	{
+		return TrySetAttributeAtomic(Attribute::KNOWN_TO_BE_IN_USE);
 	}
 #endif
 

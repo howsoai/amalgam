@@ -889,7 +889,7 @@ static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints
 	case InterpreterConstraints::ViolationType::ContainedEntitiesDepth:
 		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Contained entities depth exceeded")), true);
 	case InterpreterConstraints::ViolationType::ContainedEntitiesNumber:
-		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Contained entities number l)imit exceeded")), true);
+		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Contained entities number limit exceeded")), true);
 	case InterpreterConstraints::ViolationType::ExecutionDepth:
 		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Execution depth exceeded")), true);
 	case InterpreterConstraints::ViolationType::ExecutionStep:

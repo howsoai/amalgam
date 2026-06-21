@@ -10,6 +10,11 @@
 
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 
+#ifdef MULTITHREAD_SUPPORT
+//tunable parameter for how many nodes to have a garbage collection sweep perform at a time
+constexpr size_t invalidate_nodes_task_size = 8000;
+#endif
+
 EvaluableNodeManager::~EvaluableNodeManager()
 {
 #ifdef MULTITHREAD_SUPPORT
@@ -267,160 +272,88 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 
 void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index)
 {
-	//create a temporary variable for multithreading as to not use the atomic variable to slow things down
-	size_t first_unused_node_index_temp = 0;
+	//move all nodes in use to the front and unused ones to the back
+	size_t last_active_index = cur_first_unused_node_index;
+	//index that is being considered
+	size_t cur_candidate_index = 0;
+	//next index that can be written to in a swap
+	size_t next_write_index = 0;
+
+	//traverse nodes until find the first unused
+	for(; cur_candidate_index < last_active_index; cur_candidate_index++)
+	{
+		auto &current_node = nodes[cur_candidate_index];
+		if(!current_node->GetKnownToBeInUse())
+			break;
+
+		current_node->SetKnownToBeInUse(false);
+	}
+
+	//move to the next node, leaving the previous one behind
+	next_write_index = cur_candidate_index;
+	cur_candidate_index++;
+
+	//move unused back into the next_write_index
+	for(; cur_candidate_index < last_active_index; cur_candidate_index++)
+	{
+		auto &current_node = nodes[cur_candidate_index];
+
+		if(current_node->GetKnownToBeInUse())
+		{
+			current_node->SetKnownToBeInUse(false);
+			std::swap(current_node, nodes[next_write_index]);
+			next_write_index++;
+		}
+	}
 
 #ifdef MULTITHREAD_SUPPORT
-	if(Concurrency::GetMaxNumThreads() > 1 && cur_first_unused_node_index > 10000)
+	size_t num_nodes_to_invalidate = last_active_index - next_write_index;
+	if(Concurrency::GetMaxNumThreads() > 1 && num_nodes_to_invalidate > 2 * invalidate_nodes_task_size)
 	{
-		//used to climb up the indices, swapping out unused nodes above this as moves downward
-		std::atomic<size_t> lowest_known_unused_index = cur_first_unused_node_index;
-		//used by the independent freeing thread to climb down from lowest_known_unused_index
-		size_t highest_possibly_unfreed_node = cur_first_unused_node_index;
-		std::atomic<bool> all_nodes_finished = false;
+		size_t num_tasks = (num_nodes_to_invalidate + (invalidate_nodes_task_size - 1)) / invalidate_nodes_task_size;
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_tasks);
 
-		//free nodes in a separate thread
-		auto completed_node_cleanup = Concurrency::urgentThreadPool.EnqueueTaskWithResult(
-			[this, &lowest_known_unused_index, &highest_possibly_unfreed_node, &all_nodes_finished]
-			{
-				while(true)
+		//free each full block of invalidate_nodes_task_size
+		size_t start_index = next_write_index;
+		for(; start_index + invalidate_nodes_task_size < last_active_index; start_index += invalidate_nodes_task_size)
+			Concurrency::urgentThreadPool.EnqueueTask(
+				[this, &task_set, start_index]
 				{
-					while(highest_possibly_unfreed_node > lowest_known_unused_index)
+					size_t end_index = start_index + invalidate_nodes_task_size;
+					for(size_t i = start_index; i < end_index; i++)
 					{
-						auto &cur_node_ptr = nodes[--highest_possibly_unfreed_node];
-						if(!cur_node_ptr->IsNodeDeallocated())
-							cur_node_ptr->Invalidate();
+						if(!nodes[i]->IsNodeDeallocated())
+							nodes[i]->Invalidate();
 					}
+					task_set.MarkTaskCompleted();
+				});
 
-					if(all_nodes_finished)
+		//invalidate any remaining that are fewer than invalidate_nodes_task_size
+		if(start_index < last_active_index)
+			Concurrency::urgentThreadPool.EnqueueTask(
+				[this, &task_set, start_index, last_active_index]
+				{
+					for(size_t i = start_index; i < last_active_index; i++)
 					{
-						//need to double-check to make sure there's nothing left
-						//just in case the atomic variables were updated in a different order
-						//otherwise go around the loop again
-						if(highest_possibly_unfreed_node <= lowest_known_unused_index)
-							return;
+						if(!nodes[i]->IsNodeDeallocated())
+							nodes[i]->Invalidate();
 					}
-				}
-			});
+					task_set.MarkTaskCompleted();
+				});
 
-		//organize nodes above lowest_known_unused_index that are unused
-		//don't need to check nodes if they are nullptr because if it has been used, it won't be nullptr
-		//first make pass without extra logic
-		while(first_unused_node_index_temp < lowest_known_unused_index)
-		{
-			//nodes can't be nullptr below firstUnusedNodeIndex
-			auto &cur_node_ptr = nodes[first_unused_node_index_temp];
-
-			//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
-			if(cur_node_ptr->GetKnownToBeInUse())
-			{
-				cur_node_ptr->SetKnownToBeInUse(false);
-				first_unused_node_index_temp++;
-			}
-			else //collect the node
-			{
-				//see if out of things to free; if so exit early
-				if(lowest_known_unused_index == 0)
-					break;
-
-				//put the node up at the top where unused memory resides
-				// and reduce lowest_known_unused_index after the swap occurs so the other thread doesn't get misaligned
-				std::swap(cur_node_ptr, nodes[lowest_known_unused_index - 1]);
-				--lowest_known_unused_index;
-			}
-		}
-
-		//repeat the loop but know that there's at least one node that is used,
-		//so lowest_known_unused_index does not need to be checked if zero
-		while(first_unused_node_index_temp < lowest_known_unused_index)
-		{
-			//nodes can't be nullptr below firstUnusedNodeIndex
-			auto &cur_node_ptr = nodes[first_unused_node_index_temp];
-
-			//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
-			if(cur_node_ptr->GetKnownToBeInUse())
-			{
-				cur_node_ptr->SetKnownToBeInUse(false);
-				first_unused_node_index_temp++;
-			}
-			else //collect the node
-			{
-				//put the node up at the top where unused memory resides
-				// and reduce lowest_known_unused_index after the swap occurs so the other thread doesn't get misaligned
-				std::swap(cur_node_ptr, nodes[lowest_known_unused_index - 1]);
-				--lowest_known_unused_index;
-			}
-		}
-
-		all_nodes_finished = true;
-
-		completed_node_cleanup.wait();
-
-		//assign back to the atomic variable
-		firstUnusedNodeIndex = first_unused_node_index_temp;
-
-		UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
-		return;
+		task_set.WaitForTasks();
 	}
+	else
 #endif
-
-	size_t lowest_known_unused_index = cur_first_unused_node_index;
-	//organize nodes above lowest_known_unused_index that are unused
-	//don't need to check nodes if they are nullptr because if it has been used, it won't be nullptr
-	//first make pass without extra logic
-	while(first_unused_node_index_temp < lowest_known_unused_index)
 	{
-		//nodes can't be nullptr below firstUnusedNodeIndex
-		auto &cur_node_ptr = nodes[first_unused_node_index_temp];
-
-		//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
-		if(cur_node_ptr->GetKnownToBeInUse())
+		for(size_t i = next_write_index; i < last_active_index; i++)
 		{
-			cur_node_ptr->SetKnownToBeInUse(false);
-			first_unused_node_index_temp++;
-		}
-		else //collect the node
-		{
-			//free any extra memory used, since this node is no longer needed
-			if(!cur_node_ptr->IsNodeDeallocated())
-				cur_node_ptr->Invalidate();
-
-			//see if out of things to free; if so exit early
-			if(lowest_known_unused_index == 0)
-				break;
-
-			//put the node up at the top where unused memory resides and reduce lowest_known_unused_index
-			std::swap(cur_node_ptr, nodes[--lowest_known_unused_index]);
+			if(!nodes[i]->IsNodeDeallocated())
+				nodes[i]->Invalidate();
 		}
 	}
 
-	//repeat the loop but know that there's at least one node that is used,
-	//so lowest_known_unused_index does not need to be checked if zero
-	while(first_unused_node_index_temp < lowest_known_unused_index)
-	{
-		//nodes can't be nullptr below firstUnusedNodeIndex
-		auto &cur_node_ptr = nodes[first_unused_node_index_temp];
-
-		//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
-		if(cur_node_ptr->GetKnownToBeInUse())
-		{
-			cur_node_ptr->SetKnownToBeInUse(false);
-			first_unused_node_index_temp++;
-		}
-		else //collect the node
-		{
-			//free any extra memory used, since this node is no longer needed
-			if(!cur_node_ptr->IsNodeDeallocated())
-				cur_node_ptr->Invalidate();
-
-			//put the node up at the top where unused memory resides and reduce lowest_known_unused_index
-			std::swap(cur_node_ptr, nodes[--lowest_known_unused_index]);
-		}
-	}
-
-	//assign back to the atomic variable
-	firstUnusedNodeIndex = first_unused_node_index_temp;
-
+	firstUnusedNodeIndex = next_write_index;
 	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
 }
 
@@ -692,22 +625,16 @@ static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
 		{
 			for(auto &[_, cn] : node->GetMappedChildNodesReference())
 			{
-				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
-				{
-					cn->SetKnownToBeInUseAtomic(true);
+				if(cn != nullptr && cn->TrySetKnownToBeInUseAtomic())
 					node_stack.push_back(cn);
-				}
 			}
 		}
 		else if(!IsEvaluableNodeTypeImmediate(type))
 		{
 			for(auto &cn : node->GetOrderedChildNodesReference())
 			{
-				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
-				{
-					cn->SetKnownToBeInUseAtomic(true);
+				if(cn != nullptr && cn->TrySetKnownToBeInUseAtomic())
 					node_stack.push_back(cn);
-				}
 			}
 		}
 	}

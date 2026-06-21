@@ -44,7 +44,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set build preset
         run: |
@@ -93,7 +93,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set build preset
         run: |
@@ -144,7 +144,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -207,7 +207,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set build preset
         run: |
@@ -404,7 +404,7 @@ jobs:
     runs-on: ubuntu-latest
     container: node:18-bullseye-slim
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Download Artifact
         uses: actions/download-artifact@v8
@@ -483,8 +483,8 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-  
-      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v7
         with:
           token: ${{ secrets.HOWSOAI_WORKFLOW_AUTOMATION_TOKEN }}
           ref: 'amalgam-${{ inputs.version }}-update'

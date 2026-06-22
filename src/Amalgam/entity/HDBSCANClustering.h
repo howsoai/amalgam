@@ -142,11 +142,13 @@ namespace HDBSCAN
 		return nodes;
 	}
 
-	//Appends every leaf point id under node to out.
+	//Appends every leaf point id under node to out.  stack is a caller-owned scratch
+	//buffer, reused across calls and cleared on entry, to avoid a per-call allocation.
 	inline void CollectLeaves(size_t node, size_t m,
-		const std::vector<SingleLinkageNode> &nodes, std::vector<size_t> &out)
+		const std::vector<SingleLinkageNode> &nodes,
+		std::vector<size_t> &out, std::vector<size_t> &stack)
 	{
-		std::vector<size_t> stack;
+		stack.clear();
 		stack.push_back(node);
 		while(!stack.empty())
 		{
@@ -211,6 +213,10 @@ namespace HDBSCAN
 			}
 		}
 
+		//scratch buffers reused across the walk below to avoid per-iteration allocation
+		std::vector<size_t> leaf_scratch;	//leaves of a small branch falling out as noise
+		std::vector<size_t> collect_stack;	//DFS stack for CollectLeaves
+
 		//Walk each pending cluster node down the dendrogram.  The merge at this node
 		//happened at density level lambda = 1 / weight; classify its two children
 		//against min_cluster_weight to decide their fate:
@@ -244,9 +250,9 @@ namespace HDBSCAN
 				if(!big[c])
 				{
 					//small branch: all its points fall out of the cluster as noise
-					std::vector<size_t> leaves;
-					CollectLeaves(child, m, nodes, leaves);
-					for(size_t p : leaves)
+					leaf_scratch.clear();
+					CollectLeaves(child, m, nodes, leaf_scratch, collect_stack);
+					for(size_t p : leaf_scratch)
 						result.push_back(CondensedEdge{cluster_id, p, lambda, point_weights[p]});
 				}
 				else if(num_big == 2)

@@ -59,8 +59,8 @@ static void TestBuildSingleLinkageTree()
 	// Second merge joins node 3 with point 2 at weight 2.0, mass 3.0 -> node id 4.
 	CHECK(slt[1].weight == 2.0);
 	CHECK(slt[1].mass == 3.0);
-	CHECK((slt[1].left == 3 || slt[1].right == 3));
-	CHECK((slt[1].left == 2 || slt[1].right == 2));
+	CHECK((slt[1].leftChildId == 3 || slt[1].rightChildId == 3));
+	CHECK((slt[1].leftChildId == 2 || slt[1].rightChildId == 2));
 }
 
 //Count, in a condensed tree, how many distinct points fall out of each parent.
@@ -68,8 +68,8 @@ static size_t CountPointChildren(const std::vector<HDBSCAN::CondensedEdge> &c, s
 {
 	std::set<size_t> pts;
 	for(const auto &e : c)
-		if(e.child < m)
-			pts.insert(e.child);
+		if(e.childId < m)
+			pts.insert(e.childId);
 	return pts.size();
 }
 
@@ -90,7 +90,7 @@ static void TestCondenseTree()
 	// are born, so there are >= 2 sub-cluster edges (child >= m).
 	size_t subcluster_edges = 0;
 	for(const auto &e : condensed)
-		if(e.child >= 4)
+		if(e.childId >= 4)
 			++subcluster_edges;
 	CHECK(subcluster_edges == 2);
 
@@ -99,7 +99,7 @@ static void TestCondenseTree()
 	auto condensed2 = HDBSCAN::CondenseTree(4, slt, w, 3.0);
 	size_t subcluster_edges2 = 0;
 	for(const auto &e : condensed2)
-		if(e.child >= 4)
+		if(e.childId >= 4)
 			++subcluster_edges2;
 	CHECK(subcluster_edges2 == 0);
 }

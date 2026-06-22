@@ -345,8 +345,6 @@ PLATFORM_MAIN_CONSOLE
 	if(interpreter_constraints.AnyActiveConstraints())
 		interpreter_constraints_ptr = &interpreter_constraints;
 
-	//TODO 25650: pass interpreter_constraints_ptr into appropriate methods below
-
 	//debugging information
 	if(debug_state)
 		Interpreter::SetDebuggingState(true);
@@ -461,8 +459,10 @@ PLATFORM_MAIN_CONSOLE
 		//execute the entity
 		if(!run_as_repl)
 		{
+			//don't need a return value
 			entity->Execute(StringInternPool::NOT_A_STRING_ID, &scope_stack, false, nullptr,
-				&write_listeners, print_listener);
+				&write_listeners, print_listener, interpreter_constraints_ptr,
+				EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
 		}
 		else //repl
 		{
@@ -527,7 +527,8 @@ PLATFORM_MAIN_CONSOLE
 				for(auto &w : warnings)
 					std::cerr << w << std::endl;
 
-				auto result = entity->ExecuteOnEntity(code, &scope_stack, nullptr, &write_listeners, print_listener);
+				auto result = entity->ExecuteOnEntity(code, &scope_stack, nullptr,
+					&write_listeners, print_listener, interpreter_constraints_ptr);
 				std::cout << Parser::Unparse(result, true, true, true);
 				running = !(result != nullptr && result->GetType() == ENT_CONCLUDE);
 				entity->evaluableNodeManager.FreeNodeTreeIfPossible(result);

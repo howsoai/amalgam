@@ -112,20 +112,21 @@ static void TestComputeStabilities()
 	auto slt = HDBSCAN::BuildSingleLinkageTree(4, mst, w);
 	auto condensed = HDBSCAN::CondenseTree(4, slt, w, 2.0);
 	auto birth = HDBSCAN::ClusterBirthLambdas(4, condensed);
-	auto stab = HDBSCAN::ComputeStabilities(condensed, birth);
+	auto stab = HDBSCAN::ComputeStabilities(4, condensed, birth);
 
 	// There is a root cluster plus two children. Each child cluster is born at
 	// lambda 0.1 (1/10) and loses its 2 points at lambda 1.0 (1/1):
 	//   S(child) = 2 * (1.0 - 0.1) = 1.8
-	// Find the two non-root clusters (they have positive birth lambda).
+	// Find the two non-root clusters (they have positive birth lambda).  birth and
+	// stab are indexed by cluster id - m.
 	double child_stability_sum = 0.0;
 	size_t child_count = 0;
-	for(const auto &kv : stab)
+	for(size_t ci = 0; ci < stab.size(); ci++)
 	{
-		if(birth[kv.first] > 0.0)	//a child (non-root) cluster
+		if(birth[ci] > 0.0)	//a child (non-root) cluster
 		{
-			child_stability_sum += kv.second;
-			++child_count;
+			child_stability_sum += stab[ci];
+			child_count++;
 		}
 	}
 	CHECK(child_count == 2);
@@ -141,14 +142,21 @@ static void TestSelectClusters()
 	auto slt = HDBSCAN::BuildSingleLinkageTree(4, mst, w);
 	auto condensed = HDBSCAN::CondenseTree(4, slt, w, 2.0);
 	auto birth = HDBSCAN::ClusterBirthLambdas(4, condensed);
-	auto stab = HDBSCAN::ComputeStabilities(condensed, birth);
+	auto stab = HDBSCAN::ComputeStabilities(4, condensed, birth);
 	auto selected = HDBSCAN::SelectClusters(4, condensed, stab, birth);
 
-	CHECK(selected.size() == 2);
-
-	// The root cluster (birth lambda 0) must NOT be selected.
-	for(size_t c : selected)
-		CHECK(birth[c] > 0.0);
+	// Exactly the two child clusters are selected; the root (birth lambda 0) is not.
+	// selected is a keep flag indexed by cluster id - m.
+	size_t num_selected = 0;
+	for(size_t ci = 0; ci < selected.size(); ci++)
+	{
+		if(selected[ci])
+		{
+			num_selected++;
+			CHECK(birth[ci] > 0.0);
+		}
+	}
+	CHECK(num_selected == 2);
 }
 
 static size_t DistinctNonzero(const std::vector<size_t> &labels)

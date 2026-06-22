@@ -1,8 +1,5 @@
 #pragma once
 
-//project headers:
-#include "HashMaps.h"
-
 //system headers:
 #include <algorithm>
 #include <cstddef>
@@ -10,8 +7,9 @@
 #include <utility>
 #include <vector>
 
-//Self-contained HDBSCAN* clustering.  Apart from the in-tree FastHashMap /
-//FastHashSet associative containers, it has no Amalgam dependencies.
+//Self-contained HDBSCAN* clustering.  Cluster and node ids are contiguous integers,
+//so the intermediate maps are plain vectors; this has no dependencies beyond the C++
+//standard library.
 namespace HDBSCAN
 {
 	//Node-id convention used throughout: m is the number of input points being
@@ -194,7 +192,9 @@ namespace HDBSCAN
 		}
 
 		size_t next_cluster_id = m;	//condensed cluster ids live above point ids
-		FastHashMap<size_t, size_t> node_cluster_id;	//dendrogram node id -> cluster id
+		//dendrogram node id -> the cluster id it belongs to, indexed by (node id - m),
+		//which is dense since node ids occupy [m, m + nodes.size())
+		std::vector<size_t> node_cluster_id(nodes.size(), std::numeric_limits<size_t>::max());
 
 		//seed the work list with the forest roots heavy enough to be clusters
 		std::vector<size_t> pending_nodes;	//internal node ids still to process
@@ -207,7 +207,7 @@ namespace HDBSCAN
 				//threshold; smaller components (e.g. scattered outliers) stay noise
 				if(NodeMass(id, m, point_weights, nodes) >= min_cluster_weight)
 				{
-					node_cluster_id[id] = next_cluster_id++;
+					node_cluster_id[id - m] = next_cluster_id++;
 					pending_nodes.push_back(id);
 				}
 			}
@@ -230,7 +230,7 @@ namespace HDBSCAN
 		{
 			size_t id = pending_nodes.back();
 			pending_nodes.pop_back();
-			size_t cluster_id = node_cluster_id[id];
+			size_t cluster_id = node_cluster_id[id - m];
 			const SingleLinkageNode &sn = nodes[id - m];
 			double lambda = (sn.weight > 0.0) ? 1.0 / sn.weight : lambda_max;
 
@@ -262,7 +262,7 @@ namespace HDBSCAN
 					result.push_back(CondensedEdge{cluster_id, child_cluster_id, lambda, masses[c]});
 					if(child >= m)
 					{
-						node_cluster_id[child] = child_cluster_id;
+						node_cluster_id[child - m] = child_cluster_id;
 						pending_nodes.push_back(child);
 					}
 					else	//a single heavy point that is itself a cluster
@@ -273,7 +273,7 @@ namespace HDBSCAN
 					//exactly one big child: it continues the same cluster
 					if(child >= m)
 					{
-						node_cluster_id[child] = cluster_id;
+						node_cluster_id[child - m] = cluster_id;
 						pending_nodes.push_back(child);
 					}
 					else	//a heavy continuing leaf stays in the cluster to the bottom
@@ -288,66 +288,69 @@ namespace HDBSCAN
 	//own cluster) for every cluster id in the condensed tree.  A non-root cluster is
 	//born at the lambda of the condensed edge that split it off its parent; a root
 	//cluster (one that never splits off of anything) is born at lambda 0.
-	inline FastHashMap<size_t, double> ClusterBirthLambdas(size_t m,
+	//Cluster ids are contiguous in [m, m + count), so the result is a vector indexed
+	//by (cluster id - m) rather than a hash map.
+	inline std::vector<double> ClusterBirthLambdas(size_t m,
 		const std::vector<CondensedEdge> &condensed)
 	{
-		FastHashMap<size_t, double> birth;
-		FastHashSet<size_t> clusters;
+		//cluster ids are contiguous from m; the count is one past the largest id seen
+		size_t count = 0;
 		for(const CondensedEdge &e : condensed)
 		{
-			clusters.insert(e.parentId);
+			count = std::max(count, e.parentId - m + 1);
 			if(e.childId >= m)
-			{
-				clusters.insert(e.childId);
-				birth[e.childId] = e.lambda;
-			}
+				count = std::max(count, e.childId - m + 1);
 		}
-		for(size_t c : clusters)
+
+		//roots never appear as a child, so they keep the default birth of 0
+		std::vector<double> birth(count, 0.0);
+		for(const CondensedEdge &e : condensed)
 		{
-			if(birth.find(c) == birth.end())
-				birth[c] = 0.0;
+			if(e.childId >= m)
+				birth[e.childId - m] = e.lambda;
 		}
 		return birth;
 	}
 
 	//Stability of each cluster: sum over its departing children of
-	//childMass * (lambda_leave - lambda_birth).  birth is the map returned by
-	//ClusterBirthLambdas; it is passed in so the pipeline computes it only once and
-	//shares it with SelectClusters.
-	inline FastHashMap<size_t, double> ComputeStabilities(
+	//childMass * (lambda_leave - lambda_birth).  birth is the vector returned by
+	//ClusterBirthLambdas (indexed by cluster id - m); it is passed in so the pipeline
+	//computes it only once and shares it with SelectClusters.  The result is indexed
+	//the same way.
+	inline std::vector<double> ComputeStabilities(size_t m,
 		const std::vector<CondensedEdge> &condensed,
-		const FastHashMap<size_t, double> &birth)
+		const std::vector<double> &birth)
 	{
-		FastHashMap<size_t, double> stability;
-		for(const auto &kv : birth)
-			stability[kv.first] = 0.0;
+		std::vector<double> stability(birth.size(), 0.0);
 		for(const CondensedEdge &e : condensed)
-			stability[e.parentId] += e.childMass * (e.lambda - birth.at(e.parentId));
+			stability[e.parentId - m] += e.childMass * (e.lambda - birth[e.parentId - m]);
 		return stability;
 	}
 
-	//Excess-of-mass cluster selection.  Returns the set of kept cluster labels.
-	//Root (whole-component) clusters are never selected.
-	//stability and birth are taken by value: both are moved-in maps consumed and
-	//freed when this returns, since selection is their last reader.  birth is the
-	//ClusterBirthLambdas map, shared with ComputeStabilities so it is computed once.
-	inline FastHashSet<size_t> SelectClusters(size_t m,
+	//Excess-of-mass cluster selection.  Returns a per-cluster keep flag indexed by
+	//(cluster id - m): selected[ci] != 0 means cluster id (m + ci) is kept.  A lone
+	//whole-component root is never selected.
+	//stability and birth are taken by value (moved in) and freed when this returns,
+	//since selection is their last reader.  Both are indexed by (cluster id - m); birth
+	//is the ClusterBirthLambdas vector, shared with ComputeStabilities so it is computed
+	//once.
+	inline std::vector<char> SelectClusters(size_t m,
 		const std::vector<CondensedEdge> &condensed,
-		FastHashMap<size_t, double> stability,
-		FastHashMap<size_t, double> birth)
+		std::vector<double> stability,
+		std::vector<double> birth)
 	{
-		//cluster -> parent cluster, and cluster -> child clusters
-		FastHashMap<size_t, size_t> cluster_parent;
-		FastHashMap<size_t, std::vector<size_t>> children;
-		FastHashSet<size_t> all_clusters;
+		size_t count = birth.size();
+		constexpr size_t no_parent = std::numeric_limits<size_t>::max();
+
+		//cluster -> parent cluster, and cluster -> child clusters, indexed by id - m
+		std::vector<size_t> cluster_parent(count, no_parent);
+		std::vector<std::vector<size_t>> children(count);
 		for(const CondensedEdge &e : condensed)
 		{
-			all_clusters.insert(e.parentId);
 			if(e.childId >= m)
 			{
-				all_clusters.insert(e.childId);
-				cluster_parent[e.childId] = e.parentId;
-				children[e.parentId].push_back(e.childId);
+				cluster_parent[e.childId - m] = e.parentId;
+				children[e.parentId - m].push_back(e.childId);
 			}
 		}
 
@@ -356,22 +359,24 @@ namespace HDBSCAN
 		//lambda is strictly greater than its parent's; sorting descending therefore
 		//guarantees every child is processed (and its propagated stability set)
 		//before its parent reads it.
-		std::vector<size_t> order(all_clusters.begin(), all_clusters.end());
+		std::vector<size_t> order(count);
+		for(size_t ci = 0; ci < count; ci++)
+			order[ci] = m + ci;
 		std::sort(order.begin(), order.end(),
-			[&](size_t a, size_t b) { return birth[a] > birth[b]; });
+			[&](size_t a, size_t b) { return birth[a - m] > birth[b - m]; });
 
-		FastHashMap<size_t, double> propagated;
-		FastHashSet<size_t> selected;
+		std::vector<double> propagated(count, 0.0);
+		std::vector<char> selected(count, 0);
 
 		auto deselect_descendants = [&](size_t c)
 		{
-			std::vector<size_t> stack(children[c].begin(), children[c].end());
+			std::vector<size_t> stack(children[c - m].begin(), children[c - m].end());
 			while(!stack.empty())
 			{
 				size_t d = stack.back();
 				stack.pop_back();
-				selected.erase(d);
-				for(size_t g : children[d])
+				selected[d - m] = 0;
+				for(size_t g : children[d - m])
 					stack.push_back(g);
 			}
 		};
@@ -388,66 +393,72 @@ namespace HDBSCAN
 		//two or more roots each is a genuinely separated population and is eligible for
 		//excess-of-mass selection like any other cluster.
 		size_t num_roots = 0;
-		for(const auto &kv : birth)
+		for(size_t ci = 0; ci < count; ci++)
 		{
-			if(!(kv.second > 0.0))
+			if(!(birth[ci] > 0.0))
 				num_roots++;
 		}
 
 		for(size_t c : order)
 		{
 			double sum_child = 0.0;
-			auto it = children.find(c);
-			if(it != children.end())
-			{
-				for(size_t ch : it->second)
-					sum_child += propagated[ch];
-			}
+			for(size_t ch : children[c - m])
+				sum_child += propagated[ch - m];
 
-			double own = stability.count(c) ? stability.at(c) : 0.0;
+			double own = stability[c - m];
 
 			//a lone whole-dataset root is never selectable; forest roots are
-			bool is_root = !(birth.at(c) > 0.0);
+			bool is_root = !(birth[c - m] > 0.0);
 			bool selectable = !is_root || num_roots >= 2;
 
 			if(selectable && own >= sum_child)
 			{
-				selected.insert(c);
+				selected[c - m] = 1;
 				deselect_descendants(c);
-				propagated[c] = own;
+				propagated[c - m] = own;
 			}
 			else
 			{
 				//unselectable lone root, or children win: keep descendants and
 				//propagate their summed stability up
-				propagated[c] = sum_child;
+				propagated[c - m] = sum_child;
 			}
 		}
 		return selected;
 	}
 
 	//Assigns a 1-based cluster id to each point: the nearest selected ancestor cluster
-	//of the cluster it falls out of, or 0 (noise) if no ancestor is selected.
+	//of the cluster it falls out of, or 0 (noise) if no ancestor is selected.  selected
+	//is the per-cluster keep flag from SelectClusters (indexed by cluster id - m).
 	inline std::vector<size_t> AssignClusterIds(size_t m,
 		const std::vector<CondensedEdge> &condensed,
-		const FastHashSet<size_t> &selected)
+		const std::vector<char> &selected)
 	{
 		std::vector<size_t> cluster_ids(m, 0);
-		if(selected.empty())
+		size_t count = selected.size();
+
+		//compact, deterministic 1-based ids; cluster ids are contiguous from m, so
+		//scanning the keep flags in order yields ascending selected-cluster order
+		std::vector<size_t> compact_id(count, 0);	//cluster id - m -> 1-based id (0 = unselected)
+		size_t next_compact = 1;
+		bool any_selected = false;
+		for(size_t ci = 0; ci < count; ci++)
+		{
+			if(selected[ci])
+			{
+				compact_id[ci] = next_compact++;
+				any_selected = true;
+			}
+		}
+		if(!any_selected)
 			return cluster_ids;
 
-		//compact, deterministic 1-based ids in ascending selected-cluster order
-		std::vector<size_t> sel(selected.begin(), selected.end());
-		std::sort(sel.begin(), sel.end());
-		FastHashMap<size_t, size_t> cluster_to_id;
-		for(size_t i = 0; i < sel.size(); i++)
-			cluster_to_id[sel[i]] = i + 1;
-
-		FastHashMap<size_t, size_t> cluster_parent;
+		constexpr size_t no_parent = std::numeric_limits<size_t>::max();
+		std::vector<size_t> cluster_parent(count, no_parent);
 		for(const CondensedEdge &e : condensed)
 		{
 			if(e.childId >= m)
-				cluster_parent[e.childId] = e.parentId;
+				cluster_parent[e.childId - m] = e.parentId;
 		}
 
 		for(const CondensedEdge &e : condensed)
@@ -458,15 +469,15 @@ namespace HDBSCAN
 			size_t c = e.parentId;
 			while(true)
 			{
-				if(selected.find(c) != selected.end())
+				if(selected[c - m])
 				{
-					cluster_ids[p] = cluster_to_id[c];
+					cluster_ids[p] = compact_id[c - m];
 					break;
 				}
-				auto it = cluster_parent.find(c);
-				if(it == cluster_parent.end())
+				size_t parent = cluster_parent[c - m];
+				if(parent == no_parent)
 					break;	//reached a root with no selected ancestor -> noise
-				c = it->second;
+				c = parent;
 			}
 		}
 		return cluster_ids;
@@ -479,7 +490,7 @@ namespace HDBSCAN
 	//so no artificial bridge edges are introduced.
 	//
 	//Each single-use intermediate (the MST, the single-linkage tree, the stability
-	//map) is std::move()d into the stage that consumes it; those stages take their
+	//vector) is std::move()d into the stage that consumes it; those stages take their
 	//argument by value, so each structure is freed when that stage returns rather
 	//than living until the whole pipeline finishes.  Only condensed has more than
 	//one downstream reader, so it alone is kept by reference until the end.
@@ -489,9 +500,9 @@ namespace HDBSCAN
 		std::vector<Edge> mst = BuildMST(m, std::move(edges));
 		std::vector<SingleLinkageNode> slt = BuildSingleLinkageTree(m, std::move(mst), point_weights);
 		std::vector<CondensedEdge> condensed = CondenseTree(m, std::move(slt), point_weights, min_cluster_weight);
-		FastHashMap<size_t, double> birth = ClusterBirthLambdas(m, condensed);
-		FastHashMap<size_t, double> stability = ComputeStabilities(condensed, birth);
-		FastHashSet<size_t> selected = SelectClusters(m, condensed, std::move(stability), std::move(birth));
+		std::vector<double> birth = ClusterBirthLambdas(m, condensed);
+		std::vector<double> stability = ComputeStabilities(m, condensed, birth);
+		std::vector<char> selected = SelectClusters(m, condensed, std::move(stability), std::move(birth));
 		return AssignClusterIds(m, condensed, selected);
 	}
 }

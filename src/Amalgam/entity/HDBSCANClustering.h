@@ -32,7 +32,7 @@ namespace HDBSCAN
 		double mass;	//summed point weight of this subtree
 	};
 
-	//A child leaving cluster `parent` at density level `lambda`.
+	//A child leaving cluster parent at density level lambda.
 	struct CondensedEdge
 	{
 		size_t parent;		//cluster label (>= m)
@@ -90,7 +90,7 @@ namespace HDBSCAN
 
 	//Builds the single-linkage dendrogram from the (ascending) MST edges.
 	//Each accepted merge becomes node id m + k with summed-weight mass.
-	//`mst` is taken by value: a moved-in argument is consumed and freed when this
+	//mst is taken by value: a moved-in argument is consumed and freed when this
 	//returns, so the caller need not hold the MST alive past this stage.
 	inline std::vector<SingleLinkageNode> BuildSingleLinkageTree(size_t m,
 		std::vector<Edge> mst, const std::vector<double> &point_weights)
@@ -137,7 +137,7 @@ namespace HDBSCAN
 		return nodes;
 	}
 
-	//Appends every leaf point id under `node` to `out`.
+	//Appends every leaf point id under node to out.
 	inline void CollectLeaves(size_t node, size_t m,
 		const std::vector<SingleLinkageNode> &nodes, std::vector<size_t> &out)
 	{
@@ -160,7 +160,7 @@ namespace HDBSCAN
 
 	//Condenses the dendrogram: small branches fall out as noise, balanced splits
 	//create child clusters, single big branches continue the parent cluster.
-	//`nodes` is taken by value: a moved-in single-linkage tree is consumed and freed
+	//nodes is taken by value: a moved-in single-linkage tree is consumed and freed
 	//when this returns, so the caller need not hold it alive past this stage.
 	inline std::vector<CondensedEdge> CondenseTree(size_t m,
 		std::vector<SingleLinkageNode> nodes,
@@ -228,7 +228,7 @@ namespace HDBSCAN
 				size_t child = children[c];
 				if(!big[c])
 				{
-					//small branch: all its points fall out of `label` as noise
+					//small branch: all its points fall out of label as noise
 					std::vector<size_t> leaves;
 					CollectLeaves(child, m, nodes, leaves);
 					for(size_t p : leaves)
@@ -249,13 +249,13 @@ namespace HDBSCAN
 				}
 				else
 				{
-					//exactly one big child: it continues the same cluster `label`
+					//exactly one big child: it continues the same cluster label
 					if(child >= m)
 					{
 						node_label[child] = label;
 						work.push_back(child);
 					}
-					else	//a heavy continuing leaf stays in `label` to the bottom
+					else	//a heavy continuing leaf stays in label to the bottom
 						result.push_back(CondensedEdge{label, child, lambda_max, point_weights[child]});
 				}
 			}
@@ -288,7 +288,7 @@ namespace HDBSCAN
 	}
 
 	//Stability of each cluster: sum over its departing children of
-	//child_mass * (lambda_leave - lambda_birth).  `birth` is the map returned by
+	//child_mass * (lambda_leave - lambda_birth).  birth is the map returned by
 	//ClusterBirthLambdas; it is passed in so the pipeline computes it only once and
 	//shares it with SelectClusters.
 	inline FastHashMap<size_t, double> ComputeStabilities(
@@ -305,8 +305,8 @@ namespace HDBSCAN
 
 	//Excess-of-mass cluster selection.  Returns the set of kept cluster labels.
 	//Root (whole-component) clusters are never selected.
-	//`stability` and `birth` are taken by value: both are moved-in maps consumed and
-	//freed when this returns, since selection is their last reader.  `birth` is the
+	//stability and birth are taken by value: both are moved-in maps consumed and
+	//freed when this returns, since selection is their last reader.  birth is the
 	//ClusterBirthLambdas map, shared with ComputeStabilities so it is computed once.
 	inline FastHashSet<size_t> SelectClusters(size_t m,
 		const std::vector<CondensedEdge> &condensed,
@@ -458,7 +458,7 @@ namespace HDBSCAN
 	//Each single-use intermediate (the MST, the single-linkage tree, the stability
 	//map) is std::move()d into the stage that consumes it; those stages take their
 	//argument by value, so each structure is freed when that stage returns rather
-	//than living until the whole pipeline finishes.  Only `condensed` has more than
+	//than living until the whole pipeline finishes.  Only condensed has more than
 	//one downstream reader, so it alone is kept by reference until the end.
 	inline std::vector<size_t> Cluster(size_t m, std::vector<Edge> edges,
 		const std::vector<double> &point_weights, double min_cluster_weight)

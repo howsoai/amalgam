@@ -2111,6 +2111,76 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS(ENT
 	return d;
 });
 
+static OpcodeInitializer _ENT_QUERY_ENTITY_CLUSTERS(ENT_QUERY_ENTITY_CLUSTERS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
+	OpcodeDetails d;
+	d.parameters = R"(query_entity_clusters list|number entities_returned list feature_labels number min_cluster_weight [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [string weights_selection_feature] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
+	d.returns = R"(query)";
+	d.allowsConcurrency = true;
+	d.description = R"(When used as a query argument, computes cluster ids for each of the entities, requiring that min_cluster_weight be the smallest allowable cluster.  min_cluster_weight can be 0 and is the smallest value of accumulated entity weight that will be considered as a cluster.  The ids are nonegative integers, with the id of zero denoting entities that are independent and isolated from all clusters.  feature_labels specifies the names of the features to consider the during computation.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((seq
+	(create_entities
+		"entity1"
+		{alpha 3 b 0.17 c 1}
+	)
+	(create_entities
+		"entity2"
+		{alpha 4 b 0.12 c 0}
+	)
+	(create_entities
+		"entity3"
+		{
+			alpha 5
+			b 0.1
+			c 0
+			x 16
+		}
+	)
+	(create_entities
+		"entity4"
+		{
+			alpha 1
+			b 0.14
+			c 1
+			x 8
+		}
+	)
+	(create_entities
+		"entity5"
+		{
+			alpha 9
+			b 0.11
+			c 1
+			x 32
+		}
+	)
+	(compute_on_contained_entities
+		[
+			(query_entity_cumulative_nearest_entity_weights
+				2
+				["alpha" "b" "c"]
+				.null
+				0.5
+				.null
+				[0 0 1]
+			)
+		]
+	)
+))&", R"({
+	entity1 2.3019715434701133
+	entity2 1.5822400592793713
+	entity3 0.7781961968246989
+	entity4 0.33759220042581645
+})", "", R"((apply "destroy_entities" (contained_entities)))"}
+		});
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+	d.isQuery = true;
+	d.potentiallyIdempotent = true;
+	d.frequencyPer10000Opcodes = 0.01;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_opcodes(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//use stack to lock it in place, but copy it back to temporary before returning

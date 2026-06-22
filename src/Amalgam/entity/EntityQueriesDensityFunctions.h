@@ -57,9 +57,10 @@ inline double PartialKullbackLeiblerDivergenceFromIndices(const std::vector<Dist
 //manages all types of processing related to conviction
 class EntityQueriesDensityProcessor
 {
+public:
 	using EntityReference = size_t;
 	using EntityReferenceSet = BitArrayIntegerSet;
-public:
+
 	//buffers to be reused for less memory churn
 	struct ConvictionProcessorBuffers
 	{
@@ -416,7 +417,7 @@ public:
 	// if false, then will compute the conviction as if those entities were added or included
 	inline void ComputeCaseKLDivergences(EntityReferenceSet &entities_to_compute, std::vector<double> &convictions_out, bool normalize_convictions, bool conviction_of_removal)
 	{
-		//prime the cache
+		//prime the cache, including one extra case so each can be left out
 	#ifdef MULTITHREAD_SUPPORT
 		knnCache->PreCacheKnn(nullptr, numNearestNeighbors + 1, true, runConcurrently);
 	#else
@@ -629,6 +630,14 @@ public:
 		else
 			return KullbackLeiblerDivergence(scaled_base_distance_contribs, combined_model_distance_contribs);
 	}
+
+	//TODO 24886: add documentation
+	//TODO 24886: add tests
+
+	//computes clusters for each entity and sets the corresponding index of clusters_out to the cluster id
+	//minimum_cluster_weight is the least amount of weight that can be used to constitute a cluster
+	void ComputeCaseClusters(EntityReferenceSet &entities_to_compute,
+		std::vector<double> &clusters_out, double minimum_cluster_weight);
 
 	protected:
 

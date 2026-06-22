@@ -81,6 +81,23 @@ Options:
                      For example, -xe would yield all permissions but remove environment and system permissions,
                      whereas +io would only allow console input and output
 
+    -max-exec-count [number]
+                     Specifies the maximum number of nodes that can be executed.  If the limit is exceeded,
+                     execution will halt and a null will be returned.  If run with --repl, it will be the
+                     maximum per command entered.
+
+    -max-alloc [number]
+
+
+    -max-exec-depth [number]
+
+
+    -max-entities [number]
+
+
+    -max-entity-depth [number]
+                     
+
     --debug          When specified, begins in debugging mode
 
     --debug-minimal  When specified, begins in debugging mode with minimal output while stepping

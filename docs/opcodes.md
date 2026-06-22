@@ -194,6 +194,7 @@
   - [query_entity_distance_contributions](./entity_query_engine.md#opcode-query_entity_distance_contributions)
   - [query_entity_kl_divergences](./entity_query_engine.md#opcode-query_entity_kl_divergences)
   - [query_entity_cumulative_nearest_entity_weights](./entity_query_engine.md#opcode-query_entity_cumulative_nearest_entity_weights)
+  - [query_entity_clusters](./entity_query_engine.md#opcode-query_entity_clusters)
 ### Metadata
   - [get_annotations](./metadata.md#opcode-get_annotations)
   - [set_annotations](./metadata.md#opcode-set_annotations)

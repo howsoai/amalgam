@@ -4,6 +4,7 @@
 
 //project headers:
 #include "Amalgam.h"
+#include "hdbscan_test.h"
 
 //system headers:
 #include <cctype>
@@ -613,6 +614,9 @@ int main(int argc, char *argv[])
 	suite.Run("StoreSubEntityToMemory", StoreSubEntityToMemory);
 	suite.Run("RoundTripCamlToMemory", RoundTripCamlToMemory);
 	suite.Run("ClusterTwoBlobs", ClusterTwoBlobs);
+	suite.Run("HDBSCANAlgorithm", [](TestResult &test_result) {
+		test_result.Require("pure-HDBSCAN algorithm unit tests pass", RunHDBSCANUnitTests() == 0);
+	});
 
 	return suite ? 0 : 1;
 }

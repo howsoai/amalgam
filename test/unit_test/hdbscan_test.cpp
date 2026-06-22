@@ -1,4 +1,5 @@
 //Unit tests for the pure HDBSCAN* algorithm (no Amalgam dependencies).
+#include "hdbscan_test.h"
 #include "HDBSCANClustering.h"
 
 #include <iostream>
@@ -293,7 +294,11 @@ static void TestExcessOfMassParentWins()
 	CHECK(labels[0] != labels[4]);
 }
 
-int main()
+//Runs the pure-HDBSCAN algorithm unit tests (no Amalgam dependencies).  Declared in
+//hdbscan_test.h and invoked from the lib_smoke_test driver so the pure-algorithm checks
+//ride along in the existing test executable rather than a standalone one.  Prints any
+//failures and a summary; returns the number of failed checks (0 on success).
+int RunHDBSCANUnitTests()
 {
 	TestBuildMST();
 	TestBuildSingleLinkageTree();

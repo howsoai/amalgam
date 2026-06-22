@@ -77,12 +77,14 @@ endforeach()
 # Create tests for every lib target:
 foreach(TEST_TARGET ${ALL_SHAREDLIB_TARGETS})
 
-    # Create test exe:
+    # Create test exe.  The pure-algorithm HDBSCAN unit tests (test/unit_test/hdbscan_test.cpp)
+    # ride along in this executable rather than a standalone one, so there is a single test binary.
     set(TEST_EXE_NAME "${TEST_TARGET}-tester")
-    set(TEST_SOURCES "test/lib_smoke_test/main.cpp" "test/lib_smoke_test/test.amlg" "test/lib_smoke_test/counter.amlg" "test/lib_smoke_test/cluster.amlg")
+    set(TEST_SOURCES "test/lib_smoke_test/main.cpp" "test/lib_smoke_test/test.amlg" "test/lib_smoke_test/counter.amlg" "test/lib_smoke_test/cluster.amlg" "test/unit_test/hdbscan_test.cpp")
     source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${TEST_SOURCES})
     add_executable(${TEST_EXE_NAME} ${TEST_SOURCES})
     set_target_properties(${TEST_EXE_NAME} PROPERTIES FOLDER "Testing")
+    target_include_directories(${TEST_EXE_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/test/unit_test")
     target_link_libraries(${TEST_EXE_NAME} ${TEST_TARGET})
 
     # Test for test exe:
@@ -94,21 +96,6 @@ foreach(TEST_TARGET ${ALL_SHAREDLIB_TARGETS})
     list(APPEND ALL_TEST_TARGETS ${TEST_NAME})
 
 endforeach()
-
-# Standalone pure-algorithm unit tests (no Amalgam library link).
-# Skipped under WASM: the global emscripten linker flags export the C API
-# symbols (LoadEntity, etc.), which this library-free executable cannot supply.
-if(NOT IS_WASM)
-    add_executable(hdbscan-unit-test "test/unit_test/hdbscan_test.cpp")
-    target_include_directories(hdbscan-unit-test PRIVATE "${CMAKE_SOURCE_DIR}/src/Amalgam/entity")
-    target_compile_features(hdbscan-unit-test PRIVATE cxx_std_17)
-    set_target_properties(hdbscan-unit-test PROPERTIES
-        FOLDER "Testing"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test_bin")
-    add_test(NAME Lib.UnitTest.HDBSCAN
-        COMMAND ${TEST_RUNNER} "$<TARGET_FILE:hdbscan-unit-test>")
-    list(APPEND ALL_TEST_TARGETS Lib.UnitTest.HDBSCAN)
-endif()
 
 # Add common test labels:
 foreach(TEST_TARGET ${ALL_TEST_TARGETS})

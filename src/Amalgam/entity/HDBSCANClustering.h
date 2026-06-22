@@ -1,16 +1,18 @@
 #pragma once
 
+//project headers:
+#include "HashMaps.h"
+
 //system headers:
 #include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <limits>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
-//Pure, std-only HDBSCAN* clustering. No Amalgam dependencies.
+//Self-contained HDBSCAN* clustering.  Apart from the in-tree FastHashMap /
+//FastHashSet associative containers, it has no Amalgam dependencies.
 namespace HDBSCAN
 {
 	//A candidate undirected edge with its mutual-reachability weight.
@@ -181,7 +183,7 @@ namespace HDBSCAN
 		}
 
 		size_t next_label = m;	//condensed cluster labels live above point ids
-		std::unordered_map<size_t, size_t> node_label;	//dendrogram node id -> cluster label
+		FastHashMap<size_t, size_t> node_label;	//dendrogram node id -> cluster label
 
 		std::vector<size_t> work;	//internal node ids still to process
 		for(size_t k = 0; k < nodes.size(); ++k)
@@ -259,11 +261,11 @@ namespace HDBSCAN
 
 	//Birth lambda for every cluster label.  A cluster is born at the lambda of
 	//the edge that split it off its parent; roots are born at lambda 0.
-	inline std::unordered_map<size_t, double> ClusterBirthLambdas(size_t m,
+	inline FastHashMap<size_t, double> ClusterBirthLambdas(size_t m,
 		const std::vector<CondensedEdge> &condensed)
 	{
-		std::unordered_map<size_t, double> birth;
-		std::unordered_set<size_t> clusters;
+		FastHashMap<size_t, double> birth;
+		FastHashSet<size_t> clusters;
 		for(const CondensedEdge &e : condensed)
 		{
 			clusters.insert(e.parent);
@@ -283,11 +285,11 @@ namespace HDBSCAN
 
 	//Stability of each cluster: sum over its departing children of
 	//child_mass * (lambda_leave - lambda_birth).
-	inline std::unordered_map<size_t, double> ComputeStabilities(size_t m,
+	inline FastHashMap<size_t, double> ComputeStabilities(size_t m,
 		const std::vector<CondensedEdge> &condensed)
 	{
-		std::unordered_map<size_t, double> birth = ClusterBirthLambdas(m, condensed);
-		std::unordered_map<size_t, double> stability;
+		FastHashMap<size_t, double> birth = ClusterBirthLambdas(m, condensed);
+		FastHashMap<size_t, double> stability;
 		for(const auto &kv : birth)
 			stability[kv.first] = 0.0;
 		for(const CondensedEdge &e : condensed)
@@ -297,14 +299,14 @@ namespace HDBSCAN
 
 	//Excess-of-mass cluster selection.  Returns the set of kept cluster labels.
 	//Root (whole-component) clusters are never selected.
-	inline std::unordered_set<size_t> SelectClusters(size_t m,
+	inline FastHashSet<size_t> SelectClusters(size_t m,
 		const std::vector<CondensedEdge> &condensed,
-		const std::unordered_map<size_t, double> &stability)
+		const FastHashMap<size_t, double> &stability)
 	{
 		//cluster -> parent cluster, and cluster -> child clusters
-		std::unordered_map<size_t, size_t> cluster_parent;
-		std::unordered_map<size_t, std::vector<size_t>> children;
-		std::unordered_set<size_t> all_clusters;
+		FastHashMap<size_t, size_t> cluster_parent;
+		FastHashMap<size_t, std::vector<size_t>> children;
+		FastHashSet<size_t> all_clusters;
 		for(const CondensedEdge &e : condensed)
 		{
 			all_clusters.insert(e.parent);
@@ -316,7 +318,7 @@ namespace HDBSCAN
 			}
 		}
 
-		std::unordered_map<size_t, double> birth = ClusterBirthLambdas(m, condensed);
+		FastHashMap<size_t, double> birth = ClusterBirthLambdas(m, condensed);
 
 		//process children before parents by descending birth lambda.  A child is
 		//born where it splits off its parent (a deeper, denser level), so its birth
@@ -327,8 +329,8 @@ namespace HDBSCAN
 		std::sort(order.begin(), order.end(),
 			[&](size_t a, size_t b) { return birth[a] > birth[b]; });
 
-		std::unordered_map<size_t, double> propagated;
-		std::unordered_set<size_t> selected;
+		FastHashMap<size_t, double> propagated;
+		FastHashSet<size_t> selected;
 
 		auto deselect_descendants = [&](size_t c)
 		{
@@ -343,11 +345,24 @@ namespace HDBSCAN
 			}
 		};
 
-		//allow_single_cluster = true: a root (whole connected component) competes in
-		//excess-of-mass like any other cluster.  This is required because the KNN
-		//candidate graph disconnects well-separated clusters into separate components
-		//(a spanning forest); each component is a root, and must be selectable for its
-		//points to be clustered rather than dropped as noise.
+		//A root cluster has birth lambda 0 (it splits off from nothing).  The KNN
+		//candidate graph omits long inter-cluster links, so well-separated clusters
+		//arrive as a disconnected spanning forest: one root per cluster.  Rather than
+		//fabricating bridge edges to force them under one artificial root, we allow the
+		//multiple forest roots to be selected directly ("allow multiple tree roots").
+		//
+		//The single-root case keeps allow_single_cluster = false (matching scikit-learn's
+		//default): when there is exactly one root it is the whole-dataset cluster, which
+		//is never selected, so selection descends to genuine sub-clusters.  When there are
+		//two or more roots each is a genuinely separated population and is eligible for
+		//excess-of-mass selection like any other cluster.
+		size_t num_roots = 0;
+		for(const auto &kv : birth)
+		{
+			if(!(kv.second > 0.0))
+				++num_roots;
+		}
+
 		for(size_t c : order)
 		{
 			double sum_child = 0.0;
@@ -360,7 +375,11 @@ namespace HDBSCAN
 
 			double own = stability.count(c) ? stability.at(c) : 0.0;
 
-			if(own >= sum_child)
+			//a lone whole-dataset root is never selectable; forest roots are
+			bool is_root = !(birth.at(c) > 0.0);
+			bool selectable = !is_root || num_roots >= 2;
+
+			if(selectable && own >= sum_child)
 			{
 				selected.insert(c);
 				deselect_descendants(c);
@@ -368,7 +387,8 @@ namespace HDBSCAN
 			}
 			else
 			{
-				//children win: keep descendants, propagate their mass up
+				//unselectable lone root, or children win: keep descendants and
+				//propagate their summed stability up
 				propagated[c] = sum_child;
 			}
 		}
@@ -379,7 +399,7 @@ namespace HDBSCAN
 	//of the cluster it falls out of, or 0 (noise) if none is selected.
 	inline std::vector<size_t> LabelPoints(size_t m,
 		const std::vector<CondensedEdge> &condensed,
-		const std::unordered_set<size_t> &selected)
+		const FastHashSet<size_t> &selected)
 	{
 		std::vector<size_t> labels(m, 0);
 		if(selected.empty())
@@ -388,11 +408,11 @@ namespace HDBSCAN
 		//compact, deterministic 1-based ids in ascending cluster-label order
 		std::vector<size_t> sel(selected.begin(), selected.end());
 		std::sort(sel.begin(), sel.end());
-		std::unordered_map<size_t, size_t> cluster_to_id;
+		FastHashMap<size_t, size_t> cluster_to_id;
 		for(size_t i = 0; i < sel.size(); ++i)
 			cluster_to_id[sel[i]] = i + 1;
 
-		std::unordered_map<size_t, size_t> cluster_parent;
+		FastHashMap<size_t, size_t> cluster_parent;
 		for(const CondensedEdge &e : condensed)
 		{
 			if(e.child >= m)
@@ -422,14 +442,18 @@ namespace HDBSCAN
 	}
 
 	//Full pipeline: candidate edges + point weights -> per-point labels (0 = noise).
+	//The KNN candidate graph is generally a spanning forest (well-separated clusters
+	//share no candidate edge); BuildMST returns one tree per component and the forest
+	//roots are selected directly by SelectClusters (the "multiple tree roots" approach),
+	//so no artificial bridge edges are introduced.
 	inline std::vector<size_t> Cluster(size_t m, std::vector<Edge> edges,
 		const std::vector<double> &point_weights, double min_cluster_weight)
 	{
 		std::vector<Edge> mst = BuildMST(m, std::move(edges));
 		std::vector<SingleLinkageNode> slt = BuildSingleLinkageTree(m, mst, point_weights);
 		std::vector<CondensedEdge> condensed = CondenseTree(m, slt, point_weights, min_cluster_weight);
-		std::unordered_map<size_t, double> stability = ComputeStabilities(m, condensed);
-		std::unordered_set<size_t> selected = SelectClusters(m, condensed, stability);
+		FastHashMap<size_t, double> stability = ComputeStabilities(m, condensed);
+		FastHashSet<size_t> selected = SelectClusters(m, condensed, stability);
 		return LabelPoints(m, condensed, selected);
 	}
 }

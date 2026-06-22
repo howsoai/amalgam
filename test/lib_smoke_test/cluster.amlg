@@ -13,11 +13,13 @@
 ;   arg4: weights           (.null = uniform)
 ;   arg5: attributes        (distance_types assoc)
 ;
-; k=3 is deliberately smaller than the 6-point blobs: the core distance then
-; stays inside a blob (sharp density), and the KNN candidate graph for two
-; well-separated blobs is a disconnected forest of two components.  HDBSCAN
-; clusters each component on its own, yielding exactly two clusters with no
-; noise.
+; k=3 is deliberately smaller than the 6-point blobs so the core distance stays
+; inside a blob (sharp density).  The two well-separated blobs form a
+; disconnected KNN graph (a spanning forest of two trees); the algorithm selects
+; the two forest roots directly as the two clusters.  min_cluster_weight = 4 keeps
+; each 6-point blob coherent: a blob
+; cannot split into two sub-clusters of weight >= 4 each, so it stays one
+; cluster instead of over-segmenting.  Result: exactly two clusters, no noise.
 ;
 {
 	setup
@@ -47,7 +49,7 @@
 		(query_entity_clusters
 			3
 			(list "X" "Y")
-			2
+			4
 			2
 			.null
 			(assoc "X" "continuous" "Y" "continuous")

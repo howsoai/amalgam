@@ -1148,15 +1148,12 @@ static void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<
 	auto node_type = n->GetType();
 	if(DoesEvaluableNodeTypeUseBoolData(node_type))
 	{
-		n->GetBoolValueReference() = (rs.Rand() > 0.5 ? true : false);
+		//negate the boolean value to preserve the mutation rate
+		n->GetBoolValueReference() = !n->GetBoolValueReference();
 	}
 	else if(DoesEvaluableNodeTypeUseNumberData(node_type))
 	{
 		double cur_value = n->GetNumberValueReference();
-
-		//if it's a NaN, then sometimes randomly replace it with a non-null value (which can be mutated further below)
-		if(FastIsNaN(cur_value) && rs.Rand() < 0.9)
-			cur_value = rs.Rand();
 
 		//50% chance of being negative if negative, 50% of that 50% if positive (minimizing assumptions - a number can be either)
 		bool is_negative = (cur_value < 0.0);
@@ -1190,13 +1187,19 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	if(n == nullptr)
 		n = mp.enm->AllocNode(ENT_NULL);
 
-	//if immediate type (after initial mutation), see if should mutate value
+	//if immediate value type, see if can just mutate directly to preserve
+	//mutation rate, since most other mutations won't apply
 	bool is_immediate = n->IsImmediate();
-	if(is_immediate)
+	if(is_immediate && !EvaluableNode::IsNull(n))
 	{
 		if(mp.interpreter->randomStream.Rand() < 0.5)
 			MutateImmediateNode(n, mp.interpreter->randomStream, *mp.strings);
 	}
+
+	EvaluableNodeBuiltInStringId mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
+	//mark for appropriate change if null
+	if(n->GetType() == ENT_NULL && mutation_type != ENBISI_change_type && mutation_type != ENBISI_remove)
+		mutation_type = ENBISI_remove;
 
 	//TODO 25660: update for each of the mutation types below as well as account for parameter type combos, and update docs
 	//ENBISI_change_type
@@ -1207,15 +1210,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	//ENBISI_remove_element
 	//ENBISI_swap_elements
 	//ENBISI_remove_all_elements
-
-	EvaluableNodeBuiltInStringId mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
-	//only mark for likely deletion if null has no parameters
-	if(n->GetType() == ENT_NULL && n->GetNumChildNodes() == 0 && mp.interpreter->randomStream.Rand() < 0.5)
-		mutation_type = ENBISI_delete;
-
-	//if immediate, can't perform most of the mutations, just mutate it
-	if(is_immediate && mutation_type != ENBISI_change_type)
-		mutation_type = ENBISI_change_type;
 
 	//don't change type if less than preserveTypeDepth
 	if(mutation_type == ENBISI_change_type && depth < mp.preserveTypeDepth)
@@ -1241,7 +1235,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			MutateImmediateNode(n, mp.interpreter->randomStream, *mp.strings);
 		break;
 
-	case ENBISI_delete:
+	case ENBISI_remove:
 		if(n->GetOrderedChildNodes().size() > 0)
 		{
 			auto &ocn = n->GetOrderedChildNodesReference();

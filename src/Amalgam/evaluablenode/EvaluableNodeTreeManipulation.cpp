@@ -1198,8 +1198,8 @@ static EvaluableNode *AllocateNewRandomNode(EvaluableNodeTreeManipulation::Mutat
 		else if(DoesEvaluableNodeTypeUseStringData(new_node->GetType()))
 			new_node->SetStringValue("string");
 
-		if(n->GetType() != ENT_NULL)
-			MutateImmediateNode(n, mp);
+		if(new_node->GetType() != ENT_NULL)
+			MutateImmediateNode(new_node, mp);
 	}
 
 	return new_node;
@@ -1239,8 +1239,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		if(mutation_type == ENBISI_change_type)
 			return n;
 	}
-
-	//TODO 25660: update docs for each of the mutation types below as well as account for parameter type combos
 
 	switch(mutation_type)
 	{

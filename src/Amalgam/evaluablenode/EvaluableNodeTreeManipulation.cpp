@@ -1236,6 +1236,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		{
 			size_t num_children = n->GetOrderedChildNodesReference().size();
 			size_t replace_with = mp.interpreter->randomStream.RandSize(num_children);
+			//TODO 25660: make logic based on node parameter type
 			n = mp.enm->AllocNode(n->GetOrderedChildNodesReference()[replace_with]);
 		}
 		else if(n->GetMappedChildNodes().size() > 0)
@@ -1277,7 +1278,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			n->SetMappedChildNode(key, new_node);
 		}
 		else
-			n->AppendOrderedChildNode(new_node);
+		{
+			//TODO 25660: make logic based on node parameter type
+			auto &ocn = n->GetOrderedChildNodesReference();
+			size_t location = mp.interpreter->randomStream.RandSize(ocn.size() + 1);
+			ocn.insert(ocn.begin() + location, new_node);
+			n->UpdateFlagsBasedOnNewChildNode(new_node);
+		}
 		break;
 	}
 

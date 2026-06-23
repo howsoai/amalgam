@@ -445,11 +445,13 @@ enum EvaluableNodeBuiltInStringId
 
 	//mutate opcode mutation types
 	ENBISI_change_type,
-	ENBISI_delete,
 	ENBISI_insert,
+	ENBISI_remove,
+	ENBISI_replace_with_deep_copy,
+	ENBISI_insert_element,
+	ENBISI_remove_element,
 	ENBISI_swap_elements,
-	ENBISI_deep_copy_elements,
-	ENBISI_delete_elements,
+	ENBISI_remove_all_elements,
 
 	//mix parameters
 	ENBISI_string_edit_distance,

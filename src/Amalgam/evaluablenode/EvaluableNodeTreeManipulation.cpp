@@ -1198,6 +1198,16 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			MutateImmediateNode(n, mp.interpreter->randomStream, *mp.strings);
 	}
 
+	//TODO 25660: update for each of the mutation types below as well as account for parameter type combos, and update docs
+	//ENBISI_change_type
+	//ENBISI_insert
+	//ENBISI_remove
+	//ENBISI_replace_with_deep_copy
+	//ENBISI_insert_element
+	//ENBISI_remove_element
+	//ENBISI_swap_elements
+	//ENBISI_remove_all_elements
+
 	EvaluableNodeBuiltInStringId mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
 	//only mark for likely deletion if null has no parameters
 	if(n->GetType() == ENT_NULL && n->GetNumChildNodes() == 0 && mp.interpreter->randomStream.Rand() < 0.5)
@@ -1234,8 +1244,24 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	case ENBISI_delete:
 		if(n->GetOrderedChildNodes().size() > 0)
 		{
-			size_t num_children = n->GetOrderedChildNodesReference().size();
-			size_t replace_with = mp.interpreter->randomStream.RandSize(num_children);
+			auto &ocn = n->GetOrderedChildNodesReference();
+			switch(GetOpcodeOrderedChildNodeType(n->GetType()))
+			{
+			case OpcodeDetails::OrderedChildNodeType::NONE:
+				break;
+			case OpcodeDetails::OrderedChildNodeType::UNORDERED:
+			{
+				size_t index = mp.interpreter->randomStream.RandSize(ocn.size());
+				ocn.erase(begin(ocn) + index);
+			}
+			case OpcodeDetails::OrderedChildNodeType::ORDERED:
+			case OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED:
+			case OpcodeDetails::OrderedChildNodeType::PAIRED:
+			case OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED:
+			case OpcodeDetails::OrderedChildNodeType::POSITION:
+			}
+
+			
 			//TODO 25660: make logic based on node parameter type
 			n = mp.enm->AllocNode(n->GetOrderedChildNodesReference()[replace_with]);
 		}
@@ -1546,12 +1572,14 @@ EvaluableNode EvaluableNodeTreeManipulation::nullEvaluableNode(ENT_NULL);
 
 CompactHashMap<EvaluableNodeBuiltInStringId, double> EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities
 {
-	{ ENBISI_change_type,		0.29 },
-	{ ENBISI_delete,			0.10 },
-	{ ENBISI_insert,			0.25 },
-	{ ENBISI_swap_elements,		0.24 },
-	{ ENBISI_deep_copy_elements,0.07 },
-	{ ENBISI_delete_elements,	0.05 }
+	{ENBISI_change_type,				0.15 },
+	{ENBISI_insert,						0.15 },
+	{ENBISI_remove,						0.15 },
+	{ENBISI_replace_with_deep_copy,		0.05 },
+	{ENBISI_insert_element,				0.15 },
+	{ENBISI_remove_element,				0.15 },
+	{ENBISI_swap_elements,				0.15 },
+	{ENBISI_remove_all_elements,		0.05 }
 };
 
 EvaluableNodeTreeManipulation::MutationParameters::WeightedRandMutationType EvaluableNodeTreeManipulation::mutationOperationTypeRandomStream(mutationOperationTypeProbabilities, true);

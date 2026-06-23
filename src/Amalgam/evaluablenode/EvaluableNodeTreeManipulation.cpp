@@ -1397,34 +1397,37 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 
 	case ENBISI_remove_element:
 		//remove an element from a random location
-		if(n->IsAssociativeArray())
+		if(n->GetMappedChildNodes().size() > 0)
 		{
 			auto &mcn = n->GetMappedChildNodesReference();
-			size_t location = mp.interpreter->randomStream.RandSize(mcn.size());
-			//iterate over child nodes until find the right index
-			for(auto &[key, cn] : mcn)
+			if(mcn.size() > 0)
 			{
-				if(location < 1)
+				size_t location = mp.interpreter->randomStream.RandSize(mcn.size());
+				//iterate over child nodes until find the right index
+				for(auto &[key, cn] : mcn)
 				{
-					mcn.erase(key);
-					break;
+					if(location < 1)
+					{
+						mcn.erase(key);
+						break;
+					}
+					location--;
 				}
-				location--;
 			}
 		}
-		else if(n->IsOrderedArray())
+		else if(n->GetOrderedChildNodes().size() > 0)
 		{
 			auto &ocn = n->GetOrderedChildNodesReference();
 			auto ocnt = GetOpcodeOrderedChildNodeType(n->GetType());
-			if(ocnt == OpcodeDetails::OrderedChildNodeType::PAIRED)
+			if(ocnt == OpcodeDetails::OrderedChildNodeType::PAIRED && ocn.size() >= 2)
 			{
 				size_t location = mp.interpreter->randomStream.RandSize(ocn.size() / 2);
 				ocn.erase(ocn.begin() + 2 * location);
 				ocn.erase(ocn.begin() + 2 * location + 1);
 			}
-			else if(ocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED)
+			else if(ocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED && ocn.size() >= 3)
 			{
-				size_t location = mp.interpreter->randomStream.RandSize( (ocn.size() - 1) / 2);
+				size_t location = mp.interpreter->randomStream.RandSize((ocn.size() - 1) / 2);
 				ocn.erase(ocn.begin() + 1 + 2 * location);
 				ocn.erase(ocn.begin() + 1 + 2 * location + 1);
 			}
@@ -1433,7 +1436,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 				size_t location = mp.interpreter->randomStream.RandSize(ocn.size());
 				ocn.erase(ocn.begin() + location);
 			}
-
 		}
 		else
 		{
@@ -1525,19 +1527,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 	if(copy == nullptr)
 		return nullptr;
 
-	if(mp.interpreter->randomStream.Rand() < mp.mutation_rate)
-	{
-		EvaluableNode *new_node = MutateNode(copy, mp, depth);
-		//make sure have the right node to reference if it's a new node
-		if(new_node != copy)
-		{
-			copy = new_node;
-
-			node_stack.PopEvaluableNode();
-			node_stack.PushEvaluableNode(new_node);
-		}
-	}
-
 	(mp.references)[tree] = copy;
 
 	//this shouldn't happen - it should be a node of type ENT_NULL, but check just in case
@@ -1574,6 +1563,10 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 			ocn[i] = n;
 		}
 	}
+
+	//mutate after potentially mutated all child nodes
+	if(mp.interpreter->randomStream.Rand() < mp.mutation_rate)
+		copy = MutateNode(copy, mp, depth);
 
 	return copy;
 }

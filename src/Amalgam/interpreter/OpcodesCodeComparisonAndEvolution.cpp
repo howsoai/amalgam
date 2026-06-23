@@ -126,7 +126,60 @@ static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT
 	)
 ])",
 //accept anything since mutation can do anything
-".*"}
+".*"},
+	{R"&((mutate
+	(lambda
+		[
+			1
+			2
+			"c"
+			4
+			5
+			6
+			7
+			"g"
+			9
+			10
+			11
+			12
+			"l"
+			14
+			(associate "a" 1 "b" 2)
+		]
+	)
+	0.91
+	.null
+	.null
+	1
+	{
+		101 0.25
+		201 0.25
+		301 0.25
+		.null 0.25
+	}
+	{
+		"x" 0.5
+		"y" 0.5
+	}
+))&", R"([
+        1.7100924132216468
+        201
+        "x"
+        4
+        101
+        .null
+        101
+        "x"
+        101
+        201
+        101
+        201
+        "x"
+        .null
+        x
+])",
+//accept anything since mutation can do anything
+".*"},
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.1;
@@ -227,9 +280,9 @@ static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &
         insert 0.15
         insert_element 0.15
         remove 0.15
-        remove_all_elements 0.04
+        remove_all_elements 0.0001
         remove_element 0.15
-        replace_element_with_copy, 0.06
+        replace_element_with_copy, 0.0999
         swap_elements 0.15
 })"}
 		});

@@ -1261,10 +1261,11 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		{
 			mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
 			i--;
-		} while(i > 0 && mutation_type != ENBISI_change_type);
+		} while(i > 0
+			&& mutation_type != ENBISI_change_type && mutation_type != ENBISI_insert && mutation_type != ENBISI_remove);
 
 		//if couldn't find an alternative, just return
-		if(mutation_type == ENBISI_change_type)
+		if(mutation_type == ENBISI_change_type || mutation_type == ENBISI_insert || mutation_type == ENBISI_remove)
 			return n;
 	}
 
@@ -1675,14 +1676,14 @@ EvaluableNode EvaluableNodeTreeManipulation::nullEvaluableNode(ENT_NULL);
 
 CompactHashMap<EvaluableNodeBuiltInStringId, double> EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities
 {
-	{ENBISI_change_type,				0.15 },
-	{ENBISI_insert,						0.15 },
-	{ENBISI_remove,						0.15 },
-	{ENBISI_replace_element_with_copy,	0.09 },
-	{ENBISI_insert_element,				0.15 },
-	{ENBISI_remove_element,				0.15 },
-	{ENBISI_swap_elements,				0.15 },
-	{ENBISI_remove_all_elements,		0.01 }
+	{ENBISI_change_type,				0.15   },
+	{ENBISI_insert,						0.15   },
+	{ENBISI_remove,						0.15   },
+	{ENBISI_replace_element_with_copy,	0.0999 },
+	{ENBISI_insert_element,				0.15   },
+	{ENBISI_remove_element,				0.15   },
+	{ENBISI_swap_elements,				0.15   },
+	{ENBISI_remove_all_elements,		0.0001 }
 };
 
 EvaluableNodeTreeManipulation::MutationParameters::WeightedRandMutationType EvaluableNodeTreeManipulation::mutationOperationTypeRandomStream(mutationOperationTypeProbabilities, true);

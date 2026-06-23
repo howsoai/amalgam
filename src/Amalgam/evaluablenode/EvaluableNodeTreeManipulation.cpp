@@ -1233,23 +1233,27 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 {
 	if(n == nullptr)
 		n = mp.enm->AllocNode(ENT_NULL);
+	
+	EvaluableNodeBuiltInStringId mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
 
 	//if immediate value type, see if can just mutate directly to preserve
 	//mutation rate, since most other mutations won't apply
-	bool is_immediate = n->IsImmediate();
-	if(is_immediate && !EvaluableNode::IsNull(n))
+	if(n->IsImmediate() && mutation_type != ENBISI_change_type && mutation_type != ENBISI_remove)
 	{
-		if(mp.interpreter->randomStream.Rand() < 0.5)
+		if(n->GetType() == ENT_NULL)
+		{
+			mutation_type = ENBISI_remove;
+		}
+		else
+		{
 			MutateImmediateNode(n, mp);
+			return n;
+		}
 	}
 
-	EvaluableNodeBuiltInStringId mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
-	//mark for appropriate change if null
-	if(n->GetType() == ENT_NULL && mutation_type != ENBISI_change_type && mutation_type != ENBISI_remove)
-		mutation_type = ENBISI_remove;
-
-	//don't change type if less than preserveTypeDepth
-	if(mutation_type == ENBISI_change_type && depth < mp.preserveTypeDepth)
+	//don't do anything that can change type if less than preserveTypeDepth
+	if(depth < mp.preserveTypeDepth &&
+		(mutation_type == ENBISI_change_type || mutation_type == ENBISI_insert || mutation_type == ENBISI_remove) )
 	{
 		//try to find another mutation or give up
 		size_t i = 8;

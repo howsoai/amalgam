@@ -479,7 +479,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm,
 	EvaluableNode *tree, double mutation_rate,
 	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
-	CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth)
+	CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth,
+	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_number_weights,
+	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_string_weights)
 {
 	std::vector<std::string> strings;
 	EvaluableNode::ReferenceSetType checked;
@@ -506,7 +508,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 	MutationParameters mp(interpreter, enm, mutation_rate, &strings,
 		operation_type_wrs.IsInitialized() ? &operation_type_wrs : &default_operation_type_wrs,
 		rand_mutation_type.IsInitialized() ? &rand_mutation_type : &mutationOperationTypeRandomStream,
-		preserve_type_depth);
+		preserve_type_depth, imm_number_weights, imm_string_weights);
 	EvaluableNode *ret = MutateTree(mp, tree, 0);
 
 	return ret;
@@ -1154,6 +1156,22 @@ static void MutateImmediateNode(EvaluableNode *n, EvaluableNodeTreeManipulation:
 	else if(DoesEvaluableNodeTypeUseNumberData(node_type))
 	{
 		auto &rs = mp.interpreter->randomStream;
+
+		if(mp.immNumberWeights->IsInitialized())
+		{
+			auto sid = mp.immNumberWeights->WeightedDiscreteRand(mp.interpreter->randomStream);
+			if(sid != string_intern_pool.NOT_A_STRING_ID)
+			{
+				//if found a non-null number, set it, otherwise fall into generating a new number
+				double num = Parser::ParseNumberFromKeyStringId(sid);
+				if(!FastIsNaN(num))
+				{
+					n->GetNumberValueReference() = num;
+					return;
+				}
+			}
+		}
+
 		double cur_value = n->GetNumberValueReference();
 
 		//50% chance of being negative if negative, 50% of that 50% if positive (minimizing assumptions - a number can be either)
@@ -1167,18 +1185,24 @@ static void MutateImmediateNode(EvaluableNode *n, EvaluableNodeTreeManipulation:
 		if(is_integer && (rs.Rand() < 0.5))
 			new_value = std::round(new_value);
 
-		if(rs.Rand() < 0.01)
-		{
-			if(rs.Rand() < 0.5)
-				new_value = std::numeric_limits<double>::infinity();
-			else
-				new_value = std::numeric_limits<double>::quiet_NaN();
-		}
+		if(rs.Rand() < 0.001)
+			new_value = std::numeric_limits<double>::infinity();
 
+		//just in case it ends up being a NaN, set it indirectly to be safe
 		n->SetTypeViaNumberValue((new_number_negative ? -1 : 1) * new_value);
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(node_type))
 	{
+		if(mp.immStringWeights->IsInitialized())
+		{
+			auto sid = mp.immStringWeights->WeightedDiscreteRand(mp.interpreter->randomStream);
+			if(sid != string_intern_pool.NOT_A_STRING_ID)
+			{
+				//if found a non-null string, set it, otherwise fall into generating a new string
+				n->SetStringID(sid);
+				return;
+			}
+		}
 		n->SetStringValue(GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings));
 	}
 }

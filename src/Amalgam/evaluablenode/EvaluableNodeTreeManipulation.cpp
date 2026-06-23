@@ -1201,16 +1201,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	if(n->GetType() == ENT_NULL && mutation_type != ENBISI_change_type && mutation_type != ENBISI_remove)
 		mutation_type = ENBISI_remove;
 
-	//TODO 25660: update for each of the mutation types below as well as account for parameter type combos, and update docs
-	//ENBISI_change_type
-	//ENBISI_insert
-	//ENBISI_remove
-	//ENBISI_replace_with_deep_copy
-	//ENBISI_insert_element
-	//ENBISI_remove_element
-	//ENBISI_swap_elements
-	//ENBISI_remove_all_elements
-
 	//don't change type if less than preserveTypeDepth
 	if(mutation_type == ENBISI_change_type && depth < mp.preserveTypeDepth)
 	{
@@ -1227,13 +1217,25 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			return n;
 	}
 
+	//TODO 25660: update for each of the mutation types below as well as account for parameter type combos, and update docs
+	//ENBISI_change_type
+	//ENBISI_insert
+	//ENBISI_remove
+	//ENBISI_replace_with_deep_copy
+	//ENBISI_insert_element
+	//ENBISI_remove_element
+	//ENBISI_swap_elements
+	//ENBISI_remove_all_elements
+
 	switch(mutation_type)
 	{
 	case ENBISI_change_type:
+	{
 		n->SetType(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.interpreter->randomStream), true);
-		if(IsEvaluableNodeTypeImmediate(n->GetType()))
+		if(IsEvaluableNodeTypeImmediate(n->GetType()) && n->GetType() != ENT_NULL)
 			MutateImmediateNode(n, mp.interpreter->randomStream, *mp.strings);
 		break;
+	}
 
 	case ENBISI_remove:
 		if(n->GetOrderedChildNodes().size() > 0)

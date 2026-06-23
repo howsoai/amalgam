@@ -1143,7 +1143,7 @@ static std::string GenerateRandomStringGivenStringSet(RandomStream &rs, std::vec
 }
 
 //helper function for EvaluableNodeTreeManipulation::MutateNode to populate immediate data
-static void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<std::string> &strings)
+static void MutateImmediateNode(EvaluableNode *n, EvaluableNodeTreeManipulation::MutationParameters &mp)
 {
 	auto node_type = n->GetType();
 	if(DoesEvaluableNodeTypeUseBoolData(node_type))
@@ -1153,6 +1153,7 @@ static void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<
 	}
 	else if(DoesEvaluableNodeTypeUseNumberData(node_type))
 	{
+		auto &rs = mp.interpreter->randomStream;
 		double cur_value = n->GetNumberValueReference();
 
 		//50% chance of being negative if negative, 50% of that 50% if positive (minimizing assumptions - a number can be either)
@@ -1178,8 +1179,30 @@ static void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(node_type))
 	{
-		n->SetStringValue(GenerateRandomStringGivenStringSet(rs, strings));
+		n->SetStringValue(GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings));
 	}
+}
+
+static EvaluableNode *AllocateNewRandomNode(EvaluableNodeTreeManipulation::MutationParameters &mp)
+{
+	//use some heuristics to generate some random immediate value
+	EvaluableNode *new_node = mp.enm->AllocNode(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.interpreter->randomStream));
+
+	if(new_node->IsImmediate())
+	{
+		//give it a respectable default before randomizing
+		if(DoesEvaluableNodeTypeUseBoolData(new_node->GetType()))
+			new_node->SetTypeViaBoolValue(mp.interpreter->randomStream.RandUInt32() & 1 ? true : false);
+		if(DoesEvaluableNodeTypeUseNumberData(new_node->GetType()))
+			new_node->SetTypeViaNumberValue(3);
+		else if(DoesEvaluableNodeTypeUseStringData(new_node->GetType()))
+			new_node->SetStringValue("string");
+
+		if(n->GetType() != ENT_NULL)
+			MutateImmediateNode(n, mp);
+	}
+
+	return new_node;
 }
 
 EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, MutationParameters &mp, size_t depth)
@@ -1193,7 +1216,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	if(is_immediate && !EvaluableNode::IsNull(n))
 	{
 		if(mp.interpreter->randomStream.Rand() < 0.5)
-			MutateImmediateNode(n, mp.interpreter->randomStream, *mp.strings);
+			MutateImmediateNode(n, mp);
 	}
 
 	EvaluableNodeBuiltInStringId mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
@@ -1217,49 +1240,44 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			return n;
 	}
 
-	//TODO 25660: update for each of the mutation types below as well as account for parameter type combos, and update docs
-	//ENBISI_change_type
-	//ENBISI_insert
-	//ENBISI_remove
-	//ENBISI_replace_with_deep_copy
-	//ENBISI_insert_element
-	//ENBISI_remove_element
-	//ENBISI_swap_elements
-	//ENBISI_remove_all_elements
+	//TODO 25660: update docs for each of the mutation types below as well as account for parameter type combos
 
 	switch(mutation_type)
 	{
 	case ENBISI_change_type:
 	{
+		//change the type of n
 		n->SetType(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.interpreter->randomStream), true);
 		if(IsEvaluableNodeTypeImmediate(n->GetType()) && n->GetType() != ENT_NULL)
-			MutateImmediateNode(n, mp.interpreter->randomStream, *mp.strings);
+			MutateImmediateNode(n, mp);
+	}
+
+	case ENBISI_insert:
+	{
+		//insert a new node above n
+		EvaluableNode *new_node = AllocateNewRandomNode(mp);
+		if(n->IsAssociativeArray())
+		{
+			// get a random key
+			std::string key = GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings);
+			new_node->SetMappedChildNode(key, n);
+		}
+		else
+		{
+			new_node->AppendOrderedChildNode(n);
+		}
+
+		n = new_node;
 		break;
 	}
 
 	case ENBISI_remove:
+		//remove n itself
 		if(n->GetOrderedChildNodes().size() > 0)
 		{
 			auto &ocn = n->GetOrderedChildNodesReference();
-			switch(GetOpcodeOrderedChildNodeType(n->GetType()))
-			{
-			case OpcodeDetails::OrderedChildNodeType::NONE:
-				break;
-			case OpcodeDetails::OrderedChildNodeType::UNORDERED:
-			{
-				size_t index = mp.interpreter->randomStream.RandSize(ocn.size());
-				ocn.erase(begin(ocn) + index);
-			}
-			case OpcodeDetails::OrderedChildNodeType::ORDERED:
-			case OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED:
-			case OpcodeDetails::OrderedChildNodeType::PAIRED:
-			case OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED:
-			case OpcodeDetails::OrderedChildNodeType::POSITION:
-			}
-
-			
-			//TODO 25660: make logic based on node parameter type
-			n = mp.enm->AllocNode(n->GetOrderedChildNodesReference()[replace_with]);
+			size_t index = mp.interpreter->randomStream.RandSize(ocn.size());
+			n = ocn[index];
 		}
 		else if(n->GetMappedChildNodes().size() > 0)
 		{
@@ -1270,7 +1288,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			{
 				if(replace_with < 1.0)
 				{
-					n = mp.enm->AllocNode(cn);
+					n = cn;
 					break;
 				}
 				replace_with--;
@@ -1278,74 +1296,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 
 		}
 		else
+		{
 			n->SetType(ENT_NULL, false);
-		break;
-
-	case ENBISI_insert:
-	{
-		//use some heuristics to generate some random immediate value
-		EvaluableNode *new_node = mp.enm->AllocNode(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.interpreter->randomStream));
-
-		//give it a respectable default before randomizing
-		if(DoesEvaluableNodeTypeUseNumberData(new_node->GetType()))
-			n->SetTypeViaNumberValue(50);
-		if(DoesEvaluableNodeTypeUseStringData(new_node->GetType()))
-			n->SetStringValue("string");
-
-		MutateImmediateNode(n, mp.interpreter->randomStream, *mp.strings);
-		if(n->IsAssociativeArray())
-		{
-			// get a random key
-			std::string key = GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings);
-			n->SetMappedChildNode(key, new_node);
-		}
-		else
-		{
-			//TODO 25660: make logic based on node parameter type
-			auto &ocn = n->GetOrderedChildNodesReference();
-			size_t location = mp.interpreter->randomStream.RandSize(ocn.size() + 1);
-			ocn.insert(ocn.begin() + location, new_node);
-			n->UpdateFlagsBasedOnNewChildNode(new_node);
-		}
-		break;
-	}
-
-	case ENBISI_swap_elements:
-		if(n->GetOrderedChildNodes().size() > 1)
-		{
-			auto &n_ocn = n->GetOrderedChildNodesReference();
-			size_t num_child_nodes = n_ocn.size();
-			auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
-			auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
-			std::swap(n_ocn[first_index], n_ocn[second_index]);
-		}
-		else if(n->GetMappedChildNodes().size() > 1)
-		{
-			auto &n_mcn = n->GetMappedChildNodesReference();
-			size_t num_child_nodes = n_mcn.size();
-			auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
-			auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
-
-			if(first_index != second_index)
-			{
-				if(first_index > second_index)
-					std::swap(first_index, second_index);
-
-				auto first_entry = begin(n_mcn);
-				for(size_t i = 0; i < first_index && first_entry != end(n_mcn); i++)
-					++first_entry;
-
-				auto second_entry = first_entry;
-				++second_entry;
-				for(size_t i = first_index + 1; i < second_index && second_entry != end(n_mcn); i++)
-					++second_entry;
-
-				std::swap(first_entry->second, second_entry->second);
-			}
 		}
 		break;
 
-	case ENBISI_deep_copy_elements:
+	case ENBISI_replace_element_with_copy:
+		//copy one element over another
 		if(n->GetOrderedChildNodes().size() > 0)
 		{
 			size_t num_children = n->GetOrderedChildNodesReference().size();
@@ -1394,7 +1351,134 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		}
 		break;
 
-	case ENBISI_delete_elements:
+	case ENBISI_insert_element:
+	{
+		//insert element in random location
+		EvaluableNode *new_node = AllocateNewRandomNode(mp);
+		if(n->IsAssociativeArray())
+		{
+			// get a random key
+			std::string key = GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings);
+			n->SetMappedChildNode(key, new_node);
+		}
+		else if(n->IsOrderedArray())
+		{
+			auto &ocn = n->GetOrderedChildNodesReference();
+			auto ocnt = GetOpcodeOrderedChildNodeType(n->GetType());
+			if(ocnt == OpcodeDetails::OrderedChildNodeType::PAIRED)
+			{
+				size_t location = mp.interpreter->randomStream.RandSize(ocn.size() / 2);
+				ocn.insert(ocn.begin() + 2 * location, new_node);
+				n->UpdateFlagsBasedOnNewChildNode(new_node);
+
+				//insert second node to keep the pairing
+				EvaluableNode *new_node_2 = AllocateNewRandomNode(mp);
+				ocn.insert(ocn.begin() + 2 * location + 1, new_node_2);
+				n->UpdateFlagsBasedOnNewChildNode(new_node_2);
+			}
+			else if(ocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED)
+			{
+				size_t location = mp.interpreter->randomStream.RandSize( (ocn.size() - 1) / 2);
+				ocn.insert(ocn.begin() + 1 + 2 * location, new_node);
+				n->UpdateFlagsBasedOnNewChildNode(new_node);
+
+				//insert second node to keep the pairing
+				EvaluableNode *new_node_2 = AllocateNewRandomNode(mp);
+				ocn.insert(ocn.begin() + 1 + 2 * location + 1, new_node_2);
+				n->UpdateFlagsBasedOnNewChildNode(new_node_2);
+			}
+			else
+			{
+				size_t location = mp.interpreter->randomStream.RandSize(ocn.size() + 1);
+				ocn.insert(ocn.begin() + location, new_node);
+				n->UpdateFlagsBasedOnNewChildNode(new_node);
+			}
+		}
+		break;
+	}
+
+	case ENBISI_remove_element:
+		//remove an element from a random location
+		if(n->IsAssociativeArray())
+		{
+			auto &mcn = n->GetMappedChildNodesReference();
+			size_t location = mp.interpreter->randomStream.RandSize(mcn.size());
+			//iterate over child nodes until find the right index
+			for(auto &[key, cn] : mcn)
+			{
+				if(location < 1)
+				{
+					mcn.erase(key);
+					break;
+				}
+				location--;
+			}
+		}
+		else if(n->IsOrderedArray())
+		{
+			auto &ocn = n->GetOrderedChildNodesReference();
+			auto ocnt = GetOpcodeOrderedChildNodeType(n->GetType());
+			if(ocnt == OpcodeDetails::OrderedChildNodeType::PAIRED)
+			{
+				size_t location = mp.interpreter->randomStream.RandSize(ocn.size() / 2);
+				ocn.erase(ocn.begin() + 2 * location);
+				ocn.erase(ocn.begin() + 2 * location + 1);
+			}
+			else if(ocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED)
+			{
+				size_t location = mp.interpreter->randomStream.RandSize( (ocn.size() - 1) / 2);
+				ocn.erase(ocn.begin() + 1 + 2 * location);
+				ocn.erase(ocn.begin() + 1 + 2 * location + 1);
+			}
+			else
+			{
+				size_t location = mp.interpreter->randomStream.RandSize(ocn.size());
+				ocn.erase(ocn.begin() + location);
+			}
+
+		}
+		else
+		{
+			n->SetType(ENT_NULL, false);
+		}
+		break;
+
+	case ENBISI_swap_elements:
+		if(n->GetOrderedChildNodes().size() > 1)
+		{
+			auto &n_ocn = n->GetOrderedChildNodesReference();
+			size_t num_child_nodes = n_ocn.size();
+			auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
+			auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
+			std::swap(n_ocn[first_index], n_ocn[second_index]);
+		}
+		else if(n->GetMappedChildNodes().size() > 1)
+		{
+			auto &n_mcn = n->GetMappedChildNodesReference();
+			size_t num_child_nodes = n_mcn.size();
+			auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
+			auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
+
+			if(first_index != second_index)
+			{
+				if(first_index > second_index)
+					std::swap(first_index, second_index);
+
+				auto first_entry = begin(n_mcn);
+				for(size_t i = 0; i < first_index && first_entry != end(n_mcn); i++)
+					++first_entry;
+
+				auto second_entry = first_entry;
+				++second_entry;
+				for(size_t i = first_index + 1; i < second_index && second_entry != end(n_mcn); i++)
+					++second_entry;
+
+				std::swap(first_entry->second, second_entry->second);
+			}
+		}
+		break;
+
+	case ENBISI_remove_all_elements:
 		n->ClearOrderedChildNodes();
 		n->ClearMappedChildNodes();
 		break;
@@ -1571,11 +1655,11 @@ CompactHashMap<EvaluableNodeBuiltInStringId, double> EvaluableNodeTreeManipulati
 	{ENBISI_change_type,				0.15 },
 	{ENBISI_insert,						0.15 },
 	{ENBISI_remove,						0.15 },
-	{ENBISI_replace_with_deep_copy,		0.05 },
+	{ENBISI_replace_element_with_copy,	0.06 },
 	{ENBISI_insert_element,				0.15 },
 	{ENBISI_remove_element,				0.15 },
 	{ENBISI_swap_elements,				0.15 },
-	{ENBISI_remove_all_elements,		0.05 }
+	{ENBISI_remove_all_elements,		0.04 }
 };
 
 EvaluableNodeTreeManipulation::MutationParameters::WeightedRandMutationType EvaluableNodeTreeManipulation::mutationOperationTypeRandomStream(mutationOperationTypeProbabilities, true);

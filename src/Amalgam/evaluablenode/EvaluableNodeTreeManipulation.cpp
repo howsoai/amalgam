@@ -1451,13 +1451,17 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			{
 				size_t location = mp.interpreter->randomStream.RandSize(ocn.size() / 2);
 				ocn.erase(ocn.begin() + 2 * location);
-				ocn.erase(ocn.begin() + 2 * location + 1);
+				//delete second from same spot if room
+				if(ocn.size() > 2 * location)
+					ocn.erase(ocn.begin() + 2 * location);
 			}
 			else if(ocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED && ocn.size() >= 3)
 			{
 				size_t location = mp.interpreter->randomStream.RandSize((ocn.size() - 1) / 2);
 				ocn.erase(ocn.begin() + 1 + 2 * location);
-				ocn.erase(ocn.begin() + 1 + 2 * location + 1);
+				//delete second from same spot if room
+				if(ocn.size() > 1 + 2 * location)
+					ocn.erase(ocn.begin() + 1 + 2 * location);
 			}
 			else
 			{
@@ -1674,11 +1678,11 @@ CompactHashMap<EvaluableNodeBuiltInStringId, double> EvaluableNodeTreeManipulati
 	{ENBISI_change_type,				0.15 },
 	{ENBISI_insert,						0.15 },
 	{ENBISI_remove,						0.15 },
-	{ENBISI_replace_element_with_copy,	0.06 },
+	{ENBISI_replace_element_with_copy,	0.09 },
 	{ENBISI_insert_element,				0.15 },
 	{ENBISI_remove_element,				0.15 },
 	{ENBISI_swap_elements,				0.15 },
-	{ENBISI_remove_all_elements,		0.04 }
+	{ENBISI_remove_all_elements,		0.01 }
 };
 
 EvaluableNodeTreeManipulation::MutationParameters::WeightedRandMutationType EvaluableNodeTreeManipulation::mutationOperationTypeRandomStream(mutationOperationTypeProbabilities, true);

@@ -439,6 +439,7 @@ static OpcodeInitializer _ENT_SYSTEM_TIME(ENT_SYSTEM_TIME, &Interpreter::Interpr
 	\s*$)&"
 }
 		});
+	d.retrieveData = true;
 	d.permissions = ExecutionPermissions::Permission::ENVIRONMENT;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 4.5;
@@ -488,6 +489,7 @@ static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT
 		});
 	d.permissions = ExecutionPermissions::Permission::ALL;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrieveData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 2.0;
 	d.opcodeGroup = _opcode_group;

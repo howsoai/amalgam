@@ -143,16 +143,41 @@ public:
 
 	//attribute ordering here is generally ordered by operational use to improve caching,
 	//with descriptive strings at the end
+
+	//true if the opcode may return itself if all child nodes are also idempotent
 	bool potentiallyIdempotent = false;
+
+	//true if the opcode may retrieve data from outside and require execution
+	bool retrieveData = false;
+
+	//true if the opcode may affect data outside itself
 	bool hasSideEffects = false;
+
+	//true if the opcode may cause a change in the current entity
 	bool mayCauseNodeUpdateInCurrentEntity = false;
+
+	//true if the opcode allows concurrent execution
 	bool allowsConcurrency = false;
+
+	//true if the opcode requires an entity to operate
 	bool requiresEntity = false;
+
+	//true if the opcode creates a new variable scope
 	bool newScope = false;
+
+	//true if the opcode creates a new target scope
 	bool newTargetScope = false;
+
+	//true if the opcode is a query run by the query engine
 	bool isQuery = false;
+
+	//if the opcode has ordered child nodes, how they're ordered
 	OrderedChildNodeType orderedChildNodeType = OrderedChildNodeType::POSITION;
+
+	//what kind of special permissions the opcode needs to run
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
+
+	//whether the opcode returns a newly allocated value
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 
 	std::string_view parameters;
@@ -191,6 +216,12 @@ public:
 __forceinline OpcodeDetails::OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t)
 {
 	return _opcode_details[t].orderedChildNodeType;
+}
+
+//returns true if the opcode may retrieve data
+__forceinline bool DoesOpcodeRetrieveData(EvaluableNodeType t)
+{
+	return _opcode_details[t].retrieveData;
 }
 
 //returns true if the opcode modifies things outside of its return

@@ -238,6 +238,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_UNION,
 	ENT_DIFFERENCE,
 	ENT_MIX,
+	ENT_SIMPLIFY,
 
 	//Entity Comparison and Evolution
 	ENT_TOTAL_ENTITY_SIZE,

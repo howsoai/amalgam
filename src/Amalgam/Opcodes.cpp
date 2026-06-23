@@ -258,6 +258,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_UNION, "union");
 	EmplaceNodeTypeString(ENT_DIFFERENCE, "difference");
 	EmplaceNodeTypeString(ENT_MIX, "mix");
+	EmplaceNodeTypeString(ENT_SIMPLIFY, "simplify");
 
 	//Entity Comparison and Evolution
 	EmplaceNodeTypeString(ENT_TOTAL_ENTITY_SIZE, "total_entity_size");

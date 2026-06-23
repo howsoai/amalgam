@@ -2742,6 +2742,7 @@ static OpcodeInitializer _ENT_CURRENT_INDEX(ENT_CURRENT_INDEX, &Interpreter::Int
 	[0 1 2 3 2 4]
 ])"}
 		});
+	d.retrieveData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 31.0;
 	d.opcodeGroup = _opcode_group;
@@ -2804,6 +2805,7 @@ static OpcodeInitializer _ENT_CURRENT_VALUE(ENT_CURRENT_VALUE, &Interpreter::Int
 	(range 0 4)
 ))&", R"([0 2 4 6 8])"},
 		});
+	d.retrieveData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 77.0;
 	d.opcodeGroup = _opcode_group;
@@ -2863,6 +2865,7 @@ static OpcodeInitializer _ENT_PREVIOUS_RESULT(ENT_PREVIOUS_RESULT, &Interpreter:
 	.null
 ])"}
 		});
+	d.retrieveData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 1.0;

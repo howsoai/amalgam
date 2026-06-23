@@ -1041,6 +1041,7 @@ public:
 	EvaluableNodeReference InterpretNode_ENT_UNION(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_DIFFERENCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_MIX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SIMPLIFY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//Entity Comparison and Evolution
 	EvaluableNodeReference InterpretNode_ENT_TOTAL_ENTITY_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);

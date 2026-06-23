@@ -1781,3 +1781,41 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, Eva
 
 	return EvaluableNodeReference(result, true);
 }
+
+static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode_ENT_SIMPLIFY, []() {
+	OpcodeDetails d;
+	d.parameters = R"(* node)";
+	d.returns = R"(any)";
+	d.description = R"(Simplifies all of the code node in ways that will yield the same behavior and returns the result.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((simplify
+	(lambda
+		(+
+			0
+			1
+			2
+			3
+			4
+			5
+			6
+		)
+	)
+))&", R"(21)"}
+		});
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.frequencyPer10000Opcodes = 0.25;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SIMPLIFY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodesReference();
+	if(ocn.size() < 1)
+		return EvaluableNodeReference::Null();
+
+	auto node = InterpretNodeForImmediateUse(ocn[0]);
+
+	EvaluableNode *result = EvaluableNodeTreeManipulation::SimplifyTree(evaluableNodeManager, node);
+	return EvaluableNodeReference(result, true);
+}

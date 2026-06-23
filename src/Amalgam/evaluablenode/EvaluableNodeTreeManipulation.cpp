@@ -1498,7 +1498,8 @@ void EvaluableNodeTreeManipulation::ReplaceStringsInTree(EvaluableNode *tree, Co
 	}
 }
 
-void EvaluableNodeTreeManipulation::GetStringsFromTree(EvaluableNode *tree, std::vector<std::string> &strings, EvaluableNode::ReferenceSetType &checked)
+void EvaluableNodeTreeManipulation::GetStringsFromTree(
+	EvaluableNode *tree, std::vector<std::string> &strings, EvaluableNode::ReferenceSetType &checked)
 {
 	if(tree == nullptr)
 		return;
@@ -1523,6 +1524,75 @@ void EvaluableNodeTreeManipulation::GetStringsFromTree(EvaluableNode *tree, std:
 		for(auto &cn : tree->GetOrderedChildNodesReference())
 			GetStringsFromTree(cn, strings, checked);
 	}
+}
+
+std::pair<EvaluableNode *, bool> EvaluableNodeTreeManipulation::SimplifyTreeRecurse(
+	EvaluableNodeManager *enm, EvaluableNode *tree, EvaluableNode::ReferenceAssocType &references)
+{
+	//TODO 25662: begin adding simplifications to this
+	//TODO 25662: add more unit tests
+
+	//attempt to insert a new reference for this node, start with null
+	auto [inserted_copy, inserted] = references.emplace(tree, nullptr);
+
+	//can't insert, so already have a copy
+	// need to indicate that it has a cycle
+	if(!inserted)
+		return std::make_pair(inserted_copy->second, true);
+
+	EvaluableNode *copy = enm->AllocNode(tree, false);
+
+	//shouldn't happen, but just to be safe
+	if(copy == nullptr)
+		return std::make_pair(nullptr, false);
+
+	//start without needing a cycle check in case it can be cleared
+	copy->SetNeedCycleCheck(false);
+
+	//write the value to the iterator from the earlier insert
+	inserted_copy->second = copy;
+
+	//copy and update any child nodes
+	if(copy->IsAssociativeArray())
+	{
+		auto &copy_mcn = copy->GetMappedChildNodesReference();
+		for(auto &[_, s] : copy_mcn)
+		{
+			//get current item in list
+			EvaluableNode *n = s;
+			if(n == nullptr)
+				continue;
+
+			//make copy; if need cycle check, then mark it on the parent copy
+			auto [child_copy, need_cycle_check] = SimplifyTreeRecurse(enm, n, references);
+			if(need_cycle_check)
+				copy->SetNeedCycleCheck(true);
+
+			//replace item in assoc with copy
+			s = child_copy;
+		}
+	}
+	else
+	{
+		auto &copy_ocn = copy->GetOrderedChildNodes();
+		for(size_t i = 0; i < copy_ocn.size(); i++)
+		{
+			//get current item in list
+			EvaluableNode *n = copy_ocn[i];
+			if(n == nullptr)
+				continue;
+
+			//make copy; if need cycle check, then mark it on the parent copy
+			auto [child_copy, need_cycle_check] = SimplifyTreeRecurse(enm, n, references);
+			if(need_cycle_check)
+				copy->SetNeedCycleCheck(true);
+
+			//replace current item in list with copy
+			copy_ocn[i] = child_copy;
+		}
+	}
+
+	return std::make_pair(copy, copy->GetNeedCycleCheck());
 }
 
 #if defined(MULTITHREAD_SUPPORT)

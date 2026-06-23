@@ -133,6 +133,7 @@ R"&(\[\s*
 }
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
+	d.retrieveData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 6.5;
 	d.opcodeGroup = _opcode_group;
@@ -435,6 +436,7 @@ static OpcodeInitializer _ENT_GET_RAND_SEED(ENT_GET_RAND_SEED, &Interpreter::Int
 	d.examples = MakeAmalgamExamples({
 		{R"&((format (get_rand_seed) "string" "base64"))&", R"("X6f8e5JTT5kuHHGZUu7r6/8=")"}
 		});
+	d.retrieveData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;
@@ -476,6 +478,7 @@ static OpcodeInitializer _ENT_SET_RAND_SEED(ENT_SET_RAND_SEED, &Interpreter::Int
 ))&", R"(0.5507987428849511)"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+	d.retrieveData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
@@ -521,6 +524,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_RAND_SEED(ENT_GET_ENTITY_RAND_SEED, &In
 	)
 ))&", R"("nHKVcHddHVaqvcDt3AYbD/8=")", "", R"((destroy_entities "Rand"))"}
 		});
+	d.retrieveData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.01;
@@ -599,6 +603,7 @@ static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &In
 ])", "", R"((destroy_entities "Rand"))"}
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.retrieveData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.hasSideEffects = true;

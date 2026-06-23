@@ -163,6 +163,7 @@ static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CAL
 ))&", R"(5)"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+	d.retrieveData = true;
 	d.newScope = true;
 	d.mayCauseNodeUpdateInCurrentEntity = true;
 	d.frequencyPer10000Opcodes = 112.0;
@@ -276,6 +277,7 @@ static OpcodeInitializer _ENT_CALL_SANDBOXED(ENT_CALL_SANDBOXED, &Interpreter::I
 ])"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+	d.retrieveData = true;
 	d.newScope = true;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
@@ -794,6 +796,7 @@ static OpcodeInitializer _ENT_OPCODE_STACK(ENT_OPCODE_STACK, &Interpreter::Inter
 	)
 ))&", R"((seq))"}
 		});
+	d.retrieveData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.1;
 	d.opcodeGroup = _opcode_group;

@@ -581,6 +581,14 @@ public:
 		ReplaceStringsInTree(tree, to_replace, checked);
 	}
 
+	//returns a simplified copy of tree
+	static EvaluableNode *SimplifyTree(EvaluableNodeManager *enm, EvaluableNode *tree)
+	{
+		EvaluableNode::ReferenceAssocType references;
+		auto [copy, need_cycle_check] = SimplifyTreeRecurse(enm, tree, references);
+		return copy;
+	}
+
 protected:
 
 	//Evaluates commonality metric between the two nodes passed in, including labels.
@@ -619,6 +627,10 @@ protected:
 
 	//returns a set of strings that have appeared at least once in the given tree
 	static void GetStringsFromTree(EvaluableNode *tree, std::vector<std::string> &strings, EvaluableNode::ReferenceSetType &checked);
+
+	//returns a simplified copy of tree, returns true if there is a cycle
+	static std::pair<EvaluableNode *, bool> SimplifyTreeRecurse(
+		EvaluableNodeManager *enm, EvaluableNode *tree, EvaluableNode::ReferenceAssocType &references);
 
 	//random stream for MutationOperationType, so can obtain a random type from a useful distribution
 	static MutationParameters::WeightedRandMutationType mutationOperationTypeRandomStream;

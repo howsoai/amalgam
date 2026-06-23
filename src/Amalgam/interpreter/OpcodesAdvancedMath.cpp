@@ -177,9 +177,41 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_POW(EvaluableNode *en, Eva
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	double f1 = InterpretNodeIntoNumberValue(ocn[0]);
-	double f2 = InterpretNodeIntoNumberValue(ocn[1]);
-	return AllocReturn(std::pow(f1, f2), immediate_result);
+	double base = InterpretNodeIntoNumberValue(ocn[0]);
+	double exponent = InterpretNodeIntoNumberValue(ocn[1]);
+
+	//optimize for common values
+	double result = 0.0;
+	double rounded = std::nearbyint(exponent);
+	if(std::abs(exponent - rounded) == 0.0)
+	{
+		int n = static_cast<int>(rounded);
+		switch(n)
+		{
+		case -3: result = 1.0 / (base * base * base);	break;
+		case -2: result = 1.0 / (base * base);			break;
+		case -1: result = 1.0 / base;					break;
+		case  0: result = 1.0;							break;
+		case  1: result = base;							break;
+		case  2: result = base * base;					break;
+		case  3: result = base * base * base;			break;
+		default: result = std::pow(base, exponent);		break;
+		}
+	}
+	else if(exponent == 0.5)
+	{
+		result = std::sqrt(base);
+	}
+	else if(exponent == -0.5)
+	{
+		result = 1.0 / std::sqrt(base);
+	}
+	else
+	{
+		result = std::pow(base, exponent);
+	}
+
+	return AllocReturn(result, immediate_result);
 }
 
 static OpcodeInitializer _ENT_DOT_PRODUCT(ENT_DOT_PRODUCT, &Interpreter::InterpretNode_ENT_DOT_PRODUCT, []() {

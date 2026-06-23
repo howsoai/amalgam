@@ -23,6 +23,7 @@ static OpcodeInitializer _ENT_CONTAINS_LABEL(ENT_CONTAINS_LABEL, &Interpreter::I
 ))&", R"([.true .false])", "", R"((destroy_entities "Entity"))"}
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.retrieveData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
@@ -91,6 +92,7 @@ static OpcodeInitializer _ENT_ASSIGN_TO_ENTITIES(ENT_ASSIGN_TO_ENTITIES, &Interp
 })", "", R"((destroy_entities "Entity"))"}
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
+	d.retrieveData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.hasSideEffects = true;
@@ -121,6 +123,7 @@ static OpcodeInitializer _ENT_ACCUM_TO_ENTITIES(ENT_ACCUM_TO_ENTITIES, &Interpre
 ))&", R"({a 3 b 5 c 7})", "", R"((destroy_entities "Entity"))"}
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
+	d.retrieveData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.hasSideEffects = true;
@@ -305,6 +308,7 @@ static OpcodeInitializer _ENT_RETRIEVE_FROM_ENTITY(ENT_RETRIEVE_FROM_ENTITY, &In
 ])", "", R"((destroy_entities "Entity"))"}
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.retrieveData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 	d.frequencyPer10000Opcodes = 7.5;
@@ -453,6 +457,7 @@ static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::Interpr
 	[.null {} "Execution step limit exceeded"]
 ])", "", R"((destroy_entities "Entity"))"}
 		});
+	d.retrieveData = true;
 	d.requiresEntity = true;
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
@@ -522,6 +527,7 @@ static OpcodeInitializer _ENT_CALL_ENTITY_GET_CHANGES(ENT_CALL_ENTITY_GET_CHANGE
 	)
 ])", "", R"((destroy_entities "Entity"))"}
 		});
+	d.retrieveData = true;
 	d.requiresEntity = true;
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
@@ -552,6 +558,7 @@ static OpcodeInitializer _ENT_CALL_ON_ENTITY(ENT_CALL_ON_ENTITY, &Interpreter::I
 	)
 ))&", R"([1 2 3])", "", R"((destroy_entities "Entity"))"}
 		});
+	d.retrieveData = true;
 	d.requiresEntity = true;
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -817,6 +824,7 @@ static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::I
 	[.null {} "Execution step limit exceeded"]
 ])", "", R"((apply "destroy_entities" (contained_entities)))"}
 		});
+	d.retrieveData = true;
 	d.requiresEntity = true;
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;

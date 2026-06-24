@@ -1140,7 +1140,7 @@ static OpcodeInitializer _ENT_TARGET(ENT_TARGET, &Interpreter::InterpretNode_ENT
 	d 3
 	e [0 1 2 3 0 4]
 })"},
-			{R"&((call_sandboxed {
+			{R"&((call {
 	a 0
 	b 1
 	c 2

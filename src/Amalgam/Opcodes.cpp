@@ -66,7 +66,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_SEQUENCE, "seq");
 	EmplaceNodeTypeString(ENT_LAMBDA, "lambda");
 	EmplaceNodeTypeString(ENT_CALL, "call");
-	EmplaceNodeTypeString(ENT_CALL_SANDBOXED, "call_sandboxed");
 	EmplaceNodeTypeString(ENT_WHILE, "while");
 	EmplaceNodeTypeString(ENT_CONCLUDE, "conclude");
 	EmplaceNodeTypeString(ENT_RETURN, "return");

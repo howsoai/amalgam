@@ -18,7 +18,7 @@ public:
 	};
 
 	InterpreterConstraints()
-		: maxNodeOperations(0), maxOperationDepth(0), curNumAllocatedNodesAllocatedToEntities(0),
+		: curExecutionStep(0), maxNodeOperations(0), maxOperationDepth(0), curNumAllocatedNodesAllocatedToEntities(0),
 		maxNumAllocatedNodes(0), entityToConstrainFrom(nullptr), constraintsExceeded(false),
 		constrainMaxContainedEntities(false), constrainMaxContainedEntityDepth(false), maxContainedEntities(0),
 		maxContainedEntityDepth(0), maxEntityIdLength(0), readAccess(true), writeAccess(true),

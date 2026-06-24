@@ -61,7 +61,6 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		scopeStack = std::move(*scope_stack);
 	}
 
-	//
 	if(opcode_stack == nullptr)
 		opcodeStackNodes.clear();
 	else
@@ -572,105 +571,82 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 }
 
 void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
-	size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool include_entity_constraints)
+	size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool calling_entity)
 {
 	interpreter_constraints.constraintViolation = InterpreterConstraints::ViolationType::NoViolation;
 
-	//for each of the three parameters below, values of zero indicate no limit
-
-	//populate maxNodeOperations
-	interpreter_constraints.curExecutionStep = 0;
-	interpreter_constraints.maxNodeOperations = 0;
-	size_t execution_steps_offset = perf_constraint_param_offset + 0;
-	if(params.size() > execution_steps_offset)
-	{
-		double value = InterpretNodeIntoNumberValue(params[execution_steps_offset]);
-		//nan will fail, so don't need a separate nan check
-		if(value >= 1.0)
-			interpreter_constraints.maxNodeOperations = static_cast<ExecutionCycleCount>(value);
-	}
-
-	//populate maxNumAllocatedNodes
-	interpreter_constraints.curNumAllocatedNodesAllocatedToEntities = 0;
-	interpreter_constraints.maxNumAllocatedNodes = 0;
-	size_t max_num_allocated_nodes_offset = perf_constraint_param_offset + 1;
-	if(params.size() > max_num_allocated_nodes_offset)
-	{
-		double value = InterpretNodeIntoNumberValue(params[max_num_allocated_nodes_offset]);
-		//nan will fail, so don't need a separate nan check
-		if(value >= 1.0)
-			interpreter_constraints.maxNumAllocatedNodes = static_cast<ExecutionCycleCount>(value);
-	}
-	//populate maxOperationDepth
-	interpreter_constraints.maxOperationDepth = 0;
-	size_t max_opcode_execution_depth_offset = perf_constraint_param_offset + 2;
-	if(params.size() > max_opcode_execution_depth_offset)
-	{
-		double value = InterpretNodeIntoNumberValue(params[max_opcode_execution_depth_offset]);
-		//nan will fail, so don't need a separate nan check
-		if(value >= 1.0)
-			interpreter_constraints.maxOperationDepth = static_cast<ExecutionCycleCount>(value);
-	}
-
-	interpreter_constraints.entityToConstrainFrom = nullptr;
-	interpreter_constraints.constrainMaxContainedEntities = false;
-	interpreter_constraints.maxContainedEntities = 0;
-	interpreter_constraints.constrainMaxContainedEntityDepth = false;
-	interpreter_constraints.maxContainedEntityDepth = 0;
-	interpreter_constraints.maxEntityIdLength = 0;
-	interpreter_constraints.readAccess = true;
-	interpreter_constraints.writeAccess = true;
-
-	size_t warning_override_offset = perf_constraint_param_offset + 3;
-
-	if(include_entity_constraints)
-	{
-		warning_override_offset += 4;
-
-		//populate maxContainedEntities
-		size_t max_contained_entities_offset = perf_constraint_param_offset + 3;
-		if(params.size() > max_contained_entities_offset)
-		{
-			double value = InterpretNodeIntoNumberValue(params[max_contained_entities_offset]);
-			//nan will fail, so don't need a separate nan check
-			if(value >= 0.0)
-			{
-				interpreter_constraints.constrainMaxContainedEntities = true;
-				interpreter_constraints.maxContainedEntities = static_cast<ExecutionCycleCount>(value);
-			}
-		}
-
-		//populate maxContainedEntityDepth
-		size_t max_contained_entity_depth_offset = perf_constraint_param_offset + 4;
-		if(params.size() > max_contained_entity_depth_offset)
-		{
-			double value = InterpretNodeIntoNumberValue(params[max_contained_entity_depth_offset]);
-			//nan will fail, so don't need a separate nan check
-			if(value >= 0.0)
-			{
-				interpreter_constraints.constrainMaxContainedEntityDepth = true;
-				interpreter_constraints.maxContainedEntityDepth = static_cast<ExecutionCycleCount>(value);
-			}
-		}
-
-		//populate maxEntityIdLength
-		size_t max_entity_id_length_offset = perf_constraint_param_offset + 5;
-		if(params.size() > max_entity_id_length_offset)
-		{
-			double value = InterpretNodeIntoNumberValue(params[max_entity_id_length_offset]);
-			//nan will fail, so don't need a separate nan check
-			if(value >= 1.0)
-				interpreter_constraints.maxEntityIdLength = static_cast<ExecutionCycleCount>(value);
-		}
-
-		size_t allow_entity_writes_offset = perf_constraint_param_offset + 6;
-		if(params.size() > allow_entity_writes_offset)
-			interpreter_constraints.readAccess = InterpretNodeIntoBoolValue(params[allow_entity_writes_offset]);
-	}
+	if(params.size() <= perf_constraint_param_offset)
+		return;
 
 	//check if caller specified override of the default warning collections behavior
-	if(params.size() > warning_override_offset)
-		interpreter_constraints.collectWarnings = InterpretNodeIntoBoolValue(params[warning_override_offset], false);
+	//do this before the rest of the constraints so can early out
+	if(params.size() > perf_constraint_param_offset + 1)
+		interpreter_constraints.collectWarnings
+			= InterpretNodeIntoBoolValue(params[perf_constraint_param_offset + 1], false);
+
+	EvaluableNodeReference constraints = InterpretNodeForImmediateUse(params[perf_constraint_param_offset]);
+
+	//if any form of false (including null), don't add constraints
+	if(!EvaluableNode::ToBool(constraints))
+		return;
+
+	//default to constrained execution
+	interpreter_constraints.maxNodeOperations = 10000;
+	interpreter_constraints.maxNumAllocatedNodes = 5000;
+	interpreter_constraints.maxOperationDepth = 50;
+	interpreter_constraints.writeAccess = false;
+
+	if(calling_entity)
+	{
+		interpreter_constraints.constrainMaxContainedEntities = true;
+		interpreter_constraints.maxContainedEntities = 5;
+		interpreter_constraints.constrainMaxContainedEntityDepth = true;
+		interpreter_constraints.maxContainedEntityDepth = 3;
+		interpreter_constraints.maxEntityIdLength = 20;
+	}
+	else
+	{
+		//default to not read local data
+		interpreter_constraints.readAccess = false;
+	}
+
+	if(constraints->IsAssociativeArray())
+	{
+		auto &mcn = constraints->GetMappedChildNodesReference();
+
+		EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_max_node_operations,
+			interpreter_constraints.maxNodeOperations);
+		EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_max_node_allocations,
+			interpreter_constraints.maxNumAllocatedNodes);
+		EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_max_operation_depth,
+			interpreter_constraints.maxOperationDepth);
+		EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_read_access,
+			interpreter_constraints.readAccess);
+		EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_write_access,
+			interpreter_constraints.writeAccess);
+
+		if(calling_entity)
+		{
+			auto found_value = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_max_contained_entities));
+			if(found_value != end(mcn))
+			{
+				interpreter_constraints.constrainMaxContainedEntities = true;
+				interpreter_constraints.maxContainedEntities
+					= static_cast<size_t>(EvaluableNode::ToNumber(found_value->second));
+			}
+
+			found_value = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_max_contained_entity_depth));
+			if(found_value != end(mcn))
+			{
+				interpreter_constraints.constrainMaxContainedEntityDepth = true;
+				interpreter_constraints.maxContainedEntityDepth
+					= static_cast<size_t>(EvaluableNode::ToNumber(found_value->second));
+			}
+
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_max_entity_id_length,
+				interpreter_constraints.maxEntityIdLength);
+		}
+	}
 }
 
 void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interpreter_constraints, Entity *entity_to_constrain_from)
@@ -678,7 +654,6 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 	if(interpreter_constraints == nullptr)
 		return;
 
-	//TODO 25650: finish changing this and opcodes and remove call_sandboxed
 	interpreter_constraints->constraintsExceeded = false;
 
 	if(interpreterConstraints != nullptr)

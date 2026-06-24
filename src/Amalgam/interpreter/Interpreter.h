@@ -648,10 +648,9 @@ protected:
 	EvaluableNodeReference RewriteByFunction(EvaluableNodeReference function,
 		EvaluableNode *tree, FastHashMap<EvaluableNode *, EvaluableNode *> &original_node_to_new_node);
 
-	//populates interpreter_constraints from params starting at the offset perf_constraint_param_offset,
-	// in the order of execution cycles, maximum memory, maximum stack depth
+	//populates interpreter_constraints from params starting at the offset perf_constraint_param_offset
 	void PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
-		size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool include_entity_constraints = false);
+		size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool calling_entity = false);
 
 	//if interpreter_constraints is not null, populates the counters representing the current state of the interpreter
 	void PopulatePerformanceCounters(InterpreterConstraints *interpreter_constraints, Entity *entity_to_constrain_from);
@@ -889,7 +888,6 @@ public:
 	EvaluableNodeReference InterpretNode_ENT_SEQUENCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_LAMBDA(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CALL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_CALL_SANDBOXED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_WHILE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CONCLUDE_and_RETURN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_APPLY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);

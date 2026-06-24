@@ -1260,6 +1260,10 @@ public:
 				value = EvaluableNode::ToBool(found_value->second);
 			else if constexpr(std::is_same<T, double>::value)
 				value = EvaluableNode::ToNumber(found_value->second);
+			else if constexpr(std::is_same<T, size_t>::value)
+				value = static_cast<size_t>(EvaluableNode::ToNumber(found_value->second));
+			else if constexpr(std::is_same<T, int64_t>::value)
+				value = static_cast<int64_t>(EvaluableNode::ToNumber(found_value->second));
 			else if constexpr(std::is_same<T, std::string>::value)
 				value = EvaluableNode::ToString(found_value->second);
 			else if constexpr(std::is_same<T, StringInternPool::StringID>::value)

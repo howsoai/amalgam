@@ -1277,6 +1277,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		n->SetType(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.interpreter->randomStream), true);
 		if(IsEvaluableNodeTypeImmediate(n->GetType()) && n->GetType() != ENT_NULL)
 			MutateImmediateNode(n, mp);
+		break;
 	}
 
 	case ENBISI_insert:
@@ -1332,9 +1333,15 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		//copy one element over another
 		if(n->GetOrderedChildNodes().size() > 0)
 		{
+			//get source and destination; note that destination_index is drawn from
+			//num_children - 1 to give a different index, but then includes appending to the end / new value
+			//so it gets a + 1 added back, and then is incremented if greater or equal to source_index
 			size_t num_children = n->GetOrderedChildNodesReference().size();
 			size_t source_index = mp.interpreter->randomStream.RandSize(num_children);
-			size_t destination_index = mp.interpreter->randomStream.RandSize(num_children + 1);
+			size_t destination_index = mp.interpreter->randomStream.RandSize(num_children);
+			if(destination_index >= source_index)
+				destination_index++;
+
 			if(destination_index >= num_children)
 				n->AppendOrderedChildNode(mp.enm->DeepAllocCopy(n->GetOrderedChildNodes()[source_index]));
 			else
@@ -1342,35 +1349,42 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		}
 		else if(n->GetMappedChildNodes().size() > 0)
 		{
+			//get source and destination; note that destination_index is drawn from
+			//num_children - 1 to give a different index, but then includes appending to the end / new value
+			//so it gets a + 1 added back, and then is incremented if greater or equal to source_index
 			auto &mcn = n->GetMappedChildNodes();
 			auto num_children = mcn.size();
 			size_t source_index = mp.interpreter->randomStream.RandSize(num_children);
 			EvaluableNode *source_node = nullptr;
-			size_t destination_index = mp.interpreter->randomStream.RandSize(num_children + 1);
+			size_t destination_index = mp.interpreter->randomStream.RandSize(num_children);
+			if(destination_index >= source_index)
+				destination_index++;
+
 			//iterate over child nodes until find the right index
+			size_t cur_index = 0;
 			for(auto &[_, cn] : mcn)
 			{
-				if(source_index < 1)
+				if(cur_index == source_index)
 				{
 					source_node = cn;
 					break;
 				}
-				source_index--;
+				cur_index++;
 			}
 
+			cur_index = 0;
 			for(auto &[_, cn] : mcn)
 			{
-				if(destination_index < 1)
+				if(cur_index == destination_index)
 				{
 					cn = mp.enm->DeepAllocCopy(source_node);
-					destination_index--;
 					break;
 				}
-				destination_index--;
+				cur_index++;
 			}
 
-			//need to create a new key
-			if(destination_index > 0)
+			//if didn't find destination_index, need to create a new key
+			if(cur_index < destination_index)
 			{
 				std::string new_key = GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings, 0.6);
 				n->SetMappedChildNode(new_key, mp.enm->DeepAllocCopy(source_node));
@@ -1485,7 +1499,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			size_t num_child_nodes = n_ocn.size();
 			size_t first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
 			size_t second_index = mp.interpreter->randomStream.RandSize(num_child_nodes - 1);
-			if(second_index > first_index)
+			if(second_index >= first_index)
 				second_index++;
 
 			std::swap(n_ocn[first_index], n_ocn[second_index]);
@@ -1498,7 +1512,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			size_t num_child_nodes = n_mcn.size();
 			size_t first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
 			size_t second_index = mp.interpreter->randomStream.RandSize(num_child_nodes - 1);
-			if(second_index > first_index)
+			if(second_index >= first_index)
 				second_index++;
 
 			if(first_index != second_index)

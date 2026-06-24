@@ -43,9 +43,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *
 
 static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT_MUTATE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";
+	d.parameters = R"(* node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [number preserve_type_depth] [assoc immediate_number_weights] [assoc immediate_string_weights])";
 	d.returns = R"(any)";
-	d.description = R"(Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.00001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "delete", "insert", "swap_elements", "deep_copy_elements", and "delete_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.)";
+	d.description = R"(Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.0001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((mutate
 	(lambda
@@ -126,7 +126,60 @@ static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT
 	)
 ])",
 //accept anything since mutation can do anything
-".*"}
+".*"},
+	{R"&((mutate
+	(lambda
+		[
+			1
+			2
+			"c"
+			4
+			5
+			6
+			7
+			"g"
+			9
+			10
+			11
+			12
+			"l"
+			14
+			(associate "a" 1 "b" 2)
+		]
+	)
+	0.91
+	.null
+	.null
+	1
+	{
+		101 0.25
+		201 0.25
+		301 0.25
+		.null 0.25
+	}
+	{
+		"x" 0.5
+		"y" 0.5
+	}
+))&", R"([
+        1.7100924132216468
+        201
+        "x"
+        4
+        101
+        .null
+        101
+        "x"
+        101
+        201
+        101
+        201
+        "x"
+        .null
+        x
+])",
+//accept anything since mutation can do anything
+".*"},
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.1;
@@ -145,7 +198,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 		to_mutate.SetReference(evaluableNodeManager->AllocNode(ENT_NULL));
 	auto node_stack = CreateOpcodeStackStateSaver(to_mutate);
 
-	double mutation_rate = 0.00001;
+	double mutation_rate = 0.0001;
 	if(ocn.size() > 1)
 		mutation_rate = InterpretNodeIntoNumberValue(ocn[1]);
 
@@ -191,10 +244,27 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	if(ocn.size() > 4)
 		preserve_type_depth = static_cast<size_t>(std::max(0.0, InterpretNodeIntoNumberValue(ocn[4])));
 
+	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType imm_number_weights;
+	if(ocn.size() > 5)
+	{
+		auto imm_number_weights_node = InterpretNodeForImmediateUse(ocn[5]);
+		if(EvaluableNode::IsAssociativeArray(imm_number_weights_node))
+			imm_number_weights.Initialize(imm_number_weights_node->GetMappedChildNodesReference(), true);
+	}
+
+	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType imm_string_weights;
+	if(ocn.size() > 6)
+	{
+		auto imm_string_weights_node = InterpretNodeForImmediateUse(ocn[6]);
+		if(EvaluableNode::IsAssociativeArray(imm_string_weights_node))
+			imm_string_weights.Initialize(imm_string_weights_node->GetMappedChildNodesReference(), true);
+	}
+
 	//result contains the copied result which may incur replacements
 	EvaluableNode *result = EvaluableNodeTreeManipulation::MutateTree(this, evaluableNodeManager,
 		to_mutate, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr,
-		ow_exists ? &opcode_weights : nullptr, preserve_type_depth);
+		ow_exists ? &opcode_weights : nullptr, preserve_type_depth,
+		imm_number_weights, imm_string_weights);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	return EvaluableNodeReference(result, true);
 }
@@ -206,12 +276,14 @@ static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &
 	d.description = R"(Retrieves the default values of `value_type` for mutation, either "mutation_opcodes" or "mutation_types")";
 	d.examples = MakeAmalgamExamples({
 		{R"((get_mutation_defaults "mutation_types"))", R"({
-	change_type 0.29
-	deep_copy_elements 0.07
-	delete 0.1
-	delete_elements 0.05
-	insert 0.25
-	swap_elements 0.24
+        change_type 0.15
+        insert 0.15
+        insert_element 0.15
+        remove 0.15
+        remove_all_elements 0.0001
+        remove_element 0.15
+        replace_element_with_copy 0.0999
+        swap_elements 0.15
 })"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;

@@ -56,20 +56,27 @@ public:
 		typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeBuiltInStringId,
 			CompactHashMap<EvaluableNodeBuiltInStringId, double>> WeightedRandMutationType;
 
+		typedef WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
+			EvaluableNode::AssocType, EvaluableNodeAsDouble> WeightedRandValueType;
+
 		MutationParameters(Interpreter *interpreter,
 			EvaluableNodeManager *enm,
 			double mutation_rate,
 			std::vector<std::string> *strings,
 			WeightedRandEvaluableNodeType *rand_operation,
 			WeightedRandMutationType *rand_operation_type,
-			size_t preserve_type_depth) :
+			size_t preserve_type_depth,
+			WeightedRandValueType &imm_number_weights,
+			WeightedRandValueType &imm_string_weights) :
 				interpreter(nullptr),
 				enm(nullptr),
 				mutation_rate(0),
 				strings(nullptr),
 				references(EvaluableNode::ReferenceAssocType()),
 				randEvaluableNodeType(nullptr),
-				randMutationType(&mutationOperationTypeRandomStream)
+				randMutationType(&mutationOperationTypeRandomStream),
+				immNumberWeights(&imm_number_weights),
+				immStringWeights(&imm_string_weights)
 		{
 			this->interpreter = interpreter;
 			this->enm = enm;
@@ -88,6 +95,8 @@ public:
 		WeightedRandEvaluableNodeType *randEvaluableNodeType;
 		WeightedRandMutationType *randMutationType;
 		size_t preserveTypeDepth;
+		WeightedRandValueType *immNumberWeights;
+		WeightedRandValueType *immStringWeights;
 	};
 
 	static CompactHashMap<EvaluableNodeBuiltInStringId, double> mutationOperationTypeProbabilities;
@@ -572,7 +581,11 @@ public:
 	//note that MutateTree does not guarantee that EvaluableNodeFlags will be set appropriately
 	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, EvaluableNode *tree,
 		double mutation_rate, CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
-		CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth);
+		CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth,
+	WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
+		EvaluableNode::AssocType, EvaluableNodeAsDouble> &imm_number_weights,
+	WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
+		EvaluableNode::AssocType, EvaluableNodeAsDouble> &imm_string_weights);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace
 	static inline void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace)

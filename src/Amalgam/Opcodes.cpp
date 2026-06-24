@@ -442,11 +442,13 @@ void StringInternPool::InitializeStaticStrings()
 
 	//mutate opcode mutation types
 	EmplaceStaticString(ENBISI_change_type, "change_type");
-	EmplaceStaticString(ENBISI_delete, "delete");
 	EmplaceStaticString(ENBISI_insert, "insert");
+	EmplaceStaticString(ENBISI_remove, "remove");
+	EmplaceStaticString(ENBISI_insert_element, "insert_element");
+	EmplaceStaticString(ENBISI_remove_element, "remove_element");
+	EmplaceStaticString(ENBISI_replace_element_with_copy, "replace_element_with_copy");
 	EmplaceStaticString(ENBISI_swap_elements, "swap_elements");
-	EmplaceStaticString(ENBISI_deep_copy_elements, "deep_copy_elements");
-	EmplaceStaticString(ENBISI_delete_elements, "delete_elements");
+	EmplaceStaticString(ENBISI_remove_all_elements, "remove_all_elements");
 
 	//mix parameters
 	EmplaceStaticString(ENBISI_string_edit_distance, "string_edit_distance");

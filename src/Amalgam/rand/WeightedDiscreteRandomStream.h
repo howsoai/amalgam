@@ -82,7 +82,7 @@ public:
 	inline WeightedDiscreteRandomStreamTransform()
 	{}
 
-	inline WeightedDiscreteRandomStreamTransform(const MapType &map, bool normalize = false)
+	inline WeightedDiscreteRandomStreamTransform(MapType &map, bool normalize = false)
 	{
 		Initialize(map, normalize);
 	}
@@ -115,7 +115,7 @@ public:
 		InitializeAliasTable(probabilities, normalize);
 	}
 
-	inline void Initialize(const MapType &map, bool normalize)
+	inline void Initialize(MapType &map, bool normalize)
 	{
 		auto default_key = [](const auto &pair, size_t i) { return pair.first; };
 		auto default_prob = [](const auto &pair) { return pair.second; };

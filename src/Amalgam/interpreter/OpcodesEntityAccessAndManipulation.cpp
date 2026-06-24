@@ -634,7 +634,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 
 	if(called_entity != curEntity)
 	{
-		if(get_changes)
+		if(call_type == ENT_CALL_ON_ENTITY)
 		{
 			//copy function to called_entity, free function from this entity
 			EvaluableNodeReference called_entity_function(ce_enm.DeepAllocCopy(function), true);

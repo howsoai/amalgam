@@ -1360,26 +1360,27 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			if(destination_index >= source_index)
 				destination_index++;
 
+			//iterate over child nodes until find the right source index
+			size_t cur_index = 0;
+			for(auto &[_, cn] : mcn)
+			{
+				if(cur_index == source_index)
+				{
+					source_node = cn;
+					break;
+				}
+				cur_index++;
+			}
+
+			//based on destination_index, either add a new copy or replace an existing element
 			if(destination_index >= num_children)
 			{
 				std::string new_key =
 					GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings, 0.6);
 				n->SetMappedChildNode(new_key, mp.enm->DeepAllocCopy(source_node));
 			}
-			else //replace an existing element
+			else
 			{
-				//iterate over child nodes until find the right index
-				size_t cur_index = 0;
-				for(auto &[_, cn] : mcn)
-				{
-					if(cur_index == source_index)
-					{
-						source_node = cn;
-						break;
-					}
-					cur_index++;
-				}
-
 				cur_index = 0;
 				for(auto &[_, cn] : mcn)
 				{

@@ -939,30 +939,37 @@ void Interpreter::EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::St
 	}
 }
 
-EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints)
+EvaluableNodeReference Interpreter::BundleResultWithWarningsAndChangesIfNeeded(
+	EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints, EvaluableNodeReference changes)
 {
-	if(interpreter_constraints == nullptr || !interpreter_constraints->collectWarnings)
+	if( (interpreter_constraints == nullptr || !interpreter_constraints->collectWarnings) && changes.IsNull())
 		return result;
 
-	EvaluableNodeReference warning_assoc = CreateAssocOfNumbersFromIteratorAndFunctions(
-		interpreter_constraints->warnings, [](std::pair<std::string, size_t> warning_count)
-	{ return warning_count.first; }, [](std::pair<std::string, size_t> warning_count)
-	{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);
-
-	EvaluableNodeReference constraint_violation_string = ConstraintViolationToString(interpreter_constraints->constraintViolation, evaluableNodeManager);
-
 	EvaluableNodeReference result_tuple(evaluableNodeManager->AllocNode(ENT_LIST), true);
-
 	auto &result_tuple_ocn = result_tuple->GetOrderedChildNodesReference();
-
-	result_tuple_ocn.reserve(3);
 	result_tuple_ocn.push_back(result);
-	result_tuple_ocn.push_back(warning_assoc);
-	result_tuple_ocn.push_back(constraint_violation_string);
-
 	result_tuple.UpdatePropertiesBasedOnAttachedNode(result);
-	result_tuple.UpdatePropertiesBasedOnAttachedNode(warning_assoc);
-	result_tuple.UpdatePropertiesBasedOnAttachedNode(constraint_violation_string);
+
+	if(interpreter_constraints != nullptr && interpreter_constraints->collectWarnings)
+	{
+		EvaluableNodeReference warning_assoc = CreateAssocOfNumbersFromIteratorAndFunctions(
+			interpreter_constraints->warnings, [](std::pair<std::string, size_t> warning_count)
+		{ return warning_count.first; }, [](std::pair<std::string, size_t> warning_count)
+		{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);
+
+		EvaluableNodeReference constraint_violation_string = ConstraintViolationToString(interpreter_constraints->constraintViolation, evaluableNodeManager);
+
+		result_tuple_ocn.push_back(warning_assoc);
+		result_tuple_ocn.push_back(constraint_violation_string);
+		result_tuple.UpdatePropertiesBasedOnAttachedNode(warning_assoc);
+		result_tuple.UpdatePropertiesBasedOnAttachedNode(constraint_violation_string);
+	}
+
+	if(!changes.IsNull())
+	{
+		result_tuple_ocn.push_back(changes);
+		result_tuple.UpdatePropertiesBasedOnAttachedNode(changes);
+	}
 
 	return result_tuple;
 }

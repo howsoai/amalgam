@@ -364,9 +364,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	}
 
 	if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
-		return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
+		return BundleResultWithWarningsAndChangesIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
 
-	return BundleResultWithWarningsIfNeeded(result,
+	return BundleResultWithWarningsAndChangesIfNeeded(result,
 		interpreter_constraints_ptr != nullptr ? interpreter_constraints_ptr : &interpreter_constraints);
 }
 

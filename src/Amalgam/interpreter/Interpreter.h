@@ -834,8 +834,11 @@ protected:
 	}
 
 	//If interpreter_constraints is non-null, and interpreter_constraints->collect warnings is true,
-	//creates a tuple with result, a list of all warnings, and constraint violations. Otherwise, it returns result.
-	EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints);
+	//or if changes is non-null, it creates a tuple with result, a list of all warnings, and constraint
+	//violations. Otherwise, it returns result.
+	EvaluableNodeReference BundleResultWithWarningsAndChangesIfNeeded(
+		EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints,
+		EvaluableNodeReference changes = EvaluableNodeReference::Null());
 
 	//Creates a warning string for the undefined symbol represented by not_found_variable_sid.
 	//If interpreterConstraints is not null, and collect Warnings is true, this warning will be added to warnings.
@@ -1011,7 +1014,7 @@ public:
 	EvaluableNodeReference InterpretNode_ENT_CONTAINS_LABEL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//Entity Query Engine

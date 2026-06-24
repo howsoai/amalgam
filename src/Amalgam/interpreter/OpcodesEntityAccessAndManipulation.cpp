@@ -402,11 +402,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 	}
 }
 
-static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY, []() {
+static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_ENTITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool read_only_entities] [bool return_warnings])";
+	d.parameters = R"(id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool read_only_entities] [bool return_warnings] [bool get_changes])";
 	d.returns = R"(any)";
-	d.description = R"(Calls the contained `entity` and returns the result of the call.  If `label_name` is specified, then it will call the label specified by string, otherwise it will call the null label.  If `arguments` is specified, then it will pass those as the arguments on the scope stack.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed.  If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations.  If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If `max_node_allocations` is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called.  The parameters `max_contained_entities`, `max_contained_entity_depth`, and `max_entity_id_length` constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  If `return_warnings` is false just the value will be returned instead of a list.  If read_only_entities is true, it will only allow operations that read from the entity, if false, the default, it will modification operations.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true (default is false), the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.)";
+	d.description = R"(Calls the contained `entity` and returns the result of the call.  If `label_name` is specified, then it will call the label specified by string, otherwise it will call the null label.  If `arguments` is specified, then it will pass those as the arguments on the scope stack.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed.  If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations.  If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If `max_node_allocations` is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called.  The parameters `max_contained_entities`, `max_contained_entity_depth`, and `max_entity_id_length` constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  If `return_warnings` is false just the value will be returned instead of a list.  If read_only_entities is true, it will only allow operations that read from the entity, if false, the default, it will modification operations.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true (default is false), the result will be a tuple of the form `[value warnings performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `get_changes` is true (the default is false), the value will be a tuple in the form of `[value change_log]`, where the change log is a list of opcodes that hold an executable log of all of the changes that have elapsed to the entity and its contained entities.  The log may be evaluated to apply or re-apply the changes to any entity passed in to the executable log as the parameter "_".  If both `return_warnings` and `get_changes` are true, then the tuple will be in the form of `[value warnings performance_constraint_violation change_log]`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -453,24 +453,8 @@ static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::Interpr
 	.null
 	.null
 	[.null {} "Execution step limit exceeded"]
-])", "", R"((destroy_entities "Entity"))"}
-		});
-	d.requiresEntity = true;
-	d.newScope = true;
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
-	d.mayCauseNodeUpdateInCurrentEntity = true;
-	d.frequencyPer10000Opcodes = 48.0;
-	d.opcodeGroup = _opcode_group;
-	return d;
-});
-
-static OpcodeInitializer _ENT_CALL_ENTITY_GET_CHANGES(ENT_CALL_ENTITY_GET_CHANGES, &Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY, []() {
-	OpcodeDetails d;
-	d.parameters = R"(id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool read_only_entities] [bool return_warnings])";
-	d.returns = R"(list of any1 any2)";
-	d.description = R"(Calls the contained `entity` and returns the result of the call.  However, it also returns a list of opcodes that hold an executable log of all of the changes that have elapsed to the entity and its contained entities.  The log may be evaluated to apply or re-apply the changes to any entity passed in to the executable log as the parameter "_".  If `label_name` is specified, then it will call the label specified by string, otherwise it will call the null label.  If `arguments` is specified, then it will pass those as the arguments on the scope stack.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed.  If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations.  If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If `max_node_allocations` is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called.  The parameters `max_contained_entities`, `max_contained_entity_depth`, and `max_entity_id_length` constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  If read_only_entities is true, it will only allow operations that read from the entity, if false, the default, it will modification operations.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true (default is false), the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.)";
-	d.examples = MakeAmalgamExamples({
-		{R"&((seq
+])", "", R"((destroy_entities "Entity"))"},
+{R"&((seq
 	(create_entities
 		"Entity"
 		(lambda
@@ -495,7 +479,7 @@ static OpcodeInitializer _ENT_CALL_ENTITY_GET_CHANGES(ENT_CALL_ENTITY_GET_CHANGE
 		)
 	)
 	(set_entity_permissions "Entity" .true)
-	(call_entity_get_changes "Entity" "a_assign")
+	(call_entity "Entity" "a_assign" .null .null .null .null .null .null .null .null .null .true)
 ))&", R"([
 	.true
 	(seq
@@ -528,16 +512,16 @@ static OpcodeInitializer _ENT_CALL_ENTITY_GET_CHANGES(ENT_CALL_ENTITY_GET_CHANGE
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 	d.mayCauseNodeUpdateInCurrentEntity = true;
-	d.frequencyPer10000Opcodes = 0.01;
+	d.frequencyPer10000Opcodes = 48.0;
 	d.opcodeGroup = _opcode_group;
 	return d;
 });
 
-static OpcodeInitializer _ENT_CALL_ON_ENTITY(ENT_CALL_ON_ENTITY, &Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY, []() {
+static OpcodeInitializer _ENT_CALL_ON_ENTITY(ENT_CALL_ON_ENTITY, &Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_ENTITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity * code [assoc params] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool read_only_entities] [bool return_warnings])";
+	d.parameters = R"(id_path entity * code [assoc params] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool read_only_entities] [bool return_warnings]  [bool get_changes])";
 	d.returns = R"(any)";
-	d.description = R"(Calls `code` to be run on the contained `entity` and returns the result of the call.  If `params` is specified, then it will pass those as the parameters on the scope stack.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed.  If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations.  If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If `max_node_allocations` is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called.  The parameters `max_contained_entities`, `max_contained_entity_depth`, and `max_entity_id_length` constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  If read_only_entities is true, it will only allow operations that read from the entity, if false, the default, it will modification operations.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true (default is false), the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.)";
+	d.description = R"(Calls `code` to be run on the contained `entity` and returns the result of the call.  If `params` is specified, then it will pass those as the parameters on the scope stack.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed.  If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations.  If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If `max_node_allocations` is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called.  The parameters `max_contained_entities`, `max_contained_entity_depth`, and `max_entity_id_length` constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  If read_only_entities is true, it will only allow operations that read from the entity, if false, the default, it will modification operations.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true (default is false), the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.  If `get_changes` is true (the default is false), the value will be a tuple in the form of `[value change_log]`, where the change log is a list of opcodes that hold an executable log of all of the changes that have elapsed to the entity and its contained entities.  The log may be evaluated to apply or re-apply the changes to any entity passed in to the executable log as the parameter "_".  If both `return_warnings` and `get_changes` are true, then the tuple will be in the form of `[value warnings performance_constraint_violation change_log]`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -563,7 +547,7 @@ static OpcodeInitializer _ENT_CALL_ON_ENTITY(ENT_CALL_ON_ENTITY, &Interpreter::I
 	return d;
 });
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY(
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_ENTITY(
 	EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -607,11 +591,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		}
 	}
 
+	bool get_changes = false;
+	if(ocn.size() > 11)
+		get_changes = InterpretNodeIntoBoolValue(ocn[11]);
+
 	//current pointer to write listeners
 	std::vector<EntityWriteListener *> *cur_write_listeners = writeListeners;
 	//another storage container in case getting entity changes
 	std::vector<EntityWriteListener *> get_changes_write_listeners;
-	if(call_type == ENT_CALL_ENTITY_GET_CHANGES)
+	if(get_changes)
 	{
 		//add on extra listener and set pointer to this buffer
 		// keep the copying here in this if statement so don't need to make copies when not calling ENT_CALL_ENTITY_GET_CHANGES
@@ -643,7 +631,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	if(called_entity != curEntity)
 	{
-		if(call_type == ENT_CALL_ON_ENTITY)
+		if(get_changes)
 		{
 			//copy function to called_entity, free function from this entity
 			EvaluableNodeReference called_entity_function(ce_enm.DeepAllocCopy(function), true);
@@ -711,22 +699,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		result = copied_result;
 	}
 
-	if(en->GetType() == ENT_CALL_ENTITY_GET_CHANGES)
+	EvaluableNodeReference changes = EvaluableNodeReference::Null();
+	if(get_changes)
 	{
 		EntityWriteListener *wl = get_changes_write_listeners.back();
 		EvaluableNode *writes = wl->GetWrites();
 
-		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);
-		//copy the data out of the write listener
-		list->AppendOrderedChildNode(result);
-		list->AppendOrderedChildNode(evaluableNodeManager->DeepAllocCopy(writes));
+		changes = evaluableNodeManager->DeepAllocCopy(writes);
 
 		//delete the write listener and all of its memory
 		delete wl;
-
-		result.SetReference(list);
-		result.SetNeedCycleCheck(true);	//can't count on that due to things written in the write listener
-		result->SetIsIdempotent(false);
 	}
 
 	if(_label_profiling_enabled)
@@ -735,19 +717,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(interpreterConstraints != nullptr)
 		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
 
-	//if only want results, return them
-	if(interpreter_constraints_ptr == nullptr || ocn.size() <= 3)
-	{
-		if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
-			return EvaluableNodeReference::Null();
-		return result;
-	}
-
 	if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
-		return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
+		return BundleResultWithWarningsAndChangesIfNeeded(EvaluableNodeReference::Null(),
+			interpreter_constraints_ptr, changes);
 
-	return BundleResultWithWarningsIfNeeded(result,
-		interpreter_constraints_ptr != nullptr ? interpreter_constraints_ptr : &interpreter_constraints);
+	return BundleResultWithWarningsAndChangesIfNeeded(result,
+		interpreter_constraints_ptr != nullptr ? interpreter_constraints_ptr : &interpreter_constraints,
+		changes);
 }
 
 static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::InterpretNode_ENT_CALL_CONTAINER, []() {
@@ -936,8 +912,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	}
 
 	if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
-		return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
+		return BundleResultWithWarningsAndChangesIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
 
-	return BundleResultWithWarningsIfNeeded(copied_result,
+	return BundleResultWithWarningsAndChangesIfNeeded(copied_result,
 		interpreter_constraints_ptr != nullptr ? interpreter_constraints_ptr : &interpreter_constraints);
 }

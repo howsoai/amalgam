@@ -32,9 +32,9 @@ Output:
 
 ### Opcode: `mutate`
 #### Parameters
-`* node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth]`
+`* node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [number preserve_type_depth] [assoc immediate_number_weights] [assoc immediate_string_weights]`
 #### Description
-Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.00001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "delete", "insert", "swap_elements", "deep_copy_elements", and "delete_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.
+Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.0001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -133,6 +133,64 @@ Output:
 	)
 ]
 ```
+Example:
+```amalgam
+(mutate
+	(lambda
+		[
+			1
+			2
+			"c"
+			4
+			5
+			6
+			7
+			"g"
+			9
+			10
+			11
+			12
+			"l"
+			14
+			(associate "a" 1 "b" 2)
+		]
+	)
+	0.91
+	.null
+	.null
+	1
+	{
+		101 0.25
+		201 0.25
+		301 0.25
+		.null 0.25
+	}
+	{
+		"x" 0.5
+		"y" 0.5
+	}
+)
+```
+Output:
+```amalgam
+[
+        1.7100924132216468
+        201
+        "x"
+        4
+        101
+        .null
+        101
+        "x"
+        101
+        201
+        101
+        201
+        "x"
+        .null
+        x
+]
+```
 
 [Amalgam Opcodes](./opcodes.md)
 
@@ -156,12 +214,14 @@ Example:
 Output:
 ```amalgam
 {
-	change_type 0.29
-	deep_copy_elements 0.07
-	delete 0.1
-	delete_elements 0.05
-	insert 0.25
-	swap_elements 0.24
+        change_type 0.15
+        insert 0.15
+        insert_element 0.15
+        remove 0.15
+        remove_all_elements 0.0001
+        remove_element 0.15
+        replace_element_with_copy 0.0999
+        swap_elements 0.15
 }
 ```
 

@@ -1238,11 +1238,11 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 
 	//if immediate value type, see if can just mutate directly to preserve
 	//mutation rate, since most other mutations won't apply
-	if(n->IsImmediate() && mutation_type != ENBISI_change_type && mutation_type != ENBISI_remove)
+	if(n->IsImmediate() && mutation_type != ENBISI_change_type && mutation_type != ENBISI_insert)
 	{
 		if(n->GetType() == ENT_NULL)
 		{
-			mutation_type = ENBISI_remove;
+			mutation_type = ENBISI_change_type;
 		}
 		else
 		{
@@ -1480,17 +1480,26 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		if(n->GetOrderedChildNodes().size() > 1)
 		{
 			auto &n_ocn = n->GetOrderedChildNodesReference();
+
+			//choose two different indices
 			size_t num_child_nodes = n_ocn.size();
-			auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
-			auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
+			size_t first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
+			size_t second_index = mp.interpreter->randomStream.RandSize(num_child_nodes - 1);
+			if(second_index > first_index)
+				second_index++;
+
 			std::swap(n_ocn[first_index], n_ocn[second_index]);
 		}
 		else if(n->GetMappedChildNodes().size() > 1)
 		{
 			auto &n_mcn = n->GetMappedChildNodesReference();
+
+			//choose two different indices
 			size_t num_child_nodes = n_mcn.size();
-			auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
-			auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
+			size_t first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
+			size_t second_index = mp.interpreter->randomStream.RandSize(num_child_nodes - 1);
+			if(second_index > first_index)
+				second_index++;
 
 			if(first_index != second_index)
 			{

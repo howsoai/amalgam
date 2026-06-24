@@ -220,7 +220,7 @@ Output:
         remove 0.15
         remove_all_elements 0.0001
         remove_element 0.15
-        replace_element_with_copy, 0.0999
+        replace_element_with_copy 0.0999
         swap_elements 0.15
 }
 ```

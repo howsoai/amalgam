@@ -578,16 +578,16 @@ void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 
 	//for each of the three parameters below, values of zero indicate no limit
 
-	//populate maxNumExecutionSteps
+	//populate maxNodeOperations
 	interpreter_constraints.curExecutionStep = 0;
-	interpreter_constraints.maxNumExecutionSteps = 0;
+	interpreter_constraints.maxNodeOperations = 0;
 	size_t execution_steps_offset = perf_constraint_param_offset + 0;
 	if(params.size() > execution_steps_offset)
 	{
 		double value = InterpretNodeIntoNumberValue(params[execution_steps_offset]);
 		//nan will fail, so don't need a separate nan check
 		if(value >= 1.0)
-			interpreter_constraints.maxNumExecutionSteps = static_cast<ExecutionCycleCount>(value);
+			interpreter_constraints.maxNodeOperations = static_cast<ExecutionCycleCount>(value);
 	}
 
 	//populate maxNumAllocatedNodes
@@ -601,15 +601,15 @@ void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 		if(value >= 1.0)
 			interpreter_constraints.maxNumAllocatedNodes = static_cast<ExecutionCycleCount>(value);
 	}
-	//populate maxOpcodeExecutionDepth
-	interpreter_constraints.maxOpcodeExecutionDepth = 0;
+	//populate maxOperationDepth
+	interpreter_constraints.maxOperationDepth = 0;
 	size_t max_opcode_execution_depth_offset = perf_constraint_param_offset + 2;
 	if(params.size() > max_opcode_execution_depth_offset)
 	{
 		double value = InterpretNodeIntoNumberValue(params[max_opcode_execution_depth_offset]);
 		//nan will fail, so don't need a separate nan check
 		if(value >= 1.0)
-			interpreter_constraints.maxOpcodeExecutionDepth = static_cast<ExecutionCycleCount>(value);
+			interpreter_constraints.maxOperationDepth = static_cast<ExecutionCycleCount>(value);
 	}
 
 	interpreter_constraints.entityToConstrainFrom = nullptr;
@@ -618,7 +618,8 @@ void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 	interpreter_constraints.constrainMaxContainedEntityDepth = false;
 	interpreter_constraints.maxContainedEntityDepth = 0;
 	interpreter_constraints.maxEntityIdLength = 0;
-	interpreter_constraints.readOnlyEntities = false;
+	interpreter_constraints.readAccess = true;
+	interpreter_constraints.writeAccess = true;
 
 	size_t warning_override_offset = perf_constraint_param_offset + 3;
 
@@ -664,7 +665,7 @@ void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 
 		size_t allow_entity_writes_offset = perf_constraint_param_offset + 6;
 		if(params.size() > allow_entity_writes_offset)
-			interpreter_constraints.readOnlyEntities = InterpretNodeIntoBoolValue(params[allow_entity_writes_offset]);
+			interpreter_constraints.readAccess = InterpretNodeIntoBoolValue(params[allow_entity_writes_offset]);
 	}
 
 	//check if caller specified override of the default warning collections behavior
@@ -677,6 +678,7 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 	if(interpreter_constraints == nullptr)
 		return;
 
+	//TODO 25650: finish changing this and opcodes and remove call_sandboxed
 	interpreter_constraints->constraintsExceeded = false;
 
 	if(interpreterConstraints != nullptr)
@@ -687,14 +689,14 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 			if(remaining_steps > 0)
 			{
 				if(interpreter_constraints->ConstrainedExecutionSteps())
-					interpreter_constraints->maxNumExecutionSteps = std::min(
-						interpreter_constraints->maxNumExecutionSteps, remaining_steps);
+					interpreter_constraints->maxNodeOperations = std::min(
+						interpreter_constraints->maxNodeOperations, remaining_steps);
 				else
-					interpreter_constraints->maxNumExecutionSteps = remaining_steps;
+					interpreter_constraints->maxNodeOperations = remaining_steps;
 			}
-			else //out of resources, ensure nothing will run (can't use 0 for maxNumExecutionSteps)
+			else //out of resources, ensure nothing will run (can't use 0 for maxNodeOperations)
 			{
-				interpreter_constraints->maxNumExecutionSteps = 1;
+				interpreter_constraints->maxNodeOperations = 1;
 				interpreter_constraints->curExecutionStep = 1;
 				interpreter_constraints->constraintsExceeded = true;
 				interpreter_constraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionStep;
@@ -741,14 +743,14 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 		if(remaining_depth > 0)
 		{
 			if(interpreter_constraints->ConstrainedOpcodeExecutionDepth())
-				interpreter_constraints->maxOpcodeExecutionDepth = std::min(
-					interpreter_constraints->maxOpcodeExecutionDepth, remaining_depth);
+				interpreter_constraints->maxOperationDepth = std::min(
+					interpreter_constraints->maxOperationDepth, remaining_depth);
 			else
-				interpreter_constraints->maxOpcodeExecutionDepth = remaining_depth;
+				interpreter_constraints->maxOperationDepth = remaining_depth;
 		}
-		else //out of resources, ensure nothing will run (can't use 0 for maxOpcodeExecutionDepth)
+		else //out of resources, ensure nothing will run (can't use 0 for maxOperationDepth)
 		{
-			interpreter_constraints->maxOpcodeExecutionDepth = 1;
+			interpreter_constraints->maxOperationDepth = 1;
 			interpreter_constraints->constraintsExceeded = true;
 			interpreter_constraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;
 		}
@@ -825,8 +827,11 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 					interpreterConstraints->maxEntityIdLength);
 		}
 
-		if(interpreterConstraints->readOnlyEntities)
-			interpreter_constraints->readOnlyEntities = true;
+		if(!interpreterConstraints->readAccess)
+			interpreter_constraints->readAccess = false;
+
+		if(!interpreterConstraints->writeAccess)
+			interpreter_constraints->writeAccess = false;
 	}
 }
 

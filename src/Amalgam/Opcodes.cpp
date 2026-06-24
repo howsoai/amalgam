@@ -360,6 +360,16 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_amlg_version, "amlg_version");
 	EmplaceStaticString(ENBISI_version_compatible, "version_compatible");
 
+	//execution constraints
+	EmplaceStaticString(ENBISI_max_node_operations, "max_node_operations");
+	EmplaceStaticString(ENBISI_max_node_allocations, "max_node_allocations");
+	EmplaceStaticString(ENBISI_max_operation_depth, "max_operation_depth");
+	EmplaceStaticString(ENBISI_read_access, "read_access");
+	EmplaceStaticString(ENBISI_write_access, "write_access");
+	EmplaceStaticString(ENBISI_max_contained_entities, "max_contained_entities");
+	EmplaceStaticString(ENBISI_max_contained_entity_depth, "max_contained_entity_depth");
+	EmplaceStaticString(ENBISI_max_entity_id_length, "max_entity_id_length");
+
 	//entity access parameters
 	EmplaceStaticString(ENBISI_accessing_entity, "accessing_entity");
 

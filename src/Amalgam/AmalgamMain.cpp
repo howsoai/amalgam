@@ -81,16 +81,16 @@ Options:
                      For example, -xe would yield all permissions but remove environment and system permissions,
                      whereas +io would only allow console input and output
 
-    --max-exec-count [number]
+    --max-node-operations [number]
                      Specifies the maximum number of nodes that can be executed.  If the limit is exceeded,
                      execution will halt and a null will be returned.  If run with --repl, it will be the
                      maximum per command entered.
 
-    --max-alloc [number]
+    --max-node-allocations [number]
                      Specifies the maximum number of nodes that can be allocated.  If the limit is exceeded,
                      execution will halt and a null will be returned.
 
-    --max-exec-depth [number]
+    --max-operations-depth [number]
                      Specifies the maximum depth that nested opcodes will be called.  If the limit is exceeded,
                      execution will halt and a null will be returned.
 
@@ -252,11 +252,11 @@ PLATFORM_MAIN_CONSOLE
 			profile_count = std::max<size_t>(std::atoi(args[++i].data()), 0);
 		else if(args[i] == "--p-file" && i + 1 < args.size())
 			profile_out_file = args[++i];
-		else if(args[i] == "--max-exec-count" && i + 1 < args.size())
+		else if(args[i] == "--max-node-operations" && i + 1 < args.size())
 			max_exec_count = std::max<size_t>(std::atoi(args[++i].data()), 0);
-		else if(args[i] == "--max-alloc" && i + 1 < args.size())
+		else if(args[i] == "--max-node-allocations" && i + 1 < args.size())
 			max_alloc = std::max<size_t>(std::atoi(args[++i].data()), 0);
-		else if(args[i] == "--max-exec-depth" && i + 1 < args.size())
+		else if(args[i] == "--max-operations-depth" && i + 1 < args.size())
 			max_exec_depth = std::max<size_t>(std::atoi(args[++i].data()), 0);
 		else if(args[i] == "--max-entities" && i + 1 < args.size())
 			max_entities = std::max<size_t>(std::atoi(args[++i].data()), 0);
@@ -323,9 +323,9 @@ PLATFORM_MAIN_CONSOLE
 
 	//process interpreter constraints
 	InterpreterConstraints interpreter_constraints;
-	interpreter_constraints.maxNumExecutionSteps = max_exec_count;
+	interpreter_constraints.maxNodeOperations = max_exec_count;
 	interpreter_constraints.maxNumAllocatedNodes = max_alloc;
-	interpreter_constraints.maxOpcodeExecutionDepth = max_exec_depth;
+	interpreter_constraints.maxOperationDepth = max_exec_depth;
 
 	if(max_entities > 0)
 	{

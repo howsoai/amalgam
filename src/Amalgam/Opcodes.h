@@ -371,6 +371,16 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_amlg_version,
 	ENBISI_version_compatible,
 
+	//execution constraints
+	ENBISI_max_node_operations,
+	ENBISI_max_node_allocations,
+	ENBISI_max_operation_depth,
+	ENBISI_read_access,
+	ENBISI_write_access,
+	ENBISI_max_contained_entities,
+	ENBISI_max_contained_entity_depth,
+	ENBISI_max_entity_id_length,
+
 	//entity access parameters
 	ENBISI_accessing_entity,
 

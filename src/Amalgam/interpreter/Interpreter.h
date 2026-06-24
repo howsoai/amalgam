@@ -744,7 +744,7 @@ protected:
 		if(interpreterConstraints == nullptr)
 			return true;
 
-		if(interpreterConstraints->readOnlyEntities)
+		if(!interpreterConstraints->writeAccess)
 			return false;
 
 		if(interpreterConstraints->maxEntityIdLength > 0
@@ -783,7 +783,7 @@ protected:
 		if(interpreterConstraints == nullptr)
 			return true;
 
-		if(interpreterConstraints->readOnlyEntities)
+		if(!interpreterConstraints->writeAccess)
 			return false;
 
 		return true;
@@ -800,7 +800,7 @@ protected:
 			if(increment_performance_counters)
 				interpreterConstraints->curExecutionStep++;
 
-			if(interpreterConstraints->curExecutionStep > interpreterConstraints->maxNumExecutionSteps)
+			if(interpreterConstraints->curExecutionStep > interpreterConstraints->maxNodeOperations)
 			{
 				interpreterConstraints->constraintsExceeded = true;
 				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionStep;
@@ -821,7 +821,7 @@ protected:
 
 		if(interpreterConstraints->ConstrainedOpcodeExecutionDepth())
 		{
-			if(opcodeStackNodes.size() > interpreterConstraints->maxOpcodeExecutionDepth)
+			if(opcodeStackNodes.size() > interpreterConstraints->maxOperationDepth)
 			{
 				interpreterConstraints->constraintsExceeded = true;
 				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;

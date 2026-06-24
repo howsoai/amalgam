@@ -1360,34 +1360,36 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			if(destination_index >= source_index)
 				destination_index++;
 
-			//iterate over child nodes until find the right index
-			size_t cur_index = 0;
-			for(auto &[_, cn] : mcn)
+			if(destination_index >= num_children)
 			{
-				if(cur_index == source_index)
-				{
-					source_node = cn;
-					break;
-				}
-				cur_index++;
-			}
-
-			cur_index = 0;
-			for(auto &[_, cn] : mcn)
-			{
-				if(cur_index == destination_index)
-				{
-					cn = mp.enm->DeepAllocCopy(source_node);
-					break;
-				}
-				cur_index++;
-			}
-
-			//if didn't find destination_index, need to create a new key
-			if(cur_index < destination_index)
-			{
-				std::string new_key = GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings, 0.6);
+				std::string new_key =
+					GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings, 0.6);
 				n->SetMappedChildNode(new_key, mp.enm->DeepAllocCopy(source_node));
+			}
+			else //replace an existing element
+			{
+				//iterate over child nodes until find the right index
+				size_t cur_index = 0;
+				for(auto &[_, cn] : mcn)
+				{
+					if(cur_index == source_index)
+					{
+						source_node = cn;
+						break;
+					}
+					cur_index++;
+				}
+
+				cur_index = 0;
+				for(auto &[_, cn] : mcn)
+				{
+					if(cur_index == destination_index)
+					{
+						cn = mp.enm->DeepAllocCopy(source_node);
+						break;
+					}
+					cur_index++;
+				}
 			}
 		}
 		break;

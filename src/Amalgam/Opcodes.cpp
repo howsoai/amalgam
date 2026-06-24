@@ -438,7 +438,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_remove, "remove");
 	EmplaceStaticString(ENBISI_insert_element, "insert_element");
 	EmplaceStaticString(ENBISI_remove_element, "remove_element");
-	EmplaceStaticString(ENBISI_replace_element_with_copy, "replace_element_with_copy,");
+	EmplaceStaticString(ENBISI_replace_element_with_copy, "replace_element_with_copy");
 	EmplaceStaticString(ENBISI_swap_elements, "swap_elements");
 	EmplaceStaticString(ENBISI_remove_all_elements, "remove_all_elements");
 

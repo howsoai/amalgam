@@ -128,6 +128,7 @@ set(COMMON_SOURCE
     src/Amalgam/entity/EntityQueries.cpp
     src/Amalgam/entity/EntityQueries.h
     src/Amalgam/entity/EntityQueriesClustering.cpp
+    src/Amalgam/entity/EntityQueriesClustering.h
     src/Amalgam/entity/EntityQueriesDensityFunctions.h
     src/Amalgam/entity/EntityQueriesStatistics.h
     src/Amalgam/entity/EntityQueryBuilder.h

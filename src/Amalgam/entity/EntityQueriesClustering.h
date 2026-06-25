@@ -7,10 +7,9 @@
 #include <utility>
 #include <vector>
 
-//Self-contained HDBSCAN* clustering.  Cluster and node ids are contiguous integers,
-//so the intermediate maps are plain vectors; this has no dependencies beyond the C++
-//standard library.
-namespace HDBSCAN
+//Self-contained clustering for entities.  Cluster and node ids are contiguous integers,
+//so the intermediate maps are plain vectors
+namespace EntityClustering
 {
 	//Node-id convention used throughout: m is the number of input points being
 	//clustered.  Ids in [0, m) are individual points; ids >= m are internal nodes,
@@ -18,33 +17,52 @@ namespace HDBSCAN
 	//condensed-tree cluster id).  Testing (id < m) distinguishes a point from an
 	//internal node, so one size_t can refer uniformly to either.
 
-	//A candidate undirected edge with its mutual-reachability weight.
+	//a candidate undirected edge with its mutual-reachability weight
 	struct Edge
 	{
-		size_t u;		//endpoint point id (< m)
-		size_t v;		//endpoint point id (< m)
-		double weight;	//mutual-reachability distance between u and v
+		//endpoint point id (< m)
+		size_t u;
+
+		//endpoint point id (< m)
+		size_t v;
+
+		//mutual-reachability distance between u and v
+		double weight;
 	};
 
-	//One internal node of the single-linkage dendrogram (one per accepted MST edge).
+	//one internal node of the single-linkage dendrogram (one per accepted MST edge)
 	struct SingleLinkageNode
 	{
-		size_t leftChildId;		//child node id (point id < m, or internal node id >= m)
-		size_t rightChildId;	//child node id (point id < m, or internal node id >= m)
-		double weight;			//mutual-reachability distance at which the children merged
-		double mass;			//summed point weight of this subtree
+		//child node id (point id < m, or internal node id >= m)
+		size_t leftChildId;
+
+		//child node id (point id < m, or internal node id >= m)
+		size_t rightChildId;
+
+		//mutual-reachability distance at which the children merged
+		double weight;
+
+		//summed point weight of this subtree
+		double mass;
 	};
 
-	//A child node leaving its parent cluster at density level lambda (= 1 / weight).
+	//a child node leaving its parent cluster at density level lambda (= 1 / weight).
 	struct CondensedEdge
 	{
-		size_t parentId;	//cluster id of the parent (>= m)
-		size_t childId;		//point id (< m) or sub-cluster id (>= m) that departs the parent
-		double lambda;		//1 / weight at which the child separates from the parent
-		double childMass;	//summed point weight of the child
+		//cluster id of the parent (>= m)
+		size_t parentId;
+
+		//point id (< m) or sub-cluster id (>= m) that departs the parent
+		size_t childId;
+
+		//1 / weight at which the child separates from the parent
+		double lambda;
+
+		//summed point weight of the child
+		double childMass;
 	};
 
-	//Builds the minimum spanning tree (forest, if disconnected) via Kruskal's
+	//builds the minimum spanning tree (forest, if disconnected) via Kruskal's
 	//algorithm.  Returns accepted edges in ascending weight order.
 	inline std::vector<Edge> BuildMST(size_t m, std::vector<Edge> edges)
 	{
@@ -91,7 +109,7 @@ namespace HDBSCAN
 		const WeightFn &weight,
 		const std::vector<SingleLinkageNode> &nodes)
 	{
-		return node < m ? weight(node) : nodes[node - m].mass;
+		return (node < m ? weight(node) : nodes[node - m].mass);
 	}
 
 	//Builds the single-linkage dendrogram from the (ascending) MST edges.
@@ -218,18 +236,20 @@ namespace HDBSCAN
 			}
 		}
 
-		//scratch buffers reused across the walk below to avoid per-iteration allocation
-		std::vector<size_t> leaf_scratch;	//leaves of a small branch falling out as noise
-		std::vector<size_t> collect_stack;	//DFS stack for CollectLeaves
+		//leaves of a small branch falling out as noise
+		std::vector<size_t> leaf_buffer;
+
+		//depth-first search stack for CollectLeaves
+		std::vector<size_t> collect_stack;
 
 		//Walk each pending cluster node down the dendrogram.  The merge at this node
 		//happened at density level lambda = 1 / weight; classify its two children
 		//against min_cluster_weight to decide their fate:
-		//  - a child too light to be a cluster dissolves here: its leaves fall out of
+		// * a child too light to be a cluster dissolves here: its leaves fall out of
 		//    the current cluster as noise edges at this lambda;
-		//  - when BOTH children are heavy enough it is a genuine split, so each heavy
+		// * when both children are heavy enough it is a genuine split, so each heavy
 		//    child is born as a new cluster id (and, if internal, queued for processing);
-		//  - when only ONE child is heavy the current cluster simply continues down
+		//  * when only one child is heavy the current cluster simply continues down
 		//    into it under the same cluster id, with no split recorded.
 		while(!pending_nodes.empty())
 		{
@@ -255,9 +275,9 @@ namespace HDBSCAN
 				if(!big[c])
 				{
 					//small branch: all its points fall out of the cluster as noise
-					leaf_scratch.clear();
-					CollectLeaves(child, m, nodes, leaf_scratch, collect_stack);
-					for(size_t p : leaf_scratch)
+					leaf_buffer.clear();
+					CollectLeaves(child, m, nodes, leaf_buffer, collect_stack);
+					for(size_t p : leaf_buffer)
 						result.push_back(CondensedEdge{cluster_id, p, lambda, weight(p)});
 				}
 				else if(num_big == 2)
@@ -488,21 +508,15 @@ namespace HDBSCAN
 		return cluster_ids;
 	}
 
-	//Full pipeline: candidate edges + point weights -> per-point cluster ids (0 = noise).
-	//The KNN candidate graph is generally a spanning forest (well-separated clusters
-	//share no candidate edge); BuildMST returns one tree per component and the forest
-	//roots are selected directly by SelectClusters (the "multiple tree roots" approach),
-	//so no artificial bridge edges are introduced.
-	//
-	//Each single-use intermediate (the MST, the single-linkage tree, the stability
-	//vector) is std::move()d into the stage that consumes it; those stages take their
-	//argument by value, so each structure is freed when that stage returns rather
-	//than living until the whole pipeline finishes.  Only condensed has more than
-	//one downstream reader, so it alone is kept by reference until the end.
+	//Clusters candidate edges and point weights to per-point cluster ids (0 = noise).
+	//The nearest neighbors candidate graph is generally a spanning forest (well-separated clusters share no candidate
+	// edge); BuildMST returns one tree per component and the forest roots are selected directly by SelectClusters
+	// (the "multiple tree roots" approach), so no artificial bridge edges are introduced.
 	template<typename WeightFn>
 	inline std::vector<size_t> Cluster(size_t m, std::vector<Edge> edges,
 		const WeightFn &weight, double min_cluster_weight)
 	{
+		//move data structures in and pass by value so each method frees the memory when it's no longer needed
 		std::vector<Edge> mst = BuildMST(m, std::move(edges));
 		std::vector<SingleLinkageNode> slt = BuildSingleLinkageTree(m, std::move(mst), weight);
 		std::vector<CondensedEdge> condensed = CondenseTree(m, std::move(slt), weight, min_cluster_weight);

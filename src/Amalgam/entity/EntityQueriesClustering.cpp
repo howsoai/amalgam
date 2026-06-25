@@ -1,6 +1,6 @@
 //project headers:
 #include "EntityQueriesDensityFunctions.h"
-#include "HDBSCANClustering.h"
+#include "EntityQueriesClustering.h"
 
 void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &entities_to_compute,
 		std::vector<double> &clusters_out, double minimum_cluster_weight)
@@ -45,7 +45,7 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	//candidate mutual-reachability edges from the KNN cache, keyed by entity id.  A
 	//neighbor outside entities_to_compute is skipped so only requested entities are
 	//linked (and so clustered); the membership test also keeps n.reference in range.
-	std::vector<HDBSCAN::Edge> edges;
+	std::vector<EntityClustering::Edge> edges;
 	edges.reserve(num_entities * numNearestNeighbors);
 	for(auto entity : entities_to_compute)
 	{
@@ -56,12 +56,12 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 			if(n.reference >= num_entity_indices || !entities_to_compute.contains(n.reference))
 				continue;	//neighbor not part of this clustering request
 			double w = std::max(std::max(core_distances[entity], core_distances[n.reference]), n.distance);
-			edges.push_back(HDBSCAN::Edge{entity, n.reference, w});
+			edges.push_back(EntityClustering::Edge{entity, n.reference, w});
 		}
 	}
 
 	//pass in lambda for obtaining weights
-	std::vector<size_t> labels = HDBSCAN::Cluster(num_entity_indices, std::move(edges),
+	std::vector<size_t> labels = EntityClustering::Cluster(num_entity_indices, std::move(edges),
 		[&](size_t entity)
 		{
 			double entity_weight = 1.0;

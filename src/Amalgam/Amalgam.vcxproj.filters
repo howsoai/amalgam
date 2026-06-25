@@ -198,6 +198,9 @@
     <ClCompile Include="interpreter\OpcodesVariableDefinitionAndModification.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="entity\EntityQueriesClustering.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetManager.h">
@@ -390,6 +393,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="entity\EntityQueriesDensityFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="entity\EntityQueriesClustering.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

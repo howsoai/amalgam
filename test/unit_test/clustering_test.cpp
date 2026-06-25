@@ -1,6 +1,6 @@
-//Unit tests for the pure HDBSCAN* algorithm (no Amalgam dependencies).
-#include "hdbscan_test.h"
-#include "HDBSCANClustering.h"
+//Unit tests for the clustering algorithm without other dependencies
+#include "clustering_test.h"
+#include "EntityQueriesClustering.h"
 
 #include <iostream>
 #include <set>
@@ -22,7 +22,7 @@ static auto WeightsOf(const std::vector<double> &w)
 }
 
 //Sum of edge weights, for comparing MST totals.
-static double TotalWeight(const std::vector<HDBSCAN::Edge> &edges)
+static double TotalWeight(const std::vector<EntityClustering::Edge> &edges)
 {
 	double t = 0.0;
 	for(const auto &e : edges)
@@ -35,10 +35,10 @@ static void TestBuildMST()
 	// 4 vertices; a square with a cheap diagonal.
 	//   0-1 : 1.0, 1-2 : 2.0, 2-3 : 1.0, 3-0 : 2.0, 0-2 : 0.5
 	// MST should take 0-2 (0.5), 0-1 (1.0), 2-3 (1.0): total 2.5, 3 edges.
-	std::vector<HDBSCAN::Edge> edges = {
+	std::vector<EntityClustering::Edge> edges = {
 		{0, 1, 1.0}, {1, 2, 2.0}, {2, 3, 1.0}, {3, 0, 2.0}, {0, 2, 0.5}
 	};
-	auto mst = HDBSCAN::BuildMST(4, edges);
+	auto mst = EntityClustering::BuildMST(4, edges);
 	CHECK(mst.size() == 3);
 	CHECK(TotalWeight(mst) == 2.5);
 	// ascending weight order
@@ -46,17 +46,17 @@ static void TestBuildMST()
 	CHECK(mst[1].weight <= mst[2].weight);
 
 	// Disconnected: {0,1} and {2,3}, no edge between -> forest of 2 edges.
-	std::vector<HDBSCAN::Edge> disc = { {0, 1, 1.0}, {2, 3, 1.0} };
-	auto forest = HDBSCAN::BuildMST(4, disc);
+	std::vector<EntityClustering::Edge> disc = { {0, 1, 1.0}, {2, 3, 1.0} };
+	auto forest = EntityClustering::BuildMST(4, disc);
 	CHECK(forest.size() == 2);
 }
 
 static void TestBuildSingleLinkageTree()
 {
 	// 3 points on a line: 0--(1.0)--1--(2.0)--2, weights all 1.0.
-	std::vector<HDBSCAN::Edge> mst = { {0, 1, 1.0}, {1, 2, 2.0} };
+	std::vector<EntityClustering::Edge> mst = { {0, 1, 1.0}, {1, 2, 2.0} };
 	std::vector<double> w = {1.0, 1.0, 1.0};
-	auto slt = HDBSCAN::BuildSingleLinkageTree(3, mst, WeightsOf(w));
+	auto slt = EntityClustering::BuildSingleLinkageTree(3, mst, WeightsOf(w));
 
 	CHECK(slt.size() == 2);
 	// First merge joins points 0 and 1 at weight 1.0, mass 2.0 -> node id 3.
@@ -70,7 +70,7 @@ static void TestBuildSingleLinkageTree()
 }
 
 //Count, in a condensed tree, how many distinct points fall out of each parent.
-static size_t CountPointChildren(const std::vector<HDBSCAN::CondensedEdge> &c, size_t m)
+static size_t CountPointChildren(const std::vector<EntityClustering::CondensedEdge> &c, size_t m)
 {
 	std::set<size_t> pts;
 	for(const auto &e : c)
@@ -85,10 +85,10 @@ static void TestCondenseTree()
 	//   0-1 : 1.0  (tight)        2-3 : 1.0  (tight)
 	//   then {0,1}-{2,3} : 10.0   (the split)
 	// weights all 1.0; min_cluster_weight = 2.0
-	std::vector<HDBSCAN::Edge> mst = { {0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0} };
+	std::vector<EntityClustering::Edge> mst = { {0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0} };
 	std::vector<double> w = {1.0, 1.0, 1.0, 1.0};
-	auto slt = HDBSCAN::BuildSingleLinkageTree(4, mst, WeightsOf(w));
-	auto condensed = HDBSCAN::CondenseTree(4, slt, WeightsOf(w), 2.0);
+	auto slt = EntityClustering::BuildSingleLinkageTree(4, mst, WeightsOf(w));
+	auto condensed = EntityClustering::CondenseTree(4, slt, WeightsOf(w), 2.0);
 
 	// Every one of the 4 points eventually falls out / is placed.
 	CHECK(CountPointChildren(condensed, 4) == 4);
@@ -102,7 +102,7 @@ static void TestCondenseTree()
 
 	// With min_cluster_weight = 3.0, neither side of the top split (mass 2 each)
 	// qualifies, so there is no genuine split: 0 sub-cluster edges.
-	auto condensed2 = HDBSCAN::CondenseTree(4, slt, WeightsOf(w), 3.0);
+	auto condensed2 = EntityClustering::CondenseTree(4, slt, WeightsOf(w), 3.0);
 	size_t subcluster_edges2 = 0;
 	for(const auto &e : condensed2)
 		if(e.childId >= 4)
@@ -113,12 +113,12 @@ static void TestCondenseTree()
 static void TestComputeStabilities()
 {
 	// Same two-tight-pairs tree as TestCondenseTree, min_cluster_weight = 2.0.
-	std::vector<HDBSCAN::Edge> mst = { {0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0} };
+	std::vector<EntityClustering::Edge> mst = { {0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0} };
 	std::vector<double> w = {1.0, 1.0, 1.0, 1.0};
-	auto slt = HDBSCAN::BuildSingleLinkageTree(4, mst, WeightsOf(w));
-	auto condensed = HDBSCAN::CondenseTree(4, slt, WeightsOf(w), 2.0);
-	auto birth = HDBSCAN::ClusterBirthLambdas(4, condensed);
-	auto stab = HDBSCAN::ComputeStabilities(4, condensed, birth);
+	auto slt = EntityClustering::BuildSingleLinkageTree(4, mst, WeightsOf(w));
+	auto condensed = EntityClustering::CondenseTree(4, slt, WeightsOf(w), 2.0);
+	auto birth = EntityClustering::ClusterBirthLambdas(4, condensed);
+	auto stab = EntityClustering::ComputeStabilities(4, condensed, birth);
 
 	// There is a root cluster plus two children. Each child cluster is born at
 	// lambda 0.1 (1/10) and loses its 2 points at lambda 1.0 (1/1):
@@ -143,13 +143,13 @@ static void TestSelectClusters()
 {
 	// Two well-separated tight pairs -> the two child clusters should be selected,
 	// the root should not.
-	std::vector<HDBSCAN::Edge> mst = { {0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0} };
+	std::vector<EntityClustering::Edge> mst = { {0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0} };
 	std::vector<double> w = {1.0, 1.0, 1.0, 1.0};
-	auto slt = HDBSCAN::BuildSingleLinkageTree(4, mst, WeightsOf(w));
-	auto condensed = HDBSCAN::CondenseTree(4, slt, WeightsOf(w), 2.0);
-	auto birth = HDBSCAN::ClusterBirthLambdas(4, condensed);
-	auto stab = HDBSCAN::ComputeStabilities(4, condensed, birth);
-	auto selected = HDBSCAN::SelectClusters(4, condensed, stab, birth);
+	auto slt = EntityClustering::BuildSingleLinkageTree(4, mst, WeightsOf(w));
+	auto condensed = EntityClustering::CondenseTree(4, slt, WeightsOf(w), 2.0);
+	auto birth = EntityClustering::ClusterBirthLambdas(4, condensed);
+	auto stab = EntityClustering::ComputeStabilities(4, condensed, birth);
+	auto selected = EntityClustering::SelectClusters(4, condensed, stab, birth);
 
 	// Exactly the two child clusters are selected; the root (birth lambda 0) is not.
 	// selected is a keep flag indexed by cluster id - m.
@@ -179,8 +179,8 @@ static void TestClusterEndToEnd()
 	std::vector<double> w4(4, 1.0);
 
 	// Two well-separated pairs -> exactly 2 clusters, no noise, pair-mates share a label.
-	std::vector<HDBSCAN::Edge> two = { {0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0} };
-	auto labels = HDBSCAN::Cluster(4, two, WeightsOf(w4), 2.0);
+	std::vector<EntityClustering::Edge> two = { {0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0} };
+	auto labels = EntityClustering::Cluster(4, two, WeightsOf(w4), 2.0);
 	CHECK(labels.size() == 4);
 	CHECK(DistinctNonzero(labels) == 2);
 	CHECK(labels[0] == labels[1]);
@@ -190,18 +190,18 @@ static void TestClusterEndToEnd()
 	// One tight group of 4 with no genuine sub-split: the only cluster is the
 	// whole-dataset root, which is never selected (allow_single_cluster = false,
 	// matching scikit-learn), so every point is noise.
-	std::vector<HDBSCAN::Edge> one = { {0, 1, 1.0}, {1, 2, 1.0}, {2, 3, 1.0} };
-	auto labels_one = HDBSCAN::Cluster(4, one, WeightsOf(w4), 2.0);
+	std::vector<EntityClustering::Edge> one = { {0, 1, 1.0}, {1, 2, 1.0}, {2, 3, 1.0} };
+	auto labels_one = EntityClustering::Cluster(4, one, WeightsOf(w4), 2.0);
 	CHECK(DistinctNonzero(labels_one) == 0);
 
 	// Two well-separated pairs plus one far outlier (index 4).  The two pairs are
 	// genuine sibling clusters; the outlier falls out of the unselected root, so
 	// it is noise while the pairs are clustered.
 	std::vector<double> w5(5, 1.0);
-	std::vector<HDBSCAN::Edge> outlier = {
+	std::vector<EntityClustering::Edge> outlier = {
 		{0, 1, 1.0}, {2, 3, 1.0}, {1, 2, 10.0}, {3, 4, 50.0}
 	};
-	auto labels_out = HDBSCAN::Cluster(5, outlier, WeightsOf(w5), 2.0);
+	auto labels_out = EntityClustering::Cluster(5, outlier, WeightsOf(w5), 2.0);
 	CHECK(DistinctNonzero(labels_out) == 2);
 	CHECK(labels_out[4] == 0);
 	CHECK(labels_out[0] != 0);
@@ -218,10 +218,10 @@ static void TestWeightThreshold()
 	// 0.4) never clears the threshold alone, so the heavy pairs stay intact
 	// rather than splitting into singletons.
 	std::vector<double> w = {0.8, 0.8, 0.8, 0.8, 0.4, 0.4};
-	std::vector<HDBSCAN::Edge> edges = {
+	std::vector<EntityClustering::Edge> edges = {
 		{0, 1, 1.0}, {2, 3, 1.0}, {4, 5, 1.0}, {1, 2, 10.0}, {3, 4, 20.0}
 	};
-	auto labels = HDBSCAN::Cluster(6, edges, WeightsOf(w), 1.0);
+	auto labels = EntityClustering::Cluster(6, edges, WeightsOf(w), 1.0);
 	CHECK(DistinctNonzero(labels) == 2);
 	CHECK(labels[0] != 0);
 	CHECK(labels[0] == labels[1]);
@@ -239,10 +239,10 @@ static void TestDisconnectedComponents()
 	// so each component becomes its own cluster rather than being dropped as an
 	// unselectable forest root.  A = {0,1,2}, B = {3,4,5}.
 	std::vector<double> w(7, 1.0);
-	std::vector<HDBSCAN::Edge> edges = {
+	std::vector<EntityClustering::Edge> edges = {
 		{0, 1, 1.0}, {1, 2, 1.0}, {3, 4, 1.0}, {4, 5, 1.0}
 	};
-	auto labels = HDBSCAN::Cluster(6, edges, WeightsOf(w), 2.0);
+	auto labels = EntityClustering::Cluster(6, edges, WeightsOf(w), 2.0);
 	CHECK(DistinctNonzero(labels) == 2);
 	CHECK(labels[0] != 0);
 	CHECK(labels[0] == labels[1]);
@@ -255,8 +255,8 @@ static void TestDisconnectedComponents()
 	// Two valid groups plus a lone point (index 6).  The lone point is a tiny
 	// component (mass 1 < minimum_cluster_weight): after bridging it falls out of
 	// the root as noise, while the two real groups still cluster.
-	std::vector<HDBSCAN::Edge> edges2 = { {0, 1, 1.0}, {1, 2, 1.0}, {3, 4, 1.0}, {4, 5, 1.0} };
-	auto labels2 = HDBSCAN::Cluster(7, edges2, WeightsOf(w), 2.0);  // point 6 is isolated
+	std::vector<EntityClustering::Edge> edges2 = { {0, 1, 1.0}, {1, 2, 1.0}, {3, 4, 1.0}, {4, 5, 1.0} };
+	auto labels2 = EntityClustering::Cluster(7, edges2, WeightsOf(w), 2.0);  // point 6 is isolated
 	CHECK(DistinctNonzero(labels2) == 2);
 	CHECK(labels2[0] != 0);
 	CHECK(labels2[0] == labels2[2]);
@@ -276,8 +276,8 @@ static void TestSeparatedClustersSplitNotMerged()
 	// clusters instead of letting the root absorb everything into ONE cluster.  This
 	// guards against regressing to the root-absorbs-everything behavior.
 	std::vector<double> w(4, 1.0);
-	std::vector<HDBSCAN::Edge> edges = { {0, 1, 0.9}, {2, 3, 0.9}, {1, 2, 1.0} };
-	auto labels = HDBSCAN::Cluster(4, edges, WeightsOf(w), 2.0);
+	std::vector<EntityClustering::Edge> edges = { {0, 1, 0.9}, {2, 3, 0.9}, {1, 2, 1.0} };
+	auto labels = EntityClustering::Cluster(4, edges, WeightsOf(w), 2.0);
 	CHECK(DistinctNonzero(labels) == 2);
 	CHECK(labels[0] == labels[1]);
 	CHECK(labels[2] == labels[3]);
@@ -293,12 +293,12 @@ static void TestExcessOfMassParentWins()
 	// (weight 0.95 -> lambda ~1.053).  Excess of mass therefore prefers each
 	// PARENT over its two children: the result is 2 clusters, not 4.
 	std::vector<double> w(8, 1.0);
-	std::vector<HDBSCAN::Edge> edges = {
+	std::vector<EntityClustering::Edge> edges = {
 		{0, 1, 0.95}, {2, 3, 0.95}, {1, 2, 1.0},   // P and its split
 		{4, 5, 0.95}, {6, 7, 0.95}, {5, 6, 1.0},   // Q and its split
 		{3, 4, 10.0}                                // P-Q join (root)
 	};
-	auto labels = HDBSCAN::Cluster(8, edges, WeightsOf(w), 2.0);
+	auto labels = EntityClustering::Cluster(8, edges, WeightsOf(w), 2.0);
 	CHECK(DistinctNonzero(labels) == 2);            // parents selected, not the 4 children
 	for(int i = 1; i < 4; ++i)
 		CHECK(labels[i] == labels[0]);              // all of P shares one label
@@ -308,11 +308,11 @@ static void TestExcessOfMassParentWins()
 	CHECK(labels[0] != labels[4]);
 }
 
-//Runs the pure-HDBSCAN algorithm unit tests (no Amalgam dependencies).  Declared in
-//hdbscan_test.h and invoked from the lib_smoke_test driver so the pure-algorithm checks
+//Runs the clustering algorithm without other dependencies.  Declared in
+//clustering_test.h and invoked from the lib_smoke_test driver so the pure-algorithm checks
 //ride along in the existing test executable rather than a standalone one.  Prints any
 //failures and a summary; returns the number of failed checks (0 on success).
-int RunHDBSCANUnitTests()
+int RunClusteringUnitTests()
 {
 	TestBuildMST();
 	TestBuildSingleLinkageTree();

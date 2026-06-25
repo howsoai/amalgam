@@ -4,7 +4,7 @@
 
 //project headers:
 #include "Amalgam.h"
-#include "hdbscan_test.h"
+#include "clustering_test.h"
 
 //system headers:
 #include <cctype>
@@ -481,7 +481,7 @@ static int ClusterIdForCase(const std::string &json, int index)
 static void ClusterTwoBlobs(TestResult &test_result)
 {
 	// Load cluster.amlg, create two well-separated 2-D blobs (6 entities each),
-	// run query_entity_clusters, and verify HDBSCAN recovers exactly two
+	// run query_entity_clusters, and verify clustering recovers exactly two
 	// clusters: each blob fully assigned to its own cluster, with no noise.
 	char handle[] = "cluster";
 	char *file = (char *)"cluster.amlg";
@@ -614,8 +614,8 @@ int main(int argc, char *argv[])
 	suite.Run("StoreSubEntityToMemory", StoreSubEntityToMemory);
 	suite.Run("RoundTripCamlToMemory", RoundTripCamlToMemory);
 	suite.Run("ClusterTwoBlobs", ClusterTwoBlobs);
-	suite.Run("HDBSCANAlgorithm", [](TestResult &test_result) {
-		test_result.Require("pure-HDBSCAN algorithm unit tests pass", RunHDBSCANUnitTests() == 0);
+	suite.Run("ClusteringAlgorithm", [](TestResult &test_result) {
+		test_result.Require("clustering algorithm unit tests pass", RunClusteringUnitTests() == 0);
 	});
 
 	return suite ? 0 : 1;

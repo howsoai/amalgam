@@ -77,8 +77,7 @@ endforeach()
 # Create tests for every lib target:
 foreach(TEST_TARGET ${ALL_SHAREDLIB_TARGETS})
 
-    # Create test exe.  The pure-algorithm HDBSCAN unit tests (test/unit_test/hdbscan_test.cpp)
-    # ride along in this executable rather than a standalone one, so there is a single test binary.
+    # Create test exe:
     set(TEST_EXE_NAME "${TEST_TARGET}-tester")
     set(TEST_SOURCES "test/lib_smoke_test/main.cpp" "test/lib_smoke_test/test.amlg" "test/lib_smoke_test/counter.amlg" "test/lib_smoke_test/cluster.amlg" "test/unit_test/hdbscan_test.cpp")
     source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${TEST_SOURCES})

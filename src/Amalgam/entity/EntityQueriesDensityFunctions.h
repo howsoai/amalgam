@@ -631,10 +631,9 @@ public:
 			return KullbackLeiblerDivergence(scaled_base_distance_contribs, combined_model_distance_contribs);
 	}
 
-	//computes HDBSCAN clusters for each entity and sets the corresponding index of clusters_out to the
+	//computes clusters for each entity and sets the corresponding index of clusters_out to the
 	//cluster id (a positive integer per cluster; 0 means noise / not assigned to any cluster).
-	//builds mutual-reachability candidate edges from the KNN cache and runs the pure pipeline in
-	//HDBSCANClustering.h.  minimum_cluster_weight is the least summed entity weight that can constitute a cluster.
+	//minimum_cluster_weight is the least summed entity weight that can constitute a cluster.
 	void ComputeCaseClusters(EntityReferenceSet &entities_to_compute,
 		std::vector<double> &clusters_out, double minimum_cluster_weight);
 

@@ -12,12 +12,6 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true);
 #endif
 
-	//Cluster directly in entity-index space: entity ids index the per-point arrays and
-	//are the point ids handed to HDBSCAN, so num_entity_indices (one past the largest
-	//entity index) is the point count.  Entity indices not in entities_to_compute are
-	//gaps: they get no edges below, so the pipeline leaves them isolated (noise) and we
-	//never read them back.  This avoids a separate entity->dense remap, which the entity
-	//index space being almost entirely full makes near-pointless.
 	size_t num_entity_indices = knnCache->GetEndEntityIndex();
 	size_t num_entities = entities_to_compute.size();
 
@@ -31,8 +25,7 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	//capture-default [&] so worker threads write through core_distances (the main
 	//thread's buffer) rather than their own unsized thread-local buffers.  An explicit
 	//capture list is avoided because in the single-threaded build buffers is a plain
-	//static, which would make clang flag the core_distances capture as unused
-	//(-Werror,-Wunused-lambda-capture).
+	//static, which would make clang flag the core_distances capture as unused.
 	IterateOverConcurrentlyIfPossible(entities_to_compute,
 		[&](auto /*unused*/, auto entity)
 	{
@@ -67,8 +60,7 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 		}
 	}
 
-	//look each point's weight up on demand (entity id == point id), so no weights vector
-	//is materialized; the lambda is a template arg to Cluster, so it inlines.
+	//pass in lambda for obtaining weights
 	std::vector<size_t> labels = HDBSCAN::Cluster(num_entity_indices, std::move(edges),
 		[&](size_t entity)
 		{

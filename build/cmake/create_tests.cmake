@@ -79,10 +79,11 @@ foreach(TEST_TARGET ${ALL_SHAREDLIB_TARGETS})
 
     # Create test exe:
     set(TEST_EXE_NAME "${TEST_TARGET}-tester")
-    set(TEST_SOURCES "test/lib_smoke_test/main.cpp" "test/lib_smoke_test/test.amlg" "test/lib_smoke_test/counter.amlg")
+    set(TEST_SOURCES "test/lib_smoke_test/main.cpp" "test/lib_smoke_test/test.amlg" "test/lib_smoke_test/counter.amlg" "test/lib_smoke_test/cluster.amlg" "test/unit_test/clustering_test.cpp")
     source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${TEST_SOURCES})
     add_executable(${TEST_EXE_NAME} ${TEST_SOURCES})
     set_target_properties(${TEST_EXE_NAME} PROPERTIES FOLDER "Testing")
+    target_include_directories(${TEST_EXE_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/test/unit_test")
     target_link_libraries(${TEST_EXE_NAME} ${TEST_TARGET})
 
     # Test for test exe:

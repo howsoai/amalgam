@@ -238,7 +238,7 @@ To stop early, choose the right opcode:
  - `return` propagates up through enclosing forms until it reaches a `call` (or `call_entity`, etc.), then evaluates to its value — use it for an early exit out of a whole method or call.
  - `conclude` exits only the nearest consuming `seq`/`let`/`declare`/`while`; an inner scope can swallow it, so it is for breaking out of one local form.
 
-When running untrusted code — such as genetic programming or otherwise generated code, or untrusted user code — use `call`, or `call_entity` with its constraint parameters, to limit what that code can do.
+When running untrusted code — such as genetic programming or otherwise generated code, or untrusted user code — use `call`, `call_entity`, or `call_on_entity` with its constraint parameters, to limit what that code can do.
 
 An `if` without an else branch evaluates to `.null` when the condition is false, so omit a redundant explicit `.null` else in side-effect-only branches. Keep an explicit `.null` only when it is a meaningful part of a return contract — and when `.null` is itself a valid value, use a wrapper such as `[found value]` or a distinct sentinel rather than overloading `.null`.
 

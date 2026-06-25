@@ -284,14 +284,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 			if(interpreterConstraints != nullptr)
 				interpreterConstraints->AccruePerformanceCounters(&interpreter_constraints);
 
-			//if only want results, return them
-			if(!interpreter_constraints.collectWarnings)
-			{
-				if(interpreter_constraints.constraintsExceeded)
-					return EvaluableNodeReference::Null();
-				return result;
-			}
-
 			return BundleResultWithWarningsAndChangesIfNeeded(
 				interpreter_constraints.constraintsExceeded ? EvaluableNodeReference::Null() : result,
 				&interpreter_constraints);

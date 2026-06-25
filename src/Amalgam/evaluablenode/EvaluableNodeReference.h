@@ -738,6 +738,12 @@ public:
 		return EvaluableNode::IsImmediate(value.nodeValue.code);
 	}
 
+	__forceinline bool IsNull()
+	{
+		return (value.nodeType == ENIVT_NULL
+			|| (value.nodeType == ENIVT_CODE && value.nodeValue.code == nullptr));
+	}
+
 	__forceinline bool IsNonNullNodeReference()
 	{
 		return (value.nodeType == ENIVT_CODE && value.nodeValue.code != nullptr);

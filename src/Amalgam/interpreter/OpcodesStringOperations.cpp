@@ -688,7 +688,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, 
 		//want to exit early if out of resources because
 		// this opcode can chew through memory with string concatenation via returned nulls
 		if(AreExecutionResourcesExhausted()
-				|| (interpreterConstraints != nullptr && s.size() > interpreterConstraints->maxNumAllocatedNodes))
+				|| (interpreterConstraints != nullptr
+					&& interpreterConstraints->ConstrainedAllocatedNodes()
+					&& s.size() > interpreterConstraints->maxNumAllocatedNodes))
 			return EvaluableNodeReference::Null();
 
 		//since UTF-8, don't need to do any conversions to concatenate
@@ -814,7 +816,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en,
 		include_attributes = InterpretNodeIntoBoolValue(ocn[3]);
 
 	size_t max_length = std::numeric_limits<size_t>::max();
-	if(interpreterConstraints != nullptr)
+	if(interpreterConstraints != nullptr && interpreterConstraints->ConstrainedAllocatedNodes())
 		max_length = interpreterConstraints->maxNumAllocatedNodes;
 
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);

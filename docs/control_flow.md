@@ -124,16 +124,20 @@ Output:
 
 ### Opcode: `call`
 #### Parameters
-`* function [assoc params]`
+`* function [assoc params] [bool|assoc constraints] [bool return_warnings]`
 #### Description
+<<<<<<< HEAD
 Evaluates `function` after pushing the `params` assoc onto the scope stack.  If `params` is missing or null, then it will allow access to the scope stack of the caller.
+=======
+Evaluates `function` after pushing the `params` assoc onto the scope stack.  If `constraints` is specified and not false or null, it will constrain execution.  If `constraints` is true or an assoc, it will default all constraints to be on at reasonable values for small execution without access to any data beyond `params`.  They optional key-value combinations for `constraints` are as follows.  If "max_node_operations" is specified, it represents the number of operations that are allowed to be performed. If "max_node_operations" is 0, then an infinite of operations will be allotted, up to the limits of the current calling context.  If "max_node_allocations" is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If "max_node_allocations" is 0 and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if "max_node_allocations" is specified while in a multithreaded environment, if the collective memory from all the executing threads exceeds the average memory specified by call_sandboxed, that may trigger a memory limit for the call_sandboxed.  If "max_operation_depth" is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise "max_operation_depth" limits how deep nested opcodes will be called. If `return_warnings` is true (default is false), the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  The keys "read_access" and "write_access" are boolean and control whether the execution can read from or write to entities and access their relevant permissions (e.g., to load files, make system calls).  If the parameter `return_warnings` is false, just the value will be returned.
+>>>>>>> main
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
  - Requires entity: false
  - Creates new scope: true
  - Creates new target scope: false
- - Value newness (whether references existing node): existing
+ - Value newness (whether references existing node): conditional
 #### Examples
 Example:
 ```amalgam
@@ -156,25 +160,9 @@ Output:
 ```amalgam
 5
 ```
-
-[Amalgam Opcodes](./opcodes.md)
-
-### Opcode: `call_sandboxed`
-#### Parameters
-`* function assoc params [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [bool return_warnings]`
-#### Description
-Evaluates the code specified by function, isolating it from everything except for params, which is used as a single layer of the scope stack.  This is useful when evaluating code passed by other entities that may or may not be trusted.  Opcodes run from within call_sandboxed that require any form of permissions will not perform any action and will evaluate to null.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed. If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted, up to the limits of the current calling context. If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If `max_node_allocations` is 0 or infinite and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if `max_node_allocations` is specified while call_sandboxed is being called in a multithreaded environment, if the collective memory from all the related threads exceeds the average memory specified by call_sandboxed, that may trigger a memory limit for the call_sandboxed.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called. If `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  If `return_warnings` is false, just the value will be returned.
-#### Details
- - Permissions required:  none
- - Allows concurrency: false
- - Requires entity: false
- - Creates new scope: true
- - Creates new target scope: false
- - Value newness (whether references existing node): existing
-#### Examples
 Example:
 ```amalgam
-(call_sandboxed
+(call
 	(lambda
 		(+
 			(+ y 4)
@@ -182,9 +170,25 @@ Example:
 		)
 	)
 	{y 3}
-	.null
-	.null
-	50
+	.true
+)
+```
+Output:
+```amalgam
+11
+```
+Example:
+```amalgam
+(call
+	(lambda
+		(+
+			(+ y 4)
+			4
+		)
+	)
+	{y 3}
+	.true
+	.true
 )
 ```
 Output:
@@ -193,28 +197,9 @@ Output:
 ```
 Example:
 ```amalgam
-(call_sandboxed
+(call
 	(lambda
-		(+
-			(+ y 4)
-			4
-		)
-	)
-	{y 3}
-	.null
-	.null
-	1
-)
-```
-Output:
-```amalgam
-[.null {} "Execution depth exceeded"]
-```
-Example:
-```amalgam
-(call_sandboxed
-	(lambda
-		(call_sandboxed
+		(call
 			(lambda
 				(+
 					(+ y 4)
@@ -222,15 +207,13 @@ Example:
 				)
 			)
 			{y 3}
-			.null
-			.null
-			2
+			{max_operation_depth 2}
+			.true
 		)
 	)
 	{y 3}
-	.null
-	.null
-	50
+	{max_operation_depth 50}
+	.true
 )
 ```
 Output:
@@ -367,7 +350,7 @@ Output:
 #### Parameters
 `* return_value`
 #### Description
-Evaluates to `return_value` wrapped in a `return` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a return (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to the `return` opcode with its `return_value`.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including `call`, `call_sandboxed`, `call_entity`, `call_entity_get_changes`, or `call_container`, at which point it will evaluate to `return_value`.  Note that return opcodes may be nested to break out of multiple calls.
+Evaluates to `return_value` wrapped in a `return` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a return (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to the `return` opcode with its `return_value`.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including `call`, `call_entity`, `call_on_entity`, or `call_container`, at which point it will evaluate to `return_value`.  Note that return opcodes may be nested to break out of multiple calls.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

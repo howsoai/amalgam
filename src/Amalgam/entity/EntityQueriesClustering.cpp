@@ -21,15 +21,12 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	size_t num_entity_indices = knnCache->GetEndEntityIndex();
 	size_t num_entities = entities_to_compute.size();
 
-	//core distance (distance to the numNearestNeighbors-th neighbor) per entity, plus
-	//the per-point weight the dendrogram sums into cluster masses, filled together in
-	//one pass.  buffers is thread_local under MULTITHREAD_SUPPORT, so core_distances
-	//aliases this (main) thread's buffer; point_weights is an ordinary local vector.
-	//Both are indexed by entity id; gap entries keep their defaults and are never read.
+	//core distance (distance to the numNearestNeighbors-th neighbor) per entity, indexed
+	//by entity id.  buffers is thread_local under MULTITHREAD_SUPPORT, so core_distances
+	//aliases this (main) thread's buffer; gap entries keep infinity and are never read.
 	auto &core_distances = buffers.baseDistanceContributions;
 	core_distances.clear();
 	core_distances.resize(num_entity_indices, std::numeric_limits<double>::infinity());
-	std::vector<double> point_weights(num_entity_indices, 1.0);
 
 	//capture-default [&] so worker threads write through core_distances (the main
 	//thread's buffer) rather than their own unsized thread-local buffers.  An explicit
@@ -41,12 +38,6 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	{
 		auto &neighbors = knnCache->GetKnnCache(entity);
 
-		double entity_weight = 1.0;
-		distanceTransform->getEntityWeightFunction(entity, entity_weight);
-		point_weights[entity] = entity_weight;
-
-		//experimental algorithm, leave out for now
-		//core_distances[entity] = distanceTransform->ComputeDistanceContribution(neighbors, entity_weight);
 		size_t num_neighbors_by_bandwidth = distanceTransform->TransformDistances(neighbors, false, false);
 		if(num_neighbors_by_bandwidth > 0)
 			core_distances[entity] = neighbors[num_neighbors_by_bandwidth - 1].distance;
@@ -76,7 +67,16 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 		}
 	}
 
-	std::vector<size_t> labels = HDBSCAN::Cluster(num_entity_indices, std::move(edges), point_weights, minimum_cluster_weight);
+	//look each point's weight up on demand (entity id == point id), so no weights vector
+	//is materialized; the lambda is a template arg to Cluster, so it inlines.
+	std::vector<size_t> labels = HDBSCAN::Cluster(num_entity_indices, std::move(edges),
+		[&](size_t entity)
+		{
+			double entity_weight = 1.0;
+			distanceTransform->getEntityWeightFunction(entity, entity_weight);
+			return entity_weight;
+		},
+		minimum_cluster_weight);
 
 	clusters_out.clear();
 	clusters_out.reserve(num_entities);

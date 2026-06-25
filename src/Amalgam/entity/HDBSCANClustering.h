@@ -83,20 +83,24 @@ namespace HDBSCAN
 		return mst;
 	}
 
-	//Summed point weight of a node (point if < m, else internal subtree).
+	//Summed point weight of a node (point if < m, else internal subtree).  weight maps a
+	//point id to its weight; it is a template parameter rather than a std::function so it
+	//inlines with no call overhead and the caller can supply weights without a vector.
+	template<typename WeightFn>
 	inline double NodeMass(size_t node, size_t m,
-		const std::vector<double> &point_weights,
+		const WeightFn &weight,
 		const std::vector<SingleLinkageNode> &nodes)
 	{
-		return node < m ? point_weights[node] : nodes[node - m].mass;
+		return node < m ? weight(node) : nodes[node - m].mass;
 	}
 
 	//Builds the single-linkage dendrogram from the (ascending) MST edges.
 	//Each accepted merge becomes node id m + k with summed-weight mass.
 	//mst is taken by value: a moved-in argument is consumed and freed when this
 	//returns, so the caller need not hold the MST alive past this stage.
+	template<typename WeightFn>
 	inline std::vector<SingleLinkageNode> BuildSingleLinkageTree(size_t m,
-		std::vector<Edge> mst, const std::vector<double> &point_weights)
+		std::vector<Edge> mst, const WeightFn &weight)
 	{
 		std::vector<SingleLinkageNode> nodes;
 		nodes.reserve(mst.size());
@@ -130,7 +134,7 @@ namespace HDBSCAN
 			node.leftChildId = na;
 			node.rightChildId = nb;
 			node.weight = e.weight;
-			node.mass = NodeMass(na, m, point_weights, nodes) + NodeMass(nb, m, point_weights, nodes);
+			node.mass = NodeMass(na, m, weight, nodes) + NodeMass(nb, m, weight, nodes);
 			size_t new_id = m + nodes.size();
 			nodes.push_back(node);
 
@@ -167,9 +171,10 @@ namespace HDBSCAN
 	//create child clusters, single big branches continue the parent cluster.
 	//nodes is taken by value: a moved-in single-linkage tree is consumed and freed
 	//when this returns, so the caller need not hold it alive past this stage.
+	template<typename WeightFn>
 	inline std::vector<CondensedEdge> CondenseTree(size_t m,
 		std::vector<SingleLinkageNode> nodes,
-		const std::vector<double> &point_weights, double min_cluster_weight)
+		const WeightFn &weight, double min_cluster_weight)
 	{
 		std::vector<CondensedEdge> result;
 		if(nodes.empty())
@@ -205,7 +210,7 @@ namespace HDBSCAN
 			{
 				//a component only becomes a cluster if its total mass meets the
 				//threshold; smaller components (e.g. scattered outliers) stay noise
-				if(NodeMass(id, m, point_weights, nodes) >= min_cluster_weight)
+				if(NodeMass(id, m, weight, nodes) >= min_cluster_weight)
 				{
 					node_cluster_id[id - m] = next_cluster_id++;
 					pending_nodes.push_back(id);
@@ -239,7 +244,7 @@ namespace HDBSCAN
 			bool big[2];
 			for(int c = 0; c < 2; c++)
 			{
-				masses[c] = NodeMass(children[c], m, point_weights, nodes);
+				masses[c] = NodeMass(children[c], m, weight, nodes);
 				big[c] = masses[c] >= min_cluster_weight;
 			}
 			int num_big = (big[0] ? 1 : 0) + (big[1] ? 1 : 0);
@@ -253,7 +258,7 @@ namespace HDBSCAN
 					leaf_scratch.clear();
 					CollectLeaves(child, m, nodes, leaf_scratch, collect_stack);
 					for(size_t p : leaf_scratch)
-						result.push_back(CondensedEdge{cluster_id, p, lambda, point_weights[p]});
+						result.push_back(CondensedEdge{cluster_id, p, lambda, weight(p)});
 				}
 				else if(num_big == 2)
 				{
@@ -266,7 +271,7 @@ namespace HDBSCAN
 						pending_nodes.push_back(child);
 					}
 					else	//a single heavy point that is itself a cluster
-						result.push_back(CondensedEdge{child_cluster_id, child, lambda_max, point_weights[child]});
+						result.push_back(CondensedEdge{child_cluster_id, child, lambda_max, weight(child)});
 				}
 				else
 				{
@@ -277,7 +282,7 @@ namespace HDBSCAN
 						pending_nodes.push_back(child);
 					}
 					else	//a heavy continuing leaf stays in the cluster to the bottom
-						result.push_back(CondensedEdge{cluster_id, child, lambda_max, point_weights[child]});
+						result.push_back(CondensedEdge{cluster_id, child, lambda_max, weight(child)});
 				}
 			}
 		}
@@ -494,12 +499,13 @@ namespace HDBSCAN
 	//argument by value, so each structure is freed when that stage returns rather
 	//than living until the whole pipeline finishes.  Only condensed has more than
 	//one downstream reader, so it alone is kept by reference until the end.
+	template<typename WeightFn>
 	inline std::vector<size_t> Cluster(size_t m, std::vector<Edge> edges,
-		const std::vector<double> &point_weights, double min_cluster_weight)
+		const WeightFn &weight, double min_cluster_weight)
 	{
 		std::vector<Edge> mst = BuildMST(m, std::move(edges));
-		std::vector<SingleLinkageNode> slt = BuildSingleLinkageTree(m, std::move(mst), point_weights);
-		std::vector<CondensedEdge> condensed = CondenseTree(m, std::move(slt), point_weights, min_cluster_weight);
+		std::vector<SingleLinkageNode> slt = BuildSingleLinkageTree(m, std::move(mst), weight);
+		std::vector<CondensedEdge> condensed = CondenseTree(m, std::move(slt), weight, min_cluster_weight);
 		std::vector<double> birth = ClusterBirthLambdas(m, condensed);
 		std::vector<double> stability = ComputeStabilities(m, condensed, birth);
 		std::vector<char> selected = SelectClusters(m, condensed, std::move(stability), std::move(birth));

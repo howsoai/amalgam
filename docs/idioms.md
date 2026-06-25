@@ -89,7 +89,7 @@ To stop early, choose the right opcode:
 
 When running untrusted code — such as genetic programming or otherwise generated code, or untrusted user code — use `call`, `call_entity`, or `call_on_entity` with its constraint parameters, to limit what that code can do.
 
-An `if` without an else branch evaluates to `.null` when the condition is false, so omit a redundant explicit `.null` else in side-effect-only branches. Keep an explicit `.null` only when it is a meaningful part of a return contract — and when `.null` is itself a valid value, use a wrapper such as `[found value]` or a distinct sentinel rather than overloading `.null`.
+An `if` without an else branch evaluates to `.null` when the condition is false, so omit a redundant explicit `.null` else in side-effect-only branches. Treat `.null` as the immediate no-value sentinel, not as `0`, `""`, or `[]`; `get` also returns it for missing paths and out-of-bounds access. Keep an explicit `.null` only when it is a meaningful part of a return contract, use `get_type_string` for runtime type checks, and wrap results with a tag or state string when `.null` is valid data or outcomes need to stay distinct.
 
 ## Use the real arithmetic operators
 Integer modulo is `(mod a b)`; there is no `%` operator. Division with `/` returns a real number, so wrap it in `floor` or `ceil` when an integer bucket is intended:

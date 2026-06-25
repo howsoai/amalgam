@@ -12,44 +12,32 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 	knnCache->PreCacheKnn(&entities_to_compute, numNearestNeighbors, true);
 #endif
 
-	//Dense 0..m-1 indexing over the entities being clustered, built first so the
-	//core-distance pass below can fill each point's weight at the same dense index in
-	//a single sweep.  The pure HDBSCAN pipeline sizes its vectors and union-find by
-	//point count, so it needs a contiguous space even when the entity indices are
-	//sparse (gaps from deletions, or a subset query); hashing on entity id throughout
-	//the algorithm instead would be slower and allocate more.
+	//Cluster directly in entity-index space: entity ids index the per-point arrays and
+	//are the point ids handed to HDBSCAN, so num_entity_indices (one past the largest
+	//entity index) is the point count.  Entity indices not in entities_to_compute are
+	//gaps: they get no edges below, so the pipeline leaves them isolated (noise) and we
+	//never read them back.  This avoids a separate entity->dense remap, which the entity
+	//index space being almost entirely full makes near-pointless.
 	size_t num_entity_indices = knnCache->GetEndEntityIndex();
 	size_t num_entities = entities_to_compute.size();
-	std::vector<size_t> entity_to_dense(num_entity_indices, std::numeric_limits<size_t>::max());
-	size_t m = 0;
-	for(auto entity : entities_to_compute)
-		entity_to_dense[entity] = m++;
 
-	//core distance (distance to the numNearestNeighbors-th neighbor) per entity, plus
-	//the per-point weight the dendrogram sums into cluster masses, filled together in
-	//one pass.  buffers is thread_local under MULTITHREAD_SUPPORT, so core_distances
-	//aliases this (main) thread's buffer; point_weights is an ordinary local vector.
+	//core distance (distance to the numNearestNeighbors-th neighbor) per entity, indexed
+	//by entity id.  buffers is thread_local under MULTITHREAD_SUPPORT, so core_distances
+	//aliases this (main) thread's buffer; gap entries keep infinity and are never read.
 	auto &core_distances = buffers.baseDistanceContributions;
 	core_distances.clear();
 	core_distances.resize(num_entity_indices, std::numeric_limits<double>::infinity());
-	std::vector<double> point_weights(m, 1.0);
 
 	//capture-default [&] so worker threads write through core_distances (the main
-	//thread's buffer) rather than their own unsized thread-local buffers, and write
-	//point_weights at each entity's dense index.  An explicit capture list is avoided
-	//because in the single-threaded build buffers is a plain static, which would make
-	//clang flag the core_distances capture as unused (-Werror,-Wunused-lambda-capture).
+	//thread's buffer) rather than their own unsized thread-local buffers.  An explicit
+	//capture list is avoided because in the single-threaded build buffers is a plain
+	//static, which would make clang flag the core_distances capture as unused
+	//(-Werror,-Wunused-lambda-capture).
 	IterateOverConcurrentlyIfPossible(entities_to_compute,
 		[&](auto /*unused*/, auto entity)
 	{
 		auto &neighbors = knnCache->GetKnnCache(entity);
 
-		double entity_weight = 1.0;
-		distanceTransform->getEntityWeightFunction(entity, entity_weight);
-		point_weights[entity_to_dense[entity]] = entity_weight;
-
-		//experimental algorithm, leave out for now
-		//core_distances[entity] = distanceTransform->ComputeDistanceContribution(neighbors, entity_weight);
 		size_t num_neighbors_by_bandwidth = distanceTransform->TransformDistances(neighbors, false, false);
 		if(num_neighbors_by_bandwidth > 0)
 			core_distances[entity] = neighbors[num_neighbors_by_bandwidth - 1].distance;
@@ -61,30 +49,37 @@ void EntityQueriesDensityProcessor::ComputeCaseClusters(EntityReferenceSet &enti
 #endif
 	);
 
-	//candidate mutual-reachability edges from the KNN cache
+	//candidate mutual-reachability edges from the KNN cache, keyed by entity id.  A
+	//neighbor outside entities_to_compute is skipped so only requested entities are
+	//linked (and so clustered); the membership test also keeps n.reference in range.
 	std::vector<HDBSCAN::Edge> edges;
-	edges.reserve(m * numNearestNeighbors);
+	edges.reserve(num_entities * numNearestNeighbors);
 	for(auto entity : entities_to_compute)
 	{
-		size_t di = entity_to_dense[entity];
 		for(auto &n : knnCache->GetKnnCache(entity))
 		{
 			if(n.reference == entity)
 				continue;
-			if(n.reference >= entity_to_dense.size())
-				continue;
-			size_t dj = entity_to_dense[n.reference];
-			if(dj == std::numeric_limits<size_t>::max())
+			if(n.reference >= num_entity_indices || !entities_to_compute.contains(n.reference))
 				continue;	//neighbor not part of this clustering request
 			double w = std::max(std::max(core_distances[entity], core_distances[n.reference]), n.distance);
-			edges.push_back(HDBSCAN::Edge{di, dj, w});
+			edges.push_back(HDBSCAN::Edge{entity, n.reference, w});
 		}
 	}
 
-	std::vector<size_t> labels = HDBSCAN::Cluster(m, std::move(edges), point_weights, minimum_cluster_weight);
+	//look each point's weight up on demand (entity id == point id), so no weights vector
+	//is materialized; the lambda is a template arg to Cluster, so it inlines.
+	std::vector<size_t> labels = HDBSCAN::Cluster(num_entity_indices, std::move(edges),
+		[&](size_t entity)
+		{
+			double entity_weight = 1.0;
+			distanceTransform->getEntityWeightFunction(entity, entity_weight);
+			return entity_weight;
+		},
+		minimum_cluster_weight);
 
 	clusters_out.clear();
 	clusters_out.reserve(num_entities);
 	for(auto entity : entities_to_compute)
-		clusters_out.emplace_back(static_cast<double>(labels[entity_to_dense[entity]]));
+		clusters_out.emplace_back(static_cast<double>(labels[entity]));
 }

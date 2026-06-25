@@ -46,7 +46,6 @@ enum EvaluableNodeType : uint8_t
 	ENT_SEQUENCE,
 	ENT_LAMBDA,
 	ENT_CALL,
-	ENT_CALL_SANDBOXED,
 	ENT_WHILE,
 	ENT_CONCLUDE,
 	ENT_RETURN,
@@ -177,7 +176,6 @@ enum EvaluableNodeType : uint8_t
 	ENT_REMOVE_FROM_ENTITIES,
 	ENT_RETRIEVE_FROM_ENTITY,
 	ENT_CALL_ENTITY,
-	ENT_CALL_ENTITY_GET_CHANGES,
 	ENT_CALL_ON_ENTITY,
 	ENT_CALL_CONTAINER,
 
@@ -347,6 +345,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_syntax,
 	ENBISI_distance,
 	ENBISI_opcodes,
+	ENBISI_idioms,
 
 	//file storage options
 	ENBISI_include_rand_seeds,
@@ -371,6 +370,16 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_require_version_compatibility,
 	ENBISI_amlg_version,
 	ENBISI_version_compatible,
+
+	//execution constraints
+	ENBISI_max_node_operations,
+	ENBISI_max_node_allocations,
+	ENBISI_max_operation_depth,
+	ENBISI_read_access,
+	ENBISI_write_access,
+	ENBISI_max_contained_entities,
+	ENBISI_max_contained_entity_depth,
+	ENBISI_max_entity_id_length,
 
 	//entity access parameters
 	ENBISI_accessing_entity,
@@ -445,11 +454,13 @@ enum EvaluableNodeBuiltInStringId
 
 	//mutate opcode mutation types
 	ENBISI_change_type,
-	ENBISI_delete,
 	ENBISI_insert,
+	ENBISI_remove,
+	ENBISI_insert_element,
+	ENBISI_remove_element,
+	ENBISI_replace_element_with_copy,
 	ENBISI_swap_elements,
-	ENBISI_deep_copy_elements,
-	ENBISI_delete_elements,
+	ENBISI_remove_all_elements,
 
 	//mix parameters
 	ENBISI_string_edit_distance,

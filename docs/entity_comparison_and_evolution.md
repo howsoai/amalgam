@@ -6,7 +6,7 @@ Evaluates to the total count of all of the nodes of `entity` and all of its cont
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
- - Requires entity: false
+ - Requires entity: true
  - Creates new scope: false
  - Creates new target scope: false
  - Value newness (whether references existing node): new
@@ -51,9 +51,9 @@ Output:
 
 ### Opcode: `mutate_entity`
 #### Parameters
-`id_path source_entity [number mutation_rate] [id_path dest_entity] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth]`
+`id_path source_entity [number mutation_rate] [id_path dest_entity] [assoc mutation_weights] [assoc operation_type] [number preserve_type_depth] [assoc immediate_number_weights] [assoc immediate_string_weights]`
 #### Description
-Creates a mutated version of the entity specified by `source_entity` like mutate. Returns the id path of a new entity created contained by the entity that ran it.  The value specified by `mutation_rate`, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses `dest_entity` as the optional destination.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "delete", "insert", "swap_elements", "deep_copy_elements", and "delete_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.
+Creates a mutated version of the entity specified by `source_entity` like mutate. Returns the id path of a new entity created contained by the entity that ran it.  The value specified by `mutation_rate`, from 0.0 to 1.0 and defaulting to 0.0001, indicates the probability that any node will experience a mutation.  Uses `dest_entity` as the optional destination.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

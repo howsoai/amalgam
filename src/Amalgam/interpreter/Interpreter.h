@@ -648,12 +648,9 @@ protected:
 	EvaluableNodeReference RewriteByFunction(EvaluableNodeReference function,
 		EvaluableNode *tree, FastHashMap<EvaluableNode *, EvaluableNode *> &original_node_to_new_node);
 
-	//populates interpreter_constraints from params starting at the offset perf_constraint_param_offset,
-	// in the order of execution cycles, maximum memory, maximum stack depth
-	//returns true if there are any performance constraints, false if not
-	//if include_entity_constraints is true, it will include constraints regarding entities
-	bool PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
-		size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool include_entity_constraints = false);
+	//populates interpreter_constraints from params starting at the offset perf_constraint_param_offset
+	void PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
+		size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool calling_entity = false);
 
 	//if interpreter_constraints is not null, populates the counters representing the current state of the interpreter
 	void PopulatePerformanceCounters(InterpreterConstraints *interpreter_constraints, Entity *entity_to_constrain_from);
@@ -746,7 +743,7 @@ protected:
 		if(interpreterConstraints == nullptr)
 			return true;
 
-		if(interpreterConstraints->readOnlyEntities)
+		if(!interpreterConstraints->writeAccess)
 			return false;
 
 		if(interpreterConstraints->maxEntityIdLength > 0
@@ -785,7 +782,7 @@ protected:
 		if(interpreterConstraints == nullptr)
 			return true;
 
-		if(interpreterConstraints->readOnlyEntities)
+		if(!interpreterConstraints->writeAccess)
 			return false;
 
 		return true;
@@ -802,7 +799,7 @@ protected:
 			if(increment_performance_counters)
 				interpreterConstraints->curExecutionStep++;
 
-			if(interpreterConstraints->curExecutionStep > interpreterConstraints->maxNumExecutionSteps)
+			if(interpreterConstraints->curExecutionStep > interpreterConstraints->maxNodeOperations)
 			{
 				interpreterConstraints->constraintsExceeded = true;
 				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionStep;
@@ -823,7 +820,7 @@ protected:
 
 		if(interpreterConstraints->ConstrainedOpcodeExecutionDepth())
 		{
-			if(opcodeStackNodes.size() > interpreterConstraints->maxOpcodeExecutionDepth)
+			if(opcodeStackNodes.size() > interpreterConstraints->maxOperationDepth)
 			{
 				interpreterConstraints->constraintsExceeded = true;
 				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;
@@ -836,8 +833,11 @@ protected:
 	}
 
 	//If interpreter_constraints is non-null, and interpreter_constraints->collect warnings is true,
-	//creates a tuple with result, a list of all warnings, and constraint violations. Otherwise, it returns result.
-	EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints);
+	//or if changes is non-null, it creates a tuple with result, a list of all warnings, and constraint
+	//violations. Otherwise, it returns result.
+	EvaluableNodeReference BundleResultWithWarningsAndChangesIfNeeded(
+		EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints,
+		EvaluableNodeReference changes = EvaluableNodeReference::Null());
 
 	//Creates a warning string for the undefined symbol represented by not_found_variable_sid.
 	//If interpreterConstraints is not null, and collect Warnings is true, this warning will be added to warnings.
@@ -888,7 +888,6 @@ public:
 	EvaluableNodeReference InterpretNode_ENT_SEQUENCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_LAMBDA(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CALL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_CALL_SANDBOXED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_WHILE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CONCLUDE_and_RETURN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_APPLY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
@@ -1013,7 +1012,7 @@ public:
 	EvaluableNodeReference InterpretNode_ENT_CONTAINS_LABEL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//Entity Query Engine

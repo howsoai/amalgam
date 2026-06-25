@@ -66,7 +66,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_SEQUENCE, "seq");
 	EmplaceNodeTypeString(ENT_LAMBDA, "lambda");
 	EmplaceNodeTypeString(ENT_CALL, "call");
-	EmplaceNodeTypeString(ENT_CALL_SANDBOXED, "call_sandboxed");
 	EmplaceNodeTypeString(ENT_WHILE, "while");
 	EmplaceNodeTypeString(ENT_CONCLUDE, "conclude");
 	EmplaceNodeTypeString(ENT_RETURN, "return");
@@ -197,7 +196,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_REMOVE_FROM_ENTITIES, "remove_from_entities");
 	EmplaceNodeTypeString(ENT_RETRIEVE_FROM_ENTITY, "retrieve_from_entity");
 	EmplaceNodeTypeString(ENT_CALL_ENTITY, "call_entity");
-	EmplaceNodeTypeString(ENT_CALL_ENTITY_GET_CHANGES, "call_entity_get_changes");
 	EmplaceNodeTypeString(ENT_CALL_ON_ENTITY, "call_on_entity");
 	EmplaceNodeTypeString(ENT_CALL_CONTAINER, "call_container");
 
@@ -337,6 +335,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_syntax, "syntax");
 	EmplaceStaticString(ENBISI_distance, "distance");
 	EmplaceStaticString(ENBISI_opcodes, "opcodes");
+	EmplaceStaticString(ENBISI_idioms, "idioms");
 
 	//file storage options
 	EmplaceStaticString(ENBISI_include_rand_seeds, "include_rand_seeds");
@@ -360,6 +359,16 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_require_version_compatibility, "require_version_compatibility");
 	EmplaceStaticString(ENBISI_amlg_version, "amlg_version");
 	EmplaceStaticString(ENBISI_version_compatible, "version_compatible");
+
+	//execution constraints
+	EmplaceStaticString(ENBISI_max_node_operations, "max_node_operations");
+	EmplaceStaticString(ENBISI_max_node_allocations, "max_node_allocations");
+	EmplaceStaticString(ENBISI_max_operation_depth, "max_operation_depth");
+	EmplaceStaticString(ENBISI_read_access, "read_access");
+	EmplaceStaticString(ENBISI_write_access, "write_access");
+	EmplaceStaticString(ENBISI_max_contained_entities, "max_contained_entities");
+	EmplaceStaticString(ENBISI_max_contained_entity_depth, "max_contained_entity_depth");
+	EmplaceStaticString(ENBISI_max_entity_id_length, "max_entity_id_length");
 
 	//entity access parameters
 	EmplaceStaticString(ENBISI_accessing_entity, "accessing_entity");
@@ -434,11 +443,13 @@ void StringInternPool::InitializeStaticStrings()
 
 	//mutate opcode mutation types
 	EmplaceStaticString(ENBISI_change_type, "change_type");
-	EmplaceStaticString(ENBISI_delete, "delete");
 	EmplaceStaticString(ENBISI_insert, "insert");
+	EmplaceStaticString(ENBISI_remove, "remove");
+	EmplaceStaticString(ENBISI_insert_element, "insert_element");
+	EmplaceStaticString(ENBISI_remove_element, "remove_element");
+	EmplaceStaticString(ENBISI_replace_element_with_copy, "replace_element_with_copy");
 	EmplaceStaticString(ENBISI_swap_elements, "swap_elements");
-	EmplaceStaticString(ENBISI_deep_copy_elements, "deep_copy_elements");
-	EmplaceStaticString(ENBISI_delete_elements, "delete_elements");
+	EmplaceStaticString(ENBISI_remove_all_elements, "remove_all_elements");
 
 	//mix parameters
 	EmplaceStaticString(ENBISI_string_edit_distance, "string_edit_distance");

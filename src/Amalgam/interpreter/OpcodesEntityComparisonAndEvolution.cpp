@@ -40,6 +40,7 @@ static OpcodeInitializer _ENT_TOTAL_ENTITY_SIZE(ENT_TOTAL_ENTITY_SIZE, &Interpre
 	(total_entity_size "Entity1")
 ))&", R"(67)", "", R"((destroy_entities "Entity1"))"}
 		});
+	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.1;
 	d.opcodeGroup = _opcode_group;
@@ -63,9 +64,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE(Evaluabl
 
 static OpcodeInitializer _ENT_MUTATE_ENTITY(ENT_MUTATE_ENTITY, &Interpreter::InterpretNode_ENT_MUTATE_ENTITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path source_entity [number mutation_rate] [id_path dest_entity] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";
+	d.parameters = R"(id_path source_entity [number mutation_rate] [id_path dest_entity] [assoc mutation_weights] [assoc operation_type] [number preserve_type_depth] [assoc immediate_number_weights] [assoc immediate_string_weights])";
 	d.returns = R"(id_path)";
-	d.description = R"(Creates a mutated version of the entity specified by `source_entity` like mutate. Returns the id path of a new entity created contained by the entity that ran it.  The value specified by `mutation_rate`, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses `dest_entity` as the optional destination.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "delete", "insert", "swap_elements", "deep_copy_elements", and "delete_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.)";
+	d.description = R"(Creates a mutated version of the entity specified by `source_entity` like mutate. Returns the id path of a new entity created contained by the entity that ran it.  The value specified by `mutation_rate`, from 0.0 to 1.0 and defaulting to 0.0001, indicates the probability that any node will experience a mutation.  Uses `dest_entity` as the optional destination.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -175,7 +176,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 		return EvaluableNodeReference::Null();
 
 	//get mutation rate if applicable
-	double mutation_rate = 0.00001;
+	double mutation_rate = 0.0001;
 	if(ocn.size() > 1)
 		mutation_rate = InterpretNodeIntoNumberValue(ocn[1]);
 
@@ -217,9 +218,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 		}
 	}
 
+	//preserve the top layer of the entity by default
 	size_t preserve_type_depth = 1;
 	if(ocn.size() > 5)
 		preserve_type_depth = static_cast<size_t>(std::max(0.0, InterpretNodeIntoNumberValue(ocn[5])));
+
+	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType imm_number_weights;
+	if(ocn.size() > 6)
+	{
+		auto imm_number_weights_node = InterpretNodeForImmediateUse(ocn[6]);
+		if(EvaluableNode::IsAssociativeArray(imm_number_weights_node))
+			imm_number_weights.Initialize(imm_number_weights_node->GetMappedChildNodesReference(), true);
+	}
+
+	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType imm_string_weights;
+	if(ocn.size() > 7)
+	{
+		auto imm_string_weights_node = InterpretNodeForImmediateUse(ocn[7]);
+		if(EvaluableNode::IsAssociativeArray(imm_string_weights_node))
+			imm_string_weights.Initialize(imm_string_weights_node->GetMappedChildNodesReference(), true);
+	}
 
 	//retrieve the entities after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
@@ -231,7 +249,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 
 	//create new entity by mutating
 	Entity *new_entity = EntityManipulation::MutateEntity(this, source_entity, mutation_rate,
-		mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr, preserve_type_depth);
+		mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr, preserve_type_depth,
+		imm_number_weights, imm_string_weights);
 
 	//accumulate usage
 	if(ConstrainedAllocatedNodes())

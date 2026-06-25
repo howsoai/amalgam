@@ -37,7 +37,11 @@
 	(store "./distance_and_surprisal.md" (concat
 		(help "distance") "\n"
 	))
-	
+
+	(store "./idioms.md" (concat
+		(help "idioms") "\n"
+	))
+
 	(assign "current_opcode_group" "")
 
 	(store "./opcodes.md" (concat

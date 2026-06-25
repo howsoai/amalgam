@@ -456,7 +456,7 @@ __forceinline static std::pair<bool, std::string> ModeString(ValueIterator first
 		ValueFunction get_value, bool has_weight, WeightFunction get_weight)
 {
 	return Mode<ValueIterator, std::string,
-		std::hash<std::string>, std::equal_to<std::string>>(first, last,
+		FastHasher<std::string>, std::equal_to<std::string>>(first, last,
 			get_value, has_weight, get_weight, std::string());
 }
 

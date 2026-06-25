@@ -18,7 +18,7 @@ namespace EntityQueryBuilder
 	{
 		MAX_TO_FIND_OR_MAX_DISTANCE,
 		POSITION_LABELS,
-		POSITION_OR_ENTITIES,
+		POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT,
 
 		//optional params
 		MINKOWSKI_PARAMETER,
@@ -42,6 +42,7 @@ namespace EntityQueryBuilder
 			|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_CONVICTIONS
 			|| t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
 			|| t == ENT_QUERY_ENTITY_KL_DIVERGENCES || t == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+			|| t == ENT_QUERY_ENTITY_CLUSTERS
 			);
 	}
 
@@ -559,7 +560,7 @@ namespace EntityQueryBuilder
 		auto &ocn = cn->GetOrderedChildNodes();
 
 		//need to at least have position, otherwise not valid query
-		if(ocn.size() <= POSITION_OR_ENTITIES)
+		if(ocn.size() <= POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT)
 			return;
 
 		//if ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, see if excluding an entity in the previous query -- if so, exclude here
@@ -667,7 +668,7 @@ namespace EntityQueryBuilder
 			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES
 			|| condition_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
 		{
-			EvaluableNode *entities = ocn[POSITION_OR_ENTITIES];
+			EvaluableNode *entities = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT];
 			if(EvaluableNode::IsOrderedArray(entities))
 			{
 				auto &entities_ocn = entities->GetOrderedChildNodesReference();
@@ -678,7 +679,7 @@ namespace EntityQueryBuilder
 		}
 		else if(condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
 		{
-			EvaluableNode *positions = ocn[POSITION_OR_ENTITIES];
+			EvaluableNode *positions = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT];
 			if(!EvaluableNode::IsOrderedArray(positions))
 			{
 				cur_condition->queryType = ENT_NULL;
@@ -686,10 +687,15 @@ namespace EntityQueryBuilder
 			}
 			cur_condition->positionsToCompare = &positions->GetOrderedChildNodesReference();
 		}
+		else if(condition_type == ENT_QUERY_ENTITY_CLUSTERS)
+		{
+			EvaluableNode *cluster_size = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT];
+			cur_condition->minClusterWeight = std::max<double>(0.0, EvaluableNode::ToNumber(cluster_size, 1.0));
+		}
 		else //ENT_QUERY_NEAREST_GENERALIZED_DISTANCE or ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 		{
 			//set position
-			EvaluableNode *position = ocn[POSITION_OR_ENTITIES];
+			EvaluableNode *position = ocn[POSITION_OR_ENTITIES_OR_MIN_CLUSTER_WEIGHT];
 			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == cur_condition->positionLabels.size()))
 			{
 				CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),
@@ -811,7 +817,8 @@ namespace EntityQueryBuilder
 			|| condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 			|| condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
 			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
-			|| condition_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS)
+			|| condition_type == ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS
+			|| condition_type == ENT_QUERY_ENTITY_CLUSTERS)
 		{
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{

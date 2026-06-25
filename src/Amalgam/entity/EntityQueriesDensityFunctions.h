@@ -55,11 +55,12 @@ inline double PartialKullbackLeiblerDivergenceFromIndices(const std::vector<Dist
 }
 
 //manages all types of processing related to conviction
-class ConvictionProcessor
+class EntityQueriesDensityProcessor
 {
+public:
 	using EntityReference = size_t;
 	using EntityReferenceSet = BitArrayIntegerSet;
-public:
+
 	//buffers to be reused for less memory churn
 	struct ConvictionProcessorBuffers
 	{
@@ -71,11 +72,11 @@ public:
 	};
 
 #ifdef MULTITHREAD_SUPPORT
-	ConvictionProcessor(KnnCache &cache,
+	EntityQueriesDensityProcessor(KnnCache &cache,
 		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
 		StringInternPool::StringID radius_label, bool run_concurrently)
 #else
-	ConvictionProcessor(KnnCache &cache,
+	EntityQueriesDensityProcessor(KnnCache &cache,
 		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
 		StringInternPool::StringID radius_label)
 #endif
@@ -416,7 +417,7 @@ public:
 	// if false, then will compute the conviction as if those entities were added or included
 	inline void ComputeCaseKLDivergences(EntityReferenceSet &entities_to_compute, std::vector<double> &convictions_out, bool normalize_convictions, bool conviction_of_removal)
 	{
-		//prime the cache
+		//prime the cache, including one extra case so each can be left out
 	#ifdef MULTITHREAD_SUPPORT
 		knnCache->PreCacheKnn(nullptr, numNearestNeighbors + 1, true, runConcurrently);
 	#else
@@ -629,6 +630,12 @@ public:
 		else
 			return KullbackLeiblerDivergence(scaled_base_distance_contribs, combined_model_distance_contribs);
 	}
+
+	//computes clusters for each entity and sets the corresponding index of clusters_out to the
+	//cluster id (a positive integer per cluster; 0 means noise / not assigned to any cluster).
+	//minimum_cluster_weight is the least summed entity weight that can constitute a cluster.
+	void ComputeCaseClusters(EntityReferenceSet &entities_to_compute,
+		std::vector<double> &clusters_out, double minimum_cluster_weight);
 
 	protected:
 

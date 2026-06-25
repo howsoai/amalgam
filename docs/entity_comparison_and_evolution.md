@@ -6,7 +6,7 @@ Evaluates to the total count of all of the nodes of `entity` and all of its cont
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
- - Requires entity: false
+ - Requires entity: true
  - Creates new scope: false
  - Creates new target scope: false
  - Value newness (whether references existing node): new

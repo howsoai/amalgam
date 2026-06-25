@@ -1035,6 +1035,7 @@ static OpcodeInitializer _ENT_UNASSIGN(ENT_UNASSIGN, &Interpreter::InterpretNode
 	(exists "foo")
 ))&", R"(.false)"}
 		});
+	d.hasSideEffects = true;
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 1.0;
@@ -1140,7 +1141,7 @@ static OpcodeInitializer _ENT_TARGET(ENT_TARGET, &Interpreter::InterpretNode_ENT
 	d 3
 	e [0 1 2 3 0 4]
 })"},
-			{R"&((call_sandboxed {
+			{R"&((call {
 	a 0
 	b 1
 	c 2

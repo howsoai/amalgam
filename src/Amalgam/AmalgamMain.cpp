@@ -81,6 +81,31 @@ Options:
                      For example, -xe would yield all permissions but remove environment and system permissions,
                      whereas +io would only allow console input and output
 
+    --max-node-operations [number]
+                     Specifies the maximum number of nodes that can be executed.  If the limit is exceeded,
+                     execution will halt and a null will be returned.  If run with --repl, it will be the
+                     maximum per command entered.
+
+    --max-node-allocations [number]
+                     Specifies the maximum number of nodes that can be allocated.  If the limit is exceeded,
+                     execution will halt and a null will be returned.
+
+    --max-operations-depth [number]
+                     Specifies the maximum depth that nested opcodes will be called.  If the limit is exceeded,
+                     execution will halt and a null will be returned.
+
+    --max-entities [number]
+                     Specifies the maximum total number of entities that can be created.  If the limit is exceeded,
+                     the next entity will not be created.
+
+    --max-entity-depth [number]
+                     Specifies the maximum depth that nested entities can be created.  If the limit is exceeded,
+                     the next entity will not be created.
+
+    --max-entity-id-len [number]
+                     Specifies the maximum length of an entity id.  If the limit is exceeded, the entity will
+                     not be created.
+
     --debug          When specified, begins in debugging mode
 
     --debug-minimal  When specified, begins in debugging mode with minimal output while stepping
@@ -89,8 +114,6 @@ Options:
 
     --warn-on-undefined
                      When specified, amalgam will emit warnings for undefined variables
-
-    --nosbfds        Disables the Separable Box Filter Data Store acceleration (only for debugging)
 
     --trace          Uses commands via stdio to act as if it were being called as a library
 
@@ -159,29 +182,36 @@ PLATFORM_MAIN_CONSOLE
 {
 	PLATFORM_ARGS_CONSOLE;
 
-//run options
-bool debug_state = false;
-bool debug_minimal = false;
-bool debug_sources = false;
-bool warn_on_undefined = false;
-bool profile_opcodes = false;
-bool profile_labels = false;
-bool run_as_repl = false;
-size_t profile_count = 0;
-std::string profile_out_file;
-bool run_trace = false;
-bool run_tracefile = false;
-bool run_validate_amalgam = false;
-std::string tracefile;
-std::string amlg_file_to_run;
-bool print_to_stdio = true;
-std::string write_log_filename;
-std::string print_log_filename;
+	//run options
+	bool debug_state = false;
+	bool debug_minimal = false;
+	bool debug_sources = false;
+	bool warn_on_undefined = false;
+	bool profile_opcodes = false;
+	bool profile_labels = false;
+	bool run_as_repl = false;
+	size_t profile_count = 0;
+	std::string profile_out_file;
+	bool run_trace = false;
+	bool run_tracefile = false;
+	bool run_validate_amalgam = false;
+	std::string tracefile;
+	std::string amlg_file_to_run;
+	bool print_to_stdio = true;
+	std::string write_log_filename;
+	std::string print_log_filename;
 #if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 	size_t num_threads = 0;
 #endif
-	bool debug_internal_memory = Platform_IsDebuggerPresent();
+	size_t max_exec_count = 0;
+	size_t max_alloc = 0;
+	size_t max_exec_depth = 0;
+	size_t max_entities = 0;
+	size_t max_entity_depth = 0;
+	size_t max_entity_id_len = 0;
+
 	ExecutionPermissions entity_permissions = ExecutionPermissions::AllPermissions();
+	bool debug_internal_memory = Platform_IsDebuggerPresent();
 
 	std::string rand_seed;
 	if(Platform_IsDebuggerPresent())
@@ -222,6 +252,18 @@ std::string print_log_filename;
 			profile_count = std::max<size_t>(std::atoi(args[++i].data()), 0);
 		else if(args[i] == "--p-file" && i + 1 < args.size())
 			profile_out_file = args[++i];
+		else if(args[i] == "--max-node-operations" && i + 1 < args.size())
+			max_exec_count = std::max<size_t>(std::atoi(args[++i].data()), 0);
+		else if(args[i] == "--max-node-allocations" && i + 1 < args.size())
+			max_alloc = std::max<size_t>(std::atoi(args[++i].data()), 0);
+		else if(args[i] == "--max-operations-depth" && i + 1 < args.size())
+			max_exec_depth = std::max<size_t>(std::atoi(args[++i].data()), 0);
+		else if(args[i] == "--max-entities" && i + 1 < args.size())
+			max_entities = std::max<size_t>(std::atoi(args[++i].data()), 0);
+		else if(args[i] == "--max-entity-depth" && i + 1 < args.size())
+			max_entity_depth = std::max<size_t>(std::atoi(args[++i].data()), 0);
+		else if(args[i] == "--max-entity-id-len" && i + 1 < args.size())
+			max_entity_id_len = std::max<size_t>(std::atoi(args[++i].data()), 0);
 		else if(args[i] == "--debug")
 			debug_state = true;
 		else if(args[i] == "--debug-minimal")
@@ -233,8 +275,6 @@ std::string print_log_filename;
 			debug_sources = true;
 		else if(args[i] == "--warn-on-undefined")
 			warn_on_undefined = true;
-		else if(args[i] == "--nosbfds")
-			_enable_SBF_datastore = false;
 		else if(args[i] == "--trace")
 			run_trace = true;
 		else if(args[i] == "--tracefile" && i + 1 < args.size())
@@ -248,6 +288,11 @@ std::string print_log_filename;
 		else if(args[i] == "--numthreads")
 			num_threads = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
 	#endif
+		else if(args[i] == "--debug-no-sbfds")
+		{
+			//parameter for internal debugging only -- intentionally not listed in documentation
+			_enable_SBF_datastore = false;
+		}
 		else if(args[i] == "--debug-internal-memory")
 		{
 			//parameter for internal debugging only -- intentionally not listed in documentation
@@ -276,6 +321,31 @@ std::string print_log_filename;
 	Concurrency::SetMaxNumThreads(num_threads);
 #endif
 
+	//process interpreter constraints
+	InterpreterConstraints interpreter_constraints;
+	interpreter_constraints.maxNodeOperations = max_exec_count;
+	interpreter_constraints.maxNumAllocatedNodes = max_alloc;
+	interpreter_constraints.maxOperationDepth = max_exec_depth;
+
+	if(max_entities > 0)
+	{
+		interpreter_constraints.constrainMaxContainedEntities = true;
+		interpreter_constraints.maxContainedEntities = max_entities;
+	}
+
+	if(max_entity_depth)
+	{
+		interpreter_constraints.constrainMaxContainedEntityDepth = true;
+		interpreter_constraints.maxContainedEntityDepth = max_entity_depth;
+	}
+
+	interpreter_constraints.maxEntityIdLength = max_entity_id_len;
+
+	InterpreterConstraints *interpreter_constraints_ptr = nullptr;
+	if(interpreter_constraints.AnyActiveConstraints())
+		interpreter_constraints_ptr = &interpreter_constraints;
+
+	//debugging information
 	if(debug_state)
 		Interpreter::SetDebuggingState(true);
 
@@ -389,8 +459,10 @@ std::string print_log_filename;
 		//execute the entity
 		if(!run_as_repl)
 		{
+			//don't need a return value
 			entity->Execute(StringInternPool::NOT_A_STRING_ID, &scope_stack, false, nullptr,
-				&write_listeners, print_listener);
+				&write_listeners, print_listener, interpreter_constraints_ptr,
+				EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
 		}
 		else //repl
 		{
@@ -455,7 +527,8 @@ std::string print_log_filename;
 				for(auto &w : warnings)
 					std::cerr << w << std::endl;
 
-				auto result = entity->ExecuteOnEntity(code, &scope_stack, nullptr, &write_listeners, print_listener);
+				auto result = entity->ExecuteOnEntity(code, &scope_stack, nullptr,
+					&write_listeners, print_listener, interpreter_constraints_ptr);
 				std::cout << Parser::Unparse(result, true, true, true);
 				running = !(result != nullptr && result->GetType() == ENT_CONCLUDE);
 				entity->evaluableNodeManager.FreeNodeTreeIfPossible(result);

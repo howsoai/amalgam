@@ -146,6 +146,10 @@ public:
 
 	//true if the opcode may return itself if all child nodes are also idempotent
 	bool potentiallyIdempotent = false;
+
+	//true if the opcode may retrieve data from outside and require execution
+	bool retrievesData = false;
+
 	//true if the opcode may affect data outside itself
 	bool hasSideEffects = false;
 
@@ -212,6 +216,12 @@ public:
 __forceinline OpcodeDetails::OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t)
 {
 	return _opcode_details[t].orderedChildNodeType;
+}
+
+//returns true if the opcode may retrieve data
+__forceinline bool DoesOpcodeRetrieveData(EvaluableNodeType t)
+{
+	return _opcode_details[t].retrievesData;
 }
 
 //returns true if the opcode modifies things outside of its return

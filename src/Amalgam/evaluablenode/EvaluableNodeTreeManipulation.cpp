@@ -1653,7 +1653,8 @@ void EvaluableNodeTreeManipulation::ReplaceStringsInTree(EvaluableNode *tree, Co
 	}
 }
 
-void EvaluableNodeTreeManipulation::GetStringsFromTree(EvaluableNode *tree, std::vector<std::string> &strings, EvaluableNode::ReferenceSetType &checked)
+void EvaluableNodeTreeManipulation::GetStringsFromTree(
+	EvaluableNode *tree, std::vector<std::string> &strings, EvaluableNode::ReferenceSetType &checked)
 {
 	if(tree == nullptr)
 		return;

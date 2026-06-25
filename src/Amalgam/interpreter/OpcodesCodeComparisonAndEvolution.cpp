@@ -1886,7 +1886,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIMPLIFY(EvaluableNode *en
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	auto node = InterpretNodeForImmediateUse(ocn[0]);
+	auto node = InterpretNode(ocn[0]);
+	if(!node.unique)
+		node = evaluableNodeManager->DeepAllocCopy(node, false);
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::SimplifyTree(evaluableNodeManager, node);
 	return EvaluableNodeReference(result, true);

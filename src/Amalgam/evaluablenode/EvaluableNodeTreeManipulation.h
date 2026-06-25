@@ -594,7 +594,7 @@ public:
 		ReplaceStringsInTree(tree, to_replace, checked);
 	}
 
-	//returns a simplified copy of tree
+	//returns a simplified tree; it assumes the tree is unique
 	static EvaluableNode *SimplifyTree(EvaluableNodeManager *enm, EvaluableNode *tree)
 	{
 		EvaluableNode::ReferenceAssocType references;

@@ -1446,7 +1446,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 				{
 					if(location < 1)
 					{
-						mcn.erase(key);
+						n->EraseMappedChildNode(key);
 						break;
 					}
 					location--;

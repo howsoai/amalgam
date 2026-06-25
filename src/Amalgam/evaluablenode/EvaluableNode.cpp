@@ -950,7 +950,6 @@ bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPoo
 	}
 
 	auto &mcn = GetMappedChildNodesReference();
-
 	auto [inserted_node, inserted] = mcn.emplace(sid, node);
 
 	if(!inserted)
@@ -995,6 +994,10 @@ EvaluableNode *EvaluableNode::EraseMappedChildNode(const StringInternPool::Strin
 	string_intern_pool.DestroyStringReference(sid);
 	EvaluableNode *erased_value = found->second;
 	mcn.erase(found);
+
+	if(!GetIsIdempotent() && mcn.size() == 0)
+		SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(type));
+
 	return erased_value;
 }
 

@@ -937,7 +937,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 			bool match = (n1->GetStringIDReference() == n2->GetStringIDReference());
 			return std::make_pair(n1, match ? 1.0 : (types_must_match ? 0.0 : 0.125));
 		}
-		//same type but not immeditae
+		//same type but not immediate
 		return std::make_pair(n1, 1.0);
 	}
 
@@ -949,14 +949,6 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		if(n2_type == ENT_UNORDERED_LIST)		return std::make_pair(n1, 0.125);
 		if(n2_type == ENT_NULL)					return std::make_pair(n2, 0.125);
 		if(n2_type == ENT_LIST)					return std::make_pair(n2, 0.125);
-		return std::make_pair(nullptr, 0.0);
-
-	case ENT_CALL:
-		if(n2_type == ENT_CALL_SANDBOXED)		return std::make_pair(n1, 0.125);
-		return std::make_pair(nullptr, 0.0);
-
-	case ENT_CALL_SANDBOXED:
-		if(n2_type == ENT_CALL)					return std::make_pair(n2, 0.125);
 		return std::make_pair(nullptr, 0.0);
 
 	case ENT_LET:

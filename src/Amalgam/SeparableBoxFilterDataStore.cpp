@@ -1475,7 +1475,7 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 
 	InterpreterConstraints interpreter_constraints;
 	calling_interpreter.PopulateInterpreterConstraintsFromParams(ocn, 3, interpreter_constraints, true);
-	interpreter_constraints.readOnlyEntities = true;
+	interpreter_constraints.writeAccess = false;
 	interpreter_constraints.collectWarnings = false;
 
 	EvaluableNodeReference args = EvaluableNodeReference::Null();

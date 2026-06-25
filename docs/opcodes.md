@@ -35,7 +35,6 @@
   - [seq](./control_flow.md#opcode-seq)
   - [lambda](./control_flow.md#opcode-lambda)
   - [call](./control_flow.md#opcode-call)
-  - [call_sandboxed](./control_flow.md#opcode-call_sandboxed)
   - [while](./control_flow.md#opcode-while)
   - [conclude](./control_flow.md#opcode-conclude)
   - [return](./control_flow.md#opcode-return)
@@ -157,7 +156,6 @@
   - [remove_from_entities](./entity_access_and_manipulation.md#opcode-remove_from_entities)
   - [retrieve_from_entity](./entity_access_and_manipulation.md#opcode-retrieve_from_entity)
   - [call_entity](./entity_access_and_manipulation.md#opcode-call_entity)
-  - [call_entity_get_changes](./entity_access_and_manipulation.md#opcode-call_entity_get_changes)
   - [call_on_entity](./entity_access_and_manipulation.md#opcode-call_on_entity)
   - [call_container](./entity_access_and_manipulation.md#opcode-call_container)
 ### Entity Query Engine

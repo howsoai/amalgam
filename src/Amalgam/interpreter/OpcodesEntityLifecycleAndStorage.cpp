@@ -43,8 +43,9 @@ static OpcodeInitializer _ENT_CREATE_ENTITIES(ENT_CREATE_ENTITIES, &Interpreter:
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 	d.requiresEntity = true;
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -152,6 +153,7 @@ static OpcodeInitializer _ENT_CLONE_ENTITIES(ENT_CLONE_ENTITIES, &Interpreter::I
 		});
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;
@@ -259,6 +261,7 @@ static OpcodeInitializer _ENT_MOVE_ENTITIES(ENT_MOVE_ENTITIES, &Interpreter::Int
 		});
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
@@ -358,6 +361,7 @@ static OpcodeInitializer _ENT_DESTROY_ENTITIES(ENT_DESTROY_ENTITIES, &Interprete
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 1.5;
 	d.opcodeGroup = _opcode_group;
@@ -503,6 +507,7 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 	[4.4 3.2 1.3 0.2 "setosa"]
 ])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.csv") (system "system" "rm file.csv")))"}
 		});
+	d.retrievesData = true;
 	d.permissions = ExecutionPermissions::Permission::LOAD;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 8.5;
@@ -637,6 +642,7 @@ static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::Interpr
 		});
 	d.permissions = ExecutionPermissions::Permission::LOAD;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
@@ -823,6 +829,7 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 		});
 	d.permissions = ExecutionPermissions::Permission::STORE;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
@@ -960,6 +967,7 @@ static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::Inter
 		});
 	d.permissions = ExecutionPermissions::Permission::STORE;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.1;
 	d.opcodeGroup = _opcode_group;
@@ -1051,6 +1059,7 @@ static OpcodeInitializer _ENT_CONTAINS_ENTITY(ENT_CONTAINS_ENTITY, &Interpreter:
 	]
 ))&", R"([.true .false])", "", R"((destroy_entities "Entity")"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
@@ -1122,6 +1131,7 @@ static OpcodeInitializer _ENT_FLATTEN_ENTITY(ENT_FLATTEN_ENTITY, &Interpreter::I
 	[first_rand second_rand]
 ))&", R"([0.611779739433564 0.611779739433564])", "", R"((apply "destroy_entities" (contained_entities)))"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
@@ -1172,6 +1182,7 @@ static OpcodeInitializer _ENT_RETRIEVE_ENTITY_ROOT(ENT_RETRIEVE_ENTITY_ROOT, &In
 	(retrieve_entity_root "Entity")
 ))&", R"({1 2 three 3})", "", R"((destroy_entities "Entity"))"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
@@ -1221,6 +1232,7 @@ static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Inte
 ))&", R"({a 4 b 5 c 6})", "", R"((destroy_entities "Entity"))"}
 		});
 	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.hasSideEffects = true;
@@ -1329,6 +1341,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_PERMISSIONS(ENT_GET_ENTITY_PERMISSIONS,
 	system .false
 })", "", R"((destroy_entities "Entity"))"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.05;
@@ -1381,6 +1394,7 @@ static OpcodeInitializer _ENT_SET_ENTITY_PERMISSIONS(ENT_SET_ENTITY_PERMISSIONS,
 	system .true
 })", "", R"((destroy_entities "Entity"))"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.hasSideEffects = true;

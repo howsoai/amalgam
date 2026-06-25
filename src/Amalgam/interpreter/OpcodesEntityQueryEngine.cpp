@@ -2112,6 +2112,49 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS(ENT
 	return d;
 });
 
+static OpcodeInitializer _ENT_QUERY_ENTITY_CLUSTERS(ENT_QUERY_ENTITY_CLUSTERS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
+	OpcodeDetails d;
+	d.parameters = R"(list|number selection_bandwidth  list feature_labels number min_cluster_weight [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [string weights_selection_feature] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
+	d.returns = R"(query)";
+	d.allowsConcurrency = true;
+	d.description = R"(When used as a query argument, computes a cluster id for each of the entities using the HDBSCAN algorithm.  `min_cluster_weight` is the smallest accumulated entity weight that will be considered a cluster, and can be 0.  The cluster ids returned are nonnegative integers, with the id of zero denoting entities that are independent and isolated from all clusters (noise).  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the cluster id as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding cluster ids, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
+	d.examples = MakeAmalgamExamples({
+		{R"&((seq
+	(create_entities "entity1" (assoc "x" 0 "y" 0))
+	(create_entities "entity2" (assoc "x" 0 "y" 1))
+	(create_entities "entity3" (assoc "x" 1 "y" 0))
+	(create_entities "entity4" (assoc "x" 10 "y" 10))
+	(create_entities "entity5" (assoc "x" 10 "y" 11))
+	(create_entities "entity6" (assoc "x" 11 "y" 10))
+	(compute_on_contained_entities
+		[
+			(query_entity_clusters
+				2
+				["x" "y"]
+				2
+				2
+				.null
+				(assoc "x" "continuous" "y" "continuous")
+			)
+		]
+	)
+))&", R"({
+	entity1 1
+	entity2 1
+	entity3 1
+	entity4 2
+	entity5 2
+	entity6 2
+})", "", R"((apply "destroy_entities" (contained_entities)))"}
+		});
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
+	d.isQuery = true;
+	d.potentiallyIdempotent = true;
+	d.frequencyPer10000Opcodes = 0.01;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_opcodes(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//use stack to lock it in place, but copy it back to temporary before returning

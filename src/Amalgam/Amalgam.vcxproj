@@ -593,6 +593,7 @@
     <ClCompile Include="entity\EntityExternalInterface.cpp" />
     <ClCompile Include="entity\EntityManipulation.cpp" />
     <ClCompile Include="entity\EntityQueries.cpp" />
+    <ClCompile Include="entity\EntityQueriesClustering.cpp" />
     <ClCompile Include="entity\EntityQueryCaches.cpp" />
     <ClCompile Include="entity\EntityWriteListener.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNode.cpp" />
@@ -660,6 +661,7 @@
     <ClInclude Include="entity\EntityExternalInterface.h" />
     <ClInclude Include="entity\EntityManipulation.h" />
     <ClInclude Include="entity\EntityQueries.h" />
+    <ClInclude Include="entity\EntityQueriesClustering.h" />
     <ClInclude Include="entity\EntityQueriesDensityFunctions.h" />
     <ClInclude Include="entity\EntityQueriesStatistics.h" />
     <ClInclude Include="entity\EntityQueryBuilder.h" />

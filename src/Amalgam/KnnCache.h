@@ -158,9 +158,14 @@ public:
 
 	//returns the container for the knn cache for index
 	//note that this should only be called after PreCacheKnn has been called
-	std::vector<DistanceReferencePair<size_t>> &GetKnnCache(size_t index)
+	inline std::vector<DistanceReferencePair<size_t>> &GetKnnCache(size_t index)
 	{
 		return cachedNeighbors[index];
+	}
+
+	inline std::vector<std::vector<DistanceReferencePair<size_t>>> &GetFullKnnCache()
+	{
+		return cachedNeighbors;
 	}
 
 	//returns a pointer to the relevant indices of the cache

@@ -1414,7 +1414,11 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			}
 			else if(ocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED)
 			{
-				size_t location = mp.interpreter->randomStream.RandSize( (ocn.size() - 1) / 2);
+				size_t location = 0;
+				//guard against empty ocn, and round down to pair start
+				if(ocn.size() > 0)
+					location = mp.interpreter->randomStream.RandSize((ocn.size() - 1) / 2);
+
 				ocn.insert(ocn.begin() + 1 + 2 * location, new_node);
 				n->UpdateFlagsBasedOnNewChildNode(new_node);
 

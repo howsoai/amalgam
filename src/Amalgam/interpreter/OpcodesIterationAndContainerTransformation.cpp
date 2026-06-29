@@ -791,9 +791,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 	}
 	else //multiple inputs
 	{
-		EvaluableNode *inputs_list_node = evaluableNodeManager->AllocNode(ENT_LIST);
+		EvaluableNodeReference inputs_list_node(evaluableNodeManager->AllocNode(ENT_LIST), true);
 		//set to need cycle check because don't know what will be attached
-		inputs_list_node->SetNeedCycleCheck(true);
 		inputs_list_node->SetOrderedChildNodesSize(ocn.size() - 1);
 		auto &inputs = inputs_list_node->GetOrderedChildNodesReference();
 
@@ -808,24 +807,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		for(size_t i = 0; i < ocn.size() - 1; i++)
 		{
 			inputs[i] = InterpretNode(ocn[i + 1]);
-			if(inputs[i] != nullptr)
+			if(EvaluableNode::IsNull(inputs[i]) || inputs[i]->IsImmediate())
+				continue;
+
+			if(inputs[i]->IsAssociativeArray())
 			{
-				if(!inputs[i]->IsAssociativeArray())
+				need_assoc = true;
+				for(auto &[n_id, _] : inputs[i]->GetMappedChildNodesReference())
 				{
-					largest_size = std::max(largest_size, inputs[i]->GetOrderedChildNodes().size());
-				}
-				else
-				{
-					need_assoc = true;
-					for(auto &[n_id, _] : inputs[i]->GetMappedChildNodes())
-					{
-						auto [inserted_node, inserted] = all_keys.insert(n_id);
-						//if it was inserted, then need to keep track of the string reference
-						if(inserted)
-							string_intern_pool.CreateStringReference(n_id);
-					}
+					auto [inserted_node, inserted] = all_keys.insert(n_id);
+					//if it was inserted, then need to keep track of the string reference
+					if(inserted)
+						string_intern_pool.CreateStringReference(n_id);
 				}
 			}
+			else //ordered
+			{
+				largest_size = std::max(largest_size, inputs[i]->GetOrderedChildNodesReference().size());
+			}
+
+			inputs_list_node->UpdateFlagsBasedOnNewChildNode(inputs[i]);
 		}
 		node_stack.PopEvaluableNode();
 
@@ -955,6 +956,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 		//free all references
 		string_intern_pool.DestroyStringReferences(all_keys);
+
+		//result will be marked if not unique if there were any side effects
+		if(result.unique)
+			evaluableNodeManager->FreeNodeTreeIfPossible(inputs_list_node);
 	}
 
 	return result;
@@ -2338,6 +2343,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 	}
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(index_list);
+	//don't need the top node of the zipped anymore
+	evaluableNodeManager->FreeNodeIfPossible(zipped);
 	return result;
 }
 

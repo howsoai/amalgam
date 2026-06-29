@@ -38,7 +38,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 		return EvaluableNodeReference::Null();
 
 	//get the "list" itself
-	auto list = InterpretNodeForImmediateUse(ocn[0]);
+	auto list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -308,7 +308,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto list = InterpretNodeForImmediateUse(ocn[0]);
+	auto list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -452,7 +452,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 		return EvaluableNodeReference::Null();
 
 	//get the list itself
-	auto list = InterpretNodeForImmediateUse(ocn[0]);
+	auto list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -726,7 +726,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto list = InterpretNodeForImmediateUse(ocn[0]);
+	auto list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -1198,7 +1198,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, Eva
 	if(ocn_size < 1)
 		return EvaluableNodeReference::Null();
 
-	auto source = InterpretNodeForImmediateUse(ocn[0]);
+	auto source = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(ocn_size < 2 || source == nullptr)
 		return source;
 

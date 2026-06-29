@@ -1253,9 +1253,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS(Evalua
 		//get value to assign first before getting the entity in case it needs to be locked
 		EvaluableNodeReference new_code = EvaluableNodeReference::Null();
 		if(i + 1 < ocn.size())
-			new_code = InterpretNodeForImmediateUse(ocn[i + 1]);
+			new_code = InterpretNodeWithoutCopyingImmediates(ocn[i + 1]);
 		else
-			new_code = InterpretNodeForImmediateUse(ocn[i]);
+			new_code = InterpretNodeWithoutCopyingImmediates(ocn[i]);
 		auto node_stack = CreateOpcodeStackStateSaver(new_code);
 
 		EntityWriteReference target_entity;

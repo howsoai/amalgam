@@ -127,7 +127,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	}
 
 	//if a function is specified, then set up appropriate data structures to call the function and move the indices for the index and value parameters
-	EvaluableNodeReference function = InterpretNodeForImmediateUse(ocn[0]);
+	EvaluableNodeReference function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	if(immediate_result.NoValueRequested())
@@ -406,7 +406,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
+	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 	auto node_stack = CreateOpcodeStackStateSaver(function);
@@ -534,7 +534,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
+	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -1122,7 +1122,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	else //ocn.size() > 1
 	{
 		list_index = 1;
-		function = InterpretNodeForImmediateUse(ocn[0]);
+		function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 
 		if(ocn.size() > 2)
@@ -1148,7 +1148,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
 					[&](auto operation)
 					{
-						auto list = InterpretNodeForImmediateUse(ocn[list_index]);
+						auto list = InterpretNodeWithoutCopyingImmediates(ocn[list_index]);
 						if(EvaluableNode::IsNull(list))
 							return EvaluableNodeReference::Null();
 
@@ -1689,7 +1689,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 
 		//need to interpret node here in case function is actually a null
 		// null is a special non-function for weave
-		function = InterpretNodeForImmediateUse(ocn[0]);
+		function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 	}
 
@@ -1842,7 +1842,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
+	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
@@ -2100,7 +2100,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 		index_list_index++;
 		value_list_index++;
 
-		function = InterpretNodeForImmediateUse(ocn[0]);
+		function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 	}
 

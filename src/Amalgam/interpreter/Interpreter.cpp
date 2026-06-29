@@ -91,7 +91,7 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 		}
 		else //just need to interpret
 		{
-			new_scope = InterpretNodeForImmediateUse(new_scope_node);
+			new_scope = InterpretNodeWithoutCopyingImmediates(new_scope_node);
 		}
 	}
 

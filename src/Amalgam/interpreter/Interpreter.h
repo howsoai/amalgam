@@ -500,13 +500,22 @@ public:
 		return value;
 	}
 
-	//if n is immediate, it just returns it, otherwise calls InterpretNode
-	__forceinline EvaluableNodeReference InterpretNodeForImmediateUse(EvaluableNode *n,
+	//evaluates the node, but if it is immediate, it won't make a copy
+	__forceinline EvaluableNodeReference InterpretNodeWithoutCopyingImmediates(EvaluableNode *n,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes())
 	{
 		if(n == nullptr || n->GetIsIdempotent())
 			return EvaluableNodeReference(n, false);
 		return InterpretNode(n, immediate_result);
+	}
+
+	//evaluates the node knowing that it will only be used locally by the calling node
+	__forceinline EvaluableNodeReference InterpretNodeForImmediateUse(EvaluableNode *n,
+		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes())
+	{
+		if(n == nullptr || n->GetIsIdempotent())
+			return EvaluableNodeReference(n, false);
+		return InterpretNode(n, immediate_result | EvaluableNodeRequestedValueTypes::Type::IMMEDIATE_USE_ONLY);
 	}
 
 	//computes a unary numeric function on the given node, returns an ENT_NULL if n is interpreted as an ENT_NULL

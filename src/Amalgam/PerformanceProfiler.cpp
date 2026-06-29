@@ -471,7 +471,7 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTo
 {
 	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
 		[](auto &counter_values) {
-			return static_cast<double>(counter_values.totalMemChangeExclusive);
+			return static_cast<double>(counter_values.totalMemChangeInclusive);
 		});
 }
 

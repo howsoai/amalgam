@@ -37,7 +37,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	//when retrieving symbol, only need to retain the node if it's not an immediate type
-	bool retain_node = !immediate_result.AnyPrimitiveImmediateType();
+	bool retain_node = !immediate_result.AnyImmediateType();
 	auto [symbol_value, found] = GetScopeStackSymbol(sid, retain_node);
 	if(found)
 		return EvaluableNodeReference::CoerceNonUniqueEvaluableNodeToImmediateIfPossible(symbol_value, immediate_result);

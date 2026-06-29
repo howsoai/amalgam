@@ -67,7 +67,8 @@ public:
 		KEY_STRING_ID_OR_NULL = KEY_STRING_ID | NULL_VALUE,
 
 		ANY_PRIMITIVE_IMMEDIATE = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID | STRING_ID | CODE,
-		ANY_COMPLEX_IMMEDIATE = SIZE_AS_NUMBER | SUM_AS_NUMBER | PRODUCT_AS_NUMBER | MIN_AS_NUMBER | MAX_AS_NUMBER | CONCAT_AS_STRING_ID
+		ANY_COMPLEX_IMMEDIATE = SIZE_AS_NUMBER | SUM_AS_NUMBER | PRODUCT_AS_NUMBER | MIN_AS_NUMBER | MAX_AS_NUMBER | CONCAT_AS_STRING_ID,
+		ANY_IMMEDIATE = ANY_PRIMITIVE_IMMEDIATE | ANY_COMPLEX_IMMEDIATE
 	};
 
 	constexpr EvaluableNodeRequestedValueTypes() noexcept
@@ -143,6 +144,12 @@ public:
 	{
 		return (static_cast<RequestType>(requestedValueTypes)
 			& static_cast<RequestType>(Type::ANY_COMPLEX_IMMEDIATE)) != 0;
+	}
+
+	constexpr bool AnyImmediateType() const noexcept
+	{
+		return (static_cast<RequestType>(requestedValueTypes)
+			& static_cast<RequestType>(Type::ANY_IMMEDIATE)) != 0;
 	}
 
 	constexpr bool NoValueRequested() const noexcept

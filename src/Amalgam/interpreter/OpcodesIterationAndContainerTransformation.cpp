@@ -796,6 +796,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		inputs_list_node->SetOrderedChildNodesSize(ocn.size() - 1);
 		auto &inputs = inputs_list_node->GetOrderedChildNodesReference();
 
+		//track references separately so they can be freed accordingly
+		std::vector<EvaluableNodeReference> input_references;
+		input_references.resize(ocn.size() - 1);
+
 		//process inputs, get size and whether needs to be associative array
 		bool need_assoc = false;
 
@@ -806,14 +810,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		node_stack.PushEvaluableNode(inputs_list_node);
 		for(size_t i = 0; i < ocn.size() - 1; i++)
 		{
-			inputs[i] = InterpretNode(ocn[i + 1]);
-			if(EvaluableNode::IsNull(inputs[i]) || inputs[i]->IsImmediate())
+			EvaluableNodeReference cur_input = InterpretNode(ocn[i + 1]);
+			input_references[i] = cur_input;
+
+			if(EvaluableNode::IsNull(cur_input) || cur_input->IsImmediate())
 				continue;
 
-			if(inputs[i]->IsAssociativeArray())
+			inputs_list_node->UpdateFlagsBasedOnNewChildNode(cur_input);
+			inputs[i] = cur_input;
+
+			if(cur_input->IsAssociativeArray())
 			{
 				need_assoc = true;
-				for(auto &[n_id, _] : inputs[i]->GetMappedChildNodesReference())
+				for(auto &[n_id, _] : cur_input->GetMappedChildNodesReference())
 				{
 					auto [inserted_node, inserted] = all_keys.insert(n_id);
 					//if it was inserted, then need to keep track of the string reference
@@ -823,10 +832,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			}
 			else //ordered
 			{
-				largest_size = std::max(largest_size, inputs[i]->GetOrderedChildNodesReference().size());
+				largest_size = std::max(largest_size, cur_input->GetOrderedChildNodesReference().size());
 			}
-
-			inputs_list_node->UpdateFlagsBasedOnNewChildNode(inputs[i]);
 		}
 		node_stack.PopEvaluableNode();
 
@@ -959,7 +966,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 		//result will be marked if not unique if there were any side effects
 		if(result.unique)
-			evaluableNodeManager->FreeNodeTreeIfPossible(inputs_list_node);
+		{
+			evaluableNodeManager->FreeNodeIfPossible(inputs_list_node);
+			for(auto &ref : input_references)
+				evaluableNodeManager->FreeNodeTreeIfPossible(ref);
+		}
 	}
 
 	return result;

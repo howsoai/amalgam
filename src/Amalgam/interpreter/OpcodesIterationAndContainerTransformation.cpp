@@ -812,12 +812,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		{
 			EvaluableNodeReference cur_input = InterpretNode(ocn[i + 1]);
 			input_references[i] = cur_input;
+			inputs_list_node->UpdateFlagsBasedOnNewChildNode(cur_input);
+			inputs[i] = cur_input;
 
 			if(EvaluableNode::IsNull(cur_input) || cur_input->IsImmediate())
 				continue;
-
-			inputs_list_node->UpdateFlagsBasedOnNewChildNode(cur_input);
-			inputs[i] = cur_input;
 
 			if(cur_input->IsAssociativeArray())
 			{

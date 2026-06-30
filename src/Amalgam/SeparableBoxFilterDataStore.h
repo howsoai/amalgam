@@ -253,11 +253,18 @@ public:
 		std::vector<size_t> &entities, std::vector<double> &values)
 	{
 		if(numEntities == 0)
+		{
+			enabled_entities.clear();
 			return;
+		}
 
 		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
+		{
+			enabled_entities.clear();
 			return;
+		}
+
 		size_t column_index = column->second;
 		auto &column_data = columnData[column_index];
 
@@ -281,11 +288,18 @@ public:
 		std::vector<size_t> &entities, std::vector<double> &values)
 	{
 		if(numEntities == 0)
+		{
+			enabled_entities.clear();
 			return;
+		}
 
 		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
+		{
+			enabled_entities.clear();
 			return;
+		}
+
 		size_t column_index = column->second;
 		auto &column_data = columnData[column_index];
 
@@ -343,7 +357,11 @@ public:
 	{
 		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
+		{
+			out.clear();
 			return;
+		}
+
 		size_t column_index = column->second;
 
 		if(value.nodeType != ENIVT_CODE)
@@ -367,7 +385,10 @@ public:
 	{
 		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
+		{
+			out.clear();
 			return;
+		}
 
 		columnData[column->second]->FindMinMax(value_type, num_to_find, is_max, enabled_indices, out);
 	}

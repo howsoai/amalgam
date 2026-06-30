@@ -78,7 +78,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	return retval;
 }
 
-void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_node)
+void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_node, bool scope_break)
 {
 	EvaluableNodeReference new_scope = EvaluableNodeReference::Null();
 	bool need_to_interpret_new_scope = false;
@@ -175,6 +175,9 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 	new_scope->SetIsFreeable(true);
 	//just in case a variable is added which needs cycle checks
 	new_scope->SetNeedCycleCheck(true);
+
+	new_scope->SetScopeBreak(scope_break);
+
 	scopeStack.push_back(new_scope);
 }
 
@@ -230,10 +233,20 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 {
 	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetOrderedChildNodes(begin(scopeStack), end(scopeStack), true, false);
+
 	//set flags conservatively before copy
 	stack_top_holder.SetNeedCycleCheck(true);
 	stack_top_holder.SetIsIdempotent(false);
+
+	//find scope break and erase before that
+	size_t scope_start_index = scopeStack.size();
+	for(; scope_start_index > 0; scope_start_index--)
+	{
+		if(scopeStack[scope_start_index - 1]->IsScopeBreak())
+			break;
+	}
+	stack_top_holder.GetOrderedChildNodesReference()
+		= EvaluableNode::OrderedType(begin(scopeStack) + scope_start_index, end(scopeStack));
 
 	EvaluableNodeReference copied_stack = evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 
@@ -244,9 +257,20 @@ EvaluableNode *Interpreter::MakeCopyOfScopeStack()
 		auto &stack_nodes_ocn = copied_stack->GetOrderedChildNodesReference();
 		for(Interpreter *interp = callingInterpreter; interp != nullptr; interp = interp->callingInterpreter)
 		{
-			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStack.size(), nullptr);
-			for(size_t i = 0; i < scopeStack.size(); i++)
-				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy(scopeStack[i]);
+			size_t parent_scope_start_index = interp->scopeStack.size();
+			for(; parent_scope_start_index > 0; parent_scope_start_index--)
+			{
+				if(interp->scopeStack[parent_scope_start_index - 1]->IsScopeBreak())
+					break;
+			}
+
+			stack_nodes_ocn.insert(begin(stack_nodes_ocn), interp->scopeStack.size() - parent_scope_start_index, nullptr);
+
+			for(size_t i = 0; i < interp->scopeStack.size() - parent_scope_start_index; i++)
+			{
+				stack_nodes_ocn[i]
+					= evaluableNodeManager->DeepAllocCopy(interp->scopeStack[i + parent_scope_start_index]);
+			}
 
 			if(interp->bottomOfScopeStack)
 				break;

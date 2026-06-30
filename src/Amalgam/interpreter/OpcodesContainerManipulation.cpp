@@ -37,9 +37,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	//get the "list" itself
-	auto list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
-	if(list == nullptr)
+	EvaluableNodeReference list;
+	if(immediate_result.AnyImmediateType())
+		list = InterpretNodeForImmediateUse(ocn[0]);
+	else
+		list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+
+	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
 
 	if(list->IsOrderedArray())
@@ -308,8 +312,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
-	if(list == nullptr)
+	EvaluableNodeReference list;
+	if(immediate_result.AnyImmediateType())
+		list = InterpretNodeForImmediateUse(ocn[0]);
+	else
+		list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+
+	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateOpcodeStackStateSaver(list);
@@ -451,9 +460,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	//get the list itself
-	auto list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
-	if(list == nullptr)
+	EvaluableNodeReference list;
+	if(immediate_result.AnyImmediateType())
+		list = InterpretNodeForImmediateUse(ocn[0]);
+	else
+		list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+
+	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
 
 	if(list->IsOrderedArray())
@@ -726,8 +739,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
-	if(list == nullptr)
+	EvaluableNodeReference list;
+	if(immediate_result.AnyImmediateType())
+		list = InterpretNodeForImmediateUse(ocn[0]);
+	else
+		list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+
+	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateOpcodeStackStateSaver(list);
@@ -1198,7 +1216,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, Eva
 	if(ocn_size < 1)
 		return EvaluableNodeReference::Null();
 
-	auto source = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+	EvaluableNodeReference source;
+	if(immediate_result.AnyImmediateType())
+		source = InterpretNodeForImmediateUse(ocn[0]);
+	else
+		source = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+
 	if(ocn_size < 2 || source == nullptr)
 		return source;
 

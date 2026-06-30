@@ -1148,7 +1148,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
 					[&](auto operation)
 					{
-						auto list = InterpretNodeWithoutCopyingImmediates(ocn[list_index]);
+						auto list = InterpretNodeForImmediateUse(ocn[list_index]);
 						if(EvaluableNode::IsNull(list))
 							return EvaluableNodeReference::Null();
 

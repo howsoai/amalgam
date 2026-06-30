@@ -141,7 +141,7 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 
 				//need to interpret
 				SetTopCurrentIndexInConstructionStack(cn_id);
-				EvaluableNodeReference value = InterpretNodeForImmediateUse(cn);
+				EvaluableNodeReference value = InterpretNodeWithoutCopyingImmediates(cn);
 
 				if(value != nullptr)
 				{

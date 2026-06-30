@@ -54,14 +54,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, Eva
 	}
 #endif
 
+	//can check up until the last element only using immediate values
+	// because "and" operations will only return the last value if all succeed
 	for(size_t i = 0; i < ocn_size - 1; i++)
 	{
 		if(!InterpretNodeIntoBoolValue(ocn[i]))
 			return AllocReturn(false, immediate_result);
 	}
 
-	//if made it here, evaluate the last element
-
+	//if made it here, evaluate the last element and return if true
 	EvaluableNodeReference last_element = InterpretNode(ocn[ocn_size - 1], immediate_result);
 
 	if(last_element.IsImmediateValue())

@@ -37,7 +37,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	//when retrieving symbol, only need to retain the node if it's not an immediate type
-	bool retain_node = !immediate_result.AnyPrimitiveImmediateType();
+	bool retain_node = !immediate_result.AnyImmediateType();
 	auto [symbol_value, found] = GetScopeStackSymbol(sid, retain_node);
 	if(found)
 		return EvaluableNodeReference::CoerceNonUniqueEvaluableNodeToImmediateIfPossible(symbol_value, immediate_result);
@@ -186,7 +186,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		}
 		else //just need to interpret
 		{
-			required_vars = InterpretNodeForImmediateUse(required_vars_node);
+			required_vars = InterpretNodeWithoutCopyingImmediates(required_vars_node);
 		}
 	}
 
@@ -263,7 +263,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				#endif
 
 					SetTopCurrentIndexInConstructionStack(cn_id);
-					EvaluableNodeReference value = InterpretNodeForImmediateUse(cn);
+					EvaluableNodeReference value = InterpretNodeWithoutCopyingImmediates(cn);
 
 					//mark if not unique
 					any_nonunique_assignments |= !value.unique;
@@ -539,7 +539,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		}
 		else //just need to interpret
 		{
-			assigned_vars = InterpretNodeForImmediateUse(assigned_vars_node);
+			assigned_vars = InterpretNodeWithoutCopyingImmediates(assigned_vars_node);
 		}
 
 		if(!EvaluableNode::IsAssociativeArray(assigned_vars))
@@ -561,7 +561,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			if(need_to_interpret && cn != nullptr && !cn->GetIsIdempotent())
 			{
 				PushNewConstructionContext(assigned_vars, assigned_vars, EvaluableNodeImmediateValueWithType(variable_sid), nullptr);
-				variable_value_node = InterpretNodeForImmediateUse(cn);
+				variable_value_node = InterpretNodeWithoutCopyingImmediates(cn);
 				if(PopConstructionContextAndGetExecutionSideEffectFlag())
 				{
 					assigned_vars.unique = false;
@@ -632,7 +632,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	//if only 2 params and not accumulating, then just assign/accum the destination
 	if(num_params == 2)
 	{
-		auto new_value = InterpretNodeForImmediateUse(ocn[1]);
+		auto new_value = InterpretNodeWithoutCopyingImmediates(ocn[1]);
 
 		//retrieve the symbol location
 	#ifdef MULTITHREAD_SUPPORT
@@ -713,7 +713,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		node_stack.PushEvaluableNode(address);
 		is_value_unique[ocn_index - 1] = address.unique;
 
-		auto new_value = InterpretNodeForImmediateUse(ocn[ocn_index + 1]);
+		auto new_value = InterpretNodeWithoutCopyingImmediates(ocn[ocn_index + 1]);
 		node_stack.PushEvaluableNode(new_value);
 		is_value_unique[ocn_index] = new_value.unique;
 	}
@@ -850,7 +850,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableN
 	auto value_to_compare = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PushEvaluableNode(value_to_compare);
 
-	auto value_to_assign = InterpretNodeForImmediateUse(ocn[2]);
+	auto value_to_assign = InterpretNodeWithoutCopyingImmediates(ocn[2]);
 
 	//retrieve the symbol location
 #ifdef MULTITHREAD_SUPPORT
@@ -946,7 +946,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
 
 		//when retrieving symbol, only need to retain the node if it's not an immediate type
-		bool retain_node = !immediate_result.AnyPrimitiveImmediateType();
+		bool retain_node = !immediate_result.AnyImmediateType();
 		auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid, retain_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 		return EvaluableNodeReference::CoerceNonUniqueEvaluableNodeToImmediateIfPossible(symbol_value, immediate_result);

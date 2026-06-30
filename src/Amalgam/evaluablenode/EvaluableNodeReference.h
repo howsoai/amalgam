@@ -58,6 +58,9 @@ public:
 		//code
 		CODE = 1 << 13,
 
+		//need the node itself, but won't use beyond the opcode
+		IMMEDIATE_USE_ONLY = 1 << 14,
+
 		//composite types which can include NULL_VALUE
 		BOOL_OR_NULL = BOOL | NULL_VALUE,
 		NUMBER_OR_NULL = NUMBER | NULL_VALUE,
@@ -67,7 +70,8 @@ public:
 		KEY_STRING_ID_OR_NULL = KEY_STRING_ID | NULL_VALUE,
 
 		ANY_PRIMITIVE_IMMEDIATE = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID | STRING_ID | CODE,
-		ANY_COMPLEX_IMMEDIATE = SIZE_AS_NUMBER | SUM_AS_NUMBER | PRODUCT_AS_NUMBER | MIN_AS_NUMBER | MAX_AS_NUMBER | CONCAT_AS_STRING_ID
+		ANY_COMPLEX_IMMEDIATE = SIZE_AS_NUMBER | SUM_AS_NUMBER | PRODUCT_AS_NUMBER | MIN_AS_NUMBER | MAX_AS_NUMBER | CONCAT_AS_STRING_ID,
+		ANY_IMMEDIATE = IMMEDIATE_USE_ONLY | ANY_PRIMITIVE_IMMEDIATE | ANY_COMPLEX_IMMEDIATE
 	};
 
 	constexpr EvaluableNodeRequestedValueTypes() noexcept
@@ -143,6 +147,12 @@ public:
 	{
 		return (static_cast<RequestType>(requestedValueTypes)
 			& static_cast<RequestType>(Type::ANY_COMPLEX_IMMEDIATE)) != 0;
+	}
+
+	constexpr bool AnyImmediateType() const noexcept
+	{
+		return (static_cast<RequestType>(requestedValueTypes)
+			& static_cast<RequestType>(Type::ANY_IMMEDIATE)) != 0;
 	}
 
 	constexpr bool NoValueRequested() const noexcept

@@ -127,7 +127,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	}
 
 	//if a function is specified, then set up appropriate data structures to call the function and move the indices for the index and value parameters
-	EvaluableNodeReference function = InterpretNodeForImmediateUse(ocn[0]);
+	EvaluableNodeReference function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	if(immediate_result.NoValueRequested())
@@ -406,7 +406,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
+	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 	auto node_stack = CreateOpcodeStackStateSaver(function);
@@ -534,7 +534,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
+	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -791,11 +791,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 	}
 	else //multiple inputs
 	{
-		EvaluableNode *inputs_list_node = evaluableNodeManager->AllocNode(ENT_LIST);
+		EvaluableNodeReference inputs_list_node(evaluableNodeManager->AllocNode(ENT_LIST), true);
 		//set to need cycle check because don't know what will be attached
-		inputs_list_node->SetNeedCycleCheck(true);
 		inputs_list_node->SetOrderedChildNodesSize(ocn.size() - 1);
 		auto &inputs = inputs_list_node->GetOrderedChildNodesReference();
+
+		//track references separately so they can be freed accordingly
+		std::vector<EvaluableNodeReference> input_references;
+		input_references.resize(ocn.size() - 1);
 
 		//process inputs, get size and whether needs to be associative array
 		bool need_assoc = false;
@@ -807,24 +810,28 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		node_stack.PushEvaluableNode(inputs_list_node);
 		for(size_t i = 0; i < ocn.size() - 1; i++)
 		{
-			inputs[i] = InterpretNode(ocn[i + 1]);
-			if(inputs[i] != nullptr)
+			EvaluableNodeReference cur_input = InterpretNode(ocn[i + 1]);
+			input_references[i] = cur_input;
+			inputs_list_node.UpdatePropertiesBasedOnAttachedNode(cur_input);
+			inputs[i] = cur_input;
+
+			if(EvaluableNode::IsNull(cur_input) || cur_input->IsImmediate())
+				continue;
+
+			if(cur_input->IsAssociativeArray())
 			{
-				if(!inputs[i]->IsAssociativeArray())
+				need_assoc = true;
+				for(auto &[n_id, _] : cur_input->GetMappedChildNodesReference())
 				{
-					largest_size = std::max(largest_size, inputs[i]->GetOrderedChildNodes().size());
+					auto [inserted_node, inserted] = all_keys.insert(n_id);
+					//if it was inserted, then need to keep track of the string reference
+					if(inserted)
+						string_intern_pool.CreateStringReference(n_id);
 				}
-				else
-				{
-					need_assoc = true;
-					for(auto &[n_id, _] : inputs[i]->GetMappedChildNodes())
-					{
-						auto [inserted_node, inserted] = all_keys.insert(n_id);
-						//if it was inserted, then need to keep track of the string reference
-						if(inserted)
-							string_intern_pool.CreateStringReference(n_id);
-					}
-				}
+			}
+			else //ordered
+			{
+				largest_size = std::max(largest_size, cur_input->GetOrderedChildNodesReference().size());
 			}
 		}
 		node_stack.PopEvaluableNode();
@@ -955,6 +962,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 		//free all references
 		string_intern_pool.DestroyStringReferences(all_keys);
+
+		//result will be marked if not unique if there were any side effects
+		if(result.unique)
+		{
+			evaluableNodeManager->FreeNodeIfPossible(inputs_list_node);
+			for(auto &ref : input_references)
+				evaluableNodeManager->FreeNodeTreeIfPossible(ref);
+		}
 	}
 
 	return result;
@@ -1107,7 +1122,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	else //ocn.size() > 1
 	{
 		list_index = 1;
-		function = InterpretNodeForImmediateUse(ocn[0]);
+		function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 
 		if(ocn.size() > 2)
@@ -1674,7 +1689,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 
 		//need to interpret node here in case function is actually a null
 		// null is a special non-function for weave
-		function = InterpretNodeForImmediateUse(ocn[0]);
+		function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 	}
 
@@ -1827,7 +1842,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
+	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
@@ -2085,7 +2100,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 		index_list_index++;
 		value_list_index++;
 
-		function = InterpretNodeForImmediateUse(ocn[0]);
+		function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 	}
 
@@ -2338,6 +2353,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 	}
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(index_list);
+	//don't need the top node of the zipped anymore
+	evaluableNodeManager->FreeNodeIfPossible(zipped);
 	return result;
 }
 

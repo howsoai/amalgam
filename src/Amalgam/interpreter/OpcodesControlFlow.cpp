@@ -220,7 +220,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
+	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 

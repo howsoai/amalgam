@@ -291,7 +291,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 		generate_unique_values = InterpretNodeIntoBoolValue(ocn[2]);
 
 	//get random param
-	auto param = InterpretNodeForImmediateUse(ocn[0]);
+	auto param = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 
 	//if generating a single value
 	if(!generate_list)

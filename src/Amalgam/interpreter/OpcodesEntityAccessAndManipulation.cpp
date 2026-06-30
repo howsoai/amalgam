@@ -580,7 +580,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
 	if(ocn.size() > 2)
-		args = InterpretNodeForImmediateUse(ocn[2]);
+		args = InterpretNodeWithoutCopyingImmediates(ocn[2]);
 
 	auto node_stack = CreateOpcodeStackStateSaver(args);
 
@@ -591,7 +591,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 	{
 		if(call_type == ENT_CALL_ON_ENTITY)
 		{
-			function = InterpretNodeForImmediateUse(ocn[1]);
+			function = InterpretNodeWithoutCopyingImmediates(ocn[1]);
 			node_stack.PushEvaluableNode(function);
 		}
 		else

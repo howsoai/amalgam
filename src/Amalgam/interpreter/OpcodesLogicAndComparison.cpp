@@ -28,14 +28,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, Eva
 	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference cur = EvaluableNodeReference::Null();
-
 #ifdef MULTITHREAD_SUPPORT
 	if(en->GetConcurrency())
 	{
 		std::vector<EvaluableNodeReference> interpreted_nodes;
 		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 		{
+			EvaluableNodeReference cur = EvaluableNodeReference::Null();
 			for(auto &cn : interpreted_nodes)
 			{
 				//free the previous node if applicable

@@ -1414,18 +1414,24 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			}
 			else if(ocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED)
 			{
-				size_t location = 0;
-				//guard against empty ocn, and round down to pair start
-				if(ocn.size() > 0)
-					location = mp.interpreter->randomStream.RandSize((ocn.size() - 1) / 2);
+				if(ocn.size() == 0)
+				{
+					//one position, since it's empty
+					ocn.push_back(new_node);
+					n->UpdateFlagsBasedOnNewChildNode(new_node);
+				}
+				else //insert two elements into the pairs section
+				{
+					size_t location = mp.interpreter->randomStream.RandSize((ocn.size() - 1) / 2);
 
-				ocn.insert(ocn.begin() + 1 + 2 * location, new_node);
-				n->UpdateFlagsBasedOnNewChildNode(new_node);
+					ocn.insert(ocn.begin() + 1 + 2 * location, new_node);
+					n->UpdateFlagsBasedOnNewChildNode(new_node);
 
-				//insert second node to keep the pairing
-				EvaluableNode *new_node_2 = AllocateNewRandomNode(mp);
-				ocn.insert(ocn.begin() + 1 + 2 * location + 1, new_node_2);
-				n->UpdateFlagsBasedOnNewChildNode(new_node_2);
+					//insert second node to keep the pairing
+					EvaluableNode *new_node_2 = AllocateNewRandomNode(mp);
+					ocn.insert(ocn.begin() + 1 + 2 * location + 1, new_node_2);
+					n->UpdateFlagsBasedOnNewChildNode(new_node_2);
+				}
 			}
 			else
 			{

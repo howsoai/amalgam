@@ -380,11 +380,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, E
 		EvaluableNodeReference new_result = EvaluableNodeReference::Null();
 		for(size_t i = 1; i < ocn_size; i++)
 		{
-			//request immediate values when not last, since any allocs for returns would be wasted
-			//concludes won't be immediate
+			//request nothing when not last, since any allocs for returns would be wasted
+			//concludes and returns will still be returned
 			//but because previous_result may be used, that can't be immediate, so the last param
 			//cannot be evaluated as immediate
-			new_result = InterpretNode(ocn[i], i + 1 < ocn_size);
+			if(i + 1 < ocn_size)
+				new_result = InterpretNodeForImmediateUse(ocn[i], EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
+			else
+				new_result = InterpretNode(ocn[i]);
 
 			if(new_result.IsNonNullNodeReference())
 			{

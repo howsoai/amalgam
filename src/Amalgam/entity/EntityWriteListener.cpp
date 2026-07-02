@@ -28,6 +28,8 @@ EntityWriteListener::EntityWriteListener(Entity *listening_entity,
 	listeningEntity = listening_entity;
 	storedWrites = nullptr;
 
+	pretty = _pretty;
+
 	auto new_entity_sid = GetStringIdFromBuiltInStringId(ENBISI_new_entity);
 	if(pretty)
 		fileSuffix = "\t";
@@ -38,7 +40,6 @@ EntityWriteListener::EntityWriteListener(Entity *listening_entity,
 	else
 		fileSuffix += ")";
 
-	pretty = _pretty;
 	sortKeys = sort_keys;
 
 	huffmanTree = huffman_tree;

@@ -8,6 +8,7 @@
 #include <vector>
 #include <utility>
 
+const size_t EvaluableNodeManager::minNodesToCollectGarbage = 200;
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 const int EvaluableNodeManager::extraMemoryCapacityFactor = 3;
 
@@ -56,6 +57,9 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 	{
 		numNodesToRunGarbageCollection = max_from_current;
 	}
+
+	//make sure doesn't go below the threshold
+	numNodesToRunGarbageCollection = std::max(minNodesToCollectGarbage, numNodesToRunGarbageCollection);
 }
 
 void EvaluableNodeManager::CollectGarbage()

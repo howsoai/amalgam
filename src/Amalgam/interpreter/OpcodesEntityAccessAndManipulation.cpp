@@ -794,7 +794,7 @@ static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::I
 			{x 5}
 			{
 				max_node_operations 1
-				max_node_allocations 1
+				max_node_allocations 100
 				max_operation_depth 1
 				max_contained_entities 1
 				max_contained_entity_depth 1

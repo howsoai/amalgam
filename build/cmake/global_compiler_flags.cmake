@@ -68,6 +68,13 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" S
         string(APPEND CMAKE_CXX_FLAGS " -Wno-psabi")
     endif()
 
+    # Opt-in debug info for Release builds (crash diagnostics only, see AMALGAM_RELEASE_DEBUG_INFO):
+    # -g3 keeps macro info, -fno-omit-frame-pointer makes stack unwinding under gdb/qemu more reliable
+    # even if DWARF CFI is somehow incomplete/misparsed by a cross gdb.
+    if(AMALGAM_RELEASE_DEBUG_INFO AND NOT IS_WASM)
+        string(APPEND CMAKE_CXX_FLAGS_RELEASE " -g3 -fno-omit-frame-pointer")
+    endif()
+
     # TODO 1599: WASM support is experimental, these flags will be cleaned up and auto-generated where possible
     if(IS_WASM)
         string(APPEND CMAKE_CXX_FLAGS " -sMEMORY64=2 -Wno-experimental -DSIMDJSON_NO_PORTABILITY_WARNING")

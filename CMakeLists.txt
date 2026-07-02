@@ -9,6 +9,8 @@ project(amalgam LANGUAGES CXX DESCRIPTION "Amalgam Language Interpreter")
 set(USE_OBJECT_LIBS ON CACHE BOOL "Build using object libs")
 set(TRY_GIT_TAG_FOR_UNKNOWN_VERSION ON CACHE BOOL
     "If env var AMALGAM_BUILD_VERSION not found, try to use latest git tag for version")
+set(AMALGAM_RELEASE_DEBUG_INFO OFF CACHE BOOL
+    "Include debug symbols (-g) in Release builds for crash diagnostics. Not for shipped packages.")
 
 # Project CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/build/cmake")
@@ -23,8 +25,8 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "Release build: ${CMAKE_CXX_FLAGS_RELEASE}")
-    if(CMAKE_CXX_FLAGS_RELEASE MATCHES "-g")
-        message(FATAL_ERROR "Release build should not include debug symbols (-g)")
+    if(CMAKE_CXX_FLAGS_RELEASE MATCHES "-g" AND NOT AMALGAM_RELEASE_DEBUG_INFO)
+        message(FATAL_ERROR "Release build should not include debug symbols (-g) unless AMALGAM_RELEASE_DEBUG_INFO is ON")
     endif()
 elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Debug build: ${CMAKE_CXX_FLAGS_DEBUG}")

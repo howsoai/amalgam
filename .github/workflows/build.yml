@@ -55,13 +55,28 @@ jobs:
           ldd --version
 
       - name: CMake Configure
-        run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET
+        run: |
+          EXTRA_CMAKE_ARGS=""
+          if [ "${{ inputs.build-type }}" != "release" ] && { [ "${{ matrix.preset.arch }}" = "arm64" ] || [ "${{ matrix.preset.arch }}" = "arm64_8a" ]; }; then
+            # Non-release builds only: keep debug symbols out of real release packages.
+            EXTRA_CMAKE_ARGS="-DAMALGAM_RELEASE_DEBUG_INFO=ON"
+            echo "Enabling Release debug info for crash diagnostics ($EXTRA_CMAKE_ARGS)"
+          fi
+          AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET $EXTRA_CMAKE_ARGS
 
       - name: CMake Build
         run: cmake --build --preset $PRESET --
 
       - name: CMake Test
         run: cmake --build --preset $PRESET --target test
+
+      - name: GDB Backtrace for Failed ARM64 Tests
+        if: failure() && (matrix.preset.arch == 'arm64' || matrix.preset.arch == 'arm64_8a')
+        continue-on-error: true
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends gdb-multiarch jq
+          bash build/scripts/gdb-backtrace-failed-tests.sh "out/build/${PRESET}"
 
       - name: CMake Install
         run: cmake --build --preset $PRESET --target install

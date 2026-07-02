@@ -29,7 +29,7 @@ EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream rando
 	else
 		fractionB = std::min(1.0, std::max(0.0, fraction_b));
 
-	fractionAOrB = fractionA + fractionB - fractionA * fractionB;
+	fractionAOrB = fractionA + fractionB;
 	fractionAInsteadOfB = fractionA / (fractionA + fractionB);
 
 	//similarMixChance can go from -1 to 1
@@ -81,10 +81,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 	if(a == nullptr && b == nullptr)
 		return nullptr;
 
-	EvaluableNode *merged = nullptr;
 	if(AreMergeable(a, b) || must_merge)
 	{
-		merged = MergeTrees(this, a, b);
+		EvaluableNode *merged = MergeTrees(this, a, b);
 
 		//if the original and merged, check to see if mergeable of same type,
 		// and if so and similarMixChance is large enough, interpolate
@@ -112,17 +111,17 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 				}
 			}
 		}
-	}
-	else if(KeepNonMergeableAInsteadOfB())
-	{
-		merged = MergeTrees(this, a, nullptr);
-	}
-	else
-	{
-		merged = MergeTrees(this, nullptr, b);
+
+		return merged;
 	}
 
-	return merged;
+	if(!KeepNonMergeableValue())
+		return nullptr;
+
+	if(KeepNonMergeableAInsteadOfB())
+		return enm->DeepAllocCopy(a);
+
+	return enm->DeepAllocCopy(b);
 }
 
 bool EvaluableNodeTreeManipulation::NodesMixMethod::AreMergeable(EvaluableNode *a, EvaluableNode *b)

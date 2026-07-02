@@ -216,6 +216,9 @@ public:
 
 		virtual bool KeepNonMergeableValue()
 		{
+			if(fractionAOrB >= 1.0)
+				return true;
+
 			return randomStream.Rand() < fractionAOrB;
 		}
 

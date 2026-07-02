@@ -172,7 +172,7 @@ public:
 	};
 
 	EvaluableNodeManager() :
-		numNodesToRunGarbageCollection(200), firstUnusedNodeIndex(0)
+		numNodesToRunGarbageCollection(minNodesToCollectGarbage), firstUnusedNodeIndex(0)
 	{}
 
 	~EvaluableNodeManager();
@@ -893,6 +893,9 @@ protected:
 	//keeps track of all of the nodes currently referenced by any resource or interpreter
 	//only allocated if needed
 	std::unique_ptr<ActiveInterpreters> activeInterpreters;
+
+	//minimum number of nodes before which garbage collection can be triggered
+	static const size_t minNodesToCollectGarbage;
 
 	//amount to scale up nodes when allocating
 	static const double allocExpansionFactor;

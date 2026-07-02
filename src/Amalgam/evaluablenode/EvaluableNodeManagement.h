@@ -408,21 +408,9 @@ public:
 		Concurrency::WriteLock write_lock(managerAttributesMutex);
 	#endif
 
-		for(size_t i = firstUnusedNodeIndex + 1; i < nodes.size(); i++)
-		{
-			//break at first empty slot
-			if(nodes[i] == nullptr)
-				break;
-
-			delete nodes[i];
-			nodes[i] = nullptr;
-		}
-
-		size_t new_size = std::min(nodes.size(), static_cast<size_t>(firstUnusedNodeIndex * allocExpansionFactor));
-		nodes.resize(new_size);
-		nodes.shrink_to_fit();
+		ShrinkMemoryToCurrentUtilizationWithLock();
 	}
-
+	
 	//frees an EvaluableNode (must be owned by this EvaluableNodeManager)
 	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it
 	inline void FreeNode(EvaluableNode *en, bool place_nodes_in_lab = true)
@@ -841,6 +829,9 @@ protected:
 	//to stop spinlocks
 	void FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index);
 
+	//helper function to ShrinkMemoryToCurrentUtilization() but assumes has the lock
+	void ShrinkMemoryToCurrentUtilizationWithLock();
+
 	//implemented as a recursive method because the extra complexity of an iterative implementation
 	// is not worth the very small performance benefit
 	//returns a pair of the copy and true if the copy needs cycle check
@@ -903,8 +894,11 @@ protected:
 	//only allocated if needed
 	std::unique_ptr<ActiveInterpreters> activeInterpreters;
 
-	//extra space to allocate when allocating
+	//amount to scale up nodes when allocating
 	static const double allocExpansionFactor;
+
+	//amount of room to leave free when performing garbage collection (integer for performance)
+	static const int extraMemoryCapacityFactor;
 
 	//number of nodes to allocate at once for the local allocation buffer
 	static const int labBlockAllocationSize = 24;

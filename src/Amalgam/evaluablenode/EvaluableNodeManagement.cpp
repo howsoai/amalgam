@@ -371,7 +371,6 @@ void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 	size_t new_size = std::min(nodes.size(), firstUnusedNodeIndex * extraMemoryCapacityFactor + 1);
 	for(size_t i = new_size; i < nodes.size(); i++)
 	{
-		//break at first empty slot
 		if(nodes[i] != nullptr)
 			delete nodes[i];
 	}

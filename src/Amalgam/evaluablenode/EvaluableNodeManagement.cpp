@@ -369,14 +369,11 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 {
 	size_t new_size = std::min(nodes.size(), firstUnusedNodeIndex * extraMemoryCapacityFactor + 1);
-	for(size_t i = firstUnusedNodeIndex + 1; i < new_size; i++)
+	for(size_t i = new_size; i < nodes.size(); i++)
 	{
 		//break at first empty slot
-		if(nodes[i] == nullptr)
-			break;
-
-		delete nodes[i];
-		nodes[i] = nullptr;
+		if(nodes[i] != nullptr)
+			delete nodes[i];
 	}
 
 	nodes.resize(new_size);

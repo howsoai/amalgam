@@ -649,8 +649,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
 				//can at least free the top node
-				if(result.unique)
-					evaluableNodeManager->FreeNodeIfPossible(list);
+				evaluableNodeManager->FreeNodeIfPossible(list);
 
 				result.unique = false;
 				result.uniqueUnreferencedTopNode = false;
@@ -794,8 +793,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
 				//can at least free the top node
-				if(result.unique)
-					evaluableNodeManager->FreeNodeIfPossible(list);
+				evaluableNodeManager->FreeNodeIfPossible(list);
 
 				result.unique = false;
 				result.uniqueUnreferencedTopNode = false;
@@ -893,11 +891,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
+			result_was_originally_unique = result.unique;
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
 				any_side_effects = true;
-				result_was_originally_unique = result.unique;
-
 				result.unique = false;
 				result.uniqueUnreferencedTopNode = false;
 			}
@@ -980,11 +977,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
+			result_was_originally_unique = result.unique;
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
 				any_side_effects = true;
-				result_was_originally_unique = result.unique;
-
 				result.unique = false;
 				result.uniqueUnreferencedTopNode = false;
 			}
@@ -997,8 +993,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		if(any_side_effects)
 		{
 			//can at least free the top node
-			if(result_was_originally_unique)
-				evaluableNodeManager->FreeNodeIfPossible(inputs_list_node);
+			evaluableNodeManager->FreeNodeIfPossible(inputs_list_node);
 		}
 		else //no side effects
 		{

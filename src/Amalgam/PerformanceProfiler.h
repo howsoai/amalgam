@@ -23,9 +23,9 @@ namespace PerformanceProfiler
 	//begins performance timers for the specified operation type, specified by the string t
 	// pushes current instruction on the stack, such that it will be cleared when the
 	// corresponding EndOperation is called
-	void StartOperation(const std::string &t, int64_t memory_use);
+	void StartOperation(const std::string &t, size_t memory_use);
 
-	void EndOperation(int64_t memory_use);
+	void EndOperation(size_t memory_use);
 
 #if defined(MULTITHREAD_SUPPORT)
 	//accumulates lock contention for string t

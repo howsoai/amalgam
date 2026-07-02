@@ -648,9 +648,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
+				//can at least free the top node
+				evaluableNodeManager->FreeNodeIfPossible(list);
+
 				result.unique = false;
 				result.uniqueUnreferencedTopNode = false;
 			}
+			else
+			{
+				if(result.unique)
+					evaluableNodeManager->FreeNodeTreeIfPossible(list);
+				else
+					evaluableNodeManager->FreeNodeIfPossible(list);
+			}
+
+			return result;
 		}
 		else if(list->IsAssociativeArray())
 		{
@@ -780,14 +792,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
+				//can at least free the top node
+				evaluableNodeManager->FreeNodeIfPossible(list);
+
 				result.unique = false;
 				result.uniqueUnreferencedTopNode = false;
 			}
-		}
+			else
+			{
+				if(result.unique)
+					evaluableNodeManager->FreeNodeTreeIfPossible(list);
+				else
+					evaluableNodeManager->FreeNodeIfPossible(list);
+			}
 
-		//result will be marked if not unique if there were any side effects
-		if(result.unique)
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
+			return result;
+		}
 	}
 	else //multiple inputs
 	{
@@ -836,6 +856,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		}
 		node_stack.PopEvaluableNode();
 
+		//execute over groups of nodes
+		bool any_side_effects = false;
+		bool result_was_originally_unique = true;
 		if(!need_assoc)
 		{
 			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
@@ -868,8 +891,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
+			result_was_originally_unique = result.unique;
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
+				any_side_effects = true;
 				result.unique = false;
 				result.uniqueUnreferencedTopNode = false;
 			}
@@ -952,8 +977,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
+			result_was_originally_unique = result.unique;
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
+				any_side_effects = true;
 				result.unique = false;
 				result.uniqueUnreferencedTopNode = false;
 			}
@@ -963,15 +990,25 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		//free all references
 		string_intern_pool.DestroyStringReferences(all_keys);
 
-		//result will be marked if not unique if there were any side effects
-		if(result.unique)
+		if(any_side_effects)
+		{
+			//can at least free the top node
+			evaluableNodeManager->FreeNodeIfPossible(inputs_list_node);
+		}
+		else //no side effects
 		{
 			evaluableNodeManager->FreeNodeIfPossible(inputs_list_node);
-			for(auto &ref : input_references)
-				evaluableNodeManager->FreeNodeTreeIfPossible(ref);
+			if(result_was_originally_unique)
+			{	
+				for(auto &ref : input_references)
+					evaluableNodeManager->FreeNodeTreeIfPossible(ref);
+			}
 		}
+
+		return result;
 	}
 
+	//shouldn't make it here, but compiler complained
 	return result;
 }
 

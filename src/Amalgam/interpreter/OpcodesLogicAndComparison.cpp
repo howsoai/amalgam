@@ -24,10 +24,9 @@ static OpcodeInitializer _ENT_AND(ENT_AND, &Interpreter::InterpretNode_ENT_AND, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	size_t ocn_size = ocn.size();
+	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
-
-	EvaluableNodeReference cur = EvaluableNodeReference::Null();
 
 #ifdef MULTITHREAD_SUPPORT
 	if(en->GetConcurrency())
@@ -35,6 +34,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, Eva
 		std::vector<EvaluableNodeReference> interpreted_nodes;
 		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 		{
+			EvaluableNodeReference cur = EvaluableNodeReference::Null();
 			for(auto &cn : interpreted_nodes)
 			{
 				//free the previous node if applicable
@@ -54,32 +54,35 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, Eva
 	}
 #endif
 
-	for(auto &cn : ocn)
+	//can check up until the last element only using immediate values
+	// because "and" operations will only return the last value if all succeed
+	for(size_t i = 0; i < ocn_size - 1; i++)
 	{
-		//free the previous node if applicable
-		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+		if(!InterpretNodeIntoBoolValue(ocn[i]))
+			return AllocReturn(false, immediate_result);
+	}
 
-		cur = InterpretNode(cn, immediate_result);
+	//if made it here, evaluate the last element and return if true
+	EvaluableNodeReference last_element = InterpretNode(ocn[ocn_size - 1], immediate_result);
 
-		if(cur.IsImmediateValue())
+	if(last_element.IsImmediateValue())
+	{
+		if(!last_element.GetValue().GetValueAsBoolean())
 		{
-			if(!cur.GetValue().GetValueAsBoolean())
-			{
-				evaluableNodeManager->FreeNodeIfPossible(cur);
-				return AllocReturn(false, immediate_result);
-			}
+			evaluableNodeManager->FreeNodeIfPossible(last_element);
+			return AllocReturn(false, immediate_result);
 		}
-		else
+	}
+	else
+	{
+		if(!EvaluableNode::ToBool(last_element))
 		{
-			if(!EvaluableNode::ToBool(cur))
-			{
-				evaluableNodeManager->FreeNodeTreeIfPossible(cur);
-				return AllocReturn(false, immediate_result);
-			}
+			evaluableNodeManager->FreeNodeTreeIfPossible(last_element);
+			return AllocReturn(false, immediate_result);
 		}
 	}
 
-	return cur;
+	return last_element;
 }
 
 static OpcodeInitializer _ENT_OR(ENT_OR, &Interpreter::InterpretNode_ENT_OR, []() {
@@ -233,19 +236,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, Eva
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto cur = InterpretNodeForImmediateUse(ocn[0], true);
-	if(cur.IsImmediateValue())
-	{
-		bool is_true = cur.GetValue().GetValueAsBoolean();
-		evaluableNodeManager->FreeNodeIfPossible(cur);
-		return AllocReturn(!is_true, immediate_result);
-	}
-	else
-	{
-		bool is_true = EvaluableNode::ToBool(cur);
-		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
-		return AllocReturn(!is_true, immediate_result);
-	}
+	return AllocReturn(!InterpretNodeIntoBoolValue(ocn[0]), immediate_result);
 }
 
 static OpcodeInitializer _ENT_EQUAL(ENT_EQUAL, &Interpreter::InterpretNode_ENT_EQUAL, []() {

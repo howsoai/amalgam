@@ -8,7 +8,9 @@
 #include <vector>
 #include <utility>
 
+const size_t EvaluableNodeManager::minNodesToCollectGarbage = 200;
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
+const int EvaluableNodeManager::extraMemoryCapacityFactor = 3;
 
 #ifdef MULTITHREAD_SUPPORT
 //tunable parameter for how many nodes to have a garbage collection sweep perform at a time
@@ -38,7 +40,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 {
 	//assume at least a factor larger than the base memory usage for the entity
 	//add 1 for good measure and to make sure the smallest size isn't zero
-	size_t max_from_current = 3 * GetNumberOfUsedNodes() + 1;
+	size_t max_from_current = extraMemoryCapacityFactor * GetNumberOfUsedNodes() + 1;
 
 	size_t cur_num_nodes = GetNumberOfUsedNodes();
 	if(numNodesToRunGarbageCollection > cur_num_nodes)
@@ -55,6 +57,9 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 	{
 		numNodesToRunGarbageCollection = max_from_current;
 	}
+
+	//make sure doesn't go below the threshold
+	numNodesToRunGarbageCollection = std::max(minNodesToCollectGarbage, numNodesToRunGarbageCollection);
 }
 
 void EvaluableNodeManager::CollectGarbage()
@@ -104,7 +109,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 	bool gc_on_this_thread = false;
 	if(RecommendGarbageCollection())
 		gc_on_this_thread =
-		!activeInterpreters->garbageCollectionThreadSelectionFlag.test_and_set(std::memory_order_acquire);
+			!activeInterpreters->garbageCollectionThreadSelectionFlag.test_and_set(std::memory_order_acquire);
 
 	if(gc_on_this_thread)
 	{
@@ -355,6 +360,24 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 
 	firstUnusedNodeIndex = next_write_index;
 	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
+
+	//if have more yet another entire extraMemoryCapacityFactor available, free it
+	if(nodes.size() > extraMemoryCapacityFactor * numNodesToRunGarbageCollection)
+		ShrinkMemoryToCurrentUtilizationWithLock();
+}
+
+void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
+{
+	size_t new_size = std::min(nodes.size(), firstUnusedNodeIndex * extraMemoryCapacityFactor + 1);
+	for(size_t i = new_size; i < nodes.size(); i++)
+	{
+		//break at first empty slot
+		if(nodes[i] != nullptr)
+			delete nodes[i];
+	}
+
+	nodes.resize(new_size);
+	nodes.shrink_to_fit();
 }
 
 size_t EvaluableNodeManager::GetEstimatedTotalReservedSizeInBytes()

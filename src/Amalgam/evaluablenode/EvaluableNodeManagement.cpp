@@ -253,8 +253,9 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	if(last_index_to_allocate >= num_nodes)
 	{
 		//ran out, so need another node; push a bunch on the heap so don't need to reallocate as often and slow down garbage collection
-		 //preallocate additional resources, making sure to at least add one block
-		size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * num_nodes) + labBlockAllocationSize;
+		//add extra node at the end in case of rounding down
+		//preallocate additional resources, making sure to at least add one block
+		size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * (num_nodes + labBlockAllocationSize)) + 1;
 
 		//fill new EvaluableNode slots with nullptr
 		nodes.resize(new_num_nodes, nullptr);
@@ -369,9 +370,11 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 {
 	size_t new_size = std::min(nodes.size(), firstUnusedNodeIndex * extraMemoryCapacityFactor + 1);
+	if(new_size == nodes.size())
+		return;
+
 	for(size_t i = new_size; i < nodes.size(); i++)
 	{
-		//break at first empty slot
 		if(nodes[i] != nullptr)
 			delete nodes[i];
 	}

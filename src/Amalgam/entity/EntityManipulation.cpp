@@ -648,7 +648,7 @@ Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entit
 	for(auto e : entity->GetContainedEntities())
 		new_entity->AddContainedEntity(MutateEntity(interpreter,
 			e, mutation_rate, mutation_weights, operation_type, preserve_type_depth,
-			imm_number_weights, imm_string_weights), entity->GetIdStringId());
+			imm_number_weights, imm_string_weights), e->GetIdStringId());
 
 	return new_entity;
 }

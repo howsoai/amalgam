@@ -1243,6 +1243,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 		return EvaluableNodeReference(*target, false);
 	}
 
+#ifdef MULTITHREAD_SUPPORT
+	constructionStack[offset].targetOrigin->SetIsFreeableAtomic(false);
+#else
+	constructionStack[offset].targetOrigin->SetIsFreeable(false);
+#endif
+	
 	return EvaluableNodeReference(constructionStack[offset].target, false);
 }
 
@@ -1323,7 +1329,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, Ev
 	if(arg_node == nullptr)
 		return EvaluableNodeReference::Null();
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(arg_node), false, true);
+#ifdef MULTITHREAD_SUPPORT
+	arg_node->SetIsFreeableAtomic(false);
+#else
+	arg_node->SetIsFreeable(false);
+#endif
+
+	return EvaluableNodeReference(arg_node, false);
 }
 
 static OpcodeInitializer _ENT_GET_TYPE(ENT_GET_TYPE, &Interpreter::InterpretNode_ENT_GET_TYPE, []() {

@@ -36,8 +36,10 @@ struct ConstructionStackEntry
 	EvaluableNode *currentValue;
 	EvaluableNode *previousResult;
 
+	//uniqueness of previous result
 	bool previousResultUnique;
 	bool previousResultUniqueUnreferencedTopNode;
+	//true if there were any side effects -- variables set, etc.
 	bool executionSideEffects;
 };
 

@@ -20,7 +20,8 @@ class Interpreter;
 //and prevent any part of the construction stack from being unique
 struct ConstructionStackEntry
 {
-	inline ConstructionStackEntry(EvaluableNode *target_origin, EvaluableNode *_target,
+	inline ConstructionStackEntry(EvaluableNode *target_origin,
+		EvaluableNodeReference *_target,
 		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
 		EvaluableNodeReference previous_result) :
 			targetOrigin(target_origin), target(_target), index(current_index),
@@ -31,7 +32,7 @@ struct ConstructionStackEntry
 	{}
 
 	EvaluableNode *targetOrigin;
-	EvaluableNode *target;
+	EvaluableNodeReference *target;
 	EvaluableNodeImmediateValueWithType index;
 	EvaluableNode *currentValue;
 	EvaluableNode *previousResult;

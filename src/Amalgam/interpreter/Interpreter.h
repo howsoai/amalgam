@@ -107,11 +107,15 @@ public:
 	//pushes a new construction context on the stack
 	//the stack is indexed via the constructionStackOffset* constants
 	//target_origin is the original node of target useful for keeping track of the reference
-	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin, EvaluableNode *target,
+	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin,
+		EvaluableNodeReference &target,
 		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
 		EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
 	{
-		constructionStack.emplace_back(target_origin, target, current_index, current_value, previous_result);
+		//use the freeable flag to indicate if it has been accessed by target
+		if(target != nullptr)
+			target->SetIsFreeable(true);
+		constructionStack.emplace_back(target_origin, &target, current_index, current_value, previous_result);
 	}
 
 	//pops the top construction context off the stack
@@ -120,7 +124,26 @@ public:
 	{
 		if(constructionStack.size() > 0)
 		{
-			bool execution_side_effects = constructionStack.back().executionSideEffects;
+			auto &back = constructionStack.back();
+			bool execution_side_effects = back.executionSideEffects;
+			EvaluableNodeReference &target_ref = *back.target;
+			if(target_ref != nullptr)
+			{
+				//check status of target freeability 
+				if(execution_side_effects)
+				{
+					target_ref.unique = false;
+					target_ref.uniqueUnreferencedTopNode = false;
+				}
+				else
+				{
+					//if something accessed target, the top node is no longer freeable
+					if(!target_ref.unique && !target_ref->GetIsFreeable())
+						target_ref.uniqueUnreferencedTopNode = false;
+				}
+				target_ref->SetIsFreeable(false);
+			}
+
 			constructionStack.pop_back();
 			return execution_side_effects;
 		}
@@ -1171,6 +1194,9 @@ public:
 
 	//set to true if label profiling is enabled
 	static bool _label_profiling_enabled;
+
+	//a null reference needed for some methods
+	static EvaluableNodeReference _null_reference;
 };
 
 //templated setter for opcode functions to break dependency cycle

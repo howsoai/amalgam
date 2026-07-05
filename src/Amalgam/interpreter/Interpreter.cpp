@@ -11,6 +11,7 @@
 #include <utility>
 
 UninitializedArray<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter::_opcodes;
+EvaluableNodeReference Interpreter::_null_reference = EvaluableNodeReference::Null();
 
 Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,

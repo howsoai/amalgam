@@ -235,7 +235,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		{
 			auto &scope_mcn = scope->GetMappedChildNodesReference();
 
-			PushNewConstructionContext(required_vars, nullptr,
+			PushNewConstructionContext(required_vars, required_vars,
 				EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
 			//check each of the required variables and put into the stack if appropriate
@@ -284,11 +284,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				}
 			}
 
-			if(PopConstructionContextAndGetExecutionSideEffectFlag())
-			{
-				required_vars.unique = false;
-				required_vars.uniqueUnreferencedTopNode = false;
-			}
+			PopConstructionContextAndGetExecutionSideEffectFlag();
 		}
 
 		//free the vars / assoc node
@@ -1236,20 +1232,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 	if(ocn.size() > 1)
 	{
 		//if there's a second parameter, try to look up the walk path
-		EvaluableNode **target = InterpretNodeIntoDestination(&constructionStack[offset].target, ocn[1], false);
+		EvaluableNode **uninterpreted_target_location = &constructionStack[offset].target->GetValue().nodeValue.code;
+		EvaluableNode **target = InterpretNodeIntoDestination(uninterpreted_target_location, ocn[1], false);
 		if(target == nullptr)
 			return EvaluableNodeReference::Null();
 
 		return EvaluableNodeReference(*target, false);
 	}
 
-#ifdef MULTITHREAD_SUPPORT
-	constructionStack[offset].targetOrigin->SetIsFreeableAtomic(false);
-#else
-	constructionStack[offset].targetOrigin->SetIsFreeable(false);
-#endif
+	//need to set all of the construction stack, since nothing can be freed from wherever the target was
+	for(size_t i = offset; i < constructionStack.size(); i++)
+	{
+		if(constructionStack[i].targetOrigin != nullptr)
+		#ifdef MULTITHREAD_SUPPORT
+			constructionStack[i].targetOrigin->SetIsFreeableAtomic(false);
+		#else
+			constructionStack[i].targetOrigin->SetIsFreeable(false);
+		#endif
+	}
 	
-	return EvaluableNodeReference(constructionStack[offset].target, false);
+	return EvaluableNodeReference(*constructionStack[offset].target, false);
 }
 
 static OpcodeInitializer _ENT_STACK(ENT_STACK, &Interpreter::InterpretNode_ENT_STACK, []() {

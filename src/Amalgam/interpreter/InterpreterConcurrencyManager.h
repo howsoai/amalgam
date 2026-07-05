@@ -48,7 +48,7 @@ public:
 	//result is set to the result of the task
 	template<typename EvaluableNodeRefType>
 	void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
-		EvaluableNode *target_origin, EvaluableNode *target,
+		EvaluableNode *target_origin, EvaluableNodeReference *target,
 		EvaluableNodeImmediateValueWithType current_index,
 		EvaluableNode *current_value,
 		EvaluableNodeRefType &result)
@@ -130,7 +130,7 @@ public:
 
 			//build new construction stack
 			std::vector<ConstructionStackEntry> construction_stack(parentInterpreter->constructionStack);
-			construction_stack.emplace_back(nullptr, nullptr, current_index, current_value, EvaluableNodeReference::Null());
+			construction_stack.emplace_back(nullptr, &Interpreter::_null_reference, current_index, current_value, EvaluableNodeReference::Null());
 
 			std::vector<EvaluableNode *> opcode_stack(begin(parentInterpreter->opcodeStackNodes),
 				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);

@@ -151,7 +151,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 		}
 	#endif
 
-		PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+		PushNewConstructionContext(_null_reference, _null_reference, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
 		for(size_t i = 0; i < num_nodes; i++)
 		{
@@ -184,7 +184,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 
 			for(size_t node_index = 0; node_index < num_nodes; node_index++)
 				concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
-					nullptr, result, EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start),
+					nullptr, &result, EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start),
 					nullptr, result_ocn[node_index]);
 
 			concurrency_manager.EndConcurrency();
@@ -201,7 +201,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 		auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
 			[&](auto operation)
 			{
-				PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+			PushNewConstructionContext(_null_reference, _null_reference, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
 				auto acc = operation.Init();
 
@@ -236,12 +236,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 		result.UpdatePropertiesBasedOnAttachedNode(element_result);
 	}
 
-	if(PopConstructionContextAndGetExecutionSideEffectFlag())
-	{
-		result.unique = false;
-		result.uniqueUnreferencedTopNode = false;
-	}
-
+	PopConstructionContextAndGetExecutionSideEffectFlag();
 	return result;
 }
 
@@ -415,7 +410,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 	auto to_modify = InterpretNode(ocn[1]);
 
 	FastHashMap<EvaluableNode *, EvaluableNode *> original_node_to_new_node;
-	PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(), to_modify);
+	PushNewConstructionContext(_null_reference, _null_reference, EvaluableNodeImmediateValueWithType(), to_modify);
 	EvaluableNodeReference result = RewriteByFunction(function, to_modify, original_node_to_new_node);
 	PopConstructionContextAndGetExecutionSideEffectFlag();
 
@@ -582,7 +577,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 						for(size_t node_index = 0; node_index < num_nodes; node_index++)
 							concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
-								list, result, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
+								list, &result, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
 								list_ocn[node_index], result_ocn[node_index]);
 
 						concurrency_manager.EndConcurrency();
@@ -603,7 +598,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
 					[&](auto operation)
 					{
-						PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+						PushNewConstructionContext(list, _null_reference, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
 						auto acc = operation.Init();
 
@@ -650,9 +645,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			{
 				//can at least free the top node
 				evaluableNodeManager->FreeNodeIfPossible(list);
-
-				result.unique = false;
-				result.uniqueUnreferencedTopNode = false;
 			}
 			else
 			{
@@ -712,7 +704,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 								list_node = list_node_entry->second;
 
 							concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
-								list, result, EvaluableNodeImmediateValueWithType(result_id),
+								list, &result, EvaluableNodeImmediateValueWithType(result_id),
 								list_node, result_node);
 						}
 
@@ -734,7 +726,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
 					[&](auto operation)
 					{
-						PushNewConstructionContext(list, nullptr,
+						PushNewConstructionContext(list, _null_reference,
 							EvaluableNodeImmediateValueWithType(string_intern_pool.NOT_A_STRING_ID), nullptr);
 
 						auto acc = operation.Init();
@@ -794,9 +786,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			{
 				//can at least free the top node
 				evaluableNodeManager->FreeNodeIfPossible(list);
-
-				result.unique = false;
-				result.uniqueUnreferencedTopNode = false;
 			}
 			else
 			{
@@ -1334,7 +1323,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
 					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(function,
-						list, result_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
+						list, &result_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
 						list_ocn[node_index], evaluations[node_index]);
 
 				concurrency_manager.EndConcurrency();
@@ -1407,11 +1396,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		}
 
 		had_side_effects = PopConstructionContextAndGetExecutionSideEffectFlag();
-		if(had_side_effects)
-		{
-			result_list.unique = false;
-			result_list.uniqueUnreferencedTopNode = false;
-		}
 
 		//free anything not in filtered list,
 		// but only free nodes if the result is still unique, and it won't be if it was accessed
@@ -1456,7 +1440,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			size_t node_index = 0;
 			for(auto &[node_id, node] : list_mcn)
 				concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(function, list,
-					result_list, EvaluableNodeImmediateValueWithType(node_id), node, evaluations[node_index++]);
+					&result_list, EvaluableNodeImmediateValueWithType(node_id), node, evaluations[node_index++]);
 
 			concurrency_manager.EndConcurrency();
 
@@ -1526,12 +1510,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			result_list->SetMappedChildNode(cn_id, cn);
 	}
 
-	if(PopConstructionContextAndGetExecutionSideEffectFlag())
-	{
-		result_list.unique = false;
-		result_list.uniqueUnreferencedTopNode = false;
-	}
-
+	PopConstructionContextAndGetExecutionSideEffectFlag();
 	evaluableNodeManager->FreeNodeIfPossible(list);
 	return result_list;
 }
@@ -1813,11 +1792,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 
 		EvaluableNodeReference values_to_weave = InterpretNode(function);
 
-		if(PopConstructionContextAndGetExecutionSideEffectFlag())
-		{
-			woven_list.unique = false;
-			woven_list.uniqueUnreferencedTopNode = false;
-		}
+		PopConstructionContextAndGetExecutionSideEffectFlag();
 
 		if(EvaluableNode::IsNull(values_to_weave))
 		{
@@ -1892,7 +1867,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 
 	EvaluableNodeReference previous_result = EvaluableNodeReference::Null();
 
-	PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(), nullptr, previous_result);
+	PushNewConstructionContext(list, _null_reference, EvaluableNodeImmediateValueWithType(), nullptr, previous_result);
 
 	if(list->IsAssociativeArray())
 	{
@@ -2002,7 +1977,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 				//kick off interpreters
 				for(size_t node_index = 0; node_index + 1 < num_nodes; node_index += 2)
 					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(ocn[node_index + 1],
-						en, new_assoc, EvaluableNodeImmediateValueWithType(keys[node_index / 2]),
+						en, &new_assoc, EvaluableNodeImmediateValueWithType(keys[node_index / 2]),
 						nullptr, results[node_index / 2]);
 
 				concurrency_manager.EndConcurrency();
@@ -2044,11 +2019,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 			new_assoc.UpdatePropertiesBasedOnAttachedNode(value);
 		}
 
-		if(PopConstructionContextAndGetExecutionSideEffectFlag())
-		{
-			new_assoc.unique = false;
-			new_assoc.uniqueUnreferencedTopNode = false;
-		}
+		PopConstructionContextAndGetExecutionSideEffectFlag();
 	}
 
 	return new_assoc;
@@ -2227,16 +2198,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 
 				EvaluableNodeReference collision_result = InterpretNode(function);
 
-				if(PopConstructionContextAndGetExecutionSideEffectFlag())
-				{
-					result.unique = false;
-					result.uniqueUnreferencedTopNode = false;
-				}
-				if(PopConstructionContextAndGetExecutionSideEffectFlag())
-				{
-					result.unique = false;
-					result.uniqueUnreferencedTopNode = false;
-				}
+				PopConstructionContextAndGetExecutionSideEffectFlag();
+				PopConstructionContextAndGetExecutionSideEffectFlag();
 
 				*cur_value_ptr = collision_result;
 				result.UpdatePropertiesBasedOnAttachedNode(collision_result);

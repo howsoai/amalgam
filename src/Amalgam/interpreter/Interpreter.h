@@ -127,24 +127,27 @@ public:
 			auto &back = constructionStack.back();
 			bool execution_side_effects = back.executionSideEffects;
 			EvaluableNodeReference &target_ref = *back.target;
-			if(target_ref != nullptr)
+
+			//if something accessed target, the top node is no longer freeable
+			//and further logic must assess the state of target_ref
+			if(target_ref != nullptr && !target_ref->GetIsFreeable())
 			{
-				//check status of target freeability 
+				//if something accessed target, the top node is no longer freeable
+				//and needs to be marked as potentially containing a cycle
+				if(target_ref.uniqueUnreferencedTopNode)
+				{
+					target_ref.uniqueUnreferencedTopNode = false;
+					target_ref->SetNeedCycleCheck(true);
+				}
+
+				//if something could have stored the target somewhere, then can't be unique
 				if(execution_side_effects)
 				{
 					target_ref.unique = false;
 					target_ref.uniqueUnreferencedTopNode = false;
 				}
-				else
-				{
-					//if something accessed target, the top node is no longer freeable
-					//and needs to be marked as potentially containing a cycle
-					if(!target_ref.unique && !target_ref->GetIsFreeable())
-					{
-						target_ref.uniqueUnreferencedTopNode = false;
-						target_ref->SetNeedCycleCheck(true);
-					}
-				}
+
+				//clear freeability for use in other places
 				target_ref->SetIsFreeable(false);
 			}
 

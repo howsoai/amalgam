@@ -570,7 +570,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 	InterpreterConstraints interpreter_constraints;
 	InterpreterConstraints *interpreter_constraints_ptr = nullptr;
 	PopulateInterpreterConstraintsFromParams(ocn, 3, interpreter_constraints, true);
-	if(interpreter_constraints.AnyActiveConstraints())
+	//populate if any active constraints from either parameters or caller
+	if(interpreter_constraints.AnyActiveConstraints()
+			|| (interpreterConstraints != nullptr && interpreterConstraints->AnyActiveConstraints()))
 		interpreter_constraints_ptr = &interpreter_constraints;
 
 	//need to return a more complex data structure, can't return immediate

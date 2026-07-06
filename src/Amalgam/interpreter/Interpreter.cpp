@@ -724,11 +724,14 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 	{
 		size_t remaining_depth = interpreterConstraints->GetRemainingOpcodeExecutionDepth(
 			opcodeStackNodes.size());
-		if(remaining_depth > 0)
+
+		//setting up a new interpreter to populate the constraints requires at least one node
+		//need to take it away, but can't let it go to 0, so if at last one, just end execution
+		if(remaining_depth > 1)
 		{
 			if(interpreter_constraints->ConstrainedOpcodeExecutionDepth())
 				interpreter_constraints->maxOperationDepth = std::min(
-					interpreter_constraints->maxOperationDepth, remaining_depth);
+					interpreter_constraints->maxOperationDepth, remaining_depth - 1);
 			else
 				interpreter_constraints->maxOperationDepth = remaining_depth;
 		}

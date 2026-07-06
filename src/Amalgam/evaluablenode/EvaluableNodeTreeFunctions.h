@@ -15,8 +15,9 @@ class Interpreter;
 class CustomEvaluableNodeComparator
 {
 public:
-	constexpr CustomEvaluableNodeComparator(Interpreter *_interpreter, EvaluableNode *_function, EvaluableNode *target_list)
-		: interpreter(_interpreter), function(_function), targetList(target_list), hadExecutionSideEffects(false)
+	constexpr CustomEvaluableNodeComparator(Interpreter *_interpreter, EvaluableNode *_function,
+		EvaluableNodeReference &target_list)
+		: interpreter(_interpreter), function(_function), targetList(&target_list), hadExecutionSideEffects(false)
 	{}
 
 	bool operator()(EvaluableNode *a, EvaluableNode *b);
@@ -29,7 +30,7 @@ public:
 private:
 	Interpreter *interpreter;
 	EvaluableNode *function;
-	EvaluableNode *targetList;
+	EvaluableNodeReference *targetList;
 	bool hadExecutionSideEffects;
 };
 

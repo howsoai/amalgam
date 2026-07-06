@@ -1421,12 +1421,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODIFY(EvaluableNode *en, 
 
 			new_value = InterpretNodeForImmediateUse(new_value);
 
-			if(PopConstructionContextAndGetExecutionSideEffectFlag())
-			{
-				result.unique = false;
-				result.uniqueUnreferencedTopNode = false;
-			}
-
+			PopConstructionContextAndGetExecutionSideEffectFlag();
 			node_stack.PopEvaluableNode();
 
 			if(*copy_destination != result) //normal replacement

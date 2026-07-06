@@ -432,7 +432,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			for(auto &cs_entry : constructionStack)
 			{
 				PrintStackNode(cs_entry.targetOrigin, evaluableNodeManager);
-				PrintStackNode(cs_entry.target, evaluableNodeManager);
+				PrintStackNode(*cs_entry.targetRefPtr, evaluableNodeManager);
 				PrintStackNode(cs_entry.currentValue, evaluableNodeManager);
 				PrintStackNode(cs_entry.previousResult, evaluableNodeManager);
 			}

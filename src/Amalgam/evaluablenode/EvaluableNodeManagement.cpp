@@ -453,7 +453,7 @@ void EvaluableNodeManager::VerifyEvaluableNodeIntegrityForAllReferencedNodes()
 			for(auto &cs_entry : interpreter->constructionStack)
 			{
 				ValidateEvaluableNodeTreeMemoryIntegrity(cs_entry.targetOrigin, this);
-				ValidateEvaluableNodeTreeMemoryIntegrity(cs_entry.target, this);
+				ValidateEvaluableNodeTreeMemoryIntegrity(*cs_entry.targetRefPtr, this);
 				ValidateEvaluableNodeTreeMemoryIntegrity(cs_entry.currentValue, this);
 				ValidateEvaluableNodeTreeMemoryIntegrity(cs_entry.previousResult, this);
 			}
@@ -717,8 +717,8 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 						if(cs_entry.targetOrigin != nullptr && !cs_entry.targetOrigin->GetKnownToBeInUse())
 							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.targetOrigin);
 
-						if(cs_entry.target != nullptr && !cs_entry.target->GetKnownToBeInUse())
-							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.target);
+						if(*cs_entry.targetRefPtr != nullptr && !(*cs_entry.targetRefPtr)->GetKnownToBeInUse())
+							MarkAllReferencedNodesInUseConcurrentForNode(*cs_entry.targetRefPtr);
 
 						if(cs_entry.currentValue != nullptr && !cs_entry.currentValue->GetKnownToBeInUse())
 							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.currentValue);
@@ -763,8 +763,8 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 				if(cs_entry.targetOrigin != nullptr && !cs_entry.targetOrigin->GetKnownToBeInUse())
 					MarkAllReferencedNodesInUseForNode(cs_entry.targetOrigin);
 
-				if(cs_entry.target != nullptr && !cs_entry.target->GetKnownToBeInUse())
-					MarkAllReferencedNodesInUseForNode(cs_entry.target);
+				if(*cs_entry.targetRefPtr != nullptr && !(*cs_entry.targetRefPtr)->GetKnownToBeInUse())
+					MarkAllReferencedNodesInUseForNode(*cs_entry.targetRefPtr);
 
 				if(cs_entry.currentValue != nullptr && !cs_entry.currentValue->GetKnownToBeInUse())
 					MarkAllReferencedNodesInUseForNode(cs_entry.currentValue);

@@ -20,10 +20,11 @@ class Interpreter;
 //and prevent any part of the construction stack from being unique
 struct ConstructionStackEntry
 {
-	inline ConstructionStackEntry(EvaluableNode *target_origin, EvaluableNode *_target,
+	inline ConstructionStackEntry(EvaluableNode *target_origin,
+		EvaluableNodeReference *_target,
 		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
 		EvaluableNodeReference previous_result) :
-			targetOrigin(target_origin), target(_target), index(current_index),
+			targetOrigin(target_origin), targetRefPtr(_target), index(current_index),
 			currentValue(current_value), previousResult(previous_result),
 			previousResultUnique(previous_result.unique),
 			previousResultUniqueUnreferencedTopNode(previous_result.uniqueUnreferencedTopNode),
@@ -31,13 +32,15 @@ struct ConstructionStackEntry
 	{}
 
 	EvaluableNode *targetOrigin;
-	EvaluableNode *target;
+	EvaluableNodeReference *targetRefPtr;
 	EvaluableNodeImmediateValueWithType index;
 	EvaluableNode *currentValue;
 	EvaluableNode *previousResult;
 
+	//uniqueness of previous result
 	bool previousResultUnique;
 	bool previousResultUniqueUnreferencedTopNode;
+	//true if there were any side effects -- variables set, etc.
 	bool executionSideEffects;
 };
 

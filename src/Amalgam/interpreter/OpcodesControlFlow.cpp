@@ -355,8 +355,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, E
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference previous_result = EvaluableNodeReference::Null();
-
-	PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+	PushNewConstructionContext(_null_reference, _null_reference, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
 	size_t loop_iteration = 0;
 	for(;;)

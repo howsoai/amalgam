@@ -209,7 +209,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(Ev
 						new_list_ocn[node_index]);
 
 				concurrency_manager.EndConcurrency();
-//TODO 25732: see if can use a more relaxed updating with regard to cycles since can now tell if target is accessed
+
 				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(new_list);
 				return new_list;
 			}

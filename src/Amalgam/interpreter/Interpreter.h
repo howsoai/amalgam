@@ -138,8 +138,12 @@ public:
 				else
 				{
 					//if something accessed target, the top node is no longer freeable
+					//and needs to be marked as potentially containing a cycle
 					if(!target_ref.unique && !target_ref->GetIsFreeable())
+					{
 						target_ref.uniqueUnreferencedTopNode = false;
+						target_ref->SetNeedCycleCheck(true);
+					}
 				}
 				target_ref->SetIsFreeable(false);
 			}

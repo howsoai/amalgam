@@ -11,6 +11,7 @@
 #include <utility>
 
 UninitializedArray<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter::_opcodes;
+EvaluableNodeReference Interpreter::_null_reference = EvaluableNodeReference::Null();
 
 Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
@@ -98,6 +99,9 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 	if(EvaluableNode::IsAssociativeArray(new_scope))
 	{
 		evaluableNodeManager->EnsureNodeIsModifiable(new_scope, true, false);
+		new_scope->SetIsFreeable(true);
+		//just in case a variable is added which needs cycle checks
+		new_scope->SetNeedCycleCheck(true);
 
 		if(!need_to_interpret_new_scope)
 		{
@@ -114,7 +118,7 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 			{
 				if(new_scope_mcn.size() > 0)
 				{
-					//set not freeable incase referenced elsewhere
+					//set not freeable in case referenced elsewhere
 					for(auto &[id, cn] : new_scope_mcn)
 					{
 						if(cn != nullptr)
@@ -161,20 +165,23 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 			}
 
 			//if there was a side-effect, then need to make another copy of the context in case something is referencing it
-			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+			if(PopConstructionContextAndGetExecutionSideEffectFlag() || !new_scope->GetIsFreeable())
+			{
 				new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(new_scope, false), false, true);
+				new_scope->SetIsFreeable(true);
+			}
 		}
 	}
 	else //not assoc, make a new one
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(new_scope);
 		new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
-	}
 
-	//start to check things as being freeable unless cleared/invalidated later
-	new_scope->SetIsFreeable(true);
-	//just in case a variable is added which needs cycle checks
-	new_scope->SetNeedCycleCheck(true);
+		//start to check things as being freeable unless cleared/invalidated later
+		new_scope->SetIsFreeable(true);
+		//just in case a variable is added which needs cycle checks
+		new_scope->SetNeedCycleCheck(true);
+	}
 
 	new_scope->SetScopeBreak(scope_break);
 
@@ -196,7 +203,8 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 		}
 	}
 
-	evaluableNodeManager->FreeNode(scope);
+	if(scope->GetIsFreeable())
+		evaluableNodeManager->FreeNode(scope);
 	scopeStack.pop_back();
 }
 
@@ -739,7 +747,8 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 	{
 		size_t remaining_depth = interpreterConstraints->GetRemainingOpcodeExecutionDepth(
 			opcodeStackNodes.size());
-		if(remaining_depth > 0)
+
+		if(remaining_depth > 1)
 		{
 			if(interpreter_constraints->ConstrainedOpcodeExecutionDepth())
 				interpreter_constraints->maxOperationDepth = std::min(

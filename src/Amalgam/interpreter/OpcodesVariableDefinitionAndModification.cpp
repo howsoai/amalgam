@@ -220,7 +220,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					any_nonunique_assignments = true;
 
 					if(cn != nullptr)
+					#ifdef MULTITHREAD_SUPPORT
+						cn->SetIsFreeableAtomic(required_vars.unique);
+					#else
 						cn->SetIsFreeable(required_vars.unique);
+					#endif
 				}
 				else
 				{
@@ -235,7 +239,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		{
 			auto &scope_mcn = scope->GetMappedChildNodesReference();
 
-			PushNewConstructionContext(required_vars, nullptr,
+			PushNewConstructionContext(required_vars, required_vars,
 				EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
 			//check each of the required variables and put into the stack if appropriate
@@ -278,17 +282,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					#endif
 						//only set unread if writing to parts of the stack that aren't shared
 						if(value != nullptr)
+						#ifdef MULTITHREAD_SUPPORT
+							value->SetIsFreeableAtomic(value.unique);
+						#else
 							value->SetIsFreeable(value.unique);
+						#endif
 
 					scope->SetMappedChildNode(cn_id, value, false);
 				}
 			}
 
-			if(PopConstructionContextAndGetExecutionSideEffectFlag())
-			{
-				required_vars.unique = false;
-				required_vars.uniqueUnreferencedTopNode = false;
-			}
+			PopConstructionContextAndGetExecutionSideEffectFlag();
 		}
 
 		//free the vars / assoc node
@@ -611,7 +615,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			//need to set whether freeable in case a variable's value is assigned to another variable
 			if(variable_value_node != nullptr)
+			#ifdef MULTITHREAD_SUPPORT
+				variable_value_node->SetIsFreeableAtomic(variable_value_node.unique);
+			#else
 				variable_value_node->SetIsFreeable(variable_value_node.unique);
+			#endif
 
 			//assign back into the context_to_use
 			*value_destination = variable_value_node;
@@ -1236,14 +1244,28 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 	if(ocn.size() > 1)
 	{
 		//if there's a second parameter, try to look up the walk path
-		EvaluableNode **target = InterpretNodeIntoDestination(&constructionStack[offset].target, ocn[1], false);
+		EvaluableNode **uninterpreted_target_location =
+			&constructionStack[offset].targetRefPtr->GetValue().nodeValue.code;
+		EvaluableNode **target = InterpretNodeIntoDestination(uninterpreted_target_location, ocn[1], false);
 		if(target == nullptr)
 			return EvaluableNodeReference::Null();
 
 		return EvaluableNodeReference(*target, false);
 	}
 
-	return EvaluableNodeReference(constructionStack[offset].target, false);
+	//need to set all of the construction stack, since nothing can be freed from wherever the target was
+	//don't want to exit the loop early because new entries in the constructionStack may be created
+	for(size_t i = offset; i < constructionStack.size(); i++)
+	{
+		if(constructionStack[i].targetOrigin != nullptr)
+		#ifdef MULTITHREAD_SUPPORT
+			constructionStack[i].targetOrigin->SetIsFreeableAtomic(false);
+		#else
+			constructionStack[i].targetOrigin->SetIsFreeable(false);
+		#endif
+	}
+	
+	return EvaluableNodeReference(*constructionStack[offset].targetRefPtr, false);
 }
 
 static OpcodeInitializer _ENT_STACK(ENT_STACK, &Interpreter::InterpretNode_ENT_STACK, []() {
@@ -1321,7 +1343,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, Ev
 	if(arg_node == nullptr)
 		return EvaluableNodeReference::Null();
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(arg_node), false, true);
+#ifdef MULTITHREAD_SUPPORT
+	arg_node->SetIsFreeableAtomic(false);
+#else
+	arg_node->SetIsFreeable(false);
+#endif
+
+	return EvaluableNodeReference(arg_node, false);
 }
 
 static OpcodeInitializer _ENT_GET_TYPE(ENT_GET_TYPE, &Interpreter::InterpretNode_ENT_GET_TYPE, []() {

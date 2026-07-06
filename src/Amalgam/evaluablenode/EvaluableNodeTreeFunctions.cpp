@@ -9,8 +9,8 @@
 bool CustomEvaluableNodeComparator::operator()(EvaluableNode *a, EvaluableNode *b)
 {
 	//create context with "a" and "b" variables
-	interpreter->PushNewConstructionContext(targetList, nullptr, EvaluableNodeImmediateValueWithType(), a);
-	interpreter->PushNewConstructionContext(targetList, nullptr, EvaluableNodeImmediateValueWithType(), b);
+	interpreter->PushNewConstructionContext(*targetList, *targetList, EvaluableNodeImmediateValueWithType(), a);
+	interpreter->PushNewConstructionContext(*targetList, *targetList, EvaluableNodeImmediateValueWithType(), b);
 
 	//compare
 	bool retval = (interpreter->InterpretNodeIntoNumberValue(function) > 0);

@@ -108,11 +108,15 @@ public:
 	//pushes a new construction context on the stack
 	//the stack is indexed via the constructionStackOffset* constants
 	//target_origin is the original node of target useful for keeping track of the reference
-	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin, EvaluableNode *target,
+	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin,
+		EvaluableNodeReference &target,
 		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
 		EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
 	{
-		constructionStack.emplace_back(target_origin, target, current_index, current_value, previous_result);
+		//use the freeable flag to indicate if it has been accessed by target
+		if(target != nullptr)
+			target->SetIsFreeable(true);
+		constructionStack.emplace_back(target_origin, &target, current_index, current_value, previous_result);
 	}
 
 	//pops the top construction context off the stack
@@ -121,7 +125,38 @@ public:
 	{
 		if(constructionStack.size() > 0)
 		{
-			bool execution_side_effects = constructionStack.back().executionSideEffects;
+			auto &back = constructionStack.back();
+			bool execution_side_effects = back.executionSideEffects;
+			EvaluableNodeReference &target_ref = *back.targetRefPtr;
+
+			//if something accessed target, the top node is no longer freeable
+			//and further logic must assess the state of target_ref
+			if(target_ref != nullptr && !target_ref->GetIsFreeable())
+			{
+				//if something accessed target, the top node is no longer freeable
+				//and needs to be marked as potentially containing a cycle
+				if(target_ref.uniqueUnreferencedTopNode)
+				{
+					target_ref.uniqueUnreferencedTopNode = false;
+					target_ref->SetNeedCycleCheck(true);
+				}
+
+				//if something could have stored the target somewhere, then can't be unique
+				if(execution_side_effects)
+				{
+					target_ref.unique = false;
+					target_ref.uniqueUnreferencedTopNode = false;
+				}
+
+				//clear freeability for use in other places
+			#ifdef MULTITHREAD_SUPPORT
+				//not unique, so should set atomically if other threads may be accessing it
+				target_ref->SetIsFreeableAtomic(false);
+			#else
+				target_ref->SetIsFreeable(false);
+			#endif
+			}
+
 			constructionStack.pop_back();
 			return execution_side_effects;
 		}
@@ -225,7 +260,11 @@ public:
 		if(scopeStack.size() > 0 && scopeStack.back()->GetIsFreeable())
 		{
 			for(auto &stack_entry : scopeStack)
+			#ifdef MULTITHREAD_SUPPORT
+				stack_entry->SetIsFreeableAtomic(false);
+			#else
 				stack_entry->SetIsFreeable(false);
+			#endif
 		}
 		return std::make_pair(any_constructions, any_set);
 	}
@@ -1184,6 +1223,9 @@ public:
 
 	//set to true if label profiling is enabled
 	static bool _label_profiling_enabled;
+
+	//a null reference needed for some methods
+	static EvaluableNodeReference _null_reference;
 };
 
 //templated setter for opcode functions to break dependency cycle

@@ -126,7 +126,7 @@ public:
 		{
 			auto &back = constructionStack.back();
 			bool execution_side_effects = back.executionSideEffects;
-			EvaluableNodeReference &target_ref = *back.target;
+			EvaluableNodeReference &target_ref = *back.targetRefPtr;
 
 			//if something accessed target, the top node is no longer freeable
 			//and further logic must assess the state of target_ref
@@ -148,7 +148,12 @@ public:
 				}
 
 				//clear freeability for use in other places
+			#ifdef MULTITHREAD_SUPPORT
+				//not unique, so should set atomically if other threads may be accessing it
+				target_ref->SetIsFreeableAtomic(false);
+			#else
 				target_ref->SetIsFreeable(false);
+			#endif
 			}
 
 			constructionStack.pop_back();
@@ -254,7 +259,11 @@ public:
 		if(scopeStack.size() > 0 && scopeStack.back()->GetIsFreeable())
 		{
 			for(auto &stack_entry : scopeStack)
+			#ifdef MULTITHREAD_SUPPORT
+				stack_entry->SetIsFreeableAtomic(false);
+			#else
 				stack_entry->SetIsFreeable(false);
+			#endif
 		}
 		return std::make_pair(any_constructions, any_set);
 	}

@@ -118,7 +118,7 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 			{
 				if(new_scope_mcn.size() > 0)
 				{
-					//set not freeable incase referenced elsewhere
+					//set not freeable in case referenced elsewhere
 					for(auto &[id, cn] : new_scope_mcn)
 					{
 						if(cn != nullptr)
@@ -725,13 +725,11 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 		size_t remaining_depth = interpreterConstraints->GetRemainingOpcodeExecutionDepth(
 			opcodeStackNodes.size());
 
-		//setting up a new interpreter to populate the constraints requires at least one node
-		//need to take it away, but can't let it go to 0, so if at last one, just end execution
 		if(remaining_depth > 1)
 		{
 			if(interpreter_constraints->ConstrainedOpcodeExecutionDepth())
 				interpreter_constraints->maxOperationDepth = std::min(
-					interpreter_constraints->maxOperationDepth, remaining_depth - 1);
+					interpreter_constraints->maxOperationDepth, remaining_depth);
 			else
 				interpreter_constraints->maxOperationDepth = remaining_depth;
 		}

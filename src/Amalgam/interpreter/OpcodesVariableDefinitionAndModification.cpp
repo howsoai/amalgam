@@ -1240,8 +1240,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 		return EvaluableNodeReference(*target, false);
 	}
 
-//TODO 25732: exit loop early once find one that is set (have freeable calls return previous value)
 	//need to set all of the construction stack, since nothing can be freed from wherever the target was
+	//don't want to exit the loop early because new entries in the constructionStack may be created
 	for(size_t i = offset; i < constructionStack.size(); i++)
 	{
 		if(constructionStack[i].targetOrigin != nullptr)

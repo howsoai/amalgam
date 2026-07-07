@@ -346,7 +346,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 static OpcodeInitializer _ENT_DESTROY_ENTITIES(ENT_DESTROY_ENTITIES, &Interpreter::InterpretNode_ENT_DESTROY_ENTITIES, []() {
 	OpcodeDetails d;
 	d.parameters = R"([id_path entity1] [id_path entity2] [...])";
-	d.returns = R"(bool)";
+	d.returns = OpcodeDetails::OpcodeDataType::BOOL;
 	d.description = R"(Destroys the entities specified by the ids `entity1`, `entity2`, etc. Can only be performed by containing entity.  Returns true if all entities were successfully destroyed, false if not.  Generally entities can be destroyed unless they do not exist or if there is code currently being run in it.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -416,7 +416,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOAD, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string resource_path [string resource_type] [assoc params])";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(Loads the data specified by `resource_path`, parses it into the appropriate code and data, and returns it. If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -557,7 +557,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, Ev
 static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::InterpretNode_ENT_LOAD_ENTITY, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string resource_path [id_path entity] [string resource_type] [bool persistent] [assoc params])";
-	d.returns = R"(id_path)";
+	d.returns = OpcodeDetails::OpcodeDataType::ENTITY_ID;
 	d.description = R"(Loads the data specified by `resource_path` and parse it into the appropriate code and data, and stores it in `entity`.  It follows the same id path creation rules as `(create_entities)`, except that if no id path is specified, it may default to a name based on the resource if available.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -736,7 +736,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_STORE, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string resource_path * node [string resource_type] [assoc params])";
-	d.returns = R"(bool)";
+	d.returns = OpcodeDetails::OpcodeDataType::BOOL;
 	d.description = R"(Stores `node` into `resource_path`.  Returns true if successful, false if not.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -882,7 +882,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, E
 static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::InterpretNode_ENT_STORE_ENTITY, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string resource_path id_path entity [string resource_type] [bool persistent] [assoc params])";
-	d.returns = R"(bool)";
+	d.returns = OpcodeDetails::OpcodeDataType::BOOL;
 	d.description = R"(Stores `entity` into `resource_path`.  Returns true if successful, false if not.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1039,7 +1039,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 static OpcodeInitializer _ENT_CONTAINS_ENTITY(ENT_CONTAINS_ENTITY, &Interpreter::InterpretNode_ENT_CONTAINS_ENTITY, []() {
 	OpcodeDetails d;
 	d.parameters = R"(id_path entity)";
-	d.returns = R"(bool)";
+	d.returns = OpcodeDetails::OpcodeDataType::BOOL;
 	d.description = R"(Returns true if `entity` exists, false if not.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1084,7 +1084,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableN
 static OpcodeInitializer _ENT_FLATTEN_ENTITY(ENT_FLATTEN_ENTITY, &Interpreter::InterpretNode_ENT_FLATTEN_ENTITY, []() {
 	OpcodeDetails d;
 	d.parameters = R"(id_path entity [bool include_rand_seeds] [bool parallel_create] [bool include_version])";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(Evaluates to code that, if called, would completely reproduce the `entity`, as well as all contained entities.  If `include_rand_seeds` is true, by default, it will include all entities' random seeds.  If `parallel_create` is true, then the creates will be performed with parallel markers as appropriate for each group of contained entities.  If `include_version` is true, it will include a comment on the top node that is the current version of the Amalgam interpreter, which can be used for validating interoperability when loading code.  The code returned accepts two parameters, `create_new_entity`, which defaults to true, and `new_entity`, which defaults to null.  If `create_new_entity` is true, then it will create a new entity using the id path specified by `new_entity`, where null will create an unnamed entity.  If `create_new_entity` is false, then it will overwrite the current entity's code and create all contained entities.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1169,7 +1169,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNo
 static OpcodeInitializer _ENT_RETRIEVE_ENTITY_ROOT(ENT_RETRIEVE_ENTITY_ROOT, &Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT, []() {
 	OpcodeDetails d;
 	d.parameters = R"([id_path entity])";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(Evaluates to the code contained by `entity`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1214,7 +1214,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS, []() {
 	OpcodeDetails d;
 	d.parameters = R"([id_path entity1] * root1 [id_path entity2] [* root2] [...])";
-	d.returns = R"(bool)";
+	d.returns = OpcodeDetails::OpcodeDataType::BOOL;
 	d.description = R"(Sets the code of the `entity1 to `root1`, as well as all subsequent entity-code pairs of parameters.  If `entity1` is not specified or null, then uses the current entity.  On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1372,7 +1372,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(Eva
 static OpcodeInitializer _ENT_SET_ENTITY_PERMISSIONS(ENT_SET_ENTITY_PERMISSIONS, &Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS, []() {
 	OpcodeDetails d;
 	d.parameters = R"(id_path entity bool|assoc permissions [bool deep])";
-	d.returns = R"(id_path)";
+	d.returns = OpcodeDetails::OpcodeDataType::ENTITY_ID;
 	d.description = R"(Sets the permissions on the `entity`.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.  The parameter `deep` defaults to false, but if it is true, all contained entities have their permissions updated.  Returns the id path of `entity`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq

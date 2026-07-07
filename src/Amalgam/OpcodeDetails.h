@@ -1,6 +1,7 @@
 #pragma once
 
 //project headers:
+#include "BitmaskEnum.h"
 #include "FastMath.h"
 #include "Opcodes.h"
 #include "StringInternPool.h"
@@ -141,6 +142,23 @@ public:
 		NEW, PARTIAL, CONDITIONAL, EXISTING, NULL_VALUE
 	};
 
+	using OpcodeDataTypeType = uint16_t;
+	enum class OpcodeDataType : OpcodeDataTypeType
+	{
+		NULL_TYPE = 1 << 0,
+		BOOL = 1 << 1,
+		NUMBER = 1 << 2,
+		BARE_STRING = 1 << 3,
+		STRING = 1 << 4,
+		LIST = 1 << 5,
+		UNORDERED_LIST = 1 << 6,
+		ASSOC = 1 << 7,
+		WALK_PATH = 1 << 8,
+		ENTITY_ID = 1 << 9,
+		QUERY = 1 << 10,
+		ANY_BASIC = NULL_TYPE | BOOL | NUMBER | STRING | LIST | ASSOC
+	};
+
 	//attribute ordering here is generally ordered by operational use to improve caching,
 	//with descriptive strings at the end
 
@@ -181,11 +199,15 @@ public:
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 
 	std::string_view parameters;
-	std::string_view returns;
+	OpcodeDataType returns;
 	std::string_view description;
 	std::vector<AmalgamExample> examples;
 	double frequencyPer10000Opcodes = 1.0;
 	std::string_view opcodeGroup;
+};
+
+template<> struct IsBitmaskEnum<OpcodeDetails::OpcodeDataType> : std::true_type
+{
 };
 
 //details for every opcode, indexed by EvaluableNodeType

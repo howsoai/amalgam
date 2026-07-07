@@ -48,7 +48,7 @@ static OpcodeInitializer _ENT_CONTAINED_ENTITIES(ENT_CONTAINED_ENTITIES, &Interp
 static OpcodeInitializer _ENT_COMPUTE_ON_CONTAINED_ENTITIES(ENT_COMPUTE_ON_CONTAINED_ENTITIES, &Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES, []() {
 	OpcodeDetails d;
 	d.parameters = R"([id_path containing_entity | query|list condition1] [query|list condition2] ...[ query|list conditionN])";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(Performs queries like `(contained_entities)` on `containing_entity` or the current entity if containing_entity is omitted or null, but returns a value or set of values appropriate for the last query in conditions.  The parameters of `condition1` through `conditionN` are query conditions, and they may be any of the query opcodes (beginning with `query_`) or may be a list of query opcodes, where each condition will be executed in order as a conjunction.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -230,7 +230,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 static OpcodeInitializer _ENT_QUERY_SELECT(ENT_QUERY_SELECT, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(number num_to_select [number start_offset] [number random_seed])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects `num_to_select` entities sorted by entity id.  If `start_offset` is specified, then it will return `num_to_select` entities starting that far in, and subsequent calls can be used to get all entities in batches.  If `random_seed` is specified, then it will select `num_to_select` entities randomly from the list based on the random seed.  If `random_seed` is specified and `start_offset` is null, then it will not guarantee a position in the order for subsequent calls that specify `start_offset`, and will execute more quickly.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -299,7 +299,7 @@ static OpcodeInitializer _ENT_QUERY_SELECT(ENT_QUERY_SELECT, &Interpreter::Inter
 static OpcodeInitializer _ENT_QUERY_SAMPLE(ENT_QUERY_SAMPLE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(number num_to_select [string weight_label_name] [number random_seed])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects a random sample of `num_to_select` entities sorted by entity id, sampled with replacement.  If `weight_label_name` is specified and not null, it will use `weight_label_name` as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values for weights will be ignored, and if there are any infinite values, those will be selected from uniformly.  If `random_seed` is specified, then it will select `num_to_select` entities randomly from the list based on the random seed.  If `random_seed` is not specified then the subsequent calls will return the same sample of entities.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -375,7 +375,7 @@ static OpcodeInitializer _ENT_QUERY_SAMPLE(ENT_QUERY_SAMPLE, &Interpreter::Inter
 static OpcodeInitializer _ENT_QUERY_IN_ENTITY_LIST(ENT_QUERY_IN_ENTITY_LIST, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(list entity_ids)";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects only the entities in `entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -409,7 +409,7 @@ static OpcodeInitializer _ENT_QUERY_IN_ENTITY_LIST(ENT_QUERY_IN_ENTITY_LIST, &In
 static OpcodeInitializer _ENT_QUERY_NOT_IN_ENTITY_LIST(ENT_QUERY_NOT_IN_ENTITY_LIST, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(list entity_ids)";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, filters out the entities in `entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -443,7 +443,7 @@ static OpcodeInitializer _ENT_QUERY_NOT_IN_ENTITY_LIST(ENT_QUERY_NOT_IN_ENTITY_L
 static OpcodeInitializer _ENT_QUERY_EXISTS(ENT_QUERY_EXISTS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name)";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects entities which have the label `label_name`.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding label names and values.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -492,7 +492,7 @@ static OpcodeInitializer _ENT_QUERY_EXISTS(ENT_QUERY_EXISTS, &Interpreter::Inter
 static OpcodeInitializer _ENT_QUERY_NOT_EXISTS(ENT_QUERY_NOT_EXISTS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name)";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects entities which do not have the the label `label_name`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -539,7 +539,7 @@ static OpcodeInitializer _ENT_QUERY_NOT_EXISTS(ENT_QUERY_NOT_EXISTS, &Interprete
 static OpcodeInitializer _ENT_QUERY_EQUALS(ENT_QUERY_EQUALS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name * value)";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is equal to `value`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -586,7 +586,7 @@ static OpcodeInitializer _ENT_QUERY_EQUALS(ENT_QUERY_EQUALS, &Interpreter::Inter
 static OpcodeInitializer _ENT_QUERY_NOT_EQUALS(ENT_QUERY_NOT_EQUALS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name * value)";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is not equal to `value`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -633,7 +633,7 @@ static OpcodeInitializer _ENT_QUERY_NOT_EQUALS(ENT_QUERY_NOT_EQUALS, &Interprete
 static OpcodeInitializer _ENT_QUERY_BETWEEN(ENT_QUERY_BETWEEN, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name * lower_bound * upper_bound)";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is at least `lower_bound` and at most `upper_bound`, inclusive for both values.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -680,7 +680,7 @@ static OpcodeInitializer _ENT_QUERY_BETWEEN(ENT_QUERY_BETWEEN, &Interpreter::Int
 static OpcodeInitializer _ENT_QUERY_NOT_BETWEEN(ENT_QUERY_NOT_BETWEEN, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name * lower_bound * upper_bound)";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is less than `lower_bound` or greater than `upper_bound`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -727,7 +727,7 @@ static OpcodeInitializer _ENT_QUERY_NOT_BETWEEN(ENT_QUERY_NOT_BETWEEN, &Interpre
 static OpcodeInitializer _ENT_QUERY_AMONG(ENT_QUERY_AMONG, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name list values)";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is one of the values specified in `values`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -780,7 +780,7 @@ static OpcodeInitializer _ENT_QUERY_AMONG(ENT_QUERY_AMONG, &Interpreter::Interpr
 static OpcodeInitializer _ENT_QUERY_NOT_AMONG(ENT_QUERY_NOT_AMONG, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name list values)";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects entities for which the value at label `label_name` is not one of the values specified in `values`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -833,7 +833,7 @@ static OpcodeInitializer _ENT_QUERY_NOT_AMONG(ENT_QUERY_NOT_AMONG, &Interpreter:
 static OpcodeInitializer _ENT_QUERY_MAX(ENT_QUERY_MAX, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name [number num_entities] [bool numeric])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects a number of entities with the highest values for the label `label_name`.  If `num_entities` is specified, it will return that many entities, otherwise will return 1.  If `numeric` is true, its default value, then it only considers numeric values; if false, will consider all types.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -887,7 +887,7 @@ static OpcodeInitializer _ENT_QUERY_MAX(ENT_QUERY_MAX, &Interpreter::InterpretNo
 static OpcodeInitializer _ENT_QUERY_MIN(ENT_QUERY_MIN, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name [number entities_returned] [bool numeric])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects a number of entities with the lowest values for the label `label_name`.  If `num_entities` is specified, it will return that many entities, otherwise will return 1.  If `numeric` is true, its default value, then it only considers numeric values; if false, will consider all types.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -941,7 +941,7 @@ static OpcodeInitializer _ENT_QUERY_MIN(ENT_QUERY_MIN, &Interpreter::InterpretNo
 static OpcodeInitializer _ENT_QUERY_SUM(ENT_QUERY_SUM, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name [string weight_label_name])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, returns the sum of all entities over the value at `label_name`.  If `weight_label_name` is specified, it will find the weighted sum, which is the same as a dot product.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -978,7 +978,7 @@ static OpcodeInitializer _ENT_QUERY_SUM(ENT_QUERY_SUM, &Interpreter::InterpretNo
 static OpcodeInitializer _ENT_QUERY_MODE(ENT_QUERY_MODE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name [string weight_label_name])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, finds the statistical mode of `label_name` across all entities using numerical values.  If `weight_label_name` is specified, it will find the weighted mode.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1017,7 +1017,7 @@ static OpcodeInitializer _ENT_QUERY_MODE(ENT_QUERY_MODE, &Interpreter::Interpret
 static OpcodeInitializer _ENT_QUERY_QUANTILE(ENT_QUERY_QUANTILE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name [number q] [string weight_label_name])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, finds the statistical quantile of `label_name` for numerical data, using `q` as the parameter to the quantile, the default being 0.5 which is the median.  If `weight_label_name` is specified, it will find the weighted quantile, otherwise the weight of every entity is 1.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1060,7 +1060,7 @@ static OpcodeInitializer _ENT_QUERY_QUANTILE(ENT_QUERY_QUANTILE, &Interpreter::I
 static OpcodeInitializer _ENT_QUERY_GENERALIZED_MEAN(ENT_QUERY_GENERALIZED_MEAN, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name [number p] [string weight_label_name] [number center] [bool calculate_moment] [bool absolute_value])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, computes the generalized mean over the label `label_name` for numerical data.  If `p` is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity), to harmonic mean (-1), to geometric mean (0), to arithmetic mean (1), to maximum (infinity).  If `weight_label_name` is specified, it will normalize the weights and compute a weighted mean.  If `center` is specified, calculations will use that value as the central point, and the default is 0.0.  If `calculate_moment` is true, the results will not be raised to 1 / `p`.  If `absolute_value` is true, the differences will take the absolute value.  Various parameterizations of `(generalized_mean)` can be used to compute moments about the mean, especially by setting the `calculate_moment` parameter to true and using the mean as the center.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1137,7 +1137,7 @@ static OpcodeInitializer _ENT_QUERY_GENERALIZED_MEAN(ENT_QUERY_GENERALIZED_MEAN,
 static OpcodeInitializer _ENT_QUERY_MIN_DIFFERENCE(ENT_QUERY_MIN_DIFFERENCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name [number cyclic_range] [bool include_zero_difference])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, finds the smallest difference between any two values for the label `label_name`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.  If `include_zero_difference` is true then it will return 0 if the smallest gap between any two numbers is 0.  If `include_zero_difference` is false, its default value, it will return the smallest nonzero value.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1183,7 +1183,7 @@ static OpcodeInitializer _ENT_QUERY_MIN_DIFFERENCE(ENT_QUERY_MIN_DIFFERENCE, &In
 static OpcodeInitializer _ENT_QUERY_MAX_DIFFERENCE(ENT_QUERY_MAX_DIFFERENCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name [number cyclic_range])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, finds the largest difference between any two values for the label `label_name`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1226,7 +1226,7 @@ static OpcodeInitializer _ENT_QUERY_MAX_DIFFERENCE(ENT_QUERY_MAX_DIFFERENCE, &In
 static OpcodeInitializer _ENT_QUERY_VALUE_MASSES(ENT_QUERY_VALUE_MASSES, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name [string weight_label_name])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, computes the counts for each value of the label `label_name` and returns an assoc with the keys being the label values and the values being the counts or weights of the values.  If `weight_label_name` is specified, then it will accumulate that weight for each value, otherwise it will use a weight of 1 for each yielding a count.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1280,7 +1280,7 @@ static OpcodeInitializer _ENT_QUERY_VALUE_MASSES(ENT_QUERY_VALUE_MASSES, &Interp
 static OpcodeInitializer _ENT_QUERY_LESS_OR_EQUAL_TO(ENT_QUERY_LESS_OR_EQUAL_TO, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name * max_value)";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects entities with a value in label `label_name` less than or equal to `max_value`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1320,7 +1320,7 @@ static OpcodeInitializer _ENT_QUERY_LESS_OR_EQUAL_TO(ENT_QUERY_LESS_OR_EQUAL_TO,
 static OpcodeInitializer _ENT_QUERY_GREATER_OR_EQUAL_TO(ENT_QUERY_GREATER_OR_EQUAL_TO, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string label_name * min_value)";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects entities with a value in label `label_name` greater than or equal to `min_value`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1360,7 +1360,7 @@ static OpcodeInitializer _ENT_QUERY_GREATER_OR_EQUAL_TO(ENT_QUERY_GREATER_OR_EQU
 static OpcodeInitializer _ENT_QUERY_WITHIN_GENERALIZED_DISTANCE(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(number max_distance list feature_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects the entities with labels that are at least as close as `max_distance` to the given point.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 	d.examples = MakeAmalgamExamples({
 {R"&((seq
@@ -1417,7 +1417,7 @@ static OpcodeInitializer _ENT_QUERY_WITHIN_GENERALIZED_DISTANCE(ENT_QUERY_WITHIN
 static OpcodeInitializer _ENT_QUERY_NEAREST_GENERALIZED_DISTANCE(ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(list|number selection_bandwidth list feature_labels list|string axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.description = R"(When used as a query argument, selects the closest entities to the given point.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1563,7 +1563,7 @@ static OpcodeInitializer _ENT_QUERY_NEAREST_GENERALIZED_DISTANCE(ENT_QUERY_NEARE
 static OpcodeInitializer _ENT_QUERY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_DISTANCE_CONTRIBUTIONS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(list|number selection_bandwidth list feature_labels list axis_values_or_entity_id [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes the distance or surprisal contribution for every entity.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 	d.examples = MakeAmalgamExamples({
@@ -1622,7 +1622,7 @@ static OpcodeInitializer _ENT_QUERY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_DISTANCE_CO
 static OpcodeInitializer _ENT_QUERY_ENTITY_CONVICTIONS(ENT_QUERY_ENTITY_CONVICTIONS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes the case conviction for every case given in `entity_ids_to_compute` with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 	d.examples = MakeAmalgamExamples({
@@ -1754,7 +1754,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CONVICTIONS(ENT_QUERY_ENTITY_CONVICTI
 static OpcodeInitializer _ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE(ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes the case kl divergence for every case given in `entity_ids_to_compute` as a group with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 	d.examples = MakeAmalgamExamples({
@@ -1814,7 +1814,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE(ENT_QUERY_ENTITY_
 static OpcodeInitializer _ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes the case conviction for every case given in `entity_ids_to_compute` with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 	d.examples = MakeAmalgamExamples({
@@ -1946,7 +1946,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS(ENT_QUERY_ENTI
 static OpcodeInitializer _ENT_QUERY_ENTITY_KL_DIVERGENCES(ENT_QUERY_ENTITY_KL_DIVERGENCES, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes the case conviction for every case given in `entity_ids_to_compute` with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 	d.examples = MakeAmalgamExamples({
@@ -2045,7 +2045,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_KL_DIVERGENCES(ENT_QUERY_ENTITY_KL_DI
 static OpcodeInitializer _ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(list|number selection_bandwidth list feature_labels list entity_ids_to_compute [number p_value] [list|assoc|assoc of assoc weights] [list|assoc attributes] [list|assoc deviations] [list|string weights_selection_features] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes the nearest neighbors to every entity given by `entity_ids_to_compute`, normalizes their influence weights, and accumulates the entity's total influence weights relative to every other case.  It returns a list of all cases whose cumulative neighbor values are greater than zero.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 	d.examples = MakeAmalgamExamples({
@@ -2115,7 +2115,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS(ENT
 static OpcodeInitializer _ENT_QUERY_ENTITY_CLUSTERS(ENT_QUERY_ENTITY_CLUSTERS, &Interpreter::InterpretNode_ENT_QUERY_opcodes, []() {
 	OpcodeDetails d;
 	d.parameters = R"(list|number selection_bandwidth  list feature_labels number min_cluster_weight [number p_value] [list|assoc|assoc of assoc weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc deviations] [string weights_selection_feature] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list])";
-	d.returns = R"(query)";
+	d.returns = OpcodeDetails::OpcodeDataType::QUERY;
 	d.allowsConcurrency = true;
 	d.description = R"(When used as a query argument, computes a cluster id for each of the entities using the HDBSCAN algorithm.  `min_cluster_weight` is the smallest accumulated entity weight that will be considered a cluster, and can be 0.  The cluster ids returned are nonnegative integers, with the id of zero denoting entities that are independent and isolated from all clusters (noise).  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the cluster id as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding cluster ids, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 	d.examples = MakeAmalgamExamples({

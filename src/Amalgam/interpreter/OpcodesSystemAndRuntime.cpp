@@ -12,7 +12,7 @@ static std::string _opcode_group = "System and Runtime";
 static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HELP, []() {
 	OpcodeDetails d;
 	d.parameters = R"([string topic])";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(If no parameter is specified it returns a string of the topics that can be used.  For given a `topic`, returns a string or relevant data that describes the given topic.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((help "+"))", R"&({
@@ -352,7 +352,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 static OpcodeInitializer _ENT_PRINT(ENT_PRINT, &Interpreter::InterpretNode_ENT_PRINT, []() {
 	OpcodeDetails d;
 	d.parameters = R"([* node1] [* node2] ... [* nodeN])";
-	d.returns = R"(.null)";
+	d.returns = OpcodeDetails::OpcodeDataType::NULL_TYPE;
 	d.description = R"(Prints each of the parameters in order in a manner interpretable as if they were code, except strings are printed without quotes.  Output is pretty-printed.  Printing is safe for cyclic and graph data structures and will emit appropriate opcodes using the `@` prefix so that parsing will reconstruct the cyclic or graph relationships.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((print "hello world\n"))&", R"(.null)"},
@@ -427,7 +427,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 static OpcodeInitializer _ENT_SYSTEM_TIME(ENT_SYSTEM_TIME, &Interpreter::InterpretNode_ENT_SYSTEM_TIME, []() {
 	OpcodeDetails d;
 	d.parameters = R"()";
-	d.returns = R"(number)";
+	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
 	d.description = R"(Evaluates to the current system time since epoch in seconds (including fractions of seconds).)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((system_time))&", R"(1773855306.4474)",
@@ -464,7 +464,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM_TIME(EvaluableNode 
 static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT_SYSTEM, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string command [* optional1] ... [* optionalN])";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(Executes system command specified by `command`.  The available system commands are as follows:
  - exit:                Exits the application.
  - readline:            Reads a line of input from the terminal and returns the string.
@@ -735,7 +735,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 static OpcodeInitializer _ENT_RECLAIM_RESOURCES(ENT_RECLAIM_RESOURCES, &Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES, []() {
 	OpcodeDetails d;
 	d.parameters = R"([id_path entity] [bool apply_to_all_contained_entities] [bool|list clear_query_caches] [bool collect_garbage] [bool force_free_memory])";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(Frees resources of the specified types on `entity`, which is the current entity if null.  Will include all contained entities if `apply_to_all_contained_entities` is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter `clear_query_caches` will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  If `clear_query_caches` is a boolean, then it will either clear all the caches or none.  If `clear_query_caches` is a list of strings, then it will only clear caches for the labels corresponding to the strings in the list.  The parameter `collect_garbage` will perform garbage collection on the entity, and if `force_free_memory` is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((reclaim_resources .null .true ["x"] .true .true ))", R"(.null)"},

@@ -654,7 +654,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 static OpcodeInitializer _ENT_CONCAT(ENT_CONCAT, &Interpreter::InterpretNode_ENT_CONCAT, []() {
 	OpcodeDetails d;
 	d.parameters = R"([string str1] [string str2] ... [string strN])";
-	d.returns = R"(string)";
+	d.returns = OpcodeDetails::OpcodeDataType::STRING;
 	d.description = R"(Concatenates all strings and evaluates to the single resulting string.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((concat "hello" " " "world"))&", R"("hello world")"}
@@ -703,7 +703,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, 
 static OpcodeInitializer _ENT_PARSE(ENT_PARSE, &Interpreter::InterpretNode_ENT_PARSE, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string str [bool transactional] [bool return_warnings])";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(String `str` is parsed into code, and the result is returned.  If `transactional` is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If `transactional` is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If any performance constraints are given or `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or .null if none)), unless `return_warnings` is false, in which case just the value will be returned.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((parse "(seq (+ 1 2))" .true)))&", R"&((seq
@@ -783,7 +783,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, E
 static OpcodeInitializer _ENT_UNPARSE(ENT_UNPARSE, &Interpreter::InterpretNode_ENT_UNPARSE, []() {
 	OpcodeDetails d;
 	d.parameters = R"(code c [bool pretty_print] [bool sort_keys] [bool include_attributes])";
-	d.returns = R"(string)";
+	d.returns = OpcodeDetails::OpcodeDataType::STRING;
 	d.description = R"(Code is unparsed and the representative string is returned. If `pretty_print` is true, the output will be in pretty-print format, otherwise by default it will be inlined.  If `sort_keys` is true, the default, then it will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to whatever order it is stored in memory.  If `include_attributes` is true, it will print out attributes like comments, but by default it will not.  Unparsing is safe for cyclic and graph data structures and will emit appropriate opcodes using the `@` prefix so that parsing will reconstruct the cyclic or graph relationships.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unparse (parse "(print \"hello\")")))&", R"&("(print \"hello\")")&"},

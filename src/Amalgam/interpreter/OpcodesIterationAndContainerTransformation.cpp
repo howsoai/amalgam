@@ -9,7 +9,7 @@ static std::string _opcode_group = "Iteration and Container Transform";
 static OpcodeInitializer _ENT_RANGE(ENT_RANGE, &Interpreter::InterpretNode_ENT_RANGE, []() {
 	OpcodeDetails d;
 	d.parameters = R"([* function] number low_endpoint number high_endpoint [number step_size])";
-	d.returns = R"(list)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to a list with the range from `low_endpoint` to `high_endpoint`.  The default `step_size` is 1.  Evaluates to an empty list if the range is not valid.  If four arguments are specified, then `function` will be evaluated for each value in the range.)";
 	d.examples = MakeAmalgamExamples({
@@ -243,7 +243,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 static OpcodeInitializer _ENT_REWRITE(ENT_REWRITE, &Interpreter::InterpretNode_ENT_REWRITE, []() {
 	OpcodeDetails d;
 	d.parameters = R"(* function * target)";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(Rewrites `target` by applying the `function` in a bottom-up manner.  For each node in the `target` structure, it pushes a new target scope onto the target stack, with `(current_value)` being the current node and `(current_index)` being to the index to the current node relative to the node passed into rewrite accessed via target, and evaluates `function`.  Returns the resulting structure, after have been rewritten by function.  Note that there is a small performance overhead if `target` is a graph structure rather than a tree structure.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((rewrite
@@ -423,7 +423,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 static OpcodeInitializer _ENT_MAP(ENT_MAP, &Interpreter::InterpretNode_ENT_MAP, []() {
 	OpcodeDetails d;
 	d.parameters = R"(* function [list|assoc collection1] [list|assoc collection2] ... [list|assoc collectionN])";
-	d.returns = R"(list)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(For each element in the collection, pushes a new target scope onto the stack, so that `(current_value)` accesses the element or elements in the list and `(current_index)` accesses the list or assoc index, with `(target)` representing the outer set of lists or assocs, and evaluates the function.  Returns the list of results, mapping the list via the specified `function`.  If multiple lists or assocs are specified, then it pulls from each list or assoc simultaneously (null if overrun or index does not exist) and `(current_value)` contains an array of the values in parameter order.  Note that concurrency is only available when more than one one collection is specified.)";
 	d.examples = MakeAmalgamExamples({
@@ -1518,7 +1518,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 static OpcodeInitializer _ENT_WEAVE(ENT_WEAVE, &Interpreter::InterpretNode_ENT_WEAVE, []() {
 	OpcodeDetails d;
 	d.parameters = R"([* function] list|immediate values1 [list|immediate values2] [list|immediate values3]...)";
-	d.returns = R"(list)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST;
 	d.description = R"(Interleaves the values lists optionally by applying a function.  If only `values1` is passed in, then it evaluates to `values1`. If `values1` and `values2` are passed in, or, if more values are passed in but function is null, it interleaves the lists and extends the result to the length of the longest list, filling in the remainder with null.  If any of the value parameters are immediate, then it will repeat that immediate value when weaving.  If the `function` is specified and not null, it pushes a new target scope onto the stack, so that `(current_value)` accesses a list of elements to be woven together from the list, and `(current_index)` accesses the list or assoc index, with `(target)` representing the resulting list or assoc.  The `function` should evaluate to a list, and weave will evaluate to a concatenated list of all of the lists that the function evaluated to.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((weave
@@ -1816,7 +1816,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 static OpcodeInitializer _ENT_REDUCE(ENT_REDUCE, &Interpreter::InterpretNode_ENT_REDUCE, []() {
 	OpcodeDetails d;
 	d.parameters = R"(* function list|assoc collection)";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(For each element in the `collection` after the first one, it evaluates `function` with a new scope on the stack where `(current_value)` accesses each of the elements from the `collection`, `(current_index)` accesses the list or assoc index and `(previous_result)` accesses the previously reduced result.  If the `collection` is empty, null is returned.  If the `collection` is of size one, the single element is returned.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((reduce
@@ -2219,7 +2219,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 static OpcodeInitializer _ENT_UNZIP(ENT_UNZIP, &Interpreter::InterpretNode_ENT_UNZIP, []() {
 	OpcodeDetails d;
 	d.parameters = R"([list|assoc collection] list indices)";
-	d.returns = R"(list)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST;
 	d.description = R"(Evaluates to a new list, using `indices` to look up each value from the `collection` in the same order as each index is specified in `indices`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unzip
@@ -2361,7 +2361,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 static OpcodeInitializer _ENT_REVERSE(ENT_REVERSE, &Interpreter::InterpretNode_ENT_REVERSE, []() {
 	OpcodeDetails d;
 	d.parameters = R"(list collection)";
-	d.returns = R"(list)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST;
 	d.description = R"(Returns a new list containing the `collection` with its elements in reversed order.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((reverse
@@ -2397,7 +2397,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en,
 static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SORT, []() {
 	OpcodeDetails d;
 	d.parameters = R"([* function] list|assoc collection [number k])";
-	d.returns = R"(list)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST;
 	d.description = "Returns a new list containing the elements from `collection` sorted in increasing order, regardless of whether `collection` is an assoc or list.  If `function` is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with `(current_value)` and `(current_value 1)` accessing a pair of elements from the list, and evaluates `function`.  The function should return a number, positive if `(current_value)` is greater meaning that `(current_value)` should come after `(current_value 1)`, negative if `(current_value 1)` is greater and should come after `(current_value)`, or 0 if equal.  If `k` is specified in addition to `function` and not null, then it will only return the `k` smallest values sorted in order, or, if `k` is negative, it will return the highest `k` values using the absolute value of `k`.";
 	d.examples = MakeAmalgamExamples({
 		{R"&((sort
@@ -2738,7 +2738,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 static OpcodeInitializer _ENT_CURRENT_INDEX(ENT_CURRENT_INDEX, &Interpreter::InterpretNode_ENT_CURRENT_INDEX, []() {
 	OpcodeDetails d;
 	d.parameters = R"([number stack_distance])";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(Evaluates to the index of the current node being iterated on within the current target.  If `stack_distance` is specified, it climbs back up the target stack that many levels.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&([0 1 2 3 (current_index) 5])&", R"([0 1 2 3 4 5])"},
@@ -2812,7 +2812,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 static OpcodeInitializer _ENT_CURRENT_VALUE(ENT_CURRENT_VALUE, &Interpreter::InterpretNode_ENT_CURRENT_VALUE, []() {
 	OpcodeDetails d;
 	d.parameters = R"([number stack_distance])";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(Evaluates to the current node being iterated on within the current target.  If `stack_distance` is specified, it climbs back up the target stack that many levels.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((map
@@ -2854,7 +2854,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNod
 static OpcodeInitializer _ENT_PREVIOUS_RESULT(ENT_PREVIOUS_RESULT, &Interpreter::InterpretNode_ENT_PREVIOUS_RESULT, []() {
 	OpcodeDetails d;
 	d.parameters = R"([number stack_distance] [bool copy])";
-	d.returns = R"(any)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(Evaluates to the resulting node of the previous iteration for applicable opcodes. If `stack_distance` is specified, it climbs back up the target stack that many levels.  If `copy` is true, which is false by default, then a copy of the resulting node of the previous iteration is returned, otherwise the result of the previous iteration is returned directly and consumed.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((while

@@ -169,6 +169,7 @@ jobs:
           echo "brew version: $(${BREW} --version | head -n1)"
           echo "brew prefix: $(${BREW} --prefix)"
           eval "$(${BREW} shellenv)"
+          ${BREW} tap | grep -qx "aws/tap" && ${BREW} untap aws/tap || true
           ${BREW} list libomp >/dev/null 2>&1 || ${BREW} install libomp
           ${BREW} list ninja  >/dev/null 2>&1 || ${BREW} install ninja
           ${BREW} list --versions libomp

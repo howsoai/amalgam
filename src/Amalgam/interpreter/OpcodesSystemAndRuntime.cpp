@@ -293,7 +293,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 
 		opcode_attribs->SetMappedChildNode("description", evaluableNodeManager->AllocNode(od.description));
 		opcode_attribs->SetMappedChildNode("parameters", evaluableNodeManager->AllocNode(od.parameters));
-		opcode_attribs->SetMappedChildNode("returns", evaluableNodeManager->AllocNode(od.returns));
+
+		std::string returns_str = OpcodeDetails::OpcodeDataTypeToString(od.returns);
+		opcode_attribs->SetMappedChildNode("returns", evaluableNodeManager->AllocNode(returns_str));
+
 		opcode_attribs->SetMappedChildNode("allows_concurrency", evaluableNodeManager->AllocNode(od.allowsConcurrency));
 		opcode_attribs->SetMappedChildNode("requires_entity", evaluableNodeManager->AllocNode(od.requiresEntity));
 		opcode_attribs->SetMappedChildNode("new_scope", evaluableNodeManager->AllocNode(od.newScope));

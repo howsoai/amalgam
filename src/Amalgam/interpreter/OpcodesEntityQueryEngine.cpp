@@ -8,7 +8,7 @@ static std::string _opcode_group = "Entity Query Engine";
 static OpcodeInitializer _ENT_CONTAINED_ENTITIES(ENT_CONTAINED_ENTITIES, &Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES, []() {
 	OpcodeDetails d;
 	d.parameters = R"([id_path containing_entity | query|list condition1] [query|list condition2] ...[ query|list conditionN])";
-	d.returns = R"(list of string)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST_OF_STRINGS;
 	d.description = R"(Returns a list of strings of ids of entities contained in `containing_entity` or the current entity if containing_entity is omitted or null.  The parameters of `condition1` through `conditionN` are query conditions, and they may be any of the query opcodes (beginning with `query_`) or may be a list of query opcodes, where each condition will be executed in order as a conjunction.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq

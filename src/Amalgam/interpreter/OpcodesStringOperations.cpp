@@ -10,7 +10,7 @@ static std::string _opcode_group = "String Operations";
 static OpcodeInitializer _ENT_EXPLODE(ENT_EXPLODE, &Interpreter::InterpretNode_ENT_EXPLODE, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string str [number stride])";
-	d.returns = R"(list of string)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST_OF_STRINGS;
 	d.description = R"(Explodes `str` into the pieces that make it up.  If `stride` is zero or unspecified, then it explodes `str` by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((explode "abcdefghi"))&", R"([
@@ -114,7 +114,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en,
 static OpcodeInitializer _ENT_SPLIT(ENT_SPLIT, &Interpreter::InterpretNode_ENT_SPLIT, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string str [string split_string] [number max_split_count] [number stride])";
-	d.returns = R"(list of string)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST_OF_STRINGS;
 	d.description = R"(Splits `str` into a list of strings based on `split_string`, which is handled as a regular expression.  Any data matching `split_string` will not be included in any of the resulting strings.  If `max_split_count` is provided and greater than zero, it will only split up to that many times.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified and a value other than zero, then it does not use `split_string` as a regular expression but rather a string, and it breaks the result into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((split "hello world"))&", R"(["hello world"])"},
@@ -271,7 +271,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, E
 static OpcodeInitializer _ENT_SUBSTR(ENT_SUBSTR, &Interpreter::InterpretNode_ENT_SUBSTR, []() {
 	OpcodeDetails d;
 	d.parameters = R"(string str [number|string location] [number|string param] [string replacement] [number stride])";
-	d.returns = R"(string | list of string | list of list of string)";
+	d.returns = OpcodeDetails::OpcodeDataType::STRING | OpcodeDetails::OpcodeDataType::LIST_OF_STRINGS | OpcodeDetails::OpcodeDataType::LIST;
 	d.description = R"(Extracts and optionally replaces a substring of string `str`.  If `location` is a number, then evaluates to a new string representing the substring starting at the offset specified by `location`.  If `location` is a string, then it will treat `location` as a regular expression.  If `param` is specified, then it may change the interpretation of `location`.  If `param` is specified and `location` is a number it will go until that length beyond the offset specified by `location`.  If `param` is specified and `location` is a regular expression, `param` will represent one of the following: if null or "first", then it will return the first match of the regular expression; or if `param` is a number or the string "all", then substr will evaluate to a list of up to param matches (which may be infinite yielding the same result as "all").  If `param` is a negative number or the string "submatches", then it will return a list of list of strings, for each match up to the count of the negative number or all matches.  If `param` is "submatches", each inner list will represent the full regular expression match followed by each submatch as captured by parenthesis in the regular expression, ordered from an outer to inner, left-to-right manner.  If `location` is a negative number, then it will measure from the end of the string rather than the beginning.  If `replacement` is specified and not null, it will return the original string rather than the substring, but the substring will be replaced by replacement regardless of what `location` is.  And if replacement is specified, then it will override some of the logic for the `param` type and always return just a string and not a list.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((substr "hello world"))&", R"("hello world")"},

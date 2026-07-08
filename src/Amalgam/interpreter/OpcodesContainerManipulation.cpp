@@ -1450,7 +1450,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODIFY(EvaluableNode *en, 
 static OpcodeInitializer _ENT_INDICES(ENT_INDICES, &Interpreter::InterpretNode_ENT_INDICES, []() {
 	OpcodeDetails d;
 	d.parameters = R"(list|assoc collection)";
-	d.returns = R"(list of string|number)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST_OF_NUMBERS | OpcodeDetails::OpcodeDataType::LIST_OF_STRINGS;
 	d.description = R"(Evaluates to the list of strings or numbers that comprise the indices for the list or associative parameter `collection`.  It is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((sort

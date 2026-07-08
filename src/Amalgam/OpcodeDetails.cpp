@@ -85,6 +85,97 @@ std::pair<ExecutionPermissions, ExecutionPermissions> ExecutionPermissions::Eval
 	return std::make_pair(permissions_to_set, permission_values);
 }
 
+std::string OpcodeDetails::OpcodeDataTypeToString(OpcodeDataType odt)
+{
+	std::string type_str;
+
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::NULL_TYPE))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "null";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::BOOL))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "bool";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::NUMBER))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "number";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::BARE_STRING))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "bare_string";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::STRING))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::LIST))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::UNORDERED_LIST))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::ASSOC))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::QUERY))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::WALK_PATH))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::ENTITY_ID))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::LIST_OF_NUMBERS))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::LIST_OF_STRINGS))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "";
+	}
+	if(IsSet(odt, OpcodeDetails::OpcodeDataType::LIST_OF_ENTITY_ID))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "";
+	}
+
+	return type_str;
+}
 
 //returns a copy of s where each consecutive whitespace block is replaced
 //by a single space, any leading and trailing spaces are removed,

@@ -271,7 +271,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en,
 static OpcodeInitializer _ENT_GET_DIGITS(ENT_GET_DIGITS, &Interpreter::InterpretNode_ENT_GET_DIGITS, []() {
 	OpcodeDetails d;
 	d.parameters = R"(number value [number base] [number start_digit] [number end_digit] [bool relative_to_zero])";
-	d.returns = R"(list of number)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST_OF_NUMBERS;
 	d.description = R"(Evaluates to a list of the number of each digit of `value` for the given `base`.  If `base` is omitted, 10 is the default.  The parameters `start_digit` and `end_digit` can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of `start_digit` and `end_digit` are with respect to relative_to_zero, which defaults to true.  If relative_to_zero is true, then the digits are indexed from their distance to zero, such as "5 4 3 2 1 0 . -1 -2".  If relative_to_zero is false, then the digits are indexed from their most significant digit, such as "0 1 2 3 4 5 . 6  7".  The default values of `start_digit` and `end_digit` are the most and least significant digits respectively.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((get_digits 1234567.8 10))&", R"([

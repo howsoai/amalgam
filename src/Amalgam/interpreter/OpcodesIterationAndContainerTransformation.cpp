@@ -1004,7 +1004,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT_FILTER, []() {
 	OpcodeDetails d;
 	d.parameters = R"([* function] list|assoc collection [bool match_on_value])";
-	d.returns = R"(list|assoc)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST | OpcodeDetails::OpcodeDataType::ASSOC;
 	d.allowsConcurrency = true;
 	d.description = R"(For each element in the `collection`, pushes a new target scope onto the stack, so that `(current_value)` accesses the element in the list and `(current_index)` accesses the list or assoc index, with `(target)` representing the original list or assoc, and evaluates the function.  If `function` evaluates to true, then the element is put in a new list or assoc (matching the input type) that is returned.  If function is omitted, then it will remove any elements in the collection that are null.  The parameter match_on_value defaults to null, which will evaluate the function.  However, if match_on_value is true, it will only retain elements which equal the value in function and if match_on_value is false, it will retain elements which do not equal the value in function.  Using match_on_value and wrapping filter in a size opcode additionally acts as an efficient way to count the number of a specific element in a container.)";
 	d.examples = MakeAmalgamExamples({
@@ -1916,7 +1916,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 static OpcodeInitializer _ENT_ASSOCIATE(ENT_ASSOCIATE, &Interpreter::InterpretNode_ENT_ASSOCIATE, []() {
 	OpcodeDetails d;
 	d.parameters = R"([* index1] [* value1] [* index2] [* value2] ... [* indexN] [* valueN])";
-	d.returns = R"(assoc)";
+	d.returns = OpcodeDetails::OpcodeDataType::ASSOC;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the assoc, where each pair of parameters (e.g., `index1` and `value1`) comprises a index/value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.)";
 	d.examples = MakeAmalgamExamples({
@@ -2028,7 +2028,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 static OpcodeInitializer _ENT_ZIP(ENT_ZIP, &Interpreter::InterpretNode_ENT_ZIP, []() {
 	OpcodeDetails d;
 	d.parameters = R"([* function] list indices [* values])";
-	d.returns = R"(assoc)";
+	d.returns = OpcodeDetails::OpcodeDataType::ASSOC;
 	d.description = R"(Evaluates to a new assoc where `indices` are the keys and `values` are the values, with corresponding positions in the list matched.  If the `values` is omitted and only one parameter is specified, then it will use nulls for each of the values.  If `values` is not a list, then all of the values in the assoc returned are set to the same value.  When two parameters are specified, it is the `indices` and `values`.  When three values are specified, it is the `function`, indices, and values.  The parameter `values` defaults to null and `function` defaults to `(lambda (current_value))`.  When there is a collision of indices, `function` is called with a of new target scope pushed onto the stack, so that `(current_value)` accesses a list of elements from the list, `(current_index)` accesses the list or assoc index if it is not already reduced, and `(target)` represents the original list or assoc.  When evaluating `function`, existing indices will be overwritten.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unparse

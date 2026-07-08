@@ -142,8 +142,7 @@ public:
 		NEW, PARTIAL, CONDITIONAL, EXISTING, NULL_VALUE
 	};
 
-	using OpcodeDataTypeType = uint16_t;
-	enum class OpcodeDataType : OpcodeDataTypeType
+	enum class OpcodeDataType : uint16_t
 	{
 		NULL_TYPE = 1 << 0,
 		BOOL = 1 << 1,
@@ -153,11 +152,18 @@ public:
 		LIST = 1 << 5,
 		UNORDERED_LIST = 1 << 6,
 		ASSOC = 1 << 7,
-		WALK_PATH = 1 << 8,
-		ENTITY_ID = 1 << 9,
-		QUERY = 1 << 10,
+		QUERY = 1 << 8,
+		WALK_PATH = 1 << 9,
+		ENTITY_ID = 1 << 10,
+		LIST_OF_NUMBERS = 1 << 11,
+		LIST_OF_STRINGS = 1 << 12,
+		LIST_OF_ENTITY_ID = 1 << 13,
+		
 		ANY_BASIC = NULL_TYPE | BOOL | NUMBER | STRING | LIST | ASSOC
 	};
+
+	//returns a string corresponding to the datatype
+	static std::string OpcodeDataTypeToString(OpcodeDataType odt);
 
 	//attribute ordering here is generally ordered by operational use to improve caching,
 	//with descriptive strings at the end

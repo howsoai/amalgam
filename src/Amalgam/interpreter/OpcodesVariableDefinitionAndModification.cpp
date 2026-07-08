@@ -12,7 +12,7 @@ static std::string _opcode_group = "Variable Definition and Modification";
 static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT_SYMBOL, []() {
 	OpcodeDetails d;
 	d.parameters = R"()";
-	d.returns = R"(*)";
+	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
 	d.description = R"(A string representing an internal symbol, a variable.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
@@ -1271,7 +1271,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 static OpcodeInitializer _ENT_STACK(ENT_STACK, &Interpreter::InterpretNode_ENT_STACK, []() {
 	OpcodeDetails d;
 	d.parameters = R"( )";
-	d.returns = R"(list of assoc)";
+	d.returns = OpcodeDetails::OpcodeDataType::LIST;
 	d.description = R"(Evaluates to the current execution context, also known as the scope stack, containing all of the variables for each layer of the stack.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((stack))&", R"([{}])"},
@@ -1305,7 +1305,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, E
 static OpcodeInitializer _ENT_ARGS(ENT_ARGS, &Interpreter::InterpretNode_ENT_ARGS, []() {
 	OpcodeDetails d;
 	d.parameters = R"([number stack_distance])";
-	d.returns = R"(assoc)";
+	d.returns = OpcodeDetails::OpcodeDataType::ASSOC;
 	d.description = R"(Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments.  If `stack_distance` is specified, then it evaluates to the context that many layers up the stack.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((call

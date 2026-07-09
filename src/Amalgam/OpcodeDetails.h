@@ -212,6 +212,7 @@ public:
 	std::string_view opcodeGroup;
 };
 
+//give OpcodeDetails::OpcodeDataType bitwise operations
 template<> struct IsBitmaskEnum<OpcodeDetails::OpcodeDataType> : std::true_type
 {
 };

@@ -1,3 +1,4 @@
+#pragma once
 #include <type_traits>
 
 //framework for enabling class enums to work with bitmasks

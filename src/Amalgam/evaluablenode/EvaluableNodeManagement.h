@@ -289,7 +289,15 @@ public:
 	{
 		if(original != nullptr
 				&& (original.uniqueUnreferencedTopNode || (original.unique && !ensure_copy_if_top_node_in_cycle)))
+		{
+			//clear the freeable bit in case it is on the stack
+		#ifdef MULTITHREAD_SUPPORT
+			original->SetIsFreeableAtomic(false);
+		#else
+			original->SetIsFreeable(false);
+		#endif
 			return;
+		}
 
 		EvaluableNode *copy = AllocNode(original.GetReference(), copy_metadata);
 		//the copy will only be unique if there are no child nodes

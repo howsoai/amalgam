@@ -276,12 +276,12 @@ static OpcodeInitializer _ENT_SUBSTR(ENT_SUBSTR, &Interpreter::InterpretNode_ENT
 	d.examples = MakeAmalgamExamples({
 		{R"&((substr "hello world"))&", R"("hello world")"},
 		{R"&((substr "hello world" 1))&", R"("ello world")"},
-		{R"&((substr "hello world" 1 8))&", R"("ello wo")"},
+		{R"&((substr "hello world" 1 8))&", R"("ello wor")"},
 		{R"&((substr "hello world" 1 100))&", R"("ello world")"},
 		{R"&((substr "hello world" 1 -1))&", R"("ello worl")"},
 		{R"&((substr "hello world" -4 -1))&", R"("orl")"},
 		{R"&((substr "hello world" -4 -1 .null 1))&", R"("orl")"},
-		{R"&((substr "hello world" 1 3 "x"))&", R"("hxlo world")"},
+		{R"&((substr "hello world" 1 3 "x"))&", R"("hxo world")"},
 		{R"&((substr "hello world" "(e|o)"))&", R"("e")"},
 		{R"&((substr "hello world" "[h|w](e|o)"))&", R"("he")"},
 		{R"&((substr "hello world" "[h|w](e|o)" 1))&", R"(["he"])"},
@@ -308,12 +308,12 @@ static OpcodeInitializer _ENT_SUBSTR(ENT_SUBSTR, &Interpreter::InterpretNode_ENT
 			{R"&((substr "hello world" "(e|o)" 2 "[$&]"))&", R"("h[e]ll[o] world")"},
 			{R"&((substr "abcdefgijk"))&", R"("abcdefgijk")"},
 			{R"&((substr "abcdefgijk" 1))&", R"("bcdefgijk")"},
-			{R"&((substr "abcdefgijk" 1 8))&", R"("bcdefgi")"},
+			{R"&((substr "abcdefgijk" 1 8))&", R"("bcdefgij")"},
 			{R"&((substr "abcdefgijk" 1 100))&", R"("bcdefgijk")"},
 			{R"&((substr "abcdefgijk" 1 -1))&", R"("bcdefgij")"},
 			{R"&((substr "abcdefgijk" -4 -1))&", R"("gij")"},
 			{R"&((substr "abcdefgijk" -4 -1 .null 1))&", R"("gij")"},
-			{R"&((substr "abcdefgijk" 1 3 "x"))&", R"("axdefgijk")"}
+			{R"&((substr "abcdefgijk" 1 3 "x"))&", R"("axefgijk")"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
@@ -400,12 +400,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 		//get end of substring
 		size_t end_offset = string_to_substr.size();
 		//only need to do end processing if have a value smaller than the length
-		if(length_raw < end_offset)
+		if(start_offset_raw + length_raw < end_offset)
 		{
 			if(length_raw >= 0)
 			{
 				if(stride == 0)
-					end_offset = StringManipulation::GetNthUTF8CharacterOffset(std::string_view(&string_to_substr[start_offset]), static_cast<size_t>(length_raw));
+					end_offset = start_offset + StringManipulation::GetNthUTF8CharacterOffset(std::string_view(&string_to_substr[start_offset]), static_cast<size_t>(length_raw));
 				else
 					end_offset = start_offset + stride * static_cast<size_t>(length_raw);
 			}

@@ -908,9 +908,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
 		result = RemoveTopConcludeOrReturnNode(result, &container->evaluableNodeManager);
 
-	EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(result);
-	//don't put freed nodes in local allocation buffer, because that will increase memory churn
-	container->evaluableNodeManager.FreeNodeTreeIfPossible(result, false);
+	if(!result.IsImmediateValue())
+	{
+		EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(result);
+		//don't put freed nodes in local allocation buffer, because that will increase memory churn
+		container->evaluableNodeManager.FreeNodeTreeIfPossible(result, false);
+		//function will be null if not ENT_CALL_ON_ENTITY
+		result = copied_result;
+	}
 
 	if(_label_profiling_enabled)
 		PerformanceProfiler::EndOperation(container->evaluableNodeManager.GetNumberOfUsedNodes());
@@ -918,16 +923,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	if(interpreterConstraints != nullptr)
 		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
 
-	//if only want results, return them
-	if(interpreter_constraints_ptr == nullptr || ocn.size() <= 2)
-	{
-		if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
-			return EvaluableNodeReference::Null();
-		return copied_result;
-	}
-
 	if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
-		return BundleResultWithWarningsAndChangesIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
+		return BundleResultWithWarningsAndChangesIfNeeded(EvaluableNodeReference::Null(),
+			interpreter_constraints_ptr);
 
-	return BundleResultWithWarningsAndChangesIfNeeded(copied_result, interpreter_constraints_ptr);
+	return BundleResultWithWarningsAndChangesIfNeeded(result, interpreter_constraints_ptr);
 }

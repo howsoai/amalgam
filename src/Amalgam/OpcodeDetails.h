@@ -1,7 +1,6 @@
 #pragma once
 
 //project headers:
-#include "BitmaskEnum.h"
 #include "FastMath.h"
 #include "Opcodes.h"
 #include "StringInternPool.h"
@@ -142,7 +141,8 @@ public:
 		NEW, PARTIAL, CONDITIONAL, EXISTING, NULL_VALUE
 	};
 
-	enum class OpcodeDataType : uint16_t
+	using DataTypeContainer = uint16_t;
+	enum class DataType : DataTypeContainer
 	{
 		NULL_TYPE = 1 << 0,
 		BOOL = 1 << 1,
@@ -162,8 +162,31 @@ public:
 		ANY_BASIC = NULL_TYPE | BOOL | NUMBER | STRING | LIST | ASSOC
 	};
 
+	//bit‑wise operators
+	static constexpr friend DataType operator|(DataType lhs, DataType rhs) noexcept
+	{
+		return static_cast<DataType>(static_cast<DataTypeContainer>(lhs) |
+				static_cast<DataTypeContainer>(rhs));
+	}
+
+	static constexpr friend DataType operator&(DataType lhs, DataType rhs) noexcept
+	{
+		return static_cast<DataType>(static_cast<DataTypeContainer>(lhs) &
+				static_cast<DataTypeContainer>(rhs));
+	}
+
+	static constexpr friend DataType operator~(DataType v) noexcept
+	{
+		return static_cast<DataType>(~static_cast<DataTypeContainer>(v));
+	}
+
+	static constexpr bool AreDataTypesCompatible(DataType a, DataType b)
+	{
+		return (static_cast<DataTypeContainer>(a) & static_cast<DataTypeContainer>(b)) != 0;
+	}
+
 	//returns a string corresponding to the datatype
-	static std::string OpcodeDataTypeToString(OpcodeDataType odt);
+	static std::string OpcodeDataTypeToString(DataType odt);
 
 	//attribute ordering here is generally ordered by operational use to improve caching,
 	//with descriptive strings at the end
@@ -205,15 +228,11 @@ public:
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 
 	std::string_view parameters;
-	OpcodeDataType returns;
+	DataType returns;
 	std::string_view description;
 	std::vector<AmalgamExample> examples;
 	double frequencyPer10000Opcodes = 1.0;
 	std::string_view opcodeGroup;
-};
-
-template<> struct IsBitmaskEnum<OpcodeDetails::OpcodeDataType> : std::true_type
-{
 };
 
 //details for every opcode, indexed by EvaluableNodeType

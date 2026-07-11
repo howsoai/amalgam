@@ -653,7 +653,6 @@
     <ClInclude Include="AmalgamVersion.h" />
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="BinaryPacking.h" />
-    <ClInclude Include="BitmaskEnum.h" />
     <ClInclude Include="Concurrency.h" />
     <ClInclude Include="Cryptography.h" />
     <ClInclude Include="DateTimeFormat.h" />

@@ -114,7 +114,6 @@ set(COMMON_SOURCE
     src/Amalgam/AssetManager.h
     src/Amalgam/BinaryPacking.cpp
     src/Amalgam/BinaryPacking.h
-    src/Amalgam/BitmaskEnum.h
     src/Amalgam/Cryptography.cpp
     src/Amalgam/Cryptography.h
     src/Amalgam/DateTimeFormat.cpp

@@ -7,7 +7,7 @@ static std::string _opcode_group = "Basic Math";
 static OpcodeInitializer _ENT_ADD(ENT_ADD, &Interpreter::InterpretNode_ENT_ADD, []() {
 	OpcodeDetails d;
 	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the sum of all numbers.)";
 	d.examples = MakeAmalgamExamples({
@@ -51,7 +51,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, Eva
 static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode_ENT_SUBTRACT, []() {
 	OpcodeDetails d;
 	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative)";
 	d.examples = MakeAmalgamExamples({
@@ -100,7 +100,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en
 static OpcodeInitializer _ENT_MULTIPLY(ENT_MULTIPLY, &Interpreter::InterpretNode_ENT_MULTIPLY, []() {
 	OpcodeDetails d;
 	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the product of all numbers.)";
 	d.examples = MakeAmalgamExamples({
@@ -144,7 +144,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 static OpcodeInitializer _ENT_DIVIDE(ENT_DIVIDE, &Interpreter::InterpretNode_ENT_DIVIDE, []() {
 	OpcodeDetails d;
 	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to `x1` / `x2` / ... / `xN`.)";
 	d.examples = MakeAmalgamExamples({
@@ -220,7 +220,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, 
 static OpcodeInitializer _ENT_MODULUS(ENT_MODULUS, &Interpreter::InterpretNode_ENT_MODULUS, []() {
 	OpcodeDetails d;
 	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates the modulus of `x1` mod `x2` mod ... mod `xN`.)";
 	d.examples = MakeAmalgamExamples({
@@ -271,7 +271,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en,
 static OpcodeInitializer _ENT_GET_DIGITS(ENT_GET_DIGITS, &Interpreter::InterpretNode_ENT_GET_DIGITS, []() {
 	OpcodeDetails d;
 	d.parameters = R"(number value [number base] [number start_digit] [number end_digit] [bool relative_to_zero])";
-	d.returns = OpcodeDetails::OpcodeDataType::LIST_OF_NUMBERS;
+	d.returns = OpcodeDetails::DataType::LIST_OF_NUMBERS;
 	d.description = R"(Evaluates to a list of the number of each digit of `value` for the given `base`.  If `base` is omitted, 10 is the default.  The parameters `start_digit` and `end_digit` can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of `start_digit` and `end_digit` are with respect to relative_to_zero, which defaults to true.  If relative_to_zero is true, then the digits are indexed from their distance to zero, such as "5 4 3 2 1 0 . -1 -2".  If relative_to_zero is false, then the digits are indexed from their most significant digit, such as "0 1 2 3 4 5 . 6  7".  The default values of `start_digit` and `end_digit` are the most and least significant digits respectively.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((get_digits 1234567.8 10))&", R"([
@@ -491,7 +491,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DIGITS(EvaluableNode *
 static OpcodeInitializer _ENT_SET_DIGITS(ENT_SET_DIGITS, &Interpreter::InterpretNode_ENT_SET_DIGITS, []() {
 	OpcodeDetails d;
 	d.parameters = R"(number value [number base] [list|number|null digits] [number start_digit] [number end_digit] [bool relative_to_zero])";
-	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to `value` having each of the values in the list of `digits` replace each of the relative digits in `value` for the given base.  If a digit is null in `digits`, then that digit is not set.  If `base` is omitted, 10 is the default.  The parameters `start_digit` and `end_digit` can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of `start_digit` and `end_digit` are with respect to `relative_to_zero`, which defaults to true.  If `relative_to_zero` is true, then the digits are indexed from their distance to zero, such as "5 4 3 2 1 0 . -1 -2".  If `relative_to_zer`o is false, then the digits are indexed from their most significant digit, such as "0 1 2 3 4 5 . 6  7".  The default values of `start_digit` and `end_digit` are the most and least significant digits respectively.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((set_digits
@@ -759,7 +759,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 static OpcodeInitializer _ENT_FLOOR(ENT_FLOOR, &Interpreter::InterpretNode_ENT_FLOOR, []() {
 	OpcodeDetails d;
 	d.parameters = R"(number x)";
-	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the mathematical floor of x.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((floor 1.5))", R"(1)"}
@@ -783,7 +783,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLOOR(EvaluableNode *en, E
 static OpcodeInitializer _ENT_CEILING(ENT_CEILING, &Interpreter::InterpretNode_ENT_CEILING, []() {
 	OpcodeDetails d;
 	d.parameters = R"(number x)";
-	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the mathematical ceiling of x.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((ceil 1.5))", R"(2)"}
@@ -807,7 +807,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CEILING(EvaluableNode *en,
 static OpcodeInitializer _ENT_ROUND(ENT_ROUND, &Interpreter::InterpretNode_ENT_ROUND, []() {
 	OpcodeDetails d;
 	d.parameters = R"(number x [number significant_digits] [number significant_digits_after_decimal])";
-	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Rounds the value `x` and evaluates to the new value.  If only one parameter is specified, it rounds to the nearest integer.  If `significant_digits` is specified, then it rounds to the specified number of significant digits.  If `significant_digits_after_decimal` is specified, then it ensures that `x` will be rounded at least to the number of decimal points past the integer as specified, and takes priority over `significant_digits`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((round 12.7))&", R"(13)"},
@@ -894,7 +894,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, E
 static OpcodeInitializer _ENT_ABS(ENT_ABS, &Interpreter::InterpretNode_ENT_ABS, []() {
 	OpcodeDetails d;
 	d.parameters = R"(number x)";
-	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to absolute value of `x`)";
 	d.examples = MakeAmalgamExamples({
 		{R"((abs -0.5))", R"(0.5)"}
@@ -918,7 +918,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ABS(EvaluableNode *en, Eva
 static OpcodeInitializer _ENT_MAX(ENT_MAX, &Interpreter::InterpretNode_ENT_MAX, []() {
 	OpcodeDetails d;
 	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the maximum of all of parameters.)";
 	d.examples = MakeAmalgamExamples({
@@ -984,7 +984,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, Eva
 static OpcodeInitializer _ENT_MIN(ENT_MIN, &Interpreter::InterpretNode_ENT_MIN, []() {
 	OpcodeDetails d;
 	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = OpcodeDetails::OpcodeDataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the minimum of all of the numbers.)";
 	d.examples = MakeAmalgamExamples({
@@ -1049,7 +1049,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, Eva
 static OpcodeInitializer _ENT_INDEX_MAX(ENT_INDEX_MAX, &Interpreter::InterpretNode_ENT_INDEX_MAX, []() {
 	OpcodeDetails d;
 	d.parameters = R"([[number x1] [number x2] [number x3] ... [number xN]] | assoc|list values)";
-	d.returns = OpcodeDetails::OpcodeDataType::LIST;
+	d.returns = OpcodeDetails::DataType::LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the maximum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the maximum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the maximum value.)";
 	d.examples = MakeAmalgamExamples({
@@ -1236,7 +1236,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 static OpcodeInitializer _ENT_INDEX_MIN(ENT_INDEX_MIN, &Interpreter::InterpretNode_ENT_INDEX_MIN, []() {
 	OpcodeDetails d;
 	d.parameters = R"([[number x1] [number x2] [number x3] ... [number xN]] | assoc values | list values)";
-	d.returns = OpcodeDetails::OpcodeDataType::LIST;
+	d.returns = OpcodeDetails::DataType::LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the minimum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the minimum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the minimum value.)";
 	d.examples = MakeAmalgamExamples({

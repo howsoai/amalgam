@@ -7,7 +7,7 @@ static std::string _opcode_group = "Metadata";
 static OpcodeInitializer _ENT_GET_ANNOTATIONS(ENT_GET_ANNOTATIONS, &Interpreter::InterpretNode_ENT_GET_ANNOTATIONS, []() {
 	OpcodeDetails d;
 	d.parameters = R"(* node)";
-	d.returns = OpcodeDetails::OpcodeDataType::STRING;
+	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(Returns a string comprising all of the annotation lines for `node`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((get_annotations
@@ -45,7 +45,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ANNOTATIONS(EvaluableN
 static OpcodeInitializer _ENT_SET_ANNOTATIONS(ENT_SET_ANNOTATIONS, &Interpreter::InterpretNode_ENT_SET_ANNOTATIONS, []() {
 	OpcodeDetails d;
 	d.parameters = R"(* node [string new_annotation])";
-	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to a new copy of `node` with the annotation specified by `new_annotation`, where each newline is a separate line of annotation.  If `new_annotation` is null or missing, it will clear annotations for `node`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unparse
@@ -92,7 +92,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ANNOTATIONS(EvaluableN
 static OpcodeInitializer _ENT_GET_COMMENTS(ENT_GET_COMMENTS, &Interpreter::InterpretNode_ENT_GET_COMMENTS, []() {
 	OpcodeDetails d;
 	d.parameters = R"(* node)";
-	d.returns = OpcodeDetails::OpcodeDataType::STRING;
+	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(Returns a strings comprising all of the comment lines for `node`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((get_comments
@@ -129,7 +129,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode
 static OpcodeInitializer _ENT_SET_COMMENTS(ENT_SET_COMMENTS, &Interpreter::InterpretNode_ENT_SET_COMMENTS, []() {
 	OpcodeDetails d;
 	d.parameters = R"(* node [string new_comment])";
-	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to a new copy of `node` with the comment specified by `new_comment`, where each newline is a separate line of comment.  If `new_comment` is null or missing, it will clear comments for `node`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unparse
@@ -176,7 +176,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode
 static OpcodeInitializer _ENT_GET_CONCURRENCY(ENT_GET_CONCURRENCY, &Interpreter::InterpretNode_ENT_GET_CONCURRENCY, []() {
 	OpcodeDetails d;
 	d.parameters = R"(* node)";
-	d.returns = OpcodeDetails::OpcodeDataType::BOOL;
+	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Returns true if `node` has a preference to be processed in a manner where its operations are run concurrently, false if it is not.  Note that concurrency is potentially subject to race conditions or inconsistent results if tasks write to the same locations without synchronization.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((get_concurrency
@@ -217,7 +217,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableN
 static OpcodeInitializer _ENT_SET_CONCURRENCY(ENT_SET_CONCURRENCY, &Interpreter::InterpretNode_ENT_SET_CONCURRENCY, []() {
 	OpcodeDetails d;
 	d.parameters = R"(* node bool concurrent)";
-	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to a new copy of `node` with the preference for concurrency set by `concurrent`.  Note that concurrency is potentially subject to race conditions or inconsistent results if tasks write to the same locations without synchronization.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unparse
@@ -277,7 +277,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableN
 static OpcodeInitializer _ENT_GET_VALUE(ENT_GET_VALUE, &Interpreter::InterpretNode_ENT_GET_VALUE, []() {
 	OpcodeDetails d;
 	d.parameters = R"(* node)";
-	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to a new copy of `node` without annotations, comments, or concurrency.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((get_value
@@ -320,7 +320,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *e
 static OpcodeInitializer _ENT_SET_VALUE(ENT_SET_VALUE, &Interpreter::InterpretNode_ENT_SET_VALUE, []() {
 	OpcodeDetails d;
 	d.parameters = R"(* target * val)";
-	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to a new copy of `node` with the value set to `val`, keeping existing annotations, comments, and concurrency).)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((set_value
@@ -366,7 +366,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *e
 static OpcodeInitializer _ENT_GET_ENTITY_ANNOTATIONS(ENT_GET_ENTITY_ANNOTATIONS, &Interpreter::InterpretNode_ENT_GET_ENTITY_ANNOTATIONS_and_GET_ENTITY_COMMENTS, []() {
 	OpcodeDetails d;
 	d.parameters = R"([id_path entity] [string label] [bool deep_annotations])";
-	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to the corresponding annotations for `entity`.  If `entity` is null then it will use the current entity.  If `label` is null or empty string, it will retrieve annotations for the entity root, otherwise if it is a valid `label` it will attempt to retrieve the annotations for that label, null if the label doesn't exist.  If `deep_annotations` is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the annotation of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_annotations is true, then it will return an assoc of label to annotation for each label in the entity.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -476,7 +476,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_ANNOTATIONS(ENT_GET_ENTITY_ANNOTATIONS,
 static OpcodeInitializer _ENT_GET_ENTITY_COMMENTS(ENT_GET_ENTITY_COMMENTS, &Interpreter::InterpretNode_ENT_GET_ENTITY_ANNOTATIONS_and_GET_ENTITY_COMMENTS, []() {
 	OpcodeDetails d;
 	d.parameters = R"([id_path entity] [string label] [bool deep_comments])";
-	d.returns = OpcodeDetails::OpcodeDataType::ANY_BASIC;
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to the corresponding comments for `entity`.  If `entity` is null then it will use the current entity.  If `label` is null or empty string, it will retrieve comments for the entity root, otherwise if it is a valid `label` it will attempt to retrieve the comments for that label, null if the label doesn't exist.  If `deep_comments` is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the comment of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_comments is true, then it will return an assoc of label to comment for each label in the entity.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq

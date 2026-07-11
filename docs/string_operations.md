@@ -205,7 +205,7 @@ Example:
 ```
 Output:
 ```amalgam
-"ello wo"
+"ello wor"
 ```
 Example:
 ```amalgam
@@ -245,7 +245,7 @@ Example:
 ```
 Output:
 ```amalgam
-"hxlo world"
+"hxo world"
 ```
 Example:
 ```amalgam
@@ -377,7 +377,7 @@ Example:
 ```
 Output:
 ```amalgam
-"bcdefgi"
+"bcdefgij"
 ```
 Example:
 ```amalgam
@@ -417,7 +417,7 @@ Example:
 ```
 Output:
 ```amalgam
-"axdefgijk"
+"axefgijk"
 ```
 
 [Amalgam Opcodes](./opcodes.md)

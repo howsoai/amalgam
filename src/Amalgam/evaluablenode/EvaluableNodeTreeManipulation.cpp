@@ -408,6 +408,14 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 	if(tree1_ordered_childs->size() > 0 || tree2_ordered_childs->size() > 0)
 	{
 		auto iocnt = GetOpcodeOrderedChildNodeType(generalized_node->GetType());
+
+		//if there is one position and there is one or fewer other elements,
+		//just use OpcodeDetails::OrderedChildNodeType::POSITION because it's more efficient
+		if((iocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED
+				|| iocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED)
+					&& tree1_ordered_childs->size() <= 2 && tree2_ordered_childs->size() <= 2)
+			iocnt = OpcodeDetails::OrderedChildNodeType::POSITION;
+
 		switch(iocnt)
 		{
 		case OpcodeDetails::OrderedChildNodeType::NONE:

@@ -188,6 +188,40 @@ public:
 	//returns a string corresponding to the datatype
 	static std::string OpcodeDataTypeToString(DataType odt);
 
+	//parameter of an opcode
+	struct ParameterDetails
+	{
+		std::string_view name;
+		DataType type;
+		bool optional = false;
+	};
+
+
+	//group of parameters for an opcode
+	//parameter2 is only used for paired parameters
+	//if is_repeating is true, will repeat parameter1 or pair of parameters as appropriate
+	struct ParameterGroup
+	{
+		ParameterGroup(ParameterDetails p1,
+				ParameterDetails p2 = {"", DataType::NULL_TYPE, true},
+				bool is_repeating = false)
+			: parameter1(p1), parameter2(p2), isRepeating(is_repeating)
+		{}
+
+		ParameterDetails parameter1;
+		ParameterDetails parameter2;
+		bool isRepeating = false;
+	};
+
+	//set of parameters for an opcode
+	struct ParameterSchema
+	{
+		OrderedChildNodeType nodeType;
+		std::vector<ParameterGroup> groups;
+	};
+
+	//TODO 25740: change parameters to type ParameterSchema
+
 	//attribute ordering here is generally ordered by operational use to improve caching,
 	//with descriptive strings at the end
 

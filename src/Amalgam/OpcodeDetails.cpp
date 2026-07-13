@@ -177,6 +177,39 @@ std::string OpcodeDetails::OpcodeDataTypeToString(DataType odt)
 	return type_str;
 }
 
+std::string OpcodeDetails::ParametersToString()
+{
+	std::string param_string;
+	for(auto &group : new_parameters.groups)
+	{
+		if(!group.isRepeating)
+		{
+			//fixed sequence
+			for(auto &p : group.params)
+			{
+				//TODO 25740: use orderedChildNodeType as appropriate
+				param_string += (p.is_optional ? "[" : "") + p.type + " " + p.name + (p.is_optional ? "]" : "") + " ";
+			}
+		}
+		else
+		{
+			//repeating parameters, just show the first two
+			for(int i = 1; i <= 2; i++)
+			{
+				for(auto &p : group.params)
+				{
+					param_string += (p.is_optional ? "[" : "") + p.type + " " + p.name + i
+							  + (p.is_optional ? "]" : "") + " ";
+				}
+			}
+
+			param_string += "... ";
+		}
+	}
+
+	return param_string;
+}
+
 //returns a copy of s where each consecutive whitespace block is replaced
 //by a single space, any leading and trailing spaces are removed,
 //numbers with large precision are truncated to remove errors of

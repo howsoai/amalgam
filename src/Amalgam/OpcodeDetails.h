@@ -196,7 +196,6 @@ public:
 		bool optional = false;
 	};
 
-
 	//group of parameters for an opcode
 	//parameter2 is only used for paired parameters
 	//if is_repeating is true, will repeat parameter1 or pair of parameters as appropriate
@@ -227,6 +226,9 @@ public:
 		//OrderedChildNodeType nodeType;
 		std::vector<ParameterGroup> groups;
 	};
+
+	//returns a string combining all parameters
+	std::string ParametersToString();
 
 	//attribute ordering here is generally ordered by operational use to improve caching,
 	//with descriptive strings at the end

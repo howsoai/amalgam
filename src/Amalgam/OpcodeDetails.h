@@ -203,8 +203,8 @@ public:
 	struct ParameterGroup
 	{
 		ParameterGroup(ParameterDetails p1,
-				ParameterDetails p2 = {"", DataType::NULL_TYPE, true},
-				bool is_repeating = false)
+				bool is_repeating = false,
+				ParameterDetails p2 = {"", DataType::NULL_TYPE, true})
 			: parameter1(p1), parameter2(p2), isRepeating(is_repeating)
 		{}
 
@@ -216,11 +216,17 @@ public:
 	//set of parameters for an opcode
 	struct ParameterSchema
 	{
-		OrderedChildNodeType nodeType;
+		ParameterSchema()
+		{}
+
+		ParameterSchema(std::initializer_list<ParameterGroup> il)
+			: groups(il)
+		{}
+
+		//TODO 25740: move this here?
+		//OrderedChildNodeType nodeType;
 		std::vector<ParameterGroup> groups;
 	};
-
-	//TODO 25740: change parameters to type ParameterSchema
 
 	//attribute ordering here is generally ordered by operational use to improve caching,
 	//with descriptive strings at the end
@@ -261,6 +267,8 @@ public:
 	//whether the opcode returns a newly allocated value
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 
+	//TODO 25740: change new_parameters to parameters following example in ENT_EXPONENT and remove
+	ParameterSchema new_parameters;
 	std::string_view parameters;
 	DataType returns;
 	std::string_view description;

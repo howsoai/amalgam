@@ -8,6 +8,9 @@ static std::string _opcode_group = "Advanced Math";
 static OpcodeInitializer _ENT_EXPONENT(ENT_EXPONENT, &Interpreter::InterpretNode_ENT_EXPONENT, []() {
 	OpcodeDetails d;
 	d.parameters = R"(number x)";
+	d.new_parameters = OpcodeDetails::ParameterSchema{
+			OpcodeDetails::ParameterGroup{{"x", OpcodeDetails::DataType::NUMBER}}
+	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(e^x)";
 	d.examples = MakeAmalgamExamples({

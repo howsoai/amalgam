@@ -659,7 +659,7 @@ static OpcodeInitializer _ENT_CONCAT(ENT_CONCAT, &Interpreter::InterpretNode_ENT
 	d.examples = MakeAmalgamExamples({
 		{R"&((concat "hello" " " "world"))&", R"("hello world")"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 10.0;
 	d.opcodeGroup = _opcode_group;

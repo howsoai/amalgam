@@ -1120,7 +1120,7 @@ static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT
 { R"&((filter .null [.null 1 .null 2 .null 3] .false))&", R"([1 2 3])" },
 { R"&((filter .null {a .null b 1 c .null d 2 e .null f 3} .true))&", R"({a .null c .null e .null})" }
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 15.5;
@@ -1933,7 +1933,7 @@ static OpcodeInitializer _ENT_ASSOCIATE(ENT_ASSOCIATE, &Interpreter::InterpretNo
 	)
 ))&", R"("{4 \"d\" a 1 b 2 c 3}")"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::PAIRED;
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 4.5;
@@ -2081,7 +2081,7 @@ static OpcodeInitializer _ENT_ZIP(ENT_ZIP, &Interpreter::InterpretNode_ENT_ZIP, 
 ))&", R"("{a 2 b 1 c (target .true \"b\") d (target .true \"b\")}")"}
 		});
 	d.newTargetScope = true;
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 18.0;
 	d.opcodeGroup = _opcode_group;
@@ -2231,7 +2231,7 @@ static OpcodeInitializer _ENT_UNZIP(ENT_UNZIP, &Interpreter::InterpretNode_ENT_U
 	["a" "b"]
 ))&", R"([1 2])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 8.0;
 	d.opcodeGroup = _opcode_group;
@@ -2584,7 +2584,7 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 	-2
 ))&", R"([9 5])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 3.0;

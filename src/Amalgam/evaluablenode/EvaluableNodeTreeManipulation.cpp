@@ -407,29 +407,29 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 	//see if both trees have ordered child nodes
 	if(tree1_ordered_childs->size() > 0 || tree2_ordered_childs->size() > 0)
 	{
-		auto iocnt = GetOpcodeOrderedChildNodeType(generalized_node->GetType());
+		auto cnst = GetChildNodeStructureType(generalized_node->GetType());
 
 		//if there is one position and there is one or fewer other elements,
-		//just use OpcodeDetails::OrderedChildNodeType::POSITION because it's more efficient
-		if((iocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED
-				|| iocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED)
+		//just use OpcodeDetails::ChildNodeStructureType::POSITION because it's more efficient
+		if((cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED
+				|| cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED)
 					&& tree1_ordered_childs->size() <= 2 && tree2_ordered_childs->size() <= 2)
-			iocnt = OpcodeDetails::OrderedChildNodeType::POSITION;
+			cnst = OpcodeDetails::ChildNodeStructureType::POSITION;
 
-		switch(iocnt)
+		switch(cnst)
 		{
-		case OpcodeDetails::OrderedChildNodeType::NONE:
+		case OpcodeDetails::ChildNodeStructureType::NONE:
 			break;
-		case OpcodeDetails::OrderedChildNodeType::UNORDERED:
+		case OpcodeDetails::ChildNodeStructureType::UNORDERED:
 			generalized_node->SetOrderedChildNodes(std::move(mm->MergeUnorderedSets(*tree1_ordered_childs, *tree2_ordered_childs)));
 			break;
 
-		case OpcodeDetails::OrderedChildNodeType::ORDERED:
+		case OpcodeDetails::ChildNodeStructureType::ORDERED:
 			generalized_node->SetOrderedChildNodes(std::move(mm->MergeSequences(*tree1_ordered_childs, *tree2_ordered_childs)));
 			break;
 
-		case OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED:
-		case OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED:
+		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED:
+		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED:
 		{
 			//start from a clean slate
 			generalized_node->ClearOrderedChildNodes();
@@ -459,19 +459,19 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 				a2.erase(begin(a2));
 
 			//append the rest
-			if(iocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED)
+			if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED)
 				merged = mm->MergeSequences(a1, a2);
-			else if(iocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED)
+			else if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED)
 				merged = mm->MergeUnorderedSetsOfPairs(a1, a2);
 			generalized_node->GetOrderedChildNodes().insert(end(generalized_node->GetOrderedChildNodes()), begin(merged), end(merged));
 			break;
 		}
 
-		case OpcodeDetails::OrderedChildNodeType::PAIRED:
+		case OpcodeDetails::ChildNodeStructureType::PAIRED:
 			generalized_node->SetOrderedChildNodes(std::move(mm->MergeUnorderedSetsOfPairs(*tree1_ordered_childs, *tree2_ordered_childs)));
 			break;
 
-		case OpcodeDetails::OrderedChildNodeType::POSITION:
+		case OpcodeDetails::ChildNodeStructureType::POSITION:
 			generalized_node->SetOrderedChildNodes(std::move(mm->MergePositions(*tree1_ordered_childs, *tree2_ordered_childs)));
 			break;
 
@@ -587,19 +587,19 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 
 	if(tree1_ordered_nodes_size > 0 && tree2_ordered_nodes_size > 0)
 	{
-		auto iocnt = GetOpcodeOrderedChildNodeType(tree1->GetType());
+		auto cnst = GetChildNodeStructureType(tree1->GetType());
 
-		//if there's only one node in each, then just use OpcodeDetails::OrderedChildNodeType::POSITION because
+		//if there's only one node in each, then just use OpcodeDetails::ChildNodeStructureType::POSITION because
 		// it's more efficient and the pairing doesn't matter
 		if(tree1_ordered_nodes_size < 2 && tree2_ordered_nodes_size < 2)
-			iocnt = OpcodeDetails::OrderedChildNodeType::POSITION;
+			cnst = OpcodeDetails::ChildNodeStructureType::POSITION;
 
-		switch(iocnt)
+		switch(cnst)
 		{
-		case OpcodeDetails::OrderedChildNodeType::NONE:
+		case OpcodeDetails::ChildNodeStructureType::NONE:
 			break;
 
-		case OpcodeDetails::OrderedChildNodeType::UNORDERED:
+		case OpcodeDetails::ChildNodeStructureType::UNORDERED:
 		{
 			EvaluableNode::OrderedType a2(tree2->GetOrderedChildNodesReference());
 
@@ -639,8 +639,8 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 			break;
 		}
 
-		case OpcodeDetails::OrderedChildNodeType::ORDERED:
-		case OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED:
+		case OpcodeDetails::ChildNodeStructureType::ORDERED:
+		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED:
 		{
 			auto &ocn1 = tree1->GetOrderedChildNodesReference();
 			auto &ocn2 = tree2->GetOrderedChildNodesReference();
@@ -649,7 +649,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 
 			size_t starting_index = 0;
 
-			if(iocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED)
+			if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED)
 			{
 				auto smallest_list_size = std::min(size1, size2);
 				if(smallest_list_size >= 1)
@@ -670,13 +670,13 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 			break;
 		}
 
-		case OpcodeDetails::OrderedChildNodeType::PAIRED:
-		case OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED:
+		case OpcodeDetails::ChildNodeStructureType::PAIRED:
+		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED:
 		{
 			EvaluableNode::OrderedType a1(tree1->GetOrderedChildNodesReference());
 			EvaluableNode::OrderedType a2(tree2->GetOrderedChildNodesReference());
 
-			if(iocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED)
+			if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED)
 			{
 				auto smallest_list_size = std::min(a1.size(), a2.size());
 				if(smallest_list_size >= 1)
@@ -738,7 +738,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 			break;
 		}
 
-		case OpcodeDetails::OrderedChildNodeType::POSITION:
+		case OpcodeDetails::ChildNodeStructureType::POSITION:
 		{
 			auto &ocn1 = tree1->GetOrderedChildNodesReference();
 			auto &ocn2 = tree2->GetOrderedChildNodesReference();
@@ -1106,7 +1106,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		return std::make_pair(n1, 0.25);
 
 	//see if compatible opcode ordering
-	if(GetOpcodeOrderedChildNodeType(n1_type) == GetOpcodeOrderedChildNodeType(n2_type))
+	if(GetChildNodeStructureType(n1_type) == GetChildNodeStructureType(n2_type))
 		return std::make_pair(n1, 0.125);
 
 	return std::make_pair(nullptr, 0.0);
@@ -1407,8 +1407,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		else if(n->IsOrderedArray())
 		{
 			auto &ocn = n->GetOrderedChildNodesReference();
-			auto ocnt = GetOpcodeOrderedChildNodeType(n->GetType());
-			if(ocnt == OpcodeDetails::OrderedChildNodeType::PAIRED)
+			auto ocnt = GetChildNodeStructureType(n->GetType());
+			if(ocnt == OpcodeDetails::ChildNodeStructureType::PAIRED)
 			{
 				size_t location = mp.interpreter->randomStream.RandSize(ocn.size() / 2);
 				ocn.insert(ocn.begin() + 2 * location, new_node);
@@ -1419,7 +1419,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 				ocn.insert(ocn.begin() + 2 * location + 1, new_node_2);
 				n->UpdateFlagsBasedOnNewChildNode(new_node_2);
 			}
-			else if(ocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED)
+			else if(ocnt == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED)
 			{
 				if(ocn.size() == 0)
 				{
@@ -1473,8 +1473,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		else if(n->GetOrderedChildNodes().size() > 0)
 		{
 			auto &ocn = n->GetOrderedChildNodesReference();
-			auto ocnt = GetOpcodeOrderedChildNodeType(n->GetType());
-			if(ocnt == OpcodeDetails::OrderedChildNodeType::PAIRED && ocn.size() >= 2)
+			auto ocnt = GetChildNodeStructureType(n->GetType());
+			if(ocnt == OpcodeDetails::ChildNodeStructureType::PAIRED && ocn.size() >= 2)
 			{
 				size_t location = mp.interpreter->randomStream.RandSize(ocn.size() / 2);
 				ocn.erase(ocn.begin() + 2 * location);
@@ -1482,7 +1482,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 				if(ocn.size() > 2 * location)
 					ocn.erase(ocn.begin() + 2 * location);
 			}
-			else if(ocnt == OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED && ocn.size() >= 3)
+			else if(ocnt == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED && ocn.size() >= 3)
 			{
 				size_t location = mp.interpreter->randomStream.RandSize((ocn.size() - 1) / 2);
 				ocn.erase(ocn.begin() + 1 + 2 * location);

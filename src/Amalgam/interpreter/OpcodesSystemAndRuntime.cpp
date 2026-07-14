@@ -367,7 +367,7 @@ static OpcodeInitializer _ENT_PRINT(ENT_PRINT, &Interpreter::InterpretNode_ENT_P
 	"\n"
 ))&", R"(.null)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.permissions = ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 	d.hasSideEffects = true;

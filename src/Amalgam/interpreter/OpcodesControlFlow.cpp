@@ -59,7 +59,7 @@ static OpcodeInitializer _ENT_SEQUENCE(ENT_SEQUENCE, &Interpreter::InterpretNode
 	a
 ))", R"(2)"},
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 15.0;
 	d.opcodeGroup = _opcode_group;
@@ -339,7 +339,7 @@ static OpcodeInitializer _ENT_WHILE(ENT_WHILE, &Interpreter::InterpretNode_ENT_W
 	i
 ))&", R"(10)"},
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED;
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 2.5;

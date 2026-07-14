@@ -37,7 +37,7 @@ static OpcodeInitializer _ENT_CONTAINED_ENTITIES(ENT_CONTAINED_ENTITIES, &Interp
 	["Entity1"]
 ])", "", R"((destroy_entities "Entity1" "Entity2"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 5.0;
@@ -75,7 +75,7 @@ static OpcodeInitializer _ENT_COMPUTE_ON_CONTAINED_ENTITIES(ENT_COMPUTE_ON_CONTA
 	4
 ])", "", R"((destroy_entities "Entity1" "Entity2"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;

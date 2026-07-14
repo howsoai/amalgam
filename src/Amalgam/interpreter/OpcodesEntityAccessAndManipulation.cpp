@@ -22,7 +22,7 @@ static OpcodeInitializer _ENT_CONTAINS_LABEL(ENT_CONTAINS_LABEL, &Interpreter::I
 	]
 ))&", R"([.true .false])", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -91,7 +91,7 @@ static OpcodeInitializer _ENT_ASSIGN_TO_ENTITIES(ENT_ASSIGN_TO_ENTITIES, &Interp
 	three 12
 })", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::PAIRED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -122,7 +122,7 @@ static OpcodeInitializer _ENT_ACCUM_TO_ENTITIES(ENT_ACCUM_TO_ENTITIES, &Interpre
 	(retrieve_entity_root "Entity")
 ))&", R"({a 3 b 5 c 7})", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::PAIRED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -158,7 +158,7 @@ static OpcodeInitializer _ENT_REMOVE_FROM_ENTITIES(ENT_REMOVE_FROM_ENTITIES, &In
 	(retrieve_entity_root "Entity")
 ))&", R"({d 4})", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::PAIRED;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.hasSideEffects = true;
@@ -307,7 +307,7 @@ static OpcodeInitializer _ENT_RETRIEVE_FROM_ENTITY(ENT_RETRIEVE_FROM_ENTITY, &In
 	{a 12 b 13}
 ])", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;

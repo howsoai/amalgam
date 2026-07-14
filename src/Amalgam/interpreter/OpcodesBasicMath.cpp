@@ -13,7 +13,7 @@ static OpcodeInitializer _ENT_ADD(ENT_ADD, &Interpreter::InterpretNode_ENT_ADD, 
 	d.examples = MakeAmalgamExamples({
 		{R"((+ 1 2 3 4))", R"(10)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 18.0;
 	d.opcodeGroup = _opcode_group;
@@ -58,7 +58,7 @@ static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode
 		{R"((- 1 2 3 4))", R"(-8)"},
 		{R"((- 3))", R"(-3)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 15.0;
 	d.opcodeGroup = _opcode_group;
@@ -106,7 +106,7 @@ static OpcodeInitializer _ENT_MULTIPLY(ENT_MULTIPLY, &Interpreter::InterpretNode
 	d.examples = MakeAmalgamExamples({
 		{R"((* 1 2 3 4))", R"(24)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 9.0;
 	d.opcodeGroup = _opcode_group;
@@ -150,7 +150,7 @@ static OpcodeInitializer _ENT_DIVIDE(ENT_DIVIDE, &Interpreter::InterpretNode_ENT
 	d.examples = MakeAmalgamExamples({
 		{R"((/ 1.0 2 3 4))", R"(0.041666666666666664)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 12.0;
 	d.opcodeGroup = _opcode_group;
@@ -227,7 +227,7 @@ static OpcodeInitializer _ENT_MODULUS(ENT_MODULUS, &Interpreter::InterpretNode_E
 		{R"((mod 1 2 3 4))", R"(1)"},
 		{R"((mod 5 3))", R"(2)"},
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
@@ -926,7 +926,7 @@ static OpcodeInitializer _ENT_MAX(ENT_MAX, &Interpreter::InterpretNode_ENT_MAX, 
 		{R"&((max .null 4 8))&", R"(8)"},
 		{R"&((max .null))&", R"(.null)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 2.0;
 	d.opcodeGroup = _opcode_group;
@@ -991,7 +991,7 @@ static OpcodeInitializer _ENT_MIN(ENT_MIN, &Interpreter::InterpretNode_ENT_MIN, 
 		{R"&((min 0.5 1 7 9 -5))&", R"(-5)"},
 		{R"&((min .null 4 8))&", R"(4)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 2.0;
 	d.opcodeGroup = _opcode_group;
@@ -1063,7 +1063,7 @@ static OpcodeInitializer _ENT_INDEX_MAX(ENT_INDEX_MAX, &Interpreter::InterpretNo
 	{1 2 3 5 tomato 4444}
 ))&", R"(["tomato"])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
@@ -1249,7 +1249,7 @@ static OpcodeInitializer _ENT_INDEX_MIN(ENT_INDEX_MIN, &Interpreter::InterpretNo
 	{1 2 3 5 tomato 4444}
 ))&", R"([1])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;

@@ -1238,7 +1238,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		{
 			auto &tree_ocn = tree->GetOrderedChildNodesReference();
 			if(upd.sortKeys
-				&& GetOpcodeOrderedChildNodeType(tree_type) == OpcodeDetails::OrderedChildNodeType::UNORDERED)
+				&& GetChildNodeStructureType(tree_type) == OpcodeDetails::ChildNodeStructureType::UNORDERED)
 			{
 				std::vector<std::string> unordered_code;
 				unordered_code.reserve(tree_ocn.size());

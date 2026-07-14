@@ -124,7 +124,7 @@ class OpcodeDetails
 {
 public:
 	//arrangements of ordered parameters
-	enum class OrderedChildNodeType
+	enum class ChildNodeStructureType
 	{
 		NONE,
 		UNORDERED,
@@ -218,12 +218,15 @@ public:
 		ParameterSchema()
 		{}
 
-		ParameterSchema(std::initializer_list<ParameterGroup> il)
-			: groups(il)
+		ParameterSchema(ChildNodeStructureType cns, std::initializer_list<ParameterGroup> il)
+			: childNodeStructure(cns), groups(il)
 		{}
 
-		//TODO 25740: move this here?
-		//OrderedChildNodeType nodeType;
+		ParameterSchema(std::initializer_list<ParameterGroup> il)
+			: childNodeStructure(ChildNodeStructureType::POSITION), groups(il)
+		{}
+
+		ChildNodeStructureType childNodeStructure;
 		std::vector<ParameterGroup> groups;
 	};
 
@@ -261,7 +264,7 @@ public:
 	bool isQuery = false;
 
 	//if the opcode has ordered child nodes, how they're ordered
-	OrderedChildNodeType orderedChildNodeType = OrderedChildNodeType::POSITION;
+	ChildNodeStructureType orderedChildNodeType = ChildNodeStructureType::POSITION;
 
 	//what kind of special permissions the opcode needs to run
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
@@ -269,7 +272,7 @@ public:
 	//whether the opcode returns a newly allocated value
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 
-	//TODO 25740: remove old_parameters and update all opcodes to have parameters following example in ENT_EXPONENT
+	//TODO 25740: remove old_parameters and remove orderedChildNodeType and update all opcodes to have parameters following example in ENT_EXPONENT
 	ParameterSchema parameters;
 	std::string_view old_parameters;
 	DataType returns;
@@ -304,7 +307,7 @@ public:
 };
 
 //returns the type of structure that the ordered child nodes have for a given t
-__forceinline OpcodeDetails::OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t)
+__forceinline OpcodeDetails::ChildNodeStructureType GetChildNodeStructureType(EvaluableNodeType t)
 {
 	return _opcode_details[t].orderedChildNodeType;
 }
@@ -336,7 +339,7 @@ __forceinline OpcodeDetails::OpcodeReturnNewnessType GetOpcodeNewValueReturnType
 //returns true if the opcode uses an associative array as parameters. If false, then a regular kind of list
 __forceinline bool DoesOpcodeUseAssocParameters(EvaluableNodeType t)
 {
-	return GetOpcodeOrderedChildNodeType(t) == OpcodeDetails::OrderedChildNodeType::PAIRED;
+	return GetChildNodeStructureType(t) == OpcodeDetails::ChildNodeStructureType::PAIRED;
 }
 
 //returns true if t is an immediate value

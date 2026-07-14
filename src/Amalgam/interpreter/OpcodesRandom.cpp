@@ -602,7 +602,7 @@ static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &In
 	[0.9512993766655248 0.3733350484591008]
 ])", "", R"((destroy_entities "Rand"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;

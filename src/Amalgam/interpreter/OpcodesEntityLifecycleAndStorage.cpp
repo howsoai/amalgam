@@ -41,7 +41,7 @@ static OpcodeInitializer _ENT_CREATE_ENTITIES(ENT_CREATE_ENTITIES, &Interpreter:
 	(contained_entities "EntityWithContainedEntities")
 ))&", R"(["NamedEntity1" "NamedEntity2" "_hIcoPxJ8LiS"])", "", R"((destroy_entities "EntityWithContainedEntities"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::PAIRED;
 	d.requiresEntity = true;
 	d.retrievesData = true;
 	d.hasSideEffects = true;
@@ -358,7 +358,7 @@ static OpcodeInitializer _ENT_DESTROY_ENTITIES(ENT_DESTROY_ENTITIES, &Interprete
 	(contained_entities)
 ))&", R"([])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.retrievesData = true;
@@ -1231,7 +1231,7 @@ static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Inte
 	(retrieve_entity_root "Entity")
 ))&", R"({a 4 b 5 c 6})", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::PAIRED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;

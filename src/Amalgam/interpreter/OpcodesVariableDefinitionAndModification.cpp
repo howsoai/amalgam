@@ -23,7 +23,7 @@ static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT
 			{R"&((lambda foo))&", R"(foo)"}
 		});
 	d.retrievesData = true;
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::NONE;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::NONE;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 4329.0;
 	d.opcodeGroup = _opcode_group;
@@ -74,7 +74,7 @@ static OpcodeInitializer _ENT_LET(ENT_LET, &Interpreter::InterpretNode_ENT_LET, 
 	)
 ))&", R"(11)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED;
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 26.0;
@@ -143,7 +143,7 @@ static OpcodeInitializer _ENT_DECLARE(ENT_DECLARE, &Interpreter::InterpretNode_E
 	x
 ))&", R"(8)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.retrievesData = true;
 	d.hasSideEffects = true;
@@ -401,7 +401,7 @@ static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT
 	}
 ])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 	d.hasSideEffects = true;
 	d.mayCauseNodeUpdateInCurrentEntity = true;
@@ -503,7 +503,7 @@ static OpcodeInitializer _ENT_ACCUM(ENT_ACCUM, &Interpreter::InterpretNode_ENT_A
 	{a 1 b 2 c 3}
 ])"},
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 	d.retrievesData = true;
 	d.hasSideEffects = true;
@@ -838,7 +838,7 @@ static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter:
 ))&", R"([.false 0])" }
 		});
 	d.retrievesData = true;
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::POSITION;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::POSITION;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 3.0;
 	d.opcodeGroup = _opcode_group;
@@ -1015,7 +1015,7 @@ static OpcodeInitializer _ENT_EXISTS(ENT_EXISTS, &Interpreter::InterpretNode_ENT
 ))&", R"([.true .false])"}
 		});
 	d.retrievesData = true;
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::POSITION;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::POSITION;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
@@ -1051,7 +1051,7 @@ static OpcodeInitializer _ENT_UNASSIGN(ENT_UNASSIGN, &Interpreter::InterpretNode
 		});
 	d.retrievesData = true;
 	d.hasSideEffects = true;
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
+	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;

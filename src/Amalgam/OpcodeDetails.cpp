@@ -180,7 +180,7 @@ std::string OpcodeDetails::OpcodeDataTypeToString(DataType odt)
 std::string OpcodeDetails::ParametersToString()
 {
 	std::string param_string;
-	for(auto &group : new_parameters.groups)
+	for(auto &group : parameters.groups)
 	{
 		if(!group.isRepeating)
 		{

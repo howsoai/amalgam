@@ -269,9 +269,9 @@ public:
 	//whether the opcode returns a newly allocated value
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 
-	//TODO 25740: change new_parameters to parameters following example in ENT_EXPONENT and remove
-	ParameterSchema new_parameters;
-	std::string_view parameters;
+	//TODO 25740: remove old_parameters and update all opcodes to have parameters following example in ENT_EXPONENT
+	ParameterSchema parameters;
+	std::string_view old_parameters;
 	DataType returns;
 	std::string_view description;
 	std::vector<AmalgamExample> examples;

@@ -6,7 +6,7 @@ static std::string _opcode_group = "Trigonometry";
 
 static OpcodeInitializer _ENT_SIN(ENT_SIN, &Interpreter::InterpretNode_ENT_SIN, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number theta)";
+	d.old_parameters = R"(number theta)";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the sine of `theta`.)";
 	d.examples = MakeAmalgamExamples({
@@ -30,7 +30,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIN(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_ASIN(ENT_ASIN, &Interpreter::InterpretNode_ENT_ASIN, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number length)";
+	d.old_parameters = R"(number length)";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the arc sine (inverse sine) of `length`.)";
 	d.examples = MakeAmalgamExamples({
@@ -54,7 +54,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASIN(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_COS(ENT_COS, &Interpreter::InterpretNode_ENT_COS, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number theta)";
+	d.old_parameters = R"(number theta)";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the cosine of `theta`.)";
 	d.examples = MakeAmalgamExamples({
@@ -78,7 +78,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COS(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_ACOS(ENT_ACOS, &Interpreter::InterpretNode_ENT_ACOS, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number length)";
+	d.old_parameters = R"(number length)";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the arc cosine (inverse cosine) of `length`.)";
 	d.examples = MakeAmalgamExamples({
@@ -102,7 +102,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOS(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_TAN(ENT_TAN, &Interpreter::InterpretNode_ENT_TAN, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number theta)";
+	d.old_parameters = R"(number theta)";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the tangent of `theta`.)";
 	d.examples = MakeAmalgamExamples({
@@ -126,7 +126,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAN(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_ATAN(ENT_ATAN, &Interpreter::InterpretNode_ENT_ATAN, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number num [number divisor])";
+	d.old_parameters = R"(number num [number divisor])";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the arc tangent (inverse tangent) of `num`.  If two numbers are provided, then it evaluates to the arc tangent of `num` / `divisor`.)";
 	d.examples = MakeAmalgamExamples({
@@ -160,7 +160,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ATAN(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_SINH(ENT_SINH, &Interpreter::InterpretNode_ENT_SINH, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number z)";
+	d.old_parameters = R"(number z)";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the hyperbolic sine of `z`.)";
 	d.examples = MakeAmalgamExamples({
@@ -184,7 +184,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SINH(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_ASINH(ENT_ASINH, &Interpreter::InterpretNode_ENT_ASINH, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number x)";
+	d.old_parameters = R"(number x)";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the hyperbolic arc sine of `x`.)";
 	d.examples = MakeAmalgamExamples({
@@ -208,7 +208,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASINH(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_COSH(ENT_COSH, &Interpreter::InterpretNode_ENT_COSH, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number z)";
+	d.old_parameters = R"(number z)";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the hyperbolic cosine of `z`.)";
 	d.examples = MakeAmalgamExamples({
@@ -232,7 +232,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COSH(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_ACOSH(ENT_ACOSH, &Interpreter::InterpretNode_ENT_ACOSH, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number x)";
+	d.old_parameters = R"(number x)";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the hyperbolic arc cosine of `x`.)";
 	d.examples = MakeAmalgamExamples({
@@ -256,7 +256,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOSH(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_TANH(ENT_TANH, &Interpreter::InterpretNode_ENT_TANH, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number z)";
+	d.old_parameters = R"(number z)";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the hyperbolic tangent on `z`.)";
 	d.examples = MakeAmalgamExamples({
@@ -280,7 +280,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TANH(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_ATANH(ENT_ATANH, &Interpreter::InterpretNode_ENT_ATANH, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number x)";
+	d.old_parameters = R"(number x)";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the hyperbolic arc tangent on `x`.)";
 	d.examples = MakeAmalgamExamples({

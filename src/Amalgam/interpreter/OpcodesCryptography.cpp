@@ -8,7 +8,7 @@ static std::string _opcode_group = "Cryptography";
 
 static OpcodeInitializer _ENT_CRYPTO_SIGN(ENT_CRYPTO_SIGN, &Interpreter::InterpretNode_ENT_CRYPTO_SIGN, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string message string secret_key)";
+	d.old_parameters = R"(string message string secret_key)";
 	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(Signs `message` given `secret_key` and returns the signature using the Ed25519 algorithm.  Note that `message` is not included in the `signature`.  The `system` opcode using the command "sign_key_pair" can be used to create a public/secret key pair.)";
 	d.examples = MakeAmalgamExamples({
@@ -56,7 +56,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN(EvaluableNode 
 
 static OpcodeInitializer _ENT_CRYPTO_SIGN_VERIFY(ENT_CRYPTO_SIGN_VERIFY, &Interpreter::InterpretNode_ENT_CRYPTO_SIGN_VERIFY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string message string public_key string signature)";
+	d.old_parameters = R"(string message string public_key string signature)";
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Verifies that `message` was signed with the signature via the public key using the Ed25519 algorithm and returns true if the signature is valid, false otherwise.  Note that `message` is not included in the `signature`.  The `system` opcode using the command "sign_key_pair" can be used to create a public/secret key pair.)";
 	d.examples = MakeAmalgamExamples({
@@ -105,7 +105,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN_VERIFY(Evaluab
 
 static OpcodeInitializer _ENT_ENCRYPT(ENT_ENCRYPT, &Interpreter::InterpretNode_ENT_ENCRYPT, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string plaintext_message string key1 [string nonce] [string key2])";
+	d.old_parameters = R"(string plaintext_message string key1 [string nonce] [string key2])";
 	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(If `key2` is not provided, then it uses the XSalsa20 algorithm to perform shared secret key encryption on the `message`, returning the encrypted value.  If `key2` is provided, then the Curve25519 algorithm will additionally be used, and `key1` will represent the receiver's public key and `key2` will represent the sender's secret key.  The `nonce` is a string of bytes up to 24 bytes long, that will be used to randomize the encryption, and will need to be provided to the decryption in order to work.  Nonces are not technically required, but strongly recommended to prevent replay attacks.  The `system` opcode using the command "encrypt_key_pair" can be used to create a public/secret key pair.)";
 	d.examples = MakeAmalgamExamples({
@@ -164,7 +164,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENCRYPT(EvaluableNode *en,
 
 static OpcodeInitializer _ENT_DECRYPT(ENT_DECRYPT, &Interpreter::InterpretNode_ENT_DECRYPT, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string cyphertext_message string key1 [string nonce] [string key2])";
+	d.old_parameters = R"(string cyphertext_message string key1 [string nonce] [string key2])";
 	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(If `key2` is not provided, then it uses the XSalsa20 algorithm to perform shared secret key decryption on the `message`, returning the encrypted value.  If `key2` is provided, then the Curve25519 algorithm will additionally be used, and `key1` will represent the sender's public key and `key2` will represent the receiver's secret key.  The `nonce` is a string of bytes up to 24 bytes long, that will be used to randomize the encryption, and will need to be provided to the decryption in order to work.  Nonces are not technically required, but strongly recommended to prevent replay attacks.  The `system` opcode using the command "encrypt_key_pair" can be used to create a public/secret key pair.)";
 	d.examples = MakeAmalgamExamples({

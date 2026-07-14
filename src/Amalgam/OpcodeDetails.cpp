@@ -184,28 +184,37 @@ std::string OpcodeDetails::ParametersToString()
 	{
 		if(!group.isRepeating)
 		{
-			//fixed sequence
-			for(auto &p : group.params)
-			{
-				//TODO 25740: use orderedChildNodeType as appropriate
-				param_string += (p.is_optional ? "[" : "") + p.type + " " + p.name + (p.is_optional ? "]" : "") + " ";
-			}
+			param_string += (group.parameter1.optional ? "[" : "") +
+				OpcodeDataTypeToString(group.parameter1.type) + " " + group.parameter1.name
+				+ (group.parameter1.optional ? "]" : "") + " ";
+
+			if(!group.parameter2.name.empty())
+				param_string += (group.parameter2.optional ? "[" : "")
+					+ OpcodeDataTypeToString(group.parameter2.type) + " " + group.parameter2.name
+					+ (group.parameter2.optional ? "]" : "") + " ";
 		}
 		else
 		{
 			//repeating parameters, just show the first two
-			for(int i = 1; i <= 2; i++)
+			for(size_t i = 1; i <= 2; i++)
 			{
-				for(auto &p : group.params)
-				{
-					param_string += (p.is_optional ? "[" : "") + p.type + " " + p.name + i
-							  + (p.is_optional ? "]" : "") + " ";
-				}
+				param_string += (group.parameter1.optional ? "[" : "")
+					+ OpcodeDataTypeToString(group.parameter1.type) + " " + group.parameter1.name
+					+ StringManipulation::NumberToString(i) + (group.parameter1.optional ? "]" : "") + " ";
+
+				if(!group.parameter2.name.empty())
+					param_string += (group.parameter2.optional ? "[" : "") +
+						OpcodeDataTypeToString(group.parameter2.type) + " " + group.parameter2.name +
+						StringManipulation::NumberToString(i) + (group.parameter2.optional ? "]" : "") + " ";
 			}
 
 			param_string += "... ";
 		}
 	}
+
+	//remove any trailing whitespace (easier to do here than in the logic and not notably less efficient)
+	if(param_string.size() > 0 && param_string.back() == ' ')
+		param_string.pop_back();
 
 	return param_string;
 }

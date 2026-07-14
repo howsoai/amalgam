@@ -191,7 +191,7 @@ public:
 	//parameter of an opcode
 	struct ParameterDetails
 	{
-		std::string_view name;
+		std::string name;
 		DataType type;
 		bool optional = false;
 	};

@@ -292,7 +292,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 		EvaluableNodeReference opcode_attribs(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 
 		opcode_attribs->SetMappedChildNode("description", evaluableNodeManager->AllocNode(od.description));
-		opcode_attribs->SetMappedChildNode("parameters", evaluableNodeManager->AllocNode(od.parameters));
+		opcode_attribs->SetMappedChildNode("parameters", evaluableNodeManager->AllocNode(od.ParametersToString()));
 
 		std::string returns_str = OpcodeDetails::OpcodeDataTypeToString(od.returns);
 		opcode_attribs->SetMappedChildNode("returns", evaluableNodeManager->AllocNode(returns_str));

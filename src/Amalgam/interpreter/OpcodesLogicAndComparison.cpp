@@ -4,6 +4,8 @@
 
 static std::string _opcode_group = "Logic and Comparison";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_AND(ENT_AND, &Interpreter::InterpretNode_ENT_AND, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"([bool condition1] [bool condition2] ... [bool conditionN])";

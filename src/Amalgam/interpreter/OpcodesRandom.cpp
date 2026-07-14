@@ -4,6 +4,8 @@
 
 static std::string _opcode_group = "Random";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_RAND(ENT_RAND, &Interpreter::InterpretNode_ENT_RAND, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"([list|assoc|number range] [number number_to_generate] [bool unique])";

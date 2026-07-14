@@ -5,6 +5,8 @@
 
 static std::string _opcode_group = "Entity Query Engine";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_CONTAINED_ENTITIES(ENT_CONTAINED_ENTITIES, &Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"([id_path containing_entity | query|list condition1] [query|list condition2] ...[ query|list conditionN])";

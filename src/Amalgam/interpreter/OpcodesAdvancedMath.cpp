@@ -7,7 +7,6 @@ static std::string _opcode_group = "Advanced Math";
 
 static OpcodeInitializer _ENT_EXPONENT(ENT_EXPONENT, &Interpreter::InterpretNode_ENT_EXPONENT, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(number x)";
 	d.parameters = OpcodeDetails::ParameterSchema{
 			OpcodeDetails::ParameterGroup{{"x", OpcodeDetails::DataType::NUMBER}}
 	};
@@ -34,7 +33,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPONENT(EvaluableNode *en
 
 static OpcodeInitializer _ENT_LOG(ENT_LOG, &Interpreter::InterpretNode_ENT_LOG, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(number x [number base])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+			OpcodeDetails::ParameterGroup{{"x", OpcodeDetails::DataType::NUMBER}},
+			OpcodeDetails::ParameterGroup{{"base", OpcodeDetails::DataType::NUMBER, true}}
+	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the logarithm of `x`.  If `base` is specified, uses that base, otherwise defaults to natural log.)";
 	d.examples = MakeAmalgamExamples({
@@ -66,7 +68,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOG(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_ERF(ENT_ERF, &Interpreter::InterpretNode_ENT_ERF, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(number errno)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+			OpcodeDetails::ParameterGroup{{"errno", OpcodeDetails::DataType::NUMBER}}
+	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the error function on `errno`.)";
 	d.examples = MakeAmalgamExamples({
@@ -90,7 +94,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ERF(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_TGAMMA(ENT_TGAMMA, &Interpreter::InterpretNode_ENT_TGAMMA, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(number z)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+			OpcodeDetails::ParameterGroup{{"z", OpcodeDetails::DataType::NUMBER}}
+	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates the true (complete) gamma function on `z`.)";
 	d.examples = MakeAmalgamExamples({
@@ -114,7 +120,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TGAMMA(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_LGAMMA(ENT_LGAMMA, &Interpreter::InterpretNode_ENT_LGAMMA, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(number z)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+			OpcodeDetails::ParameterGroup{{"z", OpcodeDetails::DataType::NUMBER}}
+	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates the log-gamma function function on `z`.)";
 	d.examples = MakeAmalgamExamples({
@@ -138,7 +146,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LGAMMA(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_SQRT(ENT_SQRT, &Interpreter::InterpretNode_ENT_SQRT, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(number x)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+			OpcodeDetails::ParameterGroup{{"x", OpcodeDetails::DataType::NUMBER}}
+	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Returns the square root of `x`.)";
 	d.examples = MakeAmalgamExamples({
@@ -162,7 +172,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SQRT(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_POW(ENT_POW, &Interpreter::InterpretNode_ENT_POW, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(number base number exponent)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+			OpcodeDetails::ParameterGroup{{"base", OpcodeDetails::DataType::NUMBER}},
+			OpcodeDetails::ParameterGroup{{"exponent", OpcodeDetails::DataType::NUMBER}}
+	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Returns `base` raised to the `exponent` power.)";
 	d.examples = MakeAmalgamExamples({
@@ -219,7 +232,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_POW(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_DOT_PRODUCT(ENT_DOT_PRODUCT, &Interpreter::InterpretNode_ENT_DOT_PRODUCT, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(list|assoc x1 list|assoc x2)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+			OpcodeDetails::ParameterGroup{{"x1", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}},
+			OpcodeDetails::ParameterGroup{{"x2", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}}
+	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the sum of all corresponding element-wise products of `x1` and `x2`.)";
 	d.examples = MakeAmalgamExamples({
@@ -306,7 +322,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 	evaluableNodeManager->FreeNodeTreeIfPossible(elements2);
 	return AllocReturn(dot_product, immediate_result);
 }
-
+//TODO 25740: update from here down
 static OpcodeInitializer _ENT_NORMALIZE(ENT_NORMALIZE, &Interpreter::InterpretNode_ENT_NORMALIZE, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"(list|assoc values [number p])";

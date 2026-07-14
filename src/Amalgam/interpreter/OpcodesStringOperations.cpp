@@ -7,6 +7,8 @@
 
 static std::string _opcode_group = "String Operations";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_EXPLODE(ENT_EXPLODE, &Interpreter::InterpretNode_ENT_EXPLODE, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"(string str [number stride])";

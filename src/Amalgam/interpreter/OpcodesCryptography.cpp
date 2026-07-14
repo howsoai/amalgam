@@ -5,6 +5,7 @@
 
 static std::string _opcode_group = "Cryptography";
 
+//TODO 25740: update from here down
 
 static OpcodeInitializer _ENT_CRYPTO_SIGN(ENT_CRYPTO_SIGN, &Interpreter::InterpretNode_ENT_CRYPTO_SIGN, []() {
 	OpcodeDetails d;

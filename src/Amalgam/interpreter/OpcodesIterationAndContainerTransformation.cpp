@@ -6,6 +6,8 @@
 
 static std::string _opcode_group = "Iteration and Container Transform";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_RANGE(ENT_RANGE, &Interpreter::InterpretNode_ENT_RANGE, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"([* function] number low_endpoint number high_endpoint [number step_size])";

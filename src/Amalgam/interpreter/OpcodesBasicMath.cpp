@@ -4,6 +4,8 @@
 
 static std::string _opcode_group = "Basic Math";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_ADD(ENT_ADD, &Interpreter::InterpretNode_ENT_ADD, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"([number x1] [number x2] ... [number xN])";

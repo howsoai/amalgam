@@ -113,6 +113,7 @@ std::string OpcodeDetails::OpcodeDataTypeToString(DataType odt)
 			type_str += " | ";
 		type_str += "bare_string";
 	}
+	//TODO 25740: update all strings below this
 	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::STRING))
 	{
 		if(!type_str.empty())
@@ -168,6 +169,12 @@ std::string OpcodeDetails::OpcodeDataTypeToString(DataType odt)
 		type_str += "";
 	}
 	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::LIST_OF_ENTITY_ID))
+	{
+		if(!type_str.empty())
+			type_str += " | ";
+		type_str += "";
+	}
+	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::ASSOC_OF_NUMBERS))
 	{
 		if(!type_str.empty())
 			type_str += " | ";

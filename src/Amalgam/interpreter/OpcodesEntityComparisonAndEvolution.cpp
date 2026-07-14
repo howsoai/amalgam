@@ -5,6 +5,8 @@
 
 static std::string _opcode_group = "Entity Comparison and Evolution";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_TOTAL_ENTITY_SIZE(ENT_TOTAL_ENTITY_SIZE, &Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"(id_path entity)";

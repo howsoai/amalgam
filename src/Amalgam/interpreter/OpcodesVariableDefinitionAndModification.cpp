@@ -9,6 +9,8 @@
 
 static std::string _opcode_group = "Variable Definition and Modification";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT_SYMBOL, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"()";

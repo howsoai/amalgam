@@ -4,6 +4,8 @@
 
 static std::string _opcode_group = "Metadata";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_GET_ANNOTATIONS(ENT_GET_ANNOTATIONS, &Interpreter::InterpretNode_ENT_GET_ANNOTATIONS, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"(* node)";

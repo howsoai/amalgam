@@ -5,6 +5,8 @@
 
 static std::string _opcode_group = "Entity Access and Manipulation";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_CONTAINS_LABEL(ENT_CONTAINS_LABEL, &Interpreter::InterpretNode_ENT_CONTAINS_LABEL, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"([id_path entity] string label_name)";

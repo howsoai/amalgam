@@ -9,6 +9,8 @@
 
 static std::string _opcode_group = "System and Runtime";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HELP, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"([string topic])";

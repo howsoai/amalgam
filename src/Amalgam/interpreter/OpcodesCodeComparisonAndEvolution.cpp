@@ -6,6 +6,8 @@
 
 static std::string _opcode_group = "Code Comparison and Evolution";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_TOTAL_SIZE(ENT_TOTAL_SIZE, &Interpreter::InterpretNode_ENT_TOTAL_SIZE, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"(* node)";

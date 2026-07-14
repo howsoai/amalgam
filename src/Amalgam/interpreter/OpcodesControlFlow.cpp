@@ -5,6 +5,8 @@
 
 static std::string _opcode_group = "Control Flow";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_IF(ENT_IF, &Interpreter::InterpretNode_ENT_IF, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"([bool condition1] [code then1] [bool condition2] [code then2] ... [bool conditionN] [code thenN] [code else])";

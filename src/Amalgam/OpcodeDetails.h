@@ -158,6 +158,7 @@ public:
 		LIST_OF_NUMBERS = 1 << 11,
 		LIST_OF_STRINGS = 1 << 12,
 		LIST_OF_ENTITY_ID = 1 << 13,
+		ASSOC_OF_NUMBERS = 1 << 14,
 		
 		ANY_BASIC = NULL_TYPE | BOOL | NUMBER | STRING | LIST | ASSOC
 	};
@@ -272,7 +273,7 @@ public:
 	//whether the opcode returns a newly allocated value
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 
-	//TODO 25740: remove old_parameters and remove orderedChildNodeType and update all opcodes to have parameters following example in ENT_EXPONENT
+	//TODO 25740: remove old_parameters and remove orderedChildNodeType (changing access where appropriate) and update all opcodes' parameters
 	ParameterSchema parameters;
 	std::string_view old_parameters;
 	DataType returns;

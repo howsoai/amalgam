@@ -5,6 +5,8 @@
 
 static std::string _opcode_group = "Primitive Types";
 
+//TODO 25740: update from here down
+
 static OpcodeInitializer _ENT_NULL(ENT_NULL, &Interpreter::InterpretNode_ENT_NULL, []() {
 	OpcodeDetails d;
 	d.old_parameters = R"()";

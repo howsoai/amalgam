@@ -4,8 +4,9 @@
 #include "Interpreter.h"
 #include "OpcodeDetails.h"
 
-
 static std::string _opcode_group = "Entity Lifecycle and Storage";
+
+//TODO 25740: update from here down
 
 static OpcodeInitializer _ENT_CREATE_ENTITIES(ENT_CREATE_ENTITIES, &Interpreter::InterpretNode_ENT_CREATE_ENTITIES, []() {
 	OpcodeDetails d;

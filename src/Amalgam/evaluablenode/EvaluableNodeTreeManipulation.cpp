@@ -750,6 +750,9 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 			break;
 		}
 
+		//nothing to do
+		case OpcodeDetails::ChildNodeStructureType::ASSOCIATIVE:
+			break;
 		}
 	}
 	else if(tree1_mapped_nodes_size > 0 && tree2_mapped_nodes_size > 0)

@@ -158,7 +158,6 @@ public:
 		LIST_OF_NUMBERS = 1 << 11,
 		LIST_OF_STRINGS = 1 << 12,
 		LIST_OF_ENTITY_IDS = 1 << 13,
-		//TODO 25740: use this where appropriate
 		LIST_OF_ENTITY_LABELS = 1 << 14,
 		LIST_OF_QUERIES = 1 << 15,
 		ASSOC_OF_NUMBERS = 1 << 16,
@@ -189,43 +188,54 @@ public:
 		return (static_cast<DataTypeContainer>(a) & static_cast<DataTypeContainer>(b)) != 0;
 	}
 
+	//returns true if a and b are compatible
 	static constexpr bool AreDataTypesCompatible(DataType a, DataType b)
 	{
 		if(AreDataTypesExactlyCompatible(a, b))
 			return true;
 
-		auto simple_type = std::min(a, b);
-		auto complex_type = std::max(a, b);
-
-		if(simple_type == DataType::STRING && complex_type == DataType::ENTITY_LABEL)
-			return true;
-
-		if(simple_type == DataType::ASSOC)
+		//iterate over bits in a
+		for(DataTypeContainer mask_a = 1; mask_a != 0; mask_a <<= 1)
 		{
-			if(complex_type == DataType::ASSOC_OF_NUMBERS)
-				return true;
-			return false;
-		}
+			if((static_cast<DataTypeContainer>(a) & mask_a) == 0)
+				continue;
+			DataType a_bit = static_cast<DataType>(mask_a);
 
-		if(simple_type == DataType::LIST)
-		{
-			if(complex_type == DataType::UNORDERED_LIST)
-				return true;
-			if(complex_type == DataType::WALK_PATH)
-				return true;
-			if(complex_type == DataType::LIST_OF_NUMBERS)
-				return true;
-			if(complex_type == DataType::LIST_OF_STRINGS)
-				return true;
-			if(complex_type == DataType::LIST_OF_ENTITY_IDS)
-				return true;
-			if(complex_type == DataType::LIST_OF_ENTITY_LABELS)
-				return true;
-			if(complex_type == DataType::LIST_OF_QUERIES)
-				return true;
-			return false;
-		}
+			//iterate over bits in b
+			for(DataTypeContainer mask_b = 1; mask_b != 0; mask_b <<= 1)
+			{
+				if((static_cast<DataTypeContainer>(b) & mask_b) == 0)
+					continue;
+				DataType b_bit = static_cast<DataType>(mask_b);
 
+				//order the values so simple_type is the less‑complex one
+				DataType simple_type = std::min(a_bit, b_bit);
+				DataType complex_type = std::max(a_bit, b_bit);
+
+				if(simple_type == DataType::STRING && complex_type == DataType::ENTITY_LABEL)
+					return true;
+
+				if(simple_type == DataType::ASSOC)
+				{
+					if(complex_type == DataType::ASSOC_OF_NUMBERS)
+						return true;
+					continue;
+				}
+
+				if(simple_type == DataType::LIST || simple_type == DataType::UNORDERED_LIST)
+				{
+					if(complex_type == DataType::UNORDERED_LIST ||
+							complex_type == DataType::WALK_PATH ||
+							complex_type == DataType::LIST_OF_NUMBERS ||
+							complex_type == DataType::LIST_OF_STRINGS ||
+							complex_type == DataType::LIST_OF_ENTITY_IDS ||
+							complex_type == DataType::LIST_OF_ENTITY_LABELS ||
+							complex_type == DataType::LIST_OF_QUERIES)
+						return true;
+					continue;
+				}
+			}
+		}
 		return false;
 	}
 

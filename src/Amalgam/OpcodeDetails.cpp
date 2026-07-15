@@ -89,68 +89,64 @@ std::string OpcodeDetails::OpcodeDataTypeToString(DataType odt)
 {
 	std::string type_str;
 
-	if(odt == OpcodeDetails::DataType::ANY_BASIC)
+	if( (odt & OpcodeDetails::DataType::ANY_BASIC) == OpcodeDetails::DataType::ANY_BASIC)
 	{
 		if(!type_str.empty())
 			type_str += "|";
 		type_str += "any";
-		return type_str;
+	}
+	else
+	{
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::NULL_TYPE))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "null";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::BOOL))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "bool";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::NUMBER))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "number";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::STRING))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "string";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "list";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::UNORDERED_LIST))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "unordered_list";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ASSOC))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "assoc";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::QUERY))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "query";
+		}
 	}
 
-	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::NULL_TYPE))
-	{
-		if(!type_str.empty())
-			type_str += "|";
-		type_str += "null";
-	}
-	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::BOOL))
-	{
-		if(!type_str.empty())
-			type_str += "|";
-		type_str += "bool";
-	}
-	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::NUMBER))
-	{
-		if(!type_str.empty())
-			type_str += "|";
-		type_str += "number";
-	}
-	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::BARE_STRING))
-	{
-		if(!type_str.empty())
-			type_str += "|";
-		type_str += "bare_string";
-	}
-	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::STRING))
-	{
-		if(!type_str.empty())
-			type_str += "|";
-		type_str += "string";
-	}
-	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST))
-	{
-		if(!type_str.empty())
-			type_str += "|";
-		type_str += "list";
-	}
-	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::UNORDERED_LIST))
-	{
-		if(!type_str.empty())
-			type_str += "|";
-		type_str += "unordered_list";
-	}
-	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ASSOC))
-	{
-		if(!type_str.empty())
-			type_str += "|";
-		type_str += "assoc";
-	}
-	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::QUERY))
-	{
-		if(!type_str.empty())
-			type_str += "|";
-		type_str += "query";
-	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::WALK_PATH))
 	{
 		if(!type_str.empty())

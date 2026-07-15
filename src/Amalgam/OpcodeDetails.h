@@ -147,20 +147,19 @@ public:
 		NULL_TYPE = 1 << 0,
 		BOOL = 1 << 1,
 		NUMBER = 1 << 2,
-		BARE_STRING = 1 << 3,
-		STRING = 1 << 4,
-		LIST = 1 << 5,
-		UNORDERED_LIST = 1 << 6,
-		ASSOC = 1 << 7,
-		QUERY = 1 << 8,
-		WALK_PATH = 1 << 9,
-		ENTITY_ID = 1 << 10,
-		LIST_OF_NUMBERS = 1 << 11,
-		LIST_OF_STRINGS = 1 << 12,
-		LIST_OF_ENTITY_IDS = 1 << 13,
-		ASSOC_OF_NUMBERS = 1 << 14,
+		STRING = 1 << 3,
+		LIST = 1 << 4,
+		UNORDERED_LIST = 1 << 5,
+		ASSOC = 1 << 6,
+		QUERY = 1 << 7,
+		WALK_PATH = 1 << 8,
+		ENTITY_ID = 1 << 9,
+		LIST_OF_NUMBERS = 1 << 10,
+		LIST_OF_STRINGS = 1 << 11,
+		LIST_OF_ENTITY_IDS = 1 << 12,
+		ASSOC_OF_NUMBERS = 1 << 13,
 		
-		ANY_BASIC = NULL_TYPE | BOOL | NUMBER | STRING | LIST | ASSOC
+		ANY_BASIC = NULL_TYPE | BOOL | NUMBER | STRING | LIST | UNORDERED_LIST | ASSOC | QUERY
 	};
 
 	//bit‑wise operators

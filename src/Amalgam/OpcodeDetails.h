@@ -167,19 +167,19 @@ public:
 	};
 
 	//bit‑wise operators
-	static constexpr friend DataType operator|(DataType lhs, DataType rhs) noexcept
+	constexpr friend DataType operator|(DataType lhs, DataType rhs) noexcept
 	{
 		return static_cast<DataType>(static_cast<DataTypeContainer>(lhs) |
 				static_cast<DataTypeContainer>(rhs));
 	}
 
-	static constexpr friend DataType operator&(DataType lhs, DataType rhs) noexcept
+	constexpr friend DataType operator&(DataType lhs, DataType rhs) noexcept
 	{
 		return static_cast<DataType>(static_cast<DataTypeContainer>(lhs) &
 				static_cast<DataTypeContainer>(rhs));
 	}
 
-	static constexpr friend DataType operator~(DataType v) noexcept
+	constexpr friend DataType operator~(DataType v) noexcept
 	{
 		return static_cast<DataType>(~static_cast<DataTypeContainer>(v));
 	}

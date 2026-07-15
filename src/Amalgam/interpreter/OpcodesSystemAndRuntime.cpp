@@ -9,11 +9,11 @@
 
 static std::string _opcode_group = "System and Runtime";
 
-//TODO 25740: update from here down
-
 static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HELP, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([string topic])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"topic", OpcodeDetails::DataType::STRING, true})
+	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(If no parameter is specified it returns a string of the topics that can be used.  For given a `topic`, returns a string or relevant data that describes the given topic.)";
 	d.examples = MakeAmalgamExamples({
@@ -76,9 +76,9 @@ Using <>'s to enclose optional elements, the general syntax is:
 <||><@>(opcode <parameter1> <parameter2> ...)
 ```
 
-The language generally follows a parse tree in a manner similar to Lisp and Scheme, with opcodes surrounded by parenthesis and including parameters in a recursive fashion.  The exceptions are that the opcodes list and assoc (associative array, sometimes referred to as a hash map or dict) may use `[]` and `{}` respectively and omit the opcode, though are still considered identical to `(list)` and `(assoc)`.
+The language generally follows a parse tree in a manner similar to Lisp and Scheme, with opcodes surrounded by parenthesis and including parameters in a recursive fashion.  The exceptions are that the opcodes list and assoc (associative array, sometimes referred to as a hash map or dict) may use `[]` and `{}` respectively and omit the opcode, though are still considered identical to `(list)` and `(assoc)`.  A list only has integer indices, and a negative index counts from the end of the list.  An assoc can have any valid code as an index, though bare strings are the most performant.  When accessing deeper elements within a complex container (e.g., a list of assocs of lists), using opcodes like `get`, the walk path can be a list of each element to "walk" to that particular value.  Note that when accessing a key of an assoc via an opcode that uses a walk path, if the key is code with an outermost opcode that might be a list, an extra list should surround that opcode to ensure that it is a walk path.
 
-Entities always have a top level data element which is an assoc.  These assoc elements at the top of an entity are handled specially and their keys are called labels.  Labels are how entities can be accessed from outside the entity.  If a label starts with a caret, e.g. `^method_for_contained_entities`, then it can be accessed by contained entities, and they do not need to specify the caret.  Parent entities do need to specify the caret. For example, if `^foo` is a label of a container, a contained entity within could call the label `"foo"`.  This adds a layer of security and prevents contained entities from affecting parts of the container that are exposed for its own container's access.  Labels starting with an exclamation point, e.g. `!private_method`, are not accessible by the container and can only be accessed by the entity itself except for by the contained entity getting all of the code, acting as a private label. A label cannot be simultaneously private to its container and accessible to contained entities.  If an entity's root node is set to be something other than an assoc, it is set to the null key, indicating the main method.  If an entity is executed directly, the value at its null key is what is executed.
+Entities are objects in the language that are a combination of class instance, execution sandbox, and entities can be queried somewhat like a database.  An entity is a bundle of code that has a singular root node that is an assoc, and their keys are called labels, that act as attributes and methods.  If a label starts with a caret, e.g. `^method_for_contained_entities`, then it can be accessed by contained entities, and they do not need to specify the caret.  Parent entities do need to specify the caret. For example, if `^foo` is a label of a container, a contained entity within could call the label `"foo"`.  This adds a layer of security and prevents contained entities from affecting parts of the container that are exposed for its own container's access.  Labels starting with an exclamation point, e.g. `!private_method`, are not accessible by the container and can only be accessed by the entity itself except for by the contained entity getting all of the code, acting as a private label. A label cannot be simultaneously private to its container and accessible to contained entities.  If an entity's root node is set to be something other than an assoc, it is set to the null key, indicating the main method.  If an entity is executed directly, the value at its null key is what is executed.
 
 Variables are accessed in from the closest immediate scope, which means if there is a global variable named x and a function parameter named x, the function parameter will be used.  Entity labels are considered the global-most scope.  If a variable name cannot be found, then it will look at the entity's labels instead.  Scope is handled as a stack, and some opcodes may modify the scope.  Note that when declaring variables in a singular block such as a `let` or `declare`, the order of their evaluation is not guaranteed, so variables that depend on previous values should be implemented either functionally or as a sequence of `declare` opcodes.  Setting multiple values within a complex variable at the same time can be done by specifying multiple parameters to `assign`, and the opcodes `set` and `remove` return entirely new copies of the data structure with modifications.
 
@@ -203,7 +203,7 @@ When traversing a string by character repeatedly, `explode` it once into a list 
 ```
 
 ## Sibling bindings are not visible to each other
-Within a single `let` or `declare` binding block, the key-value pairs are pushed onto the scope stack as a set: one value's expression cannot see a sibling key being defined in the same block, and there is no guaranteed order of evaluation among siblings. Use `declare` to extend the current scope when a binding depends on an earlier one; a sequence of `declare`s is preferable to nested `let`s:
+Within a single `let` or `declare` binding block, or any other operation that uses an `assoc`.  The key-value pairs are evaluated and pushed onto the scope stack as a set: one value's expression cannot see a sibling key being defined in the same block, and there is no guaranteed order of evaluation among siblings. Use `declare` to extend the current scope when a binding depends on an earlier one; a sequence of `declare`s is preferable to nested `let`s:
 ```amalgam
 ; Wrong: `need` cannot see the sibling `base`
 (let {base (get nums i) need (- target base)}
@@ -356,7 +356,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_PRINT(ENT_PRINT, &Interpreter::InterpretNode_ENT_PRINT, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([* node1] [* node2] ... [* nodeN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::NULL_TYPE;
 	d.description = R"(Prints each of the parameters in order in a manner interpretable as if they were code, except strings are printed without quotes.  Output is pretty-printed.  Printing is safe for cyclic and graph data structures and will emit appropriate opcodes using the `@` prefix so that parsing will reconstruct the cyclic or graph relationships.)";
 	d.examples = MakeAmalgamExamples({
@@ -431,7 +433,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_SYSTEM_TIME(ENT_SYSTEM_TIME, &Interpreter::InterpretNode_ENT_SYSTEM_TIME, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"()";
+	d.parameters = OpcodeDetails::ParameterSchema{};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the current system time since epoch in seconds (including fractions of seconds).)";
 	d.examples = MakeAmalgamExamples({
@@ -468,16 +470,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM_TIME(EvaluableNode 
 
 static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT_SYSTEM, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(string command [* optional1] ... [* optionalN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"command", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"parameter", OpcodeDetails::DataType::ANY_BASIC, true})
+	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
-	d.description = R"(Executes system command specified by `command`.  The available system commands are as follows:
+	d.description = R"(Executes system command specified by `command` passing in `parameter` if appropriate.  The available system commands are as follows:
  - exit:                Exits the application.
  - readline:            Reads a line of input from the terminal and returns the string.
- - printline:           Prints a line of string output of the second argument directly to the terminal and returns null.
- - cwd:                 If no additional parameter is specified, returns the current working directory. If an additional parameter is specified, it attempts to change the current working directory to that parameter, returning true on success and false on failure.
- - system:              Executes the the second argument as a system command (i.e., a string that would normally be run on the command line). Returns `.null` if the command was not found. If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.
+ - printline:           Prints a line of string output of the `parameter` directly to the terminal and returns null.
+ - cwd:                 If no additional parameter is specified, returns the current working directory. If `parameter` is specified, it attempts to change the current working directory to that `parameter`, returning true on success and false on failure.
+ - system:              Executes the the `parameter` as a system command (i.e., a string that would normally be run on the command line). Returns `.null` if the command was not found. If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.
  - os:                  Returns a string describing the operating system.
- - sleep:               Sleeps for the amount of seconds specified by the second argument.
+ - sleep:               Sleeps for the amount of seconds specified by the `parameter`.
  - version:             Returns a string representing the current Amalgam version.
  - est_mem_reserved:    Returns data involving the estimated memory reserved.
  - est_mem_used:        Returns data involving the estimated memory used (excluding memory management overhead, caching, etc.).
@@ -487,7 +492,7 @@ static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT
  - encrypt_key_pair:    Returns a list of two values, first a public key and second a secret key, for use with cryptographic encryption using the XSalsa20 and Curve25519 algorithms, generated via securely generated random numbers.
  - debugging_info:      Returns a list of two values. The first is true if a debugger is present, false if it is not. The second is true if debugging sources is enabled, which means that source code location information is prepended to opcodes comments for any opcodes loaded from a file.
  - get_max_num_threads: Returns the current maximum number of threads.
- - set_max_num_threads: Attempts to set the current maximum number of threads, where 0 means to use the number of processor cores reported by the operating system. Returns the maximum number of threads after it has been set.
+ - set_max_num_threads: Attempts to set the current maximum number of threads to `parameter`, where 0 means to use the number of processor cores reported by the operating system. Returns the maximum number of threads after it has been set.
  - built_in_data:       Returns built-in data compiled along with the version information.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((system "debugging_info"))", R"([.false .false])"}
@@ -739,6 +744,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_RECLAIM_RESOURCES(ENT_RECLAIM_RESOURCES, &Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES, []() {
 	OpcodeDetails d;
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true}),
+		OpcodeDetails::ParameterGroup({"apply_to_all_contained_entities", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"clear_query_caches", OpcodeDetails::DataType::BOOL | OpcodeDetails::DataType::LIST_OF_ENTITY_LABELS, true}),
+		OpcodeDetails::ParameterGroup({"collect_garbage", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"force_free_memory", OpcodeDetails::DataType::BOOL, true})
+	};
 	d.old_parameters = R"([id_path entity] [bool apply_to_all_contained_entities] [bool|list clear_query_caches] [bool collect_garbage] [bool force_free_memory])";
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Frees resources of the specified types on `entity`, which is the current entity if null.  Will include all contained entities if `apply_to_all_contained_entities` is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter `clear_query_caches` will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  If `clear_query_caches` is a boolean, then it will either clear all the caches or none.  If `clear_query_caches` is a list of strings, then it will only clear caches for the labels corresponding to the strings in the list.  The parameter `collect_garbage` will perform garbage collection on the entity, and if `force_free_memory` is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.)";

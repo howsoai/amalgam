@@ -92,91 +92,91 @@ std::string OpcodeDetails::OpcodeDataTypeToString(DataType odt)
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::NULL_TYPE))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "null";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::BOOL))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "bool";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::NUMBER))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "number";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::BARE_STRING))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "bare_string";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::STRING))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "string";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "list";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::UNORDERED_LIST))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "unordered_list";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ASSOC))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "assoc";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::QUERY))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "query";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::WALK_PATH))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "walk_path";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ENTITY_ID))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "entity_id";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_NUMBERS))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "list_of_numbers";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_STRINGS))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "list_of_strings";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_ENTITY_IDS))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "list_of_entity_ids";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ASSOC_OF_NUMBERS))
 	{
 		if(!type_str.empty())
-			type_str += " | ";
+			type_str += "|";
 		type_str += "assoc_of_numbers";
 	}
 

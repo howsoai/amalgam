@@ -8,7 +8,7 @@ static std::string _opcode_group = "Advanced Math";
 static OpcodeInitializer _ENT_EXPONENT(ENT_EXPONENT, &Interpreter::InterpretNode_ENT_EXPONENT, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"x", OpcodeDetails::DataType::NUMBER}}
+			OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(e^x)";
@@ -34,8 +34,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPONENT(EvaluableNode *en
 static OpcodeInitializer _ENT_LOG(ENT_LOG, &Interpreter::InterpretNode_ENT_LOG, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"x", OpcodeDetails::DataType::NUMBER}},
-			OpcodeDetails::ParameterGroup{{"base", OpcodeDetails::DataType::NUMBER, true}}
+			OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}),
+			OpcodeDetails::ParameterGroup({"base", OpcodeDetails::DataType::NUMBER, true})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the logarithm of `x`.  If `base` is specified, uses that base, otherwise defaults to natural log.)";
@@ -69,7 +69,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOG(EvaluableNode *en, Eva
 static OpcodeInitializer _ENT_ERF(ENT_ERF, &Interpreter::InterpretNode_ENT_ERF, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"errno", OpcodeDetails::DataType::NUMBER}}
+			OpcodeDetails::ParameterGroup({"errno", OpcodeDetails::DataType::NUMBER})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the error function on `errno`.)";
@@ -95,7 +95,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ERF(EvaluableNode *en, Eva
 static OpcodeInitializer _ENT_TGAMMA(ENT_TGAMMA, &Interpreter::InterpretNode_ENT_TGAMMA, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"z", OpcodeDetails::DataType::NUMBER}}
+			OpcodeDetails::ParameterGroup({"z", OpcodeDetails::DataType::NUMBER})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates the true (complete) gamma function on `z`.)";
@@ -121,7 +121,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TGAMMA(EvaluableNode *en, 
 static OpcodeInitializer _ENT_LGAMMA(ENT_LGAMMA, &Interpreter::InterpretNode_ENT_LGAMMA, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"z", OpcodeDetails::DataType::NUMBER}}
+			OpcodeDetails::ParameterGroup({"z", OpcodeDetails::DataType::NUMBER})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates the log-gamma function function on `z`.)";
@@ -147,7 +147,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LGAMMA(EvaluableNode *en, 
 static OpcodeInitializer _ENT_SQRT(ENT_SQRT, &Interpreter::InterpretNode_ENT_SQRT, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"x", OpcodeDetails::DataType::NUMBER}}
+			OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Returns the square root of `x`.)";
@@ -173,8 +173,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SQRT(EvaluableNode *en, Ev
 static OpcodeInitializer _ENT_POW(ENT_POW, &Interpreter::InterpretNode_ENT_POW, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"base", OpcodeDetails::DataType::NUMBER}},
-			OpcodeDetails::ParameterGroup{{"exponent", OpcodeDetails::DataType::NUMBER}}
+			OpcodeDetails::ParameterGroup({"base", OpcodeDetails::DataType::NUMBER}),
+			OpcodeDetails::ParameterGroup({"exponent", OpcodeDetails::DataType::NUMBER})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Returns `base` raised to the `exponent` power.)";
@@ -233,8 +233,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_POW(EvaluableNode *en, Eva
 static OpcodeInitializer _ENT_DOT_PRODUCT(ENT_DOT_PRODUCT, &Interpreter::InterpretNode_ENT_DOT_PRODUCT, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"x1", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}},
-			OpcodeDetails::ParameterGroup{{"x2", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}}
+			OpcodeDetails::ParameterGroup({"x1", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
+			OpcodeDetails::ParameterGroup({"x2", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the sum of all corresponding element-wise products of `x1` and `x2`.)";
@@ -326,8 +326,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 static OpcodeInitializer _ENT_NORMALIZE(ENT_NORMALIZE, &Interpreter::InterpretNode_ENT_NORMALIZE, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"values", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}},
-			OpcodeDetails::ParameterGroup{{"p", OpcodeDetails::DataType::NUMBER, true}}
+			OpcodeDetails::ParameterGroup({"values", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
+			OpcodeDetails::ParameterGroup({"p", OpcodeDetails::DataType::NUMBER, true})
 	};
 	d.returns = OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Evaluates to a container of the values with the elements normalized, where `p` represents the order of the Lebesgue space to normalize the vector (e.g., 1 is Manhattan or surprisal space, 2 is Euclidean) and defaults to 1.)";
@@ -429,8 +429,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 static OpcodeInitializer _ENT_MODE(ENT_MODE, &Interpreter::InterpretNode_ENT_MODE, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"values", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}},
-			OpcodeDetails::ParameterGroup{{"weights", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS, true}}
+			OpcodeDetails::ParameterGroup({"values", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
+			OpcodeDetails::ParameterGroup({"weights", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS, true})
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to mode of the `values`.  If `values` is an assoc, it will return the key.  If `weights` is specified and both `values` and `weights` are lists, then the corresponding elements will be weighted by `weights`.  If weights is specified and is an assoc, then each value will be looked up in the `weights`.)";
@@ -715,9 +715,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, Ev
 static OpcodeInitializer _ENT_QUANTILE(ENT_QUANTILE, &Interpreter::InterpretNode_ENT_QUANTILE, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"values", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}},
-			OpcodeDetails::ParameterGroup{{"quantile", OpcodeDetails::DataType::NUMBER}},
-			OpcodeDetails::ParameterGroup{{"weights", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS, true}}
+			OpcodeDetails::ParameterGroup({"values", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
+			OpcodeDetails::ParameterGroup({"quantile", OpcodeDetails::DataType::NUMBER}),
+			OpcodeDetails::ParameterGroup({"weights", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS, true})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the quantile of the `values` specified by `quantile` ranging from 0 to 1.  If `weights` is specified and both `values` and `weights` are lists, then the corresponding elements will be weighted by `weights`.  If `weights` is specified and is an assoc, then each value will be looked up in the `weights`.)";
@@ -871,12 +871,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode *en
 static OpcodeInitializer _ENT_GENERALIZED_MEAN(ENT_GENERALIZED_MEAN, &Interpreter::InterpretNode_ENT_GENERALIZED_MEAN, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"values", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}},
-			OpcodeDetails::ParameterGroup{{"p", OpcodeDetails::DataType::NUMBER, true}},
-			OpcodeDetails::ParameterGroup{{"weights", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS, true}},
-			OpcodeDetails::ParameterGroup{{"center", OpcodeDetails::DataType::NUMBER, true}},
-			OpcodeDetails::ParameterGroup{{"calculate_moment", OpcodeDetails::DataType::BOOL, true}},
-			OpcodeDetails::ParameterGroup{{"absolute_value", OpcodeDetails::DataType::BOOL, true}}
+			OpcodeDetails::ParameterGroup({"values", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
+			OpcodeDetails::ParameterGroup({"p", OpcodeDetails::DataType::NUMBER, true}),
+			OpcodeDetails::ParameterGroup({"weights", OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS, true}),
+			OpcodeDetails::ParameterGroup({"center", OpcodeDetails::DataType::NUMBER, true}),
+			OpcodeDetails::ParameterGroup({"calculate_moment", OpcodeDetails::DataType::BOOL, true}),
+			OpcodeDetails::ParameterGroup({"absolute_value", OpcodeDetails::DataType::BOOL, true})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the generalized mean of the `values`.  If `p` is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity) to harmonic mean (-1) to geometric mean (0) to arithmetic mean (1) to maximum (infinity).  If `weights` are specified, it uses those when calculating the corresponding values for the generalized mean.  If `center` is specified, calculations will use that as central point, and the default center is is 0.0.  If `calculate_moment` is true, which defaults to false, then the results will not be raised to 1/`p` at the end.  If `absolute_value` is true, which defaults to false, the differences will take the absolute value.  Various parameterizations of generalized_mean can be used to compute moments about the mean, especially setting the calculate_moment parameter to true and using the mean as the center.)";
@@ -1050,15 +1050,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"vector1", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}},
-			OpcodeDetails::ParameterGroup{{"vector2", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}},
-			OpcodeDetails::ParameterGroup{{"p_value", OpcodeDetails::DataType::NUMBER}},
-			OpcodeDetails::ParameterGroup{{"weights", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC | OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS, true}},
-			OpcodeDetails::ParameterGroup{{"attributes", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}},
-			OpcodeDetails::ParameterGroup{{"deviations", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}},
-			OpcodeDetails::ParameterGroup{{"value_names", OpcodeDetails::DataType::LIST}},
-			OpcodeDetails::ParameterGroup{{"weights_selection_features", OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::LIST}},
-			OpcodeDetails::ParameterGroup{{"surprisal_space", OpcodeDetails::DataType::BOOL}},
+			OpcodeDetails::ParameterGroup({"vector1", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+			OpcodeDetails::ParameterGroup({"vector2", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+			OpcodeDetails::ParameterGroup({"p_value", OpcodeDetails::DataType::NUMBER}),
+			OpcodeDetails::ParameterGroup({"weights", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC | OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS, true}),
+			OpcodeDetails::ParameterGroup({"attributes", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+			OpcodeDetails::ParameterGroup({"deviations", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+			OpcodeDetails::ParameterGroup({"value_names", OpcodeDetails::DataType::LIST}),
+			OpcodeDetails::ParameterGroup({"weights_selection_features", OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::LIST}),
+			OpcodeDetails::ParameterGroup({"surprisal_space", OpcodeDetails::DataType::BOOL}),
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Computes the generalized norm between `vector1` and `vector2` (or an equivalent zero vector if unspecified) using the numerical distance or edit distance as appropriate.  The parameter `value_names`, if specified as a list of the names of the values, will transform via unzipping any assoc into a list for the respective parameter in the order of the `value_names`, or if a number will use the number repeatedly for every element.  If any vector value is null or any of the differences between `vector1` and `vector2` evaluate to null, then it will compute a corresponding maximum distance value based on the properties of the feature.  If `surprisal_space` is true, which defaults to false, it will perform all computations in surprisal space.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.)";
@@ -1933,10 +1933,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 static OpcodeInitializer _ENT_ENTROPY(ENT_ENTROPY, &Interpreter::InterpretNode_ENT_ENTROPY, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-			OpcodeDetails::ParameterGroup{{"p", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}},
-			OpcodeDetails::ParameterGroup{{"q", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}},
-			OpcodeDetails::ParameterGroup{{"p_exponent", OpcodeDetails::DataType::NUMBER}},
-			OpcodeDetails::ParameterGroup{{"q_exponent", OpcodeDetails::DataType::NUMBER}}
+			OpcodeDetails::ParameterGroup({"p", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
+			OpcodeDetails::ParameterGroup({"q", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
+			OpcodeDetails::ParameterGroup({"p_exponent", OpcodeDetails::DataType::NUMBER}),
+			OpcodeDetails::ParameterGroup({"q_exponent", OpcodeDetails::DataType::NUMBER})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Computes a form of entropy on the specified vectors `p` and `q` using nats (natural log, not bits) in the form of -sum p_i ln (p_i^p_exponent * q_i^q_exponent).  For both `p` and `q`, if `p` or `q` is a list of numbers, then it will treat each entry as being the probability of that element.  If it is an associative array, then elements with matching keys will be matched.  If `p` or `q` is a number then it will use that value in place of each element.  If `p` or `q` is null or not specified, it will be calculated as the reciprocal of the size of the other element (p_i would be 1/|q| or q_i would be 1/|p|).  If either `p_exponent` or `q_exponent` is 0, then that exponent will be ignored.  Shannon entropy can be computed by ignoring the q parameters by specifying it as null, setting `p_exponent` to 1 and `q_exponent` to 0. KL-divergence can be computed by providing both `p` and `q` and setting `p_exponent` to -1 and `q_exponent` to 1.  Cross-entropy can be computed by setting `p_exponent` to 0 and `q_exponent` to 1.)";

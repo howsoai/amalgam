@@ -159,6 +159,12 @@ std::string OpcodeDetails::OpcodeDataTypeToString(DataType odt)
 			type_str += "|";
 		type_str += "entity_id";
 	}
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ENTITY_LABEL))
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "entity_label";
+	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_NUMBERS))
 	{
 		if(!type_str.empty())
@@ -176,6 +182,18 @@ std::string OpcodeDetails::OpcodeDataTypeToString(DataType odt)
 		if(!type_str.empty())
 			type_str += "|";
 		type_str += "list_of_entity_ids";
+	}
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_ENTITY_LABELS))
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "list_of_entity_labels";
+	}
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_QUERIES))
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "list_of_queries";
 	}
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ASSOC_OF_NUMBERS))
 	{

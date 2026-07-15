@@ -141,7 +141,7 @@ public:
 		NEW, PARTIAL, CONDITIONAL, EXISTING, NULL_VALUE
 	};
 
-	using DataTypeContainer = uint16_t;
+	using DataTypeContainer = uint32_t;
 	enum class DataType : DataTypeContainer
 	{
 		NULL_TYPE = 1 << 0,
@@ -154,10 +154,14 @@ public:
 		QUERY = 1 << 7,
 		WALK_PATH = 1 << 8,
 		ENTITY_ID = 1 << 9,
-		LIST_OF_NUMBERS = 1 << 10,
-		LIST_OF_STRINGS = 1 << 11,
-		LIST_OF_ENTITY_IDS = 1 << 12,
-		ASSOC_OF_NUMBERS = 1 << 13,
+		ENTITY_LABEL = 1 << 10,
+		LIST_OF_NUMBERS = 1 << 11,
+		LIST_OF_STRINGS = 1 << 12,
+		LIST_OF_ENTITY_IDS = 1 << 13,
+		//TODO 25740: use this where appropriate
+		LIST_OF_ENTITY_LABELS = 1 << 14,
+		LIST_OF_QUERIES = 1 << 15,
+		ASSOC_OF_NUMBERS = 1 << 16,
 		
 		ANY_BASIC = NULL_TYPE | BOOL | NUMBER | STRING | LIST | UNORDERED_LIST | ASSOC | QUERY
 	};
@@ -193,6 +197,9 @@ public:
 		auto simple_type = std::min(a, b);
 		auto complex_type = std::max(a, b);
 
+		if(simple_type == DataType::STRING && complex_type == DataType::ENTITY_LABEL)
+			return true;
+
 		if(simple_type == DataType::ASSOC)
 		{
 			if(complex_type == DataType::ASSOC_OF_NUMBERS)
@@ -202,6 +209,8 @@ public:
 
 		if(simple_type == DataType::LIST)
 		{
+			if(complex_type == DataType::UNORDERED_LIST)
+				return true;
 			if(complex_type == DataType::WALK_PATH)
 				return true;
 			if(complex_type == DataType::LIST_OF_NUMBERS)
@@ -209,6 +218,10 @@ public:
 			if(complex_type == DataType::LIST_OF_STRINGS)
 				return true;
 			if(complex_type == DataType::LIST_OF_ENTITY_IDS)
+				return true;
+			if(complex_type == DataType::LIST_OF_ENTITY_LABELS)
+				return true;
+			if(complex_type == DataType::LIST_OF_QUERIES)
 				return true;
 			return false;
 		}

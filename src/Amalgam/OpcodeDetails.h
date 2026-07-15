@@ -157,7 +157,7 @@ public:
 		ENTITY_ID = 1 << 10,
 		LIST_OF_NUMBERS = 1 << 11,
 		LIST_OF_STRINGS = 1 << 12,
-		LIST_OF_ENTITY_ID = 1 << 13,
+		LIST_OF_ENTITY_IDS = 1 << 13,
 		ASSOC_OF_NUMBERS = 1 << 14,
 		
 		ANY_BASIC = NULL_TYPE | BOOL | NUMBER | STRING | LIST | ASSOC
@@ -181,9 +181,40 @@ public:
 		return static_cast<DataType>(~static_cast<DataTypeContainer>(v));
 	}
 
-	static constexpr bool AreDataTypesCompatible(DataType a, DataType b)
+	static constexpr bool AreDataTypesExactlyCompatible(DataType a, DataType b)
 	{
 		return (static_cast<DataTypeContainer>(a) & static_cast<DataTypeContainer>(b)) != 0;
+	}
+
+	static constexpr bool AreDataTypesCompatible(DataType a, DataType b)
+	{
+		if(AreDataTypesExactlyCompatible(a, b))
+			return true;
+
+		auto simple_type = std::min(a, b);
+		auto complex_type = std::max(a, b);
+
+		if(simple_type == DataType::ASSOC)
+		{
+			if(complex_type == DataType::ASSOC_OF_NUMBERS)
+				return true;
+			return false;
+		}
+
+		if(simple_type == DataType::LIST)
+		{
+			if(complex_type == DataType::WALK_PATH)
+				return true;
+			if(complex_type == DataType::LIST_OF_NUMBERS)
+				return true;
+			if(complex_type == DataType::LIST_OF_STRINGS)
+				return true;
+			if(complex_type == DataType::LIST_OF_ENTITY_IDS)
+				return true;
+			return false;
+		}
+
+		return false;
 	}
 
 	//returns a string corresponding to the datatype

@@ -89,96 +89,95 @@ std::string OpcodeDetails::OpcodeDataTypeToString(DataType odt)
 {
 	std::string type_str;
 
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::NULL_TYPE))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::NULL_TYPE))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
 		type_str += "null";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::BOOL))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::BOOL))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
 		type_str += "bool";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::NUMBER))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::NUMBER))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
 		type_str += "number";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::BARE_STRING))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::BARE_STRING))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
 		type_str += "bare_string";
 	}
-	//TODO 25740: update all strings below this
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::STRING))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::STRING))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
-		type_str += "";
+		type_str += "string";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::LIST))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
-		type_str += "";
+		type_str += "list";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::UNORDERED_LIST))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::UNORDERED_LIST))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
-		type_str += "";
+		type_str += "unordered_list";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::ASSOC))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ASSOC))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
-		type_str += "";
+		type_str += "assoc";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::QUERY))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::QUERY))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
-		type_str += "";
+		type_str += "query";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::WALK_PATH))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::WALK_PATH))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
-		type_str += "";
+		type_str += "walk_path";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::ENTITY_ID))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ENTITY_ID))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
-		type_str += "";
+		type_str += "entity_id";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::LIST_OF_NUMBERS))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_NUMBERS))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
-		type_str += "";
+		type_str += "list_of_numbers";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::LIST_OF_STRINGS))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_STRINGS))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
-		type_str += "";
+		type_str += "list_of_strings";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::LIST_OF_ENTITY_ID))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_ENTITY_IDS))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
-		type_str += "";
+		type_str += "list_of_entity_ids";
 	}
-	if(OpcodeDetails::AreDataTypesCompatible(odt, OpcodeDetails::DataType::ASSOC_OF_NUMBERS))
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ASSOC_OF_NUMBERS))
 	{
 		if(!type_str.empty())
 			type_str += " | ";
-		type_str += "";
+		type_str += "assoc_of_numbers";
 	}
 
 	return type_str;

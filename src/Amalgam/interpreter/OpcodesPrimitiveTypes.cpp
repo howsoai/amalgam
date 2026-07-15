@@ -5,11 +5,9 @@
 
 static std::string _opcode_group = "Primitive Types";
 
-//TODO 25740: update from here down
-
 static OpcodeInitializer _ENT_NULL(ENT_NULL, &Interpreter::InterpretNode_ENT_NULL, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"()";
+	d.parameters = OpcodeDetails::ParameterSchema{};
 	d.returns = OpcodeDetails::DataType::NULL_TYPE;
 	d.description = R"(Evaluates to the immediate null value and cannot have any parameters.  Null is returned any time there would be a not-a-number result (NaN), such as dividing zero by zero or adding null to a number, or when intermixed with string operations.)";
 	d.examples = MakeAmalgamExamples({
@@ -37,7 +35,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NULL(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_BOOL(ENT_BOOL, &Interpreter::InterpretNode_ENT_BOOL, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"()";
+	d.parameters = OpcodeDetails::ParameterSchema{};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(A boolean value that may hold true and false as `.true` and `.false` respectively.)";
 	d.examples = MakeAmalgamExamples({
@@ -60,7 +58,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_BOOL(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_NUMBER(ENT_NUMBER, &Interpreter::InterpretNode_ENT_NUMBER, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"()";
+	d.parameters = OpcodeDetails::ParameterSchema{};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(A 64-bit floating point value.  Note that `.infinity` and `-.infinity` are used to denote infinite values and not-a-number is transformed into a null value.)";
 	d.examples = MakeAmalgamExamples({
@@ -88,7 +86,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NUMBER(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_STRING(ENT_STRING, &Interpreter::InterpretNode_ENT_STRING, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"()";
+	d.parameters = OpcodeDetails::ParameterSchema{};
 	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(A string.  Many opcodes assume UTF-8 formatted strings, but many, such as `format`, can work with any bytes.  Internally, the string is just a sequence of bytes, but when specifying a string to be parsed, `\` is the escape character and the values that can be escaped are null character as `\0`, `\` as `\\`, `"` as `\"`, tab as `\t`, newline as `\n`, and carriage return as `\r`.)";
 	d.examples = MakeAmalgamExamples({
@@ -112,7 +110,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_LIST(ENT_LIST, &Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([* node1] [* node2] ... [* nodeN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}, true)
+	};
 	d.returns = OpcodeDetails::DataType::LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to a list with the parameters as elements.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the list itself, the current index, and the current value.  If `[]`'s are used instead of parenthesis, the keyword `list` may be omitted.  `[]` are considered identical to `(list)`.)";
@@ -130,7 +130,9 @@ static OpcodeInitializer _ENT_LIST(ENT_LIST, &Interpreter::InterpretNode_ENT_LIS
 
 static OpcodeInitializer _ENT_UNORDERED_LIST(ENT_UNORDERED_LIST, &Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([* node1] [* node2] ... [* nodeN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}, true)
+	};
 	d.returns = OpcodeDetails::DataType::UNORDERED_LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the list specified by parameters as elements.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the unordered list itself, the current index, and the current value.  It operates like a list, except any operations that would normally consider a list's order.  For example, union, intersect, and mix, will consider the values unordered.)";
@@ -239,10 +241,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(Ev
 
 static OpcodeInitializer _ENT_ASSOC(ENT_ASSOC, &Interpreter::InterpretNode_ENT_ASSOC, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([bstring index1] [* value1] [bstring index1] [* value2] ...)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC, true}, {"value", OpcodeDetails::DataType::ANY_BASIC, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::ASSOC;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to an associative list, where each pair of parameters (e.g., `index1` and `value1`) comprises a index-value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.  If any of the bareword strings (bstrings) do not have reserved characters or whitespace, then quotes are optional; if whitespace or reserved characters are present, then quotes are required.  If `{}`'s are used instead of parenthesis, the keyword assoc may be omitted.  `{}` are considered identical to `(assoc)`)";
+	d.description = R"(Evaluates to an associative list, where each pair of parameters (e.g., `index1` and `value1`) comprises a index-value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.  If any index does not have reserved characters or whitespace, then quotes are optional; if whitespace or reserved characters are present, then quotes are required.  If `{}`'s are used instead of parenthesis, the keyword assoc may be omitted.  `{}` are considered identical to `(assoc)`)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unparse
 	{b 2 c 3}

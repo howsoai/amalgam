@@ -89,6 +89,14 @@ std::string OpcodeDetails::OpcodeDataTypeToString(DataType odt)
 {
 	std::string type_str;
 
+	if(odt == OpcodeDetails::DataType::ANY_BASIC)
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "any";
+		return type_str;
+	}
+
 	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::NULL_TYPE))
 	{
 		if(!type_str.empty())

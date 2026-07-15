@@ -4,11 +4,11 @@
 
 static std::string _opcode_group = "Logic and Comparison";
 
-//TODO 25740: update from here down
-
 static OpcodeInitializer _ENT_AND(ENT_AND, &Interpreter::InterpretNode_ENT_AND, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([bool condition1] [bool condition2] ... [bool conditionN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"condition", OpcodeDetails::DataType::BOOL, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.allowsConcurrency = true;
 	d.description = R"(If all condition expressions are true, evaluates to `conditionN`.  Otherwise evaluates to false.)";
@@ -89,7 +89,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_OR(ENT_OR, &Interpreter::InterpretNode_ENT_OR, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([bool condition1] [bool condition2] ... [bool conditionN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"condition", OpcodeDetails::DataType::BOOL, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.allowsConcurrency = true;
 	d.description = R"(If all condition expressions are false, evaluates to false.  Otherwise evaluates to the first condition that is true.)";
@@ -156,7 +158,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OR(EvaluableNode *en, Eval
 
 static OpcodeInitializer _ENT_XOR(ENT_XOR, &Interpreter::InterpretNode_ENT_XOR, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([bool condition1] [bool condition2] ... [bool conditionN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"condition", OpcodeDetails::DataType::BOOL, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.allowsConcurrency = true;
 	d.description = R"(If an even number of condition expressions are true, evaluates to false.  Otherwise evaluates to true.)";
@@ -217,7 +221,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_XOR(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_NOT(ENT_NOT, &Interpreter::InterpretNode_ENT_NOT, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(bool condition)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"condition", OpcodeDetails::DataType::BOOL})
+	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Evaluates to false if `condition` is true, true if false.)";
 	d.examples = MakeAmalgamExamples({
@@ -243,7 +249,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_EQUAL(ENT_EQUAL, &Interpreter::InterpretNode_ENT_EQUAL, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([* node1] [* node2] ... [* nodeN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to true if the value of all nodes are equal, false otherwise. Values of null are considered equal, and any complex data structures will be traversed evaluated for deep equality.)";
@@ -337,7 +345,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EQUAL(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_NEQUAL(ENT_NEQUAL, &Interpreter::InterpretNode_ENT_NEQUAL, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([* node1] [* node2] ... [* nodeN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to true if no two values are equal, false otherwise.  Values of null are considered equal, and any complex data structures will be traversed evaluated for deep equality.)";
@@ -454,7 +464,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NEQUAL(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_LESS(ENT_LESS, &Interpreter::InterpretNode_ENT_LESS_and_LEQUAL, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([* node1] [* node2] ... [* nodeN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::STRING, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to true if all values are in strict increasing order, false otherwise.)";
@@ -473,7 +485,9 @@ static OpcodeInitializer _ENT_LESS(ENT_LESS, &Interpreter::InterpretNode_ENT_LES
 
 static OpcodeInitializer _ENT_LEQUAL(ENT_LEQUAL, &Interpreter::InterpretNode_ENT_LESS_and_LEQUAL, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([* node1] [* node2] ... [* nodeN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::STRING, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to true if all values are in nondecreasing order, false otherwise.)";
@@ -580,7 +594,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 
 static OpcodeInitializer _ENT_GREATER(ENT_GREATER, &Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([* node1] [* node2] ... [* nodeN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::STRING, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to true if all values are in strict decreasing order, false otherwise.)";
@@ -599,7 +615,9 @@ static OpcodeInitializer _ENT_GREATER(ENT_GREATER, &Interpreter::InterpretNode_E
 
 static OpcodeInitializer _ENT_GEQUAL(ENT_GEQUAL, &Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([* node1] [* node2] ... [* nodeN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::STRING, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to true if all values are in nonincreasing order, false otherwise.)";
@@ -706,7 +724,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 
 static OpcodeInitializer _ENT_TYPE_EQUALS(ENT_TYPE_EQUALS, &Interpreter::InterpretNode_ENT_TYPE_EQUALS, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([* node1] [* node2] ... [* nodeN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to true if all values are of the same data type, false otherwise.)";
@@ -806,7 +826,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode 
 
 static OpcodeInitializer _ENT_TYPE_NEQUALS(ENT_TYPE_NEQUALS, &Interpreter::InterpretNode_ENT_TYPE_NEQUALS, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([* node1] [* node2] ... [* nodeN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Evaluates to true if no two values are of the same data types, false otherwise.)";
 	d.examples = MakeAmalgamExamples({

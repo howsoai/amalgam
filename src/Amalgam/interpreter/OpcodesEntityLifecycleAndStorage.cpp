@@ -8,12 +8,13 @@ static std::string _opcode_group = "Entity Lifecycle and Storage";
 
 static OpcodeInitializer _ENT_CREATE_ENTITIES(ENT_CREATE_ENTITIES, &Interpreter::InterpretNode_ENT_CREATE_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::PAIRED,
+	{
 		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID, true}),
 		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
 		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true},
 			{"node", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::LIST_OF_ENTITY_IDS;
 	d.description = R"(Creates a new entity for id path `entity1` with code specified by `node1`, repeating this for all entity-node pairs, returning a list of the id paths for each of the entities created.  If the execution does not have permission to create the entities, it will evaluate to null.  If the `entity` is omitted, then it will create an unnamed new entity in the calling entity.  If `entity1` specifies an existing entity, then it will create the new entity within that existing entity.  If the last id path in the string is not an existing entity, then it will attempt to create that entity (returning null if it cannot).  If the node is of any other type than assoc, it will create an assoc as the top node and place the node under the null key.  Unlike the rest of the entity creation commands, create_entities specifies the optional id path first to make it easy to read entity definitions.  If more than 2 parameters are specified, create_entities will iterate through all of the pairs of parameters, treating them like the first two as it creates new entities.)";
 	d.examples = MakeAmalgamExamples({
@@ -45,7 +46,6 @@ static OpcodeInitializer _ENT_CREATE_ENTITIES(ENT_CREATE_ENTITIES, &Interpreter:
 	(contained_entities "EntityWithContainedEntities")
 ))&", R"(["NamedEntity1" "NamedEntity2" "_hIcoPxJ8LiS"])", "", R"((destroy_entities "EntityWithContainedEntities"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::PAIRED;
 	d.requiresEntity = true;
 	d.retrievesData = true;
 	d.hasSideEffects = true;
@@ -355,9 +355,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 
 static OpcodeInitializer _ENT_DESTROY_ENTITIES(ENT_DESTROY_ENTITIES, &Interpreter::InterpretNode_ENT_DESTROY_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true}, true)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Destroys the entities specified by the ids `entity1`, `entity2`, etc. Can only be performed by containing entity.  Returns true if all entities were successfully destroyed, false if not.  Generally entities can be destroyed unless they do not exist or if there is code currently being run in it.)";
 	d.examples = MakeAmalgamExamples({
@@ -370,7 +371,6 @@ static OpcodeInitializer _ENT_DESTROY_ENTITIES(ENT_DESTROY_ENTITIES, &Interprete
 	(contained_entities)
 ))&", R"([])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.retrievesData = true;
@@ -1255,12 +1255,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 
 static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::PAIRED,
+	{
 		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID, true}),
 		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
 		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true},
 			{"node", OpcodeDetails::DataType::ANY_BASIC}, true, 2)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Sets the root of the `entity1 to `node1`, as well as all subsequent entity-code pairs of parameters.  If `entity1` is not specified or null, then uses the current entity.  On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.)";
 	d.examples = MakeAmalgamExamples({
@@ -1278,7 +1279,6 @@ static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Inte
 	(retrieve_entity_root "Entity")
 ))&", R"({a 4 b 5 c 6})", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::PAIRED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;

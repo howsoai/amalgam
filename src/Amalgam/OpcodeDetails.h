@@ -132,7 +132,8 @@ public:
 		ONE_POSITION_THEN_ORDERED,
 		PAIRED,
 		ONE_POSITION_THEN_PAIRED,
-		POSITION
+		POSITION,
+		ASSOCIATIVE
 	};
 
 	//whether an opcode returns a newly allocated value
@@ -326,16 +327,12 @@ public:
 	//true if the opcode is a query run by the query engine
 	bool isQuery = false;
 
-	//if the opcode has ordered child nodes, how they're ordered
-	ChildNodeStructureType orderedChildNodeType = ChildNodeStructureType::POSITION;
-
 	//what kind of special permissions the opcode needs to run
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
 
 	//whether the opcode returns a newly allocated value
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 
-	//TODO 25740: remove orderedChildNodeType (changing access where appropriate) and update all opcodes' parameters
 	ParameterSchema parameters;
 	DataType returns;
 	std::string_view description;
@@ -371,7 +368,7 @@ public:
 //returns the type of structure that the ordered child nodes have for a given t
 __forceinline OpcodeDetails::ChildNodeStructureType GetChildNodeStructureType(EvaluableNodeType t)
 {
-	return _opcode_details[t].orderedChildNodeType;
+	return _opcode_details[t].parameters.childNodeStructure;
 }
 
 //returns true if the opcode may retrieve data

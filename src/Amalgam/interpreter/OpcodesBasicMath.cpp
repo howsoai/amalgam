@@ -6,16 +6,16 @@ static std::string _opcode_group = "Basic Math";
 
 static OpcodeInitializer _ENT_ADD(ENT_ADD, &Interpreter::InterpretNode_ENT_ADD, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the sum of all numbers.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((+ 1 2 3 4))", R"(10)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 18.0;
 	d.opcodeGroup = _opcode_group;
@@ -52,9 +52,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode_ENT_SUBTRACT, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative)";
@@ -62,7 +63,6 @@ static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode
 		{R"((- 1 2 3 4))", R"(-8)"},
 		{R"((- 3))", R"(-3)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 15.0;
 	d.opcodeGroup = _opcode_group;
@@ -103,16 +103,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en
 
 static OpcodeInitializer _ENT_MULTIPLY(ENT_MULTIPLY, &Interpreter::InterpretNode_ENT_MULTIPLY, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the product of all numbers.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((* 1 2 3 4))", R"(24)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 9.0;
 	d.opcodeGroup = _opcode_group;
@@ -149,16 +149,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 
 static OpcodeInitializer _ENT_DIVIDE(ENT_DIVIDE, &Interpreter::InterpretNode_ENT_DIVIDE, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to `x1` / `x2` / ... / `xN`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((/ 1.0 2 3 4))", R"(0.041666666666666664)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 12.0;
 	d.opcodeGroup = _opcode_group;
@@ -227,9 +227,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_MODULUS(ENT_MODULUS, &Interpreter::InterpretNode_ENT_MODULUS, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates the modulus of `x1` mod `x2` mod ... mod `xN`.)";
@@ -237,7 +238,6 @@ static OpcodeInitializer _ENT_MODULUS(ENT_MODULUS, &Interpreter::InterpretNode_E
 		{R"((mod 1 2 3 4))", R"(1)"},
 		{R"((mod 5 3))", R"(2)"},
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
@@ -950,9 +950,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ABS(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_MAX(ENT_MAX, &Interpreter::InterpretNode_ENT_MAX, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the maximum of all of parameters.)";
@@ -961,7 +962,6 @@ static OpcodeInitializer _ENT_MAX(ENT_MAX, &Interpreter::InterpretNode_ENT_MAX, 
 		{R"&((max .null 4 8))&", R"(8)"},
 		{R"&((max .null))&", R"(.null)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 2.0;
 	d.opcodeGroup = _opcode_group;
@@ -1018,9 +1018,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_MIN(ENT_MIN, &Interpreter::InterpretNode_ENT_MIN, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the minimum of all of the numbers.)";
@@ -1028,7 +1029,6 @@ static OpcodeInitializer _ENT_MIN(ENT_MIN, &Interpreter::InterpretNode_ENT_MIN, 
 		{R"&((min 0.5 1 7 9 -5))&", R"(-5)"},
 		{R"&((min .null 4 8))&", R"(4)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 2.0;
 	d.opcodeGroup = _opcode_group;
@@ -1085,10 +1085,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_INDEX_MAX(ENT_INDEX_MAX, &Interpreter::InterpretNode_ENT_INDEX_MAX, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"x1", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true, 2)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the maximum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the maximum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the maximum value.)";
@@ -1103,7 +1104,6 @@ static OpcodeInitializer _ENT_INDEX_MAX(ENT_INDEX_MAX, &Interpreter::InterpretNo
 	{1 2 3 5 tomato 4444}
 ))&", R"(["tomato"])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
@@ -1275,10 +1275,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 
 static OpcodeInitializer _ENT_INDEX_MIN(ENT_INDEX_MIN, &Interpreter::InterpretNode_ENT_INDEX_MIN, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"x1", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true, 2)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the minimum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the minimum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the minimum value.)";
@@ -1292,7 +1293,6 @@ static OpcodeInitializer _ENT_INDEX_MIN(ENT_INDEX_MIN, &Interpreter::InterpretNo
 	{1 2 3 5 tomato 4444}
 ))&", R"([1])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;

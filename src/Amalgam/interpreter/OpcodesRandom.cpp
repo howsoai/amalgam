@@ -559,11 +559,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(Evalu
 
 static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true}),
 		OpcodeDetails::ParameterGroup({"seed", OpcodeDetails::DataType::ENTITY_ID}),
 		OpcodeDetails::ParameterGroup({"deep", OpcodeDetails::DataType::BOOL, true})
-	};
+	});
 	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(Sets the random number seed and state for the random number generator of `entity`, or the current entity if null or not specified, to the state specified by `seed`.  If `seed` is already a string in the proper format output by `get_entity_rand_seed` or `get_rand_seed`, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it will use the first 14 to 15 digits of the seed as a string to seed the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by `entity` for new calls.  The parameter `deep` defaults to false, but if it is true, all contained entities are recursively set with random seeds based on a hash of a combination of the specified random seed and their relative id path to the entity being set.)";
 	d.examples = MakeAmalgamExamples({
@@ -614,7 +615,6 @@ static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &In
 	[0.9512993766655248 0.3733350484591008]
 ])", "", R"((destroy_entities "Rand"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;

@@ -7,10 +7,11 @@ static std::string _opcode_group = "Control Flow";
 
 static OpcodeInitializer _ENT_IF(ENT_IF, &Interpreter::InterpretNode_ENT_IF, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"condition_or_node", OpcodeDetails::DataType::ANY_BASIC, true},
 			{"node", OpcodeDetails::DataType::ANY_BASIC, true}, true),
-	};
+	});
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(If `condition_or_node1` is true, then it will evaluate to the node1 argument.  Otherwise `condition_or_node2` will be checked, repeating for every pair.  If there is an odd number of parameters, the last `condition_or_node` acts as the final else, and will be evaluated as that if all conditions are false.  If there is an even number of parameters and none are true, then evaluates to null.)";
 	d.examples = MakeAmalgamExamples({
@@ -51,9 +52,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_IF(EvaluableNode *en, Eval
 
 static OpcodeInitializer _ENT_SEQUENCE(ENT_SEQUENCE, &Interpreter::InterpretNode_ENT_SEQUENCE, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true}, true),
-	};
+	});
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Runs each code block sequentially.  Evaluates to the result of the last code block run, unless it encounters a conclude or return in an earlier step, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value (see conclude opcode).)";
 	d.examples = MakeAmalgamExamples({
@@ -64,7 +66,6 @@ static OpcodeInitializer _ENT_SEQUENCE(ENT_SEQUENCE, &Interpreter::InterpretNode
 	a
 ))", R"(2)"},
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 15.0;
 	d.opcodeGroup = _opcode_group;
@@ -335,10 +336,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_WHILE(ENT_WHILE, &Interpreter::InterpretNode_ENT_WHILE, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"condition", OpcodeDetails::DataType::BOOL}),
 		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true}, true)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Each time the `condition` evaluates to true, it runs each of code sequentially, looping. Evaluates to the last `codeN` or null if the `condition` was initially false or if it encounters a `conclude` or `return`, it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  For each iteration of the loop, it pushes a new target scope onto the target stack, with `(current_index)` being the iteration count, and `(previous_result)` being the last evaluated `codeN` of the previous loop.)";
 	d.examples = MakeAmalgamExamples({
@@ -355,7 +357,6 @@ static OpcodeInitializer _ENT_WHILE(ENT_WHILE, &Interpreter::InterpretNode_ENT_W
 	i
 ))&", R"(10)"},
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED;
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 2.5;

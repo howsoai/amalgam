@@ -11,7 +11,7 @@ static std::string _opcode_group = "Variable Definition and Modification";
 
 static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT_SYMBOL, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{};
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::NONE, {});
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(A string representing an internal symbol, a variable.)";
 	d.examples = MakeAmalgamExamples({
@@ -23,7 +23,6 @@ static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT
 			{R"&((lambda foo))&", R"(foo)"}
 		});
 	d.retrievesData = true;
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::NONE;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 4329.0;
 	d.opcodeGroup = _opcode_group;
@@ -58,10 +57,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_LET(ENT_LET, &Interpreter::InterpretNode_ENT_LET, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"variables", OpcodeDetails::DataType::ASSOC}),
 		OpcodeDetails::ParameterGroup({"code", OpcodeDetails::DataType::ANY_BASIC, true}, true)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Pushes the key-value pairs of `variables` onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
 	d.examples = MakeAmalgamExamples({
@@ -77,7 +77,6 @@ static OpcodeInitializer _ENT_LET(ENT_LET, &Interpreter::InterpretNode_ENT_LET, 
 	)
 ))&", R"(11)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED;
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 26.0;
@@ -131,10 +130,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_DECLARE(ENT_DECLARE, &Interpreter::InterpretNode_ENT_DECLARE, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"variables", OpcodeDetails::DataType::ASSOC}),
 		OpcodeDetails::ParameterGroup({"code", OpcodeDetails::DataType::ANY_BASIC, true}, true)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(For each key-value pair of `variables`, if not already in the current context in the scope stack, it will define them.  Then it runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
 	d.examples = MakeAmalgamExamples({
@@ -149,7 +149,6 @@ static OpcodeInitializer _ENT_DECLARE(ENT_DECLARE, &Interpreter::InterpretNode_E
 	x
 ))&", R"(8)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.retrievesData = true;
 	d.hasSideEffects = true;
@@ -343,13 +342,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED,
+	{
 		OpcodeDetails::ParameterGroup({"variables", OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::ASSOC}),
 		OpcodeDetails::ParameterGroup({"index1_or_value", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
 			{"value1", OpcodeDetails::DataType::ANY_BASIC, true}),
 		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
 			{"value", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2),
-	};
+	});
 	d.returns = OpcodeDetails::DataType::NULL_TYPE;
 	d.description = R"(If `variables` is an assoc, then for each key-value pair it assigns the value to the variable represented by the key found by tracing upward on the stack.  If a variable is not found, it will create a variable on the top of the stack with that name.  If `variables` is a string and there are two parameters, it will assign the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of `index` and `value` to assign `value` to that part of the variable's structure.)";
 	d.examples = MakeAmalgamExamples({
@@ -413,7 +413,6 @@ static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT
 	}
 ])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 	d.hasSideEffects = true;
 	d.mayCauseNodeUpdateInCurrentEntity = true;
@@ -424,13 +423,14 @@ static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT
 
 static OpcodeInitializer _ENT_ACCUM(ENT_ACCUM, &Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED,
+	{
 		OpcodeDetails::ParameterGroup({"variables", OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::ASSOC}),
 		OpcodeDetails::ParameterGroup({"index1_or_value", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
 			{"value1", OpcodeDetails::DataType::ANY_BASIC, true}),
 		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
 			{"value", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2),
-	};
+	});
 	d.returns = OpcodeDetails::DataType::NULL_TYPE;
 	d.description = R"(If `variables` is an assoc, then for each key-value pair of data, it assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the result in the variable.  It searches for the variable name tracing up the stack to find the variable. If the variable is not found, it will create a variable on the top of the stack.  Accumulation is performed differently based on the type.  For numeric values it adds, for strings it concatenates, for lists and assocs it appends.  If `variables` is a string and there are two parameters, then it will accum the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of the corresponding walk path and accum value to that part of the variable's structure.)";
 	d.examples = MakeAmalgamExamples({
@@ -521,7 +521,6 @@ static OpcodeInitializer _ENT_ACCUM(ENT_ACCUM, &Interpreter::InterpretNode_ENT_A
 	{a 1 b 2 c 3}
 ])"},
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 	d.retrievesData = true;
 	d.hasSideEffects = true;
@@ -860,7 +859,6 @@ static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter:
 ))&", R"([.false 0])" }
 		});
 	d.retrievesData = true;
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::POSITION;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 3.0;
 	d.opcodeGroup = _opcode_group;
@@ -1041,7 +1039,6 @@ static OpcodeInitializer _ENT_EXISTS(ENT_EXISTS, &Interpreter::InterpretNode_ENT
 ))&", R"([.true .false])"}
 		});
 	d.retrievesData = true;
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::POSITION;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
@@ -1065,9 +1062,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXISTS(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_UNASSIGN(ENT_UNASSIGN, &Interpreter::InterpretNode_ENT_UNASSIGN, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"variable", OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC, true}, true)
-	};
+	});
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Removes all variables that are parameters from the stack.  Returns true all variables previously existed and were unassigned.)";
 	d.examples = MakeAmalgamExamples({
@@ -1079,7 +1077,6 @@ static OpcodeInitializer _ENT_UNASSIGN(ENT_UNASSIGN, &Interpreter::InterpretNode
 		});
 	d.retrievesData = true;
 	d.hasSideEffects = true;
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;

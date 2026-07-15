@@ -667,15 +667,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_CONCAT(ENT_CONCAT, &Interpreter::InterpretNode_ENT_CONCAT, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema{
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
 		OpcodeDetails::ParameterGroup({"s", OpcodeDetails::DataType::STRING, true}, true),
-	};
+	});
 	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(Concatenates all strings and evaluates to the single resulting string.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((concat "hello" " " "world"))&", R"("hello world")"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::ChildNodeStructureType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 10.0;
 	d.opcodeGroup = _opcode_group;

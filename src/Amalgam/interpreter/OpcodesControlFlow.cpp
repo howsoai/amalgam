@@ -54,7 +54,6 @@ static OpcodeInitializer _ENT_SEQUENCE(ENT_SEQUENCE, &Interpreter::InterpretNode
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true}, true),
 	};
-	d.old_parameters = R"([code c1] [code c2] ... [code cN])";
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Runs each code block sequentially.  Evaluates to the result of the last code block run, unless it encounters a conclude or return in an earlier step, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value (see conclude opcode).)";
 	d.examples = MakeAmalgamExamples({

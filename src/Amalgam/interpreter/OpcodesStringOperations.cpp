@@ -13,7 +13,6 @@ static OpcodeInitializer _ENT_EXPLODE(ENT_EXPLODE, &Interpreter::InterpretNode_E
 		OpcodeDetails::ParameterGroup({"s", OpcodeDetails::DataType::STRING}),
 		OpcodeDetails::ParameterGroup({"stride", OpcodeDetails::DataType::NUMBER, true})
 	};
-	d.old_parameters = R"(string str [number stride])";
 	d.returns = OpcodeDetails::DataType::LIST_OF_STRINGS;
 	d.description = R"(Explodes `s` into the pieces that make it up.  If `stride` is zero or unspecified, then it explodes `s` by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
 	d.examples = MakeAmalgamExamples({

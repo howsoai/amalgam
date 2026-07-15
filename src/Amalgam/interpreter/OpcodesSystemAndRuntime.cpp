@@ -27,7 +27,7 @@ static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HEL
 	new_scope .false
 	new_target_scope .false
 	opcode_group "Basic Math"
-	parameters "[number x1] [number x2] ... [number xN]"
+	parameters "[number x1] [number x2] ..."
 	permissions "none"
 	requires_entity .false
 	returns "number"
@@ -751,7 +751,6 @@ static OpcodeInitializer _ENT_RECLAIM_RESOURCES(ENT_RECLAIM_RESOURCES, &Interpre
 		OpcodeDetails::ParameterGroup({"collect_garbage", OpcodeDetails::DataType::BOOL, true}),
 		OpcodeDetails::ParameterGroup({"force_free_memory", OpcodeDetails::DataType::BOOL, true})
 	};
-	d.old_parameters = R"([id_path entity] [bool apply_to_all_contained_entities] [bool|list clear_query_caches] [bool collect_garbage] [bool force_free_memory])";
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Frees resources of the specified types on `entity`, which is the current entity if null.  Will include all contained entities if `apply_to_all_contained_entities` is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter `clear_query_caches` will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  If `clear_query_caches` is a boolean, then it will either clear all the caches or none.  If `clear_query_caches` is a list of strings, then it will only clear caches for the labels corresponding to the strings in the list.  The parameter `collect_garbage` will perform garbage collection on the entity, and if `force_free_memory` is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.)";
 	d.examples = MakeAmalgamExamples({

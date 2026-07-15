@@ -304,7 +304,6 @@ static OpcodeInitializer _ENT_COMMONALITY_ENTITIES(ENT_COMMONALITY_ENTITIES, &In
 		OpcodeDetails::ParameterGroup({"entity2", OpcodeDetails::DataType::ENTITY_ID}),
 		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
 	};
-	d.old_parameters = R"(id_path entity1 id_path entity2 [assoc params])";
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the total count of all of the nodes referenced within `entity1` and `entity2` that are equivalent, including all contained entities.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 	d.examples = MakeAmalgamExamples({

@@ -335,9 +335,8 @@ public:
 	//whether the opcode returns a newly allocated value
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 
-	//TODO 25740: remove old_parameters and remove orderedChildNodeType (changing access where appropriate) and update all opcodes' parameters
+	//TODO 25740: remove orderedChildNodeType (changing access where appropriate) and update all opcodes' parameters
 	ParameterSchema parameters;
-	std::string_view old_parameters;
 	DataType returns;
 	std::string_view description;
 	std::vector<AmalgamExample> examples;

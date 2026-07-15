@@ -134,7 +134,6 @@ static OpcodeInitializer _ENT_CLONE_ENTITIES(ENT_CLONE_ENTITIES, &Interpreter::I
 		OpcodeDetails::ParameterGroup({"source_entity", OpcodeDetails::DataType::ENTITY_ID, true},
 			{"dest_entity", OpcodeDetails::DataType::ENTITY_ID, true}, true)
 	};
-	d.old_parameters = R"(id_path source_entity1 [id_path dest_entity1] [id_path source_entity2] [id_path dest_entity2] [...])";
 	d.returns = OpcodeDetails::DataType::LIST_OF_ENTITY_IDS;
 	d.description = R"(Creates a clone of `source_entity1`.  If `dest_entity1` is not specified, then it clones the entity into an unnamed entity in the current entity.  If `dest_entity1` is specified, then it clones it into the location specified by `dest_entity1`; if `dest_entity1` is an existing entity, then it will create it as a contained entity within `dest_entity1`, if not, it will attempt to create it with the given id path of `dest_entity1`.  Evaluates to the id path of the new entity.  Can only be performed by an entity that contains both `source_entity1` and the specified path of `dest_entity1`. If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
 	d.examples = MakeAmalgamExamples({
@@ -1075,7 +1074,6 @@ static OpcodeInitializer _ENT_CONTAINS_ENTITY(ENT_CONTAINS_ENTITY, &Interpreter:
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID})
 	};
-	d.old_parameters = R"(id_path entity)";
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Returns true if `entity` exists, false if not.)";
 	d.examples = MakeAmalgamExamples({

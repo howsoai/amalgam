@@ -7,7 +7,7 @@ static std::string _opcode_group = "Basic Math";
 static OpcodeInitializer _ENT_ADD(ENT_ADD, &Interpreter::InterpretNode_ENT_ADD, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
@@ -53,7 +53,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, Eva
 static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode_ENT_SUBTRACT, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
@@ -104,7 +104,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en
 static OpcodeInitializer _ENT_MULTIPLY(ENT_MULTIPLY, &Interpreter::InterpretNode_ENT_MULTIPLY, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
@@ -150,7 +150,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 static OpcodeInitializer _ENT_DIVIDE(ENT_DIVIDE, &Interpreter::InterpretNode_ENT_DIVIDE, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
@@ -228,7 +228,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, 
 static OpcodeInitializer _ENT_MODULUS(ENT_MODULUS, &Interpreter::InterpretNode_ENT_MODULUS, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;

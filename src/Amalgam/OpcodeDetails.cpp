@@ -202,7 +202,7 @@ std::string OpcodeDetails::ParametersToString()
 		else
 		{
 			//repeating parameters, just show the first two
-			for(size_t i = 1; i <= 2; i++)
+			for(size_t i = group.repeatingStartIndex; i <= 2; i++)
 			{
 				param_string += (group.parameter1.optional ? "[" : "")
 					+ OpcodeDataTypeToString(group.parameter1.type) + " " + group.parameter1.name

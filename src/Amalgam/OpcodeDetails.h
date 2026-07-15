@@ -233,15 +233,24 @@ public:
 	//if is_repeating is true, will repeat parameter1 or pair of parameters as appropriate
 	struct ParameterGroup
 	{
+		ParameterGroup(ParameterDetails p1, ParameterDetails p2,
+				bool is_repeating = false, int repeating_start_index = 1)
+			: parameter1(p1), parameter2(p2),
+			isRepeating(is_repeating), repeatingStartIndex(repeating_start_index)
+		{}
+
 		ParameterGroup(ParameterDetails p1,
-				bool is_repeating = false,
-				ParameterDetails p2 = {"", DataType::NULL_TYPE, true})
-			: parameter1(p1), parameter2(p2), isRepeating(is_repeating)
+				bool is_repeating = false, int repeating_start_index = 1)
+			: parameter1(p1), parameter2({ "", DataType::NULL_TYPE, true }),
+			isRepeating(is_repeating), repeatingStartIndex(repeating_start_index)
 		{}
 
 		ParameterDetails parameter1;
 		ParameterDetails parameter2;
 		bool isRepeating = false;
+		//index that the parameter starts with; used when the first parameter can have
+		//different types but if of one type then the parameter is repeated
+		int repeatingStartIndex = 1;
 	};
 
 	//set of parameters for an opcode

@@ -1083,11 +1083,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, Eva
 	return EvaluableNodeReference::Null();
 }
 
-//TODO 25740: update from here down
-
 static OpcodeInitializer _ENT_INDEX_MAX(ENT_INDEX_MAX, &Interpreter::InterpretNode_ENT_INDEX_MAX, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([[number x1] [number x2] [number x3] ... [number xN]] | assoc|list values)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+			OpcodeDetails::ParameterGroup({"x1", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
+			OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true, 2)
+	};
 	d.returns = OpcodeDetails::DataType::LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the maximum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the maximum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the maximum value.)";
@@ -1274,7 +1275,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 
 static OpcodeInitializer _ENT_INDEX_MIN(ENT_INDEX_MIN, &Interpreter::InterpretNode_ENT_INDEX_MIN, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([[number x1] [number x2] [number x3] ... [number xN]] | assoc values | list values)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+			OpcodeDetails::ParameterGroup({"x1", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
+			OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true, 2)
+	};
 	d.returns = OpcodeDetails::DataType::LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the minimum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the minimum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the minimum value.)";

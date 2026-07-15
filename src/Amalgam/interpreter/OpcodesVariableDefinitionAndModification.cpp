@@ -347,7 +347,7 @@ static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT
 		OpcodeDetails::ParameterGroup({"variables", OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::ASSOC}),
 		OpcodeDetails::ParameterGroup({"index1_or_value", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
 			{"value1", OpcodeDetails::DataType::ANY_BASIC, true}),
-			OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
+		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
 			{"value", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2),
 	};
 	d.returns = OpcodeDetails::DataType::NULL_TYPE;
@@ -428,7 +428,7 @@ static OpcodeInitializer _ENT_ACCUM(ENT_ACCUM, &Interpreter::InterpretNode_ENT_A
 		OpcodeDetails::ParameterGroup({"variables", OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::ASSOC}),
 		OpcodeDetails::ParameterGroup({"index1_or_value", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
 			{"value1", OpcodeDetails::DataType::ANY_BASIC, true}),
-			OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
+		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
 			{"value", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2),
 	};
 	d.returns = OpcodeDetails::DataType::NULL_TYPE;

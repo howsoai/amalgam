@@ -7,13 +7,13 @@
 
 static std::string _opcode_group = "Container Manipulation";
 
-//TODO 25740: update from here down
-
 static OpcodeInitializer _ENT_FIRST(ENT_FIRST, &Interpreter::InterpretNode_ENT_FIRST, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([list|assoc|number|string data])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
-	d.description = R"(Evaluates to the first element of `data`.  If `data` is a list, it will be the first element.  If `data` is an assoc, it will evaluate to the first element by assoc storage, but order does not matter.  If `data` is a string, it will be the first character.  If `data` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
+	d.description = R"(Evaluates to the first element of `node`.  If `node` is a list, it will be the first element.  If `node` is an assoc, it will evaluate to the first element by assoc storage, but order does not matter.  If `node` is a string, it will be the first character.  If `node` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((first
 	[4 9.2 "this"]
@@ -118,9 +118,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_TAIL(ENT_TAIL, &Interpreter::InterpretNode_ENT_TAIL, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([list|assoc|number|string data] [number retain_count])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"retain_count", OpcodeDetails::DataType::NUMBER})
+	};
 	d.returns = OpcodeDetails::DataType::LIST;
-	d.description = R"(Evaluates to everything but the first element.  If `data` is a list, it will be a list of all but the first element.  If `data` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, but order does not matter.  If `data` is a string, it will be all but the first character.  If `data` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero.  If a `retain_count` is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first element).)";
+	d.description = R"(Evaluates to everything but the first element.  If `node` is a list, it will be a list of all but the first element.  If `node` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, but order does not matter.  If `node` is a string, it will be all but the first character.  If `node` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero.  If a `retain_count` is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first element).)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((tail
 	[4 9.2 "this"]
@@ -434,9 +437,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_LAST(ENT_LAST, &Interpreter::InterpretNode_ENT_LAST, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([list|assoc|number|string data])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC})
+	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
-	d.description = R"(Evaluates to the last element of `data`.  If `data` is a list, it will be the last element.  If `data` is an assoc, it will evaluate to the first element by assoc storage, because order does not matter.  If `data` is a string, it will be the last character.  If `data` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
+	d.description = R"(Evaluates to the last element of `node`.  If `node` is a list, it will be the last element.  If `node` is an assoc, it will evaluate to the first element by assoc storage, because order does not matter.  If `node` is a string, it will be the last character.  If `node` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((last
 	[4 9.2 "this"]
@@ -544,9 +549,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_TRUNC(ENT_TRUNC, &Interpreter::InterpretNode_ENT_TRUNC, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([list|assoc|number|string data] [number retain_count])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"retain_count", OpcodeDetails::DataType::NUMBER})
+	};
 	d.returns = OpcodeDetails::DataType::LIST;
-	d.description = R"(Truncates, evaluates to everything in `data` but the last element. If `data` is a list, it will be a list of all but the last element.  If `data` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, because order does not matter.  If `data` is a string, it will be all but the last character.  If `data` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If `truncate_count` is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1, indicating all but the last.)";
+	d.description = R"(Truncates, evaluates to everything in `node` but the last element. If `node` is a list, it will be a list of all but the last element.  If `node` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, because order does not matter.  If `node` is a string, it will be all but the last character.  If `node` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If `truncate_count` is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1, indicating all but the last.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((trunc
 	[4 9.2 "end"]
@@ -859,7 +867,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_APPEND(ENT_APPEND, &Interpreter::InterpretNode_ENT_APPEND, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([list|assoc|* collection1] [list|assoc|* collection2] ... [list|assoc|* collectionN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::ANY_BASIC, true}, true),
+	};
 	d.returns = OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Evaluates to a new list or assoc which merges all lists, `collection1` through `collectionN`, based on parameter order. If any assoc is passed in, then returns an assoc (lists will be automatically converted to an assoc with the indices as keys and the list elements as values). If a non-list and non-assoc is specified, then it just adds that one element to the list.  In order to append a list or assoc to the first collection, it must be wrapped in an additional layer.)";
 	d.examples = MakeAmalgamExamples({
@@ -1033,7 +1043,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_SIZE(ENT_SIZE, &Interpreter::InterpretNode_ENT_SIZE, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"([list|assoc|string collection] collection)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::ANY_BASIC})
+	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the size of the `collection` in number of elements.  If `collection` is a string, returns the length in UTF-8 characters.)";
 	d.examples = MakeAmalgamExamples({
@@ -1095,9 +1107,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_GET(ENT_GET, &Interpreter::InterpretNode_ENT_GET, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(* data [number|index|list walk_path_1] [number|string|list walk_path_2] ...)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"walk_path", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
-	d.description = R"(Evaluates to `data` as traversed by the set of values specified by `walk_path_1', which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then `get` returns a list, where each element in the list is the respective element retrieved by the respective walk path.  If the walk path continues past the data structure, it will return a null.)";
+	d.description = R"(Evaluates to `node` as traversed by the set of values specified by `walk_path_1', which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then `get` returns a list, where each element in the list is the respective element retrieved by the respective walk path.  If the walk path continues past the data structure, it will return a null.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((get
 	[4 9.2 "this"]
@@ -1268,9 +1283,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_MODIFY(ENT_MODIFY, &Interpreter::InterpretNode_ENT_MODIFY, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(* data [number|string|list walk_path1] [* function1] [number|string|list walk_path2] [* function2] ... [number|string|list walk_pathN] [* functionN])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"walk_path", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
+			{"function", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true}, true)
+	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
-	d.description = R"(Performs a deep copy on `data` (a copy of all data structures referenced by it and its references).  If any additional parameters are specified, it treats them as pairs of locations and values or functions to replace within the new copy.  For each pair of replacements, the first element is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
+	d.description = R"(Performs a deep copy of `node` (a copy of all data structures referenced by it and its references).  If any additional parameters are specified, it treats them as pairs of locations and values or functions to replace within the new copy.  For each pair of replacements, the first element is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of `node`, which is the base of the newly constructed data; this is useful for creating circular references.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((modify
 	(associate
@@ -1450,7 +1469,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODIFY(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_INDICES(ENT_INDICES, &Interpreter::InterpretNode_ENT_INDICES, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(list|assoc collection)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC})
+	};
 	d.returns = OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::LIST_OF_STRINGS;
 	d.description = R"(Evaluates to the list of strings or numbers that comprise the indices for the list or associative parameter `collection`.  It is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.)";
 	d.examples = MakeAmalgamExamples({
@@ -1555,7 +1576,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 
 static OpcodeInitializer _ENT_VALUES(ENT_VALUES, &Interpreter::InterpretNode_ENT_VALUES, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(list|assoc collection [bool only_unique_values])";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"only_unique_values", OpcodeDetails::DataType::BOOL, true})
+	};
 	d.returns = OpcodeDetails::DataType::LIST;
 	d.description = R"(Evaluates to the list of entities that comprise the values for the list or associative list `collection`.  If `only_unique_values` is true (defaults to false), then it will filter out any duplicate values and only return those that are unique, preserving their order of first appearance.  If `only_unique_values` is not true, then it is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.)";
 	d.examples = MakeAmalgamExamples({
@@ -1834,9 +1858,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_CONTAINS_INDEX(ENT_CONTAINS_INDEX, &Interpreter::InterpretNode_ENT_CONTAINS_INDEX, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(list|assoc collection string|number|list index)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH})
+	};
 	d.returns = OpcodeDetails::DataType::BOOL;
-	d.description = R"(Evaluates to true if the index is in the `collection`.  If index is a string, it will attempt to look at `collection` as an assoc, if number, it will look at `collection` as a list.  If index is a list, it will traverse a via the elements in the list as a walk path, with each element .)";
+	d.description = R"(Evaluates to true if the index is in the `collection` interpreting `index` as the appropriate type for the collection.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((contains_index
 	(associate
@@ -1923,7 +1950,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 
 static OpcodeInitializer _ENT_CONTAINS_VALUE(ENT_CONTAINS_VALUE, &Interpreter::InterpretNode_ENT_CONTAINS_VALUE, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(list|assoc|string collection_or_string string|number value)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"value", OpcodeDetails::DataType::ANY_BASIC})
+	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Evaluates to true if the `value` is contained in `collection_or_string`.  If `collection_or_string` is a string, then it uses `value` as a regular expression and evaluates to true if the regular expression matches.)";
 	d.examples = MakeAmalgamExamples({
@@ -2063,7 +2093,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 
 static OpcodeInitializer _ENT_REMOVE(ENT_REMOVE, &Interpreter::InterpretNode_ENT_REMOVE, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(list|assoc collection number|string|list index)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH})
+	};
 	d.returns = OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Removes the index-value pair with `index` being the index in assoc or index of `collection`, returning a new list or assoc with `index` removed.  If `index` is a list of numbers or strings, then it will remove each of the requested indices.  Negative numbered indices will count back from the end of a list.)";
 	d.examples = MakeAmalgamExamples({
@@ -2282,7 +2315,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_KEEP(ENT_KEEP, &Interpreter::InterpretNode_ENT_KEEP, []() {
 	OpcodeDetails d;
-	d.old_parameters = R"(list|assoc collection number|string|list index)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC})
+	};
 	d.returns = OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Keeps only the index-value pair with index being the index in `collection`, returning a new list or assoc with only that index.  If `index` is a list of numbers or strings, then it will only keep those requested indices.  Negative numbered indices will count back from the end of a list.)";
 	d.examples = MakeAmalgamExamples({

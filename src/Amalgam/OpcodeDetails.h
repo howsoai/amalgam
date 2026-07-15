@@ -280,6 +280,7 @@ public:
 	struct ParameterSchema
 	{
 		ParameterSchema()
+			: childNodeStructure(ChildNodeStructureType::POSITION)
 		{}
 
 		ParameterSchema(ChildNodeStructureType cns, std::initializer_list<ParameterGroup> il)

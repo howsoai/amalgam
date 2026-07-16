@@ -123,7 +123,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
-		return EvaluableNodeReference::Null();
+		return AllocReturn(1.0, immediate_result);
 
 	double value = 1.0;
 

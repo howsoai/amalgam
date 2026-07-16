@@ -398,6 +398,9 @@
     <ClInclude Include="entity\EntityQueriesClustering.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BitmaskEnum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

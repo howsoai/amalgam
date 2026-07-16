@@ -7,9 +7,12 @@ static std::string _opcode_group = "Entity Access and Manipulation";
 
 static OpcodeInitializer _ENT_CONTAINS_LABEL(ENT_CONTAINS_LABEL, &Interpreter::InterpretNode_ENT_CONTAINS_LABEL, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity] string label_name)";
-	d.returns = R"(bool)";
-	d.description = R"(Evaluates to true if the label represented by `label_name` exists for `entity`.  If `entity` is omitted or null, then it uses the current entity.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true}),
+		OpcodeDetails::ParameterGroup({"label", OpcodeDetails::DataType::ENTITY_LABEL})
+	};
+	d.returns = OpcodeDetails::DataType::BOOL;
+	d.description = R"(Evaluates to true if the the `label` exists for `entity`.  If `entity` is omitted or null, then it uses the current entity.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -22,7 +25,6 @@ static OpcodeInitializer _ENT_CONTAINS_LABEL(ENT_CONTAINS_LABEL, &Interpreter::I
 	]
 ))&", R"([.true .false])", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -68,8 +70,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNo
 
 static OpcodeInitializer _ENT_ASSIGN_TO_ENTITIES(ENT_ASSIGN_TO_ENTITIES, &Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity1] assoc label_value_pairs1 [id_path entity2] [assoc label_value_pairs2] [...])";
-	d.returns = R"(bool)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::PAIRED,
+	{
+		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID, true}),
+		OpcodeDetails::ParameterGroup({"label_value_pairs1", OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true} ,
+			{"label_value_pairs", OpcodeDetails::DataType::ASSOC, true}, true, 2)
+	});
+	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(For each index-value pair of `label_value_pairs`, assigns the value to the label on the contained entity represented by the respective `entity`, itself if `entity` is not specified or is null.  If the label is not found, it will create it.  Returns true if all assignments were successful, false if not.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -91,7 +99,6 @@ static OpcodeInitializer _ENT_ASSIGN_TO_ENTITIES(ENT_ASSIGN_TO_ENTITIES, &Interp
 	three 12
 })", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -104,8 +111,14 @@ static OpcodeInitializer _ENT_ASSIGN_TO_ENTITIES(ENT_ASSIGN_TO_ENTITIES, &Interp
 
 static OpcodeInitializer _ENT_ACCUM_TO_ENTITIES(ENT_ACCUM_TO_ENTITIES, &Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity1] assoc label_value_pairs1 [id_path entity2] [assoc label_value_pairs2] [...])";
-	d.returns = R"(bool)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::PAIRED,
+	{
+		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID, true}),
+		OpcodeDetails::ParameterGroup({"label_value_pairs1", OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true} ,
+			{"label_value_pairs", OpcodeDetails::DataType::ASSOC, true}, true, 2)
+	});
+	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(For each index-value pair of `label_value_pairs`, it accumulates the value to the label on the contained entity represented by the respective `entity`, itself if `entity` is not specified or is null.  If the label is not found, it will create it.  Returns true if all assignments were successful, false if not.  Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -122,7 +135,6 @@ static OpcodeInitializer _ENT_ACCUM_TO_ENTITIES(ENT_ACCUM_TO_ENTITIES, &Interpre
 	(retrieve_entity_root "Entity")
 ))&", R"({a 3 b 5 c 7})", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -135,8 +147,14 @@ static OpcodeInitializer _ENT_ACCUM_TO_ENTITIES(ENT_ACCUM_TO_ENTITIES, &Interpre
 
 static OpcodeInitializer _ENT_REMOVE_FROM_ENTITIES(ENT_REMOVE_FROM_ENTITIES, &Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity1] string|list label_names1 [id_path entity2] [list string|label_names2] [...])";
-	d.returns = R"(bool)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::PAIRED,
+	{
+		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID, true}),
+		OpcodeDetails::ParameterGroup({"label_names1", OpcodeDetails::DataType::ENTITY_LABEL | OpcodeDetails::DataType::LIST_OF_ENTITY_LABELS}),
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true} ,
+			{"label_names1", OpcodeDetails::DataType::ENTITY_LABEL | OpcodeDetails::DataType::LIST_OF_ENTITY_LABELS, true}, true, 2)
+	});
+	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Removes all labels in `label_names1` from `entity1` and so on for each respective entity and label list.  Returns true if all removes were successful, false otherwise.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -158,7 +176,6 @@ static OpcodeInitializer _ENT_REMOVE_FROM_ENTITIES(ENT_REMOVE_FROM_ENTITIES, &In
 	(retrieve_entity_root "Entity")
 ))&", R"({d 4})", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.hasSideEffects = true;
@@ -278,8 +295,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REM
 
 static OpcodeInitializer _ENT_RETRIEVE_FROM_ENTITY(ENT_RETRIEVE_FROM_ENTITY, &Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity] [string|list|assoc label_names])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true}),
+		OpcodeDetails::ParameterGroup({"label_names", OpcodeDetails::DataType::ENTITY_LABEL | OpcodeDetails::DataType::LIST_OF_ENTITY_LABELS | OpcodeDetails::DataType::ASSOC}),
+	});
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Retrieves one or more labels from `entity`, using its own entity if `entity` is omitted or null.  If `label_names` is a string, it returns the value at the corresponding label.  If `label_names` is a list, it returns a list of the values of the labels of the corresponding labels.  If `label_names` is an assoc, it an assoc with label names as keys and the label values as the values.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -307,7 +328,6 @@ static OpcodeInitializer _ENT_RETRIEVE_FROM_ENTITY(ENT_RETRIEVE_FROM_ENTITY, &In
 	{a 12 b 13}
 ])", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
@@ -408,9 +428,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 
 static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_ENTITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity [string label_name] [assoc params] [bool|assoc constraints] [bool return_warnings] [bool get_changes])";
-	d.returns = R"(any)";
-	d.description = R"(Calls the contained `entity` and returns the result of the call.  If `label_name` is specified, then it will call the label specified by string, otherwise it will call the null label.  If `params` is specified, then it will pass those as the parameters on the scope stack.  If `constraints` is specified and not false or null, it will constrain execution.  If `constraints` is true or an assoc, it will default all constraints to be on at reasonable values for small execution without access to any data beyond `params`.  They optional key-value combinations for `constraints` are as follows.  If "max_node_operations" is specified, it represents the number of operations that are allowed to be performed. If "max_node_operations" is 0, then an infinite of operations will be allotted, up to the limits of the current calling context.   If "max_node_allocations" is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If "max_node_allocations" is 0 and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if "max_node_allocations" is specified while in a multithreaded environment, if the collective memory from all the executing threads exceeds the average memory specified by "max_node_allocations", that may trigger a memory limit for the call.  If "max_operation_depth" is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise "max_operation_depth" limits how deep nested opcodes will be called. If `return_warnings` is true (default is false), the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  The keys "read_access" and "write_access" are boolean and control whether the execution can read from or write to entities and access their relevant permissions (e.g., to load files, make system calls).  The keys "max_contained_entities", "max_contained_entity_depth", and "max_entity_id_length" constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true (default is false), the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.  If `get_changes` is true (the default is false), the value will be a tuple in the form of `[value change_log]`, where the change log is a list of opcodes that hold an executable log of all of the changes that have elapsed to the entity and its contained entities.  The log may be evaluated to apply or re-apply the changes to any entity passed in to the executable log as the parameter "_".  If both `return_warnings` and `get_changes` are true, then the tuple will be in the form of `[value warnings performance_constraint_violation change_log]`.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"label", OpcodeDetails::DataType::ENTITY_LABEL}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"constraints", OpcodeDetails::DataType::BOOL | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"return_warnings", OpcodeDetails::DataType::BOOL}),
+		OpcodeDetails::ParameterGroup({"get_changes", OpcodeDetails::DataType::BOOL})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Calls the contained `entity` and returns the result of the call.  If `label` is specified, then it will call the label specified by string, otherwise it will call the null label.  If `params` is specified, then it will pass those as the parameters on the scope stack.  If `constraints` is specified and not false or null, it will constrain execution.  If `constraints` is true or an assoc, it will default all constraints to be on at reasonable values for small execution without access to any data beyond `params`.  They optional key-value combinations for `constraints` are as follows.  If "max_node_operations" is specified, it represents the number of operations that are allowed to be performed. If "max_node_operations" is 0, then an infinite of operations will be allotted, up to the limits of the current calling context.   If "max_node_allocations" is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If "max_node_allocations" is 0 and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if "max_node_allocations" is specified while in a multithreaded environment, if the collective memory from all the executing threads exceeds the average memory specified by "max_node_allocations", that may trigger a memory limit for the call.  If "max_operation_depth" is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise "max_operation_depth" limits how deep nested opcodes will be called. If `return_warnings` is true (default is false), the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  The keys "read_access" and "write_access" are boolean and control whether the execution can read from or write to entities and access their relevant permissions (e.g., to load files, make system calls).  The keys "max_contained_entities", "max_contained_entity_depth", and "max_entity_id_length" constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true (default is false), the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.  If `get_changes` is true (the default is false), the value will be a tuple in the form of `[value change_log]`, where the change log is a list of opcodes that hold an executable log of all of the changes that have elapsed to the entity and its contained entities.  The log may be evaluated to apply or re-apply the changes to any entity passed in to the executable log as the parameter "_".  If both `return_warnings` and `get_changes` are true, then the tuple will be in the form of `[value warnings performance_constraint_violation change_log]`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -527,9 +554,16 @@ static OpcodeInitializer _ENT_CALL_ENTITY(ENT_CALL_ENTITY, &Interpreter::Interpr
 
 static OpcodeInitializer _ENT_CALL_ON_ENTITY(ENT_CALL_ON_ENTITY, &Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_ENTITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity * code [assoc params] [bool|assoc constraints] [bool return_warnings] [bool get_changes])";
-	d.returns = R"(any)";
-	d.description = R"(Calls `code` to be run on the contained `entity` and returns the result of the call.  If `params` is specified, then it will pass those as the parameters on the scope stack.  If `constraints` is specified and not false or null, it will constrain execution.  If `constraints` is true or an assoc, it will default all constraints to be on at reasonable values for small execution without access to any data beyond `params`.  They optional key-value combinations for `constraints` are as follows.  If "max_node_operations" is specified, it represents the number of operations that are allowed to be performed. If "max_node_operations" is 0, then an infinite of operations will be allotted, up to the limits of the current calling context.   If "max_node_allocations" is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If "max_node_allocations" is 0 and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if "max_node_allocations" is specified while in a multithreaded environment, if the collective memory from all the executing threads exceeds the average memory specified by "max_node_allocations", that may trigger a memory limit for the call.  If "max_operation_depth" is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise "max_operation_depth" limits how deep nested opcodes will be called. If `return_warnings` is true (default is false), the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  The keys "read_access" and "write_access" are boolean and control whether the execution can read from or write to entities and access their relevant permissions (e.g., to load files, make system calls).  The keys "max_contained_entities", "max_contained_entity_depth", and "max_entity_id_length" constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true (default is false), the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.  If `get_changes` is true (the default is false), the value will be a tuple in the form of `[value change_log]`, where the change log is a list of opcodes that hold an executable log of all of the changes that have elapsed to the entity and its contained entities.  The log may be evaluated to apply or re-apply the changes to any entity passed in to the executable log as the parameter "_".  If both `return_warnings` and `get_changes` are true, then the tuple will be in the form of `[value warnings performance_constraint_violation change_log]`.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"constraints", OpcodeDetails::DataType::BOOL | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"return_warnings", OpcodeDetails::DataType::BOOL}),
+		OpcodeDetails::ParameterGroup({"get_changes", OpcodeDetails::DataType::BOOL})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Calls `function` to be run on the contained `entity` and returns the result of the call.  If `params` is specified, then it will pass those as the parameters on the scope stack.  If `constraints` is specified and not false or null, it will constrain execution.  If `constraints` is true or an assoc, it will default all constraints to be on at reasonable values for small execution without access to any data beyond `params`.  They optional key-value combinations for `constraints` are as follows.  If "max_node_operations" is specified, it represents the number of operations that are allowed to be performed. If "max_node_operations" is 0, then an infinite of operations will be allotted, up to the limits of the current calling context.   If "max_node_allocations" is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If "max_node_allocations" is 0 and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if "max_node_allocations" is specified while in a multithreaded environment, if the collective memory from all the executing threads exceeds the average memory specified by "max_node_allocations", that may trigger a memory limit for the call.  If "max_operation_depth" is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise "max_operation_depth" limits how deep nested opcodes will be called. If `return_warnings` is true (default is false), the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  The keys "read_access" and "write_access" are boolean and control whether the execution can read from or write to entities and access their relevant permissions (e.g., to load files, make system calls).  The keys "max_contained_entities", "max_contained_entity_depth", and "max_entity_id_length" constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true (default is false), the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.  If `get_changes` is true (the default is false), the value will be a tuple in the form of `[value change_log]`, where the change log is a list of opcodes that hold an executable log of all of the changes that have elapsed to the entity and its contained entities.  The log may be evaluated to apply or re-apply the changes to any entity passed in to the executable log as the parameter "_".  If both `return_warnings` and `get_changes` are true, then the tuple will be in the form of `[value warnings performance_constraint_violation change_log]`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -737,9 +771,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 
 static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::InterpretNode_ENT_CALL_CONTAINER, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string parent_label_name [assoc params] [bool|assoc constraints] [bool return_warnings])";
-	d.returns = R"(any)";
-	d.description = R"(Attempts to call the container associated with `label_name` that must begin with a caret; the caret indicates that the label is allowed to be accessed by contained entities.  It will evaluate to the return value of the call.  If `params` is specified, then it will pass those as the params on the scope stack.  If `constraints` is true or an assoc, it will default all constraints to be on at reasonable values for small execution without access to any data beyond `params`.  They optional key-value combinations for `constraints` are as follows.  If "max_node_operations" is specified, it represents the number of operations that are allowed to be performed. If "max_node_operations" is 0, then an infinite of operations will be allotted, up to the limits of the current calling context.   If "max_node_allocations" is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If "max_node_allocations" is 0 and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if "max_node_allocations" is specified while in a multithreaded environment, if the collective memory from all the executing threads exceeds the average memory specified by "max_node_allocations", that may trigger a memory limit for the call.  If "max_operation_depth" is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise "max_operation_depth" limits how deep nested opcodes will be called. If `return_warnings` is true (default is false), the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  The keys "read_access" and "write_access" are boolean and control whether the execution can read from or write to entities and access their relevant permissions (e.g., to load files, make system calls).  The keys "max_contained_entities", "max_contained_entity_depth", and "max_entity_id_length" constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true (default is false), the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"label", OpcodeDetails::DataType::ENTITY_LABEL}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"constraints", OpcodeDetails::DataType::BOOL | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"return_warnings", OpcodeDetails::DataType::BOOL})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Attempts to call the container associated with `label` that must begin with a caret; the caret indicates that the label is allowed to be accessed by contained entities.  It will evaluate to the return value of the call.  If `params` is specified, then it will pass those as the params on the scope stack.  If `constraints` is true or an assoc, it will default all constraints to be on at reasonable values for small execution without access to any data beyond `params`.  They optional key-value combinations for `constraints` are as follows.  If "max_node_operations" is specified, it represents the number of operations that are allowed to be performed. If "max_node_operations" is 0, then an infinite of operations will be allotted, up to the limits of the current calling context.   If "max_node_allocations" is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If "max_node_allocations" is 0 and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if "max_node_allocations" is specified while in a multithreaded environment, if the collective memory from all the executing threads exceeds the average memory specified by "max_node_allocations", that may trigger a memory limit for the call.  If "max_operation_depth" is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise "max_operation_depth" limits how deep nested opcodes will be called. If `return_warnings` is true (default is false), the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  The keys "read_access" and "write_access" are boolean and control whether the execution can read from or write to entities and access their relevant permissions (e.g., to load files, make system calls).  The keys "max_contained_entities", "max_contained_entity_depth", and "max_entity_id_length" constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the file system.  The execution performed will use a random number stream created from the entity's random number stream.  If `return_warnings` is true (default is false), the result will be a tuple of the form `[value, warnings, performance_constraint_violation]`, where the value at "warnings" is an assoc mapping all warnings to their number of occurrences, and the value at "perf_constraint_violation" is a string denoting the constraint exceeded, or null if none.  If `return_warnings` is false just the value will be returned instead of a list.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities

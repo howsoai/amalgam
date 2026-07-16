@@ -102,6 +102,8 @@
 								"### Opcode: `" opcode "`\n"
 								"#### Parameters\n"
 								"`" (get details "parameters") "`\n"
+								"#### Returns\n"
+								"`" (get details "returns") "`\n"
 								"#### Description\n"
 								(get details "description") "\n"
 								"#### Details\n"

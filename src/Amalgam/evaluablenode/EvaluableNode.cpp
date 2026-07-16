@@ -1156,7 +1156,7 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *
 	if(index == a_size)
 		return true;
 
-	if(GetOpcodeOrderedChildNodeType(a->GetType()) != OpcodeDetails::OrderedChildNodeType::UNORDERED)
+	if(GetChildNodeStructureType(a->GetType()) != OpcodeDetails::ChildNodeStructureType::UNORDERED)
 		return false;
 
 	//if it's small with immediate types, then do a quick O(n^2) match,

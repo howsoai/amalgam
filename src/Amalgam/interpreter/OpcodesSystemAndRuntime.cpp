@@ -11,8 +11,10 @@ static std::string _opcode_group = "System and Runtime";
 
 static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HELP, []() {
 	OpcodeDetails d;
-	d.parameters = R"([string topic])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"topic", OpcodeDetails::DataType::STRING, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(If no parameter is specified it returns a string of the topics that can be used.  For given a `topic`, returns a string or relevant data that describes the given topic.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((help "+"))", R"&({
@@ -25,7 +27,7 @@ static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HEL
 	new_scope .false
 	new_target_scope .false
 	opcode_group "Basic Math"
-	parameters "[number x1] [number x2] ... [number xN]"
+	parameters "[number x1] [number x2] ..."
 	permissions "none"
 	requires_entity .false
 	returns "number"
@@ -74,9 +76,13 @@ Using <>'s to enclose optional elements, the general syntax is:
 <||><@>(opcode <parameter1> <parameter2> ...)
 ```
 
-The language generally follows a parse tree in a manner similar to Lisp and Scheme, with opcodes surrounded by parenthesis and including parameters in a recursive fashion.  The exceptions are that the opcodes list and assoc (associative array, sometimes referred to as a hash map or dict) may use `[]` and `{}` respectively and omit the opcode, though are still considered identical to `(list)` and `(assoc)`.
+The language generally follows a parse tree in a manner similar to Lisp and Scheme, with opcodes surrounded by parenthesis and including parameters in a recursive fashion.  The exceptions are that the opcodes list and assoc (associative array, sometimes referred to as a hash map or dict) may use `[]` and `{}` respectively and omit the opcode, though are still considered identical to `(list)` and `(assoc)`.  A list only has integer indices, and a negative index counts from the end of the list.  An assoc can have any valid code as an index, though bare strings are the most performant.  When accessing deeper elements within a complex container (e.g., a list of assocs of lists), using opcodes like `get`, the walk path can be a list of each element to "walk" to that particular value.  Note that when accessing a key of an assoc via an opcode that uses a walk path, if the key is code with an outermost opcode that might be a list, an extra list should surround that opcode to ensure that it is a walk path.
 
-Entities always have a top level data element which is an assoc.  These assoc elements at the top of an entity are handled specially and their keys are called labels.  Labels are how entities can be accessed from outside the entity.  If a label starts with a caret, e.g. `^method_for_contained_entities`, then it can be accessed by contained entities, and they do not need to specify the caret.  Parent entities do need to specify the caret. For example, if `^foo` is a label of a container, a contained entity within could call the label `"foo"`.  This adds a layer of security and prevents contained entities from affecting parts of the container that are exposed for its own container's access.  Labels starting with an exclamation point, e.g. `!private_method`, are not accessible by the container and can only be accessed by the entity itself except for by the contained entity getting all of the code, acting as a private label. A label cannot be simultaneously private to its container and accessible to contained entities.  If an entity's root node is set to be something other than an assoc, it is set to the null key, indicating the main method.  If an entity is executed directly, the value at its null key is what is executed.
+Entities are objects in the language that are a combination of class instance, execution sandbox, and entities can be queried somewhat like a database.  An entity is a bundle of code that has a singular root node that is an assoc, and their keys are called labels, that act as attributes and methods.  If a label starts with a caret, e.g. `^method_for_contained_entities`, then it can be accessed by contained entities, and they do not need to specify the caret.  Parent entities do need to specify the caret. For example, if `^foo` is a label of a container, a contained entity within could call the label `"foo"`.  This adds a layer of security and prevents contained entities from affecting parts of the container that are exposed for its own container's access.  Labels starting with an exclamation point, e.g. `!private_method`, are not accessible by the container and can only be accessed by the entity itself except for by the contained entity getting all of the code, acting as a private label. A label cannot be simultaneously private to its container and accessible to contained entities.  If an entity's root node is set to be something other than an assoc, it is set to the null key, indicating the main method.  If an entity is executed directly, the value at its null key is what is executed.  Entities are often created by loading them from files or calling `(create_entities "my_entity_name" (lambda {method1 (declare ...) attribute1 3})`, using the lambda to ensure that the code is inserted into the entity rather than being executed.
+
+An entity has complete abilities to perform reads and writes to any other Entity contained within it; it is also allowed to create, destroy, access, or modify other entities.  Entities have a set of permissions which include std_out_and_std_err, std_in, load (from filesystem), store (to filesystem), environment, alter_performance, system (run system commands), and entity (create and manage contained entities).
+
+Entities may be explicitly named and may be used as code libraries.  For example, a library named MyLibrary with function MyFunction can be called as `(call_entity "MyLibrary" "MyFunction" { parameter_a 1 parameter_b 2 })`.  Entity names are called entity ids, and nested entities can be accessed via an entity walk path, which is a list of ids, and the list of ids can be used any place an entity id is used.  When using null as the entity name, it will refer to the current entity.  Entities that begin with an underscore are "unnamed" which means that when entities are merged via any entity comparison method such as `mix_entities`, unnamed entities are compared to other unnamed entities to potentially merge.
 
 Variables are accessed in from the closest immediate scope, which means if there is a global variable named x and a function parameter named x, the function parameter will be used.  Entity labels are considered the global-most scope.  If a variable name cannot be found, then it will look at the entity's labels instead.  Scope is handled as a stack, and some opcodes may modify the scope.  Note that when declaring variables in a singular block such as a `let` or `declare`, the order of their evaluation is not guaranteed, so variables that depend on previous values should be implemented either functionally or as a sequence of `declare` opcodes.  Setting multiple values within a complex variable at the same time can be done by specifying multiple parameters to `assign`, and the opcodes `set` and `remove` return entirely new copies of the data structure with modifications.
 
@@ -98,10 +104,6 @@ Neither comments nor annotations affect execution directly.  However, they can b
 In-order evaluation of parameters of most opcodes are not guaranteed to execute in order, or be executed at all if not necessary, unless otherwise specified in the opcode (e.g., seq, declare, let, etc. all execute in order).  It is generally not recommended practice to have side effects (variable or entity writes) in opcodes whose parameters are not guaranteed to be sequential.
 
 If the concurrent/parallel symbol, \|\|, is specified then the opcode's computations will be executed concurrently if possible.  The concurrent execution will be interpreted with regard to the specific opcode, but any function calls may be executed in any order and possibly concurrently.
-
-Each entity contains code and/or data via a root node that is executed every call to the entity.  An entity has complete abilities to perform reads and writes to any other Entity contained within it; it is also allowed to create, destroy, access, or modify other entities.  Entities have a set of permissions which include std_out_and_std_err, std_in, load (from filesystem), store (to filesystem), environment, alter_performance, system (run system commands), and entity (create and manage contained entities).
-
-Entities may be explicitly named and may be used as code libraries.  For example, a library named MyLibrary with function MyFunction can be called as `(call_entity "MyLibrary" "MyFunction" { parameter_a 1 parameter_b 2 })`.  Entity names are called entity ids, and nested entities can be accessed via an entity walk path, which is a list of ids.  When using null as the entity name, it will refer to the current entity.  Entities that begin with an underscore are unnamed, and when entities are merged, unnamed entities are compared to other unnamed entities to potentially merge.
 
 Null is represented as `.null`.
 
@@ -138,8 +140,8 @@ Amalgam has a number of opcodes that compute distances, and surprisals as distan
 
 These opcodes all contain a set of common parameters that start with the containers or labels from which to compute the distance.  Following these parameters, the distance opcodes have the optional parameters in the order as follows, though not all opcodes have all of these parameters.
  - list\|number `selection_bandwidth`:         The parameter `selection_bandwidth` specifies either the number of entities to return, or is a list of parameters for more sophisticated bandwidth selection.  If `selection_bandwidth` is a list, the first element of the list specifies the minimum incremental probability or percent of mass that the next largest entity would comprise (e.g., 0.05 would return at most 20 entities if they were all equal in percent of mass), and the other elements of the list are optional.  The second element is the minimum number of entities to return, the third element is the maximum number of entities to return, and the fourth indicates the number of additional entities to include after any of the aforementioned thresholds (defaulting to zero).  If there is disagreement among the constraints for `selection_bandwidth`, the constraint yielding the fewest entities will govern the number of entities returned.
- - list `feature_labels`:                     The names of the labels of the features from which to compute the distances.
- - number `p_value`:                     	  The parameter `p_value` is the generalized norm parameter, where the value of 1 is probability space and Manhattan distance, the default, 2 being Euclidean distance, etc.  For surprisal space, using a value of 1 is generally most appropriate.
+ - list `labels`:                             The names of the labels of the features from which to compute the distances.
+ - number `p_value`:                          The parameter `p_value` is the generalized norm parameter, where the value of 1 is probability space and Manhattan distance, the default, 2 being Euclidean distance, etc.  For surprisal space, using a value of 1 is generally most appropriate.
  - list\|assoc\|assoc of assoc `weights`:  	  If `weights` is a list, each value maps to its respective element in the vectors.  If `weights` is null, then it will assume that the `weights` are 1 and additionally will ignore null values for the vectors instead of treating them as unknown differences.  If `weights` is an assoc, then the parameter `value_names` will select the `weights` from the assoc.  If `weights` is an assoc of assocs, additionally the parameter `weights_selection_features` will select which set of `weights` to use.
  - list\|assoc of assoc\|string `attributes`: The parameter `attributes` describes the attributes of each feature which will determine how the differences are calculated.  Each entry can either be a string or assoc.  If a string, then the valid values are "nominal" or "continuous".  But the entry is an assoc, then there are a wide variety of attributes available depending on type.  The key "difference_type" can be either "nominal" or "continuous" to describe whether the difference will only look at equality or whether more distant values will have larger differences.  The key "data_type" can be one of "bool", "number", "string", or "code", and will determine whether all data will be coerced to the corresponding type (null is always allowed), where "code" indicates that no type coercion will occur.  The default if omitted is continuous numeric, and the default type if only nominal specified is nominal string.  The additional attributes available depend on the combination of "difference_type" and "data_type".  If "difference_type" is "nominal", then the key "nominal_count" will specify the number of data points in the data set, but if omitted or null, then it will infer the count the values available.  If the combination is "continuous" and "number" then the key "cycle_range" specifies the upper bound of the difference of the range between two values.  For example, if the "cycle_range" is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2.  If the combination of types is "continuous" and "code", then the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching" are applicable.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of node1 to node2.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Additionally, for distances computed by `contained_entities` or `compute_on_contained_entities`, the value for a given feature may be the result of executing code.  If the key "call_entity" is specified and is either a `call_entity` or `call_on_entity` opcode, then the opcode will be executed and the result will be compared with regard to distance or surprisal.  The entity should be set to null, so the parameter should be formed as `(call_entity .null ...))`, and in most cases it will be desirable to put constraints on the call to prevent excess compute for dynamic data.
  - list\|assoc `deviations`:              	  The values in the parameter `deviations` are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.
@@ -201,7 +203,7 @@ When traversing a string by character repeatedly, `explode` it once into a list 
 ```
 
 ## Sibling bindings are not visible to each other
-Within a single `let` or `declare` binding block, the key-value pairs are pushed onto the scope stack as a set: one value's expression cannot see a sibling key being defined in the same block, and there is no guaranteed order of evaluation among siblings. Use `declare` to extend the current scope when a binding depends on an earlier one; a sequence of `declare`s is preferable to nested `let`s:
+Within a single `let` or `declare` binding block, or any other operation that uses an `assoc`.  The key-value pairs are evaluated and pushed onto the scope stack as a set: one value's expression cannot see a sibling key being defined in the same block, and there is no guaranteed order of evaluation among siblings. Use `declare` to extend the current scope when a binding depends on an earlier one; a sequence of `declare`s is preferable to nested `let`s:
 ```amalgam
 ; Wrong: `need` cannot see the sibling `base`
 (let {base (get nums i) need (- target base)}
@@ -232,7 +234,7 @@ Reserve the spelled-out `(assoc key value ...)` form for cases where the explici
 	(+ x 10)
 )
 ```
-Reach for `seq` only where a single expression position must perform several steps — most commonly an `if` branch.
+Use `seq` only when single expression position must perform several steps — most commonly an `if` branch.
 
 To stop early, choose the right opcode:
  - `return` propagates up through enclosing forms until it reaches a `call` (or `call_entity`, etc.), then evaluates to its value — use it for an early exit out of a whole method or call.
@@ -292,8 +294,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 		EvaluableNodeReference opcode_attribs(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 
 		opcode_attribs->SetMappedChildNode("description", evaluableNodeManager->AllocNode(od.description));
-		opcode_attribs->SetMappedChildNode("parameters", evaluableNodeManager->AllocNode(od.parameters));
-		opcode_attribs->SetMappedChildNode("returns", evaluableNodeManager->AllocNode(od.returns));
+		opcode_attribs->SetMappedChildNode("parameters", evaluableNodeManager->AllocNode(od.ParametersToString()));
+
+		std::string returns_str = OpcodeDetails::OpcodeDataTypeToString(od.returns);
+		opcode_attribs->SetMappedChildNode("returns", evaluableNodeManager->AllocNode(returns_str));
+
 		opcode_attribs->SetMappedChildNode("allows_concurrency", evaluableNodeManager->AllocNode(od.allowsConcurrency));
 		opcode_attribs->SetMappedChildNode("requires_entity", evaluableNodeManager->AllocNode(od.requiresEntity));
 		opcode_attribs->SetMappedChildNode("new_scope", evaluableNodeManager->AllocNode(od.newScope));
@@ -351,8 +356,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_HELP(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_PRINT(ENT_PRINT, &Interpreter::InterpretNode_ENT_PRINT, []() {
 	OpcodeDetails d;
-	d.parameters = R"([* node1] [* node2] ... [* nodeN])";
-	d.returns = R"(.null)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true}, true)
+	});
+	d.returns = OpcodeDetails::DataType::NULL_TYPE;
 	d.description = R"(Prints each of the parameters in order in a manner interpretable as if they were code, except strings are printed without quotes.  Output is pretty-printed.  Printing is safe for cyclic and graph data structures and will emit appropriate opcodes using the `@` prefix so that parsing will reconstruct the cyclic or graph relationships.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((print "hello world\n"))&", R"(.null)"},
@@ -364,7 +372,6 @@ static OpcodeInitializer _ENT_PRINT(ENT_PRINT, &Interpreter::InterpretNode_ENT_P
 	"\n"
 ))&", R"(.null)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.permissions = ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 	d.hasSideEffects = true;
@@ -426,8 +433,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_SYSTEM_TIME(ENT_SYSTEM_TIME, &Interpreter::InterpretNode_ENT_SYSTEM_TIME, []() {
 	OpcodeDetails d;
-	d.parameters = R"()";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema{};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the current system time since epoch in seconds (including fractions of seconds).)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((system_time))&", R"(1773855306.4474)",
@@ -463,16 +470,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM_TIME(EvaluableNode 
 
 static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT_SYSTEM, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string command [* optional1] ... [* optionalN])";
-	d.returns = R"(any)";
-	d.description = R"(Executes system command specified by `command`.  The available system commands are as follows:
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"command", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"parameter", OpcodeDetails::DataType::ANY_BASIC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Executes system command specified by `command` passing in `parameter` if appropriate.  The available system commands are as follows:
  - exit:                Exits the application.
  - readline:            Reads a line of input from the terminal and returns the string.
- - printline:           Prints a line of string output of the second argument directly to the terminal and returns null.
- - cwd:                 If no additional parameter is specified, returns the current working directory. If an additional parameter is specified, it attempts to change the current working directory to that parameter, returning true on success and false on failure.
- - system:              Executes the the second argument as a system command (i.e., a string that would normally be run on the command line). Returns `.null` if the command was not found. If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.
+ - printline:           Prints a line of string output of the `parameter` directly to the terminal and returns null.
+ - cwd:                 If no additional parameter is specified, returns the current working directory. If `parameter` is specified, it attempts to change the current working directory to that `parameter`, returning true on success and false on failure.
+ - system:              Executes the the `parameter` as a system command (i.e., a string that would normally be run on the command line). Returns `.null` if the command was not found. If found, it returns a list, where the first value is the exit code and the second value is a string containing everything printed to stdout.
  - os:                  Returns a string describing the operating system.
- - sleep:               Sleeps for the amount of seconds specified by the second argument.
+ - sleep:               Sleeps for the amount of seconds specified by the `parameter`.
  - version:             Returns a string representing the current Amalgam version.
  - est_mem_reserved:    Returns data involving the estimated memory reserved.
  - est_mem_used:        Returns data involving the estimated memory used (excluding memory management overhead, caching, etc.).
@@ -482,7 +492,7 @@ static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT
  - encrypt_key_pair:    Returns a list of two values, first a public key and second a secret key, for use with cryptographic encryption using the XSalsa20 and Curve25519 algorithms, generated via securely generated random numbers.
  - debugging_info:      Returns a list of two values. The first is true if a debugger is present, false if it is not. The second is true if debugging sources is enabled, which means that source code location information is prepended to opcodes comments for any opcodes loaded from a file.
  - get_max_num_threads: Returns the current maximum number of threads.
- - set_max_num_threads: Attempts to set the current maximum number of threads, where 0 means to use the number of processor cores reported by the operating system. Returns the maximum number of threads after it has been set.
+ - set_max_num_threads: Attempts to set the current maximum number of threads to `parameter`, where 0 means to use the number of processor cores reported by the operating system. Returns the maximum number of threads after it has been set.
  - built_in_data:       Returns built-in data compiled along with the version information.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((system "debugging_info"))", R"([.false .false])"}
@@ -734,8 +744,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_RECLAIM_RESOURCES(ENT_RECLAIM_RESOURCES, &Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity] [bool apply_to_all_contained_entities] [bool|list clear_query_caches] [bool collect_garbage] [bool force_free_memory])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true}),
+		OpcodeDetails::ParameterGroup({"apply_to_all_contained_entities", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"clear_query_caches", OpcodeDetails::DataType::BOOL | OpcodeDetails::DataType::LIST_OF_ENTITY_LABELS, true}),
+		OpcodeDetails::ParameterGroup({"collect_garbage", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"force_free_memory", OpcodeDetails::DataType::BOOL, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Frees resources of the specified types on `entity`, which is the current entity if null.  Will include all contained entities if `apply_to_all_contained_entities` is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter `clear_query_caches` will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  If `clear_query_caches` is a boolean, then it will either clear all the caches or none.  If `clear_query_caches` is a list of strings, then it will only clear caches for the labels corresponding to the strings in the list.  The parameter `collect_garbage` will perform garbage collection on the entity, and if `force_free_memory` is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((reclaim_resources .null .true ["x"] .true .true ))", R"(.null)"},

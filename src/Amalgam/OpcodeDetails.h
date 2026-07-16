@@ -124,7 +124,7 @@ class OpcodeDetails
 {
 public:
 	//arrangements of ordered parameters
-	enum class OrderedChildNodeType
+	enum class ChildNodeStructureType
 	{
 		NONE,
 		UNORDERED,
@@ -132,7 +132,8 @@ public:
 		ONE_POSITION_THEN_ORDERED,
 		PAIRED,
 		ONE_POSITION_THEN_PAIRED,
-		POSITION
+		POSITION,
+		ASSOCIATIVE
 	};
 
 	//whether an opcode returns a newly allocated value
@@ -140,6 +141,162 @@ public:
 	{
 		NEW, PARTIAL, CONDITIONAL, EXISTING, NULL_VALUE
 	};
+
+	using DataTypeContainer = uint32_t;
+	enum class DataType : DataTypeContainer
+	{
+		NULL_TYPE = 1 << 0,
+		BOOL = 1 << 1,
+		NUMBER = 1 << 2,
+		STRING = 1 << 3,
+		LIST = 1 << 4,
+		UNORDERED_LIST = 1 << 5,
+		ASSOC = 1 << 6,
+		QUERY = 1 << 7,
+		WALK_PATH = 1 << 8,
+		ENTITY_ID = 1 << 9,
+		ENTITY_LABEL = 1 << 10,
+		LIST_OF_NUMBERS = 1 << 11,
+		LIST_OF_STRINGS = 1 << 12,
+		LIST_OF_ENTITY_IDS = 1 << 13,
+		LIST_OF_ENTITY_LABELS = 1 << 14,
+		LIST_OF_QUERIES = 1 << 15,
+		ASSOC_OF_NUMBERS = 1 << 16,
+		
+		ANY_BASIC = NULL_TYPE | BOOL | NUMBER | STRING | LIST | UNORDERED_LIST | ASSOC | QUERY
+	};
+
+	//bit‑wise operators
+	constexpr friend DataType operator|(DataType lhs, DataType rhs) noexcept
+	{
+		return static_cast<DataType>(static_cast<DataTypeContainer>(lhs) |
+				static_cast<DataTypeContainer>(rhs));
+	}
+
+	constexpr friend DataType operator&(DataType lhs, DataType rhs) noexcept
+	{
+		return static_cast<DataType>(static_cast<DataTypeContainer>(lhs) &
+				static_cast<DataTypeContainer>(rhs));
+	}
+
+	constexpr friend DataType operator~(DataType v) noexcept
+	{
+		return static_cast<DataType>(~static_cast<DataTypeContainer>(v));
+	}
+
+	static constexpr bool AreDataTypesExactlyCompatible(DataType a, DataType b)
+	{
+		return (static_cast<DataTypeContainer>(a) & static_cast<DataTypeContainer>(b)) != 0;
+	}
+
+	//returns true if a and b are compatible
+	static constexpr bool AreDataTypesCompatible(DataType a, DataType b)
+	{
+		if(AreDataTypesExactlyCompatible(a, b))
+			return true;
+
+		//iterate over bits in a
+		for(DataTypeContainer mask_a = 1; mask_a != 0; mask_a <<= 1)
+		{
+			if((static_cast<DataTypeContainer>(a) & mask_a) == 0)
+				continue;
+			DataType a_bit = static_cast<DataType>(mask_a);
+
+			//iterate over bits in b
+			for(DataTypeContainer mask_b = 1; mask_b != 0; mask_b <<= 1)
+			{
+				if((static_cast<DataTypeContainer>(b) & mask_b) == 0)
+					continue;
+				DataType b_bit = static_cast<DataType>(mask_b);
+
+				//order the values so simple_type is the less‑complex one
+				DataType simple_type = std::min(a_bit, b_bit);
+				DataType complex_type = std::max(a_bit, b_bit);
+
+				if(simple_type == DataType::STRING && complex_type == DataType::ENTITY_LABEL)
+					return true;
+
+				if(simple_type == DataType::ASSOC)
+				{
+					if(complex_type == DataType::ASSOC_OF_NUMBERS)
+						return true;
+					continue;
+				}
+
+				if(simple_type == DataType::LIST || simple_type == DataType::UNORDERED_LIST)
+				{
+					if(complex_type == DataType::UNORDERED_LIST ||
+							complex_type == DataType::WALK_PATH ||
+							complex_type == DataType::LIST_OF_NUMBERS ||
+							complex_type == DataType::LIST_OF_STRINGS ||
+							complex_type == DataType::LIST_OF_ENTITY_IDS ||
+							complex_type == DataType::LIST_OF_ENTITY_LABELS ||
+							complex_type == DataType::LIST_OF_QUERIES)
+						return true;
+					continue;
+				}
+			}
+		}
+		return false;
+	}
+
+	//returns a string corresponding to the datatype
+	static std::string OpcodeDataTypeToString(DataType odt);
+
+	//parameter of an opcode
+	struct ParameterDetails
+	{
+		std::string name;
+		DataType type;
+		bool optional = false;
+	};
+
+	//group of parameters for an opcode
+	//parameter2 is only used for paired parameters
+	//if is_repeating is true, will repeat parameter1 or pair of parameters as appropriate
+	struct ParameterGroup
+	{
+		ParameterGroup(ParameterDetails p1, ParameterDetails p2,
+				bool is_repeating = false, int repeating_start_index = 1)
+			: parameter1(p1), parameter2(p2),
+			isRepeating(is_repeating), repeatingStartIndex(repeating_start_index)
+		{}
+
+		ParameterGroup(ParameterDetails p1,
+				bool is_repeating = false, int repeating_start_index = 1)
+			: parameter1(p1), parameter2({ "", DataType::NULL_TYPE, true }),
+			isRepeating(is_repeating), repeatingStartIndex(repeating_start_index)
+		{}
+
+		ParameterDetails parameter1;
+		ParameterDetails parameter2;
+		bool isRepeating = false;
+		//index that the parameter starts with; used when the first parameter can have
+		//different types but if of one type then the parameter is repeated
+		int repeatingStartIndex = 1;
+	};
+
+	//set of parameters for an opcode
+	struct ParameterSchema
+	{
+		ParameterSchema()
+			: childNodeStructure(ChildNodeStructureType::POSITION)
+		{}
+
+		ParameterSchema(ChildNodeStructureType cns, std::initializer_list<ParameterGroup> il)
+			: childNodeStructure(cns), groups(il)
+		{}
+
+		ParameterSchema(std::initializer_list<ParameterGroup> il)
+			: childNodeStructure(ChildNodeStructureType::POSITION), groups(il)
+		{}
+
+		ChildNodeStructureType childNodeStructure;
+		std::vector<ParameterGroup> groups;
+	};
+
+	//returns a string combining all parameters
+	std::string ParametersToString();
 
 	//attribute ordering here is generally ordered by operational use to improve caching,
 	//with descriptive strings at the end
@@ -171,17 +328,14 @@ public:
 	//true if the opcode is a query run by the query engine
 	bool isQuery = false;
 
-	//if the opcode has ordered child nodes, how they're ordered
-	OrderedChildNodeType orderedChildNodeType = OrderedChildNodeType::POSITION;
-
 	//what kind of special permissions the opcode needs to run
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
 
 	//whether the opcode returns a newly allocated value
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 
-	std::string_view parameters;
-	std::string_view returns;
+	ParameterSchema parameters;
+	DataType returns;
 	std::string_view description;
 	std::vector<AmalgamExample> examples;
 	double frequencyPer10000Opcodes = 1.0;
@@ -213,9 +367,9 @@ public:
 };
 
 //returns the type of structure that the ordered child nodes have for a given t
-__forceinline OpcodeDetails::OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t)
+__forceinline OpcodeDetails::ChildNodeStructureType GetChildNodeStructureType(EvaluableNodeType t)
 {
-	return _opcode_details[t].orderedChildNodeType;
+	return _opcode_details[t].parameters.childNodeStructure;
 }
 
 //returns true if the opcode may retrieve data
@@ -245,7 +399,7 @@ __forceinline OpcodeDetails::OpcodeReturnNewnessType GetOpcodeNewValueReturnType
 //returns true if the opcode uses an associative array as parameters. If false, then a regular kind of list
 __forceinline bool DoesOpcodeUseAssocParameters(EvaluableNodeType t)
 {
-	return GetOpcodeOrderedChildNodeType(t) == OpcodeDetails::OrderedChildNodeType::PAIRED;
+	return GetChildNodeStructureType(t) == OpcodeDetails::ChildNodeStructureType::PAIRED;
 }
 
 //returns true if t is an immediate value

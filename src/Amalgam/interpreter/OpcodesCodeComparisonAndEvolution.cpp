@@ -8,8 +8,10 @@ static std::string _opcode_group = "Code Comparison and Evolution";
 
 static OpcodeInitializer _ENT_TOTAL_SIZE(ENT_TOTAL_SIZE, &Interpreter::InterpretNode_ENT_TOTAL_SIZE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node)";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the total count of all of the nodes referenced directly or indirectly by `node`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((total_size
@@ -43,8 +45,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *
 
 static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT_MUTATE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [number preserve_type_depth] [assoc immediate_number_weights] [assoc immediate_string_weights])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"mutation_rate", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"mutation_weights", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"operation_type", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"preserve_type_depth", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"immediate_number_weights", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"immediate_string_weights", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.0001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((mutate
@@ -271,8 +281,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &Interpreter::InterpretNode_ENT_GET_MUTATION_DEFAULTS, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string value_type)";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"value_type", OpcodeDetails::DataType::STRING})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Retrieves the default values of `value_type` for mutation, either "mutation_opcodes" or "mutation_types")";
 	d.examples = MakeAmalgamExamples({
 		{R"((get_mutation_defaults "mutation_types"))", R"({
@@ -335,8 +347,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_MUTATION_DEFAULTS(Eval
 
 static OpcodeInitializer _ENT_COMMONALITY(ENT_COMMONALITY, &Interpreter::InterpretNode_ENT_COMMONALITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node1 * node2 [assoc params])";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the total count of all of the nodes referenced within `node1` and `node2` that are equivalent.  The assoc `params` can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((commonality
@@ -488,8 +504,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 
 static OpcodeInitializer _ENT_EDIT_DISTANCE(ENT_EDIT_DISTANCE, &Interpreter::InterpretNode_ENT_EDIT_DISTANCE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node1 * node2 [assoc params])";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the number of nodes that are different between `node1` and `node2`. The assoc `params` can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((edit_distance
@@ -621,8 +641,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 
 static OpcodeInitializer _ENT_INTERSECT(ENT_INTERSECT, &Interpreter::InterpretNode_ENT_INTERSECT, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node1 * node2 [assoc params])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to whatever is common between `node1` and `node2` exclusive.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true, the default, then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((intersect
@@ -825,8 +849,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 
 static OpcodeInitializer _ENT_UNION(ENT_UNION, &Interpreter::InterpretNode_ENT_UNION, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node1 * node2 [assoc params])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to whatever is inclusive when merging `node1` and `node2`.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true, the default, then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((union
@@ -1061,8 +1089,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::InterpretNode_ENT_DIFFERENCE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node1 * node2)";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Finds the difference between `node1` and `node2`, and generates code that, if evaluated passing `node1` as its parameter "_", would turn it into `node2`.  Useful for finding a small difference of what needs to be changed to apply it to new (and possibly slightly different) data or code.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((difference
@@ -1421,8 +1452,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE(EvaluableNode *
 
 static OpcodeInitializer _ENT_MIX(ENT_MIX, &Interpreter::InterpretNode_ENT_MIX, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node1 * node2 [number keep_chance_node1] [number keep_chance_node2] [assoc params])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"keep_chance_node1", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"keep_chance_node2", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Performs a union operation on `node1` and `node2`, but randomly ignores nodes from one or the other if the nodes are not equal.  If only `keep_chance_node1` is specified, `keep_chance_node2` defaults to 1 - `keep_chance_node1`. `keep_chance_node1` specifies the probability that a node from `node1` will be kept, and `keep_chance_node2` the probability that a node from `node2` will be kept.  `keep_chance_node1` + `keep_chance_node2` should be between 1 and 2, as there are two objects being merged, otherwise the values will be normalized.  `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", "recursive_matching", and "similar_mix_chance".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  "similar_mix_chance" is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on `keep_chance_node1` and `keep_chance_node2`, and defaults to 0.0.  If "similar_mix_chance" is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((mix

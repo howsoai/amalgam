@@ -2434,7 +2434,7 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 	{
 		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC, true}),
 		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
-		OpcodeDetails::ParameterGroup({"k", OpcodeDetails::DataType::NUMBER})
+		OpcodeDetails::ParameterGroup({"k", OpcodeDetails::DataType::NUMBER, true})
 	});
 	d.returns = OpcodeDetails::DataType::LIST;
 	d.description = "Returns a new list containing the elements from `collection` sorted in increasing order, regardless of whether `collection` is an assoc or list.  If `function` is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with `(current_value)` and `(current_value 1)` accessing a pair of elements from the list, and evaluates `function`.  The function should return a number, positive if `(current_value)` is greater meaning that `(current_value)` should come after `(current_value 1)`, negative if `(current_value 1)` is greater and should come after `(current_value)`, or 0 if equal.  If `k` is specified in addition to `function` and not null, then it will only return the `k` smallest values sorted in order, or, if `k` is negative, it will return the highest `k` values using the absolute value of `k`.";

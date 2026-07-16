@@ -1455,8 +1455,8 @@ static OpcodeInitializer _ENT_MIX(ENT_MIX, &Interpreter::InterpretNode_ENT_MIX, 
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
 		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC}),
-		OpcodeDetails::ParameterGroup({"keep_chance_node1", OpcodeDetails::DataType::NUMBER}),
-		OpcodeDetails::ParameterGroup({"keep_chance_node2", OpcodeDetails::DataType::NUMBER}),
+		OpcodeDetails::ParameterGroup({"keep_chance_node1", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"keep_chance_node2", OpcodeDetails::DataType::NUMBER, true}),
 		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;

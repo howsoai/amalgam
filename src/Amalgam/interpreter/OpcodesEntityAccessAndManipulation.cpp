@@ -8,7 +8,7 @@ static std::string _opcode_group = "Entity Access and Manipulation";
 static OpcodeInitializer _ENT_CONTAINS_LABEL(ENT_CONTAINS_LABEL, &Interpreter::InterpretNode_ENT_CONTAINS_LABEL, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true}),
 		OpcodeDetails::ParameterGroup({"label", OpcodeDetails::DataType::ENTITY_LABEL})
 	};
 	d.returns = OpcodeDetails::DataType::BOOL;

@@ -429,8 +429,8 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"resource_path", OpcodeDetails::DataType::STRING}),
-		OpcodeDetails::ParameterGroup({"resource_type", OpcodeDetails::DataType::STRING}, true),
-		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC}, true),
+		OpcodeDetails::ParameterGroup({"resource_type", OpcodeDetails::DataType::STRING, true}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Loads the data specified by `resource_path`, parses it into the appropriate code and data, and returns it. If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
@@ -575,9 +575,9 @@ static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::Interpr
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"resource_path", OpcodeDetails::DataType::STRING}),
 		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID}),
-		OpcodeDetails::ParameterGroup({"resource_type", OpcodeDetails::DataType::STRING}, true),
-		OpcodeDetails::ParameterGroup({"persist", OpcodeDetails::DataType::BOOL}, true),
-		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC}, true),
+		OpcodeDetails::ParameterGroup({"resource_type", OpcodeDetails::DataType::STRING, true}),
+		OpcodeDetails::ParameterGroup({"persist", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
 	};
 	d.returns = OpcodeDetails::DataType::ENTITY_ID;
 	d.description = R"(Loads the data specified by `resource_path` and parse it into the appropriate code and data, and stores it in `entity`.  It follows the same id path creation rules as `(create_entities)`, except that if no id path is specified, it may default to a name based on the resource if available.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
@@ -760,8 +760,8 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"resource_path", OpcodeDetails::DataType::STRING}),
 		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
-		OpcodeDetails::ParameterGroup({"resource_type", OpcodeDetails::DataType::STRING}, true),
-		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC}, true),
+		OpcodeDetails::ParameterGroup({"resource_type", OpcodeDetails::DataType::STRING, true}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
 	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Stores `node` into `resource_path`.  Returns true if successful, false if not.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
@@ -911,9 +911,9 @@ static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::Inter
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"resource_path", OpcodeDetails::DataType::STRING}),
 		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID}),
-		OpcodeDetails::ParameterGroup({"resource_type", OpcodeDetails::DataType::STRING}, true),
-		OpcodeDetails::ParameterGroup({"persist", OpcodeDetails::DataType::BOOL}, true),
-		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC}, true),
+		OpcodeDetails::ParameterGroup({"resource_type", OpcodeDetails::DataType::STRING, true}),
+		OpcodeDetails::ParameterGroup({"persist", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
 	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Stores `entity` into `resource_path`.  Returns true if successful, false if not.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
@@ -1120,9 +1120,9 @@ static OpcodeInitializer _ENT_FLATTEN_ENTITY(ENT_FLATTEN_ENTITY, &Interpreter::I
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID}),
-		OpcodeDetails::ParameterGroup({"include_rand_seeds", OpcodeDetails::DataType::BOOL}, true),
-		OpcodeDetails::ParameterGroup({"parallel_create", OpcodeDetails::DataType::BOOL}, true),
-		OpcodeDetails::ParameterGroup({"include_version", OpcodeDetails::DataType::BOOL}, true),
+		OpcodeDetails::ParameterGroup({"include_rand_seeds", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"parallel_create", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"include_version", OpcodeDetails::DataType::BOOL, true}),
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to code that, if called, would completely reproduce the `entity`, as well as all contained entities.  If `include_rand_seeds` is true, by default, it will include all entities' random seeds.  If `parallel_create` is true, then the creates will be performed with parallel markers as appropriate for each group of contained entities.  If `include_version` is true, it will include a comment on the top node that is the current version of the Amalgam interpreter, which can be used for validating interoperability when loading code.  The code returned accepts two parameters, `create_new_entity`, which defaults to true, and `new_entity`, which defaults to null.  If `create_new_entity` is true, then it will create a new entity using the id path specified by `new_entity`, where null will create an unnamed entity.  If `create_new_entity` is false, then it will overwrite the current entity's code and create all contained entities.)";
@@ -1209,7 +1209,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNo
 static OpcodeInitializer _ENT_RETRIEVE_ENTITY_ROOT(ENT_RETRIEVE_ENTITY_ROOT, &Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID})
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true})
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to the code contained by `entity`.)";
@@ -1260,7 +1260,7 @@ static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Inte
 		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID, true}),
 		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
 		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true},
-			{"node", OpcodeDetails::DataType::ANY_BASIC}, true, 2)
+			{"node", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2)
 	});
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Sets the root of the `entity1 to `node1`, as well as all subsequent entity-code pairs of parameters.  If `entity1` is not specified or null, then uses the current entity.  On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.)";

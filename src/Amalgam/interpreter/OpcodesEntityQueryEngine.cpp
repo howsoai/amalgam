@@ -237,8 +237,8 @@ static OpcodeInitializer _ENT_QUERY_SELECT(ENT_QUERY_SELECT, &Interpreter::Inter
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"num_to_select", OpcodeDetails::DataType::NUMBER}),
-		OpcodeDetails::ParameterGroup({"start_offset", OpcodeDetails::DataType::NUMBER}),
-		OpcodeDetails::ParameterGroup({"random_seed", OpcodeDetails::DataType::NUMBER})
+		OpcodeDetails::ParameterGroup({"start_offset", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"random_seed", OpcodeDetails::DataType::NUMBER, true})
 	};
 	d.returns = OpcodeDetails::DataType::QUERY;
 	d.description = R"(When used as a query argument, selects `num_to_select` entities sorted by entity id.  If `start_offset` is specified, then it will return `num_to_select` entities starting that far in, and subsequent calls can be used to get all entities in batches.  If `random_seed` is specified, then it will select `num_to_select` entities randomly from the list based on the random seed.  If `random_seed` is specified and `start_offset` is null, then it will not guarantee a position in the order for subsequent calls that specify `start_offset`, and will execute more quickly.)";
@@ -310,8 +310,8 @@ static OpcodeInitializer _ENT_QUERY_SAMPLE(ENT_QUERY_SAMPLE, &Interpreter::Inter
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"num_to_select", OpcodeDetails::DataType::NUMBER}),
-		OpcodeDetails::ParameterGroup({"weight_label", OpcodeDetails::DataType::ENTITY_LABEL}),
-		OpcodeDetails::ParameterGroup({"random_seed", OpcodeDetails::DataType::NUMBER})
+		OpcodeDetails::ParameterGroup({"weight_label", OpcodeDetails::DataType::ENTITY_LABEL, true}),
+		OpcodeDetails::ParameterGroup({"random_seed", OpcodeDetails::DataType::NUMBER, true})
 	};
 	d.returns = OpcodeDetails::DataType::QUERY;
 	d.description = R"(When used as a query argument, selects a random sample of `num_to_select` entities sorted by entity id, sampled with replacement.  If `weight_label` is specified and not null, it will use `weight_label` as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values for weights will be ignored, and if there are any infinite values, those will be selected from uniformly.  If `random_seed` is specified, then it will select `num_to_select` entities randomly from the list based on the random seed.  If `random_seed` is not specified then the subsequent calls will return the same sample of entities.)";
@@ -1123,9 +1123,9 @@ static OpcodeInitializer _ENT_QUERY_GENERALIZED_MEAN(ENT_QUERY_GENERALIZED_MEAN,
 		OpcodeDetails::ParameterGroup({"label", OpcodeDetails::DataType::ENTITY_LABEL}),
 		OpcodeDetails::ParameterGroup({"p", OpcodeDetails::DataType::NUMBER}),
 		OpcodeDetails::ParameterGroup({"weight_label", OpcodeDetails::DataType::ENTITY_LABEL, true}),
-		OpcodeDetails::ParameterGroup({"center", OpcodeDetails::DataType::NUMBER}),
-		OpcodeDetails::ParameterGroup({"calculate_moment", OpcodeDetails::DataType::BOOL}),
-		OpcodeDetails::ParameterGroup({"absolute_value", OpcodeDetails::DataType::BOOL})
+		OpcodeDetails::ParameterGroup({"center", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"calculate_moment", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"absolute_value", OpcodeDetails::DataType::BOOL, true})
 	};
 	d.returns = OpcodeDetails::DataType::QUERY;
 	d.description = R"(When used as a query argument, computes the generalized mean over the `label` for numerical data.  If `p` is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity), to harmonic mean (-1), to geometric mean (0), to arithmetic mean (1), to maximum (infinity).  If `weight_label` is specified, it will normalize the weights and compute a weighted mean.  If `center` is specified, calculations will use that value as the central point, and the default is 0.0.  If `calculate_moment` is true, the results will not be raised to 1 / `p`.  If `absolute_value` is true, the differences will take the absolute value.  Various parameterizations of `(generalized_mean)` can be used to compute moments about the mean, especially by setting the `calculate_moment` parameter to true and using the mean as the center.)";
@@ -1205,8 +1205,8 @@ static OpcodeInitializer _ENT_QUERY_MIN_DIFFERENCE(ENT_QUERY_MIN_DIFFERENCE, &In
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"label", OpcodeDetails::DataType::ENTITY_LABEL}),
-		OpcodeDetails::ParameterGroup({"cycle_range", OpcodeDetails::DataType::NUMBER}),
-		OpcodeDetails::ParameterGroup({"include_zero_difference", OpcodeDetails::DataType::BOOL})
+		OpcodeDetails::ParameterGroup({"cycle_range", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"include_zero_difference", OpcodeDetails::DataType::BOOL, true})
 	};
 	d.returns = OpcodeDetails::DataType::QUERY;
 	d.description = R"(When used as a query argument, finds the smallest difference between any two values for the `label`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.  If `include_zero_difference` is true then it will return 0 if the smallest gap between any two numbers is 0.  If `include_zero_difference` is false, its default value, it will return the smallest nonzero value.)";
@@ -1255,7 +1255,7 @@ static OpcodeInitializer _ENT_QUERY_MAX_DIFFERENCE(ENT_QUERY_MAX_DIFFERENCE, &In
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"label", OpcodeDetails::DataType::ENTITY_LABEL}),
-		OpcodeDetails::ParameterGroup({"cycle_range", OpcodeDetails::DataType::NUMBER})
+		OpcodeDetails::ParameterGroup({"cycle_range", OpcodeDetails::DataType::NUMBER, true})
 	};
 	d.returns = OpcodeDetails::DataType::QUERY;
 	d.description = R"(When used as a query argument, finds the largest difference between any two values for the `label`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.)";
@@ -1301,7 +1301,7 @@ static OpcodeInitializer _ENT_QUERY_VALUE_MASSES(ENT_QUERY_VALUE_MASSES, &Interp
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"label", OpcodeDetails::DataType::ENTITY_LABEL}),
-		OpcodeDetails::ParameterGroup({"weight_label", OpcodeDetails::DataType::ENTITY_LABEL})
+		OpcodeDetails::ParameterGroup({"weight_label", OpcodeDetails::DataType::ENTITY_LABEL, true})
 	};
 	d.returns = OpcodeDetails::DataType::QUERY;
 	d.description = R"(When used as a query argument, computes the counts for each value of the `label` and returns an assoc with the keys being the label values and the values being the counts or weights of the values.  If `weight_label` is specified, then it will accumulate that weight for each value, otherwise it will use a weight of 1 for each yielding a count.)";

@@ -106,7 +106,7 @@ static OpcodeInitializer _ENT_LAMBDA(ENT_LAMBDA, &Interpreter::InterpretNode_ENT
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC}),
-		OpcodeDetails::ParameterGroup({"evaluate_and_wrap", OpcodeDetails::DataType::BOOL})
+		OpcodeDetails::ParameterGroup({"evaluate_and_wrap", OpcodeDetails::DataType::BOOL, true})
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to the code specified without evaluating it.  Useful for referencing functions or handling data without evaluating it.  The parameter `evaluate_and_wrap` defaults to false, but if it is true, it will evaluate the function, but then return the result wrapped in a lambda opcode.)";
@@ -154,9 +154,9 @@ static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CAL
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC}),
-		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC}),
-		OpcodeDetails::ParameterGroup({"constraints", OpcodeDetails::DataType::BOOL | OpcodeDetails::DataType::ASSOC}),
-		OpcodeDetails::ParameterGroup({"return_warnings", OpcodeDetails::DataType::BOOL})
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"constraints", OpcodeDetails::DataType::BOOL | OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"return_warnings", OpcodeDetails::DataType::BOOL, true})
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates `function` after pushing the `params` assoc onto the scope stack.  If `constraints` is specified and not false or null, it will constrain execution.  If `constraints` is true or an assoc, it will default all constraints to be on at reasonable values for small execution without access to any data beyond `params`.  They optional key-value combinations for `constraints` are as follows.  If "max_node_operations" is specified, it represents the number of operations that are allowed to be performed. If "max_node_operations" is 0, then an infinite of operations will be allotted, up to the limits of the current calling context.  If "max_node_allocations" is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If "max_node_allocations" is 0 and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if "max_node_allocations" is specified while in a multithreaded environment, if the collective memory from all the executing threads exceeds the average memory specified by "max_node_allocations", that may trigger a memory limit for the call.  If "max_operation_depth" is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise "max_operation_depth" limits how deep nested opcodes will be called. If `return_warnings` is true (default is false), the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  The keys "read_access" and "write_access" are boolean and control whether the execution can read from or write to entities and access their relevant permissions (e.g., to load files, make system calls).  If the parameter `return_warnings` is false, just the value will be returned.)";
@@ -442,7 +442,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, E
 static OpcodeInitializer _ENT_CONCLUDE(ENT_CONCLUDE, &Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC})
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true})
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to `node` wrapped in a `conclude` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a `conclude` (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to `node`.  Note that conclude opcodes may be nested to break out of outer opcodes.)";
@@ -491,7 +491,7 @@ static OpcodeInitializer _ENT_CONCLUDE(ENT_CONCLUDE, &Interpreter::InterpretNode
 static OpcodeInitializer _ENT_RETURN(ENT_RETURN, &Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC})
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true})
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to `node` wrapped in a `return` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a return (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to the `return` opcode with its `node`.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including `call`, `call_entity`, `call_on_entity`, or `call_container`, at which point it will evaluate to `node`.  Note that return opcodes may be nested to break out of multiple calls.)";
@@ -755,8 +755,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 static OpcodeInitializer _ENT_OPCODE_STACK(ENT_OPCODE_STACK, &Interpreter::InterpretNode_ENT_OPCODE_STACK, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::NUMBER}),
-		OpcodeDetails::ParameterGroup({"no_child_nodes", OpcodeDetails::DataType::BOOL})
+		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"no_child_nodes", OpcodeDetails::DataType::BOOL, true})
 	};
 	d.returns = OpcodeDetails::DataType::LIST;
 	d.description = R"(Evaluates to the list of opcodes that make up the call stack or a single opcode within the call stack.  If `stack_distance` is specified, then a copy of the node at that specified depth is returned, otherwise the list of all opcodes in opcode stack are returned. Negative values for `stack_distance` specify the depth from the top of the stack and positive values specify the depth from the bottom.  If `no_child_nodes` is true, then only the root node(s) are returned, otherwise the returned node(s) are deep-copied.)";

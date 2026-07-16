@@ -1028,7 +1028,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 static OpcodeInitializer _ENT_EXISTS(ENT_EXISTS, &Interpreter::InterpretNode_ENT_EXISTS, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"variable", OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC})
+		OpcodeDetails::ParameterGroup({"variable", OpcodeDetails::DataType::STRING})
 	};
 	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Returns true if variable exists within visibility, false if it does not.)";
@@ -1118,10 +1118,10 @@ static OpcodeInitializer _ENT_TARGET(ENT_TARGET, &Interpreter::InterpretNode_ENT
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::BOOL | OpcodeDetails::DataType::NUMBER, true}),
-		OpcodeDetails::ParameterGroup({"walk_path", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true})
+		OpcodeDetails::ParameterGroup({"path", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true})
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
-	d.description = R"(Evaluates to the node being created, referenced by the parameters by target.  Useful for serializing graph data structures or looking up data during iteration.  If `stack_distance` is a number, it climbs back up the target stack that many levels.  If `stack_distance` is a boolean, then `.true` indicates the top of the stack and `.false` indicates the bottom.  If `walk_path` is specified, it will walk from the node at `stack_distance` to the corresponding target.  If building an object, specifying `stack_distance` to true is often useful for accessing or traversing the top-level elements.)";
+	d.description = R"(Evaluates to the node being created, referenced by the parameters by target.  Useful for serializing graph data structures or looking up data during iteration.  If `stack_distance` is a number, it climbs back up the target stack that many levels.  If `stack_distance` is a boolean, then `.true` indicates the top of the stack and `.false` indicates the bottom.  If `path` is specified, it will walk from the node at `stack_distance` to the corresponding target.  If building an object, specifying `stack_distance` to true is often useful for accessing or traversing the top-level elements.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&([
 	1
@@ -1333,7 +1333,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, E
 static OpcodeInitializer _ENT_ARGS(ENT_ARGS, &Interpreter::InterpretNode_ENT_ARGS, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::BOOL | OpcodeDetails::DataType::NUMBER, true})
+		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::NUMBER, true})
 	};
 	d.returns = OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments.  If `stack_distance` is specified, then it evaluates to the context that many layers up the stack.)";

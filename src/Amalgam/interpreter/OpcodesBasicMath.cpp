@@ -12,7 +12,7 @@ static OpcodeInitializer _ENT_ADD(ENT_ADD, &Interpreter::InterpretNode_ENT_ADD, 
 	});
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to the sum of all numbers.)";
+	d.description = R"(Evaluates to the sum of all numbers.  If no parameters are provided it returns 0.0.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((+ 1 2 3 4))", R"(10)"}
 		});
@@ -26,7 +26,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, Eva
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
-		return EvaluableNodeReference::Null();
+		return AllocReturn(0.0, immediate_result);
 
 	double value = 0.0;
 
@@ -56,9 +56,9 @@ static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	});
-	d.returns = OpcodeDetails::DataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NULL_TYPE | OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative)";
+	d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative.  If no parameters are provided it returns null.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((- 1 2 3 4))", R"(-8)"},
 		{R"((- 3))", R"(-3)"}
@@ -109,7 +109,7 @@ static OpcodeInitializer _ENT_MULTIPLY(ENT_MULTIPLY, &Interpreter::InterpretNode
 	});
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to the product of all numbers.)";
+	d.description = R"(Evaluates to the product of all numbers.  If no parameters are provided, returns 1.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((* 1 2 3 4))", R"(24)"}
 		});
@@ -123,7 +123,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
-		return EvaluableNodeReference::Null();
+		return AllocReturn(1.0, immediate_result);
 
 	double value = 1.0;
 
@@ -153,9 +153,9 @@ static OpcodeInitializer _ENT_DIVIDE(ENT_DIVIDE, &Interpreter::InterpretNode_ENT
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	});
-	d.returns = OpcodeDetails::DataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NULL_TYPE | OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to `x1` / `x2` / ... / `xN`.)";
+	d.description = R"(Evaluates to `x1` / `x2` / ... / `xN`.  If no parameters are provided, it returns null.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((/ 1.0 2 3 4))", R"(0.041666666666666664)"}
 		});
@@ -231,9 +231,9 @@ static OpcodeInitializer _ENT_MODULUS(ENT_MODULUS, &Interpreter::InterpretNode_E
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	});
-	d.returns = OpcodeDetails::DataType::NUMBER;
+	d.returns = OpcodeDetails::DataType::NULL_TYPE | OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates the modulus of `x1` mod `x2` mod ... mod `xN`.)";
+	d.description = R"(Evaluates the modulus of `x1` mod `x2` mod ... mod `xN`.  If no parameters are provided it returns null.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((mod 1 2 3 4))", R"(1)"},
 		{R"((mod 5 3))", R"(2)"},

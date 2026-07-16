@@ -85,6 +85,167 @@ std::pair<ExecutionPermissions, ExecutionPermissions> ExecutionPermissions::Eval
 	return std::make_pair(permissions_to_set, permission_values);
 }
 
+std::string OpcodeDetails::OpcodeDataTypeToString(DataType odt)
+{
+	std::string type_str;
+
+	if( (odt & OpcodeDetails::DataType::ANY_BASIC) == OpcodeDetails::DataType::ANY_BASIC)
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "any";
+	}
+	else
+	{
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::NULL_TYPE))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "null";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::BOOL))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "bool";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::NUMBER))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "number";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::STRING))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "string";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "list";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::UNORDERED_LIST))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "unordered_list";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ASSOC))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "assoc";
+		}
+		if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::QUERY))
+		{
+			if(!type_str.empty())
+				type_str += "|";
+			type_str += "query";
+		}
+	}
+
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::WALK_PATH))
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "walk_path";
+	}
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ENTITY_ID))
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "entity_id";
+	}
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ENTITY_LABEL))
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "entity_label";
+	}
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_NUMBERS))
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "list_of_numbers";
+	}
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_STRINGS))
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "list_of_strings";
+	}
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_ENTITY_IDS))
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "list_of_entity_ids";
+	}
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_ENTITY_LABELS))
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "list_of_entity_labels";
+	}
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::LIST_OF_QUERIES))
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "list_of_queries";
+	}
+	if(OpcodeDetails::AreDataTypesExactlyCompatible(odt, OpcodeDetails::DataType::ASSOC_OF_NUMBERS))
+	{
+		if(!type_str.empty())
+			type_str += "|";
+		type_str += "assoc_of_numbers";
+	}
+
+	return type_str;
+}
+
+std::string OpcodeDetails::ParametersToString()
+{
+	std::string param_string;
+	for(auto &group : parameters.groups)
+	{
+		if(!group.isRepeating)
+		{
+			param_string += (group.parameter1.optional ? "[" : "") +
+				OpcodeDataTypeToString(group.parameter1.type) + " " + group.parameter1.name
+				+ (group.parameter1.optional ? "]" : "") + " ";
+
+			if(!group.parameter2.name.empty())
+				param_string += (group.parameter2.optional ? "[" : "")
+					+ OpcodeDataTypeToString(group.parameter2.type) + " " + group.parameter2.name
+					+ (group.parameter2.optional ? "]" : "") + " ";
+		}
+		else
+		{
+			//repeating parameters, just show the first two
+			for(size_t i = group.repeatingStartIndex; i <= 2; i++)
+			{
+				param_string += (group.parameter1.optional ? "[" : "")
+					+ OpcodeDataTypeToString(group.parameter1.type) + " " + group.parameter1.name
+					+ StringManipulation::NumberToString(i) + (group.parameter1.optional ? "]" : "") + " ";
+
+				if(!group.parameter2.name.empty())
+					param_string += (group.parameter2.optional ? "[" : "") +
+						OpcodeDataTypeToString(group.parameter2.type) + " " + group.parameter2.name +
+						StringManipulation::NumberToString(i) + (group.parameter2.optional ? "]" : "") + " ";
+			}
+
+			param_string += "... ";
+		}
+	}
+
+	//remove any trailing whitespace (easier to do here than in the logic and not notably less efficient)
+	if(param_string.size() > 0 && param_string.back() == ' ')
+		param_string.pop_back();
+
+	return param_string;
+}
 
 //returns a copy of s where each consecutive whitespace block is replaced
 //by a single space, any leading and trailing spaces are removed,

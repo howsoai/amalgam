@@ -1,8 +1,10 @@
 ### Opcode: `first`
 #### Parameters
-`[list|assoc|number|string data]`
+`any node`
+#### Returns
+`any`
 #### Description
-Evaluates to the first element of `data`.  If `data` is a list, it will be the first element.  If `data` is an assoc, it will evaluate to the first element by assoc storage, but order does not matter.  If `data` is a string, it will be the first character.  If `data` is a number, it will evaluate to 1 if nonzero, 0 if zero.
+Evaluates to the first element of `node`.  If `node` is a list, it will be the first element.  If `node` is an assoc, it will evaluate to the first element by assoc storage, but order does not matter.  If `node` is a string, it will be the first character.  If `node` is a number, it will evaluate to 1 if nonzero, 0 if zero.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -68,9 +70,11 @@ Output:
 
 ### Opcode: `tail`
 #### Parameters
-`[list|assoc|number|string data] [number retain_count]`
+`any node [number retain_count]`
+#### Returns
+`list`
 #### Description
-Evaluates to everything but the first element.  If `data` is a list, it will be a list of all but the first element.  If `data` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, but order does not matter.  If `data` is a string, it will be all but the first character.  If `data` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero.  If a `retain_count` is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first element).
+Evaluates to everything but the first element.  If `node` is a list, it will be a list of all but the first element.  If `node` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, but order does not matter.  If `node` is a string, it will be all but the first character.  If `node` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero.  If a `retain_count` is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first element).
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -387,9 +391,11 @@ Output:
 
 ### Opcode: `last`
 #### Parameters
-`[list|assoc|number|string data]`
+`any node`
+#### Returns
+`any`
 #### Description
-Evaluates to the last element of `data`.  If `data` is a list, it will be the last element.  If `data` is an assoc, it will evaluate to the first element by assoc storage, because order does not matter.  If `data` is a string, it will be the last character.  If `data` is a number, it will evaluate to 1 if nonzero, 0 if zero.
+Evaluates to the last element of `node`.  If `node` is a list, it will be the last element.  If `node` is an assoc, it will evaluate to the first element by assoc storage, because order does not matter.  If `node` is a string, it will be the last character.  If `node` is a number, it will evaluate to 1 if nonzero, 0 if zero.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -455,9 +461,11 @@ Output:
 
 ### Opcode: `trunc`
 #### Parameters
-`[list|assoc|number|string data] [number retain_count]`
+`any node [number retain_count]`
+#### Returns
+`list`
 #### Description
-Truncates, evaluates to everything in `data` but the last element. If `data` is a list, it will be a list of all but the last element.  If `data` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, because order does not matter.  If `data` is a string, it will be all but the last character.  If `data` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If `truncate_count` is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1, indicating all but the last.
+Truncates, evaluates to everything in `node` but the last element. If `node` is a list, it will be a list of all but the last element.  If `node` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, because order does not matter.  If `node` is a string, it will be all but the last character.  If `node` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If `truncate_count` is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1, indicating all but the last.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -774,7 +782,9 @@ Output:
 
 ### Opcode: `append`
 #### Parameters
-`[list|assoc|* collection1] [list|assoc|* collection2] ... [list|assoc|* collectionN]`
+`[any collection1] [any collection2] ...`
+#### Returns
+`list|assoc`
 #### Description
 Evaluates to a new list or assoc which merges all lists, `collection1` through `collectionN`, based on parameter order. If any assoc is passed in, then returns an assoc (lists will be automatically converted to an assoc with the indices as keys and the list elements as values). If a non-list and non-assoc is specified, then it just adds that one element to the list.  In order to append a list or assoc to the first collection, it must be wrapped in an additional layer.
 #### Details
@@ -864,7 +874,9 @@ Output:
 
 ### Opcode: `size`
 #### Parameters
-`[list|assoc|string collection] collection`
+`any collection`
+#### Returns
+`number`
 #### Description
 Evaluates to the size of the `collection` in number of elements.  If `collection` is a string, returns the length in UTF-8 characters.
 #### Details
@@ -917,9 +929,11 @@ Output:
 
 ### Opcode: `get`
 #### Parameters
-`* data [number|index|list walk_path_1] [number|string|list walk_path_2] ...`
+`any node [any|walk_path walk_path1] [any|walk_path walk_path2] ...`
+#### Returns
+`any`
 #### Description
-Evaluates to `data` as traversed by the set of values specified by `walk_path_1', which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then `get` returns a list, where each element in the list is the respective element retrieved by the respective walk path.  If the walk path continues past the data structure, it will return a null.
+Evaluates to `node` as traversed by the set of values specified by `walk_path_1', which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then `get` returns a list, where each element in the list is the respective element retrieved by the respective walk path.  If the walk path continues past the data structure, it will return a null.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -1093,9 +1107,11 @@ Output:
 
 ### Opcode: `modify`
 #### Parameters
-`* data [number|string|list walk_path1] [* function1] [number|string|list walk_path2] [* function2] ... [number|string|list walk_pathN] [* functionN]`
+`any node [any|walk_path walk_path1] [any|walk_path function1] [any|walk_path walk_path2] [any|walk_path function2] ...`
+#### Returns
+`any`
 #### Description
-Performs a deep copy on `data` (a copy of all data structures referenced by it and its references).  If any additional parameters are specified, it treats them as pairs of locations and values or functions to replace within the new copy.  For each pair of replacements, the first element is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.
+Performs a deep copy of `node` (a copy of all data structures referenced by it and its references).  If any additional parameters are specified, it treats them as pairs of locations and values or functions to replace within the new copy.  For each pair of replacements, the first element is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of `node`, which is the base of the newly constructed data; this is useful for creating circular references.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -1233,6 +1249,8 @@ Output:
 ### Opcode: `indices`
 #### Parameters
 `list|assoc collection`
+#### Returns
+`list_of_numbers|list_of_strings`
 #### Description
 Evaluates to the list of strings or numbers that comprise the indices for the list or associative parameter `collection`.  It is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.
 #### Details
@@ -1336,6 +1354,8 @@ Output:
 ### Opcode: `values`
 #### Parameters
 `list|assoc collection [bool only_unique_values]`
+#### Returns
+`list`
 #### Description
 Evaluates to the list of entities that comprise the values for the list or associative list `collection`.  If `only_unique_values` is true (defaults to false), then it will filter out any duplicate values and only return those that are unique, preserving their order of first appearance.  If `only_unique_values` is not true, then it is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.
 #### Details
@@ -1495,9 +1515,11 @@ Output:
 
 ### Opcode: `contains_index`
 #### Parameters
-`list|assoc collection string|number|list index`
+`list|assoc collection any|walk_path index`
+#### Returns
+`bool`
 #### Description
-Evaluates to true if the index is in the `collection`.  If index is a string, it will attempt to look at `collection` as an assoc, if number, it will look at `collection` as a list.  If index is a list, it will traverse a via the elements in the list as a walk path, with each element .
+Evaluates to true if the index is in the `collection` interpreting `index` as the appropriate type for the collection.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -1591,7 +1613,9 @@ Output:
 
 ### Opcode: `contains_value`
 #### Parameters
-`list|assoc|string collection_or_string string|number value`
+`list|assoc collection any value`
+#### Returns
+`bool`
 #### Description
 Evaluates to true if the `value` is contained in `collection_or_string`.  If `collection_or_string` is a string, then it uses `value` as a regular expression and evaluates to true if the regular expression matches.
 #### Details
@@ -1735,7 +1759,9 @@ Output:
 
 ### Opcode: `remove`
 #### Parameters
-`list|assoc collection number|string|list index`
+`list|assoc collection any|walk_path index`
+#### Returns
+`list|assoc`
 #### Description
 Removes the index-value pair with `index` being the index in assoc or index of `collection`, returning a new list or assoc with `index` removed.  If `index` is a list of numbers or strings, then it will remove each of the requested indices.  Negative numbered indices will count back from the end of a list.
 #### Details
@@ -1904,7 +1930,9 @@ Output:
 
 ### Opcode: `keep`
 #### Parameters
-`list|assoc collection number|string|list index`
+`list|assoc collection any index`
+#### Returns
+`list|assoc`
 #### Description
 Keeps only the index-value pair with index being the index in `collection`, returning a new list or assoc with only that index.  If `index` is a list of numbers or strings, then it will only keep those requested indices.  Negative numbered indices will count back from the end of a list.
 #### Details

@@ -23,9 +23,9 @@ enum EvaluableNodeImmediateValueType : uint8_t
 class EvaluableNodeRequestedValueTypes
 {
 public:
-	using RequestType = uint16_t;
+	using TypeContainer = uint16_t;
 
-	enum class Type : RequestType
+	enum class Type : TypeContainer
 	{
 		//there is nothing to even hold the data
 		NONE = 0,
@@ -82,7 +82,7 @@ public:
 		: requestedValueTypes(t)
 	{}
 
-	constexpr EvaluableNodeRequestedValueTypes(RequestType raw) noexcept
+	constexpr EvaluableNodeRequestedValueTypes(TypeContainer raw) noexcept
 		: requestedValueTypes(static_cast<Type>(raw))
 	{}
 
@@ -94,15 +94,15 @@ public:
 	//bit‑wise operators
 	constexpr EvaluableNodeRequestedValueTypes &operator|=(EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
-		requestedValueTypes = static_cast<Type>(static_cast<RequestType>(requestedValueTypes) |
-								 static_cast<RequestType>(rhs.requestedValueTypes));
+		requestedValueTypes = static_cast<Type>(static_cast<TypeContainer>(requestedValueTypes) |
+								 static_cast<TypeContainer>(rhs.requestedValueTypes));
 		return *this;
 	}
 
 	constexpr EvaluableNodeRequestedValueTypes &operator&=(EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
-		requestedValueTypes = static_cast<Type>(static_cast<RequestType>(requestedValueTypes) &
-								 static_cast<RequestType>(rhs.requestedValueTypes));
+		requestedValueTypes = static_cast<Type>(static_cast<TypeContainer>(requestedValueTypes) &
+								 static_cast<TypeContainer>(rhs.requestedValueTypes));
 		return *this;
 	}
 
@@ -111,8 +111,8 @@ public:
 		EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
 		return EvaluableNodeRequestedValueTypes(
-			static_cast<Type>(static_cast<RequestType>(lhs.requestedValueTypes) |
-				static_cast<RequestType>(rhs.requestedValueTypes)));
+			static_cast<Type>(static_cast<TypeContainer>(lhs.requestedValueTypes) |
+				static_cast<TypeContainer>(rhs.requestedValueTypes)));
 	}
 
 	constexpr friend EvaluableNodeRequestedValueTypes operator&(
@@ -120,39 +120,39 @@ public:
 		EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
 		return EvaluableNodeRequestedValueTypes(
-			static_cast<Type>(static_cast<RequestType>(lhs.requestedValueTypes) &
-				static_cast<RequestType>(rhs.requestedValueTypes)));
+			static_cast<Type>(static_cast<TypeContainer>(lhs.requestedValueTypes) &
+				static_cast<TypeContainer>(rhs.requestedValueTypes)));
 	}
 
 	constexpr friend EvaluableNodeRequestedValueTypes operator~(
 		EvaluableNodeRequestedValueTypes v) noexcept
 	{
 		return EvaluableNodeRequestedValueTypes(
-			static_cast<Type>(~static_cast<RequestType>(v.requestedValueTypes)));
+			static_cast<Type>(~static_cast<TypeContainer>(v.requestedValueTypes)));
 	}
 
 	constexpr bool Allows(Type flag) const noexcept
 	{
-		return (static_cast<RequestType>(requestedValueTypes) &
-				static_cast<RequestType>(flag)) != 0;
+		return (static_cast<TypeContainer>(requestedValueTypes) &
+				static_cast<TypeContainer>(flag)) != 0;
 	}
 
 	constexpr bool AnyPrimitiveImmediateType() const noexcept
 	{
-		return (static_cast<RequestType>(requestedValueTypes)
-			& static_cast<RequestType>(Type::ANY_PRIMITIVE_IMMEDIATE)) != 0;
+		return (static_cast<TypeContainer>(requestedValueTypes)
+			& static_cast<TypeContainer>(Type::ANY_PRIMITIVE_IMMEDIATE)) != 0;
 	}
 
 	constexpr bool AnyComplexImmediateType() const noexcept
 	{
-		return (static_cast<RequestType>(requestedValueTypes)
-			& static_cast<RequestType>(Type::ANY_COMPLEX_IMMEDIATE)) != 0;
+		return (static_cast<TypeContainer>(requestedValueTypes)
+			& static_cast<TypeContainer>(Type::ANY_COMPLEX_IMMEDIATE)) != 0;
 	}
 
 	constexpr bool AnyImmediateType() const noexcept
 	{
-		return (static_cast<RequestType>(requestedValueTypes)
-			& static_cast<RequestType>(Type::ANY_IMMEDIATE)) != 0;
+		return (static_cast<TypeContainer>(requestedValueTypes)
+			& static_cast<TypeContainer>(Type::ANY_IMMEDIATE)) != 0;
 	}
 
 	constexpr bool NoValueRequested() const noexcept

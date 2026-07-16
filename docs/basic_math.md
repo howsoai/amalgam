@@ -1,6 +1,6 @@
 ### Opcode: `+`
 #### Parameters
-`[number x1] [number x2] ... [number xN]`
+`[number x1] [number x2] ...`
 #### Description
 Evaluates to the sum of all numbers.
 #### Details
@@ -24,7 +24,7 @@ Output:
 
 ### Opcode: `-`
 #### Parameters
-`[number x1] [number x2] ... [number xN]`
+`[number x1] [number x2] ...`
 #### Description
 Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative
 #### Details
@@ -56,7 +56,7 @@ Output:
 
 ### Opcode: `*`
 #### Parameters
-`[number x1] [number x2] ... [number xN]`
+`[number x1] [number x2] ...`
 #### Description
 Evaluates to the product of all numbers.
 #### Details
@@ -80,7 +80,7 @@ Output:
 
 ### Opcode: `/`
 #### Parameters
-`[number x1] [number x2] ... [number xN]`
+`[number x1] [number x2] ...`
 #### Description
 Evaluates to `x1` / `x2` / ... / `xN`.
 #### Details
@@ -104,7 +104,7 @@ Output:
 
 ### Opcode: `mod`
 #### Parameters
-`[number x1] [number x2] ... [number xN]`
+`[number x1] [number x2] ...`
 #### Description
 Evaluates the modulus of `x1` mod `x2` mod ... mod `xN`.
 #### Details
@@ -374,7 +374,7 @@ Output:
 
 ### Opcode: `set_digits`
 #### Parameters
-`number value [number base] [list|number|null digits] [number start_digit] [number end_digit] [bool relative_to_zero]`
+`number value [number base] [null|number|list digits] [number start_digit] [number end_digit] [bool relative_to_zero]`
 #### Description
 Evaluates to `value` having each of the values in the list of `digits` replace each of the relative digits in `value` for the given base.  If a digit is null in `digits`, then that digit is not set.  If `base` is omitted, 10 is the default.  The parameters `start_digit` and `end_digit` can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of `start_digit` and `end_digit` are with respect to `relative_to_zero`, which defaults to true.  If `relative_to_zero` is true, then the digits are indexed from their distance to zero, such as "5 4 3 2 1 0 . -1 -2".  If `relative_to_zer`o is false, then the digits are indexed from their most significant digit, such as "0 1 2 3 4 5 . 6  7".  The default values of `start_digit` and `end_digit` are the most and least significant digits respectively.
 #### Details
@@ -866,7 +866,7 @@ Output:
 
 ### Opcode: `max`
 #### Parameters
-`[number x1] [number x2] ... [number xN]`
+`number x1 number x2 ...`
 #### Description
 Evaluates to the maximum of all of parameters.
 #### Details
@@ -906,7 +906,7 @@ Output:
 
 ### Opcode: `min`
 #### Parameters
-`[number x1] [number x2] ... [number xN]`
+`number x1 number x2 ...`
 #### Description
 Evaluates to the minimum of all of the numbers.
 #### Details
@@ -938,7 +938,7 @@ Output:
 
 ### Opcode: `index_max`
 #### Parameters
-`[[number x1] [number x2] [number x3] ... [number xN]] | assoc|list values`
+`number|list_of_numbers|assoc_of_numbers x1 number x2 ...`
 #### Description
 If given multiple arguments, returns a list of the indices of the arguments with the maximum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the maximum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the maximum value.
 #### Details
@@ -998,7 +998,7 @@ Output:
 
 ### Opcode: `index_min`
 #### Parameters
-`[[number x1] [number x2] [number x3] ... [number xN]] | assoc values | list values`
+`number|list_of_numbers|assoc_of_numbers x1 number x2 ...`
 #### Description
 If given multiple arguments, returns a list of the indices of the arguments with the minimum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the minimum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the minimum value.
 #### Details

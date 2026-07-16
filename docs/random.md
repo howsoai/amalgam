@@ -1,6 +1,6 @@
 ### Opcode: `rand`
 #### Parameters
-`[list|assoc|number range] [number number_to_generate] [bool unique]`
+`[number|list|assoc range] [number number_to_generate] [bool unique]`
 #### Description
 Generates random values based on the parameters.  The random values are drawn from a random stream specific to each execution flow for each entity.  When `range` is not specified, it evaluates to a random number between 0.0 and 1.0.  If `range` is a list, it will uniformly randomly choose and evaluate to one element of the list.  If `range` is a number, it will evaluate to a value greater than or equal to zero and less than the number specified.  If `range` is an assoc, then it will randomly evaluate to one of the keys using the values as the weights for the probabilities.  If  `number_to_generate` is specified, it will generate a list of multiple values (even if `number_to_generate` is 1).  If `unique` is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.  Note that the `unique` parameter only applies when `range` is a list or assoc.  If `unique` is true and there are not enough values in a list or assoc, it will only generate the number of elements in `range`.
 #### Details
@@ -217,7 +217,7 @@ Output:
 #### Parameters
 `string seed`
 #### Description
-Initializes the random number stream for the given `seed` without affecting any entity.  If the seed is already a string in the proper format output by `get_entity_rand_seed` or `get_rand_seed`, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the generator.
+Initializes the random number stream for the given `seed` without affecting any entity.  If `seed` is already a string in the proper format output by `get_entity_rand_seed` or `get_rand_seed`, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it will use the first 14 to 15 digits of the seed as a string to seed the generator.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -266,7 +266,7 @@ Output:
 
 ### Opcode: `get_entity_rand_seed`
 #### Parameters
-`[id_path entity]`
+`entity_id entity`
 #### Description
 Evaluates to a string representing the current state of the random number generator for `entity` used for seeding the random streams of any calls to the entity.
 #### Details
@@ -303,9 +303,9 @@ Output:
 
 ### Opcode: `set_entity_rand_seed`
 #### Parameters
-`[id_path entity] * node [bool deep]`
+`[entity_id entity] entity_id seed [bool deep]`
 #### Description
-Sets the random number seed and state for the random number generator of `entity`, or the current entity if null or not specified, to the state specified by `node`.  If `node` is already a string in the proper format output by `(get_entity_rand_seed)`, then it will set the random generator to that current state, picking up where the previous state left off.  If `node` is anything else, it uses the value as a random seed to start the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by `entity` for new calls.  The parameter `deep` defaults to false, but if it is true, all contained entities are recursively set with random seeds based on a hash of a combination of the specified random seed and their relative id path to the entity being set.
+Sets the random number seed and state for the random number generator of `entity`, or the current entity if null or not specified, to the state specified by `seed`.  If `seed` is already a string in the proper format output by `get_entity_rand_seed` or `get_rand_seed`, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it will use the first 14 to 15 digits of the seed as a string to seed the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by `entity` for new calls.  The parameter `deep` defaults to false, but if it is true, all contained entities are recursively set with random seeds based on a hash of a combination of the specified random seed and their relative id path to the entity being set.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

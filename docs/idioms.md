@@ -50,7 +50,7 @@ When traversing a string by character repeatedly, `explode` it once into a list 
 ```
 
 ## Sibling bindings are not visible to each other
-Within a single `let` or `declare` binding block, the key-value pairs are pushed onto the scope stack as a set: one value's expression cannot see a sibling key being defined in the same block, and there is no guaranteed order of evaluation among siblings. Use `declare` to extend the current scope when a binding depends on an earlier one; a sequence of `declare`s is preferable to nested `let`s:
+Within a single `let` or `declare` binding block, or any other operation that uses an `assoc`.  The key-value pairs are evaluated and pushed onto the scope stack as a set: one value's expression cannot see a sibling key being defined in the same block, and there is no guaranteed order of evaluation among siblings. Use `declare` to extend the current scope when a binding depends on an earlier one; a sequence of `declare`s is preferable to nested `let`s:
 ```amalgam
 ; Wrong: `need` cannot see the sibling `base`
 (let {base (get nums i) need (- target base)}

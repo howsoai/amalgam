@@ -176,7 +176,7 @@ Output:
 
 ### Opcode: `dot_product`
 #### Parameters
-`list|assoc x1 list|assoc x2`
+`list_of_numbers|assoc_of_numbers x1 list_of_numbers|assoc_of_numbers x2`
 #### Description
 Evaluates to the sum of all corresponding element-wise products of `x1` and `x2`.
 #### Details
@@ -225,7 +225,7 @@ Output:
 
 ### Opcode: `normalize`
 #### Parameters
-`list|assoc values [number p]`
+`list_of_numbers|assoc_of_numbers values [number p]`
 #### Description
 Evaluates to a container of the values with the elements normalized, where `p` represents the order of the Lebesgue space to normalize the vector (e.g., 1 is Manhattan or surprisal space, 2 is Euclidean) and defaults to 1.
 #### Details
@@ -282,7 +282,7 @@ Output:
 
 ### Opcode: `mode`
 #### Parameters
-`list|assoc values [list|assoc weights]`
+`list_of_numbers|assoc_of_numbers values [list_of_numbers|assoc_of_numbers weights]`
 #### Description
 Evaluates to mode of the `values`.  If `values` is an assoc, it will return the key.  If `weights` is specified and both `values` and `weights` are lists, then the corresponding elements will be weighted by `weights`.  If weights is specified and is an assoc, then each value will be looked up in the `weights`.
 #### Details
@@ -436,7 +436,7 @@ Output:
 
 ### Opcode: `quantile`
 #### Parameters
-`list|assoc values number quantile [list|assoc weights]`
+`list_of_numbers|assoc_of_numbers values number quantile [list_of_numbers|assoc_of_numbers weights]`
 #### Description
 Evaluates to the quantile of the `values` specified by `quantile` ranging from 0 to 1.  If `weights` is specified and both `values` and `weights` are lists, then the corresponding elements will be weighted by `weights`.  If `weights` is specified and is an assoc, then each value will be looked up in the `weights`.
 #### Details
@@ -552,7 +552,7 @@ Output:
 
 ### Opcode: `generalized_mean`
 #### Parameters
-`list|assoc values [number p] [list|assoc weights] [number center] [bool calculate_moment] [bool absolute_value]`
+`list_of_numbers|assoc_of_numbers values [number p] [list_of_numbers|assoc_of_numbers weights] [number center] [bool calculate_moment] [bool absolute_value]`
 #### Description
 Evaluates to the generalized mean of the `values`.  If `p` is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity) to harmonic mean (-1) to geometric mean (0) to arithmetic mean (1) to maximum (infinity).  If `weights` are specified, it uses those when calculating the corresponding values for the generalized mean.  If `center` is specified, calculations will use that as central point, and the default center is is 0.0.  If `calculate_moment` is true, which defaults to false, then the results will not be raised to 1/`p` at the end.  If `absolute_value` is true, which defaults to false, the differences will take the absolute value.  Various parameterizations of generalized_mean can be used to compute moments about the mean, especially setting the calculate_moment parameter to true and using the mean as the center.
 #### Details
@@ -666,7 +666,7 @@ Output:
 
 ### Opcode: `generalized_distance`
 #### Parameters
-`list|assoc|* vector1 [list|assoc|* vector2] [number p_value] [list|assoc|assoc of assoc|number weights] [list|assoc attributes] [list|assoc|number deviations] [list value_names] [list|string weights_selection_features] [bool surprisal_space]`
+`list|assoc vector1 list|assoc vector2 number p_value [list|assoc|list_of_numbers|assoc_of_numbers weights] list|assoc attributes number|list|assoc deviations list value_names string|list weights_selection_features bool surprisal_space`
 #### Description
 Computes the generalized norm between `vector1` and `vector2` (or an equivalent zero vector if unspecified) using the numerical distance or edit distance as appropriate.  The parameter `value_names`, if specified as a list of the names of the values, will transform via unzipping any assoc into a list for the respective parameter in the order of the `value_names`, or if a number will use the number repeatedly for every element.  If any vector value is null or any of the differences between `vector1` and `vector2` evaluate to null, then it will compute a corresponding maximum distance value based on the properties of the feature.  If `surprisal_space` is true, which defaults to false, it will perform all computations in surprisal space.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.
 #### Details
@@ -1715,7 +1715,7 @@ Output:
 
 ### Opcode: `entropy`
 #### Parameters
-`list|assoc|number p [list|assoc|number q] [number p_exponent] [number q_exponent]`
+`number|list_of_numbers|assoc_of_numbers p number|list_of_numbers|assoc_of_numbers q number p_exponent number q_exponent`
 #### Description
 Computes a form of entropy on the specified vectors `p` and `q` using nats (natural log, not bits) in the form of -sum p_i ln (p_i^p_exponent * q_i^q_exponent).  For both `p` and `q`, if `p` or `q` is a list of numbers, then it will treat each entry as being the probability of that element.  If it is an associative array, then elements with matching keys will be matched.  If `p` or `q` is a number then it will use that value in place of each element.  If `p` or `q` is null or not specified, it will be calculated as the reciprocal of the size of the other element (p_i would be 1/|q| or q_i would be 1/|p|).  If either `p_exponent` or `q_exponent` is 0, then that exponent will be ignored.  Shannon entropy can be computed by ignoring the q parameters by specifying it as null, setting `p_exponent` to 1 and `q_exponent` to 0. KL-divergence can be computed by providing both `p` and `q` and setting `p_exponent` to -1 and `q_exponent` to 1.  Cross-entropy can be computed by setting `p_exponent` to 0 and `q_exponent` to 1.
 #### Details

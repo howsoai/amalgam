@@ -24,9 +24,9 @@ Output:
 
 ### Opcode: `asin`
 #### Parameters
-`number length`
+`number x`
 #### Description
-Evaluates to the arc sine (inverse sine) of `length`.
+Evaluates to the arc sine (inverse sine) of `x`.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -72,9 +72,9 @@ Output:
 
 ### Opcode: `acos`
 #### Parameters
-`number length`
+`number x`
 #### Description
-Evaluates to the arc cosine (inverse cosine) of `length`.
+Evaluates to the arc cosine (inverse cosine) of `x`.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -120,9 +120,9 @@ Output:
 
 ### Opcode: `atan`
 #### Parameters
-`number num [number divisor]`
+`number x [number y]`
 #### Description
-Evaluates to the arc tangent (inverse tangent) of `num`.  If two numbers are provided, then it evaluates to the arc tangent of `num` / `divisor`.
+Evaluates to the arc tangent (inverse tangent) of `x`.  If two numbers are provided, then it evaluates to the arc tangent of `x` / `y`.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -152,9 +152,9 @@ Output:
 
 ### Opcode: `sinh`
 #### Parameters
-`number z`
+`number theta`
 #### Description
-Evaluates to the hyperbolic sine of `z`.
+Evaluates to the hyperbolic sine of `theta`.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -200,9 +200,9 @@ Output:
 
 ### Opcode: `cosh`
 #### Parameters
-`number z`
+`number theta`
 #### Description
-Evaluates to the hyperbolic cosine of `z`.
+Evaluates to the hyperbolic cosine of `theta`.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -248,9 +248,9 @@ Output:
 
 ### Opcode: `tanh`
 #### Parameters
-`number z`
+`number theta`
 #### Description
-Evaluates to the hyperbolic tangent on `z`.
+Evaluates to the hyperbolic tangent on `theta`.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

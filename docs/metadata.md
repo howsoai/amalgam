@@ -1,6 +1,8 @@
 ### Opcode: `get_annotations`
 #### Parameters
 `any node`
+#### Returns
+`string`
 #### Description
 Returns a string comprising all of the annotation lines for `node`.
 #### Details
@@ -32,6 +34,8 @@ Output:
 ### Opcode: `set_annotations`
 #### Parameters
 `any node [string new_annotation]`
+#### Returns
+`any`
 #### Description
 Evaluates to a new copy of `node` with the annotation specified by `new_annotation`, where each newline is a separate line of annotation.  If `new_annotation` is null or missing, it will clear annotations for `node`.
 #### Details
@@ -68,6 +72,8 @@ Output:
 ### Opcode: `get_comments`
 #### Parameters
 `any node`
+#### Returns
+`string`
 #### Description
 Returns a strings comprising all of the comment lines for `node`.
 #### Details
@@ -99,6 +105,8 @@ Output:
 ### Opcode: `set_comments`
 #### Parameters
 `any node [string new_comment]`
+#### Returns
+`any`
 #### Description
 Evaluates to a new copy of `node` with the comment specified by `new_comment`, where each newline is a separate line of comment.  If `new_comment` is null or missing, it will clear comments for `node`.
 #### Details
@@ -135,6 +143,8 @@ Output:
 ### Opcode: `get_concurrency`
 #### Parameters
 `any node`
+#### Returns
+`bool`
 #### Description
 Returns true if `node` has a preference to be processed in a manner where its operations are run concurrently, false if it is not.  Note that concurrency is potentially subject to race conditions or inconsistent results if tasks write to the same locations without synchronization.
 #### Details
@@ -190,6 +200,8 @@ Output:
 ### Opcode: `set_concurrency`
 #### Parameters
 `any node [bool concurrency]`
+#### Returns
+`any`
 #### Description
 Evaluates to a new copy of `node` with the preference for concurrency set by `concurrent`.  Note that concurrency is potentially subject to race conditions or inconsistent results if tasks write to the same locations without synchronization.
 #### Details
@@ -246,6 +258,8 @@ Output:
 ### Opcode: `get_value`
 #### Parameters
 `any node`
+#### Returns
+`any`
 #### Description
 Evaluates to a new copy of `node` without annotations, comments, or concurrency.
 #### Details
@@ -281,6 +295,8 @@ Output:
 ### Opcode: `set_value`
 #### Parameters
 `any node [any value]`
+#### Returns
+`any`
 #### Description
 Evaluates to a new copy of `node` with the value set to `value`, keeping existing annotations, comments, and concurrency).
 #### Details
@@ -315,6 +331,8 @@ Output:
 ### Opcode: `get_entity_annotations`
 #### Parameters
 `[entity_id entity] [string label] [bool deep]`
+#### Returns
+`any`
 #### Description
 Evaluates to the corresponding annotations for `entity`.  If `entity` is null then it will use the current entity.  If `label` is null or empty string, it will retrieve annotations for the entity root, otherwise if it is a valid `label` it will attempt to retrieve the annotations for that label, null if the label doesn't exist.  If `deep` is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the annotation of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and `deep` is true, then it will return an assoc of label to annotation for each label in the entity.
 #### Details
@@ -433,6 +451,8 @@ Output:
 ### Opcode: `get_entity_comments`
 #### Parameters
 `[entity_id entity] [string label] [bool deep]`
+#### Returns
+`any`
 #### Description
 Evaluates to the corresponding comments for `entity`.  If `entity` is null then it will use the current entity.  If `label` is null or empty string, it will retrieve comments for the entity root, otherwise if it is a valid `label` it will attempt to retrieve the comments for that label, null if the label doesn't exist.  If `deep` is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the comment of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and `deep` is true, then it will return an assoc of label to comment for each label in the entity.
 #### Details

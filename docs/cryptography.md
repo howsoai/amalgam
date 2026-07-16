@@ -1,6 +1,8 @@
 ### Opcode: `crypto_sign`
 #### Parameters
 `string message string secret_key`
+#### Returns
+`string`
 #### Description
 Signs `message` given `secret_key` and returns the signature using the Ed25519 algorithm.  Note that `message` is not included in the `signature`.  The `system` opcode using the command "sign_key_pair" can be used to create a public/secret key pair.
 #### Details
@@ -45,6 +47,8 @@ Output:
 ### Opcode: `crypto_sign_verify`
 #### Parameters
 `string message string public_key string signature`
+#### Returns
+`bool`
 #### Description
 Verifies that `message` was signed with the signature via the public key using the Ed25519 algorithm and returns true if the signature is valid, false otherwise.  Note that `message` is not included in the `signature`.  The `system` opcode using the command "sign_key_pair" can be used to create a public/secret key pair.
 #### Details
@@ -89,6 +93,8 @@ Output:
 ### Opcode: `encrypt`
 #### Parameters
 `string message string key1 [string nonce] [string key2]`
+#### Returns
+`string`
 #### Description
 If `key2` is not provided, then it uses the XSalsa20 algorithm to perform shared secret key encryption on the `message`, returning the encrypted value.  If `key2` is provided, then the Curve25519 algorithm will additionally be used, and `key1` will represent the receiver's public key and `key2` will represent the sender's secret key.  The `nonce` is a string of bytes up to 24 bytes long, that will be used to randomize the encryption, and will need to be provided to the decryption in order to work.  Nonces are not technically required, but strongly recommended to prevent replay attacks.  The `system` opcode using the command "encrypt_key_pair" can be used to create a public/secret key pair.
 #### Details
@@ -130,6 +136,8 @@ Output:
 ### Opcode: `decrypt`
 #### Parameters
 `string message string key1 [string nonce] [string key2]`
+#### Returns
+`string`
 #### Description
 If `key2` is not provided, then it uses the XSalsa20 algorithm to perform shared secret key decryption on the `message`, returning the encrypted value.  If `key2` is provided, then the Curve25519 algorithm will additionally be used, and `key1` will represent the sender's public key and `key2` will represent the receiver's secret key.  The `nonce` is a string of bytes up to 24 bytes long, that will be used to randomize the encryption, and will need to be provided to the decryption in order to work.  Nonces are not technically required, but strongly recommended to prevent replay attacks.  The `system` opcode using the command "encrypt_key_pair" can be used to create a public/secret key pair.
 #### Details

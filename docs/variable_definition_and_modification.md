@@ -1,6 +1,8 @@
 ### Opcode: `symbol`
 #### Parameters
 ``
+#### Returns
+`any`
 #### Description
 A string representing an internal symbol, a variable.
 #### Details
@@ -44,6 +46,8 @@ foo
 ### Opcode: `let`
 #### Parameters
 `assoc variables [any code1] [any code2] ...`
+#### Returns
+`any`
 #### Description
 Pushes the key-value pairs of `variables` onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.
 #### Details
@@ -85,6 +89,8 @@ Output:
 ### Opcode: `declare`
 #### Parameters
 `assoc variables [any code1] [any code2] ...`
+#### Returns
+`any`
 #### Description
 For each key-value pair of `variables`, if not already in the current context in the scope stack, it will define them.  Then it runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.
 #### Details
@@ -118,6 +124,8 @@ Output:
 ### Opcode: `assign`
 #### Parameters
 `string|assoc variables [any|walk_path index1_or_value] [any value1] [any|walk_path index2] [any value2] ...`
+#### Returns
+`null`
 #### Description
 If `variables` is an assoc, then for each key-value pair it assigns the value to the variable represented by the key found by tracing upward on the stack.  If a variable is not found, it will create a variable on the top of the stack with that name.  If `variables` is a string and there are two parameters, it will assign the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of `index` and `value` to assign `value` to that part of the variable's structure.
 #### Details
@@ -221,6 +229,8 @@ Output:
 ### Opcode: `accum`
 #### Parameters
 `string|assoc variables [any|walk_path index1_or_value] [any value1] [any|walk_path index2] [any value2] ...`
+#### Returns
+`null`
 #### Description
 If `variables` is an assoc, then for each key-value pair of data, it assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the result in the variable.  It searches for the variable name tracing up the stack to find the variable. If the variable is not found, it will create a variable on the top of the stack.  Accumulation is performed differently based on the type.  For numeric values it adds, for strings it concatenates, for lists and assocs it appends.  If `variables` is a string and there are two parameters, then it will accum the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of the corresponding walk path and accum value to that part of the variable's structure.
 #### Details
@@ -351,6 +361,8 @@ Output:
 ### Opcode: `assign_if_equal`
 #### Parameters
 `string variable any value_to_compare any value_to_assign`
+#### Returns
+`bool`
 #### Description
 Compares the value in variable to value_to_compare, and if equal, assigns the variable atomically to value_to_assign.  Returns true if the value in variable is equal to value_to_compare and the assignment was successful, false otherwise.
 #### Details
@@ -391,6 +403,8 @@ Output:
 ### Opcode: `retrieve`
 #### Parameters
 `string|list|assoc variables`
+#### Returns
+`any`
 #### Description
 If `variables` is a string, then it gets the value on the stack specified by the string.  If `variables` is a list, it returns a list of the values on the stack specified by each element of the list interpreted as a string.  If `variables` is an assoc, it returns an assoc with the indices of the assoc which was passed in with the values being the appropriate values on the stack for each index.
 #### Details
@@ -446,7 +460,9 @@ Output:
 
 ### Opcode: `exists`
 #### Parameters
-`string|list|assoc variable`
+`string variable`
+#### Returns
+`bool`
 #### Description
 Returns true if variable exists within visibility, false if it does not.
 #### Details
@@ -474,6 +490,8 @@ Output:
 ### Opcode: `unassign`
 #### Parameters
 `[string|list|assoc variable1] [string|list|assoc variable2] ...`
+#### Returns
+`bool`
 #### Description
 Removes all variables that are parameters from the stack.  Returns true all variables previously existed and were unassigned.
 #### Details
@@ -501,9 +519,11 @@ Output:
 
 ### Opcode: `target`
 #### Parameters
-`[bool|number stack_distance] [any|walk_path walk_path]`
+`[bool|number stack_distance] [any|walk_path path]`
+#### Returns
+`any`
 #### Description
-Evaluates to the node being created, referenced by the parameters by target.  Useful for serializing graph data structures or looking up data during iteration.  If `stack_distance` is a number, it climbs back up the target stack that many levels.  If `stack_distance` is a boolean, then `.true` indicates the top of the stack and `.false` indicates the bottom.  If `walk_path` is specified, it will walk from the node at `stack_distance` to the corresponding target.  If building an object, specifying `stack_distance` to true is often useful for accessing or traversing the top-level elements.
+Evaluates to the node being created, referenced by the parameters by target.  Useful for serializing graph data structures or looking up data during iteration.  If `stack_distance` is a number, it climbs back up the target stack that many levels.  If `stack_distance` is a boolean, then `.true` indicates the top of the stack and `.false` indicates the bottom.  If `path` is specified, it will walk from the node at `stack_distance` to the corresponding target.  If building an object, specifying `stack_distance` to true is often useful for accessing or traversing the top-level elements.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -640,6 +660,8 @@ Output:
 ### Opcode: `stack`
 #### Parameters
 ``
+#### Returns
+`list`
 #### Description
 Evaluates to the current execution context, also known as the scope stack, containing all of the variables for each layer of the stack.
 #### Details
@@ -683,7 +705,9 @@ Output:
 
 ### Opcode: `args`
 #### Parameters
-`[bool|number stack_distance]`
+`[number stack_distance]`
+#### Returns
+`assoc`
 #### Description
 Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments.  If `stack_distance` is specified, then it evaluates to the context that many layers up the stack.
 #### Details
@@ -722,6 +746,8 @@ Output:
 ### Opcode: `get_type`
 #### Parameters
 `any node`
+#### Returns
+`any`
 #### Description
 Returns a node of the type corresponding to the node.
 #### Details
@@ -750,6 +776,8 @@ Output:
 ### Opcode: `get_type_string`
 #### Parameters
 `any node`
+#### Returns
+`string`
 #### Description
 Returns a string that represents the type corresponding to the node.
 #### Details
@@ -786,6 +814,8 @@ Output:
 ### Opcode: `set_type`
 #### Parameters
 `any node any type`
+#### Returns
+`any`
 #### Description
 Creates a copy of `node`, setting the type of the node of to `type`.  If `type` is a string, it will look that up as the type, or if `type` is a node that is not a string, it will set the type to match the top node of `type`.  It will convert opcode parameters as necessary.  If `node` is an immediate type being changed to another immediate type, it will attempt to coerce the value.  If `node` is not an immediate type, such as a `list` or `assoc` or other opcode, and is being changed to another non-immediate type, it will preserve all of values.  That is, a list's first element will be the key of the number 0, second element will be the key of the number 1, etc.  If converting from an `assoc` to a type with ordered values, it will set the values in the same order as the `values` opcode.  If one of `node` and `type` is immediate and the other not, it will yield null.
 #### Details
@@ -888,6 +918,8 @@ Output:
 ### Opcode: `format`
 #### Parameters
 `any data string from_format string to_format [assoc from_params] [assoc to_params]`
+#### Returns
+`any`
 #### Description
 Converts data from `from_format` into `to_format`.  Supported language types are "number", "string", and "code", where code represents everything beyond number and string.  Beyond the supported language types, additional formats that are stored in a binary string.  The additional formats are "base16", "base64", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", ">int8", ">uint8", ">int16", ">uint16", ">int32", ">uint32", ">int64", ">uint64", ">float32", ">float64", "<int8", "<uint8", "<int16", "<uint16", "<int32", "<uint32", "<int64", "<uint64", "<float32", "<float64", "json", "yaml", "date", and "time" (though date and time are special cases).  Binary types starting with a "<" represent little endian, binary types starting with a ">" represent big endian, and binary types without either will be the endianness of the machine.  Binary types will be handled as strings.  The "date" type requires additional information.  Following "date" or "time" is a colon, followed by a standard strftime date or time format string.  If `from_params` or `to_params` are specified, then it will apply the appropriate from or to as appropriate.  If the format is either "string", "json", or "yaml", then the key "sort_keys" can be used to specify a boolean value, if true, then it will sort the keys, otherwise the default behavior is to emit the keys based on memory layout.  If the format is date or time, then the to or from params can be an assoc with "locale" as an optional key.  If date then "time_zone" is also allowed.  The locale is provided, then it will leverage operating system support to apply appropriate formatting, such as en_US.  Note that UTF-8 is assumed and automatically added to the locale.  If no locale is specified, then the default will be used.  If converting to or from dates, if "time_zone" is specified, it will use the standard time_zone name, if unspecified or empty string, it will assume the current time zone.
 #### Details

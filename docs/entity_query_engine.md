@@ -1,6 +1,8 @@
 ### Opcode: `contained_entities`
 #### Parameters
 `[entity_id entity] [query|list_of_queries condition1] [query|list_of_queries condition2] ...`
+#### Returns
+`list_of_entity_ids`
 #### Description
 Returns a list of strings of ids of entities contained in `containing_entity` or the current entity if containing_entity is omitted or null.  The parameters of `condition1` through `conditionN` are query conditions, and they may be any of the query opcodes (beginning with `query_`) or may be a list of query opcodes, where each condition will be executed in order as a conjunction.
 #### Details
@@ -49,6 +51,8 @@ Output:
 ### Opcode: `compute_on_contained_entities`
 #### Parameters
 `[entity_id entity] [query|list_of_queries condition1] [query|list_of_queries condition2] ...`
+#### Returns
+`any`
 #### Description
 Performs queries like `(contained_entities)` on `containing_entity` or the current entity if containing_entity is omitted or null, but returns a value or set of values appropriate for the last query in conditions.  The parameters of `condition1` through `conditionN` are query conditions, and they may be any of the query opcodes (beginning with `query_`) or may be a list of query opcodes, where each condition will be executed in order as a conjunction.
 #### Details
@@ -94,7 +98,9 @@ Output:
 
 ### Opcode: `query_select`
 #### Parameters
-`number num_to_select number start_offset number random_seed`
+`number num_to_select [number start_offset] [number random_seed]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects `num_to_select` entities sorted by entity id.  If `start_offset` is specified, then it will return `num_to_select` entities starting that far in, and subsequent calls can be used to get all entities in batches.  If `random_seed` is specified, then it will select `num_to_select` entities randomly from the list based on the random seed.  If `random_seed` is specified and `start_offset` is null, then it will not guarantee a position in the order for subsequent calls that specify `start_offset`, and will execute more quickly.
 #### Details
@@ -171,7 +177,9 @@ Output:
 
 ### Opcode: `query_sample`
 #### Parameters
-`number num_to_select entity_label weight_label number random_seed`
+`number num_to_select [entity_label weight_label] [number random_seed]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects a random sample of `num_to_select` entities sorted by entity id, sampled with replacement.  If `weight_label` is specified and not null, it will use `weight_label` as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values for weights will be ignored, and if there are any infinite values, those will be selected from uniformly.  If `random_seed` is specified, then it will select `num_to_select` entities randomly from the list based on the random seed.  If `random_seed` is not specified then the subsequent calls will return the same sample of entities.
 #### Details
@@ -256,6 +264,8 @@ Output:
 ### Opcode: `query_in_entity_list`
 #### Parameters
 `list_of_entity_ids entity_ids`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects only the entities in `entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.
 #### Details
@@ -298,6 +308,8 @@ Output:
 ### Opcode: `query_not_in_entity_list`
 #### Parameters
 `list_of_entity_ids entity_ids`
+#### Returns
+`query`
 #### Description
 When used as a query argument, filters out the entities in `entity_ids`.  It can be used to filter results before doing subsequent queries, especially to reduce computation required for complex queries.
 #### Details
@@ -340,6 +352,8 @@ Output:
 ### Opcode: `query_exists`
 #### Parameters
 `entity_label label`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects entities which have the `label`.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding labels and values.
 #### Details
@@ -397,6 +411,8 @@ Output:
 ### Opcode: `query_not_exists`
 #### Parameters
 `entity_label label`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects entities which do not have the `label`.
 #### Details
@@ -452,6 +468,8 @@ Output:
 ### Opcode: `query_equals`
 #### Parameters
 `entity_label label any value`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects entities for which the value at `label` is equal to `value`.
 #### Details
@@ -507,6 +525,8 @@ Output:
 ### Opcode: `query_not_equals`
 #### Parameters
 `entity_label label any value`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects entities for which the value at `label` is not equal to `value`.
 #### Details
@@ -562,6 +582,8 @@ Output:
 ### Opcode: `query_between`
 #### Parameters
 `entity_label label number|string lower_bound number|string upper_bound`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects entities for which the value at `label` is at least `lower_bound` and at most `upper_bound`, inclusive for both values.
 #### Details
@@ -617,6 +639,8 @@ Output:
 ### Opcode: `query_not_between`
 #### Parameters
 `entity_label label number|string lower_bound number|string upper_bound`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects entities for which the value at `label` is less than `lower_bound` or greater than `upper_bound`.
 #### Details
@@ -672,6 +696,8 @@ Output:
 ### Opcode: `query_among`
 #### Parameters
 `entity_label label list values`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects entities for which the value at `label` is one of the values specified in `values`.
 #### Details
@@ -733,6 +759,8 @@ Output:
 ### Opcode: `query_not_among`
 #### Parameters
 `entity_label label list values`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects entities for which the value at `label` is not one of the values specified in `values`.
 #### Details
@@ -794,6 +822,8 @@ Output:
 ### Opcode: `query_max`
 #### Parameters
 `entity_label label number num_entities bool numeric`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects a number of entities with the highest values for `label`.  If `num_entities` is specified, it will return that many entities, otherwise will return 1.  If `numeric` is true, its default value, then it only considers numeric values; if false, will consider all types.
 #### Details
@@ -856,6 +886,8 @@ Output:
 ### Opcode: `query_min`
 #### Parameters
 `entity_label label number num_entities bool numeric`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects a number of entities with the lowest values for `label`.  If `num_entities` is specified, it will return that many entities, otherwise will return 1.  If `numeric` is true, its default value, then it only considers numeric values; if false, will consider all types.
 #### Details
@@ -918,6 +950,8 @@ Output:
 ### Opcode: `query_sum`
 #### Parameters
 `entity_label label [entity_label weight_label]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, returns the sum of all entities over the value at `label`.  If `weight_label` is specified, it will find the weighted sum, which is the same as a dot product.
 #### Details
@@ -963,6 +997,8 @@ Output:
 ### Opcode: `query_mode`
 #### Parameters
 `entity_label label [entity_label weight_label]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, finds the statistical mode of `label` across all entities using numerical values.  If `weight_label` is specified, it will find the weighted mode.
 #### Details
@@ -1010,6 +1046,8 @@ Output:
 ### Opcode: `query_quantile`
 #### Parameters
 `entity_label label number q [entity_label weight_label]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, finds the statistical quantile of `label` for numerical data, using `q` as the parameter to the quantile, the default being 0.5 which is the median.  If `weight_label` is specified, it will find the weighted quantile, otherwise the weight of every entity is 1.
 #### Details
@@ -1060,7 +1098,9 @@ Output:
 
 ### Opcode: `query_generalized_mean`
 #### Parameters
-`entity_label label number p [entity_label weight_label] number center bool calculate_moment bool absolute_value`
+`entity_label label number p [entity_label weight_label] [number center] [bool calculate_moment] [bool absolute_value]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, computes the generalized mean over the `label` for numerical data.  If `p` is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity), to harmonic mean (-1), to geometric mean (0), to arithmetic mean (1), to maximum (infinity).  If `weight_label` is specified, it will normalize the weights and compute a weighted mean.  If `center` is specified, calculations will use that value as the central point, and the default is 0.0.  If `calculate_moment` is true, the results will not be raised to 1 / `p`.  If `absolute_value` is true, the differences will take the absolute value.  Various parameterizations of `(generalized_mean)` can be used to compute moments about the mean, especially by setting the `calculate_moment` parameter to true and using the mean as the center.
 #### Details
@@ -1145,7 +1185,9 @@ Output:
 
 ### Opcode: `query_min_difference`
 #### Parameters
-`entity_label label number cycle_range bool include_zero_difference`
+`entity_label label [number cycle_range] [bool include_zero_difference]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, finds the smallest difference between any two values for the `label`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.  If `include_zero_difference` is true then it will return 0 if the smallest gap between any two numbers is 0.  If `include_zero_difference` is false, its default value, it will return the smallest nonzero value.
 #### Details
@@ -1199,7 +1241,9 @@ Output:
 
 ### Opcode: `query_max_difference`
 #### Parameters
-`entity_label label number cycle_range`
+`entity_label label [number cycle_range]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, finds the largest difference between any two values for the `label`. If `cyclic_range` is null, the default value, then it will assume the values are not cyclic.  If `cyclic_range` is a number, then it will assume the range is from 0 to `cyclic_range`.
 #### Details
@@ -1250,7 +1294,9 @@ Output:
 
 ### Opcode: `query_value_masses`
 #### Parameters
-`entity_label label entity_label weight_label`
+`entity_label label [entity_label weight_label]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, computes the counts for each value of the `label` and returns an assoc with the keys being the label values and the values being the counts or weights of the values.  If `weight_label` is specified, then it will accumulate that weight for each value, otherwise it will use a weight of 1 for each yielding a count.
 #### Details
@@ -1313,6 +1359,8 @@ Output:
 ### Opcode: `query_greater_or_equal_to`
 #### Parameters
 `entity_label label number|string value`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects entities with a value in `label` greater than or equal to `value`.
 #### Details
@@ -1361,6 +1409,8 @@ Output:
 ### Opcode: `query_less_or_equal_to`
 #### Parameters
 `entity_label label number|string value`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects entities with a value in `label` less than or equal to `value`.
 #### Details
@@ -1409,6 +1459,8 @@ Output:
 ### Opcode: `query_within_generalized_distance`
 #### Parameters
 `number max_distance list_of_entity_labels labels list|entity_label axis_values_or_entity_id [number p_value] [list|assoc weights] [list|assoc attributes] [list|assoc deviations] [entity_label|list_of_entity_labels weights_selection_features] [number|string distance_transform] [entity_label entity_weight_label] [string random_seed] [entity_label radius_label] [string numerical_precision] [bool|entity_label|list_of_entity_labels output_sorted_list]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects the entities with labels that are at least as close as `max_distance` to the given point.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.
 #### Details
@@ -1474,6 +1526,8 @@ Output:
 ### Opcode: `query_nearest_generalized_distance`
 #### Parameters
 `number|list selection_bandwidth list_of_entity_labels labels list|entity_label axis_values_or_entity_id [number p_value] [list|assoc weights] [list|assoc attributes] [list|assoc deviations] [entity_label|list_of_entity_labels weights_selection_features] [number|string distance_transform] [entity_label entity_weight_label] [string random_seed] [entity_label radius_label] [string numerical_precision] [bool|entity_label|list_of_entity_labels output_sorted_list]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, selects the closest entities to the given point.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.
 #### Details
@@ -1635,6 +1689,8 @@ Output:
 ### Opcode: `query_distance_contributions`
 #### Parameters
 `number|list selection_bandwidth list_of_entity_labels labels list|entity_label axis_values_or_entity_id [number p_value] [list|assoc weights] [list|assoc attributes] [list|assoc deviations] [entity_label|list_of_entity_labels weights_selection_features] [number|string distance_transform] [entity_label entity_weight_label] [string random_seed] [entity_label radius_label] [string numerical_precision] [bool|entity_label|list_of_entity_labels output_sorted_list]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, computes the distance or surprisal contribution for every entity.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.
 #### Details
@@ -1701,6 +1757,8 @@ Output:
 ### Opcode: `query_entity_convictions`
 #### Parameters
 `number|list selection_bandwidth list_of_entity_labels labels list_of_entity_ids entity_ids_to_compute [number p_value] [list|assoc weights] [list|assoc attributes] [list|assoc deviations] [entity_label|list_of_entity_labels weights_selection_features] [number|string distance_transform] [entity_label entity_weight_label] [string random_seed] [entity_label radius_label] [string numerical_precision] [bool conviction_of_removal] [bool|entity_label|list_of_entity_labels output_sorted_list]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, computes the case conviction for every case given in `entity_ids_to_compute` with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.
 #### Details
@@ -1840,6 +1898,8 @@ Output:
 ### Opcode: `query_entity_group_kl_divergence`
 #### Parameters
 `number|list selection_bandwidth list_of_entity_labels labels list_of_entity_ids entity_ids_to_compute [number p_value] [list|assoc weights] [list|assoc attributes] [list|assoc deviations] [entity_label|list_of_entity_labels weights_selection_features] [number|string distance_transform] [entity_label entity_weight_label] [string random_seed] [entity_label radius_label] [string numerical_precision] [bool conviction_of_removal]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, computes the case kl divergence for every case given in `entity_ids_to_compute` as a group with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.
 #### Details
@@ -1907,6 +1967,8 @@ Output:
 ### Opcode: `query_entity_distance_contributions`
 #### Parameters
 `number|list selection_bandwidth list_of_entity_labels labels list_of_entity_ids entity_ids_to_compute [number p_value] [list|assoc weights] [list|assoc attributes] [list|assoc deviations] [entity_label|list_of_entity_labels weights_selection_features] [number|string distance_transform] [entity_label entity_weight_label] [string random_seed] [entity_label radius_label] [string numerical_precision] [bool|entity_label|list_of_entity_labels output_sorted_list]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, computes the case conviction for every case given in `entity_ids_to_compute` with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.
 #### Details
@@ -2046,6 +2108,8 @@ Output:
 ### Opcode: `query_entity_kl_divergences`
 #### Parameters
 `number|list selection_bandwidth list_of_entity_labels labels list_of_entity_ids entity_ids_to_compute [number p_value] [list|assoc weights] [list|assoc attributes] [list|assoc deviations] [entity_label|list_of_entity_labels weights_selection_features] [number|string distance_transform] [entity_label entity_weight_label] [string random_seed] [entity_label radius_label] [string numerical_precision] [bool conviction_of_removal] [bool|entity_label|list_of_entity_labels output_sorted_list]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, computes the case conviction for every case given in `entity_ids_to_compute` with respect to *all* cases in the contained entities set input during a query.  If `entity_ids_to_compute` is null or an empty list, case conviction is computed for all cases.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.
 #### Details
@@ -2152,6 +2216,8 @@ Output:
 ### Opcode: `query_entity_cumulative_nearest_entity_weights`
 #### Parameters
 `number|list selection_bandwidth list_of_entity_labels labels list|entity_label axis_values_or_entity_id [number p_value] [list|assoc weights] [list|assoc attributes] [list|assoc deviations] [entity_label|list_of_entity_labels weights_selection_features] [number|string distance_transform] [entity_label entity_weight_label] [string random_seed] [entity_label radius_label] [string numerical_precision] [bool|entity_label|list_of_entity_labels output_sorted_list]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, computes the nearest neighbors to every entity given by `entity_ids_to_compute`, normalizes their influence weights, and accumulates the entity's total influence weights relative to every other case.  It returns a list of all cases whose cumulative neighbor values are greater than zero.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.
 #### Details
@@ -2229,6 +2295,8 @@ Output:
 ### Opcode: `query_entity_clusters`
 #### Parameters
 `number|list selection_bandwidth list_of_entity_labels labels list|entity_label axis_values_or_entity_id [number p_value] [list|assoc weights] [list|assoc attributes] [list|assoc deviations] [entity_label|list_of_entity_labels weights_selection_features] [number|string distance_transform] [entity_label entity_weight_label] [string random_seed] [entity_label radius_label] [string numerical_precision] [bool|entity_label|list_of_entity_labels output_sorted_list]`
+#### Returns
+`query`
 #### Description
 When used as a query argument, computes a cluster id for each of the entities using the HDBSCAN algorithm.  `min_cluster_weight` is the smallest accumulated entity weight that will be considered a cluster, and can be 0.  The cluster ids returned are nonnegative integers, with the id of zero denoting entities that are independent and isolated from all clusters (noise).  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the cluster id as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding cluster ids, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.
 #### Details

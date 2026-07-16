@@ -81,7 +81,7 @@ Reserve the spelled-out `(assoc key value ...)` form for cases where the explici
 	(+ x 10)
 )
 ```
-Reach for `seq` only where a single expression position must perform several steps — most commonly an `if` branch.
+Use `seq` only when single expression position must perform several steps — most commonly an `if` branch.
 
 To stop early, choose the right opcode:
  - `return` propagates up through enclosing forms until it reaches a `call` (or `call_entity`, etc.), then evaluates to its value — use it for an early exit out of a whole method or call.

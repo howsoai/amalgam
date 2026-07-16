@@ -1,6 +1,8 @@
 ### Opcode: `create_entities`
 #### Parameters
 `[entity_id entity1] any node1 [entity_id entity2] [any node2] ...`
+#### Returns
+`list_of_entity_ids`
 #### Description
 Creates a new entity for id path `entity1` with code specified by `node1`, repeating this for all entity-node pairs, returning a list of the id paths for each of the entities created.  If the execution does not have permission to create the entities, it will evaluate to null.  If the `entity` is omitted, then it will create an unnamed new entity in the calling entity.  If `entity1` specifies an existing entity, then it will create the new entity within that existing entity.  If the last id path in the string is not an existing entity, then it will attempt to create that entity (returning null if it cannot).  If the node is of any other type than assoc, it will create an assoc as the top node and place the node under the null key.  Unlike the rest of the entity creation commands, create_entities specifies the optional id path first to make it easy to read entity definitions.  If more than 2 parameters are specified, create_entities will iterate through all of the pairs of parameters, treating them like the first two as it creates new entities.
 #### Details
@@ -58,6 +60,8 @@ Output:
 ### Opcode: `clone_entities`
 #### Parameters
 `[entity_id source_entity1] [entity_id dest_entity1] [entity_id source_entity2] [entity_id dest_entity2] ...`
+#### Returns
+`list_of_entity_ids`
 #### Description
 Creates a clone of `source_entity1`.  If `dest_entity1` is not specified, then it clones the entity into an unnamed entity in the current entity.  If `dest_entity1` is specified, then it clones it into the location specified by `dest_entity1`; if `dest_entity1` is an existing entity, then it will create it as a contained entity within `dest_entity1`, if not, it will attempt to create it with the given id path of `dest_entity1`.  Evaluates to the id path of the new entity.  Can only be performed by an entity that contains both `source_entity1` and the specified path of `dest_entity1`. If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.
 #### Details
@@ -101,6 +105,8 @@ Output:
 ### Opcode: `move_entities`
 #### Parameters
 `[entity_id source_entity1] [entity_id dest_entity1] [entity_id source_entity2] [entity_id dest_entity2] ...`
+#### Returns
+`list_of_entity_ids`
 #### Description
 Moves the entity from location specified by `source_entity1` to destination `dest_entity1`.  If `dest_entity1` exists, it will move `source_entity1` using `source_entity1`'s current id path into `dest_entity1`.  If `dest_entity1` does not exist, then it will move `source_entity1` and rename it to the end of the id path specified by `dest_entity1`. Can only be performed by a containing entity relative to both ids.  If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.
 #### Details
@@ -144,6 +150,8 @@ Output:
 ### Opcode: `destroy_entities`
 #### Parameters
 `[entity_id entity1] [entity_id entity2] ...`
+#### Returns
+`bool`
 #### Description
 Destroys the entities specified by the ids `entity1`, `entity2`, etc. Can only be performed by containing entity.  Returns true if all entities were successfully destroyed, false if not.  Generally entities can be destroyed unless they do not exist or if there is code currently being run in it.
 #### Details
@@ -174,7 +182,9 @@ Output:
 
 ### Opcode: `load`
 #### Parameters
-`string resource_path string resource_type1 string resource_type2 ... assoc params1 assoc params2 ...`
+`string resource_path [string resource_type] [assoc params]`
+#### Returns
+`any`
 #### Description
 Loads the data specified by `resource_path`, parses it into the appropriate code and data, and returns it. If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.
 #### Details
@@ -319,7 +329,9 @@ Output:
 
 ### Opcode: `load_entity`
 #### Parameters
-`string resource_path entity_id entity string resource_type1 string resource_type2 ... bool persist1 bool persist2 ... assoc params1 assoc params2 ...`
+`string resource_path entity_id entity [string resource_type] [bool persist] [assoc params]`
+#### Returns
+`entity_id`
 #### Description
 Loads the data specified by `resource_path` and parse it into the appropriate code and data, and stores it in `entity`.  It follows the same id path creation rules as `(create_entities)`, except that if no id path is specified, it may default to a name based on the resource if available.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.
 #### Details
@@ -428,7 +440,9 @@ Output:
 
 ### Opcode: `store`
 #### Parameters
-`string resource_path any node string resource_type1 string resource_type2 ... assoc params1 assoc params2 ...`
+`string resource_path any node [string resource_type] [assoc params]`
+#### Returns
+`bool`
 #### Description
 Stores `node` into `resource_path`.  Returns true if successful, false if not.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.
 #### Details
@@ -573,7 +587,9 @@ Output:
 
 ### Opcode: `store_entity`
 #### Parameters
-`string resource_path entity_id entity string resource_type1 string resource_type2 ... bool persist1 bool persist2 ... assoc params1 assoc params2 ...`
+`string resource_path entity_id entity [string resource_type] [bool persist] [assoc params]`
+#### Returns
+`bool`
 #### Description
 Stores `entity` into `resource_path`.  Returns true if successful, false if not.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.
 #### Details
@@ -683,6 +699,8 @@ Output:
 ### Opcode: `contains_entity`
 #### Parameters
 `entity_id entity`
+#### Returns
+`bool`
 #### Description
 Returns true if `entity` exists, false if not.
 #### Details
@@ -721,7 +739,9 @@ Output:
 
 ### Opcode: `flatten_entity`
 #### Parameters
-`entity_id entity bool include_rand_seeds1 bool include_rand_seeds2 ... bool parallel_create1 bool parallel_create2 ... bool include_version1 bool include_version2 ...`
+`entity_id entity [bool include_rand_seeds] [bool parallel_create] [bool include_version]`
+#### Returns
+`any`
 #### Description
 Evaluates to code that, if called, would completely reproduce the `entity`, as well as all contained entities.  If `include_rand_seeds` is true, by default, it will include all entities' random seeds.  If `parallel_create` is true, then the creates will be performed with parallel markers as appropriate for each group of contained entities.  If `include_version` is true, it will include a comment on the top node that is the current version of the Amalgam interpreter, which can be used for validating interoperability when loading code.  The code returned accepts two parameters, `create_new_entity`, which defaults to true, and `new_entity`, which defaults to null.  If `create_new_entity` is true, then it will create a new entity using the id path specified by `new_entity`, where null will create an unnamed entity.  If `create_new_entity` is false, then it will overwrite the current entity's code and create all contained entities.
 #### Details
@@ -787,7 +807,9 @@ Output:
 
 ### Opcode: `retrieve_entity_root`
 #### Parameters
-`entity_id entity`
+`[entity_id entity]`
+#### Returns
+`any`
 #### Description
 Evaluates to the code contained by `entity`.
 #### Details
@@ -819,7 +841,9 @@ Output:
 
 ### Opcode: `assign_entity_roots`
 #### Parameters
-`[entity_id entity1] any node1 [entity_id entity2] any node2 ...`
+`[entity_id entity1] any node1 [entity_id entity2] [any node2] ...`
+#### Returns
+`bool`
 #### Description
 Sets the root of the `entity1 to `node1`, as well as all subsequent entity-code pairs of parameters.  If `entity1` is not specified or null, then uses the current entity.  On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.
 #### Details
@@ -856,6 +880,8 @@ Output:
 ### Opcode: `get_entity_permissions`
 #### Parameters
 `[entity_id entity]`
+#### Returns
+`assoc`
 #### Description
 Returns an assoc of the permissions of `entity`, the current entity if `entity` is not specified or null, where each key is the permission and each value is either true or false.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.
 #### Details
@@ -896,6 +922,8 @@ Output:
 ### Opcode: `set_entity_permissions`
 #### Parameters
 `entity_id entity bool|assoc permissions [bool deep]`
+#### Returns
+`entity_id`
 #### Description
 Sets the permissions on the `entity`.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.  The parameter `deep` defaults to false, but if it is true, all contained entities have their permissions updated.  Returns the id path of `entity`.
 #### Details

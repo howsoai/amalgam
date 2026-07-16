@@ -1,6 +1,8 @@
 ### Opcode: `total_entity_size`
 #### Parameters
 `entity_id entity`
+#### Returns
+`number`
 #### Description
 Evaluates to the total count of all of the nodes of `entity` and all of its contained entities.  Each entity itself counts as multiple nodes, corresponding to flattening an entity via the `flatten_entity` opcode.
 #### Details
@@ -52,6 +54,8 @@ Output:
 ### Opcode: `mutate_entity`
 #### Parameters
 `entity_id source_entity [number mutation_rate] [entity_id dest_entity] [assoc mutation_weights] [assoc operation_type] [number preserve_type_depth] [assoc immediate_number_weights] [assoc immediate_string_weights]`
+#### Returns
+`entity_id`
 #### Description
 Creates a mutated version of the entity specified by `source_entity` like mutate. Returns the id path of a new entity created contained by the entity that ran it.  The value specified by `mutation_rate`, from 0.0 to 1.0 and defaulting to 0.0001, indicates the probability that any node will experience a mutation.  Uses `dest_entity` as the optional destination.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.
 #### Details
@@ -165,6 +169,8 @@ Output:
 ### Opcode: `commonality_entities`
 #### Parameters
 `entity_id entity1 entity_id entity2 [assoc params]`
+#### Returns
+`number`
 #### Description
 Evaluates to the total count of all of the nodes referenced within `entity1` and `entity2` that are equivalent, including all contained entities.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 #### Details
@@ -254,6 +260,8 @@ Output:
 ### Opcode: `edit_distance_entities`
 #### Parameters
 `entity_id entity1 entity_id entity2 [assoc params]`
+#### Returns
+`number`
 #### Description
 Evaluates to the edit distance of all of the nodes referenced within `entity1` and `entity2` that are equivalent, including all contained entities.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 #### Details
@@ -345,6 +353,8 @@ Output:
 ### Opcode: `intersect_entities`
 #### Parameters
 `entity_id entity1 entity_id entity2 [assoc params] [entity_id dest_entity]`
+#### Returns
+`entity_id`
 #### Description
 Creates an entity of whatever is common between the entities `entity1` and `entity2` exclusive.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true, the default, then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Uses `dest_entity` as the optional destination via an internal call create_contained_entity.  Any contained entities will be intersected either based on matching name or maximal similarity for nameless entities.
 #### Details
@@ -438,6 +448,8 @@ Output:
 ### Opcode: `union_entities`
 #### Parameters
 `entity_id entity1 entity_id entity2 [assoc params] [entity_id dest_entity]`
+#### Returns
+`entity_id`
 #### Description
 Creates an entity of whatever is inclusive when merging the entities `entity1` and `entity2`.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true, the default, then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Uses `dest_entity` as the optional destination via an internal call to create_contained_entity.  Any contained entities will be unioned either based on matching name or maximal similarity for nameless entities.
 #### Details
@@ -531,6 +543,8 @@ Output:
 ### Opcode: `difference_entities`
 #### Parameters
 `entity_id entity1 entity_id entity2`
+#### Returns
+`any`
 #### Description
 Finds the difference between the entities specified by `entity1` and `entity2` and generates code that, if evaluated passing the entity id_path as its parameter "_", would create a new entity into the id path specified by its parameter "new_entity" (null if unspecified), which would contain the applied difference between the two entities and returns the newly created entity id path.  Useful for finding a small difference of what needs to be changed to apply it to new (and possibly slightly different) entity.
 #### Details
@@ -688,6 +702,8 @@ Output:
 ### Opcode: `mix_entities`
 #### Parameters
 `entity_id entity1 entity_id entity2 [number keep_chance_entity1] [number keep_chance_entity2] [assoc params] [entity_id dest_entity]`
+#### Returns
+`entity_id`
 #### Description
 Performs a union operation on the entities represented by `entity1` and `entity2`, but randomly ignores nodes from one or the other tree if not equal.  If only `keep_chance_entity1` is specified, `keep_chance_entity2` defaults to 1 - `keep_chance_entity1`.  `keep_chance_entity1` specifies the probability that a node from the entity represented by `entity1` will be kept, and `keep_chance_entity2` the probability that a node from the entity represented by `entity2` will be kept.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  `similar_mix_chance` is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on `keep_chance_node1` and `keep_chance_node2`, and defaults to 0.0.  If `similar_mix_chance` is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.  `unnamed_entity_mix_chance` represents the probability that an unnamed entity pair will be mixed versus preserved as independent chunks, where 0.2 would yield 20% of the entities mixed. Returns the id path of a new entity created contained by the entity that ran it.  Uses `dest_entity` as the optional destination entity.   Any contained entities will be mixed either based on matching name or maximal similarity for nameless entities.
 #### Details

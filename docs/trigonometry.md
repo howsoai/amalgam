@@ -1,6 +1,8 @@
 ### Opcode: `sin`
 #### Parameters
 `number theta`
+#### Returns
+`number`
 #### Description
 Evaluates to the sine of `theta`.
 #### Details
@@ -25,6 +27,8 @@ Output:
 ### Opcode: `asin`
 #### Parameters
 `number x`
+#### Returns
+`number`
 #### Description
 Evaluates to the arc sine (inverse sine) of `x`.
 #### Details
@@ -49,6 +53,8 @@ Output:
 ### Opcode: `cos`
 #### Parameters
 `number theta`
+#### Returns
+`number`
 #### Description
 Evaluates to the cosine of `theta`.
 #### Details
@@ -73,6 +79,8 @@ Output:
 ### Opcode: `acos`
 #### Parameters
 `number x`
+#### Returns
+`number`
 #### Description
 Evaluates to the arc cosine (inverse cosine) of `x`.
 #### Details
@@ -97,6 +105,8 @@ Output:
 ### Opcode: `tan`
 #### Parameters
 `number theta`
+#### Returns
+`number`
 #### Description
 Evaluates to the tangent of `theta`.
 #### Details
@@ -121,6 +131,8 @@ Output:
 ### Opcode: `atan`
 #### Parameters
 `number x [number y]`
+#### Returns
+`number`
 #### Description
 Evaluates to the arc tangent (inverse tangent) of `x`.  If two numbers are provided, then it evaluates to the arc tangent of `x` / `y`.
 #### Details
@@ -153,6 +165,8 @@ Output:
 ### Opcode: `sinh`
 #### Parameters
 `number theta`
+#### Returns
+`number`
 #### Description
 Evaluates to the hyperbolic sine of `theta`.
 #### Details
@@ -177,6 +191,8 @@ Output:
 ### Opcode: `asinh`
 #### Parameters
 `number x`
+#### Returns
+`number`
 #### Description
 Evaluates to the hyperbolic arc sine of `x`.
 #### Details
@@ -201,6 +217,8 @@ Output:
 ### Opcode: `cosh`
 #### Parameters
 `number theta`
+#### Returns
+`number`
 #### Description
 Evaluates to the hyperbolic cosine of `theta`.
 #### Details
@@ -225,6 +243,8 @@ Output:
 ### Opcode: `acosh`
 #### Parameters
 `number x`
+#### Returns
+`number`
 #### Description
 Evaluates to the hyperbolic arc cosine of `x`.
 #### Details
@@ -249,6 +269,8 @@ Output:
 ### Opcode: `tanh`
 #### Parameters
 `number theta`
+#### Returns
+`number`
 #### Description
 Evaluates to the hyperbolic tangent on `theta`.
 #### Details
@@ -273,6 +295,8 @@ Output:
 ### Opcode: `atanh`
 #### Parameters
 `number x`
+#### Returns
+`number`
 #### Description
 Evaluates to the hyperbolic arc tangent on `x`.
 #### Details

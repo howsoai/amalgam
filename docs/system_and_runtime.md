@@ -1,6 +1,8 @@
 ### Opcode: `help`
 #### Parameters
 `[string topic]`
+#### Returns
+`any`
 #### Description
 If no parameter is specified it returns a string of the topics that can be used.  For given a `topic`, returns a string or relevant data that describes the given topic.
 #### Details
@@ -40,6 +42,8 @@ Output:
 ### Opcode: `print`
 #### Parameters
 `[any node1] [any node2] ...`
+#### Returns
+`null`
 #### Description
 Prints each of the parameters in order in a manner interpretable as if they were code, except strings are printed without quotes.  Output is pretty-printed.  Printing is safe for cyclic and graph data structures and will emit appropriate opcodes using the `@` prefix so that parsing will reconstruct the cyclic or graph relationships.
 #### Details
@@ -78,6 +82,8 @@ Output:
 ### Opcode: `system_time`
 #### Parameters
 ``
+#### Returns
+`number`
 #### Description
 Evaluates to the current system time since epoch in seconds (including fractions of seconds).
 #### Details
@@ -102,6 +108,8 @@ Output:
 ### Opcode: `system`
 #### Parameters
 `string command [any parameter]`
+#### Returns
+`any`
 #### Description
 Executes system command specified by `command` passing in `parameter` if appropriate.  The available system commands are as follows:
  - exit:                Exits the application.
@@ -144,6 +152,8 @@ Output:
 ### Opcode: `reclaim_resources`
 #### Parameters
 `[entity_id entity] [bool apply_to_all_contained_entities] [bool|list_of_entity_labels clear_query_caches] [bool collect_garbage] [bool force_free_memory]`
+#### Returns
+`any`
 #### Description
 Frees resources of the specified types on `entity`, which is the current entity if null.  Will include all contained entities if `apply_to_all_contained_entities` is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter `clear_query_caches` will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  If `clear_query_caches` is a boolean, then it will either clear all the caches or none.  If `clear_query_caches` is a list of strings, then it will only clear caches for the labels corresponding to the strings in the list.  The parameter `collect_garbage` will perform garbage collection on the entity, and if `force_free_memory` is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.
 #### Details

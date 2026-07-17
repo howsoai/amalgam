@@ -79,6 +79,10 @@ public:
 				immStringWeights(&imm_string_weights)
 		{}
 
+		//if key_or_symbol_string is true, then it will generate a string for one of those types,
+		// otherwise will generate a string for a value
+		std::string GenerateRandomStringGivenStringSet(bool key_or_symbol_string, double novel_chance = 0.08);
+
 		Interpreter *interpreter;
 		EvaluableNodeManager *enm;
 		double mutation_rate;

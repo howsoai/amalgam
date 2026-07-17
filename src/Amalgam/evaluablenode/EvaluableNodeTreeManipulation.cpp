@@ -11,6 +11,46 @@
 #include <cmath>
 #include <iterator>
 
+static std::string GenerateRandomString(RandomStream &rs)
+{
+	//make the length between 1 and 32, with a mean of 6
+	int string_length = std::min(32, static_cast<int>(rs.ExponentialRand(3.0)) + 1 + static_cast<int>(rs.Rand() * 4));
+	std::string retval;
+	retval.reserve(string_length);
+	static const std::string samples("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_");
+	for(int i = 0; i < string_length; i++)
+	{
+		auto sample = samples[rs.RandSize(samples.length())];
+		retval.push_back(sample);
+	}
+	return retval;
+}
+
+std::string EvaluableNodeTreeManipulation::MutationParameters::GenerateRandomStringGivenStringSet(
+	bool key_or_symbol_string, double novel_chance = 0.08)
+{
+	if(immStringWeights->IsInitialized())
+	{
+		auto sid = immStringWeights->WeightedDiscreteRand(mp.interpreter->randomStream);
+		if(sid != string_intern_pool.NOT_A_STRING_ID)
+			return sid->string;
+	}
+
+	//TODO 25793: fix this
+	if(strings.size() == 0 || rs.Rand() < novel_chance) //small but nontrivial chance of making a new string
+	{
+		std::string s = GenerateRandomString(rs);
+		//put the string into the list of considered strings
+		strings.emplace_back(s);
+		return s;
+	}
+	else //use randomly chosen existing string
+	{
+		size_t rand_index = rs.RandSize(strings.size());
+		return std::string(strings[rand_index]);
+	}
+}
+
 EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream random_stream, EvaluableNodeManager *_enm,
 	double fraction_a, double fraction_b, double similar_mix_chance,
 	bool types_must_match, bool nominal_numbers, bool nominal_strings, bool recursive_matching)
@@ -1163,37 +1203,6 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 	return std::make_pair(nullptr, 0.0);
 }
 
-static std::string GenerateRandomString(RandomStream &rs)
-{
-	//make the length between 1 and 32, with a mean of 6
-	int string_length = std::min(32, static_cast<int>(rs.ExponentialRand(3.0)) + 1 + static_cast<int>(rs.Rand() * 4));
-	std::string retval;
-	retval.reserve(string_length);
-	static const std::string samples("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_");
-	for(int i = 0; i < string_length; i++)
-	{
-		auto sample = samples[rs.RandSize(samples.length())];
-		retval.push_back(sample);
-	}
-	return retval;
-}
-
-static std::string GenerateRandomStringGivenStringSet(RandomStream &rs, std::vector<std::string> &strings, double novel_chance = 0.08)
-{
-	if(strings.size() == 0 || rs.Rand() < novel_chance) //small but nontrivial chance of making a new string
-	{
-		std::string s = GenerateRandomString(rs);
-		//put the string into the list of considered strings
-		strings.emplace_back(s);
-		return s;
-	}
-	else //use randomly chosen existing string
-	{
-		size_t rand_index = rs.RandSize(strings.size());
-		return std::string(strings[rand_index]);
-	}
-}
-
 //helper function for EvaluableNodeTreeManipulation::MutateNode to populate immediate data
 static void MutateImmediateNode(EvaluableNode *n, EvaluableNodeTreeManipulation::MutationParameters &mp)
 {
@@ -1243,17 +1252,7 @@ static void MutateImmediateNode(EvaluableNode *n, EvaluableNodeTreeManipulation:
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(node_type))
 	{
-		if(mp.immStringWeights->IsInitialized())
-		{
-			auto sid = mp.immStringWeights->WeightedDiscreteRand(mp.interpreter->randomStream);
-			if(sid != string_intern_pool.NOT_A_STRING_ID)
-			{
-				//if found a non-null string, set it, otherwise fall into generating a new string
-				n->SetStringID(sid);
-				return;
-			}
-		}
-		n->SetStringValue(GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings));
+		n->SetStringValue(mp.GenerateRandomStringGivenStringSet(node_type == ENT_SYMBOL));
 	}
 }
 
@@ -1337,7 +1336,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		if(n->IsAssociativeArray())
 		{
 			// get a random key
-			std::string key = GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings);
+			std::string key = mp.GenerateRandomStringGivenStringSet(true);
 			new_node->SetMappedChildNode(key, n);
 		}
 		else
@@ -1426,7 +1425,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			if(destination_index >= num_children)
 			{
 				std::string new_key =
-					GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings, 0.6);
+					mp.GenerateRandomStringGivenStringSet(true, 0.6);
 				n->SetMappedChildNode(new_key, mp.enm->DeepAllocCopy(source_node));
 			}
 			else
@@ -1452,7 +1451,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		if(n->IsAssociativeArray())
 		{
 			// get a random key
-			std::string key = GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings);
+			std::string key = mp.GenerateRandomStringGivenStringSet(true);
 			n->SetMappedChildNode(key, new_node);
 		}
 		else if(n->IsOrderedArray())
@@ -1607,22 +1606,22 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		break;
 	}
 
-	//clear excess nulls (with no child nodes) in lists
+	//randomly clear excess nulls (with no child nodes) in lists
 	if(n != nullptr)
 	{
 		auto &n_ocn = n->GetOrderedChildNodes();
-		while(!n_ocn.empty()
-			&& (n_ocn.back() == nullptr
-				|| (n_ocn.back()->GetOrderedChildNodes().size() == 0
-					&& n_ocn.back()->GetMappedChildNodes().size() == 0)))
+		while(!n_ocn.empty() && EvaluableNode::IsNull(n_ocn.back()))
 		{
 			//either remove this one or stop removing
-			if(mp.interpreter->randomStream.Rand() > 0.125)
+			if(mp.interpreter->randomStream.Rand() > 0.5)
 				n_ocn.pop_back();
 			else
 				break;
 		}
 	}
+
+	//TODO 25793: ensure that call* opcodes have correct target
+	//TODO 25793: ensure mp has entity if appropriate and if not null check with regard to call_entity
 
 	return n;
 }

@@ -1733,7 +1733,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 				}
 				else //invalid, take a random contained entity
 				{
-					auto &contained_entities = entity_to_call->GetContainedEntities();
+					auto &contained_entities = mp.entity->GetContainedEntities();
 					if(contained_entities.size() > 0)
 					{
 						size_t rand_index = mp.interpreter->randomStream.RandSize(contained_entities.size());

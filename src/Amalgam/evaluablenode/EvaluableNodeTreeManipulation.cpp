@@ -27,28 +27,52 @@ static std::string GenerateRandomString(RandomStream &rs)
 }
 
 std::string EvaluableNodeTreeManipulation::MutationParameters::GenerateRandomStringGivenStringSet(
-	bool key_or_symbol_string, double novel_chance = 0.08)
+	bool key_or_symbol_string, double novel_chance)
 {
+	auto &rs = interpreter->randomStream;
+	//first look for immediate strings
 	if(immStringWeights->IsInitialized())
 	{
-		auto sid = immStringWeights->WeightedDiscreteRand(mp.interpreter->randomStream);
+		auto sid = immStringWeights->WeightedDiscreteRand(rs);
 		if(sid != string_intern_pool.NOT_A_STRING_ID)
 			return sid->string;
 	}
 
-	//TODO 25793: fix this
-	if(strings.size() == 0 || rs.Rand() < novel_chance) //small but nontrivial chance of making a new string
+	//reuse a string if probable and possible
+	if(rs.Rand() > novel_chance)
 	{
-		std::string s = GenerateRandomString(rs);
-		//put the string into the list of considered strings
-		strings.emplace_back(s);
-		return s;
+		if(key_or_symbol_string && keyAndSymbolStrings->size() > 0)
+		{
+			size_t rand_index = rs.RandSize(keyAndSymbolStrings->size());
+			return std::string((*keyAndSymbolStrings)[rand_index]);
+		}
+
+		//not a key or symbol string or don't have any, try value string
+		if(valueStrings->size() > 0)
+		{
+			size_t rand_index = rs.RandSize(valueStrings->size());
+			return std::string((*valueStrings)[rand_index]);
+		}
 	}
-	else //use randomly chosen existing string
+
+	//sometimes use an existing built-in string
+	if(rs.Rand() > 0.75)
 	{
-		size_t rand_index = rs.RandSize(strings.size());
-		return std::string(strings[rand_index]);
+		size_t rand_index = rs.RandSize(ENBISI_FIRST_DYNAMIC_STRING);
+		auto sid = GetStringIdFromBuiltInStringId(static_cast<EvaluableNodeBuiltInStringId>(rand_index));
+		if(sid != string_intern_pool.NOT_A_STRING_ID)
+			return sid->string;
 	}
+
+	//randomly generate a string
+	std::string s = GenerateRandomString(rs);
+
+	//put the string into the list of considered strings
+	if(key_or_symbol_string)
+		keyAndSymbolStrings->emplace_back(s);
+	else
+		valueStrings->emplace_back(s);
+	return s;
 }
 
 EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream random_stream, EvaluableNodeManager *_enm,
@@ -1620,7 +1644,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		}
 	}
 
-	//TODO 25793: ensure that call* opcodes have correct target
 	//TODO 25793: ensure mp has entity if appropriate and if not null check with regard to call_entity
 
 	return n;

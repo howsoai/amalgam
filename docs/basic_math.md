@@ -4,7 +4,7 @@
 #### Returns
 `number`
 #### Description
-Evaluates to the sum of all numbers.
+Evaluates to the sum of all numbers.  If no parameters are provided it returns 0.0.
 #### Details
  - Permissions required:  none
  - Allows concurrency: true
@@ -28,9 +28,9 @@ Output:
 #### Parameters
 `[number x1] [number x2] ...`
 #### Returns
-`number`
+`null|number`
 #### Description
-Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative
+Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative.  If no parameters are provided it returns null.
 #### Details
  - Permissions required:  none
  - Allows concurrency: true
@@ -64,7 +64,7 @@ Output:
 #### Returns
 `number`
 #### Description
-Evaluates to the product of all numbers.
+Evaluates to the product of all numbers.  If no parameters are provided, returns 1.
 #### Details
  - Permissions required:  none
  - Allows concurrency: true
@@ -88,9 +88,9 @@ Output:
 #### Parameters
 `[number x1] [number x2] ...`
 #### Returns
-`number`
+`null|number`
 #### Description
-Evaluates to `x1` / `x2` / ... / `xN`.
+Evaluates to `x1` / `x2` / ... / `xN`.  If no parameters are provided, it returns null.
 #### Details
  - Permissions required:  none
  - Allows concurrency: true
@@ -114,9 +114,9 @@ Output:
 #### Parameters
 `[number x1] [number x2] ...`
 #### Returns
-`number`
+`null|number`
 #### Description
-Evaluates the modulus of `x1` mod `x2` mod ... mod `xN`.
+Evaluates the modulus of `x1` mod `x2` mod ... mod `xN`.  If no parameters are provided it returns null.
 #### Details
  - Permissions required:  none
  - Allows concurrency: true

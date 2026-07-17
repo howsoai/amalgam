@@ -61,6 +61,7 @@ public:
 
 		MutationParameters(Interpreter *interpreter,
 			EvaluableNodeManager *_enm,
+			Entity *_entity,
 			double mutation_rate,
 			std::vector<std::string> *key_and_symbol_strings,
 			std::vector<std::string> *value_strings,
@@ -69,7 +70,7 @@ public:
 			size_t preserve_type_depth,
 			WeightedRandValueType &imm_number_weights,
 			WeightedRandValueType &imm_string_weights)
-				: interpreter(interpreter), enm(_enm), mutation_rate(mutation_rate),
+				: interpreter(interpreter), enm(_enm), entity(entity), mutation_rate(mutation_rate),
 				keyAndSymbolStrings(key_and_symbol_strings), valueStrings(value_strings),
 				references(EvaluableNode::ReferenceAssocType()),
 				randEvaluableNodeType(rand_operation),
@@ -85,6 +86,7 @@ public:
 
 		Interpreter *interpreter;
 		EvaluableNodeManager *enm;
+		Entity *entity;
 		double mutation_rate;
 		std::vector<std::string> *keyAndSymbolStrings;
 		std::vector<std::string> *valueStrings;
@@ -579,8 +581,9 @@ public:
 	//returns a tree that is a copy of tree but mutated based on mutation_rate
 	// will create the new tree with interpreter's evaluableNodeManager and will use interpreter's RandomStream
 	//note that MutateTree does not guarantee that EvaluableNodeFlags will be set appropriately
-	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, EvaluableNode *tree,
-		double mutation_rate, CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
+	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, Entity *entity,
+		EvaluableNode *tree, double mutation_rate,
+		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
 		CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth,
 			WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
 				EvaluableNode::AssocType, EvaluableNodeAsDouble> &imm_number_weights,

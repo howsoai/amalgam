@@ -647,7 +647,7 @@ Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entit
 
 	//mutate entity code after have mutated all contained entities
 	EvaluableNode *mutated_code = EvaluableNodeTreeManipulation::MutateTree(interpreter,
-		&new_entity->evaluableNodeManager, entity->GetRoot(),
+		&new_entity->evaluableNodeManager, new_entity, entity->GetRoot(),
 		mutation_rate, mutation_weights, operation_type, preserve_type_depth,
 		imm_number_weights, imm_string_weights);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(mutated_code);

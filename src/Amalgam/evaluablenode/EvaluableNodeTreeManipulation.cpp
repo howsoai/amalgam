@@ -596,7 +596,7 @@ static void GetStringsFromTree(EvaluableNode *tree, StringsFromTreeData &strings
 }
 
 EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm,
-	EvaluableNode *tree, double mutation_rate,
+	Entity *entity, EvaluableNode *tree, double mutation_rate,
 	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
 	CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth,
 	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_number_weights,
@@ -623,7 +623,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 	if(mutation_weights != nullptr && !mutation_weights->empty())
 		rand_mutation_type.Initialize(*mutation_weights, true);
 
-	MutationParameters mp(interpreter, enm, mutation_rate,
+	MutationParameters mp(interpreter, enm, entity, mutation_rate,
 		&strings_from_tree_data.keyAndSymbolStrings, &strings_from_tree_data.valueStrings,
 		operation_type_wrs.IsInitialized() ? &operation_type_wrs : &default_operation_type_wrs,
 		rand_mutation_type.IsInitialized() ? &rand_mutation_type : &mutationOperationTypeRandomStream,
@@ -1630,9 +1630,10 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		break;
 	}
 
-	//randomly clear excess nulls (with no child nodes) in lists
+	//constrain and clean up if appropriate
 	if(n != nullptr)
 	{
+		//randomly clear excess nulls (with no child nodes) in lists
 		auto &n_ocn = n->GetOrderedChildNodes();
 		while(!n_ocn.empty() && EvaluableNode::IsNull(n_ocn.back()))
 		{
@@ -1642,9 +1643,16 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			else
 				break;
 		}
-	}
 
-	//TODO 25793: ensure mp has entity if appropriate and if not null check with regard to call_entity
+		if(mp.entity != nullptr && n->GetType() == ENT_CALL_ENTITY || n->GetType() == ENT_CALL_ON_ENTITY)
+		{
+			//ensure it has at least an entity and thing to call
+			if(n_ocn.size() < 2)
+				n_ocn.resize(2);
+
+			//TODO 25793: ensure mp has entity if appropriate and if not null check with regard to call_entity
+		}
+	}
 
 	return n;
 }

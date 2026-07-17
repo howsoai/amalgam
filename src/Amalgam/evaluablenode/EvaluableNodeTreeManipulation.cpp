@@ -1670,8 +1670,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 				}
 				else
 				{
-
-					//TODO 25793: find random contained entity
+					auto &contained_entities = entity_to_call->GetContainedEntities();
+					if(contained_entities.size() > 0)
+					{
+						size_t rand_index = mp.interpreter->randomStream.RandSize(contained_entities.size());
+						entity_to_call = contained_entities[rand_index];
+						n_ocn[1] = mp.enm->AllocNode(entity_to_call->GetIdStringId());
+					}
 				}
 			}
 
@@ -1690,8 +1695,11 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 							public_labels.push_back(cur_sid);
 					}
 
-					size_t rand_index = mp.interpreter->randomStream.RandSize(public_labels.size());
-					n_ocn[1] = mp.enm->AllocNode(public_labels[rand_index]);
+					if(public_labels.size() > 0)
+					{
+						size_t rand_index = mp.interpreter->randomStream.RandSize(public_labels.size());
+						n_ocn[1] = mp.enm->AllocNode(public_labels[rand_index]);
+					}
 				}
 			}
 		}

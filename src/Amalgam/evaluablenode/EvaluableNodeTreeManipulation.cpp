@@ -483,6 +483,54 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 	return generalized_node;
 }
 
+//used by GetStringsFromTree
+//store strings in raw form; could change it to store ids, but would need to keep
+//a reference of each in case the last node with a string is deleted
+class StringsFromTreeData
+{
+public:
+	std::vector<std::string> keyAndSymbolStrings;
+	std::vector<std::string> valueStrings;
+	EvaluableNode::ReferenceSetType checked;
+};
+
+//returns a set of strings that have appeared in the given tree,
+//separating by strings that appear as keys and symbols by those that are values
+static void GetStringsFromTree(EvaluableNode *tree, StringsFromTreeData &strings_from_tree_data)
+{
+	//try to record, but if already checked, then don't do anything
+	auto [_, inserted] = strings_from_tree_data.checked.insert(tree);
+	if(!inserted)
+		return;
+
+	if(tree->IsAssociativeArray())
+	{
+		for(auto &[cn_id, cn] : tree->GetMappedChildNodesReference())
+		{
+			strings_from_tree_data.keyAndSymbolStrings.push_back(cn_id->string);
+			if(cn != nullptr)
+				GetStringsFromTree(cn, strings_from_tree_data);
+		}
+	}
+	else if(tree->GetType() == ENT_SYMBOL)
+	{
+		strings_from_tree_data.keyAndSymbolStrings.emplace_back(tree->GetStringValue());
+	}
+	else if(tree->IsImmediate())
+	{
+		if(DoesEvaluableNodeTypeUseStringData(tree->GetType()))
+			strings_from_tree_data.valueStrings.emplace_back(tree->GetStringValue());
+	}
+	else //ordered
+	{
+		for(auto &cn : tree->GetOrderedChildNodesReference())
+		{
+			if(cn != nullptr)
+				GetStringsFromTree(cn, strings_from_tree_data);
+		}
+	}
+}
+
 EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm,
 	EvaluableNode *tree, double mutation_rate,
 	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
@@ -490,9 +538,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_number_weights,
 	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_string_weights)
 {
-	std::vector<std::string> strings;
-	EvaluableNode::ReferenceSetType checked;
-	GetStringsFromTree(tree, strings, checked);
+	StringsFromTreeData strings_from_tree_data;
+	GetStringsFromTree(tree, strings_from_tree_data);
 
 	//initializes on first call, 
 	static MutationParameters::WeightedRandEvaluableNodeType default_operation_type_wrs(
@@ -512,7 +559,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 	if(mutation_weights != nullptr && !mutation_weights->empty())
 		rand_mutation_type.Initialize(*mutation_weights, true);
 
-	MutationParameters mp(interpreter, enm, mutation_rate, &strings,
+	MutationParameters mp(interpreter, enm, mutation_rate,
+		&strings_from_tree_data.keyAndSymbolStrings, &strings_from_tree_data.valueStrings,
 		operation_type_wrs.IsInitialized() ? &operation_type_wrs : &default_operation_type_wrs,
 		rand_mutation_type.IsInitialized() ? &rand_mutation_type : &mutationOperationTypeRandomStream,
 		preserve_type_depth, imm_number_weights, imm_string_weights);
@@ -1673,34 +1721,6 @@ void EvaluableNodeTreeManipulation::ReplaceStringsInTree(EvaluableNode *tree, Co
 	}
 }
 
-void EvaluableNodeTreeManipulation::GetStringsFromTree(
-	EvaluableNode *tree, std::vector<std::string> &strings, EvaluableNode::ReferenceSetType &checked)
-{
-	if(tree == nullptr)
-		return;
-
-	//try to record, but if already checked, then don't do anything
-	auto [_, inserted] = checked.insert(tree);
-	if(!inserted)
-		return;
-
-	if(tree->IsAssociativeArray())
-	{
-		for(auto &[cn_id, cn] : tree->GetMappedChildNodesReference())
-			GetStringsFromTree(cn, strings, checked);
-	}
-	else if(tree->IsImmediate())
-	{
-		if(DoesEvaluableNodeTypeUseStringData(tree->GetType()))
-			strings.emplace_back(tree->GetStringValue());
-	}
-	else //ordered
-	{
-		for(auto &cn : tree->GetOrderedChildNodesReference())
-			GetStringsFromTree(cn, strings, checked);
-	}
-}
-
 #if defined(MULTITHREAD_SUPPORT)
 thread_local std::vector<uint32_t> EvaluableNodeTreeManipulation::aCharsBuffer;
 thread_local std::vector<uint32_t> EvaluableNodeTreeManipulation::bCharsBuffer;
@@ -1725,4 +1745,5 @@ CompactHashMap<EvaluableNodeBuiltInStringId, double> EvaluableNodeTreeManipulati
 	{ENBISI_remove_all_elements,		0.0001 }
 };
 
-EvaluableNodeTreeManipulation::MutationParameters::WeightedRandMutationType EvaluableNodeTreeManipulation::mutationOperationTypeRandomStream(mutationOperationTypeProbabilities, true);
+EvaluableNodeTreeManipulation::MutationParameters::WeightedRandMutationType
+	EvaluableNodeTreeManipulation::mutationOperationTypeRandomStream(mutationOperationTypeProbabilities, true);

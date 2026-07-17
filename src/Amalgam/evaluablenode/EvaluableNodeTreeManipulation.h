@@ -60,37 +60,30 @@ public:
 			EvaluableNode::AssocType, EvaluableNodeAsDouble> WeightedRandValueType;
 
 		MutationParameters(Interpreter *interpreter,
-			EvaluableNodeManager *enm,
+			EvaluableNodeManager *_enm,
 			double mutation_rate,
-			std::vector<std::string> *strings,
+			std::vector<std::string> *key_and_symbol_strings,
+			std::vector<std::string> *value_strings,
 			WeightedRandEvaluableNodeType *rand_operation,
 			WeightedRandMutationType *rand_operation_type,
 			size_t preserve_type_depth,
 			WeightedRandValueType &imm_number_weights,
-			WeightedRandValueType &imm_string_weights) :
-				interpreter(nullptr),
-				enm(nullptr),
-				mutation_rate(0),
-				strings(nullptr),
+			WeightedRandValueType &imm_string_weights)
+				: interpreter(interpreter), enm(_enm), mutation_rate(mutation_rate),
+				keyAndSymbolStrings(key_and_symbol_strings), valueStrings(value_strings),
 				references(EvaluableNode::ReferenceAssocType()),
-				randEvaluableNodeType(nullptr),
+				randEvaluableNodeType(rand_operation),
 				randMutationType(&mutationOperationTypeRandomStream),
+				preserveTypeDepth(preserve_type_depth),
 				immNumberWeights(&imm_number_weights),
 				immStringWeights(&imm_string_weights)
-		{
-			this->interpreter = interpreter;
-			this->enm = enm;
-			this->mutation_rate = mutation_rate;
-			this->strings = strings;
-			this->randEvaluableNodeType = rand_operation;
-			this->randMutationType = rand_operation_type;
-			this->preserveTypeDepth = preserve_type_depth;
-		}
+		{}
 
 		Interpreter *interpreter;
 		EvaluableNodeManager *enm;
 		double mutation_rate;
-		std::vector<std::string> *strings;
+		std::vector<std::string> *keyAndSymbolStrings;
+		std::vector<std::string> *valueStrings;
 		EvaluableNode::ReferenceAssocType references;
 		WeightedRandEvaluableNodeType *randEvaluableNodeType;
 		WeightedRandMutationType *randMutationType;
@@ -632,9 +625,6 @@ protected:
 	static void ReplaceStringsInTree(EvaluableNode *tree,
 		CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace,
 		EvaluableNode::ReferenceSetType &checked);
-
-	//returns a set of strings that have appeared at least once in the given tree
-	static void GetStringsFromTree(EvaluableNode *tree, std::vector<std::string> &strings, EvaluableNode::ReferenceSetType &checked);
 
 	//random stream for MutationOperationType, so can obtain a random type from a useful distribution
 	static MutationParameters::WeightedRandMutationType mutationOperationTypeRandomStream;

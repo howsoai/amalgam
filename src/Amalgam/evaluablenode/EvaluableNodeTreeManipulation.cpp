@@ -1701,7 +1701,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 		while(!n_ocn.empty() && EvaluableNode::IsNull(n_ocn.back()))
 		{
 			//either remove this one or stop removing
-			if(mp.interpreter->randomStream.Rand() > 0.5)
+			if(mp.interpreter->randomStream.Rand() > 0.125)
 				n_ocn.pop_back();
 			else
 				break;

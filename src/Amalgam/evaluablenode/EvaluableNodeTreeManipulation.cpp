@@ -1630,7 +1630,70 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		break;
 	}
 
-	//constrain and clean up if appropriate
+	return n;
+}
+
+EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
+	EvaluableNode *tree, size_t depth)
+{
+	//if it's nullptr, then move on to making a copy, otherwise see if it's already been copied
+	if(tree != nullptr)
+	{
+		//if this object has already been copied, then just return the reference to the new copy
+		auto found_copy = mp.references.find(tree);
+		if(found_copy != end(mp.references))
+			return found_copy->second;
+	}
+
+	EvaluableNode *n = mp.enm->AllocNode(tree);
+	auto node_stack = mp.interpreter->CreateOpcodeStackStateSaver(n);
+
+	//shouldn't happen, but just to be safe
+	if(n == nullptr)
+		return nullptr;
+
+	(mp.references)[tree] = n;
+
+	//this shouldn't happen - it should be a node of type ENT_NULL, but check just in case
+	if(n == nullptr)
+		return nullptr;
+
+	if(n->IsAssociativeArray())
+	{
+		//for any mapped children, copy and update
+		for(auto &[_, s] : n->GetMappedChildNodesReference())
+		{
+			EvaluableNode *n = s;
+
+			//turn into a copy and mutate
+			n = MutateTree(mp, n, depth + 1);
+
+			//replace current item in list with n
+			s = n;
+		}
+	}
+	else
+	{
+		//for any ordered children, copy and update
+		auto &ocn = n->GetOrderedChildNodes();
+		for(size_t i = 0; i < ocn.size(); i++)
+		{
+			//get current item in list
+			EvaluableNode *n = ocn[i];
+
+			//turn into a copy and mutate
+			n = MutateTree(mp, n, depth + 1);
+
+			//replace current item in list with n
+			ocn[i] = n;
+		}
+	}
+
+	//mutate after potentially mutated all child nodes
+	if(mp.interpreter->randomStream.Rand() < mp.mutation_rate)
+		n = MutateNode(n, mp, depth);
+
+	//constrain and clean up if appropriate, even if didn't mutate
 	if(n != nullptr)
 	{
 		//randomly clear excess nulls (with no child nodes) in lists
@@ -1663,12 +1726,12 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 				EntityReference attempted_entity =
 					TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReference<Entity>>(mp.entity, n_ocn[0]);
 
-				//if valid, use it, if invalid, take a random contained entity
+				//if valid entity, use it
 				if(attempted_entity != nullptr)
 				{
 					entity_to_call = attempted_entity;
 				}
-				else
+				else //invalid, take a random contained entity
 				{
 					auto &contained_entities = entity_to_call->GetContainedEntities();
 					if(contained_entities.size() > 0)
@@ -1681,7 +1744,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			}
 
 			//only ensure validate label if entity_to_call is valid
-			if(entity_to_call != nullptr && n->GetType() ==ENT_CALL_ENTITY)
+			if(entity_to_call != nullptr && n->GetType() == ENT_CALL_ENTITY)
 			{
 				auto label_sid = EvaluableNode::ToStringIDIfExists(n_ocn[1], true);
 				if(!Entity::IsLabelPrivate(label_sid)
@@ -1706,69 +1769,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	}
 
 	return n;
-}
-
-EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
-	EvaluableNode *tree, size_t depth)
-{
-	//if it's nullptr, then move on to making a copy, otherwise see if it's already been copied
-	if(tree != nullptr)
-	{
-		//if this object has already been copied, then just return the reference to the new copy
-		auto found_copy = mp.references.find(tree);
-		if(found_copy != end(mp.references))
-			return found_copy->second;
-	}
-
-	EvaluableNode *copy = mp.enm->AllocNode(tree);
-	auto node_stack = mp.interpreter->CreateOpcodeStackStateSaver(copy);
-
-	//shouldn't happen, but just to be safe
-	if(copy == nullptr)
-		return nullptr;
-
-	(mp.references)[tree] = copy;
-
-	//this shouldn't happen - it should be a node of type ENT_NULL, but check just in case
-	if(copy == nullptr)
-		return nullptr;
-
-	if(copy->IsAssociativeArray())
-	{
-		//for any mapped children, copy and update
-		for(auto &[_, s] : copy->GetMappedChildNodesReference())
-		{
-			EvaluableNode *n = s;
-
-			//turn into a copy and mutate
-			n = MutateTree(mp, n, depth + 1);
-
-			//replace current item in list with copy
-			s = n;
-		}
-	}
-	else
-	{
-		//for any ordered children, copy and update
-		auto &ocn = copy->GetOrderedChildNodes();
-		for(size_t i = 0; i < ocn.size(); i++)
-		{
-			//get current item in list
-			EvaluableNode *n = ocn[i];
-
-			//turn into a copy and mutate
-			n = MutateTree(mp, n, depth + 1);
-
-			//replace current item in list with copy
-			ocn[i] = n;
-		}
-	}
-
-	//mutate after potentially mutated all child nodes
-	if(mp.interpreter->randomStream.Rand() < mp.mutation_rate)
-		copy = MutateNode(copy, mp, depth);
-
-	return copy;
 }
 
 void EvaluableNodeTreeManipulation::ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace, EvaluableNode::ReferenceSetType &checked)

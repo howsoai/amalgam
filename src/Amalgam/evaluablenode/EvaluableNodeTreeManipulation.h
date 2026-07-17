@@ -70,7 +70,7 @@ public:
 			size_t preserve_type_depth,
 			WeightedRandValueType &imm_number_weights,
 			WeightedRandValueType &imm_string_weights)
-				: interpreter(interpreter), enm(_enm), entity(entity), mutation_rate(mutation_rate),
+				: interpreter(interpreter), enm(_enm), entity(_entity), mutation_rate(mutation_rate),
 				keyAndSymbolStrings(key_and_symbol_strings), valueStrings(value_strings),
 				references(EvaluableNode::ReferenceAssocType()),
 				randEvaluableNodeType(rand_operation),

@@ -1644,13 +1644,56 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 				break;
 		}
 
-		if(mp.entity != nullptr && n->GetType() == ENT_CALL_ENTITY || n->GetType() == ENT_CALL_ON_ENTITY)
+		if(mp.entity != nullptr
+			&& (n->GetType() == ENT_CALL_ENTITY || n->GetType() == ENT_CALL_ON_ENTITY))
 		{
 			//ensure it has at least an entity and thing to call
 			if(n_ocn.size() < 2)
 				n_ocn.resize(2);
 
-			//TODO 25793: ensure mp has entity if appropriate and if not null check with regard to call_entity
+			//if it's referring to an entity with an immediate but not current entity,
+			//make sure it's a real entity
+			Entity *entity_to_call = nullptr;
+			if(EvaluableNode::IsNull(n_ocn[0]))
+			{
+				entity_to_call = mp.entity;
+			}
+			else if(n_ocn[0]->IsImmediate())
+			{
+				EntityReference attempted_entity =
+					TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReference<Entity>>(mp.entity, n_ocn[0]);
+
+				//if valid, use it, if invalid, take a random contained entity
+				if(attempted_entity != nullptr)
+				{
+					entity_to_call = attempted_entity;
+				}
+				else
+				{
+
+					//TODO 25793: find random contained entity
+				}
+			}
+
+			//only ensure validate label if entity_to_call is valid
+			if(entity_to_call != nullptr && n->GetType() ==ENT_CALL_ENTITY)
+			{
+				auto label_sid = EvaluableNode::ToStringIDIfExists(n_ocn[1], true);
+				if(!Entity::IsLabelPrivate(label_sid)
+					|| !entity_to_call->DoesLabelExist(label_sid))
+				{
+					//not a valid label, so find a valid one for this entity
+					std::vector<StringInternPool::StringID> public_labels;
+					for(auto &[cur_sid, cn] : entity_to_call->GetLabelIndex())
+					{
+						if(Entity::IsLabelPrivate(cur_sid))
+							public_labels.push_back(cur_sid);
+					}
+
+					size_t rand_index = mp.interpreter->randomStream.RandSize(public_labels.size());
+					n_ocn[1] = mp.enm->AllocNode(public_labels[rand_index]);
+				}
+			}
 		}
 	}
 

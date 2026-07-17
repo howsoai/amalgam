@@ -74,7 +74,7 @@ public:
 				keyAndSymbolStrings(key_and_symbol_strings), valueStrings(value_strings),
 				references(EvaluableNode::ReferenceAssocType()),
 				randEvaluableNodeType(rand_operation),
-				randMutationType(&mutationOperationTypeRandomStream),
+				randMutationType(rand_operation_type),
 				preserveTypeDepth(preserve_type_depth),
 				immNumberWeights(&imm_number_weights),
 				immStringWeights(&imm_string_weights)

@@ -21,7 +21,7 @@ Output:
 ```amalgam
 {
 	allows_concurrency .true
-	description "Evaluates to the sum of all numbers."
+	description "Evaluates to the sum of all numbers.  If no parameters are provided it returns 0.0."
 	examples [
 			{example "(+ 1 2 3 4)" output "10"}
 		]

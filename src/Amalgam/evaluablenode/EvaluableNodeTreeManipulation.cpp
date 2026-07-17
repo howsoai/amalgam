@@ -571,7 +571,8 @@ static void GetStringsFromTree(EvaluableNode *tree, StringsFromTreeData &strings
 	{
 		for(auto &[cn_id, cn] : tree->GetMappedChildNodesReference())
 		{
-			strings_from_tree_data.keyAndSymbolStrings.push_back(cn_id->string);
+			if(cn_id != string_intern_pool.NOT_A_STRING_ID)
+				strings_from_tree_data.keyAndSymbolStrings.push_back(cn_id->string);
 			if(cn != nullptr)
 				GetStringsFromTree(cn, strings_from_tree_data);
 		}
@@ -1738,7 +1739,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 					{
 						size_t rand_index = mp.interpreter->randomStream.RandSize(contained_entities.size());
 						entity_to_call = contained_entities[rand_index];
-						n_ocn[1] = mp.enm->AllocNode(entity_to_call->GetIdStringId());
+						n_ocn[0] = mp.enm->AllocNode(entity_to_call->GetIdStringId());
 					}
 				}
 			}
@@ -1747,7 +1748,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 			if(entity_to_call != nullptr && n->GetType() == ENT_CALL_ENTITY)
 			{
 				auto label_sid = EvaluableNode::ToStringIDIfExists(n_ocn[1], true);
-				if(!Entity::IsLabelPrivate(label_sid)
+				if(Entity::IsLabelPrivate(label_sid)
 					|| !entity_to_call->DoesLabelExist(label_sid))
 				{
 					//not a valid label, so find a valid one for this entity

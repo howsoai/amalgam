@@ -585,10 +585,10 @@ public:
 	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, EvaluableNode *tree,
 		double mutation_rate, CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
 		CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth,
-	WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
-		EvaluableNode::AssocType, EvaluableNodeAsDouble> &imm_number_weights,
-	WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
-		EvaluableNode::AssocType, EvaluableNodeAsDouble> &imm_string_weights);
+			WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
+				EvaluableNode::AssocType, EvaluableNodeAsDouble> &imm_number_weights,
+			WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
+				EvaluableNode::AssocType, EvaluableNodeAsDouble> &imm_string_weights);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace
 	static inline void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace)

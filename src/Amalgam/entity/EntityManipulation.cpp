@@ -128,6 +128,8 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 	else if(b != nullptr)
 		merged_entity->SetRandomStream(b->GetRandomStream());
 
+	MergeContainedEntities(this, a, b, merged_entity);
+
 	//merge entity's code
 	EvaluableNode *code_a = (a != nullptr ? a->GetRoot() : nullptr);
 	EvaluableNode *code_b = (b != nullptr ? b->GetRoot() : nullptr);
@@ -140,7 +142,6 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	merged_entity->SetRoot(result, true);
 
-	MergeContainedEntities(this, a, b, merged_entity);
 	return merged_entity;
 }
 
@@ -636,12 +637,6 @@ Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entit
 
 	//make a new entity with mutated code
 	Entity *new_entity = new Entity();
-	EvaluableNode *mutated_code = EvaluableNodeTreeManipulation::MutateTree(interpreter,
-		&new_entity->evaluableNodeManager, entity->GetRoot(),
-		mutation_rate, mutation_weights, operation_type, preserve_type_depth,
-		imm_number_weights, imm_string_weights);
-	EvaluableNodeManager::UpdateFlagsForNodeTree(mutated_code);
-	new_entity->SetRoot(mutated_code, true);
 	new_entity->SetRandomStream(entity->GetRandomStream());
 
 	//make mutated copies of all contained entities
@@ -649,6 +644,14 @@ Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entit
 		new_entity->AddContainedEntity(MutateEntity(interpreter,
 			e, mutation_rate, mutation_weights, operation_type, preserve_type_depth,
 			imm_number_weights, imm_string_weights), e->GetIdStringId());
+
+	//mutate entity code after have mutated all contained entities
+	EvaluableNode *mutated_code = EvaluableNodeTreeManipulation::MutateTree(interpreter,
+		&new_entity->evaluableNodeManager, entity->GetRoot(),
+		mutation_rate, mutation_weights, operation_type, preserve_type_depth,
+		imm_number_weights, imm_string_weights);
+	EvaluableNodeManager::UpdateFlagsForNodeTree(mutated_code);
+	new_entity->SetRoot(mutated_code, true);
 
 	return new_entity;
 }

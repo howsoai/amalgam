@@ -31,11 +31,9 @@ std::string StringManipulation::NumberToString(double value)
 
 std::string StringManipulation::NumberToString(size_t value)
 {
-	//use std::to_chars because regular string manipulation libraries are slow and measurably impact performance,
-	// and it avoids the GCC>=13 AVX2 stringop-overflow false positive triggered by a hand-rolled digit loop
 	char buffer[std::numeric_limits<size_t>::digits10 + 1];
-	auto result = std::to_chars(std::begin(buffer), std::end(buffer), value);
-	return std::string(buffer, result.ptr);
+	auto [end_ptr, error_code] = std::to_chars(std::begin(buffer), std::end(buffer), value);
+	return std::string(buffer, end_ptr);
 }
 
 std::string StringManipulation::RemoveFirstToken(std::string &str)

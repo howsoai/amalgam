@@ -1755,7 +1755,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 					std::vector<StringInternPool::StringID> public_labels;
 					for(auto &[cur_sid, cn] : entity_to_call->GetLabelIndex())
 					{
-						if(Entity::IsLabelPrivate(cur_sid))
+						if(!Entity::IsLabelPrivate(cur_sid))
 							public_labels.push_back(cur_sid);
 					}
 

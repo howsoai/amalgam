@@ -8,6 +8,9 @@
 
 //system headers:
 #include <algorithm>
+#include <charconv>
+#include <iterator>
+#include <limits>
 #include <sstream>
 #include <string>
 
@@ -28,30 +31,9 @@ std::string StringManipulation::NumberToString(double value)
 
 std::string StringManipulation::NumberToString(size_t value)
 {
-	//do this our own way because regular string manipulation libraries are slow and measurably impact performance
-	constexpr size_t max_num_digits = std::numeric_limits<size_t>::digits / 3; //max of binary digits per character
-	constexpr size_t buffer_size = max_num_digits + 2;
-	char buffer[buffer_size];
-	char *p = &buffer[0];
-
-	if(value == 0) //check for zero because it's a very common case for integers
-		*p++ = '0';
-	else //convert each character
-	{
-		//peel off digits and put them in the next position for the string (reverse when done)
-		char *buffer_start = &buffer[0];
-		while(value != 0)
-		{
-			//pull off the least significant digit and convert it to a number character
-			*p++ = ('0' + (value % 10));
-			value /= 10;
-		}
-
-		//put back in original order
-		std::reverse(buffer_start, p);
-	}
-	*p = '\0';	//terminate string
-	return std::string(&buffer[0]);
+	char buffer[std::numeric_limits<size_t>::digits10 + 1];
+	auto [end_ptr, error_code] = std::to_chars(std::begin(buffer), std::end(buffer), value);
+	return std::string(buffer, end_ptr);
 }
 
 std::string StringManipulation::RemoveFirstToken(std::string &str)

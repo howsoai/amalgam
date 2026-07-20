@@ -190,53 +190,121 @@ public:
 	}
 
 	//returns true if a and b are compatible
-	static constexpr bool AreDataTypesCompatible(DataType a, DataType b)
+	static constexpr bool IsReturnTypeValidForRequiredDataType(DataType return_type, DataType required_type)
 	{
-		if(AreDataTypesExactlyCompatible(a, b))
+		//don't need to check for any exact matches below
+		if(AreDataTypesExactlyCompatible(return_type, required_type))
 			return true;
 
-		//iterate over bits in a
-		for(DataTypeContainer mask_a = 1; mask_a != 0; mask_a <<= 1)
+		//anything satisfies requiring a null
+		if(AreDataTypesExactlyCompatible(required_type, DataType::NULL_TYPE))
+			return true;
+
+		//everything can be converted to a bool
+		if(AreDataTypesExactlyCompatible(required_type, DataType::BOOL))
+			return true;
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::NUMBER))
 		{
-			if((static_cast<DataTypeContainer>(a) & mask_a) == 0)
-				continue;
-			DataType a_bit = static_cast<DataType>(mask_a);
-
-			//iterate over bits in b
-			for(DataTypeContainer mask_b = 1; mask_b != 0; mask_b <<= 1)
-			{
-				if((static_cast<DataTypeContainer>(b) & mask_b) == 0)
-					continue;
-				DataType b_bit = static_cast<DataType>(mask_b);
-
-				//order the values so simple_type is the less‑complex one
-				DataType simple_type = std::min(a_bit, b_bit);
-				DataType complex_type = std::max(a_bit, b_bit);
-
-				if(simple_type == DataType::STRING && complex_type == DataType::ENTITY_LABEL)
-					return true;
-
-				if(simple_type == DataType::ASSOC)
-				{
-					if(complex_type == DataType::ASSOC_OF_NUMBERS)
-						return true;
-					continue;
-				}
-
-				if(simple_type == DataType::LIST || simple_type == DataType::UNORDERED_LIST)
-				{
-					if(complex_type == DataType::UNORDERED_LIST ||
-							complex_type == DataType::WALK_PATH ||
-							complex_type == DataType::LIST_OF_NUMBERS ||
-							complex_type == DataType::LIST_OF_STRINGS ||
-							complex_type == DataType::LIST_OF_ENTITY_IDS ||
-							complex_type == DataType::LIST_OF_ENTITY_LABELS ||
-							complex_type == DataType::LIST_OF_QUERIES)
-						return true;
-					continue;
-				}
-			}
+			return (AreDataTypesExactlyCompatible(return_type, DataType::BOOL)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::STRING));
 		}
+
+		//everything can be coerced into string
+		if(AreDataTypesExactlyCompatible(required_type, DataType::STRING))
+		{
+			return true;
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::LIST))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::UNORDERED_LIST)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_NUMBERS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_STRINGS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_ENTITY_IDS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_ENTITY_LABELS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_QUERIES));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::UNORDERED_LIST))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_NUMBERS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_STRINGS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_ENTITY_IDS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_ENTITY_LABELS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_QUERIES));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::ASSOC))
+		{
+			return AreDataTypesExactlyCompatible(return_type, DataType::ASSOC_OF_NUMBERS);
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::QUERY))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+				|| AreDataTypesExactlyCompatible(required_type, DataType::LIST_OF_QUERIES));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::WALK_PATH))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::BOOL)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::NUMBER)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::STRING)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_NUMBERS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_STRINGS)
+				);
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::ENTITY_ID))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::STRING)
+					|| AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+					|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_STRINGS));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::ENTITY_LABEL))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::BOOL)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::NUMBER)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::STRING));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::LIST_OF_NUMBERS))
+		{
+			return AreDataTypesExactlyCompatible(return_type, DataType::LIST);
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::LIST_OF_STRINGS))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_NUMBERS));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::LIST_OF_ENTITY_IDS))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+					|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_STRINGS));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::LIST_OF_ENTITY_LABELS))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+					|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_STRINGS));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::LIST_OF_QUERIES))
+		{
+			return AreDataTypesExactlyCompatible(return_type, DataType::LIST);
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::ASSOC_OF_NUMBERS))
+		{
+			return AreDataTypesExactlyCompatible(return_type, DataType::ASSOC);
+		}
+
 		return false;
 	}
 
@@ -388,6 +456,12 @@ __forceinline bool DoesOpcodeHaveSideEffects(EvaluableNodeType t)
 __forceinline bool MayOpcodeCauseNodeUpdateInCurrentEntity(EvaluableNodeType t)
 {
 	return _opcode_details[t].mayCauseNodeUpdateInCurrentEntity;
+}
+
+//returns the data types that the opcode can return
+__forceinline OpcodeDetails::DataType GetOpcodeReturnTypes(EvaluableNodeType t)
+{
+	return _opcode_details[t].returns;
 }
 
 //returns whether the opcode returns a new value

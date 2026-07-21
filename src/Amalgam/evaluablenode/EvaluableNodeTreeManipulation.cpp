@@ -1763,7 +1763,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 				else //dynamic execution, make sure format is appropriate
 				{
 					auto return_types = GetOpcodeReturnTypes(n_ocn[1]->GetType());
-					replace_with_valid_label = OpcodeDetails::IsReturnTypeValidForRequiredDataType(
+					replace_with_valid_label = !OpcodeDetails::IsReturnTypeValidForRequiredDataType(
 						return_types, OpcodeDetails::DataType::ENTITY_LABEL);
 				}
 			}

@@ -244,7 +244,7 @@ public:
 		if(AreDataTypesExactlyCompatible(required_type, DataType::QUERY))
 		{
 			return (AreDataTypesExactlyCompatible(return_type, DataType::LIST)
-				|| AreDataTypesExactlyCompatible(required_type, DataType::LIST_OF_QUERIES));
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_QUERIES));
 		}
 
 		if(AreDataTypesExactlyCompatible(required_type, DataType::WALK_PATH))

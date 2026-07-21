@@ -1736,7 +1736,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 			}
 
 			//if invalid entity and the opcode can't return a list, make it valid
-			if(entity_to_call == nullptr || !can_return_valid_entity)
+			if(entity_to_call == nullptr && !can_return_valid_entity)
 			{
 				auto &contained_entities = mp.entity->GetContainedEntities();
 				if(contained_entities.size() > 0)
@@ -1760,10 +1760,10 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 						replace_with_valid_label = true;
 					}
 				}
-				else
+				else //dynamic execution, make sure format is appropriate
 				{
 					auto return_types = GetOpcodeReturnTypes(n_ocn[1]->GetType());
-					can_return_valid_entity = OpcodeDetails::IsReturnTypeValidForRequiredDataType(
+					replace_with_valid_label = OpcodeDetails::IsReturnTypeValidForRequiredDataType(
 						return_types, OpcodeDetails::DataType::ENTITY_LABEL);
 				}
 			}

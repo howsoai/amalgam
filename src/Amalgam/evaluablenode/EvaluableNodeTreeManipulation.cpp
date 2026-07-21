@@ -1664,13 +1664,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 		//for any mapped children, copy and update
 		for(auto &[_, s] : n->GetMappedChildNodesReference())
 		{
-			EvaluableNode *n = s;
+			EvaluableNode *current = s;
 
 			//turn into a copy and mutate
-			n = MutateTree(mp, n, depth + 1);
+			current = MutateTree(mp, current, depth + 1);
 
-			//replace current item in list with n
-			s = n;
+			//replace item in the map
+			s = current;
 		}
 	}
 	else
@@ -1680,13 +1680,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 		for(size_t i = 0; i < ocn.size(); i++)
 		{
 			//get current item in list
-			EvaluableNode *n = ocn[i];
+			EvaluableNode *current = ocn[i];
 
 			//turn into a copy and mutate
-			n = MutateTree(mp, n, depth + 1);
+			current = MutateTree(mp, current, depth + 1);
 
-			//replace current item in list with n
-			ocn[i] = n;
+			//replace item in the list
+			ocn[i] = current;
 		}
 	}
 
@@ -1711,60 +1711,90 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 		if(mp.entity != nullptr
 			&& (n->GetType() == ENT_CALL_ENTITY || n->GetType() == ENT_CALL_ON_ENTITY))
 		{
-			//ensure it has at least an entity and thing to call
-			if(n_ocn.size() < 2)
-				n_ocn.resize(2);
+			//ensure it has at least an entity, thing to call, and parameters
+			if(n_ocn.size() < 3)
+				n_ocn.resize(3);
 
 			//if it's referring to an entity with an immediate but not current entity,
 			//make sure it's a real entity
 			Entity *entity_to_call = nullptr;
+			bool can_return_valid_entity = false;
 			if(EvaluableNode::IsNull(n_ocn[0]))
 			{
 				entity_to_call = mp.entity;
 			}
 			else if(n_ocn[0]->IsImmediate())
 			{
-				EntityReference attempted_entity =
-					TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReference<Entity>>(mp.entity, n_ocn[0]);
+				entity_to_call = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath
+					<EntityReference<Entity>>(mp.entity, n_ocn[0]);
+			}
+			else //see if can return something valid
+			{
+				auto return_types = GetOpcodeReturnTypes(n_ocn[0]->GetType());
+				can_return_valid_entity = OpcodeDetails::IsReturnTypeValidForRequiredDataType(
+					return_types, OpcodeDetails::DataType::ENTITY_ID);
+			}
 
-				//if valid entity, use it
-				if(attempted_entity != nullptr)
+			//if invalid entity and the opcode can't return a list, make it valid
+			if(entity_to_call == nullptr && !can_return_valid_entity)
+			{
+				auto &contained_entities = mp.entity->GetContainedEntities();
+				if(contained_entities.size() > 0)
 				{
-					entity_to_call = attempted_entity;
-				}
-				else //invalid, take a random contained entity
-				{
-					auto &contained_entities = mp.entity->GetContainedEntities();
-					if(contained_entities.size() > 0)
-					{
-						size_t rand_index = mp.interpreter->randomStream.RandSize(contained_entities.size());
-						entity_to_call = contained_entities[rand_index];
-						n_ocn[0] = mp.enm->AllocNode(entity_to_call->GetIdStringId());
-					}
+					size_t rand_index = mp.interpreter->randomStream.RandSize(contained_entities.size());
+					entity_to_call = contained_entities[rand_index];
+					n_ocn[0] = mp.enm->AllocNode(entity_to_call->GetIdStringId());
 				}
 			}
 
 			//only ensure validate label if entity_to_call is valid
+			bool replace_with_valid_label = false;
 			if(entity_to_call != nullptr && n->GetType() == ENT_CALL_ENTITY)
 			{
-				auto label_sid = EvaluableNode::ToStringIDIfExists(n_ocn[1], true);
-				if(Entity::IsLabelPrivate(label_sid)
-					|| !entity_to_call->DoesLabelExist(label_sid))
+				if(n_ocn[1] == nullptr || n_ocn[1]->IsImmediate())
 				{
-					//not a valid label, so find a valid one for this entity
-					std::vector<StringInternPool::StringID> public_labels;
-					for(auto &[cur_sid, cn] : entity_to_call->GetLabelIndex())
+					auto label_sid = EvaluableNode::ToStringIDIfExists(n_ocn[1], true);
+					if(Entity::IsLabelPrivate(label_sid)
+						|| !entity_to_call->DoesLabelExist(label_sid))
 					{
-						if(!Entity::IsLabelPrivate(cur_sid))
-							public_labels.push_back(cur_sid);
-					}
-
-					if(public_labels.size() > 0)
-					{
-						size_t rand_index = mp.interpreter->randomStream.RandSize(public_labels.size());
-						n_ocn[1] = mp.enm->AllocNode(public_labels[rand_index]);
+						replace_with_valid_label = true;
 					}
 				}
+				else //dynamic execution, make sure format is appropriate
+				{
+					auto return_types = GetOpcodeReturnTypes(n_ocn[1]->GetType());
+					replace_with_valid_label = !OpcodeDetails::IsReturnTypeValidForRequiredDataType(
+						return_types, OpcodeDetails::DataType::ENTITY_LABEL);
+				}
+			}
+
+			if(replace_with_valid_label)
+			{
+				//not a valid label, so find a valid one for this entity
+				std::vector<StringInternPool::StringID> public_labels;
+				for(auto &[cur_sid, cn] : entity_to_call->GetLabelIndex())
+				{
+					if(!Entity::IsLabelPrivate(cur_sid))
+						public_labels.push_back(cur_sid);
+				}
+
+				if(public_labels.size() > 0)
+				{
+					size_t rand_index = mp.interpreter->randomStream.RandSize(public_labels.size());
+					n_ocn[1] = mp.enm->AllocNode(public_labels[rand_index]);
+				}
+			}
+
+			//ensure have parameters
+			if(n_ocn[2] == nullptr)
+			{
+				n_ocn[2] = mp.enm->AllocNode(ENT_ASSOC);
+			}
+			else //ensure returns an assoc, otherwise transform into an assoc
+			{
+				auto return_types = GetOpcodeReturnTypes(n_ocn[2]->GetType());
+				if(!OpcodeDetails::IsReturnTypeValidForRequiredDataType(return_types, OpcodeDetails::DataType::ASSOC))
+					n_ocn[2]->SetType(ENT_ASSOC, true);
 			}
 		}
 	}

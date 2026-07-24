@@ -35,7 +35,7 @@ std::string EvaluableNodeTreeManipulation::MutationParameters::GenerateRandomStr
 	{
 		auto sid = immStringWeights->WeightedDiscreteRand(rs);
 		if(sid != string_intern_pool.NOT_A_STRING_ID)
-			return sid->string;
+			return string_intern_pool.GetStringFromID(sid);
 	}
 
 	//reuse a string if probable and possible
@@ -61,7 +61,7 @@ std::string EvaluableNodeTreeManipulation::MutationParameters::GenerateRandomStr
 		size_t rand_index = rs.RandSize(ENBISI_FIRST_DYNAMIC_STRING);
 		auto sid = GetStringIdFromBuiltInStringId(static_cast<EvaluableNodeBuiltInStringId>(rand_index));
 		if(sid != string_intern_pool.NOT_A_STRING_ID)
-			return sid->string;
+			return string_intern_pool.GetStringFromID(sid);
 	}
 
 	//randomly generate a string
@@ -572,7 +572,7 @@ static void GetStringsFromTree(EvaluableNode *tree, StringsFromTreeData &strings
 		for(auto &[cn_id, cn] : tree->GetMappedChildNodesReference())
 		{
 			if(cn_id != string_intern_pool.NOT_A_STRING_ID)
-				strings_from_tree_data.keyAndSymbolStrings.push_back(cn_id->string);
+				strings_from_tree_data.keyAndSymbolStrings.push_back(string_intern_pool.GetStringFromID(cn_id));
 			if(cn != nullptr)
 				GetStringsFromTree(cn, strings_from_tree_data);
 		}

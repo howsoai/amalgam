@@ -275,7 +275,7 @@ std::string StringManipulation::Base64ToBinaryString(std::string &base64_string)
 	return binary_string;
 }
 
-int StringManipulation::CompareNumberInStringRightJustified(const std::string &a, const std::string &b, size_t &a_index, size_t &b_index)
+int StringManipulation::CompareNumberInStringRightJustified(std::string_view a, std::string_view b, size_t &a_index, size_t &b_index)
 {
 	//comparison result of first non-matching digit
 	int compare_val_if_same_length = 0;
@@ -324,7 +324,7 @@ int StringManipulation::CompareNumberInStringRightJustified(const std::string &a
 	return 0;
 }
 
-int StringManipulation::CompareNumberInStringLeftJustified(const std::string &a, const std::string &b, size_t &a_index, size_t &b_index)
+int StringManipulation::CompareNumberInStringLeftJustified(std::string_view a, std::string_view b, size_t &a_index, size_t &b_index)
 {
 	while(1)
 	{
@@ -367,7 +367,7 @@ int StringManipulation::CompareNumberInStringLeftJustified(const std::string &a,
 	return 0;
 }
 
-int StringManipulation::StringNaturalCompare(const std::string &a, const std::string &b)
+int StringManipulation::StringNaturalCompare(std::string_view a, std::string_view b)
 {
 	size_t a_index = 0, b_index = 0;
 

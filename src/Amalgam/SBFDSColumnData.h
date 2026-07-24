@@ -438,7 +438,7 @@ public:
 		if(stringId != string_intern_pool.NOT_A_STRING_ID)
 		{
 			//make sure not extreme values
-			AmlgAssert(stringId->string.size() < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
+			AmlgAssert(string_intern_pool.GetStringViewFromID(stringId).size() < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
 			AmlgAssert(stringId->refCount < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
 		}
 

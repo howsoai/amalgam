@@ -96,8 +96,8 @@ bool EvaluableNode::ToBool(EvaluableNode *n)
 std::string EvaluableNode::BoolToString(bool value, bool key_string)
 {
 	if(key_string)
-		return GetStringIdFromBuiltInStringId(value ? ENBISI_true_key : ENBISI_false_key)->string;
-	return GetStringIdFromBuiltInStringId(value ? ENBISI_true : ENBISI_false)->string;
+		return string_intern_pool.GetStringFromID(GetStringIdFromBuiltInStringId(value ? ENBISI_true_key : ENBISI_false_key));
+	return string_intern_pool.GetStringFromID(GetStringIdFromBuiltInStringId(value ? ENBISI_true : ENBISI_false));
 }
 
 StringInternPool::StringID EvaluableNode::BoolToStringID(bool value, bool key_string)
@@ -351,7 +351,7 @@ bool EvaluableNode::IsNodeValid()
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
 			return true;
 
-		return (sid->string.size() < 2000000000);
+		return (string_intern_pool.GetStringViewFromID(sid).size() < 2000000000);
 	}
 	else if(DoesEvaluableNodeTypeUseBoolData(type))
 	{

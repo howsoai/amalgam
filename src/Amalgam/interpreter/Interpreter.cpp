@@ -897,9 +897,8 @@ static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints
 
 void Interpreter::EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::StringID not_found_variable_sid, EvaluableNode *en)
 {
-	std::string warning = "";
-
-	warning.append("Warning: undefined symbol " + not_found_variable_sid->string);
+	std::string warning = "Warning: undefined symbol ";
+	warning.append(string_intern_pool.GetStringViewFromID(not_found_variable_sid));
 
 	if(asset_manager.debugSources && en->HasComments())
 	{

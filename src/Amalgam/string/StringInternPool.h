@@ -19,21 +19,41 @@ class StringInternStringData
 {
 public:
 	inline StringInternStringData()
-		: refCount(0), string()
+		: refCount(0), _string()
 	{}
 
-	//forwarding constructor – works for std::string, std::string_view, const char*, char array, etc.
-	template<class T, class = std::enable_if_t<std::is_constructible_v<std::string, T>>>
-	StringInternStringData(T &&s)
-		: refCount(1), string(std::forward<T>(s))
+	//forwarding constructor – works for std::string, std::string_view
+	template<
+		class T,
+		class = std::enable_if_t<std::is_constructible_v<std::string, std::decay_t<T>>>>
+		StringInternStringData(T &&s)
+		: refCount(1), _string(std::forward<T>(s))
 	{}
+
+	//constructor for const char*, char array, etc.
+	template<std::size_t N>
+	StringInternStringData(const char(&s)[N])
+		: refCount(1), _string(s)
+	{}
+
+	//TODO 25818: eliminate these methods and add logic in StringInternPool based on whether least significant bit is set in pointer
+	std::string_view GetStringView()
+	{
+		return std::string_view(_string.data(), _string.length());
+	}
+
+	std::string GetString()
+	{
+		return _string;
+	}
 
 #if defined(MULTITHREAD_SUPPORT)
 	std::atomic<size_t> refCount;
 #else
 	size_t refCount;
 #endif
-	std::string string;
+
+	std::string _string;
 };
 
 class StringInternPool;
@@ -71,7 +91,22 @@ public:
 		ValidateStringIdExistence(id);
 	#endif
 
-		return id->string;
+		return id->_string;
+	}
+
+	//translates the id to a std::string_view, empty string if it does not exist
+	//note that the reference is only valid as long as the string id is valid; if a string is needed
+	//after a reference is destroyed, the caller must make a copy first
+	inline const std::string_view GetStringViewFromID(StringID id)
+	{
+		if(id == NOT_A_STRING_ID)
+			return std::string_view(EMPTY_STRING);
+
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		ValidateStringIdExistence(id);
+	#endif
+
+		return id->GetStringView();
 	}
 
 	//translates the string to the corresponding ID, 0 is the empty string, maximum value of size_t means it does not exist
@@ -264,7 +299,7 @@ public:
 		}
 
 		//lock this shard and double-check that it's the last reference before erasing
-		auto iterator_with_lock = stringToID.find(id->string);
+		auto iterator_with_lock = stringToID.find(id->_string);
 
 		size_t ref_count = id->refCount.fetch_sub(1, std::memory_order_release);
 		if(ref_count > 1)
@@ -277,7 +312,7 @@ public:
 		if(ref_count > 1)
 			return;
 
-		stringToID.erase(id->string);
+		stringToID.erase(id->_string);
 	#endif
 	}
 
@@ -333,7 +368,7 @@ protected:
 		if(sid == NOT_A_STRING_ID)
 			return;
 
-		auto found = stringToID.find(sid->string);
+		auto found = stringToID.find(sid->_string);
 		if(found == end(stringToID))
 		{
 			AmlgAssert(false);

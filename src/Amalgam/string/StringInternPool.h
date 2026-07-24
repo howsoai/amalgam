@@ -19,33 +19,20 @@ class StringInternStringData
 {
 public:
 	inline StringInternStringData()
-		: refCount(0), _string()
+		: refCount(0), stringData()
 	{}
 
 	//forwarding constructor – works for std::string, std::string_view
-	template<
-		class T,
-		class = std::enable_if_t<std::is_constructible_v<std::string, std::decay_t<T>>>>
+	template<class T, class = std::enable_if_t<std::is_constructible_v<std::string, std::decay_t<T>>>>
 		StringInternStringData(T &&s)
-		: refCount(1), _string(std::forward<T>(s))
+		: refCount(1), stringData(std::forward<T>(s))
 	{}
 
 	//constructor for const char*, char array, etc.
 	template<std::size_t N>
 	StringInternStringData(const char(&s)[N])
-		: refCount(1), _string(s)
+		: refCount(1), stringData(s)
 	{}
-
-	//TODO 25818: eliminate these methods and add logic in StringInternPool based on whether least significant bit is set in pointer
-	std::string_view GetStringView()
-	{
-		return std::string_view(_string.data(), _string.length());
-	}
-
-	std::string GetString()
-	{
-		return _string;
-	}
 
 #if defined(MULTITHREAD_SUPPORT)
 	std::atomic<size_t> refCount;
@@ -53,7 +40,7 @@ public:
 	size_t refCount;
 #endif
 
-	std::string _string;
+	std::string stringData;
 };
 
 class StringInternPool;
@@ -87,11 +74,13 @@ public:
 		if(id == NOT_A_STRING_ID)
 			return EMPTY_STRING;
 
+		//TODO 25818: add logic based on whether least significant bit is set in pointer
+
 	#ifdef STRING_INTERN_POOL_VALIDATION
 		ValidateStringIdExistence(id);
 	#endif
 
-		return id->_string;
+		return id->stringData;
 	}
 
 	//translates the id to a std::string_view, empty string if it does not exist
@@ -102,16 +91,20 @@ public:
 		if(id == NOT_A_STRING_ID)
 			return std::string_view(EMPTY_STRING);
 
+		//TODO 25818: add logic based on whether least significant bit is set in pointer
+
 	#ifdef STRING_INTERN_POOL_VALIDATION
 		ValidateStringIdExistence(id);
 	#endif
 
-		return id->GetStringView();
+		return std::string_view(id->stringData.data(), id->stringData.length());
 	}
 
 	//translates the string to the corresponding ID, 0 is the empty string, maximum value of size_t means it does not exist
 	inline StringID GetIDFromString(const std::string &str)
 	{
+		//TODO 25818: add logic based on string length and set least significant bit in pointer if applicable
+
 		auto id_iter = stringToID.find(str);
 		if(id_iter == stringToID.end())
 			return NOT_A_STRING_ID;
@@ -128,6 +121,8 @@ public:
 	{
 		if(str.size() == 0)
 			return emptyStringId;
+
+		//TODO 25818: add logic based on string length and set least significant bit in pointer if applicable
 
 		//try to insert it as a new string
 		auto inserted = stringToID.emplace(str, nullptr);
@@ -152,6 +147,8 @@ public:
 	{
 		if(str.size() == 0)
 			return emptyStringId;
+
+		//TODO 25818: add logic based on string length and set least significant bit in pointer if applicable
 
 		//try to insert it as a new string
 		//make a copy which will be forwarded
@@ -275,6 +272,8 @@ public:
 		if(id == NOT_A_STRING_ID || id == emptyStringId)
 			return;
 
+		//TODO 25818: check least significant bit
+
 	#ifdef STRING_INTERN_POOL_VALIDATION
 		ValidateStringIdExistence(id);
 	#endif
@@ -299,7 +298,7 @@ public:
 		}
 
 		//lock this shard and double-check that it's the last reference before erasing
-		auto iterator_with_lock = stringToID.find(id->_string);
+		auto iterator_with_lock = stringToID.find(id->stringData);
 
 		size_t ref_count = id->refCount.fetch_sub(1, std::memory_order_release);
 		if(ref_count > 1)
@@ -368,7 +367,7 @@ protected:
 		if(sid == NOT_A_STRING_ID)
 			return;
 
-		auto found = stringToID.find(sid->_string);
+		auto found = stringToID.find(sid->stringData);
 		if(found == end(stringToID))
 		{
 			AmlgAssert(false);

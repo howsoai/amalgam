@@ -88,7 +88,7 @@ public:
 
 		//initializes in a way intended for contained entities for the given contained entity_id, will inherit parameters
 		//but update with the new resource_base_path
-		inline AssetParametersRef CreateAssetParametersForContainedResourceByEntityId(const std::string &entity_id)
+		inline AssetParametersRef CreateAssetParametersForContainedResourceByEntityId(std::string_view entity_id)
 		{
 			AssetParametersRef new_params = std::make_shared<AssetParameters>(*this);
 			if(escapeContainedResourceNames)
@@ -98,7 +98,9 @@ public:
 			}
 			else
 			{
-				new_params->resourceBasePath = resourceBasePath + "/" + entity_id;
+				new_params->resourceBasePath = resourceBasePath;
+				new_params->resourceBasePath.append("/");
+				new_params->resourceBasePath.append(entity_id);
 			}
 
 			new_params->resourcePath = new_params->resourceBasePath + "." + extension;

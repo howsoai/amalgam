@@ -161,7 +161,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 				}
 				else //just use the string directly by reference (without making a copy)
 				{
-					auto &str = string_intern_pool.GetStringFromID(cn_id);
+					auto str = string_intern_pool.GetStringViewFromID(cn_id);
 					EscapeAndAppendStringToJsonString(str, json_str);
 				}
 
@@ -199,7 +199,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 				}
 				else //just use the string directly by reference (without making a copy)
 				{
-					auto &str = string_intern_pool.GetStringFromID(key_sids[i]);
+					auto str = string_intern_pool.GetStringViewFromID(key_sids[i]);
 					EscapeAndAppendStringToJsonString(str, json_str);
 				}
 

@@ -684,10 +684,10 @@ void EvaluableNode::SetStringID(StringInternPool::StringID id)
 	}
 }
 
-const std::string &EvaluableNode::GetStringValue()
+const std::string_view EvaluableNode::GetStringValue()
 {
 	if(DoesEvaluableNodeTypeUseStringData(GetType()))
-		return string_intern_pool.GetStringFromID(value.stringValueContainer.stringID);
+		return string_intern_pool.GetStringViewFromID(value.stringValueContainer.stringID);
 
 	//none of the above, return an empty one
 	return emptyStringValue;
@@ -1478,7 +1478,7 @@ double EvaluableNodeImmediateValueWithType::GetValueAsNumber(double value_if_nul
 		if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
 			return value_if_null;
 
-		auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
+		auto str = string_intern_pool.GetStringViewFromID(nodeValue.stringID);
 		auto [value, success] = Platform_StringToNumber(str);
 		if(success)
 			return value;
@@ -1512,7 +1512,7 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 	if(nodeType == ENIVT_CODE && !EvaluableNode::IsNull(nodeValue.code))
 	{
 		if(nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
-			return std::make_pair(true, nodeValue.code->GetStringValue());
+			return std::make_pair(true, std::string(nodeValue.code->GetStringValue()));
 
 		if(key_string)
 			return std::make_pair(true, Parser::UnparseToKeyString(nodeValue.code));

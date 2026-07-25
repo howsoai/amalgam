@@ -131,8 +131,8 @@ static inline StringInternPool::StringID MixStringValues(StringInternPool::Strin
 	if(b == StringInternPool::NOT_A_STRING_ID)
 		return string_intern_pool.CreateStringReference(a);
 
-	auto &a_str = string_intern_pool.GetStringFromID(a);
-	auto &b_str = string_intern_pool.GetStringFromID(b);
+	auto a_str = string_intern_pool.GetStringViewFromID(a);
+	auto b_str = string_intern_pool.GetStringViewFromID(b);
 	std::string result = EvaluableNodeTreeManipulation::MixStrings(a_str, b_str,
 		random_stream, fraction_a, fraction_b);
 
@@ -259,7 +259,7 @@ EvaluableNodeTreeManipulation::StringsMixMethodUtf8::StringsMixMethodUtf8(Random
 	fractionAInsteadOfB = fractionA / (fractionA + fractionB);
 }
 
-std::string EvaluableNodeTreeManipulation::MixStrings(const std::string &a, const std::string &b,
+std::string EvaluableNodeTreeManipulation::MixStrings(std::string_view a, std::string_view b,
 	RandomStream random_stream, double fraction_a, double fraction_b)
 {
 	StringManipulation::ExplodeUTF8Characters(a, aCharsBuffer);

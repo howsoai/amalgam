@@ -20,7 +20,7 @@ public:
 		bool debug_sources, bool allow_file_loading);
 
 	//returns true if the string needs to be backslashified
-	inline static bool NeedsBackslashify(const std::string &s)
+	inline static bool NeedsBackslashify(std::string_view s)
 	{
 		for(auto c : s)
 		{
@@ -43,7 +43,7 @@ public:
 	}
 
 	//returns true if the string needs to be backslashified, has spaces, or has special characters
-	inline static bool HasCharactersBeyondIdentifier(const std::string &s, bool label = false)
+	inline static bool HasCharactersBeyondIdentifier(std::string_view s, bool label = false)
 	{
 		if(s.empty())
 			return false;
@@ -90,7 +90,7 @@ public:
 	}
 
 	//Returns a properly backslashified string
-	static std::string Backslashify(const std::string &s);
+	static std::string Backslashify(std::string_view s);
 
 	//appends a newline to s and indents the newline the required amount
 	static inline void AppendNewlineWithIndentation(std::string &s, size_t indentation_depth, bool pretty)

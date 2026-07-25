@@ -1025,8 +1025,8 @@ public:
 		{
 			if(a.nodeType == ENIVT_STRING_ID && b.nodeType == ENIVT_STRING_ID)
 			{
-				auto &a_str = string_intern_pool.GetStringFromID(a.nodeValue.stringID);
-				auto &b_str = string_intern_pool.GetStringFromID(b.nodeValue.stringID);
+				auto a_str = string_intern_pool.GetStringViewFromID(a.nodeValue.stringID);
+				auto b_str = string_intern_pool.GetStringViewFromID(b.nodeValue.stringID);
 				return static_cast<double>(EvaluableNodeTreeManipulation::EditDistance(a_str, b_str));
 			}
 

@@ -102,7 +102,7 @@ public:
 
 	bool operator==(const PointerType &other) const noexcept
 	{
-		return pointerOrShortString == std::launder(reinterpret_cast<std::uint64_t>(other);
+		return pointerOrShortString == std::launder(reinterpret_cast<std::uint64_t>(other));
 	}
 
 	bool operator!=(const PointerWithShortInlineString &other) const noexcept
@@ -112,7 +112,7 @@ public:
 
 	bool operator!=(const PointerType &other) const noexcept
 	{
-		return pointerOrShortString != std::launder(reinterpret_cast<std::uint64_t>(other);
+		return pointerOrShortString != std::launder(reinterpret_cast<std::uint64_t>(other));
 	}
 
 	inline void AssignPointer(PointerType *p) noexcept
@@ -220,7 +220,7 @@ public:
 	//translates the id to a string, empty string if it does not exist
 	//note that the reference is only valid as long as the string id is valid; if a string is needed
 	//after a reference is destroyed, the caller must make a copy first
-	inline const std::string &GetStringFromID(StringID id)
+	inline const std::string GetStringFromID(StringID id)
 	{
 		if(id == NOT_A_STRING_ID)
 			return EMPTY_STRING;
@@ -680,12 +680,14 @@ private:
 
 inline int StringNaturalCompare(const StringInternPool::StringID a, const StringInternPool::StringID b)
 {
-	return StringManipulation::StringNaturalCompare(string_intern_pool.GetStringFromID(a), string_intern_pool.GetStringFromID(b));
+	return StringManipulation::StringNaturalCompare(
+		string_intern_pool.GetStringViewFromID(a), string_intern_pool.GetStringViewFromID(b));
 }
 
 inline bool StringIDNaturalCompareSort(const StringInternPool::StringID a, const StringInternPool::StringID b)
 {
-	int comp = StringManipulation::StringNaturalCompare(string_intern_pool.GetStringFromID(a), string_intern_pool.GetStringFromID(b));
+	int comp = StringManipulation::StringNaturalCompare(
+		string_intern_pool.GetStringViewFromID(a), string_intern_pool.GetStringViewFromID(b));
 	return comp < 0;
 }
 

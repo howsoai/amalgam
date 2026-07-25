@@ -51,7 +51,7 @@ Parser::Parser(std::string_view code_string, EvaluableNodeManager *enm,
 	codeComplete = false;
 }
 
-std::string Parser::Backslashify(const std::string &s)
+std::string Parser::Backslashify(std::string_view s)
 {
 	if(s.size() == 0)
 		return std::string();
@@ -992,7 +992,7 @@ void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringI
 	}
 	else
 	{
-		auto &key_str = string_intern_pool.GetStringFromID(key_sid);
+		auto key_str = string_intern_pool.GetStringViewFromID(key_sid);
 
 		if(!Parser::DoesStringNeedUnparsingToKey(key_str))
 		{

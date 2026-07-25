@@ -65,7 +65,12 @@ public:
 		pointerOrShortString = 0;
 	}
 
-	inline PointerWithShortInlineString(PointerType *p) noexcept
+	inline PointerWithShortInlineString(PointerWithShortInlineString &pwsis) noexcept
+	{
+		pointerOrShortString = pwsis.pointerOrShortString;
+	}
+
+	inline PointerWithShortInlineString(PointerType p) noexcept
 	{
 		AssignPointer(p);
 	}
@@ -75,12 +80,12 @@ public:
 		AssignString(s);
 	}
 
-	inline PointerWithShortInlineString(std::string_view &s) noexcept
+	inline PointerWithShortInlineString(std::string_view s) noexcept
 	{
 		AssignStringView(s);
 	}
 
-	inline PointerWithShortInlineString &operator=(PointerType *p) noexcept
+	inline PointerWithShortInlineString &operator=(PointerType p) noexcept
 	{
 		AssignPointer(p);
 		return *this;
@@ -105,22 +110,22 @@ public:
 		return pointerOrShortString == other.pointerOrShortString;
 	}
 
-	inline bool operator==(const PointerType &other) const noexcept
+	inline bool operator==(const PointerType other) const noexcept
 	{
 		return pointerOrShortString == std::launder(reinterpret_cast<std::uint64_t>(other));
 	}
 
-	inline bool operator!=(const PointerWithShortInlineString &other) const noexcept
+	inline bool operator!=(const PointerWithShortInlineString other) const noexcept
 	{
 		return pointerOrShortString != other.pointerOrShortString;
 	}
 
-	inline bool operator!=(const PointerType &other) const noexcept
+	inline bool operator!=(const PointerType other) const noexcept
 	{
 		return pointerOrShortString != std::launder(reinterpret_cast<std::uint64_t>(other));
 	}
 
-	inline void AssignPointer(PointerType *p) noexcept
+	inline void AssignPointer(PointerType p) noexcept
 	{
 		pointerOrShortString = std::launder(reinterpret_cast<std::uint64_t>(p));
 	}
@@ -137,7 +142,7 @@ public:
 	}
 
 	//assumes CanFitString has been called and returns true
-	inline void AssignStringView(std::string_view &s) noexcept
+	inline void AssignStringView(std::string_view s) noexcept
 	{
 		pointerOrShortString = inlineMask;
 		pointerOrShortString |= (static_cast<uint64_t>(s.size()) << lengthShift) & lengthMask;
@@ -147,34 +152,34 @@ public:
 			std::launder(reinterpret_cast<std::uint8_t *>(&pointerOrShortString) + dataOffset), s.data(), s.size());
 	}
 
-	constexpr bool CanFitString(std::string &s)
+	static constexpr bool CanFitString(std::string &s)
 	{
 		return s.size() <= inlineCapacity;
 	}
 
-	constexpr bool CanFitString(std::string_view s)
+	static constexpr bool CanFitString(std::string_view s)
 	{
 		return s.size() <= inlineCapacity;
 	}
 
-	constexpr bool IsInlineString() const noexcept
+	inline bool IsInlineString() const noexcept
 	{
 		return (pointerOrShortString & inlineMask) != 0;
 	}
 
-	constexpr size_t InlineStringLength() const noexcept
+	inline size_t InlineStringLength() const noexcept
 	{
 		return static_cast<size_t>((pointerOrShortString & lengthMask) >> lengthShift);
 	}
 
-	constexpr PointerType *GetPointer() const noexcept
+	inline PointerType GetPointer() const noexcept
 	{
 		if(IsInlineString())
 			return nullptr;
-		return std::launder(reinterpret_cast<PointerType *>(pointerOrShortString));
+		return std::launder(reinterpret_cast<PointerType>(pointerOrShortString));
 	}
 
-	constexpr std::string GetString() const noexcept
+	inline std::string GetString() const noexcept
 	{
 		if(IsInlineString())
 			return std::string(
@@ -184,7 +189,7 @@ public:
 			return std::string();
 	}
 
-	constexpr std::string_view GetStringView() const noexcept
+	inline std::string_view GetStringView() const noexcept
 	{
 		if(IsInlineString())
 			return std::string_view(
@@ -225,7 +230,7 @@ public:
 	//translates the id to a string, empty string if it does not exist
 	//note that the reference is only valid as long as the string id is valid; if a string is needed
 	//after a reference is destroyed, the caller must make a copy first
-	inline const std::string GetStringFromID(StringID id)
+	inline std::string GetStringFromID(StringID id)
 	{
 		if(id == NOT_A_STRING_ID)
 			return EMPTY_STRING;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 //project headers:
 #include "Concurrency.h"
@@ -7,6 +7,7 @@
 
 //system headers:
 #include <memory>
+#include <new>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -22,7 +23,7 @@ public:
 		: refCount(0), stringData()
 	{}
 
-	//forwarding constructor � works for std::string, std::string_view
+	//forwarding constructor – works for std::string, std::string_view
 	template<class T, class = std::enable_if_t<std::is_constructible_v<std::string, std::decay_t<T>>>>
 		StringInternStringData(T &&s)
 		: refCount(1), stringData(std::forward<T>(s))
@@ -41,6 +42,83 @@ public:
 #endif
 
 	std::string stringData;
+};
+
+template<class PointerType>
+class PointerWithShortInlineString
+{
+	//data offset in bytes for potential inline strings
+	//for little‑endian, use bytes 1‑7
+	//big‑endian, use bytes 0‑6
+	static constexpr size_t dataOffset = Platform_IsLittleEndian() ? 1 : 0;
+
+	//layout masks
+	static constexpr uint64_t inlineMask = 1;
+	static constexpr uint64_t lengthMask = 0xFE;
+	static constexpr uint64_t lengthShift = 1;
+	static constexpr size_t inlineCapacity = 7;
+
+public:
+
+	explicit PointerWithShortInlineString(PointerType *p) noexcept
+	{
+		pointerOrShortString = std::launder(reinterpret_cast<std::uint64_t>(p));
+	}
+
+	explicit PointerWithShortInlineString(std::string &s) noexcept
+	{
+		if(s.size() > inlineCapacity)
+		{
+			pointerOrShortString = 0;
+			return;
+		}
+
+		pointerOrShortString = inlineMask;
+		pointerOrShortString |= (static_cast<uint64_t>(s.size()) << lengthShift) & lengthMask;
+
+		//copy characters into the selected byte range
+		std::memcpy(std::launder(reinterpret_cast<std::uint8_t *>(&pointerOrShortString) + dataOffset),
+			s.data(), s.size());
+	}
+
+	constexpr bool CanFitStringInPointer(std::string &s)
+	{
+		return s.size() <= inlineCapacity;
+	}
+
+	constexpr bool CanFitStringInPointer(std::string_view s)
+	{
+		return s.size() <= inlineCapacity;
+	}
+
+	constexpr bool IsInlineString() const noexcept
+	{
+		return (pointerOrShortString & inlineMask) != 0;
+	}
+
+	constexpr size_t InlineStringLength() const noexcept
+	{
+		return static_cast<size_t>((pointerOrShortString & lengthMask) >> lengthShift);
+	}
+
+	constexpr PointerType *GetPointer() const noexcept
+	{
+		if(IsInlineString())
+			return nullptr;
+		return std::launder(reinterpret_cast<PointerType *>(pointerOrShortString));
+	}
+
+	constexpr operator std::string_view() const noexcept
+	{
+		if(IsInlineString())
+			return std::string_view(
+				std::launder(reinterpret_cast<const std::uint8_t *>(&pointerOrShortString) + dataOffset),
+				InlineStringLength());
+		else
+			return std::string_view();
+	}
+
+	uint64_t pointerOrShortString;
 };
 
 class StringInternPool;

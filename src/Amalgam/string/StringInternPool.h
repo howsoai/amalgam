@@ -60,57 +60,62 @@ class PointerWithShortInlineString
 
 public:
 
-	explicit PointerWithShortInlineString(PointerType *p) noexcept
+	inline PointerWithShortInlineString() noexcept
+	{
+		pointerOrShortString = 0;
+	}
+
+	inline PointerWithShortInlineString(PointerType *p) noexcept
 	{
 		AssignPointer(p);
 	}
 
-	explicit PointerWithShortInlineString(std::string &s) noexcept
+	inline PointerWithShortInlineString(std::string &s) noexcept
 	{
 		AssignString(s);
 	}
 
-	explicit PointerWithShortInlineString(std::string_view &s) noexcept
+	inline PointerWithShortInlineString(std::string_view &s) noexcept
 	{
 		AssignStringView(s);
 	}
 
-	PointerWithShortInlineString &operator=(PointerType *p) noexcept
+	inline PointerWithShortInlineString &operator=(PointerType *p) noexcept
 	{
 		AssignPointer(p);
 		return *this;
 	}
 
 	//assumes CanFitString has been called and returns true
-	PointerWithShortInlineString &operator=(std::string &s) noexcept
+	inline PointerWithShortInlineString &operator=(std::string &s) noexcept
 	{
 		AssignString(s);
 		return *this;
 	}
 
 	//assumes CanFitString has been called and returns true
-	PointerWithShortInlineString &operator=(std::string_view &s) noexcept
+	inline PointerWithShortInlineString &operator=(std::string_view &s) noexcept
 	{
 		AssignStringView(s);
 		return *this;
 	}
 
-	bool operator==(const PointerWithShortInlineString &other) const noexcept
+	inline bool operator==(const PointerWithShortInlineString &other) const noexcept
 	{
 		return pointerOrShortString == other.pointerOrShortString;
 	}
 
-	bool operator==(const PointerType &other) const noexcept
+	inline bool operator==(const PointerType &other) const noexcept
 	{
 		return pointerOrShortString == std::launder(reinterpret_cast<std::uint64_t>(other));
 	}
 
-	bool operator!=(const PointerWithShortInlineString &other) const noexcept
+	inline bool operator!=(const PointerWithShortInlineString &other) const noexcept
 	{
 		return pointerOrShortString != other.pointerOrShortString;
 	}
 
-	bool operator!=(const PointerType &other) const noexcept
+	inline bool operator!=(const PointerType &other) const noexcept
 	{
 		return pointerOrShortString != std::launder(reinterpret_cast<std::uint64_t>(other));
 	}

@@ -186,7 +186,7 @@ std::string EvaluableNode::ToString(EvaluableNode *e, bool key_string)
 		return ".null";
 
 	if(e->GetType() == ENT_STRING)
-		return e->GetStringValue();
+		return std::string(e->GetStringView());
 
 	if(e->GetType() == ENT_NUMBER)
 		return StringManipulation::NumberToString(e->GetNumberValueReference());
@@ -200,7 +200,7 @@ std::pair<bool, std::string> EvaluableNode::ToValidString(EvaluableNode *e)
 		return std::make_pair(false, "");
 
 	if(e->GetType() == ENT_STRING)
-		return std::make_pair(true, e->GetStringValue());
+		return std::make_pair(true, std::string(e->GetStringView()));
 
 	if(e->GetType() == ENT_NUMBER)
 		return std::make_pair(true, StringManipulation::NumberToString(e->GetNumberValueReference()));
@@ -684,7 +684,7 @@ void EvaluableNode::SetStringID(StringInternPool::StringID id)
 	}
 }
 
-const std::string_view EvaluableNode::GetStringValue()
+std::string_view EvaluableNode::GetStringView()
 {
 	if(DoesEvaluableNodeTypeUseStringData(GetType()))
 		return string_intern_pool.GetStringViewFromID(value.stringValueContainer.stringID);
@@ -1512,7 +1512,7 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 	if(nodeType == ENIVT_CODE && !EvaluableNode::IsNull(nodeValue.code))
 	{
 		if(nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
-			return std::make_pair(true, std::string(nodeValue.code->GetStringValue()));
+			return std::make_pair(true, std::string(nodeValue.code->GetStringView()));
 
 		if(key_string)
 			return std::make_pair(true, Parser::UnparseToKeyString(nodeValue.code));

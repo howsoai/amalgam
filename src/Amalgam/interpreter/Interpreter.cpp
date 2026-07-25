@@ -330,7 +330,7 @@ std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(Evaluable
 
 	//shortcut if the node has what is being asked
 	if(n->GetType() == ENT_STRING)
-		return std::make_pair(true, n->GetStringValue());
+		return std::make_pair(true, std::string(n->GetStringView()));
 
 	auto result = InterpretNodeForImmediateUse(n,
 		key_string ? EvaluableNodeRequestedValueTypes::Type::KEY_STRING_ID_OR_NULL

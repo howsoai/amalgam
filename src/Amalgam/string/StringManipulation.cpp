@@ -107,10 +107,10 @@ std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_str
 	return args;
 }
 
-std::vector<std::string> StringManipulation::Split(const std::string &s, char delim)
+std::vector<std::string> StringManipulation::Split(std::string_view s, char delim)
 {
 	std::vector<std::string> ret;
-	std::stringstream ss{ s };
+	std::stringstream ss{ std::string(s) };
 	std::string item;
 
 	while(std::getline(ss, item, delim))

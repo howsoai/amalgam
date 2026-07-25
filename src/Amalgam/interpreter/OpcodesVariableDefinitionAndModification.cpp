@@ -2038,7 +2038,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				}
 
 				use_number = true;
-				number_value = GetNumSecondsSinceMidnight(string_value, from_type_str.c_str() + time_string.size(), locale);
+				number_value = GetNumSecondsSinceMidnight(string_value, from_type_str.data() + time_string.size(), locale);
 
 			}
 		}
@@ -2387,7 +2387,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			else if(use_int_number)		num_secs_from_midnight = static_cast<double>(int_number_value);
 			else if(use_code)			num_secs_from_midnight = static_cast<double>(EvaluableNode::ToNumber(code_value));
 
-			string_value = GetTimeStringFromNumSecondsSinceMidnight(num_secs_from_midnight, to_type_str.c_str() + time_string.size(), locale);
+			string_value = GetTimeStringFromNumSecondsSinceMidnight(num_secs_from_midnight, to_type_str.data() + time_string.size(), locale);
 		}
 	}
 

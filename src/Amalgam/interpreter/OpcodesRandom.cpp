@@ -500,7 +500,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNod
 	auto seed_node = InterpretNodeForImmediateUse(ocn[0]);
 	std::string seed_string;
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
-		seed_string = seed_node->GetStringValue();
+		seed_string = seed_node->GetStringView();
 	else
 		seed_string = Parser::Unparse(seed_node, false, false, true);
 
@@ -643,7 +643,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	auto seed_node = InterpretNode(ocn[num_params > 1 ? 1 : 0]);
 	std::string seed_string;
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
-		seed_string = seed_node->GetStringValue();
+		seed_string = seed_node->GetStringView();
 	else
 		seed_string = Parser::Unparse(seed_node, false, false, true);
 	auto node_stack = CreateOpcodeStackStateSaver(seed_node);

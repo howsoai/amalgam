@@ -579,12 +579,12 @@ static void GetStringsFromTree(EvaluableNode *tree, StringsFromTreeData &strings
 	}
 	else if(tree->GetType() == ENT_SYMBOL)
 	{
-		strings_from_tree_data.keyAndSymbolStrings.emplace_back(tree->GetStringValue());
+		strings_from_tree_data.keyAndSymbolStrings.emplace_back(tree->GetStringView());
 	}
 	else if(tree->IsImmediate())
 	{
 		if(DoesEvaluableNodeTypeUseStringData(tree->GetType()))
-			strings_from_tree_data.valueStrings.emplace_back(tree->GetStringValue());
+			strings_from_tree_data.valueStrings.emplace_back(tree->GetStringView());
 	}
 	else //ordered
 	{
@@ -1114,7 +1114,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		}
 		else if(n2_type == ENT_STRING)
 		{
-			auto &n2_value = n2->GetStringValue();
+			auto &n2_value = n2->GetStringView();
 			bool n2_as_bool = (n2_value != "");
 			if(n1_value == n2_as_bool)
 				return std::make_pair(n2, 0.25);
@@ -1140,7 +1140,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		}
 		if(n2_type == ENT_STRING)
 		{
-			auto &n2_value = n2->GetStringValue();
+			auto &n2_value = n2->GetStringView();
 			return std::make_pair(n2, n2_value == "" ? 0.25 : 0.125);
 		}
 		return std::make_pair(nullptr, 0.0);
@@ -1182,7 +1182,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 
 	case ENT_STRING:
 	{
-		auto &n1_value = n1->GetStringValue();
+		auto &n1_value = n1->GetStringView();
 
 		if(n2_type == ENT_NULL)
 		{

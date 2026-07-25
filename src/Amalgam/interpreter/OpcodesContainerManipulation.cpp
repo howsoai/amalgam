@@ -1092,7 +1092,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, Ev
 	{
 		if(n->GetType() == ENT_STRING)
 		{
-			auto &s = n->GetStringValue();
+			auto &s = n->GetStringView();
 			size = static_cast<double>(StringManipulation::GetNumUTF8Characters(s));
 		}
 		else
@@ -2066,7 +2066,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	else if(container->GetType() == ENT_STRING && !EvaluableNode::IsNull(value))
 	{
 		//compute regular expression
-		auto &s = container->GetStringValue();
+		auto &s = container->GetStringView();
 
 		std::string value_as_str = EvaluableNode::ToString(value);
 
@@ -2082,7 +2082,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 			valid_rx = false;
 		}
 
-		if(valid_rx && std::regex_match(s, rx))
+		if(valid_rx && std::regex_match(s.data(), s.data() + s.size(), rx))
 			found = true;
 	}
 

@@ -15,7 +15,7 @@ namespace StringManipulation
 	std::string RemoveFirstToken(std::string &str);
 
 	//splits a string by given delimiter
-	std::vector<std::string> Split(const std::string &s, char delim = ' ');
+	std::vector<std::string> Split(std::string_view s, char delim = ' ');
 
 	std::vector<std::string> SplitByLines(std::string_view s);
 

@@ -114,7 +114,7 @@ public:
 	{
 		//use the freeable flag to indicate if it has been accessed by target
 		if(target != nullptr)
-			target->SetIsFreeable(true);
+			target->SetIsFreeableTopNode(true);
 		constructionStack.emplace_back(target_origin, &target, current_index, current_value, previous_result);
 	}
 
@@ -130,7 +130,7 @@ public:
 
 			//if something accessed target, the top node is no longer freeable
 			//and further logic must assess the state of target_ref
-			if(target_ref != nullptr && !target_ref->GetIsFreeable())
+			if(target_ref != nullptr && !target_ref->GetIsFreeableTopNode())
 			{
 				//if something accessed target, the top node is no longer freeable
 				//and needs to be marked as potentially containing a cycle
@@ -146,14 +146,6 @@ public:
 					target_ref.unique = false;
 					target_ref.uniqueUnreferencedTopNode = false;
 				}
-
-				//clear freeability for use in other places
-			#ifdef MULTITHREAD_SUPPORT
-				//not unique, so should set atomically if other threads may be accessing it
-				target_ref->SetIsFreeableAtomic(false);
-			#else
-				target_ref->SetIsFreeable(false);
-			#endif
 			}
 
 			constructionStack.pop_back();
@@ -256,14 +248,18 @@ public:
 		}
 
 		//indicate scope stack is not freeable if the top is still freeable
-		if(scopeStack.size() > 0 && scopeStack.back()->GetIsFreeable())
+		if(scopeStack.size() > 0 && scopeStack.back()->GetIsFreeableTopNode())
 		{
 			for(auto &stack_entry : scopeStack)
+			{
 			#ifdef MULTITHREAD_SUPPORT
 				stack_entry->SetIsFreeableAtomic(false);
+				stack_entry->SetIsFreeableTopNodeAtomic(false);
 			#else
 				stack_entry->SetIsFreeable(false);
+				stack_entry->SetIsFreeableTopNode(false);
 			#endif
+			}
 		}
 		return std::make_pair(any_constructions, any_set);
 	}
@@ -283,7 +279,7 @@ public:
 		{
 			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
 			//set the context to be freeable so it knows to look for any possible freeable values
-			args->SetIsFreeable(true);
+			args->SetIsFreeableTopNode(true);
 		}
 		else if(args->IsAssociativeArray())
 		{
@@ -295,11 +291,14 @@ public:
 					for(auto &[id, cn] : args->GetMappedChildNodesReference())
 					{
 						if(cn != nullptr)
+						{
 							cn->SetIsFreeable(true);
+							cn->SetIsFreeableTopNode(true);
+						}
 					}
 
 					//set the context to be freeable so it knows to look for any possible freeable values
-					args->SetIsFreeable(true);
+					args->SetIsFreeableTopNode(true);
 				}
 			}
 			else //not unique, so need to make a copy of the top node
@@ -312,7 +311,7 @@ public:
 		{
 			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
 			//set the context to be freeable so it knows to look for any possible freeable values
-			args->SetIsFreeable(true);
+			args->SetIsFreeableTopNode(true);
 		}
 
 		args->SetNeedCycleCheck(true);
@@ -338,6 +337,8 @@ public:
 	#endif
 	)
 	{
+		//TODO 25824: revisit if this method should return a pair of bools for uniqueness
+
 		//find appropriate context for symbol by walking up the stack
 		for(auto it = rbegin(scopeStack); it != rend(scopeStack); ++it)
 		{
@@ -351,10 +352,16 @@ public:
 					{
 					#ifdef MULTITHREAD_SUPPORT
 						if(use_atomic_when_setting_access_flag)
+						{
 							is_freeable = found->second->SetIsFreeableAtomic(false);
+							found->second->SetIsFreeableTopNodeAtomic(false);
+						}
 						else
 					#endif
+						{
 							is_freeable = found->second->SetIsFreeable(false);
+							found->second->SetIsFreeableTopNode(false);
+						}
 					}
 					else
 					{
@@ -425,6 +432,8 @@ public:
 	#endif
 	)
 	{
+		//TODO 25824: revisit if this method should return a pair of bools for uniqueness
+
 		//find appropriate context for symbol by walking up the stack
 		//acquire lock if found
 		size_t cur_scope_stack_size = scopeStack.size();

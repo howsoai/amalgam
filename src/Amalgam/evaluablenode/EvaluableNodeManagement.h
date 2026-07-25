@@ -293,8 +293,10 @@ public:
 			//clear the freeable bit in case it is on the stack
 		#ifdef MULTITHREAD_SUPPORT
 			original->SetIsFreeableAtomic(false);
+			original->SetIsFreeableTopNodeAtomic(false);
 		#else
 			original->SetIsFreeable(false);
+			original->SetIsFreeableTopNode(false);
 		#endif
 			return;
 		}

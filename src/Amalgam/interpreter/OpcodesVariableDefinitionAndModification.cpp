@@ -225,11 +225,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					any_nonunique_assignments = true;
 
 					if(cn != nullptr)
+					{
 					#ifdef MULTITHREAD_SUPPORT
 						cn->SetIsFreeableAtomic(required_vars.unique);
+						cn->SetIsFreeableTopNodeAtomic(required_vars.uniqueUnreferencedTopNode);
 					#else
 						cn->SetIsFreeable(required_vars.unique);
+						cn->SetIsFreeableTopNode(required_vars.uniqueUnreferencedTopNode);
 					#endif
+					}
 				}
 				else
 				{
@@ -287,11 +291,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					#endif
 						//only set unread if writing to parts of the stack that aren't shared
 						if(value != nullptr)
+						{
 						#ifdef MULTITHREAD_SUPPORT
 							value->SetIsFreeableAtomic(value.unique);
+							value->SetIsFreeableTopNodeAtomic(value.uniqueUnreferencedTopNode);
 						#else
 							value->SetIsFreeable(value.unique);
+							value->SetIsFreeableTopNode(value.uniqueUnreferencedTopNode);
 						#endif
+						}
 
 					scope->SetMappedChildNode(cn_id, value, false);
 				}
@@ -615,6 +623,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				}
 				else
 				{
+					//TODO 25824: investigate whether this needs to be a deep copy or can be a single node copy; probably depends on whether it's cycle free, but could look at whether top node is freeable
+					//TODO 25824: make changes to 2 param variant below too, but not to walk path variant
+
 					//values should always be copied before changing, in case the value is used elsewhere, especially in another thread
 					EvaluableNodeReference value_destination_node = evaluableNodeManager->DeepAllocCopy(*value_destination);
 					variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
@@ -632,11 +643,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			//need to set whether freeable in case a variable's value is assigned to another variable
 			if(variable_value_node != nullptr)
+			{
 			#ifdef MULTITHREAD_SUPPORT
 				variable_value_node->SetIsFreeableAtomic(variable_value_node.unique);
+				variable_value_node->SetIsFreeableTopNodeAtomic(variable_value_node.uniqueUnreferencedTopNode);
 			#else
 				variable_value_node->SetIsFreeable(variable_value_node.unique);
+				variable_value_node->SetIsFreeableTopNode(variable_value_node.uniqueUnreferencedTopNode);
 			#endif
+			}
 
 			//assign back into the context_to_use
 			*value_destination = variable_value_node;
@@ -1287,9 +1302,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 	{
 		if(constructionStack[i].targetOrigin != nullptr)
 		#ifdef MULTITHREAD_SUPPORT
-			constructionStack[i].targetOrigin->SetIsFreeableAtomic(false);
+			constructionStack[i].targetOrigin->SetIsFreeableTopNodeAtomic(false);
 		#else
-			constructionStack[i].targetOrigin->SetIsFreeable(false);
+			constructionStack[i].targetOrigin->SetIsFreeableTopNode(false);
 		#endif
 	}
 	
@@ -1376,9 +1391,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, Ev
 		return EvaluableNodeReference::Null();
 
 #ifdef MULTITHREAD_SUPPORT
-	arg_node->SetIsFreeableAtomic(false);
+	arg_node->SetIsFreeableTopNodeAtomic(false);
 #else
-	arg_node->SetIsFreeable(false);
+	arg_node->SetIsFreeableTopNode(false);
 #endif
 
 	return EvaluableNodeReference(arg_node, false);

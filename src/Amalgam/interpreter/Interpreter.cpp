@@ -99,7 +99,7 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 	if(EvaluableNode::IsAssociativeArray(new_scope))
 	{
 		evaluableNodeManager->EnsureNodeIsModifiable(new_scope, true, false);
-		new_scope->SetIsFreeable(true);
+		new_scope->SetIsFreeableTopNode(true);
 		//just in case a variable is added which needs cycle checks
 		new_scope->SetNeedCycleCheck(true);
 
@@ -111,23 +111,27 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 				for(auto &[id, cn] : new_scope_mcn)
 				{
 					if(cn != nullptr)
+					{
 						cn->SetIsFreeable(true);
+						cn->SetIsFreeableTopNode(true);
+					}
 				}
 			}
 			else //!new_scope.unique
 			{
-				if(new_scope_mcn.size() > 0)
+				//set not freeable in case referenced elsewhere
+				for(auto &[id, cn] : new_scope_mcn)
 				{
-					//set not freeable in case referenced elsewhere
-					for(auto &[id, cn] : new_scope_mcn)
+					if(cn != nullptr)
 					{
-						if(cn != nullptr)
-						#ifdef MULTITHREAD_SUPPORT
-							//not unique, so should set atomically if other threads may be accessing it
-							cn->SetIsFreeableAtomic(false);
-						#else
-							cn->SetIsFreeable(false);
-						#endif
+					#ifdef MULTITHREAD_SUPPORT
+						//not unique, so should set atomically if other threads may be accessing it
+						cn->SetIsFreeableAtomic(false);
+						cn->SetIsFreeableTopNodeAtomic(false);
+					#else
+						cn->SetIsFreeable(false);
+						cn->SetIsFreeableTopNode(false);
+					#endif
 					}
 				}
 			}
@@ -158,6 +162,16 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 					#else
 						value->SetIsFreeable(false);
 					#endif
+
+					if(value.uniqueUnreferencedTopNode)
+						value->SetIsFreeableTopNode(true);
+					else
+					#ifdef MULTITHREAD_SUPPORT
+						//not unique, so should set atomically if other threads may be accessing it
+						value->SetIsFreeableTopNodeAtomic(false);
+					#else
+						value->SetIsFreeableTopNode(false);
+					#endif
 				}
 
 				cn = value;
@@ -165,10 +179,10 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 			}
 
 			//if there was a side-effect, then need to make another copy of the context in case something is referencing it
-			if(PopConstructionContextAndGetExecutionSideEffectFlag() || !new_scope->GetIsFreeable())
+			if(PopConstructionContextAndGetExecutionSideEffectFlag() || !new_scope->GetIsFreeableTopNode())
 			{
 				new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(new_scope, false), false, true);
-				new_scope->SetIsFreeable(true);
+				new_scope->SetIsFreeableTopNode(true);
 			}
 		}
 	}
@@ -178,7 +192,7 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 		new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 
 		//start to check things as being freeable unless cleared/invalidated later
-		new_scope->SetIsFreeable(true);
+		new_scope->SetIsFreeableTopNode(true);
 		//just in case a variable is added which needs cycle checks
 		new_scope->SetNeedCycleCheck(true);
 	}
@@ -192,16 +206,21 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 {
 	EvaluableNode *scope = scopeStack.back();
 
-	if(returning_unique_value && scope->GetIsFreeable())
+	if(returning_unique_value && scope->GetIsFreeableTopNode())
 	{
 		for(auto &[id, cn] : scope->GetMappedChildNodesReference())
 		{
-			if(cn != nullptr && cn->GetIsFreeable())
-				evaluableNodeManager->FreeNodeTree(cn);
+			if(cn != nullptr)
+			{
+				if(cn->GetIsFreeable())
+					evaluableNodeManager->FreeNodeTree(cn);
+				else if(cn->GetIsFreeableTopNode())
+					evaluableNodeManager->FreeNode(cn);
+			}
 		}
 	}
 
-	if(scope->GetIsFreeable())
+	if(scope->GetIsFreeableTopNode())
 		evaluableNodeManager->FreeNode(scope);
 	scopeStack.pop_back();
 }
@@ -227,10 +246,10 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		if(use_atomic_when_setting_access_flag)
-			scope_stack->SetIsFreeableAtomic(false);
+			scope_stack->SetIsFreeableTopNodeAtomic(false);
 		else
 	#endif
-			scope_stack->SetIsFreeable(false);
+			scope_stack->SetIsFreeableTopNode(false);
 	}
 
 	return scope_stack;

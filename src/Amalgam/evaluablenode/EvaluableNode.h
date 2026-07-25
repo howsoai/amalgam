@@ -63,9 +63,13 @@ public:
 		//if true, then the node has not yet been read/accessed and can be freed
 		//used to optimize flows to avoid copies when there has been no other accesses
 		FREEABLE = 1 << 4,
+		//if true, then the top node has not yet been read/accessed and can be freed
+		//used to optimize flows to avoid copies when there has been no other accesses
+		FREEABLE_TOP_NODE = 1 << 5,
 		//if true, then known to be in use with regard to garbage collection
-		KNOWN_TO_BE_IN_USE = 1 << 5,
-		ALL = HAS_EXTENDED_VALUE | NEED_CYCLE_CHECK | IDEMPOTENT | CONCURRENT | FREEABLE | KNOWN_TO_BE_IN_USE
+		KNOWN_TO_BE_IN_USE = 1 << 6,
+		ALL = HAS_EXTENDED_VALUE | NEED_CYCLE_CHECK | IDEMPOTENT | CONCURRENT
+				| FREEABLE | FREEABLE_TOP_NODE | KNOWN_TO_BE_IN_USE
 	};
 
 	//constructors
@@ -948,6 +952,51 @@ public:
 	__forceinline bool SetIsFreeableAtomic(bool is_freeable)
 	{
 		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE);
+
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		std::atomic<AttributeStorageType> *atomic_ref
+			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
+
+		if(is_freeable)
+		{
+			AttributeStorageType previous_value = atomic_ref->fetch_or(mask);
+			return (previous_value & mask) != 0;
+		}
+		else
+		{
+			AttributeStorageType previous_value = atomic_ref->fetch_and(~mask);
+			return (previous_value & mask) != 0;
+		}
+	}
+#endif
+
+	//returns true if the top node has never been read / accessed
+	__forceinline bool GetIsFreeableTopNode()
+	{
+		return HasAttribute(Attribute::FREEABLE);
+	}
+
+	//sets whether the top node has never been read / accessed
+	//returns the previous value
+	__forceinline bool SetIsFreeableTopNode(bool is_freeable)
+	{
+		bool old_value = HasAttribute(Attribute::FREEABLE_TOP_NODE);
+		SetAttribute(Attribute::FREEABLE_TOP_NODE, is_freeable);
+		return old_value;
+	}
+
+#ifdef MULTITHREAD_SUPPORT
+	//returns true if the top node has never been read / accessed
+	__forceinline bool GetIsFreeableTopNodeAtomic()
+	{
+		return HasAttributeAtomic(Attribute::FREEABLE_TOP_NODE);
+	}
+
+	//sets whether the top node has never been read / accessed
+	//returns the previous value
+	__forceinline bool SetIsFreeableTopNodeAtomic(bool is_freeable)
+	{
+		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
 
 		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
 		std::atomic<AttributeStorageType> *atomic_ref

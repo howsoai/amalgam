@@ -62,31 +62,92 @@ public:
 
 	explicit PointerWithShortInlineString(PointerType *p) noexcept
 	{
-		pointerOrShortString = std::launder(reinterpret_cast<std::uint64_t>(p));
+		AssignPointer(p);
 	}
 
 	explicit PointerWithShortInlineString(std::string &s) noexcept
 	{
-		if(s.size() > inlineCapacity)
-		{
-			pointerOrShortString = 0;
-			return;
-		}
+		AssignString(s);
+	}
 
+	explicit PointerWithShortInlineString(std::string_view &s) noexcept
+	{
+		AssignStringView(s);
+	}
+
+	PointerWithShortInlineString &operator=(PointerType *p) noexcept
+	{
+		AssignPointer(p);
+		return *this;
+	}
+
+	//assumes CanFitString has been called and returns true
+	PointerWithShortInlineString &operator=(std::string &s) noexcept
+	{
+		AssignString(s);
+		return *this;
+	}
+
+	//assumes CanFitString has been called and returns true
+	PointerWithShortInlineString &operator=(std::string_view &s) noexcept
+	{
+		AssignStringView(s);
+		return *this;
+	}
+
+	bool operator==(const PointerWithShortInlineString &other) const noexcept
+	{
+		return pointerOrShortString == other.pointerOrShortString;
+	}
+
+	bool operator==(const PointerType &other) const noexcept
+	{
+		return pointerOrShortString == std::launder(reinterpret_cast<std::uint64_t>(other);
+	}
+
+	bool operator!=(const PointerWithShortInlineString &other) const noexcept
+	{
+		return pointerOrShortString != other.pointerOrShortString;
+	}
+
+	bool operator!=(const PointerType &other) const noexcept
+	{
+		return pointerOrShortString != std::launder(reinterpret_cast<std::uint64_t>(other);
+	}
+
+	inline void AssignPointer(PointerType *p) noexcept
+	{
+		pointerOrShortString = std::launder(reinterpret_cast<std::uint64_t>(p));
+	}
+
+	//assumes CanFitString has been called and returns true
+	inline void AssignString(std::string &s) noexcept
+	{
 		pointerOrShortString = inlineMask;
 		pointerOrShortString |= (static_cast<uint64_t>(s.size()) << lengthShift) & lengthMask;
 
 		//copy characters into the selected byte range
-		std::memcpy(std::launder(reinterpret_cast<std::uint8_t *>(&pointerOrShortString) + dataOffset),
-			s.data(), s.size());
+		std::memcpy(
+			std::launder(reinterpret_cast<std::uint8_t *>(&pointerOrShortString) + dataOffset), s.data(), s.size());
 	}
 
-	constexpr bool CanFitStringInPointer(std::string &s)
+	//assumes CanFitString has been called and returns true
+	inline void AssignStringView(std::string_view &s) noexcept
+	{
+		pointerOrShortString = inlineMask;
+		pointerOrShortString |= (static_cast<uint64_t>(s.size()) << lengthShift) & lengthMask;
+
+		//copy characters into the selected byte range
+		std::memcpy(
+			std::launder(reinterpret_cast<std::uint8_t *>(&pointerOrShortString) + dataOffset), s.data(), s.size());
+	}
+
+	constexpr bool CanFitString(std::string &s)
 	{
 		return s.size() <= inlineCapacity;
 	}
 
-	constexpr bool CanFitStringInPointer(std::string_view s)
+	constexpr bool CanFitString(std::string_view s)
 	{
 		return s.size() <= inlineCapacity;
 	}
@@ -108,7 +169,17 @@ public:
 		return std::launder(reinterpret_cast<PointerType *>(pointerOrShortString));
 	}
 
-	constexpr operator std::string_view() const noexcept
+	constexpr std::string GetString() const noexcept
+	{
+		if(IsInlineString())
+			return std::string(
+				std::launder(reinterpret_cast<const std::uint8_t *>(&pointerOrShortString) + dataOffset),
+				InlineStringLength());
+		else
+			return std::string();
+	}
+
+	constexpr std::string_view GetStringView() const noexcept
 	{
 		if(IsInlineString())
 			return std::string_view(
@@ -132,6 +203,8 @@ extern StringInternPool string_intern_pool;
 class StringInternPool
 {
 public:
+	//TODO 25818: put this back in
+	//using StringID = PointerWithShortInlineString<StringInternStringData *>;
 	using StringID = StringInternStringData *;
 
 	inline StringInternPool()

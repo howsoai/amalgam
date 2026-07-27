@@ -91,21 +91,39 @@ jobs:
     with:
       version: ${{ needs.set-pr-version.outputs.version }}
 
-  # This job is here to have only one final step to add for "Status Checks"
-  # in GitHub, instead of adding every leaf test from 'build'
+  # Single required status check for branch protection, instead of every leaf
+  # test from 'build'. On a docs-bot commit (skip-build == true) the pipeline is
+  # intentionally skipped and this just passes. On a real commit, every job below
+  # -- including 'rebuild-docs' -- must succeed, so a skipped/failed docs rebuild
+  # can't let the PR merge with stale auto-generated docs.
   final-check:
-    needs: ["check-docs-commit", "build"]
-    if: |
-      always() && (
-        needs.check-docs-commit.outputs.skip-build == 'true' ||
-        (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
-      )
+    needs: ["check-docs-commit", "set-pr-version", "build", "rebuild-docs"]
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Skip — docs bot commit detected
         if: needs.check-docs-commit.outputs.skip-build == 'true'
         run: echo "Last commit was an automated docs rebuild. Skipping build pipeline."
 
-      - name: Fail — build or upstream job failed
+      - name: Verify pipeline results
         if: needs.check-docs-commit.outputs.skip-build != 'true'
-        run: exit 1
+        run: |
+          echo "check-docs-commit: ${{ needs.check-docs-commit.result }}"
+          echo "set-pr-version:    ${{ needs.set-pr-version.result }}"
+          echo "build:             ${{ needs.build.result }}"
+          echo "rebuild-docs:      ${{ needs.rebuild-docs.result }}"
+          failed=0
+          for result in \
+            "${{ needs.check-docs-commit.result }}" \
+            "${{ needs.set-pr-version.result }}" \
+            "${{ needs.build.result }}" \
+            "${{ needs.rebuild-docs.result }}"; do
+            if [[ "$result" != "success" ]]; then
+              failed=1
+            fi
+          done
+          if [[ "$failed" -ne 0 ]]; then
+            echo "::error::One or more required pipeline jobs did not succeed (see results above)."
+            exit 1
+          fi
+          echo "All required pipeline jobs succeeded."

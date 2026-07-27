@@ -55,13 +55,16 @@ jobs:
       - name: Commit changes
         id: commit-changes
         run: |
-          git pull
           if [ -n "$(git status --porcelain)" ]; then
             echo "Changes to docs files detected. Making a new commit..."
             git config user.name "howso-automation"
             git config user.email "support@howso.com"
             git add -A docs/
             git commit -m "Automated docs rebuild"
+            # Reconcile with anything pushed to the branch since checkout so the
+            # push can't fail on a divergent-branch race (default 'git pull' would
+            # abort with "Need to specify how to reconcile divergent branches").
+            git pull --rebase origin "${{ github.head_ref }}"
             git push
           else
             echo "No changes detected in the repository."

@@ -692,7 +692,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				*symbol_location.location, symbol_location.unique, symbol_location.uniqueTopNode);
 
 			EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(
-				value_destination_node, variable_value_node, evaluableNodeManager);
+				value_destination_node, new_value, evaluableNodeManager);
 
 			//assign the new accumulation
 			*symbol_location.location = variable_value_node;

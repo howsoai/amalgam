@@ -91,11 +91,8 @@ jobs:
     with:
       version: ${{ needs.set-pr-version.outputs.version }}
 
-  # Single required status check for branch protection, instead of every leaf
-  # test from 'build'. On a docs-bot commit (skip-build == true) the pipeline is
-  # intentionally skipped and this just passes. On a real commit, every job below
-  # -- including 'rebuild-docs' -- must succeed, so a skipped/failed docs rebuild
-  # can't let the PR merge with stale auto-generated docs.
+  # This job is here to have only one final step to add for "Status Checks"
+  # in GitHub, instead of adding every leaf test from 'build'
   final-check:
     needs: ["check-docs-commit", "set-pr-version", "build", "rebuild-docs"]
     if: always()

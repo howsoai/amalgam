@@ -837,7 +837,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(result_flags_need_updates)
 		EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
 
-
 	//need to set whether freeable in case a variable's value is assigned to another variable
 	if(value_replacement != nullptr)
 	{

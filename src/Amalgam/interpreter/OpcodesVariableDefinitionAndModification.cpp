@@ -605,41 +605,31 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			node_stack.PushEvaluableNode(variable_value_node);
 
 			Concurrency::SingleLock write_lock;
-			auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+			auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 			if(write_lock.owns_lock())
 				RecordStackLockForProfiling(en, variable_sid);
 
 			node_stack.PopEvaluableNode();
 		#else
-			auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+			auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 		#endif
 
-			if(accum && !EvaluableNode::IsNull(*value_destination))
+			if(accum && !EvaluableNode::IsNull(*symbol_location.location))
 			{
-				if(is_freeable)
-				{
-					EvaluableNodeReference value_destination_node(*value_destination, true);
-					variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
-				}
-				else
-				{
-					//TODO 25824: investigate whether this needs to be a deep copy or can be a single node copy; probably depends on whether it's cycle free, but could look at whether top node is freeable
-					//TODO 25824: make changes to 2 param variant below too, but not to walk path variant
-
-					//values should always be copied before changing, in case the value is used elsewhere, especially in another thread
-					EvaluableNodeReference value_destination_node = evaluableNodeManager->DeepAllocCopy(*value_destination);
-					variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
-				}
+				EvaluableNodeReference value_destination_node(*symbol_location.location,
+					symbol_location.unique, symbol_location.uniqueTopNode);
+				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
 			}
-			else if(is_freeable)
+			else //free whatever is possible
 			{
-				EvaluableNodeReference value_destination_node(*value_destination, true);
+				EvaluableNodeReference value_destination_node(*symbol_location.location,
+					symbol_location.unique, symbol_location.uniqueTopNode);
 				evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
 			}
 
 			any_nonunique_assignments |= !variable_value_node.unique;
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-			any_nonunique_assignments |= !top_of_stack;
+			any_nonunique_assignments |= !symbol_location.atTopOfStack;
 
 			//need to set whether freeable in case a variable's value is assigned to another variable
 			if(variable_value_node != nullptr)
@@ -654,7 +644,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			}
 
 			//assign back into the context_to_use
-			*value_destination = variable_value_node;
+			*symbol_location.location = variable_value_node;
 		}
 
 		if(any_nonunique_assignments)
@@ -682,46 +672,42 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		auto node_stack = CreateOpcodeStackStateSaver(new_value);
 
 		Concurrency::SingleLock write_lock;
-		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+		auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 		if(write_lock.owns_lock())
 			RecordStackLockForProfiling(en, variable_sid);
 
 		node_stack.PopEvaluableNode();
 	#else
-		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+		auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
-		if(accum && !EvaluableNode::IsNull(*value_destination))
+		//TODO 25824: set freeable flags as appropriate
+		//TODO 25824: check freeable flags in walk-path branch below
+		//TODO 25824: fix crash bug
+		//TODO 25824: consider combined flag calls to set both flags to true or false at same time
+
+		if(accum && !EvaluableNode::IsNull(*symbol_location.location))
 		{
-			EvaluableNodeReference variable_value_node;
-			if(is_freeable)
-			{
-				EvaluableNodeReference value_destination_node(*value_destination, true);
-				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
-			}
-			else
-			{
-				//values should always be copied before changing, in case the value is used elsewhere, especially in another thread
-				//because of the deep copy, do not need to call SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
-				EvaluableNodeReference value_destination_node = evaluableNodeManager->DeepAllocCopy(*value_destination);
-				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
-			}
+			EvaluableNodeReference value_destination_node(
+				*symbol_location.location, symbol_location.unique, symbol_location.uniqueTopNode);
+
+			EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(
+				value_destination_node, variable_value_node, evaluableNodeManager);
 
 			//assign the new accumulation
-			*value_destination = variable_value_node;
+			*symbol_location.location = variable_value_node;
 		}
 		else
 		{
-			if(is_freeable)
-			{
-				EvaluableNodeReference value_destination_node(*value_destination, true);
-				evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
-			}
+			//free whatever is possible
+			EvaluableNodeReference value_destination_node(*symbol_location.location,
+				symbol_location.unique, symbol_location.uniqueTopNode);
+			evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
 
-			*value_destination = new_value;
+			*symbol_location.location = new_value;
 
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-			if(!new_value.unique || !top_of_stack)
+			if(!new_value.unique || !symbol_location.atTopOfStack)
 				SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 		}
 
@@ -763,24 +749,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 #ifdef MULTITHREAD_SUPPORT
 	//node_stack already has everything saved in case garbage collection is called in GetScopeStackSymbolLocationWithLock
 	Concurrency::SingleLock write_lock;
-	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+	auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 	if(write_lock.owns_lock())
 		RecordStackLockForProfiling(en, variable_sid);
 #else
-	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+	auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 #endif
 
 	//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-	any_nonunique_assignments |= !top_of_stack;
+	any_nonunique_assignments |= !symbol_location.atTopOfStack;
 
 	//make a copy of value_replacement because not sure where else it may be used
 	EvaluableNode *value_replacement = nullptr;
-	if(*value_destination == nullptr)
+	if(symbol_location.location == nullptr)
 		value_replacement = evaluableNodeManager->AllocNode(ENT_NULL);
-	else if(is_freeable)
-		value_replacement = *value_destination;
+	else if(symbol_location.unique)
+		value_replacement = *symbol_location.location;
 	else
-		value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
+		value_replacement = evaluableNodeManager->DeepAllocCopy(*symbol_location.location);
 
 	//replace each in order, traversing as it goes along
 	//this is safe because it is all on a copy, and each traversal must be done one at a time as to not
@@ -844,7 +830,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 	if(result_flags_need_updates)
 		EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
-	*value_destination = value_replacement;
+	*symbol_location.location = value_replacement;
 
 	if(any_nonunique_assignments)
 		SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
@@ -903,28 +889,27 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableN
 	node_stack.PushEvaluableNode(value_to_assign);
 
 	Concurrency::SingleLock write_lock;
-	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+	auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 	if(write_lock.owns_lock())
 		RecordStackLockForProfiling(en, variable_sid);
 
 	node_stack.PopEvaluableNode();
 #else
-	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+	auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 #endif
 
 	bool success = false;
-	if(EvaluableNode::AreDeepEqual(*value_destination, value_to_compare))
+	if(EvaluableNode::AreDeepEqual(*symbol_location.location, value_to_compare))
 	{
-		if(is_freeable)
-		{
-			EvaluableNodeReference value_destination_node(*value_destination, true);
-			evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
-		}
+		//attempt to free if possible
+		EvaluableNodeReference value_destination_node(*symbol_location.location,
+			symbol_location.unique, symbol_location.uniqueTopNode);
+		evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
 
-		*value_destination = value_to_assign;
+		*symbol_location.location = value_to_assign;
 
 		//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-		if(!value_to_assign.unique || !top_of_stack)
+		if(!value_to_assign.unique || !symbol_location.atTopOfStack)
 			SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 
 		success = true;
@@ -1114,16 +1099,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNASSIGN(EvaluableNode *en
 		auto node_stack = CreateOpcodeStackStateSaver(string_node_to_unassign);
 
 		Concurrency::SingleLock write_lock;
-		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+		auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 		if(write_lock.owns_lock())
 			RecordStackLockForProfiling(en, variable_sid);
 
 		node_stack.PopEvaluableNode();
 	#else
-		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+		auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
-		scope->erase(variable_sid);
+		symbol_location.containingAssoc->erase(variable_sid);
 	}
 
 	return AllocReturn(all_unassigned, immediate_result);

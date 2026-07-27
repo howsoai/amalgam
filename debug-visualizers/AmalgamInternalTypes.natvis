@@ -9,7 +9,7 @@
 			<Item Name="value.orderedChildNodes">value.orderedChildNodes</Item>
 			<Item Name="value.mappedChildNodes">value.mappedChildNodes</Item>
 			<Item Name="value.stringValueContainer">value.stringValueContainer</Item>
-			<Item Name="value.numberValueContainer">value.numberValueContainer</Item>
+			<Item Name="value.numberAndNullValueContainer">value.numberAndNullValueContainer</Item>
 			<Item Name="value.boolValueContainer">value.boolValueContainer</Item>
 			<Item Name="value.extendedOrderedChildNodes">value.extendedOrderedChildNodes</Item>
 			<Item Name="value.extendedMappedChildNodes">value.extendedMappedChildNodes</Item>
@@ -17,7 +17,8 @@
 			<Item Name="IDEMPOTENT">(attributes &amp; 4) != 0</Item>
 			<Item Name="CONCURRENT">(attributes &amp; 8) != 0</Item>
 			<Item Name="FREEABLE">(attributes &amp; 16) != 0</Item>
-			<Item Name="KNOWN_TO_BE_IN_USE">(attributes &amp; 32) != 0</Item>
+			<Item Name="FREEABLE_TOP_NODE">(attributes &amp; 32) != 0</Item>
+			<Item Name="KNOWN_TO_BE_IN_USE">(attributes &amp; 64) != 0</Item>
 			<Item Name="attributes">attributes</Item>
 		</Expand>
 	</Type>

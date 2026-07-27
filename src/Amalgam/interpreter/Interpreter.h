@@ -146,6 +146,14 @@ public:
 					target_ref.unique = false;
 					target_ref.uniqueUnreferencedTopNode = false;
 				}
+
+				//clear freeability for use in other places
+			#ifdef MULTITHREAD_SUPPORT
+				//not unique, so should set atomically if other threads may be accessing it
+				target_ref->SetIsFreeableTopNodeAtomic(false);
+			#else
+				target_ref->SetIsFreeableTopNode(false);
+			#endif
 			}
 
 			constructionStack.pop_back();

@@ -681,8 +681,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
-		//TODO 25824: set freeable flags as appropriate
-		//TODO 25824: check freeable flags in walk-path branch below
 		//TODO 25824: consider combined flag calls to set both flags to true or false at same time
 
 		if(accum && !EvaluableNode::IsNull(*symbol_location.location))
@@ -690,11 +688,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			EvaluableNodeReference value_destination_node(
 				*symbol_location.location, symbol_location.unique, symbol_location.uniqueTopNode);
 
-			EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(
+			new_value = AccumulateEvaluableNodeIntoEvaluableNode(
 				value_destination_node, new_value, evaluableNodeManager);
-
-			//assign the new accumulation
-			*symbol_location.location = variable_value_node;
 		}
 		else
 		{
@@ -702,13 +697,25 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			EvaluableNodeReference value_destination_node(*symbol_location.location,
 				symbol_location.unique, symbol_location.uniqueTopNode);
 			evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
-
-			*symbol_location.location = new_value;
-
-			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-			if(!new_value.unique || !symbol_location.atTopOfStack)
-				SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 		}
+
+		//need to set whether freeable in case a variable's value is assigned to another variable
+		if(new_value != nullptr)
+		{
+		#ifdef MULTITHREAD_SUPPORT
+			new_value->SetIsFreeableAtomic(new_value.unique);
+			new_value->SetIsFreeableTopNodeAtomic(new_value.uniqueUnreferencedTopNode);
+		#else
+			new_value->SetIsFreeable(new_value.unique);
+			new_value->SetIsFreeableTopNode(new_value.uniqueUnreferencedTopNode);
+		#endif
+		}
+
+		*symbol_location.location = new_value;
+
+		//if writing to an outer scope, can't guarantee the memory at this scope can be freed
+		if(!new_value.unique || !symbol_location.atTopOfStack)
+			SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 
 		return EvaluableNodeReference::Null();
 	}
@@ -829,6 +836,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 	if(result_flags_need_updates)
 		EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
+
+
+	//need to set whether freeable in case a variable's value is assigned to another variable
+	if(value_replacement != nullptr)
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		value_replacement->SetIsFreeableAtomic(any_nonunique_assignments);
+		value_replacement->SetIsFreeableTopNodeAtomic(any_nonunique_assignments);
+	#else
+		value_replacement->SetIsFreeable(any_nonunique_assignments);
+		value_replacement->SetIsFreeableTopNode(any_nonunique_assignments);
+	#endif
+	}
+
 	*symbol_location.location = value_replacement;
 
 	if(any_nonunique_assignments)

@@ -683,7 +683,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		//TODO 25824: set freeable flags as appropriate
 		//TODO 25824: check freeable flags in walk-path branch below
-		//TODO 25824: fix crash bug
 		//TODO 25824: consider combined flag calls to set both flags to true or false at same time
 
 		if(accum && !EvaluableNode::IsNull(*symbol_location.location))

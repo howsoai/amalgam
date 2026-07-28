@@ -465,7 +465,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 	{
 		//make a copy of the string so the node can be freed
 		//(if this is a performance cost found in profiling, it can be fixed with more logic)
-		auto &regex_str = substr_node->GetStringView();
+		auto regex_str = substr_node->GetStringView();
 		evaluableNodeManager->FreeNodeTreeIfPossible(substr_node);
 
 		if(replace_string)

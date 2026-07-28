@@ -129,7 +129,7 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 		auto sid = e->GetStringIDReference();
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
 			return value_if_null;
-		auto &str = string_intern_pool.GetStringFromID(sid);
+		auto str = string_intern_pool.GetStringViewFromID(sid);
 		auto [value, success] = Platform_StringToNumber(str);
 		if(success)
 			return value;
@@ -1499,7 +1499,7 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 		if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
 			return std::make_pair(false, "");
 
-		auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
+		auto str = string_intern_pool.GetStringFromID(nodeValue.stringID);
 		return std::make_pair(true, str);
 	}
 

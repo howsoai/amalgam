@@ -27,6 +27,10 @@ jobs:
           token: ${{ secrets.HOWSOAI_WORKFLOW_AUTOMATION_TOKEN }}
           ref: ${{ github.head_ref }}
 
+      - name: Record checked-out SHA
+        id: checked-out
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Download Artifact
         uses: actions/download-artifact@v8
         with:
@@ -61,10 +65,11 @@ jobs:
             git config user.email "support@howso.com"
             git add -A docs/
             git commit -m "Automated docs rebuild"
-            # Reconcile with anything pushed to the branch since checkout so the
-            # push can't fail on a divergent-branch race (default 'git pull' would
-            # abort with "Need to specify how to reconcile divergent branches").
-            git pull --rebase origin "${{ github.head_ref }}"
+            git fetch --no-tags origin "${{ github.head_ref }}"
+            if [ "$(git rev-parse FETCH_HEAD)" != "${{ steps.checked-out.outputs.sha }}" ]; then
+              echo "PR branch moved since checkout; skipping push."
+              exit 0
+            fi
             git push
           else
             echo "No changes detected in the repository."

@@ -751,7 +751,7 @@ public:
 	//Sets the code and recreates the index
 	//if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
 	//write_listeners is optional, and if specified, will log the event
-	void SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm,
+	void SetRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr);
 	void SetRoot(std::string &code_string,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr);

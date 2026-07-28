@@ -48,7 +48,7 @@ Entity::Entity(EvaluableNode *_root, const std::string &rand_state)
 	evaluableNodeManager.rootNode = nullptr;
 
 	//since this is the constructor, can't have had this entity's EntityNodeManager
-	SetRoot(_root, false);
+	SetRoot(EvaluableNodeReference(_root, false), false);
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 }
@@ -61,7 +61,7 @@ Entity::Entity(Entity *t)
 	entityRelationships.container = nullptr;
 	evaluableNodeManager.rootNode = nullptr;
 
-	SetRoot(t->evaluableNodeManager.rootNode, false);
+	SetRoot(EvaluableNodeReference(t->evaluableNodeManager.rootNode, false, false), false);
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 
@@ -265,8 +265,8 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		const auto &label_iterator = label_index.find(label_sid);
 
 		EvaluableNodeReference new_value_reference(new_value_node, false);
-		//make copy if needed
-		if(!on_self)
+		//make copy if needed; ensure uniqueness
+		if(!on_self || !new_value_reference.unique)
 			new_value_reference = evaluableNodeManager.DeepAllocCopy(new_value_reference);
 
 		if(accum_values)
@@ -897,12 +897,12 @@ void Entity::SetPermissions(ExecutionPermissions permissions_to_set, ExecutionPe
 	}
 }
 
-void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm, std::vector<EntityWriteListener *> *write_listeners)
 {
 	EvaluableNode *cur_root = GetRoot();
 	bool entity_previously_empty = (cur_root == nullptr || cur_root->GetNumChildNodes() == 0);
 
-	if(_code != nullptr && !allocated_with_entity_enm)
+	if(_code != nullptr && (!allocated_with_entity_enm || !_code.unique))
 		_code = evaluableNodeManager.DeepAllocCopy(_code);
 
 	//ensure the top node is an assoc
@@ -910,7 +910,8 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::
 	{
 		EvaluableNode *new_root = evaluableNodeManager.AllocNode(ENT_ASSOC);
 		new_root->SetMappedChildNode(string_intern_pool.NOT_A_STRING_ID, _code);
-		_code = new_root;
+		new_root->UpdateFlagsBasedOnNewChildNode(_code);
+		_code = EvaluableNodeReference(new_root, _code.unique, true);
 	}
 
 	evaluableNodeManager.SetRootNode(_code);

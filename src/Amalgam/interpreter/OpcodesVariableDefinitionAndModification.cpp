@@ -841,11 +841,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(value_replacement != nullptr)
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		value_replacement->SetIsFreeableAtomic(any_nonunique_assignments);
-		value_replacement->SetIsFreeableTopNodeAtomic(any_nonunique_assignments);
+		value_replacement->SetIsFreeableAtomic(!any_nonunique_assignments);
+		value_replacement->SetIsFreeableTopNodeAtomic(!any_nonunique_assignments);
 	#else
-		value_replacement->SetIsFreeable(any_nonunique_assignments);
-		value_replacement->SetIsFreeableTopNode(any_nonunique_assignments);
+		value_replacement->SetIsFreeable(!any_nonunique_assignments);
+		value_replacement->SetIsFreeableTopNode(!any_nonunique_assignments);
 	#endif
 	}
 

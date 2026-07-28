@@ -459,6 +459,9 @@ public:
 		: value(), unique(true), uniqueUnreferencedTopNode(true)
 	{}
 
+	//don't allow an EvaluableNode pointer without uniqueness flags
+	constexpr EvaluableNodeReference(EvaluableNode *_reference) = delete;
+
 	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique)
 		: value(_reference), unique(_unique), uniqueUnreferencedTopNode(_unique)
 	{}

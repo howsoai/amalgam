@@ -112,7 +112,7 @@ public:
 
 	inline bool operator==(const PointerType other) const noexcept
 	{
-		return pointerOrShortString == std::launder(reinterpret_cast<std::uint64_t>(other));
+		return pointerOrShortString == static_cast<std::uint64_t>(reinterpret_cast<std::uintptr_t>(other));
 	}
 
 	inline bool operator!=(const PointerWithShortInlineString other) const noexcept
@@ -122,12 +122,12 @@ public:
 
 	inline bool operator!=(const PointerType other) const noexcept
 	{
-		return pointerOrShortString != std::launder(reinterpret_cast<std::uint64_t>(other));
+		return pointerOrShortString != static_cast<std::uint64_t>(reinterpret_cast<std::uintptr_t>(other));
 	}
 
 	inline void AssignPointer(PointerType p) noexcept
 	{
-		pointerOrShortString = *std::launder(reinterpret_cast<std::uint64_t *>(&p));
+		pointerOrShortString = static_cast<std::uint64_t>(reinterpret_cast<std::uintptr_t>(p));
 	}
 
 	//assumes CanFitString has been called and returns true
@@ -137,8 +137,7 @@ public:
 		pointerOrShortString |= (static_cast<uint64_t>(s.size()) << lengthShift) & lengthMask;
 
 		//copy characters into the selected byte range
-		std::memcpy(
-			std::launder(reinterpret_cast<std::uint8_t *>(&pointerOrShortString) + dataOffset), s.data(), s.size());
+		std::memcpy(reinterpret_cast<std::uint8_t *>(&pointerOrShortString) + dataOffset, s.data(), s.size());
 	}
 
 	//assumes CanFitString has been called and returns true
@@ -148,8 +147,7 @@ public:
 		pointerOrShortString |= (static_cast<uint64_t>(s.size()) << lengthShift) & lengthMask;
 
 		//copy characters into the selected byte range
-		std::memcpy(
-			std::launder(reinterpret_cast<std::uint8_t *>(&pointerOrShortString) + dataOffset), s.data(), s.size());
+		std::memcpy(reinterpret_cast<std::uint8_t *>(&pointerOrShortString) + dataOffset, s.data(), s.size());
 	}
 
 	static constexpr bool CanFitString(std::string &s)
@@ -172,33 +170,24 @@ public:
 		return static_cast<size_t>((pointerOrShortString & lengthMask) >> lengthShift);
 	}
 
+	//assumes IsInlineString() has been called and returns false
 	inline PointerType GetPointer() const noexcept
 	{
-		if(IsInlineString())
-			return nullptr;
-		return std::launder(reinterpret_cast<PointerType>(pointerOrShortString));
+		return reinterpret_cast<PointerType>(static_cast<std::uintptr_t>(pointerOrShortString));
 	}
 
+	//assumes IsInlineString() has been called and returned true
 	inline std::string GetString() const noexcept
 	{
-		if(IsInlineString())
-		{
-			const char *ptr = std::launder(reinterpret_cast<const char *>(&pointerOrShortString)) + dataOffset;
-			return std::string(ptr, InlineStringLength());
-		}
-
-		return std::string();
+		const char *ptr = reinterpret_cast<const char *>(&pointerOrShortString) + dataOffset;
+		return std::string(ptr, InlineStringLength());
 	}
 
+	//assumes IsInlineString() has been called and returned true
 	inline std::string_view GetStringView() const noexcept
 	{
-		if(IsInlineString())
-		{
-			const char *ptr = std::launder(reinterpret_cast<const char *>(&pointerOrShortString)) + dataOffset;
-			return std::string_view(ptr, InlineStringLength());
-		}
-
-		return std::string_view();
+		const char *ptr = reinterpret_cast<const char *>(&pointerOrShortString) + dataOffset;
+		return std::string_view(ptr, InlineStringLength());
 	}
 
 	uint64_t pointerOrShortString;

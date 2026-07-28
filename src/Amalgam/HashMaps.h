@@ -18,6 +18,8 @@
 #include <unordered_set>
 #include <vector>
 
+//a fast, deterministic hash object
+//note that any types that have padding or are more complex with equality will need their own hash implementation
 template <typename T>
 struct FastHasher {
 	std::size_t operator()(const T& val) const noexcept {
@@ -149,6 +151,7 @@ inline constexpr bool has_data_and_size_v = has_data_and_size<T>::value;
 inline constexpr uint64_t rapid_hasher_rand_seed = 13766731;
 
 //a fast, deterministic hash object
+//note that any types that have padding or are more complex with equality will need their own hash implementation
 template <typename T, typename = void>
 struct FastHasher
 {

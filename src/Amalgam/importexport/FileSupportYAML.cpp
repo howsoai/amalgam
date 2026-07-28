@@ -1,3 +1,4 @@
+
 //project headers:
 #include "FileSupportYAML.h"
 
@@ -5,7 +6,7 @@
 
 //3rd party headers:
 #define RYML_SINGLE_HDR_DEFINE_NOW
-#include "rapidyaml/rapidyaml-0.15.2.hpp"
+#include "rapidyaml/rapidyaml.v0.16.0.singlehdr.hpp"
 
 //system headers:
 #include <iostream>
@@ -64,13 +65,13 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 	//if null, don't set anything
 	if(en == nullptr)
 	{
-		built_element << nullptr;
+		built_element.save(nullptr);
 		return true;
 	}
 
 	if(en->IsAssociativeArray())
 	{
-		built_element |= ryml::MAP;
+		built_element.set_map();
 		auto &mcn = en->GetMappedChildNodesReference();
 		if(!sort_keys)
 		{
@@ -78,7 +79,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 			{
 				auto &str = string_intern_pool.GetStringFromID(cn_id);
 				auto new_element = built_element.append_child();
-				new_element << ryml::key(str);
+				new_element.save_key(str);
 				if(!EvaluableNodeToYamlStringRecurse(cn, new_element, sort_keys))
 					return false;
 			}
@@ -98,7 +99,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 
 				auto &str = string_intern_pool.GetStringFromID(k->first);
 				auto new_element = built_element.append_child();
-				new_element << ryml::key(str);
+				new_element.save_key(str);
 
 				if(!EvaluableNodeToYamlStringRecurse(k->second, new_element, sort_keys))
 					return false;
@@ -114,7 +115,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 			return false;
 		}
 
-		built_element |= ryml::SEQ;
+		built_element.set_seq();
 		for(auto &cn : en->GetOrderedChildNodesReference())
 		{
 			auto new_element = built_element.append_child();
@@ -125,21 +126,21 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 	{
 		if(DoesEvaluableNodeTypeUseNullData(en->GetType()))
 		{
-			built_element << nullptr;
+			built_element.save(nullptr);
 		}
 		else if(DoesEvaluableNodeTypeUseBoolData(en->GetType()))
 		{
-			built_element << (en->GetBoolValueReference() ? "true" : "false");
+			built_element.save(en->GetBoolValueReference() ? "true" : "false");
 		}
 		else if(DoesEvaluableNodeTypeUseNumberData(en->GetType()))
 		{
 			double number = en->GetNumberValueReference();
-			built_element << number;
+			built_element.save(number);
 		}
 		else
 		{
 			auto &str_value = en->GetStringValue();
-			built_element << str_value;
+			built_element.save(str_value);
 		}
 	}
 

@@ -524,7 +524,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters *asset_par
 		else
 		{
 			std::ofstream outf(asset_params->resourcePath, std::ios::out | std::ios::binary);
-			return StoreFileFromBuffer<BinaryData>(outf, asset_params->resourceType, compressed_data);
+			return StoreFileFromBuffer(outf, asset_params->resourceType, compressed_data);
 		}
 	}
 	else //binary string
@@ -540,7 +540,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters *asset_par
 		else
 		{
 			std::ofstream outf(asset_params->resourcePath, std::ios::out | std::ios::binary);
-			return StoreFileFromBuffer<std::string>(outf, asset_params->resourceType, s);
+			return StoreFileFromBuffer(outf, asset_params->resourceType, s);
 		}
 	}
 

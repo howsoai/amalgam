@@ -430,18 +430,32 @@ public:
 	}
 
 	//assign another string reference
-	inline StringRef &operator =(const StringRef &sir)
+	inline StringRef &operator=(const StringRef &sir)
 	{
 		if(id != sir.id)
 		{
 			string_intern_pool.DestroyStringReference(id);
 			id = string_intern_pool.CreateStringReference(sir.id);
-		#ifdef STRING_INTERN_POOL_VALIDATION
+#ifdef STRING_INTERN_POOL_VALIDATION
 			string_intern_pool.ValidateStringIdExistence(id);
-		#endif
+#endif
 		}
 		return *this;
 	}
+
+	//move assignment
+	inline StringRef &operator=(StringRef &&sir) noexcept
+	{
+		if(this != &sir)
+		{
+			//release current reference and take result from source
+			string_intern_pool.DestroyStringReference(id);
+			id = sir.id;
+			sir.id = StringInternPool::NOT_A_STRING_ID;
+		}
+		return *this;
+	}
+
 
 	//allow being able to use as a string
 	inline operator const std::string()
@@ -453,6 +467,16 @@ public:
 	inline operator StringInternPool::StringID()
 	{
 		return id;
+	}
+
+	inline bool operator==(const StringInternPool::StringID &other) const noexcept
+	{
+		return id == other;
+	}
+
+	inline bool operator!=(const StringInternPool::StringID &other) const noexcept
+	{
+		return id != other;
 	}
 
 	//call this to set the id and create a reference

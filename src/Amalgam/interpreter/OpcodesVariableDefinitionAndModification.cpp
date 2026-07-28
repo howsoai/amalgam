@@ -618,6 +618,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				EvaluableNodeReference value_destination_node(*symbol_location.location,
 					symbol_location.unique, symbol_location.uniqueTopNode);
+
+				//TODO 25824: either keep this or need to ensure copy if !new_value_reference.unique in Entity::SetValuesAtLabels
+				//need to clear freability of variable_value_node before it is accumulated
+				if(variable_value_node != nullptr)
+				{
+				#ifdef MULTITHREAD_SUPPORT
+					variable_value_node->SetIsFreeableAtomic(false);
+					variable_value_node->SetIsFreeableTopNodeAtomic(false);
+				#else
+					variable_value_node->SetIsFreeable(false);
+					variable_value_node->SetIsFreeableTopNode(false);
+				#endif
+				}
+
 				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
 			}
 			else //free whatever is possible
@@ -687,6 +701,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		{
 			EvaluableNodeReference value_destination_node(
 				*symbol_location.location, symbol_location.unique, symbol_location.uniqueTopNode);
+
+			//TODO 25824: either keep this or need to ensure copy if !new_value_reference.unique in 
+			//need to clear freability of new_value before it is accumulated
+			if(new_value != nullptr)
+			{
+			#ifdef MULTITHREAD_SUPPORT
+				new_value->SetIsFreeableAtomic(false);
+				new_value->SetIsFreeableTopNodeAtomic(false);
+			#else
+				new_value->SetIsFreeable(false);
+				new_value->SetIsFreeableTopNode(false);
+			#endif
+			}
 
 			new_value = AccumulateEvaluableNodeIntoEvaluableNode(
 				value_destination_node, new_value, evaluableNodeManager);
@@ -805,6 +832,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//create destination reference; the logic above has already made a copy if it wasn't freeable
 			//so the destination can be treated as unique
 			EvaluableNodeReference value_destination_node(*copy_destination, true);
+
+			//TODO 25824: either keep this or need to ensure copy if !new_value_reference.unique in 
+			//need to clear freability of new_value before it is accumulated
+			if(new_value != nullptr)
+			{
+			#ifdef MULTITHREAD_SUPPORT
+				new_value->SetIsFreeableAtomic(false);
+				new_value->SetIsFreeableTopNodeAtomic(false);
+			#else
+				new_value->SetIsFreeable(false);
+				new_value->SetIsFreeableTopNode(false);
+			#endif
+			}
+
 			EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
 			//assign the new accumulation

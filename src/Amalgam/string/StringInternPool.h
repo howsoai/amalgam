@@ -632,7 +632,7 @@ public:
 	}
 
 	//assign another string reference
-	inline StringRef &operator =(StringRef &sir)
+	inline StringRef &operator=(const StringRef &sir)
 	{
 		if(id != sir.id)
 		{
@@ -641,19 +641,6 @@ public:
 		#ifdef STRING_INTERN_POOL_VALIDATION
 			string_intern_pool.ValidateStringIdExistence(id);
 		#endif
-		}
-		return *this;
-	}
-
-	inline StringRef &operator=(const StringRef &sir)
-	{
-		if(id != sir.id)
-		{
-			string_intern_pool.DestroyStringReference(id);
-			id = string_intern_pool.CreateStringReference(sir.id);
-#ifdef STRING_INTERN_POOL_VALIDATION
-			string_intern_pool.ValidateStringIdExistence(id);
-#endif
 		}
 		return *this;
 	}

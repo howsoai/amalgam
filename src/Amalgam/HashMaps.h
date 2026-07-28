@@ -18,16 +18,34 @@
 #include <unordered_set>
 #include <vector>
 
-template<typename T, typename H = std::hash<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
+template <typename T>
+struct FastHasher {
+	std::size_t operator()(const T& val) const noexcept {
+		return std::hash<T>{}(val);
+	}
+};
+
+//overload for pairs
+template <typename T1, typename T2>
+struct FastHasher<std::pair<T1, T2>> {
+	std::size_t operator()(const std::pair<T1, T2>& val) const noexcept {
+		auto h1 = std::hash<T1>{}(val.first);
+		auto h2 = std::hash<T2>{}(val.second);
+		return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL);
+	}
+};
+
+
+template<typename T, typename H = FastHasher<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
 using FastHashSet = std::unordered_set<T, H, E, A>;
 
-template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
+template<typename K, typename V, typename H = FastHasher<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using FastHashMap = std::unordered_map<K, V, H, E, A>;
 
-template<typename T, typename H = std::hash<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
+template<typename T, typename H = FastHasher<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
 using CompactHashSet = std::unordered_set<T, H, E, A>;
 
-template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
+template<typename K, typename V, typename H = FastHasher<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using CompactHashMap = std::unordered_map<K, V, H, E, A>;
 
 //wrapper that includes method specializations of _with_hash to enable the use of std::unordered_set with ConcurrentFastHashMap

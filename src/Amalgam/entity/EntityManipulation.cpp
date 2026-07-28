@@ -26,7 +26,7 @@ Entity *EntityManipulation::EntitiesMergeMethod::MergeValues(Entity *a, Entity *
 
 	EvaluableNodeTreeManipulation::NodesMergeMethod mm(&merged_entity->evaluableNodeManager, keepAllOfBoth,
 		TypesMustMatch(), NominalNumbers(), NominalStrings(), RecursiveMatching());
-	EvaluableNode *result = mm.MergeValues(code_a, code_b);
+	EvaluableNodeReference result(mm.MergeValues(code_a, code_b), true);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	merged_entity->SetRoot(result, true);
 
@@ -138,7 +138,7 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 		&merged_entity->evaluableNodeManager, fractionA, fractionB, similarMixChance,
 		TypesMustMatch(), NominalNumbers(), NominalStrings(), RecursiveMatching());
 
-	EvaluableNode *result = mm.MergeValues(code_a, code_b);
+	EvaluableNodeReference result(mm.MergeValues(code_a, code_b), true);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	merged_entity->SetRoot(result, true);
 
@@ -646,10 +646,10 @@ Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entit
 			imm_number_weights, imm_string_weights), e->GetIdStringId());
 
 	//mutate entity code after have mutated all contained entities
-	EvaluableNode *mutated_code = EvaluableNodeTreeManipulation::MutateTree(interpreter,
+	EvaluableNodeReference mutated_code(EvaluableNodeTreeManipulation::MutateTree(interpreter,
 		&new_entity->evaluableNodeManager, new_entity, entity->GetRoot(),
 		mutation_rate, mutation_weights, operation_type, preserve_type_depth,
-		imm_number_weights, imm_string_weights);
+		imm_number_weights, imm_string_weights), true);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(mutated_code);
 	new_entity->SetRoot(mutated_code, true);
 

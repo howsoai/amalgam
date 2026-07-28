@@ -604,6 +604,14 @@ public:
 	}
 
 	//copy constructor
+	inline StringRef(const StringRef &sir)
+	{
+		id = string_intern_pool.CreateStringReference(sir.id);
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		string_intern_pool.ValidateStringIdExistence(id);
+	#endif
+	}
+
 	inline StringRef(StringRef &sir)
 	{
 		id = string_intern_pool.CreateStringReference(sir.id);

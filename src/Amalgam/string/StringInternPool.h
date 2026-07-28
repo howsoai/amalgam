@@ -162,7 +162,8 @@ public:
 
 	inline bool IsInlineString() const noexcept
 	{
-		return (pointerOrShortString & inlineMask) != 0;
+		//make sure not nullptr and bit is set
+		return (pointerOrShortString != 0) && (pointerOrShortString & inlineMask) != 0;
 	}
 
 	inline size_t InlineStringLength() const noexcept

@@ -20,7 +20,7 @@ static std::string GenerateRandomString(RandomStream &rs)
 	static const std::string samples("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_");
 	for(int i = 0; i < string_length; i++)
 	{
-		auto sample = samples[rs.RandSize(samples.length())];
+		auto sample = samples[rs.RandSize(samples.size())];
 		retval.push_back(sample);
 	}
 	return retval;

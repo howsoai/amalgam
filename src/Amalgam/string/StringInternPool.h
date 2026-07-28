@@ -259,7 +259,7 @@ public:
 	#endif
 
 		auto sd_ptr = id.GetPointer();
-		return std::string_view(sd_ptr->stringData.data(), sd_ptr->stringData.length());
+		return std::string_view(sd_ptr->stringData.data(), sd_ptr->stringData.size());
 	}
 
 	//translates the string to the corresponding ID, 0 is the empty string, maximum value of size_t means it does not exist

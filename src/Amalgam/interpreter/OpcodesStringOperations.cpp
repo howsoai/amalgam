@@ -232,8 +232,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, E
 	{
 		size_t cur_segment_start = 0;
 		size_t cur_segment_end = 0;
-		size_t string_to_split_len = string_to_split.length();
-		size_t split_value_len = split_value.length();
+		size_t string_to_split_len = string_to_split.size();
+		size_t split_value_len = split_value.size();
 
 		while(cur_segment_end < string_to_split_len && max_split_count > 0)
 		{

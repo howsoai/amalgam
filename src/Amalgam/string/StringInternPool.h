@@ -472,7 +472,7 @@ public:
 		if(ref_count > 1)
 			return;
 
-		stringToID.erase(id->_string);
+		stringToID.erase(id->stringData);
 	#endif
 	}
 

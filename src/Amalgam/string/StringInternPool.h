@@ -247,7 +247,9 @@ public:
 	//translates the id to a std::string_view, empty string if it does not exist
 	//note that the reference is only valid as long as the string id is valid; if a string is needed
 	//after a reference is destroyed, the caller must make a copy first
-	inline const std::string_view GetStringViewFromID(StringID id)
+	//the id MUST be passed by reference because otherwise it will make a copy
+	//of the id on the stack which will then be invalid when returned
+	inline const std::string_view GetStringViewFromID(const StringID &id)
 	{
 		if(id == NOT_A_STRING_ID)
 			return std::string_view(EMPTY_STRING);

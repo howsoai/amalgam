@@ -1791,8 +1791,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	const std::string date_string("date:");
 	const std::string time_string("time:");
 
-	//TODO: when moving to C++20, can change to use std::endian::native
-	static bool big_endian = (*reinterpret_cast<char *>(new int32_t(0x12345678)) == 0x12);
+	static constexpr bool big_endian = !Platform_IsLittleEndian();
 
 	if(from_type == GetStringIdFromNodeType(ENT_NUMBER))
 	{

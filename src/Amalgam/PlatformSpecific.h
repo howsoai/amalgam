@@ -101,6 +101,27 @@ inline size_t Platform_FindLastBitSet(uint64_t x)
 #endif
 }
 
+//returns true if system compiled on is little endian
+//TODO: when moving to C++20, can replace with constants provided by STL
+constexpr bool Platform_IsLittleEndian()
+{
+	//GCC and Clang
+#if defined(__BYTE_ORDER__)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	return true;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	return false;
+#else
+	return false;
+#endif
+//Windows is almost exclusively little endian, even on ARM
+#elif defined(_MSC_VER)
+	return true;
+#else
+	return false;
+#endif
+}
+
 //changes argv into string_view for easier use
 inline std::vector<std::string_view> Platform_ArgvToStringViews(int argc, char **argv)
 {

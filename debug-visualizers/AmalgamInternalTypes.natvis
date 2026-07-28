@@ -9,7 +9,7 @@
 			<Item Name="value.orderedChildNodes">value.orderedChildNodes</Item>
 			<Item Name="value.mappedChildNodes">value.mappedChildNodes</Item>
 			<Item Name="value.stringValueContainer">value.stringValueContainer</Item>
-			<Item Name="value.numberValueContainer">value.numberValueContainer</Item>
+			<Item Name="value.numberAndNullValueContainer">value.numberAndNullValueContainer</Item>
 			<Item Name="value.boolValueContainer">value.boolValueContainer</Item>
 			<Item Name="value.extendedOrderedChildNodes">value.extendedOrderedChildNodes</Item>
 			<Item Name="value.extendedMappedChildNodes">value.extendedMappedChildNodes</Item>

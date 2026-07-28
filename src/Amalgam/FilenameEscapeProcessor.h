@@ -102,7 +102,7 @@ public:
 	{
 		std::string out;
 
-		if(string.length() == 0)
+		if(string.size() == 0)
 			return out;
 
 		char escape_buffer[1 + num_hex_values_per_char]; //store 1 escape char '_' + 2 hex digit chars per byte
@@ -128,7 +128,7 @@ public:
 	{
 		std::string out;
 
-		if(string.length() == 0)
+		if(string.size() == 0)
 			return out;
 
 		uint8_t escape_index = 0;

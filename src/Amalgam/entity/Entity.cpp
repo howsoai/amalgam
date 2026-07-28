@@ -48,7 +48,7 @@ Entity::Entity(EvaluableNode *_root, const std::string &rand_state)
 	evaluableNodeManager.rootNode = nullptr;
 
 	//since this is the constructor, can't have had this entity's EntityNodeManager
-	SetRoot(_root, false);
+	SetRoot(EvaluableNodeReference(_root, false), false);
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 }
@@ -61,7 +61,7 @@ Entity::Entity(Entity *t)
 	entityRelationships.container = nullptr;
 	evaluableNodeManager.rootNode = nullptr;
 
-	SetRoot(t->evaluableNodeManager.rootNode, false);
+	SetRoot(EvaluableNodeReference(t->evaluableNodeManager.rootNode, false, false), false);
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 
@@ -897,7 +897,7 @@ void Entity::SetPermissions(ExecutionPermissions permissions_to_set, ExecutionPe
 	}
 }
 
-void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm, std::vector<EntityWriteListener *> *write_listeners)
 {
 	EvaluableNode *cur_root = GetRoot();
 	bool entity_previously_empty = (cur_root == nullptr || cur_root->GetNumChildNodes() == 0);
@@ -910,7 +910,8 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::
 	{
 		EvaluableNode *new_root = evaluableNodeManager.AllocNode(ENT_ASSOC);
 		new_root->SetMappedChildNode(string_intern_pool.NOT_A_STRING_ID, _code);
-		_code = new_root;
+		new_root->UpdateFlagsBasedOnNewChildNode(_code);
+		_code = EvaluableNodeReference(new_root, _code.unique, true);
 	}
 
 	evaluableNodeManager.SetRootNode(_code);

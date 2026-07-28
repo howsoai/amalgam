@@ -34,7 +34,7 @@ public:
 	void SetState(const std::string &new_state);
 
 	//returns a random seed based on this stream's current state and seed_string parameter
-	std::string CreateOtherStreamStateViaString(const std::string &seed_string);
+	std::string CreateOtherStreamStateViaString(std::string_view seed_string);
 
 	//returns a RandomStream based on this stream's current state and seed_string parameter
 	RandomStream CreateOtherStreamViaString(const std::string &seed_string);

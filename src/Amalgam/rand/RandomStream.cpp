@@ -67,12 +67,12 @@ void RandomStream::SetState(const std::string &new_state)
 		BurnIn();
 }
 
-std::string RandomStream::CreateOtherStreamStateViaString(const std::string &seed_string)
+std::string RandomStream::CreateOtherStreamStateViaString(std::string_view seed_string)
 {
 	//initialized to zeros
 	std::array<char, randStateStringifiedSizeInBytes> buffer{};
 
-	MurmurHash3_x64_128(seed_string.c_str(),
+	MurmurHash3_x64_128(seed_string.data(),
 		static_cast<int>(seed_string.size()),
 		static_cast<uint32_t>(state & 0xFFFFFFFF), buffer.data());
 

@@ -45,8 +45,8 @@ extern "C"
 
 	char *StringToCharPtr(std::string &value)
 	{
-		char *out = new char[value.length() + 1];
-		strcpy_s(out, value.length() + 1, value.c_str());
+		char *out = new char[value.size() + 1];
+		strcpy_s(out, value.size() + 1, value.c_str());
 		return out;
 	}
 
@@ -54,7 +54,7 @@ extern "C"
 	{
 		std::wstring widestr = std::wstring(value.begin(), value.end());
 		widestr += (wchar_t)0;
-		wchar_t *wct = new wchar_t[widestr.length()];
+		wchar_t *wct = new wchar_t[widestr.size()];
 
 		//The below call is deprecated but medium risk since the buffer is generated within the function
 		//and length of the string is tracked. This still could pose a vulnerability with malicious unicode
@@ -65,7 +65,7 @@ extern "C"
 	#pragma warning( push )
 	#pragma warning( disable: 4996 )
 	#endif
-		wcsncpy(wct, widestr.c_str(), widestr.length());
+		wcsncpy(wct, widestr.c_str(), widestr.size());
 	#ifdef _MSC_VER
 	#pragma warning( pop )
 	#endif

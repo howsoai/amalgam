@@ -116,18 +116,17 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 			}
 			else //!new_scope.unique
 			{
-				if(new_scope_mcn.size() > 0)
+				//set not freeable in case referenced elsewhere
+				for(auto &[id, cn] : new_scope_mcn)
 				{
-					//set not freeable in case referenced elsewhere
-					for(auto &[id, cn] : new_scope_mcn)
+					if(cn != nullptr)
 					{
-						if(cn != nullptr)
-						#ifdef MULTITHREAD_SUPPORT
-							//not unique, so should set atomically if other threads may be accessing it
-							cn->SetIsFreeableAtomic(false);
-						#else
-							cn->SetIsFreeable(false);
-						#endif
+					#ifdef MULTITHREAD_SUPPORT
+						//not unique, so should set atomically if other threads may be accessing it
+						cn->SetIsFreeableAtomic(false);
+					#else
+						cn->SetIsFreeable(false);
+					#endif
 					}
 				}
 			}

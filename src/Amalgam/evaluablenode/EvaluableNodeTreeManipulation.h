@@ -468,8 +468,8 @@ public:
 		if(sid1 == string_intern_pool.NOT_A_STRING_ID || sid2 == string_intern_pool.NOT_A_STRING_ID)
 			return 0.0;
 
-		const auto &s1 = string_intern_pool.GetStringFromID(sid1);
-		const auto &s2 = string_intern_pool.GetStringFromID(sid2);
+		auto s1 = string_intern_pool.GetStringViewFromID(sid1);
+		auto s2 = string_intern_pool.GetStringViewFromID(sid2);
 
 		StringManipulation::ExplodeUTF8Characters(s1, aCharsBuffer);
 		StringManipulation::ExplodeUTF8Characters(s2, bCharsBuffer);

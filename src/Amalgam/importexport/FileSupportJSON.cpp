@@ -274,7 +274,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 		}
 		else
 		{
-			auto &str_value = en->GetStringView();
+			auto str_value = en->GetStringView();
 			EscapeAndAppendStringToJsonString(str_value, json_str);
 		}
 	}

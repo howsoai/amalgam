@@ -5,6 +5,7 @@
 
 StringInternPool string_intern_pool;
 
+//TODO 25818: remove any strings that are shorter than the minimum for interning
 static inline void EmplaceStaticString(EvaluableNodeBuiltInStringId bisid, std::string str)
 {
 	auto sid = string_intern_pool.CreateStringReference(str);

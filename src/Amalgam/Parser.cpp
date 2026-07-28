@@ -1113,7 +1113,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			{
 				upd.result.push_back('"');
 
-				auto &s = tree->GetStringView();
+				auto s = tree->GetStringView();
 				if(upd.result.size() + s.size() > upd.maxLength)
 					return;
 
@@ -1128,7 +1128,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		}
 		case ENT_SYMBOL:
 		{
-			auto &s = tree->GetStringView();
+			auto s = tree->GetStringView();
 			if(upd.result.size() + s.size() > upd.maxLength)
 				return;
 			upd.result.append(s);

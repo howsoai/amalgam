@@ -151,7 +151,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 						nullptr);
 
 				concurrency_manager.EndConcurrency();
-				return nullptr;
+				return EvaluableNodeReference::Null();
 			}
 		}
 	#endif
@@ -169,7 +169,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 
 		PopConstructionContextAndGetExecutionSideEffectFlag();
 
-		return nullptr;
+		return EvaluableNodeReference::Null();
 	}
 
 #ifdef MULTITHREAD_SUPPORT

@@ -21,8 +21,8 @@ Entity *EntityManipulation::EntitiesMergeMethod::MergeValues(Entity *a, Entity *
 		merged_entity->SetRandomStream(b->GetRandomStream());
 
 	//merge entity code
-	EvaluableNode *code_a = (a != nullptr ? a->GetRoot() : nullptr);
-	EvaluableNode *code_b = (b != nullptr ? b->GetRoot() : nullptr);
+	EvaluableNode *code_a = (a != nullptr ? a->GetRoot().GetReference() : nullptr);
+	EvaluableNode *code_b = (b != nullptr ? b->GetRoot().GetReference() : nullptr);
 
 	EvaluableNodeTreeManipulation::NodesMergeMethod mm(&merged_entity->evaluableNodeManager, keepAllOfBoth,
 		TypesMustMatch(), NominalNumbers(), NominalStrings(), RecursiveMatching());
@@ -46,8 +46,8 @@ Entity *EntityManipulation::EntitiesMergeForDifferenceMethod::MergeValues(Entity
 	Entity *result = new Entity();
 
 	//compare entity code
-	EvaluableNode *code_a = (a != nullptr ? a->GetRoot() : nullptr);
-	EvaluableNode *code_b = (b != nullptr ? b->GetRoot() : nullptr);
+	EvaluableNode *code_a = (a != nullptr ? a->GetRoot().GetReference() : nullptr);
+	EvaluableNode *code_b = (b != nullptr ? b->GetRoot().GetReference() : nullptr);
 
 	if(a != nullptr)
 		aEntitiesIncludedFromB[b] = a;
@@ -131,8 +131,8 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 	MergeContainedEntities(this, a, b, merged_entity);
 
 	//merge entity's code
-	EvaluableNode *code_a = (a != nullptr ? a->GetRoot() : nullptr);
-	EvaluableNode *code_b = (b != nullptr ? b->GetRoot() : nullptr);
+	EvaluableNode *code_a = (a != nullptr ? a->GetRoot().GetReference() : nullptr);
+	EvaluableNode *code_b = (b != nullptr ? b->GetRoot().GetReference() : nullptr);
 
 	EvaluableNodeTreeManipulation::NodesMixMethod mm(interpreter->randomStream.CreateOtherStreamViaRand(),
 		&merged_entity->evaluableNodeManager, fractionA, fractionB, similarMixChance,

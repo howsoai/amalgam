@@ -505,7 +505,13 @@ public:
 	//returns the number of strings that are still in use
 	inline size_t GetNumDynamicStringsInUse()
 	{
-		return stringToID.size() - staticStringIDToIndex.size();
+		size_t num_static_strings_interned = 0;
+		for(auto &sid : staticStringsIndexToStringID)
+		{
+			if(!sid.IsInlineString() && sid.GetPointer() != nullptr)
+				num_static_strings_interned++;
+		}
+		return stringToID.size() - num_static_strings_interned;
 	}
 
 	//returns a vector of all the strings still in use.  Intended for debugging.

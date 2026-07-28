@@ -81,7 +81,7 @@ std::string SetTimeZoneDatabasePath(std::string path)
 }
 
 // return true if format is year-month or month-year, where year is %Y and month is one of %m, %b, %B or %h, with any single character separator
-inline bool IsFormatMonthAndYearOnly(const std::string &s)
+inline bool IsFormatMonthAndYearOnly(std::string_view s)
 {
 	//expected formats should be length of 5, e.g., "%m-%Y"
 	if(s.size() != 5)
@@ -214,7 +214,7 @@ std::vector<date::zoned_time<std::common_type_t<Duration, std::chrono::seconds>>
 
 //returns the time_zone corresponding with the string timezone
 // if timezone is an abbreviation, it will only select a timezone if it is a unique timezone corresponding to the abbreviation
-const date::time_zone *GetTimeZoneFromString(const std::string &timezone)
+const date::time_zone *GetTimeZoneFromString(std::string timezone)
 {
 	// if timezone wasn't specified, return local timezone
 	if(timezone.empty())
@@ -244,7 +244,8 @@ const date::time_zone *GetTimeZoneFromString(const std::string &timezone)
 
 
 //don't pass locale by reference so can default it
-double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str, std::string format, std::string locale, std::string timezone)
+double GetNumSecondsSinceEpochFromDateTimeString(std::string datetime_str,
+	std::string format, std::string locale, std::string timezone)
 {
 	bool has_time_offset = ConstrainDateTimeStringToValidFormat(format);
 
@@ -323,7 +324,7 @@ double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str
 // locale is not specified as constant or passed reference because this function may modify the string
 //  and needs to call the copy constructor
 template<typename TimepointType>
-std::string ConvertZonedDateTimeToString(TimepointType datetime, const std::string &format, std::string locale, const date::time_zone *tz)
+std::string ConvertZonedDateTimeToString(TimepointType datetime, std::string format, std::string locale, const date::time_zone *tz)
 {
 	auto zoned_dt = date::make_zoned(tz, datetime);
 
@@ -373,7 +374,7 @@ std::string ConvertZonedDateTimeToString(TimepointType datetime, const std::stri
 }
 
 //format and locale are not passed by reference because both need a copy
-std::string GetDateTimeStringFromNumSecondsSinceEpoch(double seconds_since_epoch, std::string format, const std::string &locale, const std::string &timezone)
+std::string GetDateTimeStringFromNumSecondsSinceEpoch(double seconds_since_epoch, std::string format, std::string locale, std::string timezone)
 {
 	if(seconds_since_epoch != seconds_since_epoch
 			|| seconds_since_epoch == std::numeric_limits<double>::infinity()
@@ -405,7 +406,7 @@ std::string GetDateTimeStringFromNumSecondsSinceEpoch(double seconds_since_epoch
 }
 
 //parses time_str based on format and locale and returns the number of seconds since midnight
-double GetNumSecondsSinceMidnight(const std::string &time_str, std::string format, std::string locale)
+double GetNumSecondsSinceMidnight(std::string time_str, std::string format, std::string locale)
 {
 #if defined(MULTITHREAD_SUPPORT)
 	thread_local static CachedLocale cached_locale;

@@ -400,10 +400,13 @@ public:
 	std::pair<bool, bool> RemoveLabels(EvaluableNodeReference labels_to_remove,
 		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self);
 
-	//Returns the id for this Entity
+	//returns the id for this Entity
+	//note that changing the entity's id will invalidate the string_view returned
 	inline std::string_view GetId()
 	{
-		return string_intern_pool.GetStringViewFromID(GetIdStringId());
+		//idStringId is stable as long as the entity id has not changed,
+		// so therefore can return the a string_view directly
+		return string_intern_pool.GetStringViewFromID(idStringId);
 	}
 
 	//Returns the Id String's StringID (the index pointing to the Entity's ID string)

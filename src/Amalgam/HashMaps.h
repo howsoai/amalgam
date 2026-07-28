@@ -146,11 +146,17 @@ struct has_data_and_size<T, std::void_t<
 template <typename T>
 inline constexpr bool has_data_and_size_v = has_data_and_size<T>::value;
 
+inline constexpr uint64_t rapid_hasher_rand_seed = 13766731;
+
 //a fast, deterministic hash object
 template <typename T, typename = void>
-struct FastHasher;
-
-inline constexpr uint64_t rapid_hasher_rand_seed = 13766731;
+struct FastHasher
+{
+	std::size_t operator()(const T &val) const noexcept
+	{
+		return static_cast<std::size_t>(rapidhash_withSeed(&val, sizeof(T), rapid_hasher_rand_seed));
+	}
+};
 
 //container types like std::string, std::vector
 template <typename T>

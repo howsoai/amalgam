@@ -81,7 +81,7 @@ std::string SetTimeZoneDatabasePath(std::string path)
 }
 
 // return true if format is year-month or month-year, where year is %Y and month is one of %m, %b, %B or %h, with any single character separator
-inline bool IsFormatMonthAndYearOnly(std::string_view s)
+inline bool IsFormatMonthAndYearOnly(std::string &s)
 {
 	//expected formats should be length of 5, e.g., "%m-%Y"
 	if(s.size() != 5)
@@ -244,8 +244,8 @@ const date::time_zone *GetTimeZoneFromString(std::string timezone)
 
 
 //don't pass locale by reference so can default it
-double GetNumSecondsSinceEpochFromDateTimeString(std::string datetime_str,
-	std::string format, std::string locale, std::string timezone)
+double GetNumSecondsSinceEpochFromDateTimeString(std::string &datetime_str,
+	std::string &format, std::string &locale, std::string &timezone)
 {
 	bool has_time_offset = ConstrainDateTimeStringToValidFormat(format);
 
@@ -334,7 +334,6 @@ std::string ConvertZonedDateTimeToString(TimepointType datetime, std::string for
 	static CachedLocale cached_locale;
 #endif
 
-
 	cached_locale.ResetStringStream();
 	if(locale.empty())
 	{
@@ -374,7 +373,8 @@ std::string ConvertZonedDateTimeToString(TimepointType datetime, std::string for
 }
 
 //format and locale are not passed by reference because both need a copy
-std::string GetDateTimeStringFromNumSecondsSinceEpoch(double seconds_since_epoch, std::string format, std::string locale, std::string timezone)
+std::string GetDateTimeStringFromNumSecondsSinceEpoch(double seconds_since_epoch,
+	std::string &format, std::string &locale, std::string &timezone)
 {
 	if(seconds_since_epoch != seconds_since_epoch
 			|| seconds_since_epoch == std::numeric_limits<double>::infinity()
@@ -406,7 +406,7 @@ std::string GetDateTimeStringFromNumSecondsSinceEpoch(double seconds_since_epoch
 }
 
 //parses time_str based on format and locale and returns the number of seconds since midnight
-double GetNumSecondsSinceMidnight(std::string time_str, std::string format, std::string locale)
+double GetNumSecondsSinceMidnight(std::string &time_str, std::string &format, std::string &locale)
 {
 #if defined(MULTITHREAD_SUPPORT)
 	thread_local static CachedLocale cached_locale;
@@ -454,7 +454,7 @@ double GetNumSecondsSinceMidnight(std::string time_str, std::string format, std:
 	return 0.0;
 }
 
-std::string GetTimeStringFromNumSecondsSinceMidnight(double seconds_since_midnight, std::string format, std::string locale)
+std::string GetTimeStringFromNumSecondsSinceMidnight(double seconds_since_midnight, std::string &format, std::string &locale)
 {
 	if(seconds_since_midnight != seconds_since_midnight
 			|| seconds_since_midnight == std::numeric_limits<double>::infinity()

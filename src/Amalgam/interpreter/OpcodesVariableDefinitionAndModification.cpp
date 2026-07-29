@@ -2011,7 +2011,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		}
 		else //need to parse the string
 		{
-			auto from_type_str = string_intern_pool.GetStringViewFromID(from_type);
+			auto from_type_str = string_intern_pool.GetStringViewFromID(from_type.GetIDReference());
 
 			//see if it starts with the date or time string
 			if(from_type_str.compare(0, date_string.size(), date_string) == 0)
@@ -2352,7 +2352,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	}
 	else //need to parse the string
 	{
-		auto to_type_str = string_intern_pool.GetStringViewFromID(to_type);
+		auto to_type_str = string_intern_pool.GetStringViewFromID(to_type.GetIDReference());
 
 		//if it starts with the date or time string
 		if(to_type_str.compare(0, date_string.size(), date_string) == 0)

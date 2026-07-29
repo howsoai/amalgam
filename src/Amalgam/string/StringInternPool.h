@@ -687,6 +687,11 @@ public:
 		return id;
 	}
 
+	inline const StringInternPool::StringID &GetIDReference() const noexcept
+	{
+		return id;
+	}
+
 	inline bool operator==(const StringInternPool::StringID &other) const noexcept
 	{
 		return id == other;

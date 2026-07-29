@@ -1501,7 +1501,7 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 	auto &ce_enm = called_entity->evaluableNodeManager;
 
 	if(Interpreter::_label_profiling_enabled)
-		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
+		PerformanceProfiler::StartOperation(string_intern_pool.GetStringViewFromID(entity_label_sid),
 			ce_enm.GetNumberOfUsedNodes());
 
 #ifdef MULTITHREAD_SUPPORT

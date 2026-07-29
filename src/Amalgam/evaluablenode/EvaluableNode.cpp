@@ -96,8 +96,8 @@ bool EvaluableNode::ToBool(EvaluableNode *n)
 std::string EvaluableNode::BoolToString(bool value, bool key_string)
 {
 	if(key_string)
-		return GetStringIdFromBuiltInStringId(value ? ENBISI_true_key : ENBISI_false_key)->string;
-	return GetStringIdFromBuiltInStringId(value ? ENBISI_true : ENBISI_false)->string;
+		return string_intern_pool.GetStringFromID(GetStringIdFromBuiltInStringId(value ? ENBISI_true_key : ENBISI_false_key));
+	return string_intern_pool.GetStringFromID(GetStringIdFromBuiltInStringId(value ? ENBISI_true : ENBISI_false));
 }
 
 StringInternPool::StringID EvaluableNode::BoolToStringID(bool value, bool key_string)
@@ -129,7 +129,7 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 		auto sid = e->GetStringIDReference();
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
 			return value_if_null;
-		auto &str = string_intern_pool.GetStringFromID(sid);
+		auto str = string_intern_pool.GetStringViewFromID(sid);
 		auto [value, success] = Platform_StringToNumber(str);
 		if(success)
 			return value;
@@ -186,7 +186,7 @@ std::string EvaluableNode::ToString(EvaluableNode *e, bool key_string)
 		return ".null";
 
 	if(e->GetType() == ENT_STRING)
-		return e->GetStringValue();
+		return std::string(e->GetStringView());
 
 	if(e->GetType() == ENT_NUMBER)
 		return StringManipulation::NumberToString(e->GetNumberValueReference());
@@ -200,7 +200,7 @@ std::pair<bool, std::string> EvaluableNode::ToValidString(EvaluableNode *e)
 		return std::make_pair(false, "");
 
 	if(e->GetType() == ENT_STRING)
-		return std::make_pair(true, e->GetStringValue());
+		return std::make_pair(true, std::string(e->GetStringView()));
 
 	if(e->GetType() == ENT_NUMBER)
 		return std::make_pair(true, StringManipulation::NumberToString(e->GetNumberValueReference()));
@@ -351,7 +351,7 @@ bool EvaluableNode::IsNodeValid()
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
 			return true;
 
-		return (sid->string.size() < 2000000000);
+		return (string_intern_pool.GetStringViewFromID(sid).size() < 2000000000);
 	}
 	else if(DoesEvaluableNodeTypeUseBoolData(type))
 	{
@@ -684,10 +684,10 @@ void EvaluableNode::SetStringID(StringInternPool::StringID id)
 	}
 }
 
-const std::string &EvaluableNode::GetStringValue()
+std::string_view EvaluableNode::GetStringView()
 {
 	if(DoesEvaluableNodeTypeUseStringData(GetType()))
-		return string_intern_pool.GetStringFromID(value.stringValueContainer.stringID);
+		return string_intern_pool.GetStringViewFromID(value.stringValueContainer.stringID);
 
 	//none of the above, return an empty one
 	return emptyStringValue;
@@ -1478,7 +1478,7 @@ double EvaluableNodeImmediateValueWithType::GetValueAsNumber(double value_if_nul
 		if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
 			return value_if_null;
 
-		auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
+		auto str = string_intern_pool.GetStringViewFromID(nodeValue.stringID);
 		auto [value, success] = Platform_StringToNumber(str);
 		if(success)
 			return value;
@@ -1499,7 +1499,7 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 		if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
 			return std::make_pair(false, "");
 
-		auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
+		auto str = string_intern_pool.GetStringFromID(nodeValue.stringID);
 		return std::make_pair(true, str);
 	}
 
@@ -1512,7 +1512,7 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 	if(nodeType == ENIVT_CODE && !EvaluableNode::IsNull(nodeValue.code))
 	{
 		if(nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
-			return std::make_pair(true, nodeValue.code->GetStringValue());
+			return std::make_pair(true, std::string(nodeValue.code->GetStringView()));
 
 		if(key_string)
 			return std::make_pair(true, Parser::UnparseToKeyString(nodeValue.code));

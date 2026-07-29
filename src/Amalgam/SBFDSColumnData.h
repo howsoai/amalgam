@@ -435,11 +435,11 @@ public:
 	inline void VerifyAllEntities(size_t max_num_entities = std::numeric_limits<size_t>::max())
 	{
 		//ensure valid column name
-		if(stringId != string_intern_pool.NOT_A_STRING_ID)
+		if(stringId != string_intern_pool.NOT_A_STRING_ID && !stringId.IsInlineString())
 		{
 			//make sure not extreme values
-			AmlgAssert(stringId->string.size() < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
-			AmlgAssert(stringId->refCount < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
+			AmlgAssert(string_intern_pool.GetStringViewFromID(stringId).size() < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
+			AmlgAssert(stringId.GetPointer()->refCount < static_cast<size_t>(std::numeric_limits<int64_t>::max()));
 		}
 
 		size_t num_entities = invalidIndices.size() + nullIndices.size() + falseBoolIndices.size() + trueBoolIndices.size()
@@ -518,7 +518,7 @@ protected:
 	//updates longestStringLength and indexWithLongestString based on parameters
 	inline void UpdateLongestString(StringInternPool::StringID sid, size_t index)
 	{
-		auto &str = string_intern_pool.GetStringFromID(sid);
+		auto str = string_intern_pool.GetStringViewFromID(sid);
 		size_t str_size = StringManipulation::GetUTF8CharacterLength(str);
 		if(str_size > longestStringLength)
 		{

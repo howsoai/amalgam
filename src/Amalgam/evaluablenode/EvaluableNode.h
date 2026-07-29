@@ -734,7 +734,7 @@ public:
 	}
 
 	void SetStringID(StringInternPool::StringID id);
-	const std::string &GetStringValue();
+	std::string_view GetStringView();
 	void SetStringValue(const std::string &v);
 	//gets the string ID and clears the node's string ID, but does not destroy the string reference,
 	// leaving the reference handling up to the caller

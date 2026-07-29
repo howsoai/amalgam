@@ -367,15 +367,12 @@ Example:
 				]
 		}
 	)
-	[first_rand_numbers second_rand_numbers]
+	(and (= (size first_rand_numbers) 2) (= first_rand_numbers second_rand_numbers))
 )
 ```
 Output:
 ```amalgam
-[
-	[0.9512993766655248 0.3733350484591008]
-	[0.9512993766655248 0.3733350484591008]
-]
+.true
 ```
 
 [Amalgam Opcodes](./opcodes.md)

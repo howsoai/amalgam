@@ -500,7 +500,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNod
 	auto seed_node = InterpretNodeForImmediateUse(ocn[0]);
 	std::string seed_string;
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
-		seed_string = seed_node->GetStringValue();
+		seed_string = seed_node->GetStringView();
 	else
 		seed_string = Parser::Unparse(seed_node, false, false, true);
 
@@ -530,7 +530,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_RAND_SEED(ENT_GET_ENTITY_RAND_SEED, &In
 		"string"
 		"base64"
 	)
-))&", R"("nHKVcHddHVaqvcDt3AYbD/8=")", "", R"((destroy_entities "Rand"))"}
+))&", R"("nHKVcHddHVaqvcDt3AYbD/8=")", R"(\w+)", R"((destroy_entities "Rand"))"}
 		});
 	d.retrievesData = true;
 	d.requiresEntity = true;
@@ -609,11 +609,8 @@ static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &In
 				]
 		}
 	)
-	[first_rand_numbers second_rand_numbers]
-))&", R"([
-	[0.9512993766655248 0.3733350484591008]
-	[0.9512993766655248 0.3733350484591008]
-])", "", R"((destroy_entities "Rand"))"}
+	(and (= (size first_rand_numbers) 2) (= first_rand_numbers second_rand_numbers))
+))&", R"(.true)", "", R"((destroy_entities "Rand"))"}
 		});
 	d.retrievesData = true;
 	d.requiresEntity = true;
@@ -643,7 +640,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	auto seed_node = InterpretNode(ocn[num_params > 1 ? 1 : 0]);
 	std::string seed_string;
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
-		seed_string = seed_node->GetStringValue();
+		seed_string = seed_node->GetStringView();
 	else
 		seed_string = Parser::Unparse(seed_node, false, false, true);
 	auto node_stack = CreateOpcodeStackStateSaver(seed_node);

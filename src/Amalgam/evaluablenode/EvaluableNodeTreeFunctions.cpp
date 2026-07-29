@@ -482,7 +482,8 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			if(variable_value_node != nullptr && variable_value_node->GetType() == ENT_STRING)
 			{
 				value_destination_node->SetType(ENT_STRING, false);
-				std::string result = value_destination_node->GetStringValue() + variable_value_node->GetStringValue();
+				std::string result(value_destination_node->GetStringView());
+				result += variable_value_node->GetStringView();
 				value_destination_node->SetStringValue(result);
 			}
 			else
@@ -570,7 +571,8 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		if(variable_value_node != nullptr && variable_value_node->GetType() == ENT_STRING)
 		{
 			value_destination_node->SetType(ENT_STRING, false);
-			std::string result = value_destination_node->GetStringValue() + variable_value_node->GetStringValue();
+			std::string result(value_destination_node->GetStringView());
+			result += variable_value_node->GetStringView();
 			value_destination_node->SetStringValue(result);
 			value_destination_node.SetReference(enm->AllocNode(ENT_STRING, result), true);
 		}

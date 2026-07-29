@@ -682,7 +682,9 @@ public:
 	}
 
 	//allow being able to use as a string id
-	inline operator StringInternPool::StringID()
+	//only allow via reference so an extra copy isn't created which could
+	//invalidate a string_view
+	inline operator StringInternPool::StringID &()
 	{
 		return id;
 	}

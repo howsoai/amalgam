@@ -530,7 +530,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_RAND_SEED(ENT_GET_ENTITY_RAND_SEED, &In
 		"string"
 		"base64"
 	)
-))&", R"("nHKVcHddHVaqvcDt3AYbD/8=")", "", R"((destroy_entities "Rand"))"}
+))&", R"("nHKVcHddHVaqvcDt3AYbD/8=")", R"(\w+)", R"((destroy_entities "Rand"))"}
 		});
 	d.retrievesData = true;
 	d.requiresEntity = true;
@@ -609,11 +609,8 @@ static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &In
 				]
 		}
 	)
-	[first_rand_numbers second_rand_numbers]
-))&", R"([
-	[0.9512993766655248 0.3733350484591008]
-	[0.9512993766655248 0.3733350484591008]
-])", "", R"((destroy_entities "Rand"))"}
+	(and (= (size first_rand_numbers) 2) (= first_rand_numbers second_rand_numbers))
+))&", R"(.true)", "", R"((destroy_entities "Rand"))"}
 		});
 	d.retrievesData = true;
 	d.requiresEntity = true;

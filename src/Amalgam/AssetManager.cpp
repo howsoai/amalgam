@@ -463,7 +463,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 	EvaluableNode **version_node = args->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_amlg_version));
 	if(version_node != nullptr && *version_node != nullptr && (*version_node)->GetType() == ENT_STRING)
 	{
-		const std::string &version_string = (*version_node)->GetStringValue();
+		std::string_view version_string = (*version_node)->GetStringView();
 		auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_string);
 		load_status.SetStatus(success || !asset_params->requireVersionCompatibility, error_message, version_string);
 	}
@@ -532,7 +532,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters *asset_par
 		if(code == nullptr || code->GetType() != ENT_STRING)
 			return false;
 
-		const std::string &s = code->GetStringValue();
+		std::string_view s = code->GetStringView();
 		if(asset_params->toMemory)
 		{
 			asset_params->resourceContents = s;
@@ -637,14 +637,14 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 				EvaluableNode **seed = metadata->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_rand_seed));
 				if(seed != nullptr && (*seed)->GetType() == ENT_STRING)
 				{
-					default_random_seed = (*seed)->GetStringValue();
+					default_random_seed = (*seed)->GetStringView();
 					new_entity->SetRandomState(default_random_seed, true);
 				}
 
 				EvaluableNode **version_node = metadata->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_version));
 				if(version_node != nullptr && (*version_node)->GetType() == ENT_STRING)
 				{
-					const std::string &version_str = (*version_node)->GetStringValue();
+					std::string_view version_str = (*version_node)->GetStringView();
 					auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_str);
 					if(!success)
 					{
@@ -772,7 +772,7 @@ void AssetManager::SetEntityPermissions(Entity *entity,
 		entityPermissions.erase(entity_perms_entry);
 }
 
-std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const std::string &version,
+std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::string_view version,
 	bool print_warnings)
 {
 	auto sem_ver = StringManipulation::Split(version, '-'); //split on postfix

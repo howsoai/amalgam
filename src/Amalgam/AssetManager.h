@@ -88,7 +88,7 @@ public:
 
 		//initializes in a way intended for contained entities for the given contained entity_id, will inherit parameters
 		//but update with the new resource_base_path
-		inline AssetParametersRef CreateAssetParametersForContainedResourceByEntityId(const std::string &entity_id)
+		inline AssetParametersRef CreateAssetParametersForContainedResourceByEntityId(std::string_view entity_id)
 		{
 			AssetParametersRef new_params = std::make_shared<AssetParameters>(*this);
 			if(escapeContainedResourceNames)
@@ -98,7 +98,9 @@ public:
 			}
 			else
 			{
-				new_params->resourceBasePath = resourceBasePath + "/" + entity_id;
+				new_params->resourceBasePath = resourceBasePath;
+				new_params->resourceBasePath.append("/");
+				new_params->resourceBasePath.append(entity_id);
 			}
 
 			new_params->resourcePath = new_params->resourceBasePath + "." + extension;
@@ -621,7 +623,7 @@ public:
 
 	//stores buffer b (of type BufferType of elements BufferElementType) into the filename, returns true if successful, false if not
 	template<typename BufferType>
-	static bool StoreFileFromBuffer(std::ostream &f, std::string &file_type, const BufferType &b)
+	static bool StoreFileFromBuffer(std::ostream &f, std::string_view file_type, const BufferType &b)
 	{
 		if(!f.good())
 			return false;
@@ -639,7 +641,7 @@ public:
 	//validates given asset version against Amalgam version
 	//if successful: returns empty string and true
 	//if failure: returns error message and false
-	static std::pair<std::string, bool> ValidateVersionAgainstAmalgam(const std::string &version,
+	static std::pair<std::string, bool> ValidateVersionAgainstAmalgam(std::string_view version,
 		bool print_warnings = true);
 
 	//returns a string representing en's source, empty string if debugSources is false

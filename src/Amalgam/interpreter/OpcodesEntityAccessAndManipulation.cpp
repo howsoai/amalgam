@@ -665,7 +665,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 	auto &ce_enm = called_entity->evaluableNodeManager;
 
 	if(_label_profiling_enabled)
-		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
+		PerformanceProfiler::StartOperation(string_intern_pool.GetStringViewFromID(entity_label_sid),
 			ce_enm.GetNumberOfUsedNodes());
 
 #ifdef MULTITHREAD_SUPPORT
@@ -901,7 +901,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	cur_entity = EntityReadReference();
 
 	if(_label_profiling_enabled)
-		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(container_label_sid),
+		PerformanceProfiler::StartOperation(string_intern_pool.GetStringViewFromID(container_label_sid),
 			container->evaluableNodeManager.GetNumberOfUsedNodes());
 
 #ifdef MULTITHREAD_SUPPORT

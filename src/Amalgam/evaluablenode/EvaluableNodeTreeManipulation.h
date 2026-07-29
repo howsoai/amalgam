@@ -394,7 +394,7 @@ public:
 		return mm.MergeValues(tree1, tree2);
 	}
 
-	static std::string MixStrings(const std::string &a, const std::string &b,
+	static std::string MixStrings(std::string_view a, std::string_view b,
 		RandomStream random_stream, double fraction_a, double fraction_b);
 
 	//returns a number between 0 and 1, where 1 is exactly the same and 0 is maximally different
@@ -468,8 +468,8 @@ public:
 		if(sid1 == string_intern_pool.NOT_A_STRING_ID || sid2 == string_intern_pool.NOT_A_STRING_ID)
 			return 0.0;
 
-		const auto &s1 = string_intern_pool.GetStringFromID(sid1);
-		const auto &s2 = string_intern_pool.GetStringFromID(sid2);
+		auto s1 = string_intern_pool.GetStringViewFromID(sid1);
+		auto s2 = string_intern_pool.GetStringViewFromID(sid2);
 
 		StringManipulation::ExplodeUTF8Characters(s1, aCharsBuffer);
 		StringManipulation::ExplodeUTF8Characters(s2, bCharsBuffer);
@@ -498,7 +498,7 @@ public:
 	}
 
 	//computes the edit distance (Levenshtein distance) between the two utf-8 strings
-	inline static size_t EditDistance(const std::string &a, const std::string &b)
+	inline static size_t EditDistance(std::string_view a, std::string_view b)
 	{
 		StringManipulation::ExplodeUTF8Characters(a, aCharsBuffer);
 		StringManipulation::ExplodeUTF8Characters(b, bCharsBuffer);
@@ -507,7 +507,7 @@ public:
 
 	//computes the edit distance (Levenshtein distance) between the two utf-8 strings
 	//a_size and b_size are set to the length of the strings respectively
-	inline static size_t EditDistance(const std::string &a, const std::string &b,
+	inline static size_t EditDistance(std::string_view a, std::string_view b,
 		size_t &a_len, size_t &b_len)
 	{
 		StringManipulation::ExplodeUTF8Characters(a, aCharsBuffer);

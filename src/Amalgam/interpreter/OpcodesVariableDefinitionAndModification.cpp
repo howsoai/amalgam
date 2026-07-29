@@ -2016,6 +2016,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			//see if it starts with the date or time string
 			if(from_type_str.compare(0, date_string.size(), date_string) == 0)
 			{
+				std::string format(begin(from_type_str) + date_string.size(), end(from_type_str));
 				std::string locale;
 				std::string timezone;
 				if(EvaluableNode::IsAssociativeArray(from_params))
@@ -2026,10 +2027,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				}
 
 				use_number = true;
-				number_value = GetNumSecondsSinceEpochFromDateTimeString(string_value, from_type_str.data() + date_string.size(), locale, timezone);
+				number_value = GetNumSecondsSinceEpochFromDateTimeString(string_value, format, locale, timezone);
 			}
 			else if(from_type_str.compare(0, time_string.size(), time_string) == 0)
 			{
+				std::string format(begin(from_type_str) + time_string.size(), end(from_type_str));
 				std::string locale;
 				if(EvaluableNode::IsAssociativeArray(from_params))
 				{
@@ -2038,7 +2040,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				}
 
 				use_number = true;
-				number_value = GetNumSecondsSinceMidnight(string_value, from_type_str.data() + time_string.size(), locale);
+				number_value = GetNumSecondsSinceMidnight(string_value, format, locale);
 
 			}
 		}
@@ -2355,6 +2357,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		//if it starts with the date or time string
 		if(to_type_str.compare(0, date_string.size(), date_string) == 0)
 		{
+			std::string format(begin(to_type_str) + date_string.size(), end(to_type_str));
 			std::string locale;
 			std::string timezone;
 			if(EvaluableNode::IsAssociativeArray(to_params))
@@ -2370,11 +2373,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			else if(use_int_number)		num_secs_from_epoch = static_cast<double>(int_number_value);
 			else if(use_code)			num_secs_from_epoch = static_cast<double>(EvaluableNode::ToNumber(code_value));
 
-			string_value = GetDateTimeStringFromNumSecondsSinceEpoch(num_secs_from_epoch,
-				std::string(begin(to_type_str) + date_string.size(), end(to_type_str)), locale, timezone);
+			string_value = GetDateTimeStringFromNumSecondsSinceEpoch(num_secs_from_epoch, format, locale, timezone);
 		}
 		else if(to_type_str.compare(0, time_string.size(), time_string) == 0)
 		{
+			std::string format(begin(to_type_str) + time_string.size(), end(to_type_str));
 			std::string locale;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
@@ -2388,8 +2391,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			else if(use_int_number)		num_secs_from_midnight = static_cast<double>(int_number_value);
 			else if(use_code)			num_secs_from_midnight = static_cast<double>(EvaluableNode::ToNumber(code_value));
 
-			string_value = GetTimeStringFromNumSecondsSinceMidnight(num_secs_from_midnight,
-				std::string(begin(to_type_str) + time_string.size(), end(to_type_str)), locale);
+			string_value = GetTimeStringFromNumSecondsSinceMidnight(num_secs_from_midnight, format, locale);
 		}
 	}
 

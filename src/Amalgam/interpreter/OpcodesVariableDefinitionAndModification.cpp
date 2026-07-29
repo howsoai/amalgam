@@ -164,7 +164,7 @@ static inline void RecordStackLockForProfiling(EvaluableNode *en, StringInternPo
 	if(Interpreter::_opcode_profiling_enabled)
 	{
 		std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
-		variable_location += string_intern_pool.GetStringFromID(variable_sid);
+		variable_location += string_intern_pool.GetStringViewFromID(variable_sid);
 		PerformanceProfiler::AccumulateLockContentionCount(variable_location);
 	}
 }
@@ -2071,11 +2071,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		}
 		else //need to parse the string
 		{
-			auto &from_type_str = string_intern_pool.GetStringFromID(from_type);
+			auto from_type_str = string_intern_pool.GetStringViewFromID(from_type);
 
 			//see if it starts with the date or time string
 			if(from_type_str.compare(0, date_string.size(), date_string) == 0)
 			{
+				std::string format(begin(from_type_str) + date_string.size(), end(from_type_str));
 				std::string locale;
 				std::string timezone;
 				if(EvaluableNode::IsAssociativeArray(from_params))
@@ -2086,10 +2087,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				}
 
 				use_number = true;
-				number_value = GetNumSecondsSinceEpochFromDateTimeString(string_value, from_type_str.c_str() + date_string.size(), locale, timezone);
+				number_value = GetNumSecondsSinceEpochFromDateTimeString(string_value, format, locale, timezone);
 			}
 			else if(from_type_str.compare(0, time_string.size(), time_string) == 0)
 			{
+				std::string format(begin(from_type_str) + time_string.size(), end(from_type_str));
 				std::string locale;
 				if(EvaluableNode::IsAssociativeArray(from_params))
 				{
@@ -2098,7 +2100,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				}
 
 				use_number = true;
-				number_value = GetNumSecondsSinceMidnight(string_value, from_type_str.c_str() + time_string.size(), locale);
+				number_value = GetNumSecondsSinceMidnight(string_value, format, locale);
 
 			}
 		}
@@ -2410,11 +2412,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	}
 	else //need to parse the string
 	{
-		auto &to_type_str = string_intern_pool.GetStringFromID(to_type);
+		auto to_type_str = string_intern_pool.GetStringViewFromID(to_type);
 
 		//if it starts with the date or time string
 		if(to_type_str.compare(0, date_string.size(), date_string) == 0)
 		{
+			std::string format(begin(to_type_str) + date_string.size(), end(to_type_str));
 			std::string locale;
 			std::string timezone;
 			if(EvaluableNode::IsAssociativeArray(to_params))
@@ -2430,10 +2433,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			else if(use_int_number)		num_secs_from_epoch = static_cast<double>(int_number_value);
 			else if(use_code)			num_secs_from_epoch = static_cast<double>(EvaluableNode::ToNumber(code_value));
 
-			string_value = GetDateTimeStringFromNumSecondsSinceEpoch(num_secs_from_epoch, to_type_str.c_str() + date_string.size(), locale, timezone);
+			string_value = GetDateTimeStringFromNumSecondsSinceEpoch(num_secs_from_epoch, format, locale, timezone);
 		}
 		else if(to_type_str.compare(0, time_string.size(), time_string) == 0)
 		{
+			std::string format(begin(to_type_str) + time_string.size(), end(to_type_str));
 			std::string locale;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
@@ -2447,7 +2451,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			else if(use_int_number)		num_secs_from_midnight = static_cast<double>(int_number_value);
 			else if(use_code)			num_secs_from_midnight = static_cast<double>(EvaluableNode::ToNumber(code_value));
 
-			string_value = GetTimeStringFromNumSecondsSinceMidnight(num_secs_from_midnight, to_type_str.c_str() + time_string.size(), locale);
+			string_value = GetTimeStringFromNumSecondsSinceMidnight(num_secs_from_midnight, format, locale);
 		}
 	}
 

@@ -29,8 +29,10 @@ public:
 	{
 	public:
 		LoadEntityStatus();
-		LoadEntityStatus(bool loaded, std::string message = std::string(), std::string version = std::string());
-		void SetStatus(bool loaded_in, std::string message_in = std::string(), std::string version_in = std::string());
+		LoadEntityStatus(bool loaded, std::string_view message = std::string_view(),
+			std::string_view version = std::string_view());
+		void SetStatus(bool loaded_in, std::string_view message_in = std::string_view(),
+			std::string_view version_in = std::string_view());
 
 		bool loaded;
 		std::string message;

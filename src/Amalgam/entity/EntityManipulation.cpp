@@ -854,8 +854,8 @@ void EntityManipulation::SortEntitiesByID(std::vector<Entity *> &entities)
 	std::sort(begin(entities), end(entities),
 		[](Entity *a, Entity *b)
 		{
-			const std::string a_id = a->GetId();
-			const std::string b_id = b->GetId();
+			std::string_view a_id = a->GetId();
+			std::string_view b_id = b->GetId();
 
 			int comp = StringManipulation::StringNaturalCompare(a_id, b_id);
 			return comp < 0;

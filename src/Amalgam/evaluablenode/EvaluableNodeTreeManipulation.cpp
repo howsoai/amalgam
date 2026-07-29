@@ -35,7 +35,7 @@ std::string EvaluableNodeTreeManipulation::MutationParameters::GenerateRandomStr
 	{
 		auto sid = immStringWeights->WeightedDiscreteRand(rs);
 		if(sid != string_intern_pool.NOT_A_STRING_ID)
-			return sid->string;
+			return string_intern_pool.GetStringFromID(sid);
 	}
 
 	//reuse a string if probable and possible
@@ -61,7 +61,7 @@ std::string EvaluableNodeTreeManipulation::MutationParameters::GenerateRandomStr
 		size_t rand_index = rs.RandSize(ENBISI_FIRST_DYNAMIC_STRING);
 		auto sid = GetStringIdFromBuiltInStringId(static_cast<EvaluableNodeBuiltInStringId>(rand_index));
 		if(sid != string_intern_pool.NOT_A_STRING_ID)
-			return sid->string;
+			return string_intern_pool.GetStringFromID(sid);
 	}
 
 	//randomly generate a string
@@ -131,8 +131,8 @@ static inline StringInternPool::StringID MixStringValues(StringInternPool::Strin
 	if(b == StringInternPool::NOT_A_STRING_ID)
 		return string_intern_pool.CreateStringReference(a);
 
-	auto &a_str = string_intern_pool.GetStringFromID(a);
-	auto &b_str = string_intern_pool.GetStringFromID(b);
+	auto a_str = string_intern_pool.GetStringViewFromID(a);
+	auto b_str = string_intern_pool.GetStringViewFromID(b);
 	std::string result = EvaluableNodeTreeManipulation::MixStrings(a_str, b_str,
 		random_stream, fraction_a, fraction_b);
 
@@ -259,7 +259,7 @@ EvaluableNodeTreeManipulation::StringsMixMethodUtf8::StringsMixMethodUtf8(Random
 	fractionAInsteadOfB = fractionA / (fractionA + fractionB);
 }
 
-std::string EvaluableNodeTreeManipulation::MixStrings(const std::string &a, const std::string &b,
+std::string EvaluableNodeTreeManipulation::MixStrings(std::string_view a, std::string_view b,
 	RandomStream random_stream, double fraction_a, double fraction_b)
 {
 	StringManipulation::ExplodeUTF8Characters(a, aCharsBuffer);
@@ -572,19 +572,19 @@ static void GetStringsFromTree(EvaluableNode *tree, StringsFromTreeData &strings
 		for(auto &[cn_id, cn] : tree->GetMappedChildNodesReference())
 		{
 			if(cn_id != string_intern_pool.NOT_A_STRING_ID)
-				strings_from_tree_data.keyAndSymbolStrings.push_back(cn_id->string);
+				strings_from_tree_data.keyAndSymbolStrings.push_back(string_intern_pool.GetStringFromID(cn_id));
 			if(cn != nullptr)
 				GetStringsFromTree(cn, strings_from_tree_data);
 		}
 	}
 	else if(tree->GetType() == ENT_SYMBOL)
 	{
-		strings_from_tree_data.keyAndSymbolStrings.emplace_back(tree->GetStringValue());
+		strings_from_tree_data.keyAndSymbolStrings.emplace_back(tree->GetStringView());
 	}
 	else if(tree->IsImmediate())
 	{
 		if(DoesEvaluableNodeTypeUseStringData(tree->GetType()))
-			strings_from_tree_data.valueStrings.emplace_back(tree->GetStringValue());
+			strings_from_tree_data.valueStrings.emplace_back(tree->GetStringView());
 	}
 	else //ordered
 	{
@@ -1114,7 +1114,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		}
 		else if(n2_type == ENT_STRING)
 		{
-			auto &n2_value = n2->GetStringValue();
+			auto n2_value = n2->GetStringView();
 			bool n2_as_bool = (n2_value != "");
 			if(n1_value == n2_as_bool)
 				return std::make_pair(n2, 0.25);
@@ -1140,7 +1140,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		}
 		if(n2_type == ENT_STRING)
 		{
-			auto &n2_value = n2->GetStringValue();
+			auto n2_value = n2->GetStringView();
 			return std::make_pair(n2, n2_value == "" ? 0.25 : 0.125);
 		}
 		return std::make_pair(nullptr, 0.0);
@@ -1182,7 +1182,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 
 	case ENT_STRING:
 	{
-		auto &n1_value = n1->GetStringValue();
+		auto n1_value = n1->GetStringView();
 
 		if(n2_type == ENT_NULL)
 		{

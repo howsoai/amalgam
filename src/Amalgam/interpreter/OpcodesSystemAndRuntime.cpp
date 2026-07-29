@@ -402,7 +402,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 			else if(DoesEvaluableNodeTypeUseBoolData(cur->GetType()))
 				s = EvaluableNode::BoolToString(cur->GetBoolValueReference());
 			else if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
-				s = cur->GetStringValue();
+				s = cur->GetStringView();
 			else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
 				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
 			else //only print attributes if not debugSources
@@ -526,7 +526,8 @@ static std::string GetEntityMemorySizeDiagnostics(Entity *e)
 
 	if(cur_used > prev_used.first->second || cur_unused > prev_unused.first->second)
 	{
-		result += e->GetId() + " (used, free): " + EvaluableNode::NumberToString(cur_used - prev_used.first->second) + ", "
+		result += e->GetId();
+		result += " (used, free): " + EvaluableNode::NumberToString(cur_used - prev_used.first->second) + ", "
 			+ EvaluableNode::NumberToString(cur_unused - prev_unused.first->second) + "\n";
 
 		prev_used.first->second = cur_used;

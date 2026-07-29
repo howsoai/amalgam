@@ -98,7 +98,7 @@ public:
 
 	//returns a copy of string where all potentially unsafe characters are escaped
 	//see IsUnescapedCharSafe() for list of safe characters
-	static std::string SafeEscapeFilename(const std::string &string)
+	static std::string SafeEscapeFilename(std::string_view string)
 	{
 		std::string out;
 

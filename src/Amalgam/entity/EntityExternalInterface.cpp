@@ -18,16 +18,18 @@ EntityExternalInterface::LoadEntityStatus::LoadEntityStatus()
 	SetStatus(true);
 }
 
-EntityExternalInterface::LoadEntityStatus::LoadEntityStatus(bool loaded, std::string message, std::string version)
+EntityExternalInterface::LoadEntityStatus::LoadEntityStatus(bool loaded,
+	std::string_view message, std::string_view version)
 {
 	SetStatus(loaded, message, version);
 }
 
-void EntityExternalInterface::LoadEntityStatus::SetStatus(bool loaded_in, std::string message_in, std::string version_in)
+void EntityExternalInterface::LoadEntityStatus::SetStatus(bool loaded_in,
+	std::string_view message_in, std::string_view version_in)
 {
 	loaded = loaded_in;
-	message = std::move(message_in);
-	version = std::move(version_in);
+	message = message_in;
+	version = version_in;
 }
 
 EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, const EntityExternalInterface::LoadSource &source,

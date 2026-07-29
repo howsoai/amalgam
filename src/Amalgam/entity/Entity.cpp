@@ -867,7 +867,7 @@ void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityW
 	asset_manager.UpdateEntityRandomSeed(this, new_state, false, all_contained_entities);
 }
 
-std::string Entity::CreateRandomStreamFromStringAndRand(const std::string &seed_string)
+std::string Entity::CreateRandomStreamFromStringAndRand(std::string_view seed_string)
 {
 	//consume a random number to advance the state for creating the new state
 	randomStream.RandUInt32();

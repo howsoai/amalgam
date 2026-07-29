@@ -91,9 +91,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 			if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
-			auto &s = string_intern_pool.GetStringFromID(sid);
+			auto s = string_intern_pool.GetStringViewFromID(sid);
 			size_t utf8_char_length = StringManipulation::GetUTF8CharacterLength(s, 0);
-			std::string substring = s.substr(0, utf8_char_length);
+			std::string_view substring = s.substr(0, utf8_char_length);
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
 			return AllocReturn(substring, immediate_result);
@@ -396,7 +396,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
-			auto &s = string_intern_pool.GetStringFromID(sid);
+			auto s = string_intern_pool.GetStringViewFromID(sid);
 
 			//remove the first element(s)
 			size_t num_chars_to_drop = 0;
@@ -414,7 +414,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			//drop the number of characters before this length
 			size_t utf8_start_offset = StringManipulation::GetNthUTF8CharacterOffset(s, num_chars_to_drop);
 
-			std::string substring = s.substr(utf8_start_offset, s.size() - utf8_start_offset);
+			std::string_view substring = s.substr(utf8_start_offset, s.size() - utf8_start_offset);
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 			return AllocReturn(substring, immediate_result);
 		}
@@ -521,11 +521,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 			if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
-			auto &s = string_intern_pool.GetStringFromID(sid);
+			auto s = string_intern_pool.GetStringViewFromID(sid);
 
 			auto [utf8_char_start_offset, utf8_char_length] = StringManipulation::GetLastUTF8CharacterOffsetAndLength(s);
 
-			std::string substring = s.substr(utf8_char_start_offset, utf8_char_length);
+			std::string_view substring = s.substr(utf8_char_start_offset, utf8_char_length);
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
 			return AllocReturn(substring, immediate_result);
@@ -824,7 +824,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 			if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
-			auto &s = string_intern_pool.GetStringFromID(sid);
+			auto s = string_intern_pool.GetStringViewFromID(sid);
 
 			//remove the last element(s)
 			size_t num_chars_to_keep = 0;
@@ -842,7 +842,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 
 			//remove everything after after this length
 			size_t utf8_end_offset = StringManipulation::GetNthUTF8CharacterOffset(s, num_chars_to_keep);
-			std::string substring = s.substr(0, utf8_end_offset);
+			std::string_view substring = s.substr(0, utf8_end_offset);
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
 			return AllocReturn(substring, immediate_result);
@@ -1092,7 +1092,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, Ev
 	{
 		if(n->GetType() == ENT_STRING)
 		{
-			auto &s = n->GetStringValue();
+			auto s = n->GetStringView();
 			size = static_cast<double>(StringManipulation::GetNumUTF8Characters(s));
 		}
 		else
@@ -2066,7 +2066,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	else if(container->GetType() == ENT_STRING && !EvaluableNode::IsNull(value))
 	{
 		//compute regular expression
-		auto &s = container->GetStringValue();
+		auto s = container->GetStringView();
 
 		std::string value_as_str = EvaluableNode::ToString(value);
 
@@ -2082,7 +2082,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 			valid_rx = false;
 		}
 
-		if(valid_rx && std::regex_match(s, rx))
+		if(valid_rx && std::regex_match(s.data(), s.data() + s.size(), rx))
 			found = true;
 	}
 

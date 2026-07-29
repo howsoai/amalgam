@@ -311,7 +311,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 		auto [label_sid, found] = curEntity->GetLabelForNodeIfExists(function);
 		size_t num_nodes = evaluableNodeManager->GetNumberOfUsedNodes();
 		if(label_sid != string_intern_pool.NOT_A_STRING_ID)
-			PerformanceProfiler::StartOperation(label_sid->string, num_nodes);
+			PerformanceProfiler::StartOperation(string_intern_pool.GetStringViewFromID(label_sid), num_nodes);
 		else
 			PerformanceProfiler::StartOperation("", num_nodes);
 		profiling_call = true;
@@ -709,7 +709,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 					}
 				}
 
-				combined_string += result_value.stringID->string;
+				combined_string += string_intern_pool.GetStringViewFromID(result_value.stringID);
 				string_intern_pool.DestroyStringReference(result_value.stringID);
 				return AllocReturn(combined_string, immediate_result);
 			}

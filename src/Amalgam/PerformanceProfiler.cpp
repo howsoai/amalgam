@@ -60,7 +60,7 @@ static inline double GetCurTime()
 	return cur_time / 1000.0 / 1000.0 / 1000.0;
 }
 
-void PerformanceProfiler::StartOperation(const std::string &t, size_t memory_use)
+void PerformanceProfiler::StartOperation(std::string_view t, size_t memory_use)
 {
 	double cur_time = GetCurTime();
 	instructionStackTypeAndStartTimeAndMemUse.emplace_back(t,

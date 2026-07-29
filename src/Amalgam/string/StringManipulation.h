@@ -15,7 +15,7 @@ namespace StringManipulation
 	std::string RemoveFirstToken(std::string &str);
 
 	//splits a string by given delimiter
-	std::vector<std::string> Split(const std::string &s, char delim = ' ');
+	std::vector<std::string> Split(std::string_view s, char delim = ' ');
 
 	std::vector<std::string> SplitByLines(std::string_view s);
 
@@ -469,17 +469,17 @@ namespace StringManipulation
 	// figures out which one is greater, and remembers it.  then it sees which number string is longer
 	// if the number strings are the same length, then go with whichever was remembered to be bigger
 	// both indices will be updated along the way
-	int CompareNumberInStringRightJustified(const std::string &a, const std::string &b, size_t &a_index, size_t &b_index);
+	int CompareNumberInStringRightJustified(std::string_view a, std::string_view b, size_t &a_index, size_t &b_index);
 
 	//compares left-aligned numbers in a string until a difference is found, then uses that for comparison
 	// starts at the specified indicies
 	// both indices will be updated along the way
-	int CompareNumberInStringLeftJustified(const std::string &a, const std::string &b, size_t &a_index, size_t &b_index);
+	int CompareNumberInStringLeftJustified(std::string_view a, std::string_view b, size_t &a_index, size_t &b_index);
 
 	//compares two strings "naturally" as applicable, ignoring spaces and treating numbers how a person would
 	// however, if the strings are "identical" via natural comparison, then it falls back to regular string comparison to ensure
 	// that strings are always ordered the same way
-	int StringNaturalCompare(const std::string &a, const std::string &b);
+	int StringNaturalCompare(std::string_view a, std::string_view b);
 
 	//variant of StringNaturalCompare for sorting
 	inline bool StringNaturalCompareSort(const std::string &a, const std::string &b)

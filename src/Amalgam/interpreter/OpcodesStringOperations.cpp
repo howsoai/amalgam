@@ -465,7 +465,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 	{
 		//make a copy of the string so the node can be freed
 		//(if this is a performance cost found in profiling, it can be fixed with more logic)
-		auto &regex_str = substr_node->GetStringValue();
+		auto regex_str = substr_node->GetStringView();
 		evaluableNodeManager->FreeNodeTreeIfPossible(substr_node);
 
 		if(replace_string)
@@ -482,7 +482,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 			std::regex rx;
 			try
 			{
-				rx.assign(regex_str, std::regex::ECMAScript);
+				rx.assign(regex_str.data(), regex_str.data() + regex_str.size(), std::regex::ECMAScript);
 			}
 			catch(...)
 			{
@@ -576,7 +576,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 				std::regex rx;
 				try
 				{
-					rx.assign(regex_str, std::regex::ECMAScript | std::regex::nosubs);
+					rx.assign(regex_str.data(), regex_str.data() + regex_str.size(),
+						std::regex::ECMAScript | std::regex::nosubs);
 				}
 				catch(...)
 				{
@@ -605,7 +606,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 				std::regex rx;
 				try
 				{
-					rx.assign(regex_str, std::regex::ECMAScript | std::regex::nosubs);
+					rx.assign(regex_str.data(), regex_str.data() + regex_str.size(),
+						std::regex::ECMAScript | std::regex::nosubs);
 				}
 				catch(...)
 				{
@@ -630,7 +632,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 				std::regex rx;
 				try
 				{
-					rx.assign(regex_str, std::regex::ECMAScript);
+					rx.assign(regex_str.data(), regex_str.data() + regex_str.size(), std::regex::ECMAScript);
 				}
 				catch(...)
 				{

@@ -828,7 +828,7 @@ protected:
 			return false;
 
 		if(interpreterConstraints->maxEntityIdLength > 0
-				&& string_intern_pool.GetStringFromID(entity_id).size() > interpreterConstraints->maxEntityIdLength)
+				&& string_intern_pool.GetStringViewFromID(entity_id).size() > interpreterConstraints->maxEntityIdLength)
 			return false;
 
 		//exit early if don't need to lock all contained entities

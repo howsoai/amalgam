@@ -51,7 +51,7 @@ Parser::Parser(std::string_view code_string, EvaluableNodeManager *enm,
 	codeComplete = false;
 }
 
-std::string Parser::Backslashify(const std::string &s)
+std::string Parser::Backslashify(std::string_view s)
 {
 	if(s.size() == 0)
 		return std::string();
@@ -173,7 +173,7 @@ EvaluableNodeReference Parser::ParseFromKeyStringId(StringInternPool::StringID c
 	if(code_string_id == string_intern_pool.NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 
-	std::string &code_string = code_string_id->string;
+	std::string_view code_string = string_intern_pool.GetStringViewFromID(code_string_id);
 	if(code_string.size() == 0 || code_string[0] != '\0')
 		return EvaluableNodeReference(enm->AllocNode(ENT_STRING, code_string_id), true);
 
@@ -187,7 +187,7 @@ StringInternPool::StringID Parser::ParseFromKeyStringIdToStringIdWithReference(S
 	if(code_string_id == string_intern_pool.NOT_A_STRING_ID)
 		return string_intern_pool.NOT_A_STRING_ID;
 
-	std::string &code_string = code_string_id->string;
+	std::string_view code_string = string_intern_pool.GetStringViewFromID(code_string_id);
 	if(code_string.size() == 0 || code_string[0] != '\0')
 		return string_intern_pool.CreateStringReference(code_string_id);
 
@@ -200,7 +200,7 @@ double Parser::ParseNumberFromKeyStringId(StringInternPool::StringID code_string
 	if(code_string_id == string_intern_pool.NOT_A_STRING_ID)
 		return std::numeric_limits<double>::quiet_NaN();
 
-	std::string &code_string = code_string_id->string;
+	std::string_view code_string = string_intern_pool.GetStringViewFromID(code_string_id);
 	if(code_string.size() == 0 || code_string[0] != '\0')
 		return std::numeric_limits<double>::quiet_NaN();
 
@@ -221,9 +221,9 @@ std::string Parser::UnparseToKeyString(EvaluableNode *tree)
 		auto type = tree->GetType();
 		if(type == ENT_STRING || type == ENT_SYMBOL)
 		{
-			const auto &string_value = tree->GetStringValue();
+			auto string_value = tree->GetStringView();
 			if(string_value.size() > 0 && string_value[0] != '\0')
-				return string_value;
+				return std::string(string_value);
 		}
 		else if(type == ENT_NUMBER)
 		{
@@ -231,7 +231,7 @@ std::string Parser::UnparseToKeyString(EvaluableNode *tree)
 		}
 		else if(type == ENT_BOOL)
 		{
-			return GetStringIdFromBuiltInStringId(tree->GetBoolValueReference() ? ENBISI_true_key : ENBISI_false_key)->string;
+			return string_intern_pool.GetStringFromID(GetStringIdFromBuiltInStringId(tree->GetBoolValueReference() ? ENBISI_true_key : ENBISI_false_key));
 		}
 	}
 
@@ -761,7 +761,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 			if(key_node != nullptr && cur_node->IsAssociativeArray())
 			{
 				if((key_node->GetType() == ENT_STRING || key_node->GetType() == ENT_SYMBOL)
-					&& !DoesStringNeedUnparsingToKey(key_node->GetStringValue()))
+					&& !DoesStringNeedUnparsingToKey(key_node->GetStringView()))
 				{
 					StringInternPool::StringID index_sid
 						= EvaluableNode::ToStringIDTakingReferenceAndClearing(key_node, true);
@@ -826,7 +826,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 
 				if(EvaluableNode::IsNull(key_node)
 					|| ((key_node->GetType() == ENT_STRING || key_node->GetType() == ENT_SYMBOL)
-						&& !DoesStringNeedUnparsingToKey(key_node->GetStringValue())))
+						&& !DoesStringNeedUnparsingToKey(key_node->GetStringView())))
 				{
 					StringInternPool::StringID index_sid
 						= EvaluableNode::ToStringIDTakingReferenceAndClearing(key_node, true);
@@ -992,7 +992,7 @@ void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringI
 	}
 	else
 	{
-		auto &key_str = string_intern_pool.GetStringFromID(key_sid);
+		auto key_str = string_intern_pool.GetStringViewFromID(key_sid);
 
 		if(!Parser::DoesStringNeedUnparsingToKey(key_str))
 		{
@@ -1113,7 +1113,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			{
 				upd.result.push_back('"');
 
-				auto &s = tree->GetStringValue();
+				auto s = tree->GetStringView();
 				if(upd.result.size() + s.size() > upd.maxLength)
 					return;
 
@@ -1128,7 +1128,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		}
 		case ENT_SYMBOL:
 		{
-			auto &s = tree->GetStringValue();
+			auto s = tree->GetStringView();
 			if(upd.result.size() + s.size() > upd.maxLength)
 				return;
 			upd.result.append(s);

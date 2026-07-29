@@ -245,6 +245,16 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 		else
 	#endif
 			scope_stack->SetIsFreeableTopNode(false);
+
+		for(auto &[sid, cn] : scope_stack->GetMappedChildNodes())
+		{
+		#ifdef MULTITHREAD_SUPPORT
+			if(use_atomic_when_setting_access_flag)
+				cn->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+			else
+		#endif
+				cn->SetIsFreeableAndIsFreeableTopNode(false);
+		}
 	}
 
 	return scope_stack;

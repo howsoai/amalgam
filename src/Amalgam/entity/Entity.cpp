@@ -265,9 +265,20 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		const auto &label_iterator = label_index.find(label_sid);
 
 		EvaluableNodeReference new_value_reference(new_value_node, false);
-		//make copy if needed; ensure uniqueness
-		if(!on_self || !new_value_reference.unique)
+		//make copy if needed or clear uniqueness flags
+		if(!on_self)
+		{
 			new_value_reference = evaluableNodeManager.DeepAllocCopy(new_value_reference);
+		}
+		else if(!new_value_reference.IsNull())
+		{
+			//TODO 25824: can this be removed?
+		#ifdef MULTITHREAD_SUPPORT
+			new_value_reference->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+		#else
+			new_value_reference->SetIsFreeableAndIsFreeableTopNode(false);
+		#endif
+		}
 
 		if(accum_values)
 		{

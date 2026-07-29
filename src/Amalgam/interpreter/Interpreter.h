@@ -284,27 +284,22 @@ public:
 		if(args == nullptr)
 		{
 			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
-			//set the context to be freeable so it knows to look for any possible freeable values
-			args->SetIsFreeableTopNode(true);
 		}
 		else if(args->IsAssociativeArray())
 		{
-			if(args.unique)
+			if(args.uniqueUnreferencedTopNode)
 			{
 				//if there are no cycles referencing the top node, then mark everything as potentially freeable
-				if(args.uniqueUnreferencedTopNode)
+				if(args.unique)
 				{
 					for(auto &[id, cn] : args->GetMappedChildNodesReference())
 					{
 						if(cn != nullptr)
 							cn->SetIsFreeableAndIsFreeableTopNode(true);
 					}
-
-					//set the context to be freeable so it knows to look for any possible freeable values
-					args->SetIsFreeableTopNode(true);
 				}
 			}
-			else //not unique, so need to make a copy of the top node
+			else //not unique top node, so need to make a copy of it
 			{
 				args.SetReference(enm.AllocNode(args, false));
 				args.uniqueUnreferencedTopNode = true;
@@ -313,9 +308,11 @@ public:
 		else //!args->IsAssociativeArray() invalid type, so create a new one
 		{
 			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
-			//set the context to be freeable so it knows to look for any possible freeable values
-			args->SetIsFreeableTopNode(true);
 		}
+
+		//all paths lead to a new args,
+		// so set the context to be freeable so it knows to look for any possible freeable values
+		args->SetIsFreeableTopNode(true);
 
 		args->SetNeedCycleCheck(true);
 

@@ -261,11 +261,9 @@ public:
 			for(auto &stack_entry : scopeStack)
 			{
 			#ifdef MULTITHREAD_SUPPORT
-				stack_entry->SetIsFreeableAtomic(false);
-				stack_entry->SetIsFreeableTopNodeAtomic(false);
+				stack_entry->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
 			#else
-				stack_entry->SetIsFreeable(false);
-				stack_entry->SetIsFreeableTopNode(false);
+				stack_entry->SetIsFreeableAndIsFreeableTopNode(false);
 			#endif
 			}
 		}
@@ -299,10 +297,7 @@ public:
 					for(auto &[id, cn] : args->GetMappedChildNodesReference())
 					{
 						if(cn != nullptr)
-						{
-							cn->SetIsFreeable(true);
-							cn->SetIsFreeableTopNode(true);
-						}
+							cn->SetIsFreeableAndIsFreeableTopNode(true);
 					}
 
 					//set the context to be freeable so it knows to look for any possible freeable values
@@ -371,14 +366,14 @@ public:
 					#ifdef MULTITHREAD_SUPPORT
 						if(use_atomic_when_setting_access_flag)
 						{
-							is_freeable = found->second->SetIsFreeableAtomic(false);
-							is_freeable_top_node = found->second->SetIsFreeableTopNodeAtomic(false);
+							std::tie(is_freeable, is_freeable_top_node)
+								= found->second->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
 						}
 						else
 					#endif
 						{
-							is_freeable = found->second->SetIsFreeable(false);
-							is_freeable_top_node = found->second->SetIsFreeableTopNode(false);
+							std::tie(is_freeable, is_freeable_top_node)
+								= found->second->SetIsFreeableAndIsFreeableTopNode(false);
 						}
 					}
 					else

@@ -1015,6 +1015,48 @@ public:
 	}
 #endif
 
+	//sets both FREEABLE and FREEABLE_TOP_NODE
+	//returns previous values of the flags in order
+	__forceinline std::pair<bool, bool> SetIsFreeableAndIsFreeableTopNode(bool is_freeable)
+	{
+		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE)
+			| static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
+
+		AttributeStorageType previous_value = attributes;
+
+		if(is_freeable)
+			attributes |= static_cast<AttributeStorageType>(mask);
+		else
+			attributes &= ~static_cast<AttributeStorageType>(mask);
+
+		return std::make_pair((previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
+			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0);
+	}
+
+#ifdef MULTITHREAD_SUPPORT
+	//sets both FREEABLE and FREEABLE_TOP_NODE
+	//returns previous values of the flags in order
+	__forceinline std::pair<bool, bool> SetIsFreeableAndIsFreeableTopNodeAtomic(bool is_freeable)
+	{
+		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE)
+			| static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
+
+		AttributeStorageType previous_value;
+
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		std::atomic<AttributeStorageType> *atomic_ref
+			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
+
+		if(is_freeable)
+			previous_value = atomic_ref->fetch_or(mask);
+		else
+			previous_value = atomic_ref->fetch_and(~mask);
+
+		return std::make_pair((previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
+			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0);
+	}
+#endif
+
 	//returns whether this node has been marked as known to be currently in use
 	__forceinline bool GetKnownToBeInUse()
 	{

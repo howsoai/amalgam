@@ -624,11 +624,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				if(variable_value_node != nullptr)
 				{
 				#ifdef MULTITHREAD_SUPPORT
-					variable_value_node->SetIsFreeableAtomic(false);
-					variable_value_node->SetIsFreeableTopNodeAtomic(false);
+					variable_value_node->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
 				#else
-					variable_value_node->SetIsFreeable(false);
-					variable_value_node->SetIsFreeableTopNode(false);
+					variable_value_node->SetIsFreeableAndIsFreeableTopNode(false);
 				#endif
 				}
 
@@ -695,8 +693,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
-		//TODO 25824: consider combined flag calls to set both flags to true or false at same time
-
 		if(accum && !EvaluableNode::IsNull(*symbol_location.location))
 		{
 			EvaluableNodeReference value_destination_node(
@@ -707,11 +703,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			if(new_value != nullptr)
 			{
 			#ifdef MULTITHREAD_SUPPORT
-				new_value->SetIsFreeableAtomic(false);
-				new_value->SetIsFreeableTopNodeAtomic(false);
+				new_value->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
 			#else
-				new_value->SetIsFreeable(false);
-				new_value->SetIsFreeableTopNode(false);
+				new_value->SetIsFreeableAndIsFreeableTopNode(false);
 			#endif
 			}
 
@@ -838,11 +832,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			if(new_value != nullptr)
 			{
 			#ifdef MULTITHREAD_SUPPORT
-				new_value->SetIsFreeableAtomic(false);
-				new_value->SetIsFreeableTopNodeAtomic(false);
+				new_value->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
 			#else
-				new_value->SetIsFreeable(false);
-				new_value->SetIsFreeableTopNode(false);
+				new_value->SetIsFreeableAndIsFreeableTopNode(false);
 			#endif
 			}
 
@@ -882,11 +874,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(value_replacement != nullptr)
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		value_replacement->SetIsFreeableAtomic(!any_nonunique_assignments);
-		value_replacement->SetIsFreeableTopNodeAtomic(!any_nonunique_assignments);
+		value_replacement->SetIsFreeableAndIsFreeableTopNodeAtomic(!any_nonunique_assignments);
 	#else
-		value_replacement->SetIsFreeable(!any_nonunique_assignments);
-		value_replacement->SetIsFreeableTopNode(!any_nonunique_assignments);
+		value_replacement->SetIsFreeableAndIsFreeableTopNode(!any_nonunique_assignments);
 	#endif
 	}
 

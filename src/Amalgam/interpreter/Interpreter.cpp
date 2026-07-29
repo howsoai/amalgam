@@ -111,10 +111,7 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 				for(auto &[id, cn] : new_scope_mcn)
 				{
 					if(cn != nullptr)
-					{
-						cn->SetIsFreeable(true);
-						cn->SetIsFreeableTopNode(true);
-					}
+						cn->SetIsFreeableAndIsFreeableTopNode(true);
 				}
 			}
 			else //!new_scope.unique
@@ -126,11 +123,9 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 					{
 					#ifdef MULTITHREAD_SUPPORT
 						//not unique, so should set atomically if other threads may be accessing it
-						cn->SetIsFreeableAtomic(false);
-						cn->SetIsFreeableTopNodeAtomic(false);
+						cn->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
 					#else
-						cn->SetIsFreeable(false);
-						cn->SetIsFreeableTopNode(false);
+						cn->SetIsFreeableAndIsFreeableTopNode(false);
 					#endif
 					}
 				}

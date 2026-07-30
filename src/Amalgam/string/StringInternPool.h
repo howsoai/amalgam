@@ -471,7 +471,7 @@ public:
 		sd_ptr->refCount.fetch_add(1, std::memory_order_release);
 		auto iterator_with_lock = stringToID.find(sd_ptr->stringData);
 
-		size_t ref_count = sd_ptr->refCount.fetch_sub(1, std::memory_order_release);
+		size_t ref_count = sd_ptr->refCount.fetch_sub(1, std::memory_order_acq_rel);
 		if(ref_count > 1)
 			return;
 

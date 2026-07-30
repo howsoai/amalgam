@@ -461,30 +461,22 @@ public:
 
 		auto sd_ptr = id.GetPointer();
 	#if defined(MULTITHREAD_SUPPORT)
-		//refCount must be decremented in an atomic fashion, but if down to the last reference,
-		//then don't want to decrement outside of a lock.  This is because if this thread decremented
-		//refCount, then another thread could acquire the lock, create a reference, then acquire the
-		// lock and delete a reference, and now a double delete will occur.  
-		while(true)
-		{
-			size_t ref_count = sd_ptr->refCount.load(std::memory_order_relaxed);
-			if(ref_count <= 1)
-				break;
 
-			//if can decrement, return
-			//release order on the decrement, don't need ordering on the failure path
-			if(sd_ptr->refCount.compare_exchange_weak(ref_count, ref_count - 1,
-				std::memory_order_release,
-				std::memory_order_relaxed))
-				return;
-		}
+		//decrement counter
+		size_t prev = sd_ptr->refCount.fetch_sub(1, std::memory_order_acq_rel);
+		if(prev > 1)
+			return;
 
 		//lock this shard and double-check that it's the last reference before erasing
 		auto iterator_with_lock = stringToID.find(sd_ptr->stringData);
 
-		size_t ref_count = sd_ptr->refCount.fetch_sub(1, std::memory_order_release);
-		if(ref_count > 1)
+		size_t expected_count = 0;
+		if(!sd_ptr->refCount.compare_exchange_strong(
+			expected_count, 0, std::memory_order_acq_rel, std::memory_order_relaxed))
+		{
+			//some other thread incremented the count since lock was acquired
 			return;
+		}
 
 		stringToID.erase(iterator_with_lock);
 	#else

@@ -619,7 +619,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				EvaluableNodeReference value_destination_node(*symbol_location.location,
 					symbol_location.unique, symbol_location.uniqueTopNode);
 
-				//TODO 25824: either keep this or need to ensure copy if !new_value_reference.unique in Entity::SetValuesAtLabels
 				//need to clear freability of variable_value_node before it is accumulated
 				if(variable_value_node != nullptr)
 				{
@@ -698,7 +697,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			EvaluableNodeReference value_destination_node(
 				*symbol_location.location, symbol_location.unique, symbol_location.uniqueTopNode);
 
-			//TODO 25824: either keep this or need to ensure copy if !new_value_reference.unique in 
 			//need to clear freability of new_value before it is accumulated
 			if(new_value != nullptr)
 			{
@@ -827,7 +825,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//so the destination can be treated as unique
 			EvaluableNodeReference value_destination_node(*copy_destination, true);
 
-			//TODO 25824: either keep this or need to ensure copy if !new_value_reference.unique in 
 			//need to clear freability of new_value before it is accumulated
 			if(new_value != nullptr)
 			{

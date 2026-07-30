@@ -78,7 +78,7 @@ public:
 			size_t preserve_type_depth,
 			WeightedRandValueType &imm_number_weights,
 			WeightedRandValueType &imm_string_weights)
-				: interpreter(interpreter), enm(_enm), entity(_entity), mutation_rate(mutation_rate),
+				: interpreter(interpreter), enm(_enm), entity(_entity), mutationRate(mutation_rate),
 				valuesFromTree(&values_from_tree),
 				references(EvaluableNode::ReferenceAssocType()),
 				randEvaluableNodeType(rand_operation),
@@ -95,7 +95,7 @@ public:
 		Interpreter *interpreter;
 		EvaluableNodeManager *enm;
 		Entity *entity;
-		double mutation_rate;
+		double mutationRate;
 		ValuesFromTreeData *valuesFromTree;
 		EvaluableNode::ReferenceAssocType references;
 		WeightedRandEvaluableNodeType *randEvaluableNodeType;

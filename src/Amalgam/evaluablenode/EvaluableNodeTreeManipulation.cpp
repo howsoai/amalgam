@@ -41,17 +41,17 @@ std::string EvaluableNodeTreeManipulation::MutationParameters::GenerateRandomStr
 	//reuse a string if probable and possible
 	if(rs.Rand() > novel_chance)
 	{
-		if(key_or_symbol_string && keyAndSymbolStrings->size() > 0)
+		if(key_or_symbol_string && valuesFromTree->keyAndSymbolStrings.size() > 0)
 		{
-			size_t rand_index = rs.RandSize(keyAndSymbolStrings->size());
-			return std::string((*keyAndSymbolStrings)[rand_index]);
+			size_t rand_index = rs.RandSize(valuesFromTree->keyAndSymbolStrings.size());
+			return std::string(valuesFromTree->keyAndSymbolStrings[rand_index]);
 		}
 
 		//not a key or symbol string or don't have any, try value string
-		if(valueStrings->size() > 0)
+		if(valuesFromTree->valueStrings.size() > 0)
 		{
-			size_t rand_index = rs.RandSize(valueStrings->size());
-			return std::string((*valueStrings)[rand_index]);
+			size_t rand_index = rs.RandSize(valuesFromTree->valueStrings.size());
+			return std::string(valuesFromTree->valueStrings[rand_index]);
 		}
 	}
 
@@ -69,9 +69,9 @@ std::string EvaluableNodeTreeManipulation::MutationParameters::GenerateRandomStr
 
 	//put the string into the list of considered strings
 	if(key_or_symbol_string)
-		keyAndSymbolStrings->emplace_back(s);
+		valuesFromTree->keyAndSymbolStrings.emplace_back(s);
 	else
-		valueStrings->emplace_back(s);
+		valuesFromTree->valueStrings.emplace_back(s);
 	return s;
 }
 
@@ -547,23 +547,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 	return generalized_node;
 }
 
-//used by GetStringsFromTree
-//store strings in raw form; could change it to store ids, but would need to keep
-//a reference of each in case the last node with a string is deleted
-class StringsFromTreeData
-{
-public:
-	std::vector<std::string> keyAndSymbolStrings;
-	std::vector<std::string> valueStrings;
-	EvaluableNode::ReferenceSetType checked;
-};
-
 //returns a set of strings that have appeared in the given tree,
 //separating by strings that appear as keys and symbols by those that are values
-static void GetStringsFromTree(EvaluableNode *tree, StringsFromTreeData &strings_from_tree_data)
+static void GetStringsFromTree(EvaluableNode *tree,
+	EvaluableNodeTreeManipulation::ValuesFromTreeData &strings_from_tree_data)
 {
 	//try to record, but if already checked, then don't do anything
-	auto [_, inserted] = strings_from_tree_data.checked.insert(tree);
+	auto [_, inserted] = strings_from_tree_data.allNodes.insert(tree);
 	if(!inserted)
 		return;
 
@@ -603,7 +593,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_number_weights,
 	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_string_weights)
 {
-	StringsFromTreeData strings_from_tree_data;
+	ValuesFromTreeData strings_from_tree_data;
 	GetStringsFromTree(tree, strings_from_tree_data);
 
 	//initializes on first call, 
@@ -625,7 +615,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 		rand_mutation_type.Initialize(*mutation_weights, true);
 
 	MutationParameters mp(interpreter, enm, entity, mutation_rate,
-		&strings_from_tree_data.keyAndSymbolStrings, &strings_from_tree_data.valueStrings,
+		strings_from_tree_data,
 		operation_type_wrs.IsInitialized() ? &operation_type_wrs : &default_operation_type_wrs,
 		rand_mutation_type.IsInitialized() ? &rand_mutation_type : &mutationOperationTypeRandomStream,
 		preserve_type_depth, imm_number_weights, imm_string_weights);
@@ -1404,49 +1394,44 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		break;
 
 	case ENBISI_replace_element_with_copy:
+	{
+		//select a source from all the nodes in the original tree
+		size_t source_index = mp.interpreter->randomStream.RandSize(mp.valuesFromTree->allNodes.size());
+		EvaluableNode *source_node = nullptr;
+		//iterate over child nodes until find the right source index
+		size_t cur_index = 0;
+		for(auto &cn : mp.valuesFromTree->allNodes)
+		{
+			if(cur_index == source_index)
+			{
+				source_node = cn;
+				break;
+			}
+			cur_index++;
+		}
+
 		//copy one element over another
 		if(n->GetOrderedChildNodes().size() > 0)
 		{
 			//get source and destination; note that destination_index is drawn from
-			//num_children - 1 to give a different index, but then includes appending to the end / new value
-			//so it gets a + 1 added back, and then is incremented if greater or equal to source_index
+			//num_children + 1 to include appending to the end / new value
 			size_t num_children = n->GetOrderedChildNodesReference().size();
-			size_t source_index = mp.interpreter->randomStream.RandSize(num_children);
-			size_t destination_index = mp.interpreter->randomStream.RandSize(num_children);
-			if(destination_index >= source_index)
-				destination_index++;
+			size_t destination_index = mp.interpreter->randomStream.RandSize(num_children + 1);
 
 			if(destination_index >= num_children)
-				n->AppendOrderedChildNode(mp.enm->DeepAllocCopy(n->GetOrderedChildNodes()[source_index]));
+				n->AppendOrderedChildNode(mp.enm->DeepAllocCopy(source_node));
 			else
-				n = n->GetOrderedChildNodes()[destination_index] = mp.enm->DeepAllocCopy(n->GetOrderedChildNodes()[source_index]);
+				n = n->GetOrderedChildNodes()[destination_index] = mp.enm->DeepAllocCopy(source_node);
 		}
 		else if(n->GetMappedChildNodes().size() > 0)
 		{
-			//get source and destination; note that destination_index is drawn from
-			//num_children - 1 to give a different index, but then includes appending to the end / new value
-			//so it gets a + 1 added back, and then is incremented if greater or equal to source_index
+			//get source and destination
 			auto &mcn = n->GetMappedChildNodes();
 			auto num_children = mcn.size();
-			size_t source_index = mp.interpreter->randomStream.RandSize(num_children);
-			EvaluableNode *source_node = nullptr;
-			size_t destination_index = mp.interpreter->randomStream.RandSize(num_children);
-			if(destination_index >= source_index)
-				destination_index++;
-
-			//iterate over child nodes until find the right source index
-			size_t cur_index = 0;
-			for(auto &[_, cn] : mcn)
-			{
-				if(cur_index == source_index)
-				{
-					source_node = cn;
-					break;
-				}
-				cur_index++;
-			}
-
-			//based on destination_index, either add a new copy or replace an existing element
+			
+			//get source and destination; note that destination_index is drawn from
+			//num_children + 1 to include appending to the end / new value
+			size_t destination_index = mp.interpreter->randomStream.RandSize(num_children + 1);
 			if(destination_index >= num_children)
 			{
 				std::string new_key =
@@ -1468,6 +1453,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			}
 		}
 		break;
+	}
 
 	case ENBISI_insert_element:
 	{
@@ -1691,7 +1677,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 	}
 
 	//mutate after potentially mutated all child nodes
-	if(mp.interpreter->randomStream.Rand() < mp.mutation_rate)
+	if(mp.interpreter->randomStream.Rand() < mp.mutationRate)
 		n = MutateNode(n, mp, depth);
 
 	//constrain and clean up if appropriate, even if didn't mutate

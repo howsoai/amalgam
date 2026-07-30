@@ -191,7 +191,7 @@ public:
 
 	//returns a std::string_view representing the portion of a key that needs parsing
 	// should only be called on the sid if DoesStringIdNeedUnparsingToKey() returns true
-	static inline std::string_view GetUnparseStringFromKey(const StringInternPool::StringID sid)
+	static inline std::string_view GetUnparseStringFromKey(const StringInternPool::StringID &sid)
 	{
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
 			return std::string_view(".null");

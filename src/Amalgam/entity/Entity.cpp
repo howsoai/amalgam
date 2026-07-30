@@ -270,77 +270,68 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		{
 			new_value_reference = evaluableNodeManager.DeepAllocCopy(new_value_reference);
 		}
-		else if(!new_value_reference.IsNull())
+
+		//if label doesn't exist, create new root to contain it
+		if(label_iterator == end(label_index))
 		{
-			//TODO 25824: can this be removed?
-		#ifdef MULTITHREAD_SUPPORT
-			new_value_reference->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
-		#else
-			new_value_reference->SetIsFreeableAndIsFreeableTopNode(false);
-		#endif
+			//need to make sure unique before attaching
+			if(!new_value_reference.unique)
+				new_value_reference = evaluableNodeManager.DeepAllocCopy(new_value_reference);
+
+			EvaluableNode *new_root = evaluableNodeManager.AllocNode(evaluableNodeManager.rootNode);
+			//ensure flags are updated before new_root is exposed
+			new_root->UpdateFlagsBasedOnNewChildNode(new_value_reference);
+			auto &new_root_mcn = new_root->GetMappedChildNodesReference();
+			new_root_mcn.emplace(label_sid, new_value_reference);
+			string_intern_pool.CreateStringReference(label_sid);
+
+			//can only free the root if nothing is running on this entity and nothing references it
+			if(!AreAnyInterpretersRunning() && !evaluableNodeManager.rootNode->GetNeedCycleCheck())
+				evaluableNodeManager.FreeNode(evaluableNodeManager.rootNode);
+
+			evaluableNodeManager.SetRootNode(new_root);
 		}
-
-		if(accum_values)
+		else //label exists
 		{
-			//can't accum into an empty location
-			if(label_iterator == end(label_index))
+			//value to be stored
+			EvaluableNodeReference new_label_value = EvaluableNodeReference::Null();
+			if(accum_values)
 			{
-				all_successful_assignments = false;
-				continue;
-			}
+				//can't accum into an empty location
+				if(label_iterator == end(label_index))
+				{
+					all_successful_assignments = false;
+					continue;
+				}
 
-			//need to make a copy in case it is modified, so pass in evaluableNodeManager
-			EvaluableNodeReference value_destination_node(label_iterator->second, false);
-			EvaluableNodeReference accumulated_value = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node,
-				new_value_reference, &evaluableNodeManager);
+				//need to make a copy in case it is modified, so pass in evaluableNodeManager
+				EvaluableNodeReference value_destination_node(label_iterator->second, false);
+				new_label_value = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node,
+					new_value_reference, &evaluableNodeManager);
 
-			//overwrite the root's flags and value at the location
-			evaluableNodeManager.rootNode->UpdateFlagsBasedOnNewChildNode(accumulated_value);
-
-		#ifdef MULTITHREAD_SUPPORT
-			//fence memory to ensure flags are up to date by flushing by using an atomic store
-			//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-			std::atomic<EvaluableNode *> *atomic_ref
-				= reinterpret_cast<std::atomic<EvaluableNode *> *>(&label_iterator->second);
-			atomic_ref->store(accumulated_value, std::memory_order_release);
-		#else
-			label_iterator->second = accumulated_value;
-		#endif
-		}
-		else
-		{
-			//if label doesn't exist, create new root to contain it
-			if(label_iterator == end(label_index))
-			{
-				EvaluableNode *new_root = evaluableNodeManager.AllocNode(evaluableNodeManager.rootNode);
-				//ensure flags are updated before new_root is exposed
-				new_root->UpdateFlagsBasedOnNewChildNode(new_value_reference);
-				auto &new_root_mcn = new_root->GetMappedChildNodesReference();
-				new_root_mcn.emplace(label_sid, new_value_reference);
-				string_intern_pool.CreateStringReference(label_sid);
-
-				//can only free the root if nothing is running on this entity and nothing references it
-				if(!AreAnyInterpretersRunning()
-						&& !evaluableNodeManager.rootNode->GetNeedCycleCheck())
-					evaluableNodeManager.FreeNode(evaluableNodeManager.rootNode);
-
-				evaluableNodeManager.SetRootNode(new_root);
+				//overwrite the root's flags and value at the location
+				evaluableNodeManager.rootNode->UpdateFlagsBasedOnNewChildNode(new_label_value);
 			}
 			else
 			{
 				//overwrite the root's flags before value at the location
-				evaluableNodeManager.rootNode->UpdateFlagsBasedOnNewChildNode(new_value_reference);
+				new_label_value = new_value_reference;
+				evaluableNodeManager.rootNode->UpdateFlagsBasedOnNewChildNode(new_label_value);
+			}
+
+			//need to make sure unique before attaching
+			if(!new_label_value.unique)
+				new_label_value = evaluableNodeManager.DeepAllocCopy(new_label_value);
 
 			#ifdef MULTITHREAD_SUPPORT
 				//fence memory to ensure flags are up to date by flushing by using an atomic store
 				//TODO 15993: once C++20 is widely supported, change type to atomic_ref
 				std::atomic<EvaluableNode *> *atomic_ref
 					= reinterpret_cast<std::atomic<EvaluableNode *> *>(&label_iterator->second);
-				atomic_ref->store(new_value_reference, std::memory_order_release);
+				atomic_ref->store(new_label_value, std::memory_order_release);
 			#else
-				label_iterator->second = new_value_reference;
+				label_iterator->second = new_label_value;
 			#endif
-			}
 		}
 
 		any_successful_assignment = true;

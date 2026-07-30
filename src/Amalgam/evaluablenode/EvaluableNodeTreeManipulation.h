@@ -47,6 +47,15 @@ struct MergeMetricResultsParams
 class EvaluableNodeTreeManipulation
 {
 public:
+	//stores strings for keys/symbols, strings for values, and all nodes
+	class ValuesFromTreeData
+	{
+	public:
+		std::vector<std::string> keyAndSymbolStrings;
+		std::vector<std::string> valueStrings;
+		EvaluableNode::ReferenceSetType allNodes;
+	};
+
 	class MutationParameters
 	{
 	public:
@@ -63,15 +72,14 @@ public:
 			EvaluableNodeManager *_enm,
 			Entity *_entity,
 			double mutation_rate,
-			std::vector<std::string> *key_and_symbol_strings,
-			std::vector<std::string> *value_strings,
+			ValuesFromTreeData &values_from_tree,
 			WeightedRandEvaluableNodeType *rand_operation,
 			WeightedRandMutationType *rand_operation_type,
 			size_t preserve_type_depth,
 			WeightedRandValueType &imm_number_weights,
 			WeightedRandValueType &imm_string_weights)
 				: interpreter(interpreter), enm(_enm), entity(_entity), mutation_rate(mutation_rate),
-				keyAndSymbolStrings(key_and_symbol_strings), valueStrings(value_strings),
+				valuesFromTree(&values_from_tree),
 				references(EvaluableNode::ReferenceAssocType()),
 				randEvaluableNodeType(rand_operation),
 				randMutationType(rand_operation_type),
@@ -88,8 +96,7 @@ public:
 		EvaluableNodeManager *enm;
 		Entity *entity;
 		double mutation_rate;
-		std::vector<std::string> *keyAndSymbolStrings;
-		std::vector<std::string> *valueStrings;
+		ValuesFromTreeData *valuesFromTree;
 		EvaluableNode::ReferenceAssocType references;
 		WeightedRandEvaluableNodeType *randEvaluableNodeType;
 		WeightedRandMutationType *randMutationType;

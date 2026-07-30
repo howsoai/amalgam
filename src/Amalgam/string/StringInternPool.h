@@ -56,8 +56,7 @@ class PointerWithShortInlineString
 	static constexpr uint64_t inlineMask = 1;
 	static constexpr uint64_t lengthMask = 0xFE;
 	static constexpr uint64_t lengthShift = 1;
-	//TODO 25824: put this back when done debugging
-	static constexpr size_t inlineCapacity = 0; //7;
+	static constexpr size_t inlineCapacity = 7;
 
 public:
 

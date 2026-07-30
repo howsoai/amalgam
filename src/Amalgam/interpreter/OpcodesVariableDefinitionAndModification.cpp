@@ -786,7 +786,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 	//make a copy of value_replacement because not sure where else it may be used
 	EvaluableNode *value_replacement = nullptr;
-	if(symbol_location.location == nullptr)
+	if(*symbol_location.location == nullptr)
 		value_replacement = evaluableNodeManager->AllocNode(ENT_NULL);
 	else if(symbol_location.unique)
 		value_replacement = *symbol_location.location;

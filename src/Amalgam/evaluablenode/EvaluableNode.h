@@ -973,7 +973,7 @@ public:
 	//returns true if the top node has never been read / accessed
 	__forceinline bool GetIsFreeableTopNode()
 	{
-		return HasAttribute(Attribute::FREEABLE);
+		return HasAttribute(Attribute::FREEABLE_TOP_NODE);
 	}
 
 	//sets whether the top node has never been read / accessed

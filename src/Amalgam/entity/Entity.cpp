@@ -265,11 +265,9 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		const auto &label_iterator = label_index.find(label_sid);
 
 		EvaluableNodeReference new_value_reference(new_value_node, false);
-		//make copy if needed or clear uniqueness flags
+		//make copy if needed
 		if(!on_self)
-		{
 			new_value_reference = evaluableNodeManager.DeepAllocCopy(new_value_reference);
-		}
 
 		//if label doesn't exist, create new root to contain it
 		if(label_iterator == end(label_index))

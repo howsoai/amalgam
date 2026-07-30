@@ -1421,7 +1421,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			if(destination_index >= num_children)
 				n->AppendOrderedChildNode(mp.enm->DeepAllocCopy(source_node));
 			else
-				n = n->GetOrderedChildNodes()[destination_index] = mp.enm->DeepAllocCopy(source_node);
+				n->GetOrderedChildNodes()[destination_index] = mp.enm->DeepAllocCopy(source_node);
 		}
 		else if(n->GetMappedChildNodes().size() > 0)
 		{

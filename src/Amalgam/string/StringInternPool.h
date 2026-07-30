@@ -15,6 +15,8 @@
 
 //if STRING_INTERN_POOL_VALIDATION is defined, it will validate
 //every string reference, at the cost of performance
+//if DISABLE_SHORT_STRING_INLINING is defined, it will not
+//inline short strings to make debugging string values easier
 
 class StringInternStringData
 {
@@ -56,7 +58,11 @@ class PointerWithShortInlineString
 	static constexpr uint64_t inlineMask = 1;
 	static constexpr uint64_t lengthMask = 0xFE;
 	static constexpr uint64_t lengthShift = 1;
+#ifdef DISABLE_SHORT_STRING_INLINING
+	static constexpr size_t inlineCapacity = 0;
+#else
 	static constexpr size_t inlineCapacity = 7;
+#endif
 
 public:
 

@@ -461,14 +461,15 @@ public:
 
 		auto sd_ptr = id.GetPointer();
 	#if defined(MULTITHREAD_SUPPORT)
-
-		//decrement counter
-		size_t prev = sd_ptr->refCount.fetch_sub(1, std::memory_order_acq_rel);
-		if(prev > 1)
+		//decrement only if this cannot be the last reference
+		//the count must never reach zero outside the shard lock because a concurrent create can otherwise resurrect
+		// the map entry and a later destroy can free sd_ptr before this thread reaches the lock
+		size_t cur = sd_ptr->refCount.load(std::memory_order_relaxed);
+		if(cur > 1 && sd_ptr->refCount.compare_exchange_strong(
+				cur, cur - 1, std::memory_order_release, std::memory_order_relaxed))
 			return;
 
-		//undo decrement, acquire lock with string intern shard and see if this thread will do deletion
-		sd_ptr->refCount.fetch_add(1, std::memory_order_release);
+		//either the last reference or a tight race path; lock, decrement ref count, and clean up if last
 		auto iterator_with_lock = stringToID.find(sd_ptr->stringData);
 
 		size_t ref_count = sd_ptr->refCount.fetch_sub(1, std::memory_order_acq_rel);

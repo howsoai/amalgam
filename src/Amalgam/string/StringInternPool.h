@@ -467,16 +467,13 @@ public:
 		if(prev > 1)
 			return;
 
-		//lock this shard and double-check that it's the last reference before erasing
+		//undo decrement, acquire lock with string intern shard and see if this thread will do deletion
+		sd_ptr->refCount.fetch_add(1, std::memory_order_release);
 		auto iterator_with_lock = stringToID.find(sd_ptr->stringData);
 
-		size_t expected_count = 0;
-		if(!sd_ptr->refCount.compare_exchange_strong(
-			expected_count, 0, std::memory_order_acq_rel, std::memory_order_relaxed))
-		{
-			//some other thread incremented the count since lock was acquired
+		size_t ref_count = sd_ptr->refCount.fetch_sub(1, std::memory_order_release);
+		if(ref_count > 1)
 			return;
-		}
 
 		stringToID.erase(iterator_with_lock);
 	#else

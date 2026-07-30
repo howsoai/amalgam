@@ -1575,7 +1575,6 @@ void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 			if(ocn.size() > 2)
 			{
 				EvaluableNode *params = ocn[2];
-
 				if(EvaluableNode::IsAssociativeArray(params))
 					asset_params.SetParams(params->GetMappedChildNodesReference());
 			}

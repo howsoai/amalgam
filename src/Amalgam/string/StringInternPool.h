@@ -15,6 +15,8 @@
 
 //if STRING_INTERN_POOL_VALIDATION is defined, it will validate
 //every string reference, at the cost of performance
+//if DISABLE_SHORT_STRING_INLINING is defined, it will not
+//inline short strings to make debugging string values easier
 
 class StringInternStringData
 {
@@ -56,12 +58,16 @@ class PointerWithShortInlineString
 	static constexpr uint64_t inlineMask = 1;
 	static constexpr uint64_t lengthMask = 0xFE;
 	static constexpr uint64_t lengthShift = 1;
+#ifdef DISABLE_SHORT_STRING_INLINING
+	static constexpr size_t inlineCapacity = 0;
+#else
 	static constexpr size_t inlineCapacity = 7;
+#endif
 
 public:
 
 	constexpr PointerWithShortInlineString() noexcept
-		: pointerOrShortString(0)
+		: pointerOrShortString(nullptr)
 	{	}
 
 	constexpr PointerWithShortInlineString(PointerWithShortInlineString &) noexcept = default;
@@ -112,7 +118,7 @@ public:
 
 	inline bool operator==(const PointerType other) const noexcept
 	{
-		return pointerOrShortString == static_cast<std::uint64_t>(reinterpret_cast<std::uintptr_t>(other));
+		return pointerOrShortString == other;
 	}
 
 	inline bool operator!=(const PointerWithShortInlineString other) const noexcept
@@ -122,32 +128,36 @@ public:
 
 	inline bool operator!=(const PointerType other) const noexcept
 	{
-		return pointerOrShortString != static_cast<std::uint64_t>(reinterpret_cast<std::uintptr_t>(other));
+		return pointerOrShortString != other;
 	}
 
 	inline void AssignPointer(PointerType p) noexcept
 	{
-		pointerOrShortString = static_cast<std::uint64_t>(reinterpret_cast<std::uintptr_t>(p));
+		pointerOrShortString = p;
 	}
 
 	//assumes CanFitString has been called and returns true
 	inline void AssignString(std::string &s) noexcept
 	{
-		pointerOrShortString = inlineMask;
-		pointerOrShortString |= (static_cast<uint64_t>(s.size()) << lengthShift) & lengthMask;
+		uint64_t result = inlineMask;
+		result |= (static_cast<uint64_t>(s.size()) << lengthShift) & lengthMask;
 
 		//copy characters into the selected byte range
-		std::memcpy(reinterpret_cast<std::uint8_t *>(&pointerOrShortString) + dataOffset, s.data(), s.size());
+		std::memcpy(reinterpret_cast<std::uint8_t *>(&result) + dataOffset, s.data(), s.size());
+
+		pointerOrShortString = reinterpret_cast<PointerType>(result);
 	}
 
 	//assumes CanFitString has been called and returns true
 	inline void AssignStringView(std::string_view s) noexcept
 	{
-		pointerOrShortString = inlineMask;
-		pointerOrShortString |= (static_cast<uint64_t>(s.size()) << lengthShift) & lengthMask;
+		uint64_t result = inlineMask;
+		result |= (static_cast<uint64_t>(s.size()) << lengthShift) & lengthMask;
 
 		//copy characters into the selected byte range
-		std::memcpy(reinterpret_cast<std::uint8_t *>(&pointerOrShortString) + dataOffset, s.data(), s.size());
+		std::memcpy(reinterpret_cast<std::uint8_t *>(&result) + dataOffset, s.data(), s.size());
+
+		pointerOrShortString = reinterpret_cast<PointerType>(result);
 	}
 
 	static constexpr bool CanFitString(std::string &s)
@@ -163,18 +173,19 @@ public:
 	inline bool IsInlineString() const noexcept
 	{
 		//make sure not nullptr and bit is set
-		return (pointerOrShortString != 0) && (pointerOrShortString & inlineMask) != 0;
+		return (pointerOrShortString != nullptr)
+			&& (reinterpret_cast<uint64_t>(pointerOrShortString) & inlineMask) != 0;
 	}
 
 	inline size_t InlineStringLength() const noexcept
 	{
-		return static_cast<size_t>((pointerOrShortString & lengthMask) >> lengthShift);
+		return static_cast<size_t>((reinterpret_cast<uint64_t>(pointerOrShortString) & lengthMask) >> lengthShift);
 	}
 
 	//assumes IsInlineString() has been called and returns false
 	inline PointerType GetPointer() const noexcept
 	{
-		return reinterpret_cast<PointerType>(static_cast<std::uintptr_t>(pointerOrShortString));
+		return pointerOrShortString;
 	}
 
 	//assumes IsInlineString() has been called and returned true
@@ -191,7 +202,7 @@ public:
 		return std::string_view(ptr, InlineStringLength());
 	}
 
-	uint64_t pointerOrShortString;
+	PointerType pointerOrShortString;
 };
 
 //add hashing for PointerWithShortInlineString
@@ -202,7 +213,7 @@ namespace std
 		size_t operator()(const PointerWithShortInlineString<PointerType> &v) const noexcept
 		{
 			//hash the raw bits (or mask off inlineMask if you prefer)
-			return std::hash<std::uint64_t>{}(v.pointerOrShortString);
+			return std::hash<PointerType>{}(v.pointerOrShortString);
 		}
 	};
 }
@@ -223,6 +234,7 @@ public:
 	inline StringInternPool()
 	{
 		InitializeStaticStrings();
+		numUniqueStaticStrings = stringToID.size();
 	}
 
 	//translates the id to a string, empty string if it does not exist
@@ -449,28 +461,18 @@ public:
 
 		auto sd_ptr = id.GetPointer();
 	#if defined(MULTITHREAD_SUPPORT)
-		//refCount must be decremented in an atomic fashion, but if down to the last reference,
-		//then don't want to decrement outside of a lock.  This is because if this thread decremented
-		//refCount, then another thread could acquire the lock, create a reference, then acquire the
-		// lock and delete a reference, and now a double delete will occur.  
-		while(true)
-		{
-			size_t ref_count = sd_ptr->refCount.load(std::memory_order_relaxed);
-			if(ref_count <= 1)
-				break;
+		//decrement only if this cannot be the last reference
+		//the count must never reach zero outside the shard lock because a concurrent create can otherwise resurrect
+		// the map entry and a later destroy can free sd_ptr before this thread reaches the lock
+		size_t cur = sd_ptr->refCount.load(std::memory_order_relaxed);
+		if(cur > 1 && sd_ptr->refCount.compare_exchange_strong(
+				cur, cur - 1, std::memory_order_release, std::memory_order_relaxed))
+			return;
 
-			//if can decrement, return
-			//release order on the decrement, don't need ordering on the failure path
-			if(sd_ptr->refCount.compare_exchange_weak(ref_count, ref_count - 1,
-				std::memory_order_release,
-				std::memory_order_relaxed))
-				return;
-		}
-
-		//lock this shard and double-check that it's the last reference before erasing
+		//either the last reference or a tight race path; lock, decrement ref count, and clean up if last
 		auto iterator_with_lock = stringToID.find(sd_ptr->stringData);
 
-		size_t ref_count = sd_ptr->refCount.fetch_sub(1, std::memory_order_release);
+		size_t ref_count = sd_ptr->refCount.fetch_sub(1, std::memory_order_acq_rel);
 		if(ref_count > 1)
 			return;
 
@@ -505,13 +507,7 @@ public:
 	//returns the number of strings that are still in use
 	inline size_t GetNumDynamicStringsInUse()
 	{
-		size_t num_static_strings_interned = 0;
-		for(auto &sid : staticStringsIndexToStringID)
-		{
-			if(!sid.IsInlineString() && sid.GetPointer() != nullptr)
-				num_static_strings_interned++;
-		}
-		return stringToID.size() - num_static_strings_interned;
+		return stringToID.size() - numUniqueStaticStrings;
 	}
 
 	//returns a vector of all the strings still in use.  Intended for debugging.
@@ -566,6 +562,8 @@ protected:
 #else
 	FastHashMap<std::string, std::unique_ptr<StringInternStringData>> stringToID;
 #endif
+
+	size_t numUniqueStaticStrings;
 
 public:
 	//indicates that it is not a string, like NaN or null

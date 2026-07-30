@@ -96,20 +96,20 @@ Example:
 (seq
 	(create_entities
 		"Entity"
-		{a 1 b 2 c 3}
+		{a 1 b 2}
 	)
 	(accum_to_entities
 		"Entity"
-		{a 2 b 3 c 4}
+		{a 2 b 3}
 		"Entity"
-		{doesnt_exist 12}
+		{c 12}
 	)
 	(retrieve_entity_root "Entity")
 )
 ```
 Output:
 ```amalgam
-{a 3 b 5 c 7}
+{a 3 b 5 c 12}
 ```
 
 [Amalgam Opcodes](./opcodes.md)

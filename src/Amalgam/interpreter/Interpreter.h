@@ -115,7 +115,7 @@ public:
 	{
 		//use the freeable flag to indicate if it has been accessed by target
 		if(target != nullptr)
-			target->SetIsFreeable(true);
+			target->SetIsFreeableTopNode(true);
 		constructionStack.emplace_back(target_origin, &target, current_index, current_value, previous_result);
 	}
 
@@ -131,7 +131,7 @@ public:
 
 			//if something accessed target, the top node is no longer freeable
 			//and further logic must assess the state of target_ref
-			if(target_ref != nullptr && !target_ref->GetIsFreeable())
+			if(target_ref != nullptr && !target_ref->GetIsFreeableTopNode())
 			{
 				//if something accessed target, the top node is no longer freeable
 				//and needs to be marked as potentially containing a cycle
@@ -151,9 +151,9 @@ public:
 				//clear freeability for use in other places
 			#ifdef MULTITHREAD_SUPPORT
 				//not unique, so should set atomically if other threads may be accessing it
-				target_ref->SetIsFreeableAtomic(false);
+				target_ref->SetIsFreeableTopNodeAtomic(false);
 			#else
-				target_ref->SetIsFreeable(false);
+				target_ref->SetIsFreeableTopNode(false);
 			#endif
 			}
 
@@ -257,14 +257,16 @@ public:
 		}
 
 		//indicate scope stack is not freeable if the top is still freeable
-		if(scopeStack.size() > 0 && scopeStack.back()->GetIsFreeable())
+		if(scopeStack.size() > 0 && scopeStack.back()->GetIsFreeableTopNode())
 		{
 			for(auto &stack_entry : scopeStack)
+			{
 			#ifdef MULTITHREAD_SUPPORT
-				stack_entry->SetIsFreeableAtomic(false);
+				stack_entry->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
 			#else
-				stack_entry->SetIsFreeable(false);
+				stack_entry->SetIsFreeableAndIsFreeableTopNode(false);
 			#endif
+			}
 		}
 		return std::make_pair(any_constructions, any_set);
 	}
@@ -283,27 +285,22 @@ public:
 		if(args == nullptr)
 		{
 			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
-			//set the context to be freeable so it knows to look for any possible freeable values
-			args->SetIsFreeable(true);
 		}
 		else if(args->IsAssociativeArray())
 		{
-			if(args.unique)
+			if(args.uniqueUnreferencedTopNode)
 			{
 				//if there are no cycles referencing the top node, then mark everything as potentially freeable
-				if(args.uniqueUnreferencedTopNode)
+				if(args.unique)
 				{
 					for(auto &[id, cn] : args->GetMappedChildNodesReference())
 					{
 						if(cn != nullptr)
-							cn->SetIsFreeable(true);
+							cn->SetIsFreeableAndIsFreeableTopNode(true);
 					}
-
-					//set the context to be freeable so it knows to look for any possible freeable values
-					args->SetIsFreeable(true);
 				}
 			}
-			else //not unique, so need to make a copy of the top node
+			else //not unique top node, so need to make a copy of it
 			{
 				args.SetReference(enm.AllocNode(args, false));
 				args.uniqueUnreferencedTopNode = true;
@@ -312,9 +309,11 @@ public:
 		else //!args->IsAssociativeArray() invalid type, so create a new one
 		{
 			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
-			//set the context to be freeable so it knows to look for any possible freeable values
-			args->SetIsFreeable(true);
 		}
+
+		//all paths lead to a new args,
+		// so set the context to be freeable so it knows to look for any possible freeable values
+		args->SetIsFreeableTopNode(true);
 
 		args->SetNeedCycleCheck(true);
 
@@ -323,16 +322,27 @@ public:
 		return scope_stack;
 	}
 
-	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a
-	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
-	//additionally returns a pointer to the containing map,
-	// a bool which is true if the symbol location is at the top of the stack,
-	// followed by another bool indicating whether the symbol has been previously accessed
+	//information about the location of a symbol returned by relevant methods below
+	struct ScopeStackSymbolLocation
+	{
+		//location of the pointer so it can be overwritten
+		EvaluableNode **location;
+		//scope that contains the variable
+		EvaluableNode::AssocType *containingAssoc;
+		//true if the symbol is at the top of the stack
+		bool atTopOfStack;
+		//true if the symbol is currently unique
+		bool unique;
+		//true if the top node of the symbol is currently unique
+		bool uniqueTopNode;
+	};
+
+	//finds a pointer to the location of the symbol's pointer to value and returns a ScopeStackSymbolLocation
+	// data structure containing the relevant information
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
 	//if clear_freeable_flag is true, then it will mark the node as having been accessed and no longer freeable
 	//use_atomic_when_setting_access_flag is used for recursion and should not be modified by the caller
-	inline std::tuple<EvaluableNode **, EvaluableNode::AssocType *, bool, bool>
-		GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid,
+	inline ScopeStackSymbolLocation GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid,
 		bool create_if_nonexistent, bool clear_freeable_flag
 	#ifdef MULTITHREAD_SUPPORT
 		, bool use_atomic_when_setting_access_flag = false
@@ -350,29 +360,43 @@ public:
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
 				bool is_freeable = true;
+				bool is_freeable_top_node = true;
 				if(found->second != nullptr)
 				{
 					if(clear_freeable_flag)
 					{
 					#ifdef MULTITHREAD_SUPPORT
 						if(use_atomic_when_setting_access_flag)
-							is_freeable = found->second->SetIsFreeableAtomic(false);
+						{
+							std::tie(is_freeable, is_freeable_top_node)
+								= found->second->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+						}
 						else
 					#endif
-							is_freeable = found->second->SetIsFreeable(false);
+						{
+							std::tie(is_freeable, is_freeable_top_node)
+								= found->second->SetIsFreeableAndIsFreeableTopNode(false);
+						}
 					}
 					else
 					{
 					#ifdef MULTITHREAD_SUPPORT
 						if(use_atomic_when_setting_access_flag)
+						{
 							is_freeable = found->second->GetIsFreeableAtomic();
+							is_freeable_top_node = found->second->GetIsFreeableTopNodeAtomic();
+						}
 						else
 					#endif
+						{
 							is_freeable = found->second->GetIsFreeable();
+							is_freeable_top_node = found->second->GetIsFreeableTopNode();
+						}
 					}
 				}
 
-				return std::make_tuple(&found->second, &mcn, it == rbegin(scopeStack), is_freeable);
+				return ScopeStackSymbolLocation{
+					&found->second, &mcn, it == rbegin(scopeStack), is_freeable, is_freeable_top_node};
 			}
 
 			if(scope->IsScopeBreak())
@@ -389,49 +413,44 @@ public:
 		if(!hit_scope_break && !bottomOfScopeStack && callingInterpreter != nullptr)
 		{
 			bool top_is_next_stack = (scopeStack.size() == 0);
-			auto [value_destination, scope, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocation(
+			auto symbol_location = callingInterpreter->GetScopeStackSymbolLocation(
 				symbol_sid, top_is_next_stack && create_if_nonexistent, clear_freeable_flag, true);
-			if(value_destination != nullptr)
-				return std::make_tuple(value_destination, scope, top_is_next_stack && top_of_stack, is_freeable);
+			if(symbol_location.location != nullptr)
+				return symbol_location;
 		}
 	#endif
 
 		if(!create_if_nonexistent)
-			return std::make_tuple(nullptr, nullptr, false, false);
+			return ScopeStackSymbolLocation{nullptr, nullptr, false, false, false};
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
 		size_t scope_stack_index = scopeStack.size() - 1;
 		EvaluableNode *scope = scopeStack[scope_stack_index];
 		auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
-		return std::make_tuple(new_location, &scope->GetMappedChildNodesReference(), true, false);
+		return ScopeStackSymbolLocation{new_location, &scope->GetMappedChildNodesReference(), true, false, false};
 	}
 
 	//like the other type of GetScopeStackSymbolLocation,
 	// but returns the EvaluableNode pointer instead of a pointer-to-a-pointer and true if the variable was found
 	//if clear_freeable_flag is true, then it will mark the node as having been accessed and no longer freeable
-	__forceinline std::tuple<EvaluableNode *, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid,
+	__forceinline std::pair<EvaluableNode *, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid,
 		bool clear_freeable_flag)
 	{
-		auto [node_ptr, scope, top_of_stack, is_freeable]
-			= GetScopeStackSymbolLocation(symbol_sid, false, clear_freeable_flag);
+		auto symbol_loc = GetScopeStackSymbolLocation(symbol_sid, false, clear_freeable_flag);
 
-		if(node_ptr == nullptr)
-			return std::make_tuple(nullptr, false);
+		if(symbol_loc.location == nullptr)
+			return std::pair(nullptr, false);
 
-		return std::make_tuple(*node_ptr, true);
+		return std::pair(*symbol_loc.location, true);
 	}
 
 #ifdef MULTITHREAD_SUPPORT
-	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a
-	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
-	//additionally returns a pointer to the containing map,
-	// a bool which is true if the symbol location is at the top of the stack,
-	// followed by another bool indicating whether the symbol has been previously accessed
+	//finds a pointer to the location of the symbol's pointer to value and returns a ScopeStackSymbolLocation
+	// data structure containing the relevant information
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
 	//executing_interpreter is the interpreter that will be used for garbage collection if needed
 	//use_atomic_when_setting_access_flag is used for recursion and should not be modified by the caller
-	std::tuple<EvaluableNode **, EvaluableNode::AssocType *, bool, bool>
-		GetScopeStackSymbolLocationWithLock(StringInternPool::StringID symbol_sid,
+	ScopeStackSymbolLocation GetScopeStackSymbolLocationWithLock(StringInternPool::StringID symbol_sid,
 		bool create_if_nonexistent, Concurrency::SingleLock &lock, Interpreter *executing_interpreter = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, bool use_atomic_when_setting_access_flag = false
@@ -448,6 +467,7 @@ public:
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
 				bool is_freeable = true;
+				bool is_freeable_top_node = true;
 				if(scopeStackMutex != nullptr)
 				{
 					if(executing_interpreter != nullptr)
@@ -461,14 +481,19 @@ public:
 					found = mcn.find(symbol_sid);
 
 					if(found->second != nullptr)
+					{
 						is_freeable = found->second->GetIsFreeableAtomic();
+						is_freeable_top_node = found->second->GetIsFreeableTopNodeAtomic();
+					}
 				}
 				else if(found->second != nullptr)
 				{
 					is_freeable = found->second->GetIsFreeable();
+					is_freeable_top_node = found->second->GetIsFreeableTopNode();
 				}
 
-				return std::make_tuple(&found->second, &mcn, scope_stack_index == cur_scope_stack_size, is_freeable);
+				return ScopeStackSymbolLocation{
+					&found->second, &mcn, scope_stack_index == cur_scope_stack_size, is_freeable, is_freeable_top_node};
 			}
 		}
 
@@ -476,15 +501,15 @@ public:
 		if(!bottomOfScopeStack && callingInterpreter != nullptr)
 		{
 			bool top_is_next_stack = (cur_scope_stack_size == 0);
-			auto [value_destination, scope, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocationWithLock(
+			auto symbol_location = callingInterpreter->GetScopeStackSymbolLocationWithLock(
 				symbol_sid, top_is_next_stack && create_if_nonexistent, lock, executing_interpreter == nullptr ? this : executing_interpreter);
 
-			if(value_destination != nullptr)
-				return std::make_tuple(value_destination, scope, top_is_next_stack && top_of_stack, is_freeable);
+			if(symbol_location.location != nullptr)
+				return symbol_location;
 		}
 
 		if(!create_if_nonexistent)
-			return std::make_tuple(nullptr, nullptr, false, false);
+			return ScopeStackSymbolLocation{nullptr, nullptr, false, false, false};
 
 		Interpreter *interp_with_scope = LockScopeStackTop(lock, nullptr, executing_interpreter);
 
@@ -499,13 +524,13 @@ public:
 			EvaluableNode *scope = evaluableNodeManager->AllocNode(interp_with_scope->scopeStack[scope_stack_index]);
 			auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
 			interp_with_scope->scopeStack[scope_stack_index] = scope;
-			return std::make_tuple(new_location, &scope->GetMappedChildNodesReference(), false, false);
+			return ScopeStackSymbolLocation{new_location, &scope->GetMappedChildNodesReference(), false, false, false};
 		}
 		else
 		{
 			EvaluableNode *scope = interp_with_scope->scopeStack[scope_stack_index];
 			auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
-			return std::make_tuple(new_location, &scope->GetMappedChildNodesReference(), true, false);
+			return ScopeStackSymbolLocation{new_location, &scope->GetMappedChildNodesReference(), true, false, false};
 		}
 	}
 #endif

@@ -63,11 +63,15 @@ public:
 		//if true, then the node has not yet been read/accessed and can be freed
 		//used to optimize flows to avoid copies when there has been no other accesses
 		FREEABLE = 1 << 4,
+		//if true, then the top node has not yet been read/accessed and can be freed
+		//used to optimize flows to avoid copies when there has been no other accesses
+		FREEABLE_TOP_NODE = 1 << 5,
 		//if true, then known to be in use with regard to garbage collection
-		KNOWN_TO_BE_IN_USE = 1 << 5,
+		KNOWN_TO_BE_IN_USE = 1 << 6,
 		//if true, then the scope stops at this node
-		SCOPE_BREAK = 1 << 6,
-		ALL = HAS_EXTENDED_VALUE | NEED_CYCLE_CHECK | IDEMPOTENT | CONCURRENT | FREEABLE | KNOWN_TO_BE_IN_USE | SCOPE_BREAK
+		SCOPE_BREAK = 1 << 7,
+		ALL = HAS_EXTENDED_VALUE | NEED_CYCLE_CHECK | IDEMPOTENT | CONCURRENT | FREEABLE | FREEABLE_TOP_NODE
+			| KNOWN_TO_BE_IN_USE | SCOPE_BREAK
 	};
 
 	//constructors
@@ -965,6 +969,93 @@ public:
 			AttributeStorageType previous_value = atomic_ref->fetch_and(~mask);
 			return (previous_value & mask) != 0;
 		}
+	}
+#endif
+
+	//returns true if the top node has never been read / accessed
+	__forceinline bool GetIsFreeableTopNode()
+	{
+		return HasAttribute(Attribute::FREEABLE_TOP_NODE);
+	}
+
+	//sets whether the top node has never been read / accessed
+	//returns the previous value
+	__forceinline bool SetIsFreeableTopNode(bool is_freeable)
+	{
+		bool old_value = HasAttribute(Attribute::FREEABLE_TOP_NODE);
+		SetAttribute(Attribute::FREEABLE_TOP_NODE, is_freeable);
+		return old_value;
+	}
+
+#ifdef MULTITHREAD_SUPPORT
+	//returns true if the top node has never been read / accessed
+	__forceinline bool GetIsFreeableTopNodeAtomic()
+	{
+		return HasAttributeAtomic(Attribute::FREEABLE_TOP_NODE);
+	}
+
+	//sets whether the top node has never been read / accessed
+	//returns the previous value
+	__forceinline bool SetIsFreeableTopNodeAtomic(bool is_freeable)
+	{
+		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
+
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		std::atomic<AttributeStorageType> *atomic_ref
+			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
+
+		if(is_freeable)
+		{
+			AttributeStorageType previous_value = atomic_ref->fetch_or(mask);
+			return (previous_value & mask) != 0;
+		}
+		else
+		{
+			AttributeStorageType previous_value = atomic_ref->fetch_and(~mask);
+			return (previous_value & mask) != 0;
+		}
+	}
+#endif
+
+	//sets both FREEABLE and FREEABLE_TOP_NODE
+	//returns previous values of the flags in order
+	__forceinline std::pair<bool, bool> SetIsFreeableAndIsFreeableTopNode(bool is_freeable)
+	{
+		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE)
+			| static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
+
+		AttributeStorageType previous_value = attributes;
+
+		if(is_freeable)
+			attributes |= static_cast<AttributeStorageType>(mask);
+		else
+			attributes &= ~static_cast<AttributeStorageType>(mask);
+
+		return std::make_pair((previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
+			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0);
+	}
+
+#ifdef MULTITHREAD_SUPPORT
+	//sets both FREEABLE and FREEABLE_TOP_NODE
+	//returns previous values of the flags in order
+	__forceinline std::pair<bool, bool> SetIsFreeableAndIsFreeableTopNodeAtomic(bool is_freeable)
+	{
+		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE)
+			| static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
+
+		AttributeStorageType previous_value;
+
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		std::atomic<AttributeStorageType> *atomic_ref
+			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
+
+		if(is_freeable)
+			previous_value = atomic_ref->fetch_or(mask);
+		else
+			previous_value = atomic_ref->fetch_and(~mask);
+
+		return std::make_pair((previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
+			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0);
 	}
 #endif
 

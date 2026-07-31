@@ -8,26 +8,25 @@ enable_testing()
 set(CMAKE_CTEST_ARGUMENTS "-j 1" "--schedule-random" "--output-on-failure" "--extra-verbose" "--output-log" "${CMAKE_SOURCE_DIR}/out/test/all_tests.log")
 
 # Not all tests can be run on all platforms:
+# Note: macOS builds arm64 by setting CMAKE_OSX_ARCHITECTURES rather than by changing the
+# system name, so CMAKE_CROSSCOMPILING is not set for it; compare against the host
+# processor instead to tell a native arm64 build from one cross compiled on an amd64 host.
 if(IS_WASM)
     # No tests to run for WASM
     list(PREPEND CMAKE_CTEST_ARGUMENTS "-LE" ".*")
-elseif(IS_MACOS)
-    if(IS_ARM64)
-        # Can't run cross compiled arm64 binaries on macos amd64 hosts
-        list(PREPEND CMAKE_CTEST_ARGUMENTS "-LE" ".*")
-    else()
-        # Can't run advanced intrinsic builds on macos amd64 build machines
-        list(PREPEND CMAKE_CTEST_ARGUMENTS "-LE" "advanced_intrinsics")
-    endif()
+elseif(IS_MACOS AND IS_ARM64 AND NOT "${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL "arm64")
+    # Can't run cross compiled arm64 binaries on macos amd64 hosts
+    list(PREPEND CMAKE_CTEST_ARGUMENTS "-LE" ".*")
+elseif(IS_MACOS AND NOT IS_ARM64)
+    # Can't run advanced intrinsic builds on macos amd64 build machines
+    list(PREPEND CMAKE_CTEST_ARGUMENTS "-LE" "advanced_intrinsics")
 else()
     list(PREPEND CMAKE_CTEST_ARGUMENTS "-L" "smoke_test")
 endif()
 
 # Test runner for platforms that need it:
+# Note: arm64 Linux is built and tested natively on arm64 runners, so no emulator is needed.
 set(TEST_RUNNER)
-if(IS_LINUX AND IS_ARM64)
-    set(TEST_RUNNER "qemu-aarch64" "-L" "${ARM64_LIB_DIR}")
-endif()
 
 # Create tests for every app target:
 set(ALL_TEST_TARGETS)

@@ -1893,8 +1893,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode_ENT_SIMPLIFY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node)";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description =
 		R"(Simplifies all of the code node in ways that will yield the same behavior and returns the result.)";
 	d.examples = MakeAmalgamExamples({{R"&((simplify

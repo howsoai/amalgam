@@ -2031,7 +2031,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
     auto offptr = offset ? offset : &offset_local;
     fields<CT> fds{};
     fds.has_tod = true;
-    from_stream(is, fmt, fds, abbrev, offptr);
+    date::from_stream(is, fmt, fds, abbrev, offptr);
     if (!fds.ymd.ok())
         is.setstate(std::ios::failbit);
     if (!is.fail())
@@ -2166,7 +2166,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
             std::chrono::minutes* offset = nullptr)
 {
     local_time<Duration> lp;
-    from_stream(is, fmt, lp, abbrev, offset);
+    date::from_stream(is, fmt, lp, abbrev, offset);
     if (!is.fail())
         tp = tai_clock::from_local(lp);
     return is;
@@ -2289,7 +2289,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
             std::chrono::minutes* offset = nullptr)
 {
     local_time<Duration> lp;
-    from_stream(is, fmt, lp, abbrev, offset);
+    date::from_stream(is, fmt, lp, abbrev, offset);
     if (!is.fail())
         tp = gps_clock::from_local(lp);
     return is;

@@ -227,11 +227,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					if(cn != nullptr)
 					{
 					#ifdef MULTITHREAD_SUPPORT
-						cn->SetIsFreeableAtomic(required_vars.unique);
-						cn->SetIsFreeableTopNodeAtomic(required_vars.uniqueUnreferencedTopNode);
+						cn->SetIsFreeableAndIsFreeableTopNodeAtomic(required_vars.unique);
 					#else
-						cn->SetIsFreeable(required_vars.unique);
-						cn->SetIsFreeableTopNode(required_vars.uniqueUnreferencedTopNode);
+						cn->SetIsFreeableAndIsFreeableTopNode(required_vars.unique);
 					#endif
 					}
 				}

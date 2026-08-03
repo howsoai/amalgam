@@ -285,20 +285,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					{
 						LockScopeStackTop(write_lock, required_vars);
 					}
-					else
-					#endif
-						//only set unread if writing to parts of the stack that aren't shared
-						if(value != nullptr)
-						{
-						#ifdef MULTITHREAD_SUPPORT
-							value->SetIsFreeableAtomic(value.unique);
-							value->SetIsFreeableTopNodeAtomic(value.uniqueUnreferencedTopNode);
-						#else
-							value->SetIsFreeable(value.unique);
-							value->SetIsFreeableTopNode(value.uniqueUnreferencedTopNode);
-						#endif
-						}
+				#endif
 
+					value.SetFreeableFlagsBasedOnUniqueness();
 					scope->SetMappedChildNode(cn_id, value, false);
 				}
 			}
@@ -640,17 +629,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
 			any_nonunique_assignments |= !symbol_location.atTopOfStack;
 
-			//need to set whether freeable in case a variable's value is assigned to another variable
-			if(variable_value_node != nullptr)
-			{
-			#ifdef MULTITHREAD_SUPPORT
-				variable_value_node->SetIsFreeableAtomic(variable_value_node.unique);
-				variable_value_node->SetIsFreeableTopNodeAtomic(variable_value_node.uniqueUnreferencedTopNode);
-			#else
-				variable_value_node->SetIsFreeable(variable_value_node.unique);
-				variable_value_node->SetIsFreeableTopNode(variable_value_node.uniqueUnreferencedTopNode);
-			#endif
-			}
+			variable_value_node.SetFreeableFlagsBasedOnUniqueness();
 
 			//assign back into the context_to_use
 			*symbol_location.location = variable_value_node;
@@ -716,18 +695,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
 		}
 
-		//need to set whether freeable in case a variable's value is assigned to another variable
-		if(new_value != nullptr)
-		{
-		#ifdef MULTITHREAD_SUPPORT
-			new_value->SetIsFreeableAtomic(new_value.unique);
-			new_value->SetIsFreeableTopNodeAtomic(new_value.uniqueUnreferencedTopNode);
-		#else
-			new_value->SetIsFreeable(new_value.unique);
-			new_value->SetIsFreeableTopNode(new_value.uniqueUnreferencedTopNode);
-		#endif
-		}
-
+		new_value.SetFreeableFlagsBasedOnUniqueness();
 		*symbol_location.location = new_value;
 
 		//if writing to an outer scope, can't guarantee the memory at this scope can be freed

@@ -145,29 +145,7 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 				//need to interpret
 				SetTopCurrentIndexInConstructionStack(cn_id);
 				EvaluableNodeReference value = InterpretNodeWithoutCopyingImmediates(cn);
-
-				if(value != nullptr)
-				{
-					if(value.unique)
-						value->SetIsFreeable(true);
-					else
-					#ifdef MULTITHREAD_SUPPORT
-						//not unique, so should set atomically if other threads may be accessing it
-						value->SetIsFreeableAtomic(false);
-					#else
-						value->SetIsFreeable(false);
-					#endif
-
-					if(value.uniqueUnreferencedTopNode)
-						value->SetIsFreeableTopNode(true);
-					else
-					#ifdef MULTITHREAD_SUPPORT
-						//not unique, so should set atomically if other threads may be accessing it
-						value->SetIsFreeableTopNodeAtomic(false);
-					#else
-						value->SetIsFreeableTopNode(false);
-					#endif
-				}
+				value.SetFreeableFlagsBasedOnUniqueness();
 
 				cn = value;
 				new_scope->UpdateFlagsBasedOnNewChildNode(cn);
@@ -201,6 +179,7 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 {
 	EvaluableNode *scope = scopeStack.back();
 
+	//TODO 25844: investigate if can always free nodes, but may need to have call clear some immediate flags
 	if(returning_unique_value && scope->GetIsFreeableTopNode())
 	{
 		for(auto &[id, cn] : scope->GetMappedChildNodesReference())

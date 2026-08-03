@@ -1685,7 +1685,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 	{
 		//randomly clear excess nulls (with no child nodes) in lists
 		auto &n_ocn = n->GetOrderedChildNodes();
-		while(!n_ocn.empty() && EvaluableNode::IsNull(n_ocn.back()))
+		size_t max_num_usable_nodes = GetOpcodeMinNumValidParameters(n->GetType());
+		while(n_ocn.size() > max_num_usable_nodes && EvaluableNode::IsNull(n_ocn.back()))
 		{
 			//either remove this one or stop removing
 			if(mp.interpreter->randomStream.Rand() > 0.125)

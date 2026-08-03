@@ -2294,7 +2294,7 @@ Output:
 
 ### Opcode: `query_entity_clusters`
 #### Parameters
-`number|list selection_bandwidth list_of_entity_labels labels list|entity_label axis_values_or_entity_id [number p_value] [list|assoc weights] [list|assoc attributes] [list|assoc deviations] [entity_label|list_of_entity_labels weights_selection_features] [number|string distance_transform] [entity_label entity_weight_label] [string random_seed] [entity_label radius_label] [string numerical_precision] [bool|entity_label|list_of_entity_labels output_sorted_list]`
+`number|list selection_bandwidth list_of_entity_labels labels number min_cluster_weight [number p_value] [list|assoc weights] [list|assoc attributes] [list|assoc deviations] [entity_label|list_of_entity_labels weights_selection_features] [number|string distance_transform] [entity_label entity_weight_label] [string random_seed] [entity_label radius_label] [string numerical_precision] [bool|entity_label|list_of_entity_labels output_sorted_list]`
 #### Returns
 `query`
 #### Description

@@ -651,6 +651,34 @@ public:
 		return false;
 	}
 
+	//sets both freeable and top node freeable flags given the appropriate uniqueness of the reference
+	void SetFreeableFlagsBasedOnUniqueness()
+	{
+		if(IsNull() || IsImmediateValue())
+			return;
+
+		EvaluableNode *en = GetReference();
+		if(unique)
+		{
+			en->SetIsFreeableAndIsFreeableTopNode(true);
+		}
+		else
+		{
+			if(uniqueUnreferencedTopNode)
+			{
+				en->SetIsFreeableTopNode(true);
+			}
+			else
+			{
+			#ifdef MULTITHREAD_SUPPORT
+				en->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+			#else
+				en->SetIsFreeableAndIsFreeableTopNode(false);
+			#endif
+			}
+		}
+	}
+
 	//calls GetNeedCycleCheck if the reference is not nullptr, returns false if it is nullptr
 	__forceinline bool GetNeedCycleCheck()
 	{

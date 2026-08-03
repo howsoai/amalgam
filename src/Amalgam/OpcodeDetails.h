@@ -162,7 +162,7 @@ public:
 		LIST_OF_ENTITY_LABELS = 1 << 14,
 		LIST_OF_QUERIES = 1 << 15,
 		ASSOC_OF_NUMBERS = 1 << 16,
-		
+
 		ANY_BASIC = NULL_TYPE | BOOL | NUMBER | STRING | LIST | UNORDERED_LIST | ASSOC | QUERY
 	};
 
@@ -306,6 +306,37 @@ public:
 		}
 
 		return false;
+	}
+
+	//returns the minimum number of parameters required to return a valid result
+	size_t GetMinNumValidParameters()
+	{
+		if(parameters.childNodeStructure == ChildNodeStructureType::NONE)
+			return 0;
+
+		size_t num_not_optional = 0;
+		for(auto &group : parameters.groups)
+		{
+			if(!group.parameter1.optional)
+				num_not_optional++;
+		}
+
+		return num_not_optional;
+	}
+
+	//returns the maximum number of parameters that the opcode can use
+	//if there is no upper limit, returns std::numeric_limits<size_t>::max()
+	size_t GetMaxNumValidParameters()
+	{
+		if(parameters.childNodeStructure == ChildNodeStructureType::NONE
+				|| parameters.groups.size() == 0)
+			return 0;
+
+		auto &last_group = parameters.groups.back();
+		if(last_group.isRepeating)
+			return std::numeric_limits<size_t>::max();
+
+		return parameters.groups.size();
 	}
 
 	//returns a string corresponding to the datatype
@@ -474,6 +505,19 @@ __forceinline OpcodeDetails::OpcodeReturnNewnessType GetOpcodeNewValueReturnType
 __forceinline bool DoesOpcodeUseAssocParameters(EvaluableNodeType t)
 {
 	return GetChildNodeStructureType(t) == OpcodeDetails::ChildNodeStructureType::PAIRED;
+}
+
+//returns the minimum number of parameters required to return a valid result
+__forceinline size_t GetOpcodeMinNumValidParameters(EvaluableNodeType t)
+{
+	return _opcode_details[t].GetMinNumValidParameters();
+}
+
+//returns the maximum number of parameters that the opcode can use
+//if there is no upper limit, returns std::numeric_limits<size_t>::max()
+__forceinline size_t GetOpcodeMaxNumValidParameters(EvaluableNodeType t)
+{
+	return _opcode_details[t].GetMaxNumValidParameters();
 }
 
 //returns true if t is an immediate value

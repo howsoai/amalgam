@@ -201,7 +201,7 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 {
 	EvaluableNode *scope = scopeStack.back();
 
-	if(returning_unique_value)
+	if(returning_unique_value && scope->GetIsFreeableTopNode())
 	{
 		for(auto &[id, cn] : scope->GetMappedChildNodesReference())
 		{

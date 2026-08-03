@@ -629,29 +629,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
 			any_nonunique_assignments |= !symbol_location.atTopOfStack;
 
-			//need to set whether freeable in case a variable's value is assigned to another variable
-			if(variable_value_node != nullptr)
-			{
-				if(variable_value_node.unique)
-				{
-					variable_value_node->SetIsFreeableAndIsFreeableTopNode(true);
-				}
-				else
-				{
-					if(variable_value_node.uniqueUnreferencedTopNode)
-					{
-						variable_value_node->SetIsFreeableTopNode(true);
-					}
-					else
-					{
-					#ifdef MULTITHREAD_SUPPORT
-						variable_value_node->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
-					#else
-						variable_value_node->SetIsFreeableAndIsFreeableTopNode(false);
-					#endif
-					}
-				}
-			}
+			variable_value_node.SetFreeableFlagsBasedOnUniqueness();
 
 			//assign back into the context_to_use
 			*symbol_location.location = variable_value_node;

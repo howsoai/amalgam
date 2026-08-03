@@ -179,7 +179,8 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 {
 	EvaluableNode *scope = scopeStack.back();
 
-	//TODO 25844: investigate if can always free nodes, but may need to have call clear some immediate flags
+	//the return value could be some portion of an otherwise unique value,
+	//so can't be guaranteed that everything is freeable
 	if(returning_unique_value && scope->GetIsFreeableTopNode())
 	{
 		for(auto &[id, cn] : scope->GetMappedChildNodesReference())
@@ -193,7 +194,7 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 			}
 		}
 	}
-	else //not unique result, need to clear freeability flags so they don't cause issues later
+	else //can't free scope variables, need to clear freeability flags so they don't cause issues later
 	{
 		for(auto &[id, cn] : scope->GetMappedChildNodesReference())
 		{

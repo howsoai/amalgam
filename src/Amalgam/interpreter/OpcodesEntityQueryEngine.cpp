@@ -2322,7 +2322,7 @@ static OpcodeInitializer _ENT_QUERY_ENTITY_CLUSTERS(ENT_QUERY_ENTITY_CLUSTERS, &
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"selection_bandwidth", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST}),
 		OpcodeDetails::ParameterGroup({"labels", OpcodeDetails::DataType::LIST_OF_ENTITY_LABELS}),
-		OpcodeDetails::ParameterGroup({"axis_values_or_entity_id", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ENTITY_LABEL}),
+		OpcodeDetails::ParameterGroup({"min_cluster_weight", OpcodeDetails::DataType::NUMBER}),
 		OpcodeDetails::ParameterGroup({"p_value", OpcodeDetails::DataType::NUMBER, true}),
 		OpcodeDetails::ParameterGroup({"weights", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC, true}),
 		OpcodeDetails::ParameterGroup({"attributes", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC, true}),

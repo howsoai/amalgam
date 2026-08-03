@@ -201,7 +201,7 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 {
 	EvaluableNode *scope = scopeStack.back();
 
-	if(returning_unique_value && scope->GetIsFreeableTopNode())
+	if(returning_unique_value)
 	{
 		for(auto &[id, cn] : scope->GetMappedChildNodesReference())
 		{
@@ -211,6 +211,20 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 					evaluableNodeManager->FreeNodeTree(cn);
 				else if(cn->GetIsFreeableTopNode())
 					evaluableNodeManager->FreeNode(cn);
+			}
+		}
+	}
+	else //not unique result, need to clear fereability flags so they don't cause issues later
+	{
+		for(auto &[id, cn] : scope->GetMappedChildNodesReference())
+		{
+			if(cn != nullptr)
+			{
+			#ifdef MULTITHREAD_SUPPORT
+				cn->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+			#else
+				cn->SetIsFreeableAndIsFreeableTopNode(false);
+			#endif
 			}
 		}
 	}

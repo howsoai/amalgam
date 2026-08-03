@@ -214,7 +214,7 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 			}
 		}
 	}
-	else //not unique result, need to clear fereability flags so they don't cause issues later
+	else //not unique result, need to clear freeability flags so they don't cause issues later
 	{
 		for(auto &[id, cn] : scope->GetMappedChildNodesReference())
 		{

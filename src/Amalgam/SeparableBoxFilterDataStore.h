@@ -694,11 +694,7 @@ public:
 	}
 
 	//used for debugging to make sure all entities are valid
-	inline void VerifyAllEntitiesForAllColumns()
-	{
-		for(auto &column_data : columnData)
-			column_data->VerifyAllEntities(numEntities);
-	}
+	void VerifyAllEntitiesForAllColumns();
 
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
 	//if enabled_indices is not nullptr, intersects with the enabled_indices set.

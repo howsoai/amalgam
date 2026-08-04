@@ -677,19 +677,19 @@ public:
 		{
 			if(r_dist_eval.distEvaluator->computeSurprisal)
 				FindNearestEntities<true, true>(r_dist_eval, position_label_sids, top_k,
-					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+					radius_label, *possible_knn_indices, distances_out, ignore_entity_index, rand_stream);
 			else
 				FindNearestEntities<true, false>(r_dist_eval, position_label_sids, top_k,
-					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+					radius_label, *possible_knn_indices, distances_out, ignore_entity_index, rand_stream);
 		}
 		else
 		{
 			if(r_dist_eval.distEvaluator->computeSurprisal)
 				FindNearestEntities<false, true>(r_dist_eval, position_label_sids, top_k,
-					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+					radius_label, *possible_knn_indices, distances_out, ignore_entity_index, rand_stream);
 			else
 				FindNearestEntities<false, false>(r_dist_eval, position_label_sids, top_k,
-					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+					radius_label, *possible_knn_indices, distances_out, ignore_entity_index, rand_stream);
 		}
 	}
 

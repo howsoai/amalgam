@@ -1072,6 +1072,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(EvaluableNodeManager
 		//TODO 25662: flatten and fold other literals beyond addition
 		//TODO 25662: reduce rational numbers (4/6 -> 2/3)
 		//TODO 25662: sort children of commutative opcodes
+		//TODO 25662: truncate to maximum allowed child nodes
 	}
 
 	return tree;

@@ -1055,7 +1055,10 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(EvaluableNodeManager
 			}
 			else
 			{
-				result_child_nodes.push_back(enm->AllocNode(sum));
+				//only include the sum if it's nonzero
+				if(sum != 0.0)
+					result_child_nodes.push_back(enm->AllocNode(sum));
+
 				cur->SetOrderedChildNodes(std::move(result_child_nodes),
 					cur->GetNeedCycleCheck(), cur->GetIsIdempotent());
 			}

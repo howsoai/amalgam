@@ -604,13 +604,11 @@ public:
 		ReplaceStringsInTree(tree, to_replace, checked);
 	}
 
+	//returns a normalized tree; it assumes the tree is unique
+	static EvaluableNode *NormalizeTree(EvaluableNodeManager *enm, EvaluableNode *tree);
+
 	//returns a simplified tree; it assumes the tree is unique
-	static EvaluableNode *SimplifyTree(EvaluableNodeManager *enm, EvaluableNode *tree)
-	{
-		EvaluableNode::ReferenceAssocType references;
-		auto [copy, need_cycle_check] = SimplifyTreeRecurse(enm, tree, references);
-		return copy;
-	}
+	static EvaluableNode *SimplifyTree(EvaluableNodeManager *enm, EvaluableNode *tree);
 
 protected:
 

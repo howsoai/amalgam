@@ -1919,6 +1919,8 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 	return d;
 });
 
+//TODO 25662: add more unit tests
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SIMPLIFY(
 	EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {

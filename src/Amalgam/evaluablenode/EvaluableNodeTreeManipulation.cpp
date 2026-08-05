@@ -973,6 +973,118 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	return commonality;
 }
 
+EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(EvaluableNodeManager *enm, EvaluableNode *tree)
+{
+	if(tree == nullptr)
+		return nullptr;
+
+	//node and bool indicating whether its child nodes have been processed yet
+	std::vector<std::pair<EvaluableNode *, bool>> node_stack;
+	EvaluableNode::ReferenceSetType visited;
+
+	node_stack.emplace_back(tree, false);
+
+	while(!node_stack.empty())
+	{
+		auto [cur, child_nodes_seen] = node_stack.back();
+		node_stack.pop_back();
+
+		if(!child_nodes_seen)
+		{
+			if(!visited.insert(cur).second)
+				continue;
+
+			//put the node back on before its child nodes and indicate that its child nodes have been seen
+			node_stack.emplace_back(cur, true);
+
+			//traverse further down the tree
+			if(cur->IsAssociativeArray())
+			{
+				for(auto &[_, cn] : cur->GetMappedChildNodesReference())
+				{
+					if(cn && !cn->IsImmediate())
+						node_stack.emplace_back(cn, false);
+				}
+			}
+			else if(!cur->IsImmediate())
+			{
+				for(EvaluableNode *cn : cur->GetOrderedChildNodesReference())
+				{
+					if(cn && !cn->IsImmediate())
+						node_stack.emplace_back(cn, false);
+				}
+			}
+
+			continue;
+		}
+
+		//canonicalisation
+		auto node_type = cur->GetType();
+		switch(node_type)
+		{
+		case ENT_ADD:
+		{
+			double sum = 0.0;
+			std::vector<EvaluableNode *> result_child_nodes;
+			for(EvaluableNode *cn: cur->GetOrderedChildNodesReference())
+			{
+				if(EvaluableNode::IsNull(cn))
+				{
+					sum = std::numeric_limits<double>::quiet_NaN();
+					break;
+				}
+
+				if(cn->GetType() == ENT_NUMBER)
+				{
+					sum += cn->GetNumberValue();
+				}
+				else if(cn->GetType() == ENT_ADD)
+				{
+					for(EvaluableNode *add_cn : cn->GetOrderedChildNodesReference())
+						result_child_nodes.push_back(add_cn);
+				}
+				else //need to be kept as-is
+				{
+					result_child_nodes.push_back(cn);
+				}
+			}
+
+			if(result_child_nodes.size() == 0)
+			{
+				cur->SetTypeViaNumberValue(sum);
+			}
+			else
+			{
+				result_child_nodes.push_back(enm->AllocNode(sum));
+				cur->SetOrderedChildNodes(std::move(result_child_nodes),
+					cur->GetNeedCycleCheck(), cur->GetIsIdempotent());
+			}
+
+			break;
+		}
+
+		default:
+			break;
+		} 
+		//TODO 25662: flatten and fold other literals beyond addition
+		//TODO 25662: reduce rational numbers (4/6 -> 2/3)
+		//TODO 25662: sort children of commutative opcodes
+	}
+
+	return tree;
+}
+
+EvaluableNode *EvaluableNodeTreeManipulation::SimplifyTree(EvaluableNodeManager *enm, EvaluableNode *tree)
+{
+	tree = NormalizeTree(enm, tree);
+	//TODO 25662: add these back in
+	//tree = ApplyRewriteRules(enm, tree);
+	//tree = NormalizeTree(enm, tree);
+
+	EvaluableNodeManager::UpdateFlagsForNodeTree(tree);
+	return tree;
+}
+
 MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBetweenNodes(
 	EvaluableNode *n1, EvaluableNode *n2,
 	bool types_must_match, bool nominal_numbers, bool nominal_strings)
@@ -1818,75 +1930,6 @@ void EvaluableNodeTreeManipulation::ReplaceStringsInTree(EvaluableNode *tree, Co
 		for(auto cn : tree->GetOrderedChildNodesReference())
 			ReplaceStringsInTree(cn, to_replace, checked);
 	}
-}
-
-std::pair<EvaluableNode *, bool> EvaluableNodeTreeManipulation::SimplifyTreeRecurse(
-	EvaluableNodeManager *enm, EvaluableNode *tree, EvaluableNode::ReferenceAssocType &references)
-{
-	//TODO 25662: begin adding simplifications to this
-	//TODO 25662: add more unit tests
-
-	//attempt to insert a new reference for this node, start with null
-	auto [inserted_copy, inserted] = references.emplace(tree, nullptr);
-
-	//can't insert, so already have a copy
-	// need to indicate that it has a cycle
-	if(!inserted)
-		return std::make_pair(inserted_copy->second, true);
-
-	EvaluableNode *copy = enm->AllocNode(tree, false);
-
-	//shouldn't happen, but just to be safe
-	if(copy == nullptr)
-		return std::make_pair(nullptr, false);
-
-	//start without needing a cycle check in case it can be cleared
-	copy->SetNeedCycleCheck(false);
-
-	//write the value to the iterator from the earlier insert
-	inserted_copy->second = copy;
-
-	//copy and update any child nodes
-	if(copy->IsAssociativeArray())
-	{
-		auto &copy_mcn = copy->GetMappedChildNodesReference();
-		for(auto &[_, s] : copy_mcn)
-		{
-			//get current item in list
-			EvaluableNode *n = s;
-			if(n == nullptr)
-				continue;
-
-			//make copy; if need cycle check, then mark it on the parent copy
-			auto [child_copy, need_cycle_check] = SimplifyTreeRecurse(enm, n, references);
-			if(need_cycle_check)
-				copy->SetNeedCycleCheck(true);
-
-			//replace item in assoc with copy
-			s = child_copy;
-		}
-	}
-	else
-	{
-		auto &copy_ocn = copy->GetOrderedChildNodes();
-		for(size_t i = 0; i < copy_ocn.size(); i++)
-		{
-			//get current item in list
-			EvaluableNode *n = copy_ocn[i];
-			if(n == nullptr)
-				continue;
-
-			//make copy; if need cycle check, then mark it on the parent copy
-			auto [child_copy, need_cycle_check] = SimplifyTreeRecurse(enm, n, references);
-			if(need_cycle_check)
-				copy->SetNeedCycleCheck(true);
-
-			//replace current item in list with copy
-			copy_ocn[i] = child_copy;
-		}
-	}
-
-	return std::make_pair(copy, copy->GetNeedCycleCheck());
 }
 
 #if defined(MULTITHREAD_SUPPORT)

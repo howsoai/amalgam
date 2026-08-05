@@ -322,6 +322,36 @@ void SeparableBoxFilterDataStore::RemoveEntityIndexValueFromLabelId(
 #endif
 }
 
+//used for debugging to make sure all entities are valid
+void SeparableBoxFilterDataStore::VerifyAllEntitiesForAllColumns()
+{
+#ifdef MULTITHREAD_SUPPORT
+	//if big enough (enough entities and/or enough columns), try to use multithreading
+	size_t num_columns = columnData.size();
+	if(num_columns > 1)
+	{
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_columns);
+
+		auto enqueue_task_lock = Concurrency::urgentThreadPool.AcquireTaskLock();
+		for(auto &column_data : columnData)
+		{
+			Concurrency::urgentThreadPool.BatchEnqueueTask([this, &column_data, &task_set]()
+			{
+				column_data->VerifyAllEntities(numEntities);
+				task_set.MarkTaskCompleted();
+			});
+		}
+
+		task_set.WaitForTasks(&enqueue_task_lock);
+		return;
+	}
+	//not running concurrently
+#endif
+
+	for(auto &column_data : columnData)
+		column_data->VerifyAllEntities(numEntities);
+}
+
 //populates distances_out with all entities and their distances that have a distance to target less than max_dist
 // and sets distances_out to the found entities.  Infinity is allowed to compute all distances.
 //if enabled_indices is not nullptr, it will only find distances to those entities, and it will modify enabled_indices in-place

@@ -1018,6 +1018,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(EvaluableNodeManager
 			continue;
 		}
 
+		//TODO 25662: pull out flattening of add and make it generic for all associative opcodes
 		//canonicalisation
 		auto node_type = cur->GetType();
 		switch(node_type)
@@ -1070,9 +1071,24 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(EvaluableNodeManager
 			break;
 		} 
 		//TODO 25662: flatten and fold other literals beyond addition
-		//TODO 25662: reduce rational numbers (4/6 -> 2/3)
+
+		//truncate to maximum allowed child nodes
+		size_t max_num_params = GetOpcodeMaxNumValidParameters(node_type);
+		if(cur->IsOrderedArray() && cur->GetOrderedChildNodesReference().size() > max_num_params)
+		{
+			auto &ocn = cur->GetOrderedChildNodesReference();
+			if(!cur->GetNeedCycleCheck())
+			{
+				for(size_t i = max_num_params; i < ocn.size(); i++)
+					enm->FreeNodeTree(ocn[i]);
+			}
+			ocn.resize(max_num_params);
+		}
+
+		//TODO 25662: if opcode has no side effects and all child nodes are immediate, execute and replace with value
+
 		//TODO 25662: sort children of commutative opcodes
-		//TODO 25662: truncate to maximum allowed child nodes
+
 	}
 
 	return tree;

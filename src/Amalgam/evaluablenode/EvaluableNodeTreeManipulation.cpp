@@ -1051,12 +1051,15 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 				cur->AppendOrderedChildNodes(associative_child_nodes);
 		}
 
-		//if it's not immediate but could be executed immediately, do so
+		//if node_type is self-contained, and all child nodes are fully immediate, execute
+		//ENT_RANGE is excluded because it can expand considerably in size
 		if(!cur->IsImmediate() && !DoesOpcodeRetrieveData(node_type) && !DoesOpcodeHaveSideEffects(node_type) &&
-			!MayOpcodeCauseNodeUpdateInCurrentEntity(node_type) && !DoesOpcodeRequireEntity(node_type))
+			!MayOpcodeCauseNodeUpdateInCurrentEntity(node_type) && !DoesOpcodeRequireEntity(node_type)
+			&& node_type != ENT_RANGE)
 		{
 			//TODO 25662: break symbol out of immediate, update where appropriate, fix logic below
-			//TODO 25662: exclude evaluate range from the above, double-check other opcodes; consider condensing into a single method?
+			//TODO 25662: consider condensing flags into a single method?
+			//TODO 25662: make sure partial consolidated results are computed, e.g., addition of numbers and symbols
 
 			//check for any non-immediate child node
 			bool any_non_immediate = false;

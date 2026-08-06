@@ -605,10 +605,11 @@ public:
 	}
 
 	//returns a normalized tree; it assumes the tree is unique
-	static EvaluableNode *NormalizeTree(EvaluableNodeManager *enm, EvaluableNode *tree);
+	static EvaluableNode *NormalizeTree(Interpreter *interpreter, EvaluableNode *tree);
 
-	//returns a simplified tree; it assumes the tree is unique
-	static EvaluableNode *SimplifyTree(EvaluableNodeManager *enm, EvaluableNode *tree);
+	//returns a simplified tree; it assumes the tree is unique and protected from garbage collection,
+	//incase this method must interpret some nodes
+	static EvaluableNode *SimplifyTree(Interpreter *interpreter, EvaluableNode *tree);
 
 protected:
 
@@ -645,10 +646,6 @@ protected:
 	static void ReplaceStringsInTree(EvaluableNode *tree,
 		CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace,
 		EvaluableNode::ReferenceSetType &checked);
-
-	//returns a simplified copy of tree, returns true if there is a cycle
-	static std::pair<EvaluableNode *, bool> SimplifyTreeRecurse(
-		EvaluableNodeManager *enm, EvaluableNode *tree, EvaluableNode::ReferenceAssocType &references);
 
 	//random stream for MutationOperationType, so can obtain a random type from a useful distribution
 	static MutationParameters::WeightedRandMutationType mutationOperationTypeRandomStream;

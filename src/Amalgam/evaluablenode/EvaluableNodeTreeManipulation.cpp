@@ -973,10 +973,12 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	return commonality;
 }
 
-EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(EvaluableNodeManager *enm, EvaluableNode *tree)
+EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpreter, EvaluableNode *tree)
 {
 	if(tree == nullptr)
 		return nullptr;
+
+	auto *enm = interpreter->evaluableNodeManager;
 
 	//node and bool indicating whether its child nodes have been processed yet
 	std::vector<std::pair<EvaluableNode *, bool>> node_stack;
@@ -1100,6 +1102,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(EvaluableNodeManager
 			break;
 		} 
 
+		//refresh node type in case changed
+		node_type = cur->GetType();
+
 		//truncate to maximum allowed child nodes
 		size_t max_num_params = GetOpcodeMaxNumValidParameters(node_type);
 		if(cur->IsOrderedArray() && cur->GetOrderedChildNodesReference().size() > max_num_params)
@@ -1113,19 +1118,23 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(EvaluableNodeManager
 			ocn.resize(max_num_params);
 		}
 
-		//TODO 25662: sort children of commutative opcodes
-
+		//sort to canonical order
+		if(GetChildNodeStructureType(node_type) == OpcodeDetails::ChildNodeStructureType::UNORDERED)
+		{
+			auto &ocn = cur->GetOrderedChildNodesReference();
+			std::sort(begin(ocn), end(ocn), EvaluableNode::IsStrictlyLessThan);
+		}
 	}
 
 	return tree;
 }
 
-EvaluableNode *EvaluableNodeTreeManipulation::SimplifyTree(EvaluableNodeManager *enm, EvaluableNode *tree)
+EvaluableNode *EvaluableNodeTreeManipulation::SimplifyTree(Interpreter *interpreter, EvaluableNode *tree)
 {
-	tree = NormalizeTree(enm, tree);
+	tree = NormalizeTree(interpreter, tree);
 	//TODO 25662: add these back in
 	//tree = ApplyRewriteRules(enm, tree);
-	//tree = NormalizeTree(enm, tree);
+	//tree = NormalizeTree(interpreter, tree);
 
 	EvaluableNodeManager::UpdateFlagsForNodeTree(tree);
 	return tree;

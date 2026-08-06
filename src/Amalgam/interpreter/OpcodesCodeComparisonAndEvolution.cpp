@@ -1933,6 +1933,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIMPLIFY(
 	if(!node.unique)
 		node = evaluableNodeManager->DeepAllocCopy(node, false);
 
-	EvaluableNode *result = EvaluableNodeTreeManipulation::SimplifyTree(evaluableNodeManager, node);
+	auto node_stack = CreateOpcodeStackStateSaver(node);
+
+	EvaluableNode *result = EvaluableNodeTreeManipulation::SimplifyTree(this, node);
 	return EvaluableNodeReference(result, true);
 }

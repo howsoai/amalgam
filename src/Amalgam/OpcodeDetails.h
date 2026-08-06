@@ -486,6 +486,12 @@ __forceinline bool DoesOpcodeHaveSideEffects(EvaluableNodeType t)
 	return _opcode_details[t].hasSideEffects;
 }
 
+//returns true if the opcode requires its execution within an entity
+__forceinline bool DoesOpcodeRequireEntity(EvaluableNodeType t)
+{
+	return _opcode_details[t].requiresEntity;
+}
+
 //returns true if the opcode modifies things outside of its return
 __forceinline bool MayOpcodeCauseNodeUpdateInCurrentEntity(EvaluableNodeType t)
 {

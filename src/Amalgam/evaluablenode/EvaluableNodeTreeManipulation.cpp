@@ -1051,56 +1051,44 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 				cur->AppendOrderedChildNodes(associative_child_nodes);
 		}
 
-		//TODO 25662: remove this, change to if opcode has no side effects (check all flags like needs entity, retrieves data, etc. but not something that can explode like range) and all child nodes are immediate, execute and replace with value
-		switch(node_type)
+		//if it's not immediate but could be executed immediately, do so
+		if(!cur->IsImmediate() && !DoesOpcodeRetrieveData(node_type) && !DoesOpcodeHaveSideEffects(node_type) &&
+			!MayOpcodeCauseNodeUpdateInCurrentEntity(node_type) && !DoesOpcodeRequireEntity(node_type))
 		{
-		case ENT_ADD:
-		{
-			double sum = 0.0;
-			std::vector<EvaluableNode *> result_child_nodes;
-			for(EvaluableNode *cn: cur->GetOrderedChildNodesReference())
-			{
-				if(EvaluableNode::IsNull(cn))
-				{
-					sum = std::numeric_limits<double>::quiet_NaN();
-					break;
-				}
+			//TODO 25662: break symbol out of immediate, update where appropriate, fix logic below
 
-				if(cn->GetType() == ENT_NUMBER)
+			//check for any non-immediate child node
+			bool any_non_immediate = false;
+			if(cur->IsAssociativeArray())
+			{
+				for(auto &[_, cn] : cur->GetMappedChildNodesReference())
 				{
-					sum += cn->GetNumberValue();
+					if(cn != nullptr && (!cn->IsImmediate() || cn->GetType() != ENT_SYMBOL))
+					{
+						any_non_immediate = true;
+						break;
+					}
 				}
-				else if(cn->GetType() == ENT_ADD)
+			}
+			else if(!cur->IsImmediate())
+			{
+				for(EvaluableNode *cn : cur->GetOrderedChildNodesReference())
 				{
-					for(EvaluableNode *add_cn : cn->GetOrderedChildNodesReference())
-						result_child_nodes.push_back(add_cn);
-				}
-				else //need to be kept as-is
-				{
-					result_child_nodes.push_back(cn);
+					if(cn != nullptr && (!cn->IsImmediate() || cn->GetType() != ENT_SYMBOL))
+					{
+						any_non_immediate = true;
+						break;
+					}
 				}
 			}
 
-			if(result_child_nodes.size() == 0)
+			if(!any_non_immediate)
 			{
-				cur->SetTypeViaNumberValue(sum);
+				EvaluableNodeReference result = interpreter->InterpretNode(cur);
+				cur->CopyValueFrom(result);
+				cur->CopyMetadataFrom(result);
 			}
-			else
-			{
-				//only include the sum if it's nonzero
-				if(sum != 0.0)
-					result_child_nodes.push_back(enm->AllocNode(sum));
-
-				cur->SetOrderedChildNodes(std::move(result_child_nodes),
-					cur->GetNeedCycleCheck(), cur->GetIsIdempotent());
-			}
-
-			break;
 		}
-
-		default:
-			break;
-		} 
 
 		//refresh node type in case changed
 		node_type = cur->GetType();

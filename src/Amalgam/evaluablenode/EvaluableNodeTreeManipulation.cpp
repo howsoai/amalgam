@@ -1059,6 +1059,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 		{
 			//TODO 25662: consider condensing flags into a single method?  SimpleOpcode?
 			//TODO 25662: make sure partial consolidated results are computed, e.g., addition of numbers and symbols
+			//TODO 25662: break out normalization on a single layer into its own method / rule so can be applied in mutate
 
 			//check for any non-immediate child node
 			bool any_non_immediate = false;

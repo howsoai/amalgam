@@ -18,7 +18,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux:2.1.0
+      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.10
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -75,7 +75,7 @@ jobs:
   build-linux-arm:
     runs-on: ubuntu-24.04-arm
     container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux:2.1.0
+      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.10
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -127,7 +127,7 @@ jobs:
   build-linux-228:
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux-228:2.1.0
+      image: ghcr.io/howsoai/amalgam-build-container-linux-228:2.0.10
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -334,7 +334,7 @@ jobs:
     needs: ["build-linux-228"]
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux-228:2.1.0
+      image: ghcr.io/howsoai/amalgam-build-container-linux-228:2.0.10
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}

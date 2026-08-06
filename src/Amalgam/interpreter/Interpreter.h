@@ -453,8 +453,9 @@ public:
 			auto &mcn = cur_context->GetMappedChildNodesReference();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
-				bool is_freeable = true;
-				bool is_freeable_top_node = true;
+				//default to not freeable if need a lock; if don't need a lock, then set to current values
+				bool is_freeable = false;
+				bool is_freeable_top_node = false;
 				if(scopeStackMutex != nullptr)
 				{
 					if(executing_interpreter != nullptr)
@@ -467,11 +468,9 @@ public:
 					mcn = cur_context->GetMappedChildNodesReference();
 					found = mcn.find(symbol_sid);
 
+					//not freeable because it could be accessed by multiple threads concurrently
 					if(found->second != nullptr)
-					{
-						is_freeable = found->second->GetIsFreeableAtomic();
-						is_freeable_top_node = found->second->GetIsFreeableTopNodeAtomic();
-					}
+						found->second->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
 				}
 				else if(found->second != nullptr)
 				{

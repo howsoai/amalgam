@@ -657,7 +657,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
 	}
 
-	//get a write lock on the entity
+	//get a read lock on the entity
 	EntityReadReference called_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
 	if(called_entity == nullptr)
 		return EvaluableNodeReference::Null();

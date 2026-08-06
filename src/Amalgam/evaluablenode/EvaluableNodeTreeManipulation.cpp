@@ -1056,6 +1056,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 			!MayOpcodeCauseNodeUpdateInCurrentEntity(node_type) && !DoesOpcodeRequireEntity(node_type))
 		{
 			//TODO 25662: break symbol out of immediate, update where appropriate, fix logic below
+			//TODO 25662: exclude evaluate range from the above, double-check other opcodes; consider condensing into a single method?
 
 			//check for any non-immediate child node
 			bool any_non_immediate = false;
@@ -1092,6 +1093,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 
 		//refresh node type in case changed
 		node_type = cur->GetType();
+
+		//TODO 25662: add dead code elimination, such as if branches with constants
 
 		//truncate to maximum allowed child nodes
 		size_t max_num_params = GetOpcodeMaxNumValidParameters(node_type);

@@ -508,11 +508,13 @@ public:
 			return;
 
 	#if defined(MULTITHREAD_SUPPORT)
-		//obtain a write lock and immediately release it to make sure there aren't any operations
-		//waiting to complete. don't need to worry about new operations as they will not be able
-		//to start with a write lock on this entity
-		Concurrency::WriteLock write_lock(entityRelationships.relationships->queryCaches->mutex);
-		write_lock.release();
+		{
+			//obtain a write lock and immediately release it to make sure there aren't any operations
+			//waiting to complete. don't need to worry about new operations as they will not be able
+			//to start with a write lock on this entity
+			//make sure the lock goes out of scope before the pointer is reset
+			Concurrency::WriteLock write_lock(entityRelationships.relationships->queryCaches->mutex);
+		}
 	#endif
 
 		entityRelationships.relationships->queryCaches.reset();

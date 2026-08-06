@@ -10,6 +10,7 @@ static OpcodeInitializer _ENT_AND(ENT_AND, &Interpreter::InterpretNode_ENT_AND, 
 	{
 		OpcodeDetails::ParameterGroup({"condition", OpcodeDetails::DataType::BOOL, true}, true)
 	});
+	d.isAssociative = true;
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.allowsConcurrency = true;
 	d.description = R"(If all condition expressions are true, evaluates to `conditionN`.  Otherwise evaluates to false.)";
@@ -93,6 +94,7 @@ static OpcodeInitializer _ENT_OR(ENT_OR, &Interpreter::InterpretNode_ENT_OR, [](
 	{
 		OpcodeDetails::ParameterGroup({"condition", OpcodeDetails::DataType::BOOL, true}, true)
 	});
+	d.isAssociative = true;
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.allowsConcurrency = true;
 	d.description = R"(If all condition expressions are false, evaluates to false.  Otherwise evaluates to the first condition that is true.)";

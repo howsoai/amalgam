@@ -10,6 +10,7 @@ static OpcodeInitializer _ENT_ADD(ENT_ADD, &Interpreter::InterpretNode_ENT_ADD, 
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	});
+	d.isAssociative = true;
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the sum of all numbers.  If no parameters are provided it returns 0.0.)";
@@ -107,6 +108,7 @@ static OpcodeInitializer _ENT_MULTIPLY(ENT_MULTIPLY, &Interpreter::InterpretNode
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	});
+	d.isAssociative = true;
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the product of all numbers.  If no parameters are provided, returns 1.)";
@@ -954,6 +956,7 @@ static OpcodeInitializer _ENT_MAX(ENT_MAX, &Interpreter::InterpretNode_ENT_MAX, 
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
 	});
+	d.isAssociative = true;
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the maximum of all of parameters.)";
@@ -1022,6 +1025,7 @@ static OpcodeInitializer _ENT_MIN(ENT_MIN, &Interpreter::InterpretNode_ENT_MIN, 
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
 	});
+	d.isAssociative = true;
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the minimum of all of the numbers.)";

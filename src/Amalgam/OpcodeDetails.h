@@ -427,6 +427,9 @@ public:
 	//true if the opcode is a query run by the query engine
 	bool isQuery = false;
 
+	//true if the opcode is associative
+	bool isAssociative = false;
+
 	//what kind of special permissions the opcode needs to run
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
 
@@ -518,6 +521,12 @@ __forceinline size_t GetOpcodeMinNumValidParameters(EvaluableNodeType t)
 __forceinline size_t GetOpcodeMaxNumValidParameters(EvaluableNodeType t)
 {
 	return _opcode_details[t].GetMaxNumValidParameters();
+}
+
+//returns true if the opcode is associative
+__forceinline bool IsOpcodeAssociative(EvaluableNodeType t)
+{
+	return _opcode_details[t].isAssociative;
 }
 
 //returns true if t is an immediate value

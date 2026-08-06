@@ -1816,6 +1816,7 @@ static OpcodeInitializer _ENT_MIX(ENT_MIX, &Interpreter::InterpretNode_ENT_MIX, 
 //accept anything since mutation can do anything
 ".*" }
 		});
+	d.hasSideEffects = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;

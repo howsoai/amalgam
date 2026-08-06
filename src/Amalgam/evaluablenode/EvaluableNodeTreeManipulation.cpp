@@ -1018,9 +1018,38 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(EvaluableNodeManager
 			continue;
 		}
 
-		//TODO 25662: pull out flattening of add and make it generic for all associative opcodes
-		//canonicalisation
 		auto node_type = cur->GetType();
+
+		//if associative and nested, then flatten
+		if(IsOpcodeAssociative(node_type))
+		{
+			std::vector<EvaluableNode *> associative_child_nodes;
+			auto &ocn = cur->GetOrderedChildNodesReference();
+			for(size_t i = 0; i < ocn.size(); i++)
+			{
+				if(EvaluableNode::IsNull(ocn[i]) || !ocn[i]->IsOrderedArray())
+					continue;
+
+				if(ocn[i]->GetType() == node_type)
+				{
+					for(EvaluableNode *add_cn : ocn[i]->GetOrderedChildNodesReference())
+						associative_child_nodes.push_back(add_cn);
+
+					//erase the node
+					if(!ocn[i]->GetNeedCycleCheck())
+						enm->FreeNode(ocn[i]);
+					ocn.erase(begin(ocn) + i);
+					//need to recheck index since erased one
+					i--;
+				}
+			}
+
+			//append all at the end
+			if(associative_child_nodes.size() != 0)
+				cur->AppendOrderedChildNodes(associative_child_nodes);
+		}
+
+		//TODO 25662: remove this, change to if opcode has no side effects (check all flags like needs entity, retrieves data, etc. but not something that can explode like range) and all child nodes are immediate, execute and replace with value
 		switch(node_type)
 		{
 		case ENT_ADD:
@@ -1070,7 +1099,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(EvaluableNodeManager
 		default:
 			break;
 		} 
-		//TODO 25662: flatten and fold other literals beyond addition
 
 		//truncate to maximum allowed child nodes
 		size_t max_num_params = GetOpcodeMaxNumValidParameters(node_type);
@@ -1084,8 +1112,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(EvaluableNodeManager
 			}
 			ocn.resize(max_num_params);
 		}
-
-		//TODO 25662: if opcode has no side effects and all child nodes are immediate, execute and replace with value
 
 		//TODO 25662: sort children of commutative opcodes
 

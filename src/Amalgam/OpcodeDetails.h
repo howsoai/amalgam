@@ -595,6 +595,14 @@ __forceinline bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType t)
 	return _opcode_details[t].potentiallyIdempotent;
 }
 
+//returns true if t can be executed in a self-contained fashion
+//ENT_RANGE is excluded because it can expand considerably in size, as are immediate types
+__forceinline bool IsEvaluableNodeTypeOfSimpleExecution(EvaluableNodeType t)
+{
+	return (!DoesOpcodeRetrieveData(t) && !DoesOpcodeHaveSideEffects(t) &&
+			!MayOpcodeCauseNodeUpdateInCurrentEntity(t) && !DoesOpcodeRequireEntity(t) && t != ENT_RANGE);
+}
+
 //returns the string id representing EvaluableNodeBuiltInStringId t
 inline StringInternPool::StringID GetStringIdFromBuiltInStringId(EvaluableNodeBuiltInStringId t)
 {

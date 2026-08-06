@@ -1052,12 +1052,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 		}
 
 		//if node_type is self-contained, and all child nodes are fully immediate, execute
-		//ENT_RANGE is excluded because it can expand considerably in size
-		if(!cur->IsTerminal() && !DoesOpcodeRetrieveData(node_type) && !DoesOpcodeHaveSideEffects(node_type) &&
-			!MayOpcodeCauseNodeUpdateInCurrentEntity(node_type) && !DoesOpcodeRequireEntity(node_type)
-			&& node_type != ENT_RANGE)
+		if(!cur->IsTerminal() && IsEvaluableNodeTypeOfSimpleExecution(node_type))
 		{
-			//TODO 25662: consider condensing flags into a single method?  SimpleOpcode?
 			//TODO 25662: make sure partial consolidated results are computed, e.g., addition of numbers and symbols
 			//TODO 25662: break out normalization on a single layer into its own method / rule so can be applied in mutate
 

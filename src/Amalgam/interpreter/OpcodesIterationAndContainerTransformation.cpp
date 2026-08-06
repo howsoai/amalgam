@@ -835,7 +835,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			inputs_list_node.UpdatePropertiesBasedOnAttachedNode(cur_input);
 			inputs[i] = cur_input;
 
-			if(EvaluableNode::IsNull(cur_input) || cur_input->IsImmediate())
+			if(EvaluableNode::IsNull(cur_input) || cur_input->IsTerminal())
 				continue;
 
 			if(cur_input->IsAssociativeArray())
@@ -1299,7 +1299,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	//get list
 	auto list = InterpretNode(ocn[list_index]);
 	//if null, just return a new null, since it has no child nodes
-	if(EvaluableNode::IsNull(list) || list->IsImmediate())
+	if(EvaluableNode::IsNull(list) || list->IsTerminal())
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(list);
 		return EvaluableNodeReference::Null();
@@ -1768,7 +1768,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 
 		for(auto &list : lists)
 		{
-			if(list != nullptr && IsEvaluableNodeTypeImmediate(list->GetType()))
+			if(list != nullptr && IsEvaluableNodeTypeTerminalNode(list->GetType()))
 				woven_list->SetNeedCycleCheck(true);
 
 			woven_list.UpdatePropertiesBasedOnAttachedNode(list);
@@ -1780,7 +1780,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 			for(auto &list : lists)
 			{
 				//if immediate, then write out immediate
-				if(list == nullptr || IsEvaluableNodeTypeImmediate(list->GetType()))
+				if(list == nullptr || IsEvaluableNodeTypeTerminalNode(list->GetType()))
 					woven_list->AppendOrderedChildNode(list);
 				else if(list->GetOrderedChildNodes().size() > list_index) //only write out if list is long enough
 					woven_list->AppendOrderedChildNode(list->GetOrderedChildNodes()[list_index]);
@@ -1799,7 +1799,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 		for(auto &list : lists)
 		{
 			//if immediate, then write out immediate
-			if(list == nullptr || IsEvaluableNodeTypeImmediate(list->GetType()))
+			if(list == nullptr || IsEvaluableNodeTypeTerminalNode(list->GetType()))
 				list_index_values_node->AppendOrderedChildNode(list);
 			else if(list->GetOrderedChildNodes().size() > list_index)
 				list_index_values_node->AppendOrderedChildNode(list->GetOrderedChildNodes()[list_index]);

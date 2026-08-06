@@ -737,7 +737,7 @@ void EvaluableNode::SetStringIDWithReferenceHandoff(StringInternPool::StringID i
 
 size_t EvaluableNode::GetNumChildNodes()
 {
-	if(IsEvaluableNodeTypeImmediate(GetType()))
+	if(IsEvaluableNodeTypeTerminalNode(GetType()))
 		return 0;
 
 	if(IsAssociativeArray())
@@ -1106,7 +1106,7 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *
 				return false;
 
 			//since they are shallow equal, check for quick exit
-			if(a_child == nullptr || b_child == nullptr || IsEvaluableNodeTypeImmediate(a_child->GetType()))
+			if(a_child == nullptr || b_child == nullptr || IsEvaluableNodeTypeTerminalNode(a_child->GetType()))
 				continue;
 
 			//now check deep values
@@ -1144,7 +1144,7 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *
 			break;
 
 		//since they are shallow equal, check for quick exit
-		if(a_child == nullptr || b_child == nullptr || IsEvaluableNodeTypeImmediate(a_child->GetType()))
+		if(a_child == nullptr || b_child == nullptr || IsEvaluableNodeTypeTerminalNode(a_child->GetType()))
 			continue;
 
 		//now check deep values
@@ -1161,21 +1161,21 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *
 
 	//if it's small with immediate types, then do a quick O(n^2) match,
 	//otherwise do an expensive hash-based O(n) match
-	bool use_immediate_method = false;
+	bool use_terminal_method = false;
 	if(a_size - index < 4)
 	{
-		use_immediate_method = true;
+		use_terminal_method = true;
 		for(size_t i = index; i < a_size; i++)
 		{
-			if(!EvaluableNode::IsImmediate(a_ocn[i]) || !EvaluableNode::IsImmediate(b_ocn[i]))
+			if(!EvaluableNode::IsTerminal(a_ocn[i]) || !EvaluableNode::IsTerminal(b_ocn[i]))
 			{
-				use_immediate_method = false;
+				use_terminal_method = false;
 				break;
 			}
 		}
 	}
 
-	if(use_immediate_method)
+	if(use_terminal_method)
 	{
 		auto &b_unmatched = reusableBuffer;
 		b_unmatched.clear();
@@ -1271,7 +1271,7 @@ bool EvaluableNode::CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<
 				return false;
 		}
 	}
-	else if(!n->IsImmediate())
+	else if(!n->IsTerminal())
 	{
 		for(auto &e : n->GetOrderedChildNodesReference())
 		{
@@ -1317,7 +1317,7 @@ size_t EvaluableNode::GetDeepSizeWithCycles(EvaluableNode *n, ReferenceSetType &
 
 				total++;
 
-				if(!e->IsImmediate())
+				if(!e->IsTerminal())
 					reusableBuffer.push_back(e);
 			}
 		}
@@ -1336,7 +1336,7 @@ size_t EvaluableNode::GetDeepSizeWithCycles(EvaluableNode *n, ReferenceSetType &
 
 				total++;
 
-				if(!e->IsImmediate())
+				if(!e->IsTerminal())
 					reusableBuffer.push_back(e);
 			}
 		}
@@ -1366,7 +1366,7 @@ size_t EvaluableNode::GetDeepSizeNoCycles(EvaluableNode *n)
 				if(e == nullptr)
 					continue;
 
-				if(!e->IsImmediate())
+				if(!e->IsTerminal())
 					reusableBuffer.push_back(e);
 			}
 		}
@@ -1379,7 +1379,7 @@ size_t EvaluableNode::GetDeepSizeNoCycles(EvaluableNode *n)
 				if(e == nullptr)
 					continue;
 
-				if(!e->IsImmediate())
+				if(!e->IsTerminal())
 					reusableBuffer.push_back(e);
 			}
 		}

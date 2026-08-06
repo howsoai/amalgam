@@ -571,7 +571,7 @@ static void GetStringsFromTree(EvaluableNode *tree,
 	{
 		strings_from_tree_data.keyAndSymbolStrings.emplace_back(tree->GetStringView());
 	}
-	else if(tree->IsImmediate())
+	else if(tree->IsTerminal())
 	{
 		if(DoesEvaluableNodeTypeUseStringData(tree->GetType()))
 			strings_from_tree_data.valueStrings.emplace_back(tree->GetStringView());
@@ -1004,15 +1004,15 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 			{
 				for(auto &[_, cn] : cur->GetMappedChildNodesReference())
 				{
-					if(cn && !cn->IsImmediate())
+					if(cn && !cn->IsTerminal())
 						node_stack.emplace_back(cn, false);
 				}
 			}
-			else if(!cur->IsImmediate())
+			else if(!cur->IsTerminal())
 			{
 				for(EvaluableNode *cn : cur->GetOrderedChildNodesReference())
 				{
-					if(cn && !cn->IsImmediate())
+					if(cn && !cn->IsTerminal())
 						node_stack.emplace_back(cn, false);
 				}
 			}
@@ -1053,12 +1053,11 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 
 		//if node_type is self-contained, and all child nodes are fully immediate, execute
 		//ENT_RANGE is excluded because it can expand considerably in size
-		if(!cur->IsImmediate() && !DoesOpcodeRetrieveData(node_type) && !DoesOpcodeHaveSideEffects(node_type) &&
+		if(!cur->IsTerminal() && !DoesOpcodeRetrieveData(node_type) && !DoesOpcodeHaveSideEffects(node_type) &&
 			!MayOpcodeCauseNodeUpdateInCurrentEntity(node_type) && !DoesOpcodeRequireEntity(node_type)
 			&& node_type != ENT_RANGE)
 		{
-			//TODO 25662: break symbol out of immediate, update where appropriate, fix logic below
-			//TODO 25662: consider condensing flags into a single method?
+			//TODO 25662: consider condensing flags into a single method?  SimpleOpcode?
 			//TODO 25662: make sure partial consolidated results are computed, e.g., addition of numbers and symbols
 
 			//check for any non-immediate child node
@@ -1067,18 +1066,18 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 			{
 				for(auto &[_, cn] : cur->GetMappedChildNodesReference())
 				{
-					if(cn != nullptr && (!cn->IsImmediate() || cn->GetType() != ENT_SYMBOL))
+					if(cn != nullptr && !cn->IsImmediate())
 					{
 						any_non_immediate = true;
 						break;
 					}
 				}
 			}
-			else if(!cur->IsImmediate())
+			else if(!cur->IsTerminal())
 			{
 				for(EvaluableNode *cn : cur->GetOrderedChildNodesReference())
 				{
-					if(cn != nullptr && (!cn->IsImmediate() || cn->GetType() != ENT_SYMBOL))
+					if(cn != nullptr && !cn->IsImmediate())
 					{
 						any_non_immediate = true;
 						break;
@@ -1380,7 +1379,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 }
 
 //helper function for EvaluableNodeTreeManipulation::MutateNode to populate immediate data
-static void MutateImmediateNode(EvaluableNode *n, EvaluableNodeTreeManipulation::MutationParameters &mp)
+static void MutateTerminalNode(EvaluableNode *n, EvaluableNodeTreeManipulation::MutationParameters &mp)
 {
 	auto node_type = n->GetType();
 	if(DoesEvaluableNodeTypeUseBoolData(node_type))
@@ -1437,7 +1436,7 @@ static EvaluableNode *AllocateNewRandomNode(EvaluableNodeTreeManipulation::Mutat
 	//use some heuristics to generate some random immediate value
 	EvaluableNode *new_node = mp.enm->AllocNode(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.interpreter->randomStream));
 
-	if(new_node->IsImmediate())
+	if(new_node->IsTerminal())
 	{
 		//give it a respectable default before randomizing
 		if(DoesEvaluableNodeTypeUseBoolData(new_node->GetType()))
@@ -1448,7 +1447,7 @@ static EvaluableNode *AllocateNewRandomNode(EvaluableNodeTreeManipulation::Mutat
 			new_node->SetStringValue("string");
 
 		if(new_node->GetType() != ENT_NULL)
-			MutateImmediateNode(new_node, mp);
+			MutateTerminalNode(new_node, mp);
 	}
 
 	return new_node;
@@ -1463,7 +1462,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 
 	//if immediate value type, see if can just mutate directly to preserve
 	//mutation rate, since most other mutations won't apply
-	if(n->IsImmediate() && mutation_type != ENBISI_change_type && mutation_type != ENBISI_insert)
+	if(n->IsTerminal() && mutation_type != ENBISI_change_type && mutation_type != ENBISI_insert)
 	{
 		if(n->GetType() == ENT_NULL)
 		{
@@ -1471,7 +1470,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		}
 		else
 		{
-			MutateImmediateNode(n, mp);
+			MutateTerminalNode(n, mp);
 			return n;
 		}
 	}
@@ -1500,8 +1499,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	{
 		//change the type of n
 		n->SetType(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.interpreter->randomStream), true);
-		if(IsEvaluableNodeTypeImmediate(n->GetType()) && n->GetType() != ENT_NULL)
-			MutateImmediateNode(n, mp);
+		if(IsEvaluableNodeTypeTerminalNode(n->GetType()) && n->GetType() != ENT_NULL)
+			MutateTerminalNode(n, mp);
 		break;
 	}
 
@@ -1871,7 +1870,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 			{
 				entity_to_call = mp.entity;
 			}
-			else if(n_ocn[0]->IsImmediate())
+			else if(n_ocn[0]->IsTerminal())
 			{
 				entity_to_call = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath
 					<EntityReference<Entity>>(mp.entity, n_ocn[0]);
@@ -1899,7 +1898,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 			bool replace_with_valid_label = false;
 			if(entity_to_call != nullptr && n->GetType() == ENT_CALL_ENTITY)
 			{
-				if(n_ocn[1] == nullptr || n_ocn[1]->IsImmediate())
+				if(n_ocn[1] == nullptr || n_ocn[1]->IsTerminal())
 				{
 					auto label_sid = EvaluableNode::ToStringIDIfExists(n_ocn[1], true);
 					if(Entity::IsLabelPrivate(label_sid)
@@ -1965,7 +1964,7 @@ void EvaluableNodeTreeManipulation::ReplaceStringsInTree(EvaluableNode *tree, Co
 		for(auto &[cn_id, cn] : tree->GetMappedChildNodesReference())
 			ReplaceStringsInTree(cn, to_replace, checked);
 	}
-	else if(tree->IsImmediate())
+	else if(tree->IsTerminal())
 	{
 		if(tree->GetType() == ENT_STRING)
 		{

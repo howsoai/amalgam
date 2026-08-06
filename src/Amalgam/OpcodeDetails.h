@@ -538,7 +538,13 @@ __forceinline bool IsOpcodeAssociative(EvaluableNodeType t)
 //returns true if t is an immediate value
 __forceinline constexpr bool IsEvaluableNodeTypeImmediate(EvaluableNodeType t)
 {
-	return (t == ENT_NULL || t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING || t == ENT_SYMBOL);
+	return (t == ENT_NULL || t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING);
+}
+
+//returns true if t is an immediate value or symbol
+__forceinline constexpr bool IsEvaluableNodeTypeTerminalNode(EvaluableNodeType t)
+{
+	return (IsEvaluableNodeTypeImmediate(t) || t == ENT_SYMBOL);
 }
 
 //returns true if t uses null (no) data
@@ -574,7 +580,7 @@ __forceinline constexpr bool DoesEvaluableNodeTypeUseAssocData(EvaluableNodeType
 //returns true if t uses ordered data (doesn't use any other t)
 constexpr bool DoesEvaluableNodeTypeUseOrderedData(EvaluableNodeType t)
 {
-	return (IsEvaluableNodeTypeValid(t) && !IsEvaluableNodeTypeImmediate(t) && !DoesEvaluableNodeTypeUseAssocData(t));
+	return (IsEvaluableNodeTypeValid(t) && !IsEvaluableNodeTypeTerminalNode(t) && !DoesEvaluableNodeTypeUseAssocData(t));
 }
 
 //returns true if t is a query
@@ -637,7 +643,7 @@ inline EvaluableNodeType GetEvaluableNodeTypeFromStringId(StringInternPool::Stri
 // if get_non_keywords is true, then it will return types that are not necessarily keywords, like number
 inline std::string GetStringFromEvaluableNodeType(EvaluableNodeType t, bool get_non_keywords = false)
 {
-	if(!get_non_keywords && IsEvaluableNodeTypeImmediate(t))
+	if(!get_non_keywords && IsEvaluableNodeTypeTerminalNode(t))
 		return "";
 
 	if(t >= NUM_VALID_ENT_OPCODES)

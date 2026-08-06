@@ -473,7 +473,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 		node_stack.clear();
 
 		EvaluableNode *root_copy = AllocNode(en, copy_metadata);
-		if(root_copy->IsImmediate())
+		if(root_copy->IsTerminal())
 			return EvaluableNodeReference(root_copy, true);
 
 		//walk the tree depth‑first using the buffer as a stack
@@ -491,7 +491,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 						continue;
 
 					child = AllocNode(child, copy_metadata);
-					if(!child->IsImmediate())
+					if(!child->IsTerminal())
 						node_stack.push_back(child);
 				}
 			}
@@ -503,7 +503,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 						continue;
 
 					child = AllocNode(child, copy_metadata);
-					if(!child->IsImmediate())
+					if(!child->IsTerminal())
 						node_stack.push_back(child);
 				}
 			}
@@ -612,7 +612,7 @@ static void MarkAllReferencedNodesInUseForNode(EvaluableNode *tree)
 				}
 			}
 		}
-		else if(!IsEvaluableNodeTypeImmediate(type))
+		else if(!IsEvaluableNodeTypeTerminalNode(type))
 		{
 			for(auto &cn : node->GetOrderedChildNodesReference())
 			{
@@ -655,7 +655,7 @@ static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
 					node_stack.push_back(cn);
 			}
 		}
-		else if(!IsEvaluableNodeTypeImmediate(type))
+		else if(!IsEvaluableNodeTypeTerminalNode(type))
 		{
 			for(auto &cn : node->GetOrderedChildNodesReference())
 			{
@@ -842,7 +842,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			tree->SetIsIdempotent(is_idempotent);
 		return std::make_pair(need_cycle_check, is_idempotent);
 	}
-	else if(!tree->IsImmediate())
+	else if(!tree->IsTerminal())
 	{
 		bool need_cycle_check = false;
 
@@ -867,7 +867,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			tree->SetIsIdempotent(is_idempotent);
 		return std::make_pair(need_cycle_check, is_idempotent);
 	}
-	else //immediate value
+	else //terminal value
 	{
 		tree->SetIsIdempotent(is_idempotent);
 		return std::make_pair(false, is_idempotent);
@@ -911,7 +911,7 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 				child_nodes_idempotent = false;
 		}
 	}
-	else if(!en->IsImmediate())
+	else if(!en->IsTerminal())
 	{
 		for(auto cn : en->GetOrderedChildNodesReference())
 		{

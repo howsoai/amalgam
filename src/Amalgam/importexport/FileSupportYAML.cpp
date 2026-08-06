@@ -106,7 +106,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 			}
 		}
 	}
-	else if(!en->IsImmediate())
+	else if(!en->IsTerminal())
 	{
 		auto node_type = en->GetType();
 		if(node_type != ENT_LIST)

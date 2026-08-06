@@ -383,7 +383,7 @@ public:
 			return false;
 
 		//since they are shallow equal, check for quick exit
-		if(a == nullptr || b == nullptr || IsEvaluableNodeTypeImmediate(a->GetType()))
+		if(a == nullptr || b == nullptr || IsEvaluableNodeTypeTerminalNode(a->GetType()))
 			return true;
 
 		//only need cycle checks if both a and b need cycle checks,
@@ -421,7 +421,18 @@ public:
 
 	static __forceinline bool IsImmediate(EvaluableNode *n)
 	{
-		return ((n == nullptr) || IsEvaluableNodeTypeImmediate(n->GetType()));
+		return (n == nullptr || n->IsImmediate());
+	}
+
+	//returns true if the type is terminal (immediate or symbol)
+	__forceinline bool IsTerminal()
+	{
+		return IsEvaluableNodeTypeTerminalNode(GetType());
+	}
+
+	static __forceinline bool IsTerminal(EvaluableNode *n)
+	{
+		return (n == nullptr || n->IsTerminal());
 	}
 
 	//returns true if the node is some form of ordered array
@@ -586,7 +597,7 @@ public:
 	//Returns the number of nodes in the data structure
 	inline static size_t GetDeepSize(EvaluableNode *n)
 	{
-		if(n == nullptr || n->IsImmediate())
+		if(n == nullptr || n->IsTerminal())
 			return 1;
 
 		if(!n->GetNeedCycleCheck())
@@ -1147,7 +1158,7 @@ public:
 					break;
 			}
 		}
-		else if(!IsImmediate())
+		else if(!IsTerminal())
 		{
 			for(auto cn : GetOrderedChildNodesReference())
 			{
@@ -1204,7 +1215,7 @@ public:
 	inline static void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
 		size_t num_expected_elements, StoreValueFunction store_value)
 	{
-		if(EvaluableNode::IsImmediate(node))
+		if(EvaluableNode::IsTerminal(node))
 		{
 			//fill in with the node's value
 			for(size_t i = 0; i < num_expected_elements; i++)

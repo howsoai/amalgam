@@ -14,7 +14,8 @@ constexpr auto MakeRuleEntry()
 	// to a plain function pointer (no std::function, no allocation).
 	return std::pair{
 		+[](EvaluableNode *en) -> bool { return R{}.Match(en); },
-		+[](Interpreter *ip, EvaluableNode *en) { R{}.Rewrite(ip, en); }
+		+[](Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
+		{ R{}.Rewrite(interpreter, en, nodes_freeable); }
 	};
 }
 
@@ -23,7 +24,7 @@ constexpr auto MakeRuleRegistry()
 {
 	using entry_t = std::pair<
 		bool(*)(EvaluableNode *),
-		void(*)(Interpreter *, EvaluableNode *)>;
+		void(*)(Interpreter *, EvaluableNode *, bool)>;
 
 	return std::array<entry_t, sizeof...(Rules)>{ MakeRuleEntry<Rules>()... };
 }
@@ -36,7 +37,7 @@ struct FlattenAssociations final
 		return IsOpcodeAssociative(node_type);
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en)
+	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
 	{
 		std::vector<EvaluableNode *> associative_child_nodes;
 		auto &ocn = en->GetOrderedChildNodesReference();
@@ -51,9 +52,10 @@ struct FlattenAssociations final
 					associative_child_nodes.push_back(add_cn);
 
 				//erase the node
-				if(!ocn[i]->GetNeedCycleCheck())
+				if(nodes_freeable)
 					interpreter->evaluableNodeManager->FreeNode(ocn[i]);
 				ocn.erase(begin(ocn) + i);
+
 				//need to recheck index since erased one
 				i--;
 			}
@@ -73,7 +75,7 @@ struct DeadCodeEliminationInENT_IF final
 		return (node_type == ENT_IF);
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en)
+	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
 	{
 		auto enm = interpreter->evaluableNodeManager;
 		auto &ocn = en->GetOrderedChildNodesReference();
@@ -99,10 +101,11 @@ struct DeadCodeEliminationInENT_IF final
 			else //remove this branch
 			{
 				//erase the node and the following
-				if(!ocn[i]->GetNeedCycleCheck())
+				if(nodes_freeable)
+				{
 					enm->FreeNodeTree(ocn[i]);
-				if(!ocn[i + 1]->GetNeedCycleCheck())
 					enm->FreeNodeTree(ocn[i + 1]);
+				}
 
 				ocn.erase(begin(ocn) + i, begin(ocn) + i + 2);
 
@@ -126,7 +129,7 @@ struct DeadCodeEliminationInENT_IF final
 				en->CopyMetadataFrom(child_node);
 				en->CopyValueFrom(child_node);
 
-				if(!child_node->GetNeedCycleCheck())
+				if(nodes_freeable)
 					enm->FreeNode(child_node);
 			}
 		}
@@ -141,7 +144,7 @@ struct ShortCircuitENT_AND final
 		return (node_type == ENT_AND);
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en)
+	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
 	{
 		auto enm = interpreter->evaluableNodeManager;
 		auto &ocn = en->GetOrderedChildNodesReference();
@@ -167,9 +170,8 @@ struct ShortCircuitENT_AND final
 			if(EvaluableNode::ToBool(ocn[i]))
 			{
 				//erase the node and the following
-				if(!ocn[i]->GetNeedCycleCheck())
+				if(nodes_freeable)
 					enm->FreeNodeTree(ocn[i]);
-
 				ocn.erase(begin(ocn) + i);
 
 				//recheck this position next iteration
@@ -185,7 +187,7 @@ struct ShortCircuitENT_AND final
 		//if have eliminated all true values or short circuited, replace with a single value
 		if(ocn.size() == 0 || short_circuit)
 		{
-			if(!en->GetNeedCycleCheck())
+			if(nodes_freeable)
 			{
 				for(auto &cn : ocn)
 					enm->FreeNodeTree(cn);
@@ -205,7 +207,7 @@ struct ShortCircuitENT_OR final
 		return (node_type == ENT_OR);
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en)
+	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
 	{
 		auto enm = interpreter->evaluableNodeManager;
 		auto &ocn = en->GetOrderedChildNodesReference();
@@ -231,7 +233,7 @@ struct ShortCircuitENT_OR final
 			if(!EvaluableNode::ToBool(ocn[i]))
 			{
 				//erase the node and the following
-				if(!ocn[i]->GetNeedCycleCheck())
+				if(nodes_freeable)
 					enm->FreeNodeTree(ocn[i]);
 
 				ocn.erase(begin(ocn) + i);
@@ -249,7 +251,7 @@ struct ShortCircuitENT_OR final
 		//if have eliminated all true values or short circuited, replace with a single value
 		if(ocn.size() == 0 || short_circuit)
 		{
-			if(!en->GetNeedCycleCheck())
+			if(nodes_freeable)
 			{
 				for(auto &cn : ocn)
 					enm->FreeNodeTree(cn);
@@ -269,7 +271,7 @@ struct SimplifySelfContainedWithImmediates final
 		return (!en->IsTerminal() && IsEvaluableNodeTypeOfSimpleExecution(node_type));
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en)
+	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
 	{
 		//check for any non-immediate child node
 		bool any_non_immediate = false;
@@ -314,11 +316,11 @@ struct TruncateToValidParameters final
 		return (en->IsOrderedArray() && en->GetOrderedChildNodesReference().size() > max_num_params);
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en)
+	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
 	{
 		size_t max_num_params = GetOpcodeMaxNumValidParameters(en->GetType());
 		auto &ocn = en->GetOrderedChildNodesReference();
-		if(!en->GetNeedCycleCheck())
+		if(nodes_freeable)
 		{
 			for(size_t i = max_num_params; i < ocn.size(); i++)
 				interpreter->evaluableNodeManager->FreeNodeTree(ocn[i]);
@@ -335,7 +337,7 @@ struct SortParameters final
 		return (GetChildNodeStructureType(node_type) == OpcodeDetails::ChildNodeStructureType::UNORDERED);
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en)
+	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		std::sort(begin(ocn), end(ocn), EvaluableNode::IsStrictlyLessThan);
@@ -353,13 +355,13 @@ static constexpr auto rule_registry = MakeRuleRegistry<
 	SortParameters
 >();
 
-inline static void ApplyRewriteRules(Interpreter *interpreter, EvaluableNode *en)
+inline static void ApplyRewriteRules(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
 {
 	for(const auto &entry : rule_registry)
 	{
 		const auto &[match_fn, rewrite_fn] = entry;
 		if(match_fn(en))
-			rewrite_fn(interpreter, en);
+			rewrite_fn(interpreter, en, nodes_freeable);
 	}
 }
 
@@ -373,6 +375,8 @@ EvaluableNode *EvaluableNodeTreeAlgebra::SimplifyTree(Interpreter *interpreter, 
 	EvaluableNode::ReferenceSetType visited;
 
 	node_stack.emplace_back(tree, false);
+	//can't free nodes if different parts of the tree may refer to each other
+	bool nodes_freeable = !tree->GetNeedCycleCheck();
 
 	while(!node_stack.empty())
 	{
@@ -408,7 +412,7 @@ EvaluableNode *EvaluableNodeTreeAlgebra::SimplifyTree(Interpreter *interpreter, 
 			continue;
 		}
 
-		ApplyRewriteRules(interpreter, cur);
+		ApplyRewriteRules(interpreter, cur, nodes_freeable);
 	}
 
 	EvaluableNodeManager::UpdateFlagsForNodeTree(tree);

@@ -573,7 +573,7 @@ static constexpr auto rule_registry = MakeRuleRegistry<
 	ShortCircuitENT_OR,
 	SortParameters,
 	FoldENT_ADD_and_SUBTRACT,
-	//TODO 25662: add one position then unordered for subtraction, division, and modulus
+	//TODO 25662: add one position then unordered for subtraction, division (but not modulus)
 	//TODO 25662: make sure consolidated results are computed for multiplication, subtraction, division; for multiplication, change -1 multiplication into (- value)
 	//TODO 25662: consolidate already factored terms
 	//TODO 25662: add logic to rerun engine if any change occurred

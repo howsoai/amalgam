@@ -1,4 +1,5 @@
 //project headers:
+#include "EvaluableNodeTreeAlgebra.h"
 #include "EvaluableNodeTreeManipulation.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeTreeFunctions.h"
@@ -1393,6 +1394,12 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		}
 		break;
 
+	case ENBISI_simplify_node:
+	{
+		EvaluableNodeTreeAlgebra::SimplifyNode(n, mp.enm, false);
+		break;
+	}
+
 	case ENBISI_replace_element_with_copy:
 	{
 		//select a source from all the nodes in the original tree
@@ -1835,12 +1842,13 @@ EvaluableNode EvaluableNodeTreeManipulation::nullEvaluableNode(ENT_NULL);
 CompactHashMap<EvaluableNodeBuiltInStringId, double> EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities
 {
 	{ENBISI_change_type,				0.15   },
-	{ENBISI_insert,						0.15   },
-	{ENBISI_remove,						0.15   },
+	{ENBISI_insert,						0.14   },
+	{ENBISI_remove,						0.14   },
+	{ENBISI_simplify_node,				0.05   },
 	{ENBISI_replace_element_with_copy,	0.0999 },
-	{ENBISI_insert_element,				0.15   },
-	{ENBISI_remove_element,				0.15   },
-	{ENBISI_swap_elements,				0.15   },
+	{ENBISI_insert_element,				0.14   },
+	{ENBISI_remove_element,				0.14   },
+	{ENBISI_swap_elements,				0.14   },
 	{ENBISI_remove_all_elements,		0.0001 }
 };
 

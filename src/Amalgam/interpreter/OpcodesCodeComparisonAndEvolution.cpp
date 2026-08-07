@@ -290,13 +290,14 @@ static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &
 	d.examples = MakeAmalgamExamples({
 		{R"((get_mutation_defaults "mutation_types"))", R"({
         change_type 0.15
-        insert 0.15
-        insert_element 0.15
-        remove 0.15
+        insert 0.14
+        insert_element 0.14
+        remove 0.14
         remove_all_elements 0.0001
-        remove_element 0.15
+        remove_element 0.14
         replace_element_with_copy 0.0999
-        swap_elements 0.15
+        simplify_node 0.05
+        swap_elements 0.14
 })"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;

@@ -421,6 +421,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_change_type,
 	ENBISI_insert,
 	ENBISI_remove,
+	ENBISI_simplify_node,
 	ENBISI_insert_element,
 	ENBISI_remove_element,
 	ENBISI_replace_element_with_copy,

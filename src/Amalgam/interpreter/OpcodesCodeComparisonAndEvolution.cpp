@@ -1951,7 +1951,20 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
         r
         l
         "d!"
-))" } });
+))" },
+		{R"&((simplify
+	(lambda
+		(+ (exp a) a 4 2 (+ 3 4 a) (+ 3 a 4) a (exp a))
+	)
+))&",
+		R"((+
+        (*
+                (exp a)
+                2
+        )
+        (* 4 a)
+        20
+))"} });
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;

@@ -167,7 +167,7 @@ struct ShortCircuitENT_AND final
 			//eliminate or short-circuit based on value
 			if(EvaluableNode::ToBool(ocn[i]))
 			{
-				//erase the node and the following
+				//erase the node
 				if(nodes_freeable)
 					enm->FreeNodeTree(ocn[i]);
 				ocn.erase(begin(ocn) + i);
@@ -229,10 +229,9 @@ struct ShortCircuitENT_OR final
 			//eliminate or short-circuit based on value
 			if(!EvaluableNode::ToBool(ocn[i]))
 			{
-				//erase the node and the following
+				//erase the node
 				if(nodes_freeable)
 					enm->FreeNodeTree(ocn[i]);
-
 				ocn.erase(begin(ocn) + i);
 
 				//recheck this position next iteration
@@ -256,6 +255,119 @@ struct ShortCircuitENT_OR final
 
 			en->ClearMetadata();
 			en->SetTypeViaBoolValue(short_circuit_value);
+		}
+	}
+};
+
+struct FoldENT_ADD final
+{
+	bool Match(EvaluableNode *en) const noexcept
+	{
+		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
+		return (node_type == ENT_ADD);
+	}
+
+	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	{
+		auto &ocn = en->GetOrderedChildNodesReference();
+		if(ocn.size() == 0)
+		{
+			en->ClearMetadata();
+			en->SetTypeViaNumberValue(0.0);
+			return;
+		}
+
+		double accumulated_immediate = 0.0;
+
+		bool currently_accumulating_nonimmediate = false;
+		double nonimmediate_accum_multiplicand = 0.0;
+
+		//check each condition
+		for(size_t i = 0; i < ocn.size(); i++)
+		{
+			//any null short circuits to a null
+			if(EvaluableNode::IsNull(ocn[i]))
+			{
+				if(nodes_freeable)
+				{
+					for(auto &cn : ocn)
+						enm->FreeNodeTree(cn);
+				}
+
+				en->ClearMetadata();
+				en->SetType(ENT_NULL, false);
+				return;
+			}
+
+			if(ocn[i]->IsImmediate())
+			{
+				accumulated_immediate += EvaluableNode::ToNumber(ocn[i]);
+
+				//erase the node
+				if(nodes_freeable)
+					enm->FreeNodeTree(ocn[i]);
+				ocn.erase(begin(ocn) + i);
+
+				//recheck this position next iteration
+				i--;
+
+				continue;
+			}
+
+			//if two non-immediates in a row, see if the same
+			if(i + 1 < ocn.size() && !ocn[i + 1]->IsImmediate())
+			{
+				if(EvaluableNode::AreDeepEqual(ocn[i], ocn[i + 1]))
+				{
+					//if currently accumulating, count another one, otherwise count first two
+					if(currently_accumulating_nonimmediate)
+					{
+						nonimmediate_accum_multiplicand += 1.0;
+					}
+					else
+					{
+						currently_accumulating_nonimmediate = true;
+						nonimmediate_accum_multiplicand = 2.0;
+					}
+
+					//erase the node
+					if(nodes_freeable)
+						enm->FreeNodeTree(ocn[i]);
+					ocn.erase(begin(ocn) + i);
+
+					//recheck this position next iteration
+					i--;
+
+					continue;
+				}
+			}
+
+			//if made it here, need to put a multiplicand in front of the node
+			if(currently_accumulating_nonimmediate && nonimmediate_accum_multiplicand != 1.0)
+			{
+				EvaluableNode *new_term = enm->AllocNode(ENT_MULTIPLY);
+				new_term->AppendOrderedChildNode(enm->AllocNode(nonimmediate_accum_multiplicand));
+				new_term->AppendOrderedChildNode(ocn[i]);
+				ocn[i] = new_term;
+			}
+
+			//start over
+			currently_accumulating_nonimmediate = false;
+			nonimmediate_accum_multiplicand = 0.0;
+		}
+
+		//add on accumulated_immediate at end if nonzero
+		if(accumulated_immediate != 0.0)
+		{
+			if(ocn.size() > 0)
+			{
+				ocn.push_back(enm->AllocNode(accumulated_immediate));
+			}
+			else
+			{
+				en->ClearMetadata();
+				en->SetTypeViaNumberValue(accumulated_immediate);
+			}
 		}
 	}
 };
@@ -316,7 +428,7 @@ struct ConsolidateConstantsENT_CONCAT final
 				currently_accumulating = true;
 				accumulating_string += EvaluableNode::ToString(ocn[i]);
 
-				//erase the node and the following
+				//erase the node
 				if(nodes_freeable)
 					enm->FreeNodeTree(ocn[i]);
 
@@ -420,7 +532,12 @@ static constexpr auto rule_registry = MakeRuleRegistry<
 	SimplifySelfContainedWithImmediates,
 	ShortCircuitENT_AND,
 	ShortCircuitENT_OR,
-	//TODO 25662: make sure consolidated results are computed, e.g., addition of numbers and symbols
+	SortParameters,
+	FoldENT_ADD,
+	//TODO 25662: make sure consolidated results are computed for multiplication, subtraction, division
+	//TODO 25662: consolidate already factored terms?
+	//TODO 25662: add logic to rerun engine if any change occurred
+	//TODO 25662: properly account for execution count for rule engine
 	ConsolidateConstantsENT_CONCAT,
 	TruncateToValidParameters,
 	SortParameters

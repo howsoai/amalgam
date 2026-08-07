@@ -259,12 +259,12 @@ struct ShortCircuitENT_OR final
 	}
 };
 
-struct FoldENT_ADD final
+struct FoldENT_ADD_and_SUBTRACT final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
 		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
-		return (node_type == ENT_ADD);
+		return (node_type == ENT_ADD || node_type == ENT_SUBTRACT);
 	}
 
 	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
@@ -277,13 +277,17 @@ struct FoldENT_ADD final
 			return;
 		}
 
+		bool positive_sign = true;
+		bool subtraction = (en->GetType() == ENT_SUBTRACT);
+
 		double accumulated_immediate = 0.0;
 
 		bool currently_accumulating_nonimmediate = false;
 		double nonimmediate_accum_multiplicand = 0.0;
 
-		//check each condition
-		for(size_t i = 0; i < ocn.size(); i++)
+		//check each condition; need extra counter to see how many variables have been accum'd in case one is removed
+		size_t loop_iteration = 0;
+		for(size_t i = 0; i < ocn.size(); i++, loop_iteration++)
 		{
 			//any null short circuits to a null
 			if(EvaluableNode::IsNull(ocn[i]))
@@ -299,9 +303,16 @@ struct FoldENT_ADD final
 				return;
 			}
 
+			if(subtraction && loop_iteration == 1)
+				positive_sign = false;
+
 			if(ocn[i]->IsImmediate())
 			{
-				accumulated_immediate += EvaluableNode::ToNumber(ocn[i]);
+				double value = EvaluableNode::ToNumber(ocn[i]);;
+				if(positive_sign)
+					accumulated_immediate += value;
+				else
+					accumulated_immediate -= value;
 
 				//erase the node
 				if(nodes_freeable)
@@ -322,12 +333,24 @@ struct FoldENT_ADD final
 					//if currently accumulating, count another one, otherwise count first two
 					if(currently_accumulating_nonimmediate)
 					{
-						nonimmediate_accum_multiplicand += 1.0;
+						if(positive_sign)
+							nonimmediate_accum_multiplicand += 1.0;
+						else
+							nonimmediate_accum_multiplicand -= 1.0;
 					}
 					else
 					{
 						currently_accumulating_nonimmediate = true;
-						nonimmediate_accum_multiplicand = 2.0;
+						if(!subtraction)
+							nonimmediate_accum_multiplicand = 2.0;
+						else
+						{
+							//first two cancel out, otherwise negative
+							if(positive_sign)
+								nonimmediate_accum_multiplicand = 0.0;
+							else
+								nonimmediate_accum_multiplicand = -2.0;
+						}
 					}
 
 					//erase the node
@@ -343,12 +366,25 @@ struct FoldENT_ADD final
 			}
 
 			//if made it here, need to put a multiplicand in front of the node
-			if(currently_accumulating_nonimmediate && nonimmediate_accum_multiplicand != 1.0)
+			if(currently_accumulating_nonimmediate)
 			{
-				EvaluableNode *new_term = enm->AllocNode(ENT_MULTIPLY);
-				new_term->AppendOrderedChildNode(enm->AllocNode(nonimmediate_accum_multiplicand));
-				new_term->AppendOrderedChildNode(ocn[i]);
-				ocn[i] = new_term;
+				if(nonimmediate_accum_multiplicand == 0.0)
+				{
+					//erase the node
+					if(nodes_freeable)
+						enm->FreeNodeTree(ocn[i]);
+					ocn.erase(begin(ocn) + i);
+
+					//recheck this position next iteration
+					i--;
+				}
+				else if(nonimmediate_accum_multiplicand != 1.0)
+				{
+					EvaluableNode *new_term = enm->AllocNode(ENT_MULTIPLY);
+					new_term->AppendOrderedChildNode(enm->AllocNode(nonimmediate_accum_multiplicand));
+					new_term->AppendOrderedChildNode(ocn[i]);
+					ocn[i] = new_term;
+				}
 			}
 
 			//start over
@@ -361,7 +397,10 @@ struct FoldENT_ADD final
 		{
 			if(ocn.size() > 0)
 			{
-				ocn.push_back(enm->AllocNode(accumulated_immediate));
+				if(!subtraction)
+					ocn.push_back(enm->AllocNode(accumulated_immediate));
+				else
+					ocn.push_back(enm->AllocNode(-accumulated_immediate));
 			}
 			else
 			{
@@ -533,9 +572,10 @@ static constexpr auto rule_registry = MakeRuleRegistry<
 	ShortCircuitENT_AND,
 	ShortCircuitENT_OR,
 	SortParameters,
-	FoldENT_ADD,
-	//TODO 25662: make sure consolidated results are computed for multiplication, subtraction, division
-	//TODO 25662: consolidate already factored terms?
+	FoldENT_ADD_and_SUBTRACT,
+	//TODO 25662: add one position then unordered for subtraction, division, and modulus
+	//TODO 25662: make sure consolidated results are computed for multiplication, subtraction, division; for multiplication, change -1 multiplication into (- value)
+	//TODO 25662: consolidate already factored terms
 	//TODO 25662: add logic to rerun engine if any change occurred
 	//TODO 25662: properly account for execution count for rule engine
 	ConsolidateConstantsENT_CONCAT,

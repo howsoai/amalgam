@@ -14,8 +14,8 @@ constexpr auto MakeRuleEntry()
 	// to a plain function pointer (no std::function, no allocation).
 	return std::pair{
 		+[](EvaluableNode *en) -> bool { return R{}.Match(en); },
-		+[](Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
-		{ R{}.Rewrite(interpreter, en, nodes_freeable); }
+		+[](EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+		{ R{}.Rewrite(en, enm, nodes_freeable, interpreter); }
 	};
 }
 
@@ -24,7 +24,7 @@ constexpr auto MakeRuleRegistry()
 {
 	using entry_t = std::pair<
 		bool(*)(EvaluableNode *),
-		void(*)(Interpreter *, EvaluableNode *, bool)>;
+		void(*)(EvaluableNode *, EvaluableNodeManager *, bool, Interpreter *)>;
 
 	return std::array<entry_t, sizeof...(Rules)>{ MakeRuleEntry<Rules>()... };
 }
@@ -37,7 +37,7 @@ struct FlattenAssociations final
 		return IsOpcodeAssociative(node_type);
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
+	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
 		std::vector<EvaluableNode *> associative_child_nodes;
 		auto &ocn = en->GetOrderedChildNodesReference();
@@ -53,7 +53,7 @@ struct FlattenAssociations final
 
 				//erase the node
 				if(nodes_freeable)
-					interpreter->evaluableNodeManager->FreeNode(ocn[i]);
+					enm->FreeNode(ocn[i]);
 				ocn.erase(begin(ocn) + i);
 
 				//need to recheck index since erased one
@@ -75,9 +75,8 @@ struct DeadCodeEliminationInENT_IF final
 		return (node_type == ENT_IF);
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
+	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
-		auto enm = interpreter->evaluableNodeManager;
 		auto &ocn = en->GetOrderedChildNodesReference();
 		bool node_replaced = false;
 
@@ -144,9 +143,8 @@ struct ShortCircuitENT_AND final
 		return (node_type == ENT_AND);
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
+	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
-		auto enm = interpreter->evaluableNodeManager;
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
@@ -207,9 +205,8 @@ struct ShortCircuitENT_OR final
 		return (node_type == ENT_OR);
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
+	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
-		auto enm = interpreter->evaluableNodeManager;
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
@@ -271,8 +268,12 @@ struct SimplifySelfContainedWithImmediates final
 		return (!en->IsTerminal() && IsEvaluableNodeTypeOfSimpleExecution(node_type));
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
+	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
+		//need interpreter
+		if(interpreter == nullptr)
+			return;
+
 		//check for any non-immediate child node
 		bool any_non_immediate = false;
 		if(en->IsAssociativeArray())
@@ -316,14 +317,14 @@ struct TruncateToValidParameters final
 		return (en->IsOrderedArray() && en->GetOrderedChildNodesReference().size() > max_num_params);
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
+	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
 		size_t max_num_params = GetOpcodeMaxNumValidParameters(en->GetType());
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(nodes_freeable)
 		{
 			for(size_t i = max_num_params; i < ocn.size(); i++)
-				interpreter->evaluableNodeManager->FreeNodeTree(ocn[i]);
+				enm->FreeNodeTree(ocn[i]);
 		}
 		ocn.resize(max_num_params);
 	}
@@ -337,7 +338,7 @@ struct SortParameters final
 		return (GetChildNodeStructureType(node_type) == OpcodeDetails::ChildNodeStructureType::UNORDERED);
 	}
 
-	void Rewrite(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
+	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		std::sort(begin(ocn), end(ocn), EvaluableNode::IsStrictlyLessThan);
@@ -355,17 +356,19 @@ static constexpr auto rule_registry = MakeRuleRegistry<
 	SortParameters
 >();
 
-inline static void ApplyRewriteRules(Interpreter *interpreter, EvaluableNode *en, bool nodes_freeable)
+void EvaluableNodeTreeAlgebra::SimplifyNode(EvaluableNode *en, EvaluableNodeManager *enm,
+	bool nodes_freeable, Interpreter *interpreter)
 {
 	for(const auto &entry : rule_registry)
 	{
 		const auto &[match_fn, rewrite_fn] = entry;
 		if(match_fn(en))
-			rewrite_fn(interpreter, en, nodes_freeable);
+			rewrite_fn(en, enm, nodes_freeable, interpreter);
 	}
 }
 
-EvaluableNode *EvaluableNodeTreeAlgebra::SimplifyTree(Interpreter *interpreter, EvaluableNode *tree)
+EvaluableNode *EvaluableNodeTreeAlgebra::SimplifyTree(EvaluableNode *tree, EvaluableNodeManager *enm,
+	Interpreter *interpreter)
 {
 	if(tree == nullptr)
 		return nullptr;
@@ -412,7 +415,7 @@ EvaluableNode *EvaluableNodeTreeAlgebra::SimplifyTree(Interpreter *interpreter, 
 			continue;
 		}
 
-		ApplyRewriteRules(interpreter, cur, nodes_freeable);
+		SimplifyNode(cur, enm, nodes_freeable, interpreter);
 	}
 
 	EvaluableNodeManager::UpdateFlagsForNodeTree(tree);

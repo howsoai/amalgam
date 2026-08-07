@@ -1957,6 +1957,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIMPLIFY(
 
 	auto node_stack = CreateOpcodeStackStateSaver(node);
 
-	EvaluableNode *result = EvaluableNodeTreeAlgebra::SimplifyTree(this, node);
+	EvaluableNode *result = EvaluableNodeTreeAlgebra::SimplifyTree(node, evaluableNodeManager, this);
 	return EvaluableNodeReference(result, true);
 }

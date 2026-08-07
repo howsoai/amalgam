@@ -1051,12 +1051,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 				cur->AppendOrderedChildNodes(associative_child_nodes);
 		}
 
-		//TODO 25662: test this
+		//dead code elimination
 		if(node_type == ENT_IF)
 		{
 			auto &ocn = cur->GetOrderedChildNodesReference();
+			bool node_replaced = false;
 			//check each condition
-			for(size_t i = 0; i < ocn.size(); i += 2)
+			for(size_t i = 0; i + 1 < ocn.size(); i += 2)
 			{
 				//if not immediate, then skip
 				if(ocn[i] != nullptr && !ocn[i]->IsImmediate())
@@ -1065,49 +1066,49 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 				//found it, replace with this
 				if(EvaluableNode::ToBool(ocn[i]))
 				{
-					if(i + 1 < ocn.size())
-					{
-						cur->CopyValueFrom(ocn[i + 1]);
-						cur->CopyMetadataFrom(ocn[i + 1]);
-					}
-					else
-					{
-						cur->SetType(ENT_NULL, false);
-						cur->ClearOrderedChildNodes();
-						cur->ClearMetadata();
-					}
-					node_type = cur->GetType();
+					//copy metadata first so don't clobber
+					cur->CopyMetadataFrom(ocn[i + 1]);
+					cur->CopyValueFrom(ocn[i + 1]);
+					
+					node_replaced = true;
 					break;
 				}
 				else //remove this branch
 				{
-					//erase the node
+					//erase the node and the following
 					if(!ocn[i]->GetNeedCycleCheck())
 						enm->FreeNodeTree(ocn[i]);
-					ocn.erase(begin(ocn) + i);
+					if(!ocn[i + 1]->GetNeedCycleCheck())
+						enm->FreeNodeTree(ocn[i + 1]);
 
-					if(i + 1 <= ocn.size())
-					{
-						if(!ocn[i + 1]->GetNeedCycleCheck())
-							enm->FreeNodeTree(ocn[i + 1]);
-						ocn.erase(begin(ocn) + i + 1);
-					}
+					ocn.erase(begin(ocn) + i, begin(ocn) + i + 2);
 
 					//recheck this position next iteration
 					i -= 2;
 				}
 			}
 
-			//see if only have one else node remaining
-			if(ocn.size() == 1)
+			//check for low number of parameters
+			if(!node_replaced)
 			{
-				EvaluableNode *child_node = ocn[0];
-				cur->CopyValueFrom(ocn[0]);
-				cur->CopyMetadataFrom(ocn[0]);
+				if(ocn.size() == 0)
+				{
+					cur->ClearMetadata();
+					cur->SetType(ENT_NULL, false);
+				}
 
-				if(!child_node->GetNeedCycleCheck())
-					enm->FreeNode(child_node);
+				if(ocn.size() == 1)
+				{
+					EvaluableNode *child_node = ocn[0];
+					cur->CopyMetadataFrom(child_node);
+					cur->CopyValueFrom(child_node);
+
+					if(!child_node->GetNeedCycleCheck())
+						enm->FreeNode(child_node);
+				}
 			}
+
+			node_type = cur->GetType();
 		}
 
 		//if node_type is self-contained, and all child nodes are fully immediate, execute

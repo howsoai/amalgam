@@ -1913,7 +1913,18 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 		)
 	)
 ))&",
-		R"(21)"}});
+		R"(21)"},
+{R"&((simplify
+	(lambda
+		(if
+			a (if .false 1 .true 2 c)
+			b (if 3)
+			.false 3
+			4			
+		)
+	)
+))&",
+		R"((if a 2 b 3 4))"} });
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;

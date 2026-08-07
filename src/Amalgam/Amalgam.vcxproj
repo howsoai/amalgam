@@ -598,6 +598,7 @@
     <ClCompile Include="entity\EntityWriteListener.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNode.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNodeManagement.cpp" />
+    <ClCompile Include="evaluablenode\EvaluableNodeTreeAlgebra.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNodeTreeDifference.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNodeTreeFunctions.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNodeTreeManipulation.cpp" />
@@ -670,6 +671,7 @@
     <ClInclude Include="evaluablenode\EvaluableNode.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeManagement.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeReference.h" />
+    <ClInclude Include="evaluablenode\EvaluableNodeTreeAlgebra.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeDifference.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeFunctions.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeManipulation.h" />

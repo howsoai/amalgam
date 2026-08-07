@@ -1,5 +1,6 @@
 //project headers:
 
+#include "EvaluableNodeTreeAlgebra.h"
 #include "EvaluableNodeTreeDifference.h"
 #include "Interpreter.h"
 #include "OpcodeDetails.h"
@@ -1946,6 +1947,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIMPLIFY(
 
 	auto node_stack = CreateOpcodeStackStateSaver(node);
 
-	EvaluableNode *result = EvaluableNodeTreeManipulation::SimplifyTree(this, node);
+	EvaluableNode *result = EvaluableNodeTreeAlgebra::SimplifyTree(this, node);
 	return EvaluableNodeReference(result, true);
 }

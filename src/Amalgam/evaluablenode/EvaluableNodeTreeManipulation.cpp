@@ -1051,12 +1051,68 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 				cur->AppendOrderedChildNodes(associative_child_nodes);
 		}
 
+		//TODO 25662: test this
+		if(node_type == ENT_IF)
+		{
+			auto &ocn = cur->GetOrderedChildNodesReference();
+			//check each condition
+			for(size_t i = 0; i < ocn.size(); i += 2)
+			{
+				//if not immediate, then skip
+				if(ocn[i] != nullptr && !ocn[i]->IsImmediate())
+					continue;
+
+				//found it, replace with this
+				if(EvaluableNode::ToBool(ocn[i]))
+				{
+					if(i + 1 < ocn.size())
+					{
+						cur->CopyValueFrom(ocn[i + 1]);
+						cur->CopyMetadataFrom(ocn[i + 1]);
+					}
+					else
+					{
+						cur->SetType(ENT_NULL, false);
+						cur->ClearOrderedChildNodes();
+						cur->ClearMetadata();
+					}
+					node_type = cur->GetType();
+					break;
+				}
+				else //remove this branch
+				{
+					//erase the node
+					if(!ocn[i]->GetNeedCycleCheck())
+						enm->FreeNodeTree(ocn[i]);
+					ocn.erase(begin(ocn) + i);
+
+					if(i + 1 <= ocn.size())
+					{
+						if(!ocn[i + 1]->GetNeedCycleCheck())
+							enm->FreeNodeTree(ocn[i + 1]);
+						ocn.erase(begin(ocn) + i + 1);
+					}
+
+					//recheck this position next iteration
+					i -= 2;
+				}
+			}
+
+			//see if only have one else node remaining
+			if(ocn.size() == 1)
+			{
+				EvaluableNode *child_node = ocn[0];
+				cur->CopyValueFrom(ocn[0]);
+				cur->CopyMetadataFrom(ocn[0]);
+
+				if(!child_node->GetNeedCycleCheck())
+					enm->FreeNode(child_node);
+			}
+		}
+
 		//if node_type is self-contained, and all child nodes are fully immediate, execute
 		if(!cur->IsTerminal() && IsEvaluableNodeTypeOfSimpleExecution(node_type))
 		{
-			//TODO 25662: make sure partial consolidated results are computed, e.g., addition of numbers and symbols
-			//TODO 25662: break out normalization on a single layer into its own method / rule so can be applied in mutate
-
 			//check for any non-immediate child node
 			bool any_non_immediate = false;
 			if(cur->IsAssociativeArray())
@@ -1087,13 +1143,12 @@ EvaluableNode *EvaluableNodeTreeManipulation::NormalizeTree(Interpreter *interpr
 				EvaluableNodeReference result = interpreter->InterpretNode(cur);
 				cur->CopyValueFrom(result);
 				cur->CopyMetadataFrom(result);
+				node_type = cur->GetType();
 			}
 		}
 
-		//refresh node type in case changed
-		node_type = cur->GetType();
-
-		//TODO 25662: add dead code elimination, such as if branches with constants
+		//TODO 25662: make sure partial consolidated results are computed, e.g., addition of numbers and symbols
+		//TODO 25662: break out normalization on a single layer into its own method / rule so can be applied in mutate, or break into separate rules
 
 		//truncate to maximum allowed child nodes
 		size_t max_num_params = GetOpcodeMaxNumValidParameters(node_type);

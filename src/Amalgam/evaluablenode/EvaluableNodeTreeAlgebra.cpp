@@ -237,8 +237,6 @@ EvaluableNode *EvaluableNodeTreeAlgebra::SimplifyTree(Interpreter *interpreter, 
 	if(tree == nullptr)
 		return nullptr;
 
-	auto *enm = interpreter->evaluableNodeManager;
-
 	//node and bool indicating whether its child nodes have been processed yet
 	std::vector<std::pair<EvaluableNode *, bool>> node_stack;
 	EvaluableNode::ReferenceSetType visited;

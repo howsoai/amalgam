@@ -702,6 +702,13 @@ public:
 		}
 	}
 
+	//changes the type by setting it to the string value specified
+	inline void SetTypeViaStringIdValue(std::string &v)
+	{
+		SetType(ENT_STRING, false);
+		GetStringIDReference() = string_intern_pool.CreateStringReference(v);
+	}
+
 	//changes the type by setting it to the string id value specified
 	inline void SetTypeViaStringIdValue(StringInternPool::StringID v)
 	{

@@ -260,6 +260,75 @@ struct ShortCircuitENT_OR final
 	}
 };
 
+struct ConsolidateConstantsENT_CONCAT final
+{
+	bool Match(EvaluableNode *en) const noexcept
+	{
+		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
+		return (node_type == ENT_CONCAT);
+	}
+
+	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	{
+		auto &ocn = en->GetOrderedChildNodesReference();
+		if(ocn.size() == 0)
+		{
+			en->ClearMetadata();
+			en->SetType(ENT_NULL, false);
+			return;
+		}
+
+		//control variables for string accumulation
+		std::string accumulating_string;
+		bool currently_accumulating = false;
+
+		//check each condition
+		for(size_t i = 0; i < ocn.size(); i++)
+		{
+			//any null short circuits to a null
+			if(EvaluableNode::IsNull(ocn[i]))
+			{
+				if(nodes_freeable)
+				{
+					for(auto &cn : ocn)
+						enm->FreeNodeTree(cn);
+				}
+
+				en->ClearMetadata();
+				en->SetType(ENT_NULL, false);
+				return;
+			}
+
+			//if not immediate with another immediate following, then skip
+			if(i + 1 >= ocn.size() || !ocn[i]->IsImmediate() || !ocn[i + 1]->IsImmediate())
+			{
+				if(currently_accumulating)
+				{
+					//since made it here, the previous value must have been immediate, so concat and overwrite
+					accumulating_string += EvaluableNode::ToString(ocn[i]);
+					ocn[i]->SetTypeViaStringIdValue(accumulating_string);
+					currently_accumulating = false;
+					accumulating_string.clear();
+				}
+			}
+			else //immediate, followed by another immediate; delete and accumulate
+			{
+				currently_accumulating = true;
+				accumulating_string += EvaluableNode::ToString(ocn[i]);
+
+				//erase the node and the following
+				if(nodes_freeable)
+					enm->FreeNodeTree(ocn[i]);
+
+				ocn.erase(begin(ocn) + i);
+
+				//recheck this position next iteration
+				i--;
+			}
+		}
+	}
+};
+
 struct SimplifySelfContainedWithImmediates final
 {
 	bool Match(EvaluableNode *en) const noexcept
@@ -352,6 +421,7 @@ static constexpr auto rule_registry = MakeRuleRegistry<
 	ShortCircuitENT_AND,
 	ShortCircuitENT_OR,
 	//TODO 25662: make sure consolidated results are computed, e.g., addition of numbers and symbols
+	ConsolidateConstantsENT_CONCAT,
 	TruncateToValidParameters,
 	SortParameters
 >();

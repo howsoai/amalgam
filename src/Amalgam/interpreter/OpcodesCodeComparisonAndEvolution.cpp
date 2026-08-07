@@ -1901,7 +1901,7 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description =
 		R"(Simplifies all of the code node in ways that will yield the same behavior and returns the result.)";
-	d.examples = MakeAmalgamExamples({{R"&((simplify
+	d.examples = MakeAmalgamExamples({ {R"&((simplify
 	(lambda
 		(+
 			0
@@ -1925,7 +1925,17 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 		)
 	)
 ))&",
-		R"((if a 2 b 3 4))"} });
+		R"((if a 2 b 3 4))"},
+{ R"&((simplify
+	(lambda
+		(and a .true b (or .false c d))
+	)
+))&",
+		R"((and
+        (or c d)
+        a
+        b
+))" } });
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;

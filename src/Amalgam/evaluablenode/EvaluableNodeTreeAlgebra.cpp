@@ -65,12 +65,12 @@ struct FlattenAssociations final
 	}
 };
 
-struct DeadCodeElimination final
+struct DeadCodeEliminationInENT_IF final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
 		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
-		return node_type == ENT_IF;
+		return (node_type == ENT_IF);
 	}
 
 	void Rewrite(Interpreter *interpreter, EvaluableNode *en)
@@ -78,6 +78,7 @@ struct DeadCodeElimination final
 		auto enm = interpreter->evaluableNodeManager;
 		auto &ocn = en->GetOrderedChildNodesReference();
 		bool node_replaced = false;
+
 		//check each condition
 		for(size_t i = 0; i + 1 < ocn.size(); i += 2)
 		{
@@ -128,6 +129,134 @@ struct DeadCodeElimination final
 				if(!child_node->GetNeedCycleCheck())
 					enm->FreeNode(child_node);
 			}
+		}
+	}
+};
+
+struct ShortCircuitENT_AND final
+{
+	bool Match(EvaluableNode *en) const noexcept
+	{
+		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
+		return (node_type == ENT_AND);
+	}
+
+	void Rewrite(Interpreter *interpreter, EvaluableNode *en)
+	{
+		auto enm = interpreter->evaluableNodeManager;
+		auto &ocn = en->GetOrderedChildNodesReference();
+		if(ocn.size() == 0)
+		{
+			en->ClearMetadata();
+			en->SetType(ENT_NULL, false);
+			return;
+		}
+
+		bool short_circuit = false;
+		//default to true
+		bool short_circuit_value = true;
+
+		//check each condition
+		for(size_t i = 0; i < ocn.size(); i++)
+		{
+			//if not immediate, then skip
+			if(ocn[i] != nullptr && !ocn[i]->IsImmediate())
+				continue;
+
+			//eliminate or short-circuit based on value
+			if(EvaluableNode::ToBool(ocn[i]))
+			{
+				//erase the node and the following
+				if(!ocn[i]->GetNeedCycleCheck())
+					enm->FreeNodeTree(ocn[i]);
+
+				ocn.erase(begin(ocn) + i);
+
+				//recheck this position next iteration
+				i--;
+			}
+			else //entirity is false
+			{
+				short_circuit = true;
+				short_circuit_value = false;
+			}
+		}
+
+		//if have eliminated all true values or short circuited, replace with a single value
+		if(ocn.size() == 0 || short_circuit)
+		{
+			if(!en->GetNeedCycleCheck())
+			{
+				for(auto &cn : ocn)
+					enm->FreeNodeTree(cn);
+			}
+
+			en->ClearMetadata();
+			en->SetTypeViaBoolValue(short_circuit_value);
+		}
+	}
+};
+
+struct ShortCircuitENT_OR final
+{
+	bool Match(EvaluableNode *en) const noexcept
+	{
+		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
+		return (node_type == ENT_OR);
+	}
+
+	void Rewrite(Interpreter *interpreter, EvaluableNode *en)
+	{
+		auto enm = interpreter->evaluableNodeManager;
+		auto &ocn = en->GetOrderedChildNodesReference();
+		if(ocn.size() == 0)
+		{
+			en->ClearMetadata();
+			en->SetType(ENT_NULL, false);
+			return;
+		}
+
+		bool short_circuit = false;
+		//default to false
+		bool short_circuit_value = false;
+
+		//check each condition
+		for(size_t i = 0; i < ocn.size(); i++)
+		{
+			//if not immediate, then skip
+			if(ocn[i] != nullptr && !ocn[i]->IsImmediate())
+				continue;
+
+			//eliminate or short-circuit based on value
+			if(!EvaluableNode::ToBool(ocn[i]))
+			{
+				//erase the node and the following
+				if(!ocn[i]->GetNeedCycleCheck())
+					enm->FreeNodeTree(ocn[i]);
+
+				ocn.erase(begin(ocn) + i);
+
+				//recheck this position next iteration
+				i--;
+			}
+			else //entirity is true
+			{
+				short_circuit = true;
+				short_circuit_value = true;
+			}
+		}
+
+		//if have eliminated all true values or short circuited, replace with a single value
+		if(ocn.size() == 0 || short_circuit)
+		{
+			if(!en->GetNeedCycleCheck())
+			{
+				for(auto &cn : ocn)
+					enm->FreeNodeTree(cn);
+			}
+
+			en->ClearMetadata();
+			en->SetTypeViaBoolValue(short_circuit_value);
 		}
 	}
 };
@@ -215,8 +344,10 @@ struct SortParameters final
 
 static constexpr auto rule_registry = MakeRuleRegistry<
 	FlattenAssociations,
-	DeadCodeElimination,
+	DeadCodeEliminationInENT_IF,
 	SimplifySelfContainedWithImmediates,
+	ShortCircuitENT_AND,
+	ShortCircuitENT_OR,
 	//TODO 25662: make sure consolidated results are computed, e.g., addition of numbers and symbols
 	TruncateToValidParameters,
 	SortParameters

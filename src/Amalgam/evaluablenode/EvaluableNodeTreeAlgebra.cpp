@@ -7,6 +7,7 @@
 #include <utility>
 
 //converts a stateless rule type into a pair of plain function pointers
+//implementations en is a valid pointer and guaranteed to not be nullptr
 template<class R>
 constexpr auto MakeRuleEntry()
 {
@@ -33,8 +34,7 @@ struct FlattenAssociations final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
-		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
-		return IsOpcodeAssociative(node_type);
+		return IsOpcodeAssociative(en->GetType());
 	}
 
 	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
@@ -71,8 +71,7 @@ struct DeadCodeEliminationInENT_IF final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
-		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
-		return (node_type == ENT_IF);
+		return (en->GetType() == ENT_IF);
 	}
 
 	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
@@ -139,8 +138,7 @@ struct ShortCircuitENT_AND final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
-		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
-		return (node_type == ENT_AND);
+		return (en->GetType() == ENT_AND);
 	}
 
 	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
@@ -201,8 +199,7 @@ struct ShortCircuitENT_OR final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
-		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
-		return (node_type == ENT_OR);
+		return (en->GetType() == ENT_OR);
 	}
 
 	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
@@ -263,8 +260,7 @@ struct FoldENT_ADD_and_SUBTRACT final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
-		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
-		return (node_type == ENT_ADD || node_type == ENT_SUBTRACT);
+		return (en->GetType() == ENT_ADD || en->GetType() == ENT_SUBTRACT);
 	}
 
 	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
@@ -415,8 +411,7 @@ struct ConsolidateConstantsENT_CONCAT final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
-		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
-		return (node_type == ENT_CONCAT);
+		return (en->GetType() == ENT_CONCAT);
 	}
 
 	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
@@ -484,8 +479,7 @@ struct SimplifySelfContainedWithImmediates final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
-		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
-		return (!en->IsTerminal() && IsEvaluableNodeTypeOfSimpleExecution(node_type));
+		return (!en->IsTerminal() && IsEvaluableNodeTypeOfSimpleExecution(en->GetType()));
 	}
 
 	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
@@ -532,8 +526,7 @@ struct TruncateToValidParameters final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
-		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
-		size_t max_num_params = GetOpcodeMaxNumValidParameters(node_type);
+		size_t max_num_params = GetOpcodeMaxNumValidParameters(en->GetType());
 		return (en->IsOrderedArray() && en->GetOrderedChildNodesReference().size() > max_num_params);
 	}
 
@@ -554,8 +547,7 @@ struct SortParameters final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
-		auto node_type = (en != nullptr ? en->GetType() : ENT_NULL);
-		return (GetChildNodeStructureType(node_type) == OpcodeDetails::ChildNodeStructureType::UNORDERED);
+		return (GetChildNodeStructureType(en->GetType()) == OpcodeDetails::ChildNodeStructureType::UNORDERED);
 	}
 
 	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
@@ -589,7 +581,8 @@ void EvaluableNodeTreeAlgebra::SimplifyNode(EvaluableNode *en, EvaluableNodeMana
 	for(const auto &entry : rule_registry)
 	{
 		const auto &[match_fn, rewrite_fn] = entry;
-		if(match_fn(en))
+		//rewrite_fn not applicable for nullptr node
+		if(en != nullptr && match_fn(en))
 			rewrite_fn(en, enm, nodes_freeable, interpreter);
 	}
 }

@@ -232,6 +232,24 @@ public:
 			unmatched_a1.reserve(a1.size());
 		}
 
+		//first, find and merge exact matches
+		for(size_t i1 = 0; i1 < a1.size(); i1++)
+		{
+			for(size_t i2 = 0; i2 < a2.size(); i2++)
+			{
+				if(EvaluableNode::AreDeepEqual(a1[i1], a2[i2]))
+				{
+					T m = MergeValues(a1[i1], a2[i2]);
+					merged.emplace_back(m);
+
+					a1.erase(begin(a1) + i1);
+					a2.erase(begin(a2) + i2);
+					i1--;
+					break;
+				}
+			}
+		}
+
 		//for every element in a1, find best match (if one exists) in a2
 		while(a1.size() > 0)
 		{

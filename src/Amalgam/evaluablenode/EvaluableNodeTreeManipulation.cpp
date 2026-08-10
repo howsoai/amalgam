@@ -494,7 +494,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 			break;
 
 //TODO 25662: fix newly introduced bugs here
-//TODO 25662: add unit test for (union (lambda (+ a b)) (lambda (+ b)))
 //TODO 25662: add unit test for (union (lambda (- a b)) (lambda (- b)))
 
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED:

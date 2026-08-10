@@ -1044,7 +1044,9 @@ R"("\[\\r\\n\\t\\r\\n\\t;comment 1\\r\\n\\t;comment 2\\r\\n\\t;comment 3\\r\\n\\
 	2
 	3
 	[1 2 3]
-])"}
+])"},
+		{R"((union (lambda (+ a b)) (lambda (+ b))))",
+		R"((+ a b))"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;

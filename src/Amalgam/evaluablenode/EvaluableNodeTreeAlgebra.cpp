@@ -225,6 +225,9 @@ struct FoldENT_ADD_and_SUBTRACT final
 
 	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
+		if(en->GetType() == ENT_SUBTRACT)
+			return false;
+
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
@@ -283,7 +286,7 @@ struct FoldENT_ADD_and_SUBTRACT final
 			}
 
 			//if two non-immediates in a row, see if the same
-			if(i + 1 < ocn.size() && !ocn[i + 1]->IsImmediate())
+			if(i + 1 < ocn.size() && ocn[i + 1] != nullptr && !ocn[i + 1]->IsImmediate())
 			{
 				if(EvaluableNode::AreDeepEqual(ocn[i], ocn[i + 1]))
 				{
@@ -378,6 +381,9 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 
 	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
+		if(en->GetType() == ENT_DIVIDE)
+			return false;
+
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
@@ -436,7 +442,7 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 			}
 
 			//if two non-immediates in a row, see if the same
-			if(i + 1 < ocn.size() && !ocn[i + 1]->IsImmediate())
+			if(i + 1 < ocn.size() && ocn[i + 1] != nullptr && !ocn[i + 1]->IsImmediate())
 			{
 				if(EvaluableNode::AreDeepEqual(ocn[i], ocn[i + 1]))
 				{
@@ -676,6 +682,10 @@ struct SortParameters final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
+		//Non-associative arithmetic must preserve left-to-right IEEE-754 evaluation order.
+		if(en->GetType() == ENT_SUBTRACT || en->GetType() == ENT_DIVIDE)
+			return false;
+
 		auto child_structure_type = GetChildNodeStructureType(en->GetType());
 		return (child_structure_type == OpcodeDetails::ChildNodeStructureType::UNORDERED ||
 				child_structure_type == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED);

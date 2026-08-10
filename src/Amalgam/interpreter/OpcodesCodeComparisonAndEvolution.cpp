@@ -1971,16 +1971,10 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 		(* 4 a)
 		20
 ))"},
-		{R"&((simplify
-	(lambda
-		(- b a a 1)
-	)
-))&",
-		R"((-
-		b
-		(* 2 a)
-		1
-))"},
+		{R"&((simplify (lambda (- 5 a))))&", R"((- 5 a))"},
+		{R"&((simplify (lambda (- a 0))))&", R"((- a 0))"},
+		{R"&((simplify (lambda (- a 5 -5))))&", R"((- a -5 5))"},
+		{R"&((call (simplify (lambda (- a 10000000000000000 -10000000000000000))) {a 1}))&", R"(0)"},
 		{R"&((simplify
 	(lambda
 		(* b a a 1 b 3)
@@ -1991,16 +1985,14 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 		(pow b 2)
 		3
 ))"},
-		{R"&((simplify
-	(lambda
-		(/ b a a 1 3 a)
-	)
-))&",
-		R"((/
-		b
-		(pow a 3)
-		3
-))"} });
+		{R"&((simplify (lambda (/ a 2))))&", R"((/ a 2))"},
+		{R"&((simplify (lambda (/ 6 a))))&", R"((/ 6 a))"},
+		{R"&((simplify (lambda (/ a 1))))&", R"((/ a 1))"},
+		{R"&((simplify (lambda (/ a 2 0.5))))&", R"((/ a 0.5 2))"},
+		{R"&((simplify (lambda (/ a 2 0))))&", R"((/ a 0 2))"},
+		{R"&((simplify (lambda (/ a .infinity 0))))&", R"((/ a .infinity 0))"},
+		{R"&((simplify (lambda (/ a -1 0))))&", R"((/ a -1 0))"},
+		{R"&((call (simplify (lambda (/ a 1e-200 1e-200))) {a 0}))&", R"(0)"} });
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;

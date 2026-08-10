@@ -178,21 +178,21 @@ Example:
 Output:
 ```amalgam
 [
-        1.7100924132216468
-        201
-        "x"
-        4
-        101
-        .null
-        101
-        "x"
-        101
-        201
-        101
-        201
-        "x"
-        .null
-        x
+		1.7100924132216468
+		201
+		"x"
+		4
+		101
+		.null
+		101
+		"x"
+		101
+		201
+		101
+		201
+		"x"
+		.null
+		x
 ]
 ```
 
@@ -220,15 +220,15 @@ Example:
 Output:
 ```amalgam
 {
-        change_type 0.15
-        insert 0.14
-        insert_element 0.14
-        remove 0.14
-        remove_all_elements 0.0001
-        remove_element 0.14
-        replace_element_with_copy 0.0999
-        simplify_node 0.05
-        swap_elements 0.14
+		change_type 0.15
+		insert 0.14
+		insert_element 0.14
+		remove 0.14
+		remove_all_elements 0.0001
+		remove_element 0.14
+		replace_element_with_copy 0.0999
+		simplify_node 0.05
+		swap_elements 0.14
 }
 ```
 
@@ -2051,9 +2051,9 @@ Example:
 Output:
 ```amalgam
 (and
-        (or c d)
-        a
-        b
+		(or c d)
+		a
+		b
 )
 ```
 Example:
@@ -2067,14 +2067,14 @@ Example:
 Output:
 ```amalgam
 (concat
-        "he"
-        l
-        l
-        "o w"
-        o
-        r
-        l
-        "d!"
+		"he"
+		l
+		l
+		"o w"
+		o
+		r
+		l
+		"d!"
 )
 ```
 Example:
@@ -2088,12 +2088,12 @@ Example:
 Output:
 ```amalgam
 (+
-        (*
-                (exp a)
-                2
-        )
-        (* 4 a)
-        20
+		(*
+				(exp a)
+				2
+		)
+		(* 4 a)
+		20
 )
 ```
 Example:
@@ -2107,9 +2107,9 @@ Example:
 Output:
 ```amalgam
 (-
-        b
-        (* 2 a)
-        1
+		b
+		(* 2 a)
+		1
 )
 ```
 Example:
@@ -2123,9 +2123,9 @@ Example:
 Output:
 ```amalgam
 (*
-        (pow a 2)
-        (pow b 2)
-        3
+		(pow a 2)
+		(pow b 2)
+		3
 )
 ```
 Example:
@@ -2139,9 +2139,9 @@ Example:
 Output:
 ```amalgam
 (/
-        b
-        (pow a 3)
-        3
+		b
+		(pow a 3)
+		3
 )
 ```
 

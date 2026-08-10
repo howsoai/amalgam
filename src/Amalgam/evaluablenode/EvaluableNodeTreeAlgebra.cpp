@@ -345,7 +345,8 @@ struct FoldENT_ADD_and_SUBTRACT final
 				else if(nonimmediate_accum_multiplicand != 1.0)
 				{
 					EvaluableNode *new_term = enm->AllocNode(ENT_MULTIPLY);
-					new_term->AppendOrderedChildNode(enm->AllocNode(nonimmediate_accum_multiplicand));
+					new_term->AppendOrderedChildNode(enm->AllocNode(
+						subtraction ? -nonimmediate_accum_multiplicand : nonimmediate_accum_multiplicand));
 					new_term->AppendOrderedChildNode(ocn[i]);
 					ocn[i] = new_term;
 				}
@@ -361,15 +362,168 @@ struct FoldENT_ADD_and_SUBTRACT final
 		{
 			if(ocn.size() > 0)
 			{
-				if(!subtraction)
-					ocn.push_back(enm->AllocNode(accumulated_immediate));
-				else
-					ocn.push_back(enm->AllocNode(-accumulated_immediate));
+				ocn.push_back(enm->AllocNode(subtraction ? -accumulated_immediate : accumulated_immediate));
 			}
 			else
 			{
 				en->ClearMetadata();
 				en->SetTypeViaNumberValue(accumulated_immediate);
+			}
+		}
+
+		return (any_changes || ocn.size() != original_term_count);
+	}
+};
+
+struct FoldENT_MULTIPLY_and_DIVIDE final
+{
+	bool Match(EvaluableNode *en) const noexcept
+	{
+		return (en->GetType() == ENT_MULTIPLY || en->GetType() == ENT_DIVIDE);
+	}
+
+	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	{
+		auto &ocn = en->GetOrderedChildNodesReference();
+		if(ocn.size() == 0)
+		{
+			en->ClearMetadata();
+			en->SetTypeViaNumberValue(0.0);
+			return true;
+		}
+
+		bool multiplicand = true;
+		bool division = (en->GetType() == ENT_DIVIDE);
+
+		double product_immediate = 1.0;
+
+		size_t original_term_count = ocn.size();
+
+		bool currently_accumulating_nonimmediate = false;
+		double nonimmediate_accum_exponent = 0.0;
+
+		bool any_changes = false;
+
+		//check each condition; need extra counter to see how many variables have been accum'd in case one is removed
+		size_t loop_iteration = 0;
+		for(size_t i = 0; i < ocn.size(); i++, loop_iteration++)
+		{
+			//any null short circuits to a null
+			if(EvaluableNode::IsNull(ocn[i]))
+			{
+				if(nodes_freeable)
+				{
+					for(auto &cn : ocn)
+						enm->FreeNodeTree(cn);
+				}
+
+				en->ClearMetadata();
+				en->SetType(ENT_NULL, false);
+				return true;
+			}
+
+			if(division && loop_iteration == 1)
+				multiplicand = false;
+
+			if(ocn[i]->IsImmediate())
+			{
+				double value = EvaluableNode::ToNumber(ocn[i]);;
+				if(multiplicand)
+					product_immediate *= value;
+				else
+					product_immediate /= value;
+
+				//erase the node
+				if(nodes_freeable)
+					enm->FreeNodeTree(ocn[i]);
+				ocn.erase(begin(ocn) + i);
+
+				//recheck this position next iteration
+				i--;
+
+				continue;
+			}
+
+			//if two non-immediates in a row, see if the same
+			if(i + 1 < ocn.size() && !ocn[i + 1]->IsImmediate())
+			{
+				if(EvaluableNode::AreDeepEqual(ocn[i], ocn[i + 1]))
+				{
+					//if currently accumulating, count another one, otherwise count first two
+					if(currently_accumulating_nonimmediate)
+					{
+						if(multiplicand)
+							nonimmediate_accum_exponent += 1.0;
+						else
+							nonimmediate_accum_exponent -= 1.0;
+					}
+					else
+					{
+						currently_accumulating_nonimmediate = true;
+						if(!division)
+							nonimmediate_accum_exponent = 2.0;
+						else
+						{
+							//first two cancel out, otherwise negative
+							if(multiplicand)
+								nonimmediate_accum_exponent = 0.0;
+							else
+								nonimmediate_accum_exponent = -2.0;
+						}
+					}
+
+					//erase the node
+					if(nodes_freeable)
+						enm->FreeNodeTree(ocn[i]);
+					ocn.erase(begin(ocn) + i);
+
+					//recheck this position next iteration
+					i--;
+
+					any_changes = true;
+					continue;
+				}
+			}
+
+			//if made it here, need to put an exponentiation in front of the node
+			if(currently_accumulating_nonimmediate)
+			{
+				if(nonimmediate_accum_exponent == 0.0)
+				{
+					//erase the node
+					if(nodes_freeable)
+						enm->FreeNodeTree(ocn[i]);
+					ocn.erase(begin(ocn) + i);
+
+					//recheck this position next iteration
+					i--;
+				}
+				else if(nonimmediate_accum_exponent != 1.0)
+				{
+					EvaluableNode *new_term = enm->AllocNode(ENT_POW);
+					new_term->AppendOrderedChildNode(ocn[i]);
+					new_term->AppendOrderedChildNode(enm->AllocNode(
+						division ? -nonimmediate_accum_exponent : nonimmediate_accum_exponent));
+					ocn[i] = new_term;
+				}
+			}
+
+			//start over
+			currently_accumulating_nonimmediate = false;
+			nonimmediate_accum_exponent = 1.0;
+		}
+
+		//add on accumulated_immediate at end if nonzero
+		if(product_immediate != 1.0)
+		{
+			if(ocn.size() > 0)
+			{
+				ocn.push_back(enm->AllocNode(division ? -product_immediate : product_immediate));
+			}
+			else
+			{
+				en->ClearMetadata();
+				en->SetTypeViaNumberValue(product_immediate);
 			}
 		}
 
@@ -559,8 +713,7 @@ static constexpr auto rule_registry = MakeRuleRegistry<
 	ShortCircuitBooleans,
 	SortParameters,
 	FoldENT_ADD_and_SUBTRACT,
-	//TODO 25662: make sure consolidated results are computed for multiplication and division; for multiplication, change -1 multiplication into (- value)
-	//TODO 25662: consolidate already factored terms
+	FoldENT_MULTIPLY_and_DIVIDE,
 	ConsolidateConstantsENT_CONCAT,
 	TruncateToValidParameters,
 	SortParameters

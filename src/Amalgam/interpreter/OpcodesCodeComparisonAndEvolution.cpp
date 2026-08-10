@@ -1970,6 +1970,36 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
         )
         (* 4 a)
         20
+))"},
+		{R"&((simplify
+	(lambda
+		(- b a a 1)
+	)
+))&",
+		R"((-
+        b
+        (* 2 a)
+        1
+))"},
+		{R"&((simplify
+	(lambda
+		(* b a a 1 b 3)
+	)
+))&",
+		R"((*
+        (pow a 2)
+        (pow b 2)
+        3
+))"},
+		{R"&((simplify
+	(lambda
+		(/ b a a 1 3 a)
+	)
+))&",
+		R"((/
+        b
+        (pow a 3)
+        3
 ))"} });
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;

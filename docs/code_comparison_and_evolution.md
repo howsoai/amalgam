@@ -1994,7 +1994,7 @@ Output:
 #### Returns
 `any`
 #### Description
-Simplifies `code` in basic ways that will yield the same behavior and return the same result.
+Simplifies `code` in basic ways that will yield the same behavior and return the same result.  Note that values from boolean logic may not necessarily be preserved, with the opcodes "and" and "or" potentially returning just true or false.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

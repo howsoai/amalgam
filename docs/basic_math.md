@@ -30,7 +30,7 @@ Output:
 #### Returns
 `null|number`
 #### Description
-Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative.  If no parameters are provided it returns null.
+Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it evaluates to the negation of the value.  If no parameters are provided it returns null.
 #### Details
  - Permissions required:  none
  - Allows concurrency: true
@@ -90,7 +90,7 @@ Output:
 #### Returns
 `null|number`
 #### Description
-Evaluates to `x1` / `x2` / ... / `xN`.  If no parameters are provided, it returns null.
+Evaluates to `x1` / `x2` / ... / `xN`.  If only one parameter is passed, then it evaluates to the reciprocal of the value.  If no parameters are provided, it returns null.
 #### Details
  - Permissions required:  none
  - Allows concurrency: true
@@ -106,6 +106,14 @@ Example:
 Output:
 ```amalgam
 0.041666666666666664
+```
+Example:
+```amalgam
+(/ 2)
+```
+Output:
+```amalgam
+0.5
 ```
 
 [Amalgam Opcodes](./opcodes.md)

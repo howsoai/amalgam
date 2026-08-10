@@ -205,10 +205,7 @@ struct ShortCircuitBooleans final
 		if(ocn.size() == 0 || short_circuit)
 		{
 			if(nodes_freeable)
-			{
-				for(auto &cn : ocn)
-					enm->FreeNodeTree(cn);
-			}
+				enm->FreeNodeChildNodes(en);
 
 			en->ClearMetadata();
 			en->SetTypeViaBoolValue(short_circuit_value);
@@ -256,10 +253,7 @@ struct FoldENT_ADD_and_SUBTRACT final
 			if(EvaluableNode::IsNull(ocn[i]))
 			{
 				if(nodes_freeable)
-				{
-					for(auto &cn : ocn)
-						enm->FreeNodeTree(cn);
-				}
+					enm->FreeNodeChildNodes(en);
 
 				en->ClearMetadata();
 				en->SetType(ENT_NULL, false);
@@ -412,10 +406,7 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 			if(EvaluableNode::IsNull(ocn[i]))
 			{
 				if(nodes_freeable)
-				{
-					for(auto &cn : ocn)
-						enm->FreeNodeTree(cn);
-				}
+					enm->FreeNodeChildNodes(en);
 
 				en->ClearMetadata();
 				en->SetType(ENT_NULL, false);
@@ -561,10 +552,7 @@ struct ConsolidateConstantsENT_CONCAT final
 			if(EvaluableNode::IsNull(ocn[i]))
 			{
 				if(nodes_freeable)
-				{
-					for(auto &cn : ocn)
-						enm->FreeNodeTree(cn);
-				}
+					enm->FreeNodeChildNodes(en);
 
 				en->ClearMetadata();
 				en->SetType(ENT_NULL, false);

@@ -580,7 +580,7 @@ public:
 		auto &node_stack = EvaluableNode::reusableBuffer;
 		node_stack.clear();
 
-		// Seed the buffer with the direct children of *tree*.
+		//seed the buffer with the direct children of tree
 		if(tree->IsAssociativeArray())
 		{
 			for(auto &[_, e] : tree->GetMappedChildNodesReference())

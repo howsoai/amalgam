@@ -134,11 +134,11 @@ struct DeadCodeEliminationInENT_IF final
 	}
 };
 
-struct ShortCircuitENT_AND final
+struct ShortCircuitBooleans final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
-		return (en->GetType() == ENT_AND);
+		return (en->GetType() == ENT_AND || en->GetType() == ENT_OR);
 	}
 
 	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
@@ -155,6 +155,8 @@ struct ShortCircuitENT_AND final
 		//default to true
 		bool short_circuit_value = true;
 
+		bool is_or = (en->GetType() == ENT_OR);
+
 		//check each condition
 		for(size_t i = 0; i < ocn.size(); i++)
 		{
@@ -162,8 +164,10 @@ struct ShortCircuitENT_AND final
 			if(ocn[i] != nullptr && !ocn[i]->IsImmediate())
 				continue;
 
+			bool immediate_value = EvaluableNode::ToBool(ocn[i]);
+
 			//eliminate or short-circuit based on value
-			if(EvaluableNode::ToBool(ocn[i]))
+			if((!is_or && immediate_value) ||  (is_or && !immediate_value))
 			{
 				//erase the node
 				if(nodes_freeable)
@@ -173,71 +177,10 @@ struct ShortCircuitENT_AND final
 				//recheck this position next iteration
 				i--;
 			}
-			else //entirity is false
+			else //result is false
 			{
 				short_circuit = true;
 				short_circuit_value = false;
-			}
-		}
-
-		//if have eliminated all true values or short circuited, replace with a single value
-		if(ocn.size() == 0 || short_circuit)
-		{
-			if(nodes_freeable)
-			{
-				for(auto &cn : ocn)
-					enm->FreeNodeTree(cn);
-			}
-
-			en->ClearMetadata();
-			en->SetTypeViaBoolValue(short_circuit_value);
-		}
-	}
-};
-
-struct ShortCircuitENT_OR final
-{
-	bool Match(EvaluableNode *en) const noexcept
-	{
-		return (en->GetType() == ENT_OR);
-	}
-
-	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
-	{
-		auto &ocn = en->GetOrderedChildNodesReference();
-		if(ocn.size() == 0)
-		{
-			en->ClearMetadata();
-			en->SetType(ENT_NULL, false);
-			return;
-		}
-
-		bool short_circuit = false;
-		//default to false
-		bool short_circuit_value = false;
-
-		//check each condition
-		for(size_t i = 0; i < ocn.size(); i++)
-		{
-			//if not immediate, then skip
-			if(ocn[i] != nullptr && !ocn[i]->IsImmediate())
-				continue;
-
-			//eliminate or short-circuit based on value
-			if(!EvaluableNode::ToBool(ocn[i]))
-			{
-				//erase the node
-				if(nodes_freeable)
-					enm->FreeNodeTree(ocn[i]);
-				ocn.erase(begin(ocn) + i);
-
-				//recheck this position next iteration
-				i--;
-			}
-			else //entirity is true
-			{
-				short_circuit = true;
-				short_circuit_value = true;
 			}
 		}
 
@@ -566,8 +509,7 @@ static constexpr auto rule_registry = MakeRuleRegistry<
 	FlattenAssociations,
 	DeadCodeEliminationInENT_IF,
 	SimplifySelfContainedWithImmediates,
-	ShortCircuitENT_AND,
-	ShortCircuitENT_OR,
+	ShortCircuitBooleans,
 	SortParameters,
 	FoldENT_ADD_and_SUBTRACT,
 	//TODO 25662: make sure consolidated results are computed for multiplication, subtraction, division; for multiplication, change -1 multiplication into (- value)

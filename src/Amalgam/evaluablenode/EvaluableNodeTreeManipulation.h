@@ -128,6 +128,11 @@ public:
 			return MergeTrees(this, a, b);
 		}
 
+		virtual bool AreDeepEqual(EvaluableNode *a, EvaluableNode *b)
+		{
+			return EvaluableNode::AreDeepEqual(a, b);
+		}
+
 		virtual bool KeepAllNonMergeableValues()
 		{
 			return keepAllOfBoth;

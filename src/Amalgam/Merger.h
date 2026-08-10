@@ -186,6 +186,12 @@ public:
 	// the value that is more valid if applicable
 	virtual T MergeValues(T a, T b, bool must_merge = false) = 0;
 
+	//returns true if a and b are deep equal
+	virtual bool AreDeepEqual(T a, T b)
+	{
+		return (a == b);
+	}
+
 	//Returns true if the merge should keep all elements that do not have a corresponding element to merge with
 	virtual bool KeepAllNonMergeableValues() = 0;
 
@@ -237,7 +243,7 @@ public:
 		{
 			for(size_t i2 = 0; i2 < a2.size(); i2++)
 			{
-				if(EvaluableNode::AreDeepEqual(a1[i1], a2[i2]))
+				if(AreDeepEqual(a1[i1], a2[i2]))
 				{
 					T m = MergeValues(a1[i1], a2[i2]);
 					merged.emplace_back(m);

@@ -192,10 +192,10 @@ struct ShortCircuitBooleans final
 				//recheck this position next iteration
 				i--;
 			}
-			else //result is false
+			else //can short-circuit
 			{
 				short_circuit = true;
-				short_circuit_value = false;
+				short_circuit_value = is_or;
 			}
 
 			any_changes = true;

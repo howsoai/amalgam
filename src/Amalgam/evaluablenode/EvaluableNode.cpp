@@ -489,6 +489,12 @@ void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 	if(n == this)
 		return;
 
+	if(n == nullptr)
+	{
+		ClearMetadata();
+		return;
+	}
+
 	auto [annotations, comments] = n->GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
 
 	if(annotations.empty() && comments.empty())

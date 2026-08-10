@@ -1907,7 +1907,7 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description =
-		R"(Simplifies `code` in basic ways that will yield the same behavior and return the same result.)";
+		R"(Simplifies `code` in basic ways that will yield the same behavior and return the same result.  Note that values from boolean logic may not necessarily be preserved, with the opcodes "and" and "or" potentially returning just true or false.)";
 	d.examples = MakeAmalgamExamples({ {R"&((simplify
 	(lambda
 		(+

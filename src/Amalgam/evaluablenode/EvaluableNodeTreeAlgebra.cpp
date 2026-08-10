@@ -704,6 +704,7 @@ static constexpr auto rule_registry = MakeRuleRegistry<
 	FoldENT_MULTIPLY_and_DIVIDE,
 	ConsolidateConstantsENT_CONCAT,
 	TruncateToValidParameters,
+	//sort again to yield canonical output
 	SortParameters
 >();
 

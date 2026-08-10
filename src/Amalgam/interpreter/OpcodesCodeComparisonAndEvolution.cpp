@@ -1903,11 +1903,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, Eva
 static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode_ENT_SIMPLIFY, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC})
+		OpcodeDetails::ParameterGroup({"code", OpcodeDetails::DataType::ANY_BASIC})
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description =
-		R"(Simplifies all of the code node in ways that will yield the same behavior and returns the result.)";
+		R"(Simplifies `code` in basic ways that will yield the same behavior and return the same result.)";
 	d.examples = MakeAmalgamExamples({ {R"&((simplify
 	(lambda
 		(+
@@ -2006,8 +2006,6 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 	d.opcodeGroup = _opcode_group;
 	return d;
 });
-
-//TODO 25662: add more unit tests
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SIMPLIFY(
 	EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)

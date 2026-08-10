@@ -214,6 +214,7 @@
   - [union](./code_comparison_and_evolution.md#opcode-union)
   - [difference](./code_comparison_and_evolution.md#opcode-difference)
   - [mix](./code_comparison_and_evolution.md#opcode-mix)
+  - [simplify](./code_comparison_and_evolution.md#opcode-simplify)
 ### Entity Comparison and Evolution
   - [total_entity_size](./entity_comparison_and_evolution.md#opcode-total_entity_size)
   - [mutate_entity](./entity_comparison_and_evolution.md#opcode-mutate_entity)

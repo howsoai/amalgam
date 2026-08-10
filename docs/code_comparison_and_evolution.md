@@ -38,7 +38,7 @@ Output:
 #### Returns
 `any`
 #### Description
-Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.0001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.
+Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.0001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "simplify_node", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -221,13 +221,14 @@ Output:
 ```amalgam
 {
         change_type 0.15
-        insert 0.15
-        insert_element 0.15
-        remove 0.15
+        insert 0.14
+        insert_element 0.14
+        remove 0.14
         remove_all_elements 0.0001
-        remove_element 0.15
+        remove_element 0.14
         replace_element_with_copy 0.0999
-        swap_elements 0.15
+        simplify_node 0.05
+        swap_elements 0.14
 }
 ```
 
@@ -435,6 +436,14 @@ Example:
 Output:
 ```amalgam
 3.5
+```
+Example:
+```amalgam
+(commonality (lambda (- a b)) (lambda (- b)))
+```
+Output:
+```amalgam
+2
 ```
 
 [Amalgam Opcodes](./opcodes.md)
@@ -1094,6 +1103,22 @@ Output:
 	3
 	[1 2 3]
 ]
+```
+Example:
+```amalgam
+(union (lambda (+ a b)) (lambda (+ b)))
+```
+Output:
+```amalgam
+(+ a b)
+```
+Example:
+```amalgam
+(union (lambda (- a b)) (lambda (- b)))
+```
+Output:
+```amalgam
+(- a b)
 ```
 
 [Amalgam Opcodes](./opcodes.md)
@@ -1959,6 +1984,165 @@ Output:
 	w [2]
 	z [5]
 }
+```
+
+[Amalgam Opcodes](./opcodes.md)
+
+### Opcode: `simplify`
+#### Parameters
+`any code`
+#### Returns
+`any`
+#### Description
+Simplifies `code` in basic ways that will yield the same behavior and return the same result.
+#### Details
+ - Permissions required:  none
+ - Allows concurrency: false
+ - Requires entity: false
+ - Creates new scope: false
+ - Creates new target scope: false
+ - Value newness (whether references existing node): new
+#### Examples
+Example:
+```amalgam
+(simplify
+	(lambda
+		(+
+			0
+			1
+			2
+			3
+			4
+			5
+			6
+		)
+	)
+)
+```
+Output:
+```amalgam
+21
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(if
+			a (if .false 1 .true 2 c)
+			b (if 3)
+			.false 3
+			4			
+		)
+	)
+)
+```
+Output:
+```amalgam
+(if a 2 b 3 4)
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(and a .true b (or .false c d))
+	)
+)
+```
+Output:
+```amalgam
+(and
+        (or c d)
+        a
+        b
+)
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(concat "h" "e" l l "o" " " "w" o r l "d" "!")
+	)
+)
+```
+Output:
+```amalgam
+(concat
+        "he"
+        l
+        l
+        "o w"
+        o
+        r
+        l
+        "d!"
+)
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(+ (exp a) a 4 2 (+ 3 4 a) (+ 3 a 4) a (exp a))
+	)
+)
+```
+Output:
+```amalgam
+(+
+        (*
+                (exp a)
+                2
+        )
+        (* 4 a)
+        20
+)
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(- b a a 1)
+	)
+)
+```
+Output:
+```amalgam
+(-
+        b
+        (* 2 a)
+        1
+)
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(* b a a 1 b 3)
+	)
+)
+```
+Output:
+```amalgam
+(*
+        (pow a 2)
+        (pow b 2)
+        3
+)
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(/ b a a 1 3 a)
+	)
+)
+```
+Output:
+```amalgam
+(/
+        b
+        (pow a 3)
+        3
+)
 ```
 
 [Amalgam Opcodes](./opcodes.md)

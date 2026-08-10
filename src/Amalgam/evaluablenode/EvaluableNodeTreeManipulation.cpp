@@ -493,9 +493,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 			generalized_node->SetOrderedChildNodes(std::move(mm->MergeSequences(*tree1_ordered_childs, *tree2_ordered_childs)));
 			break;
 
-//TODO 25662: fix newly introduced bugs here
-//TODO 25662: add unit test for (union (lambda (- a b)) (lambda (- b)))
-
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED:
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED:
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED:
@@ -541,17 +538,17 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 			if(tree1_first_in_unordered)
 				a1.push_back((*tree1_ordered_childs)[0]);
 			else if(tree1_ordered_childs->size() > 1)
-				a1.insert(end(a1), begin(*tree1_ordered_childs), end(*tree1_ordered_childs));
+				a1.insert(end(a1), begin(*tree1_ordered_childs) + 1, end(*tree1_ordered_childs));
 
 			if(tree2_first_in_unordered)
 				a2.push_back((*tree2_ordered_childs)[0]);
-			if(tree2_ordered_childs->size() > 1)
-				a2.insert(end(a2), begin(*tree2_ordered_childs), end(*tree2_ordered_childs));
+			else if(tree2_ordered_childs->size() > 1)
+				a2.insert(end(a2), begin(*tree2_ordered_childs) + 1, end(*tree2_ordered_childs));
 			
 			//append the rest
 			if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED)
 				merged = mm->MergeUnorderedSets(a1, a2);
-			if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED)
+			else if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED)
 				merged = mm->MergeSequences(a1, a2);
 			else if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED)
 				merged = mm->MergeUnorderedSetsOfPairs(a1, a2);

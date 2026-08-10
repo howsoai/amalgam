@@ -446,7 +446,9 @@ static OpcodeInitializer _ENT_COMMONALITY(ENT_COMMONALITY, &Interpreter::Interpr
 	[1 2 3]
 	(unordered_list 1 2 3)
 	{types_must_match .false}
-))&", R"(3.5)"}
+))&", R"(3.5)"},
+		{R"&((commonality (lambda (- a b)) (lambda (- b))))&",
+			R"(2)"},
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.05;

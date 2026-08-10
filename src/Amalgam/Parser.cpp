@@ -1238,8 +1238,14 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		{
 			auto &tree_ocn = tree->GetOrderedChildNodesReference();
 			if(upd.sortKeys
-				&& GetChildNodeStructureType(tree_type) == OpcodeDetails::ChildNodeStructureType::UNORDERED)
+				&& (GetChildNodeStructureType(tree_type) == OpcodeDetails::ChildNodeStructureType::UNORDERED
+					|| GetChildNodeStructureType(tree_type)
+						== OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED))
 			{
+				size_t starting_index = 0;
+				if(GetChildNodeStructureType(tree_type) == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED)
+					starting_index = 1;
+
 				std::vector<std::string> unordered_code;
 				unordered_code.reserve(tree_ocn.size());
 
@@ -1267,7 +1273,8 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				//move current code back in
 				std::swap(previous_code, upd.result);
 
-				std::sort(begin(unordered_code), end(unordered_code), StringManipulation::StringNaturalCompareSort);
+				std::sort(begin(unordered_code) + starting_index, end(unordered_code),
+					StringManipulation::StringNaturalCompareSort);
 				for(auto &uc : unordered_code)
 					upd.result.append(uc);
 			}

@@ -53,7 +53,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode_ENT_SUBTRACT, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED,
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	});
@@ -151,7 +151,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 
 static OpcodeInitializer _ENT_DIVIDE(ENT_DIVIDE, &Interpreter::InterpretNode_ENT_DIVIDE, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED,
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	});

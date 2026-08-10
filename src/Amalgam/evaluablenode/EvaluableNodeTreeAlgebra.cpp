@@ -547,13 +547,18 @@ struct SortParameters final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
-		return (GetChildNodeStructureType(en->GetType()) == OpcodeDetails::ChildNodeStructureType::UNORDERED);
+		auto child_structure_type = GetChildNodeStructureType(en->GetType());
+		return (child_structure_type == OpcodeDetails::ChildNodeStructureType::UNORDERED ||
+				child_structure_type == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED);
 	}
 
 	void Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
-		std::sort(begin(ocn), end(ocn), EvaluableNode::IsStrictlyLessThan);
+		if(GetChildNodeStructureType(en->GetType()) == OpcodeDetails::ChildNodeStructureType::UNORDERED)
+			std::sort(begin(ocn), end(ocn), EvaluableNode::IsStrictlyLessThan);
+		else if(ocn.size() > 2)
+			std::sort(begin(ocn) + 1, end(ocn), EvaluableNode::IsStrictlyLessThan);
 	}
 };
 

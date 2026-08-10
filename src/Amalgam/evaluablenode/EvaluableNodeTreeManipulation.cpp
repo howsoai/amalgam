@@ -493,37 +493,65 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 			generalized_node->SetOrderedChildNodes(std::move(mm->MergeSequences(*tree1_ordered_childs, *tree2_ordered_childs)));
 			break;
 
+//TODO 25662: fix newly introduced bugs here
+//TODO 25662: add unit test for (union (lambda (+ a b)) (lambda (+ b)))
+//TODO 25662: add unit test for (union (lambda (- a b)) (lambda (- b)))
+
+		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED:
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED:
 		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED:
 		{
+			//if can operate simply on position, then exit early
+			if(tree1_ordered_childs->size() <= 1 && tree2_ordered_childs->size() <= 1)
+			{
+				generalized_node->SetOrderedChildNodes(
+					std::move(mm->MergePositions(*tree1_ordered_childs, *tree2_ordered_childs)));
+				break;
+			}
+
 			//start from a clean slate
 			generalized_node->ClearOrderedChildNodes();
 
-			//make arrays of just the first node
 			EvaluableNode::OrderedType a1;
 			EvaluableNode::OrderedType a2;
-			if(tree1_ordered_childs->size() > 0)
+			EvaluableNode::OrderedType merged;
+			size_t tree1_ordered_size = tree1_ordered_childs->size();
+			size_t tree2_ordered_size = tree2_ordered_childs->size();
+
+			//merge first as position unless one of the positions is special and needs to be compared with unordered
+			//note that if both nodes need the special handling, then that is handled above if each only has one node
+			bool first_may_be_unordered
+				= (cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED);
+			bool tree1_first_in_unordered = (first_may_be_unordered && tree1_ordered_size == 1);
+			bool tree2_first_in_unordered = (first_may_be_unordered && tree2_ordered_size == 1);
+			
+			//make arrays of just the first node
+			if(tree1_ordered_size > 0 && !tree1_first_in_unordered)
 				a1.emplace_back((*tree1_ordered_childs)[0]);
-			if(tree2_ordered_childs->size() > 0)
+			if(tree2_ordered_size > 0 && !tree2_first_in_unordered)
 				a2.emplace_back((*tree2_ordered_childs)[0]);
 
 			//put on the first position
-			auto merged = mm->MergePositions(a1, a2);
+			merged = mm->MergePositions(a1, a2);
 			generalized_node->GetOrderedChildNodes().insert(end(generalized_node->GetOrderedChildNodes()), begin(merged), end(merged));
 
 			//make new arrays without first position
 			a1.clear();
 			a2.clear();
-			if(tree1_ordered_childs->size() > 0)
-				a1.insert(begin(a1), begin(*tree1_ordered_childs), end(*tree1_ordered_childs));
-			if(tree2_ordered_childs->size() > 0)
-				a2.insert(begin(a2), begin(*tree2_ordered_childs), end(*tree2_ordered_childs));
-			if(a1.size() > 0)
-				a1.erase(begin(a1));
-			if(a2.size() > 0)
-				a2.erase(begin(a2));
 
+			if(tree1_first_in_unordered)
+				a1.push_back((*tree1_ordered_childs)[0]);
+			else if(tree1_ordered_childs->size() > 1)
+				a1.insert(end(a1), begin(*tree1_ordered_childs), end(*tree1_ordered_childs));
+
+			if(tree2_first_in_unordered)
+				a2.push_back((*tree2_ordered_childs)[0]);
+			if(tree2_ordered_childs->size() > 1)
+				a2.insert(end(a2), begin(*tree2_ordered_childs), end(*tree2_ordered_childs));
+			
 			//append the rest
+			if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED)
+				merged = mm->MergeUnorderedSets(a1, a2);
 			if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED)
 				merged = mm->MergeSequences(a1, a2);
 			else if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED)
@@ -704,12 +732,35 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 			break;
 
 		case OpcodeDetails::ChildNodeStructureType::UNORDERED:
+		case OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED:
 		{
-			EvaluableNode::OrderedType a2(tree2->GetOrderedChildNodesReference());
+			auto &ocn1 = tree1->GetOrderedChildNodesReference();
+			auto &ocn2 = tree2->GetOrderedChildNodesReference();
+			auto size1 = ocn1.size();
+			auto size2 = ocn2.size();
+
+			size_t starting_index_1 = 0;
+			size_t starting_index_2 = 0;
+
+			if(cnst == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED)
+			{
+				//if both are treating the first node in the same way, then can compare
+				if( (size1 == 1 && size2 == 1) || (size1 > 1 && size2 > 1))
+					commonality += NumberOfSharedNodes(ocn1[0], ocn2[0], mmrp);
+
+				if(size1 > 1)
+					starting_index_1 = 1;
+				if(size2 > 1)
+					starting_index_2 = 1;
+			}
+
+			EvaluableNode::OrderedType a2(begin(ocn2) + starting_index_2, end(ocn2));
 
 			//for every element in a1, check to see if there's any in a2
-			for(auto &a1_current : tree1->GetOrderedChildNodesReference())
+			for(size_t i = starting_index_1; i < ocn1.size(); i++)
 			{
+				auto &a1_current = ocn1[i];
+
 				//find the node that best matches this one, greedily
 				bool best_match_found = false;
 				size_t best_match_index = 0;

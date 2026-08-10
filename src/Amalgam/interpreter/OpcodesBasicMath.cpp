@@ -59,7 +59,7 @@ static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode
 	});
 	d.returns = OpcodeDetails::DataType::NULL_TYPE | OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative.  If no parameters are provided it returns null.)";
+	d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it evaluates to the negation of the value.  If no parameters are provided it returns null.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((- 1 2 3 4))", R"(-8)"},
 		{R"((- 3))", R"(-3)"}
@@ -157,9 +157,10 @@ static OpcodeInitializer _ENT_DIVIDE(ENT_DIVIDE, &Interpreter::InterpretNode_ENT
 	});
 	d.returns = OpcodeDetails::DataType::NULL_TYPE | OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to `x1` / `x2` / ... / `xN`.  If no parameters are provided, it returns null.)";
+	d.description = R"(Evaluates to `x1` / `x2` / ... / `xN`.  If only one parameter is passed, then it evaluates to the reciprocal of the value.  If no parameters are provided, it returns null.)";
 	d.examples = MakeAmalgamExamples({
-		{R"((/ 1.0 2 3 4))", R"(0.041666666666666664)"}
+		{R"((/ 1.0 2 3 4))", R"(0.041666666666666664)"},
+		{R"((/ 2))", R"(0.5)"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 12.0;
@@ -223,6 +224,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, 
 			break;
 		}
 	}
+
+	//if just one parameter, then treat as reciprocal
+	if(ocn.size() == 1)
+		value = 1.0 / value;
 
 	return AllocReturn(value, immediate_result);
 }

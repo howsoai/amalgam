@@ -559,9 +559,8 @@ static constexpr auto rule_registry = MakeRuleRegistry<
 	ShortCircuitBooleans,
 	SortParameters,
 	FoldENT_ADD_and_SUBTRACT,
-	//TODO 25662: make sure consolidated results are computed for multiplication, subtraction, division; for multiplication, change -1 multiplication into (- value)
+	//TODO 25662: make sure consolidated results are computed for multiplication and division; for multiplication, change -1 multiplication into (- value)
 	//TODO 25662: consolidate already factored terms
-	//TODO 25662: properly account for execution count for rule engine
 	ConsolidateConstantsENT_CONCAT,
 	TruncateToValidParameters,
 	SortParameters

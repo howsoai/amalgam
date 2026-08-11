@@ -1974,10 +1974,10 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 		{R"&((simplify (lambda (-))))&", R"(.null)"},
 		{R"&((simplify (lambda (- a))))&", R"((- a))"},
 		{R"&((simplify (lambda (- 5 a))))&", R"((- 5 a))"},
-		{R"&((simplify (lambda (- a 0))))&", R"((* a))"},
+		{R"&((simplify (lambda (- a 0))))&", R"(a)"},
 		{R"&((call (simplify (lambda (- a 0))) {a -0}))&", R"(-0)"},
 		{R"&((simplify (lambda (- a -0))))&", R"((- a -0))"},
-		{R"&((call (simplify (lambda (- a 0))) {a "2"}))&", R"(2)"},
+		{R"&((call (simplify (lambda (- a 0))) {a "2"}))&", R"("2")"},
 		{R"&((simplify (lambda (- b a a 1))))&", R"((-
 	b
 	(* 2 a)
@@ -2006,9 +2006,9 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 		{R"&((simplify (lambda (/ a))))&", R"((/ a))"},
 		{R"&((simplify (lambda (/ a 2))))&", R"((/ a 2))"},
 		{R"&((simplify (lambda (/ 6 a))))&", R"((/ 6 a))"},
-		{R"&((simplify (lambda (/ a 1))))&", R"((* a))"},
+		{R"&((simplify (lambda (/ a 1))))&", R"(a)"},
 		{R"&((call (simplify (lambda (/ a 1))) {a -0}))&", R"(-0)"},
-		{R"&((call (simplify (lambda (/ a 1))) {a "2"}))&", R"(2)"},
+		{R"&((call (simplify (lambda (/ a 1))) {a "2"}))&", R"("2")"},
 		{R"&((simplify (lambda (/ b a a 1 3 a))))&", R"((/
 	b
 	(pow a 3)
@@ -2018,7 +2018,7 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 		{R"&((call (simplify (lambda (/ a a a))) {a 2}))&", R"(0.5)"},
 		{R"&((call (simplify (lambda (/ a a a a))) {a 2}))&", R"(0.25)"},
 		{R"&((call (simplify (lambda (/ a a b))) {a 2 b 4}))&", R"(0.25)"},
-		{R"&((simplify (lambda (/ a 2 0.5))))&", R"((* a))"},
+		{R"&((simplify (lambda (/ a 2 0.5))))&", R"(a)"},
 		{R"&((simplify (lambda (/ 12 2 3))))&", R"(2)"},
 		{R"&((simplify (lambda (/ a 2 3))))&", R"((/ a 6))"},
 		{R"&((call (simplify (lambda (/ a -1 0))) {a 2}))&", R"(-.infinity)"},

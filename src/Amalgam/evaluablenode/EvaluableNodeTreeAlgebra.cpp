@@ -128,12 +128,16 @@ struct DeadCodeElimination final
 			if(ocn[i] != nullptr && !ocn[i]->IsImmediate())
 				continue;
 
+			//will either eliminate branch or replace code above with it
+			any_changes = true;
+
 			//found it, replace with this
 			if(EvaluableNode::ToBool(ocn[i]))
 			{
 				en->CopyNodeFrom(ocn[i + 1]);
 
 				node_replaced = true;
+				any_changes = true;
 				break;
 			}
 			else //remove this branch
@@ -147,8 +151,6 @@ struct DeadCodeElimination final
 				//recheck this position next iteration
 				i -= 2;
 			}
-
-			any_changes = true;
 		}
 
 		//check for low number of parameters
@@ -207,6 +209,8 @@ struct ShortCircuitBooleans final
 
 			bool immediate_value = EvaluableNode::ToBool(ocn[i]);
 
+			any_changes = true;
+
 			//eliminate or short-circuit based on value
 			if((!is_or && immediate_value) ||  (is_or && !immediate_value))
 			{
@@ -220,9 +224,8 @@ struct ShortCircuitBooleans final
 			{
 				short_circuit = true;
 				short_circuit_value = is_or;
+				break;
 			}
-
-			any_changes = true;
 		}
 
 		//if have eliminated all true values or short circuited, replace with a single value
@@ -404,7 +407,10 @@ struct FoldAdditionAndSubtraction final
 			}
 			else if(ocn.size() == 1)
 			{
-				en->SetType(ENT_MULTIPLY, false);
+				//replace en with the remaining child node
+				EvaluableNode *child = ocn[0];
+				en->CopyNodeFrom(child);
+				rc.FreeNodeIfPossible(child);
 			}
 		}
 
@@ -583,7 +589,10 @@ struct FoldMultiplicationAndDivision final
 			}
 			else if(ocn.size() == 1)
 			{
-				en->SetType(ENT_MULTIPLY, false);
+				//replace en with the remaining child node
+				EvaluableNode *child = ocn[0];
+				en->CopyNodeFrom(child);
+				rc.FreeNodeIfPossible(child);
 			}
 		}
 

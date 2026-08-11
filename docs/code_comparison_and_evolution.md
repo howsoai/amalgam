@@ -2098,19 +2098,35 @@ Output:
 ```
 Example:
 ```amalgam
-(simplify
-	(lambda
-		(- b a a 1)
-	)
-)
+(simplify (lambda (- 5 a)))
 ```
 Output:
 ```amalgam
-(-
-		b
-		(* 2 a)
-		1
-)
+(- 5 a)
+```
+Example:
+```amalgam
+(simplify (lambda (- a 0)))
+```
+Output:
+```amalgam
+(- a 0)
+```
+Example:
+```amalgam
+(simplify (lambda (- a 5 -5)))
+```
+Output:
+```amalgam
+(- a -5 5)
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a 10000000000000000 -10000000000000000))) {a 1})
+```
+Output:
+```amalgam
+0
 ```
 Example:
 ```amalgam
@@ -2130,19 +2146,67 @@ Output:
 ```
 Example:
 ```amalgam
-(simplify
-	(lambda
-		(/ b a a 1 3 a)
-	)
-)
+(simplify (lambda (/ a 2)))
 ```
 Output:
 ```amalgam
-(/
-		b
-		(pow a 3)
-		3
-)
+(/ a 2)
+```
+Example:
+```amalgam
+(simplify (lambda (/ 6 a)))
+```
+Output:
+```amalgam
+(/ 6 a)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 1)))
+```
+Output:
+```amalgam
+(/ a 1)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 2 0.5)))
+```
+Output:
+```amalgam
+(/ a 0.5 2)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 2 0)))
+```
+Output:
+```amalgam
+(/ a 0 2)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a .infinity 0)))
+```
+Output:
+```amalgam
+(/ a .infinity 0)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a -1 0)))
+```
+Output:
+```amalgam
+(/ a -1 0)
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 1e-200 1e-200))) {a 0})
+```
+Output:
+```amalgam
+0
 ```
 
 [Amalgam Opcodes](./opcodes.md)

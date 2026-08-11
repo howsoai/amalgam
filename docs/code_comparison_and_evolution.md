@@ -2394,6 +2394,14 @@ Output:
 ```
 Example:
 ```amalgam
+(call (simplify (lambda (/ a -0))) {a 2})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
 (simplify (lambda (/ a .null b)))
 ```
 Output:
@@ -2431,6 +2439,81 @@ Example:
 Output:
 ```amalgam
 a
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 7 7)))
+```
+Output:
+```amalgam
+(/ a 49)
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 7 7))) {a 49})
+```
+Output:
+```amalgam
+1
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 7 7 2)))
+```
+Output:
+```amalgam
+(/ a 98)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 49)))
+```
+Output:
+```amalgam
+(/ a 49)
+```
+Example:
+```amalgam
+(simplify (simplify (lambda (/ a 7 7))))
+```
+Output:
+```amalgam
+(/ a 49)
+```
+Example:
+```amalgam
+(simplify (lambda (concat "a" (concat b "c") "d")))
+```
+Output:
+```amalgam
+(concat "a" b "cd")
+```
+Example:
+```amalgam
+(call (simplify (lambda (concat "a" (concat b "c") "d"))) {b "-"})
+```
+Output:
+```amalgam
+"a-cd"
+```
+Example:
+```amalgam
+(call
+	(simplify
+		(lambda
+			(concat
+				(concat "a" b)
+				"m"
+				(concat c "d")
+			)
+		)
+	)
+	{b "X" c "Y"}
+)
+```
+Output:
+```amalgam
+"aXmYd"
 ```
 
 [Amalgam Opcodes](./opcodes.md)

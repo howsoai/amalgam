@@ -1,6 +1,7 @@
 //project headers:
 #include "Entity.h"
 #include "EvaluableNode.h"
+#include "EvaluableNodeTreeAlgebra.h"
 #include "Interpreter.h"
 #include "OpcodeDetails.h"
 #include "Parser.h"
@@ -2709,6 +2710,38 @@ AmalgamExample{ R"&((seq
 ))&", R"({"155" "155: 0.1 {deg 0}" "190" "190: 0.045454545454545456 {deg 12}" "200" "200: 0.05555555555555555 {deg 8}"})", "", R"((destroy_entities "CyclicTestEntity"))" }
 );
 
+//Parser canonicalization sorts unordered operands before opcode examples run.  Mutate parsed
+//trees so this regression exercises the simplifier's requirement to preserve the evaluation
+//order of non-associative arithmetic.
+static bool ValidateSimplifyPreservesNonAssociativeOperandOrder(EvaluableNodeManager &enm)
+{
+	auto preserves_mutated_order = [&enm](std::string_view source, EvaluableNodeType type,
+		double expected_second, double expected_third)
+	{
+		auto [tree, warnings, error_offset, code_complete] = Parser::Parse(source, &enm);
+		if(tree == nullptr || tree->GetType() != type ||
+			tree->GetOrderedChildNodesReference().size() != 3)
+		{
+			enm.FreeNodeTree(tree);
+			return false;
+		}
+
+		auto &children = tree->GetOrderedChildNodesReference();
+		std::swap(children[1], children[2]);
+		EvaluableNodeTreeAlgebra::SimplifyTree(tree, &enm);
+
+		bool preserved = tree->GetType() == type && children.size() == 3 &&
+			children[1]->GetType() == ENT_NUMBER && children[2]->GetType() == ENT_NUMBER &&
+			children[1]->GetNumberValueReference() == expected_second &&
+			children[2]->GetNumberValueReference() == expected_third;
+		enm.FreeNodeTree(tree);
+		return preserved;
+	};
+
+	return preserves_mutated_order("(/ a 1e-200 1e200)", ENT_DIVIDE, 1e200, 1e-200) &&
+		preserves_mutated_order("(- a -5 5)", ENT_SUBTRACT, 5.0, -5.0);
+}
+
 //runs a test suite against the language
 //the return value of this function will be returned for the executable
 int32_t RunAmalgamLanguageValidation()
@@ -2748,6 +2781,12 @@ int32_t RunAmalgamLanguageValidation()
 		else
 			failed_test_names_and_numbers.emplace_back("unit test", unit_test_num);
 	}
+
+	std::cout << "Validating simplify preserves non-associative operand order: ";
+	if(ValidateSimplifyPreservesNonAssociativeOperandOrder(entity->evaluableNodeManager))
+		std::cout << "Passed" << std::endl;
+	else
+		failed_test_names_and_numbers.emplace_back("simplify operand order regression", 0);
 
 	delete entity;
 

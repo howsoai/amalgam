@@ -4,6 +4,7 @@
 
 //system headers:
 #include <array>
+#include <cmath>
 #include <utility>
 
 //converts a stateless rule type into a pair of plain function pointers
@@ -226,7 +227,44 @@ struct FoldENT_ADD_and_SUBTRACT final
 	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
 		if(en->GetType() == ENT_SUBTRACT)
-			return false;
+		{
+			auto &ocn = en->GetOrderedChildNodesReference();
+
+			//Remove only positive-zero subtrahends; binary identities become unary numeric carriers.
+			bool any_changes = false;
+			for(size_t i = 0; i < ocn.size(); i++)
+			{
+				//any null short circuits to a null
+				if(EvaluableNode::IsNull(ocn[i]))
+				{
+					if(nodes_freeable)
+						enm->FreeNodeChildNodes(en);
+
+					en->ClearMetadata();
+					en->SetType(ENT_NULL, false);
+					return true;
+				}
+
+				if(i > 0 && ocn[i]->IsImmediate())
+				{
+					double value = EvaluableNode::ToNumber(ocn[i]);
+					if(value == 0.0 && !std::signbit(value))
+					{
+						if(nodes_freeable)
+							enm->FreeNodeTree(ocn[i]);
+						ocn.erase(begin(ocn) + i);
+						i--;
+
+						//Preserve numeric coercion and return-value ownership for a binary identity.
+						if(ocn.size() == 1)
+							en->SetType(ENT_MULTIPLY, false);
+						any_changes = true;
+					}
+				}
+			}
+
+			return any_changes;
+		}
 
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
@@ -382,7 +420,44 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
 		if(en->GetType() == ENT_DIVIDE)
-			return false;
+		{
+			auto &ocn = en->GetOrderedChildNodesReference();
+
+			//Remove only unit divisors; binary identities become unary numeric carriers.
+			bool any_changes = false;
+			for(size_t i = 0; i < ocn.size(); i++)
+			{
+				//any null short circuits to a null
+				if(EvaluableNode::IsNull(ocn[i]))
+				{
+					if(nodes_freeable)
+						enm->FreeNodeChildNodes(en);
+
+					en->ClearMetadata();
+					en->SetType(ENT_NULL, false);
+					return true;
+				}
+
+				if(i > 0 && ocn[i]->IsImmediate())
+				{
+					double value = EvaluableNode::ToNumber(ocn[i]);
+					if(value == 1.0)
+					{
+						if(nodes_freeable)
+							enm->FreeNodeTree(ocn[i]);
+						ocn.erase(begin(ocn) + i);
+						i--;
+
+						//Preserve numeric coercion and return-value ownership for a binary identity.
+						if(ocn.size() == 1)
+							en->SetType(ENT_MULTIPLY, false);
+						any_changes = true;
+					}
+				}
+			}
+
+			return any_changes;
+		}
 
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)

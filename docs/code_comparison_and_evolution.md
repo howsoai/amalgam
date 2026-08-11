@@ -2408,6 +2408,14 @@ Output:
 ```amalgam
 (/ a 2)
 ```
+Example:
+```amalgam
+(simplify (lambda (pow a 1)))
+```
+Output:
+```amalgam
+a
+```
 
 [Amalgam Opcodes](./opcodes.md)
 

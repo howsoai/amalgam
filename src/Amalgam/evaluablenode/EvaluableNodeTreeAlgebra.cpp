@@ -34,7 +34,7 @@ public:
 	inline void FreeNodeChildNodesIfPossible(EvaluableNode *en)
 	{
 		if(nodesFreeable)
-			enm->FreeNode(en);
+			enm->FreeNodeChildNodes(en);
 	}
 
 	EvaluableNodeManager *enm;
@@ -888,6 +888,7 @@ void EvaluableNodeTreeAlgebra::SimplifyNode(EvaluableNode *en, EvaluableNodeMana
 	bool nodes_freeable, Interpreter *interpreter)
 {
 	bool any_changes = false;
+	size_t total_count = 0;
 	RuleContext rc{ enm, nodes_freeable, interpreter };
 	do
 	{
@@ -902,7 +903,8 @@ void EvaluableNodeTreeAlgebra::SimplifyNode(EvaluableNode *en, EvaluableNodeMana
 			if(interpreter != nullptr && interpreter->AreExecutionResourcesExhausted(true))
 				return;
 		}
-	} while(any_changes);
+		//limit in case it goes into an infinite loop for some reason
+	} while(any_changes && ++total_count < 50);
 }
 
 EvaluableNode *EvaluableNodeTreeAlgebra::SimplifyTree(EvaluableNode *tree, EvaluableNodeManager *enm,

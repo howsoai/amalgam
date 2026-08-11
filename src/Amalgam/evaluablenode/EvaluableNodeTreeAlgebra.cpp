@@ -865,18 +865,21 @@ struct SortParameters final
 };
 
 static constexpr auto rule_registry = MakeRuleRegistry<
-	FlattenAssociations,
+	TruncateToValidParameters,
 	DeadCodeElimination,
-	SimplifySelfContainedWithImmediates,
 	ShortCircuitBooleans,
+	FlattenAssociations,
+	SimplifySelfContainedWithImmediates,
+
+	LogSimplification,
+	EulerExponentSimplification,
+	PowerSimplification,
+
 	SortParameters,
 	FoldAdditionAndSubtraction,
 	FoldMultiplicationAndDivision,
-	ConsolidateConstantsForConcat,
-	PowerSimplification,
-	EulerExponentSimplification,
-	LogSimplification,
-	TruncateToValidParameters,
+	ConsolidateConstantsForConcat,	
+	
 	//sort again to yield canonical output
 	SortParameters
 >();

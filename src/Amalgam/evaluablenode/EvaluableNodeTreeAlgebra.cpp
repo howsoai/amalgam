@@ -127,6 +127,9 @@ struct DeadCodeEliminationInENT_IF final
 		{
 			if(ocn.size() == 0)
 			{
+				if(nodes_freeable)
+					enm->FreeNodeChildNodes(en);
+
 				en->ClearMetadata();
 				en->SetType(ENT_NULL, false);
 				any_changes = true;
@@ -161,6 +164,9 @@ struct ShortCircuitBooleans final
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
+			if(nodes_freeable)
+				enm->FreeNodeChildNodes(en);
+
 			en->ClearMetadata();
 			en->SetType(ENT_NULL, false);
 			return true;
@@ -229,6 +235,9 @@ struct FoldENT_ADD_and_SUBTRACT final
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
+			if(nodes_freeable)
+				enm->FreeNodeChildNodes(en);
+
 			en->ClearMetadata();
 			if(en->GetType() == ENT_SUBTRACT)
 				en->SetType(ENT_NULL, false);
@@ -273,7 +282,7 @@ struct FoldENT_ADD_and_SUBTRACT final
 					continue;
 
 				double value = EvaluableNode::ToNumber(ocn[i]);
-				//Keep a negative-zero subtrahend because removing it changes signed-zero results.
+				//keep a negative-zero subtrahend because removing it changes signed-zero results
 				if(subtraction && loop_iteration > 0 && value == 0.0 && std::signbit(value))
 					continue;
 				if(positive_sign)
@@ -333,15 +342,16 @@ struct FoldENT_ADD_and_SUBTRACT final
 				}
 			}
 
-			//A group at index zero contains the distinguished minuend and keeps its sign.
+			//a group at index zero contains the distinguished minuend and keeps its sign
 			if(currently_accumulating_nonimmediate)
 			{
-				double grouped_multiplicand = subtraction && i > 0
-					? -nonimmediate_accum_multiplicand : nonimmediate_accum_multiplicand;
+				double grouped_multiplicand = ( (subtraction && i > 0)
+					? -nonimmediate_accum_multiplicand : nonimmediate_accum_multiplicand);
 				if(grouped_multiplicand == 0.0)
 				{
 					if(i == 0)
 					{
+						//need to keep a zero at the start
 						if(nodes_freeable)
 							enm->FreeNodeTree(ocn[i]);
 						ocn[i] = enm->AllocNode(0.0);
@@ -368,7 +378,7 @@ struct FoldENT_ADD_and_SUBTRACT final
 			nonimmediate_accum_multiplicand = 0.0;
 		}
 
-		//Append the positive magnitude subtracted from the first operand.
+		//append the positive magnitude subtracted from the first operand
 		if(accumulated_immediate != 0.0)
 		{
 			if(ocn.size() > 0)
@@ -386,11 +396,15 @@ struct FoldENT_ADD_and_SUBTRACT final
 		{
 			if(ocn.size() == 0)
 			{
+				if(nodes_freeable)
+					enm->FreeNodeChildNodes(en);
 				en->ClearMetadata();
 				en->SetTypeViaNumberValue(0.0);
 			}
 			else if(ocn.size() == 1)
+			{
 				en->SetType(ENT_MULTIPLY, false);
+			}
 		}
 
 		return (any_changes || ocn.size() != original_term_count);
@@ -409,6 +423,9 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
+			if(nodes_freeable)
+				enm->FreeNodeChildNodes(en);
+
 			en->ClearMetadata();
 			if(en->GetType() == ENT_DIVIDE)
 				en->SetType(ENT_NULL, false);
@@ -453,7 +470,7 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 					continue;
 
 				double value = EvaluableNode::ToNumber(ocn[i]);
-				//Runtime division stops at a zero divisor, so it cannot be regrouped.
+				//runtime division stops at a zero divisor, so it cannot be regrouped
 				if(division && !multiplicand && value == 0.0)
 					continue;
 				if(multiplicand)
@@ -513,11 +530,11 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 				}
 			}
 
-			//A group at index zero contains the distinguished dividend and keeps its exponent.
+			//a group at index zero contains the distinguished dividend and keeps its exponent
 			if(currently_accumulating_nonimmediate)
 			{
-				double grouped_exponent = division && i > 0
-					? -nonimmediate_accum_exponent : nonimmediate_accum_exponent;
+				double grouped_exponent = ( (division && i > 0)
+					? -nonimmediate_accum_exponent : nonimmediate_accum_exponent);
 				if(grouped_exponent == 0.0)
 				{
 					if(i == 0)
@@ -557,6 +574,9 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 			}
 			else
 			{
+				if(nodes_freeable)
+					enm->FreeNodeChildNodes(en);
+
 				en->ClearMetadata();
 				en->SetTypeViaNumberValue(product_immediate);
 			}
@@ -566,6 +586,9 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 		{
 			if(ocn.size() == 0)
 			{
+				if(nodes_freeable)
+					enm->FreeNodeChildNodes(en);
+
 				en->ClearMetadata();
 				en->SetTypeViaNumberValue(1.0);
 			}
@@ -589,6 +612,9 @@ struct ConsolidateConstantsENT_CONCAT final
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
+			if(nodes_freeable)
+				enm->FreeNodeChildNodes(en);
+
 			en->ClearMetadata();
 			en->SetType(ENT_NULL, false);
 			return true;

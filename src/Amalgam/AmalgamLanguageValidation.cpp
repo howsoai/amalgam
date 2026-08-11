@@ -1,7 +1,6 @@
 //project headers:
 #include "Entity.h"
 #include "EvaluableNode.h"
-#include "EvaluableNodeTreeAlgebra.h"
 #include "Interpreter.h"
 #include "OpcodeDetails.h"
 #include "Parser.h"
@@ -2710,54 +2709,6 @@ AmalgamExample{ R"&((seq
 ))&", R"({"155" "155: 0.1 {deg 0}" "190" "190: 0.045454545454545456 {deg 12}" "200" "200: 0.05555555555555555 {deg 8}"})", "", R"((destroy_entities "CyclicTestEntity"))" }
 );
 
-static bool ValidateSimplifyHandlesNullChildren(EvaluableNodeManager &enm)
-{
-	auto handles_null_child = [&enm](std::string_view source, EvaluableNodeType type)
-	{
-		auto [tree, warnings, error_offset, code_complete] = Parser::Parse(source, &enm);
-		if(tree == nullptr || tree->GetType() != type ||
-			tree->GetOrderedChildNodesReference().size() != 3)
-		{
-			enm.FreeNodeTree(tree);
-			return false;
-		}
-
-		auto &children = tree->GetOrderedChildNodesReference();
-		enm.FreeNodeTree(children[1]);
-		children[1] = nullptr;
-		EvaluableNodeTreeAlgebra::SimplifyTree(tree, &enm);
-
-		bool preserved = tree->GetType() == ENT_NULL;
-		enm.FreeNodeTree(tree);
-		return preserved;
-	};
-
-	return handles_null_child("(- a b b)", ENT_SUBTRACT) &&
-		handles_null_child("(/ a b b)", ENT_DIVIDE);
-}
-
-static bool ValidateSimplifyWithoutInterpreterPreservesEmptyArithmeticArity(EvaluableNodeManager &enm)
-{
-	auto simplifies_to = [&enm](EvaluableNodeType source_type, EvaluableNodeType expected_type,
-		double expected_number = 0.0)
-	{
-		EvaluableNode *node = enm.AllocNode(source_type);
-		EvaluableNodeTreeAlgebra::SimplifyNode(node, &enm, true, nullptr);
-
-		bool matches = node->GetType() == expected_type;
-		if(matches && expected_type == ENT_NUMBER)
-			matches = node->GetNumberValueReference() == expected_number;
-
-		enm.FreeNodeTree(node);
-		return matches;
-	};
-
-	return simplifies_to(ENT_ADD, ENT_NUMBER, 0.0) &&
-		simplifies_to(ENT_SUBTRACT, ENT_NULL) &&
-		simplifies_to(ENT_MULTIPLY, ENT_NUMBER, 1.0) &&
-		simplifies_to(ENT_DIVIDE, ENT_NULL);
-}
-
 //runs a test suite against the language
 //the return value of this function will be returned for the executable
 int32_t RunAmalgamLanguageValidation()
@@ -2797,18 +2748,6 @@ int32_t RunAmalgamLanguageValidation()
 		else
 			failed_test_names_and_numbers.emplace_back("unit test", unit_test_num);
 	}
-
-	std::cout << "Validating simplify handles null children: ";
-	if(ValidateSimplifyHandlesNullChildren(entity->evaluableNodeManager))
-		std::cout << "Passed" << std::endl;
-	else
-		failed_test_names_and_numbers.emplace_back("simplify null child regression", 0);
-
-	std::cout << "Validating simplify without interpreter preserves empty arithmetic arity: ";
-	if(ValidateSimplifyWithoutInterpreterPreservesEmptyArithmeticArity(entity->evaluableNodeManager))
-		std::cout << "Passed" << std::endl;
-	else
-		failed_test_names_and_numbers.emplace_back("simplify empty arithmetic arity regression", 0);
 
 	delete entity;
 

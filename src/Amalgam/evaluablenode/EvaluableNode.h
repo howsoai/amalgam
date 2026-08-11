@@ -305,6 +305,13 @@ public:
 	//copies the metadata of the node n into this
 	void CopyMetadataFrom(EvaluableNode *n);
 
+	//copies the entire node n into this
+	__forceinline void CopyNodeFrom(EvaluableNode *n)
+	{
+		CopyMetadataFrom(n);
+		CopyValueFrom(n);
+	}
+
 	//clears annotations and comments
 	__forceinline void ClearAnnotationsAndComments()
 	{

@@ -97,9 +97,7 @@ struct DeadCodeEliminationInENT_IF final
 			//found it, replace with this
 			if(EvaluableNode::ToBool(ocn[i]))
 			{
-				//copy metadata first so don't clobber
-				en->CopyMetadataFrom(ocn[i + 1]);
-				en->CopyValueFrom(ocn[i + 1]);
+				en->CopyNodeFrom(ocn[i + 1]);
 
 				node_replaced = true;
 				break;
@@ -138,8 +136,7 @@ struct DeadCodeEliminationInENT_IF final
 			if(ocn.size() == 1)
 			{
 				EvaluableNode *child_node = ocn[0];
-				en->CopyMetadataFrom(child_node);
-				en->CopyValueFrom(child_node);
+				en->CopyNodeFrom(child_node);
 
 				if(nodes_freeable)
 					enm->FreeNode(child_node);
@@ -712,8 +709,7 @@ struct SimplifySelfContainedWithImmediates final
 				for(auto &[_, cn] : en->GetMappedChildNodes())
 					enm->FreeNodeTree(cn);
 			}
-			en->CopyValueFrom(result);
-			en->CopyMetadataFrom(result);
+			en->CopyNodeFrom(result);
 			return true;
 		}
 

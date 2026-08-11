@@ -74,7 +74,7 @@ struct FlattenAssociations final
 	}
 };
 
-struct DeadCodeEliminationInENT_IF final
+struct DeadCodeElimination final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
@@ -219,7 +219,7 @@ struct ShortCircuitBooleans final
 	}
 };
 
-struct FoldENT_ADD_and_SUBTRACT final
+struct FoldAdditionAndSubtraction final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
@@ -401,7 +401,7 @@ struct FoldENT_ADD_and_SUBTRACT final
 	}
 };
 
-struct FoldENT_MULTIPLY_and_DIVIDE final
+struct FoldMultiplicationAndDivision final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
@@ -589,8 +589,7 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 	}
 };
 
-
-struct ConsolidateConstantsENT_POWSimplification final
+struct PowerSimplification final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
@@ -645,7 +644,89 @@ struct ConsolidateConstantsENT_POWSimplification final
 	}
 };
 
-struct ConsolidateConstantsENT_CONCAT final
+struct EulerExponentSimplification final
+{
+	bool Match(EvaluableNode *en) const noexcept
+	{
+		return (en->GetType() == ENT_EXPONENT);
+	}
+
+	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	{
+		auto &ocn = en->GetOrderedChildNodesReference();
+		if(ocn.size() < 1)
+			return false;
+
+		EvaluableNode *child = ocn[0];
+		if(EvaluableNode::IsNull(child))
+		{
+			if(nodes_freeable)
+				enm->FreeNodeChildNodes(en);
+
+			en->ClearMetadata();
+			en->SetType(ENT_NULL, false);
+			return true;
+		}
+
+		if(child->GetType() == ENT_LOG)
+		{
+			auto &log_ocn = child->GetOrderedChildNodesReference();
+			if(log_ocn.size() == 1)
+			{
+				en->CopyNodeFrom(log_ocn[0]);
+				if(nodes_freeable)
+					enm->FreeNode(child);
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+};
+
+struct LogSimplification final
+{
+	bool Match(EvaluableNode *en) const noexcept
+	{
+		return (en->GetType() == ENT_LOG);
+	}
+
+	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	{
+		auto &ocn = en->GetOrderedChildNodesReference();
+		if(ocn.size() != 1)
+			return false;
+
+		EvaluableNode *child = ocn[0];
+		if(EvaluableNode::IsNull(child))
+		{
+			if(nodes_freeable)
+				enm->FreeNodeChildNodes(en);
+
+			en->ClearMetadata();
+			en->SetType(ENT_NULL, false);
+			return true;
+		}
+
+		if(child->GetType() == ENT_EXPONENT)
+		{
+			auto &log_ocn = child->GetOrderedChildNodesReference();
+			if(log_ocn.size() == 1)
+			{
+				en->CopyNodeFrom(log_ocn[0]);
+				if(nodes_freeable)
+					enm->FreeNode(child);
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+};
+
+struct ConsolidateConstantsForConcat final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
@@ -821,14 +902,16 @@ struct SortParameters final
 
 static constexpr auto rule_registry = MakeRuleRegistry<
 	FlattenAssociations,
-	DeadCodeEliminationInENT_IF,
+	DeadCodeElimination,
 	SimplifySelfContainedWithImmediates,
 	ShortCircuitBooleans,
 	SortParameters,
-	FoldENT_ADD_and_SUBTRACT,
-	FoldENT_MULTIPLY_and_DIVIDE,
-	ConsolidateConstantsENT_CONCAT,
-	ConsolidateConstantsENT_POWSimplification,
+	FoldAdditionAndSubtraction,
+	FoldMultiplicationAndDivision,
+	ConsolidateConstantsForConcat,
+	PowerSimplification,
+	EulerExponentSimplification,
+	LogSimplification,
 	TruncateToValidParameters,
 	//sort again to yield canonical output
 	SortParameters

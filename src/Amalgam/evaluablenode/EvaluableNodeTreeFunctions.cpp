@@ -444,7 +444,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		{
 			double cur_value = EvaluableNode::ToNumber(value_destination_node);
 			double inc_value = EvaluableNode::ToNumber(variable_value_node);
-			value_destination_node->SetTypeViaNumberValue(cur_value + inc_value);
+			value_destination_node->SetTypeViaNumberValue(cur_value + inc_value, false);
 			enm->FreeNodeTreeIfPossible(variable_value_node);
 		}
 		else if(value_destination_node->IsAssociativeArray())

@@ -664,8 +664,10 @@ public:
 	}
 
 	//changes the type by setting it to the number value specified
-	inline void SetTypeViaBoolValue(bool v)
+	inline void SetTypeViaBoolValue(bool v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
 		SetType(ENT_BOOL, false);
 		GetBoolValueReference() = v;
 	}
@@ -689,8 +691,10 @@ public:
 	}
 
 	//changes the type by setting it to the number value specified
-	inline void SetTypeViaNumberValue(double v)
+	inline void SetTypeViaNumberValue(double v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
 		if(FastIsNaN(v))
 		{
 			SetType(ENT_NULL, false);
@@ -703,15 +707,19 @@ public:
 	}
 
 	//changes the type by setting it to the string value specified
-	inline void SetTypeViaStringIdValue(std::string &v)
+	inline void SetTypeViaStringIdValue(std::string &v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
 		SetType(ENT_STRING, false);
 		GetStringIDReference() = string_intern_pool.CreateStringReference(v);
 	}
 
 	//changes the type by setting it to the string id value specified
-	inline void SetTypeViaStringIdValue(StringInternPool::StringID v)
+	inline void SetTypeViaStringIdValue(StringInternPool::StringID v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
 		if(v == string_intern_pool.NOT_A_STRING_ID)
 		{
 			SetType(ENT_NULL, false);
@@ -724,8 +732,10 @@ public:
 	}
 
 	//changes the type by setting it to the string id value specified, handing off the reference
-	inline void SetTypeViaStringIdValueWithReferenceHandoff(StringInternPool::StringID v)
+	inline void SetTypeViaStringIdValueWithReferenceHandoff(StringInternPool::StringID v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
 		if(v == string_intern_pool.NOT_A_STRING_ID)
 		{
 			SetType(ENT_NULL, false);

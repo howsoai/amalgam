@@ -214,7 +214,6 @@ struct ShortCircuitBooleans final
 			if(nodes_freeable)
 				enm->FreeNodeChildNodes(en);
 
-			en->ClearMetadata();
 			en->SetTypeViaBoolValue(short_circuit_value);
 			return true;
 		}
@@ -382,14 +381,9 @@ struct FoldENT_ADD_and_SUBTRACT final
 		if(accumulated_immediate != 0.0)
 		{
 			if(ocn.size() > 0)
-			{
 				ocn.push_back(enm->AllocNode(subtraction ? -accumulated_immediate : accumulated_immediate));
-			}
 			else
-			{
-				en->ClearMetadata();
 				en->SetTypeViaNumberValue(accumulated_immediate);
-			}
 		}
 
 		if(subtraction && original_term_count > 1)
@@ -398,7 +392,6 @@ struct FoldENT_ADD_and_SUBTRACT final
 			{
 				if(nodes_freeable)
 					enm->FreeNodeChildNodes(en);
-				en->ClearMetadata();
 				en->SetTypeViaNumberValue(0.0);
 			}
 			else if(ocn.size() == 1)
@@ -426,7 +419,6 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 			if(nodes_freeable)
 				enm->FreeNodeChildNodes(en);
 
-			en->ClearMetadata();
 			if(en->GetType() == ENT_DIVIDE)
 				en->SetType(ENT_NULL, false);
 			else
@@ -577,7 +569,6 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 				if(nodes_freeable)
 					enm->FreeNodeChildNodes(en);
 
-				en->ClearMetadata();
 				en->SetTypeViaNumberValue(product_immediate);
 			}
 		}
@@ -589,11 +580,12 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 				if(nodes_freeable)
 					enm->FreeNodeChildNodes(en);
 
-				en->ClearMetadata();
 				en->SetTypeViaNumberValue(1.0);
 			}
 			else if(ocn.size() == 1)
+			{
 				en->SetType(ENT_MULTIPLY, false);
+			}
 		}
 
 		return (any_changes || ocn.size() != original_term_count);

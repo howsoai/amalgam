@@ -657,12 +657,12 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 		}
 		if(s == ".true")
 		{
-			new_token->SetTypeViaBoolValue(true);
+			new_token->SetTypeViaBoolValue(true, false);
 			return new_token;
 		}
 		else if(s == ".false")
 		{
-			new_token->SetTypeViaBoolValue(false);
+			new_token->SetTypeViaBoolValue(false, false);
 			return new_token;
 		}
 		if(s == ".infinity")
@@ -680,7 +680,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 				value = converted_value;
 		}
 
-		new_token->SetTypeViaNumberValue(value);
+		new_token->SetTypeViaNumberValue(value, false);
 		return new_token;
 	}
 	else if(cur_char == '"')

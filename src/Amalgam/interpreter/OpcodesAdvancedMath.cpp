@@ -11,7 +11,7 @@ static OpcodeInitializer _ENT_EXPONENT(ENT_EXPONENT, &Interpreter::InterpretNode
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
-	d.description = R"(e^x)";
+	d.description = R"(Evaluates to e^`x`.  If no parameter is specified it evaluates to just e.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((exp 0.5))", R"(1.6487212707001282)"}
 		});
@@ -25,7 +25,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPONENT(EvaluableNode *en
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
-		return EvaluableNodeReference::Null();
+		return AllocReturn(std::exp(1), immediate_result);
 
 	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
 		[](double value) {	return std::exp(value);	});
@@ -174,10 +174,10 @@ static OpcodeInitializer _ENT_POW(ENT_POW, &Interpreter::InterpretNode_ENT_POW, 
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
 		OpcodeDetails::ParameterGroup({"base", OpcodeDetails::DataType::NUMBER}),
-		OpcodeDetails::ParameterGroup({"exponent", OpcodeDetails::DataType::NUMBER})
+		OpcodeDetails::ParameterGroup({"exponent", OpcodeDetails::DataType::NUMBER, true})
 	};
 	d.returns = OpcodeDetails::DataType::NUMBER;
-	d.description = R"(Returns `base` raised to the `exponent` power.)";
+	d.description = R"(Returns `base` raised to the `exponent` power.  If 'exponent` is not specified it evaluates to `base`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((pow 0.5 2))", R"(0.25)"}
 		});
@@ -190,10 +190,15 @@ static OpcodeInitializer _ENT_POW(ENT_POW, &Interpreter::InterpretNode_ENT_POW, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_POW(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
 	double base = InterpretNodeIntoNumberValue(ocn[0]);
+
+	//assume exponent is 1 if unspecified
+	if(ocn.size() == 1)
+		return AllocReturn(base, immediate_result);
+
 	double exponent = InterpretNodeIntoNumberValue(ocn[1]);
 
 	//optimize for common values

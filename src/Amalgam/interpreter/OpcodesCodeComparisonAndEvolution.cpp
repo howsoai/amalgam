@@ -2024,7 +2024,9 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 		{R"&((call (simplify (lambda (/ a -1 0))) {a 2}))&", R"(-.infinity)"},
 		{R"&((call (simplify (lambda (/ a -2 0))) {a 2}))&", R"(-.infinity)"},
 		{R"&((simplify (lambda (/ a .null b))))&", R"(.null)"},
-		{R"&((simplify (lambda (/ a 2 1))))&", R"((/ a 2))"} });
+		{R"&((simplify (lambda (/ a 2 1))))&", R"((/ a 2))"},
+		{R"&((simplify (lambda (pow a 1))))&", R"(a)"}
+});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;

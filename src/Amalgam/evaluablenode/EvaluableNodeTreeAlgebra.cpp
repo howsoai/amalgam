@@ -589,6 +589,62 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 	}
 };
 
+
+struct ConsolidateConstantsENT_POWSimplification final
+{
+	bool Match(EvaluableNode *en) const noexcept
+	{
+		return (en->GetType() == ENT_POW);
+	}
+
+	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	{
+		auto &ocn = en->GetOrderedChildNodesReference();
+		if(ocn.size() == 0)
+		{
+			if(nodes_freeable)
+				enm->FreeNodeChildNodes(en);
+
+			en->ClearMetadata();
+			en->SetType(ENT_NULL, false);
+			return true;
+		}
+
+		if(ocn.size() == 1)
+		{
+			EvaluableNode *child = ocn[0];
+			en->CopyNodeFrom(child);
+			if(nodes_freeable)
+				enm->FreeNode(child);
+			
+			return true;
+		}
+
+		//ocn.size() > 1
+		if(EvaluableNode::IsNull(ocn[1]))
+		{
+			if(nodes_freeable)
+				enm->FreeNodeChildNodes(en);
+
+			en->ClearMetadata();
+			en->SetType(ENT_NULL, false);
+			return true;
+		}
+
+		if(ocn[1]->GetType() == ENT_NUMBER && ocn[1]->GetNumberValue() == 1.0)
+		{
+			EvaluableNode *child = ocn[0];
+			en->CopyNodeFrom(child);
+			if(nodes_freeable)
+				enm->FreeNode(child);
+
+			return true;
+		}
+
+		return false;
+	}
+};
+
 struct ConsolidateConstantsENT_CONCAT final
 {
 	bool Match(EvaluableNode *en) const noexcept
@@ -772,6 +828,7 @@ static constexpr auto rule_registry = MakeRuleRegistry<
 	FoldENT_ADD_and_SUBTRACT,
 	FoldENT_MULTIPLY_and_DIVIDE,
 	ConsolidateConstantsENT_CONCAT,
+	ConsolidateConstantsENT_POWSimplification,
 	TruncateToValidParameters,
 	//sort again to yield canonical output
 	SortParameters

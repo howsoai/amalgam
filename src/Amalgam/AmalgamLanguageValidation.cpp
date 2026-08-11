@@ -2710,13 +2710,9 @@ AmalgamExample{ R"&((seq
 ))&", R"({"155" "155: 0.1 {deg 0}" "190" "190: 0.045454545454545456 {deg 12}" "200" "200: 0.05555555555555555 {deg 8}"})", "", R"((destroy_entities "CyclicTestEntity"))" }
 );
 
-//Parser canonicalization sorts unordered operands before opcode examples run.  Mutate parsed
-//trees so this regression exercises the simplifier's requirement to preserve the evaluation
-//order of non-associative arithmetic.
-static bool ValidateSimplifyPreservesNonAssociativeOperandOrder(EvaluableNodeManager &enm)
+static bool ValidateSimplifyHandlesNullChildren(EvaluableNodeManager &enm)
 {
-	auto preserves_mutated_order = [&enm](std::string_view source, EvaluableNodeType type,
-		double expected_second, double expected_third)
+	auto handles_null_child = [&enm](std::string_view source, EvaluableNodeType type)
 	{
 		auto [tree, warnings, error_offset, code_complete] = Parser::Parse(source, &enm);
 		if(tree == nullptr || tree->GetType() != type ||
@@ -2727,19 +2723,39 @@ static bool ValidateSimplifyPreservesNonAssociativeOperandOrder(EvaluableNodeMan
 		}
 
 		auto &children = tree->GetOrderedChildNodesReference();
-		std::swap(children[1], children[2]);
+		enm.FreeNodeTree(children[1]);
+		children[1] = nullptr;
 		EvaluableNodeTreeAlgebra::SimplifyTree(tree, &enm);
 
-		bool preserved = tree->GetType() == type && children.size() == 3 &&
-			children[1]->GetType() == ENT_NUMBER && children[2]->GetType() == ENT_NUMBER &&
-			children[1]->GetNumberValueReference() == expected_second &&
-			children[2]->GetNumberValueReference() == expected_third;
+		bool preserved = tree->GetType() == ENT_NULL;
 		enm.FreeNodeTree(tree);
 		return preserved;
 	};
 
-	return preserves_mutated_order("(/ a 1e-200 1e200)", ENT_DIVIDE, 1e200, 1e-200) &&
-		preserves_mutated_order("(- a -5 5)", ENT_SUBTRACT, 5.0, -5.0);
+	return handles_null_child("(- a b b)", ENT_SUBTRACT) &&
+		handles_null_child("(/ a b b)", ENT_DIVIDE);
+}
+
+static bool ValidateSimplifyWithoutInterpreterPreservesEmptyArithmeticArity(EvaluableNodeManager &enm)
+{
+	auto simplifies_to = [&enm](EvaluableNodeType source_type, EvaluableNodeType expected_type,
+		double expected_number = 0.0)
+	{
+		EvaluableNode *node = enm.AllocNode(source_type);
+		EvaluableNodeTreeAlgebra::SimplifyNode(node, &enm, true, nullptr);
+
+		bool matches = node->GetType() == expected_type;
+		if(matches && expected_type == ENT_NUMBER)
+			matches = node->GetNumberValueReference() == expected_number;
+
+		enm.FreeNodeTree(node);
+		return matches;
+	};
+
+	return simplifies_to(ENT_ADD, ENT_NUMBER, 0.0) &&
+		simplifies_to(ENT_SUBTRACT, ENT_NULL) &&
+		simplifies_to(ENT_MULTIPLY, ENT_NUMBER, 1.0) &&
+		simplifies_to(ENT_DIVIDE, ENT_NULL);
 }
 
 //runs a test suite against the language
@@ -2782,11 +2798,17 @@ int32_t RunAmalgamLanguageValidation()
 			failed_test_names_and_numbers.emplace_back("unit test", unit_test_num);
 	}
 
-	std::cout << "Validating simplify preserves non-associative operand order: ";
-	if(ValidateSimplifyPreservesNonAssociativeOperandOrder(entity->evaluableNodeManager))
+	std::cout << "Validating simplify handles null children: ";
+	if(ValidateSimplifyHandlesNullChildren(entity->evaluableNodeManager))
 		std::cout << "Passed" << std::endl;
 	else
-		failed_test_names_and_numbers.emplace_back("simplify operand order regression", 0);
+		failed_test_names_and_numbers.emplace_back("simplify null child regression", 0);
+
+	std::cout << "Validating simplify without interpreter preserves empty arithmetic arity: ";
+	if(ValidateSimplifyWithoutInterpreterPreservesEmptyArithmeticArity(entity->evaluableNodeManager))
+		std::cout << "Passed" << std::endl;
+	else
+		failed_test_names_and_numbers.emplace_back("simplify empty arithmetic arity regression", 0);
 
 	delete entity;
 

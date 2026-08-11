@@ -226,51 +226,14 @@ struct FoldENT_ADD_and_SUBTRACT final
 
 	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
-		if(en->GetType() == ENT_SUBTRACT)
-		{
-			auto &ocn = en->GetOrderedChildNodesReference();
-
-			//Remove only positive-zero subtrahends; binary identities become unary numeric carriers.
-			bool any_changes = false;
-			for(size_t i = 0; i < ocn.size(); i++)
-			{
-				//any null short circuits to a null
-				if(EvaluableNode::IsNull(ocn[i]))
-				{
-					if(nodes_freeable)
-						enm->FreeNodeChildNodes(en);
-
-					en->ClearMetadata();
-					en->SetType(ENT_NULL, false);
-					return true;
-				}
-
-				if(i > 0 && ocn[i]->IsImmediate())
-				{
-					double value = EvaluableNode::ToNumber(ocn[i]);
-					if(value == 0.0 && !std::signbit(value))
-					{
-						if(nodes_freeable)
-							enm->FreeNodeTree(ocn[i]);
-						ocn.erase(begin(ocn) + i);
-						i--;
-
-						//Preserve numeric coercion and return-value ownership for a binary identity.
-						if(ocn.size() == 1)
-							en->SetType(ENT_MULTIPLY, false);
-						any_changes = true;
-					}
-				}
-			}
-
-			return any_changes;
-		}
-
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
 			en->ClearMetadata();
-			en->SetTypeViaNumberValue(0.0);
+			if(en->GetType() == ENT_SUBTRACT)
+				en->SetType(ENT_NULL, false);
+			else
+				en->SetTypeViaNumberValue(0.0);
 			return true;
 		}
 
@@ -306,7 +269,13 @@ struct FoldENT_ADD_and_SUBTRACT final
 
 			if(ocn[i]->IsImmediate())
 			{
-				double value = EvaluableNode::ToNumber(ocn[i]);;
+				if(subtraction && loop_iteration == 0)
+					continue;
+
+				double value = EvaluableNode::ToNumber(ocn[i]);
+				//Keep a negative-zero subtrahend because removing it changes signed-zero results.
+				if(subtraction && loop_iteration > 0 && value == 0.0 && std::signbit(value))
+					continue;
 				if(positive_sign)
 					accumulated_immediate += value;
 				else
@@ -364,24 +333,31 @@ struct FoldENT_ADD_and_SUBTRACT final
 				}
 			}
 
-			//if made it here, need to put a multiplicand in front of the node
+			//A group at index zero contains the distinguished minuend and keeps its sign.
 			if(currently_accumulating_nonimmediate)
 			{
-				if(nonimmediate_accum_multiplicand == 0.0)
+				double grouped_multiplicand = subtraction && i > 0
+					? -nonimmediate_accum_multiplicand : nonimmediate_accum_multiplicand;
+				if(grouped_multiplicand == 0.0)
 				{
-					//erase the node
-					if(nodes_freeable)
-						enm->FreeNodeTree(ocn[i]);
-					ocn.erase(begin(ocn) + i);
-
-					//recheck this position next iteration
-					i--;
+					if(i == 0)
+					{
+						if(nodes_freeable)
+							enm->FreeNodeTree(ocn[i]);
+						ocn[i] = enm->AllocNode(0.0);
+					}
+					else
+					{
+						if(nodes_freeable)
+							enm->FreeNodeTree(ocn[i]);
+						ocn.erase(begin(ocn) + i);
+						i--;
+					}
 				}
-				else if(nonimmediate_accum_multiplicand != 1.0)
+				else if(grouped_multiplicand != 1.0)
 				{
 					EvaluableNode *new_term = enm->AllocNode(ENT_MULTIPLY);
-					new_term->AppendOrderedChildNode(enm->AllocNode(
-						subtraction ? -nonimmediate_accum_multiplicand : nonimmediate_accum_multiplicand));
+					new_term->AppendOrderedChildNode(enm->AllocNode(grouped_multiplicand));
 					new_term->AppendOrderedChildNode(ocn[i]);
 					ocn[i] = new_term;
 				}
@@ -392,7 +368,7 @@ struct FoldENT_ADD_and_SUBTRACT final
 			nonimmediate_accum_multiplicand = 0.0;
 		}
 
-		//add on accumulated_immediate at end if nonzero
+		//Append the positive magnitude subtracted from the first operand.
 		if(accumulated_immediate != 0.0)
 		{
 			if(ocn.size() > 0)
@@ -404,6 +380,17 @@ struct FoldENT_ADD_and_SUBTRACT final
 				en->ClearMetadata();
 				en->SetTypeViaNumberValue(accumulated_immediate);
 			}
+		}
+
+		if(subtraction && original_term_count > 1)
+		{
+			if(ocn.size() == 0)
+			{
+				en->ClearMetadata();
+				en->SetTypeViaNumberValue(0.0);
+			}
+			else if(ocn.size() == 1)
+				en->SetType(ENT_MULTIPLY, false);
 		}
 
 		return (any_changes || ocn.size() != original_term_count);
@@ -419,51 +406,14 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 
 	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
 	{
-		if(en->GetType() == ENT_DIVIDE)
-		{
-			auto &ocn = en->GetOrderedChildNodesReference();
-
-			//Remove only unit divisors; binary identities become unary numeric carriers.
-			bool any_changes = false;
-			for(size_t i = 0; i < ocn.size(); i++)
-			{
-				//any null short circuits to a null
-				if(EvaluableNode::IsNull(ocn[i]))
-				{
-					if(nodes_freeable)
-						enm->FreeNodeChildNodes(en);
-
-					en->ClearMetadata();
-					en->SetType(ENT_NULL, false);
-					return true;
-				}
-
-				if(i > 0 && ocn[i]->IsImmediate())
-				{
-					double value = EvaluableNode::ToNumber(ocn[i]);
-					if(value == 1.0)
-					{
-						if(nodes_freeable)
-							enm->FreeNodeTree(ocn[i]);
-						ocn.erase(begin(ocn) + i);
-						i--;
-
-						//Preserve numeric coercion and return-value ownership for a binary identity.
-						if(ocn.size() == 1)
-							en->SetType(ENT_MULTIPLY, false);
-						any_changes = true;
-					}
-				}
-			}
-
-			return any_changes;
-		}
-
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
 			en->ClearMetadata();
-			en->SetTypeViaNumberValue(0.0);
+			if(en->GetType() == ENT_DIVIDE)
+				en->SetType(ENT_NULL, false);
+			else
+				en->SetTypeViaNumberValue(1.0);
 			return true;
 		}
 
@@ -499,7 +449,13 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 
 			if(ocn[i]->IsImmediate())
 			{
-				double value = EvaluableNode::ToNumber(ocn[i]);;
+				if(division && loop_iteration == 0)
+					continue;
+
+				double value = EvaluableNode::ToNumber(ocn[i]);
+				//Runtime division stops at a zero divisor, so it cannot be regrouped.
+				if(division && !multiplicand && value == 0.0)
+					continue;
 				if(multiplicand)
 					product_immediate *= value;
 				else
@@ -557,32 +513,39 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 				}
 			}
 
-			//if made it here, need to put an exponentiation in front of the node
+			//A group at index zero contains the distinguished dividend and keeps its exponent.
 			if(currently_accumulating_nonimmediate)
 			{
-				if(nonimmediate_accum_exponent == 0.0)
+				double grouped_exponent = division && i > 0
+					? -nonimmediate_accum_exponent : nonimmediate_accum_exponent;
+				if(grouped_exponent == 0.0)
 				{
-					//erase the node
-					if(nodes_freeable)
-						enm->FreeNodeTree(ocn[i]);
-					ocn.erase(begin(ocn) + i);
-
-					//recheck this position next iteration
-					i--;
+					if(i == 0)
+					{
+						if(nodes_freeable)
+							enm->FreeNodeTree(ocn[i]);
+						ocn[i] = enm->AllocNode(1.0);
+					}
+					else
+					{
+						if(nodes_freeable)
+							enm->FreeNodeTree(ocn[i]);
+						ocn.erase(begin(ocn) + i);
+						i--;
+					}
 				}
-				else if(nonimmediate_accum_exponent != 1.0)
+				else if(grouped_exponent != 1.0)
 				{
 					EvaluableNode *new_term = enm->AllocNode(ENT_POW);
 					new_term->AppendOrderedChildNode(ocn[i]);
-					new_term->AppendOrderedChildNode(enm->AllocNode(
-						division ? -nonimmediate_accum_exponent : nonimmediate_accum_exponent));
+					new_term->AppendOrderedChildNode(enm->AllocNode(grouped_exponent));
 					ocn[i] = new_term;
 				}
 			}
 
 			//start over
 			currently_accumulating_nonimmediate = false;
-			nonimmediate_accum_exponent = 1.0;
+			nonimmediate_accum_exponent = 0.0;
 		}
 
 		//add on accumulated_immediate at end if nonzero
@@ -590,13 +553,24 @@ struct FoldENT_MULTIPLY_and_DIVIDE final
 		{
 			if(ocn.size() > 0)
 			{
-				ocn.push_back(enm->AllocNode(division ? -product_immediate : product_immediate));
+				ocn.push_back(enm->AllocNode(division ? 1.0 / product_immediate : product_immediate));
 			}
 			else
 			{
 				en->ClearMetadata();
 				en->SetTypeViaNumberValue(product_immediate);
 			}
+		}
+
+		if(division && original_term_count > 1)
+		{
+			if(ocn.size() == 0)
+			{
+				en->ClearMetadata();
+				en->SetTypeViaNumberValue(1.0);
+			}
+			else if(ocn.size() == 1)
+				en->SetType(ENT_MULTIPLY, false);
 		}
 
 		return (any_changes || ocn.size() != original_term_count);
@@ -757,10 +731,6 @@ struct SortParameters final
 {
 	bool Match(EvaluableNode *en) const noexcept
 	{
-		//Non-associative arithmetic must preserve left-to-right IEEE-754 evaluation order.
-		if(en->GetType() == ENT_SUBTRACT || en->GetType() == ENT_DIVIDE)
-			return false;
-
 		auto child_structure_type = GetChildNodeStructureType(en->GetType());
 		return (child_structure_type == OpcodeDetails::ChildNodeStructureType::UNORDERED ||
 				child_structure_type == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED);

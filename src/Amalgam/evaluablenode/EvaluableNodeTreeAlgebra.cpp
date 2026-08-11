@@ -7,6 +7,34 @@
 #include <cmath>
 #include <utility>
 
+//contextual information when applying a rule
+class RuleContext
+{
+public:
+
+	inline void FreeNodeIfPossible(EvaluableNode *en)
+	{
+		if(nodesFreeable)
+			enm->FreeNode(en);
+	}
+
+	inline void FreeNodeTreeIfPossible(EvaluableNode *en)
+	{
+		if(nodesFreeable)
+			enm->FreeNodeTree(en);
+	}
+
+	inline void FreeNodeChildNodesIfPossible(EvaluableNode *en)
+	{
+		if(nodesFreeable)
+			enm->FreeNode(en);
+	}
+
+	EvaluableNodeManager *enm;
+	bool nodesFreeable;
+	Interpreter *interpreter;
+};
+
 //converts a stateless rule type into a pair of plain function pointers
 //implementations en is a valid pointer and guaranteed to not be nullptr
 //Rewrite should return true if it made any changes, false if not
@@ -17,8 +45,8 @@ constexpr auto MakeRuleEntry()
 	// to a plain function pointer (no std::function, no allocation).
 	return std::pair{
 		+[](EvaluableNode *en) -> bool { return R{}.Match(en); },
-		+[](EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter) -> bool
-		{ return R{}.Rewrite(en, enm, nodes_freeable, interpreter); }
+		+[](EvaluableNode *en, RuleContext &rc) -> bool
+		{ return R{}.Rewrite(en, rc); }
 	};
 }
 
@@ -27,7 +55,7 @@ constexpr auto MakeRuleRegistry()
 {
 	using entry_t = std::pair<
 		bool (*)(EvaluableNode *),
-		bool (*)(EvaluableNode *, EvaluableNodeManager *, bool, Interpreter *)>;
+		bool (*)(EvaluableNode *, RuleContext &)>;
 
 	return std::array<entry_t, sizeof...(Rules)>{ MakeRuleEntry<Rules>()... };
 }
@@ -39,7 +67,7 @@ struct FlattenAssociations final
 		return IsOpcodeAssociative(en->GetType());
 	}
 
-	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		std::vector<EvaluableNode *> associative_child_nodes;
 		auto &ocn = en->GetOrderedChildNodesReference();
@@ -54,8 +82,7 @@ struct FlattenAssociations final
 					associative_child_nodes.push_back(add_cn);
 
 				//erase the node
-				if(nodes_freeable)
-					enm->FreeNode(ocn[i]);
+				rc.FreeNodeIfPossible(ocn[i]);
 				ocn.erase(begin(ocn) + i);
 
 				//need to recheck index since erased one
@@ -81,7 +108,7 @@ struct DeadCodeElimination final
 		return (en->GetType() == ENT_IF);
 	}
 
-	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		bool node_replaced = false;
@@ -105,11 +132,8 @@ struct DeadCodeElimination final
 			else //remove this branch
 			{
 				//erase the node and the following
-				if(nodes_freeable)
-				{
-					enm->FreeNodeTree(ocn[i]);
-					enm->FreeNodeTree(ocn[i + 1]);
-				}
+				rc.FreeNodeTreeIfPossible(ocn[i]);
+				rc.FreeNodeTreeIfPossible(ocn[i + 1]);
 
 				ocn.erase(begin(ocn) + i, begin(ocn) + i + 2);
 
@@ -125,9 +149,7 @@ struct DeadCodeElimination final
 		{
 			if(ocn.size() == 0)
 			{
-				if(nodes_freeable)
-					enm->FreeNodeChildNodes(en);
-
+				rc.FreeNodeChildNodesIfPossible(en);
 				en->ClearMetadata();
 				en->SetType(ENT_NULL, false);
 				any_changes = true;
@@ -138,8 +160,7 @@ struct DeadCodeElimination final
 				EvaluableNode *child_node = ocn[0];
 				en->CopyNodeFrom(child_node);
 
-				if(nodes_freeable)
-					enm->FreeNode(child_node);
+				rc.FreeNodeIfPossible(child_node);
 
 				any_changes = true;
 			}
@@ -156,14 +177,12 @@ struct ShortCircuitBooleans final
 		return (en->GetType() == ENT_AND || en->GetType() == ENT_OR);
 	}
 
-	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
-			if(nodes_freeable)
-				enm->FreeNodeChildNodes(en);
-
+			rc.FreeNodeChildNodesIfPossible(en);
 			en->ClearMetadata();
 			en->SetType(ENT_NULL, false);
 			return true;
@@ -188,9 +207,7 @@ struct ShortCircuitBooleans final
 			//eliminate or short-circuit based on value
 			if((!is_or && immediate_value) ||  (is_or && !immediate_value))
 			{
-				//erase the node
-				if(nodes_freeable)
-					enm->FreeNodeTree(ocn[i]);
+				rc.FreeNodeTreeIfPossible(ocn[i]);
 				ocn.erase(begin(ocn) + i);
 
 				//recheck this position next iteration
@@ -208,9 +225,7 @@ struct ShortCircuitBooleans final
 		//if have eliminated all true values or short circuited, replace with a single value
 		if(ocn.size() == 0 || short_circuit)
 		{
-			if(nodes_freeable)
-				enm->FreeNodeChildNodes(en);
-
+			rc.FreeNodeChildNodesIfPossible(en);
 			en->SetTypeViaBoolValue(short_circuit_value);
 			return true;
 		}
@@ -226,13 +241,12 @@ struct FoldAdditionAndSubtraction final
 		return (en->GetType() == ENT_ADD || en->GetType() == ENT_SUBTRACT);
 	}
 
-	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
-			if(nodes_freeable)
-				enm->FreeNodeChildNodes(en);
+			rc.FreeNodeChildNodesIfPossible(en);
 
 			en->ClearMetadata();
 			if(en->GetType() == ENT_SUBTRACT)
@@ -261,9 +275,7 @@ struct FoldAdditionAndSubtraction final
 			//any null short circuits to a null
 			if(EvaluableNode::IsNull(ocn[i]))
 			{
-				if(nodes_freeable)
-					enm->FreeNodeChildNodes(en);
-
+				rc.FreeNodeChildNodesIfPossible(en);
 				en->ClearMetadata();
 				en->SetType(ENT_NULL, false);
 				return true;
@@ -287,8 +299,7 @@ struct FoldAdditionAndSubtraction final
 					accumulated_immediate -= value;
 
 				//erase the node
-				if(nodes_freeable)
-					enm->FreeNodeTree(ocn[i]);
+				rc.FreeNodeTreeIfPossible(ocn[i]);
 				ocn.erase(begin(ocn) + i);
 
 				//recheck this position next iteration
@@ -326,8 +337,7 @@ struct FoldAdditionAndSubtraction final
 					}
 
 					//erase the node
-					if(nodes_freeable)
-						enm->FreeNodeTree(ocn[i]);
+					rc.FreeNodeTreeIfPossible(ocn[i]);
 					ocn.erase(begin(ocn) + i);
 
 					//recheck this position next iteration
@@ -348,22 +358,20 @@ struct FoldAdditionAndSubtraction final
 					if(i == 0)
 					{
 						//need to keep a zero at the start
-						if(nodes_freeable)
-							enm->FreeNodeTree(ocn[i]);
-						ocn[i] = enm->AllocNode(0.0);
+						rc.FreeNodeTreeIfPossible(ocn[i]);
+						ocn[i] = rc.enm->AllocNode(0.0);
 					}
 					else
 					{
-						if(nodes_freeable)
-							enm->FreeNodeTree(ocn[i]);
+						rc.FreeNodeTreeIfPossible(ocn[i]);
 						ocn.erase(begin(ocn) + i);
 						i--;
 					}
 				}
 				else if(grouped_multiplicand != 1.0)
 				{
-					EvaluableNode *new_term = enm->AllocNode(ENT_MULTIPLY);
-					new_term->AppendOrderedChildNode(enm->AllocNode(grouped_multiplicand));
+					EvaluableNode *new_term = rc.enm->AllocNode(ENT_MULTIPLY);
+					new_term->AppendOrderedChildNode(rc.enm->AllocNode(grouped_multiplicand));
 					new_term->AppendOrderedChildNode(ocn[i]);
 					ocn[i] = new_term;
 				}
@@ -378,7 +386,7 @@ struct FoldAdditionAndSubtraction final
 		if(accumulated_immediate != 0.0)
 		{
 			if(ocn.size() > 0)
-				ocn.push_back(enm->AllocNode(subtraction ? -accumulated_immediate : accumulated_immediate));
+				ocn.push_back(rc.enm->AllocNode(subtraction ? -accumulated_immediate : accumulated_immediate));
 			else
 				en->SetTypeViaNumberValue(accumulated_immediate);
 		}
@@ -387,8 +395,7 @@ struct FoldAdditionAndSubtraction final
 		{
 			if(ocn.size() == 0)
 			{
-				if(nodes_freeable)
-					enm->FreeNodeChildNodes(en);
+				rc.FreeNodeChildNodesIfPossible(en);
 				en->SetTypeViaNumberValue(0.0);
 			}
 			else if(ocn.size() == 1)
@@ -408,13 +415,12 @@ struct FoldMultiplicationAndDivision final
 		return (en->GetType() == ENT_MULTIPLY || en->GetType() == ENT_DIVIDE);
 	}
 
-	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
-			if(nodes_freeable)
-				enm->FreeNodeChildNodes(en);
+			rc.FreeNodeChildNodesIfPossible(en);
 
 			if(en->GetType() == ENT_DIVIDE)
 				en->SetType(ENT_NULL, false);
@@ -442,9 +448,7 @@ struct FoldMultiplicationAndDivision final
 			//any null short circuits to a null
 			if(EvaluableNode::IsNull(ocn[i]))
 			{
-				if(nodes_freeable)
-					enm->FreeNodeChildNodes(en);
-
+				rc.FreeNodeChildNodesIfPossible(en);
 				en->ClearMetadata();
 				en->SetType(ENT_NULL, false);
 				return true;
@@ -468,8 +472,7 @@ struct FoldMultiplicationAndDivision final
 					product_immediate /= value;
 
 				//erase the node
-				if(nodes_freeable)
-					enm->FreeNodeTree(ocn[i]);
+				rc.FreeNodeTreeIfPossible(ocn[i]);
 				ocn.erase(begin(ocn) + i);
 
 				//recheck this position next iteration
@@ -507,8 +510,7 @@ struct FoldMultiplicationAndDivision final
 					}
 
 					//erase the node
-					if(nodes_freeable)
-						enm->FreeNodeTree(ocn[i]);
+					rc.FreeNodeTreeIfPossible(ocn[i]);
 					ocn.erase(begin(ocn) + i);
 
 					//recheck this position next iteration
@@ -528,23 +530,21 @@ struct FoldMultiplicationAndDivision final
 				{
 					if(i == 0)
 					{
-						if(nodes_freeable)
-							enm->FreeNodeTree(ocn[i]);
-						ocn[i] = enm->AllocNode(1.0);
+						rc.FreeNodeTreeIfPossible(ocn[i]);
+						ocn[i] = rc.enm->AllocNode(1.0);
 					}
 					else
 					{
-						if(nodes_freeable)
-							enm->FreeNodeTree(ocn[i]);
+						rc.FreeNodeTreeIfPossible(ocn[i]);
 						ocn.erase(begin(ocn) + i);
 						i--;
 					}
 				}
 				else if(grouped_exponent != 1.0)
 				{
-					EvaluableNode *new_term = enm->AllocNode(ENT_POW);
+					EvaluableNode *new_term = rc.enm->AllocNode(ENT_POW);
 					new_term->AppendOrderedChildNode(ocn[i]);
-					new_term->AppendOrderedChildNode(enm->AllocNode(grouped_exponent));
+					new_term->AppendOrderedChildNode(rc.enm->AllocNode(grouped_exponent));
 					ocn[i] = new_term;
 				}
 			}
@@ -559,13 +559,11 @@ struct FoldMultiplicationAndDivision final
 		{
 			if(ocn.size() > 0)
 			{
-				ocn.push_back(enm->AllocNode(division ? 1.0 / product_immediate : product_immediate));
+				ocn.push_back(rc.enm->AllocNode(division ? 1.0 / product_immediate : product_immediate));
 			}
 			else
 			{
-				if(nodes_freeable)
-					enm->FreeNodeChildNodes(en);
-
+				rc.FreeNodeChildNodesIfPossible(en);
 				en->SetTypeViaNumberValue(product_immediate);
 			}
 		}
@@ -574,9 +572,7 @@ struct FoldMultiplicationAndDivision final
 		{
 			if(ocn.size() == 0)
 			{
-				if(nodes_freeable)
-					enm->FreeNodeChildNodes(en);
-
+				rc.FreeNodeChildNodesIfPossible(en);
 				en->SetTypeViaNumberValue(1.0);
 			}
 			else if(ocn.size() == 1)
@@ -596,14 +592,12 @@ struct PowerSimplification final
 		return (en->GetType() == ENT_POW);
 	}
 
-	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
-			if(nodes_freeable)
-				enm->FreeNodeChildNodes(en);
-
+			rc.FreeNodeChildNodesIfPossible(en);
 			en->ClearMetadata();
 			en->SetType(ENT_NULL, false);
 			return true;
@@ -613,18 +607,14 @@ struct PowerSimplification final
 		{
 			EvaluableNode *child = ocn[0];
 			en->CopyNodeFrom(child);
-			if(nodes_freeable)
-				enm->FreeNode(child);
-			
+			rc.FreeNodeIfPossible(child);
 			return true;
 		}
 
 		//ocn.size() > 1
 		if(EvaluableNode::IsNull(ocn[1]))
 		{
-			if(nodes_freeable)
-				enm->FreeNodeChildNodes(en);
-
+			rc.FreeNodeChildNodesIfPossible(en);
 			en->ClearMetadata();
 			en->SetType(ENT_NULL, false);
 			return true;
@@ -634,9 +624,7 @@ struct PowerSimplification final
 		{
 			EvaluableNode *child = ocn[0];
 			en->CopyNodeFrom(child);
-			if(nodes_freeable)
-				enm->FreeNode(child);
-
+			rc.FreeNodeIfPossible(child);
 			return true;
 		}
 
@@ -651,7 +639,7 @@ struct EulerExponentSimplification final
 		return (en->GetType() == ENT_EXPONENT);
 	}
 
-	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() < 1)
@@ -660,9 +648,7 @@ struct EulerExponentSimplification final
 		EvaluableNode *child = ocn[0];
 		if(EvaluableNode::IsNull(child))
 		{
-			if(nodes_freeable)
-				enm->FreeNodeChildNodes(en);
-
+			rc.FreeNodeChildNodesIfPossible(en);
 			en->ClearMetadata();
 			en->SetType(ENT_NULL, false);
 			return true;
@@ -674,9 +660,7 @@ struct EulerExponentSimplification final
 			if(log_ocn.size() == 1)
 			{
 				en->CopyNodeFrom(log_ocn[0]);
-				if(nodes_freeable)
-					enm->FreeNode(child);
-
+				rc.FreeNodeIfPossible(child);
 				return true;
 			}
 		}
@@ -692,7 +676,7 @@ struct LogSimplification final
 		return (en->GetType() == ENT_LOG);
 	}
 
-	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() != 1)
@@ -701,9 +685,7 @@ struct LogSimplification final
 		EvaluableNode *child = ocn[0];
 		if(EvaluableNode::IsNull(child))
 		{
-			if(nodes_freeable)
-				enm->FreeNodeChildNodes(en);
-
+			rc.FreeNodeChildNodesIfPossible(en);
 			en->ClearMetadata();
 			en->SetType(ENT_NULL, false);
 			return true;
@@ -715,9 +697,7 @@ struct LogSimplification final
 			if(log_ocn.size() == 1)
 			{
 				en->CopyNodeFrom(log_ocn[0]);
-				if(nodes_freeable)
-					enm->FreeNode(child);
-
+				rc.FreeNodeIfPossible(child);
 				return true;
 			}
 		}
@@ -733,14 +713,12 @@ struct ConsolidateConstantsForConcat final
 		return (en->GetType() == ENT_CONCAT);
 	}
 
-	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
-			if(nodes_freeable)
-				enm->FreeNodeChildNodes(en);
-
+			rc.FreeNodeChildNodesIfPossible(en);
 			en->ClearMetadata();
 			en->SetType(ENT_NULL, false);
 			return true;
@@ -758,9 +736,7 @@ struct ConsolidateConstantsForConcat final
 			//any null short circuits to a null
 			if(EvaluableNode::IsNull(ocn[i]))
 			{
-				if(nodes_freeable)
-					enm->FreeNodeChildNodes(en);
-
+				rc.FreeNodeChildNodesIfPossible(en);
 				en->ClearMetadata();
 				en->SetType(ENT_NULL, false);
 				return true;
@@ -784,9 +760,7 @@ struct ConsolidateConstantsForConcat final
 				accumulating_string += EvaluableNode::ToString(ocn[i]);
 
 				//erase the node
-				if(nodes_freeable)
-					enm->FreeNodeTree(ocn[i]);
-
+				rc.FreeNodeTreeIfPossible(ocn[i]);
 				ocn.erase(begin(ocn) + i);
 
 				//recheck this position next iteration
@@ -805,10 +779,10 @@ struct SimplifySelfContainedWithImmediates final
 		return (!en->IsTerminal() && IsEvaluableNodeTypeOfSimpleExecution(en->GetType()));
 	}
 
-	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		//need interpreter
-		if(interpreter == nullptr)
+		if(rc.interpreter == nullptr)
 			return false;
 
 		//check for any non-immediate child node
@@ -838,14 +812,10 @@ struct SimplifySelfContainedWithImmediates final
 
 		if(!any_non_immediate)
 		{
-			EvaluableNodeReference result = interpreter->InterpretNode(en);
-			if(result.unique && nodes_freeable)
-			{
-				for(auto &cn : en->GetOrderedChildNodes())
-					enm->FreeNodeTree(cn);
-				for(auto &[_, cn] : en->GetMappedChildNodes())
-					enm->FreeNodeTree(cn);
-			}
+			EvaluableNodeReference result = rc.interpreter->InterpretNode(en);
+			if(result.unique)
+				rc.FreeNodeChildNodesIfPossible(en);
+
 			en->CopyNodeFrom(result);
 			return true;
 		}
@@ -862,15 +832,15 @@ struct TruncateToValidParameters final
 		return (en->IsOrderedArray() && en->GetOrderedChildNodesReference().size() > max_num_params);
 	}
 
-	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		size_t max_num_params = GetOpcodeMaxNumValidParameters(en->GetType());
 		auto &ocn = en->GetOrderedChildNodesReference();
 		bool extra_params = (ocn.size() >= max_num_params);
-		if(extra_params && nodes_freeable)
+		if(extra_params && rc.nodesFreeable)
 		{
 			for(size_t i = max_num_params; i < ocn.size(); i++)
-				enm->FreeNodeTree(ocn[i]);
+				rc.FreeNodeTreeIfPossible(ocn[i]);
 		}
 		ocn.resize(max_num_params);
 
@@ -887,7 +857,7 @@ struct SortParameters final
 				child_structure_type == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED);
 	}
 
-	bool Rewrite(EvaluableNode *en, EvaluableNodeManager *enm, bool nodes_freeable, Interpreter *interpreter)
+	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(GetChildNodeStructureType(en->GetType()) == OpcodeDetails::ChildNodeStructureType::UNORDERED)
@@ -921,6 +891,7 @@ void EvaluableNodeTreeAlgebra::SimplifyNode(EvaluableNode *en, EvaluableNodeMana
 	bool nodes_freeable, Interpreter *interpreter)
 {
 	bool any_changes = false;
+	RuleContext rc{ enm, nodes_freeable, interpreter };
 	do
 	{
 		any_changes = false;
@@ -929,7 +900,7 @@ void EvaluableNodeTreeAlgebra::SimplifyNode(EvaluableNode *en, EvaluableNodeMana
 			const auto &[match_fn, rewrite_fn] = entry;
 			//rewrite_fn not applicable for nullptr node
 			if(en != nullptr && match_fn(en))
-				any_changes |= rewrite_fn(en, enm, nodes_freeable, interpreter);
+				any_changes |= rewrite_fn(en, rc);
 
 			if(interpreter != nullptr && interpreter->AreExecutionResourcesExhausted(true))
 				return;

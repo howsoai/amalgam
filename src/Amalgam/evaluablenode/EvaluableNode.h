@@ -702,6 +702,7 @@ public:
 	{
 		if(clear_metadata)
 			ClearMetadata();
+
 		if(FastIsNaN(v))
 		{
 			SetType(ENT_NULL, false);
@@ -718,6 +719,7 @@ public:
 	{
 		if(clear_metadata)
 			ClearMetadata();
+
 		SetType(ENT_STRING, false);
 		GetStringIDReference() = string_intern_pool.CreateStringReference(v);
 	}
@@ -727,6 +729,7 @@ public:
 	{
 		if(clear_metadata)
 			ClearMetadata();
+
 		if(v == string_intern_pool.NOT_A_STRING_ID)
 		{
 			SetType(ENT_NULL, false);
@@ -743,6 +746,7 @@ public:
 	{
 		if(clear_metadata)
 			ClearMetadata();
+
 		if(v == string_intern_pool.NOT_A_STRING_ID)
 		{
 			SetType(ENT_NULL, false);

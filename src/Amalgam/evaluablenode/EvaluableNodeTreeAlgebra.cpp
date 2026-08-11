@@ -76,35 +76,38 @@ struct FlattenAssociations final
 
 	bool Rewrite(EvaluableNode *en, RuleContext &rc)
 	{
-		std::vector<EvaluableNode *> associative_child_nodes;
 		auto &ocn = en->GetOrderedChildNodesReference();
+		bool any_changes = false;
 		for(size_t i = 0; i < ocn.size(); i++)
 		{
 			if(EvaluableNode::IsNull(ocn[i]) || !ocn[i]->IsOrderedArray())
 				continue;
 
-			if(ocn[i]->GetType() == en->GetType())
-			{
-				for(EvaluableNode *add_cn : ocn[i]->GetOrderedChildNodesReference())
-					associative_child_nodes.push_back(add_cn);
+			if(ocn[i]->GetType() != en->GetType())
+				continue;
 
-				//erase the node
-				rc.FreeNodeIfPossible(ocn[i]);
-				ocn.erase(begin(ocn) + i);
+			EvaluableNode *child = ocn[i];
 
-				//need to recheck index since erased one
-				i--;
-			}
+			//a node that contains itself can't be flattened into itself
+			if(child == en)
+				continue;
+
+			//splice the child's child nodes in at the position the child occupied, so that opcodes that
+			//are associative but not commutative, such as concat, retain their original ordering
+			auto &child_ocn = child->GetOrderedChildNodesReference();
+			ocn.erase(begin(ocn) + i);
+			ocn.insert(begin(ocn) + i, begin(child_ocn), end(child_ocn));
+
+			//free only the child node itself; its child nodes have been moved up and are still in use
+			rc.FreeNodeIfPossible(child);
+
+			//need to recheck the position now occupied by the first spliced-in child node
+			i--;
+
+			any_changes = true;
 		}
 
-		//append all at the end
-		if(associative_child_nodes.size() != 0)
-		{
-			en->AppendOrderedChildNodes(associative_child_nodes);
-			return true;
-		}
-
-		return false;
+		return any_changes;
 	}
 };
 
@@ -447,7 +450,11 @@ struct FoldMultiplicationAndDivision final
 		bool multiplicand = true;
 		bool division = (en->GetType() == ENT_DIVIDE);
 
-		double product_immediate = 1.0;
+		//immediates that multiply the result
+		double numerator_immediate = 1.0;
+		//immediates that divide the result, accumulated as a direct product of the denominators
+		//rather than as a reciprocal, so that (/ a 7 7) yields (/ a 49) exactly
+		double denominator_immediate = 1.0;
 
 		size_t original_term_count = ocn.size();
 
@@ -480,9 +487,9 @@ struct FoldMultiplicationAndDivision final
 				if(division && !multiplicand && value == 0.0)
 					continue;
 				if(multiplicand)
-					product_immediate *= value;
+					numerator_immediate *= value;
 				else
-					product_immediate /= value;
+					denominator_immediate *= value;
 
 				//erase the node
 				rc.FreeNodeTreeIfPossible(ocn[i]);
@@ -568,37 +575,34 @@ struct FoldMultiplicationAndDivision final
 			nonimmediate_accum_exponent = 0.0;
 		}
 
-		//add on accumulated_immediate at end if nonzero
-		if(product_immediate != 1.0)
+		//if every term folded away, the node is just the accumulated value
+		if(ocn.size() == 0)
 		{
-			if(ocn.size() > 0)
-			{
-				ocn.push_back(rc.enm->AllocNode(division ? 1.0 / product_immediate : product_immediate));
-			}
-			else
-			{
-				rc.FreeNodeChildNodesIfPossible(en);
-				en->SetTypeViaNumberValue(product_immediate);
-			}
+			rc.FreeNodeChildNodesIfPossible(en);
+			en->SetTypeViaNumberValue(division
+				? numerator_immediate / denominator_immediate : numerator_immediate);
+			return true;
 		}
 
-		if(original_term_count > 1)
+		//add on the accumulated immediate at the end if it isn't the identity; for division this is
+		//the product of the denominators, so it divides once by an exact value instead of
+		//multiplying by a rounded reciprocal
+		double remaining_immediate = (division ? denominator_immediate : numerator_immediate);
+		if(remaining_immediate != 1.0)
+			ocn.push_back(rc.enm->AllocNode(remaining_immediate));
+
+		bool term_count_changed = (ocn.size() != original_term_count);
+
+		if(original_term_count > 1 && ocn.size() == 1)
 		{
-			if(ocn.size() == 0)
-			{
-				rc.FreeNodeChildNodesIfPossible(en);
-				en->SetTypeViaNumberValue(1.0);
-			}
-			else if(ocn.size() == 1)
-			{
-				//replace en with the remaining child node
-				EvaluableNode *child = ocn[0];
-				en->CopyNodeFrom(child);
-				rc.FreeNodeIfPossible(child);
-			}
+			//replace en with the remaining child node
+			EvaluableNode *child = ocn[0];
+			en->CopyNodeFrom(child);
+			rc.FreeNodeIfPossible(child);
+			return true;
 		}
 
-		return (any_changes || ocn.size() != original_term_count);
+		return (any_changes || term_count_changed);
 	}
 };
 

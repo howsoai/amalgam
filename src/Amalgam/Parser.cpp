@@ -1273,6 +1273,11 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				//move current code back in
 				std::swap(previous_code, upd.result);
 
+				//clamp in case there are fewer child nodes than leading positional parameters,
+				//as iterating past the end is not valid even when the sort would be a no-op
+				if(starting_index > unordered_code.size())
+					starting_index = unordered_code.size();
+
 				std::sort(begin(unordered_code) + starting_index, end(unordered_code),
 					StringManipulation::StringNaturalCompareSort);
 				for(auto &uc : unordered_code)

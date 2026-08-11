@@ -2706,7 +2706,29 @@ AmalgamExample{ R"&((seq
 		)
 		buds
 	)
-))&", R"({"155" "155: 0.1 {deg 0}" "190" "190: 0.045454545454545456 {deg 12}" "200" "200: 0.05555555555555555 {deg 8}"})", "", R"((destroy_entities "CyclicTestEntity"))" }
+))&", R"({"155" "155: 0.1 {deg 0}" "190" "190: 0.045454545454545456 {deg 12}" "200" "200: 0.05555555555555555 {deg 8}"})", "", R"((destroy_entities "CyclicTestEntity"))" },
+
+//sorting an opcode's unordered parameters must not step past the end when the opcode has no
+//parameters at all, since it then has fewer child nodes than leading positional parameters;
+//with one or more parameters the distinguished first parameter is retained in place and only
+//the parameters after it are natural-sorted
+AmalgamExample{ R"&((unparse
+	(lambda
+		[
+			(-)
+			(/)
+			(/ z)
+			(/ z b a)
+			(min)
+			(max)
+			(and)
+			(or)
+		]
+	)
+	.false
+	.true
+	.true
+))&", R"("[(-) (/) (/ z) (/ z a b) (min) (max) (and) (or)]")" }
 );
 
 //runs a test suite against the language

@@ -2154,19 +2154,71 @@ Output:
 ```
 Example:
 ```amalgam
-(simplify (lambda (- a 5 -5)))
+(simplify (lambda (- b a a 1)))
 ```
 Output:
 ```amalgam
-(- a -5 5)
+(-
+	b
+	(* 2 a)
+	1
+)
 ```
 Example:
 ```amalgam
-(call (simplify (lambda (- a 10000000000000000 -10000000000000000))) {a 1})
+(simplify (lambda (- a a)))
 ```
 Output:
 ```amalgam
 0
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a a))) {a 2})
+```
+Output:
+```amalgam
+-2
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a a a))) {a 2})
+```
+Output:
+```amalgam
+-4
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a b))) {a 2 b 3})
+```
+Output:
+```amalgam
+-3
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a 5 b))) {a 2 b 3})
+```
+Output:
+```amalgam
+-8
+```
+Example:
+```amalgam
+(simplify (lambda (- a 5 -2)))
+```
+Output:
+```amalgam
+(- a 3)
+```
+Example:
+```amalgam
+(simplify (lambda (- 10 2 3)))
+```
+Output:
+```amalgam
+5
 ```
 Example:
 ```amalgam
@@ -2175,6 +2227,14 @@ Example:
 Output:
 ```amalgam
 (- a 2)
+```
+Example:
+```amalgam
+(simplify (lambda (- a .null b)))
+```
+Output:
+```amalgam
+.null
 ```
 Example:
 ```amalgam
@@ -2250,43 +2310,95 @@ Output:
 ```
 Example:
 ```amalgam
+(simplify (lambda (/ b a a 1 3 a)))
+```
+Output:
+```amalgam
+(/
+	b
+	(pow a 3)
+	3
+)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a a)))
+```
+Output:
+```amalgam
+1
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a a))) {a 2})
+```
+Output:
+```amalgam
+0.5
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a a a))) {a 2})
+```
+Output:
+```amalgam
+0.25
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a b))) {a 2 b 4})
+```
+Output:
+```amalgam
+0.25
+```
+Example:
+```amalgam
 (simplify (lambda (/ a 2 0.5)))
 ```
 Output:
 ```amalgam
-(/ a 0.5 2)
+(* a)
 ```
 Example:
 ```amalgam
-(simplify (lambda (/ a 2 0)))
+(simplify (lambda (/ 12 2 3)))
 ```
 Output:
 ```amalgam
-(/ a 0 2)
+2
 ```
 Example:
 ```amalgam
-(simplify (lambda (/ a .infinity 0)))
+(simplify (lambda (/ a 2 3)))
 ```
 Output:
 ```amalgam
-(/ a .infinity 0)
+(/ a 6)
 ```
 Example:
 ```amalgam
-(simplify (lambda (/ a -1 0)))
+(call (simplify (lambda (/ a -1 0))) {a 2})
 ```
 Output:
 ```amalgam
-(/ a -1 0)
+-.infinity
 ```
 Example:
 ```amalgam
-(call (simplify (lambda (/ a 1e-200 1e200))) {a 1e200})
+(call (simplify (lambda (/ a -2 0))) {a 2})
 ```
 Output:
 ```amalgam
-.infinity
+-.infinity
+```
+Example:
+```amalgam
+(simplify (lambda (/ a .null b)))
+```
+Output:
+```amalgam
+.null
 ```
 Example:
 ```amalgam

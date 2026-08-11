@@ -12,6 +12,13 @@ class RuleContext
 {
 public:
 
+	inline void NullifyNode(EvaluableNode *en)
+	{
+		FreeNodeChildNodesIfPossible(en);
+		en->ClearMetadata();
+		en->SetType(ENT_NULL, false);
+	}
+
 	inline void FreeNodeIfPossible(EvaluableNode *en)
 	{
 		if(nodesFreeable)
@@ -149,9 +156,7 @@ struct DeadCodeElimination final
 		{
 			if(ocn.size() == 0)
 			{
-				rc.FreeNodeChildNodesIfPossible(en);
-				en->ClearMetadata();
-				en->SetType(ENT_NULL, false);
+				rc.NullifyNode(en);
 				any_changes = true;
 			}
 
@@ -182,9 +187,7 @@ struct ShortCircuitBooleans final
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
-			rc.FreeNodeChildNodesIfPossible(en);
-			en->ClearMetadata();
-			en->SetType(ENT_NULL, false);
+			rc.NullifyNode(en);
 			return true;
 		}
 
@@ -246,13 +249,16 @@ struct FoldAdditionAndSubtraction final
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
-			rc.FreeNodeChildNodesIfPossible(en);
-
-			en->ClearMetadata();
 			if(en->GetType() == ENT_SUBTRACT)
-				en->SetType(ENT_NULL, false);
+			{
+				rc.NullifyNode(en);
+			}
 			else
+			{
+				rc.FreeNodeChildNodesIfPossible(en);
+				en->ClearMetadata();
 				en->SetTypeViaNumberValue(0.0);
+			}
 			return true;
 		}
 
@@ -275,9 +281,7 @@ struct FoldAdditionAndSubtraction final
 			//any null short circuits to a null
 			if(EvaluableNode::IsNull(ocn[i]))
 			{
-				rc.FreeNodeChildNodesIfPossible(en);
-				en->ClearMetadata();
-				en->SetType(ENT_NULL, false);
+				rc.NullifyNode(en);
 				return true;
 			}
 
@@ -420,12 +424,16 @@ struct FoldMultiplicationAndDivision final
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
-			rc.FreeNodeChildNodesIfPossible(en);
-
 			if(en->GetType() == ENT_DIVIDE)
-				en->SetType(ENT_NULL, false);
+			{
+				rc.NullifyNode(en);
+			}
 			else
+			{
+				rc.FreeNodeChildNodesIfPossible(en);
+				en->ClearMetadata();
 				en->SetTypeViaNumberValue(1.0);
+			}
 			return true;
 		}
 
@@ -448,9 +456,7 @@ struct FoldMultiplicationAndDivision final
 			//any null short circuits to a null
 			if(EvaluableNode::IsNull(ocn[i]))
 			{
-				rc.FreeNodeChildNodesIfPossible(en);
-				en->ClearMetadata();
-				en->SetType(ENT_NULL, false);
+				rc.NullifyNode(en);
 				return true;
 			}
 
@@ -597,9 +603,7 @@ struct PowerSimplification final
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
-			rc.FreeNodeChildNodesIfPossible(en);
-			en->ClearMetadata();
-			en->SetType(ENT_NULL, false);
+			rc.NullifyNode(en);
 			return true;
 		}
 
@@ -614,9 +618,7 @@ struct PowerSimplification final
 		//ocn.size() > 1
 		if(EvaluableNode::IsNull(ocn[1]))
 		{
-			rc.FreeNodeChildNodesIfPossible(en);
-			en->ClearMetadata();
-			en->SetType(ENT_NULL, false);
+			rc.NullifyNode(en);
 			return true;
 		}
 
@@ -648,9 +650,7 @@ struct EulerExponentSimplification final
 		EvaluableNode *child = ocn[0];
 		if(EvaluableNode::IsNull(child))
 		{
-			rc.FreeNodeChildNodesIfPossible(en);
-			en->ClearMetadata();
-			en->SetType(ENT_NULL, false);
+			rc.NullifyNode(en);
 			return true;
 		}
 
@@ -685,9 +685,7 @@ struct LogSimplification final
 		EvaluableNode *child = ocn[0];
 		if(EvaluableNode::IsNull(child))
 		{
-			rc.FreeNodeChildNodesIfPossible(en);
-			en->ClearMetadata();
-			en->SetType(ENT_NULL, false);
+			rc.NullifyNode(en);
 			return true;
 		}
 
@@ -718,9 +716,7 @@ struct ConsolidateConstantsForConcat final
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(ocn.size() == 0)
 		{
-			rc.FreeNodeChildNodesIfPossible(en);
-			en->ClearMetadata();
-			en->SetType(ENT_NULL, false);
+			rc.NullifyNode(en);
 			return true;
 		}
 
@@ -736,9 +732,7 @@ struct ConsolidateConstantsForConcat final
 			//any null short circuits to a null
 			if(EvaluableNode::IsNull(ocn[i]))
 			{
-				rc.FreeNodeChildNodesIfPossible(en);
-				en->ClearMetadata();
-				en->SetType(ENT_NULL, false);
+				rc.NullifyNode(en);
 				return true;
 			}
 

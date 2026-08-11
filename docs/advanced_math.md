@@ -4,7 +4,7 @@
 #### Returns
 `number`
 #### Description
-e^x
+Evaluates to e^`x`.  If no parameter is specified it evaluates to just e.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -164,11 +164,11 @@ Output:
 
 ### Opcode: `pow`
 #### Parameters
-`number base number exponent`
+`number base [number exponent]`
 #### Returns
 `number`
 #### Description
-Returns `base` raised to the `exponent` power.
+Returns `base` raised to the `exponent` power.  If 'exponent` is not specified it evaluates to `base`.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

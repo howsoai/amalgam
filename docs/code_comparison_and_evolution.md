@@ -2416,6 +2416,22 @@ Output:
 ```amalgam
 a
 ```
+Example:
+```amalgam
+(simplify (lambda (exp (log a))))
+```
+Output:
+```amalgam
+a
+```
+Example:
+```amalgam
+(simplify (lambda (log (exp a))))
+```
+Output:
+```amalgam
+a
+```
 
 [Amalgam Opcodes](./opcodes.md)
 

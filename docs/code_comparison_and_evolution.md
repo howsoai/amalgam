@@ -2126,7 +2126,7 @@ Example:
 ```
 Output:
 ```amalgam
-(* a)
+a
 ```
 Example:
 ```amalgam
@@ -2150,7 +2150,7 @@ Example:
 ```
 Output:
 ```amalgam
-2
+"2"
 ```
 Example:
 ```amalgam
@@ -2290,7 +2290,7 @@ Example:
 ```
 Output:
 ```amalgam
-(* a)
+a
 ```
 Example:
 ```amalgam
@@ -2306,7 +2306,7 @@ Example:
 ```
 Output:
 ```amalgam
-2
+"2"
 ```
 Example:
 ```amalgam
@@ -2358,7 +2358,7 @@ Example:
 ```
 Output:
 ```amalgam
-(* a)
+a
 ```
 Example:
 ```amalgam

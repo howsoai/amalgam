@@ -2023,27 +2023,19 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 		{R"&((simplify (lambda (/ a 2 3))))&", R"((/ a 6))"},
 		{R"&((call (simplify (lambda (/ a -1 0))) {a 2}))&", R"(-.infinity)"},
 		{R"&((call (simplify (lambda (/ a -2 0))) {a 2}))&", R"(-.infinity)"},
-		//a negative zero divisor is left in place like any other zero divisor; division by any zero
-		//takes its sign from the dividend alone, so a positive dividend yields a positive infinity
 		{R"&((call (simplify (lambda (/ a -0))) {a 2}))&", R"(.infinity)"},
 		{R"&((simplify (lambda (/ a .null b))))&", R"(.null)"},
 		{R"&((simplify (lambda (/ a 2 1))))&", R"((/ a 2))"},
 		{R"&((simplify (lambda (pow a 1))))&", R"(a)"},
 		{R"&((simplify (lambda (exp (log a)))))&", R"(a)"},
 		{R"&((simplify (lambda (log (exp a)))))&", R"(a)"},
-		//dividing by successive immediates must accumulate the denominators as a direct product,
-		//otherwise the reciprocal of the accumulated quotient is rounded and (/ a 7 7) is not exact
 		{R"&((simplify (lambda (/ a 7 7))))&", R"((/ a 49))"},
 		{R"&((call (simplify (lambda (/ a 7 7))) {a 49}))&", R"(1)"},
 		{R"&((simplify (lambda (/ a 7 7 2))))&", R"((/ a 98))"},
-		//an already-canonical single denominator is left exactly as it is
 		{R"&((simplify (lambda (/ a 49))))&", R"((/ a 49))"},
-		//simplifying the folded form again is a fixed point, not a further-rounded denominator
 		{R"&((simplify (simplify (lambda (/ a 7 7)))))&", R"((/ a 49))"},
-		//a nested associative node flattens where it was, so ordered opcodes keep their ordering
 		{R"&((simplify (lambda (concat "a" (concat b "c") "d"))))&", R"((concat "a" b "cd"))"},
 		{R"&((call (simplify (lambda (concat "a" (concat b "c") "d"))) {b "-"}))&", R"("a-cd")"},
-		//two nested concats separated by a constant each flatten at their own position
 		{R"&((call
 	(simplify
 		(lambda

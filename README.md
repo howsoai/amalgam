@@ -1,6 +1,6 @@
 # Amalgam&reg;
 
-An LLM-ready, tree-structured language for safe, sandboxed code generation, manipulation, and advanced information-theoretic inference. 
+An LLM-ready, tree-structured language for safe, sandboxed code generation, manipulation, and advanced information-theoretic inference.
 
 **Table of Contents**
 
@@ -75,10 +75,10 @@ An interpreter application and shared library (dll/so/dylib) are built for each 
 |------------------------------|-------------------------------------|:------------------:|-------|
 | Windows amd64                | MT, ST, OMP, MT-NoAVX               | :heavy_check_mark: | |
 | Linux amd64                  | MT, ST, OMP, MT-NoAVX, ST-PGC, AFMI | :heavy_check_mark: | ST-PGC and AFMI are for testing only, not packaged for release |
-| Linux amd64 (glibc 2.28)     | MT, ST, OMP, MT-NoAVX, ST-PGC, AFMI | :heavy_check_mark: | Built on Oracle Linux 8 for older distributions; packaged separately with a `-228` suffix.  Only the MT and ST binaries are tested. |
+| Linux amd64 (glibc 2.28)     | MT, ST, OMP, MT-NoAVX, ST-PGC, AFMI | :heavy_check_mark: | Built on Oracle Linux 8 for older distributions; packaged separately with a `-228` suffix. |
 | Linux arm64: 8.2-a+simd+rcpc | MT, ST, OMP                         | :heavy_check_mark: | Built and tested natively on arm64 runners |
 | Linux arm64: 8-a+simd        | ST                                  | :heavy_check_mark: | Built and tested natively on arm64 runners |
-| macOS arm64: 8.4-a+simd      | MT, ST, OMP                         | :heavy_check_mark: | M1 and newer supported; built and tested natively on Apple Silicon.  Intel-based Macs are no longer supported. |
+| macOS arm64: 8.4-a+simd      | MT, ST, OMP                         | :heavy_check_mark: | M1 and newer supported; built and tested natively on Apple Silicon. |
 | WASM 64-bit                  | ST                                  | :heavy_check_mark: | Built on linux using emscripten, headless test with node:18 + jest |
 
 * <sup>1</sup> Variant meanings:
@@ -124,7 +124,7 @@ Though Amalgam is intended to support any C++20 compliant compiler, the current 
     * Ubuntu 24.04, gcc-14 (amd64 and arm64, each built natively)
     * Oracle Linux 8, gcc-toolset-14 (glibc 2.28 amd64 build)
 * macOS (Darwin):
-    * macOS 15 (Apple Silicon), the runner's default Xcode AppleClang
+    * macOS 15 (Apple Silicon), Clang/LLVM 17.0.0
 * WASM:
     * Ubuntu 24.04, emscripten 3.1.67
 

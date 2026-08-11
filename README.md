@@ -195,7 +195,7 @@ The above performs a local "build install". For specifying a custom location, ru
 cmake -DCMAKE_INSTALL_PREFIX="/path/to/install/location" --build --preset $PRESET --target install
 ```
 
-Depending on the platform, not all tests will run successfully out of the box, especially when cross compiling or when the build machine lacks the intrinsics a variant was built for (i.e., AVX2/AVX512). For those cases, the tests that are runnable on the specific platform can be included/excluded by running CTest directly (not through CMake, like above):
+Depending on the platform, not all tests will run successfully out of the box, especially when cross compiling or when the build machine lacks the intrinsics a variant was built for (e.g., AVX2/AVX512). For those cases, the tests that are runnable on the specific platform can be included/excluded by running CTest directly (not through CMake, like above):
 
 ```bash
 ctest --preset $PRESET --label-exclude 'advanced_intrinsics'

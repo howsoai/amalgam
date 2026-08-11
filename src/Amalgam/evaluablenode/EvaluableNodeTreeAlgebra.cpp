@@ -312,6 +312,7 @@ struct FoldAdditionAndSubtraction final
 				//recheck this position next iteration
 				i--;
 
+				any_changes = true;
 				continue;
 			}
 
@@ -398,7 +399,7 @@ struct FoldAdditionAndSubtraction final
 				en->SetTypeViaNumberValue(accumulated_immediate);
 		}
 
-		if(subtraction && original_term_count > 1)
+		if(original_term_count > 1)
 		{
 			if(ocn.size() == 0)
 			{
@@ -490,6 +491,7 @@ struct FoldMultiplicationAndDivision final
 				//recheck this position next iteration
 				i--;
 
+				any_changes = true;
 				continue;
 			}
 
@@ -580,7 +582,7 @@ struct FoldMultiplicationAndDivision final
 			}
 		}
 
-		if(division && original_term_count > 1)
+		if(original_term_count > 1)
 		{
 			if(ocn.size() == 0)
 			{
@@ -625,18 +627,28 @@ struct PowerSimplification final
 		}
 
 		//ocn.size() > 1
-		if(EvaluableNode::IsNull(ocn[1]))
+		if(EvaluableNode::IsNull(ocn[0]) || EvaluableNode::IsNull(ocn[1]))
 		{
 			rc.NullifyNode(en);
 			return true;
 		}
 
-		if(ocn[1]->GetType() == ENT_NUMBER && ocn[1]->GetNumberValue() == 1.0)
+		if(ocn[1]->GetType() == ENT_NUMBER)
 		{
-			EvaluableNode *child = ocn[0];
-			en->CopyNodeFrom(child);
-			rc.FreeNodeIfPossible(child);
-			return true;
+			double exponent = ocn[1]->GetNumberValue();
+			if(exponent == 1.0)
+			{
+				EvaluableNode *child = ocn[0];
+				en->CopyNodeFrom(child);
+				rc.FreeNodeIfPossible(child);
+				return true;
+			}
+			else if(exponent == 0.0 && ocn[0]->GetType() == ENT_NUMBER && ocn[0]->GetNumberValueReference() != 0.0)
+			{
+				rc.FreeNodeChildNodesIfPossible(en);
+				en->SetTypeViaNumberValue(1.0);
+				return true;
+			}
 		}
 
 		return false;
@@ -698,12 +710,26 @@ struct LogSimplification final
 			return true;
 		}
 
+		//ln(1) -> 0
+		if(child->IsImmediate() && EvaluableNode::ToNumber(child) == 1.0)
+		{
+			rc.FreeNodeChildNodesIfPossible(en);
+			en->SetTypeViaNumberValue(0.0);
+			return true;
+		}
+
 		if(child->GetType() == ENT_EXPONENT)
 		{
-			auto &log_ocn = child->GetOrderedChildNodesReference();
-			if(log_ocn.size() == 1)
+			auto &exp_ocn = child->GetOrderedChildNodesReference();
+			if(exp_ocn.size() == 0)
 			{
-				en->CopyNodeFrom(log_ocn[0]);
+				rc.FreeNodeChildNodesIfPossible(en);
+				en->SetTypeViaNumberValue(1.0);
+				return true;
+			}
+			if(exp_ocn.size() == 1)
+			{
+				en->CopyNodeFrom(exp_ocn[0]);
 				rc.FreeNodeIfPossible(child);
 				return true;
 			}

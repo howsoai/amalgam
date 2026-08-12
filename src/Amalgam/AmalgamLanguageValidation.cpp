@@ -825,7 +825,10 @@ AmalgamExample{ R"&((seq
 					;precision
 					"precise"
 					;output sorted
-					.true
+					;note: an assoc keyed by entity id is used rather than a sorted list because
+					;several of these entities tie at the same distance, and the relative order of
+					;tied entities is not stable across platforms/compilers
+					.false
 				)
 			]
 		)
@@ -863,56 +866,35 @@ AmalgamExample{ R"&((seq
 					;precision
 					"precise"
 					;output sorted
-					.true
+					;note: an assoc keyed by entity id is used rather than a sorted list because
+					;several of these entities tie at the same distance, and the relative order of
+					;tied entities is not stable across platforms/compilers
+					.false
 				)
 			]
 		)
 	]
 ))&", R"([
-	[
-		[
-			"B"
-			"D"
-			"F"
-			"A"
-			"I"
-			"C"
-			"G"
-			"H"
-		]
-		[
-			0
-			1
-			1
-			1
-			1
-			1
-			1024
-			1024
-		]
-	]
-	[
-		[
-			"B"
-			"F"
-			"C"
-			"D"
-			"I"
-			"A"
-			"J"
-			"E"
-		]
-		[
-			0
-			1
-			1
-			1
-			1
-			1
-			1024
-			1024
-		]
-	]
+	{
+		A 1
+		B 0
+		C 1
+		D 1
+		F 1
+		G 1024
+		H 1024
+		I 1
+	}
+	{
+		A 1
+		B 0
+		C 1
+		D 1
+		E 1024
+		F 1
+		I 1
+		J 1024
+	}
 ])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "BoxConvictionTestContainer" .null)

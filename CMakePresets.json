@@ -13,7 +13,7 @@
       "binaryDir": "${sourceDir}/out/build/${presetName}",
       "installDir": "${sourceDir}/out/install/${presetName}",
       "cacheVariables": {
-        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD": "20",
         "CMAKE_CXX_STANDARD_REQUIRED": "YES",
         "CMAKE_CXX_EXTENSIONS": "OFF",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
@@ -135,15 +135,7 @@
       "hidden": true,
       "description": "Sets gcc compiler",
       "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "g++-10"
-      }
-    },
-    {
-      "name": "gcc-arm",
-      "hidden": true,
-      "description": "Sets gcc-arm compiler",
-      "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "aarch64-linux-gnu-g++-10"
+        "CMAKE_CXX_COMPILER": "g++-14"
       }
     },
     {
@@ -252,7 +244,7 @@
     {
       "name": "arm64-debug-linux",
       "description": "gcc for arm64 (debug) for linux",
-      "inherits": [ "base", "linux", "arm64", "debug", "gcc-arm" ],
+      "inherits": [ "base", "linux", "arm64", "debug", "gcc" ],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -262,7 +254,7 @@
     {
       "name": "arm64-release-linux",
       "description": "gcc for arm64 (release) for linux",
-      "inherits": [ "base", "linux", "arm64", "release", "gcc-arm" ],
+      "inherits": [ "base", "linux", "arm64", "release", "gcc" ],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -272,7 +264,7 @@
     {
       "name": "arm64_8a-debug-linux",
       "description": "gcc for arm64_8a (debug) for linux",
-      "inherits": [ "base", "linux", "arm64_8a", "debug", "gcc-arm" ],
+      "inherits": [ "base", "linux", "arm64_8a", "debug", "gcc" ],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -282,7 +274,7 @@
     {
       "name": "arm64_8a-release-linux",
       "description": "gcc for arm64_8a (release) for linux",
-      "inherits": [ "base", "linux", "arm64_8a", "release", "gcc-arm" ],
+      "inherits": [ "base", "linux", "arm64_8a", "release", "gcc" ],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",

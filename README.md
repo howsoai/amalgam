@@ -1,6 +1,6 @@
 # Amalgam&reg;
 
-An LLM-ready, tree-structured language for safe, sandboxed code generation, manipulation, and advanced information-theoretic inference. 
+An LLM-ready, tree-structured language for safe, sandboxed code generation, manipulation, and advanced information-theoretic inference.
 
 **Table of Contents**
 
@@ -65,7 +65,7 @@ Debugging Amalgam is supported through the [VSCode Plugin](https://github.com/ho
 
 ## Amalgam Interpreter
 
-The Amalgam interpreter is written conforming to the C++ 17 standard so theoretically should be compilable on virtually any modern system.
+The Amalgam interpreter is written conforming to the C++ 20 standard so theoretically should be compilable on virtually any modern system.
 
 ### Build Matrix
 
@@ -75,9 +75,10 @@ An interpreter application and shared library (dll/so/dylib) are built for each 
 |------------------------------|-------------------------------------|:------------------:|-------|
 | Windows amd64                | MT, ST, OMP, MT-NoAVX               | :heavy_check_mark: | |
 | Linux amd64                  | MT, ST, OMP, MT-NoAVX, ST-PGC, AFMI | :heavy_check_mark: | ST-PGC and AFMI are for testing only, not packaged for release |
-| Linux arm64: 8.2-a+simd+rcpc | MT, ST, OMP                         | :heavy_check_mark: | Tested with [qemu](https://www.qemu.org/) |
-| Linux arm64: 8-a+simd        | ST                                  | :heavy_check_mark: | Tested with [qemu](https://www.qemu.org/) |
-| macOS arm64: 8.4-a+simd      | MT, ST, OMP                         | :heavy_check_mark: | M1 and newer supported (amd64 NoAVX also tested w/ emulation) |
+| Linux amd64 (glibc 2.28)     | MT, ST, OMP, MT-NoAVX, ST-PGC, AFMI | :heavy_check_mark: | Built on Oracle Linux 8 for older distributions; packaged separately with a `-228` suffix. |
+| Linux arm64: 8.2-a+simd+rcpc | MT, ST, OMP                         | :heavy_check_mark: | Built and tested natively on arm64 runners |
+| Linux arm64: 8-a+simd        | ST                                  | :heavy_check_mark: | Built and tested natively on arm64 runners |
+| macOS arm64: 8.4-a+simd      | MT, ST, OMP                         | :heavy_check_mark: | M1 and newer supported; built and tested natively on Apple Silicon. |
 | WASM 64-bit                  | ST                                  | :heavy_check_mark: | Built on linux using emscripten, headless test with node:18 + jest |
 
 * <sup>1</sup> Variant meanings:
@@ -113,18 +114,21 @@ An interpreter application and shared library (dll/so/dylib) are built for each 
 
 Pre-built binaries use CMake+Ninja for CI/CD. See [PR workflow](.github/workflows/create-pr-build.yml) for automated build steps.
 
-Though Amalgam is intended to support any C++17 compliant compiler, the current specific tool and OS versions used are:
+Though Amalgam is intended to support any C++20 compliant compiler, the current specific tool and OS versions used are:
 
 * CMake 3.30
 * Ninja 1.10
 * Windows:
     * Visual Studio 2026 v145
 * Linux:
-    * Ubuntu 20.04, gcc-10
+    * Ubuntu 24.04, gcc-14 (amd64 and arm64, each built natively)
+    * Oracle Linux 8, gcc-toolset-14 (glibc 2.28 amd64 build)
 * macOS (Darwin):
-    * macOS 13, AppleClang 15.0
+    * macOS 15 (Apple Silicon), Clang/LLVM 17.0.0
 * WASM:
-    * Ubuntu 20.04, emscripten 3.1.67
+    * Ubuntu 24.04, emscripten 3.1.67
+
+GCC versions older than 14 and Clang versions older than 17 will emit a configuration warning and are not officially supported.
 
 #### Runtime Requirements
 
@@ -149,7 +153,8 @@ Running the pre-built interpreter has specific runtime requirements per platform
 
 ##### Linux
 
-* glibc 2.31 or later
+* glibc 2.39 or later
+    * A separate amd64 package with a `-228` suffix is built for glibc 2.28 or later, to support older distributions such as Oracle Linux 8
 * Arch: amd64 or arm64
     * Specific arm64 builds: `armv8-a+simd` & `armv8.2-a+simd+rcpc`
 
@@ -190,7 +195,7 @@ The above performs a local "build install". For specifying a custom location, ru
 cmake -DCMAKE_INSTALL_PREFIX="/path/to/install/location" --build --preset $PRESET --target install
 ```
 
-Depending on the platform, not all tests will run successfully out of the box, especially when cross compiling. For those cases (i.e., arm64 on Mac M1 or AVX2/AVX512), the tests that are runnable on the specific platform can be included/excluded by running CTest directly (not through CMake, like above):
+Depending on the platform, not all tests will run successfully out of the box, especially when cross compiling or when the build machine lacks the intrinsics a variant was built for (e.g., AVX2/AVX512). For those cases, the tests that are runnable on the specific platform can be included/excluded by running CTest directly (not through CMake, like above):
 
 ```bash
 ctest --preset $PRESET --label-exclude 'advanced_intrinsics'
@@ -224,8 +229,8 @@ Note: on Windows, some issues have been found with using the CMake generated VS 
 Some specific build customizations are important to note. These customizations can be altered in the main [CMake file](CMakeLists.txt#L1):
 
 * [Compiler options](build/cmake/global_compiler_flags.cmake)
-* [arm64 arch](build/cmake/global_compiler_flags.cmake#L90)
-* [amd64 AVX intrinsics](build/cmake/global_compiler_flags.cmake#L126)
+* [arm64 arch](build/cmake/global_compiler_flags.cmake#L113)
+* [amd64 AVX intrinsics](build/cmake/global_compiler_flags.cmake#L153)
 * [Custom testing](build/cmake/create_tests.cmake)
 
 ### Debugging

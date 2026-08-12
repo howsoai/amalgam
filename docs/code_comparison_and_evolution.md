@@ -38,7 +38,7 @@ Output:
 #### Returns
 `any`
 #### Description
-Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.0001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.
+Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.0001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "simplify_node", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -178,22 +178,30 @@ Example:
 Output:
 ```amalgam
 [
-        1.7100924132216468
-        201
-        "x"
-        4
-        101
-        .null
-        101
-        "x"
-        101
-        201
-        101
-        201
-        "x"
-        .null
-        x
+		1.7100924132216468
+		201
+		"x"
+		4
+		101
+		.null
+		101
+		"x"
+		101
+		201
+		101
+		201
+		"x"
+		.null
+		x
 ]
+```
+Example:
+```amalgam
+(get_type_string (mutate (lambda (+ 1 2)) 1.0 .null {"simplify_node" 1}))
+```
+Output:
+```amalgam
+"number"
 ```
 
 [Amalgam Opcodes](./opcodes.md)
@@ -220,14 +228,15 @@ Example:
 Output:
 ```amalgam
 {
-        change_type 0.15
-        insert 0.15
-        insert_element 0.15
-        remove 0.15
-        remove_all_elements 0.0001
-        remove_element 0.15
-        replace_element_with_copy 0.0999
-        swap_elements 0.15
+		change_type 0.15
+		insert 0.14
+		insert_element 0.14
+		remove 0.14
+		remove_all_elements 0.0001
+		remove_element 0.14
+		replace_element_with_copy 0.0999
+		simplify_node 0.05
+		swap_elements 0.14
 }
 ```
 
@@ -435,6 +444,14 @@ Example:
 Output:
 ```amalgam
 3.5
+```
+Example:
+```amalgam
+(commonality (lambda (- a b)) (lambda (- b)))
+```
+Output:
+```amalgam
+2
 ```
 
 [Amalgam Opcodes](./opcodes.md)
@@ -1094,6 +1111,22 @@ Output:
 	3
 	[1 2 3]
 ]
+```
+Example:
+```amalgam
+(union (lambda (+ a b)) (lambda (+ b)))
+```
+Output:
+```amalgam
+(+ a b)
+```
+Example:
+```amalgam
+(union (lambda (- a b)) (lambda (- b)))
+```
+Output:
+```amalgam
+(- a b)
 ```
 
 [Amalgam Opcodes](./opcodes.md)
@@ -1959,6 +1992,706 @@ Output:
 	w [2]
 	z [5]
 }
+```
+
+[Amalgam Opcodes](./opcodes.md)
+
+### Opcode: `simplify`
+#### Parameters
+`any code`
+#### Returns
+`any`
+#### Description
+Simplifies `code` in basic ways that will yield the same behavior and return the same result.  Note that values from boolean logic may not necessarily be preserved, with the opcodes "and" and "or" potentially returning just true or false.
+#### Details
+ - Permissions required:  none
+ - Allows concurrency: false
+ - Requires entity: false
+ - Creates new scope: false
+ - Creates new target scope: false
+ - Value newness (whether references existing node): new
+#### Examples
+Example:
+```amalgam
+(simplify
+	(lambda
+		(+
+			0
+			1
+			2
+			3
+			4
+			5
+			6
+		)
+	)
+)
+```
+Output:
+```amalgam
+21
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(if
+			a (if .false 1 .true 2 c)
+			b (if 3)
+			.false 3
+			4			
+		)
+	)
+)
+```
+Output:
+```amalgam
+(if a 2 b 3 4)
+```
+Example:
+```amalgam
+(simplify (lambda (if)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (if .false 1)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(and a .true b (or .false c d))
+	)
+)
+```
+Output:
+```amalgam
+(and
+		(or c d)
+		a
+		b
+)
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(concat "h" "e" l l "o" " " "w" o r l "d" "!")
+	)
+)
+```
+Output:
+```amalgam
+(concat
+		"he"
+		l
+		l
+		"o w"
+		o
+		r
+		l
+		"d!"
+)
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(+ (exp a) a 4 2 (+ 3 4 a) (+ 3 a 4) a (exp a))
+	)
+)
+```
+Output:
+```amalgam
+(+
+		(*
+				(exp a)
+				2
+		)
+		(* 4 a)
+		20
+)
+```
+Example:
+```amalgam
+(simplify (lambda (-)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (- a)))
+```
+Output:
+```amalgam
+(- a)
+```
+Example:
+```amalgam
+(simplify (lambda (- 5 a)))
+```
+Output:
+```amalgam
+(- 5 a)
+```
+Example:
+```amalgam
+(simplify (lambda (- a 0)))
+```
+Output:
+```amalgam
+a
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a 0))) {a -0})
+```
+Output:
+```amalgam
+-0
+```
+Example:
+```amalgam
+(simplify (lambda (- a -0)))
+```
+Output:
+```amalgam
+(- a -0)
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a 0))) {a "2"})
+```
+Output:
+```amalgam
+"2"
+```
+Example:
+```amalgam
+(simplify (lambda (- b a a 1)))
+```
+Output:
+```amalgam
+(-
+	b
+	(* 2 a)
+	1
+)
+```
+Example:
+```amalgam
+(simplify (lambda (- a a)))
+```
+Output:
+```amalgam
+(- a a)
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a))) {a .infinity})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a))) {a .null})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (- a a a)))
+```
+Output:
+```amalgam
+(-
+	a
+	(* 2 a)
+)
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a a))) {a 2})
+```
+Output:
+```amalgam
+-2
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a a))) {a .infinity})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a a a))) {a 2})
+```
+Output:
+```amalgam
+-4
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a b))) {a 2 b 3})
+```
+Output:
+```amalgam
+-3
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a 5 b))) {a 2 b 3})
+```
+Output:
+```amalgam
+-8
+```
+Example:
+```amalgam
+(simplify (lambda (- a 5 -2)))
+```
+Output:
+```amalgam
+(- a 3)
+```
+Example:
+```amalgam
+(simplify (lambda (- 10 2 3)))
+```
+Output:
+```amalgam
+5
+```
+Example:
+```amalgam
+(simplify (lambda (- a 2 0)))
+```
+Output:
+```amalgam
+(- a 2)
+```
+Example:
+```amalgam
+(simplify (lambda (- a .null b)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(* b a a 1 b 3)
+	)
+)
+```
+Output:
+```amalgam
+(*
+		(pow a 2)
+		(pow b 2)
+		3
+)
+```
+Example:
+```amalgam
+(simplify (lambda (/)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (/ a)))
+```
+Output:
+```amalgam
+(/ a)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 2)))
+```
+Output:
+```amalgam
+(/ a 2)
+```
+Example:
+```amalgam
+(simplify (lambda (/ 6 a)))
+```
+Output:
+```amalgam
+(/ 6 a)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 1)))
+```
+Output:
+```amalgam
+a
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 1))) {a -0})
+```
+Output:
+```amalgam
+-0
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 1))) {a "2"})
+```
+Output:
+```amalgam
+"2"
+```
+Example:
+```amalgam
+(simplify (lambda (/ b a a 1 3 a)))
+```
+Output:
+```amalgam
+(/
+	b
+	(pow a 3)
+	3
+)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a a)))
+```
+Output:
+```amalgam
+(/ a a)
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a))) {a 0})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a))) {a .infinity})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (/ a a a)))
+```
+Output:
+```amalgam
+(/
+	a
+	(pow a 2)
+)
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a a))) {a 2})
+```
+Output:
+```amalgam
+0.5
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a a))) {a .infinity})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a a a))) {a 2})
+```
+Output:
+```amalgam
+0.25
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a b))) {a 2 b 4})
+```
+Output:
+```amalgam
+0.25
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 2 0.5)))
+```
+Output:
+```amalgam
+a
+```
+Example:
+```amalgam
+(simplify (lambda (/ 12 2 3)))
+```
+Output:
+```amalgam
+2
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 2 3)))
+```
+Output:
+```amalgam
+(/ a 6)
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a -1 0))) {a 2})
+```
+Output:
+```amalgam
+-.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a -2 0))) {a 2})
+```
+Output:
+```amalgam
+-.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 0 -1))) {a 2})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 0 -2))) {a 2})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 2 0 -3))) {a 2})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(unparse (simplify (lambda (/ a 2 0 -3))) .false .false)
+```
+Output:
+```amalgam
+"(/ a 2 0 -3)"
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a -0))) {a 2})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(simplify (lambda (/ a .null b)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 2 1)))
+```
+Output:
+```amalgam
+(/ a 2)
+```
+Example:
+```amalgam
+(simplify (lambda (pow a 1)))
+```
+Output:
+```amalgam
+a
+```
+Example:
+```amalgam
+(simplify (lambda (exp (log a))))
+```
+Output:
+```amalgam
+(exp
+	(log a)
+)
+```
+Example:
+```amalgam
+(call (simplify (lambda (exp (log a)))) {a -1})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (exp (log a)))) {a 0})
+```
+Output:
+```amalgam
+0
+```
+Example:
+```amalgam
+(call (simplify (lambda (exp (log a)))) {a .infinity})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(simplify (lambda (log (exp a))))
+```
+Output:
+```amalgam
+(log
+	(exp a)
+)
+```
+Example:
+```amalgam
+(call (simplify (lambda (log (exp a)))) {a 1000})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (log (exp a)))) {a -1000})
+```
+Output:
+```amalgam
+-.infinity
+```
+Example:
+```amalgam
+(simplify (lambda (log (exp))))
+```
+Output:
+```amalgam
+1
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 7 7)))
+```
+Output:
+```amalgam
+(/ a 49)
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 7 7))) {a 49})
+```
+Output:
+```amalgam
+1
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 7 7 2)))
+```
+Output:
+```amalgam
+(/ a 98)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 49)))
+```
+Output:
+```amalgam
+(/ a 49)
+```
+Example:
+```amalgam
+(simplify (simplify (lambda (/ a 7 7))))
+```
+Output:
+```amalgam
+(/ a 49)
+```
+Example:
+```amalgam
+(simplify (lambda (concat "a" (concat b "c") "d")))
+```
+Output:
+```amalgam
+(concat "a" b "cd")
+```
+Example:
+```amalgam
+(call (simplify (lambda (concat "a" (concat b "c") "d"))) {b "-"})
+```
+Output:
+```amalgam
+"a-cd"
+```
+Example:
+```amalgam
+(call
+	(simplify
+		(lambda
+			(concat
+				(concat "a" b)
+				"m"
+				(concat c "d")
+			)
+		)
+	)
+	{b "X" c "Y"}
+)
+```
+Output:
+```amalgam
+"aXmYd"
 ```
 
 [Amalgam Opcodes](./opcodes.md)

@@ -984,7 +984,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
 
 	//get the value(s)
-	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
+	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeTerminalNode(to_lookup->GetType()))
 	{
 		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
 

@@ -1,5 +1,6 @@
 //project headers:
 
+#include "EvaluableNodeTreeAlgebra.h"
 #include "EvaluableNodeTreeDifference.h"
 #include "Interpreter.h"
 #include "OpcodeDetails.h"
@@ -55,7 +56,7 @@ static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT
 		OpcodeDetails::ParameterGroup({"immediate_string_weights", OpcodeDetails::DataType::ASSOC, true})
 	};
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
-	d.description = R"(Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.0001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.)";
+	d.description = R"(Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.0001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "simplify_node", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((mutate
 	(lambda
@@ -172,24 +173,25 @@ static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT
 		"y" 0.5
 	}
 ))&", R"([
-        1.7100924132216468
-        201
-        "x"
-        4
-        101
-        .null
-        101
-        "x"
-        101
-        201
-        101
-        201
-        "x"
-        .null
-        x
+		1.7100924132216468
+		201
+		"x"
+		4
+		101
+		.null
+		101
+		"x"
+		101
+		201
+		101
+		201
+		"x"
+		.null
+		x
 ])",
 //accept anything since mutation can do anything
 ".*"},
+{R"&((get_type_string (mutate (lambda (+ 1 2)) 1.0 .null {"simplify_node" 1})))&", R"("number")"},
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.1;
@@ -288,14 +290,15 @@ static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &
 	d.description = R"(Retrieves the default values of `value_type` for mutation, either "mutation_opcodes" or "mutation_types")";
 	d.examples = MakeAmalgamExamples({
 		{R"((get_mutation_defaults "mutation_types"))", R"({
-        change_type 0.15
-        insert 0.15
-        insert_element 0.15
-        remove 0.15
-        remove_all_elements 0.0001
-        remove_element 0.15
-        replace_element_with_copy 0.0999
-        swap_elements 0.15
+		change_type 0.15
+		insert 0.14
+		insert_element 0.14
+		remove 0.14
+		remove_all_elements 0.0001
+		remove_element 0.14
+		replace_element_with_copy 0.0999
+		simplify_node 0.05
+		swap_elements 0.14
 })"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -444,7 +447,9 @@ static OpcodeInitializer _ENT_COMMONALITY(ENT_COMMONALITY, &Interpreter::Interpr
 	[1 2 3]
 	(unordered_list 1 2 3)
 	{types_must_match .false}
-))&", R"(3.5)"}
+))&", R"(3.5)"},
+		{R"&((commonality (lambda (- a b)) (lambda (- b))))&",
+			R"(2)"},
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.05;
@@ -1040,7 +1045,11 @@ R"("\[\\r\\n\\t\\r\\n\\t;comment 1\\r\\n\\t;comment 2\\r\\n\\t;comment 3\\r\\n\\
 	2
 	3
 	[1 2 3]
-])"}
+])"},
+		{R"((union (lambda (+ a b)) (lambda (+ b))))",
+		R"((+ a b))"},
+		{ R"((union (lambda (- a b)) (lambda (- b))))",
+		R"((- a b))" }
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
@@ -1889,5 +1898,207 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, Eva
 	evaluableNodeManager->FreeNodeTreeIfPossible(n1);
 	evaluableNodeManager->FreeNodeTreeIfPossible(n2);
 
+	return EvaluableNodeReference(result, true);
+}
+
+static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode_ENT_SIMPLIFY, []() {
+	OpcodeDetails d;
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"code", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description =
+		R"(Simplifies `code` in basic ways that will yield the same behavior and return the same result.  Note that values from boolean logic may not necessarily be preserved, with the opcodes "and" and "or" potentially returning just true or false.)";
+	d.examples = MakeAmalgamExamples({ {R"&((simplify
+	(lambda
+		(+
+			0
+			1
+			2
+			3
+			4
+			5
+			6
+		)
+	)
+))&",
+		R"(21)"},
+{R"&((simplify
+	(lambda
+		(if
+			a (if .false 1 .true 2 c)
+			b (if 3)
+			.false 3
+			4			
+		)
+	)
+))&",
+		R"((if a 2 b 3 4))"},
+		{R"&((simplify (lambda (if))))&", R"(.null)"},
+		{R"&((simplify (lambda (if .false 1))))&", R"(.null)"},
+{ R"&((simplify
+	(lambda
+		(and a .true b (or .false c d))
+	)
+))&",
+		R"((and
+		(or c d)
+		a
+		b
+))" },
+		{ R"&((simplify
+	(lambda
+		(concat "h" "e" l l "o" " " "w" o r l "d" "!")
+	)
+))&",
+		R"((concat
+		"he"
+		l
+		l
+		"o w"
+		o
+		r
+		l
+		"d!"
+))" },
+		{R"&((simplify
+	(lambda
+		(+ (exp a) a 4 2 (+ 3 4 a) (+ 3 a 4) a (exp a))
+	)
+))&",
+		R"((+
+		(*
+				(exp a)
+				2
+		)
+		(* 4 a)
+		20
+))"},
+		{R"&((simplify (lambda (-))))&", R"(.null)"},
+		{R"&((simplify (lambda (- a))))&", R"((- a))"},
+		{R"&((simplify (lambda (- 5 a))))&", R"((- 5 a))"},
+		{R"&((simplify (lambda (- a 0))))&", R"(a)"},
+		{R"&((call (simplify (lambda (- a 0))) {a -0}))&", R"(-0)"},
+		{R"&((simplify (lambda (- a -0))))&", R"((- a -0))"},
+		{R"&((call (simplify (lambda (- a 0))) {a "2"}))&", R"("2")"},
+		{R"&((simplify (lambda (- b a a 1))))&", R"((-
+	b
+	(* 2 a)
+	1
+))"},
+		{R"&((simplify (lambda (- a a))))&", R"((- a a))"},
+		{R"&((call (simplify (lambda (- a a))) {a .infinity}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (- a a))) {a .null}))&", R"(.null)"},
+		{R"&((simplify (lambda (- a a a))))&", R"((-
+	a
+	(* 2 a)
+))"},
+		{R"&((call (simplify (lambda (- a a a))) {a 2}))&", R"(-2)"},
+		{R"&((call (simplify (lambda (- a a a))) {a .infinity}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (- a a a a))) {a 2}))&", R"(-4)"},
+		{R"&((call (simplify (lambda (- a a b))) {a 2 b 3}))&", R"(-3)"},
+		{R"&((call (simplify (lambda (- a a 5 b))) {a 2 b 3}))&", R"(-8)"},
+		{R"&((simplify (lambda (- a 5 -2))))&", R"((- a 3))"},
+		{R"&((simplify (lambda (- 10 2 3))))&", R"(5)"},
+		{R"&((simplify (lambda (- a 2 0))))&", R"((- a 2))"},
+		{R"&((simplify (lambda (- a .null b))))&", R"(.null)"},
+		{R"&((simplify
+	(lambda
+		(* b a a 1 b 3)
+	)
+))&",
+		R"((*
+		(pow a 2)
+		(pow b 2)
+		3
+))"},
+		{R"&((simplify (lambda (/))))&", R"(.null)"},
+		{R"&((simplify (lambda (/ a))))&", R"((/ a))"},
+		{R"&((simplify (lambda (/ a 2))))&", R"((/ a 2))"},
+		{R"&((simplify (lambda (/ 6 a))))&", R"((/ 6 a))"},
+		{R"&((simplify (lambda (/ a 1))))&", R"(a)"},
+		{R"&((call (simplify (lambda (/ a 1))) {a -0}))&", R"(-0)"},
+		{R"&((call (simplify (lambda (/ a 1))) {a "2"}))&", R"("2")"},
+		{R"&((simplify (lambda (/ b a a 1 3 a))))&", R"((/
+	b
+	(pow a 3)
+	3
+))"},
+		{R"&((simplify (lambda (/ a a))))&", R"((/ a a))"},
+		{R"&((call (simplify (lambda (/ a a))) {a 0}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (/ a a))) {a .infinity}))&", R"(.null)"},
+		{R"&((simplify (lambda (/ a a a))))&", R"((/
+	a
+	(pow a 2)
+))"},
+		{R"&((call (simplify (lambda (/ a a a))) {a 2}))&", R"(0.5)"},
+		{R"&((call (simplify (lambda (/ a a a))) {a .infinity}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (/ a a a a))) {a 2}))&", R"(0.25)"},
+		{R"&((call (simplify (lambda (/ a a b))) {a 2 b 4}))&", R"(0.25)"},
+		{R"&((simplify (lambda (/ a 2 0.5))))&", R"(a)"},
+		{R"&((simplify (lambda (/ 12 2 3))))&", R"(2)"},
+		{R"&((simplify (lambda (/ a 2 3))))&", R"((/ a 6))"},
+		{R"&((call (simplify (lambda (/ a -1 0))) {a 2}))&", R"(-.infinity)"},
+		{R"&((call (simplify (lambda (/ a -2 0))) {a 2}))&", R"(-.infinity)"},
+		{R"&((call (simplify (lambda (/ a 0 -1))) {a 2}))&", R"(.infinity)"},
+		{R"&((call (simplify (lambda (/ a 0 -2))) {a 2}))&", R"(.infinity)"},
+		{R"&((call (simplify (lambda (/ a 2 0 -3))) {a 2}))&", R"(.infinity)"},
+		{R"&((unparse (simplify (lambda (/ a 2 0 -3))) .false .false))&", R"&("(/ a 2 0 -3)")&"},
+		{R"&((call (simplify (lambda (/ a -0))) {a 2}))&", R"(.infinity)"},
+		{R"&((simplify (lambda (/ a .null b))))&", R"(.null)"},
+		{R"&((simplify (lambda (/ a 2 1))))&", R"((/ a 2))"},
+		{R"&((simplify (lambda (pow a 1))))&", R"(a)"},
+		{R"&((simplify (lambda (exp (log a)))))&", R"((exp
+	(log a)
+))"},
+		{R"&((call (simplify (lambda (exp (log a)))) {a -1}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (exp (log a)))) {a 0}))&", R"(0)"},
+		{R"&((call (simplify (lambda (exp (log a)))) {a .infinity}))&", R"(.infinity)"},
+		{R"&((simplify (lambda (log (exp a)))))&", R"((log
+	(exp a)
+))"},
+		{R"&((call (simplify (lambda (log (exp a)))) {a 1000}))&", R"(.infinity)"},
+		{R"&((call (simplify (lambda (log (exp a)))) {a -1000}))&", R"(-.infinity)"},
+		{R"&((simplify (lambda (log (exp)))))&", R"(1)"},
+		{R"&((simplify (lambda (/ a 7 7))))&", R"((/ a 49))"},
+		{R"&((call (simplify (lambda (/ a 7 7))) {a 49}))&", R"(1)"},
+		{R"&((simplify (lambda (/ a 7 7 2))))&", R"((/ a 98))"},
+		{R"&((simplify (lambda (/ a 49))))&", R"((/ a 49))"},
+		{R"&((simplify (simplify (lambda (/ a 7 7)))))&", R"((/ a 49))"},
+		{R"&((simplify (lambda (concat "a" (concat b "c") "d"))))&", R"((concat "a" b "cd"))"},
+		{R"&((call (simplify (lambda (concat "a" (concat b "c") "d"))) {b "-"}))&", R"("a-cd")"},
+		{R"&((call
+	(simplify
+		(lambda
+			(concat
+				(concat "a" b)
+				"m"
+				(concat c "d")
+			)
+		)
+	)
+	{b "X" c "Y"}
+))&", R"("aXmYd")"}
+});
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.frequencyPer10000Opcodes = 0.25;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SIMPLIFY(
+	EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodesReference();
+	if(ocn.size() < 1)
+		return EvaluableNodeReference::Null();
+
+	auto node = InterpretNode(ocn[0]);
+	if(!node.unique)
+		node = evaluableNodeManager->DeepAllocCopy(node, false);
+
+	auto node_stack = CreateOpcodeStackStateSaver(node);
+
+	EvaluableNode *result = EvaluableNodeTreeAlgebra::SimplifyTree(node, evaluableNodeManager, this);
 	return EvaluableNodeReference(result, true);
 }

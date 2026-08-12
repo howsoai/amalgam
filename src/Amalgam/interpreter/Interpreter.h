@@ -725,6 +725,50 @@ public:
 		return std::make_tuple(entity_1, entity_2, std::move(erbr));
 	}
 
+	//returns true if there's a max number of execution steps or nodes and at least one is exhausted
+	__forceinline bool AreExecutionResourcesExhausted(bool increment_performance_counters = false)
+	{
+		if(interpreterConstraints == nullptr)
+			return false;
+
+		if(interpreterConstraints->ConstrainedExecutionSteps())
+		{
+			if(increment_performance_counters)
+				interpreterConstraints->curExecutionStep++;
+
+			if(interpreterConstraints->curExecutionStep > interpreterConstraints->maxNodeOperations)
+			{
+				interpreterConstraints->constraintsExceeded = true;
+				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionStep;
+				return true;
+			}
+		}
+
+		if(interpreterConstraints->ConstrainedAllocatedNodes())
+		{
+			size_t cur_allocated_nodes = interpreterConstraints->curNumAllocatedNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
+			if(cur_allocated_nodes > interpreterConstraints->maxNumAllocatedNodes)
+			{
+				interpreterConstraints->constraintsExceeded = true;
+				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::NodeAllocation;
+				return true;
+			}
+		}
+
+		if(interpreterConstraints->ConstrainedOpcodeExecutionDepth())
+		{
+			if(opcodeStackNodes.size() > interpreterConstraints->maxOperationDepth)
+			{
+				interpreterConstraints->constraintsExceeded = true;
+				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;
+				return true;
+			}
+		}
+
+		//return whether they have ever been exceeded
+		return interpreterConstraints->constraintsExceeded;
+	}
+
 protected:
 
 	//traverses down n until it reaches the furthest-most nodes from top_node,
@@ -871,50 +915,6 @@ protected:
 			return false;
 
 		return true;
-	}
-
-	//returns true if there's a max number of execution steps or nodes and at least one is exhausted
-	__forceinline bool AreExecutionResourcesExhausted(bool increment_performance_counters = false)
-	{
-		if(interpreterConstraints == nullptr)
-			return false;
-
-		if(interpreterConstraints->ConstrainedExecutionSteps())
-		{
-			if(increment_performance_counters)
-				interpreterConstraints->curExecutionStep++;
-
-			if(interpreterConstraints->curExecutionStep > interpreterConstraints->maxNodeOperations)
-			{
-				interpreterConstraints->constraintsExceeded = true;
-				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionStep;
-				return true;
-			}
-		}
-
-		if(interpreterConstraints->ConstrainedAllocatedNodes())
-		{
-			size_t cur_allocated_nodes = interpreterConstraints->curNumAllocatedNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
-			if(cur_allocated_nodes > interpreterConstraints->maxNumAllocatedNodes)
-			{
-				interpreterConstraints->constraintsExceeded = true;
-				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::NodeAllocation;
-				return true;
-			}
-		}
-
-		if(interpreterConstraints->ConstrainedOpcodeExecutionDepth())
-		{
-			if(opcodeStackNodes.size() > interpreterConstraints->maxOperationDepth)
-			{
-				interpreterConstraints->constraintsExceeded = true;
-				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;
-				return true;
-			}
-		}
-
-		//return whether they have ever been exceeded
-		return interpreterConstraints->constraintsExceeded;
 	}
 
 	//If interpreter_constraints is non-null, and interpreter_constraints->collect warnings is true,
@@ -1125,6 +1125,7 @@ public:
 	EvaluableNodeReference InterpretNode_ENT_UNION(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_DIFFERENCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_MIX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SIMPLIFY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//Entity Comparison and Evolution
 	EvaluableNodeReference InterpretNode_ENT_TOTAL_ENTITY_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);

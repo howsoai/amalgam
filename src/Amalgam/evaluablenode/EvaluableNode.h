@@ -307,6 +307,13 @@ public:
 	//copies the metadata of the node n into this
 	void CopyMetadataFrom(EvaluableNode *n);
 
+	//copies the entire node n into this
+	__forceinline void CopyNodeFrom(EvaluableNode *n)
+	{
+		CopyMetadataFrom(n);
+		CopyValueFrom(n);
+	}
+
 	//clears annotations and comments
 	__forceinline void ClearAnnotationsAndComments()
 	{
@@ -385,7 +392,7 @@ public:
 			return false;
 
 		//since they are shallow equal, check for quick exit
-		if(a == nullptr || b == nullptr || IsEvaluableNodeTypeImmediate(a->GetType()))
+		if(a == nullptr || b == nullptr || IsEvaluableNodeTypeTerminalNode(a->GetType()))
 			return true;
 
 		//only need cycle checks if both a and b need cycle checks,
@@ -423,7 +430,18 @@ public:
 
 	static __forceinline bool IsImmediate(EvaluableNode *n)
 	{
-		return ((n == nullptr) || IsEvaluableNodeTypeImmediate(n->GetType()));
+		return (n == nullptr || n->IsImmediate());
+	}
+
+	//returns true if the type is terminal (immediate or symbol)
+	__forceinline bool IsTerminal()
+	{
+		return IsEvaluableNodeTypeTerminalNode(GetType());
+	}
+
+	static __forceinline bool IsTerminal(EvaluableNode *n)
+	{
+		return (n == nullptr || n->IsTerminal());
 	}
 
 	//returns true if the node is some form of ordered array
@@ -588,7 +606,7 @@ public:
 	//Returns the number of nodes in the data structure
 	inline static size_t GetDeepSize(EvaluableNode *n)
 	{
-		if(n == nullptr || n->IsImmediate())
+		if(n == nullptr || n->IsTerminal())
 			return 1;
 
 		if(!n->GetNeedCycleCheck())
@@ -655,8 +673,10 @@ public:
 	}
 
 	//changes the type by setting it to the number value specified
-	inline void SetTypeViaBoolValue(bool v)
+	inline void SetTypeViaBoolValue(bool v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
 		SetType(ENT_BOOL, false);
 		GetBoolValueReference() = v;
 	}
@@ -680,8 +700,11 @@ public:
 	}
 
 	//changes the type by setting it to the number value specified
-	inline void SetTypeViaNumberValue(double v)
+	inline void SetTypeViaNumberValue(double v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
+
 		if(FastIsNaN(v))
 		{
 			SetType(ENT_NULL, false);
@@ -693,9 +716,22 @@ public:
 		}
 	}
 
-	//changes the type by setting it to the string id value specified
-	inline void SetTypeViaStringIdValue(StringInternPool::StringID v)
+	//changes the type by setting it to the string value specified
+	inline void SetTypeViaStringIdValue(std::string &v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
+
+		SetType(ENT_STRING, false);
+		GetStringIDReference() = string_intern_pool.CreateStringReference(v);
+	}
+
+	//changes the type by setting it to the string id value specified
+	inline void SetTypeViaStringIdValue(StringInternPool::StringID v, bool clear_metadata = true)
+	{
+		if(clear_metadata)
+			ClearMetadata();
+
 		if(v == string_intern_pool.NOT_A_STRING_ID)
 		{
 			SetType(ENT_NULL, false);
@@ -708,8 +744,11 @@ public:
 	}
 
 	//changes the type by setting it to the string id value specified, handing off the reference
-	inline void SetTypeViaStringIdValueWithReferenceHandoff(StringInternPool::StringID v)
+	inline void SetTypeViaStringIdValueWithReferenceHandoff(StringInternPool::StringID v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
+
 		if(v == string_intern_pool.NOT_A_STRING_ID)
 		{
 			SetType(ENT_NULL, false);
@@ -1161,7 +1200,7 @@ public:
 					break;
 			}
 		}
-		else if(!IsImmediate())
+		else if(!IsTerminal())
 		{
 			for(auto cn : GetOrderedChildNodesReference())
 			{
@@ -1218,7 +1257,7 @@ public:
 	inline static void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
 		size_t num_expected_elements, StoreValueFunction store_value)
 	{
-		if(EvaluableNode::IsImmediate(node))
+		if(EvaluableNode::IsTerminal(node))
 		{
 			//fill in with the node's value
 			for(size_t i = 0; i < num_expected_elements; i++)

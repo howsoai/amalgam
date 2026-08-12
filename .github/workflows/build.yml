@@ -18,7 +18,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.8
+      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.10
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -26,12 +26,6 @@ jobs:
       matrix:
         preset:
           - arch: amd64
-            platform: linux
-            type: release
-          - arch: arm64
-            platform: linux
-            type: release
-          - arch: arm64_8a
             platform: linux
             type: release
           - arch: wasm64
@@ -76,10 +70,64 @@ jobs:
           path: ./out/package/amalgam-*.tar.gz
           if-no-files-found: error
 
+  # arm64 is built natively on arm64 runners rather than cross compiled and emulated
+  # under QEMU, using the linux/arm64 variant of the same multi-arch build container.
+  build-linux-arm:
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.10
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    strategy:
+      matrix:
+        preset:
+          - arch: arm64
+            platform: linux
+            type: release
+          - arch: arm64_8a
+            platform: linux
+            type: release
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set build preset
+        run: |
+          PRESET=$(echo ${{ matrix.preset.arch }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }})
+          echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
+          echo "Build preset: $PRESET"
+          # Print glibc version
+          ldd --version
+
+      - name: CMake Configure
+        run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET
+
+      - name: CMake Build
+        run: cmake --build --preset $PRESET --
+
+      - name: CMake Test
+        run: cmake --build --preset $PRESET --target test
+
+      - name: CMake Install
+        run: cmake --build --preset $PRESET --target install
+
+      - name: CMake Package
+        run: cmake --build --preset $PRESET --target package
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: amalgam-${{ inputs.version }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+          path: ./out/package/amalgam-*.tar.gz
+          if-no-files-found: error
+
   build-linux-228:
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux-228:2.0.9
+      image: ghcr.io/howsoai/amalgam-build-container-linux-228:2.0.10
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -286,7 +334,7 @@ jobs:
     needs: ["build-linux-228"]
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux-228:2.0.9
+      image: ghcr.io/howsoai/amalgam-build-container-linux-228:2.0.10
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -310,7 +358,7 @@ jobs:
           done
 
   smoke-test-linux-arm64:
-    needs: ['build-linux']
+    needs: ['build-linux-arm']
     runs-on: ubuntu-24.04-arm
     steps:
     - name: Download Artifact
@@ -326,14 +374,13 @@ jobs:
     - name: Smoke test
       run: |
         set -e
-        PATH=$PATH:/usr/aarch64-linux-gnu
         cd ./amalgam/bin
         for f in *; do
           echo -n "$f: " && "./$f" --version
         done
 
   smoke-test-linux-arm64_8a:
-    needs: ['build-linux']
+    needs: ['build-linux-arm']
     runs-on: ubuntu-24.04-arm
     steps:
     - name: Download Artifact
@@ -349,7 +396,6 @@ jobs:
     - name: Smoke test
       run: |
         set -e
-        PATH=$PATH:/usr/aarch64-linux-gnu
         cd ./amalgam/bin
         for f in *; do
           echo -n "$f: " && "./$f" --version

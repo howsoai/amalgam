@@ -200,10 +200,10 @@ inline bool ConstrainDateTimeStringToValidFormat(std::string &s)
 template<class Duration>
 std::vector<date::zoned_time<std::common_type_t<Duration, std::chrono::seconds>>> FindZonesByAbbrev(date::sys_time<Duration> tp, const std::string &abbrev)
 {
-	using namespace std::chrono;
-	using namespace date;
-	std::vector<zoned_time<std::common_type_t<Duration, std::chrono::seconds>>> results;
-	auto &db = get_tzdb();
+	//note: names are explicitly qualified because in C++20 std::chrono provides its own
+	// zoned_time/get_tzdb, which would be ambiguous with date's if both namespaces were imported
+	std::vector<date::zoned_time<std::common_type_t<Duration, std::chrono::seconds>>> results;
+	auto &db = date::get_tzdb();
 	for(auto &z : db.zones)
 	{
 		if(z.get_info(tp).abbrev == abbrev)

@@ -673,6 +673,7 @@ static OpcodeInitializer _ENT_CONCAT(ENT_CONCAT, &Interpreter::InterpretNode_ENT
 	{
 		OpcodeDetails::ParameterGroup({"s", OpcodeDetails::DataType::STRING, true}, true),
 	});
+	d.isAssociative = true;
 	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(Concatenates all strings and evaluates to the single resulting string.)";
 	d.examples = MakeAmalgamExamples({

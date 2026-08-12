@@ -525,7 +525,7 @@ public:
 				}
 			}
 
-			if(en->IsImmediate())
+			if(en->IsTerminal())
 			{
 				//first check for key strings
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
@@ -770,13 +770,13 @@ public:
 		return (value.nodeType != ENIVT_CODE || value.nodeValue.code == nullptr);
 	}
 
-	//returns true if the type of whatever is stored is an immediate type
-	__forceinline bool IsImmediateValueType()
+	//returns true if the type of whatever is stored is a terminal value type
+	__forceinline bool IsTerminalValueType()
 	{
 		if(value.nodeType != ENIVT_CODE)
 			return true;
 
-		return EvaluableNode::IsImmediate(value.nodeValue.code);
+		return EvaluableNode::IsTerminal(value.nodeValue.code);
 	}
 
 	__forceinline bool IsNull()

@@ -73,6 +73,7 @@ if(IS_MSVC)
 message(STATUS "MSVC version                 : ${MSVC_VERSION}")
 message(STATUS "MSVC toolset                 : ${MSVC_TOOLSET_VERSION}")
 endif()
+message(STATUS "C++ standard                 : ${CMAKE_CXX_STANDARD} (required: ${CMAKE_CXX_STANDARD_REQUIRED}, extensions: ${CMAKE_CXX_EXTENSIONS})")
 message(STATUS "Compiler C++ flags           : ${CMAKE_CXX_FLAGS}")
 message(STATUS "Compiler C++ debug flags     : ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "Compiler C++ release flags   : ${CMAKE_CXX_FLAGS_RELEASE}")
@@ -141,6 +142,8 @@ set(COMMON_SOURCE
     src/Amalgam/evaluablenode/EvaluableNodeManagement.cpp
     src/Amalgam/evaluablenode/EvaluableNodeManagement.h
     src/Amalgam/evaluablenode/EvaluableNodeReference.h
+    src/Amalgam/evaluablenode/EvaluableNodeTreeAlgebra.cpp
+    src/Amalgam/evaluablenode/EvaluableNodeTreeAlgebra.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeDifference.cpp
     src/Amalgam/evaluablenode/EvaluableNodeTreeDifference.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeFunctions.cpp

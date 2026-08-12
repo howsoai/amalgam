@@ -596,7 +596,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 			std::string token = GetNextIdentifier();
 			EvaluableNodeType token_type = GetEvaluableNodeTypeFromString(token);
 
-			if(IsEvaluableNodeTypeValid(token_type) && !IsEvaluableNodeTypeImmediate(token_type))
+			if(IsEvaluableNodeTypeValid(token_type) && !IsEvaluableNodeTypeTerminalNode(token_type))
 			{
 				new_token->SetType(token_type, false);
 			}
@@ -657,12 +657,12 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 		}
 		if(s == ".true")
 		{
-			new_token->SetTypeViaBoolValue(true);
+			new_token->SetTypeViaBoolValue(true, false);
 			return new_token;
 		}
 		else if(s == ".false")
 		{
-			new_token->SetTypeViaBoolValue(false);
+			new_token->SetTypeViaBoolValue(false, false);
 			return new_token;
 		}
 		if(s == ".infinity")
@@ -680,7 +680,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 				value = converted_value;
 		}
 
-		new_token->SetTypeViaNumberValue(value);
+		new_token->SetTypeViaNumberValue(value, false);
 		return new_token;
 	}
 	else if(cur_char == '"')
@@ -747,7 +747,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 		// because don't need to parse closing parenthesis or other symbol
 		if(parsing_assoc_key
 				&& cur_node == nullptr
-				&& n != nullptr && n->IsImmediate())
+				&& n != nullptr && n->IsTerminal())
 			return n;
 
 		//if end of a list
@@ -846,7 +846,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 			parentNodes[n] = cur_node;
 
 			//if it's not immediate, then descend into that part of the tree, resetting parent index counter
-			if(!IsEvaluableNodeTypeImmediate(n->GetType()))
+			if(!IsEvaluableNodeTypeTerminalNode(n->GetType()))
 				cur_node = n;
 
 			//if specifying something unusual, then assume it's just a null
@@ -1089,7 +1089,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 
 	//check if it's an immediate/variable before deciding whether to surround with parenthesis
 	EvaluableNodeType tree_type = tree->GetType();
-	if(IsEvaluableNodeTypeImmediate(tree_type))
+	if(IsEvaluableNodeTypeTerminalNode(tree_type))
 	{
 		switch(tree_type)
 		{
@@ -1238,8 +1238,14 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		{
 			auto &tree_ocn = tree->GetOrderedChildNodesReference();
 			if(upd.sortKeys
-				&& GetChildNodeStructureType(tree_type) == OpcodeDetails::ChildNodeStructureType::UNORDERED)
+				&& (GetChildNodeStructureType(tree_type) == OpcodeDetails::ChildNodeStructureType::UNORDERED
+					|| GetChildNodeStructureType(tree_type)
+						== OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED))
 			{
+				size_t starting_index = 0;
+				if(GetChildNodeStructureType(tree_type) == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED)
+					starting_index = 1;
+
 				std::vector<std::string> unordered_code;
 				unordered_code.reserve(tree_ocn.size());
 
@@ -1267,7 +1273,9 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				//move current code back in
 				std::swap(previous_code, upd.result);
 
-				std::sort(begin(unordered_code), end(unordered_code), StringManipulation::StringNaturalCompareSort);
+				//clamp in case there are fewer child nodes than leading positional parameters
+				std::sort(begin(unordered_code) + std::min(starting_index, unordered_code.size()),
+					end(unordered_code), StringManipulation::StringNaturalCompareSort);
 				for(auto &uc : unordered_code)
 					upd.result.append(uc);
 			}
@@ -1622,7 +1630,7 @@ void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 
 				result_node->AppendMappedChildNodes(ocn[i]->GetMappedChildNodes());
 			}
-			else if(ocn[i]->IsImmediate())
+			else if(ocn[i]->IsTerminal())
 			{
 				if(result_node->IsOrderedArray())
 					result_node->AppendOrderedChildNode(ocn[i]);

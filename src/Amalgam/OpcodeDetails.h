@@ -128,6 +128,7 @@ public:
 	{
 		NONE,
 		UNORDERED,
+		ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED,
 		ORDERED,
 		ONE_POSITION_THEN_ORDERED,
 		PAIRED,
@@ -427,6 +428,9 @@ public:
 	//true if the opcode is a query run by the query engine
 	bool isQuery = false;
 
+	//true if the opcode is associative
+	bool isAssociative = false;
+
 	//what kind of special permissions the opcode needs to run
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
 
@@ -483,6 +487,12 @@ __forceinline bool DoesOpcodeHaveSideEffects(EvaluableNodeType t)
 	return _opcode_details[t].hasSideEffects;
 }
 
+//returns true if the opcode requires its execution within an entity
+__forceinline bool DoesOpcodeRequireEntity(EvaluableNodeType t)
+{
+	return _opcode_details[t].requiresEntity;
+}
+
 //returns true if the opcode modifies things outside of its return
 __forceinline bool MayOpcodeCauseNodeUpdateInCurrentEntity(EvaluableNodeType t)
 {
@@ -520,10 +530,22 @@ __forceinline size_t GetOpcodeMaxNumValidParameters(EvaluableNodeType t)
 	return _opcode_details[t].GetMaxNumValidParameters();
 }
 
+//returns true if the opcode is associative
+__forceinline bool IsOpcodeAssociative(EvaluableNodeType t)
+{
+	return _opcode_details[t].isAssociative;
+}
+
 //returns true if t is an immediate value
 __forceinline constexpr bool IsEvaluableNodeTypeImmediate(EvaluableNodeType t)
 {
-	return (t == ENT_NULL || t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING || t == ENT_SYMBOL);
+	return (t == ENT_NULL || t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING);
+}
+
+//returns true if t is an immediate value or symbol
+__forceinline constexpr bool IsEvaluableNodeTypeTerminalNode(EvaluableNodeType t)
+{
+	return (IsEvaluableNodeTypeImmediate(t) || t == ENT_SYMBOL);
 }
 
 //returns true if t uses null (no) data
@@ -559,7 +581,7 @@ __forceinline constexpr bool DoesEvaluableNodeTypeUseAssocData(EvaluableNodeType
 //returns true if t uses ordered data (doesn't use any other t)
 constexpr bool DoesEvaluableNodeTypeUseOrderedData(EvaluableNodeType t)
 {
-	return (IsEvaluableNodeTypeValid(t) && !IsEvaluableNodeTypeImmediate(t) && !DoesEvaluableNodeTypeUseAssocData(t));
+	return (IsEvaluableNodeTypeValid(t) && !IsEvaluableNodeTypeTerminalNode(t) && !DoesEvaluableNodeTypeUseAssocData(t));
 }
 
 //returns true if t is a query
@@ -572,6 +594,14 @@ __forceinline bool IsEvaluableNodeTypeQuery(EvaluableNodeType t)
 __forceinline bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType t)
 {
 	return _opcode_details[t].potentiallyIdempotent;
+}
+
+//returns true if t can be executed in a self-contained fashion
+//ENT_RANGE is excluded because it can expand considerably in size, as are immediate types
+__forceinline bool IsEvaluableNodeTypeOfSimpleExecution(EvaluableNodeType t)
+{
+	return (!DoesOpcodeRetrieveData(t) && !DoesOpcodeHaveSideEffects(t) &&
+			!MayOpcodeCauseNodeUpdateInCurrentEntity(t) && !DoesOpcodeRequireEntity(t) && t != ENT_RANGE);
 }
 
 //returns the string id representing EvaluableNodeBuiltInStringId t
@@ -622,7 +652,7 @@ inline EvaluableNodeType GetEvaluableNodeTypeFromStringId(StringInternPool::Stri
 // if get_non_keywords is true, then it will return types that are not necessarily keywords, like number
 inline std::string GetStringFromEvaluableNodeType(EvaluableNodeType t, bool get_non_keywords = false)
 {
-	if(!get_non_keywords && IsEvaluableNodeTypeImmediate(t))
+	if(!get_non_keywords && IsEvaluableNodeTypeTerminalNode(t))
 		return "";
 
 	if(t >= NUM_VALID_ENT_OPCODES)

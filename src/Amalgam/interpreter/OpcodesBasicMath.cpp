@@ -10,6 +10,7 @@ static OpcodeInitializer _ENT_ADD(ENT_ADD, &Interpreter::InterpretNode_ENT_ADD, 
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	});
+	d.isAssociative = true;
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the sum of all numbers.  If no parameters are provided it returns 0.0.)";
@@ -52,13 +53,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode_ENT_SUBTRACT, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED,
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	});
 	d.returns = OpcodeDetails::DataType::NULL_TYPE | OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative.  If no parameters are provided it returns null.)";
+	d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it evaluates to the negation of the value.  If no parameters are provided it returns null.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((- 1 2 3 4))", R"(-8)"},
 		{R"((- 3))", R"(-3)"}
@@ -107,6 +108,7 @@ static OpcodeInitializer _ENT_MULTIPLY(ENT_MULTIPLY, &Interpreter::InterpretNode
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	});
+	d.isAssociative = true;
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the product of all numbers.  If no parameters are provided, returns 1.)";
@@ -149,15 +151,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 
 static OpcodeInitializer _ENT_DIVIDE(ENT_DIVIDE, &Interpreter::InterpretNode_ENT_DIVIDE, []() {
 	OpcodeDetails d;
-	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED,
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
 	});
 	d.returns = OpcodeDetails::DataType::NULL_TYPE | OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to `x1` / `x2` / ... / `xN`.  If no parameters are provided, it returns null.)";
+	d.description = R"(Evaluates to `x1` / `x2` / ... / `xN`.  If only one parameter is passed, then it evaluates to the reciprocal of the value.  If no parameters are provided, it returns null.)";
 	d.examples = MakeAmalgamExamples({
-		{R"((/ 1.0 2 3 4))", R"(0.041666666666666664)"}
+		{R"((/ 1.0 2 3 4))", R"(0.041666666666666664)"},
+		{R"((/ 2))", R"(0.5)"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 12.0;
@@ -221,6 +224,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, 
 			break;
 		}
 	}
+
+	//if just one parameter, then treat as reciprocal
+	if(ocn.size() == 1)
+		value = 1.0 / value;
 
 	return AllocReturn(value, immediate_result);
 }
@@ -954,6 +961,7 @@ static OpcodeInitializer _ENT_MAX(ENT_MAX, &Interpreter::InterpretNode_ENT_MAX, 
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
 	});
+	d.isAssociative = true;
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the maximum of all of parameters.)";
@@ -1022,6 +1030,7 @@ static OpcodeInitializer _ENT_MIN(ENT_MIN, &Interpreter::InterpretNode_ENT_MIN, 
 	{
 		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
 	});
+	d.isAssociative = true;
 	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the minimum of all of the numbers.)";

@@ -83,7 +83,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 			return EvaluableNodeReference(first_en, list.unique);
 		}
 	}
-	else //if(list->IsImmediate())
+	else //if(list->IsTerminal())
 	{
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
@@ -388,7 +388,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			return list;
 		}
 	}
-	else //list->IsImmediate()
+	else //list->IsTerminal()
 	{
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
@@ -513,7 +513,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 			return EvaluableNodeReference(last_en, list.unique);
 		}
 	}
-	else //list->IsImmediate()
+	else //list->IsTerminal()
 	{
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
@@ -816,7 +816,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 
 		return list;
 	}
-	else //if(list->IsImmediate())
+	else //if(list->IsTerminal())
 	{
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
@@ -1712,7 +1712,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 	auto container = InterpretNode(ocn[0]);
 
 	//exit early if wrong type
-	if(EvaluableNode::IsImmediate(container))
+	if(EvaluableNode::IsTerminal(container))
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(container);
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
@@ -2226,7 +2226,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 		container.unique && !container->GetNeedCycleCheck());
 
 	//if not a list, then just remove individual element
-	if(indices.IsImmediateValueType())
+	if(indices.IsTerminalValueType())
 	{
 		if(container->IsAssociativeArray())
 		{
@@ -2426,7 +2426,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
 
 	//if immediate then just keep individual element
-	if(indices.IsImmediateValueType())
+	if(indices.IsTerminalValueType())
 	{
 		if(container->IsAssociativeArray())
 		{

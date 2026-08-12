@@ -257,6 +257,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_UNION, "union");
 	EmplaceNodeTypeString(ENT_DIFFERENCE, "difference");
 	EmplaceNodeTypeString(ENT_MIX, "mix");
+	EmplaceNodeTypeString(ENT_SIMPLIFY, "simplify");
 
 	//Entity Comparison and Evolution
 	EmplaceNodeTypeString(ENT_TOTAL_ENTITY_SIZE, "total_entity_size");
@@ -410,6 +411,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_change_type, "change_type");
 	EmplaceStaticString(ENBISI_insert, "insert");
 	EmplaceStaticString(ENBISI_remove, "remove");
+	EmplaceStaticString(ENBISI_simplify_node, "simplify_node");
 	EmplaceStaticString(ENBISI_insert_element, "insert_element");
 	EmplaceStaticString(ENBISI_remove_element, "remove_element");
 	EmplaceStaticString(ENBISI_replace_element_with_copy, "replace_element_with_copy");

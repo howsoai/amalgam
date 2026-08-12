@@ -142,6 +142,8 @@ set(COMMON_SOURCE
     src/Amalgam/evaluablenode/EvaluableNodeManagement.cpp
     src/Amalgam/evaluablenode/EvaluableNodeManagement.h
     src/Amalgam/evaluablenode/EvaluableNodeReference.h
+    src/Amalgam/evaluablenode/EvaluableNodeTreeAlgebra.cpp
+    src/Amalgam/evaluablenode/EvaluableNodeTreeAlgebra.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeDifference.cpp
     src/Amalgam/evaluablenode/EvaluableNodeTreeDifference.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeFunctions.cpp

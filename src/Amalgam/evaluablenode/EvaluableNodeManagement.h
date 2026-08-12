@@ -359,7 +359,7 @@ public:
 			tree->SetIsIdempotent(is_idempotent);
 			return is_idempotent;
 		}
-		else if(!tree->IsImmediate())
+		else if(!tree->IsTerminal())
 		{
 			for(auto cn : tree->GetOrderedChildNodesReference())
 			{
@@ -472,7 +472,7 @@ public:
 		AmlgAssert(en->IsNodeValid());
 	#endif
 
-		if(IsEvaluableNodeTypeImmediate(en->GetType()))
+		if(IsEvaluableNodeTypeTerminalNode(en->GetType()))
 		{
 			en->Invalidate();
 			if(place_nodes_in_lab)
@@ -504,7 +504,7 @@ public:
 							node_stack.push_back(child);
 					}
 				}
-				else if(!cur->IsImmediate())
+				else if(!cur->IsTerminal())
 				{
 					for(auto &child : cur->GetOrderedChildNodesReference())
 					{
@@ -546,7 +546,7 @@ public:
 							node_stack.push_back(e);
 					}
 				}
-				else if(!cur->IsImmediate())
+				else if(!cur->IsTerminal())
 				{
 					for(auto &e : cur->GetOrderedChildNodesReference())
 					{
@@ -580,7 +580,7 @@ public:
 		auto &node_stack = EvaluableNode::reusableBuffer;
 		node_stack.clear();
 
-		// Seed the buffer with the direct children of *tree*.
+		//seed the buffer with the direct children of tree
 		if(tree->IsAssociativeArray())
 		{
 			for(auto &[_, e] : tree->GetMappedChildNodesReference())
@@ -617,7 +617,7 @@ public:
 						node_stack.push_back(child);
 				}
 			}
-			else if(!cur->IsImmediate())
+			else if(!cur->IsTerminal())
 			{
 				for(auto &child : cur->GetOrderedChildNodesReference())
 				{

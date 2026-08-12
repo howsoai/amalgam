@@ -201,6 +201,9 @@
     <ClCompile Include="entity\EntityQueriesClustering.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="evaluablenode\EvaluableNodeTreeAlgebra.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetManager.h">
@@ -398,7 +401,7 @@
     <ClInclude Include="entity\EntityQueriesClustering.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BitmaskEnum.h">
+    <ClInclude Include="evaluablenode\EvaluableNodeTreeAlgebra.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

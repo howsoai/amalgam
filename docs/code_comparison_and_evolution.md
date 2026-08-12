@@ -195,6 +195,14 @@ Output:
 		x
 ]
 ```
+Example:
+```amalgam
+(get_type_string (mutate (lambda (+ 1 2)) 1.0 .null {"simplify_node" 1}))
+```
+Output:
+```amalgam
+"number"
+```
 
 [Amalgam Opcodes](./opcodes.md)
 
@@ -2042,6 +2050,22 @@ Output:
 ```
 Example:
 ```amalgam
+(simplify (lambda (if)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (if .false 1)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
 (simplify
 	(lambda
 		(and a .true b (or .false c d))
@@ -2170,7 +2194,34 @@ Example:
 ```
 Output:
 ```amalgam
-0
+(- a a)
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a))) {a .infinity})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a))) {a .null})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (- a a a)))
+```
+Output:
+```amalgam
+(-
+	a
+	(* 2 a)
+)
 ```
 Example:
 ```amalgam
@@ -2179,6 +2230,14 @@ Example:
 Output:
 ```amalgam
 -2
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a a))) {a .infinity})
+```
+Output:
+```amalgam
+.null
 ```
 Example:
 ```amalgam
@@ -2326,7 +2385,34 @@ Example:
 ```
 Output:
 ```amalgam
-1
+(/ a a)
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a))) {a 0})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a))) {a .infinity})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (/ a a a)))
+```
+Output:
+```amalgam
+(/
+	a
+	(pow a 2)
+)
 ```
 Example:
 ```amalgam
@@ -2335,6 +2421,14 @@ Example:
 Output:
 ```amalgam
 0.5
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a a))) {a .infinity})
+```
+Output:
+```amalgam
+.null
 ```
 Example:
 ```amalgam
@@ -2394,6 +2488,38 @@ Output:
 ```
 Example:
 ```amalgam
+(call (simplify (lambda (/ a 0 -1))) {a 2})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 0 -2))) {a 2})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 2 0 -3))) {a 2})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(unparse (simplify (lambda (/ a 2 0 -3))) .false .false)
+```
+Output:
+```amalgam
+"(/ a 2 0 -3)"
+```
+Example:
+```amalgam
 (call (simplify (lambda (/ a -0))) {a 2})
 ```
 Output:
@@ -2430,7 +2556,33 @@ Example:
 ```
 Output:
 ```amalgam
-a
+(exp
+	(log a)
+)
+```
+Example:
+```amalgam
+(call (simplify (lambda (exp (log a)))) {a -1})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (exp (log a)))) {a 0})
+```
+Output:
+```amalgam
+0
+```
+Example:
+```amalgam
+(call (simplify (lambda (exp (log a)))) {a .infinity})
+```
+Output:
+```amalgam
+.infinity
 ```
 Example:
 ```amalgam
@@ -2438,7 +2590,33 @@ Example:
 ```
 Output:
 ```amalgam
-a
+(log
+	(exp a)
+)
+```
+Example:
+```amalgam
+(call (simplify (lambda (log (exp a)))) {a 1000})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (log (exp a)))) {a -1000})
+```
+Output:
+```amalgam
+-.infinity
+```
+Example:
+```amalgam
+(simplify (lambda (log (exp))))
+```
+Output:
+```amalgam
+1
 ```
 Example:
 ```amalgam

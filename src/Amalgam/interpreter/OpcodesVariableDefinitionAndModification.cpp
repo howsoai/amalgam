@@ -35,7 +35,7 @@ static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	StringInternPool::StringID sid = en->GetStringIDReference();
-	if(sid == StringInternPool::NOT_A_STRING_ID)
+	if(sid == StringInternPool::NOT_A_STRING_ID) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//when retrieving symbol, only need to retain the node if it's not an immediate type
@@ -185,7 +185,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	//transform into variables if possible
 	EvaluableNodeReference required_vars = EvaluableNodeReference::Null();
 	bool need_to_interpret_required_vars = false;
-	if(required_vars_node != nullptr)
+	if(required_vars_node != nullptr) [[likely]]
 	{
 		if(required_vars_node->IsAssociativeArray())
 		{

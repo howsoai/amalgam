@@ -190,7 +190,7 @@ public:
 	bool AreThreadsAvailable()
 	{
 		//don't spin up new threads if shutting down, since that could cause a deadlock
-		if(shutdownThreads)
+		if(shutdownThreads) [[unlikely]]
 			return false;
 
 		//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run

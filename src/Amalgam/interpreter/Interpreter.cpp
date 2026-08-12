@@ -301,7 +301,7 @@ void Interpreter::SetSideEffectFlagsAndAccumulatePerformanceCounters(EvaluableNo
 
 EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(EvaluableNode::IsNull(en))
+	if(EvaluableNode::IsNull(en)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//reference this node before we collect garbage
@@ -320,7 +320,9 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, EvaluableNo
 #endif
 
 	//get corresponding opcode taking into account resource constraints
-	EvaluableNodeType ent = (!AreExecutionResourcesExhausted(true) ? en->GetType() : ENT_NULL);
+	EvaluableNodeType ent = en->GetType();
+	if(AreExecutionResourcesExhausted(true)) [[unlikely]]
+		ent = ENT_NULL;
 
 	auto oc = _opcodes[ent];
 	EvaluableNodeReference retval = (this->*oc)(en, immediate_result);

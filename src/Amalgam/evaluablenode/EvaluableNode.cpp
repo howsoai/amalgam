@@ -130,7 +130,7 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
 			return value_if_null;
 		auto str = string_intern_pool.GetStringViewFromID(sid);
-		auto [value, success] = Platform_StringToNumber(str);
+		auto [value, success] = StringManipulation::StringToNumber(str);
 		if(success)
 			return value;
 		return value_if_null;
@@ -1485,7 +1485,7 @@ double EvaluableNodeImmediateValueWithType::GetValueAsNumber(double value_if_nul
 			return value_if_null;
 
 		auto str = string_intern_pool.GetStringViewFromID(nodeValue.stringID);
-		auto [value, success] = Platform_StringToNumber(str);
+		auto [value, success] = StringManipulation::StringToNumber(str);
 		if(success)
 			return value;
 		return value_if_null;

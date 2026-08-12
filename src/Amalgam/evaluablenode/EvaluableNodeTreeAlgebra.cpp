@@ -49,7 +49,7 @@ template<class R>
 constexpr auto MakeRuleEntry()
 {
 	//the lambdas are capture‑less; the leading + forces them to decay
-	// to a plain function pointer (no std::function, no allocation).
+	// to a plain function pointer (no std::function, no allocation)
 	return std::pair{
 		+[](EvaluableNode *en) -> bool { return R{}.Match(en); },
 		+[](EvaluableNode *en, RuleContext &rc) -> bool

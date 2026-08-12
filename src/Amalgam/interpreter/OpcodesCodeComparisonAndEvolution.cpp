@@ -191,8 +191,6 @@ static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT
 ])",
 //accept anything since mutation can do anything
 ".*"},
-//simplifying as a mutation has no interpreter to evaluate with, so the arithmetic is folded
-//directly; the mutated values are random, but folding them always yields a number
 {R"&((get_type_string (mutate (lambda (+ 1 2)) 1.0 .null {"simplify_node" 1})))&", R"("number")"},
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -2045,7 +2043,6 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 		{R"&((call (simplify (lambda (/ a 0 -1))) {a 2}))&", R"(.infinity)"},
 		{R"&((call (simplify (lambda (/ a 0 -2))) {a 2}))&", R"(.infinity)"},
 		{R"&((call (simplify (lambda (/ a 2 0 -3))) {a 2}))&", R"(.infinity)"},
-		//unparsed without a deterministic order, since that would sort the divisors for display
 		{R"&((unparse (simplify (lambda (/ a 2 0 -3))) .false .false))&", R"&("(/ a 2 0 -3)")&"},
 		{R"&((call (simplify (lambda (/ a -0))) {a 2}))&", R"(.infinity)"},
 		{R"&((simplify (lambda (/ a .null b))))&", R"(.null)"},

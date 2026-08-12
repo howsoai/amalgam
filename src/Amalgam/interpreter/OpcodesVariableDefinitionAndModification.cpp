@@ -7,6 +7,9 @@
 #include "OpcodeDetails.h"
 #include "PerformanceProfiler.h"
 
+//system headers:
+#include <bit>
+
 static std::string _opcode_group = "Variable Definition and Modification";
 
 static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT_SYMBOL, []() {
@@ -1806,7 +1809,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	const std::string date_string("date:");
 	const std::string time_string("time:");
 
-	static constexpr bool big_endian = !Platform_IsLittleEndian();
+	static constexpr bool big_endian = (std::endian::native == std::endian::big);
 
 	if(from_type == GetStringIdFromNodeType(ENT_NUMBER))
 	{

@@ -64,6 +64,15 @@ size_t __popcnt64(uint64_t x)
 }
 #endif
 
+//ensure strdup is portable
+#if defined(_MSC_VER)
+#define PORTABLE_STRDUP _strdup
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#else
+#define PORTABLE_STRDUP strdup
+#endif
+
 //returns the offset of the first bit set in x, starting at 0 as the least significant bit
 inline size_t Platform_FindFirstBitSet(uint64_t x)
 {
@@ -98,27 +107,6 @@ inline size_t Platform_FindLastBitSet(uint64_t x)
 	while((x & (1ULL << bit)) == 0)
 		bit--;
 	return bit;
-#endif
-}
-
-//returns true if system compiled on is little endian
-//TODO: when moving to C++20, can replace with constants provided by STL
-constexpr bool Platform_IsLittleEndian()
-{
-	//GCC and Clang
-#if defined(__BYTE_ORDER__)
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	return true;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	return false;
-#else
-	return false;
-#endif
-//Windows is almost exclusively little endian, even on ARM
-#elif defined(_MSC_VER)
-	return true;
-#else
-	return false;
 #endif
 }
 

@@ -636,10 +636,8 @@ public:
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		//fence memory flushing by using an atomic store
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		std::atomic<EvaluableNode *> *atomic_ref
-			= reinterpret_cast<std::atomic<EvaluableNode *> *>(&rootNode);
-		atomic_ref->store(new_root, std::memory_order_release);
+		std::atomic_ref atomic_ref(rootNode);
+		atomic_ref.store(new_root, std::memory_order_release);
 	#else
 		rootNode = new_root;
 	#endif

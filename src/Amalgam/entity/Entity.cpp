@@ -323,10 +323,8 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 			#ifdef MULTITHREAD_SUPPORT
 				//fence memory to ensure flags are up to date by flushing by using an atomic store
-				//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-				std::atomic<EvaluableNode *> *atomic_ref
-					= reinterpret_cast<std::atomic<EvaluableNode *> *>(&label_iterator->second);
-				atomic_ref->store(new_label_value, std::memory_order_release);
+				std::atomic_ref atomic_ref(label_iterator->second);
+				atomic_ref.store(new_label_value, std::memory_order_release);
 			#else
 				label_iterator->second = new_label_value;
 			#endif

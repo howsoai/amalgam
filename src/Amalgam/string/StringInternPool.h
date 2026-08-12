@@ -6,6 +6,7 @@
 #include "PlatformSpecific.h"
 
 //system headers:
+#include <bit>
 #include <memory>
 #include <new>
 #include <string>
@@ -52,7 +53,7 @@ class PointerWithShortInlineString
 	//data offset in bytes for potential inline strings
 	//for little‑endian, use bytes 1‑7
 	//big‑endian, use bytes 0‑6
-	static constexpr size_t dataOffset = Platform_IsLittleEndian() ? 1 : 0;
+	static constexpr size_t dataOffset = std::endian::native == std::endian::little ? 1 : 0;
 
 	//layout masks
 	static constexpr uint64_t inlineMask = 1;

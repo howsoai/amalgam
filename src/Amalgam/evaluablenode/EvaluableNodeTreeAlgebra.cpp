@@ -57,6 +57,15 @@ constexpr auto MakeRuleEntry()
 	};
 }
 
+//returns an iterator to the first divisor of ocn that is an immediate zero, or the end iterator if
+//there is none; a runtime division stops at a zero divisor, leaving the remaining divisors unevaluated,
+//so no divisor can be moved across one
+static EvaluableNode::OrderedType::iterator FindFirstZeroDivisor(EvaluableNode::OrderedType &ocn)
+{
+	return std::find_if(begin(ocn) + 1, end(ocn),
+		[](EvaluableNode *cn) { return (EvaluableNode::IsImmediate(cn) && EvaluableNode::ToNumber(cn) == 0.0); });
+}
+
 template<class... Rules>
 constexpr auto MakeRuleRegistry()
 {
@@ -162,7 +171,7 @@ struct DeadCodeElimination final
 			if(ocn.size() == 0)
 			{
 				rc.NullifyNode(en);
-				any_changes = true;
+				return true;
 			}
 
 			if(ocn.size() == 1)
@@ -319,8 +328,11 @@ struct FoldAdditionAndSubtraction final
 				continue;
 			}
 
+			//the minuend can't be combined with the terms that follow it, because a term minus an
+			//equal term is only zero for finite numbers
 			//if two non-immediates in a row, see if the same
-			if(i + 1 < ocn.size() && ocn[i + 1] != nullptr && !ocn[i + 1]->IsImmediate())
+			if(!(subtraction && i == 0)
+				&& i + 1 < ocn.size() && ocn[i + 1] != nullptr && !ocn[i + 1]->IsImmediate())
 			{
 				if(EvaluableNode::AreDeepEqual(ocn[i], ocn[i + 1]))
 				{
@@ -335,16 +347,7 @@ struct FoldAdditionAndSubtraction final
 					else
 					{
 						currently_accumulating_nonimmediate = true;
-						if(!subtraction)
-							nonimmediate_accum_multiplicand = 2.0;
-						else
-						{
-							//first two cancel out, otherwise negative
-							if(positive_sign)
-								nonimmediate_accum_multiplicand = 0.0;
-							else
-								nonimmediate_accum_multiplicand = -2.0;
-						}
+						nonimmediate_accum_multiplicand = (subtraction ? -2.0 : 2.0);
 					}
 
 					//erase the node
@@ -359,33 +362,16 @@ struct FoldAdditionAndSubtraction final
 				}
 			}
 
-			//a group at index zero contains the distinguished minuend and keeps its sign
+			//a group of a subtraction is always part of the subtrahend, so it keeps its magnitude
 			if(currently_accumulating_nonimmediate)
 			{
-				double grouped_multiplicand = ( (subtraction && i > 0)
+				double grouped_multiplicand = (subtraction
 					? -nonimmediate_accum_multiplicand : nonimmediate_accum_multiplicand);
-				if(grouped_multiplicand == 0.0)
-				{
-					if(i == 0)
-					{
-						//need to keep a zero at the start
-						rc.FreeNodeTreeIfPossible(ocn[i]);
-						ocn[i] = rc.enm->AllocNode(0.0);
-					}
-					else
-					{
-						rc.FreeNodeTreeIfPossible(ocn[i]);
-						ocn.erase(begin(ocn) + i);
-						i--;
-					}
-				}
-				else if(grouped_multiplicand != 1.0)
-				{
-					EvaluableNode *new_term = rc.enm->AllocNode(ENT_MULTIPLY);
-					new_term->AppendOrderedChildNode(rc.enm->AllocNode(grouped_multiplicand));
-					new_term->AppendOrderedChildNode(ocn[i]);
-					ocn[i] = new_term;
-				}
+
+				EvaluableNode *new_term = rc.enm->AllocNode(ENT_MULTIPLY);
+				new_term->AppendOrderedChildNode(rc.enm->AllocNode(grouped_multiplicand));
+				new_term->AppendOrderedChildNode(ocn[i]);
+				ocn[i] = new_term;
 			}
 
 			//start over
@@ -394,28 +380,24 @@ struct FoldAdditionAndSubtraction final
 		}
 
 		//append the positive magnitude subtracted from the first operand
-		if(accumulated_immediate != 0.0)
+		if(accumulated_immediate != 0.0 && ocn.size() > 0)
+			ocn.push_back(rc.enm->AllocNode(subtraction ? -accumulated_immediate : accumulated_immediate));
+
+		//if every term folded away, the node is just the accumulated value
+		if(ocn.size() == 0)
 		{
-			if(ocn.size() > 0)
-				ocn.push_back(rc.enm->AllocNode(subtraction ? -accumulated_immediate : accumulated_immediate));
-			else
-				en->SetTypeViaNumberValue(accumulated_immediate);
+			rc.FreeNodeChildNodesIfPossible(en);
+			en->SetTypeViaNumberValue(accumulated_immediate);
+			return true;
 		}
 
-		if(original_term_count > 1)
+		if(original_term_count > 1 && ocn.size() == 1)
 		{
-			if(ocn.size() == 0)
-			{
-				rc.FreeNodeChildNodesIfPossible(en);
-				en->SetTypeViaNumberValue(0.0);
-			}
-			else if(ocn.size() == 1)
-			{
-				//replace en with the remaining child node
-				EvaluableNode *child = ocn[0];
-				en->CopyNodeFrom(child);
-				rc.FreeNodeIfPossible(child);
-			}
+			//replace en with the remaining child node
+			EvaluableNode *child = ocn[0];
+			en->CopyNodeFrom(child);
+			rc.FreeNodeIfPossible(child);
+			return true;
 		}
 
 		return (any_changes || ocn.size() != original_term_count);
@@ -447,8 +429,13 @@ struct FoldMultiplicationAndDivision final
 			return true;
 		}
 
-		bool multiplicand = true;
 		bool division = (en->GetType() == ENT_DIVIDE);
+
+		//a zero divisor ends the division, so the divisors can neither be regrouped nor reordered
+		if(division && FindFirstZeroDivisor(ocn) != end(ocn))
+			return false;
+
+		bool multiplicand = true;
 
 		//immediates that multiply the result
 		double numerator_immediate = 1.0;
@@ -483,9 +470,6 @@ struct FoldMultiplicationAndDivision final
 					continue;
 
 				double value = EvaluableNode::ToNumber(ocn[i]);
-				//runtime division stops at a zero divisor, so it cannot be regrouped
-				if(division && !multiplicand && value == 0.0)
-					continue;
 				if(multiplicand)
 					numerator_immediate *= value;
 				else
@@ -502,8 +486,11 @@ struct FoldMultiplicationAndDivision final
 				continue;
 			}
 
+			//the dividend can't be combined with the divisors that follow it, because a term divided
+			//by an equal term is only one for finite nonzero numbers
 			//if two non-immediates in a row, see if the same
-			if(i + 1 < ocn.size() && ocn[i + 1] != nullptr && !ocn[i + 1]->IsImmediate())
+			if(!(division && i == 0)
+				&& i + 1 < ocn.size() && ocn[i + 1] != nullptr && !ocn[i + 1]->IsImmediate())
 			{
 				if(EvaluableNode::AreDeepEqual(ocn[i], ocn[i + 1]))
 				{
@@ -518,16 +505,7 @@ struct FoldMultiplicationAndDivision final
 					else
 					{
 						currently_accumulating_nonimmediate = true;
-						if(!division)
-							nonimmediate_accum_exponent = 2.0;
-						else
-						{
-							//first two cancel out, otherwise negative
-							if(multiplicand)
-								nonimmediate_accum_exponent = 0.0;
-							else
-								nonimmediate_accum_exponent = -2.0;
-						}
+						nonimmediate_accum_exponent = (division ? -2.0 : 2.0);
 					}
 
 					//erase the node
@@ -542,32 +520,16 @@ struct FoldMultiplicationAndDivision final
 				}
 			}
 
-			//a group at index zero contains the distinguished dividend and keeps its exponent
+			//a group of a division is always part of the divisor, so it keeps its exponent's magnitude
 			if(currently_accumulating_nonimmediate)
 			{
-				double grouped_exponent = ( (division && i > 0)
+				double grouped_exponent = (division
 					? -nonimmediate_accum_exponent : nonimmediate_accum_exponent);
-				if(grouped_exponent == 0.0)
-				{
-					if(i == 0)
-					{
-						rc.FreeNodeTreeIfPossible(ocn[i]);
-						ocn[i] = rc.enm->AllocNode(1.0);
-					}
-					else
-					{
-						rc.FreeNodeTreeIfPossible(ocn[i]);
-						ocn.erase(begin(ocn) + i);
-						i--;
-					}
-				}
-				else if(grouped_exponent != 1.0)
-				{
-					EvaluableNode *new_term = rc.enm->AllocNode(ENT_POW);
-					new_term->AppendOrderedChildNode(ocn[i]);
-					new_term->AppendOrderedChildNode(rc.enm->AllocNode(grouped_exponent));
-					ocn[i] = new_term;
-				}
+
+				EvaluableNode *new_term = rc.enm->AllocNode(ENT_POW);
+				new_term->AppendOrderedChildNode(ocn[i]);
+				new_term->AppendOrderedChildNode(rc.enm->AllocNode(grouped_exponent));
+				ocn[i] = new_term;
 			}
 
 			//start over
@@ -672,24 +634,13 @@ struct EulerExponentSimplification final
 		if(ocn.size() < 1)
 			return false;
 
-		EvaluableNode *child = ocn[0];
-		if(EvaluableNode::IsNull(child))
+		if(EvaluableNode::IsNull(ocn[0]))
 		{
 			rc.NullifyNode(en);
 			return true;
 		}
 
-		if(child->GetType() == ENT_LOG)
-		{
-			auto &log_ocn = child->GetOrderedChildNodesReference();
-			if(log_ocn.size() == 1)
-			{
-				en->CopyNodeFrom(log_ocn[0]);
-				rc.FreeNodeIfPossible(child);
-				return true;
-			}
-		}
-
+		//an exp of a log can't be reduced to its parameter, because the log of a nonpositive number isn't a number
 		return false;
 	}
 };
@@ -722,23 +673,16 @@ struct LogSimplification final
 			return true;
 		}
 
-		if(child->GetType() == ENT_EXPONENT)
+		//ln(e) -> 1
+		if(child->GetType() == ENT_EXPONENT && child->GetOrderedChildNodesReference().size() == 0)
 		{
-			auto &exp_ocn = child->GetOrderedChildNodesReference();
-			if(exp_ocn.size() == 0)
-			{
-				rc.FreeNodeChildNodesIfPossible(en);
-				en->SetTypeViaNumberValue(1.0);
-				return true;
-			}
-			if(exp_ocn.size() == 1)
-			{
-				en->CopyNodeFrom(exp_ocn[0]);
-				rc.FreeNodeIfPossible(child);
-				return true;
-			}
+			rc.FreeNodeChildNodesIfPossible(en);
+			en->SetTypeViaNumberValue(1.0);
+			return true;
 		}
 
+		//a log of an exp can't be reduced to its parameter, because the exp may overflow to infinity
+		//or underflow to zero
 		return false;
 	}
 };
@@ -896,7 +840,11 @@ struct SortParameters final
 		if(GetChildNodeStructureType(en->GetType()) == OpcodeDetails::ChildNodeStructureType::UNORDERED)
 			std::sort(begin(ocn), end(ocn), EvaluableNode::IsStrictlyLessThan);
 		else if(ocn.size() > 2)
-			std::sort(begin(ocn) + 1, end(ocn), EvaluableNode::IsStrictlyLessThan);
+		{
+			//a zero divisor ends the division, so the divisors from the first zero onward keep their order
+			auto sort_end = (en->GetType() == ENT_DIVIDE ? FindFirstZeroDivisor(ocn) : end(ocn));
+			std::sort(begin(ocn) + 1, sort_end, EvaluableNode::IsStrictlyLessThan);
+		}
 
 		//sorting alone shouldn't trigger a another analysis
 		return false;

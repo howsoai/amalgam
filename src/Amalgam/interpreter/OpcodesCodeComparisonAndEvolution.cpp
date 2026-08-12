@@ -191,6 +191,9 @@ static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT
 ])",
 //accept anything since mutation can do anything
 ".*"},
+//simplifying as a mutation has no interpreter to evaluate with, so the arithmetic is folded
+//directly; the mutated values are random, but folding them always yields a number
+{R"&((get_type_string (mutate (lambda (+ 1 2)) 1.0 .null {"simplify_node" 1})))&", R"("number")"},
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.1;
@@ -1933,6 +1936,8 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 	)
 ))&",
 		R"((if a 2 b 3 4))"},
+		{R"&((simplify (lambda (if))))&", R"(.null)"},
+		{R"&((simplify (lambda (if .false 1))))&", R"(.null)"},
 { R"&((simplify
 	(lambda
 		(and a .true b (or .false c d))
@@ -1983,8 +1988,15 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 	(* 2 a)
 	1
 ))"},
-		{R"&((simplify (lambda (- a a))))&", R"(0)"},
+		{R"&((simplify (lambda (- a a))))&", R"((- a a))"},
+		{R"&((call (simplify (lambda (- a a))) {a .infinity}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (- a a))) {a .null}))&", R"(.null)"},
+		{R"&((simplify (lambda (- a a a))))&", R"((-
+	a
+	(* 2 a)
+))"},
 		{R"&((call (simplify (lambda (- a a a))) {a 2}))&", R"(-2)"},
+		{R"&((call (simplify (lambda (- a a a))) {a .infinity}))&", R"(.null)"},
 		{R"&((call (simplify (lambda (- a a a a))) {a 2}))&", R"(-4)"},
 		{R"&((call (simplify (lambda (- a a b))) {a 2 b 3}))&", R"(-3)"},
 		{R"&((call (simplify (lambda (- a a 5 b))) {a 2 b 3}))&", R"(-8)"},
@@ -2014,8 +2026,15 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 	(pow a 3)
 	3
 ))"},
-		{R"&((simplify (lambda (/ a a))))&", R"(1)"},
+		{R"&((simplify (lambda (/ a a))))&", R"((/ a a))"},
+		{R"&((call (simplify (lambda (/ a a))) {a 0}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (/ a a))) {a .infinity}))&", R"(.null)"},
+		{R"&((simplify (lambda (/ a a a))))&", R"((/
+	a
+	(pow a 2)
+))"},
 		{R"&((call (simplify (lambda (/ a a a))) {a 2}))&", R"(0.5)"},
+		{R"&((call (simplify (lambda (/ a a a))) {a .infinity}))&", R"(.null)"},
 		{R"&((call (simplify (lambda (/ a a a a))) {a 2}))&", R"(0.25)"},
 		{R"&((call (simplify (lambda (/ a a b))) {a 2 b 4}))&", R"(0.25)"},
 		{R"&((simplify (lambda (/ a 2 0.5))))&", R"(a)"},
@@ -2023,12 +2042,27 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 		{R"&((simplify (lambda (/ a 2 3))))&", R"((/ a 6))"},
 		{R"&((call (simplify (lambda (/ a -1 0))) {a 2}))&", R"(-.infinity)"},
 		{R"&((call (simplify (lambda (/ a -2 0))) {a 2}))&", R"(-.infinity)"},
+		{R"&((call (simplify (lambda (/ a 0 -1))) {a 2}))&", R"(.infinity)"},
+		{R"&((call (simplify (lambda (/ a 0 -2))) {a 2}))&", R"(.infinity)"},
+		{R"&((call (simplify (lambda (/ a 2 0 -3))) {a 2}))&", R"(.infinity)"},
+		//unparsed without a deterministic order, since that would sort the divisors for display
+		{R"&((unparse (simplify (lambda (/ a 2 0 -3))) .false .false))&", R"&("(/ a 2 0 -3)")&"},
 		{R"&((call (simplify (lambda (/ a -0))) {a 2}))&", R"(.infinity)"},
 		{R"&((simplify (lambda (/ a .null b))))&", R"(.null)"},
 		{R"&((simplify (lambda (/ a 2 1))))&", R"((/ a 2))"},
 		{R"&((simplify (lambda (pow a 1))))&", R"(a)"},
-		{R"&((simplify (lambda (exp (log a)))))&", R"(a)"},
-		{R"&((simplify (lambda (log (exp a)))))&", R"(a)"},
+		{R"&((simplify (lambda (exp (log a)))))&", R"((exp
+	(log a)
+))"},
+		{R"&((call (simplify (lambda (exp (log a)))) {a -1}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (exp (log a)))) {a 0}))&", R"(0)"},
+		{R"&((call (simplify (lambda (exp (log a)))) {a .infinity}))&", R"(.infinity)"},
+		{R"&((simplify (lambda (log (exp a)))))&", R"((log
+	(exp a)
+))"},
+		{R"&((call (simplify (lambda (log (exp a)))) {a 1000}))&", R"(.infinity)"},
+		{R"&((call (simplify (lambda (log (exp a)))) {a -1000}))&", R"(-.infinity)"},
+		{R"&((simplify (lambda (log (exp)))))&", R"(1)"},
 		{R"&((simplify (lambda (/ a 7 7))))&", R"((/ a 49))"},
 		{R"&((call (simplify (lambda (/ a 7 7))) {a 49}))&", R"(1)"},
 		{R"&((simplify (lambda (/ a 7 7 2))))&", R"((/ a 98))"},

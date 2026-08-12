@@ -5,6 +5,8 @@
 #include "PlatformSpecific.h"
 
 //3rd party headers:
+//TODO: remove this library once the C++20 date-time library is fully supported across all platforms
+// (in particular WASM and CLANG)
 #include "date/date.h"
 #include "date/tz.h"
 
@@ -193,7 +195,6 @@ inline bool ConstrainDateTimeStringToValidFormat(std::string &s)
 
 	return has_time_offset;
 }
-
 
 //finds a vector of time zones corresponding to the abbreviation
 // from https://github.com/HowardHinnant/date/wiki/Examples-and-Recipes#convert_by_timezone_abbreviation

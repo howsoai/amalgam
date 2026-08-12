@@ -274,7 +274,7 @@ public:
 	// As the distance grows, this constant, which is already small, becomes insignificant with regard to the difference.
 	// However, adding this constant is necessary to preserve nearest neighbor ordering near the boundary of
 	// s_deviation_expansion.
-	//TODO: when change to C++20, can make ComputeDifferenceWithDeviation constexpr and can run at compile time
+	//Can be computed as follows:
 	// GeneralizedDistanceEvaluator dist_eval;
 	// dist_eval.featureAttribs.resize(1);
 	// dist_eval.featureAttribs[0].deviation = 1;

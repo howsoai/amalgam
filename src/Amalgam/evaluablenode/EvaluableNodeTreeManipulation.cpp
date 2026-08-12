@@ -1424,7 +1424,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			auto &mcn = n->GetMappedChildNodesReference();
 			double replace_with = mp.interpreter->randomStream.Rand() * mcn.size();
 			//iterate over child nodes until find the right index
-			for(auto &[_, cn] : mcn)
+			for(auto &cn : mcn | std::views::values)
 			{
 				if(replace_with < 1.0)
 				{
@@ -1495,7 +1495,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			else
 			{
 				cur_index = 0;
-				for(auto &[_, cn] : mcn)
+				for(auto &cn : mcn | std::views::values)
 				{
 					if(cur_index == destination_index)
 					{
@@ -1702,7 +1702,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 	if(n->IsAssociativeArray())
 	{
 		//for any mapped children, copy and update
-		for(auto &[_, s] : n->GetMappedChildNodesReference())
+		for(auto &s : n->GetMappedChildNodesReference() | std::views::values)
 		{
 			EvaluableNode *current = s;
 

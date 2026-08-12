@@ -88,7 +88,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 		{
 			std::vector<StringInternPool::StringID> key_sids;
 			key_sids.reserve(mcn.size());
-			for(auto &[key, _] : mcn)
+			for(auto &key : mcn | std::views::keys)
 				key_sids.push_back(key);
 
 			std::sort(begin(key_sids), end(key_sids), StringIDNaturalCompareSort);

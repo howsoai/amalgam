@@ -303,7 +303,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 			{
 				std::vector<StringInternPool::StringID> key_sids;
 				key_sids.reserve(bp_mcn.size());
-				for(auto &[k_id, _] : bp_mcn)
+				for(auto &k_id : bp_mcn | std::views::keys)
 					key_sids.push_back(k_id);
 
 				std::sort(begin(key_sids), end(key_sids), StringIDNaturalCompareSort);
@@ -1185,7 +1185,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 					}
 				}
 
-				for(auto &[_, cn] : mcn)
+				for(auto &cn : mcn | std::views::values)
 				{
 					//need to count the additional node for the string index
 					if(cn != nullptr && (cn->GetNumChildNodes() > 0
@@ -1221,7 +1221,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			{
 				std::vector<StringInternPool::StringID> key_sids;
 				key_sids.reserve(tree_mcn.size());
-				for(auto &[k_id, _] : tree_mcn)
+				for(auto &k_id : tree_mcn | std::views::keys)
 					key_sids.push_back(k_id);
 
 				std::sort(begin(key_sids), end(key_sids), StringIDNaturalCompareSort);
@@ -1507,7 +1507,7 @@ void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 			//copy reference of target to the parent's index of the target
 			if(parent->IsAssociativeArray())
 			{
-				for(auto &[_, cn] : parent->GetMappedChildNodesReference())
+				for(auto &cn : parent->GetMappedChildNodesReference() | std::views::values)
 				{
 					if(cn == node)
 					{

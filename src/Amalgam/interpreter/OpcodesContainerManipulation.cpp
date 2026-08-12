@@ -73,7 +73,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 
 			if(list.unique && !list->GetNeedCycleCheck())
 			{
-				for(auto &[_, cn] : list_mcn)
+				for(auto &cn : list_mcn | std::views::values)
 				{
 					if(cn != first_en)
 						evaluableNodeManager->FreeNodeTree(cn);
@@ -503,7 +503,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 
 			if(list.unique && !list->GetNeedCycleCheck())
 			{
-				for(auto &[_, cn] : list_mcn)
+				for(auto &cn : list_mcn | std::views::values)
 				{
 					if(cn != last_en)
 						evaluableNodeManager->FreeNodeTree(cn);
@@ -1553,7 +1553,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 	{
 		auto &container_mcn = container->GetMappedChildNodesReference();
 		index_list_ocn.reserve(container_mcn.size());
-		for(auto &[node_id, _] : container_mcn)
+		for(auto &node_id : container_mcn | std::views::keys)
 		{
 			EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(node_id, evaluableNodeManager);
 			index_list_ocn.push_back(key_node);
@@ -1753,7 +1753,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 
 			EvaluableNode *result = evaluableNodeManager->AllocNode(ENT_LIST);
 
-			for(auto &[_, cn] : container->GetMappedChildNodesReference())
+			for(auto &cn : container->GetMappedChildNodesReference() | std::views::values)
 				result->AppendOrderedChildNode(cn);
 
 			if(container->GetNeedCycleCheck())
@@ -1833,7 +1833,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			}
 			else //container->IsAssociativeArray()
 			{
-				for(auto &[_, cn] : container->GetMappedChildNodesReference())
+				for(auto &cn : container->GetMappedChildNodesReference() | std::views::values)
 				{
 					std::string str_value = Parser::UnparseToKeyString(cn);
 					if(values_in_existence.emplace(str_value).second)
@@ -2043,7 +2043,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	//try to find value
 	if(container->IsAssociativeArray())
 	{
-		for(auto &[_, cn] : container->GetMappedChildNodesReference())
+		for(auto &cn : container->GetMappedChildNodesReference() | std::views::values)
 		{
 			if(EvaluableNode::AreDeepEqual(cn, value))
 			{
@@ -2515,7 +2515,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			//anything left should be freed if possible
 			if(container.unique && !container->GetNeedCycleCheck())
 			{
-				for(auto &[_, cn] : container_mcn)
+				for(auto &cn : container_mcn | std::views::values)
 					evaluableNodeManager->FreeNodeTree(cn);
 			}
 			string_intern_pool.DestroyStringReferences(container_mcn, [](auto &pair) { return pair.first;  });

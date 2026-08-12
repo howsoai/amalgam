@@ -4,6 +4,7 @@
 #include "PerformanceProfiler.h"
 
 //system headers:
+#include <ranges>
 #include <string>
 #include <vector>
 #include <utility>
@@ -485,7 +486,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 
 			if(cur->IsAssociativeArray())
 			{
-				for(auto &[_, child] : cur->GetMappedChildNodesReference())
+				for(auto &child : cur->GetMappedChildNodesReference() | std::views::values)
 				{
 					if(child == nullptr)
 						continue;
@@ -544,7 +545,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 	if(copy->IsAssociativeArray())
 	{
 		auto &copy_mcn = copy->GetMappedChildNodesReference();
-		for(auto &[_, s] : copy_mcn)
+		for(auto &s : copy_mcn | std::views::values)
 		{
 			//get current item in list
 			EvaluableNode *n = s;
@@ -603,7 +604,7 @@ static void MarkAllReferencedNodesInUseForNode(EvaluableNode *tree)
 		auto type = node->GetType();
 		if(DoesEvaluableNodeTypeUseAssocData(type))
 		{
-			for(auto &[_, cn] : node->GetMappedChildNodesReference())
+			for(auto &cn : node->GetMappedChildNodesReference() | std::views::values)
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUse())
 				{
@@ -649,7 +650,7 @@ static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
 		auto type = node->GetType();
 		if(DoesEvaluableNodeTypeUseAssocData(type))
 		{
-			for(auto &[_, cn] : node->GetMappedChildNodesReference())
+			for(auto &cn : node->GetMappedChildNodesReference() | std::views::values)
 			{
 				if(cn != nullptr && cn->TrySetKnownToBeInUseAtomic())
 					node_stack.push_back(cn);

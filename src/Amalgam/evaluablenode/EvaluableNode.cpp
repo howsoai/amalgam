@@ -9,6 +9,7 @@
 
 //system headers:
 #include <algorithm>
+#include <ranges>
 
 bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
@@ -290,7 +291,7 @@ void EvaluableNode::ConvertAssocToList()
 
 	auto &mcn = GetMappedChildNodesReference();
 	new_ocn.reserve(mcn.size());
-	for(auto &[_, cn] : mcn)
+	for(auto &cn : mcn | std::views::values)
 		new_ocn.emplace_back(cn);
 
 	InitOrderedChildNodes();
@@ -1268,7 +1269,7 @@ bool EvaluableNode::CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<
 	//check child nodes
 	if(n->IsAssociativeArray())
 	{
-		for(auto &[_, e] : n->GetMappedChildNodesReference())
+		for(auto &e : n->GetMappedChildNodesReference() | std::views::values)
 		{
 			if(e == nullptr)
 				continue;

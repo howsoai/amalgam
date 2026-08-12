@@ -157,7 +157,7 @@ static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType 
 	if(normalize)
 	{
 		total_probability = 0;
-		for(auto &[_, prob] : assoc)
+		for(auto &prob : assoc | std::views::values)
 			total_probability += std::max(0.0, EvaluableNode::ToNumber(prob, 0.0));
 
 		//if no probabilities, just choose uniformly
@@ -168,7 +168,7 @@ static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType 
 
 			//iterate over pairs until find the index
 			size_t cur_index = 0;
-			for(auto &[prob_id, _] : assoc)
+			for(auto &prob_id : assoc | std::views::keys)
 			{
 				if(cur_index == index_to_return)
 					return prob_id;
@@ -183,7 +183,7 @@ static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType 
 		{
 			//start over, count infinities
 			size_t inf_count = 0;
-			for(auto &[_, prob] : assoc)
+			for(auto &prob : assoc | std::views::values)
 			{
 				if(EvaluableNode::ToNumber(prob, 0.0) == std::numeric_limits<double>::infinity())
 					inf_count++;

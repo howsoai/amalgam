@@ -776,7 +776,7 @@ void SBFDSColumnData::FindMinMax(EvaluableNodeImmediateValueType value_type, siz
 		all_sids.reserve(stringIdValueEntries.size());
 
 		//get all strings
-		for(auto &[id, _] : stringIdValueEntries)
+		for(auto &id : stringIdValueEntries | std::views::keys)
 			all_sids.push_back(id);
 
 		std::sort(begin(all_sids), end(all_sids), StringIDNaturalCompareSort);

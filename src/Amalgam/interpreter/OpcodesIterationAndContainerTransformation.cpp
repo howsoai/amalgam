@@ -841,7 +841,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			if(cur_input->IsAssociativeArray())
 			{
 				need_assoc = true;
-				for(auto &[n_id, _] : cur_input->GetMappedChildNodesReference())
+				for(auto &n_id : cur_input->GetMappedChildNodesReference() | std::views::keys)
 				{
 					auto [inserted_node, inserted] = all_keys.insert(n_id);
 					//if it was inserted, then need to keep track of the string reference

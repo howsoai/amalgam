@@ -377,7 +377,7 @@ public:
 	inline void IterateFunctionOverLabels(LabelFunc func,
 		EvaluableNodeManager *destination_temp_enm = nullptr, bool on_self = false)
 	{
-		for(auto &[label_id, _] : GetLabelIndex())
+		for(auto &label_id : GetLabelIndex() | std::views::keys)
 		{
 			EvaluableNode *node = GetValueAtLabel(label_id, destination_temp_enm,
 				EvaluableNodeRequestedValueTypes::Type::NONE, on_self, true).first;

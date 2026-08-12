@@ -2011,7 +2011,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 
 		p_values = &p_copied_values;
 		p_copied_values.reserve(p_num_elements);
-		for(auto &[_, ce] : p_node_mcn)
+		for(auto &ce : p_node_mcn | std::views::values)
 			p_copied_values.push_back(ce);
 	}
 	else if(EvaluableNode::IsOrderedArray(p_node))
@@ -2059,7 +2059,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 			if(p_is_assoc)
 			{
 				q_copied_values.reserve(p_num_elements);
-				for(auto &[pce_id, _] : p_node->GetMappedChildNodesReference())
+				for(auto &pce_id : p_node->GetMappedChildNodesReference() | std::views::keys)
 				{
 					auto q_i = q_node->GetMappedChildNodesReference().find(pce_id);
 					if(q_i == end(q_node->GetMappedChildNodesReference()))
@@ -2070,7 +2070,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 			else if(p_is_constant)
 			{
 				q_copied_values.reserve(q_num_elements);
-				for(auto &[_, ce] : q_node->GetMappedChildNodesReference())
+				for(auto &ce : q_node->GetMappedChildNodesReference() | std::views::values)
 					q_copied_values.push_back(ce);
 			}
 			else //p must be a list

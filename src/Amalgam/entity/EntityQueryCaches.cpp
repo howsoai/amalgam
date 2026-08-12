@@ -155,7 +155,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 	case ENT_QUERY_EQUALS:
 	case ENT_QUERY_NOT_EQUALS:
 	{
-		for(auto &[label_id, _] : cond->singleLabels)
+		for(auto &label_id : cond->singleLabels | std::views::keys)
 		{
 			if(!DoesHaveLabel(label_id))
 				labels_to_add.push_back(label_id);

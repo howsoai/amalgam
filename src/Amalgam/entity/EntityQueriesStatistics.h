@@ -351,21 +351,15 @@ public:
 					auto [weighted_value, unweighted_value, prob_same, prob_mass, weight]
 						= transform_func(entity_distance_pair_container_begin + main_k);
 
-					//stop if have enough entities and conditions are met as follows:
-					if(main_k >= minToRetrieve
-						//there has been enough probability mass accumulated
-						&& total_prob > 1.25
-
+					//stop if have enough entities and enough probability mass accumulated and
+					//probability is different from the previous one to ensure equidistant cases are included
+					if(main_k >= minToRetrieve && total_prob > 1.25 && prob_same != previous_prob)
+					{
 						//marginal probability is below threshold or
 						//delta to first prob is >= 20 %, i.e.the difference is large enough to not have to accumulate more to reach the marginal cutoff
-						&& (prob_same / total_prob < numToRetrieveMinIncrementalProbability)
-							|| ((first_prob_same - prob_same) / first_prob_same) >= 0.2 )
-							
-						//probability is different from the previous one to ensure equidistant cases are included
-						&& prob_same != previous_prob
-					)
-						break;
-
+						if(prob_same / total_prob < numToRetrieveMinIncrementalProbability || (first_prob_same - prob_same) / first_prob_same >= 0.2)
+							break;
+					}
 					total_prob += prob_same;
 					previous_prob = prob_same;
 

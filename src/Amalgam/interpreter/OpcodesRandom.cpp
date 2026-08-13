@@ -494,7 +494,7 @@ static OpcodeInitializer _ENT_SET_RAND_SEED(ENT_SET_RAND_SEED, &Interpreter::Int
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto seed_node = InterpretNodeForImmediateUse(ocn[0]);
@@ -623,7 +623,7 @@ static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &In
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();

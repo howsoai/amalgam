@@ -36,7 +36,7 @@ static OpcodeInitializer _ENT_CONTAINS_LABEL(ENT_CONTAINS_LABEL, &Interpreter::I
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//not allowed if don't have a Entity to work within
@@ -187,7 +187,7 @@ static OpcodeInitializer _ENT_REMOVE_FROM_ENTITIES(ENT_REMOVE_FROM_ENTITIES, &In
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -286,7 +286,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REM
 			all_assignments_successful = false;
 
 		//check this at the end of each iteration in case need to exit
-		if(AreExecutionResourcesExhausted())
+		if(AreExecutionResourcesExhausted()) [[unlikely]]
 			return EvaluableNodeReference::Null();
 	}
 
@@ -339,11 +339,11 @@ static OpcodeInitializer _ENT_RETRIEVE_FROM_ENTITY(ENT_RETRIEVE_FROM_ENTITY, &In
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//not allowed if don't have a Entity to work within
-	if(curEntity == nullptr)
+	if(curEntity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get lookup reference
@@ -594,11 +594,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 	EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//not allowed if don't have a Entity to check within
-	if(curEntity == nullptr)
+	if(curEntity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	InterpreterConstraints interpreter_constraints;
@@ -864,11 +864,11 @@ static OpcodeInitializer _ENT_CALL_CONTAINER(ENT_CALL_CONTAINER, &Interpreter::I
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//not allowed if don't have a containing Entity to call
-	if(curEntity == nullptr)
+	if(curEntity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto container_label_sid = InterpretNodeIntoStringIDValueIfExists(ocn[0]);

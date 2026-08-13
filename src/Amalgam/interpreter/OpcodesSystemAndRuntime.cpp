@@ -383,7 +383,7 @@ static OpcodeInitializer _ENT_PRINT(ENT_PRINT, &Interpreter::InterpretNode_ENT_P
 EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::STD_OUT_AND_STD_ERR)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	for(auto &cn : en->GetOrderedChildNodesReference())
@@ -457,7 +457,7 @@ static OpcodeInitializer _ENT_SYSTEM_TIME(ENT_SYSTEM_TIME, &Interpreter::Interpr
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM_TIME(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::chrono::time_point tp = std::chrono::system_clock::now();
@@ -543,7 +543,7 @@ static std::string GetEntityMemorySizeDiagnostics(Entity *e)
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
@@ -768,7 +768,7 @@ static OpcodeInitializer _ENT_RECLAIM_RESOURCES(ENT_RECLAIM_RESOURCES, &Interpre
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);

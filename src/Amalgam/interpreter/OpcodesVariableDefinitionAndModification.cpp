@@ -91,7 +91,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-	if(ocn_size == 0)
+	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	InterpretAndPushNewScopeStackNode(ocn[0]);
@@ -177,7 +177,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-	if(ocn_size == 0)
+	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//work on the node that is declaring the variables
@@ -533,7 +533,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_params = ocn.size();
 
-	if(num_params < 1)
+	if(num_params < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool accum = (en->GetType() == ENT_ACCUM);
@@ -885,7 +885,7 @@ static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 3)
+	if(ocn.size() < 3) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto variable_string_node = InterpretNodeForImmediateUse(ocn[0]);
@@ -981,7 +981,7 @@ static OpcodeInitializer _ENT_RETRIEVE(ENT_RETRIEVE, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
@@ -1064,7 +1064,7 @@ static OpcodeInitializer _ENT_EXISTS(ENT_EXISTS, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EXISTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
@@ -1423,7 +1423,7 @@ static OpcodeInitializer _ENT_GET_TYPE(ENT_GET_TYPE, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto cur = InterpretNodeForImmediateUse(ocn[0]);
@@ -1459,7 +1459,7 @@ static OpcodeInitializer _ENT_GET_TYPE_STRING(ENT_GET_TYPE_STRING, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto cur = InterpretNodeForImmediateUse(ocn[0]);
@@ -1535,7 +1535,7 @@ static OpcodeInitializer _ENT_SET_TYPE(ENT_SET_TYPE, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get the target
@@ -1772,7 +1772,7 @@ constexpr DestinationType ExpandCharStorage(char &value)
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 3)
+	if(ocn.size() < 3) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	StringRef from_type, to_type;

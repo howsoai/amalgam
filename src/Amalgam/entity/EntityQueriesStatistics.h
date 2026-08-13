@@ -352,13 +352,16 @@ public:
 						= transform_func(entity_distance_pair_container_begin + main_k);
 
 					//stop if have enough entities and enough probability mass accumulated and
-					//probability is different from the previous one to ensure equidistant cases are included
-					if(main_k >= minToRetrieve && total_prob > 1.25 && prob_same != previous_prob)
+					if(main_k >= minToRetrieve && total_prob > 1.25) 
 					{
 						//marginal probability is below threshold or
 						//delta to first prob is >= 20 %, i.e.the difference is large enough to not have to accumulate more to reach the marginal cutoff
 						if(prob_same / total_prob < numToRetrieveMinIncrementalProbability || (first_prob_same - prob_same) / first_prob_same >= 0.2)
-							break;
+						{
+							//probability is different from the previous one to ensure equidistant cases are included
+							if(prob_same != previous_prob)
+								break;
+						}
 					}
 					total_prob += prob_same;
 					previous_prob = prob_same;

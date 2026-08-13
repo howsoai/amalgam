@@ -7,6 +7,9 @@
 #include "OpcodeDetails.h"
 #include "PerformanceProfiler.h"
 
+//system headers:
+#include <bit>
+
 static std::string _opcode_group = "Variable Definition and Modification";
 
 static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT_SYMBOL, []() {
@@ -32,7 +35,7 @@ static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	StringInternPool::StringID sid = en->GetStringIDReference();
-	if(sid == StringInternPool::NOT_A_STRING_ID)
+	if(sid == StringInternPool::NOT_A_STRING_ID) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//when retrieving symbol, only need to retain the node if it's not an immediate type
@@ -88,7 +91,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-	if(ocn_size == 0)
+	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	InterpretAndPushNewScopeStackNode(ocn[0], false);
@@ -174,7 +177,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-	if(ocn_size == 0)
+	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//work on the node that is declaring the variables
@@ -182,7 +185,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	//transform into variables if possible
 	EvaluableNodeReference required_vars = EvaluableNodeReference::Null();
 	bool need_to_interpret_required_vars = false;
-	if(required_vars_node != nullptr)
+	if(required_vars_node != nullptr) [[likely]]
 	{
 		if(required_vars_node->IsAssociativeArray())
 		{
@@ -210,7 +213,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 		//get the current layer of the stack
 		EvaluableNode *scope = GetCurrentScopeStackContext();
-		if(scope == nullptr)	//this shouldn't happen, but just in case it does
+		if(scope == nullptr) [[unlikely]]	//this shouldn't happen, but just in case it does
 			return EvaluableNodeReference::Null();
 
 		if(!need_to_interpret_required_vars)
@@ -530,7 +533,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_params = ocn.size();
 
-	if(num_params < 1)
+	if(num_params < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool accum = (en->GetType() == ENT_ACCUM);
@@ -882,7 +885,7 @@ static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 3)
+	if(ocn.size() < 3) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto variable_string_node = InterpretNodeForImmediateUse(ocn[0]);
@@ -978,7 +981,7 @@ static OpcodeInitializer _ENT_RETRIEVE(ENT_RETRIEVE, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
@@ -1061,7 +1064,7 @@ static OpcodeInitializer _ENT_EXISTS(ENT_EXISTS, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EXISTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
@@ -1418,7 +1421,7 @@ static OpcodeInitializer _ENT_GET_TYPE(ENT_GET_TYPE, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto cur = InterpretNodeForImmediateUse(ocn[0]);
@@ -1454,7 +1457,7 @@ static OpcodeInitializer _ENT_GET_TYPE_STRING(ENT_GET_TYPE_STRING, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto cur = InterpretNodeForImmediateUse(ocn[0]);
@@ -1530,7 +1533,7 @@ static OpcodeInitializer _ENT_SET_TYPE(ENT_SET_TYPE, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get the target
@@ -1767,7 +1770,7 @@ constexpr DestinationType ExpandCharStorage(char &value)
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 3)
+	if(ocn.size() < 3) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	StringRef from_type, to_type;
@@ -1804,7 +1807,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	const std::string date_string("date:");
 	const std::string time_string("time:");
 
-	static constexpr bool big_endian = !Platform_IsLittleEndian();
+	static constexpr bool big_endian = (std::endian::native == std::endian::big);
 
 	if(from_type == GetStringIdFromNodeType(ENT_NUMBER))
 	{

@@ -35,7 +35,7 @@ static OpcodeInitializer _ENT_FIRST(ENT_FIRST, &Interpreter::InterpretNode_ENT_F
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference list;
@@ -73,7 +73,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 
 			if(list.unique && !list->GetNeedCycleCheck())
 			{
-				for(auto &[_, cn] : list_mcn)
+				for(auto &cn : list_mcn | std::views::values)
 				{
 					if(cn != first_en)
 						evaluableNodeManager->FreeNodeTree(cn);
@@ -313,7 +313,7 @@ R"&(^\s*\{\s*
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference list;
@@ -463,7 +463,7 @@ static OpcodeInitializer _ENT_LAST(ENT_LAST, &Interpreter::InterpretNode_ENT_LAS
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference list;
@@ -503,7 +503,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 
 			if(list.unique && !list->GetNeedCycleCheck())
 			{
-				for(auto &[_, cn] : list_mcn)
+				for(auto &cn : list_mcn | std::views::values)
 				{
 					if(cn != last_en)
 						evaluableNodeManager->FreeNodeTree(cn);
@@ -745,7 +745,7 @@ R"&(^\s*\{\s*
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference list;
@@ -930,7 +930,7 @@ static OpcodeInitializer _ENT_APPEND(ENT_APPEND, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//pull the first element and reuse its memory if possible;
@@ -1075,7 +1075,7 @@ static OpcodeInitializer _ENT_SIZE(ENT_SIZE, &Interpreter::InterpretNode_ENT_SIZ
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto n = InterpretNodeForImmediateUse(ocn[0], EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER);
@@ -1229,7 +1229,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, Eva
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-	if(ocn_size < 1)
+	if(ocn_size < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference source;
@@ -1377,7 +1377,7 @@ static OpcodeInitializer _ENT_MODIFY(ENT_MODIFY, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MODIFY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto result = InterpretNode(ocn[0]);
@@ -1537,7 +1537,7 @@ static OpcodeInitializer _ENT_INDICES(ENT_INDICES, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get assoc array to look up
@@ -1553,7 +1553,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 	{
 		auto &container_mcn = container->GetMappedChildNodesReference();
 		index_list_ocn.reserve(container_mcn.size());
-		for(auto &[node_id, _] : container_mcn)
+		for(auto &node_id : container_mcn | std::views::keys)
 		{
 			EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(node_id, evaluableNodeManager);
 			index_list_ocn.push_back(key_node);
@@ -1702,7 +1702,7 @@ static OpcodeInitializer _ENT_VALUES(ENT_VALUES, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool only_unique_values = false;
@@ -1753,7 +1753,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 
 			EvaluableNode *result = evaluableNodeManager->AllocNode(ENT_LIST);
 
-			for(auto &[_, cn] : container->GetMappedChildNodesReference())
+			for(auto &cn : container->GetMappedChildNodesReference() | std::views::values)
 				result->AppendOrderedChildNode(cn);
 
 			if(container->GetNeedCycleCheck())
@@ -1833,7 +1833,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			}
 			else //container->IsAssociativeArray()
 			{
-				for(auto &[_, cn] : container->GetMappedChildNodesReference())
+				for(auto &cn : container->GetMappedChildNodesReference() | std::views::values)
 				{
 					std::string str_value = Parser::UnparseToKeyString(cn);
 					if(values_in_existence.emplace(str_value).second)
@@ -1927,7 +1927,7 @@ static OpcodeInitializer _ENT_CONTAINS_INDEX(ENT_CONTAINS_INDEX, &Interpreter::I
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get assoc array to look up
@@ -2025,7 +2025,7 @@ static OpcodeInitializer _ENT_CONTAINS_VALUE(ENT_CONTAINS_VALUE, &Interpreter::I
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto container = InterpretNodeForImmediateUse(ocn[0]);
@@ -2043,7 +2043,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	//try to find value
 	if(container->IsAssociativeArray())
 	{
-		for(auto &[_, cn] : container->GetMappedChildNodesReference())
+		for(auto &cn : container->GetMappedChildNodesReference() | std::views::values)
 		{
 			if(EvaluableNode::AreDeepEqual(cn, value))
 			{
@@ -2207,7 +2207,7 @@ static OpcodeInitializer _ENT_REMOVE(ENT_REMOVE, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto container = InterpretNode(ocn[0]);
@@ -2411,7 +2411,7 @@ static OpcodeInitializer _ENT_KEEP(ENT_KEEP, &Interpreter::InterpretNode_ENT_KEE
 EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto container = InterpretNode(ocn[0]);
@@ -2515,7 +2515,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			//anything left should be freed if possible
 			if(container.unique && !container->GetNeedCycleCheck())
 			{
-				for(auto &[_, cn] : container_mcn)
+				for(auto &cn : container_mcn | std::views::values)
 					evaluableNodeManager->FreeNodeTree(cn);
 			}
 			string_intern_pool.DestroyStringReferences(container_mcn, [](auto &pair) { return pair.first;  });

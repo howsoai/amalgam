@@ -94,7 +94,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	//not allowed if don't have a Entity to work within
-	if(curEntity == nullptr)
+	if(curEntity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool return_query_value = (en->GetType() == ENT_COMPUTE_ON_CONTAINED_ENTITIES);

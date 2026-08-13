@@ -114,7 +114,7 @@ static std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, Eval
 	{
 		std::string code_str = Parser::Unparse(en, false, false, true);
 		ClampSingleLineStringLength(code_str, max_num_chars);
-		return std::make_pair(std::string(), code_str);
+		return {std::string(), code_str};
 	}
 	else //has comments, so need to thoughtfully handle showing first line of comments and appropriate amount of code
 	{
@@ -131,7 +131,7 @@ static std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, Eval
 		std::string code_str = Parser::Unparse(&en_without_comment, false, false, true);
 		ClampSingleLineStringLength(code_str, max_num_chars);
 
-		return std::make_pair(comment_str, code_str);
+		return {comment_str, code_str};
 	}
 }
 
@@ -495,7 +495,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 
 				//see if this level of the stack contains the symbol
 				auto &mcn = cur_context->GetMappedChildNodesReference();
-				for(auto &[symbol_id, _] : mcn)
+				for(auto &symbol_id : mcn | std::views::keys)
 					std::cout << "  " << string_intern_pool.GetStringViewFromID(symbol_id) << std::endl;
 			}
 		}

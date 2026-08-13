@@ -224,7 +224,7 @@ void EvaluableNodeTreeDifference::FindParentReferences(EvaluableNode *tree, Eval
 
 	if(tree->IsAssociativeArray())
 	{
-		for(auto &[_, cn] : tree->GetMappedChildNodesReference())
+		for(auto &cn : tree->GetMappedChildNodesReference() | std::views::values)
 			FindParentReferences(cn, references_with_parents, tree);
 	}
 	else
@@ -271,7 +271,7 @@ void EvaluableNodeTreeDifference::FindTopNodesExcluded(EvaluableNode *tree, Eval
 			top_nodes_excluded.push_back(tree);
 
 		//if any missing keys then also it is excluded -- needs to be recreated
-		for(auto &[cn_id, _] : tree_mcn)
+		for(auto &cn_id : tree_mcn | std::views::keys)
 		{
 			if(matching_mcn.find(cn_id) == end(matching_mcn))
 			{
@@ -283,7 +283,7 @@ void EvaluableNodeTreeDifference::FindTopNodesExcluded(EvaluableNode *tree, Eval
 		//check child nodes
 		for(auto &cn : tree_ocn)
 			FindTopNodesExcluded(cn, nodes_included, top_nodes_excluded, references_with_parents, tree);
-		for(auto &[_, cn] : tree_mcn)
+		for(auto &cn : tree_mcn | std::views::values)
 			FindTopNodesExcluded(cn, nodes_included, top_nodes_excluded, references_with_parents, tree);
 	}
 }

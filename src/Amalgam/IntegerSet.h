@@ -7,6 +7,7 @@
 
 //system headers:
 #include <algorithm>
+#include <bit>
 #include <cstdint>
 #include <vector>
 
@@ -606,7 +607,7 @@ public:
 		} while(bitBucket[bucket] == 0);
 
 		//if made it here, then there is nonzero value in bitBucket[bucket]
-		bit = Platform_FindFirstBitSet(bitBucket[bucket]);
+		bit = std::countr_zero(bitBucket[bucket]);
 	}
 
 	//returns the next id in the hash
@@ -631,7 +632,7 @@ public:
 		size_t bucket = 0;
 		for(; bucket < bitBucket.size(); bucket++)
 		{
-			size_t bucket_count = __popcnt64(bitBucket[bucket]);
+			size_t bucket_count = std::popcount(bitBucket[bucket]);
 			//look for where the count exceeds n because the bit hasn't been found yet (e.g., bit 0 is found by the first count of 1)
 			if(iteration + bucket_count > n)
 				break;
@@ -745,7 +746,7 @@ public:
 			return 0;
 
 		//return 1 past the max index
-		return numBitsPerBucket * bucket + Platform_FindLastBitSet(bitBucket[bucket]) + 1;
+		return numBitsPerBucket * bucket + std::bit_width(bitBucket[bucket]);
 	}
 
 	//returns true if the id exists in the set
@@ -1016,7 +1017,7 @@ public:
 		//update num elements
 		numElements = 0;
 		for(const auto &bucket : bitBucket)
-			numElements += __popcnt64(bucket);
+			numElements += std::popcount(bucket);
 	}
 
 	//trims off trailing empty buckets

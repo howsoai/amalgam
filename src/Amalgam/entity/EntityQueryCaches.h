@@ -75,7 +75,7 @@ public:
 		Concurrency::WriteLock write_lock(mutex);
 	#endif
 
-		for(auto &[label_id, _] : new_values)
+		for(auto &label_id : new_values | std::views::keys)
 			sbfds.UpdateEntityLabel(entity, entity_index, label_id);
 	}
 

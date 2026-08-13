@@ -210,7 +210,7 @@ namespace StringManipulation
 		}
 
 		size_t length = end_offset - offset;
-		return std::make_pair(offset, length);
+		return {offset, length};
 	}
 
 	//returns the offset of the nth utf8 character in the specified string
@@ -239,7 +239,7 @@ namespace StringManipulation
 		size_t num_utf8_chars = GetNumUTF8Characters(s);
 
 		//if past the end, just return the end
-		if(nth >= num_utf8_chars)
+		if(nth >= num_utf8_chars) [[unlikely]]
 			return s.size();
 
 		//reflect from the end

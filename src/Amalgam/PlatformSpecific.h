@@ -45,83 +45,6 @@
 
 #endif
 
-//defines __popcnt64 if it doesn't exist
-//platform independent intrinsic for bit count on a 64-bit var
-#if defined(__GNUC__)
-#define __popcnt64 __builtin_popcountll
-#elif !defined(_MSC_VER)
-size_t __popcnt64(uint64_t x)
-{
-	size_t bit_count = 0;
-	while(x > 0)
-	{
-		if(x & 1)
-			bit_count++;
-
-		x <<= 1;
-	}
-	return bit_count;
-}
-#endif
-
-//returns the offset of the first bit set in x, starting at 0 as the least significant bit
-inline size_t Platform_FindFirstBitSet(uint64_t x)
-{
-#if defined(__GNUC__)
-	return __builtin_ctzll(x);
-#elif defined(_MSC_VER)
-	unsigned long bit;
-	_BitScanForward64(&bit, x);
-	return bit;
-#else
-	size_t bit = 0;
-	while((x & (1ULL << bit)) == 0)
-		bit++;
-	return bit;
-#endif
-}
-
-//returns the offset of the last bit set in x, starting at 63 as the most significant bit
-inline size_t Platform_FindLastBitSet(uint64_t x)
-{
-#if defined(__GNUC__)
-	//counts the number of leading zeros, so need to find the difference between that
-	// and the number of digits to find the first 1
-	//note that this is different behavior than the other two implementations below because of what is returned
-	return 63 - __builtin_clzll(x);
-#elif defined(_MSC_VER)
-	unsigned long bit;
-	_BitScanReverse64(&bit, x);
-	return bit;
-#else
-	size_t bit = 63;
-	while((x & (1ULL << bit)) == 0)
-		bit--;
-	return bit;
-#endif
-}
-
-//returns true if system compiled on is little endian
-//TODO: when moving to C++20, can replace with constants provided by STL
-constexpr bool Platform_IsLittleEndian()
-{
-	//GCC and Clang
-#if defined(__BYTE_ORDER__)
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	return true;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	return false;
-#else
-	return false;
-#endif
-//Windows is almost exclusively little endian, even on ARM
-#elif defined(_MSC_VER)
-	return true;
-#else
-	return false;
-#endif
-}
-
 //changes argv into string_view for easier use
 inline std::vector<std::string_view> Platform_ArgvToStringViews(int argc, char **argv)
 {
@@ -143,7 +66,7 @@ inline std::pair<std::string, bool> Platform_OpenFileAsString(const std::string 
 	if(!inf.good())
 	{
 		data = "Error loading file " + filename;
-		return std::make_pair(data, false);
+		return {data, false};
 	}
 
 	inf.seekg(0, std::ios::end);
@@ -156,39 +79,64 @@ inline std::pair<std::string, bool> Platform_OpenFileAsString(const std::string 
 	}
 	inf.close();
 
-	return std::make_pair(data, true);
+	return {data, true};
 }
+
+#if defined(__APPLE__)
+#include <xlocale.h>
+#endif
 
 //converts the string to a double, and returns true if it was successful, false if not
 // note1: std::from_chars is supposed to be supported in all C++17 compliant compilers but
-//        is not. If upgrading to gcc-11 or beyond, this should be updated. AppleClang does
-//        not currently have a working implementation on any version.
+//        is not. In particular, AppleClang nor WASM builds currently have a working implementation
 // note2: std::from_chars is more desirable than std::strtod because it is locale independent
-// TODO 15993: Reevaluate when moving to C++20
 template<typename StringType>
 inline std::pair<double, bool> Platform_StringToNumber(const StringType &s)
 {
-#ifdef OS_WINDOWS
+	//check if the compiler supports floating-point std::from_chars
+#if defined(__cpp_lib_to_chars) && (__cpp_lib_to_chars >= 201611L)
 	const char *first_char = s.data();
 	const char *last_char = first_char + s.size();
 	double value = 0.0;
 	auto [ptr, ec] = std::from_chars(first_char, last_char, value);
+
 	//if there was no parse error and nothing left on string, then it's a number
 	if(ec == std::errc() && ptr == last_char)
-		return std::make_pair(value, true);
-	return std::make_pair(0.0, false);
+		return {value, true};
+	return {0.0, false};
 #else
-	//make sure it has a zero terminator
-	std::string stringified_s(s);
-	const char *start_pointer = stringified_s.data();
+	// FALLBACK FOR APPLECLANG, WASM, AND OLDER PLATFORMS
+
+	//need to ensure has null terminator
+	std::string zero_terminated_copy(s);
+	const char *start_pointer = zero_terminated_copy.data();
 	char *end_pointer = nullptr;
-	double value = strtod(start_pointer, &end_pointer);
-	//if didn't reach the end or grabbed nothing, then it's not a number
-	if(*end_pointer != '\0' || end_pointer == start_pointer)
-		return std::make_pair(0.0, false);
-	return std::make_pair(value, true);
+	double value = 0.0;
+
+#if defined(__APPLE__)
+	//cache the C locale per-thread to eliminate the global penalty
+	thread_local locale_t c_locale = newlocale(LC_ALL_MASK, "C", nullptr);
+	value = strtod_l(start_pointer, &end_pointer, c_locale);
+
+#elif defined(__EMSCRIPTEN__) || defined(__wasm__)
+	//WASM targets exclusively execute within a fixed "C" environment.
+	//std::strtod is completely thread-safe here and lacks global states.
+	value = std::strtod(start_pointer, &end_pointer);
+
+#else
+	// Default POSIX fallback using thread-safe locale context
+	static locale_t global_c_locale = newlocale(LC_ALL_MASK, "C", nullptr);
+	value = strtod_l(start_pointer, &end_pointer, global_c_locale);
+#endif
+
+	// If didn't reach the end or grabbed nothing, then it's not a number
+	if(end_pointer == start_pointer || end_pointer != (start_pointer + s.size()))
+		return {0.0, false};
+
+	return {value, true};
 #endif
 }
+
 
 //Takes a string containing a combined path/filename.extension, and breaks it into each of: path, base_filename, and extension
 void Platform_SeparatePathFileExtension(const std::string &combined, std::string &path, std::string &base_filename, std::string &extension);

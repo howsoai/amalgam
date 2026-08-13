@@ -334,7 +334,7 @@ std::vector<std::string> EntityExternalInterface::GetEntities()
 #endif
 
 	entities.reserve(handleToBundle.size());
-	for(auto &[bundle_handle, _] : handleToBundle)
+	for(auto &bundle_handle : handleToBundle | std::views::keys)
 		entities.push_back(bundle_handle);
 
 	return entities;

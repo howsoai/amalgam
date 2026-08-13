@@ -128,26 +128,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAMBDA(EvaluableNode *en, 
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-	if(ocn_size == 0)
-	{
+	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
-	}
-	else if(ocn_size == 1 || !EvaluableNode::ToBool(ocn[1]))
-	{
-		//if only one parameter or second parameter isn't true, just return the result
+
+	//if only one parameter or second parameter isn't true, just return the result
+	if(ocn_size == 1 || !EvaluableNode::ToBool(ocn[1]))
 		return EvaluableNodeReference(ocn[0], false);
-	}
-	else //evaluate and then wrap in a lambda
-	{
-		EvaluableNodeReference evaluated_value = InterpretNode(ocn[0]);
 
-		//need to evaluate its parameter and return a new node encapsulating it
-		EvaluableNodeReference lambda(evaluableNodeManager->AllocNode(ENT_LAMBDA), true);
-		lambda->AppendOrderedChildNode(evaluated_value);
-		lambda.UpdatePropertiesBasedOnAttachedNode(evaluated_value, true);
+	//evaluate and then wrap in a lambda
+	EvaluableNodeReference evaluated_value = InterpretNode(ocn[0]);
 
-		return lambda;
-	}
+	//need to evaluate its parameter and return a new node encapsulating it
+	EvaluableNodeReference lambda(evaluableNodeManager->AllocNode(ENT_LAMBDA), true);
+	lambda->AppendOrderedChildNode(evaluated_value);
+	lambda.UpdatePropertiesBasedOnAttachedNode(evaluated_value, true);
+
+	return lambda;
 }
 
 static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CALL, []() {
@@ -231,7 +227,7 @@ static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CAL
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
@@ -371,7 +367,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, E
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-	if(ocn_size == 0)
+	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference previous_result = EvaluableNodeReference::Null();
@@ -574,7 +570,7 @@ static OpcodeInitializer _ENT_APPLY(ENT_APPLY, &Interpreter::InterpretNode_ENT_A
 EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//can't interpret for immediate use in case the node has child nodes that will be prepended

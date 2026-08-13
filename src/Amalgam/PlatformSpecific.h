@@ -48,7 +48,6 @@
 //ensure strdup is portable
 #if defined(_MSC_VER)
 #define PORTABLE_STRDUP _strdup
-#pragma warning(push)
 #pragma warning(disable : 4996)
 #else
 #define PORTABLE_STRDUP strdup

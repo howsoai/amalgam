@@ -1057,8 +1057,8 @@ public:
 		else
 			attributes &= ~static_cast<AttributeStorageType>(mask);
 
-		return std::make_pair((previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
-			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0);
+		return { (previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
+			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0 };
 	}
 
 #ifdef MULTITHREAD_SUPPORT
@@ -1076,8 +1076,8 @@ public:
 		else
 			previous_value = atomic_ref.fetch_and(~mask);
 
-		return std::make_pair((previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
-			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0);
+		return { (previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
+			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0 };
 	}
 #endif
 

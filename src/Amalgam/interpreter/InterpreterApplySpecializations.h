@@ -201,27 +201,27 @@ inline std::pair<bool, EvaluableNodeReference> AttemptSpecializedInterpret(
 	switch(immediate_result.requestedValueTypes)
 	{
 	case EvaluableNodeRequestedValueTypes::Type::NULL_VALUE:
-		return std::make_pair(true, iteration_function(NoValueOp{}));
+		return {true, iteration_function(NoValueOp{})};
 
 	case EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER:
-		return std::make_pair(true, iteration_function(SizeOp{}));
+		return {true, iteration_function(SizeOp{})};
 
 	case EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER:
-		return std::make_pair(true, iteration_function(SumOp{}));
+		return {true, iteration_function(SumOp{})};
 
 	case EvaluableNodeRequestedValueTypes::Type::PRODUCT_AS_NUMBER:
-		return std::make_pair(true, iteration_function(ProductOp{}));
+		return {true, iteration_function(ProductOp{})};
 
 	case EvaluableNodeRequestedValueTypes::Type::MIN_AS_NUMBER:
-		return std::make_pair(true, iteration_function(MinOp{}));
+		return {true, iteration_function(MinOp{})};
 
 	case EvaluableNodeRequestedValueTypes::Type::MAX_AS_NUMBER:
-		return std::make_pair(true, iteration_function(MaxOp{}));
+		return {true, iteration_function(MaxOp{})};
 
 	case EvaluableNodeRequestedValueTypes::Type::CONCAT_AS_STRING_ID:
-		return std::make_pair(true, iteration_function(ConcatOp{}));
+		return {true, iteration_function(ConcatOp{})};
 
 	default:
-		return std::make_pair(false, EvaluableNodeReference::Null());
+		return {false, EvaluableNodeReference::Null()};
 	}
 }

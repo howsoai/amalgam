@@ -115,7 +115,7 @@ public:
 	//returns the bucket and bit for the specified dimension
 	static __forceinline std::pair<size_t, size_t> GetAccumLocation(size_t dimension_index)
 	{
-		return std::make_pair(GetBucketForIndex(dimension_index), GetBucketBitForIndex(dimension_index));
+		return {GetBucketForIndex(dimension_index), GetBucketBitForIndex(dimension_index)};
 	}
 
 	//accumulates the specified value into the value specified by partial_sum_index
@@ -168,7 +168,7 @@ public:
 		for(size_t offset = start_offset; offset < end_offset; offset++)
 			num_filled += std::popcount(buffer[offset].mask);
 
-		return std::make_pair(num_filled, sum);
+		return {num_filled, sum};
 	}
 
 	//sets the sum to the specified value

@@ -330,10 +330,10 @@ public:
 		for(auto &label : GetLabelIndex())
 		{
 			if(label.second == en)
-				return std::make_pair(label.first, true);
+				return {label.first, true};
 		}
 
-		return std::make_pair(string_intern_pool.NOT_A_STRING_ID, false);
+		return {string_intern_pool.NOT_A_STRING_ID, false};
 	}
 
 	//Evaluates the specified label into a bool and returns the value

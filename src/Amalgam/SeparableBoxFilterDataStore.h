@@ -1313,12 +1313,12 @@ protected:
 		size_t num_uncalculated_features = (num_features - num_calculated_features);
 		//if have already calculated everything, then already have the distance
 		if(num_uncalculated_features == 0)
-			return std::make_pair(distance <= reject_distance, distance);
+			return {distance <= reject_distance, distance};
 
 		//if too far out, reject immediately
 		distance += min_distance_by_unpopulated_count[num_uncalculated_features];
 		if(distance > reject_distance)
-			return std::make_pair(false, distance);
+			return {false, distance};
 
 		//use infinite loop with exit at the end to remove need for extra iterator increment
 		for(auto it = partial_sums.BeginPartialSumIndex(entity_index); true; ++it)
@@ -1336,11 +1336,11 @@ protected:
 			//do this via logic to minimize the number of branches
 			bool unacceptable_distance = (distance > reject_distance);
 			if(unacceptable_distance || num_uncalculated_features == 0)
-				return std::make_pair(!unacceptable_distance, distance);
+				return {!unacceptable_distance, distance};
 		}
 
 		//shouldn't make it here
-		return std::make_pair(true, distance);
+		return {true, distance};
 	}
 
 public:

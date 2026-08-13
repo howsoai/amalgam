@@ -447,7 +447,7 @@ __forceinline static std::pair<bool, ValueType> Mode(ValueIterator first, ValueI
 		}
 	}
 
-	return std::make_pair(mode_found, mode);
+	return {mode_found, mode};
 }
 
 //specialization of Mode for std::string

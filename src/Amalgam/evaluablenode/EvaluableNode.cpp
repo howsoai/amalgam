@@ -198,15 +198,15 @@ std::string EvaluableNode::ToString(EvaluableNode *e, bool key_string)
 std::pair<bool, std::string> EvaluableNode::ToValidString(EvaluableNode *e)
 {
 	if(EvaluableNode::IsNull(e))
-		return std::make_pair(false, "");
+		return {false, ""};
 
 	if(e->GetType() == ENT_STRING)
-		return std::make_pair(true, std::string(e->GetStringView()));
+		return {true, std::string(e->GetStringView())};
 
 	if(e->GetType() == ENT_NUMBER)
-		return std::make_pair(true, StringManipulation::NumberToString(e->GetNumberValueReference()));
+		return {true, StringManipulation::NumberToString(e->GetNumberValueReference())};
 
-	return std::make_pair(true, Parser::Unparse(e, false, false, true));
+	return {true, Parser::Unparse(e, false, false, true)};
 }
 
 StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e, bool key_string)
@@ -898,7 +898,7 @@ void EvaluableNode::SetMappedChildNodes(AssocType &new_mcn, bool copy, bool need
 std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::string &id, EvaluableNode *node, bool overwrite)
 {
 	if(!IsAssociativeArray()) [[unlikely]]
-		return std::make_pair(false, nullptr);
+		return {false, nullptr};
 
 	auto &mcn = GetMappedChildNodesReference();
 
@@ -910,20 +910,20 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::s
 	{
 		string_intern_pool.DestroyStringReference(sid);
 		if(!overwrite)
-			return std::make_pair(false, &inserted_node->second);
+			return {false, &inserted_node->second};
 	}
 
 	//set node regardless of whether it was added
 	inserted_node->second = node;
 	UpdateFlagsBasedOnNewChildNode(node);
 
-	return std::make_pair(true, &inserted_node->second);
+	return {true, &inserted_node->second};
 }
 
 std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite)
 {
 	if(!IsAssociativeArray()) [[unlikely]]
-		return std::make_pair(false, nullptr);
+		return {false, nullptr};
 
 	auto &mcn = GetMappedChildNodesReference();
 
@@ -937,7 +937,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const String
 	{
 		//if not overwriting, return if sid is already found
 		if(!overwrite)
-			return std::make_pair(false, &inserted_node->second);
+			return {false, &inserted_node->second};
 
 		//update the value
 		inserted_node->second = node;
@@ -945,7 +945,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const String
 
 	UpdateFlagsBasedOnNewChildNode(node);
 
-	return std::make_pair(true, &inserted_node->second);
+	return {true, &inserted_node->second};
 }
 
 bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite)
@@ -1504,31 +1504,31 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 	if(nodeType == ENIVT_STRING_ID)
 	{
 		if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
-			return std::make_pair(false, "");
+			return {false, ""};
 
 		auto str = string_intern_pool.GetStringFromID(nodeValue.stringID);
-		return std::make_pair(true, str);
+		return {true, str};
 	}
 
 	if(nodeType == ENIVT_BOOL)
-		return std::make_pair(true, EvaluableNode::BoolToString(nodeValue.boolValue, key_string));
+		return {true, EvaluableNode::BoolToString(nodeValue.boolValue, key_string)};
 
 	if(nodeType == ENIVT_NUMBER)
-		return std::make_pair(true, EvaluableNode::NumberToString(nodeValue.number, key_string));
+		return {true, EvaluableNode::NumberToString(nodeValue.number, key_string)};
 
 	if(nodeType == ENIVT_CODE && !EvaluableNode::IsNull(nodeValue.code))
 	{
 		if(nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
-			return std::make_pair(true, std::string(nodeValue.code->GetStringView()));
+			return {true, std::string(nodeValue.code->GetStringView())};
 
 		if(key_string)
-			return std::make_pair(true, Parser::UnparseToKeyString(nodeValue.code));
+			return {true, Parser::UnparseToKeyString(nodeValue.code)};
 		else
-			return std::make_pair(true, Parser::Unparse(nodeValue.code, false, false, true));
+			return {true, Parser::Unparse(nodeValue.code, false, false, true)};
 	}
 
 	//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-	return std::make_pair(false, "");
+	return {false, ""};
 }
 
 StringInternPool::StringID EvaluableNodeImmediateValueWithType::GetValueAsStringIDIfExists(bool key_string)

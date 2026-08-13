@@ -267,7 +267,7 @@ public:
 			#endif
 			}
 		}
-		return std::make_pair(any_constructions, any_set);
+		return {any_constructions, any_set};
 	}
 
 	//calls SetSideEffectsFlags and updates performance counters for node if applicable

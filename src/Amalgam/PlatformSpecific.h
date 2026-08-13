@@ -75,7 +75,7 @@ inline std::pair<std::string, bool> Platform_OpenFileAsString(const std::string 
 	if(!inf.good())
 	{
 		data = "Error loading file " + filename;
-		return std::make_pair(data, false);
+		return {data, false};
 	}
 
 	inf.seekg(0, std::ios::end);
@@ -88,7 +88,7 @@ inline std::pair<std::string, bool> Platform_OpenFileAsString(const std::string 
 	}
 	inf.close();
 
-	return std::make_pair(data, true);
+	return {data, true};
 }
 
 #if defined(__APPLE__)
@@ -111,8 +111,8 @@ inline std::pair<double, bool> Platform_StringToNumber(const StringType &s)
 
 	//if there was no parse error and nothing left on string, then it's a number
 	if(ec == std::errc() && ptr == last_char)
-		return std::make_pair(value, true);
-	return std::make_pair(0.0, false);
+		return {value, true};
+	return {0.0, false};
 #else
 	// FALLBACK FOR APPLECLANG, WASM, AND OLDER PLATFORMS
 
@@ -148,11 +148,12 @@ inline std::pair<double, bool> Platform_StringToNumber(const StringType &s)
 
 	// If didn't reach the end or grabbed nothing, then it's not a number
 	if(end_pointer == start_pointer || end_pointer != (start_pointer + s.size()))
-		return std::make_pair(0.0, false);
+		return {0.0, false};
 
-	return std::make_pair(value, true);
+	return {value, true};
 #endif
 }
+
 
 //Takes a string containing a combined path/filename.extension, and breaks it into each of: path, base_filename, and extension
 void Platform_SeparatePathFileExtension(const std::string &combined, std::string &path, std::string &base_filename, std::string &extension);

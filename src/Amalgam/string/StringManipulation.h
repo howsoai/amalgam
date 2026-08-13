@@ -210,7 +210,7 @@ namespace StringManipulation
 		}
 
 		size_t length = end_offset - offset;
-		return std::make_pair(offset, length);
+		return {offset, length};
 	}
 
 	//returns the offset of the nth utf8 character in the specified string

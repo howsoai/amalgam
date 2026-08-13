@@ -527,13 +527,13 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 	//can't insert, so already have a copy
 	// need to indicate that it has a cycle
 	if(!inserted)
-		return std::make_pair(inserted_copy->second, true);
+		return {inserted_copy->second, true};
 
 	EvaluableNode *copy = AllocNode(tree, dacp.copyMetadata);
 
 	//shouldn't happen, but just to be safe
 	if(copy == nullptr) [[unlikely]]
-		return std::make_pair(nullptr, false);
+		return {nullptr, false};
 
 	//start without needing a cycle check in case it can be cleared
 	copy->SetNeedCycleCheck(false);
@@ -581,7 +581,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 		}
 	}
 
-	return std::make_pair(copy, copy->GetNeedCycleCheck());
+	return {copy, copy->GetNeedCycleCheck()};
 }
 
 //sets or clears all referenced nodes' in use flags
@@ -808,7 +808,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 
 			cur_node = parent_record->second;
 		}
-		return std::make_pair(true, tree->GetIsIdempotent());
+		return {true, tree->GetIsIdempotent()};
 	}
 
 	bool is_idempotent = IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType());
@@ -841,7 +841,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			tree->SetNeedCycleCheck(need_cycle_check);
 		if(!is_idempotent)
 			tree->SetIsIdempotent(is_idempotent);
-		return std::make_pair(need_cycle_check, is_idempotent);
+		return {need_cycle_check, is_idempotent};
 	}
 	else if(!tree->IsTerminal())
 	{
@@ -866,12 +866,12 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			tree->SetNeedCycleCheck(need_cycle_check);
 		if(!is_idempotent)
 			tree->SetIsIdempotent(is_idempotent);
-		return std::make_pair(need_cycle_check, is_idempotent);
+		return {need_cycle_check, is_idempotent};
 	}
 	else //terminal value
 	{
 		tree->SetIsIdempotent(is_idempotent);
-		return std::make_pair(false, is_idempotent);
+		return {false, is_idempotent};
 	}
 }
 
@@ -883,7 +883,7 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 	//can't assume that, just because something was inserted before,
 	// doesn't mean it isn't cycle free from where it is, so return true to exclude false negatives
 	if(!inserted)
-		return std::make_pair(true, en->GetIsIdempotent());
+		return {true, en->GetIsIdempotent()};
 
 	if(!en->IsNodeValid() || en->GetKnownToBeInUse()) [[unlikely]]
 		AmlgAssert(false);
@@ -935,5 +935,5 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 	if(check_cycle_flag_consistency && !child_nodes_cycle_free && !en->GetNeedCycleCheck()) [[unlikely]]
 		AmlgAssert(false);
 
-	return std::make_pair(!en->GetNeedCycleCheck(), en->GetIsIdempotent());
+	return {!en->GetNeedCycleCheck(), en->GetIsIdempotent()};
 }

@@ -482,7 +482,7 @@ public:
 		double prob_class_given_nonmatch = std::numeric_limits<double>::quiet_NaN();
 
 		if(sdm.size() == 0)
-			return std::make_pair(prob_class_given_match, prob_class_given_nonmatch);
+			return {prob_class_given_match, prob_class_given_nonmatch};
 
 		auto a_deviations_it = sdm.find(nominal_value_a);
 		if(a_deviations_it != std::end(sdm))
@@ -505,7 +505,7 @@ public:
 				prob_class_given_nonmatch = (1 - deviations.defaultDeviation) / nonmatching_classes;
 		}
 
-		return std::make_pair(prob_class_given_match, prob_class_given_nonmatch);
+		return {prob_class_given_match, prob_class_given_nonmatch};
 	}
 
 	//returns the distance term given that it is nominal

@@ -349,11 +349,11 @@ EvaluableNode *Interpreter::GetCurrentScopeStackContext()
 std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(EvaluableNode *n, bool key_string)
 {
 	if(EvaluableNode::IsNull(n))
-		return std::make_pair(false, "");
+		return {false, ""};
 
 	//shortcut if the node has what is being asked
 	if(n->GetType() == ENT_STRING)
-		return std::make_pair(true, std::string(n->GetStringView()));
+		return {true, std::string(n->GetStringView())};
 
 	auto result = InterpretNodeForImmediateUse(n,
 		key_string ? EvaluableNodeRequestedValueTypes::Type::KEY_STRING_ID_OR_NULL
@@ -363,7 +363,7 @@ std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(Evaluable
 	auto [valid, str] = result_value.GetValueAsString(key_string);
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
-	return std::make_pair(valid, str);
+	return {valid, str};
 }
 
 StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(EvaluableNode *n, bool key_string)
@@ -513,9 +513,9 @@ std::pair<EntityWriteReference, StringRef> Interpreter::InterpretNodeIntoDestina
 
 	//if it already exists, then place inside it
 	if(entity != nullptr)
-		return std::make_pair(std::move(entity), StringRef());
+		return {std::move(entity), StringRef()};
 	else //return the container
-		return std::make_pair(std::move(entity_container), new_entity_id);
+		return {std::move(entity_container), new_entity_id};
 }
 
 EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(EvaluableNode **source, EvaluableNodeReference &tpl, bool create_destination_if_necessary)

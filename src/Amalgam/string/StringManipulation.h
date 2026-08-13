@@ -2,7 +2,6 @@
 
 //system headers:
 #include <array>
-#include <charconv>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -11,18 +10,6 @@ namespace StringManipulation
 {
 	std::string NumberToString(double value);
 	std::string NumberToString(size_t value);
-
-	//converts the string to a double, and returns true if it was successful, false if not
-	template<typename StringType>
-	inline std::pair<double, bool> StringToNumber(const StringType &s)
-	{
-		double value = 0.0;
-		auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), value);
-		//if there was no parse error and nothing left on string, then it's a number
-		if(ec == std::errc() && ptr == s.data() + s.size())
-			return std::make_pair(value, true);
-		return std::make_pair(0.0, false);
-	}
 
 	//removes the first token from str and return the removed token
 	std::string RemoveFirstToken(std::string &str);

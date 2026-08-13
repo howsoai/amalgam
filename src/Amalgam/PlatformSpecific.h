@@ -91,6 +91,69 @@ inline std::pair<std::string, bool> Platform_OpenFileAsString(const std::string 
 	return std::make_pair(data, true);
 }
 
+#if defined(__APPLE__)
+#include <xlocale.h>
+#endif
+
+//converts the string to a double, and returns true if it was successful, false if not
+// note1: std::from_chars is supposed to be supported in all C++17 compliant compilers but
+//        is not. In particular, AppleClang nor WASM builds currently have a working implementation
+// note2: std::from_chars is more desirable than std::strtod because it is locale independent
+template<typename StringType>
+inline std::pair<double, bool> Platform_StringToNumber(const StringType &s)
+{
+	//check if the compiler supports floating-point std::from_chars
+#if defined(__cpp_lib_to_chars) && (__cpp_lib_to_chars >= 201611L)
+	const char *first_char = s.data();
+	const char *last_char = first_char + s.size();
+	double value = 0.0;
+	auto [ptr, ec] = std::from_chars(first_char, last_char, value);
+
+	//if there was no parse error and nothing left on string, then it's a number
+	if(ec == std::errc() && ptr == last_char)
+		return std::make_pair(value, true);
+	return std::make_pair(0.0, false);
+#else
+	// FALLBACK FOR APPLECLANG, WASM, AND OLDER PLATFORMS
+
+	const char *start_pointer = s.data();
+
+	// Fast safety check: if s is a type like std::string, s[s.size()] is guaranteed 
+	// to be '\0' in C++11 and later. If it's a slice or view, we must copy it.
+	std::string fallback_copy;
+	if(start_pointer[s.size()] != '\0')
+	{
+		fallback_copy.assign(start_pointer, s.size());
+		start_pointer = fallback_copy.data();
+	}
+
+	char *end_pointer = nullptr;
+	double value = 0.0;
+
+#if defined(__APPLE__)
+	//cache the C locale per-thread to eliminate the global penalty
+	thread_local locale_t c_locale = newlocale(LC_ALL_MASK, "C", nullptr);
+	value = strtod_l(start_pointer, &end_pointer, c_locale);
+
+#elif defined(__EMSCRIPTEN__) || defined(__wasm__)
+	//WASM targets exclusively execute within a fixed "C" environment.
+	//std::strtod is completely thread-safe here and lacks global states.
+	value = std::strtod(start_pointer, &end_pointer);
+
+#else
+	// Default POSIX fallback using thread-safe locale context
+	static locale_t global_c_locale = newlocale(LC_ALL_MASK, "C", nullptr);
+	value = strtod_l(start_pointer, &end_pointer, global_c_locale);
+#endif
+
+	// If didn't reach the end or grabbed nothing, then it's not a number
+	if(end_pointer == start_pointer || end_pointer != (start_pointer + s.size()))
+		return std::make_pair(0.0, false);
+
+	return std::make_pair(value, true);
+#endif
+}
+
 //Takes a string containing a combined path/filename.extension, and breaks it into each of: path, base_filename, and extension
 void Platform_SeparatePathFileExtension(const std::string &combined, std::string &path, std::string &base_filename, std::string &extension);
 

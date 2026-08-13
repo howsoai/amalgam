@@ -206,7 +206,7 @@ double Parser::ParseNumberFromKeyStringId(StringInternPool::StringID code_string
 
 	std::string_view escaped_string(&code_string[1], code_string.size() - 1);
 
-	auto [number_value, success] = StringManipulation::StringToNumber(escaped_string);
+	auto [number_value, success] = Platform_StringToNumber(escaped_string);
 	if(!success)
 		return std::numeric_limits<double>::quiet_NaN();
 
@@ -675,7 +675,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 		}
 		else
 		{
-			auto [converted_value, success] = StringManipulation::StringToNumber(s);
+			auto [converted_value, success] = Platform_StringToNumber(s);
 			if(success)
 				value = converted_value;
 		}

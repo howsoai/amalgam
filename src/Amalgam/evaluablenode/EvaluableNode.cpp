@@ -9,6 +9,7 @@
 
 //system headers:
 #include <algorithm>
+#include <ranges>
 
 bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
@@ -197,15 +198,15 @@ std::string EvaluableNode::ToString(EvaluableNode *e, bool key_string)
 std::pair<bool, std::string> EvaluableNode::ToValidString(EvaluableNode *e)
 {
 	if(EvaluableNode::IsNull(e))
-		return std::make_pair(false, "");
+		return {false, ""};
 
 	if(e->GetType() == ENT_STRING)
-		return std::make_pair(true, std::string(e->GetStringView()));
+		return {true, std::string(e->GetStringView())};
 
 	if(e->GetType() == ENT_NUMBER)
-		return std::make_pair(true, StringManipulation::NumberToString(e->GetNumberValueReference()));
+		return {true, StringManipulation::NumberToString(e->GetNumberValueReference())};
 
-	return std::make_pair(true, Parser::Unparse(e, false, false, true));
+	return {true, Parser::Unparse(e, false, false, true)};
 }
 
 StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e, bool key_string)
@@ -255,7 +256,7 @@ StringInternPool::StringID EvaluableNode::ToStringIDTakingReferenceAndClearing(E
 void EvaluableNode::ConvertListToNumberedAssoc()
 {
 	//don't do anything if no child nodes
-	if(!DoesEvaluableNodeTypeUseOrderedData(GetType()))
+	if(!DoesEvaluableNodeTypeUseOrderedData(GetType())) [[unlikely]]
 	{
 		InitMappedChildNodes();
 		type = ENT_ASSOC;
@@ -283,14 +284,14 @@ void EvaluableNode::ConvertListToNumberedAssoc()
 void EvaluableNode::ConvertAssocToList()
 {
 	//don't do anything if no child nodes
-	if(!IsAssociativeArray())
+	if(!IsAssociativeArray()) [[unlikely]]
 		return;
 
 	OrderedType new_ocn;
 
 	auto &mcn = GetMappedChildNodesReference();
 	new_ocn.reserve(mcn.size());
-	for(auto &[_, cn] : mcn)
+	for(auto &cn : mcn | std::views::values)
 		new_ocn.emplace_back(cn);
 
 	InitOrderedChildNodes();
@@ -329,7 +330,7 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 
 bool EvaluableNode::IsNodeValid()
 {
-	if(!IsEvaluableNodeTypeValid(type))
+	if(!IsEvaluableNodeTypeValid(type)) [[unlikely]]
 		return false;
 
 	//set a maximum number of valid elements of 100 million
@@ -432,7 +433,7 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 {
 	//don't do anything if copying from itself (note that some flat hash map structures don't copy well onto themselves)
-	if(n == this)
+	if(n == this) [[unlikely]]
 		return;
 
 	if(n == nullptr)
@@ -486,7 +487,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 {
 	//don't do anything if copying from itself
-	if(n == this)
+	if(n == this) [[unlikely]]
 		return;
 
 	if(n == nullptr)
@@ -756,7 +757,7 @@ size_t EvaluableNode::GetNumChildNodes()
 
 void EvaluableNode::SetOrderedChildNodes(const OrderedType &ocn, bool need_cycle_check, bool is_idempotent)
 {
-	if(!IsOrderedArray())
+	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
 	GetOrderedChildNodesReference() = ocn;
@@ -771,7 +772,7 @@ void EvaluableNode::SetOrderedChildNodes(const OrderedType &ocn, bool need_cycle
 
 void EvaluableNode::SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check, bool is_idempotent)
 {
-	if(!IsOrderedArray())
+	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
 	GetOrderedChildNodesReference() = std::move(ocn);
@@ -786,7 +787,7 @@ void EvaluableNode::SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_chec
 
 void EvaluableNode::ClearOrderedChildNodes()
 {
-	if(!IsOrderedArray())
+	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
 	GetOrderedChildNodesReference().clear();
@@ -798,7 +799,7 @@ void EvaluableNode::ClearOrderedChildNodes()
 
 void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 {
-	if(!IsOrderedArray())
+	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
 	GetOrderedChildNodesReference().emplace_back(cn);
@@ -808,7 +809,7 @@ void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 
 void EvaluableNode::AppendOrderedChildNodes(const OrderedType &ocn_to_append)
 {
-	if(!IsOrderedArray())
+	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
 	auto &ocn = GetOrderedChildNodesReference();
@@ -869,7 +870,7 @@ EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const StringInternPool
 
 void EvaluableNode::SetMappedChildNodes(AssocType &new_mcn, bool copy, bool need_cycle_check, bool is_idempotent)
 {
-	if(!IsAssociativeArray())
+	if(!IsAssociativeArray()) [[unlikely]]
 		return;
 
 	auto &mcn = GetMappedChildNodesReference();
@@ -896,8 +897,8 @@ void EvaluableNode::SetMappedChildNodes(AssocType &new_mcn, bool copy, bool need
 
 std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::string &id, EvaluableNode *node, bool overwrite)
 {
-	if(!IsAssociativeArray())
-		return std::make_pair(false, nullptr);
+	if(!IsAssociativeArray()) [[unlikely]]
+		return {false, nullptr};
 
 	auto &mcn = GetMappedChildNodesReference();
 
@@ -909,20 +910,20 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::s
 	{
 		string_intern_pool.DestroyStringReference(sid);
 		if(!overwrite)
-			return std::make_pair(false, &inserted_node->second);
+			return {false, &inserted_node->second};
 	}
 
 	//set node regardless of whether it was added
 	inserted_node->second = node;
 	UpdateFlagsBasedOnNewChildNode(node);
 
-	return std::make_pair(true, &inserted_node->second);
+	return {true, &inserted_node->second};
 }
 
 std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite)
 {
-	if(!IsAssociativeArray())
-		return std::make_pair(false, nullptr);
+	if(!IsAssociativeArray()) [[unlikely]]
+		return {false, nullptr};
 
 	auto &mcn = GetMappedChildNodesReference();
 
@@ -936,7 +937,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const String
 	{
 		//if not overwriting, return if sid is already found
 		if(!overwrite)
-			return std::make_pair(false, &inserted_node->second);
+			return {false, &inserted_node->second};
 
 		//update the value
 		inserted_node->second = node;
@@ -944,12 +945,12 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const String
 
 	UpdateFlagsBasedOnNewChildNode(node);
 
-	return std::make_pair(true, &inserted_node->second);
+	return {true, &inserted_node->second};
 }
 
 bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite)
 {
-	if(!IsAssociativeArray())
+	if(!IsAssociativeArray()) [[unlikely]]
 	{
 		string_intern_pool.DestroyStringReference(sid);
 		return false;
@@ -976,7 +977,7 @@ bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPoo
 
 void EvaluableNode::ClearMappedChildNodes()
 {
-	if(!IsAssociativeArray())
+	if(!IsAssociativeArray()) [[unlikely]]
 		return;
 
 	auto &map = GetMappedChildNodesReference();
@@ -1268,7 +1269,7 @@ bool EvaluableNode::CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<
 	//check child nodes
 	if(n->IsAssociativeArray())
 	{
-		for(auto &[_, e] : n->GetMappedChildNodesReference())
+		for(auto &e : n->GetMappedChildNodesReference() | std::views::values)
 		{
 			if(e == nullptr)
 				continue;
@@ -1503,31 +1504,31 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 	if(nodeType == ENIVT_STRING_ID)
 	{
 		if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
-			return std::make_pair(false, "");
+			return {false, ""};
 
 		auto str = string_intern_pool.GetStringFromID(nodeValue.stringID);
-		return std::make_pair(true, str);
+		return {true, str};
 	}
 
 	if(nodeType == ENIVT_BOOL)
-		return std::make_pair(true, EvaluableNode::BoolToString(nodeValue.boolValue, key_string));
+		return {true, EvaluableNode::BoolToString(nodeValue.boolValue, key_string)};
 
 	if(nodeType == ENIVT_NUMBER)
-		return std::make_pair(true, EvaluableNode::NumberToString(nodeValue.number, key_string));
+		return {true, EvaluableNode::NumberToString(nodeValue.number, key_string)};
 
 	if(nodeType == ENIVT_CODE && !EvaluableNode::IsNull(nodeValue.code))
 	{
 		if(nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
-			return std::make_pair(true, std::string(nodeValue.code->GetStringView()));
+			return {true, std::string(nodeValue.code->GetStringView())};
 
 		if(key_string)
-			return std::make_pair(true, Parser::UnparseToKeyString(nodeValue.code));
+			return {true, Parser::UnparseToKeyString(nodeValue.code)};
 		else
-			return std::make_pair(true, Parser::Unparse(nodeValue.code, false, false, true));
+			return {true, Parser::Unparse(nodeValue.code, false, false, true)};
 	}
 
 	//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-	return std::make_pair(false, "");
+	return {false, ""};
 }
 
 StringInternPool::StringID EvaluableNodeImmediateValueWithType::GetValueAsStringIDIfExists(bool key_string)

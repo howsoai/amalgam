@@ -52,7 +52,7 @@ static OpcodeInitializer _ENT_LOG(ENT_LOG, &Interpreter::InterpretNode_ENT_LOG, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOG(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	double divisor = 1.0;
@@ -85,7 +85,7 @@ static OpcodeInitializer _ENT_ERF(ENT_ERF, &Interpreter::InterpretNode_ENT_ERF, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ERF(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
@@ -111,7 +111,7 @@ static OpcodeInitializer _ENT_TGAMMA(ENT_TGAMMA, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TGAMMA(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
@@ -137,7 +137,7 @@ static OpcodeInitializer _ENT_LGAMMA(ENT_LGAMMA, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LGAMMA(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
@@ -163,7 +163,7 @@ static OpcodeInitializer _ENT_SQRT(ENT_SQRT, &Interpreter::InterpretNode_ENT_SQR
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SQRT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
@@ -190,7 +190,7 @@ static OpcodeInitializer _ENT_POW(ENT_POW, &Interpreter::InterpretNode_ENT_POW, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_POW(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	double base = InterpretNodeIntoNumberValue(ocn[0]);
@@ -367,7 +367,7 @@ static OpcodeInitializer _ENT_NORMALIZE(ENT_NORMALIZE, &Interpreter::InterpretNo
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	double p_value = 1.0;
@@ -636,7 +636,7 @@ inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto values = InterpretNodeForImmediateUse(ocn[0]);
@@ -788,7 +788,7 @@ static OpcodeInitializer _ENT_QUANTILE(ENT_QUANTILE, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	double quantile = InterpretNodeIntoNumberValue(ocn[1]);
@@ -945,7 +945,7 @@ static OpcodeInitializer _ENT_GENERALIZED_MEAN(ENT_GENERALIZED_MEAN, &Interprete
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	double p = 1.0;
@@ -1798,7 +1798,7 @@ inline static void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateOpcodeStackStateSaver();
@@ -1985,7 +1985,7 @@ static OpcodeInitializer _ENT_ENTROPY(ENT_ENTROPY, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return AllocReturn(0.0, immediate_result);
 
 	//get first list of probabilities, p
@@ -2011,7 +2011,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 
 		p_values = &p_copied_values;
 		p_copied_values.reserve(p_num_elements);
-		for(auto &[_, ce] : p_node_mcn)
+		for(auto &ce : p_node_mcn | std::views::values)
 			p_copied_values.push_back(ce);
 	}
 	else if(EvaluableNode::IsOrderedArray(p_node))
@@ -2059,7 +2059,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 			if(p_is_assoc)
 			{
 				q_copied_values.reserve(p_num_elements);
-				for(auto &[pce_id, _] : p_node->GetMappedChildNodesReference())
+				for(auto &pce_id : p_node->GetMappedChildNodesReference() | std::views::keys)
 				{
 					auto q_i = q_node->GetMappedChildNodesReference().find(pce_id);
 					if(q_i == end(q_node->GetMappedChildNodesReference()))
@@ -2070,7 +2070,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 			else if(p_is_constant)
 			{
 				q_copied_values.reserve(q_num_elements);
-				for(auto &[_, ce] : q_node->GetMappedChildNodesReference())
+				for(auto &ce : q_node->GetMappedChildNodesReference() | std::views::values)
 					q_copied_values.push_back(ce);
 			}
 			else //p must be a list

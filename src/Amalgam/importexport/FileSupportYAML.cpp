@@ -88,7 +88,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 		{
 			std::vector<StringInternPool::StringID> key_sids;
 			key_sids.reserve(mcn.size());
-			for(auto &[key, _] : mcn)
+			for(auto &key : mcn | std::views::keys)
 				key_sids.push_back(key);
 
 			std::sort(begin(key_sids), end(key_sids), StringIDNaturalCompareSort);
@@ -159,18 +159,18 @@ EvaluableNode *EvaluableNodeYAMLTranslation::YamlToEvaluableNode(EvaluableNodeMa
 std::pair<std::string, bool> EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(EvaluableNode *code, bool sort_keys)
 {
 	if(code == nullptr)
-		return std::make_pair("null", true);
+		return {"null", true};
 
 	//if need cycle check, double-check
 	if(!EvaluableNode::CanNodeTreeBeFlattened(code))
-		return std::make_pair("", false);
+		return {"", false};
 
 	ryml::Tree tree;
 	auto top_node = tree.rootref();
 	if(EvaluableNodeToYamlStringRecurse(code, top_node, sort_keys))
-		return std::make_pair(ryml::emitrs_yaml<std::string>(tree), true);
+		return {ryml::emitrs_yaml<std::string>(tree), true};
 	else
-		return std::make_pair("", false);
+		return {"", false};
 }
 
 EvaluableNode *EvaluableNodeYAMLTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)

@@ -4,15 +4,10 @@
 #include "Concurrency.h"
 #include "EntityExternalInterface.h"
 #include "EntityQueries.h"
+#include "PlatformSpecific.h"
 
 //system headers:
 #include <string>
-
-//Workaround because GCC doesn't support strcpy_s
-// TODO 15993: Reevaluate when moving to C++20
-#if defined(__GNUC__)
-#define strcpy_s(dest, size, source) {strncpy( (dest), (source), (size)); (dest)[(size) - 1] = '\0'; }
-#endif
 
 EntityExternalInterface entint;
 
@@ -46,7 +41,8 @@ extern "C"
 	char *StringToCharPtr(std::string &value)
 	{
 		char *out = new char[value.size() + 1];
-		strcpy_s(out, value.size() + 1, value.c_str());
+		std::memcpy(out, value.data(), value.size());
+		out[value.size()] = '\0';
 		return out;
 	}
 

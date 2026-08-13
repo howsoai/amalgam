@@ -30,7 +30,7 @@ static OpcodeInitializer _ENT_GET_ANNOTATIONS(ENT_GET_ANNOTATIONS, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ANNOTATIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string annotations;
@@ -76,7 +76,7 @@ static OpcodeInitializer _ENT_SET_ANNOTATIONS(ENT_SET_ANNOTATIONS, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ANNOTATIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto source = InterpretNode(ocn[0]);
@@ -120,7 +120,7 @@ static OpcodeInitializer _ENT_GET_COMMENTS(ENT_GET_COMMENTS, &Interpreter::Inter
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string comment;
@@ -165,7 +165,7 @@ static OpcodeInitializer _ENT_SET_COMMENTS(ENT_SET_COMMENTS, &Interpreter::Inter
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto source = InterpretNode(ocn[0]);
@@ -219,7 +219,7 @@ static OpcodeInitializer _ENT_GET_CONCURRENCY(ENT_GET_CONCURRENCY, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto n = InterpretNodeForImmediateUse(ocn[0]);
@@ -271,7 +271,7 @@ static OpcodeInitializer _ENT_SET_CONCURRENCY(ENT_SET_CONCURRENCY, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto source = InterpretNode(ocn[0]);
@@ -319,7 +319,7 @@ static OpcodeInitializer _ENT_GET_VALUE(ENT_GET_VALUE, &Interpreter::InterpretNo
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto n = InterpretNode(ocn[0]);
@@ -364,7 +364,7 @@ static OpcodeInitializer _ENT_SET_VALUE(ENT_SET_VALUE, &Interpreter::InterpretNo
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto source = InterpretNode(ocn[0]);
@@ -613,7 +613,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_COMMENTS(ENT_GET_ENTITY_COMMENTS, &Inte
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ANNOTATIONS_and_GET_ENTITY_COMMENTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(curEntity == nullptr)
+	if(curEntity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();

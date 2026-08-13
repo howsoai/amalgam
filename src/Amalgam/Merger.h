@@ -669,7 +669,7 @@ public:
 		else if(map_a.size() > 0 && map_b.size() > 0)
 		{
 			//include all keys that are in both nodes
-			for(auto &[n_key, _] : map_a)
+			for(auto &n_key : map_a | std::views::keys)
 			{
 				if(map_b.find(n_key) != end(map_b))
 					merged.emplace(n_key, NullValue);
@@ -680,7 +680,7 @@ public:
 			//but can skip if the merged is the same size as the map
 			if(map_a.size() != num_common_indices)
 			{
-				for(auto &[n_key, _] : map_a)
+				for(auto &n_key : map_a | std::views::keys)
 				{
 					if(KeepNonMergeableA())
 						merged.emplace(n_key, NullValue);
@@ -689,7 +689,7 @@ public:
 
 			if(map_b.size() != num_common_indices)
 			{
-				for(auto &[n_key, _] : map_b)
+				for(auto &n_key : map_b | std::views::keys)
 				{
 					if(KeepNonMergeableB())
 						merged.emplace(n_key, NullValue);

@@ -82,7 +82,7 @@ std::pair<ExecutionPermissions, ExecutionPermissions> ExecutionPermissions::Eval
 		permission_values = AllPermissions();
 	}
 
-	return std::make_pair(permissions_to_set, permission_values);
+	return {permissions_to_set, permission_values};
 }
 
 std::string OpcodeDetails::OpcodeDataTypeToString(DataType odt)

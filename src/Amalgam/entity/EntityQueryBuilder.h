@@ -880,7 +880,7 @@ namespace EntityQueryBuilder
 		{
 		case ENT_QUERY_BETWEEN: //all double parameter query types
 		case ENT_QUERY_NOT_BETWEEN:
-			if(ocn.size() < 3)
+			if(ocn.size() < 3) [[unlikely]]
 				return;
 			break;
 
@@ -888,14 +888,14 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_GREATER_OR_EQUAL_TO:
 		case ENT_QUERY_NOT_EQUALS:
 		case ENT_QUERY_EQUALS:
-			if(ocn.size() < 2)
+			if(ocn.size() < 2) [[unlikely]]
 				return;
 			break;
 
 		case ENT_QUERY_MIN:
 		case ENT_QUERY_MAX:
 		case ENT_QUERY_VALUE_MASSES:
-			if(ocn.size() < 1)
+			if(ocn.size() < 1) [[unlikely]]
 				return;
 			break;
 
@@ -967,7 +967,7 @@ namespace EntityQueryBuilder
 			if(ocn.size() >= 1)
 				label_sid = EvaluableNode::ToStringIDIfExists(ocn[0]);
 
-			if(!Entity::IsLabelValidAndPublic(label_sid))
+			if(!Entity::IsLabelValidAndPublic(label_sid)) [[unlikely]]
 			{
 				cur_condition->queryType = ENT_NULL;
 				return;

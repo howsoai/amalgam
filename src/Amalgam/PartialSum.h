@@ -144,7 +144,7 @@ public:
 
 		size_t num_set = 0;
 		for(size_t offset = start_offset; offset < end_offset; offset++)
-			num_set += __popcnt64(buffer[offset].mask);
+			num_set += std::popcount(buffer[offset].mask);
 		return num_set;
 	}
 
@@ -166,7 +166,7 @@ public:
 
 		size_t num_filled = 0;
 		for(size_t offset = start_offset; offset < end_offset; offset++)
-			num_filled += __popcnt64(buffer[offset].mask);
+			num_filled += std::popcount(buffer[offset].mask);
 
 		return std::make_pair(num_filled, sum);
 	}

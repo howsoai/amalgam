@@ -45,25 +45,6 @@
 
 #endif
 
-//defines __popcnt64 if it doesn't exist
-//platform independent intrinsic for bit count on a 64-bit var
-#if defined(__GNUC__)
-#define __popcnt64 __builtin_popcountll
-#elif !defined(_MSC_VER)
-size_t __popcnt64(uint64_t x)
-{
-	size_t bit_count = 0;
-	while(x > 0)
-	{
-		if(x & 1)
-			bit_count++;
-
-		x <<= 1;
-	}
-	return bit_count;
-}
-#endif
-
 //ensure strdup is portable
 #if defined(_MSC_VER)
 #define PORTABLE_STRDUP _strdup
@@ -72,43 +53,6 @@ size_t __popcnt64(uint64_t x)
 #else
 #define PORTABLE_STRDUP strdup
 #endif
-
-//returns the offset of the first bit set in x, starting at 0 as the least significant bit
-inline size_t Platform_FindFirstBitSet(uint64_t x)
-{
-#if defined(__GNUC__)
-	return __builtin_ctzll(x);
-#elif defined(_MSC_VER)
-	unsigned long bit;
-	_BitScanForward64(&bit, x);
-	return bit;
-#else
-	size_t bit = 0;
-	while((x & (1ULL << bit)) == 0)
-		bit++;
-	return bit;
-#endif
-}
-
-//returns the offset of the last bit set in x, starting at 63 as the most significant bit
-inline size_t Platform_FindLastBitSet(uint64_t x)
-{
-#if defined(__GNUC__)
-	//counts the number of leading zeros, so need to find the difference between that
-	// and the number of digits to find the first 1
-	//note that this is different behavior than the other two implementations below because of what is returned
-	return 63 - __builtin_clzll(x);
-#elif defined(_MSC_VER)
-	unsigned long bit;
-	_BitScanReverse64(&bit, x);
-	return bit;
-#else
-	size_t bit = 63;
-	while((x & (1ULL << bit)) == 0)
-		bit--;
-	return bit;
-#endif
-}
 
 //changes argv into string_view for easier use
 inline std::vector<std::string_view> Platform_ArgvToStringViews(int argc, char **argv)

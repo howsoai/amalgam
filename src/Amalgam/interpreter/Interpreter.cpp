@@ -910,6 +910,7 @@ static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints
 	case InterpreterConstraints::ViolationType::NodeAllocation:
 		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Node allocation limit exceeded")), true);
 	default:
+		[[unlikely]]
 		//cases should be exhaustive, so this is unreachable
 		AmlgAssert(false);
 	}

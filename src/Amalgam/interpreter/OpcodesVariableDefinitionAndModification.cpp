@@ -213,7 +213,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 		//get the current layer of the stack
 		EvaluableNode *scope = GetCurrentScopeStackContext();
-		if(scope == nullptr)	//this shouldn't happen, but just in case it does
+		if(scope == nullptr) [[unlikely]]	//this shouldn't happen, but just in case it does
 			return EvaluableNodeReference::Null();
 
 		if(!need_to_interpret_required_vars)

@@ -549,7 +549,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 	{
 		//get list
 		auto list = InterpretNode(ocn[1]);
-		if(list == nullptr)
+		if(list == nullptr) [[unlikely]]
 			return EvaluableNodeReference::Null();
 
 		if(list->IsOrderedArray())
@@ -1224,7 +1224,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		}
 
 		auto list = InterpretNode(ocn[list_index]);
-		if(EvaluableNode::IsNull(list))
+		if(EvaluableNode::IsNull(list)) [[unlikely]]
 			return EvaluableNodeReference::Null();
 
 		EvaluableNodeReference result_list(list, list.unique, list.uniqueUnreferencedTopNode);
@@ -1299,7 +1299,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	//get list
 	auto list = InterpretNode(ocn[list_index]);
 	//if null, just return a new null, since it has no child nodes
-	if(EvaluableNode::IsNull(list) || list->IsTerminal())
+	if(EvaluableNode::IsNull(list) || list->IsTerminal()) [[unlikely]]
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(list);
 		return EvaluableNodeReference::Null();

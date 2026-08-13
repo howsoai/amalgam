@@ -1690,13 +1690,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 	auto node_stack = mp.interpreter->CreateOpcodeStackStateSaver(n);
 
 	//shouldn't happen, but just to be safe
-	if(n == nullptr)
+	if(n == nullptr) [[unlikely]]
 		return nullptr;
 
 	(mp.references)[tree] = n;
 
 	//this shouldn't happen - it should be a node of type ENT_NULL, but check just in case
-	if(n == nullptr)
+	if(n == nullptr) [[unlikely]]
 		return nullptr;
 
 	if(n->IsAssociativeArray())

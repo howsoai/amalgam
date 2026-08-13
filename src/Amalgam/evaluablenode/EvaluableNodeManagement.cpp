@@ -210,7 +210,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 
 	EvaluableNode *lab_node = AllocNodeFromLocalAllocationBufferIfAvailable();
 
-	//Fast Path; get node from thread local buffer
+	//fast path; get node from thread local buffer
 	if(lab_node != nullptr)
 		return lab_node;
 
@@ -532,7 +532,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 	EvaluableNode *copy = AllocNode(tree, dacp.copyMetadata);
 
 	//shouldn't happen, but just to be safe
-	if(copy == nullptr)
+	if(copy == nullptr) [[unlikely]]
 		return std::make_pair(nullptr, false);
 
 	//start without needing a cycle check in case it can be cleared
@@ -801,7 +801,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			cur_node->SetNeedCycleCheck(true);
 
 			auto parent_record = checked_to_parent.find(cur_node);
-			if(parent_record == end(checked_to_parent))
+			if(parent_record == end(checked_to_parent)) [[unlikely]]
 			{
 				AmlgAssert(false);
 			}
@@ -885,12 +885,12 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 	if(!inserted)
 		return std::make_pair(true, en->GetIsIdempotent());
 
-	if(!en->IsNodeValid() || en->GetKnownToBeInUse())
+	if(!en->IsNodeValid() || en->GetKnownToBeInUse()) [[unlikely]]
 		AmlgAssert(false);
 
 	if(existing_nodes != nullptr)
 	{
-		if(existing_nodes->find(en) == end(*existing_nodes))
+		if(existing_nodes->find(en) == end(*existing_nodes)) [[unlikely]]
 			AmlgAssert(false);
 	}
 
@@ -929,10 +929,10 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 		}
 	}
 
-	if(!child_nodes_idempotent && en->GetIsIdempotent())
+	if(!child_nodes_idempotent && en->GetIsIdempotent()) [[unlikely]]
 		AmlgAssert(false);
 
-	if(check_cycle_flag_consistency && !child_nodes_cycle_free && !en->GetNeedCycleCheck())
+	if(check_cycle_flag_consistency && !child_nodes_cycle_free && !en->GetNeedCycleCheck()) [[unlikely]]
 		AmlgAssert(false);
 
 	return std::make_pair(!en->GetNeedCycleCheck(), en->GetIsIdempotent());

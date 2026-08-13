@@ -654,11 +654,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 	}
 
 	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
-	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
+	if(source_entity_1 == nullptr || source_entity_2 == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//need a source entity, and shouldn't copy self
-	if(source_entity_1 == curEntity || source_entity_2 == curEntity)
+	if(source_entity_1 == curEntity || source_entity_2 == curEntity) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging
@@ -822,11 +822,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 	}
 
 	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
-	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
+	if(source_entity_1 == nullptr || source_entity_2 == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//need a source entity, and shouldn't copy self
-	if(source_entity_1 == curEntity || source_entity_2 == curEntity)
+	if(source_entity_1 == curEntity || source_entity_2 == curEntity) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging
@@ -1197,11 +1197,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	}
 
 	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
-	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
+	if(source_entity_1 == nullptr || source_entity_2 == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//need a source entity, and shouldn't copy self
-	if(source_entity_1 == curEntity || source_entity_2 == curEntity)
+	if(source_entity_1 == curEntity || source_entity_2 == curEntity) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging

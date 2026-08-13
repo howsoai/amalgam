@@ -1402,7 +1402,7 @@ static EvaluableNode *GetNodeFromNodeAndWalkPath(EvaluableNode *node, EvaluableN
 
 EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 {
-	if(path == nullptr)
+	if(path == nullptr) [[unlikely]]
 		return nullptr;
 
 	//traverse based on type

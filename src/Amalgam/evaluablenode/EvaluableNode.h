@@ -1486,7 +1486,7 @@ public:
 	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(debugWatchMutex);
 	#endif
-		if(debugWatch.find(en) != end(debugWatch))
+		if(debugWatch.find(en) != end(debugWatch)) [[unlikely]]
 		{
 			AmlgAssert(false);
 		}

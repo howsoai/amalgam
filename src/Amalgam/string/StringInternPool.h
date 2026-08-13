@@ -541,14 +541,14 @@ protected:
 			return;
 
 		auto found = stringToID.find(sid.GetPointer()->stringData);
-		if(found == end(stringToID))
+		if(found == end(stringToID)) [[unlikely]]
 		{
 			AmlgAssert(false);
 			return;
 		}
 
 		StringID found_sid = found->second.get();
-		if(sid != found_sid)
+		if(sid != found_sid) [[unlikely]]
 		{
 			AmlgAssert(false);
 		}

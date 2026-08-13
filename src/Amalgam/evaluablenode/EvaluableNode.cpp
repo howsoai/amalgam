@@ -256,7 +256,7 @@ StringInternPool::StringID EvaluableNode::ToStringIDTakingReferenceAndClearing(E
 void EvaluableNode::ConvertListToNumberedAssoc()
 {
 	//don't do anything if no child nodes
-	if(!DoesEvaluableNodeTypeUseOrderedData(GetType()))
+	if(!DoesEvaluableNodeTypeUseOrderedData(GetType())) [[unlikely]]
 	{
 		InitMappedChildNodes();
 		type = ENT_ASSOC;
@@ -284,7 +284,7 @@ void EvaluableNode::ConvertListToNumberedAssoc()
 void EvaluableNode::ConvertAssocToList()
 {
 	//don't do anything if no child nodes
-	if(!IsAssociativeArray())
+	if(!IsAssociativeArray()) [[unlikely]]
 		return;
 
 	OrderedType new_ocn;
@@ -330,7 +330,7 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 
 bool EvaluableNode::IsNodeValid()
 {
-	if(!IsEvaluableNodeTypeValid(type))
+	if(!IsEvaluableNodeTypeValid(type)) [[unlikely]]
 		return false;
 
 	//set a maximum number of valid elements of 100 million
@@ -433,7 +433,7 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 {
 	//don't do anything if copying from itself (note that some flat hash map structures don't copy well onto themselves)
-	if(n == this)
+	if(n == this) [[unlikely]]
 		return;
 
 	if(n == nullptr)
@@ -487,7 +487,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 {
 	//don't do anything if copying from itself
-	if(n == this)
+	if(n == this) [[unlikely]]
 		return;
 
 	if(n == nullptr)
@@ -757,7 +757,7 @@ size_t EvaluableNode::GetNumChildNodes()
 
 void EvaluableNode::SetOrderedChildNodes(const OrderedType &ocn, bool need_cycle_check, bool is_idempotent)
 {
-	if(!IsOrderedArray())
+	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
 	GetOrderedChildNodesReference() = ocn;
@@ -772,7 +772,7 @@ void EvaluableNode::SetOrderedChildNodes(const OrderedType &ocn, bool need_cycle
 
 void EvaluableNode::SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check, bool is_idempotent)
 {
-	if(!IsOrderedArray())
+	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
 	GetOrderedChildNodesReference() = std::move(ocn);
@@ -787,7 +787,7 @@ void EvaluableNode::SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_chec
 
 void EvaluableNode::ClearOrderedChildNodes()
 {
-	if(!IsOrderedArray())
+	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
 	GetOrderedChildNodesReference().clear();
@@ -799,7 +799,7 @@ void EvaluableNode::ClearOrderedChildNodes()
 
 void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 {
-	if(!IsOrderedArray())
+	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
 	GetOrderedChildNodesReference().emplace_back(cn);
@@ -809,7 +809,7 @@ void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 
 void EvaluableNode::AppendOrderedChildNodes(const OrderedType &ocn_to_append)
 {
-	if(!IsOrderedArray())
+	if(!IsOrderedArray()) [[unlikely]]
 		return;
 
 	auto &ocn = GetOrderedChildNodesReference();
@@ -870,7 +870,7 @@ EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const StringInternPool
 
 void EvaluableNode::SetMappedChildNodes(AssocType &new_mcn, bool copy, bool need_cycle_check, bool is_idempotent)
 {
-	if(!IsAssociativeArray())
+	if(!IsAssociativeArray()) [[unlikely]]
 		return;
 
 	auto &mcn = GetMappedChildNodesReference();
@@ -897,7 +897,7 @@ void EvaluableNode::SetMappedChildNodes(AssocType &new_mcn, bool copy, bool need
 
 std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::string &id, EvaluableNode *node, bool overwrite)
 {
-	if(!IsAssociativeArray())
+	if(!IsAssociativeArray()) [[unlikely]]
 		return std::make_pair(false, nullptr);
 
 	auto &mcn = GetMappedChildNodesReference();
@@ -922,7 +922,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::s
 
 std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite)
 {
-	if(!IsAssociativeArray())
+	if(!IsAssociativeArray()) [[unlikely]]
 		return std::make_pair(false, nullptr);
 
 	auto &mcn = GetMappedChildNodesReference();
@@ -950,7 +950,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const String
 
 bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite)
 {
-	if(!IsAssociativeArray())
+	if(!IsAssociativeArray()) [[unlikely]]
 	{
 		string_intern_pool.DestroyStringReference(sid);
 		return false;
@@ -977,7 +977,7 @@ bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPoo
 
 void EvaluableNode::ClearMappedChildNodes()
 {
-	if(!IsAssociativeArray())
+	if(!IsAssociativeArray()) [[unlikely]]
 		return;
 
 	auto &map = GetMappedChildNodesReference();

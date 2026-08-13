@@ -356,7 +356,7 @@ public:
 		const EvaluableNodeImmediateValueWithType &value, BitArrayIntegerSet &out)
 	{
 		auto column = labelIdToColumnIndex.find(feature_sid);
-		if(column == labelIdToColumnIndex.end())
+		if(column == labelIdToColumnIndex.end()) [[unlikely]]
 		{
 			out.clear();
 			return;
@@ -384,7 +384,7 @@ public:
 		BitArrayIntegerSet *enabled_indices, BitArrayIntegerSet &out)
 	{
 		auto column = labelIdToColumnIndex.find(feature_sid);
-		if(column == labelIdToColumnIndex.end())
+		if(column == labelIdToColumnIndex.end()) [[unlikely]]
 		{
 			out.clear();
 			return;

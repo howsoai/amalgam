@@ -249,7 +249,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 			auto &new_value_entry = new_value_entry_iter->second;
 			auto old_value_entry = sortedNumberValueEntries.find(old_number_value);
 
-			if(old_value_entry == end(sortedNumberValueEntries))
+			if(old_value_entry == end(sortedNumberValueEntries)) [[unlikely]]
 				AmlgAssert(false);
 
 			//if there are multiple entries for this number, just remove the id from the old value
@@ -289,7 +289,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 
 			size_t new_value_index = 0;
 			auto old_id_entry = stringIdValueEntries.find(old_sid_value);
-			if(old_id_entry == end(stringIdValueEntries))
+			if(old_id_entry == end(stringIdValueEntries)) [[unlikely]]
 				AmlgAssert(false);
 
 			//if there are multiple entries for this string, just move the id
@@ -364,7 +364,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 
 				//need to emplace above before searching to ensure new_size_entry does not become invalidated
 				auto old_size_entry = valueCodeSizeToIndices.find(old_code_size);
-				if(old_size_entry == end(valueCodeSizeToIndices))
+				if(old_size_entry == end(valueCodeSizeToIndices)) [[unlikely]]
 					AmlgAssert(false);
 
 				//if there are multiple entries for this string, just move the id
@@ -441,7 +441,7 @@ void SBFDSColumnData::RemoveIndexValue(EvaluableNodeImmediateValueType value_typ
 
 		//look up value
 		auto value_entry = sortedNumberValueEntries.find(resolved_value.number);
-		if(value_entry == end(sortedNumberValueEntries))
+		if(value_entry == end(sortedNumberValueEntries)) [[unlikely]]
 			AmlgAssert(false);
 
 		//if the bucket has only one entry, we must delete the entire bucket
@@ -466,7 +466,7 @@ void SBFDSColumnData::RemoveIndexValue(EvaluableNodeImmediateValueType value_typ
 		auto resolved_value = ResolveValue(value_type, value);
 
 		auto id_entry = stringIdValueEntries.find(resolved_value.stringID);
-		if(id_entry == end(stringIdValueEntries))
+		if(id_entry == end(stringIdValueEntries)) [[unlikely]]
 			AmlgAssert(false);
 
 		auto &entities = id_entry->second->indicesWithValue;
@@ -492,7 +492,7 @@ void SBFDSColumnData::RemoveIndexValue(EvaluableNodeImmediateValueType value_typ
 		//find the entities that have the corresponding size
 		size_t num_indices = EvaluableNode::GetDeepSize(value.code);
 		auto id_entry = valueCodeSizeToIndices.find(num_indices);
-		if(id_entry == end(valueCodeSizeToIndices))
+		if(id_entry == end(valueCodeSizeToIndices)) [[unlikely]]
 			AmlgAssert(false);
 
 		//remove the entity
@@ -606,7 +606,7 @@ void SBFDSColumnData::FindAllIndicesWithinRange(EvaluableNodeImmediateValueType 
 	if(value_type == ENIVT_NUMBER)
 	{
 		//there are no ids for this column, so return no results
-		if(sortedNumberValueEntries.size() == 0)
+		if(sortedNumberValueEntries.size() == 0) [[unlikely]]
 			return;
 
 		//make a copy because passed by reference, and may need to change value for logic below
@@ -689,7 +689,7 @@ void SBFDSColumnData::FindAllIndicesWithinRange(EvaluableNodeImmediateValueType 
 	}
 	else if(value_type == ENIVT_STRING_ID)
 	{
-		if(stringIdValueEntries.size() == 0)
+		if(stringIdValueEntries.size() == 0) [[unlikely]]
 			return;
 
 		//check every string value to see if between
@@ -724,7 +724,7 @@ void SBFDSColumnData::FindMinMax(EvaluableNodeImmediateValueType value_type, siz
 	if(value_type == ENIVT_NUMBER)
 	{
 		//there are no ids for this column, so return no results
-		if(sortedNumberValueEntries.size() == 0)
+		if(sortedNumberValueEntries.size() == 0) [[unlikely]]
 			return;
 
 		if(find_max)
@@ -768,7 +768,7 @@ void SBFDSColumnData::FindMinMax(EvaluableNodeImmediateValueType value_type, siz
 	}
 	else if(value_type == ENIVT_STRING_ID)
 	{
-		if(stringIdValueEntries.size() == 0)
+		if(stringIdValueEntries.size() == 0) [[unlikely]]
 			return;
 
 		//else it's a string, need to do it the brute force way

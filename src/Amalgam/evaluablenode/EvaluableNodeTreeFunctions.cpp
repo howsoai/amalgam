@@ -207,7 +207,7 @@ EvaluableNode *id_path_1, EvaluableNode *id_path_2)
 EvaluableNode *GetTraversalIDPathFromAToB(EvaluableNodeManager *enm, Entity *a, Entity *b)
 {
 	//shouldn't happen, but check
-	if(b == nullptr)
+	if(b == nullptr) [[unlikely]]
 		return nullptr;
 
 	//if immediate entity, can return a string instead of a list

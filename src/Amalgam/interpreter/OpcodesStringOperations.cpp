@@ -51,7 +51,7 @@ static OpcodeInitializer _ENT_EXPLODE(ENT_EXPLODE, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto [valid, str] = InterpretNodeIntoStringValue(ocn[0]);
@@ -145,7 +145,7 @@ static OpcodeInitializer _ENT_SPLIT(ENT_SPLIT, &Interpreter::InterpretNode_ENT_S
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
@@ -338,7 +338,7 @@ static OpcodeInitializer _ENT_SUBSTR(ENT_SUBSTR, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//if only string as the parameter, just return a new copy of the string
@@ -690,7 +690,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, 
 	//build string from all child nodes
 	auto &ocn = en->GetOrderedChildNodesReference();
 
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//if only one parameter is specified, do a fast shortcut
@@ -766,7 +766,7 @@ static OpcodeInitializer _ENT_PARSE(ENT_PARSE, &Interpreter::InterpretNode_ENT_P
 EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool transactional_parse = false;
@@ -828,7 +828,7 @@ static OpcodeInitializer _ENT_UNPARSE(ENT_UNPARSE, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool pretty = false;

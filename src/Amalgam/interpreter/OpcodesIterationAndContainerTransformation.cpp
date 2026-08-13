@@ -76,7 +76,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_params = ocn.size();
 
-	if(num_params < 2)
+	if(num_params < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get the index of the start index based on how many parameters there are, if there is a function
@@ -85,7 +85,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	double range_start = InterpretNodeIntoNumberValue(ocn[index_of_start + 0]);
 	double range_end = InterpretNodeIntoNumberValue(ocn[index_of_start + 1]);
 
-	if(FastIsNaN(range_start) || FastIsNaN(range_end))
+	if(FastIsNaN(range_start) || FastIsNaN(range_end)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//default step size
@@ -406,11 +406,11 @@ static OpcodeInitializer _ENT_REWRITE(ENT_REWRITE, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
-	if(EvaluableNode::IsNull(function))
+	if(EvaluableNode::IsNull(function)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
@@ -537,7 +537,7 @@ static OpcodeInitializer _ENT_MAP(ENT_MAP, &Interpreter::InterpretNode_ENT_MAP, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
@@ -549,7 +549,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 	{
 		//get list
 		auto list = InterpretNode(ocn[1]);
-		if(list == nullptr)
+		if(list == nullptr) [[unlikely]]
 			return EvaluableNodeReference::Null();
 
 		if(list->IsOrderedArray())
@@ -841,7 +841,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			if(cur_input->IsAssociativeArray())
 			{
 				need_assoc = true;
-				for(auto &[n_id, _] : cur_input->GetMappedChildNodesReference())
+				for(auto &n_id : cur_input->GetMappedChildNodesReference() | std::views::keys)
 				{
 					auto [inserted_node, inserted] = all_keys.insert(n_id);
 					//if it was inserted, then need to keep track of the string reference
@@ -1146,7 +1146,7 @@ static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference function = EvaluableNodeReference::Null();
@@ -1224,7 +1224,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		}
 
 		auto list = InterpretNode(ocn[list_index]);
-		if(EvaluableNode::IsNull(list))
+		if(EvaluableNode::IsNull(list)) [[unlikely]]
 			return EvaluableNodeReference::Null();
 
 		EvaluableNodeReference result_list(list, list.unique, list.uniqueUnreferencedTopNode);
@@ -1299,7 +1299,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	//get list
 	auto list = InterpretNode(ocn[list_index]);
 	//if null, just return a new null, since it has no child nodes
-	if(EvaluableNode::IsNull(list) || list->IsTerminal())
+	if(EvaluableNode::IsNull(list) || list->IsTerminal()) [[unlikely]]
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(list);
 		return EvaluableNodeReference::Null();
@@ -1704,7 +1704,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 	auto &ocn = en->GetOrderedChildNodesReference();
 
 	size_t num_params = ocn.size();
-	if(num_params < 1)
+	if(num_params < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//single list, return itself
@@ -1873,7 +1873,7 @@ static OpcodeInitializer _ENT_REDUCE(ENT_REDUCE, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
@@ -2121,7 +2121,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_params = ocn.size();
-	if(num_params < 1)
+	if(num_params < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get the indices of the parameters based on how many there are
@@ -2273,18 +2273,18 @@ static OpcodeInitializer _ENT_UNZIP(ENT_UNZIP, &Interpreter::InterpretNode_ENT_U
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto zipped = InterpretNode(ocn[0]);
-	if(EvaluableNode::IsNull(zipped))
+	if(EvaluableNode::IsNull(zipped)) [[unlikely]]
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	auto node_stack = CreateOpcodeStackStateSaver(zipped);
 	auto index_list = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PopEvaluableNode();
 
-	if(EvaluableNode::IsNull(index_list))
+	if(EvaluableNode::IsNull(index_list)) [[unlikely]]
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	auto &index_list_ocn = index_list->GetOrderedChildNodes();
@@ -2411,12 +2411,12 @@ static OpcodeInitializer _ENT_REVERSE(ENT_REVERSE, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get the list to reverse
 	auto list = InterpretNode(ocn[0]);
-	if(list == nullptr)
+	if(list == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//make sure it is an editable copy
@@ -2633,7 +2633,7 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	size_t list_index = (ocn.size() == 1 ? 0 : 1);

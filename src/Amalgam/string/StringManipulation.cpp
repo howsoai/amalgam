@@ -11,6 +11,7 @@
 #include <charconv>
 #include <iterator>
 #include <limits>
+#include <ranges>
 #include <sstream>
 #include <string>
 
@@ -109,14 +110,10 @@ std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_str
 
 std::vector<std::string> StringManipulation::Split(std::string_view s, char delim)
 {
-	std::vector<std::string> ret;
-	std::stringstream ss{ std::string(s) };
-	std::string item;
-
-	while(std::getline(ss, item, delim))
-		ret.push_back(item);
-
-	return ret;
+	std::vector<std::string> out;
+	for(auto sub : s | std::views::split(delim))
+		out.emplace_back(sub.begin(), sub.end());
+	return out;
 }
 
 std::vector<std::string> StringManipulation::SplitByLines(std::string_view full_string)

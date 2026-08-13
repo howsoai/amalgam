@@ -8,6 +8,9 @@
 #include "Interpreter.h"
 #include "Merger.h"
 
+//system headers
+#include <ranges>
+
 Entity *EntityManipulation::EntitiesMergeMethod::MergeValues(Entity *a, Entity *b, bool must_merge)
 {
 	if(a == nullptr && b == nullptr)
@@ -424,7 +427,7 @@ MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *ent
 	//find all contained entities that have the same name
 	//reserve enough in one block for all in entity1, as an upper bound
 	std::vector<StringInternPool::StringID> matching_entities(entity1_unmatched.size());
-	for(auto &[e1c_id, _] : entity1_unmatched)
+	for(auto &e1c_id : entity1_unmatched | std::views::keys)
 	{
 		if(entity2_unmatched.find(e1c_id) != end(entity2_unmatched))
 			matching_entities.emplace_back(e1c_id);
@@ -516,7 +519,7 @@ void EntityManipulation::MergeContainedEntities(EntitiesMergeMethod *mm, Entity 
 	//find all contained entities that have the same id
 	std::vector<StringInternPool::StringID> matching_entities;
 	matching_entities.reserve(entity1_unmatched.size());	//reserve enough in one block for all in entity1 to reduce potential reallocations
-	for(auto &[_, e1c] : entity1_unmatched)
+	for(auto &e1c : entity1_unmatched | std::views::values)
 	{
 		StringInternPool::StringID e1c_id = e1c->GetIdStringId();
 		if(entity2_unmatched.find(e1c_id) != end(entity2_unmatched))

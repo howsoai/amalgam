@@ -274,7 +274,7 @@ public:
 	// As the distance grows, this constant, which is already small, becomes insignificant with regard to the difference.
 	// However, adding this constant is necessary to preserve nearest neighbor ordering near the boundary of
 	// s_deviation_expansion.
-	//TODO: when change to C++20, can make ComputeDifferenceWithDeviation constexpr and can run at compile time
+	//Can be computed as follows:
 	// GeneralizedDistanceEvaluator dist_eval;
 	// dist_eval.featureAttribs.resize(1);
 	// dist_eval.featureAttribs[0].deviation = 1;
@@ -482,7 +482,7 @@ public:
 		double prob_class_given_nonmatch = std::numeric_limits<double>::quiet_NaN();
 
 		if(sdm.size() == 0)
-			return std::make_pair(prob_class_given_match, prob_class_given_nonmatch);
+			return {prob_class_given_match, prob_class_given_nonmatch};
 
 		auto a_deviations_it = sdm.find(nominal_value_a);
 		if(a_deviations_it != std::end(sdm))
@@ -505,7 +505,7 @@ public:
 				prob_class_given_nonmatch = (1 - deviations.defaultDeviation) / nonmatching_classes;
 		}
 
-		return std::make_pair(prob_class_given_match, prob_class_given_nonmatch);
+		return {prob_class_given_match, prob_class_given_nonmatch};
 	}
 
 	//returns the distance term given that it is nominal

@@ -57,7 +57,7 @@ static OpcodeInitializer _ENT_CREATE_ENTITIES(ENT_CREATE_ENTITIES, &Interpreter:
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -169,7 +169,7 @@ static OpcodeInitializer _ENT_CLONE_ENTITIES(ENT_CLONE_ENTITIES, &Interpreter::I
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -280,7 +280,7 @@ static OpcodeInitializer _ENT_MOVE_ENTITIES(ENT_MOVE_ENTITIES, &Interpreter::Int
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -382,7 +382,7 @@ static OpcodeInitializer _ENT_DESTROY_ENTITIES(ENT_DESTROY_ENTITIES, &Interprete
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool all_destroys_successful = true;
@@ -534,11 +534,11 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(ExecutionPermissions::Permission::LOAD))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::LOAD)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -673,19 +673,19 @@ static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::Interpr
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(ExecutionPermissions::Permission::LOAD))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::LOAD)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(path.empty())
+	if(path.empty()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string file_type = "";
@@ -866,15 +866,15 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(ExecutionPermissions::Permission::STORE))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::STORE)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(path.empty())
+	if(path.empty()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto to_store = InterpretNodeForImmediateUse(ocn[1]);
@@ -1010,15 +1010,15 @@ static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::Inter
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(ExecutionPermissions::Permission::STORE))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::STORE)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(path.empty())
+	if(path.empty()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string file_type = "";
@@ -1105,11 +1105,11 @@ static OpcodeInitializer _ENT_CONTAINS_ENTITY(ENT_CONTAINS_ENTITY, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//not allowed if don't have a Entity to create within
-	if(curEntity == nullptr)
+	if(curEntity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
@@ -1182,7 +1182,7 @@ static OpcodeInitializer _ENT_FLATTEN_ENTITY(ENT_FLATTEN_ENTITY, &Interpreter::I
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool include_rand_seeds = true;
@@ -1234,7 +1234,7 @@ static OpcodeInitializer _ENT_RETRIEVE_ENTITY_ROOT(ENT_RETRIEVE_ENTITY_ROOT, &In
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(curEntity == nullptr)
+	if(curEntity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -1290,7 +1290,7 @@ static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Inte
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -1400,7 +1400,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_PERMISSIONS(ENT_GET_ENTITY_PERMISSIONS,
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(curEntity == nullptr)
+	if(curEntity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -1458,11 +1458,11 @@ static OpcodeInitializer _ENT_SET_ENTITY_PERMISSIONS(ENT_SET_ENTITY_PERMISSIONS,
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//retrieve parameter to determine whether to deep set the seeds, if applicable

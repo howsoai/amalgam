@@ -180,7 +180,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 		{
 			std::vector<StringInternPool::StringID> key_sids;
 			key_sids.reserve(mcn.size());
-			for(auto &[key, _] : mcn)
+			for(auto &key : mcn | std::views::keys)
 				key_sids.push_back(key);
 
 			std::sort(begin(key_sids), end(key_sids), StringIDNaturalCompareSort);
@@ -327,17 +327,17 @@ EvaluableNode *EvaluableNodeJSONTranslation::JsonToEvaluableNode(EvaluableNodeMa
 std::pair<std::string, bool> EvaluableNodeJSONTranslation::EvaluableNodeToJson(EvaluableNode *code, bool sort_keys)
 {
 	if(code == nullptr)
-		return std::make_pair("null", true);
+		return {"null", true};
 
 	//if need cycle check, double-check
 	if(!EvaluableNode::CanNodeTreeBeFlattened(code))
-		return std::make_pair("", false);
+		return {"", false};
 
 	std::string json_str;
 	if(EvaluableNodeToJsonStringRecurse(code, json_str, sort_keys))
-		return std::make_pair(json_str, true);
+		return {json_str, true};
 	else
-		return std::make_pair("", false);
+		return {"", false};
 }
 
 EvaluableNode *EvaluableNodeJSONTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)

@@ -6,6 +6,7 @@
 
 //system headers:
 #include <memory>
+#include <ranges>
 
 //if the macro PEDANTIC_GARBAGE_COLLECTION is defined, then garbage collection will be performed
 //after every opcode, to help find and debug memory issues
@@ -498,7 +499,7 @@ public:
 
 				if(cur->IsAssociativeArray())
 				{
-					for(auto &[_, child] : cur->GetMappedChildNodesReference())
+					for(auto &child : cur->GetMappedChildNodesReference() | std::views::values)
 					{
 						if(child != nullptr)
 							node_stack.push_back(child);
@@ -540,7 +541,7 @@ public:
 
 				if(cur->IsAssociativeArray())
 				{
-					for(auto &[_, e] : cur->GetMappedChildNodesReference())
+					for(auto &e : cur->GetMappedChildNodesReference() | std::views::values)
 					{
 						if(e != nullptr && !e->IsNodeDeallocated())
 							node_stack.push_back(e);
@@ -583,7 +584,7 @@ public:
 		//seed the buffer with the direct children of tree
 		if(tree->IsAssociativeArray())
 		{
-			for(auto &[_, e] : tree->GetMappedChildNodesReference())
+			for(auto &e : tree->GetMappedChildNodesReference() | std::views::values)
 			{
 				if(e != nullptr)
 					node_stack.push_back(e);
@@ -611,7 +612,7 @@ public:
 
 			if(cur->IsAssociativeArray())
 			{
-				for(auto &[_, child] : cur->GetMappedChildNodesReference())
+				for(auto &child : cur->GetMappedChildNodesReference() | std::views::values)
 				{
 					if(child != nullptr)
 						node_stack.push_back(child);
@@ -636,10 +637,8 @@ public:
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		//fence memory flushing by using an atomic store
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		std::atomic<EvaluableNode *> *atomic_ref
-			= reinterpret_cast<std::atomic<EvaluableNode *> *>(&rootNode);
-		atomic_ref->store(new_root, std::memory_order_release);
+		std::atomic_ref atomic_ref(rootNode);
+		atomic_ref.store(new_root, std::memory_order_release);
 	#else
 		rootNode = new_root;
 	#endif

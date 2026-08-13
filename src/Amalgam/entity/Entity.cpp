@@ -241,7 +241,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 {
 	//can only work with assoc arrays
 	if(!EvaluableNode::IsAssociativeArray(new_label_values))
-		return std::make_pair(false, false);
+		return {false, false};
 
 	//if relevant, keep track of new memory allocated to the entity
 	size_t prev_size = 0;
@@ -323,10 +323,8 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 			#ifdef MULTITHREAD_SUPPORT
 				//fence memory to ensure flags are up to date by flushing by using an atomic store
-				//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-				std::atomic<EvaluableNode *> *atomic_ref
-					= reinterpret_cast<std::atomic<EvaluableNode *> *>(&label_iterator->second);
-				atomic_ref->store(new_label_value, std::memory_order_release);
+				std::atomic_ref atomic_ref(label_iterator->second);
+				atomic_ref.store(new_label_value, std::memory_order_release);
 			#else
 				label_iterator->second = new_label_value;
 			#endif
@@ -358,7 +356,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		}
 	}
 
-	return std::make_pair(any_successful_assignment, all_successful_assignments);
+	return {any_successful_assignment, all_successful_assignments};
 }
 
 std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remove,
@@ -374,7 +372,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 	else if(EvaluableNode::IsOrderedArray(labels_to_remove))
 		labels_to_remove_ocn = labels_to_remove->GetOrderedChildNodesReference();
 	else
-		return std::make_pair(false, false);
+		return {false, false};
 
 	std::vector<std::pair<StringInternPool::StringID, EvaluableNode *>> label_sids_and_values_to_remove;
 	label_sids_and_values_to_remove.reserve(labels_to_remove_ocn.size());
@@ -430,7 +428,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		evaluableNodeManager.FreeNode(new_root);
 	}
 
-	return std::make_pair(any_successful_remove, all_successful_removes);
+	return {any_successful_remove, all_successful_removes};
 }
 
 EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,

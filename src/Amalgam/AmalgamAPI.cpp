@@ -304,7 +304,7 @@ extern "C"
 
 	void DeleteString(char *p)
 	{
-		delete[] p;
+		free(p);
 	}
 
 	// ************************************

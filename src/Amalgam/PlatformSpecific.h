@@ -115,17 +115,9 @@ inline std::pair<double, bool> Platform_StringToNumber(const StringType &s)
 #else
 	// FALLBACK FOR APPLECLANG, WASM, AND OLDER PLATFORMS
 
-	const char *start_pointer = s.data();
-
-	// Fast safety check: if s is a type like std::string, s[s.size()] is guaranteed 
-	// to be '\0' in C++11 and later. If it's a slice or view, we must copy it.
-	std::string fallback_copy;
-	if(start_pointer[s.size()] != '\0')
-	{
-		fallback_copy.assign(start_pointer, s.size());
-		start_pointer = fallback_copy.data();
-	}
-
+	//need to ensure has null terminator
+	std::string zero_terminated_copy(s);
+	const char *start_pointer = zero_terminated_copy.data();
 	char *end_pointer = nullptr;
 	double value = 0.0;
 

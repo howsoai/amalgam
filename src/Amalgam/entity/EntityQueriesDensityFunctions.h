@@ -188,28 +188,12 @@ public:
 	}
 
 #ifdef MULTITHREAD_SUPPORT
-	//placeholder function to implement C++20 functionality around std::atomic_ref<double>
-	//TODO: remove this when migrating to C++20
-	static inline double fetch_add_double(double &atomic_value,
-								   double arg,
-								   std::memory_order order = std::memory_order_seq_cst)
+	//adding doubles with optional atomicity based on build
+	static inline double fetch_add_double(double &atomic_value, double arg,
+		std::memory_order order = std::memory_order_seq_cst)
 	{
-		//reinterpret as atomic 64-bit integer to support C++17 limitations
-		auto *atomic_ptr = reinterpret_cast<std::atomic<std::uint64_t>*>(&atomic_value);
-
-		std::uint64_t expected = atomic_ptr->load(order);
-		for(;;)
-		{
-			double cur_val = *reinterpret_cast<double *>(&expected);
-			double new_val = cur_val + arg;
-			std::uint64_t desired = *reinterpret_cast<std::uint64_t *>(&new_val);
-
-			//try to replace the old bit pattern with the new one.
-			if(atomic_ptr->compare_exchange_weak(expected, desired, order, std::memory_order_relaxed))
-				return *reinterpret_cast<double *>(&expected);
-
-			//on failure expected has the new value
-		}
+		std::atomic_ref atomic(atomic_value);
+		return atomic.fetch_add(arg, order);
 	}
 #else
 	static inline double fetch_add_double(double &value,

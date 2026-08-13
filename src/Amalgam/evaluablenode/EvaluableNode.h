@@ -882,23 +882,20 @@ public:
 #ifdef MULTITHREAD_SUPPORT
 	__forceinline bool HasAttributeAtomic(Attribute attr)
 	{
-		//TODO 15993: once C++20 is allowed, change type to atomic_ref
-		const std::atomic<AttributeStorageType> *atomic_ref
-			= reinterpret_cast<const std::atomic<AttributeStorageType>*>(&attributes);
-		AttributeStorageType cur = atomic_ref->load(std::memory_order_seq_cst);
+		std::atomic_ref atomic_ref(attributes);
+		AttributeStorageType cur = atomic_ref.load(std::memory_order_seq_cst);
 		return (cur & static_cast<AttributeStorageType>(attr)) != 0;
 	}
 
 	__forceinline void SetAttributeAtomic(Attribute attr, bool enable = true)
 	{
 		AttributeStorageType mask = static_cast<AttributeStorageType>(attr);
-		//TODO 15993: once C++20 is allowed, change type to atomic_ref
-		std::atomic<AttributeStorageType> *atomic_ref
-			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
+
+		std::atomic_ref atomic_ref(attributes);
 		if(enable)
-			atomic_ref->fetch_or(mask, std::memory_order_seq_cst);
+			atomic_ref.fetch_or(mask, std::memory_order_seq_cst);
 		else
-			atomic_ref->fetch_and(~mask, std::memory_order_seq_cst);
+			atomic_ref.fetch_and(~mask, std::memory_order_seq_cst);
 	}
 
 	//returns true if the bit was successfully set (was previously unset)
@@ -906,17 +903,15 @@ public:
 	__forceinline bool TrySetAttributeAtomic(Attribute attr)
 	{
 		constexpr AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::KNOWN_TO_BE_IN_USE);
-		//TODO 15993: once C++20 is allowed, change type to atomic_ref
-		std::atomic<AttributeStorageType> *atomic_ref
-			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
 
 		//check if already set, relaxed is fine for early-out
-		AttributeStorageType current_flags = atomic_ref->load(std::memory_order_relaxed);
+		std::atomic_ref atomic_ref(attributes);
+		AttributeStorageType current_flags = atomic_ref.load(std::memory_order_relaxed);
 		if(current_flags & mask)
 			return false;
 
 		//slow path to actually set the value
-		while(!atomic_ref->compare_exchange_weak(current_flags, current_flags | mask,
+		while(!atomic_ref.compare_exchange_weak(current_flags, current_flags | mask,
 			std::memory_order_acquire, std::memory_order_relaxed))
 		{
 			//see if another thread set it
@@ -991,19 +986,16 @@ public:
 	__forceinline bool SetIsFreeableAtomic(bool is_freeable)
 	{
 		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE);
-
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		std::atomic<AttributeStorageType> *atomic_ref
-			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
+		std::atomic_ref atomic_ref(attributes);
 
 		if(is_freeable)
 		{
-			AttributeStorageType previous_value = atomic_ref->fetch_or(mask);
+			AttributeStorageType previous_value = atomic_ref.fetch_or(mask);
 			return (previous_value & mask) != 0;
 		}
 		else
 		{
-			AttributeStorageType previous_value = atomic_ref->fetch_and(~mask);
+			AttributeStorageType previous_value = atomic_ref.fetch_and(~mask);
 			return (previous_value & mask) != 0;
 		}
 	}
@@ -1037,18 +1029,15 @@ public:
 	{
 		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
 
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		std::atomic<AttributeStorageType> *atomic_ref
-			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
-
+		std::atomic_ref atomic_ref(attributes);
 		if(is_freeable)
 		{
-			AttributeStorageType previous_value = atomic_ref->fetch_or(mask);
+			AttributeStorageType previous_value = atomic_ref.fetch_or(mask);
 			return (previous_value & mask) != 0;
 		}
 		else
 		{
-			AttributeStorageType previous_value = atomic_ref->fetch_and(~mask);
+			AttributeStorageType previous_value = atomic_ref.fetch_and(~mask);
 			return (previous_value & mask) != 0;
 		}
 	}
@@ -1068,8 +1057,8 @@ public:
 		else
 			attributes &= ~static_cast<AttributeStorageType>(mask);
 
-		return std::make_pair((previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
-			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0);
+		return { (previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
+			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0 };
 	}
 
 #ifdef MULTITHREAD_SUPPORT
@@ -1079,20 +1068,16 @@ public:
 	{
 		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE)
 			| static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
-
 		AttributeStorageType previous_value;
 
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		std::atomic<AttributeStorageType> *atomic_ref
-			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
-
+		std::atomic_ref atomic_ref(attributes);
 		if(is_freeable)
-			previous_value = atomic_ref->fetch_or(mask);
+			previous_value = atomic_ref.fetch_or(mask);
 		else
-			previous_value = atomic_ref->fetch_and(~mask);
+			previous_value = atomic_ref.fetch_and(~mask);
 
-		return std::make_pair((previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
-			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0);
+		return { (previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
+			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0 };
 	}
 #endif
 
@@ -1501,7 +1486,7 @@ public:
 	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(debugWatchMutex);
 	#endif
-		if(debugWatch.find(en) != end(debugWatch))
+		if(debugWatch.find(en) != end(debugWatch)) [[unlikely]]
 		{
 			AmlgAssert(false);
 		}

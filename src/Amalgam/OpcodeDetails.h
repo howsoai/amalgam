@@ -655,7 +655,7 @@ inline std::string GetStringFromEvaluableNodeType(EvaluableNodeType t, bool get_
 	if(!get_non_keywords && IsEvaluableNodeTypeTerminalNode(t))
 		return "";
 
-	if(t >= NUM_VALID_ENT_OPCODES)
+	if(t >= NUM_VALID_ENT_OPCODES) [[unlikely]]
 	{
 		AmlgAssert(false);
 		return "";

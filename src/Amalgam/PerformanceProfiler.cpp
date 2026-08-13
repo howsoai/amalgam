@@ -352,7 +352,7 @@ std::pair<int64_t, int64_t> PerformanceProfiler::GetTotalAndPositiveMemoryIncrea
 		if(c.second.totalMemChangeExclusive > 0)
 			positive_mem_increase += c.second.totalMemChangeExclusive;
 	}
-	return std::make_pair(total_mem_increase, positive_mem_increase);
+	return {total_mem_increase, positive_mem_increase};
 }
 
 template<typename StatValueType, typename CounterValueType, typename CounterMapType>

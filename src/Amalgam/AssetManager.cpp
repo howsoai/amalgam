@@ -165,9 +165,9 @@ static std::pair<bool, std::string> FindVersionStringInAmlgMetadata(std::ifstrea
 
 	std::smatch match;
 	if(std::regex_search(str, match, pattern))
-		return std::make_pair(true, match[1].str());
+		return {true, match[1].str()};
 	else
-		return std::make_pair(false, "");
+		return {false, ""};
 }
 
 //returns a pair of success followed by version number if a version can be found in an Amalgam execute on load file
@@ -184,9 +184,9 @@ std::pair<bool, std::string> FindVersionStringInAmlgExecOnLoad(std::ifstream &fi
 
 	std::smatch match;
 	if(std::regex_search(str, match, pattern))
-		return std::make_pair(true, match[1].str());
+		return {true, match[1].str()};
 	else
-		return std::make_pair(false, "");
+		return {false, ""};
 }
 
 std::tuple<std::string, std::string, bool> AssetManager::GetFileStatus(std::string &resource_path)
@@ -778,7 +778,7 @@ std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::st
 	auto sem_ver = StringManipulation::Split(version, '-'); //split on postfix
 	auto version_split = StringManipulation::Split(sem_ver[0], '.'); //ignore postfix
 	if(version_split.size() != 3)
-		return std::make_pair("Error: Invalid version number", false);
+		return {"Error: Invalid version number", false};
 
 	std::string message;
 
@@ -810,7 +810,7 @@ std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::st
 	if(print_warnings && !message.empty())
 		std::cerr << message << ", version=" << version << std::endl;
 
-	return std::make_pair(message, true);
+	return {message, true};
 }
 
 std::string AssetManager::GetEvaluableNodeSourceFromComments(EvaluableNode *en)

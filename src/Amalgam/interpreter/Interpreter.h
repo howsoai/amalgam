@@ -74,7 +74,8 @@ public:
 	//collects garbage on evaluableNodeManager
 	__forceinline void CollectGarbage()
 	{
-		if(evaluableNodeManager->RecommendGarbageCollection())
+		//marked as unlikely because it should be called << 1% of the time
+		if(evaluableNodeManager->RecommendGarbageCollection()) [[unlikely]]
 		{
 		#ifdef MULTITHREAD_SUPPORT
 			evaluableNodeManager->CollectGarbageWithConcurrentAccess(memoryModificationLock);
@@ -267,7 +268,7 @@ public:
 			#endif
 			}
 		}
-		return std::make_pair(any_constructions, any_set);
+		return {any_constructions, any_set};
 	}
 
 	//calls SetSideEffectsFlags and updates performance counters for node if applicable

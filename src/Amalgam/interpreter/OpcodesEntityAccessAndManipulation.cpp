@@ -358,7 +358,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 	else
 		target_entity = EntityReadReference(curEntity);
 
-	if(target_entity == nullptr)
+	if(target_entity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get the value(s)

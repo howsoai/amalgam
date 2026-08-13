@@ -2277,14 +2277,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 		return EvaluableNodeReference::Null();
 
 	auto zipped = InterpretNode(ocn[0]);
-	if(EvaluableNode::IsNull(zipped))
+	if(EvaluableNode::IsNull(zipped)) [[unlikely]]
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	auto node_stack = CreateOpcodeStackStateSaver(zipped);
 	auto index_list = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PopEvaluableNode();
 
-	if(EvaluableNode::IsNull(index_list))
+	if(EvaluableNode::IsNull(index_list)) [[unlikely]]
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	auto &index_list_ocn = index_list->GetOrderedChildNodes();

@@ -45,14 +45,6 @@
 
 #endif
 
-//ensure strdup is portable
-#if defined(_MSC_VER)
-#define PORTABLE_STRDUP _strdup
-#pragma warning(disable : 4996)
-#else
-#define PORTABLE_STRDUP strdup
-#endif
-
 //changes argv into string_view for easier use
 inline std::vector<std::string_view> Platform_ArgvToStringViews(int argc, char **argv)
 {

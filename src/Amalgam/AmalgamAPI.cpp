@@ -33,6 +33,19 @@ extern "C"
 	// helper functions (not in API)
 	// ************************************
 
+	// WARNING: when using StringToCharPtr & StringToWCharPtr, ownership
+	//          of the memory is returned to caller. When sending strings
+	//          across the library boundary, the callers must free the
+	//          memory using 'DeleteString', otherwise a leak occurs.
+
+	char *StringToCharPtr(std::string &value)
+	{
+		char *out = new char[value.size() + 1];
+		std::memcpy(out, value.data(), value.size());
+		out[value.size()] = '\0';
+		return out;
+	}
+
 	wchar_t *StringToWCharPtr(std::string &value)
 	{
 		std::wstring widestr = std::wstring(value.begin(), value.end());
@@ -67,12 +80,12 @@ extern "C"
 			char *entity_path_alloc = new char[sizeof(char *) * entity_path_len];
 			entity_path = reinterpret_cast<char **>(entity_path_alloc);
 			for(size_t i = 0; i < entity_path_len; i++)
-				entity_path[i] = strdup(status.entity_path[i].c_str());
+				entity_path[i] = StringToCharPtr(status.entity_path[i]);
 		}
 		return {
 			status.loaded,
-			strdup(status.message.c_str()),
-			strdup(status.version.c_str()),
+			StringToCharPtr(status.message),
+			StringToCharPtr(status.version),
 			entity_path,
 			entity_path_len
 		};
@@ -123,7 +136,7 @@ extern "C"
 	{
 		std::string h(handle);
 		std::string ret = entint.GetEntityPermissions(h);
-		return strdup(ret.c_str());
+		return StringToCharPtr(ret);
 	}
 
 	bool SetEntityPermissions(char *handle, char *json_permissions)
@@ -165,7 +178,7 @@ extern "C"
 		std::string_view params(json_file_params);
 		std::vector<std::string> eps(entity_path, entity_path + entity_path_len);
 		bool success = entint.StoreEntity(h, EntityExternalInterface::StoreToMemory{ d }, ft, persistent, params, eps);
-		// This is the same fundamental API as strdup(.c_str()) above; the caller needs to
+		// This is the same fundamental API as StringToCharPtr() above; the caller needs to
 		// DeleteString() on the result.
 		char *out = new char[d.size() + 1];
 		std::memcpy(out, d.data(), d.size());
@@ -197,7 +210,7 @@ extern "C"
 		std::string h(handle);
 		std::string l(label);
 		std::string ret = entint.GetJSONFromLabel(h, l);
-		return strdup(ret.c_str());
+		return StringToCharPtr(ret);
 	}
 
 	wchar_t *GetVersionStringWide()
@@ -209,7 +222,7 @@ extern "C"
 	char *GetVersionString()
 	{
 		std::string version(AMALGAM_VERSION_STRING);
-		return strdup(version.c_str());
+		return StringToCharPtr(version);
 	}
 
 	wchar_t *GetConcurrencyTypeStringWide()
@@ -221,7 +234,7 @@ extern "C"
 	char *GetConcurrencyTypeString()
 	{
 		std::string ct = ConcurrencyType();
-		return strdup(ct.c_str());
+		return StringToCharPtr(ct);
 	}
 
 	wchar_t *ExecuteEntityJsonPtrWide(char *handle, char *label, char *json)
@@ -239,7 +252,7 @@ extern "C"
 		std::string l(label);
 		std::string_view j(json);
 		std::string ret = entint.ExecuteEntityJSON(h, l, j);
-		return strdup(ret.c_str());
+		return StringToCharPtr(ret);
 	}
 
 	ResultWithLog ExecuteEntityJsonPtrLogged(char *handle, char *label, char *json)
@@ -249,8 +262,8 @@ extern "C"
 		std::string_view j(json);
 		std::pair<std::string, std::string> ret = entint.ExecuteEntityJSONLogged(h, l, j);
 		ResultWithLog rwl;
-		rwl.json = strdup(ret.first.c_str());
-		rwl.log = strdup(ret.second.c_str());
+		rwl.json = StringToCharPtr(ret.first);
+		rwl.log = StringToCharPtr(ret.second);
 		return rwl;
 	}
 
@@ -267,7 +280,7 @@ extern "C"
 		std::string h(handle);
 		std::string a(amlg);
 		std::string ret = entint.EvalOnEntity(h, a);
-		return strdup(ret.c_str());
+		return StringToCharPtr(ret);
 	}
 
 	void DestroyEntity(char *handle)
@@ -304,7 +317,7 @@ extern "C"
 
 	void DeleteString(char *p)
 	{
-		free(p);
+		delete[] p;
 	}
 
 	// ************************************

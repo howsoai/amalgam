@@ -154,28 +154,26 @@ public:
 		waitForTask.notify_one();
 	}
 
-	//enqueues a task into the thread pool comprised of a function and arguments, automatically inferring the function type
 	template<class FunctionType, class ...ArgsType>
-	inline std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> EnqueueTaskWithResult(FunctionType &&function, ArgsType &&...args)
+	[[nodiscard]] std::future<typename std::invoke_result<FunctionType, ArgsType...>::type>
+		EnqueueTaskWithResult(FunctionType &&function, ArgsType&&... args)
 	{
-		using return_type = typename std::invoke_result<FunctionType, ArgsType ...>::type;
+		using return_type = typename std::invoke_result<FunctionType, ArgsType...>::type;
 
-		//create a shared pointer of the task, as we don't know which could happen first, either
-		// this function will return and the thread will free the memory, or the thread could return really fast
-		// and this function will need to clean up the memory, but both need a valid reference
-		auto task = std::make_shared< std::packaged_task<return_type()> >(
-										std::bind(std::forward<FunctionType>(function), std::forward<ArgsType>(args) ...)
-		);
+		//create a shared packaged_task that will hold the callable
+		//the lambda captures the function and a tuple of its arguments, then uses std::apply to invoke it
+		auto task = std::make_shared<std::packaged_task<return_type()>>(
+			[func = std::forward<FunctionType>(function),
+			 tup = std::make_tuple(std::forward<ArgsType>(args)...)]() mutable {
+					 return std::apply(std::move(func), std::move(tup));
+			});
 
-		//hold the future to return
 		std::future<return_type> result = task->get_future();
 
 		EnqueueTask(
-			[task]()
-			{
-				(*task)();
-			}
-		);
+			[task]() mutable {
+					(*task)();
+			});
 
 		return result;
 	}

@@ -41,7 +41,7 @@ public:
 	using KeywordLookupType = FastHashMap<std::string, EvaluableNodeType>;
 
 	//EvaluableNode assoc storage
-	using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
+	using AssocType = OrderedHashMap<StringInternPool::StringID, EvaluableNode *>;
 
 	//EvaluableNode ordered storage
 	using OrderedType = CompactVector<EvaluableNode *>;

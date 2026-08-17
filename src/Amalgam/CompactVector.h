@@ -29,14 +29,14 @@ public:
 		if(n == 0)
 			return;
 
-		vecMemory = allocate_raw(n);
-		T *d = data_ptr();
+		vecMemory = AllocateRaw(n);
+		T *d = GetDataPointer();
 
 		for(size_type i = 0; i < n; ++i)
 			new (d + i) T();
 
-		set_size(n);
-		set_capacity(n);
+		SetSize(n);
+		SetCapacity(n);
 	}
 
 	CompactVector(size_type n, const T &value)
@@ -44,14 +44,14 @@ public:
 		if(n == 0)
 			return;
 
-		vecMemory = allocate_raw(n);
-		T *d = data_ptr();
+		vecMemory = AllocateRaw(n);
+		T *d = GetDataPointer();
 
 		for(size_type i = 0; i < n; ++i)
 			new (d + i) T(value);
 
-		set_size(n);
-		set_capacity(n);
+		SetSize(n);
+		SetCapacity(n);
 	}
 
 	//range constructor (input iterator)
@@ -66,14 +66,14 @@ public:
 		if(n == 0)
 			return;
 
-		vecMemory = allocate_raw(n, large);
-		T *d = data_ptr();
+		vecMemory = AllocateRaw(n, large);
+		T *d = GetDataPointer();
 		size_type i = 0;
 		for(auto it = first; it != last; ++it, ++i)
 			new (d + i) T(*it);
 
-		set_size(n);
-		set_capacity(n, large);
+		SetSize(n);
+		SetCapacity(n, large);
 	}
 
 	CompactVector(const CompactVector &other)
@@ -82,9 +82,9 @@ public:
 		if(n == 0)
 			return;
 
-		vecMemory = allocate_raw(n);
-		T *dst = data_ptr();
-		const T *src = other.data_ptr();
+		vecMemory = AllocateRaw(n);
+		T *dst = GetDataPointer();
+		const T *src = other.GetDataPointer();
 
 		if constexpr(trivially_relocatable_v)
 		{
@@ -96,8 +96,8 @@ public:
 				new (dst + i) T(src[i]);
 		}
 
-		set_size(n);
-		set_capacity(n);
+		SetSize(n);
+		SetCapacity(n);
 	}
 
 	CompactVector(CompactVector &&other) noexcept
@@ -113,7 +113,7 @@ public:
 
 	~CompactVector()
 	{
-		destroy_all();
+		DestroyAll();
 	}
 
 	CompactVector &operator=(const CompactVector &other)
@@ -121,13 +121,13 @@ public:
 		if(this == &other)
 			return *this;
 
-		destroy_all();
+		DestroyAll();
 		if(other.size() == 0)
 			return *this;
 
-		vecMemory = allocate_raw(other.size());
-		T *dst = data_ptr();
-		const T *src = other.data_ptr();
+		vecMemory = AllocateRaw(other.size());
+		T *dst = GetDataPointer();
+		const T *src = other.GetDataPointer();
 
 		if constexpr(trivially_relocatable_v)
 		{
@@ -139,8 +139,8 @@ public:
 				new (dst + i) T(src[i]);
 		}
 
-		set_size(other.size());
-		set_capacity(other.size());
+		SetSize(other.size());
+		SetCapacity(other.size());
 		return *this;
 	}
 
@@ -148,7 +148,7 @@ public:
 	{
 		if(this != &other)
 		{
-			destroy_all();
+			DestroyAll();
 			vecMemory = other.vecMemory;
 			other.vecMemory = nullptr;
 		}
@@ -163,12 +163,12 @@ public:
 
 	inline reference operator[](size_type pos) noexcept
 	{
-		return data_ptr()[pos];
+		return GetDataPointer()[pos];
 	}
 
 	inline const_reference operator[](size_type pos) const noexcept
 	{
-		return data_ptr()[pos];
+		return GetDataPointer()[pos];
 	}
 
 	inline reference at(size_type pos)
@@ -209,12 +209,12 @@ public:
 
 	inline T *data() noexcept
 	{
-		return data_ptr();
+		return GetDataPointer();
 	}
 
 	inline const T *data() const noexcept
 	{
-		return data_ptr();
+		return GetDataPointer();
 	}
 
 	inline bool empty() const noexcept
@@ -224,7 +224,7 @@ public:
 
 	inline size_type size() const noexcept
 	{
-		if(!vecMemory)
+		if(vecMemory == nullptr)
 			return 0;
 
 		return reinterpret_cast<Header *>(vecMemory)->size;
@@ -232,7 +232,7 @@ public:
 
 	size_type capacity() const noexcept
 	{
-		if(!vecMemory)
+		if(vecMemory == nullptr)
 			return 0;
 
 		return reinterpret_cast<Header *>(vecMemory)->capacity;
@@ -243,11 +243,11 @@ public:
 		if(new_capacity <= capacity())
 			return;
 
-		void *new_vec_mem = allocate_raw(new_capacity);
+		void *new_vec_mem = AllocateRaw(new_capacity);
 		T *new_data = reinterpret_cast<T *>(static_cast<char *>(new_vec_mem) + sizeof(Header));
 
 		//move existing elements
-		T *old_data = data_ptr();
+		T *old_data = GetDataPointer();
 		size_type cur_size = size();
 
 		if(old_data != nullptr)
@@ -261,12 +261,12 @@ public:
 				for(size_type i = 0; i < cur_size; i++)
 					new (new_data + i) T(std::move(old_data[i]));
 			}
-			deallocate_raw(vecMemory);
+			DeallocateRaw(vecMemory);
 		}
 
 		vecMemory = new_vec_mem;
-		set_size(cur_size);
-		set_capacity(new_capacity);
+		SetSize(cur_size);
+		SetCapacity(new_capacity);
 	}
 
 	void shrink_to_fit()
@@ -277,12 +277,12 @@ public:
 
 		if(size() == 0)
 		{
-			destroy_all();
+			DestroyAll();
 			return;
 		}
 
-		T *old_data = data_ptr();
-		void *new_vec_mem = allocate_raw(cur_size);
+		T *old_data = GetDataPointer();
+		void *new_vec_mem = AllocateRaw(cur_size);
 		T *new_data = reinterpret_cast<T *>(static_cast<char *>(new_vec_mem) + sizeof(Header));
 
 		if constexpr(trivially_relocatable_v)
@@ -294,11 +294,11 @@ public:
 			for(size_type i = 0; i < cur_size; i++)
 				new (new_data + i) T(std::move(old_data[i]));
 		}
-		deallocate_raw(vecMemory);
+		DeallocateRaw(vecMemory);
 
 		vecMemory = new_vec_mem;
-		set_size(cur_size);
-		set_capacity(cur_size);
+		SetSize(cur_size);
+		SetCapacity(cur_size);
 	}
 
 	//move‑or‑copy existing elements into a newly allocated buffer
@@ -321,40 +321,40 @@ public:
 		else
 		{
 			if constexpr(!trivially_relocatable_v)
-				destroy_range(data + new_size, data + prev_size);
+				DestroyRange(data + new_size, data + prev_size);
 		}
 
-		set_size(new_size);
+		SetSize(new_size);
 	}
 
 	void clear() noexcept
 	{
-		destroy_range(data_ptr(), data_ptr() + size());
-		set_size(0);
+		DestroyRange(GetDataPointer(), GetDataPointer() + size());
+		SetSize(0);
 	}
 
 	void push_back(const T &value)
 	{
 		if(capacity() == 0 || size() == capacity())
 		{
-			size_type new_cap = new_increased_capacity(capacity());
+			size_type new_cap = NextIncreasedCapacity(capacity());
 			reserve(new_cap);
 		}
 
-		new (data_ptr() + size()) T(value);
-		set_size(size() + 1);
+		new (GetDataPointer() + size()) T(value);
+		SetSize(size() + 1);
 	}
 
 	void push_back(T &&value)
 	{
 		if(capacity() == 0 || size() == capacity())
 		{
-			size_type new_cap = new_increased_capacity(capacity());
+			size_type new_cap = NextIncreasedCapacity(capacity());
 			reserve(new_cap);
 		}
 
-		new (data_ptr() + size()) T(std::move(value));
-		set_size(size() + 1);
+		new (GetDataPointer() + size()) T(std::move(value));
+		SetSize(size() + 1);
 	}
 
 	template<class... Args>
@@ -362,13 +362,13 @@ public:
 	{
 		if(capacity() == 0 || size() == capacity())
 		{
-			size_type new_cap = new_increased_capacity(capacity());
+			size_type new_cap = NextIncreasedCapacity(capacity());
 			reserve(new_cap);
 		}
 
-		T *p = data_ptr() + size();
+		T *p = GetDataPointer() + size();
 		new (p) T(std::forward<Args>(args)...);
-		set_size(size() + 1);
+		SetSize(size() + 1);
 		return *p;
 	}
 
@@ -377,9 +377,9 @@ public:
 		if(empty())
 			return;
 
-		T *p = data_ptr() + size() - 1;
+		T *p = GetDataPointer() + size() - 1;
 		p->~T();
-		set_size(size() - 1);
+		SetSize(size() - 1);
 	}
 
 	template<class... Args>
@@ -389,19 +389,19 @@ public:
 
 		if(capacity() == 0)
 		{
-			const size_type new_cap = new_increased_capacity(capacity());
+			const size_type new_cap = NextIncreasedCapacity(capacity());
 			reserve(new_cap);
 		}
 		else if(size() == capacity())
 		{
 			//get index before reallocation
-			index = static_cast<size_type>(data_ptr() - cbegin());
+			index = static_cast<size_type>(GetDataPointer() - cbegin());
 
-			const size_type new_cap = new_increased_capacity(capacity());
+			const size_type new_cap = NextIncreasedCapacity(capacity());
 			reserve(new_cap);
 		}
 
-		T *data = data_ptr();
+		T *data = GetDataPointer();
 		T *insertion_point = data + index;
 
 		if(index == size())
@@ -429,7 +429,7 @@ public:
 			new (insertion_point) T(std::forward<Args>(args)...);
 		}
 
-		set_size(size() + 1);
+		SetSize(size() + 1);
 		return data + index;
 	}
 
@@ -456,11 +456,11 @@ public:
 		{
 			size_type new_cap = capacity();
 			while(new_cap < new_size)
-				new_cap = new_increased_capacity(new_cap);
+				new_cap = NextIncreasedCapacity(new_cap);
 			reserve(new_cap);
 		}
 
-		T *data = data_ptr();
+		T *data = GetDataPointer();
 		T *insertion_point = data + index;
 
 		//move the tail far enough to make space for the new range
@@ -481,7 +481,7 @@ public:
 		for(size_type i = 0; i < count; ++i)
 			new (insertion_point + i) T(value);
 
-		set_size(new_size);
+		SetSize(new_size);
 		return data + index;
 	}
 
@@ -503,11 +503,11 @@ public:
 		{
 			size_type new_cap = capacity();
 			while(new_cap < new_size)
-				new_cap = new_increased_capacity(new_cap);
+				new_cap = NextIncreasedCapacity(new_cap);
 			reserve(new_cap);
 		}
 
-		T *data = data_ptr();
+		T *data = GetDataPointer();
 		T *insertion_point = data + index;
 
 		//move existing tail rightwards
@@ -529,7 +529,7 @@ public:
 		for(InputIt it = first; it != last; ++it, ++dst)
 			new (dst) T(*it);
 
-		set_size(new_size);
+		SetSize(new_size);
 		return data + index;
 	}
 
@@ -544,10 +544,10 @@ public:
 		{
 			//destroy any existing elements beyond the new size
 			if(count < size())
-				destroy_range(data_ptr() + count, data_ptr() + size());
+				DestroyRange(GetDataPointer() + count, GetDataPointer() + size());
 
 			//construct/assign the first `count` elements
-			T *dst = data_ptr();
+			T *dst = GetDataPointer();
 			for(size_type i = 0; i < count; i++)
 			{
 				//reuse or construct as appropriate
@@ -557,21 +557,21 @@ public:
 					new (dst + i) T(value);
 			}
 
-			set_size(count);
+			SetSize(count);
 		}
 		else //need a bigger buffer, so destroy and create anew
 		{
-			destroy_all();
+			DestroyAll();
 
-			void *new_mem = allocate_raw(count);
+			void *new_mem = AllocateRaw(count);
 			T *new_data = reinterpret_cast<T *>(static_cast<char *>(new_mem) + sizeof(Header));
 
 			for(size_type i = 0; i < count; ++i)
 				new (new_data + i) T(value);
 
 			vecMemory = new_mem;
-			set_size(count);
-			set_capacity(count);
+			SetSize(count);
+			SetCapacity(count);
 		}
 	}
 
@@ -587,9 +587,9 @@ public:
 		{
 			// destroy excess elements, then copy/assign into the existing buffer
 			if(new_size < size())
-				destroy_range(data_ptr() + new_size, data_ptr() + size());
+				DestroyRange(GetDataPointer() + new_size, GetDataPointer() + size());
 
-			T *dst = data_ptr();
+			T *dst = GetDataPointer();
 			size_type i = 0;
 			for(InputIt it = first; it != last; ++it, ++i)
 			{
@@ -599,13 +599,13 @@ public:
 					new (dst + i) T(*it);   // construct fresh slot
 			}
 
-			set_size(new_size);
+			SetSize(new_size);
 		}
 		else //need a bigger buffer, so destroy and create anew
 		{
-			destroy_all();
+			DestroyAll();
 
-			void *new_mem = allocate_raw(new_size);
+			void *new_mem = AllocateRaw(new_size);
 			T *new_data = reinterpret_cast<T *>(static_cast<char *>(new_mem) + sizeof(Header));
 
 			size_type i = 0;
@@ -613,8 +613,8 @@ public:
 				new (new_data + i) T(*it);
 
 			vecMemory = new_mem;
-			set_size(new_size);
-			set_capacity(new_size);
+			SetSize(new_size);
+			SetCapacity(new_size);
 		}
 	}
 
@@ -629,7 +629,7 @@ public:
 		if(index >= size())
 			return end();
 
-		T *data = data_ptr();
+		T *data = GetDataPointer();
 		T *target = data + index;
 
 		target->~T();
@@ -648,7 +648,7 @@ public:
 			}
 		}
 
-		set_size(size() - 1);
+		SetSize(size() - 1);
 		return data + index;
 	}
 
@@ -660,10 +660,10 @@ public:
 		if(first_index >= last_index)
 			return const_cast<iterator>(first);
 
-		T *data = data_ptr();
+		T *data = GetDataPointer();
 
 		//destroy the elements to be removed
-		destroy_range(data + first_index, data + last_index);
+		DestroyRange(data + first_index, data + last_index);
 
 		const size_type shift_cnt = last_index - first_index;
 		const size_type tail_cnt = size() - last_index;
@@ -682,39 +682,39 @@ public:
 			}
 		}
 
-		set_size(size() - shift_cnt);
+		SetSize(size() - shift_cnt);
 		return data + first_index;
 	}
 
 
 	inline iterator begin() noexcept
 	{
-		return data_ptr();
+		return GetDataPointer();
 	}
 
 	inline const_iterator begin() const noexcept
 	{
-		return data_ptr();
+		return GetDataPointer();
 	}
 
 	inline const_iterator cbegin() const noexcept
 	{
-		return data_ptr();
+		return GetDataPointer();
 	}
 
 	inline iterator end() noexcept
 	{
-		return data_ptr() + size();
+		return GetDataPointer() + size();
 	}
 
 	inline const_iterator end() const noexcept
 	{
-		return data_ptr() + size();
+		return GetDataPointer() + size();
 	}
 
 	inline const_iterator cend() const noexcept
 	{
-		return data_ptr() + size();
+		return GetDataPointer() + size();
 	}
 
 	inline reverse_iterator rbegin() noexcept
@@ -780,34 +780,34 @@ protected:
 	static constexpr size_type align_of_T = alignof(T);
 	static constexpr size_type header_align = alignof(Header);
 
-	inline void set_size(size_type n) noexcept
+	inline void SetSize(size_type n) noexcept
 	{
 		if(vecMemory != nullptr)
 			reinterpret_cast<Header *>(vecMemory)->size = n;
 	}
 
-	inline void set_capacity(size_type capacity) noexcept
+	inline void SetCapacity(size_type capacity) noexcept
 	{
 		if(vecMemory != nullptr)
 			reinterpret_cast<Header *>(vecMemory)->capacity = capacity;
 	}
 
 	//pointer to the first element
-	inline T *data_ptr() noexcept
+	inline T *GetDataPointer() noexcept
 	{
-		if(!vecMemory)
+		if(vecMemory == nullptr)
 			return nullptr;
 
 		//data starts after the header
 		return reinterpret_cast<T *>(static_cast<char *>(vecMemory) + sizeof(Header));
 	}
 
-	inline const T *data_ptr() const noexcept
+	inline const T *GetDataPointer() const noexcept
 	{
-		return const_cast<CompactVector *>(this)->data_ptr();
+		return const_cast<CompactVector *>(this)->GetDataPointer();
 	}
 
-	inline static void *allocate_raw(size_type cap)
+	inline static void *AllocateRaw(size_type cap)
 	{
 		size_type total = sizeof(Header) + cap * sizeof(T);
 
@@ -816,9 +816,9 @@ protected:
 		return p;
 	}
 
-	inline static void deallocate_raw(void *ptr) noexcept
+	inline static void DeallocateRaw(void *ptr) noexcept
 	{
-		if(!ptr)
+		if(ptr == nullptr)
 			return;
 
 		size_type align = std::max(align_of_T, sizeof(Header));
@@ -826,7 +826,7 @@ protected:
 	}
 
 	//destroy elements in range [first, last)
-	inline void destroy_range(T *first, T *last) noexcept
+	inline void DestroyRange(T *first, T *last) noexcept
 	{
 		if constexpr(!std::is_trivially_destructible_v<T>)
 		{
@@ -835,19 +835,19 @@ protected:
 		}
 	}
 
-	inline void destroy_all() noexcept
+	inline void DestroyAll() noexcept
 	{
 		if(vecMemory == nullptr)
 			return;
 
-		T *p = data_ptr();
-		destroy_range(p, p + size());
-		deallocate_raw(vecMemory);
+		T *p = GetDataPointer();
+		DestroyRange(p, p + size());
+		DeallocateRaw(vecMemory);
 
 		vecMemory = nullptr;
 	}
 
-	inline size_type new_increased_capacity(size_type cur_capacity)
+	inline size_type NextIncreasedCapacity(size_type cur_capacity)
 	{
 		//increase capacity by just over golden ratio, rounded up to next integer
 		return cur_capacity == 0 ? 1

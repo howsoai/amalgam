@@ -53,6 +53,7 @@ public:
 	enum class Attribute : AttributeStorageType
 	{
 		NONE = 0,
+		//TODO 25549: remove this value
 		//if true, then contains an extended type
 		HAS_EXTENDED_VALUE = 1 << 0,
 		//if true, then this node and any nodes it contains may have a cycle so needs to be checked
@@ -111,9 +112,9 @@ public:
 
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		//use a value that is more apparent that something went wrong
-		value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+		value.numberValue = std::numeric_limits<double>::quiet_NaN();
 	#else
-		value.numberAndNullValueContainer.numberValue = 0;
+		value.numberValue = 0;
 	#endif
 
 		AnnotationsAndComments::Construct(annotationsAndComments);
@@ -129,7 +130,7 @@ public:
 
 		type = _type;
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
+		value.stringID = string_intern_pool.CreateStringReference(string_value);
 		AnnotationsAndComments::Construct(annotationsAndComments);
 
 		SetIsIdempotent(type == ENT_STRING);
@@ -144,7 +145,7 @@ public:
 
 		type = _type;
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
+		value.stringID = string_intern_pool.CreateStringReference(string_value);
 		AnnotationsAndComments::Construct(annotationsAndComments);
 
 		SetIsIdempotent(type == ENT_STRING);
@@ -161,12 +162,12 @@ public:
 		if(string_id == StringInternPool::NOT_A_STRING_ID)
 		{
 			type = ENT_NULL;
-			value.orderedChildNodesContainer.Construct();
+			value.numberValue = std::numeric_limits<double>::quiet_NaN();
 		}
 		else
 		{
 			type = _type;
-			value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_id);
+			value.stringID = string_intern_pool.CreateStringReference(string_id);
 		}
 
 		AnnotationsAndComments::Construct(annotationsAndComments);
@@ -186,12 +187,12 @@ public:
 		if(string_id == StringInternPool::NOT_A_STRING_ID)
 		{
 			type = ENT_NULL;
-			value.orderedChildNodesContainer.Construct();
+			value.numberValue = std::numeric_limits<double>::quiet_NaN();
 		}
 		else
 		{
 			type = _type;
-			value.stringValueContainer.stringID = string_id;
+			value.stringID = string_id;
 		}
 
 		AnnotationsAndComments::Construct(annotationsAndComments);
@@ -206,12 +207,12 @@ public:
 		if(FastIsNaN(number_value))
 		{
 			type = ENT_NULL;
-			value.orderedChildNodesContainer.Construct();
+			value.numberValue = std::numeric_limits<double>::quiet_NaN();
 		}
 		else
 		{
 			type = ENT_NUMBER;
-			value.numberAndNullValueContainer.numberValue = number_value;
+			value.numberValue = number_value;
 		}
 
 		AnnotationsAndComments::Construct(annotationsAndComments);
@@ -224,7 +225,7 @@ public:
 	{
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		type = ENT_BOOL;
-		value.boolValueContainer.boolValue = bool_value;
+		value.boolValue = bool_value;
 		AnnotationsAndComments::Construct(annotationsAndComments);
 
 		SetIsIdempotent(true);
@@ -251,19 +252,19 @@ public:
 
 		if(DoesEvaluableNodeTypeUseNullData(_type))
 		{
-			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+			value.numberValue = std::numeric_limits<double>::quiet_NaN();
 			SetIsIdempotent(true);
 			SetNeedCycleCheck(false);
 		}
 		if(DoesEvaluableNodeTypeUseBoolData(_type))
 		{
-			value.boolValueContainer.boolValue = false;
+			value.boolValue = false;
 			SetIsIdempotent(true);
 			SetNeedCycleCheck(false);
 		}
 		else if(DoesEvaluableNodeTypeUseNumberData(_type))
 		{
-			value.numberAndNullValueContainer.numberValue = 0.0;
+			value.numberValue = 0.0;
 			SetIsIdempotent(true);
 			SetNeedCycleCheck(false);
 		}
@@ -282,14 +283,14 @@ public:
 		{
 		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 			//use a value that is more apparent that something went wrong
-			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+			value.numberValue = std::numeric_limits<double>::quiet_NaN();
 		#else
-			value.numberAndNullValueContainer.numberValue = 0;
+			value.numberValue = 0;
 		#endif
 		}
 		else
 		{
-			value.orderedChildNodesContainer.Construct();
+			value.ConstructOrderedChildNodes();
 		}
 
 		AnnotationsAndComments::Construct(annotationsAndComments);
@@ -314,21 +315,7 @@ public:
 	//clears annotations and comments
 	__forceinline void ClearAnnotationsAndComments()
 	{
-		if(HasExtendedValue())
-		{
-			if(GetType() == ENT_ASSOC)
-			{
-				AssocType temp_mcn = std::move(*value.extendedMappedChildNodes.mappedChildNodes);
-				value.extendedMappedChildNodes.mappedChildNodes.~unique_ptr<AssocType>();
-				new (&value.mappedChildNodes) AssocType(std::move(temp_mcn));
-			}
-
-			SetExtendedValue(false);
-		}
-		else
-		{
-			GetAnnotationsAndCommentsStorage().Clear();
-		}
+		GetAnnotationsAndCommentsStorage().Clear();
 	}
 
 	//clears the node's metadata
@@ -641,7 +628,7 @@ public:
 	inline void InitNullValue()
 	{
 		DestructValue();
-		value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+		value.numberValue = std::numeric_limits<double>::quiet_NaN();
 		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
@@ -649,7 +636,7 @@ public:
 	inline void InitBoolValue()
 	{
 		DestructValue();
-		value.boolValueContainer.boolValue = false;
+		value.boolValue = false;
 		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
@@ -676,7 +663,7 @@ public:
 	inline void InitNumberValue()
 	{
 		DestructValue();
-		value.numberAndNullValueContainer.numberValue = 0.0;
+		value.numberValue = 0.0;
 		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
@@ -755,7 +742,7 @@ public:
 	inline void InitStringValue()
 	{
 		DestructValue();
-		value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
+		value.stringID = StringInternPool::NOT_A_STRING_ID;
 		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
@@ -1101,18 +1088,6 @@ public:
 	}
 #endif
 
-	//returns true if value contains an extended type
-	__forceinline bool HasExtendedValue()
-	{
-		return HasAttribute(Attribute::HAS_EXTENDED_VALUE);
-	}
-
-	//sets whether this node contains an extended type
-	__forceinline void SetExtendedValue(bool extended_value)
-	{
-		SetAttribute(Attribute::HAS_EXTENDED_VALUE, extended_value);
-	}
-
 	//returns the number of child nodes regardless of mapped or ordered
 	size_t GetNumChildNodes();
 
@@ -1185,7 +1160,7 @@ public:
 	inline void InitOrderedChildNodes()
 	{
 		DestructValue();
-		value.orderedChildNodesContainer.Construct();
+		value.ConstructOrderedChildNodes();
 		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
@@ -1286,12 +1261,7 @@ public:
 	inline void InitMappedChildNodes()
 	{
 		DestructValue();
-
-		if(!HasExtendedValue())
-			value.ConstructMappedChildNodes();
-		else
-			value.extendedMappedChildNodes.Construct();
-
+		value.ConstructMappedChildNodes();
 		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
@@ -1382,34 +1352,31 @@ public:
 	//assumes that the EvaluableNode is of type ENT_BOOL, and returns the value by reference
 	__forceinline bool &GetBoolValueReference()
 	{
-		return value.boolValueContainer.boolValue;
+		return value.boolValue;
 	}
 
 	//assumes that the EvaluableNode is of type ENT_NUMBER, and returns the value by reference
 	__forceinline double &GetNumberValueReference()
 	{
-		return value.numberAndNullValueContainer.numberValue;
+		return value.numberValue;
 	}
 
 	//assumes that the EvaluableNode is of type that holds a string, and returns the value by reference
 	__forceinline StringInternPool::StringID &GetStringIDReference()
 	{
-		return value.stringValueContainer.stringID;
+		return value.stringID;
 	}
 
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
 	__forceinline OrderedType &GetOrderedChildNodesReference()
 	{
-		return value.orderedChildNodesContainer.orderedChildNodes;
+		return value.orderedChildNodes;
 	}
 
 	//assumes that the EvaluableNode is has mapped child nodes, and returns the value by reference
 	__forceinline AssocType &GetMappedChildNodesReference()
 	{
-		if(!HasExtendedValue())
-			return value.mappedChildNodes;
-		else
-			return *value.extendedMappedChildNodes.mappedChildNodes.get();
+		return *value.mappedChildNodes;
 	}
 
 	//if it is storing an immediate value and has room to store a label
@@ -1604,74 +1571,40 @@ protected:
 		__forceinline  ~EvaluableNodeValue()
 		{}
 
+		__forceinline void ConstructOrderedChildNodes()
+		{
+			new (&orderedChildNodes) OrderedType;
+		}
+
+		__forceinline void DestructOrderedChildNodes()
+		{
+			orderedChildNodes.~OrderedType();
+		}
+
 		__forceinline void ConstructMappedChildNodes()
 		{
-			new (&mappedChildNodes) AssocType;
+			mappedChildNodes = new AssocType();
 		}
 
 		__forceinline void DestructMappedChildNodes()
 		{
-			string_intern_pool.DestroyStringReferences(mappedChildNodes, [](auto n) { return n.first; });
-			mappedChildNodes.~AssocType();
+			string_intern_pool.DestroyStringReferences(*mappedChildNodes, [](auto n) { return n.first; });
+			delete mappedChildNodes;
 		}
 
 		//hash-mapped child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
-		AssocType mappedChildNodes;
+		AssocType *mappedChildNodes;
 
 		//when type represents a string, holds the corresponding values
-		struct EvaluableNodeValueString
-		{
-			//string value
-			StringInternPool::StringID stringID;
-		} stringValueContainer;
+		StringInternPool::StringID stringID;
 
 		//when type represents a number, holds the corresponding value
 		//ENT_NULL also uses this with a NaN
-		struct EvaluableNodeValueNumber
-		{
-			//number value
-			double numberValue;
-		} numberAndNullValueContainer;
+		double numberValue;
 
-		//when type represents a bool, holds the corresponding value
-		struct EvaluableNodeValueBool
-		{
-			//bool value
-			bool boolValue;
-		} boolValueContainer;
+		bool boolValue;
 
-		struct EvaluableNodeValueOrderedChildNodes
-		{
-			__forceinline void Construct()
-			{
-				new (&orderedChildNodes) OrderedType;
-			}
-
-			__forceinline void Destruct()
-			{
-				orderedChildNodes.~OrderedType();
-			}
-
-			OrderedType orderedChildNodes;
-		} orderedChildNodesContainer;
-
-		struct EvaluableNodeValueMappedChildNodesWithAnnotationsAndComments
-		{
-			__forceinline void Construct()
-			{
-				new (&mappedChildNodes) std::unique_ptr<AssocType>(std::make_unique<AssocType>());
-			}
-
-			__forceinline void Destruct()
-			{
-				string_intern_pool.DestroyStringReferences(*mappedChildNodes, [](auto n) { return n.first; });
-				mappedChildNodes.~unique_ptr<AssocType>();
-			}
-
-			//external mappedChildNodes
-			std::unique_ptr<AssocType> mappedChildNodes;
-
-		} extendedMappedChildNodes;
+		OrderedType orderedChildNodes;
 	};
 
 	AnnotationsAndComments annotationsAndComments;
@@ -1689,22 +1622,14 @@ protected:
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:
-			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
+			string_intern_pool.DestroyStringReference(value.stringID);
 			break;
 		case ENT_ASSOC:
-			if(!HasExtendedValue())
-			{
-				value.DestructMappedChildNodes();
-			}
-			else
-			{
-				value.extendedMappedChildNodes.Destruct();
-				SetExtendedValue(false);
-			}
+			value.DestructMappedChildNodes();
 			break;
 			//otherwise ordered
 		default:
-			value.orderedChildNodesContainer.Destruct();
+			value.ConstructOrderedChildNodes();
 			break;
 		}
 

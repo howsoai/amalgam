@@ -306,10 +306,7 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 	if(n == nullptr)
 		return 0;
 
-	size_t total_size = 0;
-	total_size += sizeof(EvaluableNode);
-	if(n->HasExtendedValue())
-		total_size += sizeof(EvaluableNode::EvaluableNodeValue);
+	size_t total_size = sizeof(EvaluableNode);
 
 	auto &a_and_c = n->GetAnnotationsAndCommentsStorage();
 	size_t annotation_size = a_and_c.GetAnnotations().size();
@@ -322,8 +319,16 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 		comment_size++;
 	total_size += annotation_size + comment_size;
 
-	total_size += n->GetOrderedChildNodes().capacity() * sizeof(EvaluableNode *);
-	total_size += n->GetMappedChildNodes().size() * (sizeof(StringInternPool::StringID) + sizeof(EvaluableNode *));
+	if(n->IsAssociativeArray())
+	{
+		total_size += sizeof(AssocType);
+		total_size += n->GetMappedChildNodesReference().size() * (sizeof(StringInternPool::StringID) + sizeof(EvaluableNode *));
+	}
+	else if(n->IsOrderedArray())
+	{
+		total_size += sizeof(OrderedType);
+		total_size += n->GetOrderedChildNodesReference().capacity() * sizeof(EvaluableNode *);
+	}
 
 	return total_size;
 }
@@ -378,7 +383,7 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	if(n == nullptr)
 	{
 		type = ENT_NULL;
-		value.orderedChildNodesContainer.Construct();
+		value.numberValue = std::numeric_limits<double>::quiet_NaN();
 		return;
 	}
 
@@ -395,31 +400,31 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	if(DoesEvaluableNodeTypeUseAssocData(type))
 	{
 		value.ConstructMappedChildNodes();
-		value.mappedChildNodes = n->GetMappedChildNodesReference();
+		*value.mappedChildNodes = n->GetMappedChildNodesReference();
 
-		for(auto &[sid, cn] : value.mappedChildNodes)
+		for(auto &[sid, cn] : *value.mappedChildNodes)
 			string_intern_pool.CreateStringReference(sid);
 	}
 	else if(DoesEvaluableNodeTypeUseNullData(type))
 	{
-		value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+		value.numberValue = std::numeric_limits<double>::quiet_NaN();
 	}
 	else if(DoesEvaluableNodeTypeUseBoolData(type))
 	{
-		value.boolValueContainer.boolValue = n->GetBoolValueReference();
+		value.boolValue = n->GetBoolValueReference();
 	}
 	else if(DoesEvaluableNodeTypeUseNumberData(type))
 	{
-		value.numberAndNullValueContainer.numberValue = n->GetNumberValueReference();
+		value.numberValue = n->GetNumberValueReference();
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(type))
 	{
-		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(n->GetStringIDReference());
+		value.stringID = string_intern_pool.CreateStringReference(n->GetStringIDReference());
 	}
 	else //ordered
 	{
-		value.orderedChildNodesContainer.Construct();
-		value.orderedChildNodesContainer.orderedChildNodes = n->GetOrderedChildNodesReference();
+		value.ConstructOrderedChildNodes();
+		value.orderedChildNodes = n->GetOrderedChildNodesReference();
 	}
 
 	AnnotationsAndComments::Construct(annotationsAndComments);
@@ -669,11 +674,11 @@ void EvaluableNode::SetStringID(StringInternPool::StringID id)
 	{
 		if(DoesEvaluableNodeTypeUseStringData(GetType()))
 		{
-			StringInternPool::StringID cur_id = value.stringValueContainer.stringID;
+			StringInternPool::StringID cur_id = value.stringID;
 			if(id != cur_id)
 			{
 				string_intern_pool.DestroyStringReference(cur_id);
-				value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(id);
+				value.stringID = string_intern_pool.CreateStringReference(id);
 			}
 		}
 	}
@@ -682,7 +687,7 @@ void EvaluableNode::SetStringID(StringInternPool::StringID id)
 std::string_view EvaluableNode::GetStringView()
 {
 	if(DoesEvaluableNodeTypeUseStringData(GetType()))
-		return string_intern_pool.GetStringViewFromID(value.stringValueContainer.stringID);
+		return string_intern_pool.GetStringViewFromID(value.stringID);
 
 	//none of the above, return an empty one
 	return emptyStringValue;
@@ -698,8 +703,8 @@ void EvaluableNode::SetStringValue(const std::string &v)
 		auto new_id = string_intern_pool.CreateStringReference(v);
 
 		//destroy anything that was already in there
-		string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
-		value.stringValueContainer.stringID = new_id;
+		string_intern_pool.DestroyStringReference(value.stringID);
+		value.stringID = new_id;
 	}
 }
 
@@ -709,8 +714,8 @@ StringInternPool::StringID EvaluableNode::GetAndClearStringIDWithReference()
 	if(DoesEvaluableNodeTypeUseStringData(GetType()))
 	{
 		//retrieve id and just clear it, as the caller will take care of the reference
-		sid = value.stringValueContainer.stringID;
-		value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
+		sid = value.stringID;
+		value.stringID = StringInternPool::NOT_A_STRING_ID;
 	}
 
 	return sid;
@@ -724,9 +729,9 @@ void EvaluableNode::SetStringIDWithReferenceHandoff(StringInternPool::StringID i
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(GetType()))
 	{
-		StringInternPool::StringID cur_id = value.stringValueContainer.stringID;
+		StringInternPool::StringID cur_id = value.stringID;
 		string_intern_pool.DestroyStringReference(cur_id);
-		value.stringValueContainer.stringID = id;
+		value.stringID = id;
 	}
 }
 

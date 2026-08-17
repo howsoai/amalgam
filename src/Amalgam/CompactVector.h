@@ -55,11 +55,7 @@ public:
 	}
 
 	//range constructor (input iterator)
-	template<class InputIt,
-		class = typename std::enable_if<
-		std::is_base_of_v<std::input_iterator_tag,
-		typename std::iterator_traits<InputIt>::iterator_category>
-	>::type>
+	template<std::input_iterator InputIt>
 	CompactVector(InputIt first, InputIt last)
 	{
 		size_type n = std::distance(first, last);
@@ -469,10 +465,7 @@ public:
 		return data + index;
 	}
 
-	template<class InputIt,
-		class = typename std::enable_if<std::is_base_of_v<std::input_iterator_tag,
-			typename std::iterator_traits<InputIt>::iterator_category>
-		>::type>
+	template<std::input_iterator InputIt>
 	iterator insert(const_iterator pos, InputIt first, InputIt last)
 	{
 		const size_type count = static_cast<size_type>(std::distance(first, last));
@@ -559,10 +552,7 @@ public:
 		}
 	}
 
-	template<class InputIt,
-		class = typename std::enable_if<std::is_base_of_v<std::input_iterator_tag,
-			typename std::iterator_traits<InputIt>::iterator_category>
-		>::type>
+	template<std::input_iterator InputIt>
 	void assign(InputIt first, InputIt last)
 	{
 		const size_type new_size = static_cast<size_type>(std::distance(first, last));

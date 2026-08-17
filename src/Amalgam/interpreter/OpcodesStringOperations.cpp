@@ -9,9 +9,12 @@ static std::string _opcode_group = "String Operations";
 
 static OpcodeInitializer _ENT_EXPLODE(ENT_EXPLODE, &Interpreter::InterpretNode_ENT_EXPLODE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string str [number stride])";
-	d.returns = R"(list of string)";
-	d.description = R"(Explodes `str` into the pieces that make it up.  If `stride` is zero or unspecified, then it explodes `str` by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"s", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"stride", OpcodeDetails::DataType::NUMBER, true})
+	};
+	d.returns = OpcodeDetails::DataType::LIST_OF_STRINGS;
+	d.description = R"(Explodes `s` into the pieces that make it up.  If `stride` is zero or unspecified, then it explodes `s` by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((explode "abcdefghi"))&", R"([
 	"a"
@@ -48,7 +51,7 @@ static OpcodeInitializer _ENT_EXPLODE(ENT_EXPLODE, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto [valid, str] = InterpretNodeIntoStringValue(ocn[0]);
@@ -113,9 +116,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en,
 
 static OpcodeInitializer _ENT_SPLIT(ENT_SPLIT, &Interpreter::InterpretNode_ENT_SPLIT, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string str [string split_string] [number max_split_count] [number stride])";
-	d.returns = R"(list of string)";
-	d.description = R"(Splits `str` into a list of strings based on `split_string`, which is handled as a regular expression.  Any data matching `split_string` will not be included in any of the resulting strings.  If `max_split_count` is provided and greater than zero, it will only split up to that many times.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified and a value other than zero, then it does not use `split_string` as a regular expression but rather a string, and it breaks the result into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"s", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"split_string", OpcodeDetails::DataType::STRING, true}),
+		OpcodeDetails::ParameterGroup({"max_split_count", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"stride", OpcodeDetails::DataType::NUMBER, true})
+	};
+	d.returns = OpcodeDetails::DataType::LIST_OF_STRINGS;
+	d.description = R"(Splits `s` into a list of strings based on `split_string`, which is handled as a regular expression.  Any data matching `split_string` will not be included in any of the resulting strings.  If `max_split_count` is provided and greater than zero, it will only split up to that many times.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified and a value other than zero, then it does not use `split_string` as a regular expression but rather a string, and it breaks the result into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((split "hello world"))&", R"(["hello world"])"},
 		{R"&((split "hello world" " "))&", R"(["hello" "world"])"},
@@ -137,7 +145,7 @@ static OpcodeInitializer _ENT_SPLIT(ENT_SPLIT, &Interpreter::InterpretNode_ENT_S
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
@@ -224,8 +232,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, E
 	{
 		size_t cur_segment_start = 0;
 		size_t cur_segment_end = 0;
-		size_t string_to_split_len = string_to_split.length();
-		size_t split_value_len = split_value.length();
+		size_t string_to_split_len = string_to_split.size();
+		size_t split_value_len = split_value.size();
 
 		while(cur_segment_end < string_to_split_len && max_split_count > 0)
 		{
@@ -270,18 +278,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_SUBSTR(ENT_SUBSTR, &Interpreter::InterpretNode_ENT_SUBSTR, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string str [number|string location] [number|string param] [string replacement] [number stride])";
-	d.returns = R"(string | list of string | list of list of string)";
-	d.description = R"(Extracts and optionally replaces a substring of string `str`.  If `location` is a number, then evaluates to a new string representing the substring starting at the offset specified by `location`.  If `location` is a string, then it will treat `location` as a regular expression.  If `param` is specified, then it may change the interpretation of `location`.  If `param` is specified and `location` is a number it will go until that length beyond the offset specified by `location`.  If `param` is specified and `location` is a regular expression, `param` will represent one of the following: if null or "first", then it will return the first match of the regular expression; or if `param` is a number or the string "all", then substr will evaluate to a list of up to param matches (which may be infinite yielding the same result as "all").  If `param` is a negative number or the string "submatches", then it will return a list of list of strings, for each match up to the count of the negative number or all matches.  If `param` is "submatches", each inner list will represent the full regular expression match followed by each submatch as captured by parenthesis in the regular expression, ordered from an outer to inner, left-to-right manner.  If `location` is a negative number, then it will measure from the end of the string rather than the beginning.  If `replacement` is specified and not null, it will return the original string rather than the substring, but the substring will be replaced by replacement regardless of what `location` is.  And if replacement is specified, then it will override some of the logic for the `param` type and always return just a string and not a list.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"s", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"location", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::STRING, true}),
+		OpcodeDetails::ParameterGroup({"param", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::STRING, true}),
+		OpcodeDetails::ParameterGroup({"replacement", OpcodeDetails::DataType::STRING, true}),
+		OpcodeDetails::ParameterGroup({"stride", OpcodeDetails::DataType::NUMBER, true})
+	};
+	d.returns = OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::LIST_OF_STRINGS | OpcodeDetails::DataType::LIST;
+	d.description = R"(Extracts and optionally replaces a substring of string `s`.  If `location` is a number, then evaluates to a new string representing the substring starting at the offset specified by `location`.  If `location` is a string, then it will treat `location` as a regular expression.  If `param` is specified, then it may change the interpretation of `location`.  If `param` is specified and `location` is a number it will go until that length beyond the offset specified by `location`.  If `param` is specified and `location` is a regular expression, `param` will represent one of the following: if null or "first", then it will return the first match of the regular expression; or if `param` is a number or the string "all", then substr will evaluate to a list of up to param matches (which may be infinite yielding the same result as "all").  If `param` is a negative number or the string "submatches", then it will return a list of list of strings, for each match up to the count of the negative number or all matches.  If `param` is "submatches", each inner list will represent the full regular expression match followed by each submatch as captured by parenthesis in the regular expression, ordered from an outer to inner, left-to-right manner.  If `location` is a negative number, then it will measure from the end of the string rather than the beginning.  If `replacement` is specified and not null, it will return the original string rather than the substring, but the substring will be replaced by replacement regardless of what `location` is.  And if replacement is specified, then it will override some of the logic for the `param` type and always return just a string and not a list.  If `stride` is zero or unspecified, then it explodes the string by character per UTF-8 parsing.  If `stride` is specified, then it breaks it into chunks of that many bytes.  For example, a `stride` of 1 would break it into bytes, whereas a `stride` of 4 would break it into 32-bit chunks.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((substr "hello world"))&", R"("hello world")"},
 		{R"&((substr "hello world" 1))&", R"("ello world")"},
-		{R"&((substr "hello world" 1 8))&", R"("ello wo")"},
+		{R"&((substr "hello world" 1 8))&", R"("ello wor")"},
 		{R"&((substr "hello world" 1 100))&", R"("ello world")"},
 		{R"&((substr "hello world" 1 -1))&", R"("ello worl")"},
 		{R"&((substr "hello world" -4 -1))&", R"("orl")"},
 		{R"&((substr "hello world" -4 -1 .null 1))&", R"("orl")"},
-		{R"&((substr "hello world" 1 3 "x"))&", R"("hxlo world")"},
+		{R"&((substr "hello world" 1 3 "x"))&", R"("hxo world")"},
 		{R"&((substr "hello world" "(e|o)"))&", R"("e")"},
 		{R"&((substr "hello world" "[h|w](e|o)"))&", R"("he")"},
 		{R"&((substr "hello world" "[h|w](e|o)" 1))&", R"(["he"])"},
@@ -308,12 +322,12 @@ static OpcodeInitializer _ENT_SUBSTR(ENT_SUBSTR, &Interpreter::InterpretNode_ENT
 			{R"&((substr "hello world" "(e|o)" 2 "[$&]"))&", R"("h[e]ll[o] world")"},
 			{R"&((substr "abcdefgijk"))&", R"("abcdefgijk")"},
 			{R"&((substr "abcdefgijk" 1))&", R"("bcdefgijk")"},
-			{R"&((substr "abcdefgijk" 1 8))&", R"("bcdefgi")"},
+			{R"&((substr "abcdefgijk" 1 8))&", R"("bcdefgij")"},
 			{R"&((substr "abcdefgijk" 1 100))&", R"("bcdefgijk")"},
 			{R"&((substr "abcdefgijk" 1 -1))&", R"("bcdefgij")"},
 			{R"&((substr "abcdefgijk" -4 -1))&", R"("gij")"},
 			{R"&((substr "abcdefgijk" -4 -1 .null 1))&", R"("gij")"},
-			{R"&((substr "abcdefgijk" 1 3 "x"))&", R"("axdefgijk")"}
+			{R"&((substr "abcdefgijk" 1 3 "x"))&", R"("axefgijk")"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
@@ -324,7 +338,7 @@ static OpcodeInitializer _ENT_SUBSTR(ENT_SUBSTR, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//if only string as the parameter, just return a new copy of the string
@@ -400,12 +414,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 		//get end of substring
 		size_t end_offset = string_to_substr.size();
 		//only need to do end processing if have a value smaller than the length
-		if(length_raw < end_offset)
+		if(start_offset_raw + length_raw < end_offset)
 		{
 			if(length_raw >= 0)
 			{
 				if(stride == 0)
-					end_offset = StringManipulation::GetNthUTF8CharacterOffset(std::string_view(&string_to_substr[start_offset]), static_cast<size_t>(length_raw));
+					end_offset = start_offset + StringManipulation::GetNthUTF8CharacterOffset(std::string_view(&string_to_substr[start_offset]), static_cast<size_t>(length_raw));
 				else
 					end_offset = start_offset + stride * static_cast<size_t>(length_raw);
 			}
@@ -451,7 +465,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 	{
 		//make a copy of the string so the node can be freed
 		//(if this is a performance cost found in profiling, it can be fixed with more logic)
-		auto &regex_str = substr_node->GetStringValue();
+		auto regex_str = substr_node->GetStringView();
 		evaluableNodeManager->FreeNodeTreeIfPossible(substr_node);
 
 		if(replace_string)
@@ -468,7 +482,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 			std::regex rx;
 			try
 			{
-				rx.assign(regex_str, std::regex::ECMAScript);
+				rx.assign(regex_str.data(), regex_str.data() + regex_str.size(), std::regex::ECMAScript);
 			}
 			catch(...)
 			{
@@ -562,7 +576,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 				std::regex rx;
 				try
 				{
-					rx.assign(regex_str, std::regex::ECMAScript | std::regex::nosubs);
+					rx.assign(regex_str.data(), regex_str.data() + regex_str.size(),
+						std::regex::ECMAScript | std::regex::nosubs);
 				}
 				catch(...)
 				{
@@ -591,7 +606,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 				std::regex rx;
 				try
 				{
-					rx.assign(regex_str, std::regex::ECMAScript | std::regex::nosubs);
+					rx.assign(regex_str.data(), regex_str.data() + regex_str.size(),
+						std::regex::ECMAScript | std::regex::nosubs);
 				}
 				catch(...)
 				{
@@ -616,7 +632,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 				std::regex rx;
 				try
 				{
-					rx.assign(regex_str, std::regex::ECMAScript);
+					rx.assign(regex_str.data(), regex_str.data() + regex_str.size(), std::regex::ECMAScript);
 				}
 				catch(...)
 				{
@@ -653,13 +669,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_CONCAT(ENT_CONCAT, &Interpreter::InterpretNode_ENT_CONCAT, []() {
 	OpcodeDetails d;
-	d.parameters = R"([string str1] [string str2] ... [string strN])";
-	d.returns = R"(string)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"s", OpcodeDetails::DataType::STRING, true}, true),
+	});
+	d.isAssociative = true;
+	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(Concatenates all strings and evaluates to the single resulting string.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((concat "hello" " " "world"))&", R"("hello world")"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 10.0;
 	d.opcodeGroup = _opcode_group;
@@ -670,6 +689,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, 
 {
 	//build string from all child nodes
 	auto &ocn = en->GetOrderedChildNodesReference();
+
+	if(ocn.size() == 0) [[unlikely]]
+		return EvaluableNodeReference::Null();
 
 	//if only one parameter is specified, do a fast shortcut
 	if(ocn.size() == 1)
@@ -685,7 +707,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, 
 		//want to exit early if out of resources because
 		// this opcode can chew through memory with string concatenation via returned nulls
 		if(AreExecutionResourcesExhausted()
-				|| (interpreterConstraints != nullptr && s.size() > interpreterConstraints->maxNumAllocatedNodes))
+				|| (interpreterConstraints != nullptr
+					&& interpreterConstraints->ConstrainedAllocatedNodes()
+					&& s.size() > interpreterConstraints->maxNumAllocatedNodes))
 			return EvaluableNodeReference::Null();
 
 		//since UTF-8, don't need to do any conversions to concatenate
@@ -697,9 +721,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_PARSE(ENT_PARSE, &Interpreter::InterpretNode_ENT_PARSE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string str [bool transactional] [bool return_warnings])";
-	d.returns = R"(any)";
-	d.description = R"(String `str` is parsed into code, and the result is returned.  If `transactional` is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If `transactional` is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If any performance constraints are given or `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or .null if none)), unless `return_warnings` is false, in which case just the value will be returned.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"s", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"transactional", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"return_warnings", OpcodeDetails::DataType::BOOL, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(String `s` is parsed into code, and the result is returned.  If `transactional` is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If `transactional` is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If any performance constraints are given or `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or .null if none)), unless `return_warnings` is false, in which case just the value will be returned.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((parse "(seq (+ 1 2))" .true)))&", R"&((seq
 	(+ 1 2)
@@ -738,7 +766,7 @@ static OpcodeInitializer _ENT_PARSE(ENT_PARSE, &Interpreter::InterpretNode_ENT_P
 EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool transactional_parse = false;
@@ -777,9 +805,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_UNPARSE(ENT_UNPARSE, &Interpreter::InterpretNode_ENT_UNPARSE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(code c [bool pretty_print] [bool sort_keys] [bool include_attributes])";
-	d.returns = R"(string)";
-	d.description = R"(Code is unparsed and the representative string is returned. If `pretty_print` is true, the output will be in pretty-print format, otherwise by default it will be inlined.  If `sort_keys` is true, the default, then it will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to whatever order it is stored in memory.  If `include_attributes` is true, it will print out attributes like comments, but by default it will not.  Unparsing is safe for cyclic and graph data structures and will emit appropriate opcodes using the `@` prefix so that parsing will reconstruct the cyclic or graph relationships.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"pretty_print", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"sort_keys", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"include_attributes", OpcodeDetails::DataType::BOOL, true})
+	};
+	d.returns = OpcodeDetails::DataType::STRING;
+	d.description = R"(Code referenced by `node` is unparsed and the representative string is returned. If `pretty_print` is true, the output will be in pretty-print format, otherwise by default it will be inlined.  If `sort_keys` is true, the default, then it will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to whatever order it is stored in memory.  If `include_attributes` is true, it will print out attributes like comments, but by default it will not.  Unparsing is safe for cyclic and graph data structures and will emit appropriate opcodes using the `@` prefix so that parsing will reconstruct the cyclic or graph relationships.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unparse (parse "(print \"hello\")")))&", R"&("(print \"hello\")")&"},
 		{R"&((parse (unparse (list (sqrt -1) .null .infinity -.infinity))))&", R"&([.null .null .infinity -.infinity])&"},
@@ -795,7 +828,7 @@ static OpcodeInitializer _ENT_UNPARSE(ENT_UNPARSE, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool pretty = false;
@@ -811,7 +844,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en,
 		include_attributes = InterpretNodeIntoBoolValue(ocn[3]);
 
 	size_t max_length = std::numeric_limits<size_t>::max();
-	if(interpreterConstraints != nullptr)
+	if(interpreterConstraints != nullptr && interpreterConstraints->ConstrainedAllocatedNodes())
 		max_length = interpreterConstraints->maxNumAllocatedNodes;
 
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);

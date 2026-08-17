@@ -1,5 +1,6 @@
 //project headers:
 #include "Interpreter.h"
+#include "InterpreterApplySpecializations.h"
 #include "InterpreterConcurrencyManager.h"
 #include "OpcodeDetails.h"
 
@@ -7,8 +8,13 @@ static std::string _opcode_group = "Iteration and Container Transform";
 
 static OpcodeInitializer _ENT_RANGE(ENT_RANGE, &Interpreter::InterpretNode_ENT_RANGE, []() {
 	OpcodeDetails d;
-	d.parameters = R"([* function] number low_endpoint number high_endpoint [number step_size])";
-	d.returns = R"(list)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC, true}),
+		OpcodeDetails::ParameterGroup({"low_endpoint", OpcodeDetails::DataType::NUMBER}),
+		OpcodeDetails::ParameterGroup({"high_endpoint", OpcodeDetails::DataType::NUMBER}),
+		OpcodeDetails::ParameterGroup({"step_size", OpcodeDetails::DataType::NUMBER, true})
+	};
+	d.returns = OpcodeDetails::DataType::LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to a list with the range from `low_endpoint` to `high_endpoint`.  The default `step_size` is 1.  Evaluates to an empty list if the range is not valid.  If four arguments are specified, then `function` will be evaluated for each value in the range.)";
 	d.examples = MakeAmalgamExamples({
@@ -70,7 +76,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_params = ocn.size();
 
-	if(num_params < 2)
+	if(num_params < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get the index of the start index based on how many parameters there are, if there is a function
@@ -79,7 +85,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	double range_start = InterpretNodeIntoNumberValue(ocn[index_of_start + 0]);
 	double range_end = InterpretNodeIntoNumberValue(ocn[index_of_start + 1]);
 
-	if(FastIsNaN(range_start) || FastIsNaN(range_end))
+	if(FastIsNaN(range_start) || FastIsNaN(range_end)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//default step size
@@ -126,7 +132,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	}
 
 	//if a function is specified, then set up appropriate data structures to call the function and move the indices for the index and value parameters
-	EvaluableNodeReference function = InterpretNodeForImmediateUse(ocn[0]);
+	EvaluableNodeReference function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	if(immediate_result.NoValueRequested())
@@ -145,12 +151,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 						nullptr);
 
 				concurrency_manager.EndConcurrency();
-				return nullptr;
+				return EvaluableNodeReference::Null();
 			}
 		}
 	#endif
 
-		PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+		PushNewConstructionContext(_null_reference, _null_reference, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
 		for(size_t i = 0; i < num_nodes; i++)
 		{
@@ -163,12 +169,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 
 		PopConstructionContextAndGetExecutionSideEffectFlag();
 
-		return nullptr;
+		return EvaluableNodeReference::Null();
 	}
-
-	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto &result_ocn = result->GetOrderedChildNodesReference();
-	result_ocn.resize(num_nodes);
 
 #ifdef MULTITHREAD_SUPPORT
 	if(en->GetConcurrency() && num_nodes > 1)
@@ -176,6 +178,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 		auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
 		if(Concurrency::threadPool.AreThreadsAvailable())
 		{
+			EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
+			auto &result_ocn = result->GetOrderedChildNodesReference();
+			result_ocn.resize(num_nodes);
 			node_stack.PushEvaluableNode(result);
 			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
 			result->SetNeedCycleCheck(true);
@@ -184,7 +189,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 
 			for(size_t node_index = 0; node_index < num_nodes; node_index++)
 				concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
-					nullptr, result, EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start),
+					nullptr, &result, EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start),
 					nullptr, result_ocn[node_index]);
 
 			concurrency_manager.EndConcurrency();
@@ -195,6 +200,35 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	}
 #endif
 
+	//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
+	if(immediate_result.AnyComplexImmediateType() && num_nodes > 0)
+	{
+		auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
+			[&](auto operation)
+			{
+			PushNewConstructionContext(_null_reference, _null_reference, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+
+				auto acc = operation.Init();
+
+				for(size_t i = 0; i < num_nodes; ++i)
+				{
+					//pass index of list to be mapped -- leave value at nullptr
+					SetTopCurrentIndexInConstructionStack(i * range_step_size + range_start);
+
+					if(!operation.template Step<true>(*this, function, acc))
+						return EvaluableNodeReference::Null();
+				}
+
+				return operation.Finish(acc);
+			});
+
+		if(computed)
+			return retval;
+	}
+
+	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
+	auto &result_ocn = result->GetOrderedChildNodesReference();
+	result_ocn.resize(num_nodes);
 	PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
 	for(size_t i = 0; i < num_nodes; i++)
@@ -207,20 +241,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 		result.UpdatePropertiesBasedOnAttachedNode(element_result);
 	}
 
-	if(PopConstructionContextAndGetExecutionSideEffectFlag())
-	{
-		result.unique = false;
-		result.uniqueUnreferencedTopNode = false;
-	}
-
+	PopConstructionContextAndGetExecutionSideEffectFlag();
 	return result;
 }
 
 static OpcodeInitializer _ENT_REWRITE(ENT_REWRITE, &Interpreter::InterpretNode_ENT_REWRITE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* function * target)";
-	d.returns = R"(any)";
-	d.description = R"(Rewrites `target` by applying the `function` in a bottom-up manner.  For each node in the `target` structure, it pushes a new target scope onto the target stack, with `(current_value)` being the current node and `(current_index)` being to the index to the current node relative to the node passed into rewrite accessed via target, and evaluates `function`.  Returns the resulting structure, after have been rewritten by function.  Note that there is a small performance overhead if `target` is a graph structure rather than a tree structure.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Rewrites `target` by applying the `function` in a bottom-up manner.  For each node in the `node` structure, it pushes a new target scope onto the target stack, with `(current_value)` being the current node and `(current_index)` being to the index to the current node relative to the node passed into rewrite accessed via target, and evaluates `function`.  Returns the resulting structure, after have been rewritten by function.  Note that there is a small performance overhead if `target` is a graph structure rather than a tree structure.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((rewrite
 	(lambda
@@ -374,11 +406,11 @@ static OpcodeInitializer _ENT_REWRITE(ENT_REWRITE, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	if(EvaluableNode::IsNull(function))
+	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+	if(EvaluableNode::IsNull(function)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
@@ -386,7 +418,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 	auto to_modify = InterpretNode(ocn[1]);
 
 	FastHashMap<EvaluableNode *, EvaluableNode *> original_node_to_new_node;
-	PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(), to_modify);
+	PushNewConstructionContext(_null_reference, _null_reference, EvaluableNodeImmediateValueWithType(), to_modify);
 	EvaluableNodeReference result = RewriteByFunction(function, to_modify, original_node_to_new_node);
 	PopConstructionContextAndGetExecutionSideEffectFlag();
 
@@ -398,8 +430,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 
 static OpcodeInitializer _ENT_MAP(ENT_MAP, &Interpreter::InterpretNode_ENT_MAP, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* function [list|assoc collection1] [list|assoc collection2] ... [list|assoc collectionN])";
-	d.returns = R"(list)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC, true}, true)
+	};
+	d.returns = OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC;
 	d.allowsConcurrency = true;
 	d.description = R"(For each element in the collection, pushes a new target scope onto the stack, so that `(current_value)` accesses the element or elements in the list and `(current_index)` accesses the list or assoc index, with `(target)` representing the outer set of lists or assocs, and evaluates the function.  Returns the list of results, mapping the list via the specified `function`.  If multiple lists or assocs are specified, then it pulls from each list or assoc simultaneously (null if overrun or index does not exist) and `(current_value)` contains an array of the values in parameter order.  Note that concurrency is only available when more than one one collection is specified.)";
 	d.examples = MakeAmalgamExamples({
@@ -502,10 +537,10 @@ static OpcodeInitializer _ENT_MAP(ENT_MAP, &Interpreter::InterpretNode_ENT_MAP, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
+	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -514,19 +549,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 	{
 		//get list
 		auto list = InterpretNode(ocn[1]);
-		if(list == nullptr)
+		if(list == nullptr) [[unlikely]]
 			return EvaluableNodeReference::Null();
-
-		//create result_list as a copy of the current list, but without child nodes
-		result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
 
 		if(list->IsOrderedArray())
 		{
 			auto &list_ocn = list->GetOrderedChildNodesReference();
 			size_t num_nodes = list_ocn.size();
-
-			auto &result_ocn = result->GetOrderedChildNodesReference();
-			result_ocn.resize(num_nodes);
 
 		#ifdef MULTITHREAD_SUPPORT
 			if(en->GetConcurrency() && num_nodes > 1)
@@ -535,27 +564,80 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				if(Concurrency::threadPool.AreThreadsAvailable())
 				{
 					node_stack.PushEvaluableNode(list);
-					node_stack.PushEvaluableNode(result);
-					//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
-					result->SetNeedCycleCheck(true);
-
 					InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
-					for(size_t node_index = 0; node_index < num_nodes; node_index++)
-						concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
-							list, result, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
-							list_ocn[node_index], result_ocn[node_index]);
+					if(immediate_result.NoValueRequested())
+					{
+						for(size_t node_index = 0; node_index < num_nodes; node_index++)
+							concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
+								EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), list_ocn[node_index]);
 
-					concurrency_manager.EndConcurrency();
+						concurrency_manager.EndConcurrency();
 
-					concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
-					if(result.unique && !concurrency_manager.HadSideEffects())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+						return EvaluableNodeReference::Null();
+					}
+					else //not immediate
+					{
+						//create result_list as a copy of the current list, but without child nodes
+						result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
+						auto &result_ocn = result->GetOrderedChildNodesReference();
+						result_ocn.resize(num_nodes);
+						//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+						result->SetNeedCycleCheck(true);
+						node_stack.PushEvaluableNode(result);
 
-					return result;
+						for(size_t node_index = 0; node_index < num_nodes; node_index++)
+							concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
+								list, &result, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
+								list_ocn[node_index], result_ocn[node_index]);
+
+						concurrency_manager.EndConcurrency();
+
+						concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
+						if(result.unique && !concurrency_manager.HadSideEffects())
+							evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
+						return result;
+					}
 				}
 			}
 		#endif
+
+			//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
+			if(immediate_result.AnyComplexImmediateType() && num_nodes > 0)
+			{
+				auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
+					[&](auto operation)
+					{
+						PushNewConstructionContext(list, _null_reference, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+
+						auto acc = operation.Init();
+
+						auto &list_ocn = list->GetOrderedChildNodesReference();
+						size_t num_nodes = list_ocn.size();
+						for(size_t i = 0; i < num_nodes; ++i)
+						{
+							SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+							SetTopCurrentValueInConstructionStack(list_ocn[i]);
+
+							if(!operation.template Step<true>(*this, function, acc))
+								return EvaluableNodeReference::Null();
+						}
+
+						if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+							evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
+						return operation.Finish(acc);
+					});
+
+				if(computed)
+					return retval;
+			}
+
+			//create result_list as a copy of the current list, but without child nodes
+			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
+			auto &result_ocn = result->GetOrderedChildNodesReference();
+			result_ocn.resize(num_nodes);
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
@@ -572,22 +654,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
-				result.unique = false;
-				result.uniqueUnreferencedTopNode = false;
+				//can at least free the top node
+				evaluableNodeManager->FreeNodeIfPossible(list);
 			}
+			else
+			{
+				if(result.unique)
+					evaluableNodeManager->FreeNodeTreeIfPossible(list);
+				else
+					evaluableNodeManager->FreeNodeIfPossible(list);
+			}
+
+			return result;
 		}
 		else if(list->IsAssociativeArray())
 		{
 			auto &list_mcn = list->GetMappedChildNodesReference();
 			size_t num_nodes = list_mcn.size();
-
-			//populate result_mcn with all a slot for each child node,
-			//as do not want to change this allocation during potential concurrent execution
-			//and because iterators may be invalidated when the map is changed
-			auto &result_mcn = result->GetMappedChildNodesReference();
-			result_mcn.reserve(num_nodes);
-			for(auto &[sid, cn] : list_mcn)
-				result_mcn.emplace(string_intern_pool.CreateStringReference(sid), nullptr);
 
 		#ifdef MULTITHREAD_SUPPORT
 			if(en->GetConcurrency() && num_nodes > 1)
@@ -596,35 +679,101 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				if(Concurrency::threadPool.AreThreadsAvailable())
 				{
 					node_stack.PushEvaluableNode(list);
-					node_stack.PushEvaluableNode(result);
-					//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
-					result->SetNeedCycleCheck(true);
-
 					InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
-					for(auto &[result_id, result_node] : result_mcn)
+					if(immediate_result.NoValueRequested())
 					{
-						//get the original data element
-						auto list_node_entry = list_mcn.find(result_id);
-						EvaluableNode *list_node = nullptr;
-						if(list_node_entry != end(list_mcn))
-							list_node = list_node_entry->second;
+						for(auto &[list_id, list_node] : list_mcn)
+							concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
+								EvaluableNodeImmediateValueWithType(list_id), list_node);
 
-						concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
-							list, result, EvaluableNodeImmediateValueWithType(result_id),
-							list_node, result_node);
+						concurrency_manager.EndConcurrency();
+
+						return EvaluableNodeReference::Null();
 					}
+					else //not immediate
+					{
+						//create result_list as a copy of the current list, but without child nodes
+						result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
+						//populate result_mcn with all a slot for each child node,
+						//as do not want to change this allocation during potential concurrent execution
+						//and because iterators may be invalidated when the map is changed
+						auto &result_mcn = result->GetMappedChildNodesReference();
+						result_mcn.reserve(num_nodes);
+						for(auto &[sid, cn] : list_mcn)
+							result_mcn.emplace(string_intern_pool.CreateStringReference(sid), nullptr);
+						node_stack.PushEvaluableNode(result);
+						//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+						result->SetNeedCycleCheck(true);
 
-					concurrency_manager.EndConcurrency();
+						for(auto &[result_id, result_node] : result_mcn)
+						{
+							//get the original data element
+							auto list_node_entry = list_mcn.find(result_id);
+							EvaluableNode *list_node = nullptr;
+							if(list_node_entry != end(list_mcn))
+								list_node = list_node_entry->second;
 
-					concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
-					if(result.unique && !concurrency_manager.HadSideEffects())
-						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+							concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
+								list, &result, EvaluableNodeImmediateValueWithType(result_id),
+								list_node, result_node);
+						}
 
-					return result;
+						concurrency_manager.EndConcurrency();
+
+						concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
+						if(result.unique && !concurrency_manager.HadSideEffects())
+							evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
+						return result;
+					}
 				}
 			}
 		#endif
+
+			//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
+			if(immediate_result.AnyComplexImmediateType() && num_nodes > 0)
+			{
+				auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
+					[&](auto operation)
+					{
+						PushNewConstructionContext(list, _null_reference,
+							EvaluableNodeImmediateValueWithType(string_intern_pool.NOT_A_STRING_ID), nullptr);
+
+						auto acc = operation.Init();
+
+						auto &map_mcn = list->GetMappedChildNodesReference();
+						for(auto &[map_id, map_node] : map_mcn)
+						{
+							SetTopCurrentIndexInConstructionStack(map_id);
+							SetTopCurrentValueInConstructionStack(map_node);
+
+							if(!operation.template Step<true>(*this, function, acc))
+								return EvaluableNodeReference::Null();
+						}
+
+						if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+							evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
+						return operation.Finish(acc);
+					});
+
+				if(computed)
+					return retval;
+			}
+
+			//create result_list as a copy of the current list, but without child nodes
+			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
+			//populate result_mcn with all a slot for each child node,
+			//as do not want to change this allocation during potential concurrent execution
+			//and because iterators may be invalidated when the map is changed
+			auto &result_mcn = result->GetMappedChildNodesReference();
+			result_mcn.reserve(num_nodes);
+			for(auto &[sid, cn] : list_mcn)
+				result_mcn.emplace(string_intern_pool.CreateStringReference(sid), nullptr);
+			node_stack.PushEvaluableNode(result);
+			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+			result->SetNeedCycleCheck(true);
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
@@ -646,22 +795,30 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
-				result.unique = false;
-				result.uniqueUnreferencedTopNode = false;
+				//can at least free the top node
+				evaluableNodeManager->FreeNodeIfPossible(list);
 			}
-		}
+			else
+			{
+				if(result.unique)
+					evaluableNodeManager->FreeNodeTreeIfPossible(list);
+				else
+					evaluableNodeManager->FreeNodeIfPossible(list);
+			}
 
-		//result will be marked if not unique if there were any side effects
-		if(result.unique)
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
+			return result;
+		}
 	}
 	else //multiple inputs
 	{
-		EvaluableNode *inputs_list_node = evaluableNodeManager->AllocNode(ENT_LIST);
+		EvaluableNodeReference inputs_list_node(evaluableNodeManager->AllocNode(ENT_LIST), true);
 		//set to need cycle check because don't know what will be attached
-		inputs_list_node->SetNeedCycleCheck(true);
 		inputs_list_node->SetOrderedChildNodesSize(ocn.size() - 1);
 		auto &inputs = inputs_list_node->GetOrderedChildNodesReference();
+
+		//track references separately so they can be freed accordingly
+		std::vector<EvaluableNodeReference> input_references;
+		input_references.resize(ocn.size() - 1);
 
 		//process inputs, get size and whether needs to be associative array
 		bool need_assoc = false;
@@ -673,28 +830,35 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		node_stack.PushEvaluableNode(inputs_list_node);
 		for(size_t i = 0; i < ocn.size() - 1; i++)
 		{
-			inputs[i] = InterpretNode(ocn[i + 1]);
-			if(inputs[i] != nullptr)
+			EvaluableNodeReference cur_input = InterpretNode(ocn[i + 1]);
+			input_references[i] = cur_input;
+			inputs_list_node.UpdatePropertiesBasedOnAttachedNode(cur_input);
+			inputs[i] = cur_input;
+
+			if(EvaluableNode::IsNull(cur_input) || cur_input->IsTerminal())
+				continue;
+
+			if(cur_input->IsAssociativeArray())
 			{
-				if(!inputs[i]->IsAssociativeArray())
+				need_assoc = true;
+				for(auto &n_id : cur_input->GetMappedChildNodesReference() | std::views::keys)
 				{
-					largest_size = std::max(largest_size, inputs[i]->GetOrderedChildNodes().size());
+					auto [inserted_node, inserted] = all_keys.insert(n_id);
+					//if it was inserted, then need to keep track of the string reference
+					if(inserted)
+						string_intern_pool.CreateStringReference(n_id);
 				}
-				else
-				{
-					need_assoc = true;
-					for(auto &[n_id, _] : inputs[i]->GetMappedChildNodes())
-					{
-						auto [inserted_node, inserted] = all_keys.insert(n_id);
-						//if it was inserted, then need to keep track of the string reference
-						if(inserted)
-							string_intern_pool.CreateStringReference(n_id);
-					}
-				}
+			}
+			else //ordered
+			{
+				largest_size = std::max(largest_size, cur_input->GetOrderedChildNodesReference().size());
 			}
 		}
 		node_stack.PopEvaluableNode();
 
+		//execute over groups of nodes
+		bool any_side_effects = false;
+		bool result_was_originally_unique = true;
 		if(!need_assoc)
 		{
 			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
@@ -727,8 +891,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
+			result_was_originally_unique = result.unique;
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
+				any_side_effects = true;
 				result.unique = false;
 				result.uniqueUnreferencedTopNode = false;
 			}
@@ -811,8 +977,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
+			result_was_originally_unique = result.unique;
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
+				any_side_effects = true;
 				result.unique = false;
 				result.uniqueUnreferencedTopNode = false;
 			}
@@ -821,15 +989,38 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 		//free all references
 		string_intern_pool.DestroyStringReferences(all_keys);
+
+		if(any_side_effects)
+		{
+			//can at least free the top node
+			evaluableNodeManager->FreeNodeIfPossible(inputs_list_node);
+		}
+		else //no side effects
+		{
+			evaluableNodeManager->FreeNodeIfPossible(inputs_list_node);
+			if(result_was_originally_unique)
+			{	
+				for(auto &ref : input_references)
+					evaluableNodeManager->FreeNodeTreeIfPossible(ref);
+			}
+		}
+
+		return result;
 	}
 
+	//shouldn't make it here, but compiler complained
 	return result;
 }
 
 static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT_FILTER, []() {
 	OpcodeDetails d;
-	d.parameters = R"([* function] list|assoc collection [bool match_on_value])";
-	d.returns = R"(list|assoc)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC, true}),
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"match_on_value", OpcodeDetails::DataType::BOOL, true})
+	});
+	d.returns = OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC;
 	d.allowsConcurrency = true;
 	d.description = R"(For each element in the `collection`, pushes a new target scope onto the stack, so that `(current_value)` accesses the element in the list and `(current_index)` accesses the list or assoc index, with `(target)` representing the original list or assoc, and evaluates the function.  If `function` evaluates to true, then the element is put in a new list or assoc (matching the input type) that is returned.  If function is omitted, then it will remove any elements in the collection that are null.  The parameter match_on_value defaults to null, which will evaluate the function.  However, if match_on_value is true, it will only retain elements which equal the value in function and if match_on_value is false, it will retain elements which do not equal the value in function.  Using match_on_value and wrapping filter in a size opcode additionally acts as an efficient way to count the number of a specific element in a container.)";
 	d.examples = MakeAmalgamExamples({
@@ -945,7 +1136,6 @@ static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT
 { R"&((filter .null [.null 1 .null 2 .null 3] .false))&", R"([1 2 3])" },
 { R"&((filter .null {a .null b 1 c .null d 2 e .null f 3} .true))&", R"({a .null c .null e .null})" }
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 15.5;
@@ -956,7 +1146,7 @@ static OpcodeInitializer _ENT_FILTER(ENT_FILTER, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference function = EvaluableNodeReference::Null();
@@ -973,7 +1163,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	else //ocn.size() > 1
 	{
 		list_index = 1;
-		function = InterpretNodeForImmediateUse(ocn[0]);
+		function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 
 		if(ocn.size() > 2)
@@ -994,41 +1184,47 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 	if(match_on_value || match_on_not_value)
 	{
-		//specialized path for just getting the count
-		if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))
+		if(immediate_result.AnyComplexImmediateType())
 		{
-			auto list = InterpretNode(ocn[list_index]);
-			if(EvaluableNode::IsNull(list))
-				return EvaluableNodeReference::Null();
+			auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
+					[&](auto operation)
+					{
+						auto list = InterpretNodeForImmediateUse(ocn[list_index]);
+						if(EvaluableNode::IsNull(list))
+							return EvaluableNodeReference::Null();
 
-			size_t num_elements_not_filtered = 0;
-			if(list->IsAssociativeArray())
-			{
-				auto &list_mcn = list->GetMappedChildNodesReference();
-				for(auto &[cn_id, cn] : list_mcn)
-				{
-					//want either to be equal or match_on_not_value, but not both or neither
-					if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
-						num_elements_not_filtered++;
-				}
+						auto acc = operation.Init();
 
-			}
-			else if(list->IsOrderedArray())
-			{
-				auto &list_ocn = list->GetOrderedChildNodesReference();
-				for(auto &cn : list_ocn)
-				{
-					if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
-						num_elements_not_filtered++;
-				}
-			}
+						if(list->IsAssociativeArray())
+						{
+							auto &list_mcn = list->GetMappedChildNodesReference();
+							for(auto &[cn_id, cn] : list_mcn)
+							{
+								//want either to be equal or match_on_not_value, but not both or neither
+								if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
+									operation.template Step<false>(*this, cn, acc);
+							}
+						}
+						else if(list->IsOrderedArray())
+						{
+							auto &list_ocn = list->GetOrderedChildNodesReference();
+							for(auto &cn : list_ocn)
+							{
+								if(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value)
+									operation.template Step<false>(*this, cn, acc);
+							}
+						}
 
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-			return EvaluableNodeReference(static_cast<double>(num_elements_not_filtered));
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+						return operation.Finish(acc);
+					});
+
+			if(computed)
+				return retval;
 		}
 
 		auto list = InterpretNode(ocn[list_index]);
-		if(EvaluableNode::IsNull(list))
+		if(EvaluableNode::IsNull(list)) [[unlikely]]
 			return EvaluableNodeReference::Null();
 
 		EvaluableNodeReference result_list(list, list.unique, list.uniqueUnreferencedTopNode);
@@ -1103,8 +1299,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	//get list
 	auto list = InterpretNode(ocn[list_index]);
 	//if null, just return a new null, since it has no child nodes
-	if(EvaluableNode::IsNull(list))
+	if(EvaluableNode::IsNull(list) || list->IsTerminal()) [[unlikely]]
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(list);
 		return EvaluableNodeReference::Null();
+	}
 
 	//create result_list as a copy of the current list, but without child nodes
 	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()),
@@ -1116,7 +1315,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	if(EvaluableNode::IsNull(function))
 		return result_list;
 
-	if(list->GetOrderedChildNodes().size() > 0)
+	if(list->IsOrderedArray())
 	{
 		auto &list_ocn = list->GetOrderedChildNodesReference();
 		auto &result_ocn = result_list->GetOrderedChildNodesReference();
@@ -1139,7 +1338,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
 					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(function,
-						list, result_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
+						list, &result_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
 						list_ocn[node_index], evaluations[node_index]);
 
 				concurrency_manager.EndConcurrency();
@@ -1157,48 +1356,75 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 					if(!had_side_effects)
 						evaluableNodeManager->FreeNodeTreeIfPossible(evaluations[i]);
 				}
+
+				evaluableNodeManager->FreeNodeIfPossible(list);
+				return result_list;
 			}
 		}
-		else
-		#endif
-			//need this in a block for multithreading above
-		{
-			PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+	#endif
 
-			//iterate over all child nodes
+		if(immediate_result.AnyComplexImmediateType())
+		{
+			auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
+					[&](auto operation)
+					{
+						PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+
+						auto acc = operation.Init();
+
+						//iterate over all child nodes
+						for(size_t i = 0; i < list_ocn.size(); i++)
+						{
+							EvaluableNode *cur_value = list_ocn[i];
+
+							SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+							SetTopCurrentValueInConstructionStack(cur_value);
+
+							//check current element
+							if(InterpretNodeIntoBoolValue(function))
+								operation.template Step<false>(*this, cur_value, acc);
+						}
+
+						if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+							evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
+						return operation.Finish(acc);
+					});
+
+			if(computed)
+				return retval;
+		}
+
+		PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+
+		//iterate over all child nodes
+		for(size_t i = 0; i < list_ocn.size(); i++)
+		{
+			EvaluableNode *cur_value = list_ocn[i];
+
+			SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+			SetTopCurrentValueInConstructionStack(cur_value);
+
+			//check current element
+			if(InterpretNodeIntoBoolValue(function))
+				result_ocn.push_back(cur_value);
+		}
+
+		had_side_effects = PopConstructionContextAndGetExecutionSideEffectFlag();
+
+		//free anything not in filtered list,
+		// but only free nodes if the result is still unique, and it won't be if it was accessed
+		// need to do this outside of the iteration loop in case anything is accessing the original list
+		if(list.unique && !list->GetNeedCycleCheck() && !had_side_effects)
+		{
+			size_t result_index = 0;
 			for(size_t i = 0; i < list_ocn.size(); i++)
 			{
-				EvaluableNode *cur_value = list_ocn[i];
-
-				SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
-				SetTopCurrentValueInConstructionStack(cur_value);
-
-				//check current element
-				if(InterpretNodeIntoBoolValue(function))
-					result_ocn.push_back(cur_value);
-			}
-
-			had_side_effects = PopConstructionContextAndGetExecutionSideEffectFlag();
-			if(had_side_effects)
-			{
-				result_list.unique = false;
-				result_list.uniqueUnreferencedTopNode = false;
-			}
-
-			//free anything not in filtered list,
-			// but only free nodes if the result is still unique, and it won't be if it was accessed
-			// need to do this outside of the iteration loop in case anything is accessing the original list
-			if(list.unique && !list->GetNeedCycleCheck() && !had_side_effects)
-			{
-				size_t result_index = 0;
-				for(size_t i = 0; i < list_ocn.size(); i++)
-				{
-					//if there are still results left, check if it matches
-					if(result_index < result_ocn.size() && list_ocn[i] == result_ocn[result_index])
-						result_index++;
-					else //free it
-						evaluableNodeManager->FreeNodeTree(list_ocn[i]);
-				}
+				//if there are still results left, check if it matches
+				if(result_index < result_ocn.size() && list_ocn[i] == result_ocn[result_index])
+					result_index++;
+				else //free it
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
 			}
 		}
 
@@ -1206,85 +1432,112 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		return result_list;
 	}
 
-	if(list->IsAssociativeArray())
+	//if made it here, then list is an assoc
+	auto &list_mcn = list->GetMappedChildNodesReference();
+
+#ifdef MULTITHREAD_SUPPORT
+	size_t num_nodes = list_mcn.size();
+	if(en->GetConcurrency() && num_nodes > 1)
 	{
-		auto &list_mcn = list->GetMappedChildNodesReference();
-
-	#ifdef MULTITHREAD_SUPPORT
-		size_t num_nodes = list_mcn.size();
-		if(en->GetConcurrency() && num_nodes > 1)
+		auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
+		if(Concurrency::threadPool.AreThreadsAvailable())
 		{
-			auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
-			if(Concurrency::threadPool.AreThreadsAvailable())
+			node_stack.PushEvaluableNode(list);
+			node_stack.PushEvaluableNode(result_list);
+			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+			result_list->SetNeedCycleCheck(true);
+
+			std::vector<EvaluableNodeReference> evaluations(num_nodes);
+
+			InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+
+			//kick off interpreters
+			size_t node_index = 0;
+			for(auto &[node_id, node] : list_mcn)
+				concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(function, list,
+					&result_list, EvaluableNodeImmediateValueWithType(node_id), node, evaluations[node_index++]);
+
+			concurrency_manager.EndConcurrency();
+
+			concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result_list);
+			had_side_effects = concurrency_manager.HadSideEffects();
+
+			//iterate in same order with same node_index
+			node_index = 0;
+			for(auto &[node_id, node] : list_mcn)
 			{
-				node_stack.PushEvaluableNode(list);
-				node_stack.PushEvaluableNode(result_list);
-				//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
-				result_list->SetNeedCycleCheck(true);
+				if(EvaluableNode::ToBool(evaluations[node_index]))
+					result_list->SetMappedChildNode(node_id, node);
 
-				std::vector<EvaluableNodeReference> evaluations(num_nodes);
+				//only free nodes if the result is still unique, and it won't be if it was accessed
+				if(!had_side_effects)
+					evaluableNodeManager->FreeNodeTreeIfPossible(evaluations[node_index]);
 
-				InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
-
-				//kick off interpreters
-				size_t node_index = 0;
-				for(auto &[node_id, node] : list_mcn)
-					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(function,
-						list, result_list, EvaluableNodeImmediateValueWithType(node_id),
-						node, evaluations[node_index++]);
-
-				concurrency_manager.EndConcurrency();
-
-				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result_list);
-				had_side_effects = concurrency_manager.HadSideEffects();
-
-				//iterate in same order with same node_index
-				node_index = 0;
-				for(auto &[node_id, node] : list_mcn)
-				{
-					if(EvaluableNode::ToBool(evaluations[node_index]))
-						result_list->SetMappedChildNode(node_id, node);
-
-					//only free nodes if the result is still unique, and it won't be if it was accessed
-					if(!had_side_effects)
-						evaluableNodeManager->FreeNodeTreeIfPossible(evaluations[node_index]);
-
-					node_index++;
-				}
-			}
-		}
-		else
-		#endif
-		{
-			PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
-
-			//result_list is a copy of list, so it should already be the same size (no need to reserve)
-			for(auto &[cn_id, cn] : list_mcn)
-			{
-				SetTopCurrentIndexInConstructionStack(cn_id);
-				SetTopCurrentValueInConstructionStack(cn);
-
-				//if contained, add to result_list (and let SetMappedChildNode create the string reference)
-				if(InterpretNodeIntoBoolValue(function))
-					result_list->SetMappedChildNode(cn_id, cn);
+				node_index++;
 			}
 
-			if(PopConstructionContextAndGetExecutionSideEffectFlag())
-			{
-				result_list.unique = false;
-				result_list.uniqueUnreferencedTopNode = false;
-			}
+			evaluableNodeManager->FreeNodeIfPossible(list);
+			return result_list;
 		}
 	}
+#endif
 
+	if(immediate_result.AnyComplexImmediateType())
+	{
+		auto [computed, retval] = AttemptSpecializedInterpret(immediate_result,
+				[&](auto operation)
+				{
+				PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+
+				auto acc = operation.Init();
+
+				//iterate over all child nodes
+				for(auto &[cn_id, cn] : list_mcn)
+				{
+					SetTopCurrentIndexInConstructionStack(cn_id);
+					SetTopCurrentValueInConstructionStack(cn);
+
+					//if contained, add to result_list (and let SetMappedChildNode create the string reference)
+					if(InterpretNodeIntoBoolValue(function))
+						operation.template Step<false>(*this, cn, acc);
+				}
+
+				if(!PopConstructionContextAndGetExecutionSideEffectFlag())
+					evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
+				return operation.Finish(acc);
+				});
+
+		if(computed)
+			return retval;
+	}
+
+	PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
+
+	//result_list is a copy of list, so it should already be the same size (no need to reserve)
+	for(auto &[cn_id, cn] : list_mcn)
+	{
+		SetTopCurrentIndexInConstructionStack(cn_id);
+		SetTopCurrentValueInConstructionStack(cn);
+
+		//if contained, add to result_list (and let SetMappedChildNode create the string reference)
+		if(InterpretNodeIntoBoolValue(function))
+			result_list->SetMappedChildNode(cn_id, cn);
+	}
+
+	PopConstructionContextAndGetExecutionSideEffectFlag();
 	evaluableNodeManager->FreeNodeIfPossible(list);
 	return result_list;
 }
 
 static OpcodeInitializer _ENT_WEAVE(ENT_WEAVE, &Interpreter::InterpretNode_ENT_WEAVE, []() {
 	OpcodeDetails d;
-	d.parameters = R"([* function] list|immediate values1 [list|immediate values2] [list|immediate values3]...)";
-	d.returns = R"(list)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC, true}),
+		OpcodeDetails::ParameterGroup({"values1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"values", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2)
+	};
+	d.returns = OpcodeDetails::DataType::LIST;
 	d.description = R"(Interleaves the values lists optionally by applying a function.  If only `values1` is passed in, then it evaluates to `values1`. If `values1` and `values2` are passed in, or, if more values are passed in but function is null, it interleaves the lists and extends the result to the length of the longest list, filling in the remainder with null.  If any of the value parameters are immediate, then it will repeat that immediate value when weaving.  If the `function` is specified and not null, it pushes a new target scope onto the stack, so that `(current_value)` accesses a list of elements to be woven together from the list, and `(current_index)` accesses the list or assoc index, with `(target)` representing the resulting list or assoc.  The `function` should evaluate to a list, and weave will evaluate to a concatenated list of all of the lists that the function evaluated to.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((weave
@@ -1451,7 +1704,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 	auto &ocn = en->GetOrderedChildNodesReference();
 
 	size_t num_params = ocn.size();
-	if(num_params < 1)
+	if(num_params < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//single list, return itself
@@ -1471,7 +1724,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 
 		//need to interpret node here in case function is actually a null
 		// null is a special non-function for weave
-		function = InterpretNodeForImmediateUse(ocn[0]);
+		function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 	}
 
@@ -1515,7 +1768,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 
 		for(auto &list : lists)
 		{
-			if(list != nullptr && IsEvaluableNodeTypeImmediate(list->GetType()))
+			if(list != nullptr && IsEvaluableNodeTypeTerminalNode(list->GetType()))
 				woven_list->SetNeedCycleCheck(true);
 
 			woven_list.UpdatePropertiesBasedOnAttachedNode(list);
@@ -1527,7 +1780,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 			for(auto &list : lists)
 			{
 				//if immediate, then write out immediate
-				if(list == nullptr || IsEvaluableNodeTypeImmediate(list->GetType()))
+				if(list == nullptr || IsEvaluableNodeTypeTerminalNode(list->GetType()))
 					woven_list->AppendOrderedChildNode(list);
 				else if(list->GetOrderedChildNodes().size() > list_index) //only write out if list is long enough
 					woven_list->AppendOrderedChildNode(list->GetOrderedChildNodes()[list_index]);
@@ -1546,7 +1799,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 		for(auto &list : lists)
 		{
 			//if immediate, then write out immediate
-			if(list == nullptr || IsEvaluableNodeTypeImmediate(list->GetType()))
+			if(list == nullptr || IsEvaluableNodeTypeTerminalNode(list->GetType()))
 				list_index_values_node->AppendOrderedChildNode(list);
 			else if(list->GetOrderedChildNodes().size() > list_index)
 				list_index_values_node->AppendOrderedChildNode(list->GetOrderedChildNodes()[list_index]);
@@ -1558,11 +1811,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 
 		EvaluableNodeReference values_to_weave = InterpretNode(function);
 
-		if(PopConstructionContextAndGetExecutionSideEffectFlag())
-		{
-			woven_list.unique = false;
-			woven_list.uniqueUnreferencedTopNode = false;
-		}
+		PopConstructionContextAndGetExecutionSideEffectFlag();
 
 		if(EvaluableNode::IsNull(values_to_weave))
 		{
@@ -1585,8 +1834,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_REDUCE(ENT_REDUCE, &Interpreter::InterpretNode_ENT_REDUCE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* function list|assoc collection)";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(For each element in the `collection` after the first one, it evaluates `function` with a new scope on the stack where `(current_value)` accesses each of the elements from the `collection`, `(current_index)` accesses the list or assoc index and `(previous_result)` accesses the previously reduced result.  If the `collection` is empty, null is returned.  If the `collection` is of size one, the single element is returned.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((reduce
@@ -1621,10 +1873,10 @@ static OpcodeInitializer _ENT_REDUCE(ENT_REDUCE, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
+	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
@@ -1637,7 +1889,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 
 	EvaluableNodeReference previous_result = EvaluableNodeReference::Null();
 
-	PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(), nullptr, previous_result);
+	PushNewConstructionContext(list, _null_reference, EvaluableNodeImmediateValueWithType(), nullptr, previous_result);
 
 	if(list->IsAssociativeArray())
 	{
@@ -1685,8 +1937,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_ASSOCIATE(ENT_ASSOCIATE, &Interpreter::InterpretNode_ENT_ASSOCIATE, []() {
 	OpcodeDetails d;
-	d.parameters = R"([* index1] [* value1] [* index2] [* value2] ... [* indexN] [* valueN])";
-	d.returns = R"(assoc)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::PAIRED,
+	{
+		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC, true},
+			{"value", OpcodeDetails::DataType::ANY_BASIC, true}, true)
+	});
+	d.returns = OpcodeDetails::DataType::ASSOC;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the assoc, where each pair of parameters (e.g., `index1` and `value1`) comprises a index/value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.)";
 	d.examples = MakeAmalgamExamples({
@@ -1703,7 +1959,6 @@ static OpcodeInitializer _ENT_ASSOCIATE(ENT_ASSOCIATE, &Interpreter::InterpretNo
 	)
 ))&", R"("{4 \"d\" a 1 b 2 c 3}")"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 4.5;
@@ -1747,7 +2002,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 				//kick off interpreters
 				for(size_t node_index = 0; node_index + 1 < num_nodes; node_index += 2)
 					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(ocn[node_index + 1],
-						en, new_assoc, EvaluableNodeImmediateValueWithType(keys[node_index / 2]),
+						en, &new_assoc, EvaluableNodeImmediateValueWithType(keys[node_index / 2]),
 						nullptr, results[node_index / 2]);
 
 				concurrency_manager.EndConcurrency();
@@ -1789,11 +2044,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 			new_assoc.UpdatePropertiesBasedOnAttachedNode(value);
 		}
 
-		if(PopConstructionContextAndGetExecutionSideEffectFlag())
-		{
-			new_assoc.unique = false;
-			new_assoc.uniqueUnreferencedTopNode = false;
-		}
+		PopConstructionContextAndGetExecutionSideEffectFlag();
 	}
 
 	return new_assoc;
@@ -1801,8 +2052,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 
 static OpcodeInitializer _ENT_ZIP(ENT_ZIP, &Interpreter::InterpretNode_ENT_ZIP, []() {
 	OpcodeDetails d;
-	d.parameters = R"([* function] list indices [* values])";
-	d.returns = R"(assoc)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC, true}),
+		OpcodeDetails::ParameterGroup({"indices", OpcodeDetails::DataType::LIST}),
+		OpcodeDetails::ParameterGroup({"values", OpcodeDetails::DataType::ANY_BASIC, true})
+	});
+	d.returns = OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Evaluates to a new assoc where `indices` are the keys and `values` are the values, with corresponding positions in the list matched.  If the `values` is omitted and only one parameter is specified, then it will use nulls for each of the values.  If `values` is not a list, then all of the values in the assoc returned are set to the same value.  When two parameters are specified, it is the `indices` and `values`.  When three values are specified, it is the `function`, indices, and values.  The parameter `values` defaults to null and `function` defaults to `(lambda (current_value))`.  When there is a collision of indices, `function` is called with a of new target scope pushed onto the stack, so that `(current_value)` accesses a list of elements from the list, `(current_index)` accesses the list or assoc index if it is not already reduced, and `(target)` represents the original list or assoc.  When evaluating `function`, existing indices will be overwritten.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unparse
@@ -1855,7 +2111,6 @@ static OpcodeInitializer _ENT_ZIP(ENT_ZIP, &Interpreter::InterpretNode_ENT_ZIP, 
 ))&", R"("{a 2 b 1 c (target .true \"b\") d (target .true \"b\")}")"}
 		});
 	d.newTargetScope = true;
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 18.0;
 	d.opcodeGroup = _opcode_group;
@@ -1866,7 +2121,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_params = ocn.size();
-	if(num_params < 1)
+	if(num_params < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get the indices of the parameters based on how many there are
@@ -1882,7 +2137,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 		index_list_index++;
 		value_list_index++;
 
-		function = InterpretNodeForImmediateUse(ocn[0]);
+		function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 	}
 
@@ -1972,16 +2227,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 
 				EvaluableNodeReference collision_result = InterpretNode(function);
 
-				if(PopConstructionContextAndGetExecutionSideEffectFlag())
-				{
-					result.unique = false;
-					result.uniqueUnreferencedTopNode = false;
-				}
-				if(PopConstructionContextAndGetExecutionSideEffectFlag())
-				{
-					result.unique = false;
-					result.uniqueUnreferencedTopNode = false;
-				}
+				PopConstructionContextAndGetExecutionSideEffectFlag();
+				PopConstructionContextAndGetExecutionSideEffectFlag();
 
 				*cur_value_ptr = collision_result;
 				result.UpdatePropertiesBasedOnAttachedNode(collision_result);
@@ -2000,8 +2247,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_UNZIP(ENT_UNZIP, &Interpreter::InterpretNode_ENT_UNZIP, []() {
 	OpcodeDetails d;
-	d.parameters = R"([list|assoc collection] list indices)";
-	d.returns = R"(list)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"indices", OpcodeDetails::DataType::LIST})
+	});
+	d.returns = OpcodeDetails::DataType::LIST;
 	d.description = R"(Evaluates to a new list, using `indices` to look up each value from the `collection` in the same order as each index is specified in `indices`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unzip
@@ -2013,7 +2264,6 @@ static OpcodeInitializer _ENT_UNZIP(ENT_UNZIP, &Interpreter::InterpretNode_ENT_U
 	["a" "b"]
 ))&", R"([1 2])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 8.0;
 	d.opcodeGroup = _opcode_group;
@@ -2023,23 +2273,74 @@ static OpcodeInitializer _ENT_UNZIP(ENT_UNZIP, &Interpreter::InterpretNode_ENT_U
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto zipped = InterpretNode(ocn[0]);
-	if(EvaluableNode::IsNull(zipped))
+	if(EvaluableNode::IsNull(zipped)) [[unlikely]]
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	auto node_stack = CreateOpcodeStackStateSaver(zipped);
 	auto index_list = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PopEvaluableNode();
 
-	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
-
-	if(EvaluableNode::IsNull(index_list))
-		return result;
+	if(EvaluableNode::IsNull(index_list)) [[unlikely]]
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	auto &index_list_ocn = index_list->GetOrderedChildNodes();
+
+	//don't apply optimizations if there are no nodes; let calling opcodes handle those edge cases
+	if(immediate_result.AnyComplexImmediateType() && index_list_ocn.size() > 0)
+	{
+		auto [computed, retval] = AttemptSpecializedInterpret(immediate_result, [&](auto operation)
+			{
+				auto acc = operation.Init();
+
+				if(zipped->IsAssociativeArray())
+				{
+					auto &zipped_mcn = zipped->GetMappedChildNodesReference();
+					for(auto &index : index_list_ocn)
+					{
+						StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index, true);
+
+						auto found_index = zipped_mcn.find(index_sid);
+						if(found_index != end(zipped_mcn))
+							operation.template Step<false>(*this, found_index->second, acc);
+						else
+							operation.template Step<false>(*this, nullptr, acc);
+					}
+				}
+				else if(zipped->IsOrderedArray())
+				{
+					auto &zipped_ocn = zipped->GetOrderedChildNodes();
+					for(auto &index : index_list_ocn)
+					{
+						double index_value = EvaluableNode::ToNumber(index);
+						if(index_value < 0)
+						{
+							index_value += zipped_ocn.size();
+							if(index_value < 0) //clamp at zero
+								index_value = 0;
+						}
+
+						if(index_value < zipped_ocn.size())
+							operation.template Step<false>(*this, zipped_ocn[static_cast<size_t>(index_value)], acc);
+						else
+							operation.template Step<false>(*this, nullptr, acc);
+					}
+				}
+
+				evaluableNodeManager->FreeNodeTreeIfPossible(index_list);
+				evaluableNodeManager->FreeNodeTreeIfPossible(zipped);
+				return operation.Finish(acc);
+			});
+
+		if(computed)
+			return retval;
+	}
+
+	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
+
 	result.UpdatePropertiesBasedOnAttachedNode(zipped, true);
 	size_t num_indices = index_list_ocn.size();
 	//can't guarantee cycle free since an index could be duplicated
@@ -2084,13 +2385,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 	}
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(index_list);
+	//don't need the top node of the zipped anymore
+	evaluableNodeManager->FreeNodeIfPossible(zipped);
 	return result;
 }
 
 static OpcodeInitializer _ENT_REVERSE(ENT_REVERSE, &Interpreter::InterpretNode_ENT_REVERSE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list collection)";
-	d.returns = R"(list)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST}),
+	};
+	d.returns = OpcodeDetails::DataType::LIST;
 	d.description = R"(Returns a new list containing the `collection` with its elements in reversed order.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((reverse
@@ -2106,12 +2411,12 @@ static OpcodeInitializer _ENT_REVERSE(ENT_REVERSE, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get the list to reverse
 	auto list = InterpretNode(ocn[0]);
-	if(list == nullptr)
+	if(list == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//make sure it is an editable copy
@@ -2125,8 +2430,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en,
 
 static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SORT, []() {
 	OpcodeDetails d;
-	d.parameters = R"([* function] list|assoc collection [number k])";
-	d.returns = R"(list)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC, true}),
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"k", OpcodeDetails::DataType::NUMBER, true})
+	});
+	d.returns = OpcodeDetails::DataType::LIST;
 	d.description = "Returns a new list containing the elements from `collection` sorted in increasing order, regardless of whether `collection` is an assoc or list.  If `function` is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with `(current_value)` and `(current_value 1)` accessing a pair of elements from the list, and evaluates `function`.  The function should return a number, positive if `(current_value)` is greater meaning that `(current_value)` should come after `(current_value 1)`, negative if `(current_value 1)` is greater and should come after `(current_value)`, or 0 if equal.  If `k` is specified in addition to `function` and not null, then it will only return the `k` smallest values sorted in order, or, if `k` is negative, it will return the highest `k` values using the absolute value of `k`.";
 	d.examples = MakeAmalgamExamples({
 		{R"&((sort
@@ -2313,7 +2623,6 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 	-2
 ))&", R"([9 5])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 3.0;
@@ -2324,7 +2633,7 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	size_t list_index = (ocn.size() == 1 ? 0 : 1);
@@ -2466,8 +2775,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_CURRENT_INDEX(ENT_CURRENT_INDEX, &Interpreter::InterpretNode_ENT_CURRENT_INDEX, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number stack_distance])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::NUMBER, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to the index of the current node being iterated on within the current target.  If `stack_distance` is specified, it climbs back up the target stack that many levels.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&([0 1 2 3 (current_index) 5])&", R"([0 1 2 3 4 5])"},
@@ -2488,6 +2799,7 @@ static OpcodeInitializer _ENT_CURRENT_INDEX(ENT_CURRENT_INDEX, &Interpreter::Int
 	[0 1 2 3 2 4]
 ])"}
 		});
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 31.0;
 	d.opcodeGroup = _opcode_group;
@@ -2523,7 +2835,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	}
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
 	{
-		if(immediate_result.AnyImmediateType())
+		if(immediate_result.AnyPrimitiveImmediateType())
 		{
 			//parse into key, which may be the same StringID if not escaped and desired to be in an immediate format
 			auto cur_index_sid = Parser::ParseFromKeyStringIdToStringIdWithReference(enivwt.nodeValue.stringID);
@@ -2539,8 +2851,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 
 static OpcodeInitializer _ENT_CURRENT_VALUE(ENT_CURRENT_VALUE, &Interpreter::InterpretNode_ENT_CURRENT_VALUE, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number stack_distance])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::NUMBER, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to the current node being iterated on within the current target.  If `stack_distance` is specified, it climbs back up the target stack that many levels.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((map
@@ -2550,6 +2864,7 @@ static OpcodeInitializer _ENT_CURRENT_VALUE(ENT_CURRENT_VALUE, &Interpreter::Int
 	(range 0 4)
 ))&", R"([0 2 4 6 8])"},
 		});
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 77.0;
 	d.opcodeGroup = _opcode_group;
@@ -2580,8 +2895,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNod
 
 static OpcodeInitializer _ENT_PREVIOUS_RESULT(ENT_PREVIOUS_RESULT, &Interpreter::InterpretNode_ENT_PREVIOUS_RESULT, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number stack_distance] [bool copy])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"copy", OpcodeDetails::DataType::BOOL, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to the resulting node of the previous iteration for applicable opcodes. If `stack_distance` is specified, it climbs back up the target stack that many levels.  If `copy` is true, which is false by default, then a copy of the resulting node of the previous iteration is returned, otherwise the result of the previous iteration is returned directly and consumed.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((while
@@ -2609,6 +2927,7 @@ static OpcodeInitializer _ENT_PREVIOUS_RESULT(ENT_PREVIOUS_RESULT, &Interpreter:
 	.null
 ])"}
 		});
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 1.0;

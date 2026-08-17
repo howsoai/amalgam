@@ -66,7 +66,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_SEQUENCE, "seq");
 	EmplaceNodeTypeString(ENT_LAMBDA, "lambda");
 	EmplaceNodeTypeString(ENT_CALL, "call");
-	EmplaceNodeTypeString(ENT_CALL_SANDBOXED, "call_sandboxed");
 	EmplaceNodeTypeString(ENT_WHILE, "while");
 	EmplaceNodeTypeString(ENT_CONCLUDE, "conclude");
 	EmplaceNodeTypeString(ENT_RETURN, "return");
@@ -150,8 +149,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_APPEND, "append");
 	EmplaceNodeTypeString(ENT_SIZE, "size");
 	EmplaceNodeTypeString(ENT_GET, "get");
-	EmplaceNodeTypeString(ENT_SET, "set");
-	EmplaceNodeTypeString(ENT_REPLACE, "replace");
+	EmplaceNodeTypeString(ENT_MODIFY, "modify");
 	EmplaceNodeTypeString(ENT_INDICES, "indices");
 	EmplaceNodeTypeString(ENT_VALUES, "values");
 	EmplaceNodeTypeString(ENT_CONTAINS_INDEX, "contains_index");
@@ -198,7 +196,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_REMOVE_FROM_ENTITIES, "remove_from_entities");
 	EmplaceNodeTypeString(ENT_RETRIEVE_FROM_ENTITY, "retrieve_from_entity");
 	EmplaceNodeTypeString(ENT_CALL_ENTITY, "call_entity");
-	EmplaceNodeTypeString(ENT_CALL_ENTITY_GET_CHANGES, "call_entity_get_changes");
 	EmplaceNodeTypeString(ENT_CALL_ON_ENTITY, "call_on_entity");
 	EmplaceNodeTypeString(ENT_CALL_CONTAINER, "call_container");
 
@@ -236,6 +233,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS, "query_entity_distance_contributions");
 	EmplaceNodeTypeString(ENT_QUERY_ENTITY_KL_DIVERGENCES, "query_entity_kl_divergences");
 	EmplaceNodeTypeString(ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS, "query_entity_cumulative_nearest_entity_weights");
+	EmplaceNodeTypeString(ENT_QUERY_ENTITY_CLUSTERS, "query_entity_clusters");
 
 	//Metadata
 	EmplaceNodeTypeString(ENT_GET_ANNOTATIONS, "get_annotations");
@@ -259,6 +257,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_UNION, "union");
 	EmplaceNodeTypeString(ENT_DIFFERENCE, "difference");
 	EmplaceNodeTypeString(ENT_MIX, "mix");
+	EmplaceNodeTypeString(ENT_SIMPLIFY, "simplify");
 
 	//Entity Comparison and Evolution
 	EmplaceNodeTypeString(ENT_TOTAL_ENTITY_SIZE, "total_entity_size");
@@ -290,41 +289,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_false, ".false");
 	EmplaceStaticString(ENBISI_infinity, ".infinity");
 	EmplaceStaticString(ENBISI_neg_infinity, "-.infinity");
-	EmplaceStaticString(ENBISI_zero, "0");
-	EmplaceStaticString(ENBISI_one, "1");
-	EmplaceStaticString(ENBISI_one_half, "0.5");
-	EmplaceStaticString(ENBISI_two, "2");
-	EmplaceStaticString(ENBISI_three, "3");
-	EmplaceStaticString(ENBISI_four, "4");
-	EmplaceStaticString(ENBISI_five, "5");
-	EmplaceStaticString(ENBISI_six, "6");
-	EmplaceStaticString(ENBISI_seven, "7");
-	EmplaceStaticString(ENBISI_eight, "8");
-	EmplaceStaticString(ENBISI_nine, "9");
-	EmplaceStaticString(ENBISI_ten, "10");
-	EmplaceStaticString(ENBISI_eleven, "11");
-	EmplaceStaticString(ENBISI_twelve, "12");
-	EmplaceStaticString(ENBISI_neg_one, "-1");
-	EmplaceStaticString(ENBISI_neg_two, "-2");
-	EmplaceStaticString(ENBISI_zero_number_key, std::string("\0" "0", 2));
-	EmplaceStaticString(ENBISI_one_half_number_key, std::string("\0" "0.5", 4));
-	EmplaceStaticString(ENBISI_one_number_key, std::string("\0" "1", 2));
-	EmplaceStaticString(ENBISI_two_number_key, std::string("\0" "2", 2));
-	EmplaceStaticString(ENBISI_three_number_key, std::string("\0" "3", 2));
-	EmplaceStaticString(ENBISI_four_number_key, std::string("\0" "4", 2));
-	EmplaceStaticString(ENBISI_five_number_key, std::string("\0" "5", 2));
-	EmplaceStaticString(ENBISI_six_number_key, std::string("\0" "6", 2));
-	EmplaceStaticString(ENBISI_seven_number_key, std::string("\0" "7", 2));
-	EmplaceStaticString(ENBISI_eight_number_key, std::string("\0" "8", 2));
-	EmplaceStaticString(ENBISI_ten_number_key, std::string("\0" "10", 3));
-	EmplaceStaticString(ENBISI_eleven_number_key, std::string("\0" "11", 3));
-	EmplaceStaticString(ENBISI_twelve_number_key, std::string("\0" "12", 3));
-	EmplaceStaticString(ENBISI_neg_one_number_key, std::string("\0" "-1", 3));
-	EmplaceStaticString(ENBISI_neg_two_number_key, std::string("\0" "-2", 3));
-	EmplaceStaticString(ENBISI_null, ".null");
-	EmplaceStaticString(ENBISI_empty_list, "(list)");
-	EmplaceStaticString(ENBISI_empty_assoc, "(assoc)");
-	EmplaceStaticString(ENBISI_null_key, std::string("\0" ".null", 7));
 	EmplaceStaticString(ENBISI_true_key, std::string("\0" ".true", 6));
 	EmplaceStaticString(ENBISI_false_key, std::string("\0" ".false", 7));
 
@@ -337,6 +301,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_syntax, "syntax");
 	EmplaceStaticString(ENBISI_distance, "distance");
 	EmplaceStaticString(ENBISI_opcodes, "opcodes");
+	EmplaceStaticString(ENBISI_idioms, "idioms");
 
 	//file storage options
 	EmplaceStaticString(ENBISI_include_rand_seeds, "include_rand_seeds");
@@ -360,6 +325,16 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_require_version_compatibility, "require_version_compatibility");
 	EmplaceStaticString(ENBISI_amlg_version, "amlg_version");
 	EmplaceStaticString(ENBISI_version_compatible, "version_compatible");
+
+	//execution constraints
+	EmplaceStaticString(ENBISI_max_node_operations, "max_node_operations");
+	EmplaceStaticString(ENBISI_max_node_allocations, "max_node_allocations");
+	EmplaceStaticString(ENBISI_max_operation_depth, "max_operation_depth");
+	EmplaceStaticString(ENBISI_read_access, "read_access");
+	EmplaceStaticString(ENBISI_write_access, "write_access");
+	EmplaceStaticString(ENBISI_max_contained_entities, "max_contained_entities");
+	EmplaceStaticString(ENBISI_max_contained_entity_depth, "max_contained_entity_depth");
+	EmplaceStaticString(ENBISI_max_entity_id_length, "max_entity_id_length");
 
 	//entity access parameters
 	EmplaceStaticString(ENBISI_accessing_entity, "accessing_entity");
@@ -434,11 +409,14 @@ void StringInternPool::InitializeStaticStrings()
 
 	//mutate opcode mutation types
 	EmplaceStaticString(ENBISI_change_type, "change_type");
-	EmplaceStaticString(ENBISI_delete, "delete");
 	EmplaceStaticString(ENBISI_insert, "insert");
+	EmplaceStaticString(ENBISI_remove, "remove");
+	EmplaceStaticString(ENBISI_simplify_node, "simplify_node");
+	EmplaceStaticString(ENBISI_insert_element, "insert_element");
+	EmplaceStaticString(ENBISI_remove_element, "remove_element");
+	EmplaceStaticString(ENBISI_replace_element_with_copy, "replace_element_with_copy");
 	EmplaceStaticString(ENBISI_swap_elements, "swap_elements");
-	EmplaceStaticString(ENBISI_deep_copy_elements, "deep_copy_elements");
-	EmplaceStaticString(ENBISI_delete_elements, "delete_elements");
+	EmplaceStaticString(ENBISI_remove_all_elements, "remove_all_elements");
 
 	//mix parameters
 	EmplaceStaticString(ENBISI_string_edit_distance, "string_edit_distance");

@@ -1,6 +1,8 @@
 ### Opcode: `total_size`
 #### Parameters
-`* node`
+`any node`
+#### Returns
+`number`
 #### Description
 Evaluates to the total count of all of the nodes referenced directly or indirectly by `node`.
 #### Details
@@ -32,9 +34,11 @@ Output:
 
 ### Opcode: `mutate`
 #### Parameters
-`* node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth]`
+`any node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [number preserve_type_depth] [assoc immediate_number_weights] [assoc immediate_string_weights]`
+#### Returns
+`any`
 #### Description
-Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.00001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "delete", "insert", "swap_elements", "deep_copy_elements", and "delete_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.
+Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.0001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "simplify_node", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -133,12 +137,80 @@ Output:
 	)
 ]
 ```
+Example:
+```amalgam
+(mutate
+	(lambda
+		[
+			1
+			2
+			"c"
+			4
+			5
+			6
+			7
+			"g"
+			9
+			10
+			11
+			12
+			"l"
+			14
+			(associate "a" 1 "b" 2)
+		]
+	)
+	0.91
+	.null
+	.null
+	1
+	{
+		101 0.25
+		201 0.25
+		301 0.25
+		.null 0.25
+	}
+	{
+		"x" 0.5
+		"y" 0.5
+	}
+)
+```
+Output:
+```amalgam
+[
+		1.7100924132216468
+		201
+		"x"
+		4
+		101
+		.null
+		101
+		"x"
+		101
+		201
+		101
+		201
+		"x"
+		.null
+		x
+]
+```
+Example:
+```amalgam
+(get_type_string (mutate (lambda (+ 1 2)) 1.0 .null {"simplify_node" 1}))
+```
+Output:
+```amalgam
+"number"
+```
 
 [Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `get_mutation_defaults`
 #### Parameters
 `string value_type`
+#### Returns
+`any`
 #### Description
 Retrieves the default values of `value_type` for mutation, either "mutation_opcodes" or "mutation_types"
 #### Details
@@ -156,12 +228,15 @@ Example:
 Output:
 ```amalgam
 {
-	change_type 0.29
-	deep_copy_elements 0.07
-	delete 0.1
-	delete_elements 0.05
-	insert 0.25
-	swap_elements 0.24
+		change_type 0.15
+		insert 0.14
+		insert_element 0.14
+		remove 0.14
+		remove_all_elements 0.0001
+		remove_element 0.14
+		replace_element_with_copy 0.0999
+		simplify_node 0.05
+		swap_elements 0.14
 }
 ```
 
@@ -169,9 +244,11 @@ Output:
 
 ### Opcode: `commonality`
 #### Parameters
-`* node1 * node2 [assoc params]`
+`any node1 any node2 [assoc params]`
+#### Returns
+`number`
 #### Description
-Evaluates to the total count of all of the nodes referenced within `node1` and `node2` that are equivalent.  The assoc `params` can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "use_string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
+Evaluates to the total count of all of the nodes referenced within `node1` and `node2` that are equivalent.  The assoc `params` can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -298,7 +375,7 @@ Example:
 ```
 Output:
 ```amalgam
-0.49099467997549845
+0.583096267567592
 ```
 Example:
 ```amalgam
@@ -368,14 +445,24 @@ Output:
 ```amalgam
 3.5
 ```
+Example:
+```amalgam
+(commonality (lambda (- a b)) (lambda (- b)))
+```
+Output:
+```amalgam
+2
+```
 
 [Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `edit_distance`
 #### Parameters
-`* node1 * node2 [assoc params]`
+`any node1 any node2 [assoc params]`
+#### Returns
+`number`
 #### Description
-Evaluates to the number of nodes that are different between `node1` and `node2`. The assoc `params` can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "use_string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
+Evaluates to the number of nodes that are different between `node1` and `node2`. The assoc `params` can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -466,7 +553,7 @@ Example:
 ```
 Output:
 ```amalgam
-1.018010640049003
+0.8338074648648159
 ```
 Example:
 ```amalgam
@@ -512,7 +599,9 @@ Output:
 
 ### Opcode: `intersect`
 #### Parameters
-`* node1 * node2 [assoc params]`
+`any node1 any node2 [assoc params]`
+#### Returns
+`any`
 #### Description
 Evaluates to whatever is common between `node1` and `node2` exclusive.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true, the default, then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 #### Details
@@ -656,16 +745,16 @@ Example:
 ```amalgam
 (intersect
 	(lambda
-		(replace 4 2 6 1 7)
+		(modify 4 2 6 1 7)
 	)
 	(lambda
-		(replace 4 1 7 2 6)
+		(modify 4 1 7 2 6)
 	)
 )
 ```
 Output:
 ```amalgam
-(replace 4 2 6 1 7)
+(modify 4 2 6 1 7)
 ```
 Example:
 ```amalgam
@@ -743,7 +832,9 @@ Output:
 
 ### Opcode: `union`
 #### Parameters
-`* node1 * node2 [assoc params]`
+`any node1 any node2 [assoc params]`
+#### Returns
+`any`
 #### Description
 Evaluates to whatever is inclusive when merging `node1` and `node2`.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true, the default, then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.
 #### Details
@@ -1021,12 +1112,30 @@ Output:
 	[1 2 3]
 ]
 ```
+Example:
+```amalgam
+(union (lambda (+ a b)) (lambda (+ b)))
+```
+Output:
+```amalgam
+(+ a b)
+```
+Example:
+```amalgam
+(union (lambda (- a b)) (lambda (- b)))
+```
+Output:
+```amalgam
+(- a b)
+```
 
 [Amalgam Opcodes](./opcodes.md)
 
 ### Opcode: `difference`
 #### Parameters
-`* node1 * node2`
+`any node1 any node2`
+#### Returns
+`any`
 #### Description
 Finds the difference between `node1` and `node2`, and generates code that, if evaluated passing `node1` as its parameter "_", would turn it into `node2`.  Useful for finding a small difference of what needs to be changed to apply it to new (and possibly slightly different) data or code.
 #### Details
@@ -1075,7 +1184,7 @@ Output:
 ```amalgam
 (declare
 	{_ .null}
-	(replace
+	(modify
 		_
 		[]
 		(lambda
@@ -1126,7 +1235,7 @@ Output:
 ```amalgam
 (declare
 	{_ .null}
-	(replace
+	(modify
 		_
 		[]
 		(lambda
@@ -1183,7 +1292,7 @@ Output:
 ```amalgam
 (declare
 	{_ .null}
-	(replace
+	(modify
 		_
 		[]
 		(lambda
@@ -1246,7 +1355,7 @@ Example:
 ```
 Output:
 ```amalgam
-"(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\ta 2\r\n\t\t\t\tc (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"c\"\r\n\t\t\t\t\t)\r\n\t\t\t\td 6\r\n\t\t\t\te (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"e\"\r\n\t\t\t\t\t)\r\n\t\t\t\tf (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"f\"\r\n\t\t\t\t\t)\r\n\t\t\t\tg 14\r\n\t\t\t\tq 8\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n"
+"(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\ta 2\r\n\t\t\t\tc (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"c\"\r\n\t\t\t\t\t)\r\n\t\t\t\td 6\r\n\t\t\t\te (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"e\"\r\n\t\t\t\t\t)\r\n\t\t\t\tf (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"f\"\r\n\t\t\t\t\t)\r\n\t\t\t\tg 14\r\n\t\t\t\tq 8\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n"
 ```
 Example:
 ```amalgam
@@ -1276,7 +1385,7 @@ Example:
 ```
 Output:
 ```amalgam
-"(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[3]\r\n\t\t(lambda\r\n\t\t\t[\r\n\t\t\t\t(get\r\n\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t0\r\n\t\t\t\t)\r\n\t\t\t\t4\r\n\t\t\t]\r\n\t\t)\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t(set_type\r\n\t\t\t\t[\r\n\t\t\t\t\ta\r\n\t\t\t\t\t2\r\n\t\t\t\t\tg\r\n\t\t\t\t\t(get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t3\r\n\t\t\t\t\t)\r\n\t\t\t\t]\r\n\t\t\t\t\"associate\"\r\n\t\t\t)\r\n\t\t)\r\n\t)\r\n)\r\n"
+"(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[3]\r\n\t\t(lambda\r\n\t\t\t[\r\n\t\t\t\t(get\r\n\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t0\r\n\t\t\t\t)\r\n\t\t\t\t4\r\n\t\t\t]\r\n\t\t)\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t(set_type\r\n\t\t\t\t[\r\n\t\t\t\t\ta\r\n\t\t\t\t\t2\r\n\t\t\t\t\tg\r\n\t\t\t\t\t(get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t3\r\n\t\t\t\t\t)\r\n\t\t\t\t]\r\n\t\t\t\t\"associate\"\r\n\t\t\t)\r\n\t\t)\r\n\t)\r\n)\r\n"
 ```
 Example:
 ```amalgam
@@ -1299,7 +1408,7 @@ Example:
 ```
 Output:
 ```amalgam
-"(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\t2 .null\r\n\t\t\t\t5 .null\r\n\t\t\t\t6 .null\r\n\t\t\t\ta 1\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n"
+"(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\t2 .null\r\n\t\t\t\t5 .null\r\n\t\t\t\t6 .null\r\n\t\t\t\ta 1\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n"
 ```
 Example:
 ```amalgam
@@ -1319,7 +1428,7 @@ Example:
 ```
 Output:
 ```amalgam
-"(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n"
+"(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n"
 ```
 Example:
 ```amalgam
@@ -1339,7 +1448,7 @@ Example:
 ```
 Output:
 ```amalgam
-"(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n"
+"(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n"
 ```
 Example:
 ```amalgam
@@ -1448,7 +1557,9 @@ Output:
 
 ### Opcode: `mix`
 #### Parameters
-`* node1 * node2 [number keep_chance_node1] [number keep_chance_node2] [assoc params]`
+`any node1 any node2 [number keep_chance_node1] [number keep_chance_node2] [assoc params]`
+#### Returns
+`any`
 #### Description
 Performs a union operation on `node1` and `node2`, but randomly ignores nodes from one or the other if the nodes are not equal.  If only `keep_chance_node1` is specified, `keep_chance_node2` defaults to 1 - `keep_chance_node1`. `keep_chance_node1` specifies the probability that a node from `node1` will be kept, and `keep_chance_node2` the probability that a node from `node2` will be kept.  `keep_chance_node1` + `keep_chance_node2` should be between 1 and 2, as there are two objects being merged, otherwise the values will be normalized.  `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", "recursive_matching", and "similar_mix_chance".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  "similar_mix_chance" is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on `keep_chance_node1` and `keep_chance_node2`, and defaults to 0.0.  If "similar_mix_chance" is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.
 #### Details
@@ -1881,6 +1992,706 @@ Output:
 	w [2]
 	z [5]
 }
+```
+
+[Amalgam Opcodes](./opcodes.md)
+
+### Opcode: `simplify`
+#### Parameters
+`any code`
+#### Returns
+`any`
+#### Description
+Simplifies `code` in basic ways that will yield the same behavior and return the same result.  Note that values from boolean logic may not necessarily be preserved, with the opcodes "and" and "or" potentially returning just true or false.
+#### Details
+ - Permissions required:  none
+ - Allows concurrency: false
+ - Requires entity: false
+ - Creates new scope: false
+ - Creates new target scope: false
+ - Value newness (whether references existing node): new
+#### Examples
+Example:
+```amalgam
+(simplify
+	(lambda
+		(+
+			0
+			1
+			2
+			3
+			4
+			5
+			6
+		)
+	)
+)
+```
+Output:
+```amalgam
+21
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(if
+			a (if .false 1 .true 2 c)
+			b (if 3)
+			.false 3
+			4			
+		)
+	)
+)
+```
+Output:
+```amalgam
+(if a 2 b 3 4)
+```
+Example:
+```amalgam
+(simplify (lambda (if)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (if .false 1)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(and a .true b (or .false c d))
+	)
+)
+```
+Output:
+```amalgam
+(and
+		(or c d)
+		a
+		b
+)
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(concat "h" "e" l l "o" " " "w" o r l "d" "!")
+	)
+)
+```
+Output:
+```amalgam
+(concat
+		"he"
+		l
+		l
+		"o w"
+		o
+		r
+		l
+		"d!"
+)
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(+ (exp a) a 4 2 (+ 3 4 a) (+ 3 a 4) a (exp a))
+	)
+)
+```
+Output:
+```amalgam
+(+
+		(*
+				(exp a)
+				2
+		)
+		(* 4 a)
+		20
+)
+```
+Example:
+```amalgam
+(simplify (lambda (-)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (- a)))
+```
+Output:
+```amalgam
+(- a)
+```
+Example:
+```amalgam
+(simplify (lambda (- 5 a)))
+```
+Output:
+```amalgam
+(- 5 a)
+```
+Example:
+```amalgam
+(simplify (lambda (- a 0)))
+```
+Output:
+```amalgam
+a
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a 0))) {a -0})
+```
+Output:
+```amalgam
+-0
+```
+Example:
+```amalgam
+(simplify (lambda (- a -0)))
+```
+Output:
+```amalgam
+(- a -0)
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a 0))) {a "2"})
+```
+Output:
+```amalgam
+"2"
+```
+Example:
+```amalgam
+(simplify (lambda (- b a a 1)))
+```
+Output:
+```amalgam
+(-
+	b
+	(* 2 a)
+	1
+)
+```
+Example:
+```amalgam
+(simplify (lambda (- a a)))
+```
+Output:
+```amalgam
+(- a a)
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a))) {a .infinity})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a))) {a .null})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (- a a a)))
+```
+Output:
+```amalgam
+(-
+	a
+	(* 2 a)
+)
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a a))) {a 2})
+```
+Output:
+```amalgam
+-2
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a a))) {a .infinity})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a a a))) {a 2})
+```
+Output:
+```amalgam
+-4
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a b))) {a 2 b 3})
+```
+Output:
+```amalgam
+-3
+```
+Example:
+```amalgam
+(call (simplify (lambda (- a a 5 b))) {a 2 b 3})
+```
+Output:
+```amalgam
+-8
+```
+Example:
+```amalgam
+(simplify (lambda (- a 5 -2)))
+```
+Output:
+```amalgam
+(- a 3)
+```
+Example:
+```amalgam
+(simplify (lambda (- 10 2 3)))
+```
+Output:
+```amalgam
+5
+```
+Example:
+```amalgam
+(simplify (lambda (- a 2 0)))
+```
+Output:
+```amalgam
+(- a 2)
+```
+Example:
+```amalgam
+(simplify (lambda (- a .null b)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify
+	(lambda
+		(* b a a 1 b 3)
+	)
+)
+```
+Output:
+```amalgam
+(*
+		(pow a 2)
+		(pow b 2)
+		3
+)
+```
+Example:
+```amalgam
+(simplify (lambda (/)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (/ a)))
+```
+Output:
+```amalgam
+(/ a)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 2)))
+```
+Output:
+```amalgam
+(/ a 2)
+```
+Example:
+```amalgam
+(simplify (lambda (/ 6 a)))
+```
+Output:
+```amalgam
+(/ 6 a)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 1)))
+```
+Output:
+```amalgam
+a
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 1))) {a -0})
+```
+Output:
+```amalgam
+-0
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 1))) {a "2"})
+```
+Output:
+```amalgam
+"2"
+```
+Example:
+```amalgam
+(simplify (lambda (/ b a a 1 3 a)))
+```
+Output:
+```amalgam
+(/
+	b
+	(pow a 3)
+	3
+)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a a)))
+```
+Output:
+```amalgam
+(/ a a)
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a))) {a 0})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a))) {a .infinity})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (/ a a a)))
+```
+Output:
+```amalgam
+(/
+	a
+	(pow a 2)
+)
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a a))) {a 2})
+```
+Output:
+```amalgam
+0.5
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a a))) {a .infinity})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a a a))) {a 2})
+```
+Output:
+```amalgam
+0.25
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a a b))) {a 2 b 4})
+```
+Output:
+```amalgam
+0.25
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 2 0.5)))
+```
+Output:
+```amalgam
+a
+```
+Example:
+```amalgam
+(simplify (lambda (/ 12 2 3)))
+```
+Output:
+```amalgam
+2
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 2 3)))
+```
+Output:
+```amalgam
+(/ a 6)
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a -1 0))) {a 2})
+```
+Output:
+```amalgam
+-.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a -2 0))) {a 2})
+```
+Output:
+```amalgam
+-.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 0 -1))) {a 2})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 0 -2))) {a 2})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 2 0 -3))) {a 2})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(unparse (simplify (lambda (/ a 2 0 -3))) .false .false)
+```
+Output:
+```amalgam
+"(/ a 2 0 -3)"
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a -0))) {a 2})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(simplify (lambda (/ a .null b)))
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 2 1)))
+```
+Output:
+```amalgam
+(/ a 2)
+```
+Example:
+```amalgam
+(simplify (lambda (pow a 1)))
+```
+Output:
+```amalgam
+a
+```
+Example:
+```amalgam
+(simplify (lambda (exp (log a))))
+```
+Output:
+```amalgam
+(exp
+	(log a)
+)
+```
+Example:
+```amalgam
+(call (simplify (lambda (exp (log a)))) {a -1})
+```
+Output:
+```amalgam
+.null
+```
+Example:
+```amalgam
+(call (simplify (lambda (exp (log a)))) {a 0})
+```
+Output:
+```amalgam
+0
+```
+Example:
+```amalgam
+(call (simplify (lambda (exp (log a)))) {a .infinity})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(simplify (lambda (log (exp a))))
+```
+Output:
+```amalgam
+(log
+	(exp a)
+)
+```
+Example:
+```amalgam
+(call (simplify (lambda (log (exp a)))) {a 1000})
+```
+Output:
+```amalgam
+.infinity
+```
+Example:
+```amalgam
+(call (simplify (lambda (log (exp a)))) {a -1000})
+```
+Output:
+```amalgam
+-.infinity
+```
+Example:
+```amalgam
+(simplify (lambda (log (exp))))
+```
+Output:
+```amalgam
+1
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 7 7)))
+```
+Output:
+```amalgam
+(/ a 49)
+```
+Example:
+```amalgam
+(call (simplify (lambda (/ a 7 7))) {a 49})
+```
+Output:
+```amalgam
+1
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 7 7 2)))
+```
+Output:
+```amalgam
+(/ a 98)
+```
+Example:
+```amalgam
+(simplify (lambda (/ a 49)))
+```
+Output:
+```amalgam
+(/ a 49)
+```
+Example:
+```amalgam
+(simplify (simplify (lambda (/ a 7 7))))
+```
+Output:
+```amalgam
+(/ a 49)
+```
+Example:
+```amalgam
+(simplify (lambda (concat "a" (concat b "c") "d")))
+```
+Output:
+```amalgam
+(concat "a" b "cd")
+```
+Example:
+```amalgam
+(call (simplify (lambda (concat "a" (concat b "c") "d"))) {b "-"})
+```
+Output:
+```amalgam
+"a-cd"
+```
+Example:
+```amalgam
+(call
+	(simplify
+		(lambda
+			(concat
+				(concat "a" b)
+				"m"
+				(concat c "d")
+			)
+		)
+	)
+	{b "X" c "Y"}
+)
+```
+Output:
+```amalgam
+"aXmYd"
 ```
 
 [Amalgam Opcodes](./opcodes.md)

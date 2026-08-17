@@ -71,11 +71,11 @@ public:
 	// if has_weight, then will use get_weight to obtain the weight of each value
 	template<typename EntityIterator, typename ValueFunction, typename WeightFunction>
 	__forceinline static
-		FastHashMap<double, double, std::hash<double>, DoubleNanHashComparator>
+		FastHashMap<double, double, FastHasher<double>, DoubleNanHashComparator>
 		ValueMassesNumber(EntityIterator first, EntityIterator last, size_t estimated_num_unique_values,
 			ValueFunction get_value, bool has_weight, WeightFunction get_weight)
 	{
-		FastHashMap<double, double, std::hash<double>, DoubleNanHashComparator> value_masses;
+		FastHashMap<double, double, FastHasher<double>, DoubleNanHashComparator> value_masses;
 		value_masses.reserve(estimated_num_unique_values);
 
 		if(!has_weight)
@@ -539,9 +539,10 @@ public:
 		// and updating the length of entity_distance_pair_container
 		//selects the bandwidth from the transformed values and returns the number of entities to keep,
 		// which may be less than the total
+		//returns the number of cases kept after bandwidth selection
 		template<typename EntityDistancePairContainer>
-		__forceinline void TransformDistances(EntityDistancePairContainer &entity_distance_pair_container,
-			bool sort_results)
+		__forceinline size_t TransformDistances(EntityDistancePairContainer &entity_distance_pair_container,
+			bool sort_results, bool resize_neighbors = true)
 		{
 			size_t num_kept = TransformDistancesWithBandwidthSelectionAndResultFunction(
 				entity_distance_pair_container.begin(), entity_distance_pair_container.end(),
@@ -550,7 +551,8 @@ public:
 					ed_pair->distance = weighted_value;
 				});
 
-			entity_distance_pair_container.resize(num_kept);
+			if(resize_neighbors)
+				entity_distance_pair_container.resize(num_kept);
 
 			if(sort_results)
 			{
@@ -572,6 +574,8 @@ public:
 					);
 				}
 			}
+
+			return num_kept;
 		}
 
 		//like TransformDistances but returns the appropriate expected value

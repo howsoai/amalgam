@@ -7,9 +7,13 @@ static std::string _opcode_group = "Control Flow";
 
 static OpcodeInitializer _ENT_IF(ENT_IF, &Interpreter::InterpretNode_ENT_IF, []() {
 	OpcodeDetails d;
-	d.parameters = R"([bool condition1] [code then1] [bool condition2] [code then2] ... [bool conditionN] [code thenN] [code else])";
-	d.returns = R"(any)";
-	d.description = R"(If `condition1` is true, then it will evaluate to the then1 argument.  Otherwise `condition2` will be checked, repeating for every pair.  If there is an odd number of parameters, the last is the final 'else', and will be evaluated as that if all conditions are false.  If there is an even number of parameters and none are true, then evaluates to null.)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"condition_or_node", OpcodeDetails::DataType::ANY_BASIC, true},
+			{"node", OpcodeDetails::DataType::ANY_BASIC, true}, true),
+	});
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(If `condition_or_node1` is true, then it will evaluate to the node1 argument.  Otherwise `condition_or_node2` will be checked, repeating for every pair.  If there is an odd number of parameters, the last `condition_or_node` acts as the final else, and will be evaluated as that if all conditions are false.  If there is an even number of parameters and none are true, then evaluates to null.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((if 1 "if 1"))&", R"("if 1")"},
 		{R"&((if 0 "not this one" "if 2"))&", R"("if 2")"},
@@ -48,8 +52,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_IF(EvaluableNode *en, Eval
 
 static OpcodeInitializer _ENT_SEQUENCE(ENT_SEQUENCE, &Interpreter::InterpretNode_ENT_SEQUENCE, []() {
 	OpcodeDetails d;
-	d.parameters = R"([code c1] [code c2] ... [code cN])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true}, true),
+	});
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Runs each code block sequentially.  Evaluates to the result of the last code block run, unless it encounters a conclude or return in an earlier step, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value (see conclude opcode).)";
 	d.examples = MakeAmalgamExamples({
 		{R"((seq 1 2 3))", R"(3)"},
@@ -59,7 +66,6 @@ static OpcodeInitializer _ENT_SEQUENCE(ENT_SEQUENCE, &Interpreter::InterpretNode
 	a
 ))", R"(2)"},
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 15.0;
 	d.opcodeGroup = _opcode_group;
@@ -98,8 +104,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en
 
 static OpcodeInitializer _ENT_LAMBDA(ENT_LAMBDA, &Interpreter::InterpretNode_ENT_LAMBDA, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* function [bool evaluate_and_wrap])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"evaluate_and_wrap", OpcodeDetails::DataType::BOOL, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to the code specified without evaluating it.  Useful for referencing functions or handling data without evaluating it.  The parameter `evaluate_and_wrap` defaults to false, but if it is true, it will evaluate the function, but then return the result wrapped in a lambda opcode.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((lambda (+ 1 2)))", R"((+ 1 2))"},
@@ -119,33 +128,34 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAMBDA(EvaluableNode *en, 
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-	if(ocn_size == 0)
-	{
+	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
-	}
-	else if(ocn_size == 1 || !EvaluableNode::ToBool(ocn[1]))
-	{
-		//if only one parameter or second parameter isn't true, just return the result
+
+	//if only one parameter or second parameter isn't true, just return the result
+	if(ocn_size == 1 || !EvaluableNode::ToBool(ocn[1]))
 		return EvaluableNodeReference(ocn[0], false);
-	}
-	else //evaluate and then wrap in a lambda
-	{
-		EvaluableNodeReference evaluated_value = InterpretNode(ocn[0]);
 
-		//need to evaluate its parameter and return a new node encapsulating it
-		EvaluableNodeReference lambda(evaluableNodeManager->AllocNode(ENT_LAMBDA), true);
-		lambda->AppendOrderedChildNode(evaluated_value);
-		lambda.UpdatePropertiesBasedOnAttachedNode(evaluated_value, true);
+	//evaluate and then wrap in a lambda
+	EvaluableNodeReference evaluated_value = InterpretNode(ocn[0]);
 
-		return lambda;
-	}
+	//need to evaluate its parameter and return a new node encapsulating it
+	EvaluableNodeReference lambda(evaluableNodeManager->AllocNode(ENT_LAMBDA), true);
+	lambda->AppendOrderedChildNode(evaluated_value);
+	lambda.UpdatePropertiesBasedOnAttachedNode(evaluated_value, true);
+
+	return lambda;
 }
 
 static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CALL, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* function [assoc params])";
-	d.returns = R"(any)";
-	d.description = R"(Evaluates `function` after pushing the `params` assoc onto the scope stack.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"function", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"constraints", OpcodeDetails::DataType::BOOL | OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"return_warnings", OpcodeDetails::DataType::BOOL, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Evaluates `function` after pushing the `params` assoc onto the scope stack.  If `constraints` is specified and not false or null, it will constrain execution.  If `constraints` is true or an assoc, it will default all constraints to be on at reasonable values for small execution without access to any data beyond `params`.  They optional key-value combinations for `constraints` are as follows.  If "max_node_operations" is specified, it represents the number of operations that are allowed to be performed. If "max_node_operations" is 0, then an infinite of operations will be allotted, up to the limits of the current calling context.  If "max_node_allocations" is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If "max_node_allocations" is 0 and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if "max_node_allocations" is specified while in a multithreaded environment, if the collective memory from all the executing threads exceeds the average memory specified by "max_node_allocations", that may trigger a memory limit for the call.  If "max_operation_depth" is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise "max_operation_depth" limits how deep nested opcodes will be called. If `return_warnings` is true (default is false), the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  The keys "read_access" and "write_access" are boolean and control whether the execution can read from or write to entities and access their relevant permissions (e.g., to load files, make system calls).  If the parameter `return_warnings` is false, just the value will be returned.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
 	{
@@ -160,12 +170,56 @@ static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CAL
 		foo
 		{x 3}
 	)
-))&", R"(5)"}
+))&", R"(5)"},
+		{ R"&((call
+	(lambda
+		(+
+			(+ y 4)
+			4
+		)
+	)
+	{y 3}
+	.true
+))&", R"(11)" },
+			{ R"&((call
+	(lambda
+		(+
+			(+ y 4)
+			4
+		)
+	)
+	{y 3}
+	.true
+	.true
+))&", R"([11 {} .null])" },
+			{ R"&((call
+	(lambda
+		(call
+			(lambda
+				(+
+					(+ y 4)
+					4
+				)
+			)
+			{y 3}
+			{max_operation_depth 2}
+			.true
+		)
+	)
+	{y 3}
+	{max_operation_depth 50}
+	.true
+))&", R"([
+	[.null {} "Execution depth exceeded"]
+	{}
+	.null
+])"}
 		});
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+	d.retrievesData = true;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
 	d.newScope = true;
 	d.mayCauseNodeUpdateInCurrentEntity = true;
-	d.frequencyPer10000Opcodes = 112.0;
+	d.frequencyPer10000Opcodes = 113.0;
 	d.opcodeGroup = _opcode_group;
 	return d;
 });
@@ -173,10 +227,10 @@ static OpcodeInitializer _ENT_CALL(ENT_CALL, &Interpreter::InterpretNode_ENT_CAL
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
+	auto function = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
@@ -191,13 +245,69 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
+	//only construct objects and check if calling constrained if enough params
+	if(ocn.size() > 2)
+	{
+		InterpreterConstraints interpreter_constraints;
+		PopulateInterpreterConstraintsFromParams(ocn, 2, interpreter_constraints);
+		if(interpreter_constraints.AnyActiveConstraints())
+		{
+			//need to return a more complex data structure, can't return immediate
+			if(interpreter_constraints.collectWarnings)
+				immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
+
+			//if have a scope stack context of variables specified, then use it
+			EvaluableNodeReference args = EvaluableNodeReference::Null();
+			if(ocn.size() > 1)
+				args = InterpretNode(ocn[1]);
+
+			//build scope stack from parameters
+			auto scope_stack = ConvertArgsToScopeStack(args, *evaluableNodeManager);
+
+			bool read_access = interpreter_constraints.readAccess;
+
+			PopulatePerformanceCounters(&interpreter_constraints, nullptr);
+
+			Interpreter sandbox(evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
+				writeListeners, printListener, &interpreter_constraints, read_access ? curEntity : nullptr, this);
+
+		#ifdef MULTITHREAD_SUPPORT
+			// everything at this point is referenced on stacks; allow the sandbox to trigger a garbage collect without this interpreter blocking
+			std::swap(memoryModificationLock, sandbox.memoryModificationLock);
+		#endif
+
+			auto result = sandbox.ExecuteNode(function, &scope_stack, nullptr, nullptr, immediate_result);
+
+		#ifdef MULTITHREAD_SUPPORT
+			//hand lock back to this interpreter
+			std::swap(memoryModificationLock, sandbox.memoryModificationLock);
+		#endif
+
+			if(result.unique)
+				evaluableNodeManager->FreeNodeTreeIfPossible(args);
+			else //it's possible some value is returned, can only free top node
+				evaluableNodeManager->FreeNodeIfPossible(args);
+
+			//call opcodes should consume the outer return opcode if there is one
+			if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
+				result = RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
+
+			if(interpreterConstraints != nullptr)
+				interpreterConstraints->AccruePerformanceCounters(&interpreter_constraints);
+
+			return BundleResultWithWarningsAndChangesIfNeeded(
+				interpreter_constraints.constraintsExceeded ? EvaluableNodeReference::Null() : result,
+				&interpreter_constraints);
+		}
+	}
+
 	bool profiling_call = false;
 	if(_label_profiling_enabled && curEntity != nullptr)
 	{
 		auto [label_sid, found] = curEntity->GetLabelForNodeIfExists(function);
 		size_t num_nodes = evaluableNodeManager->GetNumberOfUsedNodes();
 		if(label_sid != string_intern_pool.NOT_A_STRING_ID)
-			PerformanceProfiler::StartOperation(label_sid->string, num_nodes);
+			PerformanceProfiler::StartOperation(string_intern_pool.GetStringViewFromID(label_sid), num_nodes);
 		else
 			PerformanceProfiler::StartOperation("", num_nodes);
 		profiling_call = true;
@@ -220,156 +330,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 	return result;
 }
 
-static OpcodeInitializer _ENT_CALL_SANDBOXED(ENT_CALL_SANDBOXED, &Interpreter::InterpretNode_ENT_CALL_SANDBOXED, []() {
-	OpcodeDetails d;
-	d.parameters = R"(* function assoc params [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [bool return_warnings])";
-	d.returns = R"(any)";
-	d.description = R"(Evaluates the code specified by function, isolating it from everything except for params, which is used as a single layer of the scope stack.  This is useful when evaluating code passed by other entities that may or may not be trusted.  Opcodes run from within call_sandboxed that require any form of permissions will not perform any action and will evaluate to null.  If `operation_limit` is specified, it represents the number of operations that are allowed to be performed. If `operation_limit` is 0 or infinite, then an infinite of operations will be allotted, up to the limits of the current calling context. If `max_node_allocations` is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory, up to the current calling context's limit.   If `max_node_allocations` is 0 or infinite and the caller also has no limit, then there is no limit to the number of nodes to be allotted as long as the machine has sufficient memory.  Note that if `max_node_allocations` is specified while call_sandboxed is being called in a multithreaded environment, if the collective memory from all the related threads exceeds the average memory specified by call_sandboxed, that may trigger a memory limit for the call_sandboxed.  If `max_opcode_execution_depth` is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise `max_opcode_execution_depth` limits how deep nested opcodes will be called. If `return_warnings` is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is a list of all warnings, and perf_constraint_violation is a string denoting the performance constraint exceeded (or .null if none)).  If `return_warnings` is false, just the value will be returned.)";
-	d.examples = MakeAmalgamExamples({
-		{R"&((call_sandboxed
-	(lambda
-		(+
-			(+ y 4)
-			4
-		)
-	)
-	{y 3}
-	.null
-	.null
-	50
-))&", R"([11 {} .null])"},
-			{R"&((call_sandboxed
-	(lambda
-		(+
-			(+ y 4)
-			4
-		)
-	)
-	{y 3}
-	.null
-	.null
-	1
-))&", R"([.null {} "Execution depth exceeded"])"},
-			{R"&((call_sandboxed
-	(lambda
-		(call_sandboxed
-			(lambda
-				(+
-					(+ y 4)
-					4
-				)
-			)
-			{y 3}
-			.null
-			.null
-			2
-		)
-	)
-	{y 3}
-	.null
-	.null
-	50
-))&", R"([
-	[.null {} "Execution depth exceeded"]
-	{}
-	.null
-])"}
-		});
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
-	d.newScope = true;
-	d.frequencyPer10000Opcodes = 1.0;
-	d.opcodeGroup = _opcode_group;
-	return d;
-});
-
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
-{
-	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
-		return EvaluableNodeReference::Null();
-
-	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	if(EvaluableNode::IsNull(function))
-		return EvaluableNodeReference::Null();
-
-	if(function.GetIsIdempotent())
-	{
-		if(!function.unique)
-			function = evaluableNodeManager->DeepAllocCopy(function, false);
-		if(function.IsNonNullNodeReference() && function->GetType() == ENT_RETURN)
-			function = RemoveTopConcludeOrReturnNode(function, evaluableNodeManager);
-		return function;
-	}
-
-	auto node_stack = CreateOpcodeStackStateSaver(function);
-
-	InterpreterConstraints interpreter_constraints;
-	InterpreterConstraints *interpreter_constraints_ptr = nullptr;
-
-	if(PopulateInterpreterConstraintsFromParams(ocn, 2, interpreter_constraints))
-		interpreter_constraints_ptr = &interpreter_constraints;
-
-	//need to return a more complex data structure, can't return immediate
-	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->collectWarnings)
-		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
-
-	//if have a scope stack context of variables specified, then use it
-	EvaluableNodeReference args = EvaluableNodeReference::Null();
-	if(ocn.size() > 1)
-		args = InterpretNode(ocn[1]);
-
-	//build scope stack from parameters
-	auto scope_stack = ConvertArgsToScopeStack(args, *evaluableNodeManager);
-
-	PopulatePerformanceCounters(interpreter_constraints_ptr, nullptr);
-
-	Interpreter sandbox(evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
-		writeListeners, printListener, interpreter_constraints_ptr, nullptr, this);
-
-#ifdef MULTITHREAD_SUPPORT
-	// everything at this point is referenced on stacks; allow the sandbox to trigger a garbage collect without this interpreter blocking
-	std::swap(memoryModificationLock, sandbox.memoryModificationLock);
-#endif
-
-	//improve performance by managing the stacks here
-	auto result = sandbox.ExecuteNode(function, &scope_stack, nullptr, nullptr, immediate_result);
-
-#ifdef MULTITHREAD_SUPPORT
-	//hand lock back to this interpreter
-	std::swap(memoryModificationLock, sandbox.memoryModificationLock);
-#endif
-
-	if(result.unique)
-		evaluableNodeManager->FreeNodeTreeIfPossible(args);
-	else //it's possible some value is returned, can only free top node
-		evaluableNodeManager->FreeNodeIfPossible(args);
-
-	//call opcodes should consume the outer return opcode if there is one
-	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
-		result = RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
-
-	if(interpreterConstraints != nullptr)
-		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
-
-	//if only want results, return them
-	if(!interpreter_constraints.collectWarnings)
-	{
-		if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
-			return EvaluableNodeReference::Null();
-		return result;
-	}
-
-	if(interpreter_constraints_ptr != nullptr && interpreter_constraints.constraintsExceeded)
-		return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
-
-	return BundleResultWithWarningsIfNeeded(result,
-		interpreter_constraints_ptr != nullptr ? interpreter_constraints_ptr : &interpreter_constraints);
-}
-
 static OpcodeInitializer _ENT_WHILE(ENT_WHILE, &Interpreter::InterpretNode_ENT_WHILE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(bool condition [code code1] [code code2] ... [code codeN])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"condition", OpcodeDetails::DataType::BOOL}),
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true}, true)
+	});
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Each time the `condition` evaluates to true, it runs each of code sequentially, looping. Evaluates to the last `codeN` or null if the `condition` was initially false or if it encounters a `conclude` or `return`, it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  For each iteration of the loop, it pushes a new target scope onto the target stack, with `(current_index)` being the iteration count, and `(previous_result)` being the last evaluated `codeN` of the previous loop.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -385,7 +353,6 @@ static OpcodeInitializer _ENT_WHILE(ENT_WHILE, &Interpreter::InterpretNode_ENT_W
 	i
 ))&", R"(10)"},
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 2.5;
@@ -397,12 +364,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, E
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-	if(ocn_size == 0)
+	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference previous_result = EvaluableNodeReference::Null();
-
-	PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+	PushNewConstructionContext(_null_reference, _null_reference, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
 	size_t loop_iteration = 0;
 	for(;;)
@@ -426,11 +392,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, E
 		EvaluableNodeReference new_result = EvaluableNodeReference::Null();
 		for(size_t i = 1; i < ocn_size; i++)
 		{
-			//request immediate values when not last, since any allocs for returns would be wasted
-			//concludes won't be immediate
+			//request nothing when not last, since any allocs for returns would be wasted
+			//concludes and returns will still be returned
 			//but because previous_result may be used, that can't be immediate, so the last param
 			//cannot be evaluated as immediate
-			new_result = InterpretNode(ocn[i], i + 1 < ocn_size);
+			if(i + 1 < ocn_size)
+				new_result = InterpretNodeForImmediateUse(ocn[i], EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
+			else
+				new_result = InterpretNode(ocn[i]);
 
 			if(new_result.IsNonNullNodeReference())
 			{
@@ -468,9 +437,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_CONCLUDE(ENT_CONCLUDE, &Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* conclusion)";
-	d.returns = R"(any)";
-	d.description = R"(Evaluates to `conclusion` wrapped in a `conclude` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a `conclude` (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to the value `conclusion`.  Note that conclude opcodes may be nested to break out of outer opcodes.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Evaluates to `node` wrapped in a `conclude` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a `conclude` (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to `node`.  Note that conclude opcodes may be nested to break out of outer opcodes.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	"seq1"
@@ -515,9 +486,11 @@ static OpcodeInitializer _ENT_CONCLUDE(ENT_CONCLUDE, &Interpreter::InterpretNode
 
 static OpcodeInitializer _ENT_RETURN(ENT_RETURN, &Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* return_value)";
-	d.returns = R"(any)";
-	d.description = R"(Evaluates to `return_value` wrapped in a `return` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a return (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to the `return` opcode with its `return_value`.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including `call`, `call_sandboxed`, `call_entity`, `call_entity_get_changes`, or `call_container`, at which point it will evaluate to `return_value`.  Note that return opcodes may be nested to break out of multiple calls.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Evaluates to `node` wrapped in a `return` opcode.  If a step in a `seq`, `let`, `declare`, or `while` evaluates to a return (excluding variable declarations for `let` and `declare`, the last step in `set`, `let`, and `declare`, or the condition of `while`), then it will conclude the execution and evaluate to the `return` opcode with its `node`.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including `call`, `call_entity`, `call_on_entity`, or `call_container`, at which point it will evaluate to `node`.  Note that return opcodes may be nested to break out of multiple calls.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((call
 	(seq
@@ -563,8 +536,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN(Evalua
 
 static OpcodeInitializer _ENT_APPLY(ENT_APPLY, &Interpreter::InterpretNode_ENT_APPLY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* to_apply [list|assoc collection])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"to_apply", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Creates a new list of the values of the elements of the `collection`, and changes the type to that specified by `to_apply` and then evaluates it.  The parameter `to_apply` can either be a string representing the type or an opcode of the specified type.  If `to_apply` is an opcode and has parameters, i.e., it is a node with one or more elements, these are prepended to the `collection` as the first parameters.  When no extra parameters are passed, it is a more efficient equivalent to `(call (set_type type collection))`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((apply
@@ -591,7 +567,7 @@ static OpcodeInitializer _ENT_APPLY(ENT_APPLY, &Interpreter::InterpretNode_ENT_A
 EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//can't interpret for immediate use in case the node has child nodes that will be prepended
@@ -627,14 +603,114 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 	auto opcode_new_value_return_type = GetOpcodeNewValueReturnType(new_type);
 	bool may_opcode_cause_node_update_in_current_entity = MayOpcodeCauseNodeUpdateInCurrentEntity(new_type);
 
+	EvaluableNodeRequestedValueTypes immediate_types;
+	switch(new_type)
+	{
+	case ENT_ADD:
+		immediate_types = EvaluableNodeRequestedValueTypes(EvaluableNodeRequestedValueTypes::Type::SUM_AS_NUMBER);
+		break;
+	case ENT_MULTIPLY:
+		immediate_types = EvaluableNodeRequestedValueTypes(EvaluableNodeRequestedValueTypes::Type::PRODUCT_AS_NUMBER);
+		break;
+	case ENT_MIN:
+		immediate_types = EvaluableNodeRequestedValueTypes(EvaluableNodeRequestedValueTypes::Type::MIN_AS_NUMBER);
+		break;
+	case ENT_MAX:
+		immediate_types = EvaluableNodeRequestedValueTypes(EvaluableNodeRequestedValueTypes::Type::MAX_AS_NUMBER);
+		break;
+	case ENT_CONCAT:
+		immediate_types = EvaluableNodeRequestedValueTypes(EvaluableNodeRequestedValueTypes::Type::CONCAT_AS_STRING_ID);
+		break;
+	default:
+		break;
+	}	
+
 	EvaluableNodeReference source;
 	if(may_opcode_cause_node_update_in_current_entity
 			|| opcode_new_value_return_type == OpcodeDetails::OpcodeReturnNewnessType::PARTIAL
 			|| opcode_new_value_return_type == OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL
 			|| opcode_new_value_return_type == OpcodeDetails::OpcodeReturnNewnessType::EXISTING)
-		source = InterpretNode(ocn[1]);
+		source = InterpretNode(ocn[1], immediate_types);
 	else //returns a new value without affecting anything else, can call potentially faster interpret
-		source = InterpretNodeForImmediateUse(ocn[1]);
+		source = InterpretNodeForImmediateUse(ocn[1], immediate_types);
+
+	if(source.IsImmediateValue())
+	{
+		auto &result_value = source.GetValue().nodeValue;
+		auto &result_type = source.GetValue().nodeType;
+		if(result_type == ENIVT_NUMBER)
+		{
+			if(new_type == ENT_ADD)
+			{
+				double sum = result_value.number;
+				//if there are further parameters, need to add them to the sum
+				if(type_node->GetType() == ENT_ADD && type_node->GetOrderedChildNodesReference().size() > 0)
+					sum += InterpretNodeIntoNumberValue(type_node);
+				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+
+				return AllocReturn(sum, immediate_result);
+			}
+
+			if(new_type == ENT_MULTIPLY)
+			{
+				double product = result_value.number;
+				//if there are further parameters, need to multiply them to the product
+				if(type_node->GetType() == ENT_MULTIPLY && type_node->GetOrderedChildNodesReference().size() > 0)
+					product *= InterpretNodeIntoNumberValue(type_node);
+				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+
+				return AllocReturn(product, immediate_result);
+			}
+
+			if(new_type == ENT_MIN)
+			{
+				double min = result_value.number;
+				//if there are further parameters, need to consider them
+				if(type_node->GetType() == ENT_MIN && type_node->GetOrderedChildNodesReference().size() > 0)
+					min = std::min(min, InterpretNodeIntoNumberValue(type_node));
+				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+
+				return AllocReturn(min, immediate_result);
+			}
+
+			if(new_type == ENT_MAX)
+			{
+				double max = result_value.number;
+				//if there are further parameters, need to consider them
+				if(type_node->GetType() == ENT_MAX && type_node->GetOrderedChildNodesReference().size() > 0)
+					max = std::max(max, InterpretNodeIntoNumberValue(type_node));
+				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+
+				return AllocReturn(max, immediate_result);
+			}
+		}
+		else if(result_type == ENIVT_STRING_ID)
+		{
+			if(new_type == ENT_CONCAT)
+			{
+				if(result_value.stringID == string_intern_pool.NOT_A_STRING_ID)
+					return EvaluableNodeReference::Null();
+
+				std::string combined_string;
+				if(type_node->GetType() == ENT_CONCAT)
+				{
+					bool success = true;
+					std::tie(success, combined_string) = InterpretNodeIntoStringValue(type_node);
+					evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+
+					if(!success)
+					{
+						string_intern_pool.DestroyStringReference(result_value.stringID);
+						return EvaluableNodeReference::Null();
+					}
+				}
+
+				combined_string += string_intern_pool.GetStringViewFromID(result_value.stringID);
+				string_intern_pool.DestroyStringReference(result_value.stringID);
+				return AllocReturn(combined_string, immediate_result);
+			}
+		}
+	}
 
 	//change source type
 	if(source == nullptr)
@@ -674,8 +750,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_OPCODE_STACK(ENT_OPCODE_STACK, &Interpreter::InterpretNode_ENT_OPCODE_STACK, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number stack_distance] [bool no_child_nodes])";
-	d.returns = R"(list of any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"no_child_nodes", OpcodeDetails::DataType::BOOL, true})
+	};
+	d.returns = OpcodeDetails::DataType::LIST;
 	d.description = R"(Evaluates to the list of opcodes that make up the call stack or a single opcode within the call stack.  If `stack_distance` is specified, then a copy of the node at that specified depth is returned, otherwise the list of all opcodes in opcode stack are returned. Negative values for `stack_distance` specify the depth from the top of the stack and positive values specify the depth from the bottom.  If `no_child_nodes` is true, then only the root node(s) are returned, otherwise the returned node(s) are deep-copied.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((size (opcode_stack)))&", R"(2)"},
@@ -694,6 +773,7 @@ static OpcodeInitializer _ENT_OPCODE_STACK(ENT_OPCODE_STACK, &Interpreter::Inter
 	)
 ))&", R"((seq))"}
 		});
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.1;
 	d.opcodeGroup = _opcode_group;

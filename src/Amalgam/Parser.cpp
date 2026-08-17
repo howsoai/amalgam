@@ -51,7 +51,7 @@ Parser::Parser(std::string_view code_string, EvaluableNodeManager *enm,
 	codeComplete = false;
 }
 
-std::string Parser::Backslashify(const std::string &s)
+std::string Parser::Backslashify(std::string_view s)
 {
 	if(s.size() == 0)
 		return std::string();
@@ -170,10 +170,10 @@ EvaluableNodeReference Parser::ParseFromKeyString(std::string &code_string, Eval
 EvaluableNodeReference Parser::ParseFromKeyStringId(StringInternPool::StringID code_string_id,
 	EvaluableNodeManager *enm)
 {
-	if(code_string_id == string_intern_pool.NOT_A_STRING_ID)
+	if(code_string_id == string_intern_pool.NOT_A_STRING_ID) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	std::string &code_string = code_string_id->string;
+	std::string_view code_string = string_intern_pool.GetStringViewFromID(code_string_id);
 	if(code_string.size() == 0 || code_string[0] != '\0')
 		return EvaluableNodeReference(enm->AllocNode(ENT_STRING, code_string_id), true);
 
@@ -184,10 +184,10 @@ EvaluableNodeReference Parser::ParseFromKeyStringId(StringInternPool::StringID c
 
 StringInternPool::StringID Parser::ParseFromKeyStringIdToStringIdWithReference(StringInternPool::StringID code_string_id)
 {
-	if(code_string_id == string_intern_pool.NOT_A_STRING_ID)
+	if(code_string_id == string_intern_pool.NOT_A_STRING_ID) [[unlikely]]
 		return string_intern_pool.NOT_A_STRING_ID;
 
-	std::string &code_string = code_string_id->string;
+	std::string_view code_string = string_intern_pool.GetStringViewFromID(code_string_id);
 	if(code_string.size() == 0 || code_string[0] != '\0')
 		return string_intern_pool.CreateStringReference(code_string_id);
 
@@ -197,10 +197,10 @@ StringInternPool::StringID Parser::ParseFromKeyStringIdToStringIdWithReference(S
 
 double Parser::ParseNumberFromKeyStringId(StringInternPool::StringID code_string_id)
 {
-	if(code_string_id == string_intern_pool.NOT_A_STRING_ID)
+	if(code_string_id == string_intern_pool.NOT_A_STRING_ID) [[unlikely]]
 		return std::numeric_limits<double>::quiet_NaN();
 
-	std::string &code_string = code_string_id->string;
+	std::string_view code_string = string_intern_pool.GetStringViewFromID(code_string_id);
 	if(code_string.size() == 0 || code_string[0] != '\0')
 		return std::numeric_limits<double>::quiet_NaN();
 
@@ -221,9 +221,9 @@ std::string Parser::UnparseToKeyString(EvaluableNode *tree)
 		auto type = tree->GetType();
 		if(type == ENT_STRING || type == ENT_SYMBOL)
 		{
-			const auto &string_value = tree->GetStringValue();
+			auto string_value = tree->GetStringView();
 			if(string_value.size() > 0 && string_value[0] != '\0')
-				return string_value;
+				return std::string(string_value);
 		}
 		else if(type == ENT_NUMBER)
 		{
@@ -231,7 +231,7 @@ std::string Parser::UnparseToKeyString(EvaluableNode *tree)
 		}
 		else if(type == ENT_BOOL)
 		{
-			return GetStringIdFromBuiltInStringId(tree->GetBoolValueReference() ? ENBISI_true_key : ENBISI_false_key)->string;
+			return string_intern_pool.GetStringFromID(GetStringIdFromBuiltInStringId(tree->GetBoolValueReference() ? ENBISI_true_key : ENBISI_false_key));
 		}
 	}
 
@@ -303,7 +303,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 			{
 				std::vector<StringInternPool::StringID> key_sids;
 				key_sids.reserve(bp_mcn.size());
-				for(auto &[k_id, _] : bp_mcn)
+				for(auto &k_id : bp_mcn | std::views::keys)
 					key_sids.push_back(k_id);
 
 				std::sort(begin(key_sids), end(key_sids), StringIDNaturalCompareSort);
@@ -596,7 +596,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 			std::string token = GetNextIdentifier();
 			EvaluableNodeType token_type = GetEvaluableNodeTypeFromString(token);
 
-			if(IsEvaluableNodeTypeValid(token_type) && !IsEvaluableNodeTypeImmediate(token_type))
+			if(IsEvaluableNodeTypeValid(token_type) && !IsEvaluableNodeTypeTerminalNode(token_type))
 			{
 				new_token->SetType(token_type, false);
 			}
@@ -657,12 +657,12 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 		}
 		if(s == ".true")
 		{
-			new_token->SetTypeViaBoolValue(true);
+			new_token->SetTypeViaBoolValue(true, false);
 			return new_token;
 		}
 		else if(s == ".false")
 		{
-			new_token->SetTypeViaBoolValue(false);
+			new_token->SetTypeViaBoolValue(false, false);
 			return new_token;
 		}
 		if(s == ".infinity")
@@ -680,7 +680,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_ass
 				value = converted_value;
 		}
 
-		new_token->SetTypeViaNumberValue(value);
+		new_token->SetTypeViaNumberValue(value, false);
 		return new_token;
 	}
 	else if(cur_char == '"')
@@ -747,7 +747,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 		// because don't need to parse closing parenthesis or other symbol
 		if(parsing_assoc_key
 				&& cur_node == nullptr
-				&& n != nullptr && n->IsImmediate())
+				&& n != nullptr && n->IsTerminal())
 			return n;
 
 		//if end of a list
@@ -761,7 +761,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 			if(key_node != nullptr && cur_node->IsAssociativeArray())
 			{
 				if((key_node->GetType() == ENT_STRING || key_node->GetType() == ENT_SYMBOL)
-					&& !DoesStringNeedUnparsingToKey(key_node->GetStringValue()))
+					&& !DoesStringNeedUnparsingToKey(key_node->GetStringView()))
 				{
 					StringInternPool::StringID index_sid
 						= EvaluableNode::ToStringIDTakingReferenceAndClearing(key_node, true);
@@ -826,7 +826,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 
 				if(EvaluableNode::IsNull(key_node)
 					|| ((key_node->GetType() == ENT_STRING || key_node->GetType() == ENT_SYMBOL)
-						&& !DoesStringNeedUnparsingToKey(key_node->GetStringValue())))
+						&& !DoesStringNeedUnparsingToKey(key_node->GetStringView())))
 				{
 					StringInternPool::StringID index_sid
 						= EvaluableNode::ToStringIDTakingReferenceAndClearing(key_node, true);
@@ -846,7 +846,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 			parentNodes[n] = cur_node;
 
 			//if it's not immediate, then descend into that part of the tree, resetting parent index counter
-			if(!IsEvaluableNodeTypeImmediate(n->GetType()))
+			if(!IsEvaluableNodeTypeTerminalNode(n->GetType()))
 				cur_node = n;
 
 			//if specifying something unusual, then assume it's just a null
@@ -992,7 +992,7 @@ void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringI
 	}
 	else
 	{
-		auto &key_str = string_intern_pool.GetStringFromID(key_sid);
+		auto key_str = string_intern_pool.GetStringViewFromID(key_sid);
 
 		if(!Parser::DoesStringNeedUnparsingToKey(key_str))
 		{
@@ -1089,7 +1089,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 
 	//check if it's an immediate/variable before deciding whether to surround with parenthesis
 	EvaluableNodeType tree_type = tree->GetType();
-	if(IsEvaluableNodeTypeImmediate(tree_type))
+	if(IsEvaluableNodeTypeTerminalNode(tree_type))
 	{
 		switch(tree_type)
 		{
@@ -1113,7 +1113,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			{
 				upd.result.push_back('"');
 
-				auto &s = tree->GetStringValue();
+				auto s = tree->GetStringView();
 				if(upd.result.size() + s.size() > upd.maxLength)
 					return;
 
@@ -1128,7 +1128,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		}
 		case ENT_SYMBOL:
 		{
-			auto &s = tree->GetStringValue();
+			auto s = tree->GetStringView();
 			if(upd.result.size() + s.size() > upd.maxLength)
 				return;
 			upd.result.append(s);
@@ -1185,7 +1185,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 					}
 				}
 
-				for(auto &[_, cn] : mcn)
+				for(auto &cn : mcn | std::views::values)
 				{
 					//need to count the additional node for the string index
 					if(cn != nullptr && (cn->GetNumChildNodes() > 0
@@ -1221,7 +1221,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			{
 				std::vector<StringInternPool::StringID> key_sids;
 				key_sids.reserve(tree_mcn.size());
-				for(auto &[k_id, _] : tree_mcn)
+				for(auto &k_id : tree_mcn | std::views::keys)
 					key_sids.push_back(k_id);
 
 				std::sort(begin(key_sids), end(key_sids), StringIDNaturalCompareSort);
@@ -1237,8 +1237,15 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		else if(tree->IsOrderedArray())
 		{
 			auto &tree_ocn = tree->GetOrderedChildNodesReference();
-			if(tree_type == ENT_UNORDERED_LIST && upd.sortKeys)
+			if(upd.sortKeys
+				&& (GetChildNodeStructureType(tree_type) == OpcodeDetails::ChildNodeStructureType::UNORDERED
+					|| GetChildNodeStructureType(tree_type)
+						== OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED))
 			{
+				size_t starting_index = 0;
+				if(GetChildNodeStructureType(tree_type) == OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED)
+					starting_index = 1;
+
 				std::vector<std::string> unordered_code;
 				unordered_code.reserve(tree_ocn.size());
 
@@ -1266,7 +1273,9 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				//move current code back in
 				std::swap(previous_code, upd.result);
 
-				std::sort(begin(unordered_code), end(unordered_code), StringManipulation::StringNaturalCompareSort);
+				//clamp in case there are fewer child nodes than leading positional parameters
+				std::sort(begin(unordered_code) + std::min(starting_index, unordered_code.size()),
+					end(unordered_code), StringManipulation::StringNaturalCompareSort);
 				for(auto &uc : unordered_code)
 					upd.result.append(uc);
 			}
@@ -1393,7 +1402,7 @@ static EvaluableNode *GetNodeFromNodeAndWalkPath(EvaluableNode *node, EvaluableN
 
 EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 {
-	if(path == nullptr)
+	if(path == nullptr) [[unlikely]]
 		return nullptr;
 
 	//traverse based on type
@@ -1498,7 +1507,7 @@ void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 			//copy reference of target to the parent's index of the target
 			if(parent->IsAssociativeArray())
 			{
-				for(auto &[_, cn] : parent->GetMappedChildNodesReference())
+				for(auto &cn : parent->GetMappedChildNodesReference() | std::views::values)
 				{
 					if(cn == node)
 					{
@@ -1573,8 +1582,7 @@ void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 
 			if(ocn.size() > 2)
 			{
-				EvaluableNodeReference params = ocn[2];
-
+				EvaluableNode *params = ocn[2];
 				if(EvaluableNode::IsAssociativeArray(params))
 					asset_params.SetParams(params->GetMappedChildNodesReference());
 			}
@@ -1622,7 +1630,7 @@ void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 
 				result_node->AppendMappedChildNodes(ocn[i]->GetMappedChildNodes());
 			}
-			else if(ocn[i]->IsImmediate())
+			else if(ocn[i]->IsTerminal())
 			{
 				if(result_node->IsOrderedArray())
 					result_node->AppendOrderedChildNode(ocn[i]);

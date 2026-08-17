@@ -196,7 +196,9 @@ public:
 
 	static Entity *MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
 		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType,
-		double> *operation_type, size_t preserve_type_depth);
+			double> *operation_type, size_t preserve_type_depth,
+		EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_number_weights,
+		EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_string_weights);
 
 	//flattens only the top entity using enm to allocate code that can recreate it;
 	// this is the first step of flattening an entity, and contained entities can be concatenated

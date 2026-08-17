@@ -18,16 +18,36 @@
 #include <unordered_set>
 #include <vector>
 
-template<typename T, typename H = std::hash<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
+//a fast, deterministic hash object
+//note that any types that have padding or are more complex with equality will need their own hash implementation
+template <typename T>
+struct FastHasher {
+	std::size_t operator()(const T& val) const noexcept {
+		return std::hash<T>{}(val);
+	}
+};
+
+//overload for pairs
+template <typename T1, typename T2>
+struct FastHasher<std::pair<T1, T2>> {
+	std::size_t operator()(const std::pair<T1, T2>& val) const noexcept {
+		auto h1 = std::hash<T1>{}(val.first);
+		auto h2 = std::hash<T2>{}(val.second);
+		return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL);
+	}
+};
+
+
+template<typename T, typename H = FastHasher<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
 using FastHashSet = std::unordered_set<T, H, E, A>;
 
-template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
+template<typename K, typename V, typename H = FastHasher<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using FastHashMap = std::unordered_map<K, V, H, E, A>;
 
-template<typename T, typename H = std::hash<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
+template<typename T, typename H = FastHasher<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
 using CompactHashSet = std::unordered_set<T, H, E, A>;
 
-template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
+template<typename K, typename V, typename H = FastHasher<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using CompactHashMap = std::unordered_map<K, V, H, E, A>;
 
 //wrapper that includes method specializations of _with_hash to enable the use of std::unordered_set with ConcurrentFastHashMap
@@ -81,26 +101,98 @@ public:
 #include <cstddef>
 #include <functional>
 #include <mutex>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
-//fast hash maps
+#include "rapidhash/rapidhash.h"
 #include "skarupke_maps/bytell_hash_map.hpp"
 #include "skarupke_maps/flat_hash_map.hpp"
 
-template<typename T, typename H = std::hash<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
+
+//traits to detect if a type is a std::pair
+template <typename T>
+struct is_pair : std::false_type
+{};
+
+template <typename T, typename U>
+struct is_pair<std::pair<T, U>> : std::true_type
+{};
+
+template <typename T>
+inline constexpr bool is_pair_v = is_pair<T>::value;
+
+//traits to check if a type has .data() and .size() methods
+template <typename T, typename = void>
+struct has_data_and_size : std::false_type
+{};
+
+template <typename T>
+struct has_data_and_size<T, std::void_t<
+	decltype(std::declval<const T &>().data()),
+	decltype(std::declval<const T &>().size())
+	>> : std::true_type {};
+
+template <typename T>
+inline constexpr bool has_data_and_size_v = has_data_and_size<T>::value;
+
+inline constexpr uint64_t rapid_hasher_rand_seed = 13766731;
+
+//a fast, deterministic hash object
+//note that any types that have padding or are more complex with equality will need their own hash implementation
+template <typename T, typename = void>
+struct FastHasher
+{
+	std::size_t operator()(const T &val) const noexcept
+	{
+		return static_cast<std::size_t>(rapidhash_withSeed(&val, sizeof(T), rapid_hasher_rand_seed));
+	}
+};
+
+//container types like std::string, std::vector
+template <typename T>
+struct FastHasher<T, std::enable_if_t<has_data_and_size_v<T>>>
+{
+	std::size_t operator()(const T &val) const noexcept
+	{
+		return static_cast<std::size_t>(rapidhash_withSeed(val.data(), val.size() * sizeof(*val.data()), rapid_hasher_rand_seed));
+	}
+};
+
+//or raw objects, but ignore pairs to prevent ambiguity
+template <typename T>
+struct FastHasher<T, std::enable_if_t<std::is_trivially_copyable_v<T> && !has_data_and_size_v<T> && !is_pair_v<T>>>
+{
+	std::size_t operator()(const T &val) const noexcept
+	{
+		return static_cast<std::size_t>(rapidhash_withSeed(&val, sizeof(T), rapid_hasher_rand_seed));
+	}
+};
+
+//pair of pointers
+template<typename T>
+struct FastHasher<std::pair<T *, T *>, void>
+{
+	inline size_t operator()(std::pair<T *, T *> const &pointer_pair) const noexcept
+	{
+		return static_cast<size_t>(rapidhash_withSeed(&pointer_pair, sizeof(pointer_pair), rapid_hasher_rand_seed));
+	}
+};
+
+
+template<typename T, typename H = FastHasher<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
 using FastHashSet = ska::flat_hash_set<T, H, E, A>;
 
-template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
+template<typename K, typename V, typename H = FastHasher<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using FastHashMap = ska::flat_hash_map<K, V, H, E, A>;
 
-template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
+template<typename K, typename V, typename H = FastHasher<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using FastHashMapWithHashInserts = ska::flat_hash_map<K, V, H, E, A>;
 
-template<typename T, typename H = std::hash<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
+template<typename T, typename H = FastHasher<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
 using CompactHashSet = ska::bytell_hash_set<T, H, E, A>;
 
-template<typename K, typename V, typename H = std::hash<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
+template<typename K, typename V, typename H = FastHasher<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using CompactHashMap = ska::bytell_hash_map<K, V, H, E, A>;
 
 #endif
@@ -119,7 +211,7 @@ using CompactHashMap = ska::bytell_hash_map<K, V, H, E, A>;
 template<
 	typename K,
 	typename V,
-	typename H = std::hash<K>,
+	typename H = FastHasher<K>,
 	typename E = std::equal_to<K>,
 	typename A = std::allocator<std::pair<const K, V>>,
 

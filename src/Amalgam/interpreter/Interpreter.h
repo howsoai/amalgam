@@ -74,7 +74,8 @@ public:
 	//collects garbage on evaluableNodeManager
 	__forceinline void CollectGarbage()
 	{
-		if(evaluableNodeManager->RecommendGarbageCollection())
+		//marked as unlikely because it should be called << 1% of the time
+		if(evaluableNodeManager->RecommendGarbageCollection()) [[unlikely]]
 		{
 		#ifdef MULTITHREAD_SUPPORT
 			evaluableNodeManager->CollectGarbageWithConcurrentAccess(memoryModificationLock);
@@ -107,11 +108,15 @@ public:
 	//pushes a new construction context on the stack
 	//the stack is indexed via the constructionStackOffset* constants
 	//target_origin is the original node of target useful for keeping track of the reference
-	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin, EvaluableNode *target,
+	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin,
+		EvaluableNodeReference &target,
 		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
 		EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
 	{
-		constructionStack.emplace_back(target_origin, target, current_index, current_value, previous_result);
+		//use the freeable flag to indicate if it has been accessed by target
+		if(target != nullptr)
+			target->SetIsFreeableTopNode(true);
+		constructionStack.emplace_back(target_origin, &target, current_index, current_value, previous_result);
 	}
 
 	//pops the top construction context off the stack
@@ -120,7 +125,38 @@ public:
 	{
 		if(constructionStack.size() > 0)
 		{
-			bool execution_side_effects = constructionStack.back().executionSideEffects;
+			auto &back = constructionStack.back();
+			bool execution_side_effects = back.executionSideEffects;
+			EvaluableNodeReference &target_ref = *back.targetRefPtr;
+
+			//if something accessed target, the top node is no longer freeable
+			//and further logic must assess the state of target_ref
+			if(target_ref != nullptr && !target_ref->GetIsFreeableTopNode())
+			{
+				//if something accessed target, the top node is no longer freeable
+				//and needs to be marked as potentially containing a cycle
+				if(target_ref.uniqueUnreferencedTopNode)
+				{
+					target_ref.uniqueUnreferencedTopNode = false;
+					target_ref->SetNeedCycleCheck(true);
+				}
+
+				//if something could have stored the target somewhere, then can't be unique
+				if(execution_side_effects)
+				{
+					target_ref.unique = false;
+					target_ref.uniqueUnreferencedTopNode = false;
+				}
+
+				//clear freeability for use in other places
+			#ifdef MULTITHREAD_SUPPORT
+				//not unique, so should set atomically if other threads may be accessing it
+				target_ref->SetIsFreeableTopNodeAtomic(false);
+			#else
+				target_ref->SetIsFreeableTopNode(false);
+			#endif
+			}
+
 			constructionStack.pop_back();
 			return execution_side_effects;
 		}
@@ -221,12 +257,18 @@ public:
 		}
 
 		//indicate scope stack is not freeable if the top is still freeable
-		if(scopeStack.size() > 0 && scopeStack.back()->GetIsFreeable())
+		if(scopeStack.size() > 0 && scopeStack.back()->GetIsFreeableTopNode())
 		{
 			for(auto &stack_entry : scopeStack)
-				stack_entry->SetIsFreeable(false);
+			{
+			#ifdef MULTITHREAD_SUPPORT
+				stack_entry->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+			#else
+				stack_entry->SetIsFreeableAndIsFreeableTopNode(false);
+			#endif
+			}
 		}
-		return std::make_pair(any_constructions, any_set);
+		return {any_constructions, any_set};
 	}
 
 	//calls SetSideEffectsFlags and updates performance counters for node if applicable
@@ -243,27 +285,22 @@ public:
 		if(args == nullptr)
 		{
 			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
-			//set the context to be freeable so it knows to look for any possible freeable values
-			args->SetIsFreeable(true);
 		}
 		else if(args->IsAssociativeArray())
 		{
-			if(args.unique)
+			if(args.uniqueUnreferencedTopNode)
 			{
 				//if there are no cycles referencing the top node, then mark everything as potentially freeable
-				if(args.uniqueUnreferencedTopNode)
+				if(args.unique)
 				{
 					for(auto &[id, cn] : args->GetMappedChildNodesReference())
 					{
 						if(cn != nullptr)
-							cn->SetIsFreeable(true);
+							cn->SetIsFreeableAndIsFreeableTopNode(true);
 					}
-
-					//set the context to be freeable so it knows to look for any possible freeable values
-					args->SetIsFreeable(true);
 				}
 			}
-			else //not unique, so need to make a copy of the top node
+			else //not unique top node, so need to make a copy of it
 			{
 				args.SetReference(enm.AllocNode(args, false));
 				args.uniqueUnreferencedTopNode = true;
@@ -272,9 +309,11 @@ public:
 		else //!args->IsAssociativeArray() invalid type, so create a new one
 		{
 			args.SetReference(enm.AllocNode(ENT_ASSOC), true);
-			//set the context to be freeable so it knows to look for any possible freeable values
-			args->SetIsFreeable(true);
 		}
+
+		//all paths lead to a new args,
+		// so set the context to be freeable so it knows to look for any possible freeable values
+		args->SetIsFreeableTopNode(true);
 
 		args->SetNeedCycleCheck(true);
 
@@ -283,16 +322,27 @@ public:
 		return scope_stack;
 	}
 
-	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a
-	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
-	//additionally returns a pointer to the containing map,
-	// a bool which is true if the symbol location is at the top of the stack,
-	// followed by another bool indicating whether the symbol has been previously accessed
+	//information about the location of a symbol returned by relevant methods below
+	struct ScopeStackSymbolLocation
+	{
+		//location of the pointer so it can be overwritten
+		EvaluableNode **location;
+		//scope that contains the variable
+		EvaluableNode::AssocType *containingAssoc;
+		//true if the symbol is at the top of the stack
+		bool atTopOfStack;
+		//true if the symbol is currently unique
+		bool unique;
+		//true if the top node of the symbol is currently unique
+		bool uniqueTopNode;
+	};
+
+	//finds a pointer to the location of the symbol's pointer to value and returns a ScopeStackSymbolLocation
+	// data structure containing the relevant information
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
 	//if clear_freeable_flag is true, then it will mark the node as having been accessed and no longer freeable
 	//use_atomic_when_setting_access_flag is used for recursion and should not be modified by the caller
-	inline std::tuple<EvaluableNode **, EvaluableNode::AssocType *, bool, bool>
-		GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid,
+	inline ScopeStackSymbolLocation GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid,
 		bool create_if_nonexistent, bool clear_freeable_flag
 	#ifdef MULTITHREAD_SUPPORT
 		, bool use_atomic_when_setting_access_flag = false
@@ -306,29 +356,43 @@ public:
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
 				bool is_freeable = true;
+				bool is_freeable_top_node = true;
 				if(found->second != nullptr)
 				{
 					if(clear_freeable_flag)
 					{
 					#ifdef MULTITHREAD_SUPPORT
 						if(use_atomic_when_setting_access_flag)
-							is_freeable = found->second->SetIsFreeableAtomic(false);
+						{
+							std::tie(is_freeable, is_freeable_top_node)
+								= found->second->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+						}
 						else
 					#endif
-							is_freeable = found->second->SetIsFreeable(false);
+						{
+							std::tie(is_freeable, is_freeable_top_node)
+								= found->second->SetIsFreeableAndIsFreeableTopNode(false);
+						}
 					}
 					else
 					{
 					#ifdef MULTITHREAD_SUPPORT
 						if(use_atomic_when_setting_access_flag)
+						{
 							is_freeable = found->second->GetIsFreeableAtomic();
+							is_freeable_top_node = found->second->GetIsFreeableTopNodeAtomic();
+						}
 						else
 					#endif
+						{
 							is_freeable = found->second->GetIsFreeable();
+							is_freeable_top_node = found->second->GetIsFreeableTopNode();
+						}
 					}
 				}
 
-				return std::make_tuple(&found->second, &mcn, it == rbegin(scopeStack), is_freeable);
+				return ScopeStackSymbolLocation{
+					&found->second, &mcn, it == rbegin(scopeStack), is_freeable, is_freeable_top_node};
 			}
 		}
 
@@ -337,49 +401,44 @@ public:
 		if(!bottomOfScopeStack && callingInterpreter != nullptr)
 		{
 			bool top_is_next_stack = (scopeStack.size() == 0);
-			auto [value_destination, scope, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocation(
+			auto symbol_location = callingInterpreter->GetScopeStackSymbolLocation(
 				symbol_sid, top_is_next_stack && create_if_nonexistent, clear_freeable_flag, true);
-			if(value_destination != nullptr)
-				return std::make_tuple(value_destination, scope, top_is_next_stack && top_of_stack, is_freeable);
+			if(symbol_location.location != nullptr)
+				return symbol_location;
 		}
 	#endif
 
 		if(!create_if_nonexistent)
-			return std::make_tuple(nullptr, nullptr, false, false);
+			return ScopeStackSymbolLocation{nullptr, nullptr, false, false, false};
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
 		size_t scope_stack_index = scopeStack.size() - 1;
 		EvaluableNode *scope = scopeStack[scope_stack_index];
 		auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
-		return std::make_tuple(new_location, &scope->GetMappedChildNodesReference(), true, false);
+		return ScopeStackSymbolLocation{new_location, &scope->GetMappedChildNodesReference(), true, false, false};
 	}
 
 	//like the other type of GetScopeStackSymbolLocation,
 	// but returns the EvaluableNode pointer instead of a pointer-to-a-pointer and true if the variable was found
 	//if clear_freeable_flag is true, then it will mark the node as having been accessed and no longer freeable
-	__forceinline std::tuple<EvaluableNode *, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid,
+	__forceinline std::pair<EvaluableNode *, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid,
 		bool clear_freeable_flag)
 	{
-		auto [node_ptr, scope, top_of_stack, is_freeable]
-			= GetScopeStackSymbolLocation(symbol_sid, false, clear_freeable_flag);
+		auto symbol_loc = GetScopeStackSymbolLocation(symbol_sid, false, clear_freeable_flag);
 
-		if(node_ptr == nullptr)
-			return std::make_tuple(nullptr, false);
+		if(symbol_loc.location == nullptr)
+			return std::pair(nullptr, false);
 
-		return std::make_tuple(*node_ptr, true);
+		return std::pair(*symbol_loc.location, true);
 	}
 
 #ifdef MULTITHREAD_SUPPORT
-	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a
-	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
-	//additionally returns a pointer to the containing map,
-	// a bool which is true if the symbol location is at the top of the stack,
-	// followed by another bool indicating whether the symbol has been previously accessed
+	//finds a pointer to the location of the symbol's pointer to value and returns a ScopeStackSymbolLocation
+	// data structure containing the relevant information
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
 	//executing_interpreter is the interpreter that will be used for garbage collection if needed
 	//use_atomic_when_setting_access_flag is used for recursion and should not be modified by the caller
-	std::tuple<EvaluableNode **, EvaluableNode::AssocType *, bool, bool>
-		GetScopeStackSymbolLocationWithLock(StringInternPool::StringID symbol_sid,
+	ScopeStackSymbolLocation GetScopeStackSymbolLocationWithLock(StringInternPool::StringID symbol_sid,
 		bool create_if_nonexistent, Concurrency::SingleLock &lock, Interpreter *executing_interpreter = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, bool use_atomic_when_setting_access_flag = false
@@ -395,7 +454,9 @@ public:
 			auto &mcn = cur_context->GetMappedChildNodesReference();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
-				bool is_freeable = true;
+				//default to not freeable if need a lock; if don't need a lock, then set to current values
+				bool is_freeable = false;
+				bool is_freeable_top_node = false;
 				if(scopeStackMutex != nullptr)
 				{
 					if(executing_interpreter != nullptr)
@@ -408,15 +469,18 @@ public:
 					mcn = cur_context->GetMappedChildNodesReference();
 					found = mcn.find(symbol_sid);
 
+					//not freeable because it could be accessed by multiple threads concurrently
 					if(found->second != nullptr)
-						is_freeable = found->second->GetIsFreeableAtomic();
+						found->second->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
 				}
 				else if(found->second != nullptr)
 				{
 					is_freeable = found->second->GetIsFreeable();
+					is_freeable_top_node = found->second->GetIsFreeableTopNode();
 				}
 
-				return std::make_tuple(&found->second, &mcn, scope_stack_index == cur_scope_stack_size, is_freeable);
+				return ScopeStackSymbolLocation{
+					&found->second, &mcn, scope_stack_index == cur_scope_stack_size, is_freeable, is_freeable_top_node};
 			}
 		}
 
@@ -424,15 +488,15 @@ public:
 		if(!bottomOfScopeStack && callingInterpreter != nullptr)
 		{
 			bool top_is_next_stack = (cur_scope_stack_size == 0);
-			auto [value_destination, scope, top_of_stack, is_freeable] = callingInterpreter->GetScopeStackSymbolLocationWithLock(
+			auto symbol_location = callingInterpreter->GetScopeStackSymbolLocationWithLock(
 				symbol_sid, top_is_next_stack && create_if_nonexistent, lock, executing_interpreter == nullptr ? this : executing_interpreter);
 
-			if(value_destination != nullptr)
-				return std::make_tuple(value_destination, scope, top_is_next_stack && top_of_stack, is_freeable);
+			if(symbol_location.location != nullptr)
+				return symbol_location;
 		}
 
 		if(!create_if_nonexistent)
-			return std::make_tuple(nullptr, nullptr, false, false);
+			return ScopeStackSymbolLocation{nullptr, nullptr, false, false, false};
 
 		Interpreter *interp_with_scope = LockScopeStackTop(lock, nullptr, executing_interpreter);
 
@@ -447,13 +511,13 @@ public:
 			EvaluableNode *scope = evaluableNodeManager->AllocNode(interp_with_scope->scopeStack[scope_stack_index]);
 			auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
 			interp_with_scope->scopeStack[scope_stack_index] = scope;
-			return std::make_tuple(new_location, &scope->GetMappedChildNodesReference(), false, false);
+			return ScopeStackSymbolLocation{new_location, &scope->GetMappedChildNodesReference(), false, false, false};
 		}
 		else
 		{
 			EvaluableNode *scope = interp_with_scope->scopeStack[scope_stack_index];
 			auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
-			return std::make_tuple(new_location, &scope->GetMappedChildNodesReference(), true, false);
+			return ScopeStackSymbolLocation{new_location, &scope->GetMappedChildNodesReference(), true, false, false};
 		}
 	}
 #endif
@@ -500,8 +564,8 @@ public:
 		return value;
 	}
 
-	//if n is immediate, it just returns it, otherwise calls InterpretNode
-	__forceinline EvaluableNodeReference InterpretNodeForImmediateUse(EvaluableNode *n,
+	//evaluates the node, but if it is immediate, it won't make a copy
+	__forceinline EvaluableNodeReference InterpretNodeWithoutCopyingImmediates(EvaluableNode *n,
 		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes())
 	{
 		if(n == nullptr || n->GetIsIdempotent())
@@ -509,11 +573,20 @@ public:
 		return InterpretNode(n, immediate_result);
 	}
 
+	//evaluates the node knowing that it will only be used locally by the calling node
+	__forceinline EvaluableNodeReference InterpretNodeForImmediateUse(EvaluableNode *n,
+		EvaluableNodeRequestedValueTypes immediate_result = EvaluableNodeRequestedValueTypes())
+	{
+		if(n == nullptr || n->GetIsIdempotent())
+			return EvaluableNodeReference(n, false);
+		return InterpretNode(n, immediate_result | EvaluableNodeRequestedValueTypes::Type::IMMEDIATE_USE_ONLY);
+	}
+
 	//computes a unary numeric function on the given node, returns an ENT_NULL if n is interpreted as an ENT_NULL
 	__forceinline EvaluableNodeReference InterpretNodeUnaryNumericOperation(EvaluableNode *n, EvaluableNodeRequestedValueTypes immediate_result,
 		std::function<double(double)> func)
 	{
-		if(immediate_result.AnyImmediateType())
+		if(immediate_result.AnyPrimitiveImmediateType())
 		{
 			double value = InterpretNodeIntoNumberValue(n);
 			return EvaluableNodeReference(func(value));
@@ -640,6 +713,50 @@ public:
 		return std::make_tuple(entity_1, entity_2, std::move(erbr));
 	}
 
+	//returns true if there's a max number of execution steps or nodes and at least one is exhausted
+	__forceinline bool AreExecutionResourcesExhausted(bool increment_performance_counters = false)
+	{
+		if(interpreterConstraints == nullptr)
+			return false;
+
+		if(interpreterConstraints->ConstrainedExecutionSteps())
+		{
+			if(increment_performance_counters)
+				interpreterConstraints->curExecutionStep++;
+
+			if(interpreterConstraints->curExecutionStep > interpreterConstraints->maxNodeOperations)
+			{
+				interpreterConstraints->constraintsExceeded = true;
+				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionStep;
+				return true;
+			}
+		}
+
+		if(interpreterConstraints->ConstrainedAllocatedNodes())
+		{
+			size_t cur_allocated_nodes = interpreterConstraints->curNumAllocatedNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
+			if(cur_allocated_nodes > interpreterConstraints->maxNumAllocatedNodes)
+			{
+				interpreterConstraints->constraintsExceeded = true;
+				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::NodeAllocation;
+				return true;
+			}
+		}
+
+		if(interpreterConstraints->ConstrainedOpcodeExecutionDepth())
+		{
+			if(opcodeStackNodes.size() > interpreterConstraints->maxOperationDepth)
+			{
+				interpreterConstraints->constraintsExceeded = true;
+				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;
+				return true;
+			}
+		}
+
+		//return whether they have ever been exceeded
+		return interpreterConstraints->constraintsExceeded;
+	}
+
 protected:
 
 	//traverses down n until it reaches the furthest-most nodes from top_node,
@@ -648,12 +765,9 @@ protected:
 	EvaluableNodeReference RewriteByFunction(EvaluableNodeReference function,
 		EvaluableNode *tree, FastHashMap<EvaluableNode *, EvaluableNode *> &original_node_to_new_node);
 
-	//populates interpreter_constraints from params starting at the offset perf_constraint_param_offset,
-	// in the order of execution cycles, maximum memory, maximum stack depth
-	//returns true if there are any performance constraints, false if not
-	//if include_entity_constraints is true, it will include constraints regarding entities
-	bool PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
-		size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool include_entity_constraints = false);
+	//populates interpreter_constraints from params starting at the offset perf_constraint_param_offset
+	void PopulateInterpreterConstraintsFromParams(EvaluableNode::OrderedType &params,
+		size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool calling_entity = false);
 
 	//if interpreter_constraints is not null, populates the counters representing the current state of the interpreter
 	void PopulatePerformanceCounters(InterpreterConstraints *interpreter_constraints, Entity *entity_to_constrain_from);
@@ -746,11 +860,11 @@ protected:
 		if(interpreterConstraints == nullptr)
 			return true;
 
-		if(interpreterConstraints->readOnlyEntities)
+		if(!interpreterConstraints->writeAccess)
 			return false;
 
 		if(interpreterConstraints->maxEntityIdLength > 0
-				&& string_intern_pool.GetStringFromID(entity_id).size() > interpreterConstraints->maxEntityIdLength)
+				&& string_intern_pool.GetStringViewFromID(entity_id).size() > interpreterConstraints->maxEntityIdLength)
 			return false;
 
 		//exit early if don't need to lock all contained entities
@@ -785,59 +899,18 @@ protected:
 		if(interpreterConstraints == nullptr)
 			return true;
 
-		if(interpreterConstraints->readOnlyEntities)
+		if(!interpreterConstraints->writeAccess)
 			return false;
 
 		return true;
 	}
 
-	//returns true if there's a max number of execution steps or nodes and at least one is exhausted
-	__forceinline bool AreExecutionResourcesExhausted(bool increment_performance_counters = false)
-	{
-		if(interpreterConstraints == nullptr)
-			return false;
-
-		if(interpreterConstraints->ConstrainedExecutionSteps())
-		{
-			if(increment_performance_counters)
-				interpreterConstraints->curExecutionStep++;
-
-			if(interpreterConstraints->curExecutionStep > interpreterConstraints->maxNumExecutionSteps)
-			{
-				interpreterConstraints->constraintsExceeded = true;
-				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionStep;
-				return true;
-			}
-		}
-
-		if(interpreterConstraints->ConstrainedAllocatedNodes())
-		{
-			size_t cur_allocated_nodes = interpreterConstraints->curNumAllocatedNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
-			if(cur_allocated_nodes > interpreterConstraints->maxNumAllocatedNodes)
-			{
-				interpreterConstraints->constraintsExceeded = true;
-				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::NodeAllocation;
-				return true;
-			}
-		}
-
-		if(interpreterConstraints->ConstrainedOpcodeExecutionDepth())
-		{
-			if(opcodeStackNodes.size() > interpreterConstraints->maxOpcodeExecutionDepth)
-			{
-				interpreterConstraints->constraintsExceeded = true;
-				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;
-				return true;
-			}
-		}
-
-		//return whether they have ever been exceeded
-		return interpreterConstraints->constraintsExceeded;
-	}
-
 	//If interpreter_constraints is non-null, and interpreter_constraints->collect warnings is true,
-	//creates a tuple with result, a list of all warnings, and constraint violations. Otherwise, it returns result.
-	EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints);
+	//or if changes is non-null, it creates a tuple with result, a list of all warnings, and constraint
+	//violations. Otherwise, it returns result.
+	EvaluableNodeReference BundleResultWithWarningsAndChangesIfNeeded(
+		EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints,
+		EvaluableNodeReference changes = EvaluableNodeReference::Null());
 
 	//Creates a warning string for the undefined symbol represented by not_found_variable_sid.
 	//If interpreterConstraints is not null, and collect Warnings is true, this warning will be added to warnings.
@@ -888,7 +961,6 @@ public:
 	EvaluableNodeReference InterpretNode_ENT_SEQUENCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_LAMBDA(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CALL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_CALL_SANDBOXED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_WHILE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CONCLUDE_and_RETURN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_APPLY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
@@ -969,7 +1041,7 @@ public:
 	EvaluableNodeReference InterpretNode_ENT_APPEND(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_GET(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_SET_and_REPLACE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MODIFY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_INDICES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_VALUES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CONTAINS_INDEX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
@@ -1013,7 +1085,7 @@ public:
 	EvaluableNodeReference InterpretNode_ENT_CONTAINS_LABEL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REMOVE_FROM_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES_and_CALL_ON_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//Entity Query Engine
@@ -1041,6 +1113,7 @@ public:
 	EvaluableNodeReference InterpretNode_ENT_UNION(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_DIFFERENCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_MIX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SIMPLIFY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//Entity Comparison and Evolution
 	EvaluableNodeReference InterpretNode_ENT_TOTAL_ENTITY_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
@@ -1163,6 +1236,9 @@ public:
 
 	//set to true if label profiling is enabled
 	static bool _label_profiling_enabled;
+
+	//a null reference needed for some methods
+	static EvaluableNodeReference _null_reference;
 };
 
 //templated setter for opcode functions to break dependency cycle

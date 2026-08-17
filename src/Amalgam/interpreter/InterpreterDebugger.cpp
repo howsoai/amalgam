@@ -114,7 +114,7 @@ static std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, Eval
 	{
 		std::string code_str = Parser::Unparse(en, false, false, true);
 		ClampSingleLineStringLength(code_str, max_num_chars);
-		return std::make_pair(std::string(), code_str);
+		return {std::string(), code_str};
 	}
 	else //has comments, so need to thoughtfully handle showing first line of comments and appropriate amount of code
 	{
@@ -131,7 +131,7 @@ static std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, Eval
 		std::string code_str = Parser::Unparse(&en_without_comment, false, false, true);
 		ClampSingleLineStringLength(code_str, max_num_chars);
 
-		return std::make_pair(comment_str, code_str);
+		return {comment_str, code_str};
 	}
 }
 
@@ -229,7 +229,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 		else
 		{
 			if(entity_sid != string_intern_pool.NOT_A_STRING_ID)
-				std::cout << "Entity: " << string_intern_pool.GetStringFromID(entity_sid) << std::endl;
+				std::cout << "Entity: " << string_intern_pool.GetStringViewFromID(entity_sid) << std::endl;
 
 		#ifdef MULTITHREAD_SUPPORT
 			std::cout << "Thread: " << this_thread_id << std::endl;
@@ -432,7 +432,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			for(auto &cs_entry : constructionStack)
 			{
 				PrintStackNode(cs_entry.targetOrigin, evaluableNodeManager);
-				PrintStackNode(cs_entry.target, evaluableNodeManager);
+				PrintStackNode(*cs_entry.targetRefPtr, evaluableNodeManager);
 				PrintStackNode(cs_entry.currentValue, evaluableNodeManager);
 				PrintStackNode(cs_entry.previousResult, evaluableNodeManager);
 			}
@@ -450,7 +450,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 			if(curEntity != nullptr && curEntity->HasContainedEntities())
 			{
 				for(auto &e : curEntity->GetContainedEntities())
-					std::cout << "  " << string_intern_pool.GetStringFromID(e->GetIdStringId()) << std::endl;
+					std::cout << "  " << string_intern_pool.GetStringViewFromID(e->GetIdStringId()) << std::endl;
 			}
 		}
 		else if(command == "entity" || command == "labels")
@@ -481,7 +481,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				entity->IterateFunctionOverLabels([]
 				(StringInternPool::StringID label_sid, EvaluableNode *node)
 					{
-						std::cout << "  " << string_intern_pool.GetStringFromID(label_sid) << std::endl;
+						std::cout << "  " << string_intern_pool.GetStringViewFromID(label_sid) << std::endl;
 					}, nullptr, true);
 			}
 		}
@@ -495,8 +495,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 
 				//see if this level of the stack contains the symbol
 				auto &mcn = cur_context->GetMappedChildNodesReference();
-				for(auto &[symbol_id, _] : mcn)
-					std::cout << "  " << string_intern_pool.GetStringFromID(symbol_id) << std::endl;
+				for(auto &symbol_id : mcn | std::views::keys)
+					std::cout << "  " << string_intern_pool.GetStringViewFromID(symbol_id) << std::endl;
 			}
 		}
 		else if(command == "r" || command == "rp")

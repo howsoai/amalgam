@@ -6,6 +6,7 @@
 
 //system headers:
 #include <memory>
+#include <ranges>
 
 //if the macro PEDANTIC_GARBAGE_COLLECTION is defined, then garbage collection will be performed
 //after every opcode, to help find and debug memory issues
@@ -20,10 +21,11 @@ class Interpreter;
 //and prevent any part of the construction stack from being unique
 struct ConstructionStackEntry
 {
-	inline ConstructionStackEntry(EvaluableNode *target_origin, EvaluableNode *_target,
+	inline ConstructionStackEntry(EvaluableNode *target_origin,
+		EvaluableNodeReference *_target,
 		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
 		EvaluableNodeReference previous_result) :
-			targetOrigin(target_origin), target(_target), index(current_index),
+			targetOrigin(target_origin), targetRefPtr(_target), index(current_index),
 			currentValue(current_value), previousResult(previous_result),
 			previousResultUnique(previous_result.unique),
 			previousResultUniqueUnreferencedTopNode(previous_result.uniqueUnreferencedTopNode),
@@ -31,13 +33,15 @@ struct ConstructionStackEntry
 	{}
 
 	EvaluableNode *targetOrigin;
-	EvaluableNode *target;
+	EvaluableNodeReference *targetRefPtr;
 	EvaluableNodeImmediateValueWithType index;
 	EvaluableNode *currentValue;
 	EvaluableNode *previousResult;
 
+	//uniqueness of previous result
 	bool previousResultUnique;
 	bool previousResultUniqueUnreferencedTopNode;
+	//true if there were any side effects -- variables set, etc.
 	bool executionSideEffects;
 };
 
@@ -172,7 +176,7 @@ public:
 	};
 
 	EvaluableNodeManager() :
-		numNodesToRunGarbageCollection(200), firstUnusedNodeIndex(0)
+		numNodesToRunGarbageCollection(minNodesToCollectGarbage), firstUnusedNodeIndex(0)
 	{}
 
 	~EvaluableNodeManager();
@@ -286,7 +290,15 @@ public:
 	{
 		if(original != nullptr
 				&& (original.uniqueUnreferencedTopNode || (original.unique && !ensure_copy_if_top_node_in_cycle)))
+		{
+			//clear the freeable bit in case it is on the stack
+		#ifdef MULTITHREAD_SUPPORT
+			original->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+		#else
+			original->SetIsFreeableAndIsFreeableTopNode(false);
+		#endif
 			return;
+		}
 
 		EvaluableNode *copy = AllocNode(original.GetReference(), copy_metadata);
 		//the copy will only be unique if there are no child nodes
@@ -297,7 +309,7 @@ public:
 	template<typename T>
 	__forceinline EvaluableNodeReference AllocIfNotImmediate(T value, EvaluableNodeRequestedValueTypes immediate_result)
 	{
-		if(immediate_result.AnyImmediateType())
+		if(immediate_result.AnyPrimitiveImmediateType())
 			return EvaluableNodeReference(value);
 		return EvaluableNodeReference(AllocNode(value), true);
 	}
@@ -348,7 +360,7 @@ public:
 			tree->SetIsIdempotent(is_idempotent);
 			return is_idempotent;
 		}
-		else if(!tree->IsImmediate())
+		else if(!tree->IsTerminal())
 		{
 			for(auto cn : tree->GetOrderedChildNodesReference())
 			{
@@ -408,21 +420,9 @@ public:
 		Concurrency::WriteLock write_lock(managerAttributesMutex);
 	#endif
 
-		for(size_t i = firstUnusedNodeIndex + 1; i < nodes.size(); i++)
-		{
-			//break at first empty slot
-			if(nodes[i] == nullptr)
-				break;
-
-			delete nodes[i];
-			nodes[i] = nullptr;
-		}
-
-		size_t new_size = std::min(nodes.size(), static_cast<size_t>(firstUnusedNodeIndex * allocExpansionFactor));
-		nodes.resize(new_size);
-		nodes.shrink_to_fit();
+		ShrinkMemoryToCurrentUtilizationWithLock();
 	}
-
+	
 	//frees an EvaluableNode (must be owned by this EvaluableNodeManager)
 	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it
 	inline void FreeNode(EvaluableNode *en, bool place_nodes_in_lab = true)
@@ -473,7 +473,7 @@ public:
 		AmlgAssert(en->IsNodeValid());
 	#endif
 
-		if(IsEvaluableNodeTypeImmediate(en->GetType()))
+		if(IsEvaluableNodeTypeTerminalNode(en->GetType()))
 		{
 			en->Invalidate();
 			if(place_nodes_in_lab)
@@ -499,13 +499,13 @@ public:
 
 				if(cur->IsAssociativeArray())
 				{
-					for(auto &[_, child] : cur->GetMappedChildNodesReference())
+					for(auto &child : cur->GetMappedChildNodesReference() | std::views::values)
 					{
 						if(child != nullptr)
 							node_stack.push_back(child);
 					}
 				}
-				else if(!cur->IsImmediate())
+				else if(!cur->IsTerminal())
 				{
 					for(auto &child : cur->GetOrderedChildNodesReference())
 					{
@@ -541,13 +541,13 @@ public:
 
 				if(cur->IsAssociativeArray())
 				{
-					for(auto &[_, e] : cur->GetMappedChildNodesReference())
+					for(auto &e : cur->GetMappedChildNodesReference() | std::views::values)
 					{
 						if(e != nullptr && !e->IsNodeDeallocated())
 							node_stack.push_back(e);
 					}
 				}
-				else if(!cur->IsImmediate())
+				else if(!cur->IsTerminal())
 				{
 					for(auto &e : cur->GetOrderedChildNodesReference())
 					{
@@ -581,10 +581,10 @@ public:
 		auto &node_stack = EvaluableNode::reusableBuffer;
 		node_stack.clear();
 
-		// Seed the buffer with the direct children of *tree*.
+		//seed the buffer with the direct children of tree
 		if(tree->IsAssociativeArray())
 		{
-			for(auto &[_, e] : tree->GetMappedChildNodesReference())
+			for(auto &e : tree->GetMappedChildNodesReference() | std::views::values)
 			{
 				if(e != nullptr)
 					node_stack.push_back(e);
@@ -612,13 +612,13 @@ public:
 
 			if(cur->IsAssociativeArray())
 			{
-				for(auto &[_, child] : cur->GetMappedChildNodesReference())
+				for(auto &child : cur->GetMappedChildNodesReference() | std::views::values)
 				{
 					if(child != nullptr)
 						node_stack.push_back(child);
 				}
 			}
-			else if(!cur->IsImmediate())
+			else if(!cur->IsTerminal())
 			{
 				for(auto &child : cur->GetOrderedChildNodesReference())
 				{
@@ -637,10 +637,8 @@ public:
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		//fence memory flushing by using an atomic store
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		std::atomic<EvaluableNode *> *atomic_ref
-			= reinterpret_cast<std::atomic<EvaluableNode *> *>(&rootNode);
-		atomic_ref->store(new_root, std::memory_order_release);
+		std::atomic_ref atomic_ref(rootNode);
+		atomic_ref.store(new_root, std::memory_order_release);
 	#else
 		rootNode = new_root;
 	#endif
@@ -841,6 +839,9 @@ protected:
 	//to stop spinlocks
 	void FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index);
 
+	//helper function to ShrinkMemoryToCurrentUtilization() but assumes has the lock
+	void ShrinkMemoryToCurrentUtilizationWithLock();
+
 	//implemented as a recursive method because the extra complexity of an iterative implementation
 	// is not worth the very small performance benefit
 	//returns a pair of the copy and true if the copy needs cycle check
@@ -903,8 +904,14 @@ protected:
 	//only allocated if needed
 	std::unique_ptr<ActiveInterpreters> activeInterpreters;
 
-	//extra space to allocate when allocating
+	//minimum number of nodes before which garbage collection can be triggered
+	static const size_t minNodesToCollectGarbage;
+
+	//amount to scale up nodes when allocating
 	static const double allocExpansionFactor;
+
+	//amount of room to leave free when performing garbage collection (integer for performance)
+	static const int extraMemoryCapacityFactor;
 
 	//number of nodes to allocate at once for the local allocation buffer
 	static const int labBlockAllocationSize = 24;

@@ -90,8 +90,8 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				if(!found)
 					return false;
 
-				if(StringManipulation::StringNaturalCompare(value, lbv.lowValue.stringID->string) <= 0
-						|| StringManipulation::StringNaturalCompare(lbv.highValue.stringID->string, value) <= 0)
+				if(StringManipulation::StringNaturalCompare(value, string_intern_pool.GetStringViewFromID(lbv.lowValue.stringID)) <= 0
+						|| StringManipulation::StringNaturalCompare(string_intern_pool.GetStringViewFromID(lbv.highValue.stringID), value) <= 0)
 					return false;
 			}
 		}
@@ -115,8 +115,8 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				if(!found)
 					return false;
 
-				if(StringManipulation::StringNaturalCompare(value, lbv.lowValue.stringID->string) > 0
-						&& StringManipulation::StringNaturalCompare(lbv.highValue.stringID->string, value) > 0)
+				if(StringManipulation::StringNaturalCompare(value, string_intern_pool.GetStringViewFromID(lbv.lowValue.stringID)) > 0
+						&& StringManipulation::StringNaturalCompare(string_intern_pool.GetStringViewFromID(lbv.highValue.stringID), value) > 0)
 					return false;
 			}
 		}
@@ -203,6 +203,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 	case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
 	case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
 	case ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS:
+	case ENT_QUERY_ENTITY_CLUSTERS:
 		return false;
 
 	default:

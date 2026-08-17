@@ -66,14 +66,14 @@ public:
 		if(n == 0)
 			return;
 
-		vecMemory = AllocateRaw(n, large);
+		vecMemory = AllocateRaw(n);
 		T *d = GetDataPointer();
 		size_type i = 0;
 		for(auto it = first; it != last; ++it, ++i)
 			new (d + i) T(*it);
 
 		SetSize(n);
-		SetCapacity(n, large);
+		SetCapacity(n);
 	}
 
 	CompactVector(const CompactVector &other)

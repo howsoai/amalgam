@@ -253,11 +253,18 @@ public:
 		std::vector<size_t> &entities, std::vector<double> &values)
 	{
 		if(numEntities == 0)
+		{
+			enabled_entities.clear();
 			return;
+		}
 
 		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
+		{
+			enabled_entities.clear();
 			return;
+		}
+
 		size_t column_index = column->second;
 		auto &column_data = columnData[column_index];
 
@@ -281,11 +288,18 @@ public:
 		std::vector<size_t> &entities, std::vector<double> &values)
 	{
 		if(numEntities == 0)
+		{
+			enabled_entities.clear();
 			return;
+		}
 
 		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
+		{
+			enabled_entities.clear();
 			return;
+		}
+
 		size_t column_index = column->second;
 		auto &column_data = columnData[column_index];
 
@@ -342,8 +356,12 @@ public:
 		const EvaluableNodeImmediateValueWithType &value, BitArrayIntegerSet &out)
 	{
 		auto column = labelIdToColumnIndex.find(feature_sid);
-		if(column == labelIdToColumnIndex.end())
+		if(column == labelIdToColumnIndex.end()) [[unlikely]]
+		{
+			out.clear();
 			return;
+		}
+
 		size_t column_index = column->second;
 
 		if(value.nodeType != ENIVT_CODE)
@@ -366,8 +384,11 @@ public:
 		BitArrayIntegerSet *enabled_indices, BitArrayIntegerSet &out)
 	{
 		auto column = labelIdToColumnIndex.find(feature_sid);
-		if(column == labelIdToColumnIndex.end())
+		if(column == labelIdToColumnIndex.end()) [[unlikely]]
+		{
+			out.clear();
 			return;
+		}
 
 		columnData[column->second]->FindMinMax(value_type, num_to_find, is_max, enabled_indices, out);
 	}
@@ -656,28 +677,24 @@ public:
 		{
 			if(r_dist_eval.distEvaluator->computeSurprisal)
 				FindNearestEntities<true, true>(r_dist_eval, position_label_sids, top_k,
-					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+					radius_label, *possible_knn_indices, distances_out, ignore_entity_index, rand_stream);
 			else
 				FindNearestEntities<true, false>(r_dist_eval, position_label_sids, top_k,
-					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+					radius_label, *possible_knn_indices, distances_out, ignore_entity_index, rand_stream);
 		}
 		else
 		{
 			if(r_dist_eval.distEvaluator->computeSurprisal)
 				FindNearestEntities<false, true>(r_dist_eval, position_label_sids, top_k,
-					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+					radius_label, *possible_knn_indices, distances_out, ignore_entity_index, rand_stream);
 			else
 				FindNearestEntities<false, false>(r_dist_eval, position_label_sids, top_k,
-					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+					radius_label, *possible_knn_indices, distances_out, ignore_entity_index, rand_stream);
 		}
 	}
 
 	//used for debugging to make sure all entities are valid
-	inline void VerifyAllEntitiesForAllColumns()
-	{
-		for(auto &column_data : columnData)
-			column_data->VerifyAllEntities(numEntities);
-	}
+	void VerifyAllEntitiesForAllColumns();
 
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
 	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
@@ -1296,12 +1313,12 @@ protected:
 		size_t num_uncalculated_features = (num_features - num_calculated_features);
 		//if have already calculated everything, then already have the distance
 		if(num_uncalculated_features == 0)
-			return std::make_pair(distance <= reject_distance, distance);
+			return {distance <= reject_distance, distance};
 
 		//if too far out, reject immediately
 		distance += min_distance_by_unpopulated_count[num_uncalculated_features];
 		if(distance > reject_distance)
-			return std::make_pair(false, distance);
+			return {false, distance};
 
 		//use infinite loop with exit at the end to remove need for extra iterator increment
 		for(auto it = partial_sums.BeginPartialSumIndex(entity_index); true; ++it)
@@ -1319,11 +1336,11 @@ protected:
 			//do this via logic to minimize the number of branches
 			bool unacceptable_distance = (distance > reject_distance);
 			if(unacceptable_distance || num_uncalculated_features == 0)
-				return std::make_pair(!unacceptable_distance, distance);
+				return {!unacceptable_distance, distance};
 		}
 
 		//shouldn't make it here
-		return std::make_pair(true, distance);
+		return {true, distance};
 	}
 
 public:

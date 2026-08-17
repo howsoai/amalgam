@@ -7,8 +7,10 @@ static std::string _opcode_group = "Entity Comparison and Evolution";
 
 static OpcodeInitializer _ENT_TOTAL_ENTITY_SIZE(ENT_TOTAL_ENTITY_SIZE, &Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity)";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the total count of all of the nodes of `entity` and all of its contained entities.  Each entity itself counts as multiple nodes, corresponding to flattening an entity via the `flatten_entity` opcode.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -40,6 +42,8 @@ static OpcodeInitializer _ENT_TOTAL_ENTITY_SIZE(ENT_TOTAL_ENTITY_SIZE, &Interpre
 	(total_entity_size "Entity1")
 ))&", R"(67)", "", R"((destroy_entities "Entity1"))"}
 		});
+	d.retrievesData = true;
+	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.1;
 	d.opcodeGroup = _opcode_group;
@@ -49,11 +53,11 @@ static OpcodeInitializer _ENT_TOTAL_ENTITY_SIZE(ENT_TOTAL_ENTITY_SIZE, &Interpre
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
-	if(entity == nullptr)
+	if(entity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto erbr = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
@@ -63,9 +67,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE(Evaluabl
 
 static OpcodeInitializer _ENT_MUTATE_ENTITY(ENT_MUTATE_ENTITY, &Interpreter::InterpretNode_ENT_MUTATE_ENTITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path source_entity [number mutation_rate] [id_path dest_entity] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";
-	d.returns = R"(id_path)";
-	d.description = R"(Creates a mutated version of the entity specified by `source_entity` like mutate. Returns the id path of a new entity created contained by the entity that ran it.  The value specified by `mutation_rate`, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses `dest_entity` as the optional destination.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "delete", "insert", "swap_elements", "deep_copy_elements", and "delete_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"source_entity", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"mutation_rate", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"dest_entity", OpcodeDetails::DataType::ENTITY_ID, true}),
+		OpcodeDetails::ParameterGroup({"mutation_weights", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"operation_type", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"preserve_type_depth", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"immediate_number_weights", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"immediate_string_weights", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ENTITY_ID;
+	d.description = R"(Creates a mutated version of the entity specified by `source_entity` like mutate. Returns the id path of a new entity created contained by the entity that ran it.  The value specified by `mutation_rate`, from 0.0 to 1.0 and defaulting to 0.0001, indicates the probability that any node will experience a mutation.  Uses `dest_entity` as the optional destination.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "simplify_node", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 1 indicating that the top level of the entities will have a preserved type, namely an assoc.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -159,6 +172,7 @@ static OpcodeInitializer _ENT_MUTATE_ENTITY(ENT_MUTATE_ENTITY, &Interpreter::Int
 ])", ".*", R"((destroy_entities "MutateEntity" "MutatedEntity1" "MutatedEntity2" "MutatedEntity3" ))"}
 		});
 	d.requiresEntity = true;
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.1;
 	d.opcodeGroup = _opcode_group;
@@ -167,15 +181,15 @@ static OpcodeInitializer _ENT_MUTATE_ENTITY(ENT_MUTATE_ENTITY, &Interpreter::Int
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get mutation rate if applicable
-	double mutation_rate = 0.00001;
+	double mutation_rate = 0.0001;
 	if(ocn.size() > 1)
 		mutation_rate = InterpretNodeIntoNumberValue(ocn[1]);
 
@@ -188,7 +202,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 		{
 			ow_exists = true;
 			for(auto &[node_id, node] : opcode_weights_node->GetMappedChildNodes())
-				opcode_weights[GetEvaluableNodeTypeFromStringId(node_id)] = EvaluableNode::ToNumber(node);
+			{
+				EvaluableNodeType t = GetEvaluableNodeTypeFromStringId(node_id);
+				if(IsEvaluableNodeTypeValid(t))
+					opcode_weights[t] = EvaluableNode::ToNumber(node);
+			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(opcode_weights_node);
 		}
@@ -204,17 +222,35 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 			mtw_exists = true;
 			for(auto &[node_id, node] : mutation_weights_node->GetMappedChildNodes())
 			{
-				auto sid = GetBuiltInStringIdFromStringId(node_id);
-				mutation_type_weights[sid] = EvaluableNode::ToNumber(node);
+				auto bisid = GetBuiltInStringIdFromStringId(node_id);
+				if(bisid != ENBISI_NOT_A_STRING)
+					mutation_type_weights[bisid] = EvaluableNode::ToNumber(node);
 			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(mutation_weights_node);
 		}
 	}
 
+	//preserve the top layer of the entity by default
 	size_t preserve_type_depth = 1;
 	if(ocn.size() > 5)
 		preserve_type_depth = static_cast<size_t>(std::max(0.0, InterpretNodeIntoNumberValue(ocn[5])));
+
+	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType imm_number_weights;
+	if(ocn.size() > 6)
+	{
+		auto imm_number_weights_node = InterpretNodeForImmediateUse(ocn[6]);
+		if(EvaluableNode::IsAssociativeArray(imm_number_weights_node))
+			imm_number_weights.Initialize(imm_number_weights_node->GetMappedChildNodesReference(), true);
+	}
+
+	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType imm_string_weights;
+	if(ocn.size() > 7)
+	{
+		auto imm_string_weights_node = InterpretNodeForImmediateUse(ocn[7]);
+		if(EvaluableNode::IsAssociativeArray(imm_string_weights_node))
+			imm_string_weights.Initialize(imm_string_weights_node->GetMappedChildNodesReference(), true);
+	}
 
 	//retrieve the entities after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
@@ -226,7 +262,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 
 	//create new entity by mutating
 	Entity *new_entity = EntityManipulation::MutateEntity(this, source_entity, mutation_rate,
-		mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr, preserve_type_depth);
+		mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr, preserve_type_depth,
+		imm_number_weights, imm_string_weights);
 
 	//accumulate usage
 	if(ConstrainedAllocatedNodes())
@@ -262,8 +299,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 
 static OpcodeInitializer _ENT_COMMONALITY_ENTITIES(ENT_COMMONALITY_ENTITIES, &Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity1 id_path entity2 [assoc params])";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"entity2", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the total count of all of the nodes referenced within `entity1` and `entity2` that are equivalent, including all contained entities.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -334,6 +375,7 @@ static OpcodeInitializer _ENT_COMMONALITY_ENTITIES(ENT_COMMONALITY_ENTITIES, &In
 ))&", R"([64 64.74178574543642])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" )"}
 		});
 	d.requiresEntity = true;
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.01;
 	d.opcodeGroup = _opcode_group;
@@ -343,7 +385,7 @@ static OpcodeInitializer _ENT_COMMONALITY_ENTITIES(ENT_COMMONALITY_ENTITIES, &In
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool types_must_match = true;
@@ -375,8 +417,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(Evalu
 
 static OpcodeInitializer _ENT_EDIT_DISTANCE_ENTITIES(ENT_EDIT_DISTANCE_ENTITIES, &Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity1 id_path entity2 [assoc params])";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"entity2", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the edit distance of all of the nodes referenced within `entity1` and `entity2` that are equivalent, including all contained entities.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -447,8 +493,8 @@ static OpcodeInitializer _ENT_EDIT_DISTANCE_ENTITIES(ENT_EDIT_DISTANCE_ENTITIES,
 		]
 	)
 ))&", R"([11 9.516428509127167])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" )"},
-
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.05;
@@ -459,7 +505,7 @@ static OpcodeInitializer _ENT_EDIT_DISTANCE_ENTITIES(ENT_EDIT_DISTANCE_ENTITIES,
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool types_must_match = true;
@@ -491,9 +537,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(Eva
 
 static OpcodeInitializer _ENT_INTERSECT_ENTITIES(ENT_INTERSECT_ENTITIES, &Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity1 id_path entity2 [assoc params] [id_path entity3])";
-	d.returns = R"(id_path)";
-	d.description = R"(Creates an entity of whatever is common between the entities `entity1` and `entity2` exclusive.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true, the default, then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Uses `entity3` as the optional destination via an internal call create_contained_entity.  Any contained entities will be intersected either based on matching name or maximal similarity for nameless entities.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"entity2", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"dest_entity", OpcodeDetails::DataType::ENTITY_ID, true}),
+	};
+	d.returns = OpcodeDetails::DataType::ENTITY_ID;
+	d.description = R"(Creates an entity of whatever is common between the entities `entity1` and `entity2` exclusive.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true, the default, then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Uses `dest_entity` as the optional destination via an internal call create_contained_entity.  Any contained entities will be intersected either based on matching name or maximal similarity for nameless entities.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(seq
@@ -566,9 +617,10 @@ static OpcodeInitializer _ENT_INTERSECT_ENTITIES(ENT_INTERSECT_ENTITIES, &Interp
 	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
 ])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" "IntersectedEntity")"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.hasSideEffects = true;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.01;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -576,11 +628,11 @@ static OpcodeInitializer _ENT_INTERSECT_ENTITIES(ENT_INTERSECT_ENTITIES, &Interp
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool types_must_match = true;
@@ -602,11 +654,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 	}
 
 	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
-	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
+	if(source_entity_1 == nullptr || source_entity_2 == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//need a source entity, and shouldn't copy self
-	if(source_entity_1 == curEntity || source_entity_2 == curEntity)
+	if(source_entity_1 == curEntity || source_entity_2 == curEntity) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging
@@ -653,9 +705,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 
 static OpcodeInitializer _ENT_UNION_ENTITIES(ENT_UNION_ENTITIES, &Interpreter::InterpretNode_ENT_UNION_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity1 id_path entity2 [assoc params] [id_path entity3])";
-	d.returns = R"(id_path)";
-	d.description = R"(Creates an entity of whatever is inclusive when merging the entities `entity1` and `entity2`.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true, the default, then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Uses `entity3` as the optional destination via an internal call to create_contained_entity.  Any contained entities will be unioned either based on matching name or maximal similarity for nameless entities.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"entity2", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"dest_entity", OpcodeDetails::DataType::ENTITY_ID, true}),
+	};
+	d.returns = OpcodeDetails::DataType::ENTITY_ID;
+	d.description = R"(Creates an entity of whatever is inclusive when merging the entities `entity1` and `entity2`.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true, the default, then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  Uses `dest_entity` as the optional destination via an internal call to create_contained_entity.  Any contained entities will be unioned either based on matching name or maximal similarity for nameless entities.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(seq
@@ -728,9 +785,10 @@ static OpcodeInitializer _ENT_UNION_ENTITIES(ENT_UNION_ENTITIES, &Interpreter::I
 	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
 ])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" "UnionedEntity")"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.hasSideEffects = true;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.01;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -738,11 +796,11 @@ static OpcodeInitializer _ENT_UNION_ENTITIES(ENT_UNION_ENTITIES, &Interpreter::I
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool types_must_match = true;
@@ -764,11 +822,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 	}
 
 	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
-	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
+	if(source_entity_1 == nullptr || source_entity_2 == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//need a source entity, and shouldn't copy self
-	if(source_entity_1 == curEntity || source_entity_2 == curEntity)
+	if(source_entity_1 == curEntity || source_entity_2 == curEntity) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging
@@ -815,8 +873,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 
 static OpcodeInitializer _ENT_DIFFERENCE_ENTITIES(ENT_DIFFERENCE_ENTITIES, &Interpreter::InterpretNode_ENT_DIFFERENCE_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity1 id_path entity2)";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"entity2", OpcodeDetails::DataType::ENTITY_ID}),
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Finds the difference between the entities specified by `entity1` and `entity2` and generates code that, if evaluated passing the entity id_path as its parameter "_", would create a new entity into the id path specified by its parameter "new_entity" (null if unspecified), which would contain the applied difference between the two entities and returns the newly created entity id path.  Useful for finding a small difference of what needs to be changed to apply it to new (and possibly slightly different) entity.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -954,6 +1015,7 @@ static OpcodeInitializer _ENT_DIFFERENCE_ENTITIES(ENT_DIFFERENCE_ENTITIES, &Inte
 	(clone_entities _ new_entity)
 ))", "", R"((apply "destroy_entities" (contained_entities)))"}
 	});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.05;
@@ -964,7 +1026,7 @@ static OpcodeInitializer _ENT_DIFFERENCE_ENTITIES(ENT_DIFFERENCE_ENTITIES, &Inte
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto [entity_1, entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
@@ -980,9 +1042,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE_ENTITIES(Evalua
 
 static OpcodeInitializer _ENT_MIX_ENTITIES(ENT_MIX_ENTITIES, &Interpreter::InterpretNode_ENT_MIX_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity1 id_path entity2 [number keep_chance_entity1] [number keep_chance_entity2] [assoc params] [id_path entity3])";
-	d.returns = R"(id_path)";
-	d.description = R"(Performs a union operation on the entities represented by `entity1` and `entity2`, but randomly ignores nodes from one or the other tree if not equal.  If only `keep_chance_entity1` is specified, `keep_chance_entity2` defaults to 1 - `keep_chance_entity1`.  `keep_chance_entity1` specifies the probability that a node from the entity represented by `entity1` will be kept, and `keep_chance_entity2` the probability that a node from the entity represented by `entity2` will be kept.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  `similar_mix_chance` is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on `keep_chance_node1` and `keep_chance_node2`, and defaults to 0.0.  If `similar_mix_chance` is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.  `unnamed_entity_mix_chance` represents the probability that an unnamed entity pair will be mixed versus preserved as independent chunks, where 0.2 would yield 20% of the entities mixed. Returns the id path of a new entity created contained by the entity that ran it.  Uses `entity3` as the optional destination entity.   Any contained entities will be mixed either based on matching name or maximal similarity for nameless entities.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"entity2", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"keep_chance_entity1", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"keep_chance_entity2", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"dest_entity", OpcodeDetails::DataType::ENTITY_ID, true}),
+	};
+	d.returns = OpcodeDetails::DataType::ENTITY_ID;
+	d.description = R"(Performs a union operation on the entities represented by `entity1` and `entity2`, but randomly ignores nodes from one or the other tree if not equal.  If only `keep_chance_entity1` is specified, `keep_chance_entity2` defaults to 1 - `keep_chance_entity1`.  `keep_chance_entity1` specifies the probability that a node from the entity represented by `entity1` will be kept, and `keep_chance_entity2` the probability that a node from the entity represented by `entity2` will be kept.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of one node to another.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  `similar_mix_chance` is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on `keep_chance_node1` and `keep_chance_node2`, and defaults to 0.0.  If `similar_mix_chance` is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.  `unnamed_entity_mix_chance` represents the probability that an unnamed entity pair will be mixed versus preserved as independent chunks, where 0.2 would yield 20% of the entities mixed. Returns the id path of a new entity created contained by the entity that ran it.  Uses `dest_entity` as the optional destination entity.   Any contained entities will be mixed either based on matching name or maximal similarity for nameless entities.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -1060,9 +1129,10 @@ static OpcodeInitializer _ENT_MIX_ENTITIES(ENT_MIX_ENTITIES, &Interpreter::Inter
 	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
 ])", ".*", R"((apply "destroy_entities" (contained_entities)))"},
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.hasSideEffects = true;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.1;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -1070,11 +1140,11 @@ static OpcodeInitializer _ENT_MIX_ENTITIES(ENT_MIX_ENTITIES, &Interpreter::Inter
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	double blend2 = 0.5; //default to half
@@ -1127,11 +1197,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	}
 
 	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
-	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
+	if(source_entity_1 == nullptr || source_entity_2 == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//need a source entity, and shouldn't copy self
-	if(source_entity_1 == curEntity || source_entity_2 == curEntity)
+	if(source_entity_1 == curEntity || source_entity_2 == curEntity) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging

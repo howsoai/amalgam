@@ -1,5 +1,7 @@
 # Amalgam&reg;
 
+An LLM-ready, tree-structured language for safe, sandboxed code generation, manipulation, and advanced information-theoretic inference.
+
 **Table of Contents**
 
 1. [Introduction](#introduction)
@@ -7,29 +9,35 @@
     * [IDE Syntax Highlighting](#ide-syntax-highlighting)
     * [IDE Debugging](#ide-debugging)
 1. [Amalgam Interpreter](#amalgam-interpreter)
-    * [Recommended System Specs](#recommended-system-specs)
-    * [Pre-built Binaries](#pre-built-binaries)
+    * [Build Matrix](#build-matrix)
     * [Dev/local Builds](#devlocal-builds)
+    * [Runtime Requirements](#runtime-requirements)
     * [Usage](#usage)
+1. [History and Roadmap](#history-and-roadmap)
+1. [License](#license)
 1. [Contributing](#contributing)
 
 ## Introduction
 
-Amalgam&reg; is a domain specific language ([DSL](https://en.wikipedia.org/wiki/Domain-specific_language)) developed primarily for [genetic programming](https://en.wikipedia.org/wiki/Genetic_programming) and [instance based machine learning](https://en.wikipedia.org/wiki/Instance-based_learning), but also for simulation, agent based modeling, data storage and retrieval, the mathematics of probability theory and information theory, and game content and AI. The language format is somewhat LISP-like in that it uses parenthesized list format with prefix notation and is geared toward functional programming, where there is a one-to-one mapping between the code and the corresponding parse tree.
+Amalgam&reg; is an LLM-ready, tree-structured language for safe, sandboxed code generation, manipulation, and advanced information-theoretic inference.  Unlike traditional languages that prioritize developer shorthand, Amalgam focuses on code-data symmetry and semantic consistency.  These properties give it unique strengths in a wide variety of domains, including [genetic programming](https://en.wikipedia.org/wiki/Generic_programming), [instance based machine learning](https://en.wikipedia.org/wiki/Instance-based_learning), simulation, agent-based modeling, data storage and retrieval, the mathematics of probability theory and information theory, and game content and AI.
 
-Whereas virtually all practical programming languages are primarily designed for some combination of programmer productivity and computational performance, Amalgam prioritizes code matching and merging, as well as a deep equivalence of code and data. Amalgam uses _entities_ to store code and data, with a rich query system to find entities by their _labels_. The language uses a variable stack, but all attributes and methods are stored directly as labels in entities. There is no separate class versus instance, but entities can be used as prototypes to be copied and modified. Though code and data are represented as trees from the root of each entity, graphs in code and data structures are permitted and are flattened to code using special references. Further, instead of failing early when there is an error, Amalgam supports genetic programming and code mixing by being extremely weakly typed, and attempts to find a way to execute code no matter whether types match or not.
+### Key Features
+  - LLM-Ready By Design: By intentionally omitting a macro system, Amalgam ensures that visual similarity equals functional identity.  This structure allows LLMs to perform precise code generation, "patching" (identifying the exact difference between two scripts), and merging operations with high reliability.
+  - Robust Sandboxing: Built with an inherent focus on sandboxing, Amalgam provides a robust permission and execution constraints system.  This makes it ideal for executing AI-generated code where safety, CPU limits, and memory constraints are paramount.  It has been hardened by a over a decade of evolutionary fuzz testing.
+  - Universal Data/Code Unity: In Amalgam, there is no distinction between a "class" and an "instance" or "data" and "code".  Everything is code.  Amalgam allows for sophisticated querying of capabilities and easy reproduction of behaviors through copying and modification.
+  - Rich Querying System: Subdividing code into "entities", Amalgam supports fast similarity search of code and data, as well as a rich information theoretic foundation for determining similarity.
 
-Amalgam takes inspiration from many programming languages, but those with the largest influence are LISP, Scheme, Haskell, Perl, Smalltalk, and Python. Despite being much like LISP, there is deliberately no macro system. This is to make sure that code is semantically similar whenever the code is similar, regardless of context. It makes it easy to find the difference between x and y as an executable patch, and then apply that patch to z as `(call (difference x y) {_ z})`, or semantically mix blocks of code a and b as `(mix a b)`. Amalgam is not a purely functional language. It has imperative and object oriented capabilities, but is primarily optimized for functional programming with relatively few opcodes that are functionally flexible based on parameters to maximize flexibility with code mixing and matching.
+### Design Philosophy
 
-Genetic programming can create arbitrary code, so there is always a chance that an evolved program ends up consuming more CPU or memory resources than desired, or may attempt to affect the system outside of the interpreter.  For these reasons, there are many strict sandboxing aspects of the language with optional constraints on access, CPU, and memory.  Amalgam also has a rich permissions system, which controls what entities and code are able to do, whether writing to the console or executing system commands.
+While influenced by LISP (prefix notation) and Smalltalk (object-oriented capabilities and embedded environment), Amalgam intentionally excludes a macro system.  This ensures that similar code is semantically identical.  By removing context-dependent transformations, it ensures that if two snippets look alike, they behave identically—a critical requirement for automated inference and "patching" via `(call (difference x y) {_ z})`.
 
-The Amalgam interpreter was designed to be used a standalone interpreter and to build functionality for other programming languages and environments. It does not currently have rich support for linking C libraries into the language, but that is planned for future functionality.
+Amalgam supports genetic programming and loose typing to facilitate flexible execution, while its underlying tree structure maintains the integrity of the logic.  It is optimized for functional-style coding though supports procedural and object oriented programming.
 
-Initial development on Amalgam began in 2011. It was first offered as a commercial product in 2014 at Hazardous Software Inc. and was open sourced in September 2023 by Howso Incorporated (formerly known as Diveplane Corporation, a company spun out of Hazardous Software Inc.).
+### Example Uses
 
-When referencing the language: 'Amalgam', 'amalgam', 'amalgam-lang', and 'amalgam language' are used interchangeably with **Amalgam** being preferred. When referencing the interpreter: 'Amalgam interpreter', 'interpreter', 'Amalgam app', and 'Amalgam lib' are used interchangeably.
+Amalgam is used in production systems driving the [Howso Engine](https://github.com/howsoai/howso-engine-py) allowing for rich data and code to be used and executed during inference, as well as evolutionary programming systems like [Evolver](https://github.com/howsoai/evolver).  Code can be called natively via Python via the [amalgam-lang-py](https://github.com/howsoai/amalgam-lang-py) package.
 
-### Programming in Amalgam
+## Programming in Amalgam
 
 See the [Amalgam beginner's guide](docs/beginner_guide.md) to get started.
 
@@ -57,19 +65,9 @@ Debugging Amalgam is supported through the [VSCode Plugin](https://github.com/ho
 
 ## Amalgam Interpreter
 
-The Amalgam interpreter is written in C++ and uses the newest standards to create a fast, cross-platform experience when running Amalgam code.
+The Amalgam interpreter is written conforming to the C++ 20 standard so theoretically should be compilable on virtually any modern system.
 
-### Recommended System Specs
-
-At least 8 physical cores and 16GB of RAM.
-
-Although the interpreter itself can run on very few system resources, the above recommendation is based on the typical type of workloads that are compute and memory intensive.
-
-### Pre-built Binaries
-
-Pre-built binaries are provided for specific target systems. They are as statically linked as possible without overly complicating the build.
-
-#### Build Matrix
+### Build Matrix
 
 An interpreter application and shared library (dll/so/dylib) are built for each release. A versioned tarball is created for each target platform in the build matrix:
 
@@ -77,9 +75,10 @@ An interpreter application and shared library (dll/so/dylib) are built for each 
 |------------------------------|-------------------------------------|:------------------:|-------|
 | Windows amd64                | MT, ST, OMP, MT-NoAVX               | :heavy_check_mark: | |
 | Linux amd64                  | MT, ST, OMP, MT-NoAVX, ST-PGC, AFMI | :heavy_check_mark: | ST-PGC and AFMI are for testing only, not packaged for release |
-| Linux arm64: 8.2-a+simd+rcpc | MT, ST, OMP                         | :heavy_check_mark: | Tested with [qemu](https://www.qemu.org/) |
-| Linux arm64: 8-a+simd        | ST                                  | :heavy_check_mark: | Tested with [qemu](https://www.qemu.org/) |
-| macOS arm64: 8.4-a+simd      | MT, ST, OMP                         | :heavy_check_mark: | M1 and newer supported (amd64 NoAVX also tested w/ emulation) |
+| Linux amd64 (glibc 2.28)     | MT, ST, OMP, MT-NoAVX, ST-PGC, AFMI | :heavy_check_mark: | Built on Oracle Linux 8 for older distributions; packaged separately with a `-228` suffix. |
+| Linux arm64: 8.2-a+simd+rcpc | MT, ST, OMP                         | :heavy_check_mark: | Built and tested natively on arm64 runners |
+| Linux arm64: 8-a+simd        | ST                                  | :heavy_check_mark: | Built and tested natively on arm64 runners |
+| macOS arm64: 8.4-a+simd      | MT, ST, OMP                         | :heavy_check_mark: | M1 and newer supported; built and tested natively on Apple Silicon. |
 | WASM 64-bit                  | ST                                  | :heavy_check_mark: | Built on linux using emscripten, headless test with node:18 + jest |
 
 * <sup>1</sup> Variant meanings:
@@ -95,6 +94,7 @@ An interpreter application and shared library (dll/so/dylib) are built for each 
         * [OpenMP](https://en.wikipedia.org/wiki/OpenMP)
         * Binary postfix: '-omp'
         * Interpreter uses OpenMP threading internally to minimize latency of query operations
+		* Can be built with single-threaded or multi-threaded
     * MT-NoAVX
         * Multi-threaded but without AVX intrinsics
         * Binary postfix: '-mt-noavx'
@@ -114,18 +114,21 @@ An interpreter application and shared library (dll/so/dylib) are built for each 
 
 Pre-built binaries use CMake+Ninja for CI/CD. See [PR workflow](.github/workflows/create-pr-build.yml) for automated build steps.
 
-Though Amalgam is intended to support any C++17 compliant compiler, the current specific tool and OS versions used are:
+Though Amalgam is intended to support any C++20 compliant compiler, the current specific tool and OS versions used are:
 
 * CMake 3.30
 * Ninja 1.10
 * Windows:
-    * Visual Studio 2022 v143
+    * Visual Studio 2026 v145
 * Linux:
-    * Ubuntu 20.04, gcc-10
+    * Ubuntu 24.04, gcc-14 (amd64 and arm64, each built natively)
+    * Oracle Linux 8, gcc-toolset-14 (glibc 2.28 amd64 build)
 * macOS (Darwin):
-    * macOS 13, AppleClang 15.0
+    * macOS 15 (Apple Silicon), Clang/LLVM 17.0.0
 * WASM:
-    * Ubuntu 20.04, emscripten 3.1.67
+    * Ubuntu 24.04, emscripten 3.1.67
+
+GCC versions older than 14 and Clang versions older than 17 will emit a configuration warning and are not officially supported.
 
 #### Runtime Requirements
 
@@ -150,7 +153,8 @@ Running the pre-built interpreter has specific runtime requirements per platform
 
 ##### Linux
 
-* glibc 2.31 or later
+* glibc 2.39 or later
+    * A separate amd64 package with a `-228` suffix is built for glibc 2.28 or later, to support older distributions such as Oracle Linux 8
 * Arch: amd64 or arm64
     * Specific arm64 builds: `armv8-a+simd` & `armv8.2-a+simd+rcpc`
 
@@ -166,7 +170,7 @@ WASM support is still experimental.
 
 * No specific runtime requirements at this time
 
-### Dev/local Builds
+## Dev/local Builds
 
 Dev and local builds can be either run using a CLI or IDE.
 
@@ -191,7 +195,7 @@ The above performs a local "build install". For specifying a custom location, ru
 cmake -DCMAKE_INSTALL_PREFIX="/path/to/install/location" --build --preset $PRESET --target install
 ```
 
-Depending on the platform, not all tests will run successfully out of the box, especially when cross compiling. For those cases (i.e., arm64 on Mac M1 or AVX2/AVX512), the tests that are runnable on the specific platform can be included/excluded by running CTest directly (not through CMake, like above):
+Depending on the platform, not all tests will run successfully out of the box, especially when cross compiling or when the build machine lacks the intrinsics a variant was built for (e.g., AVX2/AVX512). For those cases, the tests that are runnable on the specific platform can be included/excluded by running CTest directly (not through CMake, like above):
 
 ```bash
 ctest --preset $PRESET --label-exclude 'advanced_intrinsics'
@@ -207,9 +211,7 @@ All CTest run options can be on the [CMake website](https://cmake.org/cmake/help
 
 #### IDE
 
-Automation uses the CMake generated build system (ninja), but Visual Studio or VSCode are the best options for local development. In general, VScode is recommended as it provides the most uniform developer experience across platforms.
-
-For the best C++ developer experience, Visual Studio on Windows is the ideal development environment (no paid features needed, VS Community edition works). A helper script [open-in-vs.bat](open-in-vs.bat) is provided to set-up the CLI with VS build tools and open the IDE. It can be used to open multiple variants of the Windows build:
+Automation uses the CMake generated build system (ninja), but Visual Studio or VSCode are the best options for local development.  A helper script [open-in-vs.bat](open-in-vs.bat) is provided to set-up the CLI with VS build tools and open the IDE.  On Windows, it can be used via:
 
 1. Default (no args) : Visual Studio solution (CMake generated, "amd64-windows-vs" preset)
     * `open-in-vs.bat`
@@ -220,15 +222,15 @@ For the best C++ developer experience, Visual Studio on Windows is the ideal dev
 1. vs_static : Visual Studio solution (local static non-CMake generated: [Amalgam.sln](Amalgam.sln))
     * `open-in-vs.bat vs_static`
 
-Note: on Windows, some issues have been found with using the CMake generated VS solutions and the native CMake support in Visual Studio and VSCode. If the developer experience is unstable, it is recommended that the `vs_static` build be used instead of the CMake generated build. It is planned to (eventually) deprecate this static VS solution when CMake support in VS becomes more stable.
+Note: on Windows, some issues have been found with using the CMake generated VS solutions and the native CMake support in Visual Studio and VSCode.  If the developer experience is unstable, it is recommended that the `vs_static` build be used instead of the CMake generated build.
 
 #### Build Customizations
 
 Some specific build customizations are important to note. These customizations can be altered in the main [CMake file](CMakeLists.txt#L1):
 
 * [Compiler options](build/cmake/global_compiler_flags.cmake)
-* [arm64 arch](build/cmake/global_compiler_flags.cmake#L90)
-* [amd64 AVX intrinsics](build/cmake/global_compiler_flags.cmake#L126)
+* [arm64 arch](build/cmake/global_compiler_flags.cmake#L113)
+* [amd64 AVX intrinsics](build/cmake/global_compiler_flags.cmake#L153)
 * [Custom testing](build/cmake/create_tests.cmake)
 
 ### Debugging
@@ -244,11 +246,9 @@ Unit tests can be run via an amalgam executable via the `--validate-amalgam` par
 ./amalgam-mt --validate-amalgam
 ```
 
-### Usage
+## Usage
 
-Given an Amalgam interpreter, usage is similar to other popular interpreters.
-
-Running the binary without any parameters yields a read-execute-print loop, and help is available from within:
+Running the binary without any parameters is typical of many interpreters and yields a read-execute-print loop.  Help is available from within:
 
 ```bash
 ./amalgam-mt
@@ -270,6 +270,12 @@ To run an Amalgam script:
  ```bash
  ./test.amlg
  ```
+
+## History and Roadmap
+
+Initial development on Amalgam began in 2011. It was first offered as a commercial product in 2014 at Hazardous Software Inc. and was open sourced in September 2023 by Howso Incorporated (formerly known as Diveplane Corporation, a company spun out of Hazardous Software Inc.).  Amalgam takes inspiration from many programming languages, but the largest influences are LISP, Scheme, Haskell, Perl, Smalltalk, and Python.
+
+The Amalgam interpreter does not currently have rich support for linking C libraries into the language, but that is planned for future functionality.  The roadmap also includes eventually disolving the query opcodes in favor of efficient specialized code paths using other opcodes such as `map` and `filter`.
 
 ## License
 

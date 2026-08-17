@@ -198,6 +198,12 @@
     <ClCompile Include="interpreter\OpcodesVariableDefinitionAndModification.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="entity\EntityQueriesClustering.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="evaluablenode\EvaluableNodeTreeAlgebra.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetManager.h">
@@ -237,9 +243,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FilenameEscapeProcessor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Conviction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PartialSum.h">
@@ -389,7 +392,16 @@
     <ClInclude Include="interpreter\InterpreterUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Vectors.h">
+    <ClInclude Include="interpreter\InterpreterApplySpecializations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="entity\EntityQueriesDensityFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="entity\EntityQueriesClustering.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="evaluablenode\EvaluableNodeTreeAlgebra.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

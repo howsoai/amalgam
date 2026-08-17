@@ -48,7 +48,7 @@ Entity::Entity(EvaluableNode *_root, const std::string &rand_state)
 	evaluableNodeManager.rootNode = nullptr;
 
 	//since this is the constructor, can't have had this entity's EntityNodeManager
-	SetRoot(_root, false);
+	SetRoot(EvaluableNodeReference(_root, false), false);
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 }
@@ -61,7 +61,7 @@ Entity::Entity(Entity *t)
 	entityRelationships.container = nullptr;
 	evaluableNodeManager.rootNode = nullptr;
 
-	SetRoot(t->evaluableNodeManager.rootNode, false);
+	SetRoot(EvaluableNodeReference(t->evaluableNodeManager.rootNode, false, false), false);
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 
@@ -241,7 +241,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 {
 	//can only work with assoc arrays
 	if(!EvaluableNode::IsAssociativeArray(new_label_values))
-		return std::make_pair(false, false);
+		return {false, false};
 
 	//if relevant, keep track of new memory allocated to the entity
 	size_t prev_size = 0;
@@ -269,67 +269,65 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		if(!on_self)
 			new_value_reference = evaluableNodeManager.DeepAllocCopy(new_value_reference);
 
-		if(accum_values)
+		//if label doesn't exist, create new root to contain it
+		if(label_iterator == end(label_index))
 		{
-			//can't accum into an empty location
-			if(label_iterator == end(label_index))
-			{
-				all_successful_assignments = false;
-				continue;
-			}
+			//need to make sure unique before attaching
+			if(!new_value_reference.unique)
+				new_value_reference = evaluableNodeManager.DeepAllocCopy(new_value_reference);
 
-			//need to make a copy in case it is modified, so pass in evaluableNodeManager
-			EvaluableNodeReference value_destination_node(label_iterator->second, false);
-			EvaluableNodeReference accumulated_value = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node,
-				new_value_reference, &evaluableNodeManager);
+			EvaluableNode *new_root = evaluableNodeManager.AllocNode(evaluableNodeManager.rootNode);
+			//ensure flags are updated before new_root is exposed
+			new_root->UpdateFlagsBasedOnNewChildNode(new_value_reference);
+			auto &new_root_mcn = new_root->GetMappedChildNodesReference();
+			new_root_mcn.emplace(label_sid, new_value_reference);
+			string_intern_pool.CreateStringReference(label_sid);
 
-			//overwrite the root's flags and value at the location
-			evaluableNodeManager.rootNode->UpdateFlagsBasedOnNewChildNode(accumulated_value);
+			//can only free the root if nothing is running on this entity and nothing references it
+			if(!AreAnyInterpretersRunning() && !evaluableNodeManager.rootNode->GetNeedCycleCheck())
+				evaluableNodeManager.FreeNode(evaluableNodeManager.rootNode);
 
-		#ifdef MULTITHREAD_SUPPORT
-			//fence memory to ensure flags are up to date by flushing by using an atomic store
-			//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-			std::atomic<EvaluableNode *> *atomic_ref
-				= reinterpret_cast<std::atomic<EvaluableNode *> *>(&label_iterator->second);
-			atomic_ref->store(accumulated_value, std::memory_order_release);
-		#else
-			label_iterator->second = accumulated_value;
-		#endif
+			evaluableNodeManager.SetRootNode(new_root);
 		}
-		else
+		else //label exists
 		{
-			//if label doesn't exist, create new root to contain it
-			if(label_iterator == end(label_index))
+			//value to be stored
+			EvaluableNodeReference new_label_value = EvaluableNodeReference::Null();
+			if(accum_values)
 			{
-				EvaluableNode *new_root = evaluableNodeManager.AllocNode(evaluableNodeManager.rootNode);
-				//ensure flags are updated before new_root is exposed
-				new_root->UpdateFlagsBasedOnNewChildNode(new_value_reference);
-				auto &new_root_mcn = new_root->GetMappedChildNodesReference();
-				new_root_mcn.emplace(label_sid, new_value_reference);
-				string_intern_pool.CreateStringReference(label_sid);
+				//can't accum into an empty location
+				if(label_iterator == end(label_index))
+				{
+					all_successful_assignments = false;
+					continue;
+				}
 
-				//can only free the root if nothing is running on this entity and nothing references it
-				if(!AreAnyInterpretersRunning()
-						&& !evaluableNodeManager.rootNode->GetNeedCycleCheck())
-					evaluableNodeManager.FreeNode(evaluableNodeManager.rootNode);
+				//need to make a copy in case it is modified, so pass in evaluableNodeManager
+				EvaluableNodeReference value_destination_node(label_iterator->second, false);
+				new_label_value = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node,
+					new_value_reference, &evaluableNodeManager);
 
-				evaluableNodeManager.SetRootNode(new_root);
+				//overwrite the root's flags and value at the location
+				evaluableNodeManager.rootNode->UpdateFlagsBasedOnNewChildNode(new_label_value);
 			}
 			else
 			{
 				//overwrite the root's flags before value at the location
-				evaluableNodeManager.rootNode->UpdateFlagsBasedOnNewChildNode(new_value_reference);
+				new_label_value = new_value_reference;
+				evaluableNodeManager.rootNode->UpdateFlagsBasedOnNewChildNode(new_label_value);
+			}
+
+			//need to make sure unique before attaching
+			if(!new_label_value.unique)
+				new_label_value = evaluableNodeManager.DeepAllocCopy(new_label_value);
 
 			#ifdef MULTITHREAD_SUPPORT
 				//fence memory to ensure flags are up to date by flushing by using an atomic store
-				//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-				std::atomic<EvaluableNode *> *atomic_ref
-					= reinterpret_cast<std::atomic<EvaluableNode *> *>(&label_iterator->second);
-				atomic_ref->store(new_value_reference, std::memory_order_release);
+				std::atomic_ref atomic_ref(label_iterator->second);
+				atomic_ref.store(new_label_value, std::memory_order_release);
 			#else
-				label_iterator->second = new_value_reference;
+				label_iterator->second = new_label_value;
 			#endif
-			}
 		}
 
 		any_successful_assignment = true;
@@ -358,7 +356,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		}
 	}
 
-	return std::make_pair(any_successful_assignment, all_successful_assignments);
+	return {any_successful_assignment, all_successful_assignments};
 }
 
 std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remove,
@@ -374,7 +372,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 	else if(EvaluableNode::IsOrderedArray(labels_to_remove))
 		labels_to_remove_ocn = labels_to_remove->GetOrderedChildNodesReference();
 	else
-		return std::make_pair(false, false);
+		return {false, false};
 
 	std::vector<std::pair<StringInternPool::StringID, EvaluableNode *>> label_sids_and_values_to_remove;
 	label_sids_and_values_to_remove.reserve(labels_to_remove_ocn.size());
@@ -430,7 +428,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		evaluableNodeManager.FreeNode(new_root);
 	}
 
-	return std::make_pair(any_successful_remove, all_successful_removes);
+	return {any_successful_remove, all_successful_removes};
 }
 
 EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
@@ -472,7 +470,7 @@ EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,
 		interpreter.memoryModificationLock = std::move(*enm_lock);
 #endif
 
-	EvaluableNodeReference retval = interpreter.ExecuteNode(code, scope_stack);
+	EvaluableNodeReference retval = interpreter.ExecuteNode(code, scope_stack, nullptr, nullptr, immediate_result);
 
 #ifdef MULTITHREAD_SUPPORT
 	if(enm_lock != nullptr)
@@ -867,7 +865,7 @@ void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityW
 	asset_manager.UpdateEntityRandomSeed(this, new_state, false, all_contained_entities);
 }
 
-std::string Entity::CreateRandomStreamFromStringAndRand(const std::string &seed_string)
+std::string Entity::CreateRandomStreamFromStringAndRand(std::string_view seed_string)
 {
 	//consume a random number to advance the state for creating the new state
 	randomStream.RandUInt32();
@@ -897,12 +895,12 @@ void Entity::SetPermissions(ExecutionPermissions permissions_to_set, ExecutionPe
 	}
 }
 
-void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm, std::vector<EntityWriteListener *> *write_listeners)
 {
 	EvaluableNode *cur_root = GetRoot();
 	bool entity_previously_empty = (cur_root == nullptr || cur_root->GetNumChildNodes() == 0);
 
-	if(_code != nullptr && !allocated_with_entity_enm)
+	if(_code != nullptr && (!allocated_with_entity_enm || !_code.unique))
 		_code = evaluableNodeManager.DeepAllocCopy(_code);
 
 	//ensure the top node is an assoc
@@ -910,7 +908,8 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, std::
 	{
 		EvaluableNode *new_root = evaluableNodeManager.AllocNode(ENT_ASSOC);
 		new_root->SetMappedChildNode(string_intern_pool.NOT_A_STRING_ID, _code);
-		_code = new_root;
+		new_root->UpdateFlagsBasedOnNewChildNode(_code);
+		_code = EvaluableNodeReference(new_root, _code.unique, true);
 	}
 
 	evaluableNodeManager.SetRootNode(_code);

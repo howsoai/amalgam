@@ -20,7 +20,7 @@ public:
 		bool debug_sources, bool allow_file_loading);
 
 	//returns true if the string needs to be backslashified
-	inline static bool NeedsBackslashify(const std::string &s)
+	inline static bool NeedsBackslashify(std::string_view s)
 	{
 		for(auto c : s)
 		{
@@ -43,7 +43,7 @@ public:
 	}
 
 	//returns true if the string needs to be backslashified, has spaces, or has special characters
-	inline static bool HasCharactersBeyondIdentifier(const std::string &s, bool label = false)
+	inline static bool HasCharactersBeyondIdentifier(std::string_view s, bool label = false)
 	{
 		if(s.empty())
 			return false;
@@ -90,7 +90,7 @@ public:
 	}
 
 	//Returns a properly backslashified string
-	static std::string Backslashify(const std::string &s);
+	static std::string Backslashify(std::string_view s);
 
 	//appends a newline to s and indents the newline the required amount
 	static inline void AppendNewlineWithIndentation(std::string &s, size_t indentation_depth, bool pretty)
@@ -172,7 +172,7 @@ public:
 	}
 
 	//returns true if string needs to be run through UnparseStringToKeyString
-	static inline bool DoesStringNeedUnparsingToKey(const std::string &s)
+	static inline bool DoesStringNeedUnparsingToKey(std::string_view s)
 	{
 		if(s.size() == 0 || s[0] != '\0')
 			return false;
@@ -186,16 +186,17 @@ public:
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
 			return true;
 
-		return DoesStringNeedUnparsingToKey(sid->string);
+		return DoesStringNeedUnparsingToKey(string_intern_pool.GetStringViewFromID(sid));
 	}
 
 	//returns a std::string_view representing the portion of a key that needs parsing
 	// should only be called on the sid if DoesStringIdNeedUnparsingToKey() returns true
-	static inline std::string_view GetUnparseStringFromKey(const StringInternPool::StringID sid)
+	static inline std::string_view GetUnparseStringFromKey(const StringInternPool::StringID &sid)
 	{
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
 			return std::string_view(".null");
-		return std::string_view(sid->string.data() + 1, sid->string.size() - 1);
+		auto sv = string_intern_pool.GetStringViewFromID(sid);
+		return std::string_view(sv.data() + 1, sv.size() - 1);
 	}
 
 	//string to be appended after Unparse calls when the first one is called with first_of_transactional_unparse

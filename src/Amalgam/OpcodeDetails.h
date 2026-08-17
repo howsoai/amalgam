@@ -124,15 +124,17 @@ class OpcodeDetails
 {
 public:
 	//arrangements of ordered parameters
-	enum class OrderedChildNodeType
+	enum class ChildNodeStructureType
 	{
 		NONE,
 		UNORDERED,
+		ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED,
 		ORDERED,
 		ONE_POSITION_THEN_ORDERED,
 		PAIRED,
 		ONE_POSITION_THEN_PAIRED,
-		POSITION
+		POSITION,
+		ASSOCIATIVE
 	};
 
 	//whether an opcode returns a newly allocated value
@@ -141,22 +143,302 @@ public:
 		NEW, PARTIAL, CONDITIONAL, EXISTING, NULL_VALUE
 	};
 
+	using DataTypeContainer = uint32_t;
+	enum class DataType : DataTypeContainer
+	{
+		NULL_TYPE = 1 << 0,
+		BOOL = 1 << 1,
+		NUMBER = 1 << 2,
+		STRING = 1 << 3,
+		LIST = 1 << 4,
+		UNORDERED_LIST = 1 << 5,
+		ASSOC = 1 << 6,
+		QUERY = 1 << 7,
+		WALK_PATH = 1 << 8,
+		ENTITY_ID = 1 << 9,
+		ENTITY_LABEL = 1 << 10,
+		LIST_OF_NUMBERS = 1 << 11,
+		LIST_OF_STRINGS = 1 << 12,
+		LIST_OF_ENTITY_IDS = 1 << 13,
+		LIST_OF_ENTITY_LABELS = 1 << 14,
+		LIST_OF_QUERIES = 1 << 15,
+		ASSOC_OF_NUMBERS = 1 << 16,
+
+		ANY_BASIC = NULL_TYPE | BOOL | NUMBER | STRING | LIST | UNORDERED_LIST | ASSOC | QUERY
+	};
+
+	//bit‑wise operators
+	constexpr friend DataType operator|(DataType lhs, DataType rhs) noexcept
+	{
+		return static_cast<DataType>(static_cast<DataTypeContainer>(lhs) |
+				static_cast<DataTypeContainer>(rhs));
+	}
+
+	constexpr friend DataType operator&(DataType lhs, DataType rhs) noexcept
+	{
+		return static_cast<DataType>(static_cast<DataTypeContainer>(lhs) &
+				static_cast<DataTypeContainer>(rhs));
+	}
+
+	constexpr friend DataType operator~(DataType v) noexcept
+	{
+		return static_cast<DataType>(~static_cast<DataTypeContainer>(v));
+	}
+
+	static constexpr bool AreDataTypesExactlyCompatible(DataType a, DataType b)
+	{
+		return (static_cast<DataTypeContainer>(a) & static_cast<DataTypeContainer>(b)) != 0;
+	}
+
+	//returns true if a and b are compatible
+	static constexpr bool IsReturnTypeValidForRequiredDataType(DataType return_type, DataType required_type)
+	{
+		//don't need to check for any exact matches below
+		if(AreDataTypesExactlyCompatible(return_type, required_type))
+			return true;
+
+		//anything satisfies requiring a null
+		if(AreDataTypesExactlyCompatible(required_type, DataType::NULL_TYPE))
+			return true;
+
+		//everything can be converted to a bool
+		if(AreDataTypesExactlyCompatible(required_type, DataType::BOOL))
+			return true;
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::NUMBER))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::BOOL)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::STRING));
+		}
+
+		//everything can be coerced into string
+		if(AreDataTypesExactlyCompatible(required_type, DataType::STRING))
+		{
+			return true;
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::LIST))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::UNORDERED_LIST)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_NUMBERS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_STRINGS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_ENTITY_IDS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_ENTITY_LABELS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_QUERIES));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::UNORDERED_LIST))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_NUMBERS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_STRINGS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_ENTITY_IDS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_ENTITY_LABELS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_QUERIES));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::ASSOC))
+		{
+			return AreDataTypesExactlyCompatible(return_type, DataType::ASSOC_OF_NUMBERS);
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::QUERY))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_QUERIES));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::WALK_PATH))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::BOOL)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::NUMBER)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::STRING)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_NUMBERS)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_STRINGS)
+				);
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::ENTITY_ID))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::STRING)
+					|| AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+					|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_STRINGS));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::ENTITY_LABEL))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::BOOL)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::NUMBER)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::STRING));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::LIST_OF_NUMBERS))
+		{
+			return AreDataTypesExactlyCompatible(return_type, DataType::LIST);
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::LIST_OF_STRINGS))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+				|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_NUMBERS));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::LIST_OF_ENTITY_IDS))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+					|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_STRINGS));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::LIST_OF_ENTITY_LABELS))
+		{
+			return (AreDataTypesExactlyCompatible(return_type, DataType::LIST)
+					|| AreDataTypesExactlyCompatible(return_type, DataType::LIST_OF_STRINGS));
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::LIST_OF_QUERIES))
+		{
+			return AreDataTypesExactlyCompatible(return_type, DataType::LIST);
+		}
+
+		if(AreDataTypesExactlyCompatible(required_type, DataType::ASSOC_OF_NUMBERS))
+		{
+			return AreDataTypesExactlyCompatible(return_type, DataType::ASSOC);
+		}
+
+		return false;
+	}
+
+	//returns the minimum number of parameters required to return a valid result
+	size_t GetMinNumValidParameters()
+	{
+		if(parameters.childNodeStructure == ChildNodeStructureType::NONE)
+			return 0;
+
+		size_t num_not_optional = 0;
+		for(auto &group : parameters.groups)
+		{
+			if(!group.parameter1.optional)
+				num_not_optional++;
+		}
+
+		return num_not_optional;
+	}
+
+	//returns the maximum number of parameters that the opcode can use
+	//if there is no upper limit, returns std::numeric_limits<size_t>::max()
+	size_t GetMaxNumValidParameters()
+	{
+		if(parameters.childNodeStructure == ChildNodeStructureType::NONE
+				|| parameters.groups.size() == 0)
+			return 0;
+
+		auto &last_group = parameters.groups.back();
+		if(last_group.isRepeating)
+			return std::numeric_limits<size_t>::max();
+
+		return parameters.groups.size();
+	}
+
+	//returns a string corresponding to the datatype
+	static std::string OpcodeDataTypeToString(DataType odt);
+
+	//parameter of an opcode
+	struct ParameterDetails
+	{
+		std::string name;
+		DataType type;
+		bool optional = false;
+	};
+
+	//group of parameters for an opcode
+	//parameter2 is only used for paired parameters
+	//if is_repeating is true, will repeat parameter1 or pair of parameters as appropriate
+	struct ParameterGroup
+	{
+		ParameterGroup(ParameterDetails p1, ParameterDetails p2,
+				bool is_repeating = false, int repeating_start_index = 1)
+			: parameter1(p1), parameter2(p2),
+			isRepeating(is_repeating), repeatingStartIndex(repeating_start_index)
+		{}
+
+		ParameterGroup(ParameterDetails p1,
+				bool is_repeating = false, int repeating_start_index = 1)
+			: parameter1(p1), parameter2({ "", DataType::NULL_TYPE, true }),
+			isRepeating(is_repeating), repeatingStartIndex(repeating_start_index)
+		{}
+
+		ParameterDetails parameter1;
+		ParameterDetails parameter2;
+		bool isRepeating = false;
+		//index that the parameter starts with; used when the first parameter can have
+		//different types but if of one type then the parameter is repeated
+		int repeatingStartIndex = 1;
+	};
+
+	//set of parameters for an opcode
+	struct ParameterSchema
+	{
+		ParameterSchema()
+			: childNodeStructure(ChildNodeStructureType::POSITION)
+		{}
+
+		ParameterSchema(ChildNodeStructureType cns, std::initializer_list<ParameterGroup> il)
+			: childNodeStructure(cns), groups(il)
+		{}
+
+		ParameterSchema(std::initializer_list<ParameterGroup> il)
+			: childNodeStructure(ChildNodeStructureType::POSITION), groups(il)
+		{}
+
+		ChildNodeStructureType childNodeStructure;
+		std::vector<ParameterGroup> groups;
+	};
+
+	//returns a string combining all parameters
+	std::string ParametersToString();
+
 	//attribute ordering here is generally ordered by operational use to improve caching,
 	//with descriptive strings at the end
+
+	//true if the opcode may return itself if all child nodes are also idempotent
 	bool potentiallyIdempotent = false;
+
+	//true if the opcode may retrieve data from outside and require execution
+	bool retrievesData = false;
+
+	//true if the opcode may affect data outside itself
 	bool hasSideEffects = false;
+
+	//true if the opcode may cause a change in the current entity
 	bool mayCauseNodeUpdateInCurrentEntity = false;
+
+	//true if the opcode allows concurrent execution
 	bool allowsConcurrency = false;
+
+	//true if the opcode requires an entity to operate
 	bool requiresEntity = false;
+
+	//true if the opcode creates a new variable scope
 	bool newScope = false;
+
+	//true if the opcode creates a new target scope
 	bool newTargetScope = false;
+
+	//true if the opcode is a query run by the query engine
 	bool isQuery = false;
-	OrderedChildNodeType orderedChildNodeType = OrderedChildNodeType::POSITION;
+
+	//true if the opcode is associative
+	bool isAssociative = false;
+
+	//what kind of special permissions the opcode needs to run
 	ExecutionPermissions::Permission permissions = ExecutionPermissions::Permission::NONE;
+
+	//whether the opcode returns a newly allocated value
 	OpcodeReturnNewnessType valueNewness = OpcodeReturnNewnessType::EXISTING;
 
-	std::string_view parameters;
-	std::string_view returns;
+	ParameterSchema parameters;
+	DataType returns;
 	std::string_view description;
 	std::vector<AmalgamExample> examples;
 	double frequencyPer10000Opcodes = 1.0;
@@ -188,9 +470,15 @@ public:
 };
 
 //returns the type of structure that the ordered child nodes have for a given t
-__forceinline OpcodeDetails::OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t)
+__forceinline OpcodeDetails::ChildNodeStructureType GetChildNodeStructureType(EvaluableNodeType t)
 {
-	return _opcode_details[t].orderedChildNodeType;
+	return _opcode_details[t].parameters.childNodeStructure;
+}
+
+//returns true if the opcode may retrieve data
+__forceinline bool DoesOpcodeRetrieveData(EvaluableNodeType t)
+{
+	return _opcode_details[t].retrievesData;
 }
 
 //returns true if the opcode modifies things outside of its return
@@ -199,10 +487,22 @@ __forceinline bool DoesOpcodeHaveSideEffects(EvaluableNodeType t)
 	return _opcode_details[t].hasSideEffects;
 }
 
+//returns true if the opcode requires its execution within an entity
+__forceinline bool DoesOpcodeRequireEntity(EvaluableNodeType t)
+{
+	return _opcode_details[t].requiresEntity;
+}
+
 //returns true if the opcode modifies things outside of its return
 __forceinline bool MayOpcodeCauseNodeUpdateInCurrentEntity(EvaluableNodeType t)
 {
 	return _opcode_details[t].mayCauseNodeUpdateInCurrentEntity;
+}
+
+//returns the data types that the opcode can return
+__forceinline OpcodeDetails::DataType GetOpcodeReturnTypes(EvaluableNodeType t)
+{
+	return _opcode_details[t].returns;
 }
 
 //returns whether the opcode returns a new value
@@ -214,13 +514,38 @@ __forceinline OpcodeDetails::OpcodeReturnNewnessType GetOpcodeNewValueReturnType
 //returns true if the opcode uses an associative array as parameters. If false, then a regular kind of list
 __forceinline bool DoesOpcodeUseAssocParameters(EvaluableNodeType t)
 {
-	return GetOpcodeOrderedChildNodeType(t) == OpcodeDetails::OrderedChildNodeType::PAIRED;
+	return GetChildNodeStructureType(t) == OpcodeDetails::ChildNodeStructureType::PAIRED;
+}
+
+//returns the minimum number of parameters required to return a valid result
+__forceinline size_t GetOpcodeMinNumValidParameters(EvaluableNodeType t)
+{
+	return _opcode_details[t].GetMinNumValidParameters();
+}
+
+//returns the maximum number of parameters that the opcode can use
+//if there is no upper limit, returns std::numeric_limits<size_t>::max()
+__forceinline size_t GetOpcodeMaxNumValidParameters(EvaluableNodeType t)
+{
+	return _opcode_details[t].GetMaxNumValidParameters();
+}
+
+//returns true if the opcode is associative
+__forceinline bool IsOpcodeAssociative(EvaluableNodeType t)
+{
+	return _opcode_details[t].isAssociative;
 }
 
 //returns true if t is an immediate value
 __forceinline constexpr bool IsEvaluableNodeTypeImmediate(EvaluableNodeType t)
 {
-	return (t == ENT_NULL || t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING || t == ENT_SYMBOL);
+	return (t == ENT_NULL || t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING);
+}
+
+//returns true if t is an immediate value or symbol
+__forceinline constexpr bool IsEvaluableNodeTypeTerminalNode(EvaluableNodeType t)
+{
+	return (IsEvaluableNodeTypeImmediate(t) || t == ENT_SYMBOL);
 }
 
 //returns true if t uses null (no) data
@@ -256,7 +581,7 @@ __forceinline constexpr bool DoesEvaluableNodeTypeUseAssocData(EvaluableNodeType
 //returns true if t uses ordered data (doesn't use any other t)
 constexpr bool DoesEvaluableNodeTypeUseOrderedData(EvaluableNodeType t)
 {
-	return (IsEvaluableNodeTypeValid(t) && !IsEvaluableNodeTypeImmediate(t) && !DoesEvaluableNodeTypeUseAssocData(t));
+	return (IsEvaluableNodeTypeValid(t) && !IsEvaluableNodeTypeTerminalNode(t) && !DoesEvaluableNodeTypeUseAssocData(t));
 }
 
 //returns true if t is a query
@@ -269,6 +594,14 @@ __forceinline bool IsEvaluableNodeTypeQuery(EvaluableNodeType t)
 __forceinline bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType t)
 {
 	return _opcode_details[t].potentiallyIdempotent;
+}
+
+//returns true if t can be executed in a self-contained fashion
+//ENT_RANGE is excluded because it can expand considerably in size, as are immediate types
+__forceinline bool IsEvaluableNodeTypeOfSimpleExecution(EvaluableNodeType t)
+{
+	return (!DoesOpcodeRetrieveData(t) && !DoesOpcodeHaveSideEffects(t) &&
+			!MayOpcodeCauseNodeUpdateInCurrentEntity(t) && !DoesOpcodeRequireEntity(t) && t != ENT_RANGE);
 }
 
 //returns the string id representing EvaluableNodeBuiltInStringId t
@@ -319,10 +652,10 @@ inline EvaluableNodeType GetEvaluableNodeTypeFromStringId(StringInternPool::Stri
 // if get_non_keywords is true, then it will return types that are not necessarily keywords, like number
 inline std::string GetStringFromEvaluableNodeType(EvaluableNodeType t, bool get_non_keywords = false)
 {
-	if(!get_non_keywords && IsEvaluableNodeTypeImmediate(t))
+	if(!get_non_keywords && IsEvaluableNodeTypeTerminalNode(t))
 		return "";
 
-	if(t >= NUM_VALID_ENT_OPCODES)
+	if(t >= NUM_VALID_ENT_OPCODES) [[unlikely]]
 	{
 		AmlgAssert(false);
 		return "";

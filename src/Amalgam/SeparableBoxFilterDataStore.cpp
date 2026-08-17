@@ -322,6 +322,36 @@ void SeparableBoxFilterDataStore::RemoveEntityIndexValueFromLabelId(
 #endif
 }
 
+//used for debugging to make sure all entities are valid
+void SeparableBoxFilterDataStore::VerifyAllEntitiesForAllColumns()
+{
+#ifdef MULTITHREAD_SUPPORT
+	//if big enough (enough entities and/or enough columns), try to use multithreading
+	size_t num_columns = columnData.size();
+	if(num_columns > 1)
+	{
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_columns);
+
+		auto enqueue_task_lock = Concurrency::urgentThreadPool.AcquireTaskLock();
+		for(auto &column_data : columnData)
+		{
+			Concurrency::urgentThreadPool.BatchEnqueueTask([this, &column_data, &task_set]()
+			{
+				column_data->VerifyAllEntities(numEntities);
+				task_set.MarkTaskCompleted();
+			});
+		}
+
+		task_set.WaitForTasks(&enqueue_task_lock);
+		return;
+	}
+	//not running concurrently
+#endif
+
+	for(auto &column_data : columnData)
+		column_data->VerifyAllEntities(numEntities);
+}
+
 //populates distances_out with all entities and their distances that have a distance to target less than max_dist
 // and sets distances_out to the found entities.  Infinity is allowed to compute all distances.
 //if enabled_indices is not nullptr, it will only find distances to those entities, and it will modify enabled_indices in-place
@@ -1475,7 +1505,7 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 
 	InterpreterConstraints interpreter_constraints;
 	calling_interpreter.PopulateInterpreterConstraintsFromParams(ocn, 3, interpreter_constraints, true);
-	interpreter_constraints.readOnlyEntities = true;
+	interpreter_constraints.writeAccess = false;
 	interpreter_constraints.collectWarnings = false;
 
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -1501,7 +1531,7 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 	auto &ce_enm = called_entity->evaluableNodeManager;
 
 	if(Interpreter::_label_profiling_enabled)
-		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
+		PerformanceProfiler::StartOperation(string_intern_pool.GetStringViewFromID(entity_label_sid),
 			ce_enm.GetNumberOfUsedNodes());
 
 #ifdef MULTITHREAD_SUPPORT
@@ -1529,14 +1559,14 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 	if(call_type != ENT_CALL_ON_ENTITY)
 		result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
 			&scope_stack, false, &calling_interpreter, nullptr, nullptr,
-			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_STANDARD_IMMEDIATE
+			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_PRIMITIVE_IMMEDIATE
 	#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
 	#endif
 		);
 	else
 		result = called_entity->ExecuteOnEntity(function, &scope_stack, &calling_interpreter, nullptr, nullptr,
-			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_STANDARD_IMMEDIATE
+			&interpreter_constraints, EvaluableNodeRequestedValueTypes::Type::ANY_PRIMITIVE_IMMEDIATE
 	#ifdef MULTITHREAD_SUPPORT
 			, &enm_lock
 	#endif
@@ -1559,7 +1589,11 @@ double SeparableBoxFilterDataStore::ComputeDistanceTermFromEvaluatingOnEntity(
 		calling_interpreter.interpreterConstraints->AccruePerformanceCounters(&interpreter_constraints);
 
 	//ensure in immediate value form if possible since distance evaluation expects it for performance
-	auto value_as_immediate_if_possible = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(result);
+	EvaluableNodeImmediateValueWithType value_as_immediate_if_possible;
+	if(result.IsImmediateValue())
+		value_as_immediate_if_possible = result.value;
+	else
+		value_as_immediate_if_possible = EvaluableNodeImmediateValueWithType::CreateValueFromEvaluableNode(result);
 
 	double distance = r_dist_eval.ComputeDistanceTerm<compute_surprisal>(
 		value_as_immediate_if_possible, query_feature_index, high_accuracy);

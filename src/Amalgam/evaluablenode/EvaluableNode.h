@@ -64,9 +64,13 @@ public:
 		//if true, then the node has not yet been read/accessed and can be freed
 		//used to optimize flows to avoid copies when there has been no other accesses
 		FREEABLE = 1 << 4,
+		//if true, then the top node has not yet been read/accessed and can be freed
+		//used to optimize flows to avoid copies when there has been no other accesses
+		FREEABLE_TOP_NODE = 1 << 5,
 		//if true, then known to be in use with regard to garbage collection
-		KNOWN_TO_BE_IN_USE = 1 << 5,
-		ALL = HAS_EXTENDED_VALUE | NEED_CYCLE_CHECK | IDEMPOTENT | CONCURRENT | FREEABLE | KNOWN_TO_BE_IN_USE
+		KNOWN_TO_BE_IN_USE = 1 << 6,
+		ALL = HAS_EXTENDED_VALUE | NEED_CYCLE_CHECK | IDEMPOTENT | CONCURRENT
+				| FREEABLE | FREEABLE_TOP_NODE | KNOWN_TO_BE_IN_USE
 	};
 
 	//constructors
@@ -302,6 +306,13 @@ public:
 	//copies the metadata of the node n into this
 	void CopyMetadataFrom(EvaluableNode *n);
 
+	//copies the entire node n into this
+	__forceinline void CopyNodeFrom(EvaluableNode *n)
+	{
+		CopyMetadataFrom(n);
+		CopyValueFrom(n);
+	}
+
 	//clears annotations and comments
 	__forceinline void ClearAnnotationsAndComments()
 	{
@@ -374,7 +385,7 @@ public:
 			return false;
 
 		//since they are shallow equal, check for quick exit
-		if(a == nullptr || b == nullptr || IsEvaluableNodeTypeImmediate(a->GetType()))
+		if(a == nullptr || b == nullptr || IsEvaluableNodeTypeTerminalNode(a->GetType()))
 			return true;
 
 		//only need cycle checks if both a and b need cycle checks,
@@ -412,7 +423,18 @@ public:
 
 	static __forceinline bool IsImmediate(EvaluableNode *n)
 	{
-		return ((n == nullptr) || IsEvaluableNodeTypeImmediate(n->GetType()));
+		return (n == nullptr || n->IsImmediate());
+	}
+
+	//returns true if the type is terminal (immediate or symbol)
+	__forceinline bool IsTerminal()
+	{
+		return IsEvaluableNodeTypeTerminalNode(GetType());
+	}
+
+	static __forceinline bool IsTerminal(EvaluableNode *n)
+	{
+		return (n == nullptr || n->IsTerminal());
 	}
 
 	//returns true if the node is some form of ordered array
@@ -530,9 +552,12 @@ public:
 	static StringInternPool::StringID NumberToStringIDIfExists(double value, bool key_string = false);
 	static StringInternPool::StringID NumberToStringIDIfExists(size_t value, bool key_string = false);
 
-	//converts the node to a key string that can be used in assocs
+	//converts the node to a string
 	//if key_string is true, then it will generate a string used for comparing in assoc keys
 	static std::string ToString(EvaluableNode *e, bool key_string = false);
+
+	//converts the node to a string, returning true if it is a valid string
+	static std::pair<bool, std::string> ToValidString(EvaluableNode *e);
 
 	//converts node to an existing string. If it doesn't exist or it's null, it returns NOT_A_STRING_ID
 	//if key_string is true, then it will generate a string used for comparing in assoc keys
@@ -574,7 +599,7 @@ public:
 	//Returns the number of nodes in the data structure
 	inline static size_t GetDeepSize(EvaluableNode *n)
 	{
-		if(n == nullptr || n->IsImmediate())
+		if(n == nullptr || n->IsTerminal())
 			return 1;
 
 		if(!n->GetNeedCycleCheck())
@@ -641,8 +666,10 @@ public:
 	}
 
 	//changes the type by setting it to the number value specified
-	inline void SetTypeViaBoolValue(bool v)
+	inline void SetTypeViaBoolValue(bool v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
 		SetType(ENT_BOOL, false);
 		GetBoolValueReference() = v;
 	}
@@ -666,8 +693,11 @@ public:
 	}
 
 	//changes the type by setting it to the number value specified
-	inline void SetTypeViaNumberValue(double v)
+	inline void SetTypeViaNumberValue(double v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
+
 		if(FastIsNaN(v))
 		{
 			SetType(ENT_NULL, false);
@@ -679,9 +709,22 @@ public:
 		}
 	}
 
-	//changes the type by setting it to the string id value specified
-	inline void SetTypeViaStringIdValue(StringInternPool::StringID v)
+	//changes the type by setting it to the string value specified
+	inline void SetTypeViaStringIdValue(std::string &v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
+
+		SetType(ENT_STRING, false);
+		GetStringIDReference() = string_intern_pool.CreateStringReference(v);
+	}
+
+	//changes the type by setting it to the string id value specified
+	inline void SetTypeViaStringIdValue(StringInternPool::StringID v, bool clear_metadata = true)
+	{
+		if(clear_metadata)
+			ClearMetadata();
+
 		if(v == string_intern_pool.NOT_A_STRING_ID)
 		{
 			SetType(ENT_NULL, false);
@@ -694,8 +737,11 @@ public:
 	}
 
 	//changes the type by setting it to the string id value specified, handing off the reference
-	inline void SetTypeViaStringIdValueWithReferenceHandoff(StringInternPool::StringID v)
+	inline void SetTypeViaStringIdValueWithReferenceHandoff(StringInternPool::StringID v, bool clear_metadata = true)
 	{
+		if(clear_metadata)
+			ClearMetadata();
+
 		if(v == string_intern_pool.NOT_A_STRING_ID)
 		{
 			SetType(ENT_NULL, false);
@@ -724,7 +770,7 @@ public:
 	}
 
 	void SetStringID(StringInternPool::StringID id);
-	const std::string &GetStringValue();
+	std::string_view GetStringView();
 	void SetStringValue(const std::string &v);
 	//gets the string ID and clears the node's string ID, but does not destroy the string reference,
 	// leaving the reference handling up to the caller
@@ -831,23 +877,44 @@ public:
 #ifdef MULTITHREAD_SUPPORT
 	__forceinline bool HasAttributeAtomic(Attribute attr)
 	{
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		const std::atomic<AttributeStorageType> *atomic_ref
-			= reinterpret_cast<const std::atomic<AttributeStorageType>*>(&attributes);
-		AttributeStorageType cur = atomic_ref->load(std::memory_order_seq_cst);
+		std::atomic_ref atomic_ref(attributes);
+		AttributeStorageType cur = atomic_ref.load(std::memory_order_seq_cst);
 		return (cur & static_cast<AttributeStorageType>(attr)) != 0;
 	}
 
 	__forceinline void SetAttributeAtomic(Attribute attr, bool enable = true)
 	{
 		AttributeStorageType mask = static_cast<AttributeStorageType>(attr);
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		std::atomic<AttributeStorageType> *atomic_ref
-			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
+
+		std::atomic_ref atomic_ref(attributes);
 		if(enable)
-			atomic_ref->fetch_or(mask, std::memory_order_seq_cst);
+			atomic_ref.fetch_or(mask, std::memory_order_seq_cst);
 		else
-			atomic_ref->fetch_and(~mask, std::memory_order_seq_cst);
+			atomic_ref.fetch_and(~mask, std::memory_order_seq_cst);
+	}
+
+	//returns true if the bit was successfully set (was previously unset)
+	//returns false if the bit was already set
+	__forceinline bool TrySetAttributeAtomic(Attribute attr)
+	{
+		constexpr AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::KNOWN_TO_BE_IN_USE);
+
+		//check if already set, relaxed is fine for early-out
+		std::atomic_ref atomic_ref(attributes);
+		AttributeStorageType current_flags = atomic_ref.load(std::memory_order_relaxed);
+		if(current_flags & mask)
+			return false;
+
+		//slow path to actually set the value
+		while(!atomic_ref.compare_exchange_weak(current_flags, current_flags | mask,
+			std::memory_order_acquire, std::memory_order_relaxed))
+		{
+			//see if another thread set it
+			if(current_flags & mask)
+				return false;
+		}
+
+		return true;
 	}
 #endif
 
@@ -914,21 +981,98 @@ public:
 	__forceinline bool SetIsFreeableAtomic(bool is_freeable)
 	{
 		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE);
-
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		std::atomic<AttributeStorageType> *atomic_ref
-			= reinterpret_cast<std::atomic<AttributeStorageType>*>(&attributes);
+		std::atomic_ref atomic_ref(attributes);
 
 		if(is_freeable)
 		{
-			AttributeStorageType previous_value = atomic_ref->fetch_or(mask);
+			AttributeStorageType previous_value = atomic_ref.fetch_or(mask);
 			return (previous_value & mask) != 0;
 		}
 		else
 		{
-			AttributeStorageType previous_value = atomic_ref->fetch_and(~mask);
+			AttributeStorageType previous_value = atomic_ref.fetch_and(~mask);
 			return (previous_value & mask) != 0;
 		}
+	}
+#endif
+
+	//returns true if the top node has never been read / accessed
+	__forceinline bool GetIsFreeableTopNode()
+	{
+		return HasAttribute(Attribute::FREEABLE_TOP_NODE);
+	}
+
+	//sets whether the top node has never been read / accessed
+	//returns the previous value
+	__forceinline bool SetIsFreeableTopNode(bool is_freeable)
+	{
+		bool old_value = HasAttribute(Attribute::FREEABLE_TOP_NODE);
+		SetAttribute(Attribute::FREEABLE_TOP_NODE, is_freeable);
+		return old_value;
+	}
+
+#ifdef MULTITHREAD_SUPPORT
+	//returns true if the top node has never been read / accessed
+	__forceinline bool GetIsFreeableTopNodeAtomic()
+	{
+		return HasAttributeAtomic(Attribute::FREEABLE_TOP_NODE);
+	}
+
+	//sets whether the top node has never been read / accessed
+	//returns the previous value
+	__forceinline bool SetIsFreeableTopNodeAtomic(bool is_freeable)
+	{
+		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
+
+		std::atomic_ref atomic_ref(attributes);
+		if(is_freeable)
+		{
+			AttributeStorageType previous_value = atomic_ref.fetch_or(mask);
+			return (previous_value & mask) != 0;
+		}
+		else
+		{
+			AttributeStorageType previous_value = atomic_ref.fetch_and(~mask);
+			return (previous_value & mask) != 0;
+		}
+	}
+#endif
+
+	//sets both FREEABLE and FREEABLE_TOP_NODE
+	//returns previous values of the flags in order
+	__forceinline std::pair<bool, bool> SetIsFreeableAndIsFreeableTopNode(bool is_freeable)
+	{
+		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE)
+			| static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
+
+		AttributeStorageType previous_value = attributes;
+
+		if(is_freeable)
+			attributes |= static_cast<AttributeStorageType>(mask);
+		else
+			attributes &= ~static_cast<AttributeStorageType>(mask);
+
+		return { (previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
+			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0 };
+	}
+
+#ifdef MULTITHREAD_SUPPORT
+	//sets both FREEABLE and FREEABLE_TOP_NODE
+	//returns previous values of the flags in order
+	__forceinline std::pair<bool, bool> SetIsFreeableAndIsFreeableTopNodeAtomic(bool is_freeable)
+	{
+		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE)
+			| static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
+		AttributeStorageType previous_value;
+
+		std::atomic_ref atomic_ref(attributes);
+		if(is_freeable)
+			previous_value = atomic_ref.fetch_or(mask);
+		else
+			previous_value = atomic_ref.fetch_and(~mask);
+
+		return { (previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
+			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0 };
 	}
 #endif
 
@@ -955,6 +1099,13 @@ public:
 	__forceinline void SetKnownToBeInUseAtomic(bool in_use)
 	{
 		SetAttributeAtomic(Attribute::KNOWN_TO_BE_IN_USE, in_use);
+	}
+
+	//returns true if the bit was successfully set (was previously unset)
+	//returns false if the bit was already set
+	__forceinline bool TrySetKnownToBeInUseAtomic()
+	{
+		return TrySetAttributeAtomic(Attribute::KNOWN_TO_BE_IN_USE);
 	}
 #endif
 
@@ -1015,7 +1166,7 @@ public:
 					break;
 			}
 		}
-		else if(!IsImmediate())
+		else if(!IsTerminal())
 		{
 			for(auto cn : GetOrderedChildNodesReference())
 			{
@@ -1068,7 +1219,7 @@ public:
 	inline static void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
 		size_t num_expected_elements, StoreValueFunction store_value)
 	{
-		if(EvaluableNode::IsImmediate(node))
+		if(EvaluableNode::IsTerminal(node))
 		{
 			//fill in with the node's value
 			for(size_t i = 0; i < num_expected_elements; i++)
@@ -1215,6 +1366,10 @@ public:
 				value = EvaluableNode::ToBool(found_value->second);
 			else if constexpr(std::is_same<T, double>::value)
 				value = EvaluableNode::ToNumber(found_value->second);
+			else if constexpr(std::is_same<T, size_t>::value)
+				value = static_cast<size_t>(EvaluableNode::ToNumber(found_value->second, 0));
+			else if constexpr(std::is_same<T, int64_t>::value)
+				value = static_cast<int64_t>(EvaluableNode::ToNumber(found_value->second, 0));
 			else if constexpr(std::is_same<T, std::string>::value)
 				value = EvaluableNode::ToString(found_value->second);
 			else if constexpr(std::is_same<T, StringInternPool::StringID>::value)
@@ -1316,7 +1471,7 @@ public:
 	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(debugWatchMutex);
 	#endif
-		if(debugWatch.find(en) != end(debugWatch))
+		if(debugWatch.find(en) != end(debugWatch)) [[unlikely]]
 		{
 			AmlgAssert(false);
 		}

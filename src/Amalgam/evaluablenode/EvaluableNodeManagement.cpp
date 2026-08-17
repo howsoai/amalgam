@@ -4,11 +4,19 @@
 #include "PerformanceProfiler.h"
 
 //system headers:
+#include <ranges>
 #include <string>
 #include <vector>
 #include <utility>
 
+const size_t EvaluableNodeManager::minNodesToCollectGarbage = 200;
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
+const int EvaluableNodeManager::extraMemoryCapacityFactor = 3;
+
+#ifdef MULTITHREAD_SUPPORT
+//tunable parameter for how many nodes to have a garbage collection sweep perform at a time
+constexpr size_t invalidate_nodes_task_size = 8000;
+#endif
 
 EvaluableNodeManager::~EvaluableNodeManager()
 {
@@ -33,7 +41,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 {
 	//assume at least a factor larger than the base memory usage for the entity
 	//add 1 for good measure and to make sure the smallest size isn't zero
-	size_t max_from_current = 3 * GetNumberOfUsedNodes() + 1;
+	size_t max_from_current = extraMemoryCapacityFactor * GetNumberOfUsedNodes() + 1;
 
 	size_t cur_num_nodes = GetNumberOfUsedNodes();
 	if(numNodesToRunGarbageCollection > cur_num_nodes)
@@ -50,6 +58,9 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 	{
 		numNodesToRunGarbageCollection = max_from_current;
 	}
+
+	//make sure doesn't go below the threshold
+	numNodesToRunGarbageCollection = std::max(minNodesToCollectGarbage, numNodesToRunGarbageCollection);
 }
 
 void EvaluableNodeManager::CollectGarbage()
@@ -99,7 +110,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 	bool gc_on_this_thread = false;
 	if(RecommendGarbageCollection())
 		gc_on_this_thread =
-		!activeInterpreters->garbageCollectionThreadSelectionFlag.test_and_set(std::memory_order_acquire);
+			!activeInterpreters->garbageCollectionThreadSelectionFlag.test_and_set(std::memory_order_acquire);
 
 	if(gc_on_this_thread)
 	{
@@ -199,7 +210,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 
 	EvaluableNode *lab_node = AllocNodeFromLocalAllocationBufferIfAvailable();
 
-	//Fast Path; get node from thread local buffer
+	//fast path; get node from thread local buffer
 	if(lab_node != nullptr)
 		return lab_node;
 
@@ -243,8 +254,9 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	if(last_index_to_allocate >= num_nodes)
 	{
 		//ran out, so need another node; push a bunch on the heap so don't need to reallocate as often and slow down garbage collection
-		 //preallocate additional resources, making sure to at least add one block
-		size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * num_nodes) + labBlockAllocationSize;
+		//add extra node at the end in case of rounding down
+		//preallocate additional resources, making sure to at least add one block
+		size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * (num_nodes + labBlockAllocationSize)) + 1;
 
 		//fill new EvaluableNode slots with nullptr
 		nodes.resize(new_num_nodes, nullptr);
@@ -267,161 +279,109 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 
 void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index)
 {
-	//create a temporary variable for multithreading as to not use the atomic variable to slow things down
-	size_t first_unused_node_index_temp = 0;
+	//move all nodes in use to the front and unused ones to the back
+	size_t last_active_index = cur_first_unused_node_index;
+	//index that is being considered
+	size_t cur_candidate_index = 0;
+	//next index that can be written to in a swap
+	size_t next_write_index = 0;
+
+	//traverse nodes until find the first unused
+	for(; cur_candidate_index < last_active_index; cur_candidate_index++)
+	{
+		auto &current_node = nodes[cur_candidate_index];
+		if(!current_node->GetKnownToBeInUse())
+			break;
+
+		current_node->SetKnownToBeInUse(false);
+	}
+
+	//move to the next node, leaving the previous one behind
+	next_write_index = cur_candidate_index;
+	cur_candidate_index++;
+
+	//move unused back into the next_write_index
+	for(; cur_candidate_index < last_active_index; cur_candidate_index++)
+	{
+		auto &current_node = nodes[cur_candidate_index];
+
+		if(current_node->GetKnownToBeInUse())
+		{
+			current_node->SetKnownToBeInUse(false);
+			std::swap(current_node, nodes[next_write_index]);
+			next_write_index++;
+		}
+	}
 
 #ifdef MULTITHREAD_SUPPORT
-	if(Concurrency::GetMaxNumThreads() > 1 && cur_first_unused_node_index > 10000)
+	size_t num_nodes_to_invalidate = last_active_index - next_write_index;
+	if(Concurrency::GetMaxNumThreads() > 1 && num_nodes_to_invalidate > 2 * invalidate_nodes_task_size)
 	{
-		//used to climb up the indices, swapping out unused nodes above this as moves downward
-		std::atomic<size_t> lowest_known_unused_index = cur_first_unused_node_index;
-		//used by the independent freeing thread to climb down from lowest_known_unused_index
-		size_t highest_possibly_unfreed_node = cur_first_unused_node_index;
-		std::atomic<bool> all_nodes_finished = false;
+		size_t num_tasks = (num_nodes_to_invalidate + (invalidate_nodes_task_size - 1)) / invalidate_nodes_task_size;
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_tasks);
 
-		//free nodes in a separate thread
-		auto completed_node_cleanup = Concurrency::urgentThreadPool.EnqueueTaskWithResult(
-			[this, &lowest_known_unused_index, &highest_possibly_unfreed_node, &all_nodes_finished]
-			{
-				while(true)
+		//free each full block of invalidate_nodes_task_size
+		size_t start_index = next_write_index;
+		for(; start_index + invalidate_nodes_task_size < last_active_index; start_index += invalidate_nodes_task_size)
+			Concurrency::urgentThreadPool.EnqueueTask(
+				[this, &task_set, start_index]
 				{
-					while(highest_possibly_unfreed_node > lowest_known_unused_index)
+					size_t end_index = start_index + invalidate_nodes_task_size;
+					for(size_t i = start_index; i < end_index; i++)
 					{
-						auto &cur_node_ptr = nodes[--highest_possibly_unfreed_node];
-						if(!cur_node_ptr->IsNodeDeallocated())
-							cur_node_ptr->Invalidate();
+						if(!nodes[i]->IsNodeDeallocated())
+							nodes[i]->Invalidate();
 					}
+					task_set.MarkTaskCompleted();
+				});
 
-					if(all_nodes_finished)
+		//invalidate any remaining that are fewer than invalidate_nodes_task_size
+		if(start_index < last_active_index)
+			Concurrency::urgentThreadPool.EnqueueTask(
+				[this, &task_set, start_index, last_active_index]
+				{
+					for(size_t i = start_index; i < last_active_index; i++)
 					{
-						//need to double-check to make sure there's nothing left
-						//just in case the atomic variables were updated in a different order
-						//otherwise go around the loop again
-						if(highest_possibly_unfreed_node <= lowest_known_unused_index)
-							return;
+						if(!nodes[i]->IsNodeDeallocated())
+							nodes[i]->Invalidate();
 					}
-				}
-			});
+					task_set.MarkTaskCompleted();
+				});
 
-		//organize nodes above lowest_known_unused_index that are unused
-		//don't need to check nodes if they are nullptr because if it has been used, it won't be nullptr
-		//first make pass without extra logic
-		while(first_unused_node_index_temp < lowest_known_unused_index)
-		{
-			//nodes can't be nullptr below firstUnusedNodeIndex
-			auto &cur_node_ptr = nodes[first_unused_node_index_temp];
-
-			//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
-			if(cur_node_ptr->GetKnownToBeInUse())
-			{
-				cur_node_ptr->SetKnownToBeInUse(false);
-				first_unused_node_index_temp++;
-			}
-			else //collect the node
-			{
-				//see if out of things to free; if so exit early
-				if(lowest_known_unused_index == 0)
-					break;
-
-				//put the node up at the top where unused memory resides
-				// and reduce lowest_known_unused_index after the swap occurs so the other thread doesn't get misaligned
-				std::swap(cur_node_ptr, nodes[lowest_known_unused_index - 1]);
-				--lowest_known_unused_index;
-			}
-		}
-
-		//repeat the loop but know that there's at least one node that is used,
-		//so lowest_known_unused_index does not need to be checked if zero
-		while(first_unused_node_index_temp < lowest_known_unused_index)
-		{
-			//nodes can't be nullptr below firstUnusedNodeIndex
-			auto &cur_node_ptr = nodes[first_unused_node_index_temp];
-
-			//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
-			if(cur_node_ptr->GetKnownToBeInUse())
-			{
-				cur_node_ptr->SetKnownToBeInUse(false);
-				first_unused_node_index_temp++;
-			}
-			else //collect the node
-			{
-				//put the node up at the top where unused memory resides
-				// and reduce lowest_known_unused_index after the swap occurs so the other thread doesn't get misaligned
-				std::swap(cur_node_ptr, nodes[lowest_known_unused_index - 1]);
-				--lowest_known_unused_index;
-			}
-		}
-
-		all_nodes_finished = true;
-
-		completed_node_cleanup.wait();
-
-		//assign back to the atomic variable
-		firstUnusedNodeIndex = first_unused_node_index_temp;
-
-		UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
-		return;
+		task_set.WaitForTasks();
 	}
+	else
 #endif
-
-	size_t lowest_known_unused_index = cur_first_unused_node_index;
-	//organize nodes above lowest_known_unused_index that are unused
-	//don't need to check nodes if they are nullptr because if it has been used, it won't be nullptr
-	//first make pass without extra logic
-	while(first_unused_node_index_temp < lowest_known_unused_index)
 	{
-		//nodes can't be nullptr below firstUnusedNodeIndex
-		auto &cur_node_ptr = nodes[first_unused_node_index_temp];
-
-		//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
-		if(cur_node_ptr->GetKnownToBeInUse())
+		for(size_t i = next_write_index; i < last_active_index; i++)
 		{
-			cur_node_ptr->SetKnownToBeInUse(false);
-			first_unused_node_index_temp++;
-		}
-		else //collect the node
-		{
-			//free any extra memory used, since this node is no longer needed
-			if(!cur_node_ptr->IsNodeDeallocated())
-				cur_node_ptr->Invalidate();
-
-			//see if out of things to free; if so exit early
-			if(lowest_known_unused_index == 0)
-				break;
-
-			//put the node up at the top where unused memory resides and reduce lowest_known_unused_index
-			std::swap(cur_node_ptr, nodes[--lowest_known_unused_index]);
+			if(!nodes[i]->IsNodeDeallocated())
+				nodes[i]->Invalidate();
 		}
 	}
 
-	//repeat the loop but know that there's at least one node that is used,
-	//so lowest_known_unused_index does not need to be checked if zero
-	while(first_unused_node_index_temp < lowest_known_unused_index)
-	{
-		//nodes can't be nullptr below firstUnusedNodeIndex
-		auto &cur_node_ptr = nodes[first_unused_node_index_temp];
-
-		//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
-		if(cur_node_ptr->GetKnownToBeInUse())
-		{
-			cur_node_ptr->SetKnownToBeInUse(false);
-			first_unused_node_index_temp++;
-		}
-		else //collect the node
-		{
-			//free any extra memory used, since this node is no longer needed
-			if(!cur_node_ptr->IsNodeDeallocated())
-				cur_node_ptr->Invalidate();
-
-			//put the node up at the top where unused memory resides and reduce lowest_known_unused_index
-			std::swap(cur_node_ptr, nodes[--lowest_known_unused_index]);
-		}
-	}
-
-	//assign back to the atomic variable
-	firstUnusedNodeIndex = first_unused_node_index_temp;
-
+	firstUnusedNodeIndex = next_write_index;
 	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
+
+	//if have more yet another entire extraMemoryCapacityFactor available, free it
+	if(nodes.size() > extraMemoryCapacityFactor * numNodesToRunGarbageCollection)
+		ShrinkMemoryToCurrentUtilizationWithLock();
+}
+
+void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
+{
+	size_t new_size = std::min(nodes.size(), firstUnusedNodeIndex * extraMemoryCapacityFactor + 1);
+	if(new_size == nodes.size())
+		return;
+
+	for(size_t i = new_size; i < nodes.size(); i++)
+	{
+		if(nodes[i] != nullptr)
+			delete nodes[i];
+	}
+
+	nodes.resize(new_size);
+	nodes.shrink_to_fit();
 }
 
 size_t EvaluableNodeManager::GetEstimatedTotalReservedSizeInBytes()
@@ -494,7 +454,7 @@ void EvaluableNodeManager::VerifyEvaluableNodeIntegrityForAllReferencedNodes()
 			for(auto &cs_entry : interpreter->constructionStack)
 			{
 				ValidateEvaluableNodeTreeMemoryIntegrity(cs_entry.targetOrigin, this);
-				ValidateEvaluableNodeTreeMemoryIntegrity(cs_entry.target, this);
+				ValidateEvaluableNodeTreeMemoryIntegrity(*cs_entry.targetRefPtr, this);
 				ValidateEvaluableNodeTreeMemoryIntegrity(cs_entry.currentValue, this);
 				ValidateEvaluableNodeTreeMemoryIntegrity(cs_entry.previousResult, this);
 			}
@@ -514,7 +474,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 		node_stack.clear();
 
 		EvaluableNode *root_copy = AllocNode(en, copy_metadata);
-		if(root_copy->IsImmediate())
+		if(root_copy->IsTerminal())
 			return EvaluableNodeReference(root_copy, true);
 
 		//walk the tree depth‑first using the buffer as a stack
@@ -526,13 +486,13 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 
 			if(cur->IsAssociativeArray())
 			{
-				for(auto &[_, child] : cur->GetMappedChildNodesReference())
+				for(auto &child : cur->GetMappedChildNodesReference() | std::views::values)
 				{
 					if(child == nullptr)
 						continue;
 
 					child = AllocNode(child, copy_metadata);
-					if(!child->IsImmediate())
+					if(!child->IsTerminal())
 						node_stack.push_back(child);
 				}
 			}
@@ -544,7 +504,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 						continue;
 
 					child = AllocNode(child, copy_metadata);
-					if(!child->IsImmediate())
+					if(!child->IsTerminal())
 						node_stack.push_back(child);
 				}
 			}
@@ -567,13 +527,13 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 	//can't insert, so already have a copy
 	// need to indicate that it has a cycle
 	if(!inserted)
-		return std::make_pair(inserted_copy->second, true);
+		return {inserted_copy->second, true};
 
 	EvaluableNode *copy = AllocNode(tree, dacp.copyMetadata);
 
 	//shouldn't happen, but just to be safe
-	if(copy == nullptr)
-		return std::make_pair(nullptr, false);
+	if(copy == nullptr) [[unlikely]]
+		return {nullptr, false};
 
 	//start without needing a cycle check in case it can be cleared
 	copy->SetNeedCycleCheck(false);
@@ -585,7 +545,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 	if(copy->IsAssociativeArray())
 	{
 		auto &copy_mcn = copy->GetMappedChildNodesReference();
-		for(auto &[_, s] : copy_mcn)
+		for(auto &s : copy_mcn | std::views::values)
 		{
 			//get current item in list
 			EvaluableNode *n = s;
@@ -621,7 +581,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 		}
 	}
 
-	return std::make_pair(copy, copy->GetNeedCycleCheck());
+	return {copy, copy->GetNeedCycleCheck()};
 }
 
 //sets or clears all referenced nodes' in use flags
@@ -644,7 +604,7 @@ static void MarkAllReferencedNodesInUseForNode(EvaluableNode *tree)
 		auto type = node->GetType();
 		if(DoesEvaluableNodeTypeUseAssocData(type))
 		{
-			for(auto &[_, cn] : node->GetMappedChildNodesReference())
+			for(auto &cn : node->GetMappedChildNodesReference() | std::views::values)
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUse())
 				{
@@ -653,7 +613,7 @@ static void MarkAllReferencedNodesInUseForNode(EvaluableNode *tree)
 				}
 			}
 		}
-		else if(!IsEvaluableNodeTypeImmediate(type))
+		else if(!IsEvaluableNodeTypeTerminalNode(type))
 		{
 			for(auto &cn : node->GetOrderedChildNodesReference())
 			{
@@ -690,24 +650,18 @@ static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
 		auto type = node->GetType();
 		if(DoesEvaluableNodeTypeUseAssocData(type))
 		{
-			for(auto &[_, cn] : node->GetMappedChildNodesReference())
+			for(auto &cn : node->GetMappedChildNodesReference() | std::views::values)
 			{
-				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
-				{
-					cn->SetKnownToBeInUseAtomic(true);
+				if(cn != nullptr && cn->TrySetKnownToBeInUseAtomic())
 					node_stack.push_back(cn);
-				}
 			}
 		}
-		else if(!IsEvaluableNodeTypeImmediate(type))
+		else if(!IsEvaluableNodeTypeTerminalNode(type))
 		{
 			for(auto &cn : node->GetOrderedChildNodesReference())
 			{
-				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
-				{
-					cn->SetKnownToBeInUseAtomic(true);
+				if(cn != nullptr && cn->TrySetKnownToBeInUseAtomic())
 					node_stack.push_back(cn);
-				}
 			}
 		}
 	}
@@ -764,8 +718,8 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 						if(cs_entry.targetOrigin != nullptr && !cs_entry.targetOrigin->GetKnownToBeInUse())
 							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.targetOrigin);
 
-						if(cs_entry.target != nullptr && !cs_entry.target->GetKnownToBeInUse())
-							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.target);
+						if(*cs_entry.targetRefPtr != nullptr && !(*cs_entry.targetRefPtr)->GetKnownToBeInUse())
+							MarkAllReferencedNodesInUseConcurrentForNode(*cs_entry.targetRefPtr);
 
 						if(cs_entry.currentValue != nullptr && !cs_entry.currentValue->GetKnownToBeInUse())
 							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.currentValue);
@@ -810,8 +764,8 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 				if(cs_entry.targetOrigin != nullptr && !cs_entry.targetOrigin->GetKnownToBeInUse())
 					MarkAllReferencedNodesInUseForNode(cs_entry.targetOrigin);
 
-				if(cs_entry.target != nullptr && !cs_entry.target->GetKnownToBeInUse())
-					MarkAllReferencedNodesInUseForNode(cs_entry.target);
+				if(*cs_entry.targetRefPtr != nullptr && !(*cs_entry.targetRefPtr)->GetKnownToBeInUse())
+					MarkAllReferencedNodesInUseForNode(*cs_entry.targetRefPtr);
 
 				if(cs_entry.currentValue != nullptr && !cs_entry.currentValue->GetKnownToBeInUse())
 					MarkAllReferencedNodesInUseForNode(cs_entry.currentValue);
@@ -847,14 +801,14 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			cur_node->SetNeedCycleCheck(true);
 
 			auto parent_record = checked_to_parent.find(cur_node);
-			if(parent_record == end(checked_to_parent))
+			if(parent_record == end(checked_to_parent)) [[unlikely]]
 			{
 				AmlgAssert(false);
 			}
 
 			cur_node = parent_record->second;
 		}
-		return std::make_pair(true, tree->GetIsIdempotent());
+		return {true, tree->GetIsIdempotent()};
 	}
 
 	bool is_idempotent = IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType());
@@ -887,9 +841,9 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			tree->SetNeedCycleCheck(need_cycle_check);
 		if(!is_idempotent)
 			tree->SetIsIdempotent(is_idempotent);
-		return std::make_pair(need_cycle_check, is_idempotent);
+		return {need_cycle_check, is_idempotent};
 	}
-	else if(!tree->IsImmediate())
+	else if(!tree->IsTerminal())
 	{
 		bool need_cycle_check = false;
 
@@ -912,12 +866,12 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			tree->SetNeedCycleCheck(need_cycle_check);
 		if(!is_idempotent)
 			tree->SetIsIdempotent(is_idempotent);
-		return std::make_pair(need_cycle_check, is_idempotent);
+		return {need_cycle_check, is_idempotent};
 	}
-	else //immediate value
+	else //terminal value
 	{
 		tree->SetIsIdempotent(is_idempotent);
-		return std::make_pair(false, is_idempotent);
+		return {false, is_idempotent};
 	}
 }
 
@@ -929,14 +883,14 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 	//can't assume that, just because something was inserted before,
 	// doesn't mean it isn't cycle free from where it is, so return true to exclude false negatives
 	if(!inserted)
-		return std::make_pair(true, en->GetIsIdempotent());
+		return {true, en->GetIsIdempotent()};
 
-	if(!en->IsNodeValid() || en->GetKnownToBeInUse())
+	if(!en->IsNodeValid() || en->GetKnownToBeInUse()) [[unlikely]]
 		AmlgAssert(false);
 
 	if(existing_nodes != nullptr)
 	{
-		if(existing_nodes->find(en) == end(*existing_nodes))
+		if(existing_nodes->find(en) == end(*existing_nodes)) [[unlikely]]
 			AmlgAssert(false);
 	}
 
@@ -958,7 +912,7 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 				child_nodes_idempotent = false;
 		}
 	}
-	else if(!en->IsImmediate())
+	else if(!en->IsTerminal())
 	{
 		for(auto cn : en->GetOrderedChildNodesReference())
 		{
@@ -975,11 +929,11 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 		}
 	}
 
-	if(!child_nodes_idempotent && en->GetIsIdempotent())
+	if(!child_nodes_idempotent && en->GetIsIdempotent()) [[unlikely]]
 		AmlgAssert(false);
 
-	if(check_cycle_flag_consistency && !child_nodes_cycle_free && !en->GetNeedCycleCheck())
+	if(check_cycle_flag_consistency && !child_nodes_cycle_free && !en->GetNeedCycleCheck()) [[unlikely]]
 		AmlgAssert(false);
 
-	return std::make_pair(!en->GetNeedCycleCheck(), en->GetIsIdempotent());
+	return {!en->GetNeedCycleCheck(), en->GetIsIdempotent()};
 }

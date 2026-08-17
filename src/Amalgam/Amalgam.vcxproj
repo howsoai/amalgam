@@ -220,7 +220,7 @@
       <EnablePREfast>false</EnablePREfast>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
@@ -250,7 +250,7 @@
       <EnablePREfast>false</EnablePREfast>
       <PreprocessorDefinitions>MULTITHREAD_SUPPORT;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
@@ -288,7 +288,7 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -327,7 +327,7 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <OpenMPSupport>true</OpenMPSupport>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -367,7 +367,7 @@
       <PreprocessorDefinitions>MULTITHREAD_SUPPORT;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -398,7 +398,7 @@
       <EnablePREfast>false</EnablePREfast>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
@@ -430,7 +430,7 @@
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
@@ -466,7 +466,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
@@ -504,7 +504,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <OpenMPSupport>true</OpenMPSupport>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -543,7 +543,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>MULTITHREAD_SUPPORT;%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
@@ -593,10 +593,12 @@
     <ClCompile Include="entity\EntityExternalInterface.cpp" />
     <ClCompile Include="entity\EntityManipulation.cpp" />
     <ClCompile Include="entity\EntityQueries.cpp" />
+    <ClCompile Include="entity\EntityQueriesClustering.cpp" />
     <ClCompile Include="entity\EntityQueryCaches.cpp" />
     <ClCompile Include="entity\EntityWriteListener.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNode.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNodeManagement.cpp" />
+    <ClCompile Include="evaluablenode\EvaluableNodeTreeAlgebra.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNodeTreeDifference.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNodeTreeFunctions.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNodeTreeManipulation.cpp" />
@@ -653,7 +655,6 @@
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="BinaryPacking.h" />
     <ClInclude Include="Concurrency.h" />
-    <ClInclude Include="Conviction.h" />
     <ClInclude Include="Cryptography.h" />
     <ClInclude Include="DateTimeFormat.h" />
     <ClInclude Include="DistanceReferencePair.h" />
@@ -661,6 +662,8 @@
     <ClInclude Include="entity\EntityExternalInterface.h" />
     <ClInclude Include="entity\EntityManipulation.h" />
     <ClInclude Include="entity\EntityQueries.h" />
+    <ClInclude Include="entity\EntityQueriesClustering.h" />
+    <ClInclude Include="entity\EntityQueriesDensityFunctions.h" />
     <ClInclude Include="entity\EntityQueriesStatistics.h" />
     <ClInclude Include="entity\EntityQueryBuilder.h" />
     <ClInclude Include="entity\EntityQueryCaches.h" />
@@ -668,6 +671,7 @@
     <ClInclude Include="evaluablenode\EvaluableNode.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeManagement.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeReference.h" />
+    <ClInclude Include="evaluablenode\EvaluableNodeTreeAlgebra.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeDifference.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeFunctions.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeManipulation.h" />
@@ -681,6 +685,7 @@
     <ClInclude Include="importexport\FileSupportYAML.h" />
     <ClInclude Include="IntegerSet.h" />
     <ClInclude Include="interpreter\Interpreter.h" />
+    <ClInclude Include="interpreter\InterpreterApplySpecializations.h" />
     <ClInclude Include="interpreter\InterpreterConcurrencyManager.h" />
     <ClInclude Include="interpreter\InterpreterUtilities.h" />
     <ClInclude Include="KnnCache.h" />

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 //project headers:
 #include "Concurrency.h"
@@ -6,7 +6,9 @@
 #include "PlatformSpecific.h"
 
 //system headers:
+#include <bit>
 #include <memory>
+#include <new>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -14,18 +16,26 @@
 
 //if STRING_INTERN_POOL_VALIDATION is defined, it will validate
 //every string reference, at the cost of performance
+//if DISABLE_SHORT_STRING_INLINING is defined, it will not
+//inline short strings to make debugging string values easier
 
 class StringInternStringData
 {
 public:
 	inline StringInternStringData()
-		: refCount(0), string()
+		: refCount(0), stringData()
 	{}
 
-	//forwarding constructor � works for std::string, std::string_view, const char*, char array, etc.
-	template<class T, class = std::enable_if_t<std::is_constructible_v<std::string, T>>>
-	StringInternStringData(T &&s)
-		: refCount(1), string(std::forward<T>(s))
+	//forwarding constructor – works for std::string, std::string_view
+	template<class T, class = std::enable_if_t<std::is_constructible_v<std::string, std::decay_t<T>>>>
+		StringInternStringData(T &&s)
+		: refCount(1), stringData(std::forward<T>(s))
+	{}
+
+	//constructor for const char*, char array, etc.
+	template<std::size_t N>
+	StringInternStringData(const char(&s)[N])
+		: refCount(1), stringData(s)
 	{}
 
 #if defined(MULTITHREAD_SUPPORT)
@@ -33,8 +43,181 @@ public:
 #else
 	size_t refCount;
 #endif
-	std::string string;
+
+	std::string stringData;
 };
+
+template<class PointerType>
+class PointerWithShortInlineString
+{
+	//data offset in bytes for potential inline strings
+	//for little‑endian, use bytes 1‑7
+	//big‑endian, use bytes 0‑6
+	static constexpr size_t dataOffset = std::endian::native == std::endian::little ? 1 : 0;
+
+	//layout masks
+	static constexpr uint64_t inlineMask = 1;
+	static constexpr uint64_t lengthMask = 0xFE;
+	static constexpr uint64_t lengthShift = 1;
+#ifdef DISABLE_SHORT_STRING_INLINING
+	static constexpr size_t inlineCapacity = 0;
+#else
+	static constexpr size_t inlineCapacity = 7;
+#endif
+
+public:
+
+	constexpr PointerWithShortInlineString() noexcept
+		: pointerOrShortString(nullptr)
+	{	}
+
+	constexpr PointerWithShortInlineString(PointerWithShortInlineString &) noexcept = default;
+	constexpr PointerWithShortInlineString(const PointerWithShortInlineString &) noexcept = default;
+	constexpr PointerWithShortInlineString(PointerWithShortInlineString &&) noexcept = default;
+	constexpr PointerWithShortInlineString &operator=(const PointerWithShortInlineString &) noexcept = default;
+	constexpr PointerWithShortInlineString &operator=(PointerWithShortInlineString &&) noexcept = default;
+
+	inline PointerWithShortInlineString(PointerType p) noexcept
+	{
+		AssignPointer(p);
+	}
+
+	inline PointerWithShortInlineString(std::string &s) noexcept
+	{
+		AssignString(s);
+	}
+
+	inline PointerWithShortInlineString(std::string_view s) noexcept
+	{
+		AssignStringView(s);
+	}
+
+	inline PointerWithShortInlineString &operator=(PointerType p) noexcept
+	{
+		AssignPointer(p);
+		return *this;
+	}
+
+	//assumes CanFitString has been called and returns true
+	inline PointerWithShortInlineString &operator=(std::string &s) noexcept
+	{
+		AssignString(s);
+		return *this;
+	}
+
+	//assumes CanFitString has been called and returns true
+	inline PointerWithShortInlineString &operator=(std::string_view &s) noexcept
+	{
+		AssignStringView(s);
+		return *this;
+	}
+
+	inline bool operator==(const PointerWithShortInlineString &other) const noexcept
+	{
+		return pointerOrShortString == other.pointerOrShortString;
+	}
+
+	inline bool operator==(const PointerType other) const noexcept
+	{
+		return pointerOrShortString == other;
+	}
+
+	inline bool operator!=(const PointerWithShortInlineString other) const noexcept
+	{
+		return pointerOrShortString != other.pointerOrShortString;
+	}
+
+	inline bool operator!=(const PointerType other) const noexcept
+	{
+		return pointerOrShortString != other;
+	}
+
+	inline void AssignPointer(PointerType p) noexcept
+	{
+		pointerOrShortString = p;
+	}
+
+	//assumes CanFitString has been called and returns true
+	inline void AssignString(std::string &s) noexcept
+	{
+		uint64_t result = inlineMask;
+		result |= (static_cast<uint64_t>(s.size()) << lengthShift) & lengthMask;
+
+		//copy characters into the selected byte range
+		std::memcpy(reinterpret_cast<std::uint8_t *>(&result) + dataOffset, s.data(), s.size());
+
+		pointerOrShortString = reinterpret_cast<PointerType>(result);
+	}
+
+	//assumes CanFitString has been called and returns true
+	inline void AssignStringView(std::string_view s) noexcept
+	{
+		uint64_t result = inlineMask;
+		result |= (static_cast<uint64_t>(s.size()) << lengthShift) & lengthMask;
+
+		//copy characters into the selected byte range
+		std::memcpy(reinterpret_cast<std::uint8_t *>(&result) + dataOffset, s.data(), s.size());
+
+		pointerOrShortString = reinterpret_cast<PointerType>(result);
+	}
+
+	static constexpr bool CanFitString(std::string &s)
+	{
+		return s.size() <= inlineCapacity;
+	}
+
+	static constexpr bool CanFitString(std::string_view s)
+	{
+		return s.size() <= inlineCapacity;
+	}
+
+	inline bool IsInlineString() const noexcept
+	{
+		//make sure not nullptr and bit is set
+		return (pointerOrShortString != nullptr)
+			&& (reinterpret_cast<uint64_t>(pointerOrShortString) & inlineMask) != 0;
+	}
+
+	inline size_t InlineStringLength() const noexcept
+	{
+		return static_cast<size_t>((reinterpret_cast<uint64_t>(pointerOrShortString) & lengthMask) >> lengthShift);
+	}
+
+	//assumes IsInlineString() has been called and returns false
+	inline PointerType GetPointer() const noexcept
+	{
+		return pointerOrShortString;
+	}
+
+	//assumes IsInlineString() has been called and returned true
+	inline std::string GetString() const noexcept
+	{
+		const char *ptr = reinterpret_cast<const char *>(&pointerOrShortString) + dataOffset;
+		return std::string(ptr, InlineStringLength());
+	}
+
+	//assumes IsInlineString() has been called and returned true
+	inline std::string_view GetStringView() const noexcept
+	{
+		const char *ptr = reinterpret_cast<const char *>(&pointerOrShortString) + dataOffset;
+		return std::string_view(ptr, InlineStringLength());
+	}
+
+	PointerType pointerOrShortString;
+};
+
+//add hashing for PointerWithShortInlineString
+namespace std
+{
+	template<class PointerType> struct hash<PointerWithShortInlineString<PointerType>>
+	{
+		size_t operator()(const PointerWithShortInlineString<PointerType> &v) const noexcept
+		{
+			//hash the raw bits (or mask off inlineMask if you prefer)
+			return std::hash<PointerType>{}(v.pointerOrShortString);
+		}
+	};
+}
 
 class StringInternPool;
 extern StringInternPool string_intern_pool;
@@ -47,36 +230,60 @@ extern StringInternPool string_intern_pool;
 class StringInternPool
 {
 public:
-	using StringID = StringInternStringData *;
+	using StringID = PointerWithShortInlineString<StringInternStringData *>;
 
 	inline StringInternPool()
 	{
-		//create the empty string first, put in scope to destruct any locks
-		{
-			auto inserted = stringToID.emplace("", std::make_unique<StringInternStringData>(""));
-			emptyStringId = inserted.first->second.get();
-		}
 		InitializeStaticStrings();
+		numUniqueStaticStrings = stringToID.size();
 	}
 
 	//translates the id to a string, empty string if it does not exist
 	//note that the reference is only valid as long as the string id is valid; if a string is needed
 	//after a reference is destroyed, the caller must make a copy first
-	inline const std::string &GetStringFromID(StringID id)
+	inline std::string GetStringFromID(StringID id)
 	{
 		if(id == NOT_A_STRING_ID)
 			return EMPTY_STRING;
+
+		if(id.IsInlineString())
+			return id.GetString();
 
 	#ifdef STRING_INTERN_POOL_VALIDATION
 		ValidateStringIdExistence(id);
 	#endif
 
-		return id->string;
+		auto sd_ptr = id.GetPointer();
+		return sd_ptr->stringData;
+	}
+
+	//translates the id to a std::string_view, empty string if it does not exist
+	//note that the reference is only valid as long as the string id is valid; if a string is needed
+	//after a reference is destroyed, the caller must make a copy first
+	//the id MUST be passed by reference because otherwise it will make a copy
+	//of the id on the stack which will then be invalid when returned
+	inline const std::string_view GetStringViewFromID(const StringID &id)
+	{
+		if(id == NOT_A_STRING_ID)
+			return std::string_view(EMPTY_STRING);
+
+		if(id.IsInlineString())
+			return id.GetStringView();
+
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		ValidateStringIdExistence(id);
+	#endif
+
+		auto sd_ptr = id.GetPointer();
+		return std::string_view(sd_ptr->stringData.data(), sd_ptr->stringData.size());
 	}
 
 	//translates the string to the corresponding ID, 0 is the empty string, maximum value of size_t means it does not exist
 	inline StringID GetIDFromString(const std::string &str)
 	{
+		if(StringID::CanFitString(str))
+			return StringID(str);
+
 		auto id_iter = stringToID.find(str);
 		if(id_iter == stringToID.end())
 			return NOT_A_STRING_ID;
@@ -91,8 +298,8 @@ public:
 	//makes a new reference to the string specified, returning the ID
 	inline StringID CreateStringReference(const std::string &str)
 	{
-		if(str.size() == 0)
-			return emptyStringId;
+		if(StringID::CanFitString(str))
+			return StringID(str);
 
 		//try to insert it as a new string
 		auto inserted = stringToID.emplace(str, nullptr);
@@ -101,11 +308,11 @@ public:
 		else
 		#if defined(MULTITHREAD_SUPPORT)
 			inserted.first->second->refCount.fetch_add(1, std::memory_order_acquire);
-	#else
+		#else
 			inserted.first->second->refCount++;
-	#endif
+		#endif
 
-		StringID id = inserted.first->second.get();
+		StringID id(inserted.first->second.get());
 	#ifdef STRING_INTERN_POOL_VALIDATION
 		ValidateStringIdExistenceUnderLock(id);
 	#endif
@@ -115,8 +322,8 @@ public:
 	//makes a new reference to the string specified, returning the ID
 	inline StringID CreateStringReference(const std::string_view str)
 	{
-		if(str.size() == 0)
-			return emptyStringId;
+		if(StringID::CanFitString(str))
+			return StringID(str);
 
 		//try to insert it as a new string
 		//make a copy which will be forwarded
@@ -126,11 +333,11 @@ public:
 		else
 		#if defined(MULTITHREAD_SUPPORT)
 			inserted.first->second->refCount.fetch_add(1, std::memory_order_acquire);
-	#else
+		#else
 			inserted.first->second->refCount++;
-	#endif
+		#endif
 
-		StringID id = inserted.first->second.get();
+		StringID id(inserted.first->second.get());
 	#ifdef STRING_INTERN_POOL_VALIDATION
 		ValidateStringIdExistenceUnderLock(id);
 	#endif
@@ -141,18 +348,24 @@ public:
 	//note that this assumes that the caller guarantees that the id will exist for the duration of this call
 	inline StringID CreateStringReference(StringID id)
 	{
-		if(id != NOT_A_STRING_ID)
+		if(id == NOT_A_STRING_ID)
+			return NOT_A_STRING_ID;
+
+		//only refcount if not inline
+		if(!id.IsInlineString())
 		{
 		#ifdef STRING_INTERN_POOL_VALIDATION
 			ValidateStringIdExistence(id);
 		#endif
 
+			auto sd_ptr = id.GetPointer();
 		#if defined(MULTITHREAD_SUPPORT)
-			id->refCount.fetch_add(1, std::memory_order_acquire);
+			sd_ptr->refCount.fetch_add(1, std::memory_order_acquire);
 		#else
-			id->refCount++;
+			sd_ptr->refCount++;
 		#endif
 		}
+
 		return id;
 	}
 
@@ -166,16 +379,17 @@ public:
 		for(auto r : references_container)
 		{
 			StringID id = get_string_id(r);
-			if(id != NOT_A_STRING_ID)
+			if(id != NOT_A_STRING_ID && !id.IsInlineString())
 			{
 			#ifdef STRING_INTERN_POOL_VALIDATION
 				ValidateStringIdExistence(id);
 			#endif
 
+				auto sd_ptr = id.GetPointer();
 			#if defined(MULTITHREAD_SUPPORT)
-				id->refCount.fetch_add(1, std::memory_order_acquire);
+				sd_ptr->refCount.fetch_add(1, std::memory_order_acquire);
 			#else
-				id->refCount++;
+				sd_ptr->refCount++;
 			#endif
 			}
 		}
@@ -193,16 +407,17 @@ public:
 		for(auto r : references_container)
 		{
 			StringID id = get_string_id(r);
-			if(id != NOT_A_STRING_ID)
+			if(id != NOT_A_STRING_ID && !id.IsInlineString())
 			{
 			#ifdef STRING_INTERN_POOL_VALIDATION
 				ValidateStringIdExistence(id);
 			#endif
 
+				auto sd_ptr = id.GetPointer();
 			#if defined(MULTITHREAD_SUPPORT)
-				id->refCount.fetch_add(additional_reference_count, std::memory_order_acquire);
+				sd_ptr->refCount.fetch_add(additional_reference_count, std::memory_order_acquire);
 			#else
-				id->refCount += additional_reference_count;
+				sd_ptr->refCount += additional_reference_count;
 			#endif
 			}
 		}
@@ -219,16 +434,17 @@ public:
 		for(size_t i = 0; i < references_container.size(); i++)
 		{
 			StringID id = get_string_id(references_container[i], i);
-			if(id != NOT_A_STRING_ID)
+			if(id != NOT_A_STRING_ID && !id.IsInlineString())
 			{
 			#ifdef STRING_INTERN_POOL_VALIDATION
 				ValidateStringIdExistence(id);
 			#endif
 
+				auto sd_ptr = id.GetPointer();
 			#if defined(MULTITHREAD_SUPPORT)
-				id->refCount.fetch_add(1, std::memory_order_acquire);
+				sd_ptr->refCount.fetch_add(1, std::memory_order_acquire);
 			#else
-				id->refCount++;
+				sd_ptr->refCount++;
 			#endif
 			}
 		}
@@ -237,47 +453,38 @@ public:
 	//removes a reference to the string specified by the ID
 	inline void DestroyStringReference(StringID id)
 	{
-		if(id == NOT_A_STRING_ID || id == emptyStringId)
+		if(id == NOT_A_STRING_ID || id.IsInlineString())
 			return;
 
 	#ifdef STRING_INTERN_POOL_VALIDATION
 		ValidateStringIdExistence(id);
 	#endif
 
+		auto sd_ptr = id.GetPointer();
 	#if defined(MULTITHREAD_SUPPORT)
-		//refCount must be decremented in an atomic fashion, but if down to the last reference,
-		//then don't want to decrement outside of a lock.  This is because if this thread decremented
-		//refCount, then another thread could acquire the lock, create a reference, then acquire the
-		// lock and delete a reference, and now a double delete will occur.  
-		while(true)
-		{
-			size_t ref_count = id->refCount.load(std::memory_order_relaxed);
-			if(ref_count <= 1)
-				break;
+		//decrement only if this cannot be the last reference
+		//the count must never reach zero outside the shard lock because a concurrent create can otherwise resurrect
+		// the map entry and a later destroy can free sd_ptr before this thread reaches the lock
+		size_t cur = sd_ptr->refCount.load(std::memory_order_relaxed);
+		if(cur > 1 && sd_ptr->refCount.compare_exchange_strong(
+				cur, cur - 1, std::memory_order_release, std::memory_order_relaxed))
+			return;
 
-			//if can decrement, return
-			//release order on the decrement, don't need ordering on the failure path
-			if(id->refCount.compare_exchange_weak(ref_count, ref_count - 1,
-				std::memory_order_release,
-				std::memory_order_relaxed))
-				return;
-		}
+		//either the last reference or a tight race path; lock, decrement ref count, and clean up if last
+		auto iterator_with_lock = stringToID.find(sd_ptr->stringData);
 
-		//lock this shard and double-check that it's the last reference before erasing
-		auto iterator_with_lock = stringToID.find(id->string);
-
-		size_t ref_count = id->refCount.fetch_sub(1, std::memory_order_release);
+		size_t ref_count = sd_ptr->refCount.fetch_sub(1, std::memory_order_acq_rel);
 		if(ref_count > 1)
 			return;
 
 		stringToID.erase(iterator_with_lock);
 	#else
 		//remove any that aren't the last reference
-		size_t ref_count = id->refCount--;
+		size_t ref_count = sd_ptr->refCount--;
 		if(ref_count > 1)
 			return;
 
-		stringToID.erase(id->string);
+		stringToID.erase(sd_ptr->stringData);
 	#endif
 	}
 
@@ -301,7 +508,7 @@ public:
 	//returns the number of strings that are still in use
 	inline size_t GetNumDynamicStringsInUse()
 	{
-		return stringToID.size() - staticStringIDToIndex.size();
+		return stringToID.size() - numUniqueStaticStrings;
 	}
 
 	//returns a vector of all the strings still in use.  Intended for debugging.
@@ -330,18 +537,18 @@ protected:
 	//requires being under a lock
 	inline void ValidateStringIdExistenceUnderLock(StringID sid)
 	{
-		if(sid == NOT_A_STRING_ID)
+		if(sid == NOT_A_STRING_ID || sid.IsInlineString())
 			return;
 
-		auto found = stringToID.find(sid->string);
-		if(found == end(stringToID))
+		auto found = stringToID.find(sid.GetPointer()->stringData);
+		if(found == end(stringToID)) [[unlikely]]
 		{
 			AmlgAssert(false);
 			return;
 		}
 
 		StringID found_sid = found->second.get();
-		if(sid != found_sid)
+		if(sid != found_sid) [[unlikely]]
 		{
 			AmlgAssert(false);
 		}
@@ -357,10 +564,12 @@ protected:
 	FastHashMap<std::string, std::unique_ptr<StringInternStringData>> stringToID;
 #endif
 
+	size_t numUniqueStaticStrings;
+
 public:
 	//indicates that it is not a string, like NaN or null
-	static constexpr StringID NOT_A_STRING_ID = nullptr;
-	StringID emptyStringId;
+	inline static constexpr StringID NOT_A_STRING_ID = StringID();
+	StringID emptyStringId = StringID("");
 	inline static const std::string EMPTY_STRING = std::string("");
 
 	//data structures for static strings
@@ -402,6 +611,14 @@ public:
 	#endif
 	}
 
+	inline StringRef(StringRef &sir)
+	{
+		id = string_intern_pool.CreateStringReference(sir.id);
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		string_intern_pool.ValidateStringIdExistence(id);
+	#endif
+	}
+
 	//move constructor
 	inline StringRef(StringRef &&sir)
 	{
@@ -430,7 +647,7 @@ public:
 	}
 
 	//assign another string reference
-	inline StringRef &operator =(const StringRef &sir)
+	inline StringRef &operator=(const StringRef &sir)
 	{
 		if(id != sir.id)
 		{
@@ -443,6 +660,20 @@ public:
 		return *this;
 	}
 
+	//move assignment
+	inline StringRef &operator=(StringRef &&sir) noexcept
+	{
+		if(this != &sir)
+		{
+			//release current reference and take result from source
+			string_intern_pool.DestroyStringReference(id);
+			id = sir.id;
+			sir.id = StringInternPool::NOT_A_STRING_ID;
+		}
+		return *this;
+	}
+
+
 	//allow being able to use as a string
 	inline operator const std::string()
 	{
@@ -450,9 +681,21 @@ public:
 	}
 
 	//allow being able to use as a string id
-	inline operator StringInternPool::StringID()
+	//only allow via reference so an extra copy isn't created which could
+	//invalidate a string_view
+	inline operator StringInternPool::StringID &()
 	{
 		return id;
+	}
+
+	inline bool operator==(const StringInternPool::StringID &other) const noexcept
+	{
+		return id == other;
+	}
+
+	inline bool operator!=(const StringInternPool::StringID &other) const noexcept
+	{
+		return id != other;
 	}
 
 	//call this to set the id and create a reference
@@ -493,18 +736,20 @@ private:
 	StringInternPool::StringID id;
 };
 
-inline int StringNaturalCompare(const StringInternPool::StringID a, const StringInternPool::StringID b)
+inline int StringNaturalCompare(StringInternPool::StringID a, StringInternPool::StringID b)
 {
-	return StringManipulation::StringNaturalCompare(string_intern_pool.GetStringFromID(a), string_intern_pool.GetStringFromID(b));
+	return StringManipulation::StringNaturalCompare(
+		string_intern_pool.GetStringViewFromID(a), string_intern_pool.GetStringViewFromID(b));
 }
 
-inline bool StringIDNaturalCompareSort(const StringInternPool::StringID a, const StringInternPool::StringID b)
+inline bool StringIDNaturalCompareSort(StringInternPool::StringID a, StringInternPool::StringID b)
 {
-	int comp = StringManipulation::StringNaturalCompare(string_intern_pool.GetStringFromID(a), string_intern_pool.GetStringFromID(b));
+	int comp = StringManipulation::StringNaturalCompare(
+		string_intern_pool.GetStringViewFromID(a), string_intern_pool.GetStringViewFromID(b));
 	return comp < 0;
 }
 
-inline bool StringIDNaturalCompareSortReverse(const StringInternPool::StringID a, const StringInternPool::StringID b)
+inline bool StringIDNaturalCompareSortReverse(StringInternPool::StringID a, StringInternPool::StringID b)
 {
 	int comp = StringNaturalCompare(a, b);
 	return comp > 0;

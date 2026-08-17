@@ -103,7 +103,7 @@ void ThreadPool::AddNewThread()
 						[this] { return numThreadsToTransitionToReserved < 0 || shutdownThreads; });
 
 					//only can make it here if shutting down (otherwise taskQueue has something in it)
-					if(shutdownThreads)
+					if(shutdownThreads) [[unlikely]]
 						return;
 
 					//coming out of reserved
@@ -123,7 +123,7 @@ void ThreadPool::AddNewThread()
 							[this] { return !taskQueue.empty() || numThreadsToTransitionToReserved > 0 || shutdownThreads; });
 
 						//only can make it here if shutting down (otherwise taskQueue has something in it)
-						if(shutdownThreads)
+						if(shutdownThreads) [[unlikely]]
 							return;
 
 						//got a task, resuming the thread

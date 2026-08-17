@@ -17,6 +17,14 @@ public:
 		ContainedEntitiesDepth
 	};
 
+	InterpreterConstraints()
+		: curExecutionStep(0), maxNodeOperations(0), maxOperationDepth(0), curNumAllocatedNodesAllocatedToEntities(0),
+		maxNumAllocatedNodes(0), entityToConstrainFrom(nullptr), constraintsExceeded(false),
+		constrainMaxContainedEntities(false), constrainMaxContainedEntityDepth(false), maxContainedEntities(0),
+		maxContainedEntityDepth(0), maxEntityIdLength(0), readAccess(true), writeAccess(true),
+		collectWarnings(false), constraintViolation(ViolationType::NoViolation)
+	{}
+
 	//Adds the string specified by warning to the list of warnings. Takes warning as an rvalue reference.
 	void AddWarning(std::string &&warning)
 	{
@@ -26,17 +34,25 @@ public:
 		warnings[warning]++;
 	}
 
+	//returns true if there are any active constraints
+	inline bool AnyActiveConstraints()
+	{
+		return (maxNodeOperations > 0 || maxOperationDepth > 0 || maxNumAllocatedNodes > 0 ||
+				constrainMaxContainedEntities || constrainMaxContainedEntityDepth || maxEntityIdLength > 0 ||
+				!readAccess || !writeAccess);
+	}
+
 	//if true, there is a limit to how long can utilize CPU
 	constexpr bool ConstrainedExecutionSteps()
 	{
-		return maxNumExecutionSteps != 0;
+		return maxNodeOperations != 0;
 	}
 
 	//returns the remaining execution steps
 	__forceinline ExecutionCycleCount GetRemainingNumExecutionSteps()
 	{
-		if(curExecutionStep < maxNumExecutionSteps)
-			return maxNumExecutionSteps - curExecutionStep;
+		if(curExecutionStep < maxNodeOperations)
+			return maxNodeOperations - curExecutionStep;
 		else //already past limit
 			return 0;
 	}
@@ -70,14 +86,14 @@ public:
 	//if true, there is a limit on how deep execution can go in opcodes
 	constexpr bool ConstrainedOpcodeExecutionDepth()
 	{
-		return maxOpcodeExecutionDepth != 0;
+		return maxOperationDepth != 0;
 	}
 
 	//returns the remaining execution depth
 	__forceinline size_t GetRemainingOpcodeExecutionDepth(size_t cur_execution_depth)
 	{
-		if(cur_execution_depth < maxOpcodeExecutionDepth)
-			return maxOpcodeExecutionDepth - cur_execution_depth;
+		if(cur_execution_depth < maxOperationDepth)
+			return maxOperationDepth - cur_execution_depth;
 		else //already past limit
 			return 0;
 	}
@@ -101,10 +117,10 @@ public:
 
 	//maximum number of execution steps by this Interpreter and anything called from it.  If 0, then unlimited.
 	//will terminate execution if the value is reached
-	ExecutionCycleCount maxNumExecutionSteps;
+	ExecutionCycleCount maxNodeOperations;
 
 	//the maximum opcode execution depth
-	size_t maxOpcodeExecutionDepth;
+	size_t maxOperationDepth;
 
 	//number of nodes allocated only to entities
 	size_t curNumAllocatedNodesAllocatedToEntities;
@@ -132,8 +148,11 @@ public:
 	//If 0, then unlimited
 	size_t maxEntityIdLength;
 
-	//if true, it will prevent any write or modification operations from happening to any entity
-	bool readOnlyEntities;
+	//if true, will allow read operations for stack and entity
+	bool readAccess;
+
+	//if true, will allow write operations for stack and entity
+	bool writeAccess;
 
 	//if true, collect warnings, and return them with any constraint violations
 	bool collectWarnings;

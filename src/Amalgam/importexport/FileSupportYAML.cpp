@@ -1,3 +1,4 @@
+
 //project headers:
 #include "FileSupportYAML.h"
 
@@ -5,7 +6,7 @@
 
 //3rd party headers:
 #define RYML_SINGLE_HDR_DEFINE_NOW
-#include "rapidyaml/rapidyaml-0.13.0.hpp"
+#include "rapidyaml/rapidyaml.v0.16.0.singlehdr.hpp"
 
 //system headers:
 #include <iostream>
@@ -64,21 +65,21 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 	//if null, don't set anything
 	if(en == nullptr)
 	{
-		built_element << nullptr;
+		built_element.save(nullptr);
 		return true;
 	}
 
 	if(en->IsAssociativeArray())
 	{
-		built_element |= ryml::MAP;
+		built_element.set_map();
 		auto &mcn = en->GetMappedChildNodesReference();
 		if(!sort_keys)
 		{
 			for(auto &[cn_id, cn] : mcn)
 			{
-				auto &str = string_intern_pool.GetStringFromID(cn_id);
+				auto str = string_intern_pool.GetStringViewFromID(cn_id);
 				auto new_element = built_element.append_child();
-				new_element << ryml::key(str);
+				new_element.save_key(str);
 				if(!EvaluableNodeToYamlStringRecurse(cn, new_element, sort_keys))
 					return false;
 			}
@@ -87,7 +88,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 		{
 			std::vector<StringInternPool::StringID> key_sids;
 			key_sids.reserve(mcn.size());
-			for(auto &[key, _] : mcn)
+			for(auto &key : mcn | std::views::keys)
 				key_sids.push_back(key);
 
 			std::sort(begin(key_sids), end(key_sids), StringIDNaturalCompareSort);
@@ -96,16 +97,16 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 			{
 				auto k = mcn.find(key_sids[i]);
 
-				auto &str = string_intern_pool.GetStringFromID(k->first);
+				auto str = string_intern_pool.GetStringViewFromID(k->first);
 				auto new_element = built_element.append_child();
-				new_element << ryml::key(str);
+				new_element.save_key(str);
 
 				if(!EvaluableNodeToYamlStringRecurse(k->second, new_element, sort_keys))
 					return false;
 			}
 		}
 	}
-	else if(!en->IsImmediate())
+	else if(!en->IsTerminal())
 	{
 		auto node_type = en->GetType();
 		if(node_type != ENT_LIST)
@@ -114,7 +115,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 			return false;
 		}
 
-		built_element |= ryml::SEQ;
+		built_element.set_seq();
 		for(auto &cn : en->GetOrderedChildNodesReference())
 		{
 			auto new_element = built_element.append_child();
@@ -125,21 +126,21 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 	{
 		if(DoesEvaluableNodeTypeUseNullData(en->GetType()))
 		{
-			built_element << nullptr;
+			built_element.save(nullptr);
 		}
 		else if(DoesEvaluableNodeTypeUseBoolData(en->GetType()))
 		{
-			built_element << (en->GetBoolValueReference() ? "true" : "false");
+			built_element.save(en->GetBoolValueReference() ? "true" : "false");
 		}
 		else if(DoesEvaluableNodeTypeUseNumberData(en->GetType()))
 		{
 			double number = en->GetNumberValueReference();
-			built_element << number;
+			built_element.save(number);
 		}
 		else
 		{
-			auto &str_value = en->GetStringValue();
-			built_element << str_value;
+			auto str_value = en->GetStringView();
+			built_element.save(str_value);
 		}
 	}
 
@@ -158,18 +159,18 @@ EvaluableNode *EvaluableNodeYAMLTranslation::YamlToEvaluableNode(EvaluableNodeMa
 std::pair<std::string, bool> EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(EvaluableNode *code, bool sort_keys)
 {
 	if(code == nullptr)
-		return std::make_pair("null", true);
+		return {"null", true};
 
 	//if need cycle check, double-check
 	if(!EvaluableNode::CanNodeTreeBeFlattened(code))
-		return std::make_pair("", false);
+		return {"", false};
 
 	ryml::Tree tree;
 	auto top_node = tree.rootref();
 	if(EvaluableNodeToYamlStringRecurse(code, top_node, sort_keys))
-		return std::make_pair(ryml::emitrs_yaml<std::string>(tree), true);
+		return {ryml::emitrs_yaml<std::string>(tree), true};
 	else
-		return std::make_pair("", false);
+		return {"", false};
 }
 
 EvaluableNode *EvaluableNodeYAMLTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)

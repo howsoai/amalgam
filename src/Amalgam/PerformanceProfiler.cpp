@@ -60,14 +60,15 @@ static inline double GetCurTime()
 	return cur_time / 1000.0 / 1000.0 / 1000.0;
 }
 
-void PerformanceProfiler::StartOperation(const std::string &t, int64_t memory_use)
+void PerformanceProfiler::StartOperation(std::string_view t, size_t memory_use)
 {
 	double cur_time = GetCurTime();
 	instructionStackTypeAndStartTimeAndMemUse.emplace_back(t,
-			StartTimeAndMemUse{ cur_time, memory_use, cur_time, memory_use });
+			StartTimeAndMemUse{ cur_time, static_cast<int64_t>(memory_use),
+				cur_time, static_cast<int64_t>(memory_use) });
 }
 
-void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
+void PerformanceProfiler::EndOperation(size_t memory_use = 0)
 {
 	//get and remove data from scope stack
 	auto [operation_type, counters] = instructionStackTypeAndStartTimeAndMemUse.back();
@@ -75,10 +76,10 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 
 	double cur_time = GetCurTime();
 	double total_operation_time_exclusive = cur_time - counters.startTimeExclusive;
-	int64_t total_operation_memory_exclusive = memory_use - counters.memUseExclusive;
+	int64_t total_operation_memory_exclusive = static_cast<int64_t>(memory_use) - counters.memUseExclusive;
 
 	double total_operation_time_inclusive = cur_time - counters.startTimeInclusive;
-	int64_t total_operation_memory_inclusive = memory_use - counters.memUseInclusive;
+	int64_t total_operation_memory_inclusive = static_cast<int64_t>(memory_use) - counters.memUseInclusive;
 
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::Lock lock(performance_profiler_mutex);
@@ -351,7 +352,7 @@ std::pair<int64_t, int64_t> PerformanceProfiler::GetTotalAndPositiveMemoryIncrea
 		if(c.second.totalMemChangeExclusive > 0)
 			positive_mem_increase += c.second.totalMemChangeExclusive;
 	}
-	return std::make_pair(total_mem_increase, positive_mem_increase);
+	return {total_mem_increase, positive_mem_increase};
 }
 
 template<typename StatValueType, typename CounterValueType, typename CounterMapType>
@@ -471,7 +472,7 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTo
 {
 	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
 		[](auto &counter_values) {
-			return static_cast<double>(counter_values.totalMemChangeExclusive);
+			return static_cast<double>(counter_values.totalMemChangeInclusive);
 		});
 }
 

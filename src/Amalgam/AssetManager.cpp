@@ -165,9 +165,9 @@ static std::pair<bool, std::string> FindVersionStringInAmlgMetadata(std::ifstrea
 
 	std::smatch match;
 	if(std::regex_search(str, match, pattern))
-		return std::make_pair(true, match[1].str());
+		return {true, match[1].str()};
 	else
-		return std::make_pair(false, "");
+		return {false, ""};
 }
 
 //returns a pair of success followed by version number if a version can be found in an Amalgam execute on load file
@@ -184,9 +184,9 @@ std::pair<bool, std::string> FindVersionStringInAmlgExecOnLoad(std::ifstream &fi
 
 	std::smatch match;
 	if(std::regex_search(str, match, pattern))
-		return std::make_pair(true, match[1].str());
+		return {true, match[1].str()};
 	else
-		return std::make_pair(false, "");
+		return {false, ""};
 }
 
 std::tuple<std::string, std::string, bool> AssetManager::GetFileStatus(std::string &resource_path)
@@ -463,7 +463,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 	EvaluableNode **version_node = args->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_amlg_version));
 	if(version_node != nullptr && *version_node != nullptr && (*version_node)->GetType() == ENT_STRING)
 	{
-		const std::string &version_string = (*version_node)->GetStringValue();
+		std::string_view version_string = (*version_node)->GetStringView();
 		auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_string);
 		load_status.SetStatus(success || !asset_params->requireVersionCompatibility, error_message, version_string);
 	}
@@ -524,7 +524,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters *asset_par
 		else
 		{
 			std::ofstream outf(asset_params->resourcePath, std::ios::out | std::ios::binary);
-			return StoreFileFromBuffer<BinaryData>(outf, asset_params->resourceType, compressed_data);
+			return StoreFileFromBuffer(outf, asset_params->resourceType, compressed_data);
 		}
 	}
 	else //binary string
@@ -532,7 +532,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters *asset_par
 		if(code == nullptr || code->GetType() != ENT_STRING)
 			return false;
 
-		const std::string &s = code->GetStringValue();
+		std::string_view s = code->GetStringView();
 		if(asset_params->toMemory)
 		{
 			asset_params->resourceContents = s;
@@ -540,7 +540,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters *asset_par
 		else
 		{
 			std::ofstream outf(asset_params->resourcePath, std::ios::out | std::ios::binary);
-			return StoreFileFromBuffer<std::string>(outf, asset_params->resourceType, s);
+			return StoreFileFromBuffer(outf, asset_params->resourceType, s);
 		}
 	}
 
@@ -637,14 +637,14 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 				EvaluableNode **seed = metadata->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_rand_seed));
 				if(seed != nullptr && (*seed)->GetType() == ENT_STRING)
 				{
-					default_random_seed = (*seed)->GetStringValue();
+					default_random_seed = (*seed)->GetStringView();
 					new_entity->SetRandomState(default_random_seed, true);
 				}
 
 				EvaluableNode **version_node = metadata->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_version));
 				if(version_node != nullptr && (*version_node)->GetType() == ENT_STRING)
 				{
-					const std::string &version_str = (*version_node)->GetStringValue();
+					std::string_view version_str = (*version_node)->GetStringView();
 					auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_str);
 					if(!success)
 					{
@@ -772,13 +772,13 @@ void AssetManager::SetEntityPermissions(Entity *entity,
 		entityPermissions.erase(entity_perms_entry);
 }
 
-std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const std::string &version,
+std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::string_view version,
 	bool print_warnings)
 {
 	auto sem_ver = StringManipulation::Split(version, '-'); //split on postfix
 	auto version_split = StringManipulation::Split(sem_ver[0], '.'); //ignore postfix
 	if(version_split.size() != 3)
-		return std::make_pair("Error: Invalid version number", false);
+		return {"Error: Invalid version number", false};
 
 	std::string message;
 
@@ -810,7 +810,7 @@ std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const s
 	if(print_warnings && !message.empty())
 		std::cerr << message << ", version=" << version << std::endl;
 
-	return std::make_pair(message, true);
+	return {message, true};
 }
 
 std::string AssetManager::GetEvaluableNodeSourceFromComments(EvaluableNode *en)

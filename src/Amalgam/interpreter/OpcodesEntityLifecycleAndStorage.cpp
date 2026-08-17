@@ -4,13 +4,18 @@
 #include "Interpreter.h"
 #include "OpcodeDetails.h"
 
-
 static std::string _opcode_group = "Entity Lifecycle and Storage";
 
 static OpcodeInitializer _ENT_CREATE_ENTITIES(ENT_CREATE_ENTITIES, &Interpreter::InterpretNode_ENT_CREATE_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity1] * node1 [id_path entity2] [* node2] [...])";
-	d.returns = R"(list of id_path)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::PAIRED,
+	{
+		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID, true}),
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true},
+			{"node", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2)
+	});
+	d.returns = OpcodeDetails::DataType::LIST_OF_ENTITY_IDS;
 	d.description = R"(Creates a new entity for id path `entity1` with code specified by `node1`, repeating this for all entity-node pairs, returning a list of the id paths for each of the entities created.  If the execution does not have permission to create the entities, it will evaluate to null.  If the `entity` is omitted, then it will create an unnamed new entity in the calling entity.  If `entity1` specifies an existing entity, then it will create the new entity within that existing entity.  If the last id path in the string is not an existing entity, then it will attempt to create that entity (returning null if it cannot).  If the node is of any other type than assoc, it will create an assoc as the top node and place the node under the null key.  Unlike the rest of the entity creation commands, create_entities specifies the optional id path first to make it easy to read entity definitions.  If more than 2 parameters are specified, create_entities will iterate through all of the pairs of parameters, treating them like the first two as it creates new entities.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((create_entities
@@ -41,10 +46,10 @@ static OpcodeInitializer _ENT_CREATE_ENTITIES(ENT_CREATE_ENTITIES, &Interpreter:
 	(contained_entities "EntityWithContainedEntities")
 ))&", R"(["NamedEntity1" "NamedEntity2" "_hIcoPxJ8LiS"])", "", R"((destroy_entities "EntityWithContainedEntities"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
 	d.requiresEntity = true;
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
 	return d;
@@ -52,7 +57,7 @@ static OpcodeInitializer _ENT_CREATE_ENTITIES(ENT_CREATE_ENTITIES, &Interpreter:
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -90,7 +95,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 			continue;
 		}
 
-		auto &new_entity_id_string = string_intern_pool.GetStringFromID(new_entity_id);
+		auto new_entity_id_string = string_intern_pool.GetStringViewFromID(new_entity_id);
 		std::string rand_state = entity_container->CreateRandomStreamFromStringAndRand(new_entity_id_string);
 
 		//pause while allocating the new entity
@@ -125,9 +130,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 
 static OpcodeInitializer _ENT_CLONE_ENTITIES(ENT_CLONE_ENTITIES, &Interpreter::InterpretNode_ENT_CLONE_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path source_entity1 [id_path destination_entity1] [id_path source_entity2] [id_path destination_entity2] [...])";
-	d.returns = R"(list of id_path)";
-	d.description = R"(Creates a clone of `source_entity1`.  If `destination_entity1` is not specified, then it clones the entity into an unnamed entity in the current entity.  If `destination_entity1` is specified, then it clones it into the location specified by `destination_entity1`; if `destination_entity1` is an existing entity, then it will create it as a contained entity within `destination_entity1`, if not, it will attempt to create it with the given id path of `destination_entity1`.  Evaluates to the id path of the new entity.  Can only be performed by an entity that contains both `source_entity1` and the specified path of `destination_entity1`. If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"source_entity", OpcodeDetails::DataType::ENTITY_ID, true},
+			{"dest_entity", OpcodeDetails::DataType::ENTITY_ID, true}, true)
+	};
+	d.returns = OpcodeDetails::DataType::LIST_OF_ENTITY_IDS;
+	d.description = R"(Creates a clone of `source_entity1`.  If `dest_entity1` is not specified, then it clones the entity into an unnamed entity in the current entity.  If `dest_entity1` is specified, then it clones it into the location specified by `dest_entity1`; if `dest_entity1` is an existing entity, then it will create it as a contained entity within `dest_entity1`, if not, it will attempt to create it with the given id path of `dest_entity1`.  Evaluates to the id path of the new entity.  Can only be performed by an entity that contains both `source_entity1` and the specified path of `dest_entity1`. If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -152,6 +160,7 @@ static OpcodeInitializer _ENT_CLONE_ENTITIES(ENT_CLONE_ENTITIES, &Interpreter::I
 		});
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;
@@ -160,7 +169,7 @@ static OpcodeInitializer _ENT_CLONE_ENTITIES(ENT_CLONE_ENTITIES, &Interpreter::I
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -232,9 +241,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 
 static OpcodeInitializer _ENT_MOVE_ENTITIES(ENT_MOVE_ENTITIES, &Interpreter::InterpretNode_ENT_MOVE_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path source_entity1 [id_path destination_entity1] [id_path source_entity2] [id_path destination_entity2] [...])";
-	d.returns = R"(list of id_path)";
-	d.description = R"(Moves the entity from location specified by `source_entity1` to destination `destination_entity1`.  If `destination_entity1` exists, it will move `source_entity1` using `source_entity1`'s current id path into `destination_entity1`.  If `destination_entity1` does not exist, then it will move `source_entity1` and rename it to the end of the id path specified by `destination_entity1`. Can only be performed by a containing entity relative to both ids.  If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"source_entity", OpcodeDetails::DataType::ENTITY_ID, true},
+			{"dest_entity", OpcodeDetails::DataType::ENTITY_ID, true}, true)
+	};
+	d.returns = OpcodeDetails::DataType::LIST_OF_ENTITY_IDS;
+	d.description = R"(Moves the entity from location specified by `source_entity1` to destination `dest_entity1`.  If `dest_entity1` exists, it will move `source_entity1` using `source_entity1`'s current id path into `dest_entity1`.  If `dest_entity1` does not exist, then it will move `source_entity1` and rename it to the end of the id path specified by `dest_entity1`. Can only be performed by a containing entity relative to both ids.  If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -259,6 +271,7 @@ static OpcodeInitializer _ENT_MOVE_ENTITIES(ENT_MOVE_ENTITIES, &Interpreter::Int
 		});
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
@@ -267,7 +280,7 @@ static OpcodeInitializer _ENT_MOVE_ENTITIES(ENT_MOVE_ENTITIES, &Interpreter::Int
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -342,8 +355,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 
 static OpcodeInitializer _ENT_DESTROY_ENTITIES(ENT_DESTROY_ENTITIES, &Interpreter::InterpretNode_ENT_DESTROY_ENTITIES, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity1] [id_path entity2] [...])";
-	d.returns = R"(bool)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true}, true)
+	});
+	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Destroys the entities specified by the ids `entity1`, `entity2`, etc. Can only be performed by containing entity.  Returns true if all entities were successfully destroyed, false if not.  Generally entities can be destroyed unless they do not exist or if there is code currently being run in it.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -355,9 +371,9 @@ static OpcodeInitializer _ENT_DESTROY_ENTITIES(ENT_DESTROY_ENTITIES, &Interprete
 	(contained_entities)
 ))&", R"([])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 1.5;
 	d.opcodeGroup = _opcode_group;
@@ -366,7 +382,7 @@ static OpcodeInitializer _ENT_DESTROY_ENTITIES(ENT_DESTROY_ENTITIES, &Interprete
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool all_destroys_successful = true;
@@ -411,8 +427,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 
 static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOAD, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string resource_path [string resource_type] [assoc params])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"resource_path", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"resource_type", OpcodeDetails::DataType::STRING, true}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Loads the data specified by `resource_path`, parses it into the appropriate code and data, and returns it. If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -503,6 +523,7 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 	[4.4 3.2 1.3 0.2 "setosa"]
 ])", "", R"((if (= (system "os") "Windows") (system "system" "del /q file.csv") (system "system" "rm file.csv")))"}
 		});
+	d.retrievesData = true;
 	d.permissions = ExecutionPermissions::Permission::LOAD;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 8.5;
@@ -513,11 +534,11 @@ static OpcodeInitializer _ENT_LOAD(ENT_LOAD, &Interpreter::InterpretNode_ENT_LOA
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(ExecutionPermissions::Permission::LOAD))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::LOAD)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -551,8 +572,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::InterpretNode_ENT_LOAD_ENTITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string resource_path [id_path entity] [string resource_type] [bool persistent] [assoc params])";
-	d.returns = R"(id_path)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"resource_path", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"resource_type", OpcodeDetails::DataType::STRING, true}),
+		OpcodeDetails::ParameterGroup({"persist", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
+	};
+	d.returns = OpcodeDetails::DataType::ENTITY_ID;
 	d.description = R"(Loads the data specified by `resource_path` and parse it into the appropriate code and data, and stores it in `entity`.  It follows the same id path creation rules as `(create_entities)`, except that if no id path is specified, it may default to a name based on the resource if available.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -637,6 +664,7 @@ static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::Interpr
 		});
 	d.permissions = ExecutionPermissions::Permission::LOAD;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
@@ -645,19 +673,19 @@ static OpcodeInitializer _ENT_LOAD_ENTITY(ENT_LOAD_ENTITY, &Interpreter::Interpr
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(ExecutionPermissions::Permission::LOAD))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::LOAD)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(path.empty())
+	if(path.empty()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string file_type = "";
@@ -729,8 +757,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 
 static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_STORE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string resource_path * node [string resource_type] [assoc params])";
-	d.returns = R"(bool)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"resource_path", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"resource_type", OpcodeDetails::DataType::STRING, true}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
+	};
+	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Stores `node` into `resource_path`.  Returns true if successful, false if not.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -823,6 +856,7 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 		});
 	d.permissions = ExecutionPermissions::Permission::STORE;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
@@ -832,15 +866,15 @@ static OpcodeInitializer _ENT_STORE(ENT_STORE, &Interpreter::InterpretNode_ENT_S
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(ExecutionPermissions::Permission::STORE))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::STORE)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(path.empty())
+	if(path.empty()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto to_store = InterpretNodeForImmediateUse(ocn[1]);
@@ -874,8 +908,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::InterpretNode_ENT_STORE_ENTITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string resource_path id_path entity [string resource_type] [bool persistent] [assoc params])";
-	d.returns = R"(bool)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"resource_path", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"resource_type", OpcodeDetails::DataType::STRING, true}),
+		OpcodeDetails::ParameterGroup({"persist", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true}),
+	};
+	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Stores `entity` into `resource_path`.  Returns true if successful, false if not.  If `persistent` is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  If `resource_type` is specified and not null, it will use `resource_type` as the format instead of inferring the format from the extension of the `resource_path`.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  `params` is a per resource type set of parameters described in Amalgam Syntax.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -960,6 +1000,7 @@ static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::Inter
 		});
 	d.permissions = ExecutionPermissions::Permission::STORE;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.1;
 	d.opcodeGroup = _opcode_group;
@@ -969,15 +1010,15 @@ static OpcodeInitializer _ENT_STORE_ENTITY(ENT_STORE_ENTITY, &Interpreter::Inter
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	if(!permissions.HasPermission(ExecutionPermissions::Permission::STORE))
+	if(!permissions.HasPermission(ExecutionPermissions::Permission::STORE)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(path.empty())
+	if(path.empty()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	std::string file_type = "";
@@ -1030,8 +1071,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 
 static OpcodeInitializer _ENT_CONTAINS_ENTITY(ENT_CONTAINS_ENTITY, &Interpreter::InterpretNode_ENT_CONTAINS_ENTITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity)";
-	d.returns = R"(bool)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID})
+	};
+	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Returns true if `entity` exists, false if not.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1051,6 +1094,7 @@ static OpcodeInitializer _ENT_CONTAINS_ENTITY(ENT_CONTAINS_ENTITY, &Interpreter:
 	]
 ))&", R"([.true .false])", "", R"((destroy_entities "Entity")"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
@@ -1061,11 +1105,11 @@ static OpcodeInitializer _ENT_CONTAINS_ENTITY(ENT_CONTAINS_ENTITY, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//not allowed if don't have a Entity to create within
-	if(curEntity == nullptr)
+	if(curEntity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
@@ -1074,8 +1118,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableN
 
 static OpcodeInitializer _ENT_FLATTEN_ENTITY(ENT_FLATTEN_ENTITY, &Interpreter::InterpretNode_ENT_FLATTEN_ENTITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity [bool include_rand_seeds] [bool parallel_create] [bool include_version])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"include_rand_seeds", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"parallel_create", OpcodeDetails::DataType::BOOL, true}),
+		OpcodeDetails::ParameterGroup({"include_version", OpcodeDetails::DataType::BOOL, true}),
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to code that, if called, would completely reproduce the `entity`, as well as all contained entities.  If `include_rand_seeds` is true, by default, it will include all entities' random seeds.  If `parallel_create` is true, then the creates will be performed with parallel markers as appropriate for each group of contained entities.  If `include_version` is true, it will include a comment on the top node that is the current version of the Amalgam interpreter, which can be used for validating interoperability when loading code.  The code returned accepts two parameters, `create_new_entity`, which defaults to true, and `new_entity`, which defaults to null.  If `create_new_entity` is true, then it will create a new entity using the id path specified by `new_entity`, where null will create an unnamed entity.  If `create_new_entity` is false, then it will overwrite the current entity's code and create all contained entities.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1122,6 +1171,7 @@ static OpcodeInitializer _ENT_FLATTEN_ENTITY(ENT_FLATTEN_ENTITY, &Interpreter::I
 	[first_rand second_rand]
 ))&", R"([0.611779739433564 0.611779739433564])", "", R"((apply "destroy_entities" (contained_entities)))"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
@@ -1132,7 +1182,7 @@ static OpcodeInitializer _ENT_FLATTEN_ENTITY(ENT_FLATTEN_ENTITY, &Interpreter::I
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool include_rand_seeds = true;
@@ -1158,8 +1208,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNo
 
 static OpcodeInitializer _ENT_RETRIEVE_ENTITY_ROOT(ENT_RETRIEVE_ENTITY_ROOT, &Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to the code contained by `entity`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1172,6 +1224,7 @@ static OpcodeInitializer _ENT_RETRIEVE_ENTITY_ROOT(ENT_RETRIEVE_ENTITY_ROOT, &In
 	(retrieve_entity_root "Entity")
 ))&", R"({1 2 three 3})", "", R"((destroy_entities "Entity"))"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
@@ -1181,7 +1234,7 @@ static OpcodeInitializer _ENT_RETRIEVE_ENTITY_ROOT(ENT_RETRIEVE_ENTITY_ROOT, &In
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(curEntity == nullptr)
+	if(curEntity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 	auto &ocn = en->GetOrderedChildNodesReference();
 
@@ -1202,9 +1255,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 
 static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity1] * root1 [id_path entity2] [* root2] [...])";
-	d.returns = R"(bool)";
-	d.description = R"(Sets the code of the `entity1 to `root1`, as well as all subsequent entity-code pairs of parameters.  If `entity1` is not specified or null, then uses the current entity.  On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::PAIRED,
+	{
+		OpcodeDetails::ParameterGroup({"entity1", OpcodeDetails::DataType::ENTITY_ID, true}),
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true},
+			{"node", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2)
+	});
+	d.returns = OpcodeDetails::DataType::BOOL;
+	d.description = R"(Sets the root of the `entity1 to `node1`, as well as all subsequent entity-code pairs of parameters.  If `entity1` is not specified or null, then uses the current entity.  On assigning the code to the new entity, any root that is not of a type assoc will be put into an assoc under the null key.  If all assignments were successful, then returns true, otherwise returns false.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -1220,7 +1279,7 @@ static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Inte
 	(retrieve_entity_root "Entity")
 ))&", R"({a 4 b 5 c 6})", "", R"((destroy_entities "Entity"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::PAIRED;
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.hasSideEffects = true;
@@ -1231,7 +1290,7 @@ static OpcodeInitializer _ENT_ASSIGN_ENTITY_ROOTS(ENT_ASSIGN_ENTITY_ROOTS, &Inte
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -1241,9 +1300,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS(Evalua
 		//get value to assign first before getting the entity in case it needs to be locked
 		EvaluableNodeReference new_code = EvaluableNodeReference::Null();
 		if(i + 1 < ocn.size())
-			new_code = InterpretNodeForImmediateUse(ocn[i + 1]);
+			new_code = InterpretNodeWithoutCopyingImmediates(ocn[i + 1]);
 		else
-			new_code = InterpretNodeForImmediateUse(ocn[i]);
+			new_code = InterpretNodeWithoutCopyingImmediates(ocn[i]);
 		auto node_stack = CreateOpcodeStackStateSaver(new_code);
 
 		EntityWriteReference target_entity;
@@ -1307,8 +1366,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS(Evalua
 
 static OpcodeInitializer _ENT_GET_ENTITY_PERMISSIONS(ENT_GET_ENTITY_PERMISSIONS, &Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity])";
-	d.returns = R"(assoc)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true})
+	};
+	d.returns = OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Returns an assoc of the permissions of `entity`, the current entity if `entity` is not specified or null, where each key is the permission and each value is either true or false.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1329,6 +1390,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_PERMISSIONS(ENT_GET_ENTITY_PERMISSIONS,
 	system .false
 })", "", R"((destroy_entities "Entity"))"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.05;
@@ -1338,7 +1400,7 @@ static OpcodeInitializer _ENT_GET_ENTITY_PERMISSIONS(ENT_GET_ENTITY_PERMISSIONS,
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(curEntity == nullptr)
+	if(curEntity == nullptr) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -1358,8 +1420,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(Eva
 
 static OpcodeInitializer _ENT_SET_ENTITY_PERMISSIONS(ENT_SET_ENTITY_PERMISSIONS, &Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS, []() {
 	OpcodeDetails d;
-	d.parameters = R"(id_path entity bool|assoc permissions [bool deep])";
-	d.returns = R"(id_path)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"permissions", OpcodeDetails::DataType::BOOL | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"deep", OpcodeDetails::DataType::BOOL, true})
+	};
+	d.returns = OpcodeDetails::DataType::ENTITY_ID;
 	d.description = R"(Sets the permissions on the `entity`.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  Permission keys consist of: "std_out_and_std_err", which allows output; "std_in", which allows input; "load", which allows reading files; "store", which allows writing files; "environment", which allows reading information about the environment; "alter_performance", which allows adjusting performance characteristics; and "system", which allows running system commands.  The parameter `deep` defaults to false, but if it is true, all contained entities have their permissions updated.  Returns the id path of `entity`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -1381,6 +1447,7 @@ static OpcodeInitializer _ENT_SET_ENTITY_PERMISSIONS(ENT_SET_ENTITY_PERMISSIONS,
 	system .true
 })", "", R"((destroy_entities "Entity"))"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.hasSideEffects = true;
@@ -1391,11 +1458,11 @@ static OpcodeInitializer _ENT_SET_ENTITY_PERMISSIONS(ENT_SET_ENTITY_PERMISSIONS,
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//retrieve parameter to determine whether to deep set the seeds, if applicable

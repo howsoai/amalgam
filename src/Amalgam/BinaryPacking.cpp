@@ -261,7 +261,7 @@ std::pair<BinaryData, HuffmanTree<uint8_t> *> CompressString(std::string &string
 	encoded_string_with_header.resize(encoded_string_with_header.size() + encoded_string.size());
 	std::copy(begin(encoded_string), end(encoded_string), end(encoded_string_with_header) - encoded_string.size());
 
-	return std::make_pair(encoded_string_with_header, huffman_tree);
+	return {encoded_string_with_header, huffman_tree};
 }
 
 BinaryData CompressStringToAppend(std::string &string_to_compress, HuffmanTree<uint8_t> *huffman_tree)

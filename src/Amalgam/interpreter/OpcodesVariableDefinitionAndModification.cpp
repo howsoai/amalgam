@@ -7,12 +7,15 @@
 #include "OpcodeDetails.h"
 #include "PerformanceProfiler.h"
 
+//system headers:
+#include <bit>
+
 static std::string _opcode_group = "Variable Definition and Modification";
 
 static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT_SYMBOL, []() {
 	OpcodeDetails d;
-	d.parameters = R"()";
-	d.returns = R"(*)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::NONE, {});
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(A string representing an internal symbol, a variable.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
@@ -22,7 +25,7 @@ static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT
 			{R"&(not_defined)&", R"(.null)"},
 			{R"&((lambda foo))&", R"(foo)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::NONE;
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 4329.0;
 	d.opcodeGroup = _opcode_group;
@@ -32,7 +35,7 @@ static OpcodeInitializer _ENT_SYMBOL(ENT_SYMBOL, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	StringInternPool::StringID sid = en->GetStringIDReference();
-	if(sid == StringInternPool::NOT_A_STRING_ID)
+	if(sid == StringInternPool::NOT_A_STRING_ID) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//when retrieving symbol, only need to retain the node if it's not an immediate type
@@ -57,8 +60,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_LET(ENT_LET, &Interpreter::InterpretNode_ENT_LET, []() {
 	OpcodeDetails d;
-	d.parameters = R"(assoc variables [code code1] [code code2] ... [code codeN])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"variables", OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"code", OpcodeDetails::DataType::ANY_BASIC, true}, true)
+	});
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Pushes the key-value pairs of `variables` onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
@@ -73,7 +80,6 @@ static OpcodeInitializer _ENT_LET(ENT_LET, &Interpreter::InterpretNode_ENT_LET, 
 	)
 ))&", R"(11)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 26.0;
@@ -85,7 +91,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-	if(ocn_size == 0)
+	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	InterpretAndPushNewScopeStackNode(ocn[0]);
@@ -127,8 +133,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_DECLARE(ENT_DECLARE, &Interpreter::InterpretNode_ENT_DECLARE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(assoc variables [code code1] [code code2] ... [code codeN])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"variables", OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"code", OpcodeDetails::DataType::ANY_BASIC, true}, true)
+	});
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(For each key-value pair of `variables`, if not already in the current context in the scope stack, it will define them.  Then it runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -142,8 +152,8 @@ static OpcodeInitializer _ENT_DECLARE(ENT_DECLARE, &Interpreter::InterpretNode_E
 	x
 ))&", R"(8)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.mayCauseNodeUpdateInCurrentEntity = true;
 	d.frequencyPer10000Opcodes = 49.0;
@@ -157,7 +167,7 @@ static inline void RecordStackLockForProfiling(EvaluableNode *en, StringInternPo
 	if(Interpreter::_opcode_profiling_enabled)
 	{
 		std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
-		variable_location += string_intern_pool.GetStringFromID(variable_sid);
+		variable_location += string_intern_pool.GetStringViewFromID(variable_sid);
 		PerformanceProfiler::AccumulateLockContentionCount(variable_location);
 	}
 }
@@ -167,7 +177,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-	if(ocn_size == 0)
+	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//work on the node that is declaring the variables
@@ -175,7 +185,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	//transform into variables if possible
 	EvaluableNodeReference required_vars = EvaluableNodeReference::Null();
 	bool need_to_interpret_required_vars = false;
-	if(required_vars_node != nullptr)
+	if(required_vars_node != nullptr) [[likely]]
 	{
 		if(required_vars_node->IsAssociativeArray())
 		{
@@ -184,7 +194,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		}
 		else //just need to interpret
 		{
-			required_vars = InterpretNodeForImmediateUse(required_vars_node);
+			required_vars = InterpretNodeWithoutCopyingImmediates(required_vars_node);
 		}
 	}
 
@@ -203,7 +213,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 		//get the current layer of the stack
 		EvaluableNode *scope = GetCurrentScopeStackContext();
-		if(scope == nullptr)	//this shouldn't happen, but just in case it does
+		if(scope == nullptr) [[unlikely]]	//this shouldn't happen, but just in case it does
 			return EvaluableNodeReference::Null();
 
 		if(!need_to_interpret_required_vars)
@@ -218,7 +228,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					any_nonunique_assignments = true;
 
 					if(cn != nullptr)
-						cn->SetIsFreeable(required_vars.unique);
+					{
+					#ifdef MULTITHREAD_SUPPORT
+						cn->SetIsFreeableAndIsFreeableTopNodeAtomic(required_vars.unique);
+					#else
+						cn->SetIsFreeableAndIsFreeableTopNode(required_vars.unique);
+					#endif
+					}
 				}
 				else
 				{
@@ -233,7 +249,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		{
 			auto &scope_mcn = scope->GetMappedChildNodesReference();
 
-			PushNewConstructionContext(required_vars, nullptr,
+			PushNewConstructionContext(required_vars, required_vars,
 				EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
 			//check each of the required variables and put into the stack if appropriate
@@ -261,7 +277,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				#endif
 
 					SetTopCurrentIndexInConstructionStack(cn_id);
-					EvaluableNodeReference value = InterpretNodeForImmediateUse(cn);
+					EvaluableNodeReference value = InterpretNodeWithoutCopyingImmediates(cn);
 
 					//mark if not unique
 					any_nonunique_assignments |= !value.unique;
@@ -272,21 +288,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					{
 						LockScopeStackTop(write_lock, required_vars);
 					}
-					else
-					#endif
-						//only set unread if writing to parts of the stack that aren't shared
-						if(value != nullptr)
-							value->SetIsFreeable(value.unique);
+				#endif
 
+					value.SetFreeableFlagsBasedOnUniqueness();
 					scope->SetMappedChildNode(cn_id, value, false);
 				}
 			}
 
-			if(PopConstructionContextAndGetExecutionSideEffectFlag())
-			{
-				required_vars.unique = false;
-				required_vars.uniqueUnreferencedTopNode = false;
-			}
+			PopConstructionContextAndGetExecutionSideEffectFlag();
 		}
 
 		//free the vars / assoc node
@@ -331,9 +340,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM, []() {
 	OpcodeDetails d;
-	d.parameters = R"(assoc|string variables [number index1|string index1|list walk_path1|* new_value1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...)";
-	d.returns = R"(.null)";
-	d.description = R"(If `variables` is an assoc, then for each key-value pair it assigns the value to the variable represented by the key found by tracing upward on the stack.  If a variable is not found, it will create a variable on the top of the stack with that name.  If `variables` is a string and there are two parameters, it will assign the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of walk_path and new_value to assign new_value to that part of the variable's structure.)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED,
+	{
+		OpcodeDetails::ParameterGroup({"variables", OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"index1_or_value", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
+			{"value1", OpcodeDetails::DataType::ANY_BASIC, true}),
+		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
+			{"value", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2),
+	});
+	d.returns = OpcodeDetails::DataType::NULL_TYPE;
+	d.description = R"(If `variables` is an assoc, then for each key-value pair it assigns the value to the variable represented by the key found by tracing upward on the stack.  If a variable is not found, it will create a variable on the top of the stack with that name.  If `variables` is a string and there are two parameters, it will assign the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of `index` and `value` to assign `value` to that part of the variable's structure.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
 	{x 0}
@@ -395,7 +411,6 @@ static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT
 	}
 ])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
 	d.hasSideEffects = true;
 	d.mayCauseNodeUpdateInCurrentEntity = true;
@@ -406,8 +421,15 @@ static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT
 
 static OpcodeInitializer _ENT_ACCUM(ENT_ACCUM, &Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM, []() {
 	OpcodeDetails d;
-	d.parameters = R"(assoc|string variables [number index1|string index1|list walk_path1] [* accum_value1] [number index2|string index2|list walk_path2] [* accum_value2] ...)";
-	d.returns = R"(.null)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED,
+	{
+		OpcodeDetails::ParameterGroup({"variables", OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"index1_or_value", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
+			{"value1", OpcodeDetails::DataType::ANY_BASIC, true}),
+		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
+			{"value", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2),
+	});
+	d.returns = OpcodeDetails::DataType::NULL_TYPE;
 	d.description = R"(If `variables` is an assoc, then for each key-value pair of data, it assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the result in the variable.  It searches for the variable name tracing up the stack to find the variable. If the variable is not found, it will create a variable on the top of the stack.  Accumulation is performed differently based on the type.  For numeric values it adds, for strings it concatenates, for lists and assocs it appends.  If `variables` is a string and there are two parameters, then it will accum the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of the corresponding walk path and accum value to that part of the variable's structure.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -497,8 +519,8 @@ static OpcodeInitializer _ENT_ACCUM(ENT_ACCUM, &Interpreter::InterpretNode_ENT_A
 	{a 1 b 2 c 3}
 ])"},
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NULL_VALUE;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.mayCauseNodeUpdateInCurrentEntity = true;
 	d.frequencyPer10000Opcodes = 11.0;
@@ -511,7 +533,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_params = ocn.size();
 
-	if(num_params < 1)
+	if(num_params < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool accum = (en->GetType() == ENT_ACCUM);
@@ -536,7 +558,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		}
 		else //just need to interpret
 		{
-			assigned_vars = InterpretNodeForImmediateUse(assigned_vars_node);
+			assigned_vars = InterpretNodeWithoutCopyingImmediates(assigned_vars_node);
 		}
 
 		if(!EvaluableNode::IsAssociativeArray(assigned_vars))
@@ -558,7 +580,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			if(need_to_interpret && cn != nullptr && !cn->GetIsIdempotent())
 			{
 				PushNewConstructionContext(assigned_vars, assigned_vars, EvaluableNodeImmediateValueWithType(variable_sid), nullptr);
-				variable_value_node = InterpretNodeForImmediateUse(cn);
+				variable_value_node = InterpretNodeWithoutCopyingImmediates(cn);
 				if(PopConstructionContextAndGetExecutionSideEffectFlag())
 				{
 					assigned_vars.unique = false;
@@ -573,45 +595,47 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			node_stack.PushEvaluableNode(variable_value_node);
 
 			Concurrency::SingleLock write_lock;
-			auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+			auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 			if(write_lock.owns_lock())
 				RecordStackLockForProfiling(en, variable_sid);
 
 			node_stack.PopEvaluableNode();
 		#else
-			auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+			auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 		#endif
 
-			if(accum && !EvaluableNode::IsNull(*value_destination))
+			if(accum && !EvaluableNode::IsNull(*symbol_location.location))
 			{
-				if(is_freeable)
+				EvaluableNodeReference value_destination_node(*symbol_location.location,
+					symbol_location.unique, symbol_location.uniqueTopNode);
+
+				//need to clear freability of variable_value_node before it is accumulated
+				if(variable_value_node != nullptr)
 				{
-					EvaluableNodeReference value_destination_node(*value_destination, true);
-					variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
+				#ifdef MULTITHREAD_SUPPORT
+					variable_value_node->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+				#else
+					variable_value_node->SetIsFreeableAndIsFreeableTopNode(false);
+				#endif
 				}
-				else
-				{
-					//values should always be copied before changing, in case the value is used elsewhere, especially in another thread
-					EvaluableNodeReference value_destination_node = evaluableNodeManager->DeepAllocCopy(*value_destination);
-					variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
-				}
+
+				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
 			}
-			else if(is_freeable)
+			else //free whatever is possible
 			{
-				EvaluableNodeReference value_destination_node(*value_destination, true);
+				EvaluableNodeReference value_destination_node(*symbol_location.location,
+					symbol_location.unique, symbol_location.uniqueTopNode);
 				evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
 			}
 
 			any_nonunique_assignments |= !variable_value_node.unique;
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-			any_nonunique_assignments |= !top_of_stack;
+			any_nonunique_assignments |= !symbol_location.atTopOfStack;
 
-			//need to set whether freeable in case a variable's value is assigned to another variable
-			if(variable_value_node != nullptr)
-				variable_value_node->SetIsFreeable(variable_value_node.unique);
+			variable_value_node.SetFreeableFlagsBasedOnUniqueness();
 
 			//assign back into the context_to_use
-			*value_destination = variable_value_node;
+			*symbol_location.location = variable_value_node;
 		}
 
 		if(any_nonunique_assignments)
@@ -629,7 +653,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	//if only 2 params and not accumulating, then just assign/accum the destination
 	if(num_params == 2)
 	{
-		auto new_value = InterpretNodeForImmediateUse(ocn[1]);
+		auto new_value = InterpretNodeWithoutCopyingImmediates(ocn[1]);
 
 		//retrieve the symbol location
 	#ifdef MULTITHREAD_SUPPORT
@@ -639,48 +663,47 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		auto node_stack = CreateOpcodeStackStateSaver(new_value);
 
 		Concurrency::SingleLock write_lock;
-		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+		auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 		if(write_lock.owns_lock())
 			RecordStackLockForProfiling(en, variable_sid);
 
 		node_stack.PopEvaluableNode();
 	#else
-		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+		auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
-		if(accum && !EvaluableNode::IsNull(*value_destination))
+		if(accum && !EvaluableNode::IsNull(*symbol_location.location))
 		{
-			EvaluableNodeReference variable_value_node;
-			if(is_freeable)
+			EvaluableNodeReference value_destination_node(
+				*symbol_location.location, symbol_location.unique, symbol_location.uniqueTopNode);
+
+			//need to clear freability of new_value before it is accumulated
+			if(new_value != nullptr)
 			{
-				EvaluableNodeReference value_destination_node(*value_destination, true);
-				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
-			}
-			else
-			{
-				//values should always be copied before changing, in case the value is used elsewhere, especially in another thread
-				//because of the deep copy, do not need to call SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
-				EvaluableNodeReference value_destination_node = evaluableNodeManager->DeepAllocCopy(*value_destination);
-				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
+			#ifdef MULTITHREAD_SUPPORT
+				new_value->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+			#else
+				new_value->SetIsFreeableAndIsFreeableTopNode(false);
+			#endif
 			}
 
-			//assign the new accumulation
-			*value_destination = variable_value_node;
+			new_value = AccumulateEvaluableNodeIntoEvaluableNode(
+				value_destination_node, new_value, evaluableNodeManager);
 		}
 		else
 		{
-			if(is_freeable)
-			{
-				EvaluableNodeReference value_destination_node(*value_destination, true);
-				evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
-			}
-
-			*value_destination = new_value;
-
-			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-			if(!new_value.unique || !top_of_stack)
-				SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
+			//free whatever is possible
+			EvaluableNodeReference value_destination_node(*symbol_location.location,
+				symbol_location.unique, symbol_location.uniqueTopNode);
+			evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
 		}
+
+		new_value.SetFreeableFlagsBasedOnUniqueness();
+		*symbol_location.location = new_value;
+
+		//if writing to an outer scope, can't guarantee the memory at this scope can be freed
+		if(!new_value.unique || !symbol_location.atTopOfStack)
+			SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 
 		return EvaluableNodeReference::Null();
 	}
@@ -710,7 +733,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		node_stack.PushEvaluableNode(address);
 		is_value_unique[ocn_index - 1] = address.unique;
 
-		auto new_value = InterpretNodeForImmediateUse(ocn[ocn_index + 1]);
+		auto new_value = InterpretNodeWithoutCopyingImmediates(ocn[ocn_index + 1]);
 		node_stack.PushEvaluableNode(new_value);
 		is_value_unique[ocn_index] = new_value.unique;
 	}
@@ -720,24 +743,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 #ifdef MULTITHREAD_SUPPORT
 	//node_stack already has everything saved in case garbage collection is called in GetScopeStackSymbolLocationWithLock
 	Concurrency::SingleLock write_lock;
-	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+	auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 	if(write_lock.owns_lock())
 		RecordStackLockForProfiling(en, variable_sid);
 #else
-	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+	auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 #endif
 
 	//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-	any_nonunique_assignments |= !top_of_stack;
+	any_nonunique_assignments |= !symbol_location.atTopOfStack;
 
 	//make a copy of value_replacement because not sure where else it may be used
 	EvaluableNode *value_replacement = nullptr;
-	if(*value_destination == nullptr)
+	if(*symbol_location.location == nullptr)
 		value_replacement = evaluableNodeManager->AllocNode(ENT_NULL);
-	else if(is_freeable)
-		value_replacement = *value_destination;
+	else if(symbol_location.unique)
+		value_replacement = *symbol_location.location;
 	else
-		value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
+		value_replacement = evaluableNodeManager->DeepAllocCopy(*symbol_location.location);
 
 	//replace each in order, traversing as it goes along
 	//this is safe because it is all on a copy, and each traversal must be done one at a time as to not
@@ -770,6 +793,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//create destination reference; the logic above has already made a copy if it wasn't freeable
 			//so the destination can be treated as unique
 			EvaluableNodeReference value_destination_node(*copy_destination, true);
+
+			//need to clear freability of new_value before it is accumulated
+			if(new_value != nullptr)
+			{
+			#ifdef MULTITHREAD_SUPPORT
+				new_value->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+			#else
+				new_value->SetIsFreeableAndIsFreeableTopNode(false);
+			#endif
+			}
+
 			EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
 			//assign the new accumulation
@@ -801,7 +835,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 	if(result_flags_need_updates)
 		EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
-	*value_destination = value_replacement;
+
+	//need to set whether freeable in case a variable's value is assigned to another variable
+	if(value_replacement != nullptr)
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		value_replacement->SetIsFreeableAndIsFreeableTopNodeAtomic(!any_nonunique_assignments);
+	#else
+		value_replacement->SetIsFreeableAndIsFreeableTopNode(!any_nonunique_assignments);
+	#endif
+	}
+
+	*symbol_location.location = value_replacement;
 
 	if(any_nonunique_assignments)
 		SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
@@ -811,8 +856,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string variable * value_to_compare * value_to_assign)";
-	d.returns = R"(bool)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"variable", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"value_to_compare", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"value_to_assign", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Compares the value in variable to value_to_compare, and if equal, assigns the variable atomically to value_to_assign.  Returns true if the value in variable is equal to value_to_compare and the assignment was successful, false otherwise.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
@@ -826,7 +875,7 @@ static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter:
 	[success lock]
 ))&", R"([.false 0])" }
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::POSITION;
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 3.0;
 	d.opcodeGroup = _opcode_group;
@@ -836,7 +885,7 @@ static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 3)
+	if(ocn.size() < 3) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto variable_string_node = InterpretNodeForImmediateUse(ocn[0]);
@@ -846,7 +895,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableN
 	auto value_to_compare = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PushEvaluableNode(value_to_compare);
 
-	auto value_to_assign = InterpretNodeForImmediateUse(ocn[2]);
+	auto value_to_assign = InterpretNodeWithoutCopyingImmediates(ocn[2]);
 
 	//retrieve the symbol location
 #ifdef MULTITHREAD_SUPPORT
@@ -856,28 +905,27 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableN
 	node_stack.PushEvaluableNode(value_to_assign);
 
 	Concurrency::SingleLock write_lock;
-	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+	auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 	if(write_lock.owns_lock())
 		RecordStackLockForProfiling(en, variable_sid);
 
 	node_stack.PopEvaluableNode();
 #else
-	auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+	auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 #endif
 
 	bool success = false;
-	if(EvaluableNode::AreDeepEqual(*value_destination, value_to_compare))
+	if(EvaluableNode::AreDeepEqual(*symbol_location.location, value_to_compare))
 	{
-		if(is_freeable)
-		{
-			EvaluableNodeReference value_destination_node(*value_destination, true);
-			evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
-		}
+		//attempt to free if possible
+		EvaluableNodeReference value_destination_node(*symbol_location.location,
+			symbol_location.unique, symbol_location.uniqueTopNode);
+		evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
 
-		*value_destination = value_to_assign;
+		*symbol_location.location = value_to_assign;
 
 		//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-		if(!value_to_assign.unique || !top_of_stack)
+		if(!value_to_assign.unique || !symbol_location.atTopOfStack)
 			SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 
 		success = true;
@@ -890,8 +938,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableN
 
 static OpcodeInitializer _ENT_RETRIEVE(ENT_RETRIEVE, &Interpreter::InterpretNode_ENT_RETRIEVE, []() {
 	OpcodeDetails d;
-	d.parameters = R"([string|list|assoc variables])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"variables", OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(If `variables` is a string, then it gets the value on the stack specified by the string.  If `variables` is a list, it returns a list of the values on the stack specified by each element of the list interpreted as a string.  If `variables` is an assoc, it returns an assoc with the indices of the assoc which was passed in with the values being the appropriate values on the stack for each index.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -921,6 +971,7 @@ static OpcodeInitializer _ENT_RETRIEVE(ENT_RETRIEVE, &Interpreter::InterpretNode
 	{a @(target .true 0) b @(target .true [1 1])}
 ])"}
 		});
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
@@ -930,13 +981,13 @@ static OpcodeInitializer _ENT_RETRIEVE(ENT_RETRIEVE, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
 
 	//get the value(s)
-	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
+	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeTerminalNode(to_lookup->GetType()))
 	{
 		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
 
@@ -992,8 +1043,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 
 static OpcodeInitializer _ENT_EXISTS(ENT_EXISTS, &Interpreter::InterpretNode_ENT_EXISTS, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string variable)";
-	d.returns = R"(bool)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"variable", OpcodeDetails::DataType::STRING})
+	};
+	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Returns true if variable exists within visibility, false if it does not.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
@@ -1001,7 +1054,7 @@ static OpcodeInitializer _ENT_EXISTS(ENT_EXISTS, &Interpreter::InterpretNode_ENT
 	[(exists "foo") (exists "bar")]
 ))&", R"([.true .false])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::POSITION;
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
@@ -1011,7 +1064,7 @@ static OpcodeInitializer _ENT_EXISTS(ENT_EXISTS, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EXISTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
@@ -1025,8 +1078,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXISTS(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_UNASSIGN(ENT_UNASSIGN, &Interpreter::InterpretNode_ENT_UNASSIGN, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string variable1 [string variable2] ... [string variableN])";
-	d.returns = R"(bool)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"variable", OpcodeDetails::DataType::STRING | OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC, true}, true)
+	});
+	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Removes all variables that are parameters from the stack.  Returns true all variables previously existed and were unassigned.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
@@ -1035,7 +1091,8 @@ static OpcodeInitializer _ENT_UNASSIGN(ENT_UNASSIGN, &Interpreter::InterpretNode
 	(exists "foo")
 ))&", R"(.false)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
+	d.retrievesData = true;
+	d.hasSideEffects = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
@@ -1058,16 +1115,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNASSIGN(EvaluableNode *en
 		auto node_stack = CreateOpcodeStackStateSaver(string_node_to_unassign);
 
 		Concurrency::SingleLock write_lock;
-		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+		auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 		if(write_lock.owns_lock())
 			RecordStackLockForProfiling(en, variable_sid);
 
 		node_stack.PopEvaluableNode();
 	#else
-		auto [value_destination, scope, top_of_stack, is_freeable] = GetScopeStackSymbolLocation(variable_sid, true, false);
+		auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
-		scope->erase(variable_sid);
+		symbol_location.containingAssoc->erase(variable_sid);
 	}
 
 	return AllocReturn(all_unassigned, immediate_result);
@@ -1075,9 +1132,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNASSIGN(EvaluableNode *en
 
 static OpcodeInitializer _ENT_TARGET(ENT_TARGET, &Interpreter::InterpretNode_ENT_TARGET, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number|bool stack_distance] [number|string|list walk_path])";
-	d.returns = R"(any)";
-	d.description = R"(Evaluates to the node being created, referenced by the parameters by target.  Useful for serializing graph data structures or looking up data during iteration.  If `stack_distance` is a number, it climbs back up the target stack that many levels.  If `stack_distance` is a boolean, then `.true` indicates the top of the stack and `.false` indicates the bottom.  If `walk_path` is specified, it will walk from the node at `stack_distance` to the corresponding target.  If building an object, specifying `stack_distance` to true is often useful for accessing or traversing the top-level elements.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::BOOL | OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"path", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Evaluates to the node being created, referenced by the parameters by target.  Useful for serializing graph data structures or looking up data during iteration.  If `stack_distance` is a number, it climbs back up the target stack that many levels.  If `stack_distance` is a boolean, then `.true` indicates the top of the stack and `.false` indicates the bottom.  If `path` is specified, it will walk from the node at `stack_distance` to the corresponding target.  If building an object, specifying `stack_distance` to true is often useful for accessing or traversing the top-level elements.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&([
 	1
@@ -1140,7 +1200,7 @@ static OpcodeInitializer _ENT_TARGET(ENT_TARGET, &Interpreter::InterpretNode_ENT
 	d 3
 	e [0 1 2 3 0 4]
 })"},
-			{R"&((call_sandboxed {
+			{R"&((call {
 	a 0
 	b 1
 	c 2
@@ -1167,6 +1227,7 @@ static OpcodeInitializer _ENT_TARGET(ENT_TARGET, &Interpreter::InterpretNode_ENT
 		]
 })"}
 		});
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
@@ -1227,20 +1288,34 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 	if(ocn.size() > 1)
 	{
 		//if there's a second parameter, try to look up the walk path
-		EvaluableNode **target = InterpretNodeIntoDestination(&constructionStack[offset].target, ocn[1], false);
+		EvaluableNode **uninterpreted_target_location =
+			&constructionStack[offset].targetRefPtr->GetValue().nodeValue.code;
+		EvaluableNode **target = InterpretNodeIntoDestination(uninterpreted_target_location, ocn[1], false);
 		if(target == nullptr)
 			return EvaluableNodeReference::Null();
 
 		return EvaluableNodeReference(*target, false);
 	}
 
-	return EvaluableNodeReference(constructionStack[offset].target, false);
+	//need to set all of the construction stack, since nothing can be freed from wherever the target was
+	//don't want to exit the loop early because new entries in the constructionStack may be created
+	for(size_t i = offset; i < constructionStack.size(); i++)
+	{
+		if(constructionStack[i].targetOrigin != nullptr)
+		#ifdef MULTITHREAD_SUPPORT
+			constructionStack[i].targetOrigin->SetIsFreeableTopNodeAtomic(false);
+		#else
+			constructionStack[i].targetOrigin->SetIsFreeableTopNode(false);
+		#endif
+	}
+	
+	return EvaluableNodeReference(*constructionStack[offset].targetRefPtr, false);
 }
 
 static OpcodeInitializer _ENT_STACK(ENT_STACK, &Interpreter::InterpretNode_ENT_STACK, []() {
 	OpcodeDetails d;
-	d.parameters = R"( )";
-	d.returns = R"(list of assoc)";
+	d.parameters = OpcodeDetails::ParameterSchema{};
+	d.returns = OpcodeDetails::DataType::LIST;
 	d.description = R"(Evaluates to the current execution context, also known as the scope stack, containing all of the variables for each layer of the stack.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((stack))&", R"([{}])"},
@@ -1258,6 +1333,7 @@ static OpcodeInitializer _ENT_STACK(ENT_STACK, &Interpreter::InterpretNode_ENT_S
 	{a 1}
 ])"}
 		});
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
@@ -1272,8 +1348,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_ARGS(ENT_ARGS, &Interpreter::InterpretNode_ENT_ARGS, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number stack_distance])";
-	d.returns = R"(assoc)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::NUMBER, true})
+	};
+	d.returns = OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments.  If `stack_distance` is specified, then it evaluates to the context that many layers up the stack.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((call
@@ -1292,6 +1370,7 @@ static OpcodeInitializer _ENT_ARGS(ENT_ARGS, &Interpreter::InterpretNode_ENT_ARG
 	{x 1}
 ])"}
 		});
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;
@@ -1312,13 +1391,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, Ev
 	if(arg_node == nullptr)
 		return EvaluableNodeReference::Null();
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(arg_node), false, true);
+#ifdef MULTITHREAD_SUPPORT
+	arg_node->SetIsFreeableTopNodeAtomic(false);
+#else
+	arg_node->SetIsFreeableTopNode(false);
+#endif
+
+	return EvaluableNodeReference(arg_node, false);
 }
 
 static OpcodeInitializer _ENT_GET_TYPE(ENT_GET_TYPE, &Interpreter::InterpretNode_ENT_GET_TYPE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node)";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Returns a node of the type corresponding to the node.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((get_type
@@ -1336,7 +1423,7 @@ static OpcodeInitializer _ENT_GET_TYPE(ENT_GET_TYPE, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto cur = InterpretNodeForImmediateUse(ocn[0]);
@@ -1350,8 +1437,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en
 
 static OpcodeInitializer _ENT_GET_TYPE_STRING(ENT_GET_TYPE_STRING, &Interpreter::InterpretNode_ENT_GET_TYPE_STRING, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node)";
-	d.returns = R"(string)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(Returns a string that represents the type corresponding to the node.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((get_type_string
@@ -1370,7 +1459,7 @@ static OpcodeInitializer _ENT_GET_TYPE_STRING(ENT_GET_TYPE_STRING, &Interpreter:
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto cur = InterpretNodeForImmediateUse(ocn[0]);
@@ -1385,8 +1474,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableN
 
 static OpcodeInitializer _ENT_SET_TYPE(ENT_SET_TYPE, &Interpreter::InterpretNode_ENT_SET_TYPE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node [string|* type])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"type", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Creates a copy of `node`, setting the type of the node of to `type`.  If `type` is a string, it will look that up as the type, or if `type` is a node that is not a string, it will set the type to match the top node of `type`.  It will convert opcode parameters as necessary.  If `node` is an immediate type being changed to another immediate type, it will attempt to coerce the value.  If `node` is not an immediate type, such as a `list` or `assoc` or other opcode, and is being changed to another non-immediate type, it will preserve all of values.  That is, a list's first element will be the key of the number 0, second element will be the key of the number 1, etc.  If converting from an `assoc` to a type with ordered values, it will set the values in the same order as the `values` opcode.  If one of `node` and `type` is immediate and the other not, it will yield null.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((set_type
@@ -1443,7 +1535,7 @@ static OpcodeInitializer _ENT_SET_TYPE(ENT_SET_TYPE, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get the target
@@ -1470,7 +1562,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en
 	}
 	evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
 
-	if(new_type == ENT_NOT_A_BUILT_IN_TYPE)
+	if(!IsEvaluableNodeTypeValid(new_type))
 		new_type = ENT_NULL;
 
 	source->SetType(new_type, true);
@@ -1480,8 +1572,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en
 
 static OpcodeInitializer _ENT_FORMAT(ENT_FORMAT, &Interpreter::InterpretNode_ENT_FORMAT, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* data string from_format string to_format [assoc from_params] [assoc to_params])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"data", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"from_format", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"to_format", OpcodeDetails::DataType::STRING}),
+		OpcodeDetails::ParameterGroup({"from_params", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"to_params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Converts data from `from_format` into `to_format`.  Supported language types are "number", "string", and "code", where code represents everything beyond number and string.  Beyond the supported language types, additional formats that are stored in a binary string.  The additional formats are "base16", "base64", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", ">int8", ">uint8", ">int16", ">uint16", ">int32", ">uint32", ">int64", ">uint64", ">float32", ">float64", "<int8", "<uint8", "<int16", "<uint16", "<int32", "<uint32", "<int64", "<uint64", "<float32", "<float64", "json", "yaml", "date", and "time" (though date and time are special cases).  Binary types starting with a "<" represent little endian, binary types starting with a ">" represent big endian, and binary types without either will be the endianness of the machine.  Binary types will be handled as strings.  The "date" type requires additional information.  Following "date" or "time" is a colon, followed by a standard strftime date or time format string.  If `from_params` or `to_params` are specified, then it will apply the appropriate from or to as appropriate.  If the format is either "string", "json", or "yaml", then the key "sort_keys" can be used to specify a boolean value, if true, then it will sort the keys, otherwise the default behavior is to emit the keys based on memory layout.  If the format is date or time, then the to or from params can be an assoc with "locale" as an optional key.  If date then "time_zone" is also allowed.  The locale is provided, then it will leverage operating system support to apply appropriate formatting, such as en_US.  Note that UTF-8 is assumed and automatically added to the locale.  If no locale is specified, then the default will be used.  If converting to or from dates, if "time_zone" is specified, it will use the standard time_zone name, if unspecified or empty string, it will assume the current time zone.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((map
@@ -1674,7 +1772,7 @@ constexpr DestinationType ExpandCharStorage(char &value)
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 3)
+	if(ocn.size() < 3) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	StringRef from_type, to_type;
@@ -1711,8 +1809,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	const std::string date_string("date:");
 	const std::string time_string("time:");
 
-	//TODO: when moving to C++20, can change to use std::endian::native
-	static bool big_endian = (*reinterpret_cast<char *>(new int32_t(0x12345678)) == 0x12);
+	static constexpr bool big_endian = (std::endian::native == std::endian::big);
 
 	if(from_type == GetStringIdFromNodeType(ENT_NUMBER))
 	{
@@ -1930,11 +2027,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		}
 		else //need to parse the string
 		{
-			auto &from_type_str = string_intern_pool.GetStringFromID(from_type);
+			auto from_type_str = string_intern_pool.GetStringViewFromID(from_type);
 
 			//see if it starts with the date or time string
 			if(from_type_str.compare(0, date_string.size(), date_string) == 0)
 			{
+				std::string format(begin(from_type_str) + date_string.size(), end(from_type_str));
 				std::string locale;
 				std::string timezone;
 				if(EvaluableNode::IsAssociativeArray(from_params))
@@ -1945,10 +2043,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				}
 
 				use_number = true;
-				number_value = GetNumSecondsSinceEpochFromDateTimeString(string_value, from_type_str.c_str() + date_string.size(), locale, timezone);
+				number_value = GetNumSecondsSinceEpochFromDateTimeString(string_value, format, locale, timezone);
 			}
 			else if(from_type_str.compare(0, time_string.size(), time_string) == 0)
 			{
+				std::string format(begin(from_type_str) + time_string.size(), end(from_type_str));
 				std::string locale;
 				if(EvaluableNode::IsAssociativeArray(from_params))
 				{
@@ -1957,7 +2056,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				}
 
 				use_number = true;
-				number_value = GetNumSecondsSinceMidnight(string_value, from_type_str.c_str() + time_string.size(), locale);
+				number_value = GetNumSecondsSinceMidnight(string_value, format, locale);
 
 			}
 		}
@@ -2269,11 +2368,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	}
 	else //need to parse the string
 	{
-		auto &to_type_str = string_intern_pool.GetStringFromID(to_type);
+		auto to_type_str = string_intern_pool.GetStringViewFromID(to_type);
 
 		//if it starts with the date or time string
 		if(to_type_str.compare(0, date_string.size(), date_string) == 0)
 		{
+			std::string format(begin(to_type_str) + date_string.size(), end(to_type_str));
 			std::string locale;
 			std::string timezone;
 			if(EvaluableNode::IsAssociativeArray(to_params))
@@ -2289,10 +2389,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			else if(use_int_number)		num_secs_from_epoch = static_cast<double>(int_number_value);
 			else if(use_code)			num_secs_from_epoch = static_cast<double>(EvaluableNode::ToNumber(code_value));
 
-			string_value = GetDateTimeStringFromNumSecondsSinceEpoch(num_secs_from_epoch, to_type_str.c_str() + date_string.size(), locale, timezone);
+			string_value = GetDateTimeStringFromNumSecondsSinceEpoch(num_secs_from_epoch, format, locale, timezone);
 		}
 		else if(to_type_str.compare(0, time_string.size(), time_string) == 0)
 		{
+			std::string format(begin(to_type_str) + time_string.size(), end(to_type_str));
 			std::string locale;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
@@ -2306,7 +2407,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			else if(use_int_number)		num_secs_from_midnight = static_cast<double>(int_number_value);
 			else if(use_code)			num_secs_from_midnight = static_cast<double>(EvaluableNode::ToNumber(code_value));
 
-			string_value = GetTimeStringFromNumSecondsSinceMidnight(num_secs_from_midnight, to_type_str.c_str() + time_string.size(), locale);
+			string_value = GetTimeStringFromNumSecondsSinceMidnight(num_secs_from_midnight, format, locale);
 		}
 	}
 

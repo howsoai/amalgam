@@ -73,6 +73,7 @@ if(IS_MSVC)
 message(STATUS "MSVC version                 : ${MSVC_VERSION}")
 message(STATUS "MSVC toolset                 : ${MSVC_TOOLSET_VERSION}")
 endif()
+message(STATUS "C++ standard                 : ${CMAKE_CXX_STANDARD} (required: ${CMAKE_CXX_STANDARD_REQUIRED}, extensions: ${CMAKE_CXX_EXTENSIONS})")
 message(STATUS "Compiler C++ flags           : ${CMAKE_CXX_FLAGS}")
 message(STATUS "Compiler C++ debug flags     : ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "Compiler C++ release flags   : ${CMAKE_CXX_FLAGS_RELEASE}")
@@ -100,7 +101,7 @@ set(COMMON_SOURCE
     src/3rd_party/murmurhash3/MurmurHash3.h
     src/3rd_party/simdjson/simdjson.cpp
     src/3rd_party/simdjson/simdjson.h
-    src/3rd_party/rapidyaml/rapidyaml-0.13.0.hpp
+    src/3rd_party/rapidyaml/rapidyaml.v0.16.0.singlehdr.hpp
     src/3rd_party/skarupke_maps/bytell_hash_map.hpp
     src/3rd_party/skarupke_maps/flat_hash_map.hpp
     src/3rd_party/swiftdtoa/SwiftDtoa.cpp
@@ -115,7 +116,6 @@ set(COMMON_SOURCE
     src/Amalgam/BinaryPacking.cpp
     src/Amalgam/BinaryPacking.h
     src/Amalgam/CompactVector.h
-    src/Amalgam/Conviction.h
     src/Amalgam/Cryptography.cpp
     src/Amalgam/Cryptography.h
     src/Amalgam/DateTimeFormat.cpp
@@ -129,6 +129,9 @@ set(COMMON_SOURCE
     src/Amalgam/entity/EntityManipulation.h
     src/Amalgam/entity/EntityQueries.cpp
     src/Amalgam/entity/EntityQueries.h
+    src/Amalgam/entity/EntityQueriesClustering.cpp
+    src/Amalgam/entity/EntityQueriesClustering.h
+    src/Amalgam/entity/EntityQueriesDensityFunctions.h
     src/Amalgam/entity/EntityQueriesStatistics.h
     src/Amalgam/entity/EntityQueryBuilder.h
     src/Amalgam/entity/EntityQueryCaches.cpp
@@ -140,6 +143,8 @@ set(COMMON_SOURCE
     src/Amalgam/evaluablenode/EvaluableNodeManagement.cpp
     src/Amalgam/evaluablenode/EvaluableNodeManagement.h
     src/Amalgam/evaluablenode/EvaluableNodeReference.h
+    src/Amalgam/evaluablenode/EvaluableNodeTreeAlgebra.cpp
+    src/Amalgam/evaluablenode/EvaluableNodeTreeAlgebra.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeDifference.cpp
     src/Amalgam/evaluablenode/EvaluableNodeTreeDifference.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeFunctions.cpp
@@ -161,6 +166,7 @@ set(COMMON_SOURCE
     src/Amalgam/IntegerSet.h
     src/Amalgam/interpreter/Interpreter.cpp
     src/Amalgam/interpreter/Interpreter.h
+    src/Amalgam/interpreter/InterpreterApplySpecializations.h
     src/Amalgam/interpreter/InterpreterConcurrencyManager.h
     src/Amalgam/interpreter/InterpreterDebugger.cpp
     src/Amalgam/interpreter/InterpreterUtilities.h

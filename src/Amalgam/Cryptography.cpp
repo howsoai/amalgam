@@ -23,7 +23,7 @@ std::pair<std::string, std::string> GenerateSignatureKeyPair()
 	std::string pk_s(reinterpret_cast<char *>(&pk[0]), crypto_sign_PUBLICKEYBYTES);
 	std::string sk_s(reinterpret_cast<char *>(&sk[0]), crypto_sign_SECRETKEYBYTES);
 
-	return std::make_pair(pk_s, sk_s);
+	return {pk_s, sk_s};
 }
 
 std::pair<std::string, std::string> GenerateEncryptionKeyPair()
@@ -35,7 +35,7 @@ std::pair<std::string, std::string> GenerateEncryptionKeyPair()
 	std::string pk_s(reinterpret_cast<char *>(&pk[0]), crypto_box_PUBLICKEYBYTES);
 	std::string sk_s(reinterpret_cast<char *>(&sk[0]), crypto_box_SECRETKEYBYTES);
 
-	return std::make_pair(pk_s, sk_s);
+	return {pk_s, sk_s};
 }
 
 std::string SignMessage(std::string &message, std::string &secret_key)

@@ -1,6 +1,8 @@
 ### Opcode: `and`
 #### Parameters
-`[bool condition1] [bool condition2] ... [bool conditionN]`
+`[bool condition1] [bool condition2] ...`
+#### Returns
+`any`
 #### Description
 If all condition expressions are true, evaluates to `conditionN`.  Otherwise evaluates to false.
 #### Details
@@ -32,7 +34,9 @@ Output:
 
 ### Opcode: `or`
 #### Parameters
-`[bool condition1] [bool condition2] ... [bool conditionN]`
+`[bool condition1] [bool condition2] ...`
+#### Returns
+`any`
 #### Description
 If all condition expressions are false, evaluates to false.  Otherwise evaluates to the first condition that is true.
 #### Details
@@ -88,7 +92,9 @@ Output:
 
 ### Opcode: `xor`
 #### Parameters
-`[bool condition1] [bool condition2] ... [bool conditionN]`
+`[bool condition1] [bool condition2] ...`
+#### Returns
+`any`
 #### Description
 If an even number of condition expressions are true, evaluates to false.  Otherwise evaluates to true.
 #### Details
@@ -137,6 +143,8 @@ Output:
 ### Opcode: `not`
 #### Parameters
 `bool condition`
+#### Returns
+`bool`
 #### Description
 Evaluates to false if `condition` is true, true if false.
 #### Details
@@ -184,7 +192,9 @@ Output:
 
 ### Opcode: `=`
 #### Parameters
-`[* node1] [* node2] ... [* nodeN]`
+`[any node1] [any node2] ...`
+#### Returns
+`bool`
 #### Description
 Evaluates to true if the value of all nodes are equal, false otherwise. Values of null are considered equal, and any complex data structures will be traversed evaluated for deep equality.
 #### Details
@@ -251,7 +261,9 @@ Output:
 
 ### Opcode: `!=`
 #### Parameters
-`[* node1] [* node2] ... [* nodeN]`
+`[any node1] [any node2] ...`
+#### Returns
+`bool`
 #### Description
 Evaluates to true if no two values are equal, false otherwise.  Values of null are considered equal, and any complex data structures will be traversed evaluated for deep equality.
 #### Details
@@ -331,7 +343,9 @@ Output:
 
 ### Opcode: `<`
 #### Parameters
-`[* node1] [* node2] ... [* nodeN]`
+`[number|string node1] [number|string node2] ...`
+#### Returns
+`bool`
 #### Description
 Evaluates to true if all values are in strict increasing order, false otherwise.
 #### Details
@@ -379,7 +393,9 @@ Output:
 
 ### Opcode: `<=`
 #### Parameters
-`[* node1] [* node2] ... [* nodeN]`
+`[number|string node1] [number|string node2] ...`
+#### Returns
+`bool`
 #### Description
 Evaluates to true if all values are in nondecreasing order, false otherwise.
 #### Details
@@ -443,7 +459,9 @@ Output:
 
 ### Opcode: `>`
 #### Parameters
-`[* node1] [* node2] ... [* nodeN]`
+`[number|string node1] [number|string node2] ...`
+#### Returns
+`bool`
 #### Description
 Evaluates to true if all values are in strict decreasing order, false otherwise.
 #### Details
@@ -491,7 +509,9 @@ Output:
 
 ### Opcode: `>=`
 #### Parameters
-`[* node1] [* node2] ... [* nodeN]`
+`[number|string node1] [number|string node2] ...`
+#### Returns
+`bool`
 #### Description
 Evaluates to true if all values are in nonincreasing order, false otherwise.
 #### Details
@@ -555,7 +575,9 @@ Output:
 
 ### Opcode: `~`
 #### Parameters
-`[* node1] [* node2] ... [* nodeN]`
+`[any node1] [any node2] ...`
+#### Returns
+`bool`
 #### Description
 Evaluates to true if all values are of the same data type, false otherwise.
 #### Details
@@ -587,7 +609,9 @@ Output:
 
 ### Opcode: `!~`
 #### Parameters
-`[* node1] [* node2] ... [* nodeN]`
+`[any node1] [any node2] ...`
+#### Returns
+`bool`
 #### Description
 Evaluates to true if no two values are of the same data types, false otherwise.
 #### Details

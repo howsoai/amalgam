@@ -5,5 +5,5 @@
     "Minkowski", "Lukaszyk", "Karmowski", "surprisal", "surprisals", "attrib", "attribs", "cyclics",
     "laplace", "yaml", "Huffman", "Levenshtein", "Vose", "contrib", "contribs", "sid", "sids", "sbfds", "preallocates",
     "nat", "nats", "bais", "backslashified", "backslashify", "repl", "immediates", "erbr", "memoize", "memoized"],
-  "files.trimTrailingWhitespace": false
+  "files.trimTrailingWhitespace": true
 }

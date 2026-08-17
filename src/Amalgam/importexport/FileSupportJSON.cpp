@@ -161,7 +161,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 				}
 				else //just use the string directly by reference (without making a copy)
 				{
-					auto &str = string_intern_pool.GetStringFromID(cn_id);
+					auto str = string_intern_pool.GetStringViewFromID(cn_id);
 					EscapeAndAppendStringToJsonString(str, json_str);
 				}
 
@@ -180,7 +180,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 		{
 			std::vector<StringInternPool::StringID> key_sids;
 			key_sids.reserve(mcn.size());
-			for(auto &[key, _] : mcn)
+			for(auto &key : mcn | std::views::keys)
 				key_sids.push_back(key);
 
 			std::sort(begin(key_sids), end(key_sids), StringIDNaturalCompareSort);
@@ -199,7 +199,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 				}
 				else //just use the string directly by reference (without making a copy)
 				{
-					auto &str = string_intern_pool.GetStringFromID(key_sids[i]);
+					auto str = string_intern_pool.GetStringViewFromID(key_sids[i]);
 					EscapeAndAppendStringToJsonString(str, json_str);
 				}
 
@@ -217,7 +217,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 
 		json_str += '}';
 	}
-	else if(!en->IsImmediate())
+	else if(!en->IsTerminal())
 	{
 		auto node_type = en->GetType();
 		if(node_type != ENT_LIST)
@@ -274,7 +274,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 		}
 		else
 		{
-			auto &str_value = en->GetStringValue();
+			auto str_value = en->GetStringView();
 			EscapeAndAppendStringToJsonString(str_value, json_str);
 		}
 	}
@@ -327,17 +327,17 @@ EvaluableNode *EvaluableNodeJSONTranslation::JsonToEvaluableNode(EvaluableNodeMa
 std::pair<std::string, bool> EvaluableNodeJSONTranslation::EvaluableNodeToJson(EvaluableNode *code, bool sort_keys)
 {
 	if(code == nullptr)
-		return std::make_pair("null", true);
+		return {"null", true};
 
 	//if need cycle check, double-check
 	if(!EvaluableNode::CanNodeTreeBeFlattened(code))
-		return std::make_pair("", false);
+		return {"", false};
 
 	std::string json_str;
 	if(EvaluableNodeToJsonStringRecurse(code, json_str, sort_keys))
-		return std::make_pair(json_str, true);
+		return {json_str, true};
 	else
-		return std::make_pair("", false);
+		return {"", false};
 }
 
 EvaluableNode *EvaluableNodeJSONTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)

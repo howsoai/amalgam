@@ -46,7 +46,6 @@ enum EvaluableNodeType : uint8_t
 	ENT_SEQUENCE,
 	ENT_LAMBDA,
 	ENT_CALL,
-	ENT_CALL_SANDBOXED,
 	ENT_WHILE,
 	ENT_CONCLUDE,
 	ENT_RETURN,
@@ -130,8 +129,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_APPEND,
 	ENT_SIZE,
 	ENT_GET,
-	ENT_SET,
-	ENT_REPLACE,
+	ENT_MODIFY,
 	ENT_INDICES,
 	ENT_VALUES,
 	ENT_CONTAINS_INDEX,
@@ -178,7 +176,6 @@ enum EvaluableNodeType : uint8_t
 	ENT_REMOVE_FROM_ENTITIES,
 	ENT_RETRIEVE_FROM_ENTITY,
 	ENT_CALL_ENTITY,
-	ENT_CALL_ENTITY_GET_CHANGES,
 	ENT_CALL_ON_ENTITY,
 	ENT_CALL_CONTAINER,
 
@@ -216,6 +213,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS,
 	ENT_QUERY_ENTITY_KL_DIVERGENCES,
 	ENT_QUERY_ENTITY_CUMULATIVE_NEAREST_ENTITY_WEIGHTS,
+	ENT_QUERY_ENTITY_CLUSTERS,
 
 	//Metadata
 	ENT_GET_ANNOTATIONS,
@@ -239,6 +237,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_UNION,
 	ENT_DIFFERENCE,
 	ENT_MIX,
+	ENT_SIMPLIFY,
 
 	//Entity Comparison and Evolution
 	ENT_TOTAL_ENTITY_SIZE,
@@ -299,42 +298,6 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_false,
 	ENBISI_infinity,
 	ENBISI_neg_infinity,
-	ENBISI_zero,
-	ENBISI_one_half,
-	ENBISI_one,
-	ENBISI_two,
-	ENBISI_three,
-	ENBISI_four,
-	ENBISI_five,
-	ENBISI_six,
-	ENBISI_seven,
-	ENBISI_eight,
-	ENBISI_nine,
-	ENBISI_ten,
-	ENBISI_eleven,
-	ENBISI_twelve,
-	ENBISI_neg_one,
-	ENBISI_neg_two,
-	ENBISI_zero_number_key,
-	ENBISI_one_half_number_key,
-	ENBISI_one_number_key,
-	ENBISI_two_number_key,
-	ENBISI_three_number_key,
-	ENBISI_four_number_key,
-	ENBISI_five_number_key,
-	ENBISI_six_number_key,
-	ENBISI_seven_number_key,
-	ENBISI_eight_number_key,
-	ENBISI_nine_number_key,
-	ENBISI_ten_number_key,
-	ENBISI_eleven_number_key,
-	ENBISI_twelve_number_key,
-	ENBISI_neg_one_number_key,
-	ENBISI_neg_two_number_key,
-	ENBISI_null,
-	ENBISI_empty_list,
-	ENBISI_empty_assoc,
-	ENBISI_null_key,
 	ENBISI_true_key,
 	ENBISI_false_key,
 
@@ -347,6 +310,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_syntax,
 	ENBISI_distance,
 	ENBISI_opcodes,
+	ENBISI_idioms,
 
 	//file storage options
 	ENBISI_include_rand_seeds,
@@ -371,6 +335,16 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_require_version_compatibility,
 	ENBISI_amlg_version,
 	ENBISI_version_compatible,
+
+	//execution constraints
+	ENBISI_max_node_operations,
+	ENBISI_max_node_allocations,
+	ENBISI_max_operation_depth,
+	ENBISI_read_access,
+	ENBISI_write_access,
+	ENBISI_max_contained_entities,
+	ENBISI_max_contained_entity_depth,
+	ENBISI_max_entity_id_length,
 
 	//entity access parameters
 	ENBISI_accessing_entity,
@@ -445,11 +419,14 @@ enum EvaluableNodeBuiltInStringId
 
 	//mutate opcode mutation types
 	ENBISI_change_type,
-	ENBISI_delete,
 	ENBISI_insert,
+	ENBISI_remove,
+	ENBISI_simplify_node,
+	ENBISI_insert_element,
+	ENBISI_remove_element,
+	ENBISI_replace_element_with_copy,
 	ENBISI_swap_elements,
-	ENBISI_deep_copy_elements,
-	ENBISI_delete_elements,
+	ENBISI_remove_all_elements,
 
 	//mix parameters
 	ENBISI_string_edit_distance,

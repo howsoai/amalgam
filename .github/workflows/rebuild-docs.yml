@@ -21,11 +21,15 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # Check out with a PAT so that the workflow can make commits that re-trigger the PR build
           token: ${{ secrets.HOWSOAI_WORKFLOW_AUTOMATION_TOKEN }}
           ref: ${{ github.head_ref }}
+
+      - name: Record checked-out SHA
+        id: checked-out
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Download Artifact
         uses: actions/download-artifact@v8
@@ -55,13 +59,17 @@ jobs:
       - name: Commit changes
         id: commit-changes
         run: |
-          git pull
           if [ -n "$(git status --porcelain)" ]; then
             echo "Changes to docs files detected. Making a new commit..."
             git config user.name "howso-automation"
             git config user.email "support@howso.com"
             git add -A docs/
             git commit -m "Automated docs rebuild"
+            git fetch --no-tags origin "${{ github.head_ref }}"
+            if [ "$(git rev-parse FETCH_HEAD)" != "${{ steps.checked-out.outputs.sha }}" ]; then
+              echo "PR branch moved since checkout; skipping push."
+              exit 0
+            fi
             git push
           else
             echo "No changes detected in the repository."

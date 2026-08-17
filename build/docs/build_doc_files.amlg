@@ -37,7 +37,11 @@
 	(store "./distance_and_surprisal.md" (concat
 		(help "distance") "\n"
 	))
-	
+
+	(store "./idioms.md" (concat
+		(help "idioms") "\n"
+	))
+
 	(assign "current_opcode_group" "")
 
 	(store "./opcodes.md" (concat
@@ -62,7 +66,9 @@
 
 							(concat
 								result_string
-								"  - [" opcode "](./"
+								"  - ["
+								(if (= opcode "*") "\*" opcode)
+								"](./"
 								(call convert_group_name {opcode_group (get details "opcode_group")})
 								".md#opcode-" opcode ")"
 								"\n")
@@ -96,6 +102,8 @@
 								"### Opcode: `" opcode "`\n"
 								"#### Parameters\n"
 								"`" (get details "parameters") "`\n"
+								"#### Returns\n"
+								"`" (get details "returns") "`\n"
 								"#### Description\n"
 								(get details "description") "\n"
 								"#### Details\n"

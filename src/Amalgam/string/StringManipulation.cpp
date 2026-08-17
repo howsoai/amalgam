@@ -8,6 +8,10 @@
 
 //system headers:
 #include <algorithm>
+#include <charconv>
+#include <iterator>
+#include <limits>
+#include <ranges>
 #include <sstream>
 #include <string>
 
@@ -28,30 +32,9 @@ std::string StringManipulation::NumberToString(double value)
 
 std::string StringManipulation::NumberToString(size_t value)
 {
-	//do this our own way because regular string manipulation libraries are slow and measurably impact performance
-	constexpr size_t max_num_digits = std::numeric_limits<size_t>::digits / 3; //max of binary digits per character
-	constexpr size_t buffer_size = max_num_digits + 2;
-	char buffer[buffer_size];
-	char *p = &buffer[0];
-
-	if(value == 0) //check for zero because it's a very common case for integers
-		*p++ = '0';
-	else //convert each character
-	{
-		//peel off digits and put them in the next position for the string (reverse when done)
-		char *buffer_start = &buffer[0];
-		while(value != 0)
-		{
-			//pull off the least significant digit and convert it to a number character
-			*p++ = ('0' + (value % 10));
-			value /= 10;
-		}
-
-		//put back in original order
-		std::reverse(buffer_start, p);
-	}
-	*p = '\0';	//terminate string
-	return std::string(&buffer[0]);
+	char buffer[std::numeric_limits<size_t>::digits10 + 1];
+	auto [end_ptr, error_code] = std::to_chars(std::begin(buffer), std::end(buffer), value);
+	return std::string(buffer, end_ptr);
 }
 
 std::string StringManipulation::RemoveFirstToken(std::string &str)
@@ -125,16 +108,12 @@ std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_str
 	return args;
 }
 
-std::vector<std::string> StringManipulation::Split(const std::string &s, char delim)
+std::vector<std::string> StringManipulation::Split(std::string_view s, char delim)
 {
-	std::vector<std::string> ret;
-	std::stringstream ss{ s };
-	std::string item;
-
-	while(std::getline(ss, item, delim))
-		ret.push_back(item);
-
-	return ret;
+	std::vector<std::string> out;
+	for(auto sub : s | std::views::split(delim))
+		out.emplace_back(sub.begin(), sub.end());
+	return out;
 }
 
 std::vector<std::string> StringManipulation::SplitByLines(std::string_view full_string)
@@ -293,7 +272,7 @@ std::string StringManipulation::Base64ToBinaryString(std::string &base64_string)
 	return binary_string;
 }
 
-int StringManipulation::CompareNumberInStringRightJustified(const std::string &a, const std::string &b, size_t &a_index, size_t &b_index)
+int StringManipulation::CompareNumberInStringRightJustified(std::string_view a, std::string_view b, size_t &a_index, size_t &b_index)
 {
 	//comparison result of first non-matching digit
 	int compare_val_if_same_length = 0;
@@ -342,7 +321,7 @@ int StringManipulation::CompareNumberInStringRightJustified(const std::string &a
 	return 0;
 }
 
-int StringManipulation::CompareNumberInStringLeftJustified(const std::string &a, const std::string &b, size_t &a_index, size_t &b_index)
+int StringManipulation::CompareNumberInStringLeftJustified(std::string_view a, std::string_view b, size_t &a_index, size_t &b_index)
 {
 	while(1)
 	{
@@ -385,7 +364,7 @@ int StringManipulation::CompareNumberInStringLeftJustified(const std::string &a,
 	return 0;
 }
 
-int StringManipulation::StringNaturalCompare(const std::string &a, const std::string &b)
+int StringManipulation::StringNaturalCompare(std::string_view a, std::string_view b)
 {
 	size_t a_index = 0, b_index = 0;
 

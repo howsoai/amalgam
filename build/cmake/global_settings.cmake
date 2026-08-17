@@ -5,6 +5,18 @@
 # For IDEs that support it, turn on folders:
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# C++ standard floor, enforced on every OS/arch/compiler combination:
+# Note: the presets set this in the cache, so a build configured outside of a preset (or with a
+#       preset that stops inheriting "base") is caught here rather than silently falling back to
+#       the compiler default.
+set(MIN_CXX_STANDARD 20)
+if(NOT CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS MIN_CXX_STANDARD)
+    message(FATAL_ERROR "C++${MIN_CXX_STANDARD} or newer is required, but CMAKE_CXX_STANDARD is '${CMAKE_CXX_STANDARD}'")
+endif()
+if(NOT CMAKE_CXX_STANDARD_REQUIRED)
+    message(FATAL_ERROR "CMAKE_CXX_STANDARD_REQUIRED must be set so the C++${MIN_CXX_STANDARD} floor cannot be silently decayed")
+endif()
+
 # Remove library prefix for compatibility with callers who don't expect a lib prefix:
 # TODO 15993: eventually update callers to understand libs on platforms that typically have prefix
 #       Example: libamalgam.so/libamalgam.dylib/amalgam.dll

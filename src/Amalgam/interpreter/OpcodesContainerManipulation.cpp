@@ -5,14 +5,15 @@
 //system headers:
 #include <regex>
 
-
 static std::string _opcode_group = "Container Manipulation";
 
 static OpcodeInitializer _ENT_FIRST(ENT_FIRST, &Interpreter::InterpretNode_ENT_FIRST, []() {
 	OpcodeDetails d;
-	d.parameters = R"([list|assoc|number|string data])";
-	d.returns = R"(any)";
-	d.description = R"(Evaluates to the first element of `data`.  If `data` is a list, it will be the first element.  If `data` is an assoc, it will evaluate to the first element by assoc storage, but order does not matter.  If `data` is a string, it will be the first character.  If `data` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Evaluates to the first element of `node`.  If `node` is a list, it will be the first element.  If `node` is an assoc, it will evaluate to the first element by assoc storage, but order does not matter.  If `node` is a string, it will be the first character.  If `node` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((first
 	[4 9.2 "this"]
@@ -34,12 +35,16 @@ static OpcodeInitializer _ENT_FIRST(ENT_FIRST, &Interpreter::InterpretNode_ENT_F
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	//get the "list" itself
-	auto list = InterpretNodeForImmediateUse(ocn[0]);
-	if(list == nullptr)
+	EvaluableNodeReference list;
+	if(immediate_result.AnyImmediateType())
+		list = InterpretNodeForImmediateUse(ocn[0]);
+	else
+		list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+
+	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
 
 	if(list->IsOrderedArray())
@@ -68,7 +73,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 
 			if(list.unique && !list->GetNeedCycleCheck())
 			{
-				for(auto &[_, cn] : list_mcn)
+				for(auto &cn : list_mcn | std::views::values)
 				{
 					if(cn != first_en)
 						evaluableNodeManager->FreeNodeTree(cn);
@@ -78,7 +83,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 			return EvaluableNodeReference(first_en, list.unique);
 		}
 	}
-	else //if(list->IsImmediate())
+	else //if(list->IsTerminal())
 	{
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
@@ -86,9 +91,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 			if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
-			auto &s = string_intern_pool.GetStringFromID(sid);
+			auto s = string_intern_pool.GetStringViewFromID(sid);
 			size_t utf8_char_length = StringManipulation::GetUTF8CharacterLength(s, 0);
-			std::string substring = s.substr(0, utf8_char_length);
+			std::string_view substring = s.substr(0, utf8_char_length);
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
 			return AllocReturn(substring, immediate_result);
@@ -113,9 +118,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_TAIL(ENT_TAIL, &Interpreter::InterpretNode_ENT_TAIL, []() {
 	OpcodeDetails d;
-	d.parameters = R"([list|assoc|number|string data] [number retain_count])";
-	d.returns = R"(list)";
-	d.description = R"(Evaluates to everything but the first element.  If `data` is a list, it will be a list of all but the first element.  If `data` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, but order does not matter.  If `data` is a string, it will be all but the first character.  If `data` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero.  If a `retain_count` is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first element).)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"retain_count", OpcodeDetails::DataType::NUMBER, true})
+	};
+	d.returns = OpcodeDetails::DataType::LIST;
+	d.description = R"(Evaluates to everything but the first element.  If `node` is a list, it will be a list of all but the first element.  If `node` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, but order does not matter.  If `node` is a string, it will be all but the first character.  If `node` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero.  If a `retain_count` is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first element).)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((tail
 	[4 9.2 "this"]
@@ -305,11 +313,16 @@ R"&(^\s*\{\s*
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto list = InterpretNodeForImmediateUse(ocn[0]);
-	if(list == nullptr)
+	EvaluableNodeReference list;
+	if(immediate_result.AnyImmediateType())
+		list = InterpretNodeForImmediateUse(ocn[0]);
+	else
+		list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+
+	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateOpcodeStackStateSaver(list);
@@ -375,7 +388,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			return list;
 		}
 	}
-	else //list->IsImmediate()
+	else //list->IsTerminal()
 	{
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
@@ -383,7 +396,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
-			auto &s = string_intern_pool.GetStringFromID(sid);
+			auto s = string_intern_pool.GetStringViewFromID(sid);
 
 			//remove the first element(s)
 			size_t num_chars_to_drop = 0;
@@ -401,7 +414,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			//drop the number of characters before this length
 			size_t utf8_start_offset = StringManipulation::GetNthUTF8CharacterOffset(s, num_chars_to_drop);
 
-			std::string substring = s.substr(utf8_start_offset, s.size() - utf8_start_offset);
+			std::string_view substring = s.substr(utf8_start_offset, s.size() - utf8_start_offset);
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 			return AllocReturn(substring, immediate_result);
 		}
@@ -424,9 +437,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_LAST(ENT_LAST, &Interpreter::InterpretNode_ENT_LAST, []() {
 	OpcodeDetails d;
-	d.parameters = R"([list|assoc|number|string data])";
-	d.returns = R"(any)";
-	d.description = R"(Evaluates to the last element of `data`.  If `data` is a list, it will be the last element.  If `data` is an assoc, it will evaluate to the first element by assoc storage, because order does not matter.  If `data` is a string, it will be the last character.  If `data` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Evaluates to the last element of `node`.  If `node` is a list, it will be the last element.  If `node` is an assoc, it will evaluate to the first element by assoc storage, because order does not matter.  If `node` is a string, it will be the last character.  If `node` is a number, it will evaluate to 1 if nonzero, 0 if zero.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((last
 	[4 9.2 "this"]
@@ -448,12 +463,16 @@ static OpcodeInitializer _ENT_LAST(ENT_LAST, &Interpreter::InterpretNode_ENT_LAS
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	//get the list itself
-	auto list = InterpretNodeForImmediateUse(ocn[0]);
-	if(list == nullptr)
+	EvaluableNodeReference list;
+	if(immediate_result.AnyImmediateType())
+		list = InterpretNodeForImmediateUse(ocn[0]);
+	else
+		list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+
+	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
 
 	if(list->IsOrderedArray())
@@ -484,7 +503,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 
 			if(list.unique && !list->GetNeedCycleCheck())
 			{
-				for(auto &[_, cn] : list_mcn)
+				for(auto &cn : list_mcn | std::views::values)
 				{
 					if(cn != last_en)
 						evaluableNodeManager->FreeNodeTree(cn);
@@ -494,7 +513,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 			return EvaluableNodeReference(last_en, list.unique);
 		}
 	}
-	else //list->IsImmediate()
+	else //list->IsTerminal()
 	{
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
@@ -502,11 +521,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 			if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
-			auto &s = string_intern_pool.GetStringFromID(sid);
+			auto s = string_intern_pool.GetStringViewFromID(sid);
 
 			auto [utf8_char_start_offset, utf8_char_length] = StringManipulation::GetLastUTF8CharacterOffsetAndLength(s);
 
-			std::string substring = s.substr(utf8_char_start_offset, utf8_char_length);
+			std::string_view substring = s.substr(utf8_char_start_offset, utf8_char_length);
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
 			return AllocReturn(substring, immediate_result);
@@ -530,9 +549,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_TRUNC(ENT_TRUNC, &Interpreter::InterpretNode_ENT_TRUNC, []() {
 	OpcodeDetails d;
-	d.parameters = R"([list|assoc|number|string data] [number retain_count])";
-	d.returns = R"(list)";
-	d.description = R"(Truncates, evaluates to everything in `data` but the last element. If `data` is a list, it will be a list of all but the last element.  If `data` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, because order does not matter.  If `data` is a string, it will be all but the last character.  If `data` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If `truncate_count` is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1, indicating all but the last.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"retain_count", OpcodeDetails::DataType::NUMBER, true})
+	};
+	d.returns = OpcodeDetails::DataType::LIST;
+	d.description = R"(Truncates, evaluates to everything in `node` but the last element. If `node` is a list, it will be a list of all but the last element.  If `node` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, because order does not matter.  If `node` is a string, it will be all but the last character.  If `node` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If `truncate_count` is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1, indicating all but the last.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((trunc
 	[4 9.2 "end"]
@@ -723,11 +745,16 @@ R"&(^\s*\{\s*
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto list = InterpretNodeForImmediateUse(ocn[0]);
-	if(list == nullptr)
+	EvaluableNodeReference list;
+	if(immediate_result.AnyImmediateType())
+		list = InterpretNodeForImmediateUse(ocn[0]);
+	else
+		list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+
+	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateOpcodeStackStateSaver(list);
@@ -789,7 +816,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 
 		return list;
 	}
-	else //if(list->IsImmediate())
+	else //if(list->IsTerminal())
 	{
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
@@ -797,7 +824,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 			if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
-			auto &s = string_intern_pool.GetStringFromID(sid);
+			auto s = string_intern_pool.GetStringViewFromID(sid);
 
 			//remove the last element(s)
 			size_t num_chars_to_keep = 0;
@@ -815,7 +842,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 
 			//remove everything after after this length
 			size_t utf8_end_offset = StringManipulation::GetNthUTF8CharacterOffset(s, num_chars_to_keep);
-			std::string substring = s.substr(0, utf8_end_offset);
+			std::string_view substring = s.substr(0, utf8_end_offset);
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
 			return AllocReturn(substring, immediate_result);
@@ -840,8 +867,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_APPEND(ENT_APPEND, &Interpreter::InterpretNode_ENT_APPEND, []() {
 	OpcodeDetails d;
-	d.parameters = R"([list|assoc|* collection1] [list|assoc|* collection2] ... [list|assoc|* collectionN])";
-	d.returns = R"(list|assoc)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::ANY_BASIC, true}, true),
+	});
+	d.returns = OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Evaluates to a new list or assoc which merges all lists, `collection1` through `collectionN`, based on parameter order. If any assoc is passed in, then returns an assoc (lists will be automatically converted to an assoc with the indices as keys and the list elements as values). If a non-list and non-assoc is specified, then it just adds that one element to the list.  In order to append a list or assoc to the first collection, it must be wrapped in an additional layer.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((append
@@ -891,7 +921,6 @@ static OpcodeInitializer _ENT_APPEND(ENT_APPEND, &Interpreter::InterpretNode_ENT
 	3 "end"
 })"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 18.5;
 	d.opcodeGroup = _opcode_group;
@@ -901,7 +930,7 @@ static OpcodeInitializer _ENT_APPEND(ENT_APPEND, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//pull the first element and reuse its memory if possible;
@@ -1014,8 +1043,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_SIZE(ENT_SIZE, &Interpreter::InterpretNode_ENT_SIZE, []() {
 	OpcodeDetails d;
-	d.parameters = R"([list|assoc|string collection] collection)";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the size of the `collection` in number of elements.  If `collection` is a string, returns the length in UTF-8 characters.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((size
@@ -1044,7 +1075,7 @@ static OpcodeInitializer _ENT_SIZE(ENT_SIZE, &Interpreter::InterpretNode_ENT_SIZ
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto n = InterpretNodeForImmediateUse(ocn[0], EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER);
@@ -1061,7 +1092,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, Ev
 	{
 		if(n->GetType() == ENT_STRING)
 		{
-			auto &s = n->GetStringValue();
+			auto s = n->GetStringView();
 			size = static_cast<double>(StringManipulation::GetNumUTF8Characters(s));
 		}
 		else
@@ -1076,9 +1107,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_GET(ENT_GET, &Interpreter::InterpretNode_ENT_GET, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* data [number|index|list walk_path_1] [number|string|list walk_path_2] ...)";
-	d.returns = R"(any)";
-	d.description = R"(Evaluates to `data` as traversed by the set of values specified by `walk_path_1', which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then `get` returns a list, where each element in the list is the respective element retrieved by the respective walk path.  If the walk path continues past the data structure, it will return a null.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"walk_path", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true}, true)
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Evaluates to `node` as traversed by the set of values specified by `walk_path_1', which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then `get` returns a list, where each element in the list is the respective element retrieved by the respective walk path.  If the walk path continues past the data structure, it will return a null.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((get
 	[4 9.2 "this"]
@@ -1195,10 +1229,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, Eva
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t ocn_size = ocn.size();
-	if(ocn_size < 1)
+	if(ocn_size < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto source = InterpretNodeForImmediateUse(ocn[0]);
+	EvaluableNodeReference source;
+	if(immediate_result.AnyImmediateType())
+		source = InterpretNodeForImmediateUse(ocn[0]);
+	else
+		source = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+
 	if(ocn_size < 2 || source == nullptr)
 		return source;
 
@@ -1242,13 +1281,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, Eva
 	return retrieved_list;
 }
 
-static OpcodeInitializer _ENT_SET(ENT_SET, &Interpreter::InterpretNode_ENT_SET_and_REPLACE, []() {
+static OpcodeInitializer _ENT_MODIFY(ENT_MODIFY, &Interpreter::InterpretNode_ENT_MODIFY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* data [number|string|list walk_path1] [* new_value1] [number|string|list walk_path2] [* new_value2] ... [number|string|list walk_pathN] [* new_valueN])";
-	d.returns = R"(any)";
-	d.description = R"(Performs a deep copy on `data` (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values as a walk path of indices. `new_value1` to `new_valueN` represent a value that will be used to replace  whatever is in the location the preceding location parameter specifies.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc); however, it will not change the type of immediate values to an assoc or list. Note that `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_PAIRED,
+	{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"walk_path", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true},
+			{"function", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH, true}, true)
+	});
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Performs a deep copy of `node` (a copy of all data structures referenced by it and its references).  If any additional parameters are specified, it treats them as pairs of locations and values or functions to replace within the new copy.  For each pair of replacements, the first element is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of `node`, which is the base of the newly constructed data; this is useful for creating circular references.)";
 	d.examples = MakeAmalgamExamples({
-		{R"&((set
+		{R"&((modify
 	(associate
 		"a"
 		1
@@ -1268,38 +1312,24 @@ static OpcodeInitializer _ENT_SET(ENT_SET, &Interpreter::InterpretNode_ENT_SET_a
 	c 3
 	e 5
 })"},
-			{R"&((set
+			{R"&((modify
 	[0 1 2 3 4]
 	2
 	10
 ))&", R"([0 1 10 3 4])"},
-			{R"&((set
+			{R"&((modify
 	(associate "a" 1 "b" 2)
 	"a"
 	3
-))&", R"({a 3 b 2})"}
-		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
-	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-	d.frequencyPer10000Opcodes = 3.0;
-	d.opcodeGroup = _opcode_group;
-	return d;
-});
-
-static OpcodeInitializer _ENT_REPLACE(ENT_REPLACE, &Interpreter::InterpretNode_ENT_SET_and_REPLACE, []() {
-	OpcodeDetails d;
-	d.parameters = R"(* data [number|string|list walk_path1] [* function1] [number|string|list walk_path2] [* function2] ... [number|string|list walk_pathN] [* functionN])";
-	d.returns = R"(any)";
-	d.description = R"(Performs a deep copy on `data` (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. `function1` to `functionN` represent a function that will be used to replace in place of whatever is in the location of the corresponding walk_path, and will be passed the current node in (current_value).  The function can optionally be just be an immediate value or any code that can be evaluated.  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the `(target)` will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.)";
-	d.examples = MakeAmalgamExamples({
-		{R"&((replace
+))&", R"({a 3 b 2})"},
+		{R"&((modify
 	[
 		(associate "a" 13)
 	]
 ))&", R"([
 	{a 13}
 ])"},
-			{R"&((replace
+			{R"&((modify
 	[
 		(associate "a" 1)
 	]
@@ -1312,7 +1342,7 @@ static OpcodeInitializer _ENT_REPLACE(ENT_REPLACE, &Interpreter::InterpretNode_E
 	.null
 	1
 ])"},
-			{R"&((replace
+			{R"&((modify
 	[
 		(associate "a" 1)
 	]
@@ -1325,30 +1355,29 @@ static OpcodeInitializer _ENT_REPLACE(ENT_REPLACE, &Interpreter::InterpretNode_E
 	.null
 	1
 ])"},
-			{R"&((replace
+			{R"&((modify
 	[
 		(associate "a" 1)
 	]
 	[0]
 	(lambda
-		(set (current_value) "b" 2)
+		(modify (current_value) "b" 2)
 	)
 ))&", R"([
 	{a 1 b 2}
 ])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_PAIRED;
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-	d.frequencyPer10000Opcodes = 5.5;
+	d.frequencyPer10000Opcodes = 8.3;
 	d.opcodeGroup = _opcode_group;
 	return d;
 });
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_MODIFY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto result = InterpretNode(ocn[0]);
@@ -1378,14 +1407,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 		if(copy_destination == nullptr)
 			continue;
 
-		////////////////////
-		//compute new value
+		auto new_value = InterpretNode(ocn[replace_change_index + 1]);
 
-		if(en->GetType() == ENT_SET)
+		//if it's immediate, don't need to call it as a function
+		if(EvaluableNode::IsImmediate(new_value))
 		{
-			//just in case copy_destination points to result
-			auto new_value = InterpretNode(ocn[replace_change_index + 1]);
-
 			if(*copy_destination != result) //normal replacement
 			{
 				if(result.unique && !result.GetNeedCycleCheck())
@@ -1402,27 +1428,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 			if(result.NeedAllFlagsRecheckedAfterNodeAttachedAndUpdateUniqueness(new_value))
 				result_flags_need_updates = true;
 		}
-		else //en->GetType() == ENT_REPLACE
+		else //not immediate, need to call new_value as a function
 		{
-			//replace copy_destination (a part of result) with the new value
-			auto function = InterpretNodeForImmediateUse(ocn[replace_change_index + 1]);
-			if(EvaluableNode::IsNull(function))
+			if(EvaluableNode::IsNull(new_value))
 			{
 				(*copy_destination) = nullptr;
 				continue;
 			}
 
-			node_stack.PushEvaluableNode(function);
+			node_stack.PushEvaluableNode(new_value);
 			PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(), *copy_destination);
 
-			EvaluableNodeReference new_value = InterpretNodeForImmediateUse(function);
+			new_value = InterpretNodeForImmediateUse(new_value);
 
-			if(PopConstructionContextAndGetExecutionSideEffectFlag())
-			{
-				result.unique = false;
-				result.uniqueUnreferencedTopNode = false;
-			}
-
+			PopConstructionContextAndGetExecutionSideEffectFlag();
 			node_stack.PopEvaluableNode();
 
 			if(*copy_destination != result) //normal replacement
@@ -1450,8 +1469,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 
 static OpcodeInitializer _ENT_INDICES(ENT_INDICES, &Interpreter::InterpretNode_ENT_INDICES, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|assoc collection)";
-	d.returns = R"(list of string|number)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC})
+	};
+	d.returns = OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::LIST_OF_STRINGS;
 	d.description = R"(Evaluates to the list of strings or numbers that comprise the indices for the list or associative parameter `collection`.  It is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((sort
@@ -1516,7 +1537,7 @@ static OpcodeInitializer _ENT_INDICES(ENT_INDICES, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get assoc array to look up
@@ -1532,7 +1553,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 	{
 		auto &container_mcn = container->GetMappedChildNodesReference();
 		index_list_ocn.reserve(container_mcn.size());
-		for(auto &[node_id, _] : container_mcn)
+		for(auto &node_id : container_mcn | std::views::keys)
 		{
 			EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(node_id, evaluableNodeManager);
 			index_list_ocn.push_back(key_node);
@@ -1555,8 +1576,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 
 static OpcodeInitializer _ENT_VALUES(ENT_VALUES, &Interpreter::InterpretNode_ENT_VALUES, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|assoc collection [bool only_unique_values])";
-	d.returns = R"(list of any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"only_unique_values", OpcodeDetails::DataType::BOOL, true})
+	};
+	d.returns = OpcodeDetails::DataType::LIST;
 	d.description = R"(Evaluates to the list of entities that comprise the values for the list or associative list `collection`.  If `only_unique_values` is true (defaults to false), then it will filter out any duplicate values and only return those that are unique, preserving their order of first appearance.  If `only_unique_values` is not true, then it is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((sort
@@ -1678,7 +1702,7 @@ static OpcodeInitializer _ENT_VALUES(ENT_VALUES, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool only_unique_values = false;
@@ -1688,7 +1712,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 	auto container = InterpretNode(ocn[0]);
 
 	//exit early if wrong type
-	if(EvaluableNode::IsImmediate(container))
+	if(EvaluableNode::IsTerminal(container))
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(container);
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
@@ -1729,7 +1753,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 
 			EvaluableNode *result = evaluableNodeManager->AllocNode(ENT_LIST);
 
-			for(auto &[_, cn] : container->GetMappedChildNodesReference())
+			for(auto &cn : container->GetMappedChildNodesReference() | std::views::values)
 				result->AppendOrderedChildNode(cn);
 
 			if(container->GetNeedCycleCheck())
@@ -1809,7 +1833,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			}
 			else //container->IsAssociativeArray()
 			{
-				for(auto &[_, cn] : container->GetMappedChildNodesReference())
+				for(auto &cn : container->GetMappedChildNodesReference() | std::views::values)
 				{
 					std::string str_value = Parser::UnparseToKeyString(cn);
 					if(values_in_existence.emplace(str_value).second)
@@ -1834,9 +1858,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_CONTAINS_INDEX(ENT_CONTAINS_INDEX, &Interpreter::InterpretNode_ENT_CONTAINS_INDEX, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|assoc collection string|number|list index)";
-	d.returns = R"(bool)";
-	d.description = R"(Evaluates to true if the index is in the `collection`.  If index is a string, it will attempt to look at `collection` as an assoc, if number, it will look at `collection` as a list.  If index is a list, it will traverse a via the elements in the list as a walk path, with each element .)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH})
+	};
+	d.returns = OpcodeDetails::DataType::BOOL;
+	d.description = R"(Evaluates to true if the index is in the `collection` interpreting `index` as the appropriate type for the collection.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((contains_index
 	(associate
@@ -1900,7 +1927,7 @@ static OpcodeInitializer _ENT_CONTAINS_INDEX(ENT_CONTAINS_INDEX, &Interpreter::I
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//get assoc array to look up
@@ -1923,8 +1950,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 
 static OpcodeInitializer _ENT_CONTAINS_VALUE(ENT_CONTAINS_VALUE, &Interpreter::InterpretNode_ENT_CONTAINS_VALUE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|assoc|string collection_or_string string|number value)";
-	d.returns = R"(bool)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"value", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::BOOL;
 	d.description = R"(Evaluates to true if the `value` is contained in `collection_or_string`.  If `collection_or_string` is a string, then it uses `value` as a regular expression and evaluates to true if the regular expression matches.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((contains_value
@@ -1995,7 +2025,7 @@ static OpcodeInitializer _ENT_CONTAINS_VALUE(ENT_CONTAINS_VALUE, &Interpreter::I
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto container = InterpretNodeForImmediateUse(ocn[0]);
@@ -2013,7 +2043,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	//try to find value
 	if(container->IsAssociativeArray())
 	{
-		for(auto &[_, cn] : container->GetMappedChildNodesReference())
+		for(auto &cn : container->GetMappedChildNodesReference() | std::views::values)
 		{
 			if(EvaluableNode::AreDeepEqual(cn, value))
 			{
@@ -2036,7 +2066,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	else if(container->GetType() == ENT_STRING && !EvaluableNode::IsNull(value))
 	{
 		//compute regular expression
-		auto &s = container->GetStringValue();
+		auto s = container->GetStringView();
 
 		std::string value_as_str = EvaluableNode::ToString(value);
 
@@ -2052,7 +2082,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 			valid_rx = false;
 		}
 
-		if(valid_rx && std::regex_match(s, rx))
+		if(valid_rx && std::regex_match(s.data(), s.data() + s.size(), rx))
 			found = true;
 	}
 
@@ -2063,8 +2093,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 
 static OpcodeInitializer _ENT_REMOVE(ENT_REMOVE, &Interpreter::InterpretNode_ENT_REMOVE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|assoc collection number|string|list index)";
-	d.returns = R"(list|assoc)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC | OpcodeDetails::DataType::WALK_PATH})
+	};
+	d.returns = OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Removes the index-value pair with `index` being the index in assoc or index of `collection`, returning a new list or assoc with `index` removed.  If `index` is a list of numbers or strings, then it will remove each of the requested indices.  Negative numbered indices will count back from the end of a list.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((sort
@@ -2174,7 +2207,7 @@ static OpcodeInitializer _ENT_REMOVE(ENT_REMOVE, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto container = InterpretNode(ocn[0]);
@@ -2193,7 +2226,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 		container.unique && !container->GetNeedCycleCheck());
 
 	//if not a list, then just remove individual element
-	if(indices.IsImmediateValueType())
+	if(indices.IsTerminalValueType())
 	{
 		if(container->IsAssociativeArray())
 		{
@@ -2282,8 +2315,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 
 static OpcodeInitializer _ENT_KEEP(ENT_KEEP, &Interpreter::InterpretNode_ENT_KEEP, []() {
 	OpcodeDetails d;
-	d.parameters = R"(list|assoc collection number|string|list index)";
-	d.returns = R"(list|assoc)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
+		OpcodeDetails::ParameterGroup({"index", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Keeps only the index-value pair with index being the index in `collection`, returning a new list or assoc with only that index.  If `index` is a list of numbers or strings, then it will only keep those requested indices.  Negative numbered indices will count back from the end of a list.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((keep
@@ -2375,7 +2411,7 @@ static OpcodeInitializer _ENT_KEEP(ENT_KEEP, &Interpreter::InterpretNode_ENT_KEE
 EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto container = InterpretNode(ocn[0]);
@@ -2390,7 +2426,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
 
 	//if immediate then just keep individual element
-	if(indices.IsImmediateValueType())
+	if(indices.IsTerminalValueType())
 	{
 		if(container->IsAssociativeArray())
 		{
@@ -2479,7 +2515,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			//anything left should be freed if possible
 			if(container.unique && !container->GetNeedCycleCheck())
 			{
-				for(auto &[_, cn] : container_mcn)
+				for(auto &cn : container_mcn | std::views::values)
 					evaluableNodeManager->FreeNodeTree(cn);
 			}
 			string_intern_pool.DestroyStringReferences(container_mcn, [](auto &pair) { return pair.first;  });

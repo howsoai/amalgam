@@ -6,14 +6,17 @@ static std::string _opcode_group = "Basic Math";
 
 static OpcodeInitializer _ENT_ADD(ENT_ADD, &Interpreter::InterpretNode_ENT_ADD, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
+	});
+	d.isAssociative = true;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to the sum of all numbers.)";
+	d.description = R"(Evaluates to the sum of all numbers.  If no parameters are provided it returns 0.0.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((+ 1 2 3 4))", R"(10)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 18.0;
 	d.opcodeGroup = _opcode_group;
@@ -24,7 +27,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, Eva
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
-		return EvaluableNodeReference::Null();
+		return AllocReturn(0.0, immediate_result);
 
 	double value = 0.0;
 
@@ -50,15 +53,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode_ENT_SUBTRACT, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
+	});
+	d.returns = OpcodeDetails::DataType::NULL_TYPE | OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it is treated as its negative)";
+	d.description = R"(Evaluates to `x1` - `x2` - ... - `xN`.  If only one parameter is passed, then it evaluates to the negation of the value.  If no parameters are provided it returns null.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((- 1 2 3 4))", R"(-8)"},
 		{R"((- 3))", R"(-3)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 15.0;
 	d.opcodeGroup = _opcode_group;
@@ -68,7 +73,7 @@ static OpcodeInitializer _ENT_SUBTRACT(ENT_SUBTRACT, &Interpreter::InterpretNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 #ifdef MULTITHREAD_SUPPORT
@@ -99,14 +104,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en
 
 static OpcodeInitializer _ENT_MULTIPLY(ENT_MULTIPLY, &Interpreter::InterpretNode_ENT_MULTIPLY, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
+	});
+	d.isAssociative = true;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to the product of all numbers.)";
+	d.description = R"(Evaluates to the product of all numbers.  If no parameters are provided, returns 1.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((* 1 2 3 4))", R"(24)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 9.0;
 	d.opcodeGroup = _opcode_group;
@@ -117,7 +125,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	if(ocn.size() == 0)
-		return EvaluableNodeReference::Null();
+		return AllocReturn(1.0, immediate_result);
 
 	double value = 1.0;
 
@@ -143,14 +151,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 
 static OpcodeInitializer _ENT_DIVIDE(ENT_DIVIDE, &Interpreter::InterpretNode_ENT_DIVIDE, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_UNORDERED_OR_ONE_UNORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
+	});
+	d.returns = OpcodeDetails::DataType::NULL_TYPE | OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to `x1` / `x2` / ... / `xN`.)";
+	d.description = R"(Evaluates to `x1` / `x2` / ... / `xN`.  If only one parameter is passed, then it evaluates to the reciprocal of the value.  If no parameters are provided, it returns null.)";
 	d.examples = MakeAmalgamExamples({
-		{R"((/ 1.0 2 3 4))", R"(0.041666666666666664)"}
+		{R"((/ 1.0 2 3 4))", R"(0.041666666666666664)"},
+		{R"((/ 2))", R"(0.5)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 12.0;
 	d.opcodeGroup = _opcode_group;
@@ -160,7 +171,7 @@ static OpcodeInitializer _ENT_DIVIDE(ENT_DIVIDE, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 #ifdef MULTITHREAD_SUPPORT
@@ -214,20 +225,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, 
 		}
 	}
 
+	//if just one parameter, then treat as reciprocal
+	if(ocn.size() == 1)
+		value = 1.0 / value;
+
 	return AllocReturn(value, immediate_result);
 }
 
 static OpcodeInitializer _ENT_MODULUS(ENT_MODULUS, &Interpreter::InterpretNode_ENT_MODULUS, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ONE_POSITION_THEN_ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER, true}, true)
+	});
+	d.returns = OpcodeDetails::DataType::NULL_TYPE | OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates the modulus of `x1` mod `x2` mod ... mod `xN`.)";
+	d.description = R"(Evaluates the modulus of `x1` mod `x2` mod ... mod `xN`.  If no parameters are provided it returns null.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((mod 1 2 3 4))", R"(1)"},
 		{R"((mod 5 3))", R"(2)"},
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ONE_POSITION_THEN_ORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
@@ -237,7 +254,7 @@ static OpcodeInitializer _ENT_MODULUS(ENT_MODULUS, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 #ifdef MULTITHREAD_SUPPORT
@@ -270,8 +287,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en,
 
 static OpcodeInitializer _ENT_GET_DIGITS(ENT_GET_DIGITS, &Interpreter::InterpretNode_ENT_GET_DIGITS, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number value [number base] [number start_digit] [number end_digit] [bool relative_to_zero])";
-	d.returns = R"(list of number)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"value", OpcodeDetails::DataType::NUMBER}),
+		OpcodeDetails::ParameterGroup({"base", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"start_digit", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"end_digit", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"relative_to_zero", OpcodeDetails::DataType::BOOL, true})
+	};
+	d.returns = OpcodeDetails::DataType::LIST_OF_NUMBERS;
 	d.description = R"(Evaluates to a list of the number of each digit of `value` for the given `base`.  If `base` is omitted, 10 is the default.  The parameters `start_digit` and `end_digit` can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of `start_digit` and `end_digit` are with respect to relative_to_zero, which defaults to true.  If relative_to_zero is true, then the digits are indexed from their distance to zero, such as "5 4 3 2 1 0 . -1 -2".  If relative_to_zero is false, then the digits are indexed from their most significant digit, such as "0 1 2 3 4 5 . 6  7".  The default values of `start_digit` and `end_digit` are the most and least significant digits respectively.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((get_digits 1234567.8 10))&", R"([
@@ -490,8 +513,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DIGITS(EvaluableNode *
 
 static OpcodeInitializer _ENT_SET_DIGITS(ENT_SET_DIGITS, &Interpreter::InterpretNode_ENT_SET_DIGITS, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number value [number base] [list|number|null digits] [number start_digit] [number end_digit] [bool relative_to_zero])";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"value", OpcodeDetails::DataType::NUMBER}),
+		OpcodeDetails::ParameterGroup({"base", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"digits", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::NULL_TYPE, true}),
+		OpcodeDetails::ParameterGroup({"start_digit", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"end_digit", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"relative_to_zero", OpcodeDetails::DataType::BOOL, true})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to `value` having each of the values in the list of `digits` replace each of the relative digits in `value` for the given base.  If a digit is null in `digits`, then that digit is not set.  If `base` is omitted, 10 is the default.  The parameters `start_digit` and `end_digit` can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of `start_digit` and `end_digit` are with respect to `relative_to_zero`, which defaults to true.  If `relative_to_zero` is true, then the digits are indexed from their distance to zero, such as "5 4 3 2 1 0 . -1 -2".  If `relative_to_zer`o is false, then the digits are indexed from their most significant digit, such as "0 1 2 3 4 5 . 6  7".  The default values of `start_digit` and `end_digit` are the most and least significant digits respectively.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((set_digits
@@ -641,8 +671,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_params = ocn.size();
-	if(num_params == 0)
-		return AllocReturn(std::numeric_limits<double>::quiet_NaN(), immediate_result);
+	if(num_params == 0) [[unlikely]]
+		return EvaluableNodeReference::Null();
 
 	double value = InterpretNodeIntoNumberValue(ocn[0]);
 	if(FastIsNaN(value) || value == std::numeric_limits<double>::infinity())
@@ -758,8 +788,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 
 static OpcodeInitializer _ENT_FLOOR(ENT_FLOOR, &Interpreter::InterpretNode_ENT_FLOOR, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number x)";
-	d.returns = R"(int)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the mathematical floor of x.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((floor 1.5))", R"(1)"}
@@ -773,7 +805,7 @@ static OpcodeInitializer _ENT_FLOOR(ENT_FLOOR, &Interpreter::InterpretNode_ENT_F
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FLOOR(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
@@ -782,8 +814,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLOOR(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_CEILING(ENT_CEILING, &Interpreter::InterpretNode_ENT_CEILING, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number x)";
-	d.returns = R"(int)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the mathematical ceiling of x.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((ceil 1.5))", R"(2)"}
@@ -797,7 +831,7 @@ static OpcodeInitializer _ENT_CEILING(ENT_CEILING, &Interpreter::InterpretNode_E
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CEILING(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
@@ -806,8 +840,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CEILING(EvaluableNode *en,
 
 static OpcodeInitializer _ENT_ROUND(ENT_ROUND, &Interpreter::InterpretNode_ENT_ROUND, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number x [number significant_digits] [number significant_digits_after_decimal])";
-	d.returns = R"(int)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}),
+		OpcodeDetails::ParameterGroup({"significant_digits", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"significant_digits_after_decimal", OpcodeDetails::DataType::NUMBER, true})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Rounds the value `x` and evaluates to the new value.  If only one parameter is specified, it rounds to the nearest integer.  If `significant_digits` is specified, then it rounds to the specified number of significant digits.  If `significant_digits_after_decimal` is specified, then it ensures that `x` will be rounded at least to the number of decimal points past the integer as specified, and takes priority over `significant_digits`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((round 12.7))&", R"(13)"},
@@ -842,13 +880,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, E
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
 	size_t num_params = ocn.size();
-	if(num_params == 0)
+	if(num_params == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference retval = EvaluableNodeReference::Null();
 	double number_value = 0.0;
 
-	if(immediate_result.AnyImmediateType())
+	if(immediate_result.AnyPrimitiveImmediateType())
 	{
 		number_value = InterpretNodeIntoNumberValue(ocn[0]);
 	}
@@ -893,8 +931,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_ABS(ENT_ABS, &Interpreter::InterpretNode_ENT_ABS, []() {
 	OpcodeDetails d;
-	d.parameters = R"(number x)";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+			OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to absolute value of `x`)";
 	d.examples = MakeAmalgamExamples({
 		{R"((abs -0.5))", R"(0.5)"}
@@ -908,7 +948,7 @@ static OpcodeInitializer _ENT_ABS(ENT_ABS, &Interpreter::InterpretNode_ENT_ABS, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ABS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
@@ -917,8 +957,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ABS(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_MAX(ENT_MAX, &Interpreter::InterpretNode_ENT_MAX, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
+	});
+	d.isAssociative = true;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the maximum of all of parameters.)";
 	d.examples = MakeAmalgamExamples({
@@ -926,7 +970,6 @@ static OpcodeInitializer _ENT_MAX(ENT_MAX, &Interpreter::InterpretNode_ENT_MAX, 
 		{R"&((max .null 4 8))&", R"(8)"},
 		{R"&((max .null))&", R"(.null)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 2.0;
 	d.opcodeGroup = _opcode_group;
@@ -936,7 +979,7 @@ static OpcodeInitializer _ENT_MAX(ENT_MAX, &Interpreter::InterpretNode_ENT_MAX, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool value_found = false;
@@ -983,15 +1026,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_MIN(ENT_MIN, &Interpreter::InterpretNode_ENT_MIN, []() {
 	OpcodeDetails d;
-	d.parameters = R"([number x1] [number x2] ... [number xN])";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true)
+	});
+	d.isAssociative = true;
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.allowsConcurrency = true;
 	d.description = R"(Evaluates to the minimum of all of the numbers.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((min 0.5 1 7 9 -5))&", R"(-5)"},
 		{R"&((min .null 4 8))&", R"(4)"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.frequencyPer10000Opcodes = 2.0;
 	d.opcodeGroup = _opcode_group;
@@ -1001,7 +1047,7 @@ static OpcodeInitializer _ENT_MIN(ENT_MIN, &Interpreter::InterpretNode_ENT_MIN, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool value_found = false;
@@ -1048,8 +1094,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, Eva
 
 static OpcodeInitializer _ENT_INDEX_MAX(ENT_INDEX_MAX, &Interpreter::InterpretNode_ENT_INDEX_MAX, []() {
 	OpcodeDetails d;
-	d.parameters = R"([[number x1] [number x2] [number x3] ... [number xN]] | assoc|list values)";
-	d.returns = R"([any])";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"x1", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true, 2)
+	});
+	d.returns = OpcodeDetails::DataType::LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the maximum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the maximum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the maximum value.)";
 	d.examples = MakeAmalgamExamples({
@@ -1063,7 +1113,6 @@ static OpcodeInitializer _ENT_INDEX_MAX(ENT_INDEX_MAX, &Interpreter::InterpretNo
 	{1 2 3 5 tomato 4444}
 ))&", R"(["tomato"])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
@@ -1212,7 +1261,7 @@ EvaluableNodeReference GetIndexMinMaxFromRemainingArgList(EvaluableNode *en, Int
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference ocn_zero = InterpretNodeForImmediateUse(ocn[0]);
@@ -1235,8 +1284,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 
 static OpcodeInitializer _ENT_INDEX_MIN(ENT_INDEX_MIN, &Interpreter::InterpretNode_ENT_INDEX_MIN, []() {
 	OpcodeDetails d;
-	d.parameters = R"([[number x1] [number x2] [number x3] ... [number xN]] | assoc values | list values)";
-	d.returns = R"([any])";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::UNORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"x1", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST_OF_NUMBERS | OpcodeDetails::DataType::ASSOC_OF_NUMBERS}),
+		OpcodeDetails::ParameterGroup({"x", OpcodeDetails::DataType::NUMBER}, true, 2)
+	});
+	d.returns = OpcodeDetails::DataType::LIST;
 	d.allowsConcurrency = true;
 	d.description = R"(If given multiple arguments, returns a list of the indices of the arguments with the minimum value.  If given a single argument that is an assoc, it returns the a list of keys associated with the minimum values; the list will be a single value unless there are ties.  If given a single argument that is a list, it returns a list of list indices with the minimum value.)";
 	d.examples = MakeAmalgamExamples({
@@ -1249,7 +1302,6 @@ static OpcodeInitializer _ENT_INDEX_MIN(ENT_INDEX_MIN, &Interpreter::InterpretNo
 	{1 2 3 5 tomato 4444}
 ))&", R"([1])"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::UNORDERED;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
@@ -1259,7 +1311,7 @@ static OpcodeInitializer _ENT_INDEX_MIN(ENT_INDEX_MIN, &Interpreter::InterpretNo
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference ocn_zero = InterpretNodeForImmediateUse(ocn[0]);

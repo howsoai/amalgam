@@ -8,6 +8,9 @@
 #include "Interpreter.h"
 #include "Merger.h"
 
+//system headers
+#include <ranges>
+
 Entity *EntityManipulation::EntitiesMergeMethod::MergeValues(Entity *a, Entity *b, bool must_merge)
 {
 	if(a == nullptr && b == nullptr)
@@ -21,12 +24,12 @@ Entity *EntityManipulation::EntitiesMergeMethod::MergeValues(Entity *a, Entity *
 		merged_entity->SetRandomStream(b->GetRandomStream());
 
 	//merge entity code
-	EvaluableNode *code_a = (a != nullptr ? a->GetRoot() : nullptr);
-	EvaluableNode *code_b = (b != nullptr ? b->GetRoot() : nullptr);
+	EvaluableNode *code_a = (a != nullptr ? a->GetRoot().GetReference() : nullptr);
+	EvaluableNode *code_b = (b != nullptr ? b->GetRoot().GetReference() : nullptr);
 
 	EvaluableNodeTreeManipulation::NodesMergeMethod mm(&merged_entity->evaluableNodeManager, keepAllOfBoth,
 		TypesMustMatch(), NominalNumbers(), NominalStrings(), RecursiveMatching());
-	EvaluableNode *result = mm.MergeValues(code_a, code_b);
+	EvaluableNodeReference result(mm.MergeValues(code_a, code_b), true);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	merged_entity->SetRoot(result, true);
 
@@ -46,8 +49,8 @@ Entity *EntityManipulation::EntitiesMergeForDifferenceMethod::MergeValues(Entity
 	Entity *result = new Entity();
 
 	//compare entity code
-	EvaluableNode *code_a = (a != nullptr ? a->GetRoot() : nullptr);
-	EvaluableNode *code_b = (b != nullptr ? b->GetRoot() : nullptr);
+	EvaluableNode *code_a = (a != nullptr ? a->GetRoot().GetReference() : nullptr);
+	EvaluableNode *code_b = (b != nullptr ? b->GetRoot().GetReference() : nullptr);
 
 	if(a != nullptr)
 		aEntitiesIncludedFromB[b] = a;
@@ -128,19 +131,20 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 	else if(b != nullptr)
 		merged_entity->SetRandomStream(b->GetRandomStream());
 
+	MergeContainedEntities(this, a, b, merged_entity);
+
 	//merge entity's code
-	EvaluableNode *code_a = (a != nullptr ? a->GetRoot() : nullptr);
-	EvaluableNode *code_b = (b != nullptr ? b->GetRoot() : nullptr);
+	EvaluableNode *code_a = (a != nullptr ? a->GetRoot().GetReference() : nullptr);
+	EvaluableNode *code_b = (b != nullptr ? b->GetRoot().GetReference() : nullptr);
 
 	EvaluableNodeTreeManipulation::NodesMixMethod mm(interpreter->randomStream.CreateOtherStreamViaRand(),
 		&merged_entity->evaluableNodeManager, fractionA, fractionB, similarMixChance,
 		TypesMustMatch(), NominalNumbers(), NominalStrings(), RecursiveMatching());
 
-	EvaluableNode *result = mm.MergeValues(code_a, code_b);
+	EvaluableNodeReference result(mm.MergeValues(code_a, code_b), true);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	merged_entity->SetRoot(result, true);
 
-	MergeContainedEntities(this, a, b, merged_entity);
 	return merged_entity;
 }
 
@@ -423,7 +427,7 @@ MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *ent
 	//find all contained entities that have the same name
 	//reserve enough in one block for all in entity1, as an upper bound
 	std::vector<StringInternPool::StringID> matching_entities(entity1_unmatched.size());
-	for(auto &[e1c_id, _] : entity1_unmatched)
+	for(auto &e1c_id : entity1_unmatched | std::views::keys)
 	{
 		if(entity2_unmatched.find(e1c_id) != end(entity2_unmatched))
 			matching_entities.emplace_back(e1c_id);
@@ -515,7 +519,7 @@ void EntityManipulation::MergeContainedEntities(EntitiesMergeMethod *mm, Entity 
 	//find all contained entities that have the same id
 	std::vector<StringInternPool::StringID> matching_entities;
 	matching_entities.reserve(entity1_unmatched.size());	//reserve enough in one block for all in entity1 to reduce potential reallocations
-	for(auto &[_, e1c] : entity1_unmatched)
+	for(auto &e1c : entity1_unmatched | std::views::values)
 	{
 		StringInternPool::StringID e1c_id = e1c->GetIdStringId();
 		if(entity2_unmatched.find(e1c_id) != end(entity2_unmatched))
@@ -627,24 +631,30 @@ void EntityManipulation::MergeContainedEntities(EntitiesMergeMethod *mm, Entity 
 Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
 	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
 	CompactHashMap<EvaluableNodeType, double> *operation_type,
-	size_t preserve_type_depth)
+	size_t preserve_type_depth,
+	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_number_weights,
+	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_string_weights)
 {
 	if(entity == nullptr)
 		return nullptr;
 
 	//make a new entity with mutated code
 	Entity *new_entity = new Entity();
-	EvaluableNode *mutated_code = EvaluableNodeTreeManipulation::MutateTree(interpreter,
-		&new_entity->evaluableNodeManager, entity->GetRoot(),
-		mutation_rate, mutation_weights, operation_type, preserve_type_depth);
-	EvaluableNodeManager::UpdateFlagsForNodeTree(mutated_code);
-	new_entity->SetRoot(mutated_code, true);
 	new_entity->SetRandomStream(entity->GetRandomStream());
 
 	//make mutated copies of all contained entities
 	for(auto e : entity->GetContainedEntities())
 		new_entity->AddContainedEntity(MutateEntity(interpreter,
-			e, mutation_rate, mutation_weights, operation_type, preserve_type_depth), entity->GetIdStringId());
+			e, mutation_rate, mutation_weights, operation_type, preserve_type_depth,
+			imm_number_weights, imm_string_weights), e->GetIdStringId());
+
+	//mutate entity code after have mutated all contained entities
+	EvaluableNodeReference mutated_code(EvaluableNodeTreeManipulation::MutateTree(interpreter,
+		&new_entity->evaluableNodeManager, new_entity, entity->GetRoot(),
+		mutation_rate, mutation_weights, operation_type, preserve_type_depth,
+		imm_number_weights, imm_string_weights), true);
+	EvaluableNodeManager::UpdateFlagsForNodeTree(mutated_code);
+	new_entity->SetRoot(mutated_code, true);
 
 	return new_entity;
 }
@@ -847,8 +857,8 @@ void EntityManipulation::SortEntitiesByID(std::vector<Entity *> &entities)
 	std::sort(begin(entities), end(entities),
 		[](Entity *a, Entity *b)
 		{
-			const std::string a_id = a->GetId();
-			const std::string b_id = b->GetId();
+			std::string_view a_id = a->GetId();
+			std::string_view b_id = b->GetId();
 
 			int comp = StringManipulation::StringNaturalCompare(a_id, b_id);
 			return comp < 0;

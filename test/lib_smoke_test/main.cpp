@@ -4,8 +4,10 @@
 
 //project headers:
 #include "Amalgam.h"
+#include "clustering_test.h"
 
 //system headers:
+#include <cctype>
 #include <functional>
 #include <iostream>
 #include <string>
@@ -456,6 +458,76 @@ static void StoreSubEntityToMemory(TestResult &test_result)
 	}
 }
 
+// Reads the integer cluster id assigned to "case_<index>" out of the JSON assoc
+// returned by cluster.amlg's "run" label.  Returns -1 if the key is absent.
+static int ClusterIdForCase(const std::string &json, int index)
+{
+	std::string key = "\"case_" + std::to_string(index) + "\":";
+	size_t pos = json.find(key);
+	if(pos == std::string::npos)
+		return -1;
+	pos += key.size();
+	while(pos < json.size() && json[pos] == ' ')
+		++pos;
+	int val = 0;
+	while(pos < json.size() && std::isdigit(static_cast<unsigned char>(json[pos])))
+	{
+		val = val * 10 + (json[pos] - '0');
+		++pos;
+	}
+	return val;
+}
+
+static void ClusterTwoBlobs(TestResult &test_result)
+{
+	// Load cluster.amlg, create two well-separated 2-D blobs (6 entities each),
+	// run query_entity_clusters, and verify clustering recovers exactly two
+	// clusters: each blob fully assigned to its own cluster, with no noise.
+	char handle[] = "cluster";
+	char *file = (char *)"cluster.amlg";
+	char file_type[] = "";
+	char json_file_params[] = "";
+	char write_log[] = "";
+	char print_log[] = "";
+	auto status = LoadEntity(handle, file, file_type, false, json_file_params, write_log, print_log, nullptr, 0);
+	test_result.Require("LoadEntity", status.loaded);
+	if(test_result)
+	{
+		LoadedEntity loaded_entity(handle);
+
+		// Create the 12 case entities by calling the "setup" label.
+		ExecuteEntity(handle, (char *)"setup");
+
+		// Execute the "run" label, which returns an assoc of entity-id -> cluster-id
+		// (a positive integer per cluster, 0 = noise), e.g. {"case_0":2,...,"case_11":1}.
+		std::string empty;
+		ApiString result(ExecuteEntityJsonPtr(handle, (char *)"run", empty.data()));
+		std::string out = result;
+
+		// Cases 0-5 are the first blob, 6-11 the second.
+		int blob_a = ClusterIdForCase(out, 0);
+		int blob_b = ClusterIdForCase(out, 6);
+
+		// No noise: every case got a positive cluster id.
+		bool all_assigned = true;
+		for(int i = 0; i < 12; ++i)
+			all_assigned = all_assigned && (ClusterIdForCase(out, i) > 0);
+		test_result.Require("no entity left as noise", all_assigned);
+
+		// Each blob is internally consistent.
+		bool blob_a_consistent = true, blob_b_consistent = true;
+		for(int i = 0; i < 6; ++i)
+			blob_a_consistent = blob_a_consistent && (ClusterIdForCase(out, i) == blob_a);
+		for(int i = 6; i < 12; ++i)
+			blob_b_consistent = blob_b_consistent && (ClusterIdForCase(out, i) == blob_b);
+		test_result.Require("first blob is one cluster", blob_a_consistent);
+		test_result.Require("second blob is one cluster", blob_b_consistent);
+
+		// The two blobs are different clusters.
+		test_result.Require("the two blobs are distinct clusters", blob_a > 0 && blob_b > 0 && blob_a != blob_b);
+	}
+}
+
 static void RoundTripCamlToMemory(TestResult &test_result)
 {
 	// Load the counter, bump it, dump it to an in-memory caml representation, then restore it.
@@ -541,6 +613,10 @@ int main(int argc, char *argv[])
 	suite.Run("TestStoreEntityToMemory", TestStoreEntityToMemory);
 	suite.Run("StoreSubEntityToMemory", StoreSubEntityToMemory);
 	suite.Run("RoundTripCamlToMemory", RoundTripCamlToMemory);
+	suite.Run("ClusterTwoBlobs", ClusterTwoBlobs);
+	suite.Run("ClusteringAlgorithm", [](TestResult &test_result) {
+		test_result.Require("clustering algorithm unit tests pass", RunClusteringUnitTests() == 0);
+	});
 
 	return suite ? 0 : 1;
 }

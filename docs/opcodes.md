@@ -35,7 +35,6 @@
   - [seq](./control_flow.md#opcode-seq)
   - [lambda](./control_flow.md#opcode-lambda)
   - [call](./control_flow.md#opcode-call)
-  - [call_sandboxed](./control_flow.md#opcode-call_sandboxed)
   - [while](./control_flow.md#opcode-while)
   - [conclude](./control_flow.md#opcode-conclude)
   - [return](./control_flow.md#opcode-return)
@@ -113,8 +112,7 @@
   - [append](./container_manipulation.md#opcode-append)
   - [size](./container_manipulation.md#opcode-size)
   - [get](./container_manipulation.md#opcode-get)
-  - [set](./container_manipulation.md#opcode-set)
-  - [replace](./container_manipulation.md#opcode-replace)
+  - [modify](./container_manipulation.md#opcode-modify)
   - [indices](./container_manipulation.md#opcode-indices)
   - [values](./container_manipulation.md#opcode-values)
   - [contains_index](./container_manipulation.md#opcode-contains_index)
@@ -158,7 +156,6 @@
   - [remove_from_entities](./entity_access_and_manipulation.md#opcode-remove_from_entities)
   - [retrieve_from_entity](./entity_access_and_manipulation.md#opcode-retrieve_from_entity)
   - [call_entity](./entity_access_and_manipulation.md#opcode-call_entity)
-  - [call_entity_get_changes](./entity_access_and_manipulation.md#opcode-call_entity_get_changes)
   - [call_on_entity](./entity_access_and_manipulation.md#opcode-call_on_entity)
   - [call_container](./entity_access_and_manipulation.md#opcode-call_container)
 ### Entity Query Engine
@@ -195,6 +192,7 @@
   - [query_entity_distance_contributions](./entity_query_engine.md#opcode-query_entity_distance_contributions)
   - [query_entity_kl_divergences](./entity_query_engine.md#opcode-query_entity_kl_divergences)
   - [query_entity_cumulative_nearest_entity_weights](./entity_query_engine.md#opcode-query_entity_cumulative_nearest_entity_weights)
+  - [query_entity_clusters](./entity_query_engine.md#opcode-query_entity_clusters)
 ### Metadata
   - [get_annotations](./metadata.md#opcode-get_annotations)
   - [set_annotations](./metadata.md#opcode-set_annotations)
@@ -216,6 +214,7 @@
   - [union](./code_comparison_and_evolution.md#opcode-union)
   - [difference](./code_comparison_and_evolution.md#opcode-difference)
   - [mix](./code_comparison_and_evolution.md#opcode-mix)
+  - [simplify](./code_comparison_and_evolution.md#opcode-simplify)
 ### Entity Comparison and Evolution
   - [total_entity_size](./entity_comparison_and_evolution.md#opcode-total_entity_size)
   - [mutate_entity](./entity_comparison_and_evolution.md#opcode-mutate_entity)

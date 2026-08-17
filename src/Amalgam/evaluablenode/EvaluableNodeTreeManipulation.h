@@ -26,18 +26,6 @@ public:
 	}
 };
 
-//hashing for pairs of pointers
-template<typename T>
-struct std::hash<std::pair<T *, T *>>
-{
-	inline size_t operator()(std::pair<T *, T *> const &pointer_pair) const
-	{
-		size_t h1 = std::hash<T *>{}(pointer_pair.first);
-		size_t h2 = std::hash<T *>{}(pointer_pair.second);
-		return h1 ^ (h2 << 1);
-	}
-};
-
 //equality for pairs of pointers
 template<typename T>
 constexpr bool operator==(const std::pair<T *, T *> &a, const std::pair<T *, T *> &b)
@@ -59,6 +47,15 @@ struct MergeMetricResultsParams
 class EvaluableNodeTreeManipulation
 {
 public:
+	//stores strings for keys/symbols, strings for values, and all nodes
+	class ValuesFromTreeData
+	{
+	public:
+		std::vector<std::string> keyAndSymbolStrings;
+		std::vector<std::string> valueStrings;
+		EvaluableNode::ReferenceSetType allNodes;
+	};
+
 	class MutationParameters
 	{
 	public:
@@ -68,38 +65,44 @@ public:
 		typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeBuiltInStringId,
 			CompactHashMap<EvaluableNodeBuiltInStringId, double>> WeightedRandMutationType;
 
+		typedef WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
+			EvaluableNode::AssocType, EvaluableNodeAsDouble> WeightedRandValueType;
+
 		MutationParameters(Interpreter *interpreter,
-			EvaluableNodeManager *enm,
+			EvaluableNodeManager *_enm,
+			Entity *_entity,
 			double mutation_rate,
-			std::vector<std::string> *strings,
+			ValuesFromTreeData &values_from_tree,
 			WeightedRandEvaluableNodeType *rand_operation,
 			WeightedRandMutationType *rand_operation_type,
-			size_t preserve_type_depth) :
-				interpreter(nullptr),
-				enm(nullptr),
-				mutation_rate(0),
-				strings(nullptr),
+			size_t preserve_type_depth,
+			WeightedRandValueType &imm_number_weights,
+			WeightedRandValueType &imm_string_weights)
+				: interpreter(interpreter), enm(_enm), entity(_entity), mutationRate(mutation_rate),
+				valuesFromTree(&values_from_tree),
 				references(EvaluableNode::ReferenceAssocType()),
-				randEvaluableNodeType(nullptr),
-				randMutationType(&mutationOperationTypeRandomStream)
-		{
-			this->interpreter = interpreter;
-			this->enm = enm;
-			this->mutation_rate = mutation_rate;
-			this->strings = strings;
-			this->randEvaluableNodeType = rand_operation;
-			this->randMutationType = rand_operation_type;
-			this->preserveTypeDepth = preserve_type_depth;
-		}
+				randEvaluableNodeType(rand_operation),
+				randMutationType(rand_operation_type),
+				preserveTypeDepth(preserve_type_depth),
+				immNumberWeights(&imm_number_weights),
+				immStringWeights(&imm_string_weights)
+		{}
+
+		//if key_or_symbol_string is true, then it will generate a string for one of those types,
+		// otherwise will generate a string for a value
+		std::string GenerateRandomStringGivenStringSet(bool key_or_symbol_string, double novel_chance = 0.08);
 
 		Interpreter *interpreter;
 		EvaluableNodeManager *enm;
-		double mutation_rate;
-		std::vector<std::string> *strings;
+		Entity *entity;
+		double mutationRate;
+		ValuesFromTreeData *valuesFromTree;
 		EvaluableNode::ReferenceAssocType references;
 		WeightedRandEvaluableNodeType *randEvaluableNodeType;
 		WeightedRandMutationType *randMutationType;
 		size_t preserveTypeDepth;
+		WeightedRandValueType *immNumberWeights;
+		WeightedRandValueType *immStringWeights;
 	};
 
 	static CompactHashMap<EvaluableNodeBuiltInStringId, double> mutationOperationTypeProbabilities;
@@ -123,6 +126,11 @@ public:
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false)
 		{
 			return MergeTrees(this, a, b);
+		}
+
+		virtual bool AreDeepEqual(EvaluableNode *a, EvaluableNode *b)
+		{
+			return EvaluableNode::AreDeepEqual(a, b);
 		}
 
 		virtual bool KeepAllNonMergeableValues()
@@ -219,6 +227,9 @@ public:
 
 		virtual bool KeepNonMergeableValue()
 		{
+			if(fractionAOrB >= 1.0)
+				return true;
+
 			return randomStream.Rand() < fractionAOrB;
 		}
 
@@ -395,7 +406,7 @@ public:
 		return mm.MergeValues(tree1, tree2);
 	}
 
-	static std::string MixStrings(const std::string &a, const std::string &b,
+	static std::string MixStrings(std::string_view a, std::string_view b,
 		RandomStream random_stream, double fraction_a, double fraction_b);
 
 	//returns a number between 0 and 1, where 1 is exactly the same and 0 is maximally different
@@ -430,33 +441,9 @@ public:
 		return std::clamp(similarity, 0.0, 1.0);
 	}
 
-	//returns the commonality between two strings that are different
-	static inline double CommonalityBetweenStrings(StringInternPool::StringID sid1, StringInternPool::StringID sid2)
-	{
-		if(sid1 == sid2)
-			return 1.0;
-
-		if(sid1 == string_intern_pool.NOT_A_STRING_ID || sid2 == string_intern_pool.NOT_A_STRING_ID)
-			return 0.0;
-
-		const auto &s1 = string_intern_pool.GetStringFromID(sid1);
-		const auto &s2 = string_intern_pool.GetStringFromID(sid2);
-
-		size_t len1 = s1.size();
-		size_t len2 = s2.size();
-
-		size_t diff = EditDistance(s1, s2, len1, len2);
-
-		double avg_len = (len1 + len2) * 0.5;
-		double length_ratio = std::min(len1, len2) / static_cast<double>(std::max(len1, len2));
-
-		double edit_score = std::exp(-static_cast<double>(diff) / avg_len);
-		return 0.75 * edit_score + 0.25 * length_ratio;
-	}
-
-	//returns the EditDistance between the sequences a and b using the specified sequence_commonality_buffer
+	//returns the commonality between the sequences a and b using the specified sequence_commonality_buffer
 	template<typename ElementType>
-	static size_t EditDistance(std::vector<ElementType> &a, std::vector<ElementType> &b,
+	static size_t CommonalityBetweenVectors(std::vector<ElementType> &a, std::vector<ElementType> &b,
 		FlatMatrix<size_t> &sequence_commonality_buffer)
 	{
 		//if either string is empty, return the other
@@ -473,29 +460,66 @@ public:
 				return (a == b ? 1 : 0);
 			});
 
-		//edit distance is the longest sequence's size minus the commonality
-		return std::max(a_size, b_size) - sequence_commonality_buffer.At(a_size, b_size);
+		return sequence_commonality_buffer.At(a_size, b_size);
 	}
 
-	//returns the EditDistance between the sequences a and b
-	template<typename ElementType>
-	inline static size_t EditDistance(std::vector<ElementType> &a, std::vector<ElementType> &b)
-	{
-		FlatMatrix<size_t> sequence_commonality;
-		return EditDistance(a, b, sequence_commonality);
-	}
-
-	//computes the edit distance (Levenshtein distance) between the two utf-8 strings
-	inline static size_t EditDistance(const std::string &a, const std::string &b)
+	//computes the commonality between the two utf-8 strings
+	inline static size_t CommonalityBetweenStrings(const std::string &a, const std::string &b)
 	{
 		StringManipulation::ExplodeUTF8Characters(a, aCharsBuffer);
 		StringManipulation::ExplodeUTF8Characters(b, bCharsBuffer);
-		return EvaluableNodeTreeManipulation::EditDistance(aCharsBuffer, bCharsBuffer, sequenceCommonalityBuffer);
+		return CommonalityBetweenVectors(aCharsBuffer, bCharsBuffer, sequenceCommonalityBuffer);
+	}
+
+	//returns the commonality between two strings that are different
+	static inline double RelativeCommonalityBetweenStrings(StringInternPool::StringID sid1, StringInternPool::StringID sid2)
+	{
+		if(sid1 == sid2)
+			return 1.0;
+
+		if(sid1 == string_intern_pool.NOT_A_STRING_ID || sid2 == string_intern_pool.NOT_A_STRING_ID)
+			return 0.0;
+
+		auto s1 = string_intern_pool.GetStringViewFromID(sid1);
+		auto s2 = string_intern_pool.GetStringViewFromID(sid2);
+
+		StringManipulation::ExplodeUTF8Characters(s1, aCharsBuffer);
+		StringManipulation::ExplodeUTF8Characters(s2, bCharsBuffer);
+		size_t commonality = CommonalityBetweenVectors(aCharsBuffer, bCharsBuffer, sequenceCommonalityBuffer);
+
+		size_t len1 = aCharsBuffer.size();
+		size_t len2 = bCharsBuffer.size();
+
+		double avg_len = (len1 + len2) * 0.5;
+		double length_ratio = std::min(len1, len2) / static_cast<double>(std::max(len1, len2));
+
+		double edit_score = std::exp(-static_cast<double>(commonality) / avg_len);
+		return 0.75 * edit_score + 0.25 * length_ratio;
+	}
+
+	//returns the edit distance between the sequences a and b using the specified sequence_commonality_buffer
+	template<typename ElementType>
+	static size_t EditDistance(std::vector<ElementType> &a, std::vector<ElementType> &b,
+		FlatMatrix<size_t> &sequence_commonality_buffer)
+	{
+		size_t commonality = CommonalityBetweenVectors(a, b, sequence_commonality_buffer);
+
+		//edit distance is the difference between a_size and commonality and b_size and commonality,
+		//which can be written more succinctly with a * 2
+		return a.size() + b.size() - 2 * commonality;
+	}
+
+	//computes the edit distance (Levenshtein distance) between the two utf-8 strings
+	inline static size_t EditDistance(std::string_view a, std::string_view b)
+	{
+		StringManipulation::ExplodeUTF8Characters(a, aCharsBuffer);
+		StringManipulation::ExplodeUTF8Characters(b, bCharsBuffer);
+		return EditDistance(aCharsBuffer, bCharsBuffer, sequenceCommonalityBuffer);
 	}
 
 	//computes the edit distance (Levenshtein distance) between the two utf-8 strings
 	//a_size and b_size are set to the length of the strings respectively
-	inline static size_t EditDistance(const std::string &a, const std::string &b,
+	inline static size_t EditDistance(std::string_view a, std::string_view b,
 		size_t &a_len, size_t &b_len)
 	{
 		StringManipulation::ExplodeUTF8Characters(a, aCharsBuffer);
@@ -569,9 +593,14 @@ public:
 	//returns a tree that is a copy of tree but mutated based on mutation_rate
 	// will create the new tree with interpreter's evaluableNodeManager and will use interpreter's RandomStream
 	//note that MutateTree does not guarantee that EvaluableNodeFlags will be set appropriately
-	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, EvaluableNode *tree,
-		double mutation_rate, CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
-		CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth);
+	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, Entity *entity,
+		EvaluableNode *tree, double mutation_rate,
+		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
+		CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth,
+			WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
+				EvaluableNode::AssocType, EvaluableNodeAsDouble> &imm_number_weights,
+			WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
+				EvaluableNode::AssocType, EvaluableNodeAsDouble> &imm_string_weights);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace
 	static inline void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace)
@@ -615,9 +644,6 @@ protected:
 	static void ReplaceStringsInTree(EvaluableNode *tree,
 		CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace,
 		EvaluableNode::ReferenceSetType &checked);
-
-	//returns a set of strings that have appeared at least once in the given tree
-	static void GetStringsFromTree(EvaluableNode *tree, std::vector<std::string> &strings, EvaluableNode::ReferenceSetType &checked);
 
 	//random stream for MutationOperationType, so can obtain a random type from a useful distribution
 	static MutationParameters::WeightedRandMutationType mutationOperationTypeRandomStream;

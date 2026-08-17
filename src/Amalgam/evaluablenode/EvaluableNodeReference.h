@@ -23,9 +23,9 @@ enum EvaluableNodeImmediateValueType : uint8_t
 class EvaluableNodeRequestedValueTypes
 {
 public:
-	using RequestType = uint16_t;
+	using TypeContainer = uint16_t;
 
-	enum class Type : RequestType
+	enum class Type : TypeContainer
 	{
 		//there is nothing to even hold the data
 		NONE = 0,
@@ -37,16 +37,29 @@ public:
 		NUMBER = 1 << 2,
 		//the size of the container
 		SIZE_AS_NUMBER = 1 << 3,
+		//the sum of the values
+		SUM_AS_NUMBER = 1 << 4,
+		//the product of the values
+		PRODUCT_AS_NUMBER = 1 << 5,
+		//minimum of the values
+		MIN_AS_NUMBER = 1 << 6,
+		//maximum of the values
+		MAX_AS_NUMBER = 1 << 7,
 		//string_id that is currently defined elsewhere
-		EXISTING_STRING_ID = 1 << 4,
+		EXISTING_STRING_ID = 1 << 8,
 		//string_id that may be newly defined
-		STRING_ID = 1 << 5,
+		STRING_ID = 1 << 9,
 		//key string_id that is currently defined elsewhere (as a key)
-		EXISTING_KEY_STRING_ID = 1 << 6,
+		EXISTING_KEY_STRING_ID = 1 << 10,
 		//key string_id that may be newly defined
-		KEY_STRING_ID = 1 << 7,
+		KEY_STRING_ID = 1 << 11,
+		//concat of string ids
+		CONCAT_AS_STRING_ID = 1 << 12,
 		//code
-		CODE = 1 << 8,
+		CODE = 1 << 13,
+
+		//need the node itself, but won't use beyond the opcode
+		IMMEDIATE_USE_ONLY = 1 << 14,
 
 		//composite types which can include NULL_VALUE
 		BOOL_OR_NULL = BOOL | NULL_VALUE,
@@ -56,7 +69,9 @@ public:
 		EXISTING_KEY_STRING_ID_OR_NULL = EXISTING_KEY_STRING_ID | NULL_VALUE,
 		KEY_STRING_ID_OR_NULL = KEY_STRING_ID | NULL_VALUE,
 
-		ANY_STANDARD_IMMEDIATE = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID | STRING_ID | CODE
+		ANY_PRIMITIVE_IMMEDIATE = NULL_VALUE | BOOL | NUMBER | EXISTING_STRING_ID | STRING_ID | CODE,
+		ANY_COMPLEX_IMMEDIATE = SIZE_AS_NUMBER | SUM_AS_NUMBER | PRODUCT_AS_NUMBER | MIN_AS_NUMBER | MAX_AS_NUMBER | CONCAT_AS_STRING_ID,
+		ANY_IMMEDIATE = IMMEDIATE_USE_ONLY | ANY_PRIMITIVE_IMMEDIATE | ANY_COMPLEX_IMMEDIATE
 	};
 
 	constexpr EvaluableNodeRequestedValueTypes() noexcept
@@ -67,27 +82,27 @@ public:
 		: requestedValueTypes(t)
 	{}
 
-	constexpr EvaluableNodeRequestedValueTypes(RequestType raw) noexcept
+	constexpr EvaluableNodeRequestedValueTypes(TypeContainer raw) noexcept
 		: requestedValueTypes(static_cast<Type>(raw))
 	{}
 
 	//boolean implies all or none
 	constexpr EvaluableNodeRequestedValueTypes(bool all_or_none) noexcept
-		: requestedValueTypes(all_or_none ? Type::ANY_STANDARD_IMMEDIATE : Type::NONE)
+		: requestedValueTypes(all_or_none ? Type::ANY_PRIMITIVE_IMMEDIATE : Type::NONE)
 	{}
 
 	//bit‑wise operators
 	constexpr EvaluableNodeRequestedValueTypes &operator|=(EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
-		requestedValueTypes = static_cast<Type>(static_cast<RequestType>(requestedValueTypes) |
-								 static_cast<RequestType>(rhs.requestedValueTypes));
+		requestedValueTypes = static_cast<Type>(static_cast<TypeContainer>(requestedValueTypes) |
+								 static_cast<TypeContainer>(rhs.requestedValueTypes));
 		return *this;
 	}
 
 	constexpr EvaluableNodeRequestedValueTypes &operator&=(EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
-		requestedValueTypes = static_cast<Type>(static_cast<RequestType>(requestedValueTypes) &
-								 static_cast<RequestType>(rhs.requestedValueTypes));
+		requestedValueTypes = static_cast<Type>(static_cast<TypeContainer>(requestedValueTypes) &
+								 static_cast<TypeContainer>(rhs.requestedValueTypes));
 		return *this;
 	}
 
@@ -96,8 +111,8 @@ public:
 		EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
 		return EvaluableNodeRequestedValueTypes(
-			static_cast<Type>(static_cast<RequestType>(lhs.requestedValueTypes) |
-				static_cast<RequestType>(rhs.requestedValueTypes)));
+			static_cast<Type>(static_cast<TypeContainer>(lhs.requestedValueTypes) |
+				static_cast<TypeContainer>(rhs.requestedValueTypes)));
 	}
 
 	constexpr friend EvaluableNodeRequestedValueTypes operator&(
@@ -105,28 +120,39 @@ public:
 		EvaluableNodeRequestedValueTypes rhs) noexcept
 	{
 		return EvaluableNodeRequestedValueTypes(
-			static_cast<Type>(static_cast<RequestType>(lhs.requestedValueTypes) &
-				static_cast<RequestType>(rhs.requestedValueTypes)));
+			static_cast<Type>(static_cast<TypeContainer>(lhs.requestedValueTypes) &
+				static_cast<TypeContainer>(rhs.requestedValueTypes)));
 	}
 
 	constexpr friend EvaluableNodeRequestedValueTypes operator~(
 		EvaluableNodeRequestedValueTypes v) noexcept
 	{
 		return EvaluableNodeRequestedValueTypes(
-			static_cast<Type>(~static_cast<RequestType>(v.requestedValueTypes)));
+			static_cast<Type>(~static_cast<TypeContainer>(v.requestedValueTypes)));
 	}
 
 	constexpr bool Allows(Type flag) const noexcept
 	{
-		return (static_cast<RequestType>(requestedValueTypes) &
-				static_cast<RequestType>(flag)) != 0;
+		return (static_cast<TypeContainer>(requestedValueTypes) &
+				static_cast<TypeContainer>(flag)) != 0;
 	}
 
-	//returns true if any immediate is allowed
+	constexpr bool AnyPrimitiveImmediateType() const noexcept
+	{
+		return (static_cast<TypeContainer>(requestedValueTypes)
+			& static_cast<TypeContainer>(Type::ANY_PRIMITIVE_IMMEDIATE)) != 0;
+	}
+
+	constexpr bool AnyComplexImmediateType() const noexcept
+	{
+		return (static_cast<TypeContainer>(requestedValueTypes)
+			& static_cast<TypeContainer>(Type::ANY_COMPLEX_IMMEDIATE)) != 0;
+	}
+
 	constexpr bool AnyImmediateType() const noexcept
 	{
-		return (static_cast<RequestType>(requestedValueTypes)
-			& static_cast<RequestType>(Type::ANY_STANDARD_IMMEDIATE)) != 0;
+		return (static_cast<TypeContainer>(requestedValueTypes)
+			& static_cast<TypeContainer>(Type::ANY_IMMEDIATE)) != 0;
 	}
 
 	constexpr bool NoValueRequested() const noexcept
@@ -134,7 +160,6 @@ public:
 		return requestedValueTypes == Type::NULL_VALUE;
 	}
 
-private:
 	Type requestedValueTypes;
 };
 
@@ -434,6 +459,9 @@ public:
 		: value(), unique(true), uniqueUnreferencedTopNode(true)
 	{}
 
+	//don't allow an EvaluableNode pointer without uniqueness flags
+	constexpr EvaluableNodeReference(EvaluableNode *_reference) = delete;
+
 	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique)
 		: value(_reference), unique(_unique), uniqueUnreferencedTopNode(_unique)
 	{}
@@ -484,7 +512,7 @@ public:
 			return EvaluableNodeReference::Null();
 		}
 
-		if(immediate_result.AnyImmediateType())
+		if(immediate_result.AnyPrimitiveImmediateType())
 		{
 			//first check for null, since it's not an immediate value
 			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::NULL_VALUE))
@@ -497,7 +525,7 @@ public:
 				}
 			}
 
-			if(en->IsImmediate())
+			if(en->IsTerminal())
 			{
 				//first check for key strings
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
@@ -623,6 +651,34 @@ public:
 		return false;
 	}
 
+	//sets both freeable and top node freeable flags given the appropriate uniqueness of the reference
+	void SetFreeableFlagsBasedOnUniqueness()
+	{
+		if(IsNull() || IsImmediateValue())
+			return;
+
+		EvaluableNode *en = GetReference();
+		if(unique)
+		{
+			en->SetIsFreeableAndIsFreeableTopNode(true);
+		}
+		else
+		{
+			if(uniqueUnreferencedTopNode)
+			{
+				en->SetIsFreeableTopNode(true);
+			}
+			else
+			{
+			#ifdef MULTITHREAD_SUPPORT
+				en->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+			#else
+				en->SetIsFreeableAndIsFreeableTopNode(false);
+			#endif
+			}
+		}
+	}
+
 	//calls GetNeedCycleCheck if the reference is not nullptr, returns false if it is nullptr
 	__forceinline bool GetNeedCycleCheck()
 	{
@@ -714,13 +770,19 @@ public:
 		return (value.nodeType != ENIVT_CODE || value.nodeValue.code == nullptr);
 	}
 
-	//returns true if the type of whatever is stored is an immediate type
-	__forceinline bool IsImmediateValueType()
+	//returns true if the type of whatever is stored is a terminal value type
+	__forceinline bool IsTerminalValueType()
 	{
 		if(value.nodeType != ENIVT_CODE)
 			return true;
 
-		return EvaluableNode::IsImmediate(value.nodeValue.code);
+		return EvaluableNode::IsTerminal(value.nodeValue.code);
+	}
+
+	__forceinline bool IsNull()
+	{
+		return (value.nodeType == ENIVT_NULL
+			|| (value.nodeType == ENIVT_CODE && value.nodeValue.code == nullptr));
 	}
 
 	__forceinline bool IsNonNullNodeReference()
@@ -771,12 +833,9 @@ public:
 		return *this;
 	}
 
-protected:
 	//align so the entire data structure takes up 16 bytes
 #pragma pack(push, 4)
 	EvaluableNodeImmediateValueWithType value;
-
-public:
 
 	//true if this is the only reference to the result
 	bool unique;

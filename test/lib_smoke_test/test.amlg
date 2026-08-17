@@ -1,8 +1,8 @@
 ;
 ; Test amlg file for test driver to test amalgam libraries
 ;
-
-(seq
+{
+	test
 	 (map
 		 (lambda (create_entities
 			 (concat "case_" (current_index))
@@ -60,4 +60,4 @@
 			)
 		))
 	 )
-)
+}

@@ -6,8 +6,12 @@ static std::string _opcode_group = "Random";
 
 static OpcodeInitializer _ENT_RAND(ENT_RAND, &Interpreter::InterpretNode_ENT_RAND, []() {
 	OpcodeDetails d;
-	d.parameters = R"([list|assoc|number range] [number number_to_generate] [bool unique])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"range", OpcodeDetails::DataType::NUMBER | OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"number_to_generate", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"unique", OpcodeDetails::DataType::BOOL, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Generates random values based on the parameters.  The random values are drawn from a random stream specific to each execution flow for each entity.  When `range` is not specified, it evaluates to a random number between 0.0 and 1.0.  If `range` is a list, it will uniformly randomly choose and evaluate to one element of the list.  If `range` is a number, it will evaluate to a value greater than or equal to zero and less than the number specified.  If `range` is an assoc, then it will randomly evaluate to one of the keys using the values as the weights for the probabilities.  If  `number_to_generate` is specified, it will generate a list of multiple values (even if `number_to_generate` is 1).  If `unique` is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.  Note that the `unique` parameter only applies when `range` is a list or assoc.  If `unique` is true and there are not enough values in a list or assoc, it will only generate the number of elements in `range`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((rand))&", R"(0.4153759082605256)"},
@@ -133,6 +137,7 @@ R"&(\[\s*
 }
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::CONDITIONAL;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 6.5;
 	d.opcodeGroup = _opcode_group;
@@ -152,7 +157,7 @@ static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType 
 	if(normalize)
 	{
 		total_probability = 0;
-		for(auto &[_, prob] : assoc)
+		for(auto &prob : assoc | std::views::values)
 			total_probability += std::max(0.0, EvaluableNode::ToNumber(prob, 0.0));
 
 		//if no probabilities, just choose uniformly
@@ -163,7 +168,7 @@ static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType 
 
 			//iterate over pairs until find the index
 			size_t cur_index = 0;
-			for(auto &[prob_id, _] : assoc)
+			for(auto &prob_id : assoc | std::views::keys)
 			{
 				if(cur_index == index_to_return)
 					return prob_id;
@@ -178,7 +183,7 @@ static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType 
 		{
 			//start over, count infinities
 			size_t inf_count = 0;
-			for(auto &[_, prob] : assoc)
+			for(auto &prob : assoc | std::views::values)
 			{
 				if(EvaluableNode::ToNumber(prob, 0.0) == std::numeric_limits<double>::infinity())
 					inf_count++;
@@ -290,7 +295,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 		generate_unique_values = InterpretNodeIntoBoolValue(ocn[2]);
 
 	//get random param
-	auto param = InterpretNodeForImmediateUse(ocn[0]);
+	auto param = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 
 	//if generating a single value
 	if(!generate_list)
@@ -429,12 +434,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 
 static OpcodeInitializer _ENT_GET_RAND_SEED(ENT_GET_RAND_SEED, &Interpreter::InterpretNode_ENT_GET_RAND_SEED, []() {
 	OpcodeDetails d;
-	d.parameters = R"()";
-	d.returns = R"(string)";
+	d.parameters = OpcodeDetails::ParameterSchema{};
+	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(Evaluates to a string representing the current state of the random number generator.  Note that the string will be a string of bytes that may not be valid as UTF-8.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((format (get_rand_seed) "string" "base64"))&", R"("X6f8e5JTT5kuHHGZUu7r6/8=")"}
 		});
+	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;
@@ -449,9 +455,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_RAND_SEED(EvaluableNod
 
 static OpcodeInitializer _ENT_SET_RAND_SEED(ENT_SET_RAND_SEED, &Interpreter::InterpretNode_ENT_SET_RAND_SEED, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string seed)";
-	d.returns = R"(string)";
-	d.description = R"(Initializes the random number stream for the given `seed` without affecting any entity.  If the seed is already a string in the proper format output by `get_entity_rand_seed` or `get_rand_seed`, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the generator.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"seed", OpcodeDetails::DataType::STRING})
+	};
+	d.returns = OpcodeDetails::DataType::STRING;
+	d.description = R"(Initializes the random number stream for the given `seed` without affecting any entity.  If `seed` is already a string in the proper format output by `get_entity_rand_seed` or `get_rand_seed`, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it will use the first 14 to 15 digits of the seed as a string to seed the generator.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(declare
@@ -476,6 +484,7 @@ static OpcodeInitializer _ENT_SET_RAND_SEED(ENT_SET_RAND_SEED, &Interpreter::Int
 ))&", R"(0.5507987428849511)"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
+	d.retrievesData = true;
 	d.hasSideEffects = true;
 	d.frequencyPer10000Opcodes = 0.5;
 	d.opcodeGroup = _opcode_group;
@@ -485,13 +494,13 @@ static OpcodeInitializer _ENT_SET_RAND_SEED(ENT_SET_RAND_SEED, &Interpreter::Int
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 1)
+	if(ocn.size() < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto seed_node = InterpretNodeForImmediateUse(ocn[0]);
 	std::string seed_string;
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
-		seed_string = seed_node->GetStringValue();
+		seed_string = seed_node->GetStringView();
 	else
 		seed_string = Parser::Unparse(seed_node, false, false, true);
 
@@ -502,8 +511,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNod
 
 static OpcodeInitializer _ENT_GET_ENTITY_RAND_SEED(ENT_GET_ENTITY_RAND_SEED, &Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity])";
-	d.returns = R"(string)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true})
+	};
+	d.returns = OpcodeDetails::DataType::STRING;
 	d.description = R"(Evaluates to a string representing the current state of the random number generator for `entity` used for seeding the random streams of any calls to the entity.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
@@ -519,8 +530,9 @@ static OpcodeInitializer _ENT_GET_ENTITY_RAND_SEED(ENT_GET_ENTITY_RAND_SEED, &In
 		"string"
 		"base64"
 	)
-))&", R"("nHKVcHddHVaqvcDt3AYbD/8=")", "", R"((destroy_entities "Rand"))"}
+))&", R"("nHKVcHddHVaqvcDt3AYbD/8=")", R"(\w+)", R"((destroy_entities "Rand"))"}
 		});
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.01;
@@ -547,9 +559,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(Evalu
 
 static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED, []() {
 	OpcodeDetails d;
-	d.parameters = R"([id_path entity] * node [bool deep])";
-	d.returns = R"(string)";
-	d.description = R"(Sets the random number seed and state for the random number generator of `entity`, or the current entity if null or not specified, to the state specified by `node`.  If `node` is already a string in the proper format output by `(get_entity_rand_seed)`, then it will set the random generator to that current state, picking up where the previous state left off.  If `node` is anything else, it uses the value as a random seed to start the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by `entity` for new calls.  The parameter `deep` defaults to false, but if it is true, all contained entities are recursively set with random seeds based on a hash of a combination of the specified random seed and their relative id path to the entity being set.)";
+	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
+	{
+		OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true}),
+		OpcodeDetails::ParameterGroup({"seed", OpcodeDetails::DataType::ENTITY_ID}),
+		OpcodeDetails::ParameterGroup({"deep", OpcodeDetails::DataType::BOOL, true})
+	});
+	d.returns = OpcodeDetails::DataType::STRING;
+	d.description = R"(Sets the random number seed and state for the random number generator of `entity`, or the current entity if null or not specified, to the state specified by `seed`.  If `seed` is already a string in the proper format output by `get_entity_rand_seed` or `get_rand_seed`, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it will use the first 14 to 15 digits of the seed as a string to seed the generator.  Note that this will not affect the state of the current random number stream, only future random streams created by `entity` for new calls.  The parameter `deep` defaults to false, but if it is true, all contained entities are recursively set with random seeds based on a hash of a combination of the specified random seed and their relative id path to the entity being set.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -592,13 +609,10 @@ static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &In
 				]
 		}
 	)
-	[first_rand_numbers second_rand_numbers]
-))&", R"([
-	[0.9512993766655248 0.3733350484591008]
-	[0.9512993766655248 0.3733350484591008]
-])", "", R"((destroy_entities "Rand"))"}
+	(and (= (size first_rand_numbers) 2) (= first_rand_numbers second_rand_numbers))
+))&", R"(.true)", "", R"((destroy_entities "Rand"))"}
 		});
-	d.orderedChildNodeType = OpcodeDetails::OrderedChildNodeType::ORDERED;
+	d.retrievesData = true;
 	d.requiresEntity = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
 	d.hasSideEffects = true;
@@ -609,7 +623,7 @@ static OpcodeInitializer _ENT_SET_ENTITY_RAND_SEED(ENT_SET_ENTITY_RAND_SEED, &In
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	if(!CanModifyEntityFromConstraints())
+	if(!CanModifyEntityFromConstraints()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -626,7 +640,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	auto seed_node = InterpretNode(ocn[num_params > 1 ? 1 : 0]);
 	std::string seed_string;
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
-		seed_string = seed_node->GetStringValue();
+		seed_string = seed_node->GetStringView();
 	else
 		seed_string = Parser::Unparse(seed_node, false, false, true);
 	auto node_stack = CreateOpcodeStackStateSaver(seed_node);

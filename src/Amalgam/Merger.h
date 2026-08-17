@@ -186,6 +186,12 @@ public:
 	// the value that is more valid if applicable
 	virtual T MergeValues(T a, T b, bool must_merge = false) = 0;
 
+	//returns true if a and b are deep equal
+	virtual bool AreDeepEqual(T a, T b)
+	{
+		return (a == b);
+	}
+
 	//Returns true if the merge should keep all elements that do not have a corresponding element to merge with
 	virtual bool KeepAllNonMergeableValues() = 0;
 
@@ -230,6 +236,24 @@ public:
 		{
 			merged.reserve(std::max(a1.size(), a2.size()));
 			unmatched_a1.reserve(a1.size());
+		}
+
+		//first, find and merge exact matches
+		for(size_t i1 = 0; i1 < a1.size(); i1++)
+		{
+			for(size_t i2 = 0; i2 < a2.size(); i2++)
+			{
+				if(AreDeepEqual(a1[i1], a2[i2]))
+				{
+					T m = MergeValues(a1[i1], a2[i2]);
+					merged.emplace_back(m);
+
+					a1.erase(begin(a1) + i1);
+					a2.erase(begin(a2) + i2);
+					i1--;
+					break;
+				}
+			}
 		}
 
 		//for every element in a1, find best match (if one exists) in a2
@@ -645,7 +669,7 @@ public:
 		else if(map_a.size() > 0 && map_b.size() > 0)
 		{
 			//include all keys that are in both nodes
-			for(auto &[n_key, _] : map_a)
+			for(auto &n_key : map_a | std::views::keys)
 			{
 				if(map_b.find(n_key) != end(map_b))
 					merged.emplace(n_key, NullValue);
@@ -656,7 +680,7 @@ public:
 			//but can skip if the merged is the same size as the map
 			if(map_a.size() != num_common_indices)
 			{
-				for(auto &[n_key, _] : map_a)
+				for(auto &n_key : map_a | std::views::keys)
 				{
 					if(KeepNonMergeableA())
 						merged.emplace(n_key, NullValue);
@@ -665,7 +689,7 @@ public:
 
 			if(map_b.size() != num_common_indices)
 			{
-				for(auto &[n_key, _] : map_b)
+				for(auto &n_key : map_b | std::views::keys)
 				{
 					if(KeepNonMergeableB())
 						merged.emplace(n_key, NullValue);

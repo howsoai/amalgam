@@ -1,5 +1,6 @@
 //project headers:
 
+#include "EvaluableNodeTreeAlgebra.h"
 #include "EvaluableNodeTreeDifference.h"
 #include "Interpreter.h"
 #include "OpcodeDetails.h"
@@ -8,8 +9,10 @@ static std::string _opcode_group = "Code Comparison and Evolution";
 
 static OpcodeInitializer _ENT_TOTAL_SIZE(ENT_TOTAL_SIZE, &Interpreter::InterpretNode_ENT_TOTAL_SIZE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node)";
-	d.returns = R"(number)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
 	d.description = R"(Evaluates to the total count of all of the nodes referenced directly or indirectly by `node`.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((total_size
@@ -31,7 +34,7 @@ static OpcodeInitializer _ENT_TOTAL_SIZE(ENT_TOTAL_SIZE, &Interpreter::Interpret
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto n = InterpretNodeForImmediateUse(ocn[0]);
@@ -43,9 +46,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *
 
 static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT_MUTATE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node [number mutation_rate] [assoc mutation_weights] [assoc operation_type] [preserve_type_depth])";
-	d.returns = R"(any)";
-	d.description = R"(Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.00001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "delete", "insert", "swap_elements", "deep_copy_elements", and "delete_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"mutation_rate", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"mutation_weights", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"operation_type", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"preserve_type_depth", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"immediate_number_weights", OpcodeDetails::DataType::ASSOC, true}),
+		OpcodeDetails::ParameterGroup({"immediate_string_weights", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description = R"(Evaluates to a mutated version of `node`.  The `mutation_rate` can range from 0.0 to 1.0 and defaulting to 0.0001, and indicates the probability that any node will experience a mutation.  The parameter `mutation_weights` is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The parameter `operation_type` is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings "change_type", "insert", "remove", "simplify_node", "insert_element", "remove_element", "replace_element_with_copy", "swap_elements", and "remove_all_elements".  If `preserve_type_depth` is specified, it will retain the types of node down to and including whatever depth is specified, and defaults to 0 indicating that none of the structure needs to be preserved.  If `immediate_number_weights` is specified, each number value as a key will have that probability specified in its value of being chosen when a node is mutated to a number, with the null key representing the probability default behavior of exponential perturbation of the numeric value.  The parameter `immediate_string_weights` behaves similarly to `immediate_number_weights`, with its null key representing the default behavior of an even split between randomly choosing existing strings in the tree and generating new random strings.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((mutate
 	(lambda
@@ -126,7 +137,61 @@ static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT
 	)
 ])",
 //accept anything since mutation can do anything
-".*"}
+".*"},
+	{R"&((mutate
+	(lambda
+		[
+			1
+			2
+			"c"
+			4
+			5
+			6
+			7
+			"g"
+			9
+			10
+			11
+			12
+			"l"
+			14
+			(associate "a" 1 "b" 2)
+		]
+	)
+	0.91
+	.null
+	.null
+	1
+	{
+		101 0.25
+		201 0.25
+		301 0.25
+		.null 0.25
+	}
+	{
+		"x" 0.5
+		"y" 0.5
+	}
+))&", R"([
+		1.7100924132216468
+		201
+		"x"
+		4
+		101
+		.null
+		101
+		"x"
+		101
+		201
+		101
+		201
+		"x"
+		.null
+		x
+])",
+//accept anything since mutation can do anything
+".*"},
+{R"&((get_type_string (mutate (lambda (+ 1 2)) 1.0 .null {"simplify_node" 1})))&", R"("number")"},
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.1;
@@ -137,7 +202,7 @@ static OpcodeInitializer _ENT_MUTATE(ENT_MUTATE, &Interpreter::InterpretNode_ENT
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto to_mutate = InterpretNodeForImmediateUse(ocn[0]);
@@ -145,7 +210,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 		to_mutate.SetReference(evaluableNodeManager->AllocNode(ENT_NULL));
 	auto node_stack = CreateOpcodeStackStateSaver(to_mutate);
 
-	double mutation_rate = 0.00001;
+	double mutation_rate = 0.0001;
 	if(ocn.size() > 1)
 		mutation_rate = InterpretNodeIntoNumberValue(ocn[1]);
 
@@ -158,7 +223,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 		{
 			ow_exists = true;
 			for(auto &[node_id, node] : opcode_weights_node->GetMappedChildNodes())
-				opcode_weights[GetEvaluableNodeTypeFromStringId(node_id)] = EvaluableNode::ToNumber(node);
+			{
+				EvaluableNodeType t = GetEvaluableNodeTypeFromStringId(node_id);
+				if(IsEvaluableNodeTypeValid(t))
+					opcode_weights[t] = EvaluableNode::ToNumber(node);
+			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(opcode_weights_node);
 		}
@@ -175,7 +244,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 			for(auto &[node_id, node] : mutation_weights_node->GetMappedChildNodes())
 			{
 				auto bisid = GetBuiltInStringIdFromStringId(node_id);
-				mutation_type_weights[bisid] = EvaluableNode::ToNumber(node);
+				if(bisid != ENBISI_NOT_A_STRING)
+					mutation_type_weights[bisid] = EvaluableNode::ToNumber(node);
 			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(mutation_weights_node);
@@ -186,27 +256,49 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	if(ocn.size() > 4)
 		preserve_type_depth = static_cast<size_t>(std::max(0.0, InterpretNodeIntoNumberValue(ocn[4])));
 
+	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType imm_number_weights;
+	if(ocn.size() > 5)
+	{
+		auto imm_number_weights_node = InterpretNodeForImmediateUse(ocn[5]);
+		if(EvaluableNode::IsAssociativeArray(imm_number_weights_node))
+			imm_number_weights.Initialize(imm_number_weights_node->GetMappedChildNodesReference(), true);
+	}
+
+	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType imm_string_weights;
+	if(ocn.size() > 6)
+	{
+		auto imm_string_weights_node = InterpretNodeForImmediateUse(ocn[6]);
+		if(EvaluableNode::IsAssociativeArray(imm_string_weights_node))
+			imm_string_weights.Initialize(imm_string_weights_node->GetMappedChildNodesReference(), true);
+	}
+
 	//result contains the copied result which may incur replacements
-	EvaluableNode *result = EvaluableNodeTreeManipulation::MutateTree(this, evaluableNodeManager,
+	EvaluableNode *result = EvaluableNodeTreeManipulation::MutateTree(this, evaluableNodeManager, nullptr,
 		to_mutate, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr,
-		ow_exists ? &opcode_weights : nullptr, preserve_type_depth);
+		ow_exists ? &opcode_weights : nullptr, preserve_type_depth,
+		imm_number_weights, imm_string_weights);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	return EvaluableNodeReference(result, true);
 }
 
 static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &Interpreter::InterpretNode_ENT_GET_MUTATION_DEFAULTS, []() {
 	OpcodeDetails d;
-	d.parameters = R"(string value_type)";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"value_type", OpcodeDetails::DataType::STRING})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Retrieves the default values of `value_type` for mutation, either "mutation_opcodes" or "mutation_types")";
 	d.examples = MakeAmalgamExamples({
 		{R"((get_mutation_defaults "mutation_types"))", R"({
-	change_type 0.29
-	deep_copy_elements 0.07
-	delete 0.1
-	delete_elements 0.05
-	insert 0.25
-	swap_elements 0.24
+		change_type 0.15
+		insert 0.14
+		insert_element 0.14
+		remove 0.14
+		remove_all_elements 0.0001
+		remove_element 0.14
+		replace_element_with_copy 0.0999
+		simplify_node 0.05
+		swap_elements 0.14
 })"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
@@ -218,7 +310,7 @@ static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_MUTATION_DEFAULTS(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() == 0)
+	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 	//get the string key
 	std::string key = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -258,9 +350,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_MUTATION_DEFAULTS(Eval
 
 static OpcodeInitializer _ENT_COMMONALITY(ENT_COMMONALITY, &Interpreter::InterpretNode_ENT_COMMONALITY, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node1 * node2 [assoc params])";
-	d.returns = R"(number)";
-	d.description = R"(Evaluates to the total count of all of the nodes referenced within `node1` and `node2` that are equivalent.  The assoc `params` can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "use_string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
+	d.description = R"(Evaluates to the total count of all of the nodes referenced within `node1` and `node2` that are equivalent.  The assoc `params` can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((commonality
 	(lambda
@@ -318,7 +414,7 @@ static OpcodeInitializer _ENT_COMMONALITY(ENT_COMMONALITY, &Interpreter::Interpr
 	"hello"
 	"el"
 	{nominal_strings .false}
-))&", R"(0.49099467997549845)"},
+))&", R"(0.583096267567592)"},
 			{R"&((commonality
 	"hello"
 	"el"
@@ -351,7 +447,9 @@ static OpcodeInitializer _ENT_COMMONALITY(ENT_COMMONALITY, &Interpreter::Interpr
 	[1 2 3]
 	(unordered_list 1 2 3)
 	{types_must_match .false}
-))&", R"(3.5)"}
+))&", R"(3.5)"},
+		{R"&((commonality (lambda (- a b)) (lambda (- b))))&",
+			R"(2)"},
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.05;
@@ -362,7 +460,7 @@ static OpcodeInitializer _ENT_COMMONALITY(ENT_COMMONALITY, &Interpreter::Interpr
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool string_edit_distance = false;
@@ -388,11 +486,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 	//calculate edit distance based commonality if string edit distance
 	if(string_edit_distance)
 	{
-		size_t s1_len = 0;
-		size_t s2_len = 0;
-		auto edit_distance = EvaluableNodeTreeManipulation::EditDistance(
-			EvaluableNode::ToString(ocn[0]), EvaluableNode::ToString(ocn[1]), s1_len, s2_len);
-		auto commonality = static_cast<double>(std::max(s1_len, s2_len) - edit_distance);
+		double commonality = static_cast<double>(EvaluableNodeTreeManipulation::CommonalityBetweenStrings(
+			EvaluableNode::ToString(ocn[0]), EvaluableNode::ToString(ocn[1])));
 		return AllocReturn(commonality, immediate_result);
 	}
 
@@ -414,9 +509,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 
 static OpcodeInitializer _ENT_EDIT_DISTANCE(ENT_EDIT_DISTANCE, &Interpreter::InterpretNode_ENT_EDIT_DISTANCE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node1 * node2 [assoc params])";
-	d.returns = R"(number)";
-	d.description = R"(Evaluates to the number of nodes that are different between `node1` and `node2`. The assoc `params` can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "use_string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::NUMBER;
+	d.description = R"(Evaluates to the number of nodes that are different between `node1` and `node2`. The assoc `params` can contain the keys "string_edit_distance", "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "string_edit_distance" is true (default is false), it will assume `node1` and `node2` as string literals and compute via string edit distance.  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((edit_distance
 	(lambda
@@ -466,7 +565,7 @@ static OpcodeInitializer _ENT_EDIT_DISTANCE(ENT_EDIT_DISTANCE, &Interpreter::Int
 	"hello"
 	"el"
 	{nominal_strings .false}
-))&", R"(1.018010640049003)"},
+))&", R"(0.8338074648648159)"},
 			{R"&((edit_distance
 	"hello"
 	"el"
@@ -495,7 +594,7 @@ static OpcodeInitializer _ENT_EDIT_DISTANCE(ENT_EDIT_DISTANCE, &Interpreter::Int
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool string_edit_distance = false;
@@ -547,8 +646,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 
 static OpcodeInitializer _ENT_INTERSECT(ENT_INTERSECT, &Interpreter::InterpretNode_ENT_INTERSECT, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node1 * node2 [assoc params])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to whatever is common between `node1` and `node2` exclusive.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true, the default, then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((intersect
@@ -647,12 +750,12 @@ static OpcodeInitializer _ENT_INTERSECT(ENT_INTERSECT, &Interpreter::InterpretNo
 ])"},
 			{R"&((intersect
 	(lambda
-		(replace 4 2 6 1 7)
+		(modify 4 2 6 1 7)
 	)
 	(lambda
-		(replace 4 1 7 2 6)
+		(modify 4 1 7 2 6)
 	)
-))&", R"((replace 4 2 6 1 7))"},
+))&", R"((modify 4 2 6 1 7))"},
 			{R"&((unparse
 	(intersect
 		(lambda
@@ -713,7 +816,7 @@ static OpcodeInitializer _ENT_INTERSECT(ENT_INTERSECT, &Interpreter::InterpretNo
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool types_must_match = true;
@@ -751,8 +854,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 
 static OpcodeInitializer _ENT_UNION(ENT_UNION, &Interpreter::InterpretNode_ENT_UNION, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node1 * node2 [assoc params])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Evaluates to whatever is inclusive when merging `node1` and `node2`.  The assoc `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", and "recursive_matching".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true, the default, then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((union
@@ -938,7 +1045,11 @@ R"("\[\\r\\n\\t\\r\\n\\t;comment 1\\r\\n\\t;comment 2\\r\\n\\t;comment 3\\r\\n\\
 	2
 	3
 	[1 2 3]
-])"}
+])"},
+		{R"((union (lambda (+ a b)) (lambda (+ b))))",
+		R"((+ a b))"},
+		{ R"((union (lambda (- a b)) (lambda (- b))))",
+		R"((- a b))" }
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.5;
@@ -949,7 +1060,7 @@ R"("\[\\r\\n\\t\\r\\n\\t;comment 1\\r\\n\\t;comment 2\\r\\n\\t;comment 3\\r\\n\\
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	bool types_must_match = true;
@@ -987,8 +1098,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, E
 
 static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::InterpretNode_ENT_DIFFERENCE, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node1 * node2)";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Finds the difference between `node1` and `node2`, and generates code that, if evaluated passing `node1` as its parameter "_", would turn it into `node2`.  Useful for finding a small difference of what needs to be changed to apply it to new (and possibly slightly different) data or code.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((difference
@@ -1023,7 +1137,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	)
 ))&", R"((declare
 	{_ .null}
-	(replace
+	(modify
 		_
 		[]
 		(lambda
@@ -1067,7 +1181,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	}
 ))&", R"((declare
 	{_ .null}
-	(replace
+	(modify
 		_
 		[]
 		(lambda
@@ -1117,7 +1231,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	)
 ))&", R"((declare
 	{_ .null}
-	(replace
+	(modify
 		_
 		[]
 		(lambda
@@ -1173,7 +1287,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	.true
 	.true
 	.true
-))&", R"("(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\ta 2\r\n\t\t\t\tc (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"c\"\r\n\t\t\t\t\t)\r\n\t\t\t\td 6\r\n\t\t\t\te (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"e\"\r\n\t\t\t\t\t)\r\n\t\t\t\tf (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"f\"\r\n\t\t\t\t\t)\r\n\t\t\t\tg 14\r\n\t\t\t\tq 8\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
+))&", R"("(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\ta 2\r\n\t\t\t\tc (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"c\"\r\n\t\t\t\t\t)\r\n\t\t\t\td 6\r\n\t\t\t\te (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"e\"\r\n\t\t\t\t\t)\r\n\t\t\t\tf (get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t\"f\"\r\n\t\t\t\t\t)\r\n\t\t\t\tg 14\r\n\t\t\t\tq 8\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
 			{R"&((unparse
 	(difference
 		(lambda
@@ -1196,7 +1310,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	.true
 	.true
 	.true
-))&", R"("(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[3]\r\n\t\t(lambda\r\n\t\t\t[\r\n\t\t\t\t(get\r\n\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t0\r\n\t\t\t\t)\r\n\t\t\t\t4\r\n\t\t\t]\r\n\t\t)\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t(set_type\r\n\t\t\t\t[\r\n\t\t\t\t\ta\r\n\t\t\t\t\t2\r\n\t\t\t\t\tg\r\n\t\t\t\t\t(get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t3\r\n\t\t\t\t\t)\r\n\t\t\t\t]\r\n\t\t\t\t\"associate\"\r\n\t\t\t)\r\n\t\t)\r\n\t)\r\n)\r\n")"},
+))&", R"("(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[3]\r\n\t\t(lambda\r\n\t\t\t[\r\n\t\t\t\t(get\r\n\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t0\r\n\t\t\t\t)\r\n\t\t\t\t4\r\n\t\t\t]\r\n\t\t)\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t(set_type\r\n\t\t\t\t[\r\n\t\t\t\t\ta\r\n\t\t\t\t\t2\r\n\t\t\t\t\tg\r\n\t\t\t\t\t(get\r\n\t\t\t\t\t\t(current_value 1)\r\n\t\t\t\t\t\t3\r\n\t\t\t\t\t)\r\n\t\t\t\t]\r\n\t\t\t\t\"associate\"\r\n\t\t\t)\r\n\t\t)\r\n\t)\r\n)\r\n")"},
 			{R"&((unparse
 	(difference
 		(zip
@@ -1212,7 +1326,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	.true
 	.true
 	.true
-))&", R"("(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\t2 .null\r\n\t\t\t\t5 .null\r\n\t\t\t\t6 .null\r\n\t\t\t\ta 1\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
+))&", R"("(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{\r\n\t\t\t\t2 .null\r\n\t\t\t\t5 .null\r\n\t\t\t\t6 .null\r\n\t\t\t\ta 1\r\n\t\t\t}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
 			{R"&((unparse
 	(difference
 		(zip
@@ -1225,7 +1339,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	.true
 	.true
 	.true
-))&", R"("(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
+))&", R"("(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
 			{R"&((unparse
 	(difference
 		(zip
@@ -1238,7 +1352,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 	.true
 	.true
 	.true
-))&", R"("(declare\r\n\t{_ .null}\r\n\t(replace\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
+))&", R"("(declare\r\n\t{_ .null}\r\n\t(modify\r\n\t\t_\r\n\t\t[]\r\n\t\t(lambda\r\n\t\t\t{2 .null 5 .null 6 .null}\r\n\t\t)\r\n\t)\r\n)\r\n")"},
 			{R"&((let
 	{
 		x (lambda
@@ -1330,7 +1444,7 @@ static OpcodeInitializer _ENT_DIFFERENCE(ENT_DIFFERENCE, &Interpreter::Interpret
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
@@ -1347,8 +1461,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE(EvaluableNode *
 
 static OpcodeInitializer _ENT_MIX(ENT_MIX, &Interpreter::InterpretNode_ENT_MIX, []() {
 	OpcodeDetails d;
-	d.parameters = R"(* node1 * node2 [number keep_chance_node1] [number keep_chance_node2] [assoc params])";
-	d.returns = R"(any)";
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"node1", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"node2", OpcodeDetails::DataType::ANY_BASIC}),
+		OpcodeDetails::ParameterGroup({"keep_chance_node1", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"keep_chance_node2", OpcodeDetails::DataType::NUMBER, true}),
+		OpcodeDetails::ParameterGroup({"params", OpcodeDetails::DataType::ASSOC, true})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
 	d.description = R"(Performs a union operation on `node1` and `node2`, but randomly ignores nodes from one or the other if the nodes are not equal.  If only `keep_chance_node1` is specified, `keep_chance_node2` defaults to 1 - `keep_chance_node1`. `keep_chance_node1` specifies the probability that a node from `node1` will be kept, and `keep_chance_node2` the probability that a node from `node2` will be kept.  `keep_chance_node1` + `keep_chance_node2` should be between 1 and 2, as there are two objects being merged, otherwise the values will be normalized.  `params` can contain the keys "types_must_match", "nominal_numbers", "nominal_strings", "recursive_matching", and "similar_mix_chance".  If the key "types_must_match" is true (the default), it will only consider nodes common if the types match.  If the key "nominal_numbers" is true (the default is false), then it will assume that all numbers will match only if identical; if false, it will compare similarity of values.  The key "nominal_strings" defaults to true, but works similar to "nominal_numbers" except on strings using string edit distance.  If the key "recursive_matching" is true or null, then it will attempt to recursively match any part of the data structure of `node1` to `node2`.  If the key "recursive_matching" is false, then it will only attempt to merge the two at the same level, which yield better results if the data structures are common, and additionally will be much faster.  "similar_mix_chance" is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number and string values based on `keep_chance_node1` and `keep_chance_node2`, and defaults to 0.0.  If "similar_mix_chance" is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((mix
@@ -1705,6 +1825,7 @@ static OpcodeInitializer _ENT_MIX(ENT_MIX, &Interpreter::InterpretNode_ENT_MIX, 
 //accept anything since mutation can do anything
 ".*" }
 		});
+	d.hasSideEffects = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
 	d.frequencyPer10000Opcodes = 0.25;
 	d.opcodeGroup = _opcode_group;
@@ -1714,7 +1835,7 @@ static OpcodeInitializer _ENT_MIX(ENT_MIX, &Interpreter::InterpretNode_ENT_MIX, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
-	if(ocn.size() < 2)
+	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	double blend2 = 0.5; //default to half
@@ -1777,5 +1898,207 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, Eva
 	evaluableNodeManager->FreeNodeTreeIfPossible(n1);
 	evaluableNodeManager->FreeNodeTreeIfPossible(n2);
 
+	return EvaluableNodeReference(result, true);
+}
+
+static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode_ENT_SIMPLIFY, []() {
+	OpcodeDetails d;
+	d.parameters = OpcodeDetails::ParameterSchema{
+		OpcodeDetails::ParameterGroup({"code", OpcodeDetails::DataType::ANY_BASIC})
+	};
+	d.returns = OpcodeDetails::DataType::ANY_BASIC;
+	d.description =
+		R"(Simplifies `code` in basic ways that will yield the same behavior and return the same result.  Note that values from boolean logic may not necessarily be preserved, with the opcodes "and" and "or" potentially returning just true or false.)";
+	d.examples = MakeAmalgamExamples({ {R"&((simplify
+	(lambda
+		(+
+			0
+			1
+			2
+			3
+			4
+			5
+			6
+		)
+	)
+))&",
+		R"(21)"},
+{R"&((simplify
+	(lambda
+		(if
+			a (if .false 1 .true 2 c)
+			b (if 3)
+			.false 3
+			4			
+		)
+	)
+))&",
+		R"((if a 2 b 3 4))"},
+		{R"&((simplify (lambda (if))))&", R"(.null)"},
+		{R"&((simplify (lambda (if .false 1))))&", R"(.null)"},
+{ R"&((simplify
+	(lambda
+		(and a .true b (or .false c d))
+	)
+))&",
+		R"((and
+		(or c d)
+		a
+		b
+))" },
+		{ R"&((simplify
+	(lambda
+		(concat "h" "e" l l "o" " " "w" o r l "d" "!")
+	)
+))&",
+		R"((concat
+		"he"
+		l
+		l
+		"o w"
+		o
+		r
+		l
+		"d!"
+))" },
+		{R"&((simplify
+	(lambda
+		(+ (exp a) a 4 2 (+ 3 4 a) (+ 3 a 4) a (exp a))
+	)
+))&",
+		R"((+
+		(*
+				(exp a)
+				2
+		)
+		(* 4 a)
+		20
+))"},
+		{R"&((simplify (lambda (-))))&", R"(.null)"},
+		{R"&((simplify (lambda (- a))))&", R"((- a))"},
+		{R"&((simplify (lambda (- 5 a))))&", R"((- 5 a))"},
+		{R"&((simplify (lambda (- a 0))))&", R"(a)"},
+		{R"&((call (simplify (lambda (- a 0))) {a -0}))&", R"(-0)"},
+		{R"&((simplify (lambda (- a -0))))&", R"((- a -0))"},
+		{R"&((call (simplify (lambda (- a 0))) {a "2"}))&", R"("2")"},
+		{R"&((simplify (lambda (- b a a 1))))&", R"((-
+	b
+	(* 2 a)
+	1
+))"},
+		{R"&((simplify (lambda (- a a))))&", R"((- a a))"},
+		{R"&((call (simplify (lambda (- a a))) {a .infinity}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (- a a))) {a .null}))&", R"(.null)"},
+		{R"&((simplify (lambda (- a a a))))&", R"((-
+	a
+	(* 2 a)
+))"},
+		{R"&((call (simplify (lambda (- a a a))) {a 2}))&", R"(-2)"},
+		{R"&((call (simplify (lambda (- a a a))) {a .infinity}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (- a a a a))) {a 2}))&", R"(-4)"},
+		{R"&((call (simplify (lambda (- a a b))) {a 2 b 3}))&", R"(-3)"},
+		{R"&((call (simplify (lambda (- a a 5 b))) {a 2 b 3}))&", R"(-8)"},
+		{R"&((simplify (lambda (- a 5 -2))))&", R"((- a 3))"},
+		{R"&((simplify (lambda (- 10 2 3))))&", R"(5)"},
+		{R"&((simplify (lambda (- a 2 0))))&", R"((- a 2))"},
+		{R"&((simplify (lambda (- a .null b))))&", R"(.null)"},
+		{R"&((simplify
+	(lambda
+		(* b a a 1 b 3)
+	)
+))&",
+		R"((*
+		(pow a 2)
+		(pow b 2)
+		3
+))"},
+		{R"&((simplify (lambda (/))))&", R"(.null)"},
+		{R"&((simplify (lambda (/ a))))&", R"((/ a))"},
+		{R"&((simplify (lambda (/ a 2))))&", R"((/ a 2))"},
+		{R"&((simplify (lambda (/ 6 a))))&", R"((/ 6 a))"},
+		{R"&((simplify (lambda (/ a 1))))&", R"(a)"},
+		{R"&((call (simplify (lambda (/ a 1))) {a -0}))&", R"(-0)"},
+		{R"&((call (simplify (lambda (/ a 1))) {a "2"}))&", R"("2")"},
+		{R"&((simplify (lambda (/ b a a 1 3 a))))&", R"((/
+	b
+	(pow a 3)
+	3
+))"},
+		{R"&((simplify (lambda (/ a a))))&", R"((/ a a))"},
+		{R"&((call (simplify (lambda (/ a a))) {a 0}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (/ a a))) {a .infinity}))&", R"(.null)"},
+		{R"&((simplify (lambda (/ a a a))))&", R"((/
+	a
+	(pow a 2)
+))"},
+		{R"&((call (simplify (lambda (/ a a a))) {a 2}))&", R"(0.5)"},
+		{R"&((call (simplify (lambda (/ a a a))) {a .infinity}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (/ a a a a))) {a 2}))&", R"(0.25)"},
+		{R"&((call (simplify (lambda (/ a a b))) {a 2 b 4}))&", R"(0.25)"},
+		{R"&((simplify (lambda (/ a 2 0.5))))&", R"(a)"},
+		{R"&((simplify (lambda (/ 12 2 3))))&", R"(2)"},
+		{R"&((simplify (lambda (/ a 2 3))))&", R"((/ a 6))"},
+		{R"&((call (simplify (lambda (/ a -1 0))) {a 2}))&", R"(-.infinity)"},
+		{R"&((call (simplify (lambda (/ a -2 0))) {a 2}))&", R"(-.infinity)"},
+		{R"&((call (simplify (lambda (/ a 0 -1))) {a 2}))&", R"(.infinity)"},
+		{R"&((call (simplify (lambda (/ a 0 -2))) {a 2}))&", R"(.infinity)"},
+		{R"&((call (simplify (lambda (/ a 2 0 -3))) {a 2}))&", R"(.infinity)"},
+		{R"&((unparse (simplify (lambda (/ a 2 0 -3))) .false .false))&", R"&("(/ a 2 0 -3)")&"},
+		{R"&((call (simplify (lambda (/ a -0))) {a 2}))&", R"(.infinity)"},
+		{R"&((simplify (lambda (/ a .null b))))&", R"(.null)"},
+		{R"&((simplify (lambda (/ a 2 1))))&", R"((/ a 2))"},
+		{R"&((simplify (lambda (pow a 1))))&", R"(a)"},
+		{R"&((simplify (lambda (exp (log a)))))&", R"((exp
+	(log a)
+))"},
+		{R"&((call (simplify (lambda (exp (log a)))) {a -1}))&", R"(.null)"},
+		{R"&((call (simplify (lambda (exp (log a)))) {a 0}))&", R"(0)"},
+		{R"&((call (simplify (lambda (exp (log a)))) {a .infinity}))&", R"(.infinity)"},
+		{R"&((simplify (lambda (log (exp a)))))&", R"((log
+	(exp a)
+))"},
+		{R"&((call (simplify (lambda (log (exp a)))) {a 1000}))&", R"(.infinity)"},
+		{R"&((call (simplify (lambda (log (exp a)))) {a -1000}))&", R"(-.infinity)"},
+		{R"&((simplify (lambda (log (exp)))))&", R"(1)"},
+		{R"&((simplify (lambda (/ a 7 7))))&", R"((/ a 49))"},
+		{R"&((call (simplify (lambda (/ a 7 7))) {a 49}))&", R"(1)"},
+		{R"&((simplify (lambda (/ a 7 7 2))))&", R"((/ a 98))"},
+		{R"&((simplify (lambda (/ a 49))))&", R"((/ a 49))"},
+		{R"&((simplify (simplify (lambda (/ a 7 7)))))&", R"((/ a 49))"},
+		{R"&((simplify (lambda (concat "a" (concat b "c") "d"))))&", R"((concat "a" b "cd"))"},
+		{R"&((call (simplify (lambda (concat "a" (concat b "c") "d"))) {b "-"}))&", R"("a-cd")"},
+		{R"&((call
+	(simplify
+		(lambda
+			(concat
+				(concat "a" b)
+				"m"
+				(concat c "d")
+			)
+		)
+	)
+	{b "X" c "Y"}
+))&", R"("aXmYd")"}
+});
+	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+	d.frequencyPer10000Opcodes = 0.25;
+	d.opcodeGroup = _opcode_group;
+	return d;
+});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SIMPLIFY(
+	EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodesReference();
+	if(ocn.size() < 1) [[unlikely]]
+		return EvaluableNodeReference::Null();
+
+	auto node = InterpretNode(ocn[0]);
+	if(!node.unique)
+		node = evaluableNodeManager->DeepAllocCopy(node, false);
+
+	auto node_stack = CreateOpcodeStackStateSaver(node);
+
+	EvaluableNode *result = EvaluableNodeTreeAlgebra::SimplifyTree(node, evaluableNodeManager, this);
 	return EvaluableNodeReference(result, true);
 }

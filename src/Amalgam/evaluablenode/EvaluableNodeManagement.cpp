@@ -15,7 +15,7 @@ const int EvaluableNodeManager::extraMemoryCapacityFactor = 3;
 
 #ifdef MULTITHREAD_SUPPORT
 //tunable parameter for how many nodes to have a garbage collection sweep perform at a time
-constexpr size_t invalidate_nodes_task_size = 8000;
+constexpr size_t _invalidate_nodes_task_size = 4000;
 #endif
 
 EvaluableNodeManager::~EvaluableNodeManager()
@@ -315,18 +315,18 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 
 #ifdef MULTITHREAD_SUPPORT
 	size_t num_nodes_to_invalidate = last_active_index - next_write_index;
-	if(Concurrency::GetMaxNumThreads() > 1 && num_nodes_to_invalidate > 2 * invalidate_nodes_task_size)
+	if(Concurrency::GetMaxNumThreads() > 1 && num_nodes_to_invalidate > 2 * _invalidate_nodes_task_size)
 	{
-		size_t num_tasks = (num_nodes_to_invalidate + (invalidate_nodes_task_size - 1)) / invalidate_nodes_task_size;
+		size_t num_tasks = (num_nodes_to_invalidate + (_invalidate_nodes_task_size - 1)) / _invalidate_nodes_task_size;
 		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_tasks);
 
-		//free each full block of invalidate_nodes_task_size
+		//free each full block of _invalidate_nodes_task_size
 		size_t start_index = next_write_index;
-		for(; start_index + invalidate_nodes_task_size < last_active_index; start_index += invalidate_nodes_task_size)
+		for(; start_index + _invalidate_nodes_task_size < last_active_index; start_index += _invalidate_nodes_task_size)
 			Concurrency::urgentThreadPool.EnqueueTask(
 				[this, &task_set, start_index]
 				{
-					size_t end_index = start_index + invalidate_nodes_task_size;
+					size_t end_index = start_index + _invalidate_nodes_task_size;
 					for(size_t i = start_index; i < end_index; i++)
 					{
 						if(!nodes[i]->IsNodeDeallocated())
@@ -335,7 +335,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 					task_set.MarkTaskCompleted();
 				});
 
-		//invalidate any remaining that are fewer than invalidate_nodes_task_size
+		//invalidate any remaining that are fewer than _invalidate_nodes_task_size
 		if(start_index < last_active_index)
 			Concurrency::urgentThreadPool.EnqueueTask(
 				[this, &task_set, start_index, last_active_index]
@@ -684,28 +684,12 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		//allocate all the tasks assuming they will happen, but mark when they can be skipped
 		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_active_interpreters + 1);
 
-		Concurrency::urgentThreadPool.EnqueueTask(
-			[this, &task_set]
-			{
-				MarkAllReferencedNodesInUseConcurrentForNode(rootNode);
-				task_set.MarkTaskCompleted();
-			}
-		);
-
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
 			Concurrency::urgentThreadPool.EnqueueTask(
 				[interpreter, &task_set]
 				{
 					for(EvaluableNode *en : interpreter->scopeStack)
-					{
-						if(en == nullptr || en->GetKnownToBeInUse())
-							continue;
-
-						MarkAllReferencedNodesInUseConcurrentForNode(en);
-					}
-
-					for(EvaluableNode *en : interpreter->opcodeStackNodes)
 					{
 						if(en == nullptr || en->GetKnownToBeInUse())
 							continue;
@@ -728,10 +712,28 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.previousResult);
 					}
 
+					//this is more likely to overlap with the entity's nodes, not unique to an interpreter, so do it last
+					for(EvaluableNode *en : interpreter->opcodeStackNodes)
+					{
+						if(en == nullptr || en->GetKnownToBeInUse())
+							continue;
+
+						MarkAllReferencedNodesInUseConcurrentForNode(en);
+					}
+
 					task_set.MarkTaskCompleted();
 				}
 			);
 		}
+
+		//add the root node last since references above are more likely to mark pieces of it concurrently
+		Concurrency::urgentThreadPool.EnqueueTask(
+			[this, &task_set]
+			{
+				MarkAllReferencedNodesInUseConcurrentForNode(rootNode);
+				task_set.MarkTaskCompleted();
+			}
+		);
 
 		task_set.WaitForTasks();
 		return;

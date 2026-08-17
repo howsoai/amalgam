@@ -598,6 +598,7 @@ public:
 	//if first_attachment_and_not_construction_stack_node is true, then it will not call SetNeedCycleCheck(true)
 	// unless the attached node also needs cycle check.  Note that this parameter should not be set to true
 	//if the node can be accessed in any other way, such as the construction stack
+	//construction stacks will update the flags accordingly
 	void UpdatePropertiesBasedOnAttachedNode(EvaluableNodeReference &attached,
 		bool first_attachment_and_not_construction_stack_node = false)
 	{

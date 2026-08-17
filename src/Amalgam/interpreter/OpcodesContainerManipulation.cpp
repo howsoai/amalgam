@@ -1260,7 +1260,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, Eva
 	}
 
 	//else, return a list for everything retrieved via get
-	EvaluableNodeReference retrieved_list(evaluableNodeManager->AllocNode(ENT_LIST), source.unique);
+	EvaluableNodeReference retrieved_list(evaluableNodeManager->AllocNode(ENT_LIST), source.unique, true);
 	retrieved_list->ReserveOrderedChildNodes(ocn_size - 1);
 	node_stack.PushEvaluableNode(retrieved_list);
 

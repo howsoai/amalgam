@@ -116,7 +116,7 @@ public:
 		value.numberAndNullValueContainer.numberValue = 0;
 	#endif
 
-		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
+		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
 	///////////////////////////////////////////
@@ -130,7 +130,7 @@ public:
 		type = _type;
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
-		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
+		AnnotationsAndComments::Construct(annotationsAndComments);
 
 		SetIsIdempotent(type == ENT_STRING);
 		SetNeedCycleCheck(false);
@@ -145,7 +145,7 @@ public:
 		type = _type;
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
-		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
+		AnnotationsAndComments::Construct(annotationsAndComments);
 
 		SetIsIdempotent(type == ENT_STRING);
 		SetNeedCycleCheck(false);
@@ -167,8 +167,9 @@ public:
 		{
 			type = _type;
 			value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_id);
-			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 		}
+
+		AnnotationsAndComments::Construct(annotationsAndComments);
 
 		SetIsIdempotent(type == ENT_STRING);
 		SetNeedCycleCheck(false);
@@ -191,8 +192,9 @@ public:
 		{
 			type = _type;
 			value.stringValueContainer.stringID = string_id;
-			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 		}
+
+		AnnotationsAndComments::Construct(annotationsAndComments);
 
 		SetIsIdempotent(type == ENT_STRING);
 		SetNeedCycleCheck(false);
@@ -210,8 +212,9 @@ public:
 		{
 			type = ENT_NUMBER;
 			value.numberAndNullValueContainer.numberValue = number_value;
-			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 		}
+
+		AnnotationsAndComments::Construct(annotationsAndComments);
 
 		SetIsIdempotent(true);
 		SetNeedCycleCheck(false);
@@ -222,7 +225,7 @@ public:
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
 		type = ENT_BOOL;
 		value.boolValueContainer.boolValue = bool_value;
-		AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
+		AnnotationsAndComments::Construct(annotationsAndComments);
 
 		SetIsIdempotent(true);
 		SetNeedCycleCheck(false);
@@ -249,28 +252,23 @@ public:
 		if(DoesEvaluableNodeTypeUseNullData(_type))
 		{
 			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 			SetIsIdempotent(true);
 			SetNeedCycleCheck(false);
 		}
 		if(DoesEvaluableNodeTypeUseBoolData(_type))
 		{
-			AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
 			value.boolValueContainer.boolValue = false;
 			SetIsIdempotent(true);
 			SetNeedCycleCheck(false);
 		}
 		else if(DoesEvaluableNodeTypeUseNumberData(_type))
 		{
-			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 			value.numberAndNullValueContainer.numberValue = 0.0;
 			SetIsIdempotent(true);
 			SetNeedCycleCheck(false);
 		}
 		else if(DoesEvaluableNodeTypeUseStringData(_type))
 		{
-			value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
-			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 			SetIsIdempotent(_type == ENT_STRING);
 			SetNeedCycleCheck(false);
 		}
@@ -288,13 +286,13 @@ public:
 		#else
 			value.numberAndNullValueContainer.numberValue = 0;
 		#endif
-
-			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 		}
 		else
 		{
 			value.orderedChildNodesContainer.Construct();
 		}
+
+		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
 	//sets the value of the node to that of n and copies metadata if copy_metadata is true
@@ -644,7 +642,7 @@ public:
 	{
 		DestructValue();
 		value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
+		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
 	//sets up boolean value
@@ -652,7 +650,7 @@ public:
 	{
 		DestructValue();
 		value.boolValueContainer.boolValue = false;
-		AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
+		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
 	//gets the value by reference
@@ -679,7 +677,7 @@ public:
 	{
 		DestructValue();
 		value.numberAndNullValueContainer.numberValue = 0.0;
-		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
+		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
 	//gets the value by reference
@@ -758,7 +756,7 @@ public:
 	{
 		DestructValue();
 		value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
-		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
+		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
 	__forceinline StringInternPool::StringID GetStringID()
@@ -800,7 +798,6 @@ public:
 	//sets the annotation_string
 	inline void SetAnnotationsString(std::string_view s)
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
 		GetAnnotationsAndCommentsStorage().SetAnnotations(s);
 	}
 
@@ -812,8 +809,6 @@ public:
 	//appends annotations to the node
 	void AppendAnnotations(std::string &annotations)
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
-
 		auto &a_and_c = GetAnnotationsAndCommentsStorage();
 		std::string combined(a_and_c.GetAnnotations());
 		combined.append(annotations);
@@ -841,7 +836,6 @@ public:
 
 	inline void SetCommentsString(const std::string &comment)
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
 		GetAnnotationsAndCommentsStorage().SetComments(comment);
 	}
 
@@ -853,8 +847,6 @@ public:
 	//appends comments to the node
 	void AppendComments(std::string &comments)
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
-
 		auto &a_and_c = GetAnnotationsAndCommentsStorage();
 		std::string combined(a_and_c.GetComments());
 		combined.append(comments);
@@ -1194,6 +1186,7 @@ public:
 	{
 		DestructValue();
 		value.orderedChildNodesContainer.Construct();
+		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
 	//preallocates to_reserve for appending, etc.
@@ -1298,6 +1291,8 @@ public:
 			value.ConstructMappedChildNodes();
 		else
 			value.extendedMappedChildNodes.Construct();
+
+		AnnotationsAndComments::Construct(annotationsAndComments);
 	}
 
 	//preallocates to_reserve for appending, etc.
@@ -1427,25 +1422,7 @@ public:
 	// will only return valid results if HasCompactAnnotationsAndCommentsStorage() is true, so that should be called first
 	__forceinline AnnotationsAndComments &GetAnnotationsAndCommentsStorage()
 	{
-		switch(GetType())
-		{
-		case ENT_BOOL:
-			return value.boolValueContainer.annotationsAndComments;
-		case ENT_NULL:
-		case ENT_NUMBER:
-			return value.numberAndNullValueContainer.annotationsAndComments;
-		case ENT_STRING:
-		case ENT_SYMBOL:
-			return value.stringValueContainer.annotationsAndComments;
-		case ENT_ASSOC:
-			if(!HasExtendedValue())
-				return emptyAnnotationsAndComments;
-			else
-				return value.extendedMappedChildNodes.annotationsAndComments;
-			//otherwise ordered
-		default:
-			return value.orderedChildNodesContainer.annotationsAndComments;
-		}
+		return annotationsAndComments;
 	}
 
 	//registers and unregisters an EvaluableNode for debug watching
@@ -1646,8 +1623,6 @@ protected:
 		{
 			//string value
 			StringInternPool::StringID stringID;
-
-			AnnotationsAndComments annotationsAndComments;
 		} stringValueContainer;
 
 		//when type represents a number, holds the corresponding value
@@ -1656,8 +1631,6 @@ protected:
 		{
 			//number value
 			double numberValue;
-
-			AnnotationsAndComments annotationsAndComments;
 		} numberAndNullValueContainer;
 
 		//when type represents a bool, holds the corresponding value
@@ -1665,8 +1638,6 @@ protected:
 		{
 			//bool value
 			bool boolValue;
-
-			AnnotationsAndComments annotationsAndComments;
 		} boolValueContainer;
 
 		struct EvaluableNodeValueOrderedChildNodes
@@ -1674,18 +1645,14 @@ protected:
 			__forceinline void Construct()
 			{
 				new (&orderedChildNodes) OrderedType;
-				AnnotationsAndComments::Construct(annotationsAndComments);
 			}
 
 			__forceinline void Destruct()
 			{
 				orderedChildNodes.~OrderedType();
-				AnnotationsAndComments::Destruct(annotationsAndComments);
 			}
 
 			OrderedType orderedChildNodes;
-
-			AnnotationsAndComments annotationsAndComments;
 		} orderedChildNodesContainer;
 
 		struct EvaluableNodeValueMappedChildNodesWithAnnotationsAndComments
@@ -1693,27 +1660,22 @@ protected:
 			__forceinline void Construct()
 			{
 				new (&mappedChildNodes) std::unique_ptr<AssocType>(std::make_unique<AssocType>());
-
-				AnnotationsAndComments::Construct(annotationsAndComments);
 			}
 
 			__forceinline void Destruct()
 			{
 				string_intern_pool.DestroyStringReferences(*mappedChildNodes, [](auto n) { return n.first; });
 				mappedChildNodes.~unique_ptr<AssocType>();
-				AnnotationsAndComments::Destruct(annotationsAndComments);
 			}
 
 			//external mappedChildNodes
 			std::unique_ptr<AssocType> mappedChildNodes;
 
-			AnnotationsAndComments annotationsAndComments;
 		} extendedMappedChildNodes;
 	};
-#pragma pack(pop)
 
-	//makes sure that the extendedValue is set appropriately so that it can be used to hold additional data
-	void EnsureHasAnnotationsAndCommentsStorage();
+	AnnotationsAndComments annotationsAndComments;
+#pragma pack(pop)
 
 	//destructs the value so that the node can be reused
 	// note that the value should be considered uninitialized
@@ -1722,16 +1684,12 @@ protected:
 		switch(GetType())
 		{
 		case ENT_BOOL:
-			AnnotationsAndComments::Destruct(value.boolValueContainer.annotationsAndComments);
-			break;
 		case ENT_NULL:
 		case ENT_NUMBER:
-			AnnotationsAndComments::Destruct(value.numberAndNullValueContainer.annotationsAndComments);
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:
 			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
-			AnnotationsAndComments::Destruct(value.stringValueContainer.annotationsAndComments);
 			break;
 		case ENT_ASSOC:
 			if(!HasExtendedValue())
@@ -1749,6 +1707,8 @@ protected:
 			value.orderedChildNodesContainer.Destruct();
 			break;
 		}
+
+		AnnotationsAndComments::Destruct(annotationsAndComments);
 	}
 
 	//assists the public function AreDeepEqual

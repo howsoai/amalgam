@@ -402,29 +402,27 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	}
 	else if(DoesEvaluableNodeTypeUseNullData(type))
 	{
-		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 		value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
 	}
 	else if(DoesEvaluableNodeTypeUseBoolData(type))
 	{
-		AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
 		value.boolValueContainer.boolValue = n->GetBoolValueReference();
 	}
 	else if(DoesEvaluableNodeTypeUseNumberData(type))
 	{
-		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
 		value.numberAndNullValueContainer.numberValue = n->GetNumberValueReference();
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(type))
 	{
 		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(n->GetStringIDReference());
-		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
 	}
 	else //ordered
 	{
 		value.orderedChildNodesContainer.Construct();
 		value.orderedChildNodesContainer.orderedChildNodes = n->GetOrderedChildNodesReference();
 	}
+
+	AnnotationsAndComments::Construct(annotationsAndComments);
 
 	if(copy_metadata)
 		CopyMetadataFrom(n);
@@ -499,14 +497,9 @@ void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 	auto [annotations, comments] = n->GetAnnotationsAndCommentsStorage().GetAnnotationsAndComments();
 
 	if(annotations.empty() && comments.empty())
-	{
 		GetAnnotationsAndCommentsStorage().Clear();
-	}
 	else
-	{
-		EnsureHasAnnotationsAndCommentsStorage();
 		GetAnnotationsAndCommentsStorage().SetAnnotationsAndComments(annotations, comments);
-	}
 
 	SetConcurrency(n->GetConcurrency());
 }
@@ -658,14 +651,9 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 
 	ClearAnnotationsAndComments();
 	if(annotations.empty() && comments.empty())
-	{
 		GetAnnotationsAndCommentsStorage().Clear();
-	}
 	else
-	{
-		EnsureHasAnnotationsAndCommentsStorage();
 		GetAnnotationsAndCommentsStorage().SetAnnotationsAndComments(annotations, comments);
-	}
 
 	if(GetIsIdempotent())
 		SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(new_type));
@@ -1028,28 +1016,6 @@ void EvaluableNode::AppendMappedChildNodes(AssocType &mcn_to_append)
 
 		UpdateFlagsBasedOnNewChildNode(n);
 	}
-}
-
-void EvaluableNode::EnsureHasAnnotationsAndCommentsStorage()
-{
-	if(HasCompactAnnotationsAndCommentsStorage())
-		return;
-
-	if(HasExtendedValue())
-		return;
-
-	if(GetType() == ENT_ASSOC)
-	{
-		AssocType temp_mcn = std::move(value.mappedChildNodes);
-		value.DestructMappedChildNodes();
-		new (&value.extendedMappedChildNodes.mappedChildNodes) std::unique_ptr<AssocType>(
-			std::make_unique<AssocType>(std::move(temp_mcn))
-		);
-
-		AnnotationsAndComments::Construct(value.extendedMappedChildNodes.annotationsAndComments);
-	}
-
-	SetExtendedValue(true);
 }
 
 bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *a, EvaluableNode *b, ReferenceAssocType *checked)

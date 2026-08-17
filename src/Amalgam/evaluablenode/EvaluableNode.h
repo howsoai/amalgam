@@ -160,7 +160,7 @@ public:
 		if(string_id == StringInternPool::NOT_A_STRING_ID)
 		{
 			type = ENT_NULL;
-			value.ConstructOrderedChildNodes();
+			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
 		}
 		else
 		{
@@ -184,7 +184,7 @@ public:
 		if(string_id == StringInternPool::NOT_A_STRING_ID)
 		{
 			type = ENT_NULL;
-			value.ConstructOrderedChildNodes();
+			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
 		}
 		else
 		{
@@ -200,17 +200,14 @@ public:
 	inline void InitializeType(double number_value)
 	{
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		if(FastIsNaN(number_value))
-		{
-			type = ENT_NULL;
-			value.ConstructOrderedChildNodes();
-		}
-		else
-		{
+		value.numberAndNullValueContainer.numberValue = number_value;
+		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
+
+		if(!FastIsNaN(number_value))
 			type = ENT_NUMBER;
-			value.numberAndNullValueContainer.numberValue = number_value;
-			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
-		}
+		else
+			type = ENT_NULL;
+
 
 		SetIsIdempotent(true);
 		SetNeedCycleCheck(false);
@@ -1702,7 +1699,6 @@ protected:
 			__forceinline void Construct()
 			{
 				new (&orderedChildNodes) std::unique_ptr<OrderedType>(std::make_unique<OrderedType>());
-
 				AnnotationsAndComments::Construct(annotationsAndComments);
 			}
 
@@ -1723,7 +1719,6 @@ protected:
 			__forceinline void Construct()
 			{
 				new (&mappedChildNodes) std::unique_ptr<AssocType>(std::make_unique<AssocType>());
-
 				AnnotationsAndComments::Construct(annotationsAndComments);
 			}
 

@@ -590,6 +590,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			//retrieve the symbol location
 		#ifdef MULTITHREAD_SUPPORT
+			//set to false if it's possible that another thread may be reading from the variable
+			bool unique_access = true;
+
 			//need to save variable_value_node because GetScopeStackSymbolLocationWithLock
 			// may collect garbage while waiting for the lock
 			node_stack.PushEvaluableNode(variable_value_node);
@@ -597,18 +600,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			Concurrency::SingleLock write_lock;
 			auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 			if(write_lock.owns_lock())
+			{
+				unique_access = false;
 				RecordStackLockForProfiling(en, variable_sid);
+			}
 
 			node_stack.PopEvaluableNode();
 		#else
+			//set to false if it's possible that another thread may be reading from the variable; can't happen in single threading
+			constexpr bool unique_access = true;
 			auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 		#endif
 
+			EvaluableNodeReference value_destination_node(*symbol_location.location,
+					unique_access && symbol_location.unique, unique_access && symbol_location.uniqueTopNode);
+
 			if(accum && !EvaluableNode::IsNull(*symbol_location.location))
 			{
-				EvaluableNodeReference value_destination_node(*symbol_location.location,
-					symbol_location.unique, symbol_location.uniqueTopNode);
-
 				//need to clear freability of variable_value_node before it is accumulated
 				if(variable_value_node != nullptr)
 				{
@@ -621,10 +629,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
 			}
-			else //free whatever is possible
+			else //free previous value if possible
 			{
-				EvaluableNodeReference value_destination_node(*symbol_location.location,
-					symbol_location.unique, symbol_location.uniqueTopNode);
 				evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
 			}
 
@@ -657,6 +663,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		//retrieve the symbol location
 	#ifdef MULTITHREAD_SUPPORT
+		//set to false if it's possible that another thread may be reading from the variable
+		bool unique_access = true;
+
 		//need to save variable_value_node because GetScopeStackSymbolLocationWithLock
 		// may collect garbage while waiting for the lock
 		//use a scope here to make it automatically destruct
@@ -665,18 +674,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		Concurrency::SingleLock write_lock;
 		auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 		if(write_lock.owns_lock())
+		{
+			unique_access = false;
 			RecordStackLockForProfiling(en, variable_sid);
+		}
 
 		node_stack.PopEvaluableNode();
 	#else
+		//set to false if it's possible that another thread may be reading from the variable; can't happen in single threading
+		constexpr bool unique_access = true;
 		auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
+		EvaluableNodeReference value_destination_node(*symbol_location.location,
+					unique_access &&symbol_location.unique, unique_access &&symbol_location.uniqueTopNode);
+
 		if(accum && !EvaluableNode::IsNull(*symbol_location.location))
 		{
-			EvaluableNodeReference value_destination_node(
-				*symbol_location.location, symbol_location.unique, symbol_location.uniqueTopNode);
-
 			//need to clear freability of new_value before it is accumulated
 			if(new_value != nullptr)
 			{
@@ -690,11 +704,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			new_value = AccumulateEvaluableNodeIntoEvaluableNode(
 				value_destination_node, new_value, evaluableNodeManager);
 		}
-		else
+		else //free previous value if possible
 		{
-			//free whatever is possible
-			EvaluableNodeReference value_destination_node(*symbol_location.location,
-				symbol_location.unique, symbol_location.uniqueTopNode);
 			evaluableNodeManager->FreeNodeTreeIfPossible(value_destination_node);
 		}
 
@@ -741,12 +752,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 	//retrieve the symbol location
 #ifdef MULTITHREAD_SUPPORT
+	//set to false if it's possible that another thread may be reading from the variable
+	bool unique_access = true;
+
 	//node_stack already has everything saved in case garbage collection is called in GetScopeStackSymbolLocationWithLock
 	Concurrency::SingleLock write_lock;
 	auto symbol_location = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 	if(write_lock.owns_lock())
+	{
+		unique_access = false;
 		RecordStackLockForProfiling(en, variable_sid);
+	}
 #else
+	//set to false if it's possible that another thread may be reading from the variable; can't happen in single threading
+	constexpr bool unique_access = true;
 	auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 #endif
 
@@ -757,7 +776,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	EvaluableNode *value_replacement = nullptr;
 	if(*symbol_location.location == nullptr)
 		value_replacement = evaluableNodeManager->AllocNode(ENT_NULL);
-	else if(symbol_location.unique)
+	else if(unique_access && symbol_location.unique)
 		value_replacement = *symbol_location.location;
 	else
 		value_replacement = evaluableNodeManager->DeepAllocCopy(*symbol_location.location);

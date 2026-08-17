@@ -437,12 +437,8 @@ public:
 	// data structure containing the relevant information
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
 	//executing_interpreter is the interpreter that will be used for garbage collection if needed
-	//use_atomic_when_setting_access_flag is used for recursion and should not be modified by the caller
 	ScopeStackSymbolLocation GetScopeStackSymbolLocationWithLock(StringInternPool::StringID symbol_sid,
 		bool create_if_nonexistent, Concurrency::SingleLock &lock, Interpreter *executing_interpreter = nullptr
-	#ifdef MULTITHREAD_SUPPORT
-		, bool use_atomic_when_setting_access_flag = false
-	#endif
 	)
 	{
 		//find appropriate context for symbol by walking up the stack

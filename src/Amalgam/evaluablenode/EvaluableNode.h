@@ -204,16 +204,12 @@ public:
 	inline void InitializeType(double number_value)
 	{
 		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		if(FastIsNaN(number_value))
-		{
-			type = ENT_NULL;
-			value.numberValue = std::numeric_limits<double>::quiet_NaN();
-		}
-		else
-		{
+
+		value.numberValue = number_value;
+		if(!FastIsNaN(number_value))
 			type = ENT_NUMBER;
-			value.numberValue = number_value;
-		}
+		else
+			type = ENT_NULL;
 
 		AnnotationsAndComments::Construct(annotationsAndComments);
 

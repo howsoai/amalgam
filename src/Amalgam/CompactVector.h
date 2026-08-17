@@ -309,19 +309,17 @@ public:
 		if(new_size == prev_size)
 			return;
 
-		reserve(new_size);
-
-		T *data = reinterpret_cast<T *>(static_cast<char *>(vecMemory) + sizeof(Header));
-
 		if(new_size > prev_size)
 		{
+			reserve(new_size);
+			T *data = GetDataPointer();
 			for(size_type i = prev_size; i < new_size; i++)
 				new (data + i) T(init);
 		}
 		else
 		{
-			if constexpr(!trivially_relocatable_v)
-				DestroyRange(data + new_size, data + prev_size);
+			T *data = GetDataPointer();
+			DestroyRange(data + new_size, data + prev_size);
 		}
 
 		SetSize(new_size);
@@ -331,30 +329,6 @@ public:
 	{
 		DestroyRange(GetDataPointer(), GetDataPointer() + size());
 		SetSize(0);
-	}
-
-	void push_back(const T &value)
-	{
-		if(capacity() == 0 || size() == capacity())
-		{
-			size_type new_cap = NextIncreasedCapacity(capacity());
-			reserve(new_cap);
-		}
-
-		new (GetDataPointer() + size()) T(value);
-		SetSize(size() + 1);
-	}
-
-	void push_back(T &&value)
-	{
-		if(capacity() == 0 || size() == capacity())
-		{
-			size_type new_cap = NextIncreasedCapacity(capacity());
-			reserve(new_cap);
-		}
-
-		new (GetDataPointer() + size()) T(std::move(value));
-		SetSize(size() + 1);
 	}
 
 	template<class... Args>
@@ -370,6 +344,16 @@ public:
 		new (p) T(std::forward<Args>(args)...);
 		SetSize(size() + 1);
 		return *p;
+	}
+
+	inline void push_back(const T &value)
+	{
+		emplace_back(value);
+	}
+
+	inline void push_back(T &&value)
+	{
+		emplace_back(std::move(value));
 	}
 
 	void pop_back() noexcept

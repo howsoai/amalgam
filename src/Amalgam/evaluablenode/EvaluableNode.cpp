@@ -306,8 +306,7 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 	if(n == nullptr)
 		return 0;
 
-	size_t total_size = 0;
-	total_size += sizeof(EvaluableNode);
+	size_t total_size = sizeof(EvaluableNode);
 	if(n->HasExtendedValue())
 		total_size += sizeof(EvaluableNode::EvaluableNodeValue);
 
@@ -378,7 +377,7 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	if(n == nullptr)
 	{
 		type = ENT_NULL;
-		value.ConstructOrderedChildNodes();
+		value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
 		return;
 	}
 

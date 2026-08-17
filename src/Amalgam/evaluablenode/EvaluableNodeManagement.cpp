@@ -684,28 +684,12 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		//allocate all the tasks assuming they will happen, but mark when they can be skipped
 		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_active_interpreters + 1);
 
-		Concurrency::urgentThreadPool.EnqueueTask(
-			[this, &task_set]
-			{
-				MarkAllReferencedNodesInUseConcurrentForNode(rootNode);
-				task_set.MarkTaskCompleted();
-			}
-		);
-
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
 			Concurrency::urgentThreadPool.EnqueueTask(
 				[interpreter, &task_set]
 				{
 					for(EvaluableNode *en : interpreter->scopeStack)
-					{
-						if(en == nullptr || en->GetKnownToBeInUse())
-							continue;
-
-						MarkAllReferencedNodesInUseConcurrentForNode(en);
-					}
-
-					for(EvaluableNode *en : interpreter->opcodeStackNodes)
 					{
 						if(en == nullptr || en->GetKnownToBeInUse())
 							continue;
@@ -728,10 +712,28 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 							MarkAllReferencedNodesInUseConcurrentForNode(cs_entry.previousResult);
 					}
 
+					//this is more likely to overlap with the entity's nodes, not unique to an interpreter, so do it last
+					for(EvaluableNode *en : interpreter->opcodeStackNodes)
+					{
+						if(en == nullptr || en->GetKnownToBeInUse())
+							continue;
+
+						MarkAllReferencedNodesInUseConcurrentForNode(en);
+					}
+
 					task_set.MarkTaskCompleted();
 				}
 			);
 		}
+
+		//add the root node last since references above are more likely to mark pieces of it concurrently
+		Concurrency::urgentThreadPool.EnqueueTask(
+			[this, &task_set]
+			{
+				MarkAllReferencedNodesInUseConcurrentForNode(rootNode);
+				task_set.MarkTaskCompleted();
+			}
+		);
 
 		task_set.WaitForTasks();
 		return;

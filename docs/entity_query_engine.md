@@ -1584,7 +1584,7 @@ Example:
 		)
 		(compute_on_contained_entities
 			(query_nearest_generalized_distance
-				[0.2 1]
+				[0.2 4]
 				["x" "y"]
 				[1 2]
 				2

@@ -1751,7 +1751,7 @@ AmalgamExample{ R"&((seq
 					[
 						(query_nearest_generalized_distance
 							;k
-							[0.01 1 20]
+							[0.01 1 2]
 							;features
 							["x"]
 							;values
@@ -1790,7 +1790,7 @@ AmalgamExample{ R"&((seq
 					[
 						(query_nearest_generalized_distance
 							;k
-							[0.01 1 20]
+							[0.01 1 2]
 							;features
 							["x"]
 							;values
@@ -1829,7 +1829,7 @@ AmalgamExample{ R"&((seq
 					[
 						(query_nearest_generalized_distance
 							;k
-							[0.01 1 20 1]
+							[0.01 1 2 1]
 							;features
 							["x"]
 							;values
@@ -1893,7 +1893,7 @@ AmalgamExample{ R"&((seq
 					"SurprisalTransformContainer"
 					[
 						(query_distance_contributions
-							[0.05 1 20]
+							[0.05 1 2]
 							["x"]
 							[
 								[0]
@@ -1947,7 +1947,7 @@ AmalgamExample{ R"&((seq
 					"SurprisalTransformContainer"
 					[
 						(query_distance_contributions
-							[0.05 1 20]
+							[0.05 1 2]
 							["x"]
 							[
 								[0]
@@ -2005,7 +2005,7 @@ AmalgamExample{ R"&((seq
 					"SurprisalTransformContainer"
 					[
 						(query_entity_distance_contributions
-							[0.05 1 20]
+							[0.05 1 2]
 							["x"]
 							["testvert"]
 							1
@@ -2055,7 +2055,7 @@ AmalgamExample{ R"&((seq
 					"SurprisalTransformContainer"
 					[
 						(query_entity_distance_contributions
-							[0.05 1 20]
+							[0.05 1 2]
 							["x"]
 							["testvert"]
 							1

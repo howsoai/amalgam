@@ -125,8 +125,8 @@ namespace EntityQueryBuilder
 				if(cn.first != string_intern_pool.emptyStringId)
 					value = Parser::ParseNumberFromKeyStringId(cn.first);
 
-				number_sdm.emplace(value);
-				PopulateFeatureDeviationNominalValueData(number_sdm.back().second, cn.second);
+				auto it = number_sdm.EmplaceUnique(value);
+				PopulateFeatureDeviationNominalValueData(it->second, cn.second);
 			}
 		}
 		else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL
@@ -136,8 +136,8 @@ namespace EntityQueryBuilder
 			string_sdm.reserve(mcn.size());
 			for(auto &cn : deviation_node->GetMappedChildNodes())
 			{
-				string_sdm.emplace(cn.first);
-				PopulateFeatureDeviationNominalValueData(string_sdm.back().second, cn.second);
+				auto it = string_sdm.EmplaceUnique(cn.first);
+				PopulateFeatureDeviationNominalValueData(it->second, cn.second);
 			}
 		}
 	}

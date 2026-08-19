@@ -702,6 +702,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="SBFDSColumnData.h" />
     <ClInclude Include="SeparableBoxFilterDataStore.h" />
+    <ClInclude Include="SmallMap.h" />
     <ClInclude Include="string\StringInternPool.h" />
     <ClInclude Include="string\StringManipulation.h" />
     <ClInclude Include="ThreadPool.h" />

@@ -6,7 +6,7 @@
 // and for hash maps where entries are only iterated over or found once
 //note that, like flat hash maps, iterators may be invalidated when the map is altered
 template<typename K, typename V, typename E = std::equal_to<K>>
-class SmallMap
+class VectorMap
 {
 public:
 	using key_type = K;
@@ -85,7 +85,7 @@ public:
 	{
 		auto it = find(key);
 		if(it == end())
-			throw std::out_of_range("SmallMap::at: key not found");
+			throw std::out_of_range("VectorMap::at: key not found");
 
 		return it->second;
 	}
@@ -94,7 +94,7 @@ public:
 	{
 		auto it = find(key);
 		if(it == end())
-			throw std::out_of_range("SmallMap::at: key not found");
+			throw std::out_of_range("VectorMap::at: key not found");
 
 		return it->second;
 	}
@@ -129,7 +129,7 @@ public:
 		data.clear();
 	}
 
-	inline void swap(SmallMap &other) noexcept
+	inline void swap(VectorMap &other) noexcept
 	{
 		std::swap(this->data, other.data);
 	}
@@ -271,25 +271,25 @@ private:
 namespace
 {
 	template<typename K, typename V, typename E>
-	inline auto begin(SmallMap<K, V, E> &m)
+	inline auto begin(VectorMap<K, V, E> &m)
 	{
 		return m.begin();
 	}
 
 	template<typename K, typename V, typename E>
-	inline auto begin(const SmallMap<K, V, E> &m)
+	inline auto begin(const VectorMap<K, V, E> &m)
 	{
 		return m.begin();
 	}
 
 	template<typename K, typename V, typename E>
-	inline auto end(SmallMap<K, V, E> &m)
+	inline auto end(VectorMap<K, V, E> &m)
 	{
 		return m.end();
 	}
 
 	template<typename K, typename V, typename E>
-	inline auto end(const SmallMap<K, V, E> &m)
+	inline auto end(const VectorMap<K, V, E> &m)
 	{
 		return m.end();
 	}

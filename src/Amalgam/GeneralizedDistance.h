@@ -55,7 +55,7 @@ public:
 	//contains the deviations for a given nominal value for each other nominal value
 		//if the nominal value is not found, then the attribute defaultDeviation should be used
 	template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
-	class SparseNominalDeviationValues : public SmallMap<NominalValueType, double, EqualComparison>
+	class SparseNominalDeviationValues : public VectorMap<NominalValueType, double, EqualComparison>
 	{
 	public:
 		inline SparseNominalDeviationValues()
@@ -67,7 +67,7 @@ public:
 
 	template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
 	class SparseNominalDeviationMatrix
-		: public SmallMap<NominalValueType, SparseNominalDeviationValues<NominalValueType, EqualComparison>, EqualComparison>
+		: public VectorMap<NominalValueType, SparseNominalDeviationValues<NominalValueType, EqualComparison>, EqualComparison>
 	{
 	public:
 		inline SparseNominalDeviationMatrix()

@@ -404,7 +404,7 @@
     <ClInclude Include="evaluablenode\EvaluableNodeTreeAlgebra.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SmallMap.h">
+    <ClInclude Include="VectorMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

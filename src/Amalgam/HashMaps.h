@@ -2,7 +2,7 @@
 
 //project headers:
 #include "Concurrency.h"
-#include "SmallMap.h"
+#include "VectorMap.h"
 
 ////////////////////
 // Defines hash set types in a generic way so they can be easily changed

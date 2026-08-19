@@ -210,11 +210,11 @@ set(COMMON_SOURCE
     src/Amalgam/SBFDSColumnData.h
     src/Amalgam/SeparableBoxFilterDataStore.cpp
     src/Amalgam/SeparableBoxFilterDataStore.h
-    src/Amalgam/SmallMap.h
     src/Amalgam/string/StringInternPool.h
     src/Amalgam/string/StringManipulation.cpp
     src/Amalgam/string/StringManipulation.h
     src/Amalgam/UninitializedArray.h
+    src/Amalgam/VectorMap.h
 )
 set(COMMON_SOURCE_THREADS
     ${COMMON_SOURCE}

@@ -23,54 +23,54 @@ public:
 	using const_reference = const mapped_type &;
 	using iterator_category = std::random_access_iterator_tag;
 
-	auto begin()
+	inline auto begin()
 	{
 		return data.begin();
 	}
 
-	auto end()
+	inline auto end()
 	{
 		return data.end();
 	}
 
-	size_t size() const
+	inline size_t size() const
 	{
 		return data.size();
 	}
 
-	bool empty() const
+	inline bool empty() const
 	{
 		return data.empty();
 	}
 
-	void reserve(size_t n)
+	inline void reserve(size_t n)
 	{
 		data.reserve(n);
 	}
 
-	void resize(size_t n)
+	inline void resize(size_t n)
 	{
 		data.resize(n);
 	}
 
-	const_iterator find(const K &key) const
+	inline const_iterator find(const K &key) const
 	{
 		return std::find_if(data.begin(), data.end(),
 			[&](const std::pair<K, V> &p) { return E{}(p.first, key); });
 	}
 
-	iterator find(const K &key)
+	inline iterator find(const K &key)
 	{
 		return std::find_if(data.begin(), data.end(),
 			[&](const std::pair<K, V> &p) { return E{}(p.first, key); });
 	}
 
-	bool contains(const K &key) const
+	inline bool contains(const K &key) const
 	{
 		return find(key) != data.end();
 	}
 
-	mapped_type &operator[](const K &key)
+	inline mapped_type &operator[](const K &key)
 	{
 		auto it = find(key);
 		if(it == end())
@@ -81,7 +81,7 @@ public:
 		return it->second;
 	}
 
-	mapped_type &at(const K &key)
+	inline mapped_type &at(const K &key)
 	{
 		auto it = find(key);
 		if(it == end())
@@ -99,7 +99,7 @@ public:
 		return it->second;
 	}
 
-	iterator erase(iterator it)
+	inline iterator erase(iterator it)
 	{
 		return data.erase(it);
 	}
@@ -124,37 +124,37 @@ public:
 		return { it, it };
 	}
 
-	void clear()
+	inline void clear()
 	{
 		data.clear();
 	}
 
-	void swap(SmallMap &other) noexcept
+	inline void swap(SmallMap &other) noexcept
 	{
 		std::swap(this->data, other.data);
 	}
 
-	size_type max_size() const noexcept
+	inline size_type max_size() const noexcept
 	{
 		return std::numeric_limits<size_type>::max();
 	}
 
-	size_type bucket_count() const noexcept
+	inline size_type bucket_count() const noexcept
 	{
 		return 1;
 	}
 
-	size_t bucket(iterator it) const noexcept
+	inline size_t bucket(iterator it) const noexcept
 	{
 		return 0;
 	}
 
-	float load_factor() const noexcept
+	inline float load_factor() const noexcept
 	{
 		return 1.0f;
 	}
 
-	float max_load_factor() const noexcept
+	inline float max_load_factor() const noexcept
 	{
 		return 1.0f;
 	}
@@ -173,7 +173,7 @@ public:
 		return *this;
 	}
 
-	size_t count(const K &key) const
+	inline size_t count(const K &key) const
 	{
 		return find(key) != end() ? 1 : 0;
 	}
@@ -182,9 +182,8 @@ public:
 	{
 		auto it = find(key);
 		if(it != end())
-		{
 			return { it, false };
-		}
+
 		auto result = this->emplace_back(key, value);
 		return { result.first, true };
 	}
@@ -195,9 +194,8 @@ public:
 		{
 			auto it = find(item.first);
 			if(it != end())
-			{
 				continue;
-			}
+
 			data.push_back(std::move(item));
 		}
 
@@ -219,12 +217,13 @@ public:
 				this->push_back(std::move(key), V{});
 			else
 				this->push_back(std::move(key), std::forward<Args>(args)...);
+
 			return this->end() - 1;
 		}
 	}
 
 	template<class... Args>
-	std::pair<iterator, bool> try_emplace(K &&key, Args&&... args)
+	inline std::pair<iterator, bool> try_emplace(K &&key, Args&&... args)
 	{
 		auto it = find(key);
 		if(it != end())
@@ -239,7 +238,7 @@ public:
 	}
 
 	template<class... Args>
-	std::pair<iterator, bool> emplace(K key, Args&&... args)
+	inline std::pair<iterator, bool> emplace(K key, Args&&... args)
 	{
 		auto it = find(key);
 		if(it != data.end())
@@ -255,7 +254,7 @@ public:
 
 	//can only be called when it is known ahead of time that the key is not contained
 	template<class... Args>
-	iterator EmplaceUnique(K key, Args&&... args)
+	inline iterator EmplaceUnique(K key, Args&&... args)
 	{
 		if constexpr(sizeof...(Args) == 0)
 			data.emplace_back(std::move(key), V{});
@@ -272,25 +271,25 @@ private:
 namespace
 {
 	template<typename K, typename V, typename E>
-	auto begin(SmallMap<K, V, E> &m)
+	inline auto begin(SmallMap<K, V, E> &m)
 	{
 		return m.begin();
 	}
 
 	template<typename K, typename V, typename E>
-	auto begin(const SmallMap<K, V, E> &m)
+	inline auto begin(const SmallMap<K, V, E> &m)
 	{
 		return m.begin();
 	}
 
 	template<typename K, typename V, typename E>
-	auto end(SmallMap<K, V, E> &m)
+	inline auto end(SmallMap<K, V, E> &m)
 	{
 		return m.end();
 	}
 
 	template<typename K, typename V, typename E>
-	auto end(const SmallMap<K, V, E> &m)
+	inline auto end(const SmallMap<K, V, E> &m)
 	{
 		return m.end();
 	}

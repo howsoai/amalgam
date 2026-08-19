@@ -151,6 +151,7 @@ set(COMMON_SOURCE
     src/Amalgam/evaluablenode/EvaluableNodeTreeManipulation.cpp
     src/Amalgam/evaluablenode/EvaluableNodeTreeManipulation.h
     src/Amalgam/FastMath.h
+    src/Amalgam/FastOrderedMap.h
     src/Amalgam/FilenameEscapeProcessor.h
     src/Amalgam/GeneralizedDistance.h
     src/Amalgam/HashMaps.h

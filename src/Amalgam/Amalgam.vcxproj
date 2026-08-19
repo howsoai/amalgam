@@ -676,6 +676,7 @@
     <ClInclude Include="evaluablenode\EvaluableNodeTreeFunctions.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeManipulation.h" />
     <ClInclude Include="FastMath.h" />
+    <ClInclude Include="FastOrderedMap.h" />
     <ClInclude Include="FilenameEscapeProcessor.h" />
     <ClInclude Include="GeneralizedDistance.h" />
     <ClInclude Include="HashMaps.h" />

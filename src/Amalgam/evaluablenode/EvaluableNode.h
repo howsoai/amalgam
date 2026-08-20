@@ -2,6 +2,7 @@
 
 //project headers:
 #include "FastMath.h"
+#include "FastOrderedMap.h"
 #include "HashMaps.h"
 #include "OpcodeDetails.h"
 #include "Opcodes.h"
@@ -40,7 +41,9 @@ public:
 	using KeywordLookupType = FastHashMap<std::string, EvaluableNodeType>;
 
 	//EvaluableNode assoc storage
-	using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
+	//TODO 25910: change where and how this is implemented
+	//using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
+	using AssocType = FastOrderedMap<StringInternPool::StringID, EvaluableNode *>;
 
 	//EvaluableNode ordered storage
 	using OrderedType = std::vector<EvaluableNode *>;

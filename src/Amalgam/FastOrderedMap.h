@@ -1,3 +1,4 @@
+#pragma once
 //project headers
 #include "VectorMap.h"
 
@@ -7,9 +8,8 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#include <stdexcept>
 #include <vector>
-
-//TODO 25910: use this in EvaluableNode
 
 template<
 	typename K, typename V,
@@ -65,6 +65,9 @@ public:
 		{
 			return vectorIteratorAsFlag != other;
 		}
+
+		iterator vectorIteratorAsFlag;
+		FastHashMap::iterator mapIterator;
 	};
 
 	using hash = Hash;
@@ -110,7 +113,7 @@ public:
 		return vectorMap.begin();
 	}
 
-	inline const_iterator begin() const noexcept
+	inline const_iterator cbegin() const noexcept
 	{
 		return vectorMap.cbegin();
 	}
@@ -120,7 +123,7 @@ public:
 		return vectorMap.end();
 	}
 
-	inline const_iterator end() const noexcept
+	inline const_iterator cend() const noexcept
 	{
 		return vectorMap.cend();
 	}
@@ -155,7 +158,7 @@ public:
 	{
 		auto result = fastHashMap.emplace(std::forward<Args>(args)...);
 		if(result.second)
-			vectorMap.push_back({ result.first->first, result.first->second });
+			vectorMap.emplace(result.first->first, result.first->second);
 
 		return result;
 	}
@@ -164,7 +167,7 @@ public:
 	{
 		auto result = fastHashMap.insert(value);
 		if(result.second)
-			vectorMap.push_back(value);
+			vectorMap.emplace(result.first->first, result.first->second);
 
 		return result;
 	}
@@ -173,25 +176,27 @@ public:
 	{
 		auto result = fastHashMap.insert_or_assign(value.first, value.second);
 		if(result.second)
-			vectorMap.push_back(value);
+			vectorMap.emplace(result.first->first, result.first->second);
 
 		return result;
 	}
 
+	template <typename... Args>
 	inline auto emplace_hint(size_type hint, Args&&... args) -> decltype(auto)
 	{
 		auto result = fastHashMap.emplace_hint(hint, std::forward<Args>(args)...);
 		if(result.second)
-			vectorMap.push_back({ result.first->first, result.first->second });
+			vectorMap.emplace(result.first->first, result.first->second);
 
 		return result;
 	}
 
+	template <typename... Args>
 	inline auto try_emplace(const key_type &key, Args&&... args) -> std::pair<iterator, bool>
 	{
 		auto result = fastHashMap.try_emplace(key, std::forward<Args>(args)...);
 		if(result.second)
-			vectorMap.push_back({ result.first->first, result.first->second });
+			vectorMap.emplace(result.first->first, result.first->second);
 
 		return result;
 	}
@@ -205,7 +210,22 @@ public:
 			if(v_it != vectorMap.end())
 				vectorMap.erase(v_it);
 
-			fastHashMap.erase(key);
+			fastHashMap.erase(it);
+		}
+
+		return vectorMap.end();
+	}
+
+	iterator erase(const LookupResult &iter)
+	{
+		auto it = fastHashMap.find(iter.mapIterator->first);
+		if(it != fastHashMap.end())
+		{
+			auto v_it = std::find(vectorMap.begin(), vectorMap.end(), std::make_pair(it->first, it->second));
+			if(v_it != vectorMap.end())
+				vectorMap.erase(v_it);
+
+			fastHashMap.erase(it);
 		}
 
 		return vectorMap.end();
@@ -251,7 +271,7 @@ public:
 
 		auto result = fastHashMap.insert({ key, mapped_type() });
 		if(result.second)
-			vectorMap.push_back({ key, result.first->second });
+			vectorMap.emplace(key, result.first->second);
 
 		return result.first->second;
 	}

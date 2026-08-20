@@ -1,4 +1,6 @@
+#pragma once
 //system includes
+#include <stdexcept>
 #include <vector>
 
 //implements a map via a vector, where entries are looked up sequentially for brute force
@@ -23,12 +25,22 @@ public:
 	using const_reference = const mapped_type &;
 	using iterator_category = std::random_access_iterator_tag;
 
-	inline auto begin()
+	inline iterator begin() noexcept
 	{
 		return data.begin();
 	}
 
-	inline auto end()
+	inline const_iterator cbegin() const noexcept
+	{
+		return data.begin();
+	}
+
+	inline iterator end() noexcept
+	{
+		return data.end();
+	}
+
+	inline const_iterator cend() const noexcept
 	{
 		return data.end();
 	}

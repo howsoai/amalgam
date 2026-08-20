@@ -380,8 +380,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			//remove individually
 			for(size_t i = 0; list->GetMappedChildNodesReference().size() > 0 && i < num_to_remove; i++)
 			{
-				const auto &mcn = list->GetMappedChildNodesReference();
-				const auto &iter = begin(mcn);
+				auto &mcn = list->GetMappedChildNodesReference();
+				auto iter = begin(mcn);
 				list->EraseMappedChildNode(iter->first);
 			}
 
@@ -809,8 +809,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 		//remove individually
 		for(size_t i = 0; list->GetMappedChildNodesReference().size() > 0 && i < num_to_remove; i++)
 		{
-			const auto &mcn = list->GetMappedChildNodesReference();
-			const auto &iter = begin(mcn);
+			auto &mcn = list->GetMappedChildNodesReference();
+			auto iter = begin(mcn);
 			list->EraseMappedChildNode(iter->first);
 		}
 

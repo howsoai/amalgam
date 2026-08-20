@@ -218,6 +218,10 @@ public:
 
 	iterator erase(const LookupResult &iter)
 	{
+		//if invalid iterator, just return
+		if(iter == end())
+			return vectorMap.end();
+
 		auto it = fastHashMap.find(iter.mapIterator->first);
 		if(it != fastHashMap.end())
 		{

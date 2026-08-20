@@ -4,6 +4,7 @@
 #include "HashMaps.h"
 
 //system headers:
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>

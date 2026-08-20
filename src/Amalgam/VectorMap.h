@@ -225,6 +225,12 @@ public:
 		return std::prev(data.end());
 	}
 
+	//used for more advanced manipulation
+	std::vector<std::pair<K, V>> &GetVector()
+	{
+		return data;
+	}
+
 private:
 	std::vector<std::pair<K, V>> data;
 };

@@ -182,16 +182,6 @@ public:
 	}
 
 	template <typename... Args>
-	inline auto emplace_hint(size_type hint, Args&&... args) -> decltype(auto)
-	{
-		auto result = fastHashMap.emplace_hint(hint, std::forward<Args>(args)...);
-		if(result.second)
-			vectorMap.emplace(result.first->first, result.first->second);
-
-		return result;
-	}
-
-	template <typename... Args>
 	inline auto try_emplace(const key_type &key, Args&&... args) -> std::pair<iterator, bool>
 	{
 		auto result = fastHashMap.try_emplace(key, std::forward<Args>(args)...);
@@ -240,7 +230,7 @@ public:
 		FastHashSet to_remove(keys_to_remove.begin(), keys_to_remove.end());
 
 		size_t write_index = 0;
-		for(size_t i = 0; i < vectorMap.size(); ++i)
+		for(size_t i = 0; i < vectorMap.size(); i++)
 		{
 			if(to_remove.find(vectorMap[i].first) == to_remove.end())
 			{

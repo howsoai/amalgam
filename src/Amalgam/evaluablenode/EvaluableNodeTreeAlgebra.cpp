@@ -60,7 +60,7 @@ constexpr auto MakeRuleEntry()
 //returns an iterator to the first divisor of ocn that is an immediate zero, or the end iterator if
 //there is none; a runtime division stops at a zero divisor, leaving the remaining divisors unevaluated,
 //so no divisor can be moved across one
-static EvaluableNode::OrderedType::iterator FindFirstZeroDivisor(EvaluableNode::OrderedType &ocn)
+static EvaluableNode::OrderedType::iterator FindFirstZeroDivisor(EvaluableNode::OrderedRef ocn)
 {
 	return std::find_if(begin(ocn) + 1, end(ocn),
 		[](EvaluableNode *cn) { return (EvaluableNode::IsImmediate(cn) && EvaluableNode::ToNumber(cn) == 0.0); });

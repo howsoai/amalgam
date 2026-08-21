@@ -44,9 +44,11 @@ public:
 	//TODO 25910: change where and how this is implemented
 	//using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
 	using AssocType = OrderedHashMap<CompactHashMap, CompactHashSet, StringInternPool::StringID, EvaluableNode *>;
+	using AssocRef = AssocType &;
 
 	//EvaluableNode ordered storage
 	using OrderedType = std::vector<EvaluableNode *>;
+	using OrderedRef = OrderedType &;
 
 	//Storage for labels
 	using LabelsAssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
@@ -1212,7 +1214,7 @@ public:
 			GetOrderedChildNodesReference().reserve(to_reserve);
 	}
 
-	__forceinline OrderedType &GetOrderedChildNodes()
+	__forceinline OrderedRef GetOrderedChildNodes()
 	{
 		if(IsOrderedArray())
 			return GetOrderedChildNodesReference();
@@ -1268,10 +1270,10 @@ public:
 	}
 
 	//sets the ordered child nodes and updates flags
-	void SetOrderedChildNodes(const OrderedType &ocn, bool need_cycle_check = true, bool is_idempotent = false);
+	void SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check = true, bool is_idempotent = false);
 	//sets the ordered child nodes and updates flags, but can be used as an rvalue so that the memory doesn't
 	//need to be reallocated if std::move is used for the input
-	void SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check, bool is_idempotent);
+	void SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check = true, bool is_idempotent = false);
 	template<typename ContainerIterator>
 	inline void SetOrderedChildNodes(ContainerIterator first, ContainerIterator last, bool need_cycle_check, bool is_idempotent)
 	{
@@ -1291,7 +1293,7 @@ public:
 
 	void ClearOrderedChildNodes();
 	void AppendOrderedChildNode(EvaluableNode *cn);
-	void AppendOrderedChildNodes(const OrderedType &ocn_to_append);
+	void AppendOrderedChildNodes(OrderedRef ocn_to_append);
 	//if the OrderedChildNodes list was using extra memory (if it were resized to be smaller), this would attempt to free extra memory
 	inline void ReleaseOrderedChildNodesExtraMemory()
 	{
@@ -1316,7 +1318,7 @@ public:
 			GetMappedChildNodesReference().reserve(to_reserve);
 	}
 
-	__forceinline AssocType &GetMappedChildNodes()
+	__forceinline AssocRef GetMappedChildNodes()
 	{
 		if(IsAssociativeArray())
 			return GetMappedChildNodesReference();
@@ -1349,7 +1351,7 @@ public:
 	//returns a pointer to the pointer of the child node, creating it if necessary and populating it with a nullptr
 	EvaluableNode **GetOrCreateMappedChildNode(const StringInternPool::StringID sid);
 	// if copy is set to true, then it will copy the map, otherwise it will swap
-	void SetMappedChildNodes(AssocType &new_mcn, bool copy,
+	void SetMappedChildNodes(AssocRef new_mcn, bool copy,
 		bool need_cycle_check = true, bool is_idempotent = false);
 	//if overwrite is true, then it will overwrite the value, otherwise it will only set it if it does not exist
 	// will return true if it was successfully written (false if overwrite is set to false and the key already exists),
@@ -1361,12 +1363,12 @@ public:
 	void ClearMappedChildNodes();
 	//returns the node erased
 	EvaluableNode *EraseMappedChildNode(const StringInternPool::StringID sid);
-	void AppendMappedChildNodes(AssocType &mcn_to_append);
+	void AppendMappedChildNodes(AssocRef mcn_to_append);
 
 	//helper function to obtain a typed value from mapped child nodes
 	//note that it can only be used on string key lookups, no code or numeric keys
 	template<typename T>
-	static void GetValueFromMappedChildNodesReference(EvaluableNode::AssocType &mcn, EvaluableNodeBuiltInStringId key, T &value)
+	static void GetValueFromMappedChildNodesReference(EvaluableNode::AssocRef mcn, EvaluableNodeBuiltInStringId key, T &value)
 	{
 		auto found_value = mcn.find(GetStringIdFromBuiltInStringId(key));
 		if(found_value != end(mcn))
@@ -1412,7 +1414,7 @@ public:
 	}
 
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
-	__forceinline OrderedType &GetOrderedChildNodesReference()
+	__forceinline OrderedRef GetOrderedChildNodesReference()
 	{
 		if(!HasExtendedValue())
 			return value.orderedChildNodes;
@@ -1421,7 +1423,7 @@ public:
 	}
 
 	//assumes that the EvaluableNode is has mapped child nodes, and returns the value by reference
-	__forceinline AssocType &GetMappedChildNodesReference()
+	__forceinline AssocRef GetMappedChildNodesReference()
 	{
 		if(!HasExtendedValue())
 			return value.mappedChildNodes;

@@ -252,7 +252,7 @@ public:
 		return n;
 	}
 
-	inline EvaluableNode *AllocNode(EvaluableNode::OrderedType &child_nodes,
+	inline EvaluableNode *AllocNode(EvaluableNode::OrderedRef child_nodes,
 		bool need_cycle_check = true, bool is_idempotent = false)
 	{
 		EvaluableNode *n = AllocNode(ENT_LIST);

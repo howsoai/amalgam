@@ -754,7 +754,7 @@ size_t EvaluableNode::GetNumChildNodes()
 	return 0;
 }
 
-void EvaluableNode::SetOrderedChildNodes(const OrderedType &ocn, bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
@@ -806,7 +806,7 @@ void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 	UpdateFlagsBasedOnNewChildNode(cn);
 }
 
-void EvaluableNode::AppendOrderedChildNodes(const OrderedType &ocn_to_append)
+void EvaluableNode::AppendOrderedChildNodes(const OrderedRef ocn_to_append)
 {
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
@@ -867,7 +867,7 @@ EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const StringInternPool
 	return &inserted_node->second;
 }
 
-void EvaluableNode::SetMappedChildNodes(AssocType &new_mcn, bool copy, bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetMappedChildNodes(AssocRef new_mcn, bool copy, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsAssociativeArray()) [[unlikely]]
 		return;
@@ -1007,7 +1007,7 @@ EvaluableNode *EvaluableNode::EraseMappedChildNode(const StringInternPool::Strin
 	return erased_value;
 }
 
-void EvaluableNode::AppendMappedChildNodes(AssocType &mcn_to_append)
+void EvaluableNode::AppendMappedChildNodes(AssocRef mcn_to_append)
 {
 	if(!IsAssociativeArray())
 		return;

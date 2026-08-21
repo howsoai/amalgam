@@ -806,7 +806,7 @@ void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 	UpdateFlagsBasedOnNewChildNode(cn);
 }
 
-void EvaluableNode::AppendOrderedChildNodes(const OrderedRef ocn_to_append)
+void EvaluableNode::AppendOrderedChildNodes(OrderedRef ocn_to_append)
 {
 	if(!IsOrderedArray()) [[unlikely]]
 		return;

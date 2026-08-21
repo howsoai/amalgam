@@ -10,13 +10,14 @@
 //useful for standing in for hash maps when the data is very small (generally less than 20 entries)
 // and for hash maps where entries are only iterated over or found once
 //note that, like flat hash maps, iterators may be invalidated when the map is altered
-template<typename K, typename V, typename E = std::equal_to<K>>
+template<typename K, typename V, typename KeyEqual = std::equal_to<K>>
 class VectorMap
 {
 public:
 	using key_type = K;
 	using mapped_type = V;
 	using value_type = std::pair<K, V>;
+	using key_equal = KeyEqual;
 
 	// Standard naming for iterators
 	using iterator = std::vector<std::pair<K, V>>::iterator;
@@ -71,7 +72,7 @@ public:
 	inline iterator find(const K &key)
 	{
 		return std::find_if(data.begin(), data.end(),
-			[&](const std::pair<K, V> &p) { return E{}(p.first, key); });
+			[&](const std::pair<K, V> &p) { return KeyEqual{}(p.first, key); });
 	}
 
 	inline bool contains(const K &key) const

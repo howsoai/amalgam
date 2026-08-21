@@ -12,63 +12,61 @@
 #include <utility>
 #include <vector>
 
-template<
-	typename K, typename V,
-	typename Hash = std::hash<K>,
-	typename KeyEq = std::equal_to<K>,
-	typename FastHashMap = std::unordered_map<K, size_t, Hash, KeyEq>,
-	typename FastHashSet = std::unordered_set<K, Hash, KeyEq>,
-	typename VecMap = VectorMap<K, V, KeyEq>
->
-class FastOrderedMap
+template<template<typename, typename> typename HashMapType,
+	template<typename> typename HashSetType,
+	typename KeyType, typename ValueType>
+class OrderedHashMap
 {
 public:
-	//--- Type Definitions ---
-	using value_type = std::pair<K, V>;
-	using key_type = K;
-	using mapped_type = V;
 
+	//--- Type Definitions ---
+
+	using key_type = KeyType;
+	using mapped_type = ValueType;
+	using value_type = std::pair<key_type, mapped_type>;
 	using size_type = std::size_t;
 
+	using HashMap = HashMapType<key_type, size_t>;
+	using HashSet = HashSetType<key_type>;
+
+	using key_equal = HashMap::key_equal;
+	using VecMap = VectorMap<key_type, mapped_type, key_equal>;
 	using iterator = typename VecMap::iterator;
 	using const_iterator = typename VecMap::const_iterator;
 
-	using hash = Hash;
-	using key_equivalent = KeyEq;
-
 	//--- Construction & Lifecycle ---
 
-	inline FastOrderedMap() = default;
-	inline FastOrderedMap(const FastOrderedMap &other) = default;
-	inline FastOrderedMap(FastOrderedMap &&other) noexcept = default;
+	inline OrderedHashMap() = default;
+	inline OrderedHashMap(const OrderedHashMap &other) = default;
+	inline OrderedHashMap(OrderedHashMap &&other) noexcept = default;
 
-	inline FastOrderedMap(size_type initial_capacity)
+	inline OrderedHashMap(size_type initial_capacity)
 	{
 		vectorMap.reserve(initial_capacity);
-		fastHashMap.reserve(initial_capacity);
+		hashMap.reserve(initial_capacity);
 	}
 
-	inline FastOrderedMap &operator=(const FastOrderedMap &other)
+	inline OrderedHashMap &operator=(const OrderedHashMap &other)
 	{
 		if(this != &other)
 		{
 			vectorMap = other.vectorMap;
-			fastHashMap = other.fastHashMap;
+			hashMap = other.hashMap;
 		}
 		return *this;
 	}
 
-	inline FastOrderedMap &operator=(FastOrderedMap &&other) noexcept
+	inline OrderedHashMap &operator=(OrderedHashMap &&other) noexcept
 	{
 		if(this != &other)
 		{
 			vectorMap = std::move(other.vectorMap);
-			fastHashMap = std::move(other.fastHashMap);
+			hashMap = std::move(other.hashMap);
 		}
 		return *this;
 	}
 
-	inline ~FastOrderedMap() = default;
+	inline ~OrderedHashMap() = default;
 
 	//--- Iterators ---
 
@@ -114,18 +112,19 @@ public:
 	inline void clear()
 	{
 		vectorMap.clear();
-		fastHashMap.clear();
+		hashMap.clear();
 	}
 
 	template<class... Args>
 	inline std::pair<iterator, bool> try_emplace(const key_type &key, Args&&... args)
 	{
-		auto [map_it, inserted] = fastHashMap.try_emplace(key, vectorMap.size());
+		//if all 3rd party libraries are C++20 compliant, can change emplace to a try_emplace
+		auto [map_it, inserted] = hashMap.emplace(key, vectorMap.size());
 
 		auto &vec = vectorMap.GetVector();
 		if(inserted)
 		{
-			vec.emplace_back(key, V{ std::forward<Args>(args)... });
+			vec.emplace_back(key, mapped_type{ std::forward<Args>(args)... });
 			std::size_t new_index = vec.size() - 1;
 			map_it->second = new_index;
 			return { vectorMap.begin() + new_index, true };
@@ -142,7 +141,8 @@ public:
 
 		auto &&key = std::get<0>(tup);
 
-		auto [map_it, inserted] = fastHashMap.try_emplace(key, vectorMap.size());
+		//if all 3rd party libraries are C++20 compliant, can change emplace to a try_emplace
+		auto [map_it, inserted] = hashMap.emplace(key, vectorMap.size());
 
 		auto &vec = vectorMap.GetVector();
 		if(inserted)
@@ -151,7 +151,7 @@ public:
 			constexpr std::size_t tuple_size = std::tuple_size_v<tuple_t>;
 			auto construct_value = [&](auto&&... tail) {
 				vec.emplace_back(std::forward<decltype(key)>(key),
-								 V{ std::forward<decltype(tail)>(tail)... });
+					mapped_type{ std::forward<decltype(tail)>(tail)... });
 				};
 
 			//actually construct the value
@@ -171,7 +171,8 @@ public:
 
 	inline std::pair<iterator, bool> insert_or_assign(const value_type &value)
 	{
-		auto [map_it, inserted] = fastHashMap.try_emplace(value.first, vectorMap.size());
+		//if all 3rd party libraries are C++20 compliant, can change emplace to a try_emplace
+		auto [map_it, inserted] = hashMap.emplace(value.first, vectorMap.size());
 
 		if(inserted)
 		{
@@ -191,8 +192,8 @@ public:
 
 	iterator erase(const key_type &key)
 	{
-		auto it = fastHashMap.find(key);
-		if(it == fastHashMap.end())
+		auto it = hashMap.find(key);
+		if(it == hashMap.end())
 			return vectorMap.end();
 
 		auto &vec = vectorMap.GetVector();
@@ -203,11 +204,11 @@ public:
 		if(index_to_remove != last_index)
 		{
 			vec[index_to_remove] = std::move(vec[last_index]);
-			fastHashMap[vec[index_to_remove].first] = index_to_remove;
+			hashMap[vec[index_to_remove].first] = index_to_remove;
 		}
 
 		vec.pop_back();
-		fastHashMap.erase(key);
+		hashMap.erase(key);
 
 		return (index_to_remove == vec.size()) ? vectorMap.end() : vectorMap.begin() + index_to_remove;
 	}
@@ -217,8 +218,8 @@ public:
 		if(pos == vectorMap.end())
 			return vectorMap.end();
 
-		auto hash_map_it = fastHashMap.find(pos->first);
-		if(hash_map_it == fastHashMap.end())
+		auto hash_map_it = hashMap.find(pos->first);
+		if(hash_map_it == hashMap.end())
 			return vectorMap.end();
 
 		//swap with last
@@ -228,18 +229,18 @@ public:
 		if(index_to_remove != last_index)
 		{
 			vec[index_to_remove] = std::move(vec[last_index]);
-			fastHashMap[vec[index_to_remove].first] = index_to_remove;
+			hashMap[vec[index_to_remove].first] = index_to_remove;
 		}
 
 		vec.pop_back();
-		fastHashMap.erase(hash_map_it);
+		hashMap.erase(hash_map_it);
 
 		return (index_to_remove == vec.size()) ? vectorMap.end() : vectorMap.begin() + index_to_remove;
 	}
 
 	void EraseBatch(const std::vector<key_type> &keys_to_remove)
 	{
-		FastHashSet to_remove(keys_to_remove.begin(), keys_to_remove.end());
+		HashSet to_remove(keys_to_remove.begin(), keys_to_remove.end());
 
 		auto &vec = vectorMap.GetVector();
 		std::size_t write = 0;
@@ -251,34 +252,35 @@ public:
 				if(write != read)
 				{
 					vec[write] = std::move(vec[read]);
-					fastHashMap[vec[write].first] = write;
+					hashMap[vec[write].first] = write;
 				}
 				++write;
 			}
 			else
 			{
-				fastHashMap.erase(k);
+				hashMap.erase(k);
 			}
 		}
 		vec.resize(write);   // shrink to the number of kept elements
 	}
 
-	inline void swap(FastOrderedMap &other) noexcept
+	inline void swap(OrderedHashMap &other) noexcept
 	{
 		std::swap(vectorMap, other.vectorMap);
-		std::swap(fastHashMap, other.fastHashMap);
+		std::swap(hashMap, other.hashMap);
 	}
 
 	//--- Lookup ---
 
 	inline mapped_type &at(const key_type &key)
 	{
-		return vectorMap[fastHashMap.at(key)].second;
+		return vectorMap[hashMap.at(key)].second;
 	}
 
 	mapped_type &operator[](const key_type &key)
 	{
-		auto [map_it, inserted] = fastHashMap.try_emplace(key, vectorMap.size());
+		//if all 3rd party libraries are C++20 compliant, can change emplace to a try_emplace
+		auto [map_it, inserted] = hashMap.emplace(key, vectorMap.size());
 
 		auto &vec = vectorMap.GetVector();
 		if(inserted)
@@ -296,13 +298,13 @@ public:
 
 	inline size_type count(const key_type &key) const
 	{
-		return fastHashMap.count(key);
+		return hashMap.count(key);
 	}
 
 	inline iterator find(const key_type &key)
 	{
-		auto it = fastHashMap.find(key);
-		if(it != fastHashMap.end())
+		auto it = hashMap.find(key);
+		if(it != hashMap.end())
 		{
 			return vectorMap.begin() + it->second;
 		}
@@ -311,16 +313,51 @@ public:
 
 	inline bool contains(const key_type &key) const
 	{
-		return fastHashMap.find(key) != fastHashMap.end();
+		return hashMap.find(key) != hashMap.end();
 	}
 
 	inline void reserve(size_type n)
 	{
 		vectorMap.reserve(n);
-		fastHashMap.reserve(n);
+		hashMap.reserve(n);
 	}
 
 private:
 	VecMap vectorMap;
-	FastHashMap fastHashMap;
+	HashMap hashMap;
 };
+
+namespace
+{
+	template<template<typename, typename> typename HashMapType,
+		template<typename> typename HashSetType,
+		typename KeyType, typename ValueType>
+	inline auto begin(OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &m)
+	{
+		return m.begin();
+	}
+
+	template<template<typename, typename> typename HashMapType,
+		template<typename> typename HashSetType,
+		typename KeyType, typename ValueType>
+	inline auto cbegin(const OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &m)
+	{
+		return m.cbegin();
+	}
+
+	template<template<typename, typename> typename HashMapType,
+		template<typename> typename HashSetType,
+		typename KeyType, typename ValueType>
+	inline auto end(OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &m)
+	{
+		return m.end();
+	}
+
+	template<template<typename, typename> typename HashMapType,
+		template<typename> typename HashSetType,
+		typename KeyType, typename ValueType>
+	inline auto cend(const OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &m)
+	{
+		return m.cend();
+	}
+}

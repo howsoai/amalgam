@@ -2,7 +2,7 @@
 
 //project headers:
 #include "FastMath.h"
-#include "FastOrderedMap.h"
+#include "OrderedHashMap.h"
 #include "HashMaps.h"
 #include "OpcodeDetails.h"
 #include "Opcodes.h"
@@ -43,7 +43,7 @@ public:
 	//EvaluableNode assoc storage
 	//TODO 25910: change where and how this is implemented
 	//using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
-	using AssocType = FastOrderedMap<StringInternPool::StringID, EvaluableNode *>;
+	using AssocType = OrderedHashMap<CompactHashMap, CompactHashSet, StringInternPool::StringID, EvaluableNode *>;
 
 	//EvaluableNode ordered storage
 	using OrderedType = std::vector<EvaluableNode *>;

@@ -407,7 +407,7 @@
     <ClInclude Include="VectorMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FastOrderedMap.h">
+    <ClInclude Include="OrderedHashMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

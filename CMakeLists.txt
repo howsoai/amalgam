@@ -151,7 +151,6 @@ set(COMMON_SOURCE
     src/Amalgam/evaluablenode/EvaluableNodeTreeManipulation.cpp
     src/Amalgam/evaluablenode/EvaluableNodeTreeManipulation.h
     src/Amalgam/FastMath.h
-    src/Amalgam/FastOrderedMap.h
     src/Amalgam/FilenameEscapeProcessor.h
     src/Amalgam/GeneralizedDistance.h
     src/Amalgam/HashMaps.h
@@ -189,6 +188,7 @@ set(COMMON_SOURCE
     src/Amalgam/interpreter/OpcodesSystemAndRuntime.cpp
     src/Amalgam/interpreter/OpcodesTrigonometry.cpp
     src/Amalgam/interpreter/OpcodesVariableDefinitionAndModification.cpp
+    src/Amalgam/OrderedHashMap.h
     src/Amalgam/KnnCache.h
     src/Amalgam/Merger.h
     src/Amalgam/OpcodeDetails.cpp

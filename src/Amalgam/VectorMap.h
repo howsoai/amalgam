@@ -6,6 +6,8 @@
 #include <utility>
 #include <vector>
 
+//TODO 25910: update deletion to operate with the pop and swap technique like OrderedHashMap
+
 //implements a map via a vector, where entries are looked up sequentially for brute force
 //useful for standing in for hash maps when the data is very small (generally less than 20 entries)
 // and for hash maps where entries are only iterated over or found once

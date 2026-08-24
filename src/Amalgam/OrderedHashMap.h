@@ -46,14 +46,6 @@ public:
 		hashMap.reserve(initial_capacity);
 	}
 
-	//used to construct and take ownership of vec_map
-	explicit OrderedHashMap(VecMap &&vec_map)
-		: vectorMap(std::move(vec_map))
-	{
-		for(size_t i = 0; i < vectorMap.size(); i++)
-			hashMap.emplace(vectorMap[i].first, i);
-	}
-
 	inline OrderedHashMap &operator=(const OrderedHashMap &other)
 	{
 		if(this != &other)

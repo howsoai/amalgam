@@ -6,12 +6,11 @@
 #include <utility>
 #include <vector>
 
-//TODO 25910: update deletion to operate with the pop and swap technique like OrderedHashMap
-
 //implements a map via a vector, where entries are looked up sequentially for brute force
 //useful for standing in for hash maps when the data is very small (generally less than 20 entries)
 // and for hash maps where entries are only iterated over or found once
 //note that, like flat hash maps, iterators may be invalidated when the map is altered
+//the order of the elements is as inserted, but when an element is deleted, it swaps it with the last element
 template<typename K, typename V, typename KeyEqual = std::equal_to<K>>
 class VectorMap
 {
@@ -21,7 +20,7 @@ public:
 	using value_type = std::pair<K, V>;
 	using key_equal = KeyEqual;
 
-	// Standard naming for iterators
+	//standard naming for iterators
 	using iterator = std::vector<std::pair<K, V>>::iterator;
 	using const_iterator = std::vector<std::pair<K, V>>::const_iterator;
 
@@ -110,7 +109,12 @@ public:
 
 	inline iterator erase(iterator it)
 	{
-		return data.erase(it);
+		//only swap if not the last element
+		if(it != std::prev(data.end()))
+			std::swap(*it, data.back());
+
+		data.pop_back();
+		return it;
 	}
 
 	size_t erase(const K &key)
@@ -118,7 +122,7 @@ public:
 		auto it = find(key);
 		if(it != end())
 		{
-			data.erase(it);
+			erase(it);
 			return 1;
 		}
 		return 0;

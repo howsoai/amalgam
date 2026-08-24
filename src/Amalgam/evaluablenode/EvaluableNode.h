@@ -45,6 +45,8 @@ public:
 	//using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
 	using AssocType = OrderedHashMap<CompactHashMap, CompactHashSet, StringInternPool::StringID, EvaluableNode *>;
 	using AssocRef = AssocType &;
+	//TODO 25910: put this back in when implement the class
+	//class AssocRef;
 
 	//EvaluableNode ordered storage
 	using OrderedType = std::vector<EvaluableNode *>;
@@ -106,197 +108,29 @@ public:
 	}
 
 	//clears out all data and makes the unusable in the ENT_DEALLOCATED state
-	inline void Invalidate()
-	{
-		DestructValue();
-
-		type = ENT_DEALLOCATED;
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		//use a value that is more apparent that something went wrong
-		value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-	#else
-		value.numberAndNullValueContainer.numberValue = 0;
-	#endif
-
-		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
-	}
+	inline void Invalidate();
 
 	///////////////////////////////////////////
 	//Each InitializeType* sets up a given type with appropriate data
-	inline void InitializeType(EvaluableNodeType _type, const std::string &string_value)
-	{
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		AmlgAssert(IsEvaluableNodeTypeValid(_type));
-	#endif
+	inline void InitializeType(EvaluableNodeType _type, const std::string &string_value);
 
-		type = _type;
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
-		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
+	inline void InitializeType(EvaluableNodeType _type, const std::string_view string_value);
 
-		SetIsIdempotent(type == ENT_STRING);
-		SetNeedCycleCheck(false);
-	}
-
-	inline void InitializeType(EvaluableNodeType _type, const std::string_view string_value)
-	{
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		AmlgAssert(IsEvaluableNodeTypeValid(_type));
-	#endif
-
-		type = _type;
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
-		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
-
-		SetIsIdempotent(type == ENT_STRING);
-		SetNeedCycleCheck(false);
-	}
-
-	inline void InitializeType(EvaluableNodeType _type, StringInternPool::StringID string_id)
-	{
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		AmlgAssert(IsEvaluableNodeTypeValid(_type));
-	#endif
-
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		if(string_id == StringInternPool::NOT_A_STRING_ID)
-		{
-			type = ENT_NULL;
-			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-		}
-		else
-		{
-			type = _type;
-			value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_id);
-			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
-		}
-
-		SetIsIdempotent(type == ENT_STRING);
-		SetNeedCycleCheck(false);
-	}
+	inline void InitializeType(EvaluableNodeType _type, StringInternPool::StringID string_id);
 
 	//like InitializeType, but hands off the string reference to string_id
-	inline void InitializeTypeWithReferenceHandoff(EvaluableNodeType _type, StringInternPool::StringID string_id)
-	{
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		AmlgAssert(IsEvaluableNodeTypeValid(_type));
-	#endif
+	inline void InitializeTypeWithReferenceHandoff(EvaluableNodeType _type, StringInternPool::StringID string_id);
 
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		if(string_id == StringInternPool::NOT_A_STRING_ID)
-		{
-			type = ENT_NULL;
-			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-		}
-		else
-		{
-			type = _type;
-			value.stringValueContainer.stringID = string_id;
-			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
-		}
+	inline void InitializeType(double number_value);
 
-		SetIsIdempotent(type == ENT_STRING);
-		SetNeedCycleCheck(false);
-	}
-
-	inline void InitializeType(double number_value)
-	{
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		value.numberAndNullValueContainer.numberValue = number_value;
-		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
-
-		if(!FastIsNaN(number_value))
-			type = ENT_NUMBER;
-		else
-			type = ENT_NULL;
-
-
-		SetIsIdempotent(true);
-		SetNeedCycleCheck(false);
-	}
-
-	inline void InitializeType(bool bool_value)
-	{
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		type = ENT_BOOL;
-		value.boolValueContainer.boolValue = bool_value;
-		AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
-
-		SetIsIdempotent(true);
-		SetNeedCycleCheck(false);
-	}
+	inline void InitializeType(bool bool_value);
 
 	//initializes to ENT_UNINITIALIZED
 	//useful to mark a node in a hold state before it's ready so it isn't counted as ENT_DEALLOCATED
 	//but also such that the fields don't need to be initialized or cleared
-	__forceinline constexpr void InitializeUnallocated()
-	{
-		type = ENT_UNINITIALIZED;
-	}
+	__forceinline constexpr void InitializeUnallocated();
 
-	inline void InitializeType(EvaluableNodeType _type)
-	{
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		AmlgAssert(IsEvaluableNodeTypeValid(_type) || _type == ENT_DEALLOCATED);
-	#endif
-
-		type = _type;
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(_type));
-
-		if(DoesEvaluableNodeTypeUseNullData(_type))
-		{
-			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
-			SetIsIdempotent(true);
-			SetNeedCycleCheck(false);
-		}
-		if(DoesEvaluableNodeTypeUseBoolData(_type))
-		{
-			AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
-			value.boolValueContainer.boolValue = false;
-			SetIsIdempotent(true);
-			SetNeedCycleCheck(false);
-		}
-		else if(DoesEvaluableNodeTypeUseNumberData(_type))
-		{
-			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
-			value.numberAndNullValueContainer.numberValue = 0.0;
-			SetIsIdempotent(true);
-			SetNeedCycleCheck(false);
-		}
-		else if(DoesEvaluableNodeTypeUseStringData(_type))
-		{
-			value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
-			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
-			SetIsIdempotent(_type == ENT_STRING);
-			SetNeedCycleCheck(false);
-		}
-		else if(DoesEvaluableNodeTypeUseAssocData(_type))
-		{
-			type = _type;
-			SetIsIdempotent(true);
-			value.ConstructMappedChildNodes();
-		}
-		else if(_type == ENT_DEALLOCATED)
-		{
-		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-			//use a value that is more apparent that something went wrong
-			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-		#else
-			value.numberAndNullValueContainer.numberValue = 0;
-		#endif
-
-			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
-		}
-		else
-		{
-			value.ConstructOrderedChildNodes();
-		}
-	}
+	inline void InitializeType(EvaluableNodeType _type);
 
 	//sets the value of the node to that of n and copies metadata if copy_metadata is true
 	void InitializeType(EvaluableNode *n, bool copy_metadata = true);
@@ -1836,3 +1670,6 @@ protected:
 	static Concurrency::SingleMutex debugWatchMutex;
 #endif
 };
+
+#include "EvaluableNodeAssocRef.h"
+#include "EvaluableNodeInlines.h"

@@ -669,6 +669,8 @@
     <ClInclude Include="entity\EntityQueryCaches.h" />
     <ClInclude Include="entity\EntityWriteListener.h" />
     <ClInclude Include="evaluablenode\EvaluableNode.h" />
+    <ClInclude Include="evaluablenode\EvaluableNodeAssocRef.h" />
+    <ClInclude Include="evaluablenode\EvaluableNodeInlines.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeManagement.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeReference.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeAlgebra.h" />

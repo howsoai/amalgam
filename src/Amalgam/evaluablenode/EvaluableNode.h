@@ -46,6 +46,8 @@ public:
 	using AssocType = OrderedHashMap<CompactHashMap, CompactHashSet, StringInternPool::StringID, EvaluableNode *>;
 	using AssocRef = AssocType &;
 	//TODO 25910: put this back in when implement the class
+	//using SmallAssocType = VectorMap<StringInternPool::StringID, EvaluableNode *>;
+	//using LargeAssocType = OrderedHashMap<CompactHashMap, CompactHashSet, StringInternPool::StringID, EvaluableNode *>;
 	//class AssocRef;
 
 	//EvaluableNode ordered storage

@@ -186,3 +186,93 @@ inline void EvaluableNode::InitializeType(EvaluableNodeType _type)
 		value.ConstructOrderedChildNodes();
 	}
 }
+
+__forceinline void EvaluableNode::ClearAnnotationsAndComments()
+{
+	if(HasExtendedValue())
+	{
+		if(GetType() == ENT_ASSOC)
+		{
+			AssocType temp_mcn = std::move(*value.extendedMappedChildNodes.mappedChildNodes);
+			value.extendedMappedChildNodes.mappedChildNodes.~unique_ptr<AssocType>();
+			new (&value.mappedChildNodes) AssocType(std::move(temp_mcn));
+		}
+		else //ordered
+		{
+			OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
+			value.extendedOrderedChildNodes.orderedChildNodes.~unique_ptr<OrderedType>();
+			new (&value.orderedChildNodes) OrderedType(std::move(temp_ocn));
+		}
+
+		SetExtendedValue(false);
+	}
+	else
+	{
+		GetAnnotationsAndCommentsStorage().Clear();
+	}
+}
+
+__forceinline void EvaluableNode::ClearMetadata()
+{
+	ClearAnnotationsAndComments();
+	SetConcurrency(false);
+}
+
+__forceinline bool EvaluableNode::HasMetadata()
+{
+	auto &a_and_c = GetAnnotationsAndCommentsStorage();
+	return (a_and_c.HasCommentOrAnnotation() || GetConcurrency());
+}
+
+inline bool EvaluableNode::AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
+{
+	EvaluableNodeType a_type = (a == nullptr ? ENT_NULL : a->GetType());
+	EvaluableNodeType b_type = (b == nullptr ? ENT_NULL : b->GetType());
+
+	//check both types are the same
+	if(a_type != b_type)
+		return false;
+
+	//since both types are the same, only need to check one for the type of data
+	//check string equality
+	if(DoesEvaluableNodeTypeUseStringData(a_type))
+		return a->GetStringIDReference() == b->GetStringIDReference();
+
+	//check numeric equality
+	if(DoesEvaluableNodeTypeUseNumberData(a_type))
+		return a->GetNumberValueReference() == b->GetNumberValueReference();
+
+	if(DoesEvaluableNodeTypeUseBoolData(a_type))
+		return a->GetBoolValueReference() == b->GetBoolValueReference();
+
+	//if made it here, then it's an instruction, and they're of equal type
+	return true;
+}
+
+inline bool EvaluableNode::AreDeepEqual(EvaluableNode *a, EvaluableNode *b)
+{
+	//if pointers are the same, then they are the same
+	if(a == b)
+		return true;
+
+	//first check if the immediate values are equal
+	if(!AreShallowEqual(a, b))
+		return false;
+
+	//since they are shallow equal, check for quick exit
+	if(a == nullptr || b == nullptr || IsEvaluableNodeTypeTerminalNode(a->GetType()))
+		return true;
+
+	//only need cycle checks if both a and b need cycle checks,
+	// otherwise, one will become exhausted and end the comparison
+	if(a->GetNeedCycleCheck() && b->GetNeedCycleCheck())
+	{
+		ReferenceAssocType checked;
+		return AreDeepEqualGivenShallowEqualAndNotImmediate(a, b, &checked);
+	}
+	else
+	{
+		return AreDeepEqualGivenShallowEqualAndNotImmediate(a, b, nullptr);
+	}
+}
+

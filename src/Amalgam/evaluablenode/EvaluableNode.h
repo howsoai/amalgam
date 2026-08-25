@@ -149,98 +149,19 @@ public:
 	}
 
 	//clears annotations and comments
-	__forceinline void ClearAnnotationsAndComments()
-	{
-		if(HasExtendedValue())
-		{
-			if(GetType() == ENT_ASSOC)
-			{
-				AssocType temp_mcn = std::move(*value.extendedMappedChildNodes.mappedChildNodes);
-				value.extendedMappedChildNodes.mappedChildNodes.~unique_ptr<AssocType>();
-				new (&value.mappedChildNodes) AssocType(std::move(temp_mcn));
-			}
-			else //ordered
-			{
-				OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
-				value.extendedOrderedChildNodes.orderedChildNodes.~unique_ptr<OrderedType>();
-				new (&value.orderedChildNodes) OrderedType(std::move(temp_ocn));
-			}
-
-			SetExtendedValue(false);
-		}
-		else
-		{
-			GetAnnotationsAndCommentsStorage().Clear();
-		}
-	}
+	__forceinline void ClearAnnotationsAndComments();
 
 	//clears the node's metadata
-	__forceinline void ClearMetadata()
-	{
-		ClearAnnotationsAndComments();
-		SetConcurrency(false);
-	}
+	__forceinline void ClearMetadata();
 
 	//returns true if the node has any metadata
-	__forceinline bool HasMetadata()
-	{
-		auto &a_and_c = GetAnnotationsAndCommentsStorage();
-		return (a_and_c.HasCommentOrAnnotation() || GetConcurrency());
-	}
+	__forceinline bool HasMetadata();
 
 	//Returns true if the immediate data structure of a is equal to b
-	inline static bool AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
-	{
-		EvaluableNodeType a_type = (a == nullptr ? ENT_NULL : a->GetType());
-		EvaluableNodeType b_type = (b == nullptr ? ENT_NULL : b->GetType());
-
-		//check both types are the same
-		if(a_type != b_type)
-			return false;
-
-		//since both types are the same, only need to check one for the type of data
-		//check string equality
-		if(DoesEvaluableNodeTypeUseStringData(a_type))
-			return a->GetStringIDReference() == b->GetStringIDReference();
-
-		//check numeric equality
-		if(DoesEvaluableNodeTypeUseNumberData(a_type))
-			return a->GetNumberValueReference() == b->GetNumberValueReference();
-
-		if(DoesEvaluableNodeTypeUseBoolData(a_type))
-			return a->GetBoolValueReference() == b->GetBoolValueReference();
-
-		//if made it here, then it's an instruction, and they're of equal type
-		return true;
-	}
+	static inline bool AreShallowEqual(EvaluableNode *a, EvaluableNode *b);
 
 	//Returns true if the entire data structure of a is equal in value to the data structure of b
-	inline static bool AreDeepEqual(EvaluableNode *a, EvaluableNode *b)
-	{
-		//if pointers are the same, then they are the same
-		if(a == b)
-			return true;
-
-		//first check if the immediate values are equal
-		if(!AreShallowEqual(a, b))
-			return false;
-
-		//since they are shallow equal, check for quick exit
-		if(a == nullptr || b == nullptr || IsEvaluableNodeTypeTerminalNode(a->GetType()))
-			return true;
-
-		//only need cycle checks if both a and b need cycle checks,
-		// otherwise, one will become exhausted and end the comparison
-		if(a->GetNeedCycleCheck() && b->GetNeedCycleCheck())
-		{
-			ReferenceAssocType checked;
-			return AreDeepEqualGivenShallowEqualAndNotImmediate(a, b, &checked);
-		}
-		else
-		{
-			return AreDeepEqualGivenShallowEqualAndNotImmediate(a, b, nullptr);
-		}
-	}
+	static inline bool AreDeepEqual(EvaluableNode *a, EvaluableNode *b);
 
 	//Returns true if the node is some form of associative array
 	__forceinline bool IsAssociativeArray()
@@ -311,7 +232,7 @@ public:
 	static int Compare(EvaluableNode *a, EvaluableNode *b);
 
 	//Returns true if the node b is less than node a.  If or_equal_to is true, then also returns true if equal
-	inline static bool IsLessThan(EvaluableNode *a, EvaluableNode *b, bool or_equal_to)
+	static inline bool IsLessThan(EvaluableNode *a, EvaluableNode *b, bool or_equal_to)
 	{
 		int r = Compare(a, b);
 		if(r < 0)
@@ -321,12 +242,12 @@ public:
 		return false;
 	}
 
-	inline static bool IsStrictlyLessThan(EvaluableNode *a, EvaluableNode *b)
+	static inline bool IsStrictlyLessThan(EvaluableNode *a, EvaluableNode *b)
 	{
 		return IsLessThan(a, b, false);
 	}
 
-	inline static bool IsStrictlyGreaterThan(EvaluableNode *a, EvaluableNode *b)
+	static inline bool IsStrictlyGreaterThan(EvaluableNode *a, EvaluableNode *b)
 	{
 		return !IsLessThan(a, b, true);
 	}
@@ -426,7 +347,7 @@ public:
 	//returns true if the node can be flattened,
 	// that is, contains no cycles when traversing downward and potentially
 	// duplicating nodes if they are referenced more than once
-	inline static bool CanNodeTreeBeFlattened(EvaluableNode *n)
+	static inline bool CanNodeTreeBeFlattened(EvaluableNode *n)
 	{
 		if(n == nullptr)
 			return true;
@@ -438,7 +359,7 @@ public:
 	}
 
 	//Returns the number of nodes in the data structure
-	inline static size_t GetDeepSize(EvaluableNode *n)
+	static inline size_t GetDeepSize(EvaluableNode *n)
 	{
 		if(n == nullptr || n->IsTerminal())
 			return 1;
@@ -631,7 +552,7 @@ public:
 		return GetAnnotationsAndCommentsStorage().GetAnnotations();
 	}
 
-	inline static std::string_view GetAnnotationsString(EvaluableNode *en)
+	static inline std::string_view GetAnnotationsString(EvaluableNode *en)
 	{
 		if(en == nullptr)
 			return std::string_view();
@@ -667,7 +588,7 @@ public:
 		return GetAnnotationsAndCommentsStorage().GetComments();
 	}
 
-	inline static std::string_view GetCommentsString(EvaluableNode *en)
+	static inline std::string_view GetCommentsString(EvaluableNode *en)
 	{
 		if(en == nullptr)
 			return std::string_view();
@@ -1061,7 +982,7 @@ public:
 	//will use num_expected_elements for immediate values
 	//store_value takes in 3 parameters, the index, a bool if the value was found, and the EvaluableNode of the value
 	template<typename StoreValueFunction = void(size_t, bool, EvaluableNode *)>
-	inline static void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
+	static inline void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
 		size_t num_expected_elements, StoreValueFunction store_value)
 	{
 		if(EvaluableNode::IsTerminal(node))
@@ -1300,7 +1221,7 @@ public:
 	}
 
 	//registers and unregisters an EvaluableNode for debug watching
-	inline static void RegisterEvaluableNodeForDebugWatch(EvaluableNode *en)
+	static inline void RegisterEvaluableNodeForDebugWatch(EvaluableNode *en)
 	{
 	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(debugWatchMutex);
@@ -1308,7 +1229,7 @@ public:
 		debugWatch.emplace(en);
 	}
 
-	inline static void UnregisterEvaluableNodeForDebugWatch(EvaluableNode *en)
+	static inline void UnregisterEvaluableNodeForDebugWatch(EvaluableNode *en)
 	{
 	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(debugWatchMutex);
@@ -1317,7 +1238,7 @@ public:
 	}
 
 	//returns true if the EvaluableNode is in the debug watch
-	inline static void AssertIfInDebugWatch(EvaluableNode *en)
+	static inline void AssertIfInDebugWatch(EvaluableNode *en)
 	{
 	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(debugWatchMutex);
@@ -1337,12 +1258,12 @@ protected:
 	class AnnotationsAndComments
 	{
 	public:
-		__forceinline static void Construct(AnnotationsAndComments &a_and_c)
+		static __forceinline void Construct(AnnotationsAndComments &a_and_c)
 		{
 			new (&a_and_c) AnnotationsAndComments;
 		}
 
-		__forceinline static void Destruct(AnnotationsAndComments &a_and_c)
+		static __forceinline void Destruct(AnnotationsAndComments &a_and_c)
 		{
 			a_and_c.~AnnotationsAndComments();
 		}
@@ -1661,7 +1582,7 @@ public:
 #if defined(MULTITHREAD_SUPPORT)
 	thread_local
 	#endif
-		inline static std::vector<EvaluableNode *> reusableBuffer;
+		static inline std::vector<EvaluableNode *> reusableBuffer;
 protected:
 
 	//field for watching EvaluableNodes for debugging

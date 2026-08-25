@@ -773,57 +773,24 @@ public:
 	void ClearOrderedChildNodes();
 	void AppendOrderedChildNode(EvaluableNode *cn);
 	void AppendOrderedChildNodes(OrderedRef ocn_to_append);
+
 	//if the OrderedChildNodes list was using extra memory (if it were resized to be smaller), this would attempt to free extra memory
-	inline void ReleaseOrderedChildNodesExtraMemory()
-	{
-		if(IsOrderedArray())
-			GetOrderedChildNodesReference().shrink_to_fit();
-	}
+	inline void ReleaseOrderedChildNodesExtraMemory();
 
-	inline void InitMappedChildNodes()
-	{
-		DestructValue();
-
-		if(!HasExtendedValue())
-			value.ConstructMappedChildNodes();
-		else
-			value.extendedMappedChildNodes.Construct();
-	}
+	inline void InitMappedChildNodes();
 
 	//preallocates to_reserve for appending, etc.
-	inline void ReserveMappedChildNodes(size_t to_reserve)
-	{
-		if(IsAssociativeArray())
-			GetMappedChildNodesReference().reserve(to_reserve);
-	}
+	inline void ReserveMappedChildNodes(size_t to_reserve);
 
-	__forceinline AssocRef GetMappedChildNodes()
-	{
-		if(IsAssociativeArray())
-			return GetMappedChildNodesReference();
-
-		return emptyMappedChildNodes;
-	}
+	__forceinline AssocRef GetMappedChildNodes();
 
 	//if the id exists, returns a pointer to the pointer of the child node
 	// returns nullptr if the id doesn't exist
-	inline EvaluableNode **GetMappedChildNode(const std::string &id)
-	{
-		StringInternPool::StringID sid = string_intern_pool.GetIDFromString(id);
-		return GetMappedChildNode(sid);
-	}
+	inline EvaluableNode **GetMappedChildNode(const std::string &id);
+
 	//if the id exists, returns a pointer to the pointer of the child node
 	// returns nullptr if the id doesn't exist
-	inline EvaluableNode **GetMappedChildNode(const StringInternPool::StringID sid)
-	{
-		auto &mcn = GetMappedChildNodes();
-		auto node_iter = mcn.find(sid);
-		if(node_iter == end(mcn))
-			return nullptr;
-
-		//return the location of the child pointer
-		return &node_iter->second;
-	}
+	inline EvaluableNode **GetMappedChildNode(const StringInternPool::StringID sid);
 
 	//returns a pointer to the pointer of the child node, creating it if necessary and populating it with a nullptr
 	EvaluableNode **GetOrCreateMappedChildNode(const std::string &id);
@@ -856,40 +823,19 @@ protected:
 public:
 
 	//assumes that the EvaluableNode is of type ENT_BOOL, and returns the value by reference
-	__forceinline bool &GetBoolValueReference()
-	{
-		return value.boolValueContainer.boolValue;
-	}
+	__forceinline bool &GetBoolValueReference();
 
 	//assumes that the EvaluableNode is of type ENT_NUMBER, and returns the value by reference
-	__forceinline double &GetNumberValueReference()
-	{
-		return value.numberAndNullValueContainer.numberValue;
-	}
+	__forceinline double &GetNumberValueReference();
 
 	//assumes that the EvaluableNode is of type that holds a string, and returns the value by reference
-	__forceinline StringInternPool::StringID &GetStringIDReference()
-	{
-		return value.stringValueContainer.stringID;
-	}
+	__forceinline StringInternPool::StringID &GetStringIDReference();
 
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
-	__forceinline OrderedRef GetOrderedChildNodesReference()
-	{
-		if(!HasExtendedValue())
-			return value.orderedChildNodes;
-		else
-			return *value.extendedOrderedChildNodes.orderedChildNodes.get();
-	}
+	__forceinline OrderedRef GetOrderedChildNodesReference();
 
 	//assumes that the EvaluableNode is has mapped child nodes, and returns the value by reference
-	__forceinline AssocRef GetMappedChildNodesReference()
-	{
-		if(!HasExtendedValue())
-			return value.mappedChildNodes;
-		else
-			return *value.extendedMappedChildNodes.mappedChildNodes.get();
-	}
+	__forceinline AssocRef GetMappedChildNodesReference();
 
 	//if it is storing an immediate value and has room to store a label
 	inline bool HasCompactAnnotationsAndCommentsStorage()

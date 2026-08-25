@@ -607,6 +607,58 @@ inline void EvaluableNode::SetOrderedChildNodes(
 		SetIsIdempotent(is_idempotent);
 }
 
+//if the OrderedChildNodes list was using extra memory (if it were resized to be smaller), this would attempt to free extra memory
+inline void EvaluableNode::ReleaseOrderedChildNodesExtraMemory()
+{
+	if(IsOrderedArray())
+		GetOrderedChildNodesReference().shrink_to_fit();
+}
+
+inline void EvaluableNode::InitMappedChildNodes()
+{
+	DestructValue();
+
+	if(!HasExtendedValue())
+		value.ConstructMappedChildNodes();
+	else
+		value.extendedMappedChildNodes.Construct();
+}
+
+//preallocates to_reserve for appending, etc.
+inline void EvaluableNode::ReserveMappedChildNodes(size_t to_reserve)
+{
+	if(IsAssociativeArray())
+		GetMappedChildNodesReference().reserve(to_reserve);
+}
+
+__forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodes()
+{
+	if(IsAssociativeArray())
+		return GetMappedChildNodesReference();
+
+	return emptyMappedChildNodes;
+}
+
+//if the id exists, returns a pointer to the pointer of the child node
+// returns nullptr if the id doesn't exist
+inline EvaluableNode **EvaluableNode::GetMappedChildNode(const std::string &id)
+{
+	StringInternPool::StringID sid = string_intern_pool.GetIDFromString(id);
+	return GetMappedChildNode(sid);
+}
+//if the id exists, returns a pointer to the pointer of the child node
+// returns nullptr if the id doesn't exist
+inline EvaluableNode **EvaluableNode::GetMappedChildNode(const StringInternPool::StringID sid)
+{
+	auto &mcn = GetMappedChildNodes();
+	auto node_iter = mcn.find(sid);
+	if(node_iter == end(mcn))
+		return nullptr;
+
+	//return the location of the child pointer
+	return &node_iter->second;
+}
+
 template<typename T>
 void EvaluableNode::GetValueFromMappedChildNodesReference(
 	EvaluableNode::AssocRef mcn, EvaluableNodeBuiltInStringId key, T &value)
@@ -629,6 +681,37 @@ void EvaluableNode::GetValueFromMappedChildNodesReference(
 		else
 			value = found_value->second;
 	}
+}
+
+__forceinline bool &EvaluableNode::GetBoolValueReference()
+{
+	return value.boolValueContainer.boolValue;
+}
+
+__forceinline double &EvaluableNode::GetNumberValueReference()
+{
+	return value.numberAndNullValueContainer.numberValue;
+}
+
+__forceinline StringInternPool::StringID &EvaluableNode::GetStringIDReference()
+{
+	return value.stringValueContainer.stringID;
+}
+
+__forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesReference()
+{
+	if(!HasExtendedValue())
+		return value.orderedChildNodes;
+	else
+		return *value.extendedOrderedChildNodes.orderedChildNodes.get();
+}
+
+__forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesReference()
+{
+	if(!HasExtendedValue())
+		return value.mappedChildNodes;
+	else
+		return *value.extendedMappedChildNodes.mappedChildNodes.get();
 }
 
 __forceinline EvaluableNode::AnnotationsAndComments &EvaluableNode::GetAnnotationsAndCommentsStorage()

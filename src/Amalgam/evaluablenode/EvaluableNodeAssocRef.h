@@ -1,8 +1,6 @@
 #pragma once
 //this file is intended to be included only by EvaluableNode.h
 
-//TODO 25910: finish this
-/*
 class EvaluableNode::AssocRef
 {
 public:
@@ -22,28 +20,30 @@ public:
 
 	AssocRef(const AssocRef &other) : en(other.en)
 	{
+		//TODO 25910: finish this
 		if(other.IsSmall())
 		{
-			this->smallMap = other.smallMap;
+			this->storage.smallMap = other.storage.smallMap;
 		}
 		else
 		{
-			this->largeMap = std::make_unique<EvaluableNode::LargeAssocType>(*other.largeMap);
+			this->storage.largeMap = std::make_unique<EvaluableNode::LargeAssocType>(*other.storage.largeMap);
 		}
 	}
 
 	AssocRef &operator=(const AssocRef &other)
 	{
+		//TODO 25910: finish this
 		if(this != &other)
 		{
 			en = other.en;
 			if(other.IsSmall())
 			{
-				smallMap = other.smallMap;
+				storage.smallMap = other.storage.smallMap;
 			}
 			else
 			{
-				largeMap = std::make_unique<EvaluableNode::LargeAssocType>(*other.largeMap);
+				storage.largeMap = std::make_unique<EvaluableNode::LargeAssocType>(*other.storage.largeMap);
 			}
 		}
 		return *this;
@@ -51,54 +51,102 @@ public:
 
 	//--- Iterators ---
 
+	inline iterator begin() noexcept
+	{
+		return IsSmall() ? storage.smallMap->begin() : storage.largeMap->begin();
+	}
+
+	inline const_iterator cbegin() const noexcept
+	{
+		return IsSmall() ? storage.smallMap->cbegin() : storage.largeMap->cbegin();
+	}
+
+	inline iterator end() noexcept
+	{
+		return IsSmall() ? storage.smallMap->end() : storage.largeMap->end();
+	}
+
+	inline const_iterator cend() const noexcept
+	{
+		return IsSmall() ? storage.smallMap->cend() : storage.largeMap->cend();
+	}
+
 	//--- Capacity & Size ---
 
+	inline bool empty() const noexcept
+	{
+		return IsSmall() ? storage.smallMap->empty() : storage.largeMap->empty();
+	}
+
+	inline size_type size() const noexcept
+	{
+		return IsSmall() ? storage.smallMap->size() : storage.largeMap->size();
+	}
+
+	inline size_type max_size() const noexcept
+	{
+		return IsSmall() ? storage.smallMap->max_size() : storage.largeMap->max_size();
+	}
 
 	//--- Modifiers ---
 
+	//TODO 25910: finish this section (modifiers)
+	void insert(const key_type &key, mapped_type value)
+	{
+		if(IsSmall())
+		{
+			if(storage.smallMap->size() >= 8)
+			{
+				PromoteToLarge();
+			}
+			storage.smallMap->insert(key, value);
+		}
+		else
+		{
+			storage.largeMap->insert(key, value);
+		}
+	}
+
 	//--- Lookup ---
 
-	size_t size() const
-	{
-		return IsSmall() ? smallMap.size() : largeMap->size();
-	}
-
-	IterType begin() const
-	{
-		return IsSmall() ? smallMap.begin() : largeMap->begin();
-	}
-
-	IterType end() const
-	{
-		return IsSmall() ? smallMap.end() : largeMap->end();
-	}
-
-	void insert(const KeyType &key, ValueType value)
+	inline mapped_type &at(const key_type &key)
 	{
 		if(IsSmall())
-		{
-			if(smallMap.size() >= 8)
-			{
-				promote();
-			}
-			smallMap.insert(key, value);
-		}
+			return storage.smallMap->at(key);
 		else
-		{
-			largeMap->insert(key, value);
-		}
+			return storage.largeMap->at(key);
 	}
 
-	ValueType &operator[](const KeyType &key)
+	mapped_type &operator[](const key_type &key)
 	{
 		if(IsSmall())
-		{
-			return smallMap[key];
-		}
+			return (*storage.smallMap)[key];
 		else
-		{
-			return (*largeMap)[key];
-		}
+			return (*storage.largeMap)[key];
+	}
+
+	inline size_type count(const key_type &key) const
+	{
+		if(IsSmall())
+			return storage.smallMap->count(key);
+		else
+			return storage.largeMap->count(key);
+	}
+
+	inline iterator find(const key_type &key)
+	{
+		if(IsSmall())
+			return storage.smallMap->find(key);
+		else
+			return storage.largeMap->find(key);
+	}
+
+	inline bool contains(const key_type &key) const
+	{
+		if(IsSmall())
+			return storage.smallMap->contains(key);
+		else
+			return storage.largeMap->contains(key);
 	}
 
 private:	
@@ -108,15 +156,9 @@ private:
 		return !en->HasExtendedValue();
 	}
 
-	void promote()
+	inline void PromoteToLarge()
 	{
-		auto new_map = std::make_unique<EvaluableNode::LargeAssocType<CompactlargeMap, CompactHashSet, KeyType, ValueType>>();
-		for(auto &item : smallMap.data)
-			newMap->insert(item.first, item.second);
-
-		en->SetHasSmallAssoc(false);
-
-		largeMap = std::move(new_map);
+		en->EnsureHasExtendedValue();
 	}
 
 	EvaluableNode *en;
@@ -127,5 +169,3 @@ private:
 		EvaluableNode::LargeAssocType *largeMap;
 	} storage;
 };
-
-//*/

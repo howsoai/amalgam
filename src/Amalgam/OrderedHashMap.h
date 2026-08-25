@@ -109,6 +109,12 @@ public:
 
 	//--- Modifiers ---
 
+	inline void reserve(size_type n)
+	{
+		vectorMap.reserve(n);
+		hashMap.reserve(n);
+	}
+
 	inline void clear()
 	{
 		vectorMap.clear();
@@ -314,12 +320,6 @@ public:
 	inline bool contains(const key_type &key) const
 	{
 		return hashMap.find(key) != hashMap.end();
-	}
-
-	inline void reserve(size_type n)
-	{
-		vectorMap.reserve(n);
-		hashMap.reserve(n);
 	}
 
 private:

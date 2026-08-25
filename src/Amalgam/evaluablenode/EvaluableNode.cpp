@@ -15,7 +15,7 @@ bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
 EvaluableNode::OrderedType EvaluableNode::emptyOrderedChildNodes;
-EvaluableNode::AssocType EvaluableNode::emptyMappedChildNodes;
+EvaluableNode::SmallAssocType EvaluableNode::emptyMappedChildNodes;
 EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments;
 
 //field for watching EvaluableNodes for debugging
@@ -503,7 +503,7 @@ void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 	}
 	else
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasExtendedValue();
 		GetAnnotationsAndCommentsStorage().SetAnnotationsAndComments(annotations, comments);
 	}
 
@@ -662,7 +662,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 	}
 	else
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasExtendedValue();
 		GetAnnotationsAndCommentsStorage().SetAnnotationsAndComments(annotations, comments);
 	}
 
@@ -867,7 +867,7 @@ EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const StringInternPool
 	return &inserted_node->second;
 }
 
-void EvaluableNode::SetMappedChildNodes(AssocRef new_mcn, bool copy, bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetMappedChildNodes(EvaluableNode::AssocRef new_mcn, bool copy, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsAssociativeArray()) [[unlikely]]
 		return;
@@ -1029,7 +1029,7 @@ void EvaluableNode::AppendMappedChildNodes(AssocRef mcn_to_append)
 	}
 }
 
-void EvaluableNode::EnsureHasAnnotationsAndCommentsStorage()
+void EvaluableNode::EnsureHasExtendedValue()
 {
 	if(HasCompactAnnotationsAndCommentsStorage())
 		return;

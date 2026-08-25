@@ -41,14 +41,9 @@ public:
 	using KeywordLookupType = FastHashMap<std::string, EvaluableNodeType>;
 
 	//EvaluableNode assoc storage
-	//TODO 25910: change where and how this is implemented
-	//using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
-	using AssocType = OrderedHashMap<CompactHashMap, CompactHashSet, StringInternPool::StringID, EvaluableNode *>;
-	using AssocRef = AssocType &;
-	//TODO 25910: put this back in when implement the class
-	//using SmallAssocType = VectorMap<StringInternPool::StringID, EvaluableNode *>;
-	//using LargeAssocType = OrderedHashMap<CompactHashMap, CompactHashSet, StringInternPool::StringID, EvaluableNode *>;
-	//class AssocRef;
+	using SmallAssocType = VectorMap<StringInternPool::StringID, EvaluableNode *>;
+	using LargeAssocType = OrderedHashMap<CompactHashMap, CompactHashSet, StringInternPool::StringID, EvaluableNode *>;
+	class AssocRef;
 
 	//EvaluableNode ordered storage
 	using OrderedType = std::vector<EvaluableNode *>;
@@ -490,7 +485,7 @@ public:
 	//sets the annotation_string
 	inline void SetAnnotationsString(std::string_view s)
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasExtendedValue();
 		GetAnnotationsAndCommentsStorage().SetAnnotations(s);
 	}
 
@@ -502,7 +497,7 @@ public:
 	//appends annotations to the node
 	void AppendAnnotations(std::string &annotations)
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasExtendedValue();
 
 		auto &a_and_c = GetAnnotationsAndCommentsStorage();
 		std::string combined(a_and_c.GetAnnotations());
@@ -531,7 +526,7 @@ public:
 
 	inline void SetCommentsString(const std::string &comment)
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasExtendedValue();
 		GetAnnotationsAndCommentsStorage().SetComments(comment);
 	}
 
@@ -543,7 +538,7 @@ public:
 	//appends comments to the node
 	void AppendComments(std::string &comments)
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasExtendedValue();
 
 		auto &a_and_c = GetAnnotationsAndCommentsStorage();
 		std::string combined(a_and_c.GetComments());
@@ -1040,20 +1035,20 @@ protected:
 
 		__forceinline void ConstructMappedChildNodes()
 		{
-			new (&mappedChildNodes) AssocType;
+			new (&mappedChildNodes) SmallAssocType;
 		}
 
 		__forceinline void DestructMappedChildNodes()
 		{
 			string_intern_pool.DestroyStringReferences(mappedChildNodes, [](auto n) { return n.first; });
-			mappedChildNodes.~AssocType();
+			mappedChildNodes.~SmallAssocType();
 		}
 
 		//ordered child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
 		OrderedType orderedChildNodes;
 
 		//hash-mapped child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
-		AssocType mappedChildNodes;
+		SmallAssocType mappedChildNodes;
 
 		//when type represents a string, holds the corresponding values
 		struct EvaluableNodeValueString
@@ -1107,19 +1102,19 @@ protected:
 		{
 			__forceinline void Construct()
 			{
-				new (&mappedChildNodes) std::unique_ptr<AssocType>(std::make_unique<AssocType>());
+				new (&mappedChildNodes) std::unique_ptr<LargeAssocType>(std::make_unique<LargeAssocType>());
 				AnnotationsAndComments::Construct(annotationsAndComments);
 			}
 
 			__forceinline void Destruct()
 			{
 				string_intern_pool.DestroyStringReferences(*mappedChildNodes, [](auto n) { return n.first; });
-				mappedChildNodes.~unique_ptr<AssocType>();
+				mappedChildNodes.~unique_ptr<LargeAssocType>();
 				AnnotationsAndComments::Destruct(annotationsAndComments);
 			}
 
 			//external orderedChildNodes
-			std::unique_ptr<AssocType> mappedChildNodes;
+			std::unique_ptr<LargeAssocType> mappedChildNodes;
 
 			AnnotationsAndComments annotationsAndComments;
 		} extendedMappedChildNodes;
@@ -1127,7 +1122,7 @@ protected:
 #pragma pack(pop)
 
 	//makes sure that the extendedValue is set appropriately so that it can be used to hold additional data
-	void EnsureHasAnnotationsAndCommentsStorage();
+	void EnsureHasExtendedValue();
 
 	//destructs the value so that the node can be reused
 	// note that the value should be considered uninitialized
@@ -1163,7 +1158,7 @@ protected:
 	static double nanNumberValue;
 	static std::string emptyStringValue;
 	static OrderedType emptyOrderedChildNodes;
-	static AssocType emptyMappedChildNodes;
+	static SmallAssocType emptyMappedChildNodes;
 	static AnnotationsAndComments emptyAnnotationsAndComments;
 
 public:

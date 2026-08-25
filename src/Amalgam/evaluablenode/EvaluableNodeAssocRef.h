@@ -6,44 +6,29 @@
 class EvaluableNode::AssocRef
 {
 public:
-	using KeyType = Internal::KeyType;
-	using ValueType = Internal::ValueType;
+	using key_type = EvaluableNode::SmallAssocType::key_type;
+	using mapped_type = EvaluableNode::SmallAssocType::mapped_type;
+	using value_type = EvaluableNode::SmallAssocType::value_type;
+	using size_type = std::size_t;
 
-	using IterType = typename VectorMap<KeyType, ValueType>::iterator;
+	using key_equal = EvaluableNode::SmallAssocType::key_equal;
+	using iterator = typename EvaluableNode::SmallAssocType::iterator;
+	using const_iterator = typename EvaluableNode::SmallAssocType::const_iterator;
 
-private:
-	EvaluableNode *owner;
+	//--- Construction & Lifecycle ---
 
-	bool IsSmall() const
-	{
-		return owner->HasSmallAssoc();
-	}
-
-	void promote()
-	{
-		auto new_map = std::make_unique<OrderedHashMap<CompactHashMap, CompactHashSet, KeyType, ValueType>>();
-		for(auto &item : vectorMap.data)
-			newMap->insert(item.first, item.second);
-
-		owner->SetHasSmallAssoc(false);
-
-		hashMap = std::move(new_map);
-	}
-
-public:
-
-	AssocRef(EvaluableNode *owner_ptr) : owner(owner_ptr)
+	AssocRef(EvaluableNode *_en) : en(_en)
 	{}
 
-	AssocRef(const AssocRef &other) : owner(other.owner)
+	AssocRef(const AssocRef &other) : en(other.en)
 	{
 		if(other.IsSmall())
 		{
-			this->vectorMap = other.vectorMap;
+			this->smallMap = other.smallMap;
 		}
 		else
 		{
-			this->hashMap = std::make_unique<OrderedHashMap<...>>(*other.hashMap);
+			this->largeMap = std::make_unique<EvaluableNode::LargeAssocType>(*other.largeMap);
 		}
 	}
 
@@ -51,47 +36,56 @@ public:
 	{
 		if(this != &other)
 		{
-			owner = other.owner;
+			en = other.en;
 			if(other.IsSmall())
 			{
-				vectorMap = other.vectorMap;
+				smallMap = other.smallMap;
 			}
 			else
 			{
-				hashMap = std::make_unique<OrderedHashMap<...>>(*other.hashMap);
+				largeMap = std::make_unique<EvaluableNode::LargeAssocType>(*other.largeMap);
 			}
 		}
 		return *this;
 	}
 
+	//--- Iterators ---
+
+	//--- Capacity & Size ---
+
+
+	//--- Modifiers ---
+
+	//--- Lookup ---
+
 	size_t size() const
 	{
-		return IsSmall() ? vectorMap.size() : hashMap->size();
+		return IsSmall() ? smallMap.size() : largeMap->size();
 	}
 
 	IterType begin() const
 	{
-		return IsSmall() ? vectorMap.begin() : hashMap->begin();
+		return IsSmall() ? smallMap.begin() : largeMap->begin();
 	}
 
 	IterType end() const
 	{
-		return IsSmall() ? vectorMap.end() : hashMap->end();
+		return IsSmall() ? smallMap.end() : largeMap->end();
 	}
 
 	void insert(const KeyType &key, ValueType value)
 	{
 		if(IsSmall())
 		{
-			if(vectorMap.size() >= 8)
+			if(smallMap.size() >= 8)
 			{
 				promote();
 			}
-			vectorMap.insert(key, value);
+			smallMap.insert(key, value);
 		}
 		else
 		{
-			hashMap->insert(key, value);
+			largeMap->insert(key, value);
 		}
 	}
 
@@ -99,19 +93,39 @@ public:
 	{
 		if(IsSmall())
 		{
-			return vectorMap[key];
+			return smallMap[key];
 		}
 		else
 		{
-			return (*hashMap)[key];
+			return (*largeMap)[key];
 		}
 	}
 
+private:	
+
+	inline bool IsSmall() const
+	{
+		return !en->HasExtendedValue();
+	}
+
+	void promote()
+	{
+		auto new_map = std::make_unique<EvaluableNode::LargeAssocType<CompactlargeMap, CompactHashSet, KeyType, ValueType>>();
+		for(auto &item : smallMap.data)
+			newMap->insert(item.first, item.second);
+
+		en->SetHasSmallAssoc(false);
+
+		largeMap = std::move(new_map);
+	}
+
+	EvaluableNode *en;
+
 	union
 	{
-		VectorMapType *vectorMap;
-		OrderedHashMapType *hashMap;
+		EvaluableNode::SmallAssocType *smallMap;
+		EvaluableNode::LargeAssocType *largeMap;
 	} storage;
 };
 
-*/
+//*/

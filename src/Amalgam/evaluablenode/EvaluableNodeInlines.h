@@ -276,3 +276,425 @@ inline bool EvaluableNode::AreDeepEqual(EvaluableNode *a, EvaluableNode *b)
 	}
 }
 
+__forceinline bool EvaluableNode::CanRepresentValueAsANumber(EvaluableNode *e)
+{
+	if(e == nullptr)
+		return true;
+
+	switch(e->GetType())
+	{
+	case ENT_BOOL:
+	case ENT_NUMBER:
+	case ENT_NULL:
+		return true;
+	default:
+		return false;
+	}
+}
+
+inline void EvaluableNode::SetTypeViaNumberValue(double v, bool clear_metadata)
+{
+	if(clear_metadata)
+		ClearMetadata();
+
+	if(FastIsNaN(v))
+	{
+		SetType(ENT_NULL, false);
+	}
+	else
+	{
+		SetType(ENT_NUMBER, false);
+		GetNumberValueReference() = v;
+	}
+}
+
+inline void EvaluableNode::SetTypeViaStringIdValue(std::string &v, bool clear_metadata)
+{
+	if(clear_metadata)
+		ClearMetadata();
+
+	SetType(ENT_STRING, false);
+	GetStringIDReference() = string_intern_pool.CreateStringReference(v);
+}
+
+//changes the type by setting it to the string id value specified
+inline void EvaluableNode::SetTypeViaStringIdValue(StringInternPool::StringID v, bool clear_metadata)
+{
+	if(clear_metadata)
+		ClearMetadata();
+
+	if(v == string_intern_pool.NOT_A_STRING_ID)
+	{
+		SetType(ENT_NULL, false);
+	}
+	else
+	{
+		SetType(ENT_STRING, false);
+		GetStringIDReference() = string_intern_pool.CreateStringReference(v);
+	}
+}
+
+//changes the type by setting it to the string id value specified, handing off the reference
+inline void EvaluableNode::SetTypeViaStringIdValueWithReferenceHandoff(
+	StringInternPool::StringID v, bool clear_metadata)
+{
+	if(clear_metadata)
+		ClearMetadata();
+
+	if(v == string_intern_pool.NOT_A_STRING_ID)
+	{
+		SetType(ENT_NULL, false);
+	}
+	else
+	{
+		SetType(ENT_STRING, false);
+		GetStringIDReference() = v;
+	}
+}
+
+inline void EvaluableNode::InitStringValue()
+{
+	DestructValue();
+	value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
+	AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
+}
+
+__forceinline StringInternPool::StringID EvaluableNode::GetStringID()
+{
+	if(DoesEvaluableNodeTypeUseStringData(GetType()))
+		return GetStringIDReference();
+
+	return StringInternPool::NOT_A_STRING_ID;
+}
+
+#ifdef MULTITHREAD_SUPPORT
+__forceinline bool EvaluableNode::HasAttributeAtomic(Attribute attr)
+{
+	std::atomic_ref atomic_ref(attributes);
+	AttributeStorageType cur = atomic_ref.load(std::memory_order_seq_cst);
+	return (cur & static_cast<AttributeStorageType>(attr)) != 0;
+}
+
+__forceinline void EvaluableNode::SetAttributeAtomic(Attribute attr, bool enable)
+{
+	AttributeStorageType mask = static_cast<AttributeStorageType>(attr);
+
+	std::atomic_ref atomic_ref(attributes);
+	if(enable)
+		atomic_ref.fetch_or(mask, std::memory_order_seq_cst);
+	else
+		atomic_ref.fetch_and(~mask, std::memory_order_seq_cst);
+}
+
+__forceinline bool EvaluableNode::TrySetAttributeAtomic(Attribute attr)
+{
+	constexpr AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::KNOWN_TO_BE_IN_USE);
+
+	//check if already set, relaxed is fine for early-out
+	std::atomic_ref atomic_ref(attributes);
+	AttributeStorageType current_flags = atomic_ref.load(std::memory_order_relaxed);
+	if(current_flags & mask)
+		return false;
+
+	//slow path to actually set the value
+	while(!atomic_ref.compare_exchange_weak(
+		current_flags, current_flags | mask, std::memory_order_acquire, std::memory_order_relaxed))
+	{
+		//see if another thread set it
+		if(current_flags & mask)
+			return false;
+	}
+
+	return true;
+}
+
+__forceinline bool EvaluableNode::SetIsFreeableAtomic(bool is_freeable)
+{
+	AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE);
+	std::atomic_ref atomic_ref(attributes);
+
+	if(is_freeable)
+	{
+		AttributeStorageType previous_value = atomic_ref.fetch_or(mask);
+		return (previous_value & mask) != 0;
+	}
+	else
+	{
+		AttributeStorageType previous_value = atomic_ref.fetch_and(~mask);
+		return (previous_value & mask) != 0;
+	}
+}
+
+__forceinline bool EvaluableNode::SetIsFreeableTopNodeAtomic(bool is_freeable)
+{
+	AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
+
+	std::atomic_ref atomic_ref(attributes);
+	if(is_freeable)
+	{
+		AttributeStorageType previous_value = atomic_ref.fetch_or(mask);
+		return (previous_value & mask) != 0;
+	}
+	else
+	{
+		AttributeStorageType previous_value = atomic_ref.fetch_and(~mask);
+		return (previous_value & mask) != 0;
+	}
+}
+
+#endif
+
+__forceinline std::pair<bool, bool> EvaluableNode::SetIsFreeableAndIsFreeableTopNode(bool is_freeable)
+{
+	AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE) |
+								static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
+
+	AttributeStorageType previous_value = attributes;
+
+	if(is_freeable)
+		attributes |= static_cast<AttributeStorageType>(mask);
+	else
+		attributes &= ~static_cast<AttributeStorageType>(mask);
+
+	return {(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
+		(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0};
+}
+
+#ifdef MULTITHREAD_SUPPORT
+__forceinline std::pair<bool, bool> EvaluableNode::SetIsFreeableAndIsFreeableTopNodeAtomic(bool is_freeable)
+{
+	AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE) |
+								static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
+	AttributeStorageType previous_value;
+
+	std::atomic_ref atomic_ref(attributes);
+	if(is_freeable)
+		previous_value = atomic_ref.fetch_or(mask);
+	else
+		previous_value = atomic_ref.fetch_and(~mask);
+
+	return {(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
+		(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0};
+}
+#endif
+
+__forceinline void EvaluableNode::UpdateFlagsBasedOnNewChildNode(EvaluableNode *new_child)
+{
+	if(new_child == nullptr)
+		return;
+
+	//if cycles, propagate upward
+	if(new_child->GetNeedCycleCheck())
+		SetNeedCycleCheck(true);
+
+	//propagate idempotency
+	if(!new_child->GetIsIdempotent())
+		SetIsIdempotent(false);
+}
+
+//assumes all child nodes (if any) do not reference this node and all their
+//flags are correct and updates this node's flags
+__forceinline void EvaluableNode::UpdateAllFlagsBasedOnNoReferencingChildNodes()
+{
+	bool is_idempotent = IsEvaluableNodeTypePotentiallyIdempotent(GetType());
+	bool need_cycle_check = false;
+
+	if(IsAssociativeArray())
+	{
+		for(auto &[cn_id, cn] : GetMappedChildNodesReference())
+		{
+			if(cn == nullptr)
+				continue;
+
+			//update flags for tree
+			if(cn->GetNeedCycleCheck())
+				need_cycle_check = true;
+
+			if(!cn->GetIsIdempotent())
+				is_idempotent = false;
+
+			//if both are triggered, no need to continue
+			if(!is_idempotent && need_cycle_check)
+				break;
+		}
+	}
+	else if(!IsTerminal())
+	{
+		for(auto cn : GetOrderedChildNodesReference())
+		{
+			if(cn == nullptr)
+				continue;
+
+			//update flags for tree
+			if(cn->GetNeedCycleCheck())
+				need_cycle_check = true;
+
+			if(!cn->GetIsIdempotent())
+				is_idempotent = false;
+
+			//if both are triggered, no need to continue
+			if(!is_idempotent && need_cycle_check)
+				break;
+		}
+	}
+
+	SetNeedCycleCheck(need_cycle_check);
+	SetIsIdempotent(is_idempotent);
+}
+
+inline void EvaluableNode::InitOrderedChildNodes()
+{
+	DestructValue();
+
+	if(!HasExtendedValue())
+		value.ConstructOrderedChildNodes();
+	else
+		value.extendedOrderedChildNodes.Construct();
+}
+
+template<typename StoreValueFunction>
+inline void EvaluableNode::ConvertChildNodesAndStoreValue(EvaluableNode *node,
+	std::vector<StringInternPool::StringID> &element_names, size_t num_expected_elements,
+	StoreValueFunction store_value)
+{
+	if(EvaluableNode::IsTerminal(node))
+	{
+		//fill in with the node's value
+		for(size_t i = 0; i < num_expected_elements; i++)
+			store_value(i, true, node);
+	}
+	else if(node->IsAssociativeArray())
+	{
+		auto &mcn = node->GetMappedChildNodesReference();
+		for(size_t i = 0; i < element_names.size(); i++)
+		{
+			EvaluableNode *value_en = nullptr;
+			bool found = false;
+			auto found_node = mcn.find(element_names[i]);
+			if(found_node != end(mcn))
+			{
+				value_en = found_node->second;
+				found = true;
+			}
+
+			store_value(i, found, value_en);
+		}
+	}
+	else //ordered
+	{
+		auto &node_ocn = node->GetOrderedChildNodesReference();
+
+		for(size_t i = 0; i < node_ocn.size(); i++)
+			store_value(i, true, node_ocn[i]);
+	}
+}
+
+template<typename ContainerIterator>
+inline void EvaluableNode::SetOrderedChildNodes(
+	ContainerIterator first, ContainerIterator last, bool need_cycle_check, bool is_idempotent)
+{
+	if(!IsOrderedArray())
+		return;
+
+	auto &ocn = GetOrderedChildNodesReference();
+	ocn.assign(first, last);
+
+	SetNeedCycleCheck(need_cycle_check);
+
+	if(is_idempotent && !IsEvaluableNodeTypePotentiallyIdempotent(type))
+		SetIsIdempotent(false);
+	else
+		SetIsIdempotent(is_idempotent);
+}
+
+template<typename T>
+void EvaluableNode::GetValueFromMappedChildNodesReference(
+	EvaluableNode::AssocRef mcn, EvaluableNodeBuiltInStringId key, T &value)
+{
+	auto found_value = mcn.find(GetStringIdFromBuiltInStringId(key));
+	if(found_value != end(mcn))
+	{
+		if constexpr(std::is_same<T, bool>::value)
+			value = EvaluableNode::ToBool(found_value->second);
+		else if constexpr(std::is_same<T, double>::value)
+			value = EvaluableNode::ToNumber(found_value->second);
+		else if constexpr(std::is_same<T, size_t>::value)
+			value = static_cast<size_t>(EvaluableNode::ToNumber(found_value->second, 0));
+		else if constexpr(std::is_same<T, int64_t>::value)
+			value = static_cast<int64_t>(EvaluableNode::ToNumber(found_value->second, 0));
+		else if constexpr(std::is_same<T, std::string>::value)
+			value = EvaluableNode::ToString(found_value->second);
+		else if constexpr(std::is_same<T, StringInternPool::StringID>::value)
+			value = EvaluableNode::ToStringIDIfExists(found_value->second);
+		else
+			value = found_value->second;
+	}
+}
+
+__forceinline EvaluableNode::AnnotationsAndComments &EvaluableNode::GetAnnotationsAndCommentsStorage()
+{
+	switch(GetType())
+	{
+	case ENT_BOOL:
+		return value.boolValueContainer.annotationsAndComments;
+	case ENT_NULL:
+	case ENT_NUMBER:
+		return value.numberAndNullValueContainer.annotationsAndComments;
+	case ENT_STRING:
+	case ENT_SYMBOL:
+		return value.stringValueContainer.annotationsAndComments;
+	case ENT_ASSOC:
+		if(!HasExtendedValue())
+			return emptyAnnotationsAndComments;
+		else
+			return value.extendedMappedChildNodes.annotationsAndComments;
+		//otherwise ordered
+	default:
+		if(!HasExtendedValue())
+			return emptyAnnotationsAndComments;
+		else
+			return value.extendedOrderedChildNodes.annotationsAndComments;
+	}
+}
+
+inline void EvaluableNode::DestructValue()
+{
+	switch(GetType())
+	{
+	case ENT_BOOL:
+		AnnotationsAndComments::Destruct(value.boolValueContainer.annotationsAndComments);
+		break;
+	case ENT_NULL:
+	case ENT_NUMBER:
+		AnnotationsAndComments::Destruct(value.numberAndNullValueContainer.annotationsAndComments);
+		break;
+	case ENT_STRING:
+	case ENT_SYMBOL:
+		string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
+		AnnotationsAndComments::Destruct(value.stringValueContainer.annotationsAndComments);
+		break;
+	case ENT_ASSOC:
+		if(!HasExtendedValue())
+		{
+			value.DestructMappedChildNodes();
+		}
+		else
+		{
+			value.extendedMappedChildNodes.Destruct();
+			SetExtendedValue(false);
+		}
+		break;
+		//otherwise ordered
+	default:
+		if(!HasExtendedValue())
+		{
+			value.DestructOrderedChildNodes();
+		}
+		else
+		{
+			value.extendedOrderedChildNodes.Destruct();
+			SetExtendedValue(false);
+		}
+		break;
+	}
+}

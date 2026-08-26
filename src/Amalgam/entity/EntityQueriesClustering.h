@@ -105,11 +105,10 @@ namespace EntityClustering
 	//point id to its weight; it is a template parameter rather than a std::function so it
 	//inlines with no call overhead and the caller can supply weights without a vector.
 	template<typename WeightFn>
-	inline double NodeMass(size_t node, size_t m,
-		const WeightFn &weight,
+	inline double NodeMass(size_t node, size_t m, const WeightFn &weight_func,
 		const std::vector<SingleLinkageNode> &nodes)
 	{
-		return (node < m ? weight(node) : nodes[node - m].mass);
+		return (node < m ? weight_func(node) : nodes[node - m].mass);
 	}
 
 	//Builds the single-linkage dendrogram from the (ascending) MST edges.
@@ -118,7 +117,7 @@ namespace EntityClustering
 	//returns, so the caller need not hold the MST alive past this stage.
 	template<typename WeightFn>
 	inline std::vector<SingleLinkageNode> BuildSingleLinkageTree(size_t m,
-		std::vector<Edge> mst, const WeightFn &weight)
+		std::vector<Edge> mst, const WeightFn &weight_func)
 	{
 		std::vector<SingleLinkageNode> nodes;
 		nodes.reserve(mst.size());
@@ -152,7 +151,7 @@ namespace EntityClustering
 			node.leftChildId = na;
 			node.rightChildId = nb;
 			node.weight = e.weight;
-			node.mass = NodeMass(na, m, weight, nodes) + NodeMass(nb, m, weight, nodes);
+			node.mass = NodeMass(na, m, weight_func, nodes) + NodeMass(nb, m, weight_func, nodes);
 			size_t new_id = m + nodes.size();
 			nodes.push_back(node);
 
@@ -164,8 +163,7 @@ namespace EntityClustering
 
 	//Appends every leaf point id under node to out.  stack is a caller-owned scratch
 	//buffer, reused across calls and cleared on entry, to avoid a per-call allocation.
-	inline void CollectLeaves(size_t node, size_t m,
-		const std::vector<SingleLinkageNode> &nodes,
+	inline void CollectLeaves(size_t node, size_t m, const std::vector<SingleLinkageNode> &nodes,
 		std::vector<size_t> &out, std::vector<size_t> &stack)
 	{
 		stack.clear();
@@ -190,9 +188,8 @@ namespace EntityClustering
 	//nodes is taken by value: a moved-in single-linkage tree is consumed and freed
 	//when this returns, so the caller need not hold it alive past this stage.
 	template<typename WeightFn>
-	inline std::vector<CondensedEdge> CondenseTree(size_t m,
-		std::vector<SingleLinkageNode> nodes,
-		const WeightFn &weight, double min_cluster_weight)
+	inline std::vector<CondensedEdge> CondenseTree(size_t m, std::vector<SingleLinkageNode> nodes,
+		const WeightFn &weight_func, double min_cluster_weight)
 	{
 		std::vector<CondensedEdge> result;
 		if(nodes.empty())
@@ -228,7 +225,7 @@ namespace EntityClustering
 			{
 				//a component only becomes a cluster if its total mass meets the
 				//threshold; smaller components (e.g. scattered outliers) stay noise
-				if(NodeMass(id, m, weight, nodes) >= min_cluster_weight)
+				if(NodeMass(id, m, weight_func, nodes) >= min_cluster_weight)
 				{
 					node_cluster_id[id - m] = next_cluster_id++;
 					pending_nodes.push_back(id);
@@ -264,8 +261,14 @@ namespace EntityClustering
 			bool big[2];
 			for(int c = 0; c < 2; c++)
 			{
-				masses[c] = NodeMass(children[c], m, weight, nodes);
-				big[c] = masses[c] >= min_cluster_weight;
+				masses[c] = NodeMass(children[c], m, weight_func, nodes);
+
+				//a split is only triggered by the merger of two non-leaf nodes
+				//that both exceed the minimum weight. A leaf, even if heavy,
+				//is a single point and does not constitute a split of a 
+				//multi-point cluster.
+				big[c] = (children[c] >= m && masses[c] >= min_cluster_weight);
+
 			}
 			int num_big = (big[0] ? 1 : 0) + (big[1] ? 1 : 0);
 
@@ -278,7 +281,7 @@ namespace EntityClustering
 					leaf_buffer.clear();
 					CollectLeaves(child, m, nodes, leaf_buffer, collect_stack);
 					for(size_t p : leaf_buffer)
-						result.push_back(CondensedEdge{cluster_id, p, lambda, weight(p)});
+						result.push_back(CondensedEdge{cluster_id, p, lambda, weight_func(p)});
 				}
 				else if(num_big == 2)
 				{
@@ -291,7 +294,7 @@ namespace EntityClustering
 						pending_nodes.push_back(child);
 					}
 					else	//a single heavy point that is itself a cluster
-						result.push_back(CondensedEdge{child_cluster_id, child, lambda_max, weight(child)});
+						result.push_back(CondensedEdge{child_cluster_id, child, lambda_max, weight_func(child)});
 				}
 				else
 				{
@@ -302,7 +305,7 @@ namespace EntityClustering
 						pending_nodes.push_back(child);
 					}
 					else	//a heavy continuing leaf stays in the cluster to the bottom
-						result.push_back(CondensedEdge{cluster_id, child, lambda_max, weight(child)});
+						result.push_back(CondensedEdge{cluster_id, child, lambda_max, weight_func(child)});
 				}
 			}
 		}
@@ -315,8 +318,7 @@ namespace EntityClustering
 	//cluster (one that never splits off of anything) is born at lambda 0.
 	//Cluster ids are contiguous in [m, m + count), so the result is a vector indexed
 	//by (cluster id - m) rather than a hash map.
-	inline std::vector<double> ClusterBirthLambdas(size_t m,
-		const std::vector<CondensedEdge> &condensed)
+	inline std::vector<double> ClusterBirthLambdas(size_t m, const std::vector<CondensedEdge> &condensed)
 	{
 		//cluster ids are contiguous from m; the count is one past the largest id seen
 		size_t count = 0;
@@ -343,8 +345,7 @@ namespace EntityClustering
 	//computes it only once and shares it with SelectClusters.  The result is indexed
 	//the same way.
 	inline std::vector<double> ComputeStabilities(size_t m,
-		const std::vector<CondensedEdge> &condensed,
-		const std::vector<double> &birth)
+		const std::vector<CondensedEdge> &condensed, const std::vector<double> &birth)
 	{
 		std::vector<double> stability(birth.size(), 0.0);
 		for(const CondensedEdge &e : condensed)
@@ -514,12 +515,12 @@ namespace EntityClustering
 	// (the "multiple tree roots" approach), so no artificial bridge edges are introduced.
 	template<typename WeightFn>
 	inline std::vector<size_t> Cluster(size_t m, std::vector<Edge> edges,
-		const WeightFn &weight, double min_cluster_weight)
+		const WeightFn &weight_func, double min_cluster_weight)
 	{
 		//move data structures in and pass by value so each method frees the memory when it's no longer needed
 		std::vector<Edge> mst = BuildMST(m, std::move(edges));
-		std::vector<SingleLinkageNode> slt = BuildSingleLinkageTree(m, std::move(mst), weight);
-		std::vector<CondensedEdge> condensed = CondenseTree(m, std::move(slt), weight, min_cluster_weight);
+		std::vector<SingleLinkageNode> slt = BuildSingleLinkageTree(m, std::move(mst), weight_func);
+		std::vector<CondensedEdge> condensed = CondenseTree(m, std::move(slt), weight_func, min_cluster_weight);
 		std::vector<double> birth = ClusterBirthLambdas(m, condensed);
 		std::vector<double> stability = ComputeStabilities(m, condensed, birth);
 		std::vector<char> selected = SelectClusters(m, condensed, std::move(stability), std::move(birth));

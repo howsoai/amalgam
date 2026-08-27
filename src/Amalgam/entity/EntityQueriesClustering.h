@@ -256,28 +256,26 @@ namespace EntityClustering
 			const SingleLinkageNode &sn = nodes[id - m];
 			double lambda = (sn.weight > 0.0) ? 1.0 / sn.weight : lambda_max;
 
-			size_t children[2] = { sn.leftChildId, sn.rightChildId };
+			size_t children[2] = {sn.leftChildId, sn.rightChildId};
 			double masses[2];
-			bool big[2];
+			bool is_big[2];
 			for(int c = 0; c < 2; c++)
 			{
 				masses[c] = NodeMass(children[c], m, weight_func, nodes);
-
-				//a split is only triggered by the merger of two non-leaf nodes
-				//that both exceed the minimum weight. A leaf, even if heavy,
-				//is a single point and does not constitute a split of a 
-				//multi-point cluster.
-				big[c] = (children[c] >= m && masses[c] >= min_cluster_weight);
-
+				//a branch is big if its mass is sufficient
+				//no longer care if it's a leaf or a multi-point node
+				is_big[c] = (masses[c] >= min_cluster_weight);
 			}
-			int num_big = (big[0] ? 1 : 0) + (big[1] ? 1 : 0);
+
+			int num_big = (is_big[0] ? 1 : 0) + (is_big[1] ? 1 : 0);
 
 			for(int c = 0; c < 2; c++)
 			{
 				size_t child = children[c];
-				if(!big[c])
+
+				if(!is_big[c])
 				{
-					//small branch: all its points fall out of the cluster as noise
+					//small branch handling (leaf or small cluster or noise)
 					leaf_buffer.clear();
 					CollectLeaves(child, m, nodes, leaf_buffer, collect_stack);
 					for(size_t p : leaf_buffer)
@@ -285,7 +283,7 @@ namespace EntityClustering
 				}
 				else if(num_big == 2)
 				{
-					//genuine split: the big child becomes a new cluster
+					//genuine split: both sides are heavy enough to be their own clusters
 					size_t child_cluster_id = next_cluster_id++;
 					result.push_back(CondensedEdge{cluster_id, child_cluster_id, lambda, masses[c]});
 					if(child >= m)
@@ -298,14 +296,27 @@ namespace EntityClustering
 				}
 				else
 				{
-					//exactly one big child: it continues the same cluster
+					//only one side is big enough
+					//if the big side is a leaf, it's a heavy point
+					//if the big side is a multi-point node, it's a large cluster
+					//in both cases, it continues the current cluster
+
+					//however, if the other side was also big but was a leaf
+					//(which the count doesn't know), this is technically a split
+					//but with weights, a heavy leaf is a large object.
+
 					if(child >= m)
 					{
 						node_cluster_id[child - m] = cluster_id;
 						pending_nodes.push_back(child);
 					}
-					else	//a heavy continuing leaf stays in the cluster to the bottom
+					else
+					{
+						//this is a heavy leaf.  if num_big was 1, it means
+						//the other side was small or was a leaf we didn't count
+						//in this case, it joins the current cluster_id.
 						result.push_back(CondensedEdge{cluster_id, child, lambda_max, weight_func(child)});
+					}
 				}
 			}
 		}

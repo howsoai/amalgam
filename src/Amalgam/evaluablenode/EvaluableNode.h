@@ -834,8 +834,9 @@ public:
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
 	__forceinline OrderedRef GetOrderedChildNodesReference();
 
-	//assumes that the EvaluableNode is has mapped child nodes, and returns the value by reference
-	__forceinline AssocRef GetMappedChildNodesReference();
+	//assumes that the EvaluableNode is has mapped child nodes, and returns the value by reference in a view
+	//(which means the receiving variables should not have an &)
+	__forceinline AssocRef GetMappedChildNodesView();
 
 	//if it is storing an immediate value and has room to store a label
 	inline bool HasCompactAnnotationsAndCommentsStorage()

@@ -269,7 +269,7 @@ void EvaluableNode::ConvertListToNumberedAssoc()
 	InitMappedChildNodes(ocn.size());
 	type = ENT_ASSOC;
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesView();
 	for(size_t i = 0; i < ocn.size(); i++)
 	{
 		std::string s = NumberToString(i, true);
@@ -285,7 +285,7 @@ void EvaluableNode::ConvertAssocToList()
 
 	OrderedType new_ocn;
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesView();
 	new_ocn.reserve(mcn.size());
 	for(auto &cn : mcn | std::views::values)
 		new_ocn.emplace_back(cn);
@@ -333,7 +333,7 @@ bool EvaluableNode::IsNodeValid()
 	size_t max_size = 100000000;
 	if(DoesEvaluableNodeTypeUseAssocData(type))
 	{
-		auto &mcn = GetMappedChildNodesReference();
+		auto mcn = GetMappedChildNodesView();
 		return (mcn.size() < max_size);
 	}
 	else if(DoesEvaluableNodeTypeUseNumberData(type))
@@ -390,7 +390,7 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 	if(DoesEvaluableNodeTypeUseAssocData(type))
 	{
 		value.ConstructMappedChildNodes();
-		value.mappedChildNodes = n->GetMappedChildNodesReference();
+		value.mappedChildNodes = n->GetMappedChildNodesView();
 
 		for(auto &[sid, cn] : value.mappedChildNodes)
 			string_intern_pool.CreateStringReference(sid);
@@ -449,7 +449,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 
 	if(DoesEvaluableNodeTypeUseAssocData(cur_type))
 	{
-		auto &n_mcn = n->GetMappedChildNodesReference();
+		auto n_mcn = n->GetMappedChildNodesView();
 		if(n_mcn.empty())
 			ClearMappedChildNodes();
 		else
@@ -620,7 +620,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 			//set up mapped nodes
 			InitMappedChildNodes();
 			//swap for efficiency
-			std::swap(GetMappedChildNodesReference(), new_map);
+			std::swap(GetMappedChildNodesView(), new_map);
 		}
 		else //just set up empty assoc
 		{
@@ -633,7 +633,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseAssocData(cur_type))
 		{
 			OrderedType new_ordered;
-			auto &mcn = GetMappedChildNodesReference();
+			auto mcn = GetMappedChildNodesView();
 			new_ordered.reserve(mcn.size());
 			for(auto &[cn_id, cn] : mcn)
 				new_ordered.emplace_back(cn);
@@ -743,7 +743,7 @@ size_t EvaluableNode::GetNumChildNodes()
 		return 0;
 
 	if(IsAssociativeArray())
-		return GetMappedChildNodesReference().size();
+		return GetMappedChildNodesView().size();
 	else
 		return GetOrderedChildNodesReference().size();
 
@@ -836,7 +836,7 @@ void EvaluableNode::AppendOrderedChildNodes(OrderedRef ocn_to_append)
 
 EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const std::string &id)
 {
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesView();
 
 	//create a reference in case it doesn't exist yet
 	StringInternPool::StringID sid = string_intern_pool.CreateStringReference(id);
@@ -853,7 +853,7 @@ EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const std::string &id)
 
 EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const StringInternPool::StringID sid)
 {
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesView();
 	auto [inserted_node, inserted] = mcn.emplace(sid, nullptr);
 
 	//if the node was inserted, then create a reference
@@ -868,7 +868,7 @@ void EvaluableNode::SetMappedChildNodes(EvaluableNode::AssocRef new_mcn, bool co
 	if(!IsAssociativeArray()) [[unlikely]]
 		return;
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesView();
 
 	//create new references before freeing old ones
 	string_intern_pool.CreateStringReferences(new_mcn, [](auto n) { return n.first; });
@@ -895,7 +895,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::s
 	if(!IsAssociativeArray()) [[unlikely]]
 		return {false, nullptr};
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesView();
 
 	StringInternPool::StringID sid = string_intern_pool.CreateStringReference(id);
 
@@ -920,7 +920,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const String
 	if(!IsAssociativeArray()) [[unlikely]]
 		return {false, nullptr};
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesView();
 
 	auto [inserted_node, inserted] = mcn.emplace(sid, node);
 
@@ -951,7 +951,7 @@ bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPoo
 		return false;
 	}
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesView();
 	auto [inserted_node, inserted] = mcn.emplace(sid, node);
 
 	if(!inserted)
@@ -975,7 +975,7 @@ void EvaluableNode::ClearMappedChildNodes()
 	if(!IsAssociativeArray()) [[unlikely]]
 		return;
 
-	auto &map = GetMappedChildNodesReference();
+	auto map = GetMappedChildNodesView();
 	string_intern_pool.DestroyStringReferences(map, [](auto n) { return n.first; });
 	map.clear();
 
@@ -986,7 +986,7 @@ void EvaluableNode::ClearMappedChildNodes()
 
 EvaluableNode *EvaluableNode::EraseMappedChildNode(const StringInternPool::StringID sid)
 {
-	auto &mcn = GetMappedChildNodes();
+	auto mcn = GetMappedChildNodes();
 	//attempt to find
 	auto found = mcn.find(sid);
 	if(found == end(mcn))
@@ -1008,7 +1008,7 @@ void EvaluableNode::AppendMappedChildNodes(AssocRef mcn_to_append)
 	if(!IsAssociativeArray())
 		return;
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesView();
 	mcn.reserve(mcn.size() + mcn_to_append.size());
 
 	//insert everything
@@ -1079,8 +1079,8 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *
 	if(a->IsAssociativeArray())
 	{
 		//if a is associative, b must be too, since they're shallow equal
-		auto &a_mcn = a->GetMappedChildNodesReference();
-		auto &b_mcn = b->GetMappedChildNodesReference();
+		auto a_mcn = a->GetMappedChildNodesView();
+		auto b_mcn = b->GetMappedChildNodesView();
 		size_t a_size = a_mcn.size();
 		if(a_size != b_mcn.size())
 			return false;
@@ -1264,7 +1264,7 @@ bool EvaluableNode::CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<
 	//check child nodes
 	if(n->IsAssociativeArray())
 	{
-		for(auto &e : n->GetMappedChildNodesReference() | std::views::values)
+		for(auto &e : n->GetMappedChildNodesView() | std::views::values)
 		{
 			if(e == nullptr)
 				continue;
@@ -1306,7 +1306,7 @@ size_t EvaluableNode::GetDeepSizeWithCycles(EvaluableNode *n, ReferenceSetType &
 
 		if(cur->IsAssociativeArray())
 		{
-			for(auto [_, e] : cur->GetMappedChildNodesReference())
+			for(auto [_, e] : cur->GetMappedChildNodesView())
 			{
 				if(e == nullptr)
 				{
@@ -1361,7 +1361,7 @@ size_t EvaluableNode::GetDeepSizeNoCycles(EvaluableNode *n)
 
 		if(cur->IsAssociativeArray())
 		{
-			auto &mcn = cur->GetMappedChildNodesReference();
+			auto mcn = cur->GetMappedChildNodesView();
 			total += mcn.size();
 			for(auto [_, e] : mcn)
 			{

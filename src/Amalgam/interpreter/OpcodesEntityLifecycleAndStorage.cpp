@@ -560,7 +560,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, Ev
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[2]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParams(params->GetMappedChildNodesReference());
+			asset_params.SetParams(params->GetMappedChildNodesView());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
@@ -707,7 +707,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params->SetParams(params->GetMappedChildNodesReference());
+			asset_params->SetParams(params->GetMappedChildNodesView());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
@@ -894,7 +894,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, E
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParams(params->GetMappedChildNodesReference());
+			asset_params.SetParams(params->GetMappedChildNodesView());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
@@ -1049,7 +1049,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params->SetParams(params->GetMappedChildNodesReference());
+			asset_params->SetParams(params->GetMappedChildNodesView());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}

@@ -52,7 +52,7 @@ namespace EntityQueryBuilder
 	inline void PopulateFeatureDeviationNominalValueAssocData(
 		NominalDeviationValuesType &ndd, EvaluableNode *value_deviation_assoc)
 	{
-		auto &mcn = value_deviation_assoc->GetMappedChildNodesReference();
+		auto mcn = value_deviation_assoc->GetMappedChildNodesView();
 		ndd.reserve(mcn.size());
 		for(auto &cn : mcn)
 		{
@@ -115,7 +115,7 @@ namespace EntityQueryBuilder
 		string_sdm.clear();
 		number_sdm.clear();
 
-		auto &mcn = deviation_node->GetMappedChildNodesReference();
+		auto mcn = deviation_node->GetMappedChildNodesView();
 		if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
 		{
 			number_sdm.reserve(mcn.size());
@@ -179,7 +179,7 @@ namespace EntityQueryBuilder
 		size_t num_elements, std::vector<StringInternPool::StringID> &element_names,
 		StringInternPool::StringID weights_selection_feature)
 	{
-		auto &weights_matrix = weights_node->GetMappedChildNodesReference();
+		auto weights_matrix = weights_node->GetMappedChildNodesView();
 		auto weights_for_feature_node_entry = weights_matrix.find(weights_selection_feature);
 
 		//if entry not found or only one feature, just default to 1/n
@@ -211,7 +211,7 @@ namespace EntityQueryBuilder
 			return;
 		}
 
-		auto &weights_for_feature_node_mcn = weights_for_feature_node->GetMappedChildNodesReference();
+		auto weights_for_feature_node_mcn = weights_for_feature_node->GetMappedChildNodesView();
 
 		//collect all weights that contribute to this feature, but leave weights_selection_feature out
 		FastHashMap<StringInternPool::StringID, double> unused_weights_by_name;
@@ -268,7 +268,7 @@ namespace EntityQueryBuilder
 			auto unused_weights_for_feature_node = unused_weights_for_feature_entry->second;
 			if(!EvaluableNode::IsAssociativeArray(unused_weights_for_feature_node))
 				continue;
-			auto &unused_weights_for_feature_mcn = unused_weights_for_feature_node->GetMappedChildNodesReference();
+			auto unused_weights_for_feature_mcn = unused_weights_for_feature_node->GetMappedChildNodesView();
 
 			//get total probability mass to normalize this feature
 			double total_probability_mass_for_feature = 0.0;
@@ -401,7 +401,7 @@ namespace EntityQueryBuilder
 
 					if(EvaluableNode::IsAssociativeArray(en))
 					{
-						auto &mcn = en->GetMappedChildNodesReference();
+						auto mcn = en->GetMappedChildNodesView();
 
 						StringInternPool::StringID difference_type = string_intern_pool.NOT_A_STRING_ID;
 						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_difference_type, difference_type);

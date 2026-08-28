@@ -261,7 +261,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	{
 		auto imm_number_weights_node = InterpretNodeForImmediateUse(ocn[5]);
 		if(EvaluableNode::IsAssociativeArray(imm_number_weights_node))
-			imm_number_weights.Initialize(imm_number_weights_node->GetMappedChildNodesReference(), true);
+			imm_number_weights.Initialize(imm_number_weights_node->GetMappedChildNodesView(), true);
 	}
 
 	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType imm_string_weights;
@@ -269,7 +269,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	{
 		auto imm_string_weights_node = InterpretNodeForImmediateUse(ocn[6]);
 		if(EvaluableNode::IsAssociativeArray(imm_string_weights_node))
-			imm_string_weights.Initialize(imm_string_weights_node->GetMappedChildNodesReference(), true);
+			imm_string_weights.Initialize(imm_string_weights_node->GetMappedChildNodesView(), true);
 	}
 
 	//result contains the copied result which may incur replacements
@@ -473,7 +473,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
-			auto &mcn = params->GetMappedChildNodesReference();
+			auto mcn = params->GetMappedChildNodesView();
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_string_edit_distance, string_edit_distance);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
@@ -607,7 +607,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
-			auto &mcn = params->GetMappedChildNodesReference();
+			auto mcn = params->GetMappedChildNodesView();
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_string_edit_distance, string_edit_distance);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
@@ -828,7 +828,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
-			auto &mcn = params->GetMappedChildNodesReference();
+			auto mcn = params->GetMappedChildNodesView();
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
@@ -1072,7 +1072,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, E
 		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
-			auto &mcn = params->GetMappedChildNodesReference();
+			auto mcn = params->GetMappedChildNodesView();
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
@@ -1875,7 +1875,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, Eva
 		auto params = InterpretNodeForImmediateUse(ocn[4]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
-			auto &mcn = params->GetMappedChildNodesReference();
+			auto mcn = params->GetMappedChildNodesView();
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);

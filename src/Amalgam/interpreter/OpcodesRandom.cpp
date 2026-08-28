@@ -238,7 +238,7 @@ static EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeR
 	{
 		if(param->IsAssociativeArray())
 		{
-			StringInternPool::StringID id_selected = GetRandomWeightedKey(param->GetMappedChildNodesReference(),
+			StringInternPool::StringID id_selected = GetRandomWeightedKey(param->GetMappedChildNodesView(),
 				random_stream, true);
 			return Parser::ParseFromKeyStringId(id_selected, interpreter->evaluableNodeManager);
 		}
@@ -325,7 +325,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 			retval_ocn.reserve(number_to_generate);
 
 			//make a copy of all of the probabilities so they can be removed one at a time
-			EvaluableNode::AssocType assoc(param->GetMappedChildNodesReference());
+			EvaluableNode::AssocType assoc(param->GetMappedChildNodesView());
 
 			for(size_t i = 0; i < number_to_generate; i++)
 			{
@@ -393,14 +393,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 	//get information to determine which mechanism to use to generate
 	size_t num_weighted_values = 0;
 	if(EvaluableNode::IsAssociativeArray(param))
-		num_weighted_values = param->GetMappedChildNodesReference().size();
+		num_weighted_values = param->GetMappedChildNodesView().size();
 
 	if(num_weighted_values > 0
 		&& (number_to_generate > 10 || (number_to_generate > 3 && num_weighted_values > 200)))
 	{
 		//use fast repeated generation technique
 		WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
-			EvaluableNode::AssocType, EvaluableNodeAsDouble> wdrst(param->GetMappedChildNodesReference(), false);
+			EvaluableNode::AssocType, EvaluableNodeAsDouble> wdrst(param->GetMappedChildNodesView(), false);
 		for(size_t i = 0; i < number_to_generate; i++)
 		{
 			EvaluableNodeReference rand_value(Parser::ParseFromKeyStringId(wdrst.WeightedDiscreteRand(randomStream), evaluableNodeManager));

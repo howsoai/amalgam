@@ -245,7 +245,7 @@ EvaluableNode *GetTraversalPathListFromAToB(EvaluableNodeManager *enm, Evaluable
 		{
 			//look up which key corresponds to the value
 			StringInternPool::StringID key_sid = StringInternPool::NOT_A_STRING_ID;
-			for(auto &[s_id, s] : b_ancestor_parent->GetMappedChildNodesReference())
+			for(auto &[s_id, s] : b_ancestor_parent->GetMappedChildNodesView())
 			{
 				if(s == b_ancestor)
 				{
@@ -318,7 +318,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 
 		if(EvaluableNode::IsAssociativeArray(*destination))
 		{
-			auto &mcn = (*destination)->GetMappedChildNodesReference();
+			auto mcn = (*destination)->GetMappedChildNodesView();
 
 			if(enm == nullptr)
 			{
@@ -449,13 +449,13 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			if(EvaluableNode::IsAssociativeArray(variable_value_node))
 			{
 				auto &vvn_mcn = variable_value_node->GetMappedChildNodes();
-				value_destination_node->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodesReference().size()
+				value_destination_node->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodesView().size()
 																+ vvn_mcn.size());
 				value_destination_node->AppendMappedChildNodes(vvn_mcn);
 			}
 			else if(variable_value_node != nullptr) //treat ordered pairs as new entries as long as not nullptr
 			{
-				value_destination_node->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodesReference().size()
+				value_destination_node->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodesView().size()
 																+ variable_value_node->GetOrderedChildNodes().size() / 2);
 
 				//iterate as long as pairs exist
@@ -496,9 +496,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			{
 				//expand out into pairs
 				value_destination_node->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size()
-																+ 2 * variable_value_node->GetMappedChildNodesReference().size());
+																+ 2 * variable_value_node->GetMappedChildNodesView().size());
 
-				for(auto &[cn_id, cn] : variable_value_node->GetMappedChildNodesReference())
+				for(auto &[cn_id, cn] : variable_value_node->GetMappedChildNodesView())
 				{
 					EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(cn_id, enm);
 					value_destination_node->AppendOrderedChildNode(key_node);
@@ -543,7 +543,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
-			new_list->AppendMappedChildNodes(variable_value_node->GetMappedChildNodesReference());
+			new_list->AppendMappedChildNodes(variable_value_node->GetMappedChildNodesView());
 		}
 		else if(variable_value_node != nullptr) //treat ordered pairs as new entries as long as not nullptr
 		{
@@ -585,7 +585,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		EvaluableNodeReference new_list(enm->AllocNode(value_destination_node), true);
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
-			auto &vvn_mcn = variable_value_node->GetMappedChildNodesReference();
+			auto vvn_mcn = variable_value_node->GetMappedChildNodesView();
 			//expand out into pairs
 			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + 2 * vvn_mcn.size());
 			for(auto &[cn_id, cn] : vvn_mcn)

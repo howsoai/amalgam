@@ -64,7 +64,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 	}
 	else if(list->IsAssociativeArray())
 	{
-		auto &list_mcn = list->GetMappedChildNodesReference();
+		auto list_mcn = list->GetMappedChildNodesView();
 		if(list_mcn.size() > 0)
 		{
 			//keep reference to first of map before free rest of it
@@ -363,7 +363,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 	}
 	else if(list->IsAssociativeArray())
 	{
-		if(list->GetMappedChildNodesReference().size() > 0)
+		if(list->GetMappedChildNodesView().size() > 0)
 		{
 			evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 			//swap on the stack in case list changed
@@ -372,15 +372,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 
 			//just remove the first, because it's more efficient and the order does not matter for maps
 			size_t num_to_remove = 0;
-			if(tail_by > 0 && tail_by < list->GetMappedChildNodesReference().size())
-				num_to_remove = list->GetMappedChildNodesReference().size() - static_cast<size_t>(tail_by);
+			if(tail_by > 0 && tail_by < list->GetMappedChildNodesView().size())
+				num_to_remove = list->GetMappedChildNodesView().size() - static_cast<size_t>(tail_by);
 			else if(tail_by < 0)
 				num_to_remove = static_cast<size_t>(-tail_by);
 
 			//remove individually
-			for(size_t i = 0; list->GetMappedChildNodesReference().size() > 0 && i < num_to_remove; i++)
+			for(size_t i = 0; list->GetMappedChildNodesView().size() > 0 && i < num_to_remove; i++)
 			{
-				auto &mcn = list->GetMappedChildNodesReference();
+				auto mcn = list->GetMappedChildNodesView();
 				auto iter = begin(mcn);
 				list->EraseMappedChildNode(iter->first);
 			}
@@ -494,7 +494,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 	}
 	else if(list->IsAssociativeArray())
 	{
-		auto &list_mcn = list->GetMappedChildNodesReference();
+		auto list_mcn = list->GetMappedChildNodesView();
 		if(list_mcn.size() > 0)
 		{
 			//just take the first, because it's more efficient and the order does not matter for maps
@@ -801,15 +801,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 
 		//just remove the first, because it's more efficient and the order does not matter for maps
 		size_t num_to_remove = 0;
-		if(truncate_to > 0 && truncate_to < list->GetMappedChildNodesReference().size())
-			num_to_remove = list->GetMappedChildNodesReference().size() - static_cast<size_t>(truncate_to);
+		if(truncate_to > 0 && truncate_to < list->GetMappedChildNodesView().size())
+			num_to_remove = list->GetMappedChildNodesView().size() - static_cast<size_t>(truncate_to);
 		else if(truncate_to < 0)
 			num_to_remove = static_cast<size_t>(-truncate_to);
 
 		//remove individually
-		for(size_t i = 0; list->GetMappedChildNodesReference().size() > 0 && i < num_to_remove; i++)
+		for(size_t i = 0; list->GetMappedChildNodesView().size() > 0 && i < num_to_remove; i++)
 		{
-			auto &mcn = list->GetMappedChildNodesReference();
+			auto mcn = list->GetMappedChildNodesView();
 			auto iter = begin(mcn);
 			list->EraseMappedChildNode(iter->first);
 		}
@@ -972,7 +972,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 				new_list_cur_index = new_list->GetNumChildNodes();
 			}
 
-			auto &new_elements_mcn = new_elements->GetMappedChildNodesReference();
+			auto new_elements_mcn = new_elements->GetMappedChildNodesView();
 			if(new_elements_mcn.size() > 0)
 			{
 				new_list.UpdatePropertiesBasedOnAttachedNode(new_elements, first_append);
@@ -1551,7 +1551,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 
 	if(container->IsAssociativeArray())
 	{
-		auto &container_mcn = container->GetMappedChildNodesReference();
+		auto container_mcn = container->GetMappedChildNodesView();
 		index_list_ocn.reserve(container_mcn.size());
 		for(auto &node_id : container_mcn | std::views::keys)
 		{
@@ -1753,7 +1753,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 
 			EvaluableNode *result = evaluableNodeManager->AllocNode(ENT_LIST);
 
-			for(auto &cn : container->GetMappedChildNodesReference() | std::views::values)
+			for(auto &cn : container->GetMappedChildNodesView() | std::views::values)
 				result->AppendOrderedChildNode(cn);
 
 			if(container->GetNeedCycleCheck())
@@ -1833,7 +1833,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			}
 			else //container->IsAssociativeArray()
 			{
-				for(auto &cn : container->GetMappedChildNodesReference() | std::views::values)
+				for(auto &cn : container->GetMappedChildNodesView() | std::views::values)
 				{
 					std::string str_value = Parser::UnparseToKeyString(cn);
 					if(values_in_existence.emplace(str_value).second)
@@ -2043,7 +2043,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	//try to find value
 	if(container->IsAssociativeArray())
 	{
-		for(auto &cn : container->GetMappedChildNodesReference() | std::views::values)
+		for(auto &cn : container->GetMappedChildNodesView() | std::views::values)
 		{
 			if(EvaluableNode::AreDeepEqual(cn, value))
 			{
@@ -2431,7 +2431,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 		if(container->IsAssociativeArray())
 		{
 			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDWithReference(true);
-			auto &container_mcn = container->GetMappedChildNodesReference();
+			auto &container_mcn = container->GetMappedChildNodesView();
 
 			//find what should be kept, or clear key_sid if not found
 			EvaluableNode *to_keep = nullptr;
@@ -2496,7 +2496,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 		auto &indices_ocn = indices->GetOrderedChildNodes();
 		if(container->IsAssociativeArray())
 		{
-			auto &container_mcn = container->GetMappedChildNodesReference();
+			auto &container_mcn = container->GetMappedChildNodesView();
 			EvaluableNode::AssocType new_container;
 
 			for(auto &cn : indices_ocn)

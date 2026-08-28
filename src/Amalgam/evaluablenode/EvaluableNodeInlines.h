@@ -501,7 +501,7 @@ __forceinline void EvaluableNode::UpdateAllFlagsBasedOnNoReferencingChildNodes()
 
 	if(IsAssociativeArray())
 	{
-		for(auto &[cn_id, cn] : GetMappedChildNodesReference())
+		for(auto &[cn_id, cn] : GetMappedChildNodesView())
 		{
 			if(cn == nullptr)
 				continue;
@@ -565,7 +565,7 @@ inline void EvaluableNode::ConvertChildNodesAndStoreValue(EvaluableNode *node,
 	}
 	else if(node->IsAssociativeArray())
 	{
-		auto &mcn = node->GetMappedChildNodesReference();
+		auto mcn = node->GetMappedChildNodesView();
 		for(size_t i = 0; i < element_names.size(); i++)
 		{
 			EvaluableNode *value_en = nullptr;
@@ -634,13 +634,13 @@ inline void EvaluableNode::InitMappedChildNodes(size_t num_elements)
 inline void EvaluableNode::ReserveMappedChildNodes(size_t to_reserve)
 {
 	if(IsAssociativeArray())
-		GetMappedChildNodesReference().reserve(to_reserve);
+		GetMappedChildNodesView().reserve(to_reserve);
 }
 
 __forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodes()
 {
 	if(IsAssociativeArray())
-		return GetMappedChildNodesReference();
+		return GetMappedChildNodesView();
 
 	return emptyMappedChildNodes;
 }
@@ -656,7 +656,7 @@ inline EvaluableNode **EvaluableNode::GetMappedChildNode(const std::string &id)
 // returns nullptr if the id doesn't exist
 inline EvaluableNode **EvaluableNode::GetMappedChildNode(const StringInternPool::StringID sid)
 {
-	auto &mcn = GetMappedChildNodes();
+	auto mcn = GetMappedChildNodes();
 	auto node_iter = mcn.find(sid);
 	if(node_iter == end(mcn))
 		return nullptr;
@@ -712,7 +712,7 @@ __forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesRefer
 		return *value.extendedOrderedChildNodes.orderedChildNodes.get();
 }
 
-__forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesReference()
+__forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesView()
 {
 	if(!HasExtendedValue())
 		return value.mappedChildNodes;

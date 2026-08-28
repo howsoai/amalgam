@@ -224,7 +224,7 @@ void EvaluableNodeTreeDifference::FindParentReferences(EvaluableNode *tree, Eval
 
 	if(tree->IsAssociativeArray())
 	{
-		for(auto &cn : tree->GetMappedChildNodesReference() | std::views::values)
+		for(auto &cn : tree->GetMappedChildNodesView() | std::views::values)
 			FindParentReferences(cn, references_with_parents, tree);
 	}
 	else

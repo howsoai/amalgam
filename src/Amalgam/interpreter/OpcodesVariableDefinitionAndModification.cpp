@@ -219,7 +219,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		if(!need_to_interpret_required_vars)
 		{
 			//check each of the required variables and put into the stack if appropriate
-			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
+			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesView())
 			{
 				auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
 				if(inserted)
@@ -247,13 +247,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		}
 		else //need_to_interpret_required_vars
 		{
-			auto &scope_mcn = scope->GetMappedChildNodesReference();
+			auto scope_mcn = scope->GetMappedChildNodesView();
 
 			PushNewConstructionContext(required_vars, required_vars,
 				EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
 			//check each of the required variables and put into the stack if appropriate
-			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
+			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesView())
 			{
 				if(cn == nullptr || cn->GetIsIdempotent())
 				{
@@ -569,7 +569,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		bool any_nonunique_assignments = false;
 
 		//iterate over every variable being assigned
-		for(auto &[cn_id, cn] : assigned_vars->GetMappedChildNodesReference())
+		for(auto &[cn_id, cn] : assigned_vars->GetMappedChildNodesView())
 		{
 			StringInternPool::StringID variable_sid = cn_id;
 			if(variable_sid == StringInternPool::NOT_A_STRING_ID)
@@ -1022,7 +1022,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered
-		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesReference())
+		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesView())
 		{
 			//if there are values passed in, free them to be clobbered
 			EvaluableNodeReference cnr(cn, to_lookup.unique);
@@ -2056,7 +2056,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				std::string timezone;
 				if(EvaluableNode::IsAssociativeArray(from_params))
 				{
-					auto &mcn = from_params->GetMappedChildNodesReference();
+					auto mcn = from_params->GetMappedChildNodesView();
 					EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
 					EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_time_zone, timezone);
 				}
@@ -2070,7 +2070,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				std::string locale;
 				if(EvaluableNode::IsAssociativeArray(from_params))
 				{
-					auto &mcn = from_params->GetMappedChildNodesReference();
+					auto mcn = from_params->GetMappedChildNodesView();
 					EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
 				}
 
@@ -2130,7 +2130,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			bool sort_keys = false;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
-				auto &mcn = to_params->GetMappedChildNodesReference();
+				auto mcn = to_params->GetMappedChildNodesView();
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 			}
 
@@ -2344,7 +2344,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			bool sort_keys = false;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
-				auto &mcn = to_params->GetMappedChildNodesReference();
+				auto mcn = to_params->GetMappedChildNodesView();
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 			}
 
@@ -2378,7 +2378,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			bool sort_keys = false;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
-				auto &mcn = to_params->GetMappedChildNodesReference();
+				auto mcn = to_params->GetMappedChildNodesView();
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 			}
 
@@ -2397,7 +2397,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			std::string timezone;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
-				auto &mcn = to_params->GetMappedChildNodesReference();
+				auto mcn = to_params->GetMappedChildNodesView();
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_time_zone, timezone);
 			}
@@ -2416,7 +2416,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			std::string locale;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
-				auto &mcn = to_params->GetMappedChildNodesReference();
+				auto mcn = to_params->GetMappedChildNodesView();
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
 			}
 

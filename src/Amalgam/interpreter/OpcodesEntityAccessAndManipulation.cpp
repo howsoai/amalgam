@@ -381,7 +381,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 
 		//overwrite values in the ordered
 		bool first_node = true;
-		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesReference())
+		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesView())
 		{
 			//if there are values passed in, free them to be clobbered
 			cnr.SetReference(cn);

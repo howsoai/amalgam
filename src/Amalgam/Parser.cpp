@@ -286,7 +286,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 		if(b_parent->IsAssociativeArray())
 		{
 			StringInternPool::StringID key_id = StringInternPool::NOT_A_STRING_ID;
-			auto &bp_mcn = b_parent->GetMappedChildNodesReference();
+			auto bp_mcn = b_parent->GetMappedChildNodesView();
 			if(!upd.sortKeys)
 			{
 				//look up which key corresponds to the value
@@ -1207,7 +1207,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 
 		if(tree->IsAssociativeArray())
 		{
-			auto &tree_mcn = tree->GetMappedChildNodesReference();
+			auto tree_mcn = tree->GetMappedChildNodesView();
 			bool initial_space = (tree_type != ENT_LIST && tree_type != ENT_ASSOC);
 			if(!upd.sortKeys)
 			{
@@ -1351,7 +1351,7 @@ static EvaluableNode *GetNodeRelativeToIndex(EvaluableNode *node, EvaluableNode 
 	if(node->IsAssociativeArray())
 	{
 		StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index_node, true);
-		auto &node_mcn = node->GetMappedChildNodesReference();
+		auto node_mcn = node->GetMappedChildNodesView();
 		auto found = node_mcn.find(index_sid);
 		if(found != end(node_mcn))
 			return found->second;
@@ -1507,7 +1507,7 @@ void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 			//copy reference of target to the parent's index of the target
 			if(parent->IsAssociativeArray())
 			{
-				for(auto &cn : parent->GetMappedChildNodesReference() | std::views::values)
+				for(auto &cn : parent->GetMappedChildNodesView() | std::views::values)
 				{
 					if(cn == node)
 					{
@@ -1584,7 +1584,7 @@ void Parser::PreevaluateNodes(EvaluableNode *&top_node)
 			{
 				EvaluableNode *params = ocn[2];
 				if(EvaluableNode::IsAssociativeArray(params))
-					asset_params.SetParams(params->GetMappedChildNodesReference());
+					asset_params.SetParams(params->GetMappedChildNodesView());
 			}
 			asset_params.UpdateResources();
 

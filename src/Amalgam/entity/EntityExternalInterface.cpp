@@ -91,7 +91,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 		EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&temp_enm, json_file_params);
 
 		if(EvaluableNode::IsAssociativeArray(file_params))
-			asset_params->SetParams(file_params->GetMappedChildNodesReference());
+			asset_params->SetParams(file_params->GetMappedChildNodesView());
 	}
 
 	asset_params->UpdateResources();
@@ -223,7 +223,7 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 		EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
 
 		if(EvaluableNode::IsAssociativeArray(file_params))
-			asset_params->SetParams(file_params->GetMappedChildNodesReference());
+			asset_params->SetParams(file_params->GetMappedChildNodesView());
 	}
 
 	asset_params->UpdateResources();
@@ -286,7 +286,7 @@ bool EntityExternalInterface::StoreEntity(std::string &handle, const EntityExter
 		EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
 
 		if(EvaluableNode::IsAssociativeArray(file_params))
-			asset_params->SetParams(file_params->GetMappedChildNodesReference());
+			asset_params->SetParams(file_params->GetMappedChildNodesView());
 
 		enm.FreeNodeTree(file_params);
 	}

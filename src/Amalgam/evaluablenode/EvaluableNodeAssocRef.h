@@ -88,10 +88,10 @@ public:
 	{
 		if(IsSmall())
 		{
+			storage.smallMap->insert(key, value);
+
 			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
-
-			storage.smallMap->insert(key, value);
 		}
 		else
 		{
@@ -119,7 +119,7 @@ public:
 			{
 				PromoteToLarge();
 				//need to re-retrieve
-				return (storage.largeMap)[key];
+				return (*storage.largeMap)[key];
 			}
 			else
 			{
@@ -128,7 +128,9 @@ public:
 
 		}
 		else
+		{
 			return (*storage.largeMap)[key];
+		}
 	}
 
 	inline size_type count(const key_type &key) const

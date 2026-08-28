@@ -16,35 +16,28 @@ public:
 	//--- Construction & Lifecycle ---
 
 	AssocRef(EvaluableNode *_en) : en(_en)
-	{}
+	{
+		//TODO 25910: finish this
+
+	}
 
 	AssocRef(const AssocRef &other) : en(other.en)
 	{
-		//TODO 25910: finish this
 		if(other.IsSmall())
-		{
 			this->storage.smallMap = other.storage.smallMap;
-		}
 		else
-		{
-			this->storage.largeMap = std::make_unique<EvaluableNode::LargeAssocType>(*other.storage.largeMap);
-		}
+			this->storage.largeMap = other.storage.largeMap;
 	}
 
 	AssocRef &operator=(const AssocRef &other)
 	{
-		//TODO 25910: finish this
 		if(this != &other)
 		{
 			en = other.en;
 			if(other.IsSmall())
-			{
 				storage.smallMap = other.storage.smallMap;
-			}
 			else
-			{
-				storage.largeMap = std::make_unique<EvaluableNode::LargeAssocType>(*other.storage.largeMap);
-			}
+				storage.largeMap = other.storage.largeMap;
 		}
 		return *this;
 	}
@@ -95,10 +88,9 @@ public:
 	{
 		if(IsSmall())
 		{
-			if(storage.smallMap->size() >= 8)
-			{
+			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
-			}
+
 			storage.smallMap->insert(key, value);
 		}
 		else
@@ -120,7 +112,21 @@ public:
 	mapped_type &operator[](const key_type &key)
 	{
 		if(IsSmall())
-			return (*storage.smallMap)[key];
+		{
+			auto &result = (*storage.smallMap)[key];
+
+			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
+			{
+				PromoteToLarge();
+				//need to re-retrieve
+				return (storage.largeMap)[key];
+			}
+			else
+			{
+				return result;
+			}
+
+		}
 		else
 			return (*storage.largeMap)[key];
 	}
@@ -159,6 +165,8 @@ private:
 	inline void PromoteToLarge()
 	{
 		en->EnsureHasExtendedValue();
+		//TODO 25910: finish this
+		storage.largeMap = 
 	}
 
 	EvaluableNode *en;

@@ -6,8 +6,6 @@
 #include <utility>
 #include <vector>
 
-//TODO 25910: organize this like OrderedHashMap
-
 //implements a map via a vector, where entries are looked up sequentially for brute force
 //useful for standing in for hash maps when the data is very small (generally less than 20 entries)
 // and for hash maps where entries are only iterated over or found once
@@ -19,18 +17,28 @@ class VectorMap
 public:
 	using key_type = K;
 	using mapped_type = V;
-	using value_type = std::pair<K, V>;
+	using value_type = std::pair<key_type, mapped_type>;
 	using key_equal = KeyEqual;
 
 	//standard naming for iterators
-	using iterator = std::vector<std::pair<K, V>>::iterator;
-	using const_iterator = std::vector<std::pair<K, V>>::const_iterator;
+	using iterator = std::vector<std::pair<key_type, mapped_type>>::iterator;
+	using const_iterator = std::vector<std::pair<key_type, mapped_type>>::const_iterator;
 
 	using size_type = std::size_t;
 	using difference_type = std::ptrdiff_t;
 	using reference = mapped_type &;
 	using const_reference = const mapped_type &;
 	using iterator_category = std::random_access_iterator_tag;
+
+	//--- Construction & Lifecycle ---
+
+	inline VectorMap() = default;
+	inline VectorMap(const VectorMap &other) = default;
+	inline VectorMap(VectorMap &&other) noexcept = default;
+
+	inline ~VectorMap() = default;
+
+	//--- Iterators ---
 
 	inline iterator begin() noexcept
 	{
@@ -52,92 +60,16 @@ public:
 		return data.cend();
 	}
 
-	inline size_t size() const
-	{
-		return data.size();
-	}
+	//--- Capacity & Size ---
 
 	inline bool empty() const
 	{
 		return data.empty();
 	}
 
-	inline void reserve(size_t n)
+	inline size_t size() const
 	{
-		data.reserve(n);
-	}
-
-	inline void resize(size_t n)
-	{
-		data.resize(n);
-	}
-
-	inline iterator find(const K &key)
-	{
-		return std::find_if(data.begin(), data.end(),
-			[&](const std::pair<K, V> &p) { return KeyEqual{}(p.first, key); });
-	}
-
-	inline bool contains(const K &key) const
-	{
-		return find(key) != data.cend();
-	}
-
-	inline mapped_type &operator[](const K &key)
-	{
-		auto it = find(key);
-		if(it == end())
-			it = try_emplace(key).first;
-		return it->second;
-	}
-
-	inline mapped_type &at(const K &key)
-	{
-		auto it = find(key);
-		if(it == end())
-			throw std::out_of_range("VectorMap::at: key not found");
-
-		return it->second;
-	}
-
-	const mapped_type &at(const K &key) const
-	{
-		auto it = find(key);
-		if(it == end())
-			throw std::out_of_range("VectorMap::at: key not found");
-
-		return it->second;
-	}
-
-	inline iterator erase(iterator it)
-	{
-		//only swap if not the last element
-		if(it != std::prev(data.end()))
-			std::swap(*it, data.back());
-
-		data.pop_back();
-		return it;
-	}
-
-	size_t erase(const K &key)
-	{
-		auto it = find(key);
-		if(it != end())
-		{
-			erase(it);
-			return 1;
-		}
-		return 0;
-	}
-
-	inline void clear()
-	{
-		data.clear();
-	}
-
-	inline void swap(VectorMap &other) noexcept
-	{
-		std::swap(this->data, other.data);
+		return data.size();
 	}
 
 	inline size_type max_size() const noexcept
@@ -145,19 +77,89 @@ public:
 		return std::numeric_limits<size_type>::max();
 	}
 
-	inline size_type count(const K &key) const
+	//--- Modifiers ---
+
+	inline void reserve(size_t n)
 	{
-		return find(key) != cend() ? 1 : 0;
+		data.reserve(n);
 	}
 
-	std::pair<iterator, bool> insert(const K &key, const V &value)
+	inline void clear()
+	{
+		data.clear();
+	}
+
+	inline void resize(size_t n)
+	{
+		data.resize(n);
+	}
+
+	template<class... Args> inline std::pair<iterator, bool> try_emplace(key_type &&key, Args &&...args)
 	{
 		auto it = find(key);
 		if(it != end())
-			return { it, false };
+			return {it, false};
 
-		data.emplace_back(key, value);
-		return { std::prev(data.end()), true};
+		if constexpr(sizeof...(Args) == 0)
+			data.emplace_back(std::move(key), mapped_type{});
+		else
+			data.emplace_back(std::move(key), std::forward<Args>(args)...);
+
+		return {std::prev(data.end()), true};
+	}
+
+	template<class... Args> inline std::pair<iterator, bool> emplace(key_type key, Args &&...args)
+	{
+		auto it = find(key);
+		if(it != data.end())
+			return {it, false};
+
+		if constexpr(sizeof...(Args) == 0)
+			data.emplace_back(std::move(key), mapped_type{});
+		else
+			data.emplace_back(std::move(key), std::forward<Args>(args)...);
+
+		return {std::prev(data.end()), true};
+	}
+
+	//can only be called when it is known ahead of time that the key is not contained
+	template<class... Args> inline iterator EmplaceUnique(key_type key, Args &&...args)
+	{
+		if constexpr(sizeof...(Args) == 0)
+			data.emplace_back(std::move(key), mapped_type{});
+		else
+			data.emplace_back(std::move(key), std::forward<Args>(args)...);
+
+		return std::prev(data.end());
+	}
+
+	template<class... Args> iterator insert_or_assign(key_type &&key, Args &&...args)
+	{
+		auto it = find(key);
+		if(it != end())
+		{
+			it->second = mapped_type{std::forward<Args>(args)...};
+			return it;
+		}
+		else
+		{
+			if constexpr(sizeof...(Args) == 0)
+				data.emplace_back(std::move(key), mapped_type{});
+			else
+				data.emplace_back(std::move(key), std::forward<Args>(args)...);
+
+			return std::prev(data.end());
+		}
+	}
+
+	inline std::pair<iterator, bool> insert(const value_type &value)
+	{
+		return emplace(value.first, value.second);
+	}
+
+	inline std::pair<iterator, bool> insert(const key_type &key, const mapped_type &value)
+	{
+		return emplace(key, value);
 	}
 
 	void insert(std::initializer_list<value_type> init)
@@ -172,76 +174,84 @@ public:
 		}
 	}
 
-	template<class... Args>
-	iterator insert_or_assign(K &&key, Args&&... args)
+	inline iterator erase(iterator it)
+	{
+		//only swap if not the last element
+		if(it != std::prev(data.end()))
+			std::swap(*it, data.back());
+
+		data.pop_back();
+		return it;
+	}
+
+	size_t erase(const key_type &key)
 	{
 		auto it = find(key);
 		if(it != end())
 		{
-			it->second = V{ std::forward<Args>(args)... };
-			return it;
+			erase(it);
+			return 1;
 		}
-		else
-		{
-			if constexpr(sizeof...(Args) == 0)
-				data.emplace_back(std::move(key), V{});
-			else
-				data.emplace_back(std::move(key), std::forward<Args>(args)...);
-
-			return std::prev(data.end());
-		}
+		return 0;
 	}
 
-	template<class... Args>
-	inline std::pair<iterator, bool> try_emplace(K &&key, Args&&... args)
+	inline void swap(VectorMap &other) noexcept
+	{
+		std::swap(this->data, other.data);
+	}
+
+	//--- Lookup ---
+
+	inline mapped_type &at(const key_type &key)
 	{
 		auto it = find(key);
-		if(it != end())
-			return { it, false };
+		if(it == end())
+			throw std::out_of_range("VectorMap::at: key not found");
 
-		if constexpr(sizeof...(Args) == 0)
-			data.emplace_back(std::move(key), V{});
-		else
-			data.emplace_back(std::move(key), std::forward<Args>(args)...);
-
-		return { std::prev(data.end()), true };
+		return it->second;
 	}
 
-	template<class... Args>
-	inline std::pair<iterator, bool> emplace(K key, Args&&... args)
+	const mapped_type &at(const key_type &key) const
 	{
 		auto it = find(key);
-		if(it != data.end())
-			return { it, false };
+		if(it == end())
+			throw std::out_of_range("VectorMap::at: key not found");
 
-		if constexpr(sizeof...(Args) == 0)
-			data.emplace_back(std::move(key), V{});
-		else
-			data.emplace_back(std::move(key), std::forward<Args>(args)...);
-
-		return { std::prev(data.end()), true };
+		return it->second;
 	}
 
-	//can only be called when it is known ahead of time that the key is not contained
-	template<class... Args>
-	inline iterator EmplaceUnique(K key, Args&&... args)
+	inline mapped_type &operator[](const key_type &key)
 	{
-		if constexpr(sizeof...(Args) == 0)
-			data.emplace_back(std::move(key), V{});
-		else
-			data.emplace_back(std::move(key), std::forward<Args>(args)...);
+		auto it = find(key);
+		if(it == end())
+			it = try_emplace(key).first;
+		return it->second;
+	}
 
-		return std::prev(data.end());
+	inline size_type count(const key_type &key) const
+	{
+		return find(key) != cend() ? 1 : 0;
+	}
+
+	inline iterator find(const key_type &key)
+	{
+		return std::find_if(data.begin(), data.end(),
+			[&](const std::pair<key_type, mapped_type> &p) { return key_equal{}(p.first, key); });
+	}
+
+	inline bool contains(const key_type &key) const
+	{
+		return find(key) != data.cend();
 	}
 
 	//used for more advanced manipulation
-	std::vector<std::pair<K, V>> &GetVector()
+	std::vector<std::pair<key_type, mapped_type>> &GetVector()
 	{
 		return data;
 	}
 
 private:
-	std::vector<std::pair<K, V>> data;
+	std::vector<std::pair<key_type, mapped_type>> data;
 };
 
 namespace

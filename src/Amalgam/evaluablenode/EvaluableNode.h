@@ -1153,6 +1153,9 @@ protected:
 	//fields contained within the current set of data
 	AttributeStorageType attributes;
 
+	//when the number of elements in a SmallAssocType exceeds this value, it should be promoted to a LargeAssocType
+	static constexpr size_t largestSmallAssocSize = 8;
+
 	//values used to be able to return a reference
 	static bool falseBoolValue;
 	static double nanNumberValue;

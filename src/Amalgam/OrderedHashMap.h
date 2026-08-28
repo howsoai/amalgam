@@ -196,6 +196,16 @@ public:
 		}
 	}
 
+	inline std::pair<iterator, bool> insert(const value_type &value)
+	{
+		return emplace(value.first, value.second);
+	}
+
+	inline std::pair<iterator, bool> insert(const key_type &key, const mapped_type &value)
+	{
+		return emplace(key, value);
+	}
+
 	iterator erase(const key_type &key)
 	{
 		auto it = hashMap.find(key);

@@ -17,8 +17,10 @@ public:
 
 	AssocRef(EvaluableNode *_en) : en(_en)
 	{
-		//TODO 25910: finish this
-
+		if(!en->HasExtendedValue())
+			storage.smallMap = &en->value.mappedChildNodes;
+		else
+			storage.largeMap = en->value.extendedMappedChildNodes.mappedChildNodes.get();
 	}
 
 	AssocRef(const AssocRef &other) : en(other.en)

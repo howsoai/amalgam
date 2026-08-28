@@ -774,7 +774,10 @@ public:
 	//if the OrderedChildNodes list was using extra memory (if it were resized to be smaller), this would attempt to free extra memory
 	inline void ReleaseOrderedChildNodesExtraMemory();
 
-	inline void InitMappedChildNodes();
+	//sets up mapped child nodes
+	//optionally can pass in the number of elements so it can
+	//automatically set up large vs small assoc
+	inline void InitMappedChildNodes(size_t num_elements = 0);
 
 	//preallocates to_reserve for appending, etc.
 	inline void ReserveMappedChildNodes(size_t to_reserve);

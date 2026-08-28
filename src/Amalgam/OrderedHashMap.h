@@ -66,6 +66,38 @@ public:
 		return *this;
 	}
 
+	//construct from a VecMap
+	inline OrderedHashMap &operator=(const VecMap &other)
+	{
+		if(this != &other)
+		{
+			vectorMap = other;
+
+			hashMap.clear();
+			hashMap.reserve(vectorMap.size());
+			size_t index = 0;
+			for(auto key : vectorMap | std::views::keys)
+				hashMap.emplace(key, index++);
+		}
+		return *this;
+	}
+
+	//move from a VecMap
+	inline OrderedHashMap &operator=(VecMap &&other) noexcept
+	{
+		if(this != &other)
+		{
+			vectorMap = std::move(other);
+
+			hashMap.clear();
+			hashMap.reserve(vectorMap.size());
+			size_t index = 0;
+			for(auto key : vectorMap | std::views::keys)
+				hashMap.emplace(key, index++);
+		}
+		return *this;
+	}
+
 	inline ~OrderedHashMap() = default;
 
 	//--- Iterators ---

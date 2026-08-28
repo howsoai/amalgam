@@ -263,22 +263,18 @@ void EvaluableNode::ConvertListToNumberedAssoc()
 		return;
 	}
 
-	AssocType new_mcn;
-
 	//convert ordered child nodes into index number -> value
-	auto &ocn = GetOrderedChildNodesReference();
-	new_mcn.reserve(ocn.size());
+	auto ocn = std::move(GetOrderedChildNodesReference());
+
+	InitMappedChildNodes(ocn.size());
+	type = ENT_ASSOC;
+
+	auto &mcn = GetMappedChildNodesReference();
 	for(size_t i = 0; i < ocn.size(); i++)
 	{
 		std::string s = NumberToString(i, true);
-		new_mcn.emplace(string_intern_pool.CreateStringReference(s), ocn[i]);
+		mcn.emplace(string_intern_pool.CreateStringReference(s), ocn[i]);
 	}
-
-	InitMappedChildNodes();
-	type = ENT_ASSOC;
-
-	//swap for efficiency
-	std::swap(GetMappedChildNodesReference(), new_mcn);
 }
 
 void EvaluableNode::ConvertAssocToList()

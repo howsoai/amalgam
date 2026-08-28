@@ -614,14 +614,20 @@ inline void EvaluableNode::ReleaseOrderedChildNodesExtraMemory()
 		GetOrderedChildNodesReference().shrink_to_fit();
 }
 
-inline void EvaluableNode::InitMappedChildNodes()
+inline void EvaluableNode::InitMappedChildNodes(size_t num_elements)
 {
 	DestructValue();
 
-	if(!HasExtendedValue())
+	if(!HasExtendedValue() && num_elements < largestSmallAssocSize)
+	{
 		value.ConstructMappedChildNodes();
+		value.mappedChildNodes.reserve(num_elements);
+	}
 	else
+	{
 		value.extendedMappedChildNodes.Construct();
+		value.extendedMappedChildNodes.mappedChildNodes->reserve(num_elements);
+	}
 }
 
 //preallocates to_reserve for appending, etc.

@@ -364,7 +364,7 @@ Output:
 #### Returns
 `bool`
 #### Description
-Compares the value in variable to value_to_compare, and if equal, assigns the variable atomically to value_to_assign.  Returns true if the value in variable is equal to value_to_compare and the assignment was successful, false otherwise.
+Compares the value in `variable` to `value_to_compare`, and if equal, assigns the `variable` atomically to `value_to_assign`.  Returns true if the value in `variable` is equal to `value_to_compare` and the assignment was successful, false otherwise.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

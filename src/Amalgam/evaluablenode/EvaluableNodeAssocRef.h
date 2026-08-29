@@ -85,6 +85,14 @@ public:
 
 	//--- Modifiers ---
 
+	inline void reserve(size_type n)
+	{
+		if(IsSmall())
+			return storage.smallMap->reserve(n);
+		else
+			return storage.largeMap->reserve(n);
+	}
+
 	//TODO 25910: finish this section (modifiers)
 	void insert(const key_type &key, mapped_type value)
 	{
@@ -169,8 +177,7 @@ private:
 	inline void PromoteToLarge()
 	{
 		en->EnsureHasExtendedValue();
-		//TODO 25910: finish this
-		storage.largeMap = 
+		storage.largeMap = en->value.extendedMappedChildNodes.mappedChildNodes.get();
 	}
 
 	EvaluableNode *en;
@@ -181,3 +188,26 @@ private:
 		EvaluableNode::LargeAssocType *largeMap;
 	} storage;
 };
+
+namespace
+{
+	inline auto begin(EvaluableNode::AssocRef &m)
+	{
+		return m.begin();
+	}
+
+	inline auto cbegin(const EvaluableNode::AssocRef &m)
+	{
+		return m.cbegin();
+	}
+
+	inline auto end(EvaluableNode::AssocRef &m)
+	{
+		return m.end();
+	}
+
+	inline auto cend(const EvaluableNode::AssocRef &m)
+	{
+		return m.cend();
+	}
+}

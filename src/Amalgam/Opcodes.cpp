@@ -192,6 +192,7 @@ void StringInternPool::InitializeStaticStrings()
 	//Entity Access and Manipulation
 	EmplaceNodeTypeString(ENT_CONTAINS_LABEL, "contains_label");
 	EmplaceNodeTypeString(ENT_ASSIGN_TO_ENTITIES, "assign_to_entities");
+	EmplaceNodeTypeString(ENT_ASSIGN_TO_ENTITY_IF_EQUAL, "assign_to_entity_if_equal");
 	EmplaceNodeTypeString(ENT_ACCUM_TO_ENTITIES, "accum_to_entities");
 	EmplaceNodeTypeString(ENT_REMOVE_FROM_ENTITIES, "remove_from_entities");
 	EmplaceNodeTypeString(ENT_RETRIEVE_FROM_ENTITY, "retrieve_from_entity");

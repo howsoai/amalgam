@@ -1461,7 +1461,7 @@ public:
 	}
 
 	//registers and unregisters an EvaluableNode for debug watching
-	inline static void RegisterEvaluableNodeForDebugWatch(EvaluableNode *en)
+	static inline void RegisterEvaluableNodeForDebugWatch(EvaluableNode *en)
 	{
 	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(debugWatchMutex);
@@ -1469,7 +1469,7 @@ public:
 		debugWatch.emplace(en);
 	}
 
-	inline static void UnregisterEvaluableNodeForDebugWatch(EvaluableNode *en)
+	static inline void UnregisterEvaluableNodeForDebugWatch(EvaluableNode *en)
 	{
 	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(debugWatchMutex);
@@ -1478,7 +1478,7 @@ public:
 	}
 
 	//returns true if the EvaluableNode is in the debug watch
-	inline static void AssertIfInDebugWatch(EvaluableNode *en)
+	static inline void AssertIfInDebugWatch(EvaluableNode *en)
 	{
 	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::SingleLock lock(debugWatchMutex);
@@ -1498,12 +1498,12 @@ protected:
 	class AnnotationsAndComments
 	{
 	public:
-		__forceinline static void Construct(AnnotationsAndComments &a_and_c)
+		static __forceinline void Construct(AnnotationsAndComments &a_and_c)
 		{
 			new (&a_and_c) AnnotationsAndComments;
 		}
 
-		__forceinline static void Destruct(AnnotationsAndComments &a_and_c)
+		static __forceinline void Destruct(AnnotationsAndComments &a_and_c)
 		{
 			a_and_c.~AnnotationsAndComments();
 		}
@@ -1822,7 +1822,7 @@ public:
 #if defined(MULTITHREAD_SUPPORT)
 	thread_local
 	#endif
-		inline static std::vector<EvaluableNode *> reusableBuffer;
+		static inline std::vector<EvaluableNode *> reusableBuffer;
 protected:
 
 	//field for watching EvaluableNodes for debugging

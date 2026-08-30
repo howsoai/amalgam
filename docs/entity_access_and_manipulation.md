@@ -76,6 +76,37 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
+### Opcode: `assign_to_entity_if_equal`
+#### Parameters
+`[entity_id entity] entity_label label_name any value_to_compare any value_to_assign`
+#### Returns
+`bool`
+#### Description
+Compares the value in `label_name` of `entity`, or itself if `entity` is not specified or is null, to `value_to_compare`, and if equal, assigns the label atomically to `value_to_assign`.  Returns true if the value in label is equal to `value_to_compare` and the assignment was successful, false if it was not a match, and null if the label or entity was invalid.
+#### Details
+ - Permissions required:  none
+ - Allows concurrency: false
+ - Requires entity: true
+ - Creates new scope: false
+ - Creates new target scope: false
+ - Value newness (whether references existing node): new
+#### Examples
+Example:
+```amalgam
+(seq
+	(create_entities "Entity" {a 1})
+	(assign_to_entity_if_equal "Entity" "a" 1 2)
+	(assign_to_entity_if_equal "Entity" "a" 1 3)
+	(retrieve_from_entity "Entity" "a")
+)
+```
+Output:
+```amalgam
+2
+```
+
+[Amalgam Opcodes](./opcodes.md)
+
 ### Opcode: `accum_to_entities`
 #### Parameters
 `[entity_id entity1] assoc label_value_pairs1 [entity_id entity2] [assoc label_value_pairs2] ...`
@@ -120,7 +151,7 @@ Output:
 #### Returns
 `bool`
 #### Description
-Removes all labels in `label_names1` from `entity1` and so on for each respective entity and label list.  Returns true if all removes were successful, false otherwise.
+Removes all labels in `label_names1` from `entity1`, itself if `entity1` is not specified or is null, and so on for each respective entity and label list.  Returns true if all removes were successful, false otherwise.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

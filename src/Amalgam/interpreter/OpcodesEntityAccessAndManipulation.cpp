@@ -155,7 +155,7 @@ static OpcodeInitializer _ENT_REMOVE_FROM_ENTITIES(ENT_REMOVE_FROM_ENTITIES, &In
 			{"label_names1", OpcodeDetails::DataType::ENTITY_LABEL | OpcodeDetails::DataType::LIST_OF_ENTITY_LABELS, true}, true, 2)
 	});
 	d.returns = OpcodeDetails::DataType::BOOL;
-	d.description = R"(Removes all labels in `label_names1` from `entity1` and so on for each respective entity and label list.  Returns true if all removes were successful, false otherwise.)";
+	d.description = R"(Removes all labels in `label_names1` from `entity1`, itself if `entity1` is not specified or is null, and so on for each respective entity and label list.  Returns true if all removes were successful, false otherwise.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(create_entities
@@ -291,6 +291,96 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REM
 	}
 
 	return AllocReturn(all_assignments_successful, immediate_result);
+}
+
+static OpcodeInitializer _ENT_ASSIGN_TO_ENTITY_IF_EQUAL(ENT_ASSIGN_TO_ENTITY_IF_EQUAL, &Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITY_IF_EQUAL, []() {
+		OpcodeDetails d;
+		d.parameters = OpcodeDetails::ParameterSchema{
+			OpcodeDetails::ParameterGroup({"entity", OpcodeDetails::DataType::ENTITY_ID, true}),
+			OpcodeDetails::ParameterGroup({"label_name", OpcodeDetails::DataType::ENTITY_LABEL}),
+			OpcodeDetails::ParameterGroup({"value_to_compare", OpcodeDetails::DataType::ANY_BASIC}),
+			OpcodeDetails::ParameterGroup({"value_to_assign", OpcodeDetails::DataType::ANY_BASIC})
+		};
+		d.returns = OpcodeDetails::DataType::BOOL;
+		d.description = R"(Compares the value in `label_name` of `entity`, or itself if `entity` is not specified or is null, to `value_to_compare`, and if equal, assigns the label atomically to `value_to_assign`.  Returns true if the value in label is equal to `value_to_compare` and the assignment was successful, false if it was not a match, and null if the label or entity was invalid.)";
+		d.examples = MakeAmalgamExamples({{R"&((seq
+	(create_entities "Entity" {a 1})
+	(assign_to_entity_if_equal "Entity" "a" 1 2)
+	(assign_to_entity_if_equal "Entity" "a" 1 3)
+	(retrieve_from_entity "Entity" "a")
+))&",
+			R"(2)",
+			"", R"((destroy_entities "Entity"))"}});
+		d.retrievesData = true;
+		d.requiresEntity = true;
+		d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
+		d.hasSideEffects = true;
+		d.mayCauseNodeUpdateInCurrentEntity = true;
+		d.frequencyPer10000Opcodes = 1.0;
+		d.opcodeGroup = _opcode_group;
+		return d;
+	});
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITY_IF_EQUAL(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodesReference();
+
+	if(!CanModifyEntityFromConstraints() || ocn.size() < 3) [[unlikely]]
+		return EvaluableNodeReference::Null();
+
+	bool specifies_entity = (ocn.size() == 4);
+
+	auto label_name_node = InterpretNodeForImmediateUse(ocn[specifies_entity ? 1 : 0]);
+	StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(label_name_node, true);
+	auto node_stack = CreateOpcodeStackStateSaver(label_name_node);
+
+	auto value_to_compare = InterpretNodeForImmediateUse(ocn[specifies_entity ? 2 : 1]);
+	node_stack.PushEvaluableNode(value_to_compare);
+
+	auto value_to_assign = InterpretNodeWithoutCopyingImmediates(ocn[specifies_entity ? 3 : 2]);
+
+	EntityWriteReference target_entity;
+	if(specifies_entity)
+		target_entity = InterpretNodeIntoRelativeSourceEntityWriteReference(ocn[0]);
+	else
+		target_entity = EntityWriteReference(curEntity);
+
+	//if no entity, can't successfully assign
+	if(target_entity == nullptr) [[unlikely]]
+		return EvaluableNodeReference::Null();
+
+	//pause if allocating to another entity
+	EvaluableNodeManager::LocalAllocationBufferPause lab_pause;
+	if(target_entity != curEntity)
+		lab_pause = evaluableNodeManager->PauseLocalAllocationBuffer();
+
+	auto [label_value, label_found] = target_entity->GetValueAtLabel(
+		label_sid, nullptr, EvaluableNodeRequestedValueTypes(), target_entity == curEntity);
+
+	if(!label_found) [[unlikely]]
+		return EvaluableNodeReference::Null();
+
+	bool success = false;
+	if(EvaluableNode::AreDeepEqual(label_value, value_to_compare))
+	{
+		EvaluableNodeReference new_values(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
+		new_values->SetMappedChildNode(label_sid, value_to_assign);
+
+		size_t num_new_nodes_allocated = 0;
+		target_entity->SetValuesAtLabels(new_values, false, writeListeners,
+			(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity);
+
+		if(ConstrainedAllocatedNodes())
+			interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += num_new_nodes_allocated;
+
+		success = true;
+	}
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(label_name_node);
+	evaluableNodeManager->FreeNodeTreeIfPossible(value_to_compare);
+	if(target_entity != curEntity)
+		evaluableNodeManager->FreeNodeTreeIfPossible(value_to_assign);
+	return AllocReturn(success, immediate_result);
 }
 
 static OpcodeInitializer _ENT_RETRIEVE_FROM_ENTITY(ENT_RETRIEVE_FROM_ENTITY, &Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY, []() {

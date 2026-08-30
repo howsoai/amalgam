@@ -881,7 +881,7 @@ static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter:
 		OpcodeDetails::ParameterGroup({"value_to_assign", OpcodeDetails::DataType::ANY_BASIC})
 	};
 	d.returns = OpcodeDetails::DataType::BOOL;
-	d.description = R"(Compares the value in variable to value_to_compare, and if equal, assigns the variable atomically to value_to_assign.  Returns true if the value in variable is equal to value_to_compare and the assignment was successful, false otherwise.)";
+	d.description = R"(Compares the value in `variable` to `value_to_compare`, and if equal, assigns the `variable` atomically to `value_to_assign`.  Returns true if the value in `variable` is equal to `value_to_compare` and the assignment was successful, false otherwise.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
 	{lock 0}
@@ -896,7 +896,7 @@ static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter:
 		});
 	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-	d.frequencyPer10000Opcodes = 3.0;
+	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
 	return d;
 });

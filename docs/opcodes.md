@@ -152,6 +152,7 @@
 ### Entity Access and Manipulation
   - [contains_label](./entity_access_and_manipulation.md#opcode-contains_label)
   - [assign_to_entities](./entity_access_and_manipulation.md#opcode-assign_to_entities)
+  - [assign_to_entity_if_equal](./entity_access_and_manipulation.md#opcode-assign_to_entity_if_equal)
   - [accum_to_entities](./entity_access_and_manipulation.md#opcode-accum_to_entities)
   - [remove_from_entities](./entity_access_and_manipulation.md#opcode-remove_from_entities)
   - [retrieve_from_entity](./entity_access_and_manipulation.md#opcode-retrieve_from_entity)

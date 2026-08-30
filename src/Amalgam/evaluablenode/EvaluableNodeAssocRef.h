@@ -107,7 +107,7 @@ public:
 		{
 			return storage.smallMap->try_emplace(key, std::forward<Args>(args)...);
 
-			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
+			if(storage.smallMap->size() > EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
 		}
 		else
@@ -122,7 +122,7 @@ public:
 		{
 			return storage.smallMap->emplace(std::forward<Args>(args)...);
 
-			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
+			if(storage.smallMap->size() > EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
 		}
 		else
@@ -137,7 +137,7 @@ public:
 		{
 			return storage.smallMap->insert_or_assign(key, std::move(value));
 
-			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
+			if(storage.smallMap->size() > EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
 		}
 		else
@@ -152,7 +152,7 @@ public:
 		{
 			return storage.smallMap->insert(value);
 
-			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
+			if(storage.smallMap->size() > EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
 		}
 		else
@@ -167,7 +167,7 @@ public:
 		{
 			return storage.smallMap->insert(key, value);
 
-			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
+			if(storage.smallMap->size() > EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
 		}
 		else
@@ -226,7 +226,7 @@ public:
 		{
 			auto &result = (*storage.smallMap)[key];
 
-			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
+			if(storage.smallMap->size() > EvaluableNode::largestSmallAssocSize)
 			{
 				PromoteToLarge();
 				//need to re-retrieve

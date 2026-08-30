@@ -189,26 +189,36 @@ inline void EvaluableNode::InitializeType(EvaluableNodeType _type)
 
 __forceinline void EvaluableNode::ClearAnnotationsAndComments()
 {
-	if(HasExtendedValue())
-	{
-		if(GetType() == ENT_ASSOC)
-		{
-			AssocType temp_mcn = std::move(*value.extendedMappedChildNodes.mappedChildNodes);
-			value.extendedMappedChildNodes.mappedChildNodes.~unique_ptr<AssocType>();
-			new (&value.mappedChildNodes) AssocType(std::move(temp_mcn));
-		}
-		else //ordered
-		{
-			OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
-			value.extendedOrderedChildNodes.orderedChildNodes.~unique_ptr<OrderedType>();
-			new (&value.orderedChildNodes) OrderedType(std::move(temp_ocn));
-		}
-
-		SetExtendedValue(false);
-	}
-	else
+	if(!HasExtendedValue())
 	{
 		GetAnnotationsAndCommentsStorage().Clear();
+		return;
+	}
+
+	if(GetType() == ENT_ASSOC)
+	{
+		if(value.extendedMappedChildNodes.mappedChildNodes->size() > largestSmallAssocSize)
+		{
+			//need to keep extended
+			GetAnnotationsAndCommentsStorage().Clear();
+		}
+		else //reduce to small
+		{
+			SmallAssocType temp_mcn(begin(*value.extendedMappedChildNodes.mappedChildNodes),
+				end(*value.extendedMappedChildNodes.mappedChildNodes));
+			value.extendedMappedChildNodes.mappedChildNodes.reset();
+			new (&value.mappedChildNodes) SmallAssocType(std::move(temp_mcn));
+
+			SetExtendedValue(false);
+		}
+	}
+	else //ordered
+	{
+		OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
+		value.extendedOrderedChildNodes.orderedChildNodes.~unique_ptr<OrderedType>();
+		new (&value.orderedChildNodes) OrderedType(std::move(temp_ocn));
+
+		SetExtendedValue(false);
 	}
 }
 
@@ -618,7 +628,7 @@ inline void EvaluableNode::InitMappedChildNodes(size_t num_elements)
 {
 	DestructValue();
 
-	if(!HasExtendedValue() && num_elements < largestSmallAssocSize)
+	if(!HasExtendedValue() && num_elements <= largestSmallAssocSize)
 	{
 		value.ConstructMappedChildNodes();
 		value.mappedChildNodes.reserve(num_elements);

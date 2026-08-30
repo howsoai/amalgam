@@ -389,11 +389,30 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 
 	if(DoesEvaluableNodeTypeUseAssocData(type))
 	{
-		value.ConstructMappedChildNodes();
-		value.mappedChildNodes = n->GetMappedChildNodesView();
+		if(!HasExtendedValue())
+		{
+			value.ConstructMappedChildNodes();
+			value.mappedChildNodes = n->value.mappedChildNodes;
 
-		for(auto &[sid, cn] : value.mappedChildNodes)
-			string_intern_pool.CreateStringReference(sid);
+			for(auto &[sid, cn] : value.mappedChildNodes)
+				string_intern_pool.CreateStringReference(sid);
+		}
+		else if(copy_metadata || n->GetMappedChildNodesView().size() > largestSmallAssocSize)
+		{
+			value.extendedMappedChildNodes.Construct();
+			*value.extendedMappedChildNodes.mappedChildNodes = *n->value.extendedMappedChildNodes.mappedChildNodes;
+
+			for(auto &[sid, cn] : *value.extendedMappedChildNodes.mappedChildNodes)
+				string_intern_pool.CreateStringReference(sid);
+		}
+		else //not copy_metadata and small enough that can initialize a small map
+		{
+			value.ConstructMappedChildNodes();
+			value.mappedChildNodes = n->value.extendedMappedChildNodes.mappedChildNodes->GetVectorMap();
+
+			for(auto &[sid, cn] : value.mappedChildNodes)
+				string_intern_pool.CreateStringReference(sid);
+		}
 	}
 	else if(DoesEvaluableNodeTypeUseNullData(type))
 	{

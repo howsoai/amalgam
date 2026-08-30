@@ -38,6 +38,22 @@ public:
 
 	inline ~VectorMap() = default;
 
+	inline VectorMap &operator=(const VectorMap &other)
+	{
+		if(this != &other)
+			data = other.data;
+
+		return *this;
+	}
+
+	inline VectorMap &operator=(VectorMap &&other) noexcept
+	{
+		if(this != &other)
+			data = std::move(other.data);
+
+		return *this;
+	}
+
 	//--- Iterators ---
 
 	inline iterator begin() noexcept

@@ -45,6 +45,8 @@ public:
 		hashMap.reserve(initial_capacity);
 	}
 
+	inline ~OrderedHashMap() = default;
+
 	inline OrderedHashMap &operator=(const OrderedHashMap &other)
 	{
 		if(this != &other)
@@ -96,8 +98,6 @@ public:
 		}
 		return *this;
 	}
-
-	inline ~OrderedHashMap() = default;
 
 	//--- Iterators ---
 
@@ -373,6 +373,12 @@ public:
 	inline bool contains(const key_type &key) const
 	{
 		return hashMap.find(key) != hashMap.end();
+	}
+
+	//gives access to the internal vectorMap
+	inline VecMap &GetVectorMap()
+	{
+		return vectorMap;
 	}
 
 private:

@@ -714,10 +714,7 @@ __forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesRefer
 
 __forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesView()
 {
-	if(!HasExtendedValue())
-		return value.mappedChildNodes;
-	else
-		return *value.extendedMappedChildNodes.mappedChildNodes.get();
+	return EvaluableNode::AssocRef(this);
 }
 
 __forceinline EvaluableNode::AnnotationsAndComments &EvaluableNode::GetAnnotationsAndCommentsStorage()

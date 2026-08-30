@@ -94,7 +94,8 @@ public:
 		data.resize(n);
 	}
 
-	template<class... Args> inline std::pair<iterator, bool> try_emplace(key_type &&key, Args &&...args)
+	template<class... Args>
+	inline std::pair<iterator, bool> try_emplace(key_type &&key, Args &&...args)
 	{
 		auto it = find(key);
 		if(it != end())
@@ -108,47 +109,45 @@ public:
 		return {std::prev(data.end()), true};
 	}
 
-	template<class... Args> inline std::pair<iterator, bool> emplace(key_type key, Args &&...args)
+	template<class... Args>
+	inline std::pair<iterator, bool> emplace(key_type key, Args &&...args)
 	{
 		auto it = find(key);
 		if(it != data.end())
 			return {it, false};
 
 		if constexpr(sizeof...(Args) == 0)
-			data.emplace_back(std::move(key), mapped_type{});
+			data.emplace_back(key, mapped_type{});
 		else
-			data.emplace_back(std::move(key), std::forward<Args>(args)...);
+			data.emplace_back(key, std::forward<Args>(args)...);
 
 		return {std::prev(data.end()), true};
 	}
 
 	//can only be called when it is known ahead of time that the key is not contained
-	template<class... Args> inline iterator EmplaceUnique(key_type key, Args &&...args)
+	template<class... Args>
+	inline iterator EmplaceUnique(key_type key, Args &&...args)
 	{
 		if constexpr(sizeof...(Args) == 0)
-			data.emplace_back(std::move(key), mapped_type{});
+			data.emplace_back(key, mapped_type{});
 		else
-			data.emplace_back(std::move(key), std::forward<Args>(args)...);
+			data.emplace_back(key, std::forward<Args>(args)...);
 
 		return std::prev(data.end());
 	}
 
-	template<class... Args> iterator insert_or_assign(key_type &&key, Args &&...args)
+	inline std::pair<iterator, bool> insert_or_assign(const key_type &key, mapped_type &&value)
 	{
 		auto it = find(key);
 		if(it != end())
 		{
-			it->second = mapped_type{std::forward<Args>(args)...};
-			return it;
+			it->second = value;
+			return {it, false};
 		}
 		else
 		{
-			if constexpr(sizeof...(Args) == 0)
-				data.emplace_back(std::move(key), mapped_type{});
-			else
-				data.emplace_back(std::move(key), std::forward<Args>(args)...);
-
-			return std::prev(data.end());
+			data.emplace_back(key, std::move(value));
+			return {std::prev(data.end()), true};
 		}
 	}
 
@@ -278,5 +277,11 @@ namespace
 	inline auto cend(const VectorMap<K, V, E> &m)
 	{
 		return m.cend();
+	}
+
+	template<typename K, typename V, typename E>
+	inline auto swap(VectorMap<K, V, E> &a,VectorMap<K, V, E> &b)
+	{
+		return a.swap(b);
 	}
 }

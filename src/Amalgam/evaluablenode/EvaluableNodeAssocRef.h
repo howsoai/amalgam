@@ -93,20 +93,121 @@ public:
 			return storage.largeMap->reserve(n);
 	}
 
-	//TODO 25910: finish this section (modifiers)
-	void insert(const key_type &key, mapped_type value)
+	inline void clear()
+	{
+		if(IsSmall())
+			return storage.smallMap->clear();
+		else
+			return storage.largeMap->clear();
+	}
+
+	template<class... Args> inline std::pair<iterator, bool> try_emplace(const key_type &key, Args &&...args)
 	{
 		if(IsSmall())
 		{
-			storage.smallMap->insert(key, value);
+			return storage.smallMap->try_emplace(key, std::forward<Args>(args)...);
 
 			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
 		}
 		else
 		{
-			storage.largeMap->insert(key, value);
+			return storage.largeMap->try_emplace(key, std::forward<Args>(args)...);
 		}
+	}
+
+	template<class... Args> inline std::pair<iterator, bool> emplace(Args &&...args)
+	{
+		if(IsSmall())
+		{
+			return storage.smallMap->emplace(std::forward<Args>(args)...);
+
+			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
+				PromoteToLarge();
+		}
+		else
+		{
+			return storage.largeMap->emplace(std::forward<Args>(args)...);
+		}
+	}
+
+	inline std::pair<iterator, bool> insert_or_assign(const key_type &key, mapped_type &&value)
+	{
+		if(IsSmall())
+		{
+			return storage.smallMap->insert_or_assign(key, std::move(value));
+
+			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
+				PromoteToLarge();
+		}
+		else
+		{
+			return storage.largeMap->insert_or_assign(key, std::move(value));
+		}
+	}
+
+	inline std::pair<iterator, bool> insert(const value_type &value)
+	{
+		if(IsSmall())
+		{
+			return storage.smallMap->insert(value);
+
+			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
+				PromoteToLarge();
+		}
+		else
+		{
+			return storage.largeMap->insert(value);
+		}
+	}
+
+	inline std::pair<iterator, bool> insert(const key_type &key, const mapped_type &value)
+	{
+		if(IsSmall())
+		{
+			return storage.smallMap->insert(key, value);
+
+			if(storage.smallMap->size() >= EvaluableNode::largestSmallAssocSize)
+				PromoteToLarge();
+		}
+		else
+		{
+			return storage.largeMap->insert(key, value);
+		}
+	}
+
+	size_t erase(const key_type &key)
+	{
+		if(IsSmall())
+		{
+			return storage.smallMap->erase(key);
+		}
+		else
+		{
+			return storage.largeMap->erase(key);
+		}
+	}
+
+	iterator erase(iterator pos)
+	{
+		if(IsSmall())
+		{
+			return storage.smallMap->erase(pos);
+		}
+		else
+		{
+			return storage.largeMap->erase(pos);
+		}
+	}
+
+	inline void swap(AssocRef &other) noexcept
+	{
+		if(IsSmall() && other.IsSmall())
+			storage.smallMap->swap(*other.storage.smallMap);
+		else if(!IsSmall() && !other.IsSmall())
+			storage.largeMap->swap(*other.storage.largeMap);
+		//else
+			//TODO 25910: finish this
 	}
 
 	//--- Lookup ---

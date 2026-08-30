@@ -206,15 +206,27 @@ public:
 		return { vectorMap.begin() + map_it->second, false };
 	}
 
-	inline std::pair<iterator, bool> insert_or_assign(const value_type &value)
+	//can only be called when it is known ahead of time that the key is not contained
+	template<class... Args>
+	inline iterator EmplaceUnique(key_type key, Args &&...args)
+	{
+		if constexpr(sizeof...(Args) == 0)
+			hashMap.emplace(key, mapped_type{});
+		else
+			hashMap.emplace(key, std::forward<Args>(args)...);
+
+		return vectorMap.EmplaceUnique(key, std::forward<Args>(args)...);
+	}
+
+	inline std::pair<iterator, bool> insert_or_assign(const key_type &key, mapped_type &&value)
 	{
 		//if all 3rd party libraries are C++20 compliant, can change emplace to a try_emplace
-		auto [map_it, inserted] = hashMap.emplace(value.first, vectorMap.size());
+		auto [map_it, inserted] = hashMap.emplace(key, vectorMap.size());
 
 		if(inserted)
 		{
 			auto &vec = vectorMap.GetVector();
-			vec.emplace_back(value.first, value.second);
+			vec.emplace_back(std::move(value));
 			size_type new_index = vec.size() - 1;
 			map_it->second = new_index;
 			return { vectorMap.begin() + new_index, true };
@@ -222,7 +234,7 @@ public:
 		else
 		{
 			auto &vec = vectorMap.GetVector();
-			vec[map_it->second].second = value.second;
+			vec[map_it->second].second = std::move(value);
 			return { vectorMap.begin() + map_it->second, false };
 		}
 	}
@@ -237,11 +249,11 @@ public:
 		return emplace(key, value);
 	}
 
-	iterator erase(const key_type &key)
+	size_t erase(const key_type &key)
 	{
 		auto it = hashMap.find(key);
 		if(it == hashMap.end())
-			return vectorMap.end();
+			return 0;
 
 		auto &vec = vectorMap.GetVector();
 		size_type index_to_remove = it->second;
@@ -257,7 +269,7 @@ public:
 		vec.pop_back();
 		hashMap.erase(key);
 
-		return (index_to_remove == vec.size()) ? vectorMap.end() : vectorMap.begin() + index_to_remove;
+		return 1;
 	}
 
 	iterator erase(iterator pos)
@@ -400,5 +412,14 @@ namespace
 	inline auto cend(const OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &m)
 	{
 		return m.cend();
+	}
+
+	template<template<typename, typename> typename HashMapType,
+		template<typename> typename HashSetType,
+		typename KeyType, typename ValueType>
+	inline auto swap(OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &a,
+		OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &b)
+	{
+		return a.swap(b);
 	}
 }

@@ -651,7 +651,7 @@ __forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodes()
 	if(IsAssociativeArray())
 		return GetMappedChildNodesView();
 
-	return emptyMappedChildNodes;
+	return emptyMappedChildNodesNode.GetMappedChildNodesView();
 }
 
 //if the id exists, returns a pointer to the pointer of the child node

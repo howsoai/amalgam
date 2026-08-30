@@ -1165,7 +1165,7 @@ protected:
 	static double nanNumberValue;
 	static std::string emptyStringValue;
 	static OrderedType emptyOrderedChildNodes;
-	static SmallAssocType emptyMappedChildNodes;
+	static EvaluableNode emptyMappedChildNodesNode;
 	static AnnotationsAndComments emptyAnnotationsAndComments;
 
 public:

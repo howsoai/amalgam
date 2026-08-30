@@ -1813,7 +1813,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 			{
 				//not a valid label, so find a valid one for this entity
 				std::vector<StringInternPool::StringID> public_labels;
-				for(auto &[cur_sid, cn] : entity_to_call->GetLabelIndex())
+				for(auto &[cur_sid, cn] : entity_to_call->GetLabelIndexView())
 				{
 					if(!Entity::IsLabelPrivate(cur_sid))
 						public_labels.push_back(cur_sid);

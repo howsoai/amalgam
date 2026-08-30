@@ -409,7 +409,7 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 	if(query_caches != nullptr)
 		query_caches->sbfds.VerifyAllEntitiesForAllColumns();
 
-	if(entity->GetLabelIndex().size() != 0)
+	if(entity->GetLabelIndexView().size() != 0)
 	{
 		std::cerr << "Failed: Labels remain in entity after test" << std::endl;
 		test_succeeded = false;

@@ -69,7 +69,7 @@ public:
 
 	//updates the labels for the entity to the new_values specified based on the keys in new_values
 	//note that it obtains the entity's labels directly rather than using what is in new_values
-	inline void UpdateEntityLabels(Entity *entity, size_t entity_index, EvaluableNode::AssocType &new_values)
+	inline void UpdateEntityLabels(Entity *entity, size_t entity_index, EvaluableNode::AssocRef new_values)
 	{
 	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::WriteLock write_lock(mutex);

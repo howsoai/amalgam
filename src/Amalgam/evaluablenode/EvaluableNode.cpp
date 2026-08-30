@@ -15,7 +15,7 @@ bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
 EvaluableNode::OrderedType EvaluableNode::emptyOrderedChildNodes;
-EvaluableNode::SmallAssocType EvaluableNode::emptyMappedChildNodes;
+EvaluableNode EvaluableNode::emptyMappedChildNodesNode(ENT_ASSOC);
 EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments;
 
 //field for watching EvaluableNodes for debugging
@@ -1054,13 +1054,10 @@ void EvaluableNode::EnsureHasExtendedValue()
 
 	if(GetType() == ENT_ASSOC)
 	{
-		AssocType temp_mcn = std::move(value.mappedChildNodes);
+		SmallAssocType temp_mcn = std::move(value.mappedChildNodes);
 		value.DestructMappedChildNodes();
-		new (&value.extendedMappedChildNodes.mappedChildNodes) std::unique_ptr<AssocType>(
-			std::make_unique<AssocType>(std::move(temp_mcn))
-		);
-
-		AnnotationsAndComments::Construct(value.extendedMappedChildNodes.annotationsAndComments);
+		value.extendedMappedChildNodes.Construct();
+		value.extendedMappedChildNodes.mappedChildNodes = std::make_unique<LargeAssocType>(std::move(temp_mcn));
 	}
 	else //ordered
 	{

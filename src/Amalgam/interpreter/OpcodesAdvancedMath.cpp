@@ -523,13 +523,13 @@ static OpcodeInitializer _ENT_MODE(ENT_MODE, &Interpreter::InterpretNode_ENT_MOD
 });
 
 //set of getter methods to help ENT_MODE, ENT_QUANTILE, and ENT_GENERALIZED_DISTANCE when retrieving values and weights
-inline static bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, double &value)
+inline static bool GetValueFromIter(EvaluableNode::AssocRef::iterator iter, double &value)
 {
 	value = EvaluableNode::ToNumber(iter->second);
 	return !FastIsNaN(value);
 };
 
-inline static bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, std::string &value)
+inline static bool GetValueFromIter(EvaluableNode::AssocRef::iterator iter, std::string &value)
 {
 	value = Parser::UnparseToKeyString(iter->second);
 	return true;
@@ -553,8 +553,8 @@ inline static bool GetValueFromIndex(EvaluableNode::OrderedType &ocn, size_t i, 
 	return true;
 };
 
-inline static bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
-	EvaluableNode::AssocType::iterator iter, double &value)
+inline static bool GetValueFromWeightsIter(EvaluableNode::AssocRef values_mcn,
+	EvaluableNode::AssocRef::iterator iter, double &value)
 {
 	auto entry = values_mcn.find(iter->first);
 	if(entry == end(values_mcn))
@@ -564,8 +564,8 @@ inline static bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
 	return !FastIsNaN(value);
 };
 
-inline static bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
-	EvaluableNode::AssocType::iterator iter, std::string &value)
+inline static bool GetValueFromWeightsIter(EvaluableNode::AssocRef values_mcn,
+	EvaluableNode::AssocRef::iterator iter, std::string &value)
 {
 	auto entry = values_mcn.find(iter->first);
 	if(entry == end(values_mcn))
@@ -576,7 +576,7 @@ inline static bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
 };
 
 inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedType &values_ocn,
-	EvaluableNode::AssocType::iterator iter, double &value)
+	EvaluableNode::AssocRef::iterator iter, double &value)
 {
 	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
 	if(FastIsNaN(index_double))
@@ -590,7 +590,7 @@ inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedType &values_oc
 };
 
 inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedType &values_ocn,
-	EvaluableNode::AssocType::iterator iter, std::string &value)
+	EvaluableNode::AssocRef::iterator iter, std::string &value)
 {
 	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
 	if(FastIsNaN(index_double))
@@ -603,7 +603,7 @@ inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedType &values_oc
 	return true;
 };
 
-inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
+inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocRef values_mcn,
 	size_t index, double &value)
 {
 	auto key_sid = EvaluableNode::NumberToStringIDIfExists(index, true);
@@ -618,7 +618,7 @@ inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn
 	return !FastIsNaN(value);
 };
 
-inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
+inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocRef values_mcn,
 	size_t index, std::string &value)
 {
 	auto key_sid = EvaluableNode::NumberToStringIDIfExists(index, true);
@@ -2061,8 +2061,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 				q_copied_values.reserve(p_num_elements);
 				for(auto &pce_id : p_node->GetMappedChildNodesView() | std::views::keys)
 				{
-					auto q_i = q_node->GetMappedChildNodesView().find(pce_id);
-					if(q_i == end(q_node->GetMappedChildNodesView()))
+					auto mcn = q_node->GetMappedChildNodesView();
+					auto q_i = mcn.find(pce_id);
+					if(q_i == end(mcn))
 						continue;
 					q_copied_values.push_back(q_i->second);
 				}

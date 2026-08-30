@@ -121,7 +121,7 @@ public:
 		}
 
 		//sets the parameters
-		void SetParams(EvaluableNode::AssocType &params);
+		void SetParams(EvaluableNode::AssocRef params);
 
 		//updates resources based on the parameters -- should be called after SetParams
 		void UpdateResources();

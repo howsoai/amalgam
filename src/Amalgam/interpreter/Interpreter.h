@@ -328,7 +328,7 @@ public:
 		//location of the pointer so it can be overwritten
 		EvaluableNode **location;
 		//scope that contains the variable
-		EvaluableNode::AssocType *containingAssoc;
+		EvaluableNode::AssocRef containingAssoc;
 		//true if the symbol is at the top of the stack
 		bool atTopOfStack;
 		//true if the symbol is currently unique
@@ -392,7 +392,7 @@ public:
 				}
 
 				return ScopeStackSymbolLocation{
-					&found->second, &mcn, it == rbegin(scopeStack), is_freeable, is_freeable_top_node};
+					&found->second, mcn, it == rbegin(scopeStack), is_freeable, is_freeable_top_node};
 			}
 		}
 
@@ -415,7 +415,7 @@ public:
 		size_t scope_stack_index = scopeStack.size() - 1;
 		EvaluableNode *scope = scopeStack[scope_stack_index];
 		auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
-		return ScopeStackSymbolLocation{new_location, &scope->GetMappedChildNodesView(), true, false, false};
+		return ScopeStackSymbolLocation{new_location, scope->GetMappedChildNodesView(), true, false, false};
 	}
 
 	//like the other type of GetScopeStackSymbolLocation,
@@ -476,7 +476,7 @@ public:
 				}
 
 				return ScopeStackSymbolLocation{
-					&found->second, &mcn, scope_stack_index == cur_scope_stack_size, is_freeable, is_freeable_top_node};
+					&found->second, mcn, scope_stack_index == cur_scope_stack_size, is_freeable, is_freeable_top_node};
 			}
 		}
 
@@ -507,13 +507,13 @@ public:
 			EvaluableNode *scope = evaluableNodeManager->AllocNode(interp_with_scope->scopeStack[scope_stack_index]);
 			auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
 			interp_with_scope->scopeStack[scope_stack_index] = scope;
-			return ScopeStackSymbolLocation{new_location, &scope->GetMappedChildNodesView(), false, false, false};
+			return ScopeStackSymbolLocation{new_location, scope->GetMappedChildNodesView(), false, false, false};
 		}
 		else
 		{
 			EvaluableNode *scope = interp_with_scope->scopeStack[scope_stack_index];
 			auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
-			return ScopeStackSymbolLocation{new_location, &scope->GetMappedChildNodesView(), true, false, false};
+			return ScopeStackSymbolLocation{new_location, scope->GetMappedChildNodesView(), true, false, false};
 		}
 	}
 #endif

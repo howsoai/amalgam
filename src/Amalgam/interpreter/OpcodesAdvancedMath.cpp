@@ -393,7 +393,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 
 	if(container->IsAssociativeArray())
 	{
-		NormalizeVector(container->GetMappedChildNodesView(), p_value,
+		auto mcn = container->GetMappedChildNodesView();
+		NormalizeVector(mcn, p_value,
 			[](const auto &pair) { return EvaluableNode::ToNumber(pair.second); },
 			[this, allocate_child_nodes](auto &pair, double new_val)
 		{

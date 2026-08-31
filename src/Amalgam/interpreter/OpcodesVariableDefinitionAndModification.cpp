@@ -1143,7 +1143,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNASSIGN(EvaluableNode *en
 		auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
-		symbol_location.containingAssoc->erase(variable_sid);
+		symbol_location.containingAssoc.erase(variable_sid);
 	}
 
 	return AllocReturn(all_unassigned, immediate_result);

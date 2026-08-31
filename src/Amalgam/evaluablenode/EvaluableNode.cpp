@@ -621,25 +621,22 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 	{
 		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseOrderedData(cur_type))
 		{
-			//convert ordered pairs to assoc
-			AssocType new_map;
+			auto ocn = std::move(GetOrderedChildNodesReference());
 
-			auto &ocn = GetOrderedChildNodesReference();
-			new_map.reserve(ocn.size());
+			InitMappedChildNodes();
+
+			auto mcn = GetMappedChildNodesView();
+			mcn.reserve(ocn.size());
+			
 			for(size_t i = 0; i < ocn.size(); i++)
 			{
 				std::string index_string = EvaluableNode::NumberToString(i, true);
 				StringInternPool::StringID sid = string_intern_pool.CreateStringReference(index_string);
 
 				//this should never fail since every number is unique
-				if(!new_map.emplace(sid, ocn[i]).second)
+				if(!mcn.emplace(sid, ocn[i]).second)
 					string_intern_pool.DestroyStringReference(sid);
 			}
-
-			//set up mapped nodes
-			InitMappedChildNodes();
-			//swap for efficiency
-			std::swap(GetMappedChildNodesView(), new_map);
 		}
 		else //just set up empty assoc
 		{

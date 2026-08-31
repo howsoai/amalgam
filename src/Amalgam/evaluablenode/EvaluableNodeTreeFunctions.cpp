@@ -448,7 +448,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		{
 			if(EvaluableNode::IsAssociativeArray(variable_value_node))
 			{
-				auto &vvn_mcn = variable_value_node->GetMappedChildNodesView();
+				auto vvn_mcn = variable_value_node->GetMappedChildNodesViewOnAssoc();
 				value_destination_node->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodesViewOnAssoc().size()
 																+ vvn_mcn.size());
 				value_destination_node->AppendMappedChildNodes(vvn_mcn);

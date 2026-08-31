@@ -149,7 +149,7 @@ R"&(\[\s*
 // random stream, it randomly selects from the assoc
 //if it can't find an appropriate probability, it returns an empty string
 //if normalize is true, then it will accumulate the probability and then normalize
-static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType &assoc,
+static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocRef assoc,
 	RandomStream &rs, bool normalize)
 {
 	double probability_target = rs.RandFull();
@@ -327,7 +327,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 			retval_ocn.reserve(number_to_generate);
 
 			//make a copy of all of the probabilities so they can be removed one at a time
-			EvaluableNode::AssocType assoc(param->GetMappedChildNodesViewOnAssoc());
+			EvaluableNode::Assoc assoc(param->GetMappedChildNodesViewOnAssoc());
 
 			for(size_t i = 0; i < number_to_generate; i++)
 			{

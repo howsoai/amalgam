@@ -703,7 +703,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ANNOTATIONS_and
 	retval_ocn[1] = evaluableNodeManager->AllocNode(
 		get_entity_comments ? vars->GetCommentsString() : vars->GetAnnotationsString());
 
-	auto mcn = vars->GetMappedChildNodesView();
+	auto mcn = vars->GetMappedChildNodesViewOnAssoc();
 	params_list->ReserveMappedChildNodes(mcn.size());
 
 	//create the string references all at once and hand off

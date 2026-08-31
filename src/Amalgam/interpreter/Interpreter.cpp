@@ -105,7 +105,7 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 
 		if(!need_to_interpret_new_scope)
 		{
-			auto new_scope_mcn = new_scope->GetMappedChildNodesView();
+			auto new_scope_mcn = new_scope->GetMappedChildNodesViewOnAssoc();
 			if(new_scope.unique)
 			{
 				for(auto &[id, cn] : new_scope_mcn)
@@ -137,7 +137,7 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 			PushNewConstructionContext(new_scope_node, new_scope,
 					EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-			for(auto &[cn_id, cn] : new_scope->GetMappedChildNodesView())
+			for(auto &[cn_id, cn] : new_scope->GetMappedChildNodesViewOnAssoc())
 			{
 				if(cn == nullptr || cn->GetIsIdempotent())
 					continue;
@@ -183,7 +183,7 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 	//so can't be guaranteed that everything is freeable
 	if(returning_unique_value && scope->GetIsFreeableTopNode())
 	{
-		for(auto &[id, cn] : scope->GetMappedChildNodesView())
+		for(auto &[id, cn] : scope->GetMappedChildNodesViewOnAssoc())
 		{
 			if(cn != nullptr)
 			{
@@ -196,7 +196,7 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 	}
 	else //can't free scope variables, need to clear freeability flags so they don't cause issues later
 	{
-		for(auto &[id, cn] : scope->GetMappedChildNodesView())
+		for(auto &[id, cn] : scope->GetMappedChildNodesViewOnAssoc())
 		{
 			if(cn != nullptr)
 			{
@@ -240,7 +240,7 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 	#endif
 			scope_stack->SetIsFreeableTopNode(false);
 
-		for(auto &[sid, cn] : scope_stack->GetMappedChildNodesView())
+		for(auto &[sid, cn] : scope_stack->GetMappedChildNodesViewOnAssoc())
 		{
 			if(cn == nullptr)
 				continue;
@@ -564,7 +564,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 		{
 			PushNewConstructionContext(nullptr, cur_node, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-			for(auto &[e_id, e] : cur_node->GetMappedChildNodesView())
+			for(auto &[e_id, e] : cur_node->GetMappedChildNodesViewOnAssoc())
 			{
 				SetTopCurrentIndexInConstructionStack(e_id);
 				SetTopCurrentValueInConstructionStack(e);
@@ -644,7 +644,7 @@ void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 
 	if(constraints->IsAssociativeArray())
 	{
-		auto mcn = constraints->GetMappedChildNodesView();
+		auto mcn = constraints->GetMappedChildNodesViewOnAssoc();
 
 		EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_max_node_operations,
 			interpreter_constraints.maxNodeOperations);

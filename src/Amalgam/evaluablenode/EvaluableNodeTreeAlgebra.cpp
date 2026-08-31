@@ -766,7 +766,7 @@ struct SimplifySelfContainedWithImmediates final
 		bool any_non_immediate = false;
 		if(en->IsAssociativeArray())
 		{
-			for(auto &cn : en->GetMappedChildNodesView() | std::views::values)
+			for(auto &cn : en->GetMappedChildNodesViewOnAssoc() | std::views::values)
 			{
 				if(cn != nullptr && !cn->IsImmediate())
 				{
@@ -924,7 +924,7 @@ EvaluableNode *EvaluableNodeTreeAlgebra::SimplifyTree(EvaluableNode *tree, Evalu
 			//traverse further down the tree
 			if(cur->IsAssociativeArray())
 			{
-				for(auto &cn : cur->GetMappedChildNodesView() | std::views::values)
+				for(auto &cn : cur->GetMappedChildNodesViewOnAssoc() | std::views::values)
 				{
 					if(cn && !cn->IsTerminal())
 						node_stack.emplace_back(cn, false);

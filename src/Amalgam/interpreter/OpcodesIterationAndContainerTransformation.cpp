@@ -669,7 +669,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		}
 		else if(list->IsAssociativeArray())
 		{
-			auto list_mcn = list->GetMappedChildNodesView();
+			auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 			size_t num_nodes = list_mcn.size();
 
 		#ifdef MULTITHREAD_SUPPORT
@@ -698,7 +698,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 						//populate result_mcn with all a slot for each child node,
 						//as do not want to change this allocation during potential concurrent execution
 						//and because iterators may be invalidated when the map is changed
-						auto result_mcn = result->GetMappedChildNodesView();
+						auto result_mcn = result->GetMappedChildNodesViewOnAssoc();
 						result_mcn.reserve(num_nodes);
 						for(auto &[sid, cn] : list_mcn)
 							result_mcn.emplace(string_intern_pool.CreateStringReference(sid), nullptr);
@@ -742,7 +742,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 						auto acc = operation.Init();
 
-						auto map_mcn = list->GetMappedChildNodesView();
+						auto map_mcn = list->GetMappedChildNodesViewOnAssoc();
 						for(auto &[map_id, map_node] : map_mcn)
 						{
 							SetTopCurrentIndexInConstructionStack(map_id);
@@ -767,7 +767,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			//populate result_mcn with all a slot for each child node,
 			//as do not want to change this allocation during potential concurrent execution
 			//and because iterators may be invalidated when the map is changed
-			auto result_mcn = result->GetMappedChildNodesView();
+			auto result_mcn = result->GetMappedChildNodesViewOnAssoc();
 			result_mcn.reserve(num_nodes);
 			for(auto &[sid, cn] : list_mcn)
 				result_mcn.emplace(string_intern_pool.CreateStringReference(sid), nullptr);
@@ -841,7 +841,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			if(cur_input->IsAssociativeArray())
 			{
 				need_assoc = true;
-				for(auto &n_id : cur_input->GetMappedChildNodesView() | std::views::keys)
+				for(auto &n_id : cur_input->GetMappedChildNodesViewOnAssoc() | std::views::keys)
 				{
 					auto [inserted_node, inserted] = all_keys.insert(n_id);
 					//if it was inserted, then need to keep track of the string reference
@@ -1197,7 +1197,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 						if(list->IsAssociativeArray())
 						{
-							auto list_mcn = list->GetMappedChildNodesView();
+							auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 							for(auto &[cn_id, cn] : list_mcn)
 							{
 								//want either to be equal or match_on_not_value, but not both or neither
@@ -1234,7 +1234,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 		if(result_list->IsAssociativeArray())
 		{
-			auto result_list_mcn = result_list->GetMappedChildNodesView();
+			auto result_list_mcn = result_list->GetMappedChildNodesViewOnAssoc();
 
 			//can't erase from result_list_mcn while iterating because it may invalidate
 			//iteration, need to collect those to remove and remove in a separate pass
@@ -1433,7 +1433,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	}
 
 	//if made it here, then list is an assoc
-	auto list_mcn = list->GetMappedChildNodesView();
+	auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 
 #ifdef MULTITHREAD_SUPPORT
 	size_t num_nodes = list_mcn.size();
@@ -1895,7 +1895,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 	{
 		bool first_node = true;
 		//iterate over list
-		for(auto &[n_id, n] : list->GetMappedChildNodesView())
+		for(auto &[n_id, n] : list->GetMappedChildNodesViewOnAssoc())
 		{
 			//grab a value if first one
 			if(first_node)
@@ -2298,7 +2298,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 
 				if(zipped->IsAssociativeArray())
 				{
-					auto zipped_mcn = zipped->GetMappedChildNodesView();
+					auto zipped_mcn = zipped->GetMappedChildNodesViewOnAssoc();
 					for(auto &index : index_list_ocn)
 					{
 						StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index, true);
@@ -2352,7 +2352,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 
 	if(EvaluableNode::IsAssociativeArray(zipped))
 	{
-		auto zipped_mcn = zipped->GetMappedChildNodesView();
+		auto zipped_mcn = zipped->GetMappedChildNodesViewOnAssoc();
 		for(auto &index : index_list_ocn)
 		{
 			StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index, true);

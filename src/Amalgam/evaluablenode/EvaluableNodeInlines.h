@@ -510,7 +510,7 @@ __forceinline void EvaluableNode::UpdateAllFlagsBasedOnNoReferencingChildNodes()
 
 	if(IsAssociativeArray())
 	{
-		for(auto &[cn_id, cn] : GetMappedChildNodesView())
+		for(auto &[cn_id, cn] : GetMappedChildNodesViewOnAssoc())
 		{
 			if(cn == nullptr)
 				continue;
@@ -574,7 +574,7 @@ inline void EvaluableNode::ConvertChildNodesAndStoreValue(EvaluableNode *node,
 	}
 	else if(node->IsAssociativeArray())
 	{
-		auto mcn = node->GetMappedChildNodesView();
+		auto mcn = node->GetMappedChildNodesViewOnAssoc();
 		for(size_t i = 0; i < element_names.size(); i++)
 		{
 			EvaluableNode *value_en = nullptr;
@@ -643,15 +643,15 @@ inline void EvaluableNode::InitMappedChildNodes(size_t num_elements)
 inline void EvaluableNode::ReserveMappedChildNodes(size_t to_reserve)
 {
 	if(IsAssociativeArray())
-		GetMappedChildNodesView().reserve(to_reserve);
+		GetMappedChildNodesViewOnAssoc().reserve(to_reserve);
 }
 
-__forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodes()
+__forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesView()
 {
 	if(IsAssociativeArray())
-		return GetMappedChildNodesView();
+		return GetMappedChildNodesViewOnAssoc();
 
-	return emptyMappedChildNodesNode.GetMappedChildNodesView();
+	return emptyMappedChildNodesNode.GetMappedChildNodesViewOnAssoc();
 }
 
 //if the id exists, returns a pointer to the pointer of the child node
@@ -665,7 +665,7 @@ inline EvaluableNode **EvaluableNode::GetMappedChildNode(const std::string &id)
 // returns nullptr if the id doesn't exist
 inline EvaluableNode **EvaluableNode::GetMappedChildNode(const StringInternPool::StringID sid)
 {
-	auto mcn = GetMappedChildNodes();
+	auto mcn = GetMappedChildNodesView();
 	auto node_iter = mcn.find(sid);
 	if(node_iter == end(mcn))
 		return nullptr;
@@ -721,7 +721,7 @@ __forceinline EvaluableNode::OrderedRef EvaluableNode::GetOrderedChildNodesRefer
 		return *value.extendedOrderedChildNodes.orderedChildNodes.get();
 }
 
-__forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesView()
+__forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesViewOnAssoc()
 {
 	return EvaluableNode::AssocRef(this);
 }

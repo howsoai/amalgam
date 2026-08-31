@@ -368,7 +368,7 @@ public:
 	//returns an assoc of the labels
 	inline EvaluableNode::AssocRef GetLabelIndexView()
 	{
-		return evaluableNodeManager.rootNode->GetMappedChildNodesView();
+		return evaluableNodeManager.rootNode->GetMappedChildNodesViewOnAssoc();
 	}
 
 	//Iterates over all of the labels, calling GetValueAtLabel for each,

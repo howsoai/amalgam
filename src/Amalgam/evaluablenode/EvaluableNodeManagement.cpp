@@ -486,7 +486,7 @@ EvaluableNodeReference EvaluableNodeManager::DeepAllocCopy(EvaluableNode *en, bo
 
 			if(cur->IsAssociativeArray())
 			{
-				for(auto &child : cur->GetMappedChildNodesView() | std::views::values)
+				for(auto &child : cur->GetMappedChildNodesViewOnAssoc() | std::views::values)
 				{
 					if(child == nullptr)
 						continue;
@@ -544,7 +544,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopyRecurse(Eval
 	//copy and update any child nodes
 	if(copy->IsAssociativeArray())
 	{
-		auto &copy_mcn = copy->GetMappedChildNodesView();
+		auto copy_mcn = copy->GetMappedChildNodesViewOnAssoc();
 		for(auto &s : copy_mcn | std::views::values)
 		{
 			//get current item in list
@@ -604,7 +604,7 @@ static void MarkAllReferencedNodesInUseForNode(EvaluableNode *tree)
 		auto type = node->GetType();
 		if(DoesEvaluableNodeTypeUseAssocData(type))
 		{
-			for(auto &cn : node->GetMappedChildNodesView() | std::views::values)
+			for(auto &cn : node->GetMappedChildNodesViewOnAssoc() | std::views::values)
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUse())
 				{
@@ -650,7 +650,7 @@ static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
 		auto type = node->GetType();
 		if(DoesEvaluableNodeTypeUseAssocData(type))
 		{
-			for(auto &cn : node->GetMappedChildNodesView() | std::views::values)
+			for(auto &cn : node->GetMappedChildNodesViewOnAssoc() | std::views::values)
 			{
 				if(cn != nullptr && cn->TrySetKnownToBeInUseAtomic())
 					node_stack.push_back(cn);
@@ -824,7 +824,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 	{
 		bool need_cycle_check = false;
 
-		for(auto &[cn_id, cn] : tree->GetMappedChildNodesView())
+		for(auto &[cn_id, cn] : tree->GetMappedChildNodesViewOnAssoc())
 		{
 			if(cn == nullptr)
 				continue;
@@ -900,7 +900,7 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 	bool child_nodes_idempotent = IsEvaluableNodeTypePotentiallyIdempotent(en->GetType());
 	if(en->IsAssociativeArray())
 	{
-		for(auto &[cn_id, cn] : en->GetMappedChildNodesView())
+		for(auto &[cn_id, cn] : en->GetMappedChildNodesViewOnAssoc())
 		{
 			if(cn == nullptr)
 				continue;

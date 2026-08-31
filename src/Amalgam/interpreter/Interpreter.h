@@ -293,7 +293,7 @@ public:
 				//if there are no cycles referencing the top node, then mark everything as potentially freeable
 				if(args.unique)
 				{
-					for(auto &[id, cn] : args->GetMappedChildNodesView())
+					for(auto &[id, cn] : args->GetMappedChildNodesViewOnAssoc())
 					{
 						if(cn != nullptr)
 							cn->SetIsFreeableAndIsFreeableTopNode(true);
@@ -352,7 +352,7 @@ public:
 		//find appropriate context for symbol by walking up the stack
 		for(auto it = rbegin(scopeStack); it != rend(scopeStack); ++it)
 		{
-			auto mcn = (*it)->GetMappedChildNodesView();
+			auto mcn = (*it)->GetMappedChildNodesViewOnAssoc();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
 				bool is_freeable = true;
@@ -415,7 +415,7 @@ public:
 		size_t scope_stack_index = scopeStack.size() - 1;
 		EvaluableNode *scope = scopeStack[scope_stack_index];
 		auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
-		return ScopeStackSymbolLocation{new_location, scope->GetMappedChildNodesView(), true, false, false};
+		return ScopeStackSymbolLocation{new_location, scope->GetMappedChildNodesViewOnAssoc(), true, false, false};
 	}
 
 	//like the other type of GetScopeStackSymbolLocation,
@@ -447,7 +447,7 @@ public:
 		for(size_t scope_stack_index = cur_scope_stack_size; scope_stack_index > 0; scope_stack_index--)
 		{
 			EvaluableNode *cur_context = scopeStack[scope_stack_index - 1];
-			auto mcn = cur_context->GetMappedChildNodesView();
+			auto mcn = cur_context->GetMappedChildNodesViewOnAssoc();
 			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
 				//default to not freeable if need a lock; if don't need a lock, then set to current values
@@ -462,7 +462,7 @@ public:
 
 					//need to fetch again after lock in case object has changed
 					cur_context = scopeStack[scope_stack_index - 1];
-					mcn = cur_context->GetMappedChildNodesView();
+					mcn = cur_context->GetMappedChildNodesViewOnAssoc();
 					found = mcn.find(symbol_sid);
 
 					//not freeable because it could be accessed by multiple threads concurrently
@@ -507,13 +507,13 @@ public:
 			EvaluableNode *scope = evaluableNodeManager->AllocNode(interp_with_scope->scopeStack[scope_stack_index]);
 			auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
 			interp_with_scope->scopeStack[scope_stack_index] = scope;
-			return ScopeStackSymbolLocation{new_location, scope->GetMappedChildNodesView(), false, false, false};
+			return ScopeStackSymbolLocation{new_location, scope->GetMappedChildNodesViewOnAssoc(), false, false, false};
 		}
 		else
 		{
 			EvaluableNode *scope = interp_with_scope->scopeStack[scope_stack_index];
 			auto new_location = scope->GetOrCreateMappedChildNode(symbol_sid);
-			return ScopeStackSymbolLocation{new_location, scope->GetMappedChildNodesView(), true, false, false};
+			return ScopeStackSymbolLocation{new_location, scope->GetMappedChildNodesViewOnAssoc(), true, false, false};
 		}
 	}
 #endif

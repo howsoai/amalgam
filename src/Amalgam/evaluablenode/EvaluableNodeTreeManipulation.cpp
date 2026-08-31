@@ -446,13 +446,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 		EvaluableNode::AssocType tree1_conversion_assoc;
 		auto *tree1_mapped_childs = &tree1_conversion_assoc;
 		if(EvaluableNode::IsAssociativeArray(tree1))
-			tree1_mapped_childs = &tree1->GetMappedChildNodesView();
+			tree1_mapped_childs = &tree1->GetMappedChildNodesViewOnAssoc();
 
 		//get or convert the nodes to an assoc for tree2
 		EvaluableNode::AssocType tree2_conversion_assoc;
 		auto *tree2_mapped_childs = &tree2_conversion_assoc;
 		if(EvaluableNode::IsAssociativeArray(tree2))
-			tree2_mapped_childs = &tree2->GetMappedChildNodesView();
+			tree2_mapped_childs = &tree2->GetMappedChildNodesViewOnAssoc();
 
 		EvaluableNode::AssocType merged = mm->MergeMaps(*tree1_mapped_childs, *tree2_mapped_childs);
 		//hand off merged allocation into the generalized_node (hence the false parameter)
@@ -586,7 +586,7 @@ static void GetStringsFromTree(EvaluableNode *tree,
 
 	if(tree->IsAssociativeArray())
 	{
-		for(auto &[cn_id, cn] : tree->GetMappedChildNodesView())
+		for(auto &[cn_id, cn] : tree->GetMappedChildNodesViewOnAssoc())
 		{
 			if(cn_id != string_intern_pool.NOT_A_STRING_ID)
 				strings_from_tree_data.keyAndSymbolStrings.push_back(string_intern_pool.GetStringFromID(cn_id));
@@ -689,12 +689,12 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	size_t tree2_mapped_nodes_size = 0;
 
 	if(EvaluableNode::IsAssociativeArray(tree1))
-		tree1_mapped_nodes_size = tree1->GetMappedChildNodesView().size();
+		tree1_mapped_nodes_size = tree1->GetMappedChildNodesViewOnAssoc().size();
 	else if(EvaluableNode::IsOrderedArray(tree1))
 		tree1_ordered_nodes_size = tree1->GetOrderedChildNodesReference().size();
 
 	if(EvaluableNode::IsAssociativeArray(tree2))
-		tree2_mapped_nodes_size = tree2->GetMappedChildNodesView().size();
+		tree2_mapped_nodes_size = tree2->GetMappedChildNodesViewOnAssoc().size();
 	else if(EvaluableNode::IsOrderedArray(tree2))
 		tree2_ordered_nodes_size = tree2->GetOrderedChildNodesReference().size();
 
@@ -911,8 +911,8 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	else if(tree1_mapped_nodes_size > 0 && tree2_mapped_nodes_size > 0)
 	{
 		//use keys from first node
-		auto tree_2_mcn = tree2->GetMappedChildNodesView();
-		for(auto &[node_id, node] : tree1->GetMappedChildNodesView())
+		auto tree_2_mcn = tree2->GetMappedChildNodesViewOnAssoc();
+		for(auto &[node_id, node] : tree1->GetMappedChildNodesViewOnAssoc())
 		{
 			//skip unless both trees have the key
 			auto other_node = tree_2_mcn.find(node_id);
@@ -949,7 +949,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 			}
 			else if(tree1_mapped_nodes_size > 0)
 			{
-				for(auto &[node_id, node] : tree1->GetMappedChildNodesView())
+				for(auto &[node_id, node] : tree1->GetMappedChildNodesViewOnAssoc())
 				{
 					auto sub_match = NumberOfSharedNodes(node, tree2, mmrp);
 
@@ -992,7 +992,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 			}
 			else if(tree2_mapped_nodes_size > 0)
 			{
-				for(auto &[node_id, node] : tree2->GetMappedChildNodesView())
+				for(auto &[node_id, node] : tree2->GetMappedChildNodesViewOnAssoc())
 				{
 					auto sub_match = NumberOfSharedNodes(tree1, node, mmrp);
 
@@ -1421,9 +1421,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			size_t index = mp.interpreter->randomStream.RandSize(ocn.size());
 			n = ocn[index];
 		}
-		else if(n->GetMappedChildNodes().size() > 0)
+		else if(n->GetMappedChildNodesView().size() > 0)
 		{
-			auto mcn = n->GetMappedChildNodesView();
+			auto mcn = n->GetMappedChildNodesViewOnAssoc();
 			double replace_with = mp.interpreter->randomStream.Rand() * mcn.size();
 			//iterate over child nodes until find the right index
 			for(auto &cn : mcn | std::views::values)
@@ -1479,10 +1479,10 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			else
 				n->GetOrderedChildNodes()[destination_index] = mp.enm->DeepAllocCopy(source_node);
 		}
-		else if(n->GetMappedChildNodes().size() > 0)
+		else if(n->GetMappedChildNodesView().size() > 0)
 		{
 			//get source and destination
-			auto mcn = n->GetMappedChildNodes();
+			auto mcn = n->GetMappedChildNodesView();
 			auto num_children = mcn.size();
 			
 			//get source and destination; note that destination_index is drawn from
@@ -1569,9 +1569,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 
 	case ENBISI_remove_element:
 		//remove an element from a random location
-		if(n->GetMappedChildNodes().size() > 0)
+		if(n->GetMappedChildNodesView().size() > 0)
 		{
-			auto mcn = n->GetMappedChildNodesView();
+			auto mcn = n->GetMappedChildNodesViewOnAssoc();
 			if(mcn.size() > 0)
 			{
 				size_t location = mp.interpreter->randomStream.RandSize(mcn.size());
@@ -1633,9 +1633,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 
 			std::swap(n_ocn[first_index], n_ocn[second_index]);
 		}
-		else if(n->GetMappedChildNodes().size() > 1)
+		else if(n->GetMappedChildNodesView().size() > 1)
 		{
-			auto n_mcn = n->GetMappedChildNodesView();
+			auto n_mcn = n->GetMappedChildNodesViewOnAssoc();
 
 			//choose two different indices
 			size_t num_child_nodes = n_mcn.size();
@@ -1704,7 +1704,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 	if(n->IsAssociativeArray())
 	{
 		//for any mapped children, copy and update
-		for(auto &s : n->GetMappedChildNodesView() | std::views::values)
+		for(auto &s : n->GetMappedChildNodesViewOnAssoc() | std::views::values)
 		{
 			EvaluableNode *current = s;
 
@@ -1857,7 +1857,7 @@ void EvaluableNodeTreeManipulation::ReplaceStringsInTree(EvaluableNode *tree, Co
 
 	if(tree->IsAssociativeArray())
 	{
-		for(auto &[cn_id, cn] : tree->GetMappedChildNodesView())
+		for(auto &[cn_id, cn] : tree->GetMappedChildNodesViewOnAssoc())
 			ReplaceStringsInTree(cn, to_replace, checked);
 	}
 	else if(tree->IsTerminal())

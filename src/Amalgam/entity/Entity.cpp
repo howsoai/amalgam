@@ -250,7 +250,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 	bool any_successful_assignment = false;
 	bool all_successful_assignments = true;
-	auto new_label_values_mcn = new_label_values->GetMappedChildNodesView();
+	auto new_label_values_mcn = new_label_values->GetMappedChildNodesViewOnAssoc();
 
 	for(auto &[label_sid, new_value_node] : new_label_values_mcn)
 	{
@@ -279,7 +279,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			EvaluableNode *new_root = evaluableNodeManager.AllocNode(evaluableNodeManager.rootNode);
 			//ensure flags are updated before new_root is exposed
 			new_root->UpdateFlagsBasedOnNewChildNode(new_value_reference);
-			auto new_root_mcn = new_root->GetMappedChildNodesView();
+			auto new_root_mcn = new_root->GetMappedChildNodesViewOnAssoc();
 			new_root_mcn.emplace(label_sid, new_value_reference);
 			string_intern_pool.CreateStringReference(label_sid);
 
@@ -378,7 +378,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 	label_sids_and_values_to_remove.reserve(labels_to_remove_ocn.size());
 
 	EvaluableNodeReference new_root(evaluableNodeManager.AllocNode(GetRoot()), false, true);
-	auto new_root_mcn = new_root->GetMappedChildNodesView();
+	auto new_root_mcn = new_root->GetMappedChildNodesViewOnAssoc();
 
 	//captures all of the label data to remove and remove from new_root
 	for(auto label_node : labels_to_remove_ocn)

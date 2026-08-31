@@ -782,7 +782,10 @@ public:
 	//preallocates to_reserve for appending, etc.
 	inline void ReserveMappedChildNodes(size_t to_reserve);
 
-	__forceinline AssocRef GetMappedChildNodes();
+	//returns a view of the mapped child nodes; should be treated as read-only
+	//(which means the receiving variables should not have an &)
+	//if the node is of not of type ENT_ASSOC, will return a view to an empty map
+	__forceinline AssocRef GetMappedChildNodesView();
 
 	//if the id exists, returns a pointer to the pointer of the child node
 	// returns nullptr if the id doesn't exist
@@ -834,9 +837,9 @@ public:
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
 	__forceinline OrderedRef GetOrderedChildNodesReference();
 
-	//assumes that the EvaluableNode is has mapped child nodes, and returns the value by reference in a view
+	//assumes that the EvaluableNode is has mapped child nodes and returns the view
 	//(which means the receiving variables should not have an &)
-	__forceinline AssocRef GetMappedChildNodesView();
+	__forceinline AssocRef GetMappedChildNodesViewOnAssoc();
 
 	//if it is storing an immediate value and has room to store a label
 	inline bool HasCompactAnnotationsAndCommentsStorage()

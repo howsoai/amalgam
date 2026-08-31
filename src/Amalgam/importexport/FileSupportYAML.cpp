@@ -72,7 +72,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 	if(en->IsAssociativeArray())
 	{
 		built_element.set_map();
-		auto mcn = en->GetMappedChildNodesView();
+		auto mcn = en->GetMappedChildNodesViewOnAssoc();
 		if(!sort_keys)
 		{
 			for(auto &[cn_id, cn] : mcn)

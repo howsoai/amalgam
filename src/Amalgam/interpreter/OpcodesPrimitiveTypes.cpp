@@ -270,7 +270,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, E
 	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(en, false), true);
 
 	//copy of the original evaluable node's mcn
-	auto new_mcn = new_assoc->GetMappedChildNodesView();
+	auto new_mcn = new_assoc->GetMappedChildNodesViewOnAssoc();
 	size_t num_nodes = new_mcn.size();
 
 	if(num_nodes > 0)

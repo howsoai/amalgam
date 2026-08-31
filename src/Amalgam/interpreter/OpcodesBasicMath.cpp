@@ -1123,7 +1123,7 @@ template<typename Compare>
 EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc,
 	EvaluableNodeManager *enm, Compare compare, double compare_limit, EvaluableNodeRequestedValueTypes immediate_result)
 {
-	auto mcn = interpreted_assoc->GetMappedChildNodesView();
+	auto mcn = interpreted_assoc->GetMappedChildNodesViewOnAssoc();
 	double candidate_value = compare_limit;
 	bool value_found = false;
 

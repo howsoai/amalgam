@@ -35,7 +35,7 @@ std::pair<ExecutionPermissions, ExecutionPermissions> ExecutionPermissions::Eval
 
 	if(EvaluableNode::IsAssociativeArray(en))
 	{
-		for(auto [permission_type, allow_en] : en->GetMappedChildNodesView())
+		for(auto [permission_type, allow_en] : en->GetMappedChildNodesViewOnAssoc())
 		{
 			bool allow = EvaluableNode::ToBool(allow_en);
 

@@ -494,7 +494,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 				EvaluableNode *cur_context = scopeStack[i - 1];
 
 				//see if this level of the stack contains the symbol
-				auto mcn = cur_context->GetMappedChildNodesView();
+				auto mcn = cur_context->GetMappedChildNodesViewOnAssoc();
 				for(auto &symbol_id : mcn | std::views::keys)
 					std::cout << "  " << string_intern_pool.GetStringViewFromID(symbol_id) << std::endl;
 			}

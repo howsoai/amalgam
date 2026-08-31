@@ -93,22 +93,16 @@ public:
 	//construct from a VecMap
 	inline OrderedHashMap &operator=(const VecMap &other)
 	{
-		if(this != &other)
-		{
-			vectorMap = other;
-			BuildHashMapFromVectorMap();
-		}
+		vectorMap = other;
+		BuildHashMapFromVectorMap();
 		return *this;
 	}
 
 	//move from a VecMap
 	inline OrderedHashMap &operator=(VecMap &&other) noexcept
 	{
-		if(this != &other)
-		{
-			vectorMap = std::move(other);
-			BuildHashMapFromVectorMap();
-		}
+		vectorMap = std::move(other);
+		BuildHashMapFromVectorMap();
 		return *this;
 	}
 

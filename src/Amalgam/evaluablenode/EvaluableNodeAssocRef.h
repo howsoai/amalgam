@@ -230,8 +230,15 @@ public:
 				auto this_small_mcn = std::move(storage.smallMap);
 				auto other_large_mcn = std::move(*storage.largeMap);
 
+				PromoteToLarge();
+				*storage.largeMap = std::move(other_large_mcn);
 
-				//TODO 25910: finish this
+				//TODO 25910: fix compilation issue
+				other.ReduceToSmallIfPossible();
+				if(other.IsSmall())
+					*other.storage.smallMap = std::move(*this_small_mcn);
+				else
+					*other.storage.largeMap = std::move(*this_small_mcn);
 			}
 		}
 		else //!IsSmall()
@@ -241,7 +248,15 @@ public:
 				auto this_large_mcn = std::move(*storage.largeMap);
 				auto other_small_mcn = std::move(storage.smallMap);
 
-				//TODO 25910: finish this
+				//TODO 25910: fix compilation issue
+				ReduceToSmallIfPossible();
+				if(IsSmall())
+					*storage.smallMap = std::move(*other_small_mcn);
+				else
+					*storage.largeMap = std::move(*other_small_mcn);
+
+				other.PromoteToLarge();
+				*other.storage.largeMap = std::move(*this_large_mcn);
 			}
 			else
 			{
@@ -319,6 +334,13 @@ private:
 	{
 		en->EnsureHasExtendedValue();
 		storage.largeMap = en->value.extendedMappedChildNodes.mappedChildNodes.get();
+	}
+
+	inline void ReduceToSmallIfPossible()
+	{
+		en->RemoveExtendedValueIfPossible();
+		if(IsSmall())
+			storage.smallMap = &en->value.mappedChildNodes;
 	}
 
 	EvaluableNode *en;

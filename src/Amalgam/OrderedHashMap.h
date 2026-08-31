@@ -396,6 +396,13 @@ public:
 		return vectorMap;
 	}
 
+	//moves the vector map out and clears the data structure
+	inline VecMap &&ExtractVectorMap()
+	{
+		hashMap.clear();
+		return std::move(vectorMap);
+	}
+
 private:
 
 	inline void BuildHashMapFromVectorMap()

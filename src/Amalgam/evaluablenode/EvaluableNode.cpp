@@ -1071,6 +1071,38 @@ void EvaluableNode::EnsureHasExtendedValue()
 	SetExtendedValue(true);
 }
 
+void EvaluableNode::RemoveExtendedValueIfPossible()
+{
+	if(!HasExtendedValue())
+		return;
+
+	//can't reduce if either ordered or assoc and has a comment or annotation
+	if(HasMetadata())
+		return;
+
+	if(GetType() == ENT_ASSOC)
+	{
+		if(value.extendedMappedChildNodes.mappedChildNodes->size() > largestSmallAssocSize)
+			return;
+
+		SmallAssocType temp_mcn = value.extendedMappedChildNodes.mappedChildNodes->ExtractVectorMap();
+		value.extendedMappedChildNodes.mappedChildNodes.reset();
+
+		value.ConstructMappedChildNodes();
+		value.mappedChildNodes = std::move(temp_mcn);
+	}
+	else //ordered
+	{
+		OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
+		value.extendedOrderedChildNodes.orderedChildNodes.reset();
+
+		value.ConstructOrderedChildNodes();
+		value.orderedChildNodes = std::move(temp_ocn);
+	}
+
+	SetExtendedValue(false);
+}
+
 bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *a, EvaluableNode *b, ReferenceAssocType *checked)
 {
 	if(checked != nullptr)

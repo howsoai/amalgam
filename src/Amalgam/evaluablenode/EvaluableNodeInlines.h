@@ -204,7 +204,7 @@ __forceinline void EvaluableNode::ClearAnnotationsAndComments()
 		}
 		else //reduce to small
 		{
-			SmallAssocType temp_mcn = std::move(value.extendedMappedChildNodes.mappedChildNodes->GetVectorMap());
+			SmallAssocType temp_mcn = value.extendedMappedChildNodes.mappedChildNodes->ExtractVectorMap();
 			value.extendedMappedChildNodes.mappedChildNodes.reset();
 			new (&value.mappedChildNodes) SmallAssocType(std::move(temp_mcn));
 

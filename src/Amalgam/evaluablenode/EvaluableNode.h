@@ -1128,8 +1128,11 @@ protected:
 	};
 #pragma pack(pop)
 
-	//makes sure that the extendedValue is set appropriately so that it can be used to hold additional data
+	//makes sure that the data structure has an extended value so that it can be used to hold additional data
 	void EnsureHasExtendedValue();
+
+	//removes the extended value data structure if it is no longer needed
+	void RemoveExtendedValueIfPossible();
 
 	//destructs the value so that the node can be reused
 	// note that the value should be considered uninitialized

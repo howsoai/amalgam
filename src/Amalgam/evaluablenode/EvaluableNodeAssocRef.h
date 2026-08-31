@@ -227,6 +227,10 @@ public:
 			}
 			else
 			{
+				auto this_small_mcn = std::move(storage.smallMap);
+				auto other_large_mcn = std::move(*storage.largeMap);
+
+
 				//TODO 25910: finish this
 			}
 		}
@@ -234,6 +238,9 @@ public:
 		{
 			if(other.IsSmall())
 			{
+				auto this_large_mcn = std::move(*storage.largeMap);
+				auto other_small_mcn = std::move(storage.smallMap);
+
 				//TODO 25910: finish this
 			}
 			else

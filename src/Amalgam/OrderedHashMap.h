@@ -45,6 +45,18 @@ public:
 		hashMap.reserve(initial_capacity);
 	}
 
+	inline OrderedHashMap(const VecMap &other)
+	{
+		vectorMap = other;
+		BuildHashMapFromVectorMap();
+	}
+
+	inline OrderedHashMap(VecMap &&other)
+	{
+		vectorMap = std::move(other);
+		BuildHashMapFromVectorMap();
+	}
+
 	inline ~OrderedHashMap() = default;
 
 	inline OrderedHashMap &operator=(const OrderedHashMap &other)
@@ -67,18 +79,24 @@ public:
 		return *this;
 	}
 
+	//allow it to be used in context of VecMap
+	inline operator VecMap &()
+	{
+		return vectorMap;
+	}
+
+	inline operator const VecMap &() const
+	{
+		return vectorMap;
+	}
+
 	//construct from a VecMap
 	inline OrderedHashMap &operator=(const VecMap &other)
 	{
 		if(this != &other)
 		{
 			vectorMap = other;
-
-			hashMap.clear();
-			hashMap.reserve(vectorMap.size());
-			size_t index = 0;
-			for(auto key : vectorMap | std::views::keys)
-				hashMap.emplace(key, index++);
+			BuildHashMapFromVectorMap();
 		}
 		return *this;
 	}
@@ -89,12 +107,7 @@ public:
 		if(this != &other)
 		{
 			vectorMap = std::move(other);
-
-			hashMap.clear();
-			hashMap.reserve(vectorMap.size());
-			size_t index = 0;
-			for(auto key : vectorMap | std::views::keys)
-				hashMap.emplace(key, index++);
+			BuildHashMapFromVectorMap();
 		}
 		return *this;
 	}
@@ -382,6 +395,16 @@ public:
 	}
 
 private:
+
+	inline void BuildHashMapFromVectorMap()
+	{
+		hashMap.clear();
+		hashMap.reserve(vectorMap.size());
+		size_t index = 0;
+		for(auto key : vectorMap | std::views::keys)
+			hashMap.emplace(key, index++);
+	}
+
 	VecMap vectorMap;
 	HashMap hashMap;
 };

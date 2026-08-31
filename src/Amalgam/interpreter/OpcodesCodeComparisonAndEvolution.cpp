@@ -219,10 +219,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	if(ocn.size() > 2)
 	{
 		auto opcode_weights_node = InterpretNodeForImmediateUse(ocn[2]);
-		if(!EvaluableNode::IsNull(opcode_weights_node))
+		if(EvaluableNode::IsAssociativeArray(opcode_weights_node))
 		{
+			auto mcn = opcode_weights_node->GetMappedChildNodesView();
+			opcode_weights.reserve(mcn.size());
+
 			ow_exists = true;
-			for(auto &[node_id, node] : opcode_weights_node->GetMappedChildNodes())
+			for(auto &[node_id, node] : mcn)
 			{
 				EvaluableNodeType t = GetEvaluableNodeTypeFromStringId(node_id);
 				if(IsEvaluableNodeTypeValid(t))
@@ -238,10 +241,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	if(ocn.size() > 3)
 	{
 		auto mutation_weights_node = InterpretNodeForImmediateUse(ocn[3]);
-		if(!EvaluableNode::IsNull(mutation_weights_node))
+		if(EvaluableNode::IsAssociativeArray(mutation_weights_node))
 		{
+			auto mcn = mutation_weights_node->GetMappedChildNodesView();
+			mutation_type_weights.reserve(mcn.size());
+
 			mtw_exists = true;
-			for(auto &[node_id, node] : mutation_weights_node->GetMappedChildNodes())
+			for(auto &[node_id, node] : mcn)
 			{
 				auto bisid = GetBuiltInStringIdFromStringId(node_id);
 				if(bisid != ENBISI_NOT_A_STRING)
@@ -261,7 +267,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	{
 		auto imm_number_weights_node = InterpretNodeForImmediateUse(ocn[5]);
 		if(EvaluableNode::IsAssociativeArray(imm_number_weights_node))
-			imm_number_weights.Initialize(imm_number_weights_node->GetMappedChildNodesView(), true);
+		{
+			auto mcn = imm_number_weights_node->GetMappedChildNodesView();
+			imm_number_weights.Initialize(mcn, true);
+		}
 	}
 
 	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType imm_string_weights;
@@ -269,7 +278,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	{
 		auto imm_string_weights_node = InterpretNodeForImmediateUse(ocn[6]);
 		if(EvaluableNode::IsAssociativeArray(imm_string_weights_node))
-			imm_string_weights.Initialize(imm_string_weights_node->GetMappedChildNodesView(), true);
+		{
+			auto mcn = imm_string_weights_node->GetMappedChildNodesView();
+			imm_string_weights.Initialize(mcn, true);
+		}
 	}
 
 	//result contains the copied result which may incur replacements

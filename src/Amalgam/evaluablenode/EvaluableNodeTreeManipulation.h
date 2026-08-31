@@ -60,13 +60,13 @@ public:
 	{
 	public:
 		typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeType,
-			CompactHashMap<EvaluableNodeType, double>> WeightedRandEvaluableNodeType;
+			VectorMap<EvaluableNodeType, double>> WeightedRandEvaluableNodeType;
 
 		typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeBuiltInStringId,
-			CompactHashMap<EvaluableNodeBuiltInStringId, double>> WeightedRandMutationType;
+			VectorMap<EvaluableNodeBuiltInStringId, double>> WeightedRandMutationType;
 
 		typedef WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
-			EvaluableNode::AssocType, EvaluableNodeAsDouble> WeightedRandValueType;
+			EvaluableNode::SmallAssocType, EvaluableNodeAsDouble> WeightedRandValueType;
 
 		MutationParameters(Interpreter *interpreter,
 			EvaluableNodeManager *_enm,
@@ -108,7 +108,8 @@ public:
 	static CompactHashMap<EvaluableNodeBuiltInStringId, double> mutationOperationTypeProbabilities;
 
 	//functionality to merge two nodes
-	class NodesMergeMethod : public Merger<EvaluableNode *, nullptr, EvaluableNode::OrderedType, EvaluableNode::AssocType>
+	class NodesMergeMethod : public Merger<EvaluableNode *, nullptr,
+		EvaluableNode::OrderedType, EvaluableNode::SmallAssocType>
 	{
 	public:
 		NodesMergeMethod(EvaluableNodeManager *_enm, bool keep_all_of_both,
@@ -597,10 +598,8 @@ public:
 		EvaluableNode *tree, double mutation_rate,
 		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
 		CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth,
-			WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
-				EvaluableNode::AssocType, EvaluableNodeAsDouble> &imm_number_weights,
-			WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
-				EvaluableNode::AssocType, EvaluableNodeAsDouble> &imm_string_weights);
+		EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_number_weights,
+		EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_string_weights);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace
 	static inline void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace)

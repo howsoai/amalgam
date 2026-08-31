@@ -44,6 +44,23 @@ public:
 		return *this;
 	}
 
+	//allow it to be used in context of EvaluableNode::SmallAssocType
+	inline operator EvaluableNode::SmallAssocType &()
+	{
+		if(IsSmall())
+			return *storage.smallMap;
+		else
+			return *storage.largeMap;
+	}
+
+	inline operator const EvaluableNode::SmallAssocType &() const
+	{
+		if(IsSmall())
+			return *storage.smallMap;
+		else
+			return *storage.largeMap;
+	}
+
 	//--- Iterators ---
 
 	inline iterator begin() noexcept

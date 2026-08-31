@@ -260,7 +260,7 @@ public:
 	}
 
 	//used for more advanced manipulation
-	std::vector<std::pair<key_type, mapped_type>> &GetVector()
+	inline std::vector<std::pair<key_type, mapped_type>> &GetVector()
 	{
 		return data;
 	}

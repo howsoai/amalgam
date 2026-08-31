@@ -615,8 +615,8 @@ static void GetStringsFromTree(EvaluableNode *tree,
 
 EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm,
 	Entity *entity, EvaluableNode *tree, double mutation_rate,
-	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
-	CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth,
+	VectorMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
+	VectorMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth,
 	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_number_weights,
 	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_string_weights)
 {

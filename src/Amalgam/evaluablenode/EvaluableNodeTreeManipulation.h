@@ -596,8 +596,8 @@ public:
 	//note that MutateTree does not guarantee that EvaluableNodeFlags will be set appropriately
 	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, Entity *entity,
 		EvaluableNode *tree, double mutation_rate,
-		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
-		CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth,
+		VectorMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
+		VectorMap<EvaluableNodeType, double> *evaluable_node_weights, size_t preserve_type_depth,
 		EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_number_weights,
 		EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_string_weights);
 

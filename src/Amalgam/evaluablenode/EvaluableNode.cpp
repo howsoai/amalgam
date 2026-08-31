@@ -879,7 +879,8 @@ EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const StringInternPool
 	return &inserted_node->second;
 }
 
-void EvaluableNode::SetMappedChildNodes(EvaluableNode::AssocRef new_mcn, bool copy, bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetMappedChildNodes(EvaluableNode::AssocRef new_mcn,
+	bool copy, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsAssociativeArray()) [[unlikely]]
 		return;

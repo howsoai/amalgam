@@ -2496,7 +2496,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 		auto &indices_ocn = indices->GetOrderedChildNodes();
 		if(container->IsAssociativeArray())
 		{
-			auto &container_mcn = container->GetMappedChildNodesView();
+			auto container_mcn = container->GetMappedChildNodesView();
 			EvaluableNode::AssocType new_container;
 
 			for(auto &cn : indices_ocn)

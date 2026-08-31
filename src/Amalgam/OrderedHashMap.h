@@ -239,7 +239,7 @@ public:
 		if(inserted)
 		{
 			auto &vec = vectorMap.GetVector();
-			vec.emplace_back(std::move(value));
+			vec.emplace_back(key, std::move(value));
 			size_type new_index = vec.size() - 1;
 			map_it->second = new_index;
 			return { vectorMap.begin() + new_index, true };
@@ -346,7 +346,9 @@ public:
 
 	inline mapped_type &at(const key_type &key)
 	{
-		return vectorMap[hashMap.at(key)].second;
+		size_type index = hashMap.at(key);
+		auto &vec = vectorMap.GetVector();
+		return vec[index].second;
 	}
 
 	mapped_type &operator[](const key_type &key)

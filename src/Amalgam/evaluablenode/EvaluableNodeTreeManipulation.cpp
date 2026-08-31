@@ -440,6 +440,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 	if(generalized_node->IsAssociativeArray() &&
 		(EvaluableNode::IsAssociativeArray(tree1) || EvaluableNode::IsAssociativeArray(tree2)))
 	{
+		//TODO 25910: finish this
+
 		//get or convert the nodes to an assoc for tree1
 		EvaluableNode::AssocType tree1_conversion_assoc;
 		auto *tree1_mapped_childs = &tree1_conversion_assoc;
@@ -1886,7 +1888,7 @@ FlatMatrix<size_t> EvaluableNodeTreeManipulation::sequenceCommonalityBuffer;
 
 EvaluableNode EvaluableNodeTreeManipulation::nullEvaluableNode(ENT_NULL);
 
-CompactHashMap<EvaluableNodeBuiltInStringId, double> EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities
+VectorMap<EvaluableNodeBuiltInStringId, double> EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities
 {
 	{ENBISI_change_type,				0.15   },
 	{ENBISI_insert,						0.14   },

@@ -105,7 +105,7 @@ public:
 		WeightedRandValueType *immStringWeights;
 	};
 
-	static CompactHashMap<EvaluableNodeBuiltInStringId, double> mutationOperationTypeProbabilities;
+	static VectorMap<EvaluableNodeBuiltInStringId, double> mutationOperationTypeProbabilities;
 
 	//functionality to merge two nodes
 	class NodesMergeMethod : public Merger<EvaluableNode *, nullptr,

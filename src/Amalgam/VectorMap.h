@@ -36,6 +36,11 @@ public:
 	inline VectorMap(const VectorMap &other) = default;
 	inline VectorMap(VectorMap &&other) noexcept = default;
 
+	inline VectorMap(std::initializer_list<value_type> init)
+	{
+		insert(init);
+	}
+
 	inline ~VectorMap() = default;
 
 	inline VectorMap &operator=(const VectorMap &other)
@@ -108,6 +113,21 @@ public:
 	inline void resize(size_t n)
 	{
 		data.resize(n);
+	}
+
+	template<class... Args>
+	inline std::pair<iterator, bool> try_emplace(const key_type &key, Args &&...args)
+	{
+		auto it = find(key);
+		if(it != end())
+			return {it, false};
+
+		if constexpr(sizeof...(Args) == 0)
+			data.emplace_back(key, mapped_type{});
+		else
+			data.emplace_back(key, std::forward<Args>(args)...);
+
+		return {std::prev(data.end()), true};
 	}
 
 	template<class... Args>
@@ -243,7 +263,7 @@ public:
 		return it->second;
 	}
 
-	inline size_type count(const key_type &key) const
+	inline size_type count(const key_type &key)
 	{
 		return find(key) != cend() ? 1 : 0;
 	}
@@ -254,7 +274,7 @@ public:
 			[&](const std::pair<key_type, mapped_type> &p) { return key_equal{}(p.first, key); });
 	}
 
-	inline bool contains(const key_type &key) const
+	inline bool contains(const key_type &key)
 	{
 		return find(key) != data.cend();
 	}

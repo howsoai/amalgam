@@ -145,10 +145,12 @@ R"&(\[\s*
 });
 
 
-//given an assoc of StringID -> value representing the probability weight of each, and a random stream, it randomly selects from the assoc
-// if it can't find an appropriate probability, it returns an empty string
-// if normalize is true, then it will accumulate the probability and then normalize
-static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType &assoc, RandomStream &rs, bool normalize)
+//given an assoc of StringID -> value representing the probability weight of each, and a
+// random stream, it randomly selects from the assoc
+//if it can't find an appropriate probability, it returns an empty string
+//if normalize is true, then it will accumulate the probability and then normalize
+static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType &assoc,
+	RandomStream &rs, bool normalize)
 {
 	double probability_target = rs.RandFull();
 	double accumulated_probability = 0.0;

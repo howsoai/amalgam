@@ -194,14 +194,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 		mutation_rate = InterpretNodeIntoNumberValue(ocn[1]);
 
 	bool ow_exists = false;
-	CompactHashMap<EvaluableNodeType, double> opcode_weights;
+	VectorMap<EvaluableNodeType, double> opcode_weights;
 	if(ocn.size() > 3)
 	{
 		auto opcode_weights_node = InterpretNodeForImmediateUse(ocn[3]);
-		if(!EvaluableNode::IsNull(opcode_weights_node))
+		if(EvaluableNode::IsAssociativeArray(opcode_weights_node))
 		{
+			auto mcn = opcode_weights_node->GetMappedChildNodesViewOnAssoc();
+			opcode_weights.reserve(mcn.size());
+
 			ow_exists = true;
-			for(auto &[node_id, node] : opcode_weights_node->GetMappedChildNodesView())
+			for(auto &[node_id, node] : mcn)
 			{
 				EvaluableNodeType t = GetEvaluableNodeTypeFromStringId(node_id);
 				if(IsEvaluableNodeTypeValid(t))
@@ -213,14 +216,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	}
 
 	bool mtw_exists = false;
-	CompactHashMap<EvaluableNodeBuiltInStringId, double> mutation_type_weights;
+	VectorMap<EvaluableNodeBuiltInStringId, double> mutation_type_weights;
 	if(ocn.size() > 4)
 	{
 		auto mutation_weights_node = InterpretNodeForImmediateUse(ocn[4]);
-		if(!EvaluableNode::IsNull(mutation_weights_node))
+		if(EvaluableNode::IsAssociativeArray(mutation_weights_node))
 		{
+			auto mcn = mutation_weights_node->GetMappedChildNodesViewOnAssoc();
+			mutation_type_weights.reserve(mcn.size());
 			mtw_exists = true;
-			for(auto &[node_id, node] : mutation_weights_node->GetMappedChildNodesView())
+			for(auto &[node_id, node] : mcn)
 			{
 				auto bisid = GetBuiltInStringIdFromStringId(node_id);
 				if(bisid != ENBISI_NOT_A_STRING)

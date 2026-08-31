@@ -219,12 +219,28 @@ public:
 
 	inline void swap(AssocRef &other) noexcept
 	{
-		if(IsSmall() && other.IsSmall())
-			storage.smallMap->swap(*other.storage.smallMap);
-		else if(!IsSmall() && !other.IsSmall())
-			storage.largeMap->swap(*other.storage.largeMap);
-		//else
-			//TODO 25910: finish this
+		if(IsSmall())
+		{
+			if(other.IsSmall())
+			{
+				storage.smallMap->swap(*other.storage.smallMap);
+			}
+			else
+			{
+				//TODO 25910: finish this
+			}
+		}
+		else //!IsSmall()
+		{
+			if(other.IsSmall())
+			{
+				//TODO 25910: finish this
+			}
+			else
+			{
+				storage.largeMap->swap(*other.storage.largeMap);
+			}
+		}
 	}
 
 	//--- Lookup ---

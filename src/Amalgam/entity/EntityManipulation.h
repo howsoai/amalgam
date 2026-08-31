@@ -195,8 +195,8 @@ public:
 		bool types_must_match = true, bool nominal_numbers = true, bool nominal_strings = true, bool recursive_matching = true);
 
 	static Entity *MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
-		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType,
-			double> *operation_type, size_t preserve_type_depth,
+		VectorMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
+		VectorMap<EvaluableNodeType, double> *operation_type, size_t preserve_type_depth,
 		EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_number_weights,
 		EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_string_weights);
 

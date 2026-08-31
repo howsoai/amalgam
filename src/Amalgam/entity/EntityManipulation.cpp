@@ -629,8 +629,8 @@ void EntityManipulation::MergeContainedEntities(EntitiesMergeMethod *mm, Entity 
 }
 
 Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
-	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
-	CompactHashMap<EvaluableNodeType, double> *operation_type,
+	VectorMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
+	VectorMap<EvaluableNodeType, double> *operation_type,
 	size_t preserve_type_depth,
 	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_number_weights,
 	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType &imm_string_weights)

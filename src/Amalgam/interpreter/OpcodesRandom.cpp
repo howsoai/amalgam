@@ -401,8 +401,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 		&& (number_to_generate > 10 || (number_to_generate > 3 && num_weighted_values > 200)))
 	{
 		//use fast repeated generation technique
+		auto mcn = param->GetMappedChildNodesViewOnAssoc();
 		WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
-			EvaluableNode::AssocType, EvaluableNodeAsDouble> wdrst(param->GetMappedChildNodesViewOnAssoc(), false);
+			EvaluableNode::AssocRef, EvaluableNodeAsDouble> wdrst(mcn, false);
 		for(size_t i = 0; i < number_to_generate; i++)
 		{
 			EvaluableNodeReference rand_value(Parser::ParseFromKeyStringId(wdrst.WeightedDiscreteRand(randomStream), evaluableNodeManager));

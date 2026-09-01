@@ -172,9 +172,17 @@ public:
 	inline void reserve(size_type n)
 	{
 		if(IsSmall())
-			return storage.smallMap->reserve(n);
-		else
-			return storage.largeMap->reserve(n);
+		{
+			if(n <= EvaluableNode::largestSmallAssocSize)
+			{
+				storage.smallMap->reserve(n);
+				return;
+			}
+
+			PromoteToLarge();
+		}
+
+		storage.largeMap->reserve(n);
 	}
 
 	inline void clear()
@@ -185,7 +193,8 @@ public:
 			return storage.largeMap->clear();
 	}
 
-	template<class... Args> inline std::pair<iterator, bool> try_emplace(const key_type &key, Args &&...args)
+	template<class... Args>
+	inline std::pair<iterator, bool> try_emplace(const key_type &key, Args &&...args)
 	{
 		if(IsSmall())
 		{
@@ -200,7 +209,8 @@ public:
 		}
 	}
 
-	template<class... Args> inline std::pair<iterator, bool> emplace(Args &&...args)
+	template<class... Args>
+	inline std::pair<iterator, bool> emplace(Args &&...args)
 	{
 		if(IsSmall())
 		{
@@ -260,7 +270,7 @@ public:
 		}
 	}
 
-	size_t erase(const key_type &key)
+	inline size_t erase(const key_type &key)
 	{
 		if(IsSmall())
 		{
@@ -272,7 +282,7 @@ public:
 		}
 	}
 
-	iterator erase(iterator pos)
+	inline iterator erase(iterator pos)
 	{
 		if(IsSmall())
 		{

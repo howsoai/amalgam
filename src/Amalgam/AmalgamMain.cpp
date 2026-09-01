@@ -461,9 +461,11 @@ PLATFORM_MAIN_CONSOLE
 		if(!run_as_repl)
 		{
 			//don't need a return value
-			entity->Execute(StringInternPool::NOT_A_STRING_ID, &scope_stack, false, nullptr,
+			auto result = entity->Execute(StringInternPool::NOT_A_STRING_ID, &scope_stack, false, nullptr,
 				&write_listeners, print_listener, interpreter_constraints_ptr,
 				EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
+
+			entity->evaluableNodeManager.FreeNodeTreeIfPossible(result);
 		}
 		else //repl
 		{

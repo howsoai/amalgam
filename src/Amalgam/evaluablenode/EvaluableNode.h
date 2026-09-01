@@ -1127,7 +1127,7 @@ protected:
 		{
 			__forceinline void Construct()
 			{
-				mappedChildNodes = std::make_unique<LargeAssocType>();
+				new (&mappedChildNodes) std::unique_ptr<LargeAssocType>(std::make_unique<LargeAssocType>());
 				AnnotationsAndComments::Construct(annotationsAndComments);
 			}
 

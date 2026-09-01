@@ -636,6 +636,7 @@ inline void EvaluableNode::InitMappedChildNodes(size_t num_elements)
 	{
 		value.extendedMappedChildNodes.Construct();
 		value.extendedMappedChildNodes.mappedChildNodes->reserve(num_elements);
+		SetExtendedValue(true);
 	}
 }
 

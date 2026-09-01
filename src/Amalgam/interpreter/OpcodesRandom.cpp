@@ -327,7 +327,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 			retval_ocn.reserve(number_to_generate);
 
 			//make a copy of all of the probabilities so they can be removed one at a time
-			EvaluableNode::Assoc assoc(param->GetMappedChildNodesViewOnAssoc());
+			auto assoc =  param->GetMappedChildNodesViewOnAssoc();
 
 			for(size_t i = 0; i < number_to_generate; i++)
 			{

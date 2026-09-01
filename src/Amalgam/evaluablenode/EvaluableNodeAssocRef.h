@@ -227,18 +227,17 @@ public:
 			}
 			else
 			{
-				auto this_small_mcn = std::move(storage.smallMap);
+				auto this_small_mcn = std::move(*storage.smallMap);
 				auto other_large_mcn = std::move(*storage.largeMap);
 
 				PromoteToLarge();
 				*storage.largeMap = std::move(other_large_mcn);
 
-				//TODO 25910: fix compilation issue
 				other.ReduceToSmallIfPossible();
 				if(other.IsSmall())
-					*other.storage.smallMap = std::move(*this_small_mcn);
+					*other.storage.smallMap = std::move(this_small_mcn);
 				else
-					*other.storage.largeMap = std::move(*this_small_mcn);
+					*other.storage.largeMap = std::move(this_small_mcn);
 			}
 		}
 		else //!IsSmall()
@@ -246,17 +245,16 @@ public:
 			if(other.IsSmall())
 			{
 				auto this_large_mcn = std::move(*storage.largeMap);
-				auto other_small_mcn = std::move(storage.smallMap);
+				auto other_small_mcn = std::move(*storage.smallMap);
 
-				//TODO 25910: fix compilation issue
 				ReduceToSmallIfPossible();
 				if(IsSmall())
-					*storage.smallMap = std::move(*other_small_mcn);
+					*storage.smallMap = std::move(other_small_mcn);
 				else
-					*storage.largeMap = std::move(*other_small_mcn);
+					*storage.largeMap = std::move(other_small_mcn);
 
 				other.PromoteToLarge();
-				*other.storage.largeMap = std::move(*this_large_mcn);
+				*other.storage.largeMap = std::move(this_large_mcn);
 			}
 			else
 			{

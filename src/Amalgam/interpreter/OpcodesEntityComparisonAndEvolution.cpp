@@ -208,7 +208,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 			{
 				EvaluableNodeType t = GetEvaluableNodeTypeFromStringId(node_id);
 				if(IsEvaluableNodeTypeValid(t))
-					opcode_weights[t] = EvaluableNode::ToNumber(node);
+					opcode_weights.EmplaceUnique(t, EvaluableNode::ToNumber(node));
 			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(opcode_weights_node);
@@ -229,7 +229,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 			{
 				auto bisid = GetBuiltInStringIdFromStringId(node_id);
 				if(bisid != ENBISI_NOT_A_STRING)
-					mutation_type_weights[bisid] = EvaluableNode::ToNumber(node);
+					mutation_type_weights.EmplaceUnique(bisid, EvaluableNode::ToNumber(node));
 			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(mutation_weights_node);

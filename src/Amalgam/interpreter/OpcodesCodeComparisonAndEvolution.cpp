@@ -215,7 +215,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 		mutation_rate = InterpretNodeIntoNumberValue(ocn[1]);
 
 	bool ow_exists = false;
-	CompactHashMap<EvaluableNodeType, double> opcode_weights;
+	VectorMap<EvaluableNodeType, double> opcode_weights;
 	if(ocn.size() > 2)
 	{
 		auto opcode_weights_node = InterpretNodeForImmediateUse(ocn[2]);
@@ -229,7 +229,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 			{
 				EvaluableNodeType t = GetEvaluableNodeTypeFromStringId(node_id);
 				if(IsEvaluableNodeTypeValid(t))
-					opcode_weights[t] = EvaluableNode::ToNumber(node);
+					opcode_weights.EmplaceUnique(t, EvaluableNode::ToNumber(node));
 			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(opcode_weights_node);
@@ -237,7 +237,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	}
 
 	bool mtw_exists = false;
-	CompactHashMap<EvaluableNodeBuiltInStringId, double> mutation_type_weights;
+	VectorMap<EvaluableNodeBuiltInStringId, double> mutation_type_weights;
 	if(ocn.size() > 3)
 	{
 		auto mutation_weights_node = InterpretNodeForImmediateUse(ocn[3]);
@@ -251,7 +251,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 			{
 				auto bisid = GetBuiltInStringIdFromStringId(node_id);
 				if(bisid != ENBISI_NOT_A_STRING)
-					mutation_type_weights[bisid] = EvaluableNode::ToNumber(node);
+					mutation_type_weights.EmplaceUnique(bisid, EvaluableNode::ToNumber(node));
 			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(mutation_weights_node);

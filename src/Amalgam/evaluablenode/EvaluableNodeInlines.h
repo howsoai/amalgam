@@ -654,6 +654,13 @@ __forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesView()
 	return emptyMappedChildNodesNode.GetMappedChildNodesViewOnAssoc();
 }
 
+__forceinline EvaluableNode::AssocRef EvaluableNode::GetMappedChildNodesView(EvaluableNode *en)
+{
+	if(en == nullptr || !en->IsAssociativeArray())
+		return emptyMappedChildNodesNode.GetMappedChildNodesViewOnAssoc();
+	return en->GetMappedChildNodesViewOnAssoc();
+}
+
 //if the id exists, returns a pointer to the pointer of the child node
 // returns nullptr if the id doesn't exist
 inline EvaluableNode **EvaluableNode::GetMappedChildNode(const std::string &id)

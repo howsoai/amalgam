@@ -44,6 +44,70 @@ public:
 		return *this;
 	}
 
+	//assign from a SmallAssocType
+	inline AssocRef &operator=(SmallAssocType &other)
+	{
+		if(other.size() <= EvaluableNode::largestSmallAssocSize)
+			ReduceToSmallIfPossible();
+		else
+			PromoteToLarge();
+
+		if(IsSmall())
+			*storage.smallMap = other;
+		else
+			*storage.largeMap = other;
+
+		return *this;
+	}
+
+	//move from a SmallAssocType
+	inline AssocRef &operator=(SmallAssocType &&other) noexcept
+	{
+		if(other.size() <= EvaluableNode::largestSmallAssocSize)
+			ReduceToSmallIfPossible();
+		else
+			PromoteToLarge();
+
+		if(IsSmall())
+			*storage.smallMap = std::move(other);
+		else
+			*storage.largeMap = std::move(other);
+
+		return *this;
+	}
+
+	//assign from a LargeAssocType
+	inline AssocRef &operator=(LargeAssocType &other)
+	{
+		if(other.size() <= EvaluableNode::largestSmallAssocSize)
+			ReduceToSmallIfPossible();
+		else
+			PromoteToLarge();
+
+		if(IsSmall())
+			*storage.smallMap = other.GetVectorMap();
+		else
+			*storage.largeMap = other;
+
+		return *this;
+	}
+
+	//move from a LargeAssocType
+	inline AssocRef &operator=(LargeAssocType &&other) noexcept
+	{
+		if(other.size() <= EvaluableNode::largestSmallAssocSize)
+			ReduceToSmallIfPossible();
+		else
+			PromoteToLarge();
+
+		if(IsSmall())
+			*storage.smallMap = other.ExtractVectorMap();
+		else
+			*storage.largeMap = std::move(other);
+
+		return *this;
+	}
+
 	//allow it to be used in context of EvaluableNode::SmallAssocType
 	inline operator EvaluableNode::SmallAssocType &()
 	{

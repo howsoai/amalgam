@@ -742,6 +742,13 @@ public:
 		return emptyOrderedChildNodes;
 	}
 
+	static __forceinline OrderedRef GetOrderedChildNodes(EvaluableNode *en)
+	{
+		if(en == nullptr || !en->IsOrderedArray())
+			return emptyOrderedChildNodes;
+		return en->GetOrderedChildNodesReference();
+	}
+
 	//using ordered or mapped child nodes as appropriate, transforms into numeric values and passes into store_value
 	// if node is mapped child nodes, it will use element_names to order populate out and use default_value if any given id is not found
 	//will use num_expected_elements for immediate values
@@ -787,6 +794,8 @@ public:
 	//if the node is of not of type ENT_ASSOC, will return a view to an empty map
 	__forceinline AssocRef GetMappedChildNodesView();
 
+	static __forceinline AssocRef GetMappedChildNodesView(EvaluableNode *en);
+	
 	//if the id exists, returns a pointer to the pointer of the child node
 	// returns nullptr if the id doesn't exist
 	inline EvaluableNode **GetMappedChildNode(const std::string &id);
@@ -799,19 +808,28 @@ public:
 	EvaluableNode **GetOrCreateMappedChildNode(const std::string &id);
 	//returns a pointer to the pointer of the child node, creating it if necessary and populating it with a nullptr
 	EvaluableNode **GetOrCreateMappedChildNode(const StringInternPool::StringID sid);
+
 	// if copy is set to true, then it will copy the map, otherwise it will swap
-	void SetMappedChildNodes(AssocRef new_mcn, bool copy,
-		bool need_cycle_check = true, bool is_idempotent = false);
+	void SetMappedChildNodes(AssocRef new_mcn,
+		bool copy, bool need_cycle_check = true, bool is_idempotent = false);
+
+	void SetMappedChildNodes(LargeAssocType &new_mcn,
+		bool copy, bool need_cycle_check = true, bool is_idempotent = false);
+
 	//if overwrite is true, then it will overwrite the value, otherwise it will only set it if it does not exist
 	// will return true if it was successfully written (false if overwrite is set to false and the key already exists),
 	// as well as a pointer to where the pointer is stored
 	std::pair<bool, EvaluableNode **> SetMappedChildNode(const std::string &id, EvaluableNode *node, bool overwrite = true);
 	std::pair<bool, EvaluableNode **> SetMappedChildNode(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite = true);
+
 	//like SetMappedChildNode, except the sid already has a reference that is being handed off to this EvaluableNode to manage
 	bool SetMappedChildNodeWithReferenceHandoff(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite = true);
+
 	void ClearMappedChildNodes();
+
 	//returns the node erased
 	EvaluableNode *EraseMappedChildNode(const StringInternPool::StringID sid);
+
 	void AppendMappedChildNodes(AssocRef mcn_to_append);
 
 	//helper function to obtain a typed value from mapped child nodes

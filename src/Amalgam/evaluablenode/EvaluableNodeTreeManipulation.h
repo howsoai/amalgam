@@ -109,7 +109,7 @@ public:
 
 	//functionality to merge two nodes
 	class NodesMergeMethod : public Merger<EvaluableNode *, nullptr,
-		EvaluableNode::OrderedType, EvaluableNode::SmallAssocType>
+		EvaluableNode::OrderedType, EvaluableNode::AssocRef, EvaluableNode::LargeAssocType>
 	{
 	public:
 		NodesMergeMethod(EvaluableNodeManager *_enm, bool keep_all_of_both,

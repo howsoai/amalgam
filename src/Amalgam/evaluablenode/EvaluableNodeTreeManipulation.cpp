@@ -440,21 +440,10 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 	if(generalized_node->IsAssociativeArray() &&
 		(EvaluableNode::IsAssociativeArray(tree1) || EvaluableNode::IsAssociativeArray(tree2)))
 	{
-		//TODO 25910: finish this
+		auto tree1_mapped_childs = EvaluableNode::GetMappedChildNodesView(tree1);
+		auto tree2_mapped_childs = EvaluableNode::GetMappedChildNodesView(tree2);
 
-		//get or convert the nodes to an assoc for tree1
-		EvaluableNode::AssocType tree1_conversion_assoc;
-		auto *tree1_mapped_childs = &tree1_conversion_assoc;
-		if(EvaluableNode::IsAssociativeArray(tree1))
-			tree1_mapped_childs = &tree1->GetMappedChildNodesViewOnAssoc();
-
-		//get or convert the nodes to an assoc for tree2
-		EvaluableNode::AssocType tree2_conversion_assoc;
-		auto *tree2_mapped_childs = &tree2_conversion_assoc;
-		if(EvaluableNode::IsAssociativeArray(tree2))
-			tree2_mapped_childs = &tree2->GetMappedChildNodesViewOnAssoc();
-
-		EvaluableNode::AssocType merged = mm->MergeMaps(*tree1_mapped_childs, *tree2_mapped_childs);
+		EvaluableNode::LargeAssocType merged = mm->MergeMaps(tree1_mapped_childs, tree2_mapped_childs);
 		//hand off merged allocation into the generalized_node (hence the false parameter)
 		generalized_node->SetMappedChildNodes(merged, false);
 

@@ -79,18 +79,7 @@ public:
 		return *this;
 	}
 
-	//allow it to be used in context of VecMap
-	inline operator VecMap &()
-	{
-		return vectorMap;
-	}
-
-	inline operator const VecMap &() const
-	{
-		return vectorMap;
-	}
-
-	//construct from a VecMap
+	//assign from a VecMap
 	inline OrderedHashMap &operator=(const VecMap &other)
 	{
 		vectorMap = other;
@@ -104,6 +93,17 @@ public:
 		vectorMap = std::move(other);
 		BuildHashMapFromVectorMap();
 		return *this;
+	}
+
+	//allow it to be used in context of VecMap
+	inline operator VecMap &()
+	{
+		return vectorMap;
+	}
+
+	inline operator const VecMap &() const
+	{
+		return vectorMap;
 	}
 
 	//--- Iterators ---

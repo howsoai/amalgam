@@ -907,6 +907,34 @@ void EvaluableNode::SetMappedChildNodes(EvaluableNode::AssocRef new_mcn,
 		SetIsIdempotent(is_idempotent);
 }
 
+void EvaluableNode::SetMappedChildNodes(LargeAssocType &new_mcn,
+		bool copy, bool need_cycle_check, bool is_idempotent)
+{
+	if(!IsAssociativeArray()) [[unlikely]]
+		return;
+
+	auto mcn = GetMappedChildNodesViewOnAssoc();
+
+	//create new references before freeing old ones
+	string_intern_pool.CreateStringReferences(new_mcn, [](auto n) { return n.first; });
+
+	//destroy any string refs for map
+	string_intern_pool.DestroyStringReferences(mcn, [](auto n) { return n.first; });
+
+	//swap map heap memory with new_mcn
+	if(copy)
+		mcn = new_mcn.GetVectorMap();
+	else
+		mcn = new_mcn.ExtractVectorMap();
+
+	SetNeedCycleCheck(need_cycle_check);
+
+	if(is_idempotent && !IsEvaluableNodeTypePotentiallyIdempotent(type))
+		SetIsIdempotent(false);
+	else
+		SetIsIdempotent(is_idempotent);
+}
+
 std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::string &id, EvaluableNode *node, bool overwrite)
 {
 	if(!IsAssociativeArray()) [[unlikely]]

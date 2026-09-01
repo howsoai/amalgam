@@ -2214,7 +2214,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
 
-	evaluableNodeManager->EnsureNodeIsModifiable(container, true);
+	evaluableNodeManager->EnsureNodeIsModifiable(container, true, false);
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 
@@ -2418,12 +2418,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
 
-	evaluableNodeManager->EnsureNodeIsModifiable(container, true);
-
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 
 	//get indices (or index) to keep
 	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
+
+	EvaluableNodeReference new_container;
 
 	//if immediate then just keep individual element
 	if(indices.IsTerminalValueType())
@@ -2433,37 +2433,35 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDWithReference(true);
 			auto container_mcn = container->GetMappedChildNodesViewOnAssoc();
 
+			new_container = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), container.unique, true);
+
 			//find what should be kept, or clear key_sid if not found
-			EvaluableNode *to_keep = nullptr;
 			auto found_to_keep = container_mcn.find(key_sid);
 			if(found_to_keep != end(container_mcn))
-				to_keep = found_to_keep->second;
-			else
-			{
-				string_intern_pool.DestroyStringReference(key_sid);
-				key_sid = string_intern_pool.NOT_A_STRING_ID;
-			}
+				new_container->SetMappedChildNode(key_sid, found_to_keep->second);
 
 			//free everything not kept if possible
-			if(container.unique && !container->GetNeedCycleCheck())
+			if(container.uniqueUnreferencedTopNode && !container->GetNeedCycleCheck())
 			{
-				for(auto &[cn_id, cn] : container_mcn)
+				if(container.unique)
 				{
-					if(cn_id != key_sid)
-						evaluableNodeManager->FreeNodeTree(cn);
+					for(auto &[cn_id, cn] : container_mcn)
+					{
+						if(cn_id != key_sid)
+							evaluableNodeManager->FreeNodeTree(cn);
+					}
 				}
-			}
 
-			//put to_keep back in (have the string reference from above)
-			container->ClearMappedChildNodes();
-			if(key_sid != string_intern_pool.NOT_A_STRING_ID)
-				container_mcn.emplace(key_sid, to_keep);
+				evaluableNodeManager->FreeNode(container);
+			}
 		}
 		else if(container->IsOrderedArray())
 		{
 			double relative_pos = indices.GetValue().GetValueAsNumber();
 			auto &container_ocn = container->GetOrderedChildNodesReference();
 
+			new_container = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), container.unique, true);
+			
 			//get relative position
 			size_t actual_pos = 0;
 			if(relative_pos >= 0)
@@ -2474,20 +2472,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			//if the position is valid, erase everything but that position
 			if(actual_pos >= 0 && actual_pos < container_ocn.size())
 			{
+				new_container->AppendOrderedChildNode(container_ocn[actual_pos]);
 
 				//free everything not kept if possible
-				if(container.unique && !container->GetNeedCycleCheck())
+				if(container.uniqueUnreferencedTopNode && !container->GetNeedCycleCheck())
 				{
-					for(size_t i = 0; i < container_ocn.size(); i++)
+					if(container.unique)
 					{
-						if(i != actual_pos)
-							evaluableNodeManager->FreeNodeTree(container_ocn[i]);
+						for(size_t i = 0; i < container_ocn.size(); i++)
+						{
+							if(i != actual_pos)
+								evaluableNodeManager->FreeNodeTree(container_ocn[i]);
+						}
 					}
-				}
 
-				EvaluableNode *to_keep = container_ocn[actual_pos];
-				container_ocn.clear();
-				container_ocn.push_back(to_keep);
+					evaluableNodeManager->FreeNode(container);
+				}
 			}
 		}
 	}
@@ -2497,7 +2497,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 		if(container->IsAssociativeArray())
 		{
 			auto container_mcn = container->GetMappedChildNodesViewOnAssoc();
-			EvaluableNode::AssocType new_container;
+
+			new_container = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), container.unique, true);
+
+			//if container is freeable, make copy and free if appropriate
+			EvaluableNode::LargeAssocType nodes_to_free;
+			if(container.unique && !container->GetNeedCycleCheck())
+				nodes_to_free = container_mcn;
 
 			for(auto &cn : indices_ocn)
 			{
@@ -2507,21 +2513,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 				auto found_to_keep = container_mcn.find(key_sid);
 				if(found_to_keep != end(container_mcn))
 				{
-					new_container.emplace(found_to_keep->first, found_to_keep->second);
-					container_mcn.erase(found_to_keep);
+					auto [inserted, location] = new_container->SetMappedChildNode(key_sid, found_to_keep->second, false);
+					nodes_to_free.erase(key_sid);
 				}
 			}
 
 			//anything left should be freed if possible
-			if(container.unique && !container->GetNeedCycleCheck())
-			{
-				for(auto &cn : container_mcn | std::views::values)
-					evaluableNodeManager->FreeNodeTree(cn);
-			}
-			string_intern_pool.DestroyStringReferences(container_mcn, [](auto &pair) { return pair.first;  });
-
-			//put in place
-			std::swap(container_mcn, new_container);
+			for(auto &cn : nodes_to_free | std::views::values)
+				evaluableNodeManager->FreeNodeTree(cn);
+			if(container.uniqueUnreferencedTopNode)
+				evaluableNodeManager->FreeNode(container);
 		}
 		else if(container->IsOrderedArray())
 		{
@@ -2551,8 +2552,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			//sort to keep in order and remove duplicates
 			std::sort(begin(indices_to_keep), end(indices_to_keep));
 
-			EvaluableNode::OrderedType new_container;
-			new_container.reserve(indices_to_keep.size());
+			new_container = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), container.unique, true);
+			auto &new_container_ocn = new_container->GetOrderedChildNodesReference();
+			new_container_ocn.reserve(indices_to_keep.size());
 
 			//move indices over, but keep track of the previous one to skip duplicates
 			size_t prev_index = std::numeric_limits<size_t>::max();
@@ -2563,7 +2565,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 				if(index == prev_index)
 					continue;
 
-				new_container.push_back(container_ocn[index]);
+				new_container_ocn.push_back(container_ocn[index]);
 
 				//set to null so it won't be cleared later
 				container_ocn[index] = nullptr;
@@ -2572,18 +2574,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			}
 
 			//free anything left in original container
-			if(container.unique && !container->GetNeedCycleCheck())
+			if(container.uniqueUnreferencedTopNode && !container->GetNeedCycleCheck())
 			{
-				for(auto cn : container_ocn)
-					evaluableNodeManager->FreeNodeTree(cn);
-			}
+				if(container.unique)
+				{
+					for(auto cn : container_ocn)
+						evaluableNodeManager->FreeNodeTree(cn);
+				}
 
-			//put in place
-			std::swap(container_ocn, new_container);
+				evaluableNodeManager->FreeNode(container);
+			}
 		}
 	}
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(indices);
 
-	return container;
+	return new_container;
 }

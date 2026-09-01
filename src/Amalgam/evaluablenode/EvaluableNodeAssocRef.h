@@ -17,6 +17,9 @@ public:
 
 	AssocRef(EvaluableNode *_en) : en(_en)
 	{
+		if(en == nullptr)
+			return;
+
 		if(!en->HasExtendedValue())
 			storage.smallMap = &en->value.mappedChildNodes;
 		else

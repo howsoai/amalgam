@@ -389,7 +389,7 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 
 	if(DoesEvaluableNodeTypeUseAssocData(type))
 	{
-		if(!HasExtendedValue())
+		if(!n->HasExtendedValue())
 		{
 			value.ConstructMappedChildNodes();
 			value.mappedChildNodes = n->value.mappedChildNodes;

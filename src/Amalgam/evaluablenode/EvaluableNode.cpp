@@ -410,7 +410,6 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 		{
 			value.ConstructMappedChildNodes();
 			value.mappedChildNodes = n->value.extendedMappedChildNodes.mappedChildNodes->GetVectorMap();
-			SetExtendedValue(true);
 
 			for(auto &[sid, cn] : value.mappedChildNodes)
 				string_intern_pool.CreateStringReference(sid);

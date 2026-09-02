@@ -724,3 +724,5 @@ private:
 };
 
 #endif
+
+#include "OrderedHashMap.h"

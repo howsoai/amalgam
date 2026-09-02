@@ -71,11 +71,11 @@ public:
 	// if has_weight, then will use get_weight to obtain the weight of each value
 	template<typename EntityIterator, typename ValueFunction, typename WeightFunction>
 	__forceinline static
-		FastHashMap<double, double, FastHasher<double>, DoubleNanHashComparator>
+		OrderedHashMap<double, double, FastHasher<double>, DoubleNanHashComparator>
 		ValueMassesNumber(EntityIterator first, EntityIterator last, size_t estimated_num_unique_values,
 			ValueFunction get_value, bool has_weight, WeightFunction get_weight)
 	{
-		FastHashMap<double, double, FastHasher<double>, DoubleNanHashComparator> value_masses;
+		OrderedHashMap<double, double, FastHasher<double>, DoubleNanHashComparator> value_masses;
 		value_masses.reserve(estimated_num_unique_values);
 
 		if(!has_weight)
@@ -116,11 +116,11 @@ public:
 	// if has_weight, then will use get_weight to obtain the weight of each value
 	template<typename EntityIterator, typename ValueFunction, typename WeightFunction>
 	__forceinline static
-		FastHashMap<StringInternPool::StringID, double>
+		OrderedHashMap<StringInternPool::StringID, double>
 		ValueMassesStringId(EntityIterator first, EntityIterator last, size_t estimated_num_unique_values,
 			ValueFunction get_value, bool has_weight, WeightFunction get_weight)
 	{
-		FastHashMap<StringInternPool::StringID, double> value_masses;
+		OrderedHashMap<StringInternPool::StringID, double> value_masses;
 		value_masses.reserve(estimated_num_unique_values);
 
 		if(!has_weight)

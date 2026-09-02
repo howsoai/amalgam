@@ -12,8 +12,9 @@
 #include <vector>
 
 template<typename KeyType, typename ValueType,
-	template<typename, typename> typename HashMapType = CompactHashMap,
-	template<typename> typename HashSetType = CompactHashSet>
+	typename Hasher = FastHasher<KeyType>, typename Equality = std::equal_to<KeyType>,
+	template<typename, typename, typename, typename> typename HashMapType = CompactHashMap,
+	template<typename, typename, typename> typename HashSetType = CompactHashSet>
 class OrderedHashMap
 {
 public:
@@ -25,8 +26,8 @@ public:
 	using value_type = std::pair<key_type, mapped_type>;
 	using size_type = std::size_t;
 
-	using HashMap = HashMapType<key_type, size_t>;
-	using HashSet = HashSetType<key_type>;
+	using HashMap = HashMapType<key_type, size_t, Hasher, Equality>;
+	using HashSet = HashSetType<key_type, Hasher, Equality>;
 
 	using key_equal = HashMap::key_equal;
 	using VecMap = VectorMap<key_type, mapped_type, key_equal>;

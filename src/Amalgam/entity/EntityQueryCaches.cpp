@@ -800,7 +800,7 @@ EvaluableNode *EntityQueryCaches::ComputeValueFromMatchingEntities(EntityQueryCo
 }
 
 void EntityQueryCaches::ComputeValuesFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
-	FastHashMap<StringInternPool::StringID, double> &compute_results, bool is_first)
+	OrderedHashMap<StringInternPool::StringID, double> &compute_results, bool is_first)
 {
 #if defined(MULTITHREAD_SUPPORT)
 	Concurrency::ReadLock lock(mutex);
@@ -1049,7 +1049,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 		case ENT_QUERY_VALUE_MASSES:
 		{
-			FastHashMap<StringInternPool::StringID, double> value_weights;
+			OrderedHashMap<StringInternPool::StringID, double> value_weights;
 			entity_caches->ComputeValuesFromMatchingEntities(&cond, matching_ents, value_weights, is_first);
 
 			if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::SIZE_AS_NUMBER))

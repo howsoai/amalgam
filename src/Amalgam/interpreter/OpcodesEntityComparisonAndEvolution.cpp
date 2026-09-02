@@ -786,7 +786,7 @@ static OpcodeInitializer _ENT_UNION_ENTITIES(ENT_UNION_ENTITIES, &Interpreter::I
 		]
 	)
 ))&", R"([
-	{a 3 b 4 c .null}
+	{b 4 c .null a 3}
 	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
 ])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" "UnionedEntity")"}
 		});

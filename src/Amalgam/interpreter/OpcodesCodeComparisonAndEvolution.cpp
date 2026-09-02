@@ -900,7 +900,7 @@ static OpcodeInitializer _ENT_UNION(ENT_UNION, &Interpreter::InterpretNode_ENT_U
 ))&", R"([
 	1
 	(- 4 2)
-	{a 3 b 4 c 3}
+	{b 4 a 3 c 3}
 ])"},
 			{R"&((union
 	(lambda
@@ -943,7 +943,7 @@ static OpcodeInitializer _ENT_UNION(ENT_UNION, &Interpreter::InterpretNode_ENT_U
 	1
 	2
 	3
-	{a 3 b 4 c 3}
+	{b 4 a 3 c 3}
 	(if
 		true
 		1
@@ -1059,7 +1059,7 @@ R"("\[\\r\\n\\t\\r\\n\\t;comment 1\\r\\n\\t;comment 2\\r\\n\\t;comment 3\\r\\n\\
 	[1 2 3]
 ])"},
 		{R"((union (lambda (+ a b)) (lambda (+ b))))",
-		R"((+ a b))"},
+		R"((+ b a))"},
 		{ R"((union (lambda (- a b)) (lambda (- b))))",
 		R"((- a b))" }
 		});
@@ -1980,8 +1980,8 @@ static OpcodeInitializer _ENT_SIMPLIFY(ENT_SIMPLIFY, &Interpreter::InterpretNode
 ))&",
 		R"((+
 		(*
-				(exp a)
 				2
+				(exp a)
 		)
 		(* 4 a)
 		20

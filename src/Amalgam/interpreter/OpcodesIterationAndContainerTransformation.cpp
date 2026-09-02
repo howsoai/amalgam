@@ -823,9 +823,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		//process inputs, get size and whether needs to be associative array
 		bool need_assoc = false;
 
-		//note that all_keys will maintain references to each StringID that must be freed
-		//TODO 25910: make this ordered
-		FastHashSet<StringInternPool::StringID> all_keys;	//only if have assoc
+		//note that unique_keys will maintain references to each StringID that must be freed
+		//needed if any of the containers is an ENT_ASSOC
+		FastHashSet<StringInternPool::StringID> unique_keys;
+		//keep a list to maintain order
+		std::vector<StringInternPool::StringID> unique_keys_list;
 		size_t largest_size = 0; //only if have list
 
 		node_stack.PushEvaluableNode(inputs_list_node);
@@ -844,10 +846,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 				need_assoc = true;
 				for(auto &n_id : cur_input->GetMappedChildNodesViewOnAssoc() | std::views::keys)
 				{
-					auto [inserted_node, inserted] = all_keys.insert(n_id);
+					auto [inserted_node, inserted] = unique_keys.insert(n_id);
 					//if it was inserted, then need to keep track of the string reference
 					if(inserted)
+					{
+						unique_keys_list.emplace_back(n_id);
 						string_intern_pool.CreateStringReference(n_id);
+					}
 				}
 			}
 			else //ordered
@@ -903,7 +908,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		else //need associative array
 		{
 			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
-			result->ReserveMappedChildNodes(largest_size + all_keys.size());
+			result->ReserveMappedChildNodes(largest_size + unique_keys_list.size());
 
 			PushNewConstructionContext(inputs_list_node, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
@@ -945,13 +950,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 				//remove from keys so it isn't clobbered when checking assoc keys
 				StringInternPool::StringID index_sid = string_intern_pool.GetIDFromString(index_string);
-				if(all_keys.erase(index_sid))
+				if(unique_keys.erase(index_sid))
 					string_intern_pool.DestroyStringReference(index_sid);
 			}
 
 			//now perform for all assocs
-			for(auto &index_sid : all_keys)
+			for(auto &index_sid : unique_keys_list)
 			{
+				//skip over any keys already accounted for
+				if(!unique_keys.count(index_sid))
+					continue;
+
 				//set index value
 				SetTopCurrentIndexInConstructionStack(index_sid);
 
@@ -988,8 +997,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 		} //needed to process as assoc array
 
-		//free all references
-		string_intern_pool.DestroyStringReferences(all_keys);
+		//free all references still left
+		string_intern_pool.DestroyStringReferences(unique_keys);
 
 		if(any_side_effects)
 		{

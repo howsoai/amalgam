@@ -11,9 +11,9 @@
 #include <utility>
 #include <vector>
 
-template<template<typename, typename> typename HashMapType,
-	template<typename> typename HashSetType,
-	typename KeyType, typename ValueType>
+template<typename KeyType, typename ValueType,
+	template<typename, typename> typename HashMapType = CompactHashMap,
+	template<typename> typename HashSetType = CompactHashSet>
 class OrderedHashMap
 {
 public:
@@ -414,43 +414,43 @@ private:
 
 namespace
 {
-	template<template<typename, typename> typename HashMapType,
-		template<typename> typename HashSetType,
-		typename KeyType, typename ValueType>
-	inline auto begin(OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &m)
+	template<typename KeyType, typename ValueType, 
+		template<typename, typename> typename HashMapType,
+		template<typename> typename HashSetType>
+	inline auto begin(OrderedHashMap<KeyType, ValueType, HashMapType, HashSetType> &m)
 	{
 		return m.begin();
 	}
 
-	template<template<typename, typename> typename HashMapType,
-		template<typename> typename HashSetType,
-		typename KeyType, typename ValueType>
-	inline auto cbegin(const OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &m)
+	template<typename KeyType, typename ValueType,
+		template<typename, typename> typename HashMapType,
+		template<typename> typename HashSetType>
+	inline auto cbegin(const OrderedHashMap<KeyType, ValueType, HashMapType, HashSetType> &m)
 	{
 		return m.cbegin();
 	}
 
-	template<template<typename, typename> typename HashMapType,
-		template<typename> typename HashSetType,
-		typename KeyType, typename ValueType>
-	inline auto end(OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &m)
+	template<typename KeyType, typename ValueType,
+		template<typename, typename> typename HashMapType,
+		template<typename> typename HashSetType>
+	inline auto end(OrderedHashMap<KeyType, ValueType, HashMapType, HashSetType> &m)
 	{
 		return m.end();
 	}
 
-	template<template<typename, typename> typename HashMapType,
-		template<typename> typename HashSetType,
-		typename KeyType, typename ValueType>
-	inline auto cend(const OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &m)
+	template<typename KeyType, typename ValueType,
+		template<typename, typename> typename HashMapType,
+		template<typename> typename HashSetType>
+	inline auto cend(const OrderedHashMap<KeyType, ValueType, HashMapType, HashSetType> &m)
 	{
 		return m.cend();
 	}
 
-	template<template<typename, typename> typename HashMapType,
-		template<typename> typename HashSetType,
-		typename KeyType, typename ValueType>
-	inline auto swap(OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &a,
-		OrderedHashMap<HashMapType, HashSetType, KeyType, ValueType> &b)
+	template<typename KeyType, typename ValueType,
+		template<typename, typename> typename HashMapType,
+		template<typename> typename HashSetType>
+	inline auto swap(OrderedHashMap<KeyType, ValueType, HashMapType, HashSetType> &a,
+		OrderedHashMap<KeyType, ValueType, HashMapType, HashSetType> &b)
 	{
 		return a.swap(b);
 	}

@@ -39,7 +39,7 @@ public:
 
 	//EvaluableNode assoc storage
 	using SmallAssocType = VectorMap<StringInternPool::StringID, EvaluableNode *>;
-	using LargeAssocType = OrderedHashMap<CompactHashMap, CompactHashSet, StringInternPool::StringID, EvaluableNode *>;
+	using LargeAssocType = OrderedHashMap<StringInternPool::StringID, EvaluableNode *>;
 	class AssocRef;
 
 	//EvaluableNode ordered storage

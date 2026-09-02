@@ -91,20 +91,18 @@ such that `(list 1 2 3)` is same as `[1 2 3]` and `(assoc "a" 1 "b" 2)` is same 
 Indices of lists are 0-based, and keys of an assoc are referred to as
 the indices of an assoc.  This concept unifies assocs and lists so that
 you may think of lists as assocs where the index is the 'key' for each
-value in a list.  The order of items in an assoc is never guaranteed.
+value in a list.  The order of items in an assoc is based on insertion order, except when code is used as a key in an assoc and in that case it is in order of alphanumeric sorting by the canonized code string.
 
     (declare (assoc
 
         indices_of_my_list (indices [10 20 30 40])          ;returns [0 1 2 3]
 
         indices_of_my_assoc (indices { "x" 2 "y" 3 "z" 4})  ;returns just the 'keys', ["x" "z" "y"],
-                                                            ;NOTE: order of indices in an assoc is not guaranteed
 
         values_of_my_list (values [10 20 30 40])            ;returns the same list [10 20 30 40] since the values
                                                             ;of a list are the list itself
 
         values_of_my_assoc (values { "x" 2 "y" 3 "z" 4})    ;returns just the values [4 3 2]
-                                                            ;NOTE: order of values in an assoc is not guaranteed
 
     ))
 
@@ -780,7 +778,7 @@ where <num> is how many 'layers' to go up. For example:
                 (list "10" "20" "30")
             )
         )
-        (assoc "A" "a" "B" "b" "C" "c") ; note: assocs aren't necessarily iterated in order since they are unordered hashmaps
+        (assoc "A" "a" "B" "b" "C" "c")
     )
 
 ```

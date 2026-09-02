@@ -1242,6 +1242,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		//need to edit the list itself, so if not unique, make at least the top node unique
 		evaluableNodeManager->EnsureNodeIsModifiable(result_list, true);
 
+		//TODO 25910: construct rather than modify to maintain order
+
 		if(result_list->IsAssociativeArray())
 		{
 			auto result_list_mcn = result_list->GetMappedChildNodesViewOnAssoc();

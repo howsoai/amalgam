@@ -812,7 +812,7 @@ static OpcodeInitializer _ENT_UNPARSE(ENT_UNPARSE, &Interpreter::InterpretNode_E
 		OpcodeDetails::ParameterGroup({"include_attributes", OpcodeDetails::DataType::BOOL, true})
 	};
 	d.returns = OpcodeDetails::DataType::STRING;
-	d.description = R"(Code referenced by `node` is unparsed and the representative string is returned. If `pretty_print` is true, the output will be in pretty-print format, otherwise by default it will be inlined.  If `sort_keys` is true, the default, then it will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to whatever order it is stored in memory.  If `include_attributes` is true, it will print out attributes like comments, but by default it will not.  Unparsing is safe for cyclic and graph data structures and will emit appropriate opcodes using the `@` prefix so that parsing will reconstruct the cyclic or graph relationships.)";
+	d.description = R"(Code referenced by `node` is unparsed and the representative string is returned. If `pretty_print` is true, the output will be in pretty-print format, otherwise by default it will be inlined.  If `sort_keys` is true, the default, then it will print assoc structures and anything that could come in different orders in a natural sorted order by key, otherwise it will default to the order it is stored in memory.  If `include_attributes` is true, it will print out attributes like comments, but by default it will not.  Unparsing is safe for cyclic and graph data structures and will emit appropriate opcodes using the `@` prefix so that parsing will reconstruct the cyclic or graph relationships.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unparse (parse "(print \"hello\")")))&", R"&("(print \"hello\")")&"},
 		{R"&((parse (unparse (list (sqrt -1) .null .infinity -.infinity))))&", R"&([.null .null .infinity -.infinity])&"},
@@ -835,9 +835,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en,
 	if(ocn.size() > 1)
 		pretty = InterpretNodeIntoBoolValue(ocn[1]);
 
-	bool deterministic_order = true;
+	bool sort_keys = true;
 	if(ocn.size() > 2)
-		deterministic_order = InterpretNodeIntoBoolValue(ocn[2], true);
+		sort_keys = InterpretNodeIntoBoolValue(ocn[2], true);
 
 	bool include_attributes = false;
 	if(ocn.size() > 3)
@@ -848,7 +848,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en,
 		max_length = interpreterConstraints->maxNumAllocatedNodes;
 
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);
-	std::string s = Parser::Unparse(tree, pretty, include_attributes, deterministic_order, false, false, max_length);
+	std::string s = Parser::Unparse(tree, pretty, include_attributes, sort_keys, false, false, max_length);
 	evaluableNodeManager->FreeNodeTreeIfPossible(tree);
 
 	return AllocReturn(s, immediate_result);

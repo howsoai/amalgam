@@ -1381,13 +1381,13 @@ static OpcodeInitializer _ENT_GET_ENTITY_PERMISSIONS(ENT_GET_ENTITY_PERMISSIONS,
 	)
 	(get_entity_permissions "Entity")
 ))&", R"({
-	alter_performance .false
-	environment .false
-	load .false
-	std_in .false
-	std_out_and_std_err .false
-	store .false
-	system .false
+		std_out_and_std_err .false
+		std_in .false
+		load .false
+		store .false
+		environment .false
+		alter_performance .false
+		system .false
 })", "", R"((destroy_entities "Entity"))"}
 		});
 	d.retrievesData = true;
@@ -1438,13 +1438,13 @@ static OpcodeInitializer _ENT_SET_ENTITY_PERMISSIONS(ENT_SET_ENTITY_PERMISSIONS,
 	(set_entity_permissions "Entity" .true)
 	(get_entity_permissions "Entity")
 ))&", R"({
-	alter_performance .true
-	environment .true
-	load .true
-	std_in .true
-	std_out_and_std_err .true
-	store .true
-	system .true
+		std_out_and_std_err .true
+		std_in .true
+		load .true
+		store .true
+		environment .true
+		alter_performance .true
+		system .true
 })", "", R"((destroy_entities "Entity"))"}
 		});
 	d.retrievesData = true;

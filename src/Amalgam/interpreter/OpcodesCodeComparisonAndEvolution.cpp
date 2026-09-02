@@ -304,13 +304,13 @@ static OpcodeInitializer _ENT_GET_MUTATION_DEFAULTS(ENT_GET_MUTATION_DEFAULTS, &
 		{R"((get_mutation_defaults "mutation_types"))", R"({
 		change_type 0.15
 		insert 0.14
-		insert_element 0.14
 		remove 0.14
-		remove_all_elements 0.0001
-		remove_element 0.14
-		replace_element_with_copy 0.0999
 		simplify_node 0.05
+		replace_element_with_copy 0.0999
+		insert_element 0.14
+		remove_element 0.14
 		swap_elements 0.14
+		remove_all_elements 0.0001
 })"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;

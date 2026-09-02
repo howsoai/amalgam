@@ -532,7 +532,7 @@ PLATFORM_MAIN_CONSOLE
 
 				auto result = entity->ExecuteOnEntity(code, &scope_stack, nullptr,
 					&write_listeners, print_listener, interpreter_constraints_ptr);
-				std::cout << Parser::Unparse(result, true, true, true);
+				std::cout << Parser::Unparse(result, true, true, false);
 				running = !(result != nullptr && result->GetType() == ENT_CONCLUDE);
 				entity->evaluableNodeManager.FreeNodeTreeIfPossible(result);
 			}

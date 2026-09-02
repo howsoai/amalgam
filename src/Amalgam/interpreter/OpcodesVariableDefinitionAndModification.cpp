@@ -2172,7 +2172,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 		//if using code, just reuse string value
 		if(use_code)
-			string_value = Parser::Unparse(code_value, false, false, true);
+			string_value = Parser::Unparse(code_value, false, false, false);
 
 		if(to_type == GetStringIdFromBuiltInStringId(ENBISI_base16))
 			string_value = StringManipulation::BinaryStringToBase16(string_value);

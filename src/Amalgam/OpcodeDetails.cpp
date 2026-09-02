@@ -363,7 +363,7 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 
 	std::cout << "Executing... ";
 	auto result = entity->ExecuteOnEntity(code, nullptr);
-	std::string result_str = Parser::Unparse(result, true, true, true);
+	std::string result_str = Parser::Unparse(result, true, true, false);
 
 	if(regexMatch.empty())
 	{

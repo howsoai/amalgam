@@ -897,17 +897,17 @@ static OpcodeInitializer _ENT_APPEND(ENT_APPEND, &Interpreter::InterpretNode_ENT
 	[7 8 9]
 	(associate "d" 10 "e" 11)
 ))&", R"({
-	0 1
-	1 2
-	2 3
-	3 7
-	4 8
-	5 9
-	a 4
-	b 5
-	c 6
-	d 10
-	e 11
+		0 1
+		1 2
+		2 3
+		a 4
+		b 5
+		c 6
+		3 7
+		4 8
+		5 9
+		d 10
+		e 11
 })"},
 			{R"&((append
 	[4 9.2 "this"]
@@ -1308,11 +1308,11 @@ static OpcodeInitializer _ENT_MODIFY(ENT_MODIFY, &Interpreter::InterpretNode_ENT
 	"e"
 	5
 ))&", R"({
-	4 "d"
-	a 1
-	b 2
-	c 3
-	e 5
+		a 1
+		b 2
+		c 3
+		4 "d"
+		e 5
 })"},
 			{R"&((modify
 	[0 1 2 3 4]
@@ -2216,6 +2216,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
 
+	//TODO 25910: construct a new element instead of copy for both performance and to preserve insertion order for assocs
 	evaluableNodeManager->EnsureNodeIsModifiable(container, true, false);
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);

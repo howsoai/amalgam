@@ -180,6 +180,7 @@ struct FastHasher<std::pair<T *, T *>, void>
 	}
 };
 
+//TODO 25910: check usage of FastHashMap and CompactHashMap for iteration, replace with OrderedHashMap if need determinism
 
 template<typename T, typename H = FastHasher<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
 using FastHashSet = ska::flat_hash_set<T, H, E, A>;

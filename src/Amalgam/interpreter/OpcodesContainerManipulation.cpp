@@ -332,6 +332,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 	if(ocn.size() > 1)
 		tail_by = InterpretNodeIntoNumberValue(ocn[1]);
 
+	//TODO 25910: make this opcode more efficient (only copy what is needed instead of whole node) and follow proper order
 	if(list->IsOrderedArray())
 	{
 		if(list->GetOrderedChildNodesReference().size() > 0)
@@ -499,7 +500,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 		{
 			//just take the first, because it's more efficient and the order does not matter for maps
 			//keep reference to first of map before free rest of it
-			EvaluableNode *last_en = begin(list_mcn)->second;
+			EvaluableNode *last_en = std::prev(end(list_mcn))->second;
 
 			if(list.unique && !list->GetNeedCycleCheck())
 			{
@@ -764,6 +765,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 	if(ocn.size() > 1)
 		truncate_to = InterpretNodeIntoNumberValue(ocn[1]);
 
+	//TODO 25910: make this opcode more efficient (only copy what is needed instead of whole node) and follow proper order
 	if(list->IsOrderedArray())
 	{
 		evaluableNodeManager->EnsureNodeIsModifiable(list, true);

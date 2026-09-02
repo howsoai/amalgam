@@ -37,9 +37,6 @@ public:
 	//EvaluableNode pointer to count
 	using ReferenceCountType = FastHashMap<EvaluableNode *, size_t>;
 
-	//lookup a keyword string and find the type
-	using KeywordLookupType = FastHashMap<std::string, EvaluableNodeType>;
-
 	//EvaluableNode assoc storage
 	using SmallAssocType = VectorMap<StringInternPool::StringID, EvaluableNode *>;
 	using LargeAssocType = OrderedHashMap<CompactHashMap, CompactHashSet, StringInternPool::StringID, EvaluableNode *>;
@@ -48,9 +45,6 @@ public:
 	//EvaluableNode ordered storage
 	using OrderedType = std::vector<EvaluableNode *>;
 	using OrderedRef = OrderedType &;
-
-	//Storage for labels
-	using LabelsAssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
 
 	using AttributeStorageType = uint8_t;
 	enum class Attribute : AttributeStorageType

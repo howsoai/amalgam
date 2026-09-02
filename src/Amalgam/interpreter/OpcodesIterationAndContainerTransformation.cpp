@@ -824,6 +824,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		bool need_assoc = false;
 
 		//note that all_keys will maintain references to each StringID that must be freed
+		//TODO 25910: make this ordered
 		FastHashSet<StringInternPool::StringID> all_keys;	//only if have assoc
 		size_t largest_size = 0; //only if have list
 

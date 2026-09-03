@@ -3,6 +3,7 @@
 #include "OpcodeDetails.h"
 
 //system headers:
+#include <ranges>
 #include <regex>
 
 static std::string _opcode_group = "Container Manipulation";
@@ -2255,25 +2256,40 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//TODO 25910: construct a new element instead of copy for both performance and to preserve insertion order for assocs
-	evaluableNodeManager->EnsureNodeIsModifiable(container, true, false);
-
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 
 	//get indices (or index) to remove
 	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
 
 	//used for deleting nodes if possible -- unique and cycle free
-	EvaluableNodeReference removed_node = EvaluableNodeReference(static_cast<EvaluableNode *>(nullptr),
+	EvaluableNodeReference removed_node(static_cast<EvaluableNode *>(nullptr),
 		container.unique && !container->GetNeedCycleCheck());
+
+	EvaluableNodeReference new_container(static_cast<EvaluableNode *>(nullptr), container.unique, true);
 
 	//if not a list, then just remove individual element
 	if(indices.IsTerminalValueType())
 	{
 		if(container->IsAssociativeArray())
 		{
-			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDIfExists(true);
-			removed_node.SetReference(container->EraseMappedChildNode(key_sid));
+			StringInternPool::StringID key_to_remove = indices.GetValue().GetValueAsStringIDIfExists(true);
+
+			new_container.SetReference(evaluableNodeManager->AllocNode(ENT_ASSOC));
+			EvaluableNode::SmallAssocType new_container_mcn;
+
+			auto mcn = container->GetMappedChildNodesViewOnAssoc();
+			for(auto &[key, value] : mcn)
+			{
+				if(key == key_to_remove)
+				{
+					removed_node.SetReference(value);
+					continue;
+				}
+
+				new_container_mcn.emplace(key, value);
+			}
+
+			new_container->GetMappedChildNodesViewOnAssoc() = std::move(new_container_mcn);
 		}
 		else if(container->IsOrderedArray())
 		{
@@ -2281,18 +2297,30 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			auto &container_ocn = container->GetOrderedChildNodesReference();
 
 			//get relative position
-			size_t actual_pos = 0;
+			size_t absolute_pos = 0;
 			if(relative_pos >= 0)
-				actual_pos = static_cast<size_t>(relative_pos);
+				absolute_pos = static_cast<size_t>(relative_pos);
 			else
-				actual_pos = static_cast<size_t>(container_ocn.size() + relative_pos);
+				absolute_pos = static_cast<size_t>(container_ocn.size() + relative_pos);
+
+			new_container.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
+			EvaluableNode::OrderedType new_container_ocn;
 
 			//if the position is valid, erase it
-			if(actual_pos >= 0 && actual_pos < container_ocn.size())
+			if(absolute_pos >= 0 && absolute_pos < container_ocn.size())
 			{
-				removed_node.SetReference(container_ocn[actual_pos]);
-				container_ocn.erase(begin(container_ocn) + actual_pos);
+				removed_node.SetReference(container_ocn[absolute_pos]);
+
+				new_container_ocn.reserve(container_ocn.size() - 1);
+				new_container_ocn.insert(end(new_container_ocn), begin(container_ocn), begin(container_ocn) + absolute_pos);
+				new_container_ocn.insert(end(new_container_ocn), begin(container_ocn) + absolute_pos + 1, end(container_ocn));
 			}
+			else //just copy the whole thing
+			{
+				new_container_ocn = container_ocn;
+			}
+
+			new_container->GetOrderedChildNodesReference() = std::move(new_container_ocn);
 		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(removed_node);
@@ -2303,12 +2331,30 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 
 		if(container->IsAssociativeArray())
 		{
+			FastHashSet<StringInternPool::StringID> indices_to_erase;
 			for(auto &cn : indices_ocn)
 			{
 				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn, true);
-				removed_node.SetReference(container->EraseMappedChildNode(key_sid));
-				evaluableNodeManager->FreeNodeTreeIfPossible(removed_node);
+				indices_to_erase.emplace(key_sid);
 			}
+
+			new_container.SetReference(evaluableNodeManager->AllocNode(ENT_ASSOC));
+			EvaluableNode::SmallAssocType new_container_mcn;
+
+			auto mcn = container->GetMappedChildNodesViewOnAssoc();
+			for(auto &[key, value] : mcn)
+			{
+				if(indices_to_erase.count(key) > 0)
+				{
+					removed_node.SetReference(value);
+					evaluableNodeManager->FreeNodeTreeIfPossible(removed_node);
+					continue;
+				}
+
+				new_container_mcn.emplace(key, value);
+			}
+
+			new_container->GetMappedChildNodesViewOnAssoc() = std::move(new_container_mcn);
 		}
 		else if(container->IsOrderedArray())
 		{
@@ -2333,26 +2379,43 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 					indices_to_erase.push_back(actual_pos);
 			}
 
-			//sort reversed so the indices can be removed consistently and efficiently
-			std::sort(begin(indices_to_erase), end(indices_to_erase), std::greater<>());
+			//sort and remove duplicates
+			std::ranges::sort(indices_to_erase);
+			auto [first_dupe, last_dupe] = std::ranges::unique(indices_to_erase);
+			indices_to_erase.erase(first_dupe, last_dupe);
 
-			//remove indices in revers order and free if possible
-			for(size_t index : indices_to_erase)
+			new_container.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
+			EvaluableNode::OrderedType new_container_ocn;
+
+			size_t j = 0;
+			for(size_t i = 0; i < container_ocn.size(); i++)
 			{
-				//if there were any duplicate indices, skip them
-				if(index >= container_ocn.size())
-					continue;
+				if(j < indices_to_erase.size())
+				{
+					if(i == indices_to_erase[j])
+					{
+						removed_node.SetReference(container_ocn[i]);
+						evaluableNodeManager->FreeNodeTreeIfPossible(removed_node);
+						j++;
+						continue;
+					}
+				}
 
-				removed_node.SetReference(container_ocn[index]);
-				container_ocn.erase(begin(container_ocn) + index);
-				evaluableNodeManager->FreeNodeTreeIfPossible(removed_node);
+				new_container_ocn.emplace_back(container_ocn[i]);
 			}
+
+			new_container->GetOrderedChildNodesReference() = std::move(new_container_ocn);
 		}
 	}
 
-	evaluableNodeManager->FreeNodeTreeIfPossible(indices);
+	new_container->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+	if(container->GetNeedCycleCheck())
+		new_container->SetNeedCycleCheck(true);
 
-	return container;
+	evaluableNodeManager->FreeNodeTreeIfPossible(indices);
+	evaluableNodeManager->FreeNodeIfPossible(container);
+
+	return new_container;
 }
 
 static OpcodeInitializer _ENT_KEEP(ENT_KEEP, &Interpreter::InterpretNode_ENT_KEEP, []() {
@@ -2545,7 +2608,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			//if container is freeable, make copy and free if appropriate
 			EvaluableNode::LargeAssocType nodes_to_free;
 			if(container.unique && !container->GetNeedCycleCheck())
-				nodes_to_free = container_mcn;
+				nodes_to_free = std::move(container_mcn);
 
 			for(auto &cn : indices_ocn)
 			{
@@ -2609,8 +2672,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 
 				new_container_ocn.push_back(container_ocn[index]);
 
-				//set to null so it won't be cleared later
-				container_ocn[index] = nullptr;
+				//if container is unique, set to null so it won't be cleared later
+				if(container.unique)
+					container_ocn[index] = nullptr;
 
 				prev_index = index;
 			}

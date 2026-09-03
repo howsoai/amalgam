@@ -355,6 +355,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_LIST), list.unique, true);
 			new_list_node->GetOrderedChildNodesReference() = std::move(new_list);
 			new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+			if(list->GetNeedCycleCheck())
+				new_list_node->SetNeedCycleCheck(true);
 
 			if(list.unique && !list->GetNeedCycleCheck())
 			{
@@ -392,6 +394,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_ASSOC), list.unique, true);
 			new_list_node->GetMappedChildNodesViewOnAssoc() = std::move(new_assoc);
 			new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+			if(list->GetNeedCycleCheck())
+				new_list_node->SetNeedCycleCheck(true);
 
 			if(list.unique && !list->GetNeedCycleCheck())
 			{
@@ -803,6 +807,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 		EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_LIST), list.unique, true);
 		new_list_node->GetOrderedChildNodesReference() = std::move(new_list);
 		new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+		if(list->GetNeedCycleCheck())
+			new_list_node->SetNeedCycleCheck(true);
 
 		if(list.unique && !list->GetNeedCycleCheck())
 		{
@@ -839,6 +845,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 		EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_ASSOC), list.unique, true);
 		new_list_node->GetMappedChildNodesViewOnAssoc() = std::move(new_assoc);
 		new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+		if(list->GetNeedCycleCheck())
+			new_list_node->SetNeedCycleCheck(true);
 
 		if(list.unique && !list->GetNeedCycleCheck())
 		{

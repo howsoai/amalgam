@@ -1439,8 +1439,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
 			}
 		}
-
 		evaluableNodeManager->FreeNodeIfPossible(list);
+
 		return result_list;
 	}
 
@@ -1487,8 +1487,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 				node_index++;
 			}
-
 			evaluableNodeManager->FreeNodeIfPossible(list);
+
 			return result_list;
 		}
 	}
@@ -1538,7 +1538,27 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	}
 
 	PopConstructionContextAndGetExecutionSideEffectFlag();
+
+	//free anything not in filtered list,
+	// but only free nodes if the result is still unique, and it won't be if it was accessed
+	// need to do this outside of the iteration loop in case anything is accessing the original list
+	if(list.unique && !list->GetNeedCycleCheck() && !had_side_effects)
+	{
+		auto &list_mcn_vec = list_mcn.GetVector();
+		auto &result_mcn_vec = result_list->GetMappedChildNodesViewOnAssoc().GetVector();
+
+		size_t result_index = 0;
+		for(size_t i = 0; i < list_mcn_vec.size(); i++)
+		{
+			//if there are still results left, check if it matches
+			if(result_index < result_mcn_vec.size() && list_mcn_vec[i].second == result_mcn_vec[result_index].second)
+				result_index++;
+			else //free it
+				evaluableNodeManager->FreeNodeTree(list_mcn_vec[i].second);
+		}
+	}
 	evaluableNodeManager->FreeNodeIfPossible(list);
+
 	return result_list;
 }
 

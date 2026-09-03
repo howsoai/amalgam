@@ -1237,75 +1237,60 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		if(EvaluableNode::IsNull(list)) [[unlikely]]
 			return EvaluableNodeReference::Null();
 
-		EvaluableNodeReference result_list(list, list.unique, list.uniqueUnreferencedTopNode);
-
-		//need to edit the list itself, so if not unique, make at least the top node unique
-		evaluableNodeManager->EnsureNodeIsModifiable(result_list, true);
-
-		//TODO 25910: construct rather than modify to maintain order
-
-		if(result_list->IsAssociativeArray())
+		if(list->IsAssociativeArray())
 		{
-			auto result_list_mcn = result_list->GetMappedChildNodesViewOnAssoc();
+			EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(ENT_ASSOC), list.unique, true);
+			EvaluableNode::SmallAssocType result_mcn;
+			auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 
-			//can't erase from result_list_mcn while iterating because it may invalidate
-			//iteration, need to collect those to remove and remove in a separate pass
-			std::vector<StringInternPool::StringID> ids_to_remove;
-			for(auto &[cn_id, cn] : result_list_mcn)
+			bool free_unkept_nodes = (result_list.unique && !result_list->GetNeedCycleCheck());
+			//for any nodes to be erased, FreeNodeTree and erase the index
+			for(auto &[key, value] : list_mcn)
 			{
-				if(!(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value))
-					ids_to_remove.push_back(cn_id);
+				if(EvaluableNode::AreDeepEqual(value, function) != match_on_not_value)
+					result_mcn.emplace(key, value);
+				else if(free_unkept_nodes)
+					evaluableNodeManager->FreeNodeTree(value);
 			}
 
-			if(result_list.unique && !result_list->GetNeedCycleCheck())
-			{
-				//FreeNodeTree and erase the key
-				for(auto &id : ids_to_remove)
-				{
-					auto pair = result_list_mcn.find(id);
-					evaluableNodeManager->FreeNodeTree(pair->second);
-					result_list_mcn.erase(pair);
-					string_intern_pool.DestroyStringReference(id);
-				}
-			}
-			else //can't safely delete any nodes
-			{
-				for(auto &id : ids_to_remove)
-				{
-					result_list_mcn.erase(id);
-					string_intern_pool.DestroyStringReference(id);
-				}
-			}
+			//move the result into the node
+			auto result_mcn_view = result_list->GetMappedChildNodesViewOnAssoc();
+			result_mcn_view = std::move(result_mcn);
+
+			result_list->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+			if(list->GetNeedCycleCheck())
+				result_list->SetNeedCycleCheck(true);
+
+			evaluableNodeManager->FreeNodeIfPossible(list);
+
+			return result_list;
 		}
-		else if(result_list->IsOrderedArray())
+		else if(list->IsOrderedArray())
 		{
+			EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(ENT_LIST), list.unique, true);
 			auto &result_list_ocn = result_list->GetOrderedChildNodesReference();
+			auto &list_ocn = list->GetOrderedChildNodesReference();
 
-			if(result_list.unique && !result_list->GetNeedCycleCheck())
-			{
-				//for any nodes to be erased, FreeNodeTree and erase the index
-				for(size_t i = result_list_ocn.size(); i > 0; i--)
-				{
-					size_t index = i - 1;
-					if(EvaluableNode::AreDeepEqual(result_list_ocn[index], function) != match_on_not_value)
-						continue;
+			bool free_unkept_nodes = (result_list.unique && !result_list->GetNeedCycleCheck());
 
-					evaluableNodeManager->FreeNodeTree(result_list_ocn[index]);
-					result_list_ocn.erase(begin(result_list_ocn) + index);
-				}
-			}
-			else //can't safely delete any nodes
+			for(size_t i = 0; i < list_ocn.size(); i++)
 			{
-				auto new_end = std::remove_if(begin(result_list_ocn), end(result_list_ocn),
-					[&function, match_on_not_value](EvaluableNode *en)
-					{
-						return !(EvaluableNode::AreDeepEqual(en, function) != match_on_not_value);
-					});
-				result_list_ocn.erase(new_end, end(result_list_ocn));
+				if(EvaluableNode::AreDeepEqual(list_ocn[i], function) != match_on_not_value)
+					result_list_ocn.push_back(list_ocn[i]);
+				else if(free_unkept_nodes)
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
 			}
+
+			result_list->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+			if(list->GetNeedCycleCheck())
+				result_list->SetNeedCycleCheck(true);
+
+			evaluableNodeManager->FreeNodeIfPossible(list);
+
+			return result_list;
 		}
 
-		return result_list;
+		return list;
 	}
 
 	//get list

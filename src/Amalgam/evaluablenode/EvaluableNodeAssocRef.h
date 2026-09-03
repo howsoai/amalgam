@@ -1,6 +1,12 @@
 #pragma once
 //this file is intended to be included only by EvaluableNode.h
 
+//This class implements a view of EvaluableNode that dispatches
+//API requests for assoc data structures regardless of how it is stored in
+//the corresponding EvaluableNode.  Because every byte counts with regard to
+//EvaluableNode, this data structure leverages EvaluableNode's internal bit fields
+//for its state and therefore contains a reference to the corresponding EvaluableNode.
+//This view will adjust whether a SmallAssocType or LargeAssocType is employed.
 class EvaluableNode::AssocRef
 {
 public:

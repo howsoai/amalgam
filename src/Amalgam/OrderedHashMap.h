@@ -11,6 +11,12 @@
 #include <utility>
 #include <vector>
 
+//implements a hash map specified by HashMapType that also keeps track of
+//elements' order, governed by insertion order but with a pop-and-swap delete
+//it leverages a secondary VectorMap to preserve order and fast iteration
+//it is designed to interoperate with VectorMap and allow for custom
+//hash maps and hash sets
+//note that, like flat hash maps, iterators may be invalidated when the map is altered
 template<typename KeyType, typename ValueType,
 	typename Hasher = FastHasher<KeyType>, typename Equality = std::equal_to<KeyType>,
 	template<typename, typename, typename, typename> typename HashMapType = CompactHashMap,

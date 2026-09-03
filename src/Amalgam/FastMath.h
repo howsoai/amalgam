@@ -400,7 +400,7 @@ template<typename ValueIterator,
 __forceinline static std::pair<bool, ValueType> Mode(ValueIterator first, ValueIterator last,
 	ValueFunction get_value, bool has_weight, WeightFunction get_weight, ValueType value_if_not_found)
 {
-	FastHashMap<ValueType, double, ValueHash, ValueEquality> value_weights;
+	OrderedHashMap<ValueType, double, ValueHash, ValueEquality> value_weights;
 
 	if(!has_weight)
 	{

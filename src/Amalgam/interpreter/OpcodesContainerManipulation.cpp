@@ -328,65 +328,67 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 	auto node_stack = CreateOpcodeStackStateSaver(list);
 
 	//default to tailing to all but the first element
-	double tail_by = -1;
+	int64_t tail_by = -1;
 	if(ocn.size() > 1)
-		tail_by = InterpretNodeIntoNumberValue(ocn[1]);
+		tail_by = static_cast<int64_t>(InterpretNodeIntoNumberValue(ocn[1]));
 
-	//TODO 25910: make this opcode more efficient (only copy what is needed instead of whole node) and follow proper order
 	if(list->IsOrderedArray())
 	{
 		if(list->GetOrderedChildNodesReference().size() > 0)
 		{
-
-			evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 			//swap on the stack in case list changed
 			node_stack.PopEvaluableNode();
 			node_stack.PushEvaluableNode(list);
 
 			auto &list_ocn = list->GetOrderedChildNodesReference();
-			//remove the first element(s)
-			if(tail_by > 0 && tail_by < list_ocn.size())
-			{
-				double first_index = list_ocn.size() - tail_by;
-				list_ocn.erase(begin(list_ocn), begin(list_ocn) + static_cast<size_t>(first_index));
-			}
-			else if(tail_by < 0)
-			{
-				//make sure have things to remove while keeping something in the list
-				if(-tail_by < list_ocn.size())
-					list_ocn.erase(begin(list_ocn), begin(list_ocn) + static_cast<size_t>(-tail_by));
-				else //remove everything
-					list_ocn.clear();
-			}
 
-			return list;
+			size_t start_offset = 0;
+			if(tail_by > 0 && static_cast<size_t>(tail_by) < list_ocn.size())
+				start_offset = list_ocn.size() - tail_by;
+			else if(tail_by < 0)
+				start_offset = std::min(static_cast<size_t>(-tail_by), list_ocn.size());
+
+			std::vector<EvaluableNode *> new_list;
+			if(start_offset < list_ocn.size())
+				new_list.assign(list_ocn.begin() + start_offset, list_ocn.end());
+
+			EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_LIST), list.unique, true);
+			new_list_node->GetOrderedChildNodesReference() = std::move(new_list);
+			new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+
+			evaluableNodeManager->FreeNodeIfPossible(list);
+			return new_list_node;
 		}
 	}
 	else if(list->IsAssociativeArray())
 	{
 		if(list->GetMappedChildNodesViewOnAssoc().size() > 0)
 		{
-			evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 			//swap on the stack in case list changed
 			node_stack.PopEvaluableNode();
 			node_stack.PushEvaluableNode(list);
 
-			//just remove the first, because it's more efficient and the order does not matter for maps
-			size_t num_to_remove = 0;
-			if(tail_by > 0 && tail_by < list->GetMappedChildNodesViewOnAssoc().size())
-				num_to_remove = list->GetMappedChildNodesViewOnAssoc().size() - static_cast<size_t>(tail_by);
+			auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
+			
+			size_t start_offset = 0;
+			if(tail_by > 0 && static_cast<size_t>(tail_by) < list_mcn.size())
+				start_offset = list_mcn.size() - tail_by;
 			else if(tail_by < 0)
-				num_to_remove = static_cast<size_t>(-tail_by);
+				start_offset = std::min(static_cast<size_t>(-tail_by), list_mcn.size());
 
-			//remove individually
-			for(size_t i = 0; list->GetMappedChildNodesViewOnAssoc().size() > 0 && i < num_to_remove; i++)
-			{
-				auto mcn = list->GetMappedChildNodesViewOnAssoc();
-				auto iter = begin(mcn);
-				list->EraseMappedChildNode(iter->first);
-			}
+			//can use a SmallAssocType regardless of size because don't need to worry about collisions
+			EvaluableNode::SmallAssocType new_assoc;
+			auto &new_assoc_vec = new_assoc.GetVector();
 
-			return list;
+			if(start_offset < list_mcn.size())
+				new_assoc_vec.assign(list_mcn.begin() + start_offset, list_mcn.end());
+
+			EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_ASSOC), list.unique, true);
+			new_list_node->GetMappedChildNodesViewOnAssoc() = std::move(new_assoc);
+			new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+
+			evaluableNodeManager->FreeNodeIfPossible(list);
+			return new_list_node;
 		}
 	}
 	else //list->IsTerminal()
@@ -405,7 +407,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			{
 				size_t num_characters = StringManipulation::GetNumUTF8Characters(s);
 				//cap because can't remove a negative number of characters
-				num_chars_to_drop = static_cast<size_t>(std::max<double>(0.0, num_characters - tail_by));
+				num_chars_to_drop = static_cast<size_t>(std::max<int64_t>(0, num_characters - tail_by));
 			}
 			else if(tail_by < 0)
 			{

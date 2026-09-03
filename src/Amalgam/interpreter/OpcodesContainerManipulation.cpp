@@ -393,6 +393,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 				new_assoc_vec.assign(list_mcn.begin() + start_offset, list_mcn.end());
 
 			EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_ASSOC), list.unique, true);
+			string_intern_pool.CreateStringReferences(new_assoc, [](auto n) { return n.first; });
 			new_list_node->GetMappedChildNodesViewOnAssoc() = std::move(new_assoc);
 			new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
 			if(list->GetNeedCycleCheck())
@@ -844,6 +845,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 			new_assoc_vec.assign(list_mcn.begin(), list_mcn.begin() + end_offset);
 
 		EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_ASSOC), list.unique, true);
+		string_intern_pool.CreateStringReferences(new_assoc, [](auto n) { return n.first; });
 		new_list_node->GetMappedChildNodesViewOnAssoc() = std::move(new_assoc);
 		new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
 		if(list->GetNeedCycleCheck())
@@ -2253,7 +2255,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	auto container = InterpretNode(ocn[0]);
-	if(container == nullptr)
+	if(EvaluableNode::IsNull(container))
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);
@@ -2289,6 +2291,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 				new_container_mcn.emplace(key, value);
 			}
 
+			string_intern_pool.CreateStringReferences(new_container_mcn, [](auto n) { return n.first; });
 			new_container->GetMappedChildNodesViewOnAssoc() = std::move(new_container_mcn);
 		}
 		else if(container->IsOrderedArray())
@@ -2354,6 +2357,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 				new_container_mcn.emplace(key, value);
 			}
 
+			string_intern_pool.CreateStringReferences(new_container_mcn, [](auto n) { return n.first; });
 			new_container->GetMappedChildNodesViewOnAssoc() = std::move(new_container_mcn);
 		}
 		else if(container->IsOrderedArray())
@@ -2520,7 +2524,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 		return EvaluableNodeReference::Null();
 
 	auto container = InterpretNode(ocn[0]);
-	if(container == nullptr)
+	if(EvaluableNode::IsNull(container))
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);

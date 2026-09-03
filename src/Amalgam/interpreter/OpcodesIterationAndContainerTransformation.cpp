@@ -1255,8 +1255,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 			//move the result into the node
 			auto result_mcn_view = result_list->GetMappedChildNodesViewOnAssoc();
+			string_intern_pool.CreateStringReferences(result_mcn, [](auto n) { return n.first; });
 			result_mcn_view = std::move(result_mcn);
-
 			result_list->UpdateAllFlagsBasedOnNoReferencingChildNodes();
 			if(list->GetNeedCycleCheck())
 				result_list->SetNeedCycleCheck(true);

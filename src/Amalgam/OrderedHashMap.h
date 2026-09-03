@@ -398,6 +398,12 @@ public:
 		return std::move(vectorMap);
 	}
 
+	//used for more advanced manipulation
+	inline std::vector<std::pair<key_type, mapped_type>> &GetVector()
+	{
+		return vectorMap.GetVector();
+	}
+
 private:
 
 	inline void BuildHashMapFromVectorMap()

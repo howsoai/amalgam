@@ -356,7 +356,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			new_list_node->GetOrderedChildNodesReference() = std::move(new_list);
 			new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
 
+			if(list.unique && !list->GetNeedCycleCheck())
+			{
+				for(size_t i = 0; i < start_offset; i++)
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+			}
 			evaluableNodeManager->FreeNodeIfPossible(list);
+
 			return new_list_node;
 		}
 	}
@@ -387,7 +393,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			new_list_node->GetMappedChildNodesViewOnAssoc() = std::move(new_assoc);
 			new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
 
+			if(list.unique && !list->GetNeedCycleCheck())
+			{
+				auto &list_mcn_vec = list_mcn.GetVector();
+				for(size_t i = 0; i < start_offset; i++)
+					evaluableNodeManager->FreeNodeTree(list_mcn_vec[i].second);
+			}
 			evaluableNodeManager->FreeNodeIfPossible(list);
+
 			return new_list_node;
 		}
 	}
@@ -767,7 +780,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 	if(ocn.size() > 1)
 		truncate_to = InterpretNodeIntoNumberValue(ocn[1]);
 
-	//TODO 25910: make this opcode more efficient (only copy what is needed instead of whole node) and follow proper order
 	if(list->IsOrderedArray())
 	{
 		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
@@ -777,24 +789,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 
 		auto &list_ocn = list->GetOrderedChildNodesReference();
 
-		//remove the last element(s)
+		size_t end_offset = list_ocn.size();
 		if(truncate_to > 0 && truncate_to < list_ocn.size())
-		{
-			list_ocn.erase(begin(list_ocn) + static_cast<size_t>(truncate_to), end(list_ocn));
-		}
-		else if(truncate_to < 0)
-		{
-			//make sure have things to remove while keeping something in the list
-			if(-truncate_to < list_ocn.size())
-			{
-				size_t last_index = static_cast<size_t>(truncate_to + list_ocn.size());
-				list_ocn.erase(begin(list_ocn) + last_index, end(list_ocn));
-			}
-			else //remove everything
-				list_ocn.clear();
-		}
+			end_offset = static_cast<size_t>(truncate_to);
+		else if(truncate_to < 0) //ensure it doesn't go below 0
+			end_offset = (static_cast<size_t>(-truncate_to) < list_ocn.size())
+								? list_ocn.size() + static_cast<size_t>(truncate_to): 0;
 
-		return list;
+		std::vector<EvaluableNode *> new_list;
+		if(end_offset > 0)
+			new_list.assign(list_ocn.begin(), list_ocn.begin() + end_offset);
+
+		EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_LIST), list.unique, true);
+		new_list_node->GetOrderedChildNodesReference() = std::move(new_list);
+		new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+
+		if(list.unique && !list->GetNeedCycleCheck())
+		{
+			for(size_t i = end_offset; i < list_ocn.size(); i++)
+				evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+		}
+		evaluableNodeManager->FreeNodeIfPossible(list);
+
+		return new_list_node;
 	}
 	else if(list->IsAssociativeArray())
 	{
@@ -803,22 +820,34 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 		node_stack.PopEvaluableNode();
 		node_stack.PushEvaluableNode(list);
 
-		//just remove the first, because it's more efficient and the order does not matter for maps
-		size_t num_to_remove = 0;
-		if(truncate_to > 0 && truncate_to < list->GetMappedChildNodesViewOnAssoc().size())
-			num_to_remove = list->GetMappedChildNodesViewOnAssoc().size() - static_cast<size_t>(truncate_to);
-		else if(truncate_to < 0)
-			num_to_remove = static_cast<size_t>(-truncate_to);
+		auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 
-		//remove individually
-		for(size_t i = 0; list->GetMappedChildNodesViewOnAssoc().size() > 0 && i < num_to_remove; i++)
+		size_t end_offset = list_mcn.size();
+		if(truncate_to > 0 && truncate_to < list_mcn.size())
+			end_offset = static_cast<size_t>(truncate_to);
+		else if(truncate_to < 0) //ensure it doesn't go below 0
+			end_offset = (static_cast<size_t>(-truncate_to) < list_mcn.size())
+								? list_mcn.size() + static_cast<size_t>(truncate_to): 0;
+
+		//can use a SmallAssocType regardless of size because don't need to worry about collisions
+		EvaluableNode::SmallAssocType new_assoc;
+		auto &new_assoc_vec = new_assoc.GetVector();
+
+		if(end_offset > 0)
+			new_assoc_vec.assign(list_mcn.begin(), list_mcn.begin() + end_offset);
+
+		EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_ASSOC), list.unique, true);
+		new_list_node->GetMappedChildNodesViewOnAssoc() = std::move(new_assoc);
+		new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+
+		if(list.unique && !list->GetNeedCycleCheck())
 		{
-			auto mcn = list->GetMappedChildNodesViewOnAssoc();
-			auto iter = begin(mcn);
-			list->EraseMappedChildNode(iter->first);
+			auto &list_mcn_vec = list_mcn.GetVector();
+			for(size_t i = end_offset; i < list_mcn_vec.size(); i++)
+				evaluableNodeManager->FreeNodeTree(list_mcn_vec[i].second);
 		}
-
-		return list;
+		evaluableNodeManager->FreeNodeIfPossible(list);
+		return new_list_node;
 	}
 	else //if(list->IsTerminal())
 	{

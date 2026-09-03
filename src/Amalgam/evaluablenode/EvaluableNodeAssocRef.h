@@ -398,6 +398,15 @@ public:
 			return storage.largeMap->contains(key);
 	}
 
+	//used for more advanced manipulation
+	inline std::vector<std::pair<key_type, mapped_type>> &GetVector()
+	{
+		if(IsSmall())
+			return storage.smallMap->GetVector();
+		else
+			return storage.largeMap->GetVector();
+	}
+
 private:	
 
 	inline bool IsSmall() const

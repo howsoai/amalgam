@@ -782,13 +782,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 	auto node_stack = CreateOpcodeStackStateSaver(list);
 
 	//default to truncating to all but the last element
-	double truncate_to = -1;
+	int64_t truncate_to = -1;
 	if(ocn.size() > 1)
-		truncate_to = InterpretNodeIntoNumberValue(ocn[1]);
+		truncate_to = static_cast<int64_t>(InterpretNodeIntoNumberValue(ocn[1]));
 
 	if(list->IsOrderedArray())
 	{
-		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 		//swap on the stack in case list changed
 		node_stack.PopEvaluableNode();
 		node_stack.PushEvaluableNode(list);
@@ -796,11 +795,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 		auto &list_ocn = list->GetOrderedChildNodesReference();
 
 		size_t end_offset = list_ocn.size();
-		if(truncate_to > 0 && truncate_to < list_ocn.size())
+		if(truncate_to > 0 && static_cast<size_t>(truncate_to) < list_ocn.size())
 			end_offset = static_cast<size_t>(truncate_to);
-		else if(truncate_to < 0) //ensure it doesn't go below 0
+		else if(truncate_to < 0) //ensure it doesn't go below start
 			end_offset = (static_cast<size_t>(-truncate_to) < list_ocn.size())
-								? list_ocn.size() + static_cast<size_t>(truncate_to): 0;
+				? list_ocn.size() - static_cast<size_t>(-truncate_to): 0;
 
 		std::vector<EvaluableNode *> new_list;
 		if(end_offset > 0)
@@ -823,7 +822,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 	}
 	else if(list->IsAssociativeArray())
 	{
-		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 		//swap on the stack in case list changed
 		node_stack.PopEvaluableNode();
 		node_stack.PushEvaluableNode(list);
@@ -831,11 +829,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 		auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 
 		size_t end_offset = list_mcn.size();
-		if(truncate_to > 0 && truncate_to < list_mcn.size())
+		if(truncate_to > 0 && static_cast<size_t>(truncate_to) < list_mcn.size())
 			end_offset = static_cast<size_t>(truncate_to);
-		else if(truncate_to < 0) //ensure it doesn't go below 0
+		else if(truncate_to < 0) //ensure it doesn't go below start
 			end_offset = (static_cast<size_t>(-truncate_to) < list_mcn.size())
-								? list_mcn.size() + static_cast<size_t>(truncate_to): 0;
+				? list_mcn.size() - static_cast<size_t>(-truncate_to) : 0;
 
 		//can use a SmallAssocType regardless of size because don't need to worry about collisions
 		EvaluableNode::SmallAssocType new_assoc;
@@ -881,7 +879,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 				size_t num_characters = StringManipulation::GetNumUTF8Characters(s);
 
 				//cap because can't remove a negative number of characters, and add truncate_to because truncate_to is negative (technically want a subtract)
-				num_chars_to_keep = static_cast<size_t>(std::max<double>(0.0, num_characters + truncate_to));
+				num_chars_to_keep = static_cast<size_t>(std::max<int64_t>(0, num_characters + truncate_to));
 			}
 
 			//remove everything after after this length
@@ -2622,7 +2620,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 				auto found_to_keep = container_mcn.find(key_sid);
 				if(found_to_keep != end(container_mcn))
 				{
-					auto [inserted, location] = new_container->SetMappedChildNode(key_sid, found_to_keep->second, false);
+					new_container->SetMappedChildNode(key_sid, found_to_keep->second, false);
 					nodes_to_free.erase(key_sid);
 				}
 			}

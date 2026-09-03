@@ -54,6 +54,7 @@ Entity *EntityManipulation::EntitiesMergeForDifferenceMethod::MergeValues(Entity
 
 	if(a != nullptr)
 		aEntitiesIncludedFromB[b] = a;
+
 	if(b != nullptr)
 	{
 		bool identical_code = EvaluableNode::AreDeepEqual(code_a, code_b);

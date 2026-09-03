@@ -2608,7 +2608,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			//if container is freeable, make copy and free if appropriate
 			EvaluableNode::LargeAssocType nodes_to_free;
 			if(container.unique && !container->GetNeedCycleCheck())
-				nodes_to_free = std::move(container_mcn);
+				nodes_to_free = container_mcn;
 
 			for(auto &cn : indices_ocn)
 			{

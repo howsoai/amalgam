@@ -214,7 +214,7 @@ namespace EntityQueryBuilder
 		auto weights_for_feature_node_mcn = weights_for_feature_node->GetMappedChildNodesViewOnAssoc();
 
 		//collect all weights that contribute to this feature, but leave weights_selection_feature out
-		FastHashMap<StringInternPool::StringID, double> unused_weights_by_name;
+		OrderedHashMap<StringInternPool::StringID, double> unused_weights_by_name;
 		double total_probability_mass = 0.0;
 		for(auto &[sid, weight_node] : weights_for_feature_node_mcn)
 		{

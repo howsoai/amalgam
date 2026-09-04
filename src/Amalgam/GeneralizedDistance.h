@@ -1718,8 +1718,10 @@ public:
 		std::vector<double> internedDistanceTerms;
 
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix
-		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;
-		FastHashMap<double, double, FastHasher<double>, DoubleNanHashComparator> nominalNumberDistanceTerms;
+		OrderedHashMap<StringInternPool::StringID, double, FastHasher<StringInternPool::StringID>,
+			std::equal_to<StringInternPool::StringID>, FastHashMap, FastHashSet> nominalStringDistanceTerms;
+		OrderedHashMap<double, double, FastHasher<double>, DoubleNanHashComparator,
+			FastHashMap, FastHashSet> nominalNumberDistanceTerms;
 	};
 
 	//for each feature, precomputed distance terms for each interned value looked up by intern index

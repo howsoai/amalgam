@@ -224,11 +224,7 @@ public:
 	template<class... Args>
 	inline iterator EmplaceUnique(key_type key, Args &&...args)
 	{
-		if constexpr(sizeof...(Args) == 0)
-			hashMap.emplace(key, mapped_type{});
-		else
-			hashMap.emplace(key, std::forward<Args>(args)...);
-
+		hashMap.emplace(key, vectorMap.size());
 		return vectorMap.EmplaceUnique(key, std::forward<Args>(args)...);
 	}
 

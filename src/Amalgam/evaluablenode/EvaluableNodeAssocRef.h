@@ -22,34 +22,14 @@ public:
 	//--- Construction & Lifecycle ---
 
 	AssocRef(EvaluableNode *_en) : en(_en)
-	{
-		if(en == nullptr)
-			return;
-
-		if(!en->HasExtendedValue())
-			storage.smallMap = &en->value.mappedChildNodes;
-		else
-			storage.largeMap = en->value.extendedMappedChildNodes.mappedChildNodes.get();
-	}
+	{ }
 
 	AssocRef(const AssocRef &other) : en(other.en)
-	{
-		if(other.IsSmall())
-			this->storage.smallMap = other.storage.smallMap;
-		else
-			this->storage.largeMap = other.storage.largeMap;
-	}
+	{ }
 
 	AssocRef &operator=(const AssocRef &other)
 	{
-		if(this != &other)
-		{
-			en = other.en;
-			if(other.IsSmall())
-				storage.smallMap = other.storage.smallMap;
-			else
-				storage.largeMap = other.storage.largeMap;
-		}
+		en = other.en;
 		return *this;
 	}
 
@@ -62,9 +42,9 @@ public:
 			PromoteToLarge();
 
 		if(IsSmall())
-			*storage.smallMap = other;
+			GetSmallMap() = other;
 		else
-			*storage.largeMap = other;
+			GetLargeMap() = other;
 
 		return *this;
 	}
@@ -78,9 +58,9 @@ public:
 			PromoteToLarge();
 
 		if(IsSmall())
-			*storage.smallMap = std::move(other);
+			GetSmallMap() = std::move(other);
 		else
-			*storage.largeMap = std::move(other);
+			GetLargeMap() = std::move(other);
 
 		return *this;
 	}
@@ -94,9 +74,9 @@ public:
 			PromoteToLarge();
 
 		if(IsSmall())
-			*storage.smallMap = other.GetVectorMap();
+			GetSmallMap() = other.GetVectorMap();
 		else
-			*storage.largeMap = other;
+			GetLargeMap() = other;
 
 		return *this;
 	}
@@ -110,9 +90,9 @@ public:
 			PromoteToLarge();
 
 		if(IsSmall())
-			*storage.smallMap = other.ExtractVectorMap();
+			GetSmallMap() = other.ExtractVectorMap();
 		else
-			*storage.largeMap = std::move(other);
+			GetLargeMap() = std::move(other);
 
 		return *this;
 	}
@@ -121,56 +101,56 @@ public:
 	inline operator EvaluableNode::SmallAssocType &()
 	{
 		if(IsSmall())
-			return *storage.smallMap;
+			return GetSmallMap();
 		else
-			return *storage.largeMap;
+			return GetLargeMap();
 	}
 
 	inline operator const EvaluableNode::SmallAssocType &() const
 	{
 		if(IsSmall())
-			return *storage.smallMap;
+			return GetSmallMap();
 		else
-			return *storage.largeMap;
+			return GetLargeMap();
 	}
 
 	//--- Iterators ---
 
 	inline iterator begin() noexcept
 	{
-		return IsSmall() ? storage.smallMap->begin() : storage.largeMap->begin();
+		return IsSmall() ? GetSmallMap().begin() : GetLargeMap().begin();
 	}
 
 	inline const_iterator cbegin() const noexcept
 	{
-		return IsSmall() ? storage.smallMap->cbegin() : storage.largeMap->cbegin();
+		return IsSmall() ? GetSmallMap().cbegin() : GetLargeMap().cbegin();
 	}
 
 	inline iterator end() noexcept
 	{
-		return IsSmall() ? storage.smallMap->end() : storage.largeMap->end();
+		return IsSmall() ? GetSmallMap().end() : GetLargeMap().end();
 	}
 
 	inline const_iterator cend() const noexcept
 	{
-		return IsSmall() ? storage.smallMap->cend() : storage.largeMap->cend();
+		return IsSmall() ? GetSmallMap().cend() : GetLargeMap().cend();
 	}
 
 	//--- Capacity & Size ---
 
 	inline bool empty() const noexcept
 	{
-		return IsSmall() ? storage.smallMap->empty() : storage.largeMap->empty();
+		return IsSmall() ? GetSmallMap().empty() : GetLargeMap().empty();
 	}
 
 	inline size_type size() const noexcept
 	{
-		return IsSmall() ? storage.smallMap->size() : storage.largeMap->size();
+		return IsSmall() ? GetSmallMap().size() : GetLargeMap().size();
 	}
 
 	inline size_type max_size() const noexcept
 	{
-		return IsSmall() ? storage.smallMap->max_size() : storage.largeMap->max_size();
+		return IsSmall() ? GetSmallMap().max_size() : GetLargeMap().max_size();
 	}
 
 	//--- Modifiers ---
@@ -181,22 +161,22 @@ public:
 		{
 			if(n <= EvaluableNode::largestSmallAssocSize)
 			{
-				storage.smallMap->reserve(n);
+				GetSmallMap().reserve(n);
 				return;
 			}
 
 			PromoteToLarge();
 		}
 
-		storage.largeMap->reserve(n);
+		GetLargeMap().reserve(n);
 	}
 
 	inline void clear()
 	{
 		if(IsSmall())
-			return storage.smallMap->clear();
+			return GetSmallMap().clear();
 		else
-			return storage.largeMap->clear();
+			return GetLargeMap().clear();
 	}
 
 	template<class... Args>
@@ -204,14 +184,16 @@ public:
 	{
 		if(IsSmall())
 		{
-			return storage.smallMap->try_emplace(key, std::forward<Args>(args)...);
+			auto result = GetSmallMap().try_emplace(key, std::forward<Args>(args)...);
 
-			if(storage.smallMap->size() > EvaluableNode::largestSmallAssocSize)
+			if(GetSmallMap().size() > EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
+
+			return result;
 		}
 		else
 		{
-			return storage.largeMap->try_emplace(key, std::forward<Args>(args)...);
+			return GetLargeMap().try_emplace(key, std::forward<Args>(args)...);
 		}
 	}
 
@@ -220,14 +202,16 @@ public:
 	{
 		if(IsSmall())
 		{
-			return storage.smallMap->emplace(std::forward<Args>(args)...);
+			auto result = GetSmallMap().emplace(std::forward<Args>(args)...);
 
-			if(storage.smallMap->size() > EvaluableNode::largestSmallAssocSize)
+			if(GetSmallMap().size() > EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
+
+			return result;
 		}
 		else
 		{
-			return storage.largeMap->emplace(std::forward<Args>(args)...);
+			return GetLargeMap().emplace(std::forward<Args>(args)...);
 		}
 	}
 
@@ -235,14 +219,16 @@ public:
 	{
 		if(IsSmall())
 		{
-			return storage.smallMap->insert_or_assign(key, std::move(value));
+			auto result = GetSmallMap().insert_or_assign(key, std::move(value));
 
-			if(storage.smallMap->size() > EvaluableNode::largestSmallAssocSize)
+			if(GetSmallMap().size() > EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
+
+			return result;
 		}
 		else
 		{
-			return storage.largeMap->insert_or_assign(key, std::move(value));
+			return GetLargeMap().insert_or_assign(key, std::move(value));
 		}
 	}
 
@@ -250,14 +236,16 @@ public:
 	{
 		if(IsSmall())
 		{
-			return storage.smallMap->insert(value);
+			auto result = GetSmallMap().insert(value);
 
-			if(storage.smallMap->size() > EvaluableNode::largestSmallAssocSize)
+			if(GetSmallMap().size() > EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
+
+			return result;
 		}
 		else
 		{
-			return storage.largeMap->insert(value);
+			return GetLargeMap().insert(value);
 		}
 	}
 
@@ -265,14 +253,16 @@ public:
 	{
 		if(IsSmall())
 		{
-			return storage.smallMap->insert(key, value);
+			auto result = GetSmallMap().insert(key, value);
 
-			if(storage.smallMap->size() > EvaluableNode::largestSmallAssocSize)
+			if(GetSmallMap().size() > EvaluableNode::largestSmallAssocSize)
 				PromoteToLarge();
+
+			return result;
 		}
 		else
 		{
-			return storage.largeMap->insert(key, value);
+			return GetLargeMap().insert(key, value);
 		}
 	}
 
@@ -280,11 +270,11 @@ public:
 	{
 		if(IsSmall())
 		{
-			return storage.smallMap->erase(key);
+			return GetSmallMap().erase(key);
 		}
 		else
 		{
-			return storage.largeMap->erase(key);
+			return GetLargeMap().erase(key);
 		}
 	}
 
@@ -292,11 +282,11 @@ public:
 	{
 		if(IsSmall())
 		{
-			return storage.smallMap->erase(pos);
+			return GetSmallMap().erase(pos);
 		}
 		else
 		{
-			return storage.largeMap->erase(pos);
+			return GetLargeMap().erase(pos);
 		}
 	}
 
@@ -306,42 +296,42 @@ public:
 		{
 			if(other.IsSmall())
 			{
-				storage.smallMap->swap(*other.storage.smallMap);
+				GetSmallMap().swap(other.GetSmallMap());
 			}
 			else
 			{
-				auto this_small_mcn = std::move(*storage.smallMap);
-				auto other_large_mcn = std::move(*storage.largeMap);
+				auto this_small_mcn = std::move(GetSmallMap());
+				auto other_large_mcn = std::move(other.GetLargeMap());
 
 				PromoteToLarge();
-				*storage.largeMap = std::move(other_large_mcn);
+				GetLargeMap() = std::move(other_large_mcn);
 
 				other.ReduceToSmallIfPossible();
 				if(other.IsSmall())
-					*other.storage.smallMap = std::move(this_small_mcn);
+					other.GetSmallMap() = std::move(this_small_mcn);
 				else
-					*other.storage.largeMap = std::move(this_small_mcn);
+					other.GetLargeMap() = std::move(this_small_mcn);
 			}
 		}
 		else //!IsSmall()
 		{
 			if(other.IsSmall())
 			{
-				auto this_large_mcn = std::move(*storage.largeMap);
-				auto other_small_mcn = std::move(*storage.smallMap);
+				auto this_large_mcn = std::move(GetLargeMap());
+				auto other_small_mcn = std::move(other.GetSmallMap());
 
 				ReduceToSmallIfPossible();
 				if(IsSmall())
-					*storage.smallMap = std::move(other_small_mcn);
+					GetSmallMap() = std::move(other_small_mcn);
 				else
-					*storage.largeMap = std::move(other_small_mcn);
+					GetLargeMap() = std::move(other_small_mcn);
 
 				other.PromoteToLarge();
-				*other.storage.largeMap = std::move(this_large_mcn);
+				other.GetLargeMap()  = std::move(this_large_mcn);
 			}
 			else
 			{
-				storage.largeMap->swap(*other.storage.largeMap);
+				GetLargeMap().swap(other.GetLargeMap());
 			}
 		}
 	}
@@ -351,22 +341,22 @@ public:
 	inline mapped_type &at(const key_type &key)
 	{
 		if(IsSmall())
-			return storage.smallMap->at(key);
+			return GetSmallMap().at(key);
 		else
-			return storage.largeMap->at(key);
+			return GetLargeMap().at(key);
 	}
 
 	mapped_type &operator[](const key_type &key)
 	{
 		if(IsSmall())
 		{
-			auto &result = (*storage.smallMap)[key];
+			auto &result = (GetSmallMap())[key];
 
-			if(storage.smallMap->size() > EvaluableNode::largestSmallAssocSize)
+			if(GetSmallMap().size() > EvaluableNode::largestSmallAssocSize)
 			{
 				PromoteToLarge();
 				//need to re-retrieve
-				return (*storage.largeMap)[key];
+				return GetLargeMap()[key];
 			}
 			else
 			{
@@ -376,44 +366,44 @@ public:
 		}
 		else
 		{
-			return (*storage.largeMap)[key];
+			return GetLargeMap()[key];
 		}
 	}
 
 	inline size_type count(const key_type &key) const
 	{
 		if(IsSmall())
-			return storage.smallMap->count(key);
+			return GetSmallMap().count(key);
 		else
-			return storage.largeMap->count(key);
+			return GetLargeMap().count(key);
 	}
 
 	inline iterator find(const key_type &key)
 	{
 		if(IsSmall())
-			return storage.smallMap->find(key);
+			return GetSmallMap().find(key);
 		else
-			return storage.largeMap->find(key);
+			return GetLargeMap().find(key);
 	}
 
 	inline bool contains(const key_type &key) const
 	{
 		if(IsSmall())
-			return storage.smallMap->contains(key);
+			return GetSmallMap().contains(key);
 		else
-			return storage.largeMap->contains(key);
+			return GetLargeMap().contains(key);
 	}
 
 	//used for more advanced manipulation
 	inline std::vector<std::pair<key_type, mapped_type>> &GetVector()
 	{
 		if(IsSmall())
-			return storage.smallMap->GetVector();
+			return GetSmallMap().GetVector();
 		else
-			return storage.largeMap->GetVector();
+			return GetLargeMap().GetVector();
 	}
 
-private:	
+private:
 
 	inline bool IsSmall() const
 	{
@@ -423,23 +413,24 @@ private:
 	inline void PromoteToLarge()
 	{
 		en->EnsureHasExtendedValue();
-		storage.largeMap = en->value.extendedMappedChildNodes.mappedChildNodes.get();
 	}
 
 	inline void ReduceToSmallIfPossible()
 	{
 		en->RemoveExtendedValueIfPossible();
-		if(IsSmall())
-			storage.smallMap = &en->value.mappedChildNodes;
+	}
+
+	inline EvaluableNode::SmallAssocType &GetSmallMap() const
+	{
+		return en->value.mappedChildNodes;
+	}
+
+	inline EvaluableNode::LargeAssocType &GetLargeMap() const
+	{
+		return *en->value.extendedMappedChildNodes.mappedChildNodes.get();
 	}
 
 	EvaluableNode *en;
-
-	union
-	{
-		EvaluableNode::SmallAssocType *smallMap;
-		EvaluableNode::LargeAssocType *largeMap;
-	} storage;
 };
 
 namespace

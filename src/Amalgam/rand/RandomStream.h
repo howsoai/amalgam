@@ -95,26 +95,73 @@ protected:
 	uint64_t state;
 };
 
-//class to enable std::priority_queue to be able to clear and reserve buffers, but requires containers that
-//support those operations
-template<class T, class Container = std::vector<T>, class Compare = std::less<typename Container::value_type> >
-class FlexiblePriorityQueue : public std::priority_queue<T, Container, Compare>
+//class that operates like std::priority_queue but can clear and reserve buffers
+//and works exactly the same across all platforms (Apple's implementation is known to operate differently than others)
+template<class T, class Container = std::vector<T>, class Compare = std::less<typename Container::value_type>>
+class FlexiblePriorityQueue
 {
 public:
-	//inherit all constructors
-	using std::priority_queue<T, Container, Compare>::priority_queue;
+
+	FlexiblePriorityQueue() = default;
+	explicit FlexiblePriorityQueue(const Compare &compare) : comp(compare)
+	{}
+	explicit FlexiblePriorityQueue(size_t count, const Compare &compare) : comp(compare)
+	{
+		c.reserve(count);
+	}
+	explicit FlexiblePriorityQueue(const Compare &compare, const Container &cont) : c(cont), comp(compare)
+	{
+		std::stable_sort(c.begin(), c.end(), comp);
+	}
+
+	template<typename... Args>
+	__forceinline void emplace(Args&&... args)
+	{
+		T item(std::forward<Args>(args)...);
+		auto it = std::lower_bound(c.begin(), c.end(), item, comp);
+		c.insert(it, std::move(item));
+	}
+
+	__forceinline void push(const T &value)
+	{
+		auto it = std::lower_bound(c.begin(), c.end(), value, comp);
+		c.insert(it, value);
+	}
+
+	__forceinline void pop()
+	{
+		//the top element is always at the end
+		c.pop_back();
+	}
+
+	__forceinline const T &top() const
+	{
+		//the largest element according to comp is always the last element
+		return c.back();
+	}
+
+	__forceinline size_t size() const
+	{
+		return c.size();
+	}
+	__forceinline bool empty() const
+	{
+		return c.empty();
+	}
 
 	__forceinline void Reserve(size_t reserve_size)
 	{
-		//this-> is needed for some compilers to give access due to how the STL is implemented
-		this->c.reserve(reserve_size);
+		c.reserve(reserve_size);
 	}
 
 	__forceinline void clear()
 	{
-		//this-> is needed for some compilers to give access due to how the STL is implemented
-		this->c.clear();
+		c.clear();
 	}
+
+private:
+	Container c;
+	Compare comp;
 };
 
 //Priority queue that, when receiving values of equal priority, will randomize the order they are stored and popped off the queue

@@ -747,7 +747,7 @@ AmalgamExample{ R"&((seq
 			)
 		]
 	)
-))&", R"({point2 978.55697898224 point1 1036.1581794564518 point3 1036.1581794564518})", "", R"((apply "destroy_entities" (contained_entities)))" },
+))&", R"({point2 978.55697898224 point3 1036.1581794564518 point1 1036.1581794564518})", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "DistanceSymmetryContainer" .null)
 	(create_entities
@@ -877,10 +877,10 @@ AmalgamExample{ R"&((seq
 ))&", R"([
 		{
 				B 0
-				D 1
+				I 1
 				F 1
 				A 1
-				I 1
+				D 1
 				C 1
 				G 1024
 				H 1024
@@ -889,8 +889,8 @@ AmalgamExample{ R"&((seq
 				B 0
 				F 1
 				C 1
-				D 1
 				I 1
+				D 1
 				A 1
 				J 1024
 				E 1024

@@ -297,7 +297,7 @@ Output:
 #### Returns
 `assoc`
 #### Description
-Evaluates to an associative list, where each pair of parameters (e.g., `index1` and `value1`) comprises a index-value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.  If any index does not have reserved characters or whitespace, then quotes are optional; if whitespace or reserved characters are present, then quotes are required.  If `{}`'s are used instead of parenthesis, the keyword assoc may be omitted.  `{}` are considered identical to `(assoc)`
+Evaluates to an associative list, where each pair of parameters (e.g., `index1` and `value1`) comprises a index-value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.  If any index does not have reserved characters or whitespace, then quotes are optional; if whitespace or reserved characters are present, then quotes are required.  If `{}`'s are used instead of parenthesis, the keyword assoc may be omitted.  `{}` are considered identical to `(assoc)`.  The iteration order of an assoc is the same as insertion order.  If code is used for keys, the code will be stripped of comments and annotations and the order of any assocs will lose insertion order and instead be ordered by a natural string sort.  Further, if a list is used as the outer opcode of a key, any opcodes that access elements of the assoc via keys that accept walk paths will need to surround the list with another list.  For example, if a key is `[1]`, it will need to be accessed via a walk path as `[[1]]`.
 #### Details
  - Permissions required:  none
  - Allows concurrency: true

@@ -907,13 +907,13 @@ Example:
 Output:
 ```amalgam
 {
-	alter_performance .false
-	environment .false
-	load .false
-	std_in .false
-	std_out_and_std_err .false
-	store .false
-	system .false
+		std_out_and_std_err .false
+		std_in .false
+		load .false
+		store .false
+		environment .false
+		alter_performance .false
+		system .false
 }
 ```
 
@@ -950,13 +950,13 @@ Example:
 Output:
 ```amalgam
 {
-	alter_performance .true
-	environment .true
-	load .true
-	std_in .true
-	std_out_and_std_err .true
-	store .true
-	system .true
+		std_out_and_std_err .true
+		std_in .true
+		load .true
+		store .true
+		environment .true
+		alter_performance .true
+		system .true
 }
 ```
 

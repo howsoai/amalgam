@@ -829,17 +829,17 @@ Example:
 Output:
 ```amalgam
 {
-	0 1
-	1 2
-	2 3
-	3 7
-	4 8
-	5 9
-	a 4
-	b 5
-	c 6
-	d 10
-	e 11
+		0 1
+		1 2
+		2 3
+		a 4
+		b 5
+		c 6
+		3 7
+		4 8
+		5 9
+		d 10
+		e 11
 }
 ```
 Example:
@@ -1140,11 +1140,11 @@ Example:
 Output:
 ```amalgam
 {
-	4 "d"
-	a 1
-	b 2
-	c 3
-	e 5
+		a 1
+		b 2
+		c 3
+		4 "d"
+		e 5
 }
 ```
 Example:

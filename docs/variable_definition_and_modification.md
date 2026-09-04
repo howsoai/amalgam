@@ -1,3 +1,10 @@
+---
+layout: default
+title: Variable Definition and Modification
+parent: Opcodes
+nav_order: 3
+---
+
 ### Opcode: `symbol`
 #### Parameters
 ``

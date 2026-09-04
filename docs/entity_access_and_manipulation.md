@@ -1,3 +1,10 @@
+---
+layout: default
+title: Entity Access and Manipulation
+parent: Opcodes
+nav_order: 13
+---
+
 ### Opcode: `contains_label`
 #### Parameters
 `[entity_id entity] entity_label label`

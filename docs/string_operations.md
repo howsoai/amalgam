@@ -1,3 +1,10 @@
+---
+layout: default
+title: String Operations
+parent: Opcodes
+nav_order: 9
+---
+
 ### Opcode: `explode`
 #### Parameters
 `string s [number stride]`

@@ -1,3 +1,10 @@
+---
+layout: default
+title: Advanced Math
+parent: Opcodes
+nav_order: 7
+---
+
 ### Opcode: `exp`
 #### Parameters
 `number x`

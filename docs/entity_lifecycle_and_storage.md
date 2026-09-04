@@ -1,3 +1,10 @@
+---
+layout: default
+title: Entity Lifecycle and Storage
+parent: Opcodes
+nav_order: 12
+---
+
 ### Opcode: `create_entities`
 #### Parameters
 `[entity_id entity1] any node1 [entity_id entity2] [any node2] ...`

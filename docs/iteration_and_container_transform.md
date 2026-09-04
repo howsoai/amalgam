@@ -1,3 +1,10 @@
+---
+layout: default
+title: Iteration and Container Transform
+parent: Opcodes
+nav_order: 11
+---
+
 ### Opcode: `range`
 #### Parameters
 `[any function] number low_endpoint number high_endpoint [number step_size]`

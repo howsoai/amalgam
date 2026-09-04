@@ -2288,7 +2288,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 					continue;
 				}
 
-				new_container_mcn.emplace(key, value);
+				new_container_mcn.EmplaceUnique(key, value);
 			}
 
 			string_intern_pool.CreateStringReferences(new_container_mcn, [](auto n) { return n.first; });
@@ -2547,7 +2547,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			//find what should be kept, or clear key_sid if not found
 			auto found_to_keep = container_mcn.find(key_sid);
 			if(found_to_keep != end(container_mcn))
-				new_container->SetMappedChildNode(key_sid, found_to_keep->second);
+				new_container->SetMappedChildNodeWithReferenceHandoff(key_sid, found_to_keep->second);
+			else
+				string_intern_pool.DestroyStringReference(key_sid);
 
 			//free everything not kept if possible
 			if(container.unique && !container->GetNeedCycleCheck())

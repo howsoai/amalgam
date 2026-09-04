@@ -2255,6 +2255,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	auto container = InterpretNode(ocn[0]);
 	if(EvaluableNode::IsNull(container))
 		return EvaluableNodeReference::Null();
+	if(container->IsTerminal())
+		return container;
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 
@@ -2548,18 +2550,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 				new_container->SetMappedChildNode(key_sid, found_to_keep->second);
 
 			//free everything not kept if possible
-			if(container.uniqueUnreferencedTopNode && !container->GetNeedCycleCheck())
+			if(container.unique && !container->GetNeedCycleCheck())
 			{
-				if(container.unique)
+				for(auto &[cn_id, cn] : container_mcn)
 				{
-					for(auto &[cn_id, cn] : container_mcn)
-					{
-						if(cn_id != key_sid)
-							evaluableNodeManager->FreeNodeTree(cn);
-					}
+					if(cn_id != key_sid)
+						evaluableNodeManager->FreeNodeTree(cn);
 				}
-
-				evaluableNodeManager->FreeNode(container);
 			}
 		}
 		else if(container->IsOrderedArray())
@@ -2582,18 +2579,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 				new_container->AppendOrderedChildNode(container_ocn[actual_pos]);
 
 				//free everything not kept if possible
-				if(container.uniqueUnreferencedTopNode && !container->GetNeedCycleCheck())
+				if(container.unique && !container->GetNeedCycleCheck())
 				{
-					if(container.unique)
+					for(size_t i = 0; i < container_ocn.size(); i++)
 					{
-						for(size_t i = 0; i < container_ocn.size(); i++)
-						{
-							if(i != actual_pos)
-								evaluableNodeManager->FreeNodeTree(container_ocn[i]);
-						}
+						if(i != actual_pos)
+							evaluableNodeManager->FreeNodeTree(container_ocn[i]);
 					}
-
-					evaluableNodeManager->FreeNode(container);
 				}
 			}
 		}
@@ -2628,8 +2620,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			//anything left should be freed if possible
 			for(auto &cn : nodes_to_free | std::views::values)
 				evaluableNodeManager->FreeNodeTree(cn);
-			if(container.uniqueUnreferencedTopNode)
-				evaluableNodeManager->FreeNode(container);
 		}
 		else if(container->IsOrderedArray())
 		{
@@ -2682,20 +2672,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			}
 
 			//free anything left in original container
-			if(container.uniqueUnreferencedTopNode && !container->GetNeedCycleCheck())
+			if(container.unique && !container->GetNeedCycleCheck())
 			{
-				if(container.unique)
-				{
-					for(auto cn : container_ocn)
-						evaluableNodeManager->FreeNodeTree(cn);
-				}
-
-				evaluableNodeManager->FreeNode(container);
+				for(auto cn : container_ocn)
+					evaluableNodeManager->FreeNodeTree(cn);
 			}
 		}
 	}
 
+	new_container->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+	if(container->GetNeedCycleCheck())
+		new_container->SetNeedCycleCheck(true);
+
 	evaluableNodeManager->FreeNodeTreeIfPossible(indices);
+	evaluableNodeManager->FreeNodeIfPossible(container);
 
 	return new_container;
 }

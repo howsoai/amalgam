@@ -1243,7 +1243,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			EvaluableNode::SmallAssocType result_mcn;
 			auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 
-			bool free_unkept_nodes = (result_list.unique && !result_list->GetNeedCycleCheck());
+			bool free_unkept_nodes = (list.unique && !list->GetNeedCycleCheck());
 			//for any nodes to be erased, FreeNodeTree and erase the index
 			for(auto &[key, value] : list_mcn)
 			{

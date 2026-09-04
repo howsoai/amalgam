@@ -403,6 +403,18 @@ public:
 			return GetLargeMap().GetVector();
 	}
 
+	//used for more advanced manipulation
+	inline EvaluableNode::LargeAssocType CopyAsLargeAssoc()
+	{
+		EvaluableNode::LargeAssocType result;
+		if(IsSmall())
+			result = GetSmallMap();
+		else
+			result = GetLargeMap();
+
+		return result;
+	}
+
 private:
 
 	inline bool IsSmall() const

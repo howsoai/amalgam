@@ -149,8 +149,8 @@ R"&(\[\s*
 // random stream, it randomly selects from the assoc
 //if it can't find an appropriate probability, it returns an empty string
 //if normalize is true, then it will accumulate the probability and then normalize
-static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocRef assoc,
-	RandomStream &rs, bool normalize)
+template<typename MapType>
+static StringInternPool::StringID GetRandomWeightedKey(MapType &assoc, RandomStream &rs, bool normalize)
 {
 	double probability_target = rs.RandFull();
 	double accumulated_probability = 0.0;
@@ -240,8 +240,8 @@ static EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeR
 	{
 		if(param->IsAssociativeArray())
 		{
-			StringInternPool::StringID id_selected = GetRandomWeightedKey(param->GetMappedChildNodesViewOnAssoc(),
-				random_stream, true);
+			auto mcn = param->GetMappedChildNodesViewOnAssoc();
+			StringInternPool::StringID id_selected = GetRandomWeightedKey(mcn, random_stream, true);
 			return Parser::ParseFromKeyStringId(id_selected, interpreter->evaluableNodeManager);
 		}
 		else if(param->IsOrderedArray())
@@ -327,7 +327,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 			retval_ocn.reserve(number_to_generate);
 
 			//make a copy of all of the probabilities so they can be removed one at a time
-			auto assoc =  param->GetMappedChildNodesViewOnAssoc();
+			EvaluableNode::LargeAssocType assoc = param->GetMappedChildNodesViewOnAssoc().CopyAsLargeAssoc();
 
 			for(size_t i = 0; i < number_to_generate; i++)
 			{

@@ -624,11 +624,11 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 		{
 			auto ocn = std::move(GetOrderedChildNodesReference());
 
-			InitMappedChildNodes();
+			type = new_type;
+			InitMappedChildNodes(ocn.size());
 
+			//need to set type so that the view works properly
 			auto mcn = GetMappedChildNodesViewOnAssoc();
-			mcn.reserve(ocn.size());
-			
 			for(size_t i = 0; i < ocn.size(); i++)
 			{
 				std::string index_string = EvaluableNode::NumberToString(i, true);
@@ -896,9 +896,14 @@ void EvaluableNode::SetMappedChildNodes(EvaluableNode::AssocRef new_mcn,
 
 	//swap map heap memory with new_mcn
 	if(copy)
-		mcn = new_mcn;
+	{
+		EvaluableNode::SmallAssocType copied_mcn = new_mcn;
+		mcn = std::move(copied_mcn);
+	}
 	else
+	{
 		mcn.swap(new_mcn);
+	}
 
 	SetNeedCycleCheck(need_cycle_check);
 

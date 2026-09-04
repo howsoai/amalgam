@@ -1,3 +1,10 @@
+---
+layout: default
+title: Cryptography
+parent: Opcodes
+nav_order: 19
+---
+
 ### Opcode: `crypto_sign`
 #### Parameters
 `string message string secret_key`

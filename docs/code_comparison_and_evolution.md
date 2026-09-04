@@ -1,3 +1,10 @@
+---
+layout: default
+title: Code Comparison and Evolution
+parent: Opcodes
+nav_order: 16
+---
+
 ### Opcode: `total_size`
 #### Parameters
 `any node`

@@ -1,3 +1,10 @@
+---
+layout: default
+title: Entity Comparison and Evolution
+parent: Opcodes
+nav_order: 17
+---
+
 ### Opcode: `total_entity_size`
 #### Parameters
 `entity_id entity`

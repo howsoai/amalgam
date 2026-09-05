@@ -1,3 +1,10 @@
+---
+layout: default
+title: Container Manipulation
+parent: Opcodes
+nav_order: 10
+---
+
 ### Opcode: `first`
 #### Parameters
 `any node`

@@ -1,3 +1,10 @@
+---
+layout: default
+title: Primitive Types
+parent: Opcodes
+nav_order: 2
+---
+
 ### Opcode: `null`
 #### Parameters
 ``

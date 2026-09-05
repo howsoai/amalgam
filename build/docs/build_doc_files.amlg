@@ -21,8 +21,38 @@
 			)
 		
 		)
+
+		;names for opcodes that consist of symbols, since symbols are stripped from markdown heading ids
+		;any opcode not listed here uses its own name as the anchor
+		symbolic_opcode_names (assoc
+			"+" "add"
+			"-" "subtract"
+			"*" "multiply"
+			"/" "divide"
+			"=" "equal"
+			"!=" "not_equal"
+			"<" "less_than"
+			"<=" "less_than_or_equal"
+			">" "greater_than"
+			">=" "greater_than_or_equal"
+			"~" "type_equal"
+			"!~" "type_not_equal"
+		)
+
+		;returns the string used in the markdown heading id and link anchor for the opcode
+		convert_opcode_anchor (lambda
+			(declare {opcode ""}
+				(if (contains_index symbolic_opcode_names opcode)
+					(get symbolic_opcode_names opcode)
+					opcode
+				)
+			)
+		)
 		
 		current_opcode_group ""
+
+		;maps each opcode group to its position in the opcodes list, used to order the site navigation
+		opcode_group_nav_order (assoc)
     })
 
 	
@@ -58,19 +88,23 @@
 							{result_string ""}
 
 							(if (!= current_opcode_group (get details "opcode_group"))
+								(seq
+									(assign "opcode_group_nav_order" (get details "opcode_group") (+ 1 (size opcode_group_nav_order)))
 									(assign {
 										current_opcode_group (get details "opcode_group")
 										result_string (concat "### " (get details "opcode_group") "\n")
 										})
+								)
 							)
 
 							(concat
 								result_string
 								"  - ["
-								(if (= opcode "*") "\*" opcode)
+								;escape so markdown does not treat it as emphasis
+								(if (= opcode "*") "\\*" opcode)
 								"](./"
 								(call convert_group_name {opcode_group (get details "opcode_group")})
-								".md#opcode-" opcode ")"
+								".md#opcode-" (call convert_opcode_anchor {opcode opcode}) ")"
 								"\n")
 						)
 					)
@@ -97,9 +131,16 @@
 								opcode (current_value 1)
 								details (help (current_value 1))
 							}
+
+						(let {
+								anchor (call convert_opcode_anchor {opcode opcode})
+							}
 							
 							(concat
-								"### Opcode: `" opcode "`\n"
+								"### Opcode: `" opcode "`"
+								;explicitly set the heading id when it would not be derived from the opcode name
+								(if (!= anchor opcode) (concat " {#opcode-" anchor "}") "")
+								"\n"
 								"#### Parameters\n"
 								"`" (get details "parameters") "`\n"
 								"#### Returns\n"
@@ -133,6 +174,7 @@
 								"[Amalgam Opcodes](./opcodes.md)\n\n"
 							)
 						)
+						)
 					)
 					(help "opcodes")
 				)
@@ -142,12 +184,22 @@
 		(map
 			(lambda
 				(let {
+						opcode_group_name (current_index 1)
 						opcode_group
 							(call convert_group_name {opcode_group (current_index 2)})
 						opcode_text (current_value 1)
 					}
 					(print "writing to " opcode_group "\n")
-					(store (concat opcode_group ".md") opcode_text)
+					(store (concat opcode_group ".md") (concat
+						;front matter for the documentation site, ordered the same as the opcodes list
+						"---\n"
+						"layout: default\n"
+						"title: " opcode_group_name "\n"
+						"parent: Opcodes\n"
+						"nav_order: " (get opcode_group_nav_order opcode_group_name) "\n"
+						"---\n\n"
+						opcode_text
+					))
 				)
 			)
 			opcode_groups_docs

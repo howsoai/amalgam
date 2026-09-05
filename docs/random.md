@@ -1,3 +1,10 @@
+---
+layout: default
+title: Random
+parent: Opcodes
+nav_order: 18
+---
+
 ### Opcode: `rand`
 #### Parameters
 `[number|list|assoc range] [number number_to_generate] [bool unique]`

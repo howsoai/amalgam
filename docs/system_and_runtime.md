@@ -27,20 +27,20 @@ Example:
 Output:
 ```amalgam
 {
-	allows_concurrency .true
-	description "Evaluates to the sum of all numbers.  If no parameters are provided it returns 0.0."
-	examples [
-			{example "(+ 1 2 3 4)" output "10"}
-		]
-	frequency_per_10000_opcodes 18
-	new_scope .false
-	new_target_scope .false
-	opcode_group "Basic Math"
-	parameters "[number x1] [number x2] ..."
-	permissions "none"
-	requires_entity .false
-	returns "number"
-	value_newness "new"
+		description "Evaluates to the sum of all numbers.  If no parameters are provided it returns 0.0."
+		parameters "[number x1] [number x2] ..."
+		returns "number"
+		allows_concurrency .true
+		requires_entity .false
+		new_scope .false
+		new_target_scope .false
+		frequency_per_10000_opcodes 18
+		opcode_group "Basic Math"
+		permissions "none"
+		value_newness "new"
+		examples [
+						{example "(+ 1 2 3 4)" output "10"}
+				]
 }
 ```
 

@@ -669,7 +669,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		}
 		else if(list->IsAssociativeArray())
 		{
-			auto &list_mcn = list->GetMappedChildNodesReference();
+			auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 			size_t num_nodes = list_mcn.size();
 
 		#ifdef MULTITHREAD_SUPPORT
@@ -698,7 +698,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 						//populate result_mcn with all a slot for each child node,
 						//as do not want to change this allocation during potential concurrent execution
 						//and because iterators may be invalidated when the map is changed
-						auto &result_mcn = result->GetMappedChildNodesReference();
+						auto result_mcn = result->GetMappedChildNodesViewOnAssoc();
 						result_mcn.reserve(num_nodes);
 						for(auto &[sid, cn] : list_mcn)
 							result_mcn.emplace(string_intern_pool.CreateStringReference(sid), nullptr);
@@ -742,7 +742,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 						auto acc = operation.Init();
 
-						auto &map_mcn = list->GetMappedChildNodesReference();
+						auto map_mcn = list->GetMappedChildNodesViewOnAssoc();
 						for(auto &[map_id, map_node] : map_mcn)
 						{
 							SetTopCurrentIndexInConstructionStack(map_id);
@@ -767,7 +767,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			//populate result_mcn with all a slot for each child node,
 			//as do not want to change this allocation during potential concurrent execution
 			//and because iterators may be invalidated when the map is changed
-			auto &result_mcn = result->GetMappedChildNodesReference();
+			auto result_mcn = result->GetMappedChildNodesViewOnAssoc();
 			result_mcn.reserve(num_nodes);
 			for(auto &[sid, cn] : list_mcn)
 				result_mcn.emplace(string_intern_pool.CreateStringReference(sid), nullptr);
@@ -823,8 +823,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		//process inputs, get size and whether needs to be associative array
 		bool need_assoc = false;
 
-		//note that all_keys will maintain references to each StringID that must be freed
-		FastHashSet<StringInternPool::StringID> all_keys;	//only if have assoc
+		//note that unique_keys will maintain references to each StringID that must be freed
+		//needed if any of the containers is an ENT_ASSOC
+		FastHashSet<StringInternPool::StringID> unique_keys;
+		//keep a list to maintain order
+		std::vector<StringInternPool::StringID> unique_keys_list;
 		size_t largest_size = 0; //only if have list
 
 		node_stack.PushEvaluableNode(inputs_list_node);
@@ -841,12 +844,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			if(cur_input->IsAssociativeArray())
 			{
 				need_assoc = true;
-				for(auto &n_id : cur_input->GetMappedChildNodesReference() | std::views::keys)
+				for(auto &n_id : cur_input->GetMappedChildNodesViewOnAssoc() | std::views::keys)
 				{
-					auto [inserted_node, inserted] = all_keys.insert(n_id);
+					auto [inserted_node, inserted] = unique_keys.insert(n_id);
 					//if it was inserted, then need to keep track of the string reference
 					if(inserted)
+					{
+						unique_keys_list.emplace_back(n_id);
 						string_intern_pool.CreateStringReference(n_id);
+					}
 				}
 			}
 			else //ordered
@@ -902,7 +908,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 		else //need associative array
 		{
 			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
-			result->ReserveMappedChildNodes(largest_size + all_keys.size());
+			result->ReserveMappedChildNodes(largest_size + unique_keys_list.size());
 
 			PushNewConstructionContext(inputs_list_node, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
@@ -944,13 +950,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 				//remove from keys so it isn't clobbered when checking assoc keys
 				StringInternPool::StringID index_sid = string_intern_pool.GetIDFromString(index_string);
-				if(all_keys.erase(index_sid))
+				if(unique_keys.erase(index_sid))
 					string_intern_pool.DestroyStringReference(index_sid);
 			}
 
 			//now perform for all assocs
-			for(auto &index_sid : all_keys)
+			for(auto &index_sid : unique_keys_list)
 			{
+				//skip over any keys already accounted for
+				if(!unique_keys.count(index_sid))
+					continue;
+
 				//set index value
 				SetTopCurrentIndexInConstructionStack(index_sid);
 
@@ -987,8 +997,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 
 		} //needed to process as assoc array
 
-		//free all references
-		string_intern_pool.DestroyStringReferences(all_keys);
+		//free all references still left
+		string_intern_pool.DestroyStringReferences(unique_keys);
 
 		if(any_side_effects)
 		{
@@ -1197,7 +1207,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 						if(list->IsAssociativeArray())
 						{
-							auto &list_mcn = list->GetMappedChildNodesReference();
+							auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 							for(auto &[cn_id, cn] : list_mcn)
 							{
 								//want either to be equal or match_on_not_value, but not both or neither
@@ -1227,73 +1237,60 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		if(EvaluableNode::IsNull(list)) [[unlikely]]
 			return EvaluableNodeReference::Null();
 
-		EvaluableNodeReference result_list(list, list.unique, list.uniqueUnreferencedTopNode);
-
-		//need to edit the list itself, so if not unique, make at least the top node unique
-		evaluableNodeManager->EnsureNodeIsModifiable(result_list, true);
-
-		if(result_list->IsAssociativeArray())
+		if(list->IsAssociativeArray())
 		{
-			auto &result_list_mcn = result_list->GetMappedChildNodesReference();
+			EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
+			EvaluableNode::SmallAssocType result_mcn;
+			auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 
-			//can't erase from result_list_mcn while iterating because it may invalidate
-			//iteration, need to collect those to remove and remove in a separate pass
-			std::vector<StringInternPool::StringID> ids_to_remove;
-			for(auto &[cn_id, cn] : result_list_mcn)
+			bool free_unkept_nodes = (list.unique && !list->GetNeedCycleCheck());
+			//for any nodes to be erased, FreeNodeTree and erase the index
+			for(auto &[key, value] : list_mcn)
 			{
-				if(!(EvaluableNode::AreDeepEqual(cn, function) != match_on_not_value))
-					ids_to_remove.push_back(cn_id);
+				if(EvaluableNode::AreDeepEqual(value, function) != match_on_not_value)
+					result_mcn.EmplaceUnique(key, value);
+				else if(free_unkept_nodes)
+					evaluableNodeManager->FreeNodeTree(value);
 			}
 
-			if(result_list.unique && !result_list->GetNeedCycleCheck())
-			{
-				//FreeNodeTree and erase the key
-				for(auto &id : ids_to_remove)
-				{
-					auto pair = result_list_mcn.find(id);
-					evaluableNodeManager->FreeNodeTree(pair->second);
-					result_list_mcn.erase(pair);
-					string_intern_pool.DestroyStringReference(id);
-				}
-			}
-			else //can't safely delete any nodes
-			{
-				for(auto &id : ids_to_remove)
-				{
-					result_list_mcn.erase(id);
-					string_intern_pool.DestroyStringReference(id);
-				}
-			}
+			//move the result into the node
+			auto result_mcn_view = result_list->GetMappedChildNodesViewOnAssoc();
+			string_intern_pool.CreateStringReferences(result_mcn, [](auto n) { return n.first; });
+			result_mcn_view = std::move(result_mcn);
+			result_list->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+			if(list->GetNeedCycleCheck())
+				result_list->SetNeedCycleCheck(true);
+
+			evaluableNodeManager->FreeNodeIfPossible(list);
+
+			return result_list;
 		}
-		else if(result_list->IsOrderedArray())
+		else if(list->IsOrderedArray())
 		{
+			EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
 			auto &result_list_ocn = result_list->GetOrderedChildNodesReference();
+			auto &list_ocn = list->GetOrderedChildNodesReference();
 
-			if(result_list.unique && !result_list->GetNeedCycleCheck())
-			{
-				//for any nodes to be erased, FreeNodeTree and erase the index
-				for(size_t i = result_list_ocn.size(); i > 0; i--)
-				{
-					size_t index = i - 1;
-					if(EvaluableNode::AreDeepEqual(result_list_ocn[index], function) != match_on_not_value)
-						continue;
+			bool free_unkept_nodes = (list.unique && !list->GetNeedCycleCheck());
 
-					evaluableNodeManager->FreeNodeTree(result_list_ocn[index]);
-					result_list_ocn.erase(begin(result_list_ocn) + index);
-				}
-			}
-			else //can't safely delete any nodes
+			for(size_t i = 0; i < list_ocn.size(); i++)
 			{
-				auto new_end = std::remove_if(begin(result_list_ocn), end(result_list_ocn),
-					[&function, match_on_not_value](EvaluableNode *en)
-					{
-						return !(EvaluableNode::AreDeepEqual(en, function) != match_on_not_value);
-					});
-				result_list_ocn.erase(new_end, end(result_list_ocn));
+				if(EvaluableNode::AreDeepEqual(list_ocn[i], function) != match_on_not_value)
+					result_list_ocn.push_back(list_ocn[i]);
+				else if(free_unkept_nodes)
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
 			}
+
+			result_list->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+			if(list->GetNeedCycleCheck())
+				result_list->SetNeedCycleCheck(true);
+
+			evaluableNodeManager->FreeNodeIfPossible(list);
+
+			return result_list;
 		}
 
-		return result_list;
+		return list;
 	}
 
 	//get list
@@ -1427,13 +1424,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
 			}
 		}
-
 		evaluableNodeManager->FreeNodeIfPossible(list);
+
 		return result_list;
 	}
 
 	//if made it here, then list is an assoc
-	auto &list_mcn = list->GetMappedChildNodesReference();
+	auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 
 #ifdef MULTITHREAD_SUPPORT
 	size_t num_nodes = list_mcn.size();
@@ -1475,8 +1472,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 				node_index++;
 			}
-
 			evaluableNodeManager->FreeNodeIfPossible(list);
+
 			return result_list;
 		}
 	}
@@ -1512,7 +1509,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			return retval;
 	}
 
-	PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
+	PushNewConstructionContext(list, result_list,
+		EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
 	//result_list is a copy of list, so it should already be the same size (no need to reserve)
 	for(auto &[cn_id, cn] : list_mcn)
@@ -1525,8 +1523,28 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			result_list->SetMappedChildNode(cn_id, cn);
 	}
 
-	PopConstructionContextAndGetExecutionSideEffectFlag();
+	had_side_effects = PopConstructionContextAndGetExecutionSideEffectFlag();
+
+	//free anything not in filtered list,
+	// but only free nodes if the result is still unique, and it won't be if it was accessed
+	// need to do this outside of the iteration loop in case anything is accessing the original list
+	if(list.unique && !list->GetNeedCycleCheck() && !had_side_effects)
+	{
+		auto &list_mcn_vec = list_mcn.GetVector();
+		auto &result_mcn_vec = result_list->GetMappedChildNodesViewOnAssoc().GetVector();
+
+		size_t result_index = 0;
+		for(size_t i = 0; i < list_mcn_vec.size(); i++)
+		{
+			//if there are still results left, check if it matches
+			if(result_index < result_mcn_vec.size() && list_mcn_vec[i].second == result_mcn_vec[result_index].second)
+				result_index++;
+			else //free it
+				evaluableNodeManager->FreeNodeTree(list_mcn_vec[i].second);
+		}
+	}
 	evaluableNodeManager->FreeNodeIfPossible(list);
+
 	return result_list;
 }
 
@@ -1895,7 +1913,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 	{
 		bool first_node = true;
 		//iterate over list
-		for(auto &[n_id, n] : list->GetMappedChildNodesReference())
+		for(auto &[n_id, n] : list->GetMappedChildNodesViewOnAssoc())
 		{
 			//grab a value if first one
 			if(first_node)
@@ -2298,7 +2316,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 
 				if(zipped->IsAssociativeArray())
 				{
-					auto &zipped_mcn = zipped->GetMappedChildNodesReference();
+					auto zipped_mcn = zipped->GetMappedChildNodesViewOnAssoc();
 					for(auto &index : index_list_ocn)
 					{
 						StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index, true);
@@ -2352,7 +2370,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 
 	if(EvaluableNode::IsAssociativeArray(zipped))
 	{
-		auto &zipped_mcn = zipped->GetMappedChildNodesReference();
+		auto zipped_mcn = zipped->GetMappedChildNodesViewOnAssoc();
 		for(auto &index : index_list_ocn)
 		{
 			StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index, true);
@@ -2630,6 +2648,34 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 	return d;
 });
 
+//implements a stable version of partial_sort
+template<typename RandomIt, typename Compare>
+void StablePartialSort(RandomIt first, RandomIt middle, RandomIt last, Compare comp)
+{
+	if(first == last || middle == first)
+		return;
+
+	if(middle == last)
+	{
+		std::stable_sort(first, last, comp);
+		return;
+	}
+
+	//pivot the elements using nth_element
+	//assume that iterators are in memory order to ensure conssistent tie-breaking
+	auto stable_comp = [first, comp](const auto &a, const auto &b) {
+		if(comp(a, b))
+			return true;
+		if(comp(b, a))
+			return false;
+		return &a < &b;
+	};
+
+	std::nth_element(first, middle, last, stable_comp);
+
+	std::stable_sort(first, middle, stable_comp);
+}
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -2688,10 +2734,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		if(highest_k > 0 && highest_k < list_ocn.size())
 		{
 			if(ascending)
-				std::partial_sort(begin(list_ocn), begin(list_ocn) + highest_k,
+				StablePartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
 			else
-				std::partial_sort(begin(list_ocn), begin(list_ocn) + highest_k,
+				StablePartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
 
 			if(list.unique && !list->GetNeedCycleCheck())
@@ -2706,10 +2752,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		else if(lowest_k > 0 && lowest_k < list_ocn.size())
 		{
 			if(ascending)
-				std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
+				StablePartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
 			else
-				std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
+				StablePartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
 
 			if(list.unique && !list->GetNeedCycleCheck())
@@ -2723,9 +2769,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		else
 		{
 			if(ascending)
-				std::sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+				std::stable_sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyLessThan);
 			else
-				std::sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
+				std::stable_sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
 		}
 
 		return list;

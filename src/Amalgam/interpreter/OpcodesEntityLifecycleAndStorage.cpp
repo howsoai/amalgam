@@ -560,7 +560,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, Ev
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[2]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParams(params->GetMappedChildNodesReference());
+			asset_params.SetParams(params->GetMappedChildNodesViewOnAssoc());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
@@ -707,7 +707,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params->SetParams(params->GetMappedChildNodesReference());
+			asset_params->SetParams(params->GetMappedChildNodesViewOnAssoc());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
@@ -894,7 +894,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, E
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParams(params->GetMappedChildNodesReference());
+			asset_params.SetParams(params->GetMappedChildNodesViewOnAssoc());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
@@ -1049,7 +1049,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params->SetParams(params->GetMappedChildNodesReference());
+			asset_params->SetParams(params->GetMappedChildNodesViewOnAssoc());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
@@ -1381,13 +1381,13 @@ static OpcodeInitializer _ENT_GET_ENTITY_PERMISSIONS(ENT_GET_ENTITY_PERMISSIONS,
 	)
 	(get_entity_permissions "Entity")
 ))&", R"({
-	alter_performance .false
-	environment .false
-	load .false
-	std_in .false
-	std_out_and_std_err .false
-	store .false
-	system .false
+		std_out_and_std_err .false
+		std_in .false
+		load .false
+		store .false
+		environment .false
+		alter_performance .false
+		system .false
 })", "", R"((destroy_entities "Entity"))"}
 		});
 	d.retrievesData = true;
@@ -1438,13 +1438,13 @@ static OpcodeInitializer _ENT_SET_ENTITY_PERMISSIONS(ENT_SET_ENTITY_PERMISSIONS,
 	(set_entity_permissions "Entity" .true)
 	(get_entity_permissions "Entity")
 ))&", R"({
-	alter_performance .true
-	environment .true
-	load .true
-	std_in .true
-	std_out_and_std_err .true
-	store .true
-	system .true
+		std_out_and_std_err .true
+		std_in .true
+		load .true
+		store .true
+		environment .true
+		alter_performance .true
+		system .true
 })", "", R"((destroy_entities "Entity"))"}
 		});
 	d.retrievesData = true;

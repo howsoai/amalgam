@@ -2,6 +2,7 @@
 
 //project headers:
 #include "FastMath.h"
+#include "OrderedHashMap.h"
 #include "HashMaps.h"
 #include "OpcodeDetails.h"
 #include "Opcodes.h"
@@ -36,17 +37,14 @@ public:
 	//EvaluableNode pointer to count
 	using ReferenceCountType = FastHashMap<EvaluableNode *, size_t>;
 
-	//lookup a keyword string and find the type
-	using KeywordLookupType = FastHashMap<std::string, EvaluableNodeType>;
-
 	//EvaluableNode assoc storage
-	using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
+	using SmallAssocType = VectorMap<StringInternPool::StringID, EvaluableNode *>;
+	using LargeAssocType = OrderedHashMap<StringInternPool::StringID, EvaluableNode *>;
+	class AssocRef;
 
 	//EvaluableNode ordered storage
 	using OrderedType = std::vector<EvaluableNode *>;
-
-	//Storage for labels
-	using LabelsAssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
+	using OrderedRef = OrderedType &;
 
 	using AttributeStorageType = uint8_t;
 	enum class Attribute : AttributeStorageType
@@ -101,197 +99,29 @@ public:
 	}
 
 	//clears out all data and makes the unusable in the ENT_DEALLOCATED state
-	inline void Invalidate()
-	{
-		DestructValue();
-
-		type = ENT_DEALLOCATED;
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		//use a value that is more apparent that something went wrong
-		value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-	#else
-		value.numberAndNullValueContainer.numberValue = 0;
-	#endif
-
-		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
-	}
+	inline void Invalidate();
 
 	///////////////////////////////////////////
 	//Each InitializeType* sets up a given type with appropriate data
-	inline void InitializeType(EvaluableNodeType _type, const std::string &string_value)
-	{
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		AmlgAssert(IsEvaluableNodeTypeValid(_type));
-	#endif
+	inline void InitializeType(EvaluableNodeType _type, const std::string &string_value);
 
-		type = _type;
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
-		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
+	inline void InitializeType(EvaluableNodeType _type, const std::string_view string_value);
 
-		SetIsIdempotent(type == ENT_STRING);
-		SetNeedCycleCheck(false);
-	}
-
-	inline void InitializeType(EvaluableNodeType _type, const std::string_view string_value)
-	{
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		AmlgAssert(IsEvaluableNodeTypeValid(_type));
-	#endif
-
-		type = _type;
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_value);
-		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
-
-		SetIsIdempotent(type == ENT_STRING);
-		SetNeedCycleCheck(false);
-	}
-
-	inline void InitializeType(EvaluableNodeType _type, StringInternPool::StringID string_id)
-	{
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		AmlgAssert(IsEvaluableNodeTypeValid(_type));
-	#endif
-
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		if(string_id == StringInternPool::NOT_A_STRING_ID)
-		{
-			type = ENT_NULL;
-			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-		}
-		else
-		{
-			type = _type;
-			value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_id);
-			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
-		}
-
-		SetIsIdempotent(type == ENT_STRING);
-		SetNeedCycleCheck(false);
-	}
+	inline void InitializeType(EvaluableNodeType _type, StringInternPool::StringID string_id);
 
 	//like InitializeType, but hands off the string reference to string_id
-	inline void InitializeTypeWithReferenceHandoff(EvaluableNodeType _type, StringInternPool::StringID string_id)
-	{
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		AmlgAssert(IsEvaluableNodeTypeValid(_type));
-	#endif
+	inline void InitializeTypeWithReferenceHandoff(EvaluableNodeType _type, StringInternPool::StringID string_id);
 
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		if(string_id == StringInternPool::NOT_A_STRING_ID)
-		{
-			type = ENT_NULL;
-			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-		}
-		else
-		{
-			type = _type;
-			value.stringValueContainer.stringID = string_id;
-			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
-		}
+	inline void InitializeType(double number_value);
 
-		SetIsIdempotent(type == ENT_STRING);
-		SetNeedCycleCheck(false);
-	}
-
-	inline void InitializeType(double number_value)
-	{
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		value.numberAndNullValueContainer.numberValue = number_value;
-		AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
-
-		if(!FastIsNaN(number_value))
-			type = ENT_NUMBER;
-		else
-			type = ENT_NULL;
-
-
-		SetIsIdempotent(true);
-		SetNeedCycleCheck(false);
-	}
-
-	inline void InitializeType(bool bool_value)
-	{
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		type = ENT_BOOL;
-		value.boolValueContainer.boolValue = bool_value;
-		AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
-
-		SetIsIdempotent(true);
-		SetNeedCycleCheck(false);
-	}
+	inline void InitializeType(bool bool_value);
 
 	//initializes to ENT_UNINITIALIZED
 	//useful to mark a node in a hold state before it's ready so it isn't counted as ENT_DEALLOCATED
 	//but also such that the fields don't need to be initialized or cleared
-	__forceinline constexpr void InitializeUnallocated()
-	{
-		type = ENT_UNINITIALIZED;
-	}
+	__forceinline constexpr void InitializeUnallocated();
 
-	inline void InitializeType(EvaluableNodeType _type)
-	{
-	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		AmlgAssert(IsEvaluableNodeTypeValid(_type) || _type == ENT_DEALLOCATED);
-	#endif
-
-		type = _type;
-		attributes = static_cast<AttributeStorageType>(Attribute::NONE);
-		SetIsIdempotent(IsEvaluableNodeTypePotentiallyIdempotent(_type));
-
-		if(DoesEvaluableNodeTypeUseNullData(_type))
-		{
-			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
-			SetIsIdempotent(true);
-			SetNeedCycleCheck(false);
-		}
-		if(DoesEvaluableNodeTypeUseBoolData(_type))
-		{
-			AnnotationsAndComments::Construct(value.boolValueContainer.annotationsAndComments);
-			value.boolValueContainer.boolValue = false;
-			SetIsIdempotent(true);
-			SetNeedCycleCheck(false);
-		}
-		else if(DoesEvaluableNodeTypeUseNumberData(_type))
-		{
-			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
-			value.numberAndNullValueContainer.numberValue = 0.0;
-			SetIsIdempotent(true);
-			SetNeedCycleCheck(false);
-		}
-		else if(DoesEvaluableNodeTypeUseStringData(_type))
-		{
-			value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
-			AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
-			SetIsIdempotent(_type == ENT_STRING);
-			SetNeedCycleCheck(false);
-		}
-		else if(DoesEvaluableNodeTypeUseAssocData(_type))
-		{
-			type = _type;
-			SetIsIdempotent(true);
-			value.ConstructMappedChildNodes();
-		}
-		else if(_type == ENT_DEALLOCATED)
-		{
-		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-			//use a value that is more apparent that something went wrong
-			value.numberAndNullValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
-		#else
-			value.numberAndNullValueContainer.numberValue = 0;
-		#endif
-
-			AnnotationsAndComments::Construct(value.numberAndNullValueContainer.annotationsAndComments);
-		}
-		else
-		{
-			value.ConstructOrderedChildNodes();
-		}
-	}
+	inline void InitializeType(EvaluableNodeType _type);
 
 	//sets the value of the node to that of n and copies metadata if copy_metadata is true
 	void InitializeType(EvaluableNode *n, bool copy_metadata = true);
@@ -310,98 +140,19 @@ public:
 	}
 
 	//clears annotations and comments
-	__forceinline void ClearAnnotationsAndComments()
-	{
-		if(HasExtendedValue())
-		{
-			if(GetType() == ENT_ASSOC)
-			{
-				AssocType temp_mcn = std::move(*value.extendedMappedChildNodes.mappedChildNodes);
-				value.extendedMappedChildNodes.mappedChildNodes.~unique_ptr<AssocType>();
-				new (&value.mappedChildNodes) AssocType(std::move(temp_mcn));
-			}
-			else //ordered
-			{
-				OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
-				value.extendedOrderedChildNodes.orderedChildNodes.~unique_ptr<OrderedType>();
-				new (&value.orderedChildNodes) OrderedType(std::move(temp_ocn));
-			}
-
-			SetExtendedValue(false);
-		}
-		else
-		{
-			GetAnnotationsAndCommentsStorage().Clear();
-		}
-	}
+	__forceinline void ClearAnnotationsAndComments();
 
 	//clears the node's metadata
-	__forceinline void ClearMetadata()
-	{
-		ClearAnnotationsAndComments();
-		SetConcurrency(false);
-	}
+	__forceinline void ClearMetadata();
 
 	//returns true if the node has any metadata
-	__forceinline bool HasMetadata()
-	{
-		auto &a_and_c = GetAnnotationsAndCommentsStorage();
-		return (a_and_c.HasCommentOrAnnotation() || GetConcurrency());
-	}
+	__forceinline bool HasMetadata();
 
 	//Returns true if the immediate data structure of a is equal to b
-	inline static bool AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
-	{
-		EvaluableNodeType a_type = (a == nullptr ? ENT_NULL : a->GetType());
-		EvaluableNodeType b_type = (b == nullptr ? ENT_NULL : b->GetType());
-
-		//check both types are the same
-		if(a_type != b_type)
-			return false;
-
-		//since both types are the same, only need to check one for the type of data
-		//check string equality
-		if(DoesEvaluableNodeTypeUseStringData(a_type))
-			return a->GetStringIDReference() == b->GetStringIDReference();
-
-		//check numeric equality
-		if(DoesEvaluableNodeTypeUseNumberData(a_type))
-			return a->GetNumberValueReference() == b->GetNumberValueReference();
-
-		if(DoesEvaluableNodeTypeUseBoolData(a_type))
-			return a->GetBoolValueReference() == b->GetBoolValueReference();
-
-		//if made it here, then it's an instruction, and they're of equal type
-		return true;
-	}
+	static inline bool AreShallowEqual(EvaluableNode *a, EvaluableNode *b);
 
 	//Returns true if the entire data structure of a is equal in value to the data structure of b
-	inline static bool AreDeepEqual(EvaluableNode *a, EvaluableNode *b)
-	{
-		//if pointers are the same, then they are the same
-		if(a == b)
-			return true;
-
-		//first check if the immediate values are equal
-		if(!AreShallowEqual(a, b))
-			return false;
-
-		//since they are shallow equal, check for quick exit
-		if(a == nullptr || b == nullptr || IsEvaluableNodeTypeTerminalNode(a->GetType()))
-			return true;
-
-		//only need cycle checks if both a and b need cycle checks,
-		// otherwise, one will become exhausted and end the comparison
-		if(a->GetNeedCycleCheck() && b->GetNeedCycleCheck())
-		{
-			ReferenceAssocType checked;
-			return AreDeepEqualGivenShallowEqualAndNotImmediate(a, b, &checked);
-		}
-		else
-		{
-			return AreDeepEqualGivenShallowEqualAndNotImmediate(a, b, nullptr);
-		}
-	}
+	static inline bool AreDeepEqual(EvaluableNode *a, EvaluableNode *b);
 
 	//Returns true if the node is some form of associative array
 	__forceinline bool IsAssociativeArray()
@@ -472,7 +223,7 @@ public:
 	static int Compare(EvaluableNode *a, EvaluableNode *b);
 
 	//Returns true if the node b is less than node a.  If or_equal_to is true, then also returns true if equal
-	inline static bool IsLessThan(EvaluableNode *a, EvaluableNode *b, bool or_equal_to)
+	static inline bool IsLessThan(EvaluableNode *a, EvaluableNode *b, bool or_equal_to)
 	{
 		int r = Compare(a, b);
 		if(r < 0)
@@ -482,33 +233,19 @@ public:
 		return false;
 	}
 
-	inline static bool IsStrictlyLessThan(EvaluableNode *a, EvaluableNode *b)
+	static inline bool IsStrictlyLessThan(EvaluableNode *a, EvaluableNode *b)
 	{
 		return IsLessThan(a, b, false);
 	}
 
-	inline static bool IsStrictlyGreaterThan(EvaluableNode *a, EvaluableNode *b)
+	static inline bool IsStrictlyGreaterThan(EvaluableNode *a, EvaluableNode *b)
 	{
 		return !IsLessThan(a, b, true);
 	}
 
 	//if the node's contents can be represented as a number, which includes numbers, infinity, then return true
 	// otherwise returns false
-	static __forceinline bool CanRepresentValueAsANumber(EvaluableNode *e)
-	{
-		if(e == nullptr)
-			return true;
-
-		switch(e->GetType())
-		{
-		case ENT_BOOL:
-		case ENT_NUMBER:
-		case ENT_NULL:
-			return true;
-		default:
-			return false;
-		}
-	}
+	static __forceinline bool CanRepresentValueAsANumber(EvaluableNode *e);
 
 	//returns true if e is nullptr or value of e has type ENT_NULL
 	static __forceinline bool IsNull(EvaluableNode *e)
@@ -587,7 +324,7 @@ public:
 	//returns true if the node can be flattened,
 	// that is, contains no cycles when traversing downward and potentially
 	// duplicating nodes if they are referenced more than once
-	inline static bool CanNodeTreeBeFlattened(EvaluableNode *n)
+	static inline bool CanNodeTreeBeFlattened(EvaluableNode *n)
 	{
 		if(n == nullptr)
 			return true;
@@ -599,7 +336,7 @@ public:
 	}
 
 	//Returns the number of nodes in the data structure
-	inline static size_t GetDeepSize(EvaluableNode *n)
+	static inline size_t GetDeepSize(EvaluableNode *n)
 	{
 		if(n == nullptr || n->IsTerminal())
 			return 1;
@@ -695,81 +432,21 @@ public:
 	}
 
 	//changes the type by setting it to the number value specified
-	inline void SetTypeViaNumberValue(double v, bool clear_metadata = true)
-	{
-		if(clear_metadata)
-			ClearMetadata();
-
-		if(FastIsNaN(v))
-		{
-			SetType(ENT_NULL, false);
-		}
-		else
-		{
-			SetType(ENT_NUMBER, false);
-			GetNumberValueReference() = v;
-		}
-	}
+	inline void SetTypeViaNumberValue(double v, bool clear_metadata = true);
 
 	//changes the type by setting it to the string value specified
-	inline void SetTypeViaStringIdValue(std::string &v, bool clear_metadata = true)
-	{
-		if(clear_metadata)
-			ClearMetadata();
-
-		SetType(ENT_STRING, false);
-		GetStringIDReference() = string_intern_pool.CreateStringReference(v);
-	}
+	inline void SetTypeViaStringIdValue(std::string &v, bool clear_metadata = true);
 
 	//changes the type by setting it to the string id value specified
-	inline void SetTypeViaStringIdValue(StringInternPool::StringID v, bool clear_metadata = true)
-	{
-		if(clear_metadata)
-			ClearMetadata();
-
-		if(v == string_intern_pool.NOT_A_STRING_ID)
-		{
-			SetType(ENT_NULL, false);
-		}
-		else
-		{
-			SetType(ENT_STRING, false);
-			GetStringIDReference() = string_intern_pool.CreateStringReference(v);
-		}
-	}
+	inline void SetTypeViaStringIdValue(StringInternPool::StringID v, bool clear_metadata = true);
 
 	//changes the type by setting it to the string id value specified, handing off the reference
-	inline void SetTypeViaStringIdValueWithReferenceHandoff(StringInternPool::StringID v, bool clear_metadata = true)
-	{
-		if(clear_metadata)
-			ClearMetadata();
-
-		if(v == string_intern_pool.NOT_A_STRING_ID)
-		{
-			SetType(ENT_NULL, false);
-		}
-		else
-		{
-			SetType(ENT_STRING, false);
-			GetStringIDReference() = v;
-		}
-	}
+	inline void SetTypeViaStringIdValueWithReferenceHandoff(StringInternPool::StringID v, bool clear_metadata = true);
 
 	//sets up the ability to contain a string
-	inline void InitStringValue()
-	{
-		DestructValue();
-		value.stringValueContainer.stringID = StringInternPool::NOT_A_STRING_ID;
-		AnnotationsAndComments::Construct(value.stringValueContainer.annotationsAndComments);
-	}
+	inline void InitStringValue();
 
-	__forceinline StringInternPool::StringID GetStringID()
-	{
-		if(DoesEvaluableNodeTypeUseStringData(GetType()))
-			return GetStringIDReference();
-
-		return StringInternPool::NOT_A_STRING_ID;
-	}
+	__forceinline StringInternPool::StringID GetStringID();
 
 	void SetStringID(StringInternPool::StringID id);
 	std::string_view GetStringView();
@@ -792,7 +469,7 @@ public:
 		return GetAnnotationsAndCommentsStorage().GetAnnotations();
 	}
 
-	inline static std::string_view GetAnnotationsString(EvaluableNode *en)
+	static inline std::string_view GetAnnotationsString(EvaluableNode *en)
 	{
 		if(en == nullptr)
 			return std::string_view();
@@ -802,7 +479,7 @@ public:
 	//sets the annotation_string
 	inline void SetAnnotationsString(std::string_view s)
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasExtendedValue();
 		GetAnnotationsAndCommentsStorage().SetAnnotations(s);
 	}
 
@@ -814,7 +491,7 @@ public:
 	//appends annotations to the node
 	void AppendAnnotations(std::string &annotations)
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasExtendedValue();
 
 		auto &a_and_c = GetAnnotationsAndCommentsStorage();
 		std::string combined(a_and_c.GetAnnotations());
@@ -828,7 +505,7 @@ public:
 		return GetAnnotationsAndCommentsStorage().GetComments();
 	}
 
-	inline static std::string_view GetCommentsString(EvaluableNode *en)
+	static inline std::string_view GetCommentsString(EvaluableNode *en)
 	{
 		if(en == nullptr)
 			return std::string_view();
@@ -843,7 +520,7 @@ public:
 
 	inline void SetCommentsString(const std::string &comment)
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasExtendedValue();
 		GetAnnotationsAndCommentsStorage().SetComments(comment);
 	}
 
@@ -855,7 +532,7 @@ public:
 	//appends comments to the node
 	void AppendComments(std::string &comments)
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasExtendedValue();
 
 		auto &a_and_c = GetAnnotationsAndCommentsStorage();
 		std::string combined(a_and_c.GetComments());
@@ -877,47 +554,13 @@ public:
 	}
 
 #ifdef MULTITHREAD_SUPPORT
-	__forceinline bool HasAttributeAtomic(Attribute attr)
-	{
-		std::atomic_ref atomic_ref(attributes);
-		AttributeStorageType cur = atomic_ref.load(std::memory_order_seq_cst);
-		return (cur & static_cast<AttributeStorageType>(attr)) != 0;
-	}
+	__forceinline bool HasAttributeAtomic(Attribute attr);
 
-	__forceinline void SetAttributeAtomic(Attribute attr, bool enable = true)
-	{
-		AttributeStorageType mask = static_cast<AttributeStorageType>(attr);
-
-		std::atomic_ref atomic_ref(attributes);
-		if(enable)
-			atomic_ref.fetch_or(mask, std::memory_order_seq_cst);
-		else
-			atomic_ref.fetch_and(~mask, std::memory_order_seq_cst);
-	}
+	__forceinline void SetAttributeAtomic(Attribute attr, bool enable = true);
 
 	//returns true if the bit was successfully set (was previously unset)
 	//returns false if the bit was already set
-	__forceinline bool TrySetAttributeAtomic(Attribute attr)
-	{
-		constexpr AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::KNOWN_TO_BE_IN_USE);
-
-		//check if already set, relaxed is fine for early-out
-		std::atomic_ref atomic_ref(attributes);
-		AttributeStorageType current_flags = atomic_ref.load(std::memory_order_relaxed);
-		if(current_flags & mask)
-			return false;
-
-		//slow path to actually set the value
-		while(!atomic_ref.compare_exchange_weak(current_flags, current_flags | mask,
-			std::memory_order_acquire, std::memory_order_relaxed))
-		{
-			//see if another thread set it
-			if(current_flags & mask)
-				return false;
-		}
-
-		return true;
-	}
+	__forceinline bool TrySetAttributeAtomic(Attribute attr);
 #endif
 
 	//returns true if the EvaluableNode is marked with preference for concurrency
@@ -980,22 +623,7 @@ public:
 
 	//sets whether the node has never been read / accessed
 	//returns the previous value
-	__forceinline bool SetIsFreeableAtomic(bool is_freeable)
-	{
-		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE);
-		std::atomic_ref atomic_ref(attributes);
-
-		if(is_freeable)
-		{
-			AttributeStorageType previous_value = atomic_ref.fetch_or(mask);
-			return (previous_value & mask) != 0;
-		}
-		else
-		{
-			AttributeStorageType previous_value = atomic_ref.fetch_and(~mask);
-			return (previous_value & mask) != 0;
-		}
-	}
+	__forceinline bool SetIsFreeableAtomic(bool is_freeable);
 #endif
 
 	//returns true if the top node has never been read / accessed
@@ -1022,60 +650,17 @@ public:
 
 	//sets whether the top node has never been read / accessed
 	//returns the previous value
-	__forceinline bool SetIsFreeableTopNodeAtomic(bool is_freeable)
-	{
-		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
-
-		std::atomic_ref atomic_ref(attributes);
-		if(is_freeable)
-		{
-			AttributeStorageType previous_value = atomic_ref.fetch_or(mask);
-			return (previous_value & mask) != 0;
-		}
-		else
-		{
-			AttributeStorageType previous_value = atomic_ref.fetch_and(~mask);
-			return (previous_value & mask) != 0;
-		}
-	}
+	__forceinline bool SetIsFreeableTopNodeAtomic(bool is_freeable);
 #endif
 
 	//sets both FREEABLE and FREEABLE_TOP_NODE
 	//returns previous values of the flags in order
-	__forceinline std::pair<bool, bool> SetIsFreeableAndIsFreeableTopNode(bool is_freeable)
-	{
-		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE)
-			| static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
-
-		AttributeStorageType previous_value = attributes;
-
-		if(is_freeable)
-			attributes |= static_cast<AttributeStorageType>(mask);
-		else
-			attributes &= ~static_cast<AttributeStorageType>(mask);
-
-		return { (previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
-			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0 };
-	}
+	__forceinline std::pair<bool, bool> SetIsFreeableAndIsFreeableTopNode(bool is_freeable);
 
 #ifdef MULTITHREAD_SUPPORT
 	//sets both FREEABLE and FREEABLE_TOP_NODE
 	//returns previous values of the flags in order
-	__forceinline std::pair<bool, bool> SetIsFreeableAndIsFreeableTopNodeAtomic(bool is_freeable)
-	{
-		AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::FREEABLE)
-			| static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE);
-		AttributeStorageType previous_value;
-
-		std::atomic_ref atomic_ref(attributes);
-		if(is_freeable)
-			previous_value = atomic_ref.fetch_or(mask);
-		else
-			previous_value = atomic_ref.fetch_and(~mask);
-
-		return { (previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE)) != 0,
-			(previous_value & static_cast<AttributeStorageType>(Attribute::FREEABLE_TOP_NODE)) != 0 };
-	}
+	__forceinline std::pair<bool, bool> SetIsFreeableAndIsFreeableTopNodeAtomic(bool is_freeable);
 #endif
 
 	//returns whether this node has been marked as known to be currently in use
@@ -1128,79 +713,13 @@ public:
 
 	//updates all flags as appropriate given that a newly allocated
 	// child_node is being added as a child to this node
-	__forceinline void UpdateFlagsBasedOnNewChildNode(EvaluableNode *new_child)
-	{
-		if(new_child == nullptr)
-			return;
-
-		//if cycles, propagate upward
-		if(new_child->GetNeedCycleCheck())
-			SetNeedCycleCheck(true);
-
-		//propagate idempotency
-		if(!new_child->GetIsIdempotent())
-			SetIsIdempotent(false);
-	}
+	__forceinline void UpdateFlagsBasedOnNewChildNode(EvaluableNode *new_child);
 
 	//assumes all child nodes (if any) do not reference this node and all their
 	//flags are correct and updates this node's flags
-	__forceinline void UpdateAllFlagsBasedOnNoReferencingChildNodes()
-	{
-		bool is_idempotent = IsEvaluableNodeTypePotentiallyIdempotent(GetType());
-		bool need_cycle_check = false;
+	__forceinline void UpdateAllFlagsBasedOnNoReferencingChildNodes();
 
-		if(IsAssociativeArray())
-		{
-			for(auto &[cn_id, cn] : GetMappedChildNodesReference())
-			{
-				if(cn == nullptr)
-					continue;
-
-				//update flags for tree
-				if(cn->GetNeedCycleCheck())
-					need_cycle_check = true;
-
-				if(!cn->GetIsIdempotent())
-					is_idempotent = false;
-
-				//if both are triggered, no need to continue
-				if(!is_idempotent && need_cycle_check)
-					break;
-			}
-		}
-		else if(!IsTerminal())
-		{
-			for(auto cn : GetOrderedChildNodesReference())
-			{
-				if(cn == nullptr)
-					continue;
-
-				//update flags for tree
-				if(cn->GetNeedCycleCheck())
-					need_cycle_check = true;
-
-				if(!cn->GetIsIdempotent())
-					is_idempotent = false;
-
-				//if both are triggered, no need to continue
-				if(!is_idempotent && need_cycle_check)
-					break;
-			}
-		}
-
-		SetNeedCycleCheck(need_cycle_check);
-		SetIsIdempotent(is_idempotent);
-	}
-
-	inline void InitOrderedChildNodes()
-	{
-		DestructValue();
-
-		if(!HasExtendedValue())
-			value.ConstructOrderedChildNodes();
-		else
-			value.extendedOrderedChildNodes.Construct();
-	}
+	inline void InitOrderedChildNodes();
 
 	//preallocates to_reserve for appending, etc.
 	inline void ReserveOrderedChildNodes(size_t to_reserve)
@@ -1209,7 +728,7 @@ public:
 			GetOrderedChildNodesReference().reserve(to_reserve);
 	}
 
-	__forceinline OrderedType &GetOrderedChildNodes()
+	__forceinline OrderedRef GetOrderedChildNodes()
 	{
 		if(IsOrderedArray())
 			return GetOrderedChildNodesReference();
@@ -1217,45 +736,21 @@ public:
 		return emptyOrderedChildNodes;
 	}
 
+	static __forceinline OrderedRef GetOrderedChildNodes(EvaluableNode *en)
+	{
+		if(en == nullptr || !en->IsOrderedArray())
+			return emptyOrderedChildNodes;
+		return en->GetOrderedChildNodesReference();
+	}
+
 	//using ordered or mapped child nodes as appropriate, transforms into numeric values and passes into store_value
 	// if node is mapped child nodes, it will use element_names to order populate out and use default_value if any given id is not found
 	//will use num_expected_elements for immediate values
 	//store_value takes in 3 parameters, the index, a bool if the value was found, and the EvaluableNode of the value
 	template<typename StoreValueFunction = void(size_t, bool, EvaluableNode *)>
-	inline static void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
-		size_t num_expected_elements, StoreValueFunction store_value)
-	{
-		if(EvaluableNode::IsTerminal(node))
-		{
-			//fill in with the node's value
-			for(size_t i = 0; i < num_expected_elements; i++)
-				store_value(i, true, node);
-		}
-		else if(node->IsAssociativeArray())
-		{
-			auto &mcn = node->GetMappedChildNodesReference();
-			for(size_t i = 0; i < element_names.size(); i++)
-			{
-				EvaluableNode *value_en = nullptr;
-				bool found = false;
-				auto found_node = mcn.find(element_names[i]);
-				if(found_node != end(mcn))
-				{
-					value_en = found_node->second;
-					found = true;
-				}
-
-				store_value(i, found, value_en);
-			}
-		}
-		else //ordered
-		{
-			auto &node_ocn = node->GetOrderedChildNodesReference();
-
-			for(size_t i = 0; i < node_ocn.size(); i++)
-				store_value(i, true, node_ocn[i]);
-		}
-	}
+	static inline void ConvertChildNodesAndStoreValue(EvaluableNode *node,
+		std::vector<StringInternPool::StringID> &element_names, size_t num_expected_elements,
+		StoreValueFunction store_value);
 
 	//Note that ResizeOrderedChildNodes does not initialize new nodes, so they must be initialized by caller
 	inline void SetOrderedChildNodesSize(size_t new_size)
@@ -1265,125 +760,77 @@ public:
 	}
 
 	//sets the ordered child nodes and updates flags
-	void SetOrderedChildNodes(const OrderedType &ocn, bool need_cycle_check = true, bool is_idempotent = false);
+	void SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check = true, bool is_idempotent = false);
 	//sets the ordered child nodes and updates flags, but can be used as an rvalue so that the memory doesn't
 	//need to be reallocated if std::move is used for the input
-	void SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check, bool is_idempotent);
+	void SetOrderedChildNodes(OrderedType &&ocn, bool need_cycle_check = true, bool is_idempotent = false);
 	template<typename ContainerIterator>
-	inline void SetOrderedChildNodes(ContainerIterator first, ContainerIterator last, bool need_cycle_check, bool is_idempotent)
-	{
-		if(!IsOrderedArray())
-			return;
-
-		auto &ocn = GetOrderedChildNodesReference();
-		ocn.assign(first, last);
-
-		SetNeedCycleCheck(need_cycle_check);
-
-		if(is_idempotent && !IsEvaluableNodeTypePotentiallyIdempotent(type))
-			SetIsIdempotent(false);
-		else
-			SetIsIdempotent(is_idempotent);
-	}
+	inline void SetOrderedChildNodes(
+		ContainerIterator first, ContainerIterator last, bool need_cycle_check, bool is_idempotent);
 
 	void ClearOrderedChildNodes();
 	void AppendOrderedChildNode(EvaluableNode *cn);
-	void AppendOrderedChildNodes(const OrderedType &ocn_to_append);
+	void AppendOrderedChildNodes(OrderedRef ocn_to_append);
+
 	//if the OrderedChildNodes list was using extra memory (if it were resized to be smaller), this would attempt to free extra memory
-	inline void ReleaseOrderedChildNodesExtraMemory()
-	{
-		if(IsOrderedArray())
-			GetOrderedChildNodesReference().shrink_to_fit();
-	}
+	inline void ReleaseOrderedChildNodesExtraMemory();
 
-	inline void InitMappedChildNodes()
-	{
-		DestructValue();
-
-		if(!HasExtendedValue())
-			value.ConstructMappedChildNodes();
-		else
-			value.extendedMappedChildNodes.Construct();
-	}
+	//sets up mapped child nodes
+	//optionally can pass in the number of elements so it can
+	//automatically set up large vs small assoc
+	inline void InitMappedChildNodes(size_t num_elements = 0);
 
 	//preallocates to_reserve for appending, etc.
-	inline void ReserveMappedChildNodes(size_t to_reserve)
-	{
-		if(IsAssociativeArray())
-			GetMappedChildNodesReference().reserve(to_reserve);
-	}
+	inline void ReserveMappedChildNodes(size_t to_reserve);
 
-	__forceinline AssocType &GetMappedChildNodes()
-	{
-		if(IsAssociativeArray())
-			return GetMappedChildNodesReference();
+	//returns a view of the mapped child nodes; should be treated as read-only
+	//(which means the receiving variables should not have an &)
+	//if the node is of not of type ENT_ASSOC, will return a view to an empty map
+	__forceinline AssocRef GetMappedChildNodesView();
 
-		return emptyMappedChildNodes;
-	}
+	static __forceinline AssocRef GetMappedChildNodesView(EvaluableNode *en);
+	
+	//if the id exists, returns a pointer to the pointer of the child node
+	// returns nullptr if the id doesn't exist
+	inline EvaluableNode **GetMappedChildNode(const std::string &id);
 
 	//if the id exists, returns a pointer to the pointer of the child node
 	// returns nullptr if the id doesn't exist
-	inline EvaluableNode **GetMappedChildNode(const std::string &id)
-	{
-		StringInternPool::StringID sid = string_intern_pool.GetIDFromString(id);
-		return GetMappedChildNode(sid);
-	}
-	//if the id exists, returns a pointer to the pointer of the child node
-	// returns nullptr if the id doesn't exist
-	inline EvaluableNode **GetMappedChildNode(const StringInternPool::StringID sid)
-	{
-		auto &mcn = GetMappedChildNodes();
-		auto node_iter = mcn.find(sid);
-		if(node_iter == end(mcn))
-			return nullptr;
-
-		//return the location of the child pointer
-		return &node_iter->second;
-	}
+	inline EvaluableNode **GetMappedChildNode(const StringInternPool::StringID sid);
 
 	//returns a pointer to the pointer of the child node, creating it if necessary and populating it with a nullptr
 	EvaluableNode **GetOrCreateMappedChildNode(const std::string &id);
 	//returns a pointer to the pointer of the child node, creating it if necessary and populating it with a nullptr
 	EvaluableNode **GetOrCreateMappedChildNode(const StringInternPool::StringID sid);
+
 	// if copy is set to true, then it will copy the map, otherwise it will swap
-	void SetMappedChildNodes(AssocType &new_mcn, bool copy,
-		bool need_cycle_check = true, bool is_idempotent = false);
+	void SetMappedChildNodes(AssocRef new_mcn,
+		bool copy, bool need_cycle_check = true, bool is_idempotent = false);
+
+	void SetMappedChildNodes(LargeAssocType &new_mcn,
+		bool copy, bool need_cycle_check = true, bool is_idempotent = false);
+
 	//if overwrite is true, then it will overwrite the value, otherwise it will only set it if it does not exist
 	// will return true if it was successfully written (false if overwrite is set to false and the key already exists),
 	// as well as a pointer to where the pointer is stored
 	std::pair<bool, EvaluableNode **> SetMappedChildNode(const std::string &id, EvaluableNode *node, bool overwrite = true);
 	std::pair<bool, EvaluableNode **> SetMappedChildNode(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite = true);
+
 	//like SetMappedChildNode, except the sid already has a reference that is being handed off to this EvaluableNode to manage
 	bool SetMappedChildNodeWithReferenceHandoff(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite = true);
+
 	void ClearMappedChildNodes();
+
 	//returns the node erased
 	EvaluableNode *EraseMappedChildNode(const StringInternPool::StringID sid);
-	void AppendMappedChildNodes(AssocType &mcn_to_append);
+
+	void AppendMappedChildNodes(AssocRef mcn_to_append);
 
 	//helper function to obtain a typed value from mapped child nodes
 	//note that it can only be used on string key lookups, no code or numeric keys
 	template<typename T>
-	static void GetValueFromMappedChildNodesReference(EvaluableNode::AssocType &mcn, EvaluableNodeBuiltInStringId key, T &value)
-	{
-		auto found_value = mcn.find(GetStringIdFromBuiltInStringId(key));
-		if(found_value != end(mcn))
-		{
-			if constexpr(std::is_same<T, bool>::value)
-				value = EvaluableNode::ToBool(found_value->second);
-			else if constexpr(std::is_same<T, double>::value)
-				value = EvaluableNode::ToNumber(found_value->second);
-			else if constexpr(std::is_same<T, size_t>::value)
-				value = static_cast<size_t>(EvaluableNode::ToNumber(found_value->second, 0));
-			else if constexpr(std::is_same<T, int64_t>::value)
-				value = static_cast<int64_t>(EvaluableNode::ToNumber(found_value->second, 0));
-			else if constexpr(std::is_same<T, std::string>::value)
-				value = EvaluableNode::ToString(found_value->second);
-			else if constexpr(std::is_same<T, StringInternPool::StringID>::value)
-				value = EvaluableNode::ToStringIDIfExists(found_value->second);
-			else
-				value = found_value->second;
-		}
-	}
+	static void GetValueFromMappedChildNodesReference(
+		EvaluableNode::AssocRef mcn, EvaluableNodeBuiltInStringId key, T &value);
 
 protected:
 	//defined since it is used as a pointer
@@ -1391,40 +838,20 @@ protected:
 public:
 
 	//assumes that the EvaluableNode is of type ENT_BOOL, and returns the value by reference
-	__forceinline bool &GetBoolValueReference()
-	{
-		return value.boolValueContainer.boolValue;
-	}
+	__forceinline bool &GetBoolValueReference();
 
 	//assumes that the EvaluableNode is of type ENT_NUMBER, and returns the value by reference
-	__forceinline double &GetNumberValueReference()
-	{
-		return value.numberAndNullValueContainer.numberValue;
-	}
+	__forceinline double &GetNumberValueReference();
 
 	//assumes that the EvaluableNode is of type that holds a string, and returns the value by reference
-	__forceinline StringInternPool::StringID &GetStringIDReference()
-	{
-		return value.stringValueContainer.stringID;
-	}
+	__forceinline StringInternPool::StringID &GetStringIDReference();
 
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
-	__forceinline OrderedType &GetOrderedChildNodesReference()
-	{
-		if(!HasExtendedValue())
-			return value.orderedChildNodes;
-		else
-			return *value.extendedOrderedChildNodes.orderedChildNodes.get();
-	}
+	__forceinline OrderedRef GetOrderedChildNodesReference();
 
-	//assumes that the EvaluableNode is has mapped child nodes, and returns the value by reference
-	__forceinline AssocType &GetMappedChildNodesReference()
-	{
-		if(!HasExtendedValue())
-			return value.mappedChildNodes;
-		else
-			return *value.extendedMappedChildNodes.mappedChildNodes.get();
-	}
+	//assumes that the EvaluableNode is has mapped child nodes and returns the view
+	//(which means the receiving variables should not have an &)
+	__forceinline AssocRef GetMappedChildNodesViewOnAssoc();
 
 	//if it is storing an immediate value and has room to store a label
 	inline bool HasCompactAnnotationsAndCommentsStorage()
@@ -1434,31 +861,7 @@ public:
 
 	//returns a reference to the storage location for the annotation and comment storage
 	// will only return valid results if HasCompactAnnotationsAndCommentsStorage() is true, so that should be called first
-	__forceinline AnnotationsAndComments &GetAnnotationsAndCommentsStorage()
-	{
-		switch(GetType())
-		{
-		case ENT_BOOL:
-			return value.boolValueContainer.annotationsAndComments;
-		case ENT_NULL:
-		case ENT_NUMBER:
-			return value.numberAndNullValueContainer.annotationsAndComments;
-		case ENT_STRING:
-		case ENT_SYMBOL:
-			return value.stringValueContainer.annotationsAndComments;
-		case ENT_ASSOC:
-			if(!HasExtendedValue())
-				return emptyAnnotationsAndComments;
-			else
-				return value.extendedMappedChildNodes.annotationsAndComments;
-			//otherwise ordered
-		default:
-			if(!HasExtendedValue())
-				return emptyAnnotationsAndComments;
-			else
-				return value.extendedOrderedChildNodes.annotationsAndComments;
-		}
-	}
+	__forceinline AnnotationsAndComments &GetAnnotationsAndCommentsStorage();
 
 	//registers and unregisters an EvaluableNode for debug watching
 	static inline void RegisterEvaluableNodeForDebugWatch(EvaluableNode *en)
@@ -1651,20 +1054,20 @@ protected:
 
 		__forceinline void ConstructMappedChildNodes()
 		{
-			new (&mappedChildNodes) AssocType;
+			new (&mappedChildNodes) SmallAssocType;
 		}
 
 		__forceinline void DestructMappedChildNodes()
 		{
 			string_intern_pool.DestroyStringReferences(mappedChildNodes, [](auto n) { return n.first; });
-			mappedChildNodes.~AssocType();
+			mappedChildNodes.~SmallAssocType();
 		}
 
 		//ordered child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
 		OrderedType orderedChildNodes;
 
 		//hash-mapped child nodes (when type requires it), meaning and number of childNodes is based on the type of the node
-		AssocType mappedChildNodes;
+		SmallAssocType mappedChildNodes;
 
 		//when type represents a string, holds the corresponding values
 		struct EvaluableNodeValueString
@@ -1718,71 +1121,34 @@ protected:
 		{
 			__forceinline void Construct()
 			{
-				new (&mappedChildNodes) std::unique_ptr<AssocType>(std::make_unique<AssocType>());
+				new (&mappedChildNodes) std::unique_ptr<LargeAssocType>(std::make_unique<LargeAssocType>());
 				AnnotationsAndComments::Construct(annotationsAndComments);
 			}
 
 			__forceinline void Destruct()
 			{
 				string_intern_pool.DestroyStringReferences(*mappedChildNodes, [](auto n) { return n.first; });
-				mappedChildNodes.~unique_ptr<AssocType>();
+				mappedChildNodes.~unique_ptr<LargeAssocType>();
 				AnnotationsAndComments::Destruct(annotationsAndComments);
 			}
 
 			//external orderedChildNodes
-			std::unique_ptr<AssocType> mappedChildNodes;
+			std::unique_ptr<LargeAssocType> mappedChildNodes;
 
 			AnnotationsAndComments annotationsAndComments;
 		} extendedMappedChildNodes;
 	};
 #pragma pack(pop)
 
-	//makes sure that the extendedValue is set appropriately so that it can be used to hold additional data
-	void EnsureHasAnnotationsAndCommentsStorage();
+	//makes sure that the data structure has an extended value so that it can be used to hold additional data
+	void EnsureHasExtendedValue();
+
+	//removes the extended value data structure if it is no longer needed
+	void RemoveExtendedValueIfPossible();
 
 	//destructs the value so that the node can be reused
 	// note that the value should be considered uninitialized
-	inline void DestructValue()
-	{
-		switch(GetType())
-		{
-		case ENT_BOOL:
-			AnnotationsAndComments::Destruct(value.boolValueContainer.annotationsAndComments);
-			break;
-		case ENT_NULL:
-		case ENT_NUMBER:
-			AnnotationsAndComments::Destruct(value.numberAndNullValueContainer.annotationsAndComments);
-			break;
-		case ENT_STRING:
-		case ENT_SYMBOL:
-			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
-			AnnotationsAndComments::Destruct(value.stringValueContainer.annotationsAndComments);
-			break;
-		case ENT_ASSOC:
-			if(!HasExtendedValue())
-			{
-				value.DestructMappedChildNodes();
-			}
-			else
-			{
-				value.extendedMappedChildNodes.Destruct();
-				SetExtendedValue(false);
-			}
-			break;
-			//otherwise ordered
-		default:
-			if(!HasExtendedValue())
-			{
-				value.DestructOrderedChildNodes();
-			}
-			else
-			{
-				value.extendedOrderedChildNodes.Destruct();
-				SetExtendedValue(false);
-			}
-			break;
-		}
-	}
+	inline void DestructValue();
 
 	//assists the public function AreDeepEqual
 	//returns true if the entire data structure of a is equal in value to the data structure of b
@@ -1809,12 +1175,15 @@ protected:
 	//fields contained within the current set of data
 	AttributeStorageType attributes;
 
+	//when the number of elements in a SmallAssocType exceeds this value, it should be promoted to a LargeAssocType
+	static constexpr size_t largestSmallAssocSize = 8;
+
 	//values used to be able to return a reference
 	static bool falseBoolValue;
 	static double nanNumberValue;
 	static std::string emptyStringValue;
 	static OrderedType emptyOrderedChildNodes;
-	static AssocType emptyMappedChildNodes;
+	static EvaluableNode emptyMappedChildNodesNode;
 	static AnnotationsAndComments emptyAnnotationsAndComments;
 
 public:
@@ -1831,3 +1200,6 @@ protected:
 	static Concurrency::SingleMutex debugWatchMutex;
 #endif
 };
+
+#include "EvaluableNodeAssocRef.h"
+#include "EvaluableNodeInlines.h"

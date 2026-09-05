@@ -1468,7 +1468,7 @@ public:
 			}
 		}
 
-		std::sort(begin(dist_eval.featureAttribs), end(dist_eval.featureAttribs),
+		std::stable_sort(begin(dist_eval.featureAttribs), end(dist_eval.featureAttribs),
 			[](const auto &a, const auto &b)
 			{
 				return a.probabilityImpactForComputeCost > b.probabilityImpactForComputeCost;
@@ -1495,7 +1495,7 @@ public:
 			distances_out.emplace_back(distance, index);
 		}
 
-		std::sort(begin(distances_out), end(distances_out));
+		std::stable_sort(begin(distances_out), end(distances_out));
 	}
 
 	//contains entity lookups for each of the values for each of the columns

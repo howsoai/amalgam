@@ -18,20 +18,20 @@ static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HEL
 	d.description = R"(If no parameter is specified it returns a string of the topics that can be used.  For given a `topic`, returns a string or relevant data that describes the given topic.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((help "+"))", R"&({
-	allows_concurrency .true
-	description "Evaluates to the sum of all numbers.  If no parameters are provided it returns 0.0."
-	examples [
-			{example "(+ 1 2 3 4)" output "10"}
-		]
-	frequency_per_10000_opcodes 18
-	new_scope .false
-	new_target_scope .false
-	opcode_group "Basic Math"
-	parameters "[number x1] [number x2] ..."
-	permissions "none"
-	requires_entity .false
-	returns "number"
-	value_newness "new"
+		description "Evaluates to the sum of all numbers.  If no parameters are provided it returns 0.0."
+		parameters "[number x1] [number x2] ..."
+		returns "number"
+		allows_concurrency .true
+		requires_entity .false
+		new_scope .false
+		new_target_scope .false
+		frequency_per_10000_opcodes 18
+		opcode_group "Basic Math"
+		permissions "none"
+		value_newness "new"
+		examples [
+						{example "(+ 1 2 3 4)" output "10"}
+				]
 })&"}
 		});
 	d.permissions = ExecutionPermissions::Permission::ALL;
@@ -84,7 +84,7 @@ An entity has complete abilities to perform reads and writes to any other Entity
 
 Entities may be explicitly named and may be used as code libraries.  For example, a library named MyLibrary with function MyFunction can be called as `(call_entity "MyLibrary" "MyFunction" { parameter_a 1 parameter_b 2 })`.  Entity names are called entity ids, and nested entities can be accessed via an entity walk path, which is a list of ids, and the list of ids can be used any place an entity id is used.  When using null as the entity name, it will refer to the current entity.  Entities that begin with an underscore are "unnamed" which means that when entities are merged via any entity comparison method such as `mix_entities`, unnamed entities are compared to other unnamed entities to potentially merge.
 
-Variables are accessed in from the closest immediate scope, which means if there is a global variable named x and a function parameter named x, the function parameter will be used.  Entity labels are considered the global-most scope.  If a variable name cannot be found, then it will look at the entity's labels instead.  Scope is handled as a stack, and some opcodes may modify the scope.  Note that when declaring variables in a singular block such as a `let` or `declare`, the order of their evaluation is not guaranteed, so variables that depend on previous values should be implemented either functionally or as a sequence of `declare` opcodes.  Setting multiple values within a complex variable at the same time can be done by specifying multiple parameters to `assign`, and the opcodes `set` and `remove` return entirely new copies of the data structure with modifications.
+Variables are accessed in from the closest immediate scope, which means if there is a global variable named x and a function parameter named x, the function parameter will be used.  Entity labels are considered the global-most scope.  If a variable name cannot be found, then it will look at the entity's labels instead.  Scope is handled as a stack, and some opcodes may modify the scope.  As assoc data structures are initialized by insertion order, when declaring variables in a singular block such as a `let` or `declare`, the order of their evaluation will occur in the order that they are listed.  Setting multiple values within a complex variable at the same time can be done by specifying multiple parameters to `assign`, and the opcodes `set` and `remove` return entirely new copies of the data structure with modifications.
 
 In addition to the stack scope, there is a target scope, which can be accessed via the target opcodes to access the data being iterated over.  Some opcodes will add one or more layers to the target stack, so care must be taken to count back up the target stack an appropriate number of levels if the target is being used directly as opposed to being accessed via a variable.
 
@@ -406,7 +406,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 			else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
 				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
 			else //only print attributes if not debugSources
-				s = Parser::Unparse(cur, true, false, true);
+				s = Parser::Unparse(cur, true, false, false);
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 		}

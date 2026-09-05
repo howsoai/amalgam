@@ -309,8 +309,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 			elements2->ConvertListToNumberedAssoc();
 		}
 
-		auto &mcn1 = elements1->GetMappedChildNodesReference();
-		auto &mcn2 = elements2->GetMappedChildNodesReference();
+		auto mcn1 = elements1->GetMappedChildNodesViewOnAssoc();
+		auto mcn2 = elements2->GetMappedChildNodesViewOnAssoc();
 
 		for(auto &[node1_id, node1] : mcn1)
 		{
@@ -393,7 +393,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 
 	if(container->IsAssociativeArray())
 	{
-		NormalizeVector(container->GetMappedChildNodesReference(), p_value,
+		auto mcn = container->GetMappedChildNodesViewOnAssoc();
+		NormalizeVector(mcn, p_value,
 			[](const auto &pair) { return EvaluableNode::ToNumber(pair.second); },
 			[this, allocate_child_nodes](auto &pair, double new_val)
 		{
@@ -523,13 +524,13 @@ static OpcodeInitializer _ENT_MODE(ENT_MODE, &Interpreter::InterpretNode_ENT_MOD
 });
 
 //set of getter methods to help ENT_MODE, ENT_QUANTILE, and ENT_GENERALIZED_DISTANCE when retrieving values and weights
-inline static bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, double &value)
+inline static bool GetValueFromIter(EvaluableNode::AssocRef::iterator iter, double &value)
 {
 	value = EvaluableNode::ToNumber(iter->second);
 	return !FastIsNaN(value);
 };
 
-inline static bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, std::string &value)
+inline static bool GetValueFromIter(EvaluableNode::AssocRef::iterator iter, std::string &value)
 {
 	value = Parser::UnparseToKeyString(iter->second);
 	return true;
@@ -553,8 +554,8 @@ inline static bool GetValueFromIndex(EvaluableNode::OrderedType &ocn, size_t i, 
 	return true;
 };
 
-inline static bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
-	EvaluableNode::AssocType::iterator iter, double &value)
+inline static bool GetValueFromWeightsIter(EvaluableNode::AssocRef values_mcn,
+	EvaluableNode::AssocRef::iterator iter, double &value)
 {
 	auto entry = values_mcn.find(iter->first);
 	if(entry == end(values_mcn))
@@ -564,8 +565,8 @@ inline static bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
 	return !FastIsNaN(value);
 };
 
-inline static bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
-	EvaluableNode::AssocType::iterator iter, std::string &value)
+inline static bool GetValueFromWeightsIter(EvaluableNode::AssocRef values_mcn,
+	EvaluableNode::AssocRef::iterator iter, std::string &value)
 {
 	auto entry = values_mcn.find(iter->first);
 	if(entry == end(values_mcn))
@@ -576,7 +577,7 @@ inline static bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
 };
 
 inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedType &values_ocn,
-	EvaluableNode::AssocType::iterator iter, double &value)
+	EvaluableNode::AssocRef::iterator iter, double &value)
 {
 	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
 	if(FastIsNaN(index_double))
@@ -590,7 +591,7 @@ inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedType &values_oc
 };
 
 inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedType &values_ocn,
-	EvaluableNode::AssocType::iterator iter, std::string &value)
+	EvaluableNode::AssocRef::iterator iter, std::string &value)
 {
 	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
 	if(FastIsNaN(index_double))
@@ -603,7 +604,7 @@ inline static bool GetValueFromWeightsIter(EvaluableNode::OrderedType &values_oc
 	return true;
 };
 
-inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
+inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocRef values_mcn,
 	size_t index, double &value)
 {
 	auto key_sid = EvaluableNode::NumberToStringIDIfExists(index, true);
@@ -618,7 +619,7 @@ inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn
 	return !FastIsNaN(value);
 };
 
-inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
+inline static bool GetValueFromWeightsIndex(EvaluableNode::AssocRef values_mcn,
 	size_t index, std::string &value)
 {
 	auto key_sid = EvaluableNode::NumberToStringIDIfExists(index, true);
@@ -654,7 +655,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, Ev
 	std::string unparsed_result;
 	if(values->IsAssociativeArray())
 	{
-		auto &values_mcn = values->GetMappedChildNodesReference();
+		auto values_mcn = values->GetMappedChildNodesViewOnAssoc();
 
 		if(EvaluableNode::IsNull(weights))
 		{
@@ -664,7 +665,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, Ev
 		}
 		else if(weights->IsAssociativeArray())
 		{
-			auto &weights_mcn = weights->GetMappedChildNodesReference();
+			auto weights_mcn = weights->GetMappedChildNodesViewOnAssoc();
 
 			std::tie(found, unparsed_result) = ModeString(begin(weights_mcn), end(weights_mcn),
 				[&values_mcn](auto iter, auto &value) { return GetValueFromWeightsIter(values_mcn, iter, value); },
@@ -692,7 +693,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, Ev
 		}
 		else if(weights->IsAssociativeArray())
 		{
-			auto &weights_mcn = weights->GetMappedChildNodesReference();
+			auto weights_mcn = weights->GetMappedChildNodesViewOnAssoc();
 
 			std::tie(found, unparsed_result) = ModeString(begin(weights_mcn), end(weights_mcn),
 				[&values_ocn](auto iter, auto &value) { return GetValueFromWeightsIter(values_ocn, iter, value); },
@@ -807,7 +808,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode *en
 	double result = 0.0;
 	if(values->IsAssociativeArray())
 	{
-		auto &values_mcn = values->GetMappedChildNodesReference();
+		auto values_mcn = values->GetMappedChildNodesViewOnAssoc();
 
 		if(EvaluableNode::IsNull(weights))
 		{
@@ -818,7 +819,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode *en
 		}
 		else if(weights->IsAssociativeArray())
 		{
-			auto &weights_mcn = weights->GetMappedChildNodesReference();
+			auto weights_mcn = weights->GetMappedChildNodesViewOnAssoc();
 
 			result = Quantile(begin(weights_mcn), end(weights_mcn),
 				[&values_mcn](auto iter, auto &value) { return GetValueFromWeightsIter(values_mcn, iter, value); },
@@ -849,7 +850,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode *en
 		}
 		else if(weights->IsAssociativeArray())
 		{
-			auto &weights_mcn = weights->GetMappedChildNodesReference();
+			auto weights_mcn = weights->GetMappedChildNodesViewOnAssoc();
 
 			result = Quantile(begin(weights_mcn), end(weights_mcn),
 				[&values_ocn](auto iter, auto &value) { return GetValueFromWeightsIter(values_ocn, iter, value); },
@@ -986,7 +987,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	double result = 0.0;
 	if(values->IsAssociativeArray())
 	{
-		auto &values_mcn = values->GetMappedChildNodesReference();
+		auto values_mcn = values->GetMappedChildNodesViewOnAssoc();
 
 		if(EvaluableNode::IsTerminal(weights))
 		{
@@ -997,7 +998,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 		}
 		else if(weights->IsAssociativeArray())
 		{
-			auto &weights_mcn = weights->GetMappedChildNodesReference();
+			auto weights_mcn = weights->GetMappedChildNodesViewOnAssoc();
 
 			result = GeneralizedMean(begin(weights_mcn), end(weights_mcn),
 				[&values_mcn](auto iter, auto &value) { return GetValueFromWeightsIter(values_mcn, iter, value); },
@@ -1028,7 +1029,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 		}
 		else if(weights->IsAssociativeArray())
 		{
-			auto &weights_mcn = weights->GetMappedChildNodesReference();
+			auto weights_mcn = weights->GetMappedChildNodesViewOnAssoc();
 
 			result = GeneralizedMean(begin(weights_mcn), end(weights_mcn),
 				[&values_ocn](auto iter, auto &value) { return GetValueFromWeightsIter(values_ocn, iter, value); },
@@ -1767,7 +1768,7 @@ inline static void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std
 	{
 		if(node->IsAssociativeArray())
 		{
-			auto &wn_mcn = node->GetMappedChildNodesReference();
+			auto wn_mcn = node->GetMappedChildNodesViewOnAssoc();
 			out.resize(id_order.size());
 			for(size_t i = 0; i < id_order.size(); i++)
 			{
@@ -2005,7 +2006,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 
 	if(EvaluableNode::IsAssociativeArray(p_node))
 	{
-		auto &p_node_mcn = p_node->GetMappedChildNodesReference();
+		auto p_node_mcn = p_node->GetMappedChildNodesViewOnAssoc();
 		p_is_assoc = true;
 		p_num_elements = p_node_mcn.size();
 
@@ -2050,7 +2051,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 
 		if(EvaluableNode::IsAssociativeArray(q_node))
 		{
-			q_num_elements = q_node->GetMappedChildNodesReference().size();
+			q_num_elements = q_node->GetMappedChildNodesViewOnAssoc().size();
 
 			q_values = &q_copied_values;
 
@@ -2059,10 +2060,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 			if(p_is_assoc)
 			{
 				q_copied_values.reserve(p_num_elements);
-				for(auto &pce_id : p_node->GetMappedChildNodesReference() | std::views::keys)
+				for(auto &pce_id : p_node->GetMappedChildNodesViewOnAssoc() | std::views::keys)
 				{
-					auto q_i = q_node->GetMappedChildNodesReference().find(pce_id);
-					if(q_i == end(q_node->GetMappedChildNodesReference()))
+					auto mcn = q_node->GetMappedChildNodesViewOnAssoc();
+					auto q_i = mcn.find(pce_id);
+					if(q_i == end(mcn))
 						continue;
 					q_copied_values.push_back(q_i->second);
 				}
@@ -2070,7 +2072,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 			else if(p_is_constant)
 			{
 				q_copied_values.reserve(q_num_elements);
-				for(auto &ce : q_node->GetMappedChildNodesReference() | std::views::values)
+				for(auto &ce : q_node->GetMappedChildNodesViewOnAssoc() | std::views::values)
 					q_copied_values.push_back(ce);
 			}
 			else //p must be a list

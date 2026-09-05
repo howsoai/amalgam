@@ -15,7 +15,7 @@ bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
 EvaluableNode::OrderedType EvaluableNode::emptyOrderedChildNodes;
-EvaluableNode::AssocType EvaluableNode::emptyMappedChildNodes;
+EvaluableNode EvaluableNode::emptyMappedChildNodesNode(ENT_ASSOC);
 EvaluableNode::AnnotationsAndComments EvaluableNode::emptyAnnotationsAndComments;
 
 //field for watching EvaluableNodes for debugging
@@ -263,22 +263,18 @@ void EvaluableNode::ConvertListToNumberedAssoc()
 		return;
 	}
 
-	AssocType new_mcn;
-
 	//convert ordered child nodes into index number -> value
-	auto &ocn = GetOrderedChildNodesReference();
-	new_mcn.reserve(ocn.size());
+	auto ocn = std::move(GetOrderedChildNodesReference());
+
+	InitMappedChildNodes(ocn.size());
+	type = ENT_ASSOC;
+
+	auto mcn = GetMappedChildNodesViewOnAssoc();
 	for(size_t i = 0; i < ocn.size(); i++)
 	{
 		std::string s = NumberToString(i, true);
-		new_mcn.emplace(string_intern_pool.CreateStringReference(s), ocn[i]);
+		mcn.emplace(string_intern_pool.CreateStringReference(s), ocn[i]);
 	}
-
-	InitMappedChildNodes();
-	type = ENT_ASSOC;
-
-	//swap for efficiency
-	std::swap(GetMappedChildNodesReference(), new_mcn);
 }
 
 void EvaluableNode::ConvertAssocToList()
@@ -289,7 +285,7 @@ void EvaluableNode::ConvertAssocToList()
 
 	OrderedType new_ocn;
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesViewOnAssoc();
 	new_ocn.reserve(mcn.size());
 	for(auto &cn : mcn | std::views::values)
 		new_ocn.emplace_back(cn);
@@ -322,7 +318,7 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 	total_size += annotation_size + comment_size;
 
 	total_size += n->GetOrderedChildNodes().capacity() * sizeof(EvaluableNode *);
-	total_size += n->GetMappedChildNodes().size() * (sizeof(StringInternPool::StringID) + sizeof(EvaluableNode *));
+	total_size += n->GetMappedChildNodesView().size() * (sizeof(StringInternPool::StringID) + sizeof(EvaluableNode *));
 
 	return total_size;
 }
@@ -337,7 +333,7 @@ bool EvaluableNode::IsNodeValid()
 	size_t max_size = 100000000;
 	if(DoesEvaluableNodeTypeUseAssocData(type))
 	{
-		auto &mcn = GetMappedChildNodesReference();
+		auto mcn = GetMappedChildNodesViewOnAssoc();
 		return (mcn.size() < max_size);
 	}
 	else if(DoesEvaluableNodeTypeUseNumberData(type))
@@ -393,11 +389,31 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_metadata)
 
 	if(DoesEvaluableNodeTypeUseAssocData(type))
 	{
-		value.ConstructMappedChildNodes();
-		value.mappedChildNodes = n->GetMappedChildNodesReference();
+		if(!n->HasExtendedValue())
+		{
+			value.ConstructMappedChildNodes();
+			value.mappedChildNodes = n->value.mappedChildNodes;
 
-		for(auto &[sid, cn] : value.mappedChildNodes)
-			string_intern_pool.CreateStringReference(sid);
+			for(auto &[sid, cn] : value.mappedChildNodes)
+				string_intern_pool.CreateStringReference(sid);
+		}
+		else if(copy_metadata || n->GetMappedChildNodesViewOnAssoc().size() > largestSmallAssocSize)
+		{
+			value.extendedMappedChildNodes.Construct();
+			*value.extendedMappedChildNodes.mappedChildNodes = *n->value.extendedMappedChildNodes.mappedChildNodes;
+			SetExtendedValue(true);
+
+			for(auto &[sid, cn] : *value.extendedMappedChildNodes.mappedChildNodes)
+				string_intern_pool.CreateStringReference(sid);
+		}
+		else //not copy_metadata and small enough that can initialize a small map
+		{
+			value.ConstructMappedChildNodes();
+			value.mappedChildNodes = n->value.extendedMappedChildNodes.mappedChildNodes->GetVectorMap();
+
+			for(auto &[sid, cn] : value.mappedChildNodes)
+				string_intern_pool.CreateStringReference(sid);
+		}
 	}
 	else if(DoesEvaluableNodeTypeUseNullData(type))
 	{
@@ -453,7 +469,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 
 	if(DoesEvaluableNodeTypeUseAssocData(cur_type))
 	{
-		auto &n_mcn = n->GetMappedChildNodesReference();
+		auto n_mcn = n->GetMappedChildNodesViewOnAssoc();
 		if(n_mcn.empty())
 			ClearMappedChildNodes();
 		else
@@ -503,7 +519,7 @@ void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 	}
 	else
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasExtendedValue();
 		GetAnnotationsAndCommentsStorage().SetAnnotationsAndComments(annotations, comments);
 	}
 
@@ -606,25 +622,21 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 	{
 		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseOrderedData(cur_type))
 		{
-			//convert ordered pairs to assoc
-			AssocType new_map;
+			auto ocn = std::move(GetOrderedChildNodesReference());
 
-			auto &ocn = GetOrderedChildNodesReference();
-			new_map.reserve(ocn.size());
+			InitMappedChildNodes(ocn.size());
+			type = new_type;
+
+			//need to set type so that the view works properly
+			auto mcn = GetMappedChildNodesViewOnAssoc();
 			for(size_t i = 0; i < ocn.size(); i++)
 			{
 				std::string index_string = EvaluableNode::NumberToString(i, true);
 				StringInternPool::StringID sid = string_intern_pool.CreateStringReference(index_string);
 
 				//this should never fail since every number is unique
-				if(!new_map.emplace(sid, ocn[i]).second)
-					string_intern_pool.DestroyStringReference(sid);
+				mcn.EmplaceUnique(sid, ocn[i]);
 			}
-
-			//set up mapped nodes
-			InitMappedChildNodes();
-			//swap for efficiency
-			std::swap(GetMappedChildNodesReference(), new_map);
 		}
 		else //just set up empty assoc
 		{
@@ -637,7 +649,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 		if(attempt_to_preserve_value && DoesEvaluableNodeTypeUseAssocData(cur_type))
 		{
 			OrderedType new_ordered;
-			auto &mcn = GetMappedChildNodesReference();
+			auto mcn = GetMappedChildNodesViewOnAssoc();
 			new_ordered.reserve(mcn.size());
 			for(auto &[cn_id, cn] : mcn)
 				new_ordered.emplace_back(cn);
@@ -662,7 +674,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 	}
 	else
 	{
-		EnsureHasAnnotationsAndCommentsStorage();
+		EnsureHasExtendedValue();
 		GetAnnotationsAndCommentsStorage().SetAnnotationsAndComments(annotations, comments);
 	}
 
@@ -747,14 +759,14 @@ size_t EvaluableNode::GetNumChildNodes()
 		return 0;
 
 	if(IsAssociativeArray())
-		return GetMappedChildNodesReference().size();
+		return GetMappedChildNodesViewOnAssoc().size();
 	else
 		return GetOrderedChildNodesReference().size();
 
 	return 0;
 }
 
-void EvaluableNode::SetOrderedChildNodes(const OrderedType &ocn, bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetOrderedChildNodes(OrderedRef ocn, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
@@ -806,7 +818,7 @@ void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 	UpdateFlagsBasedOnNewChildNode(cn);
 }
 
-void EvaluableNode::AppendOrderedChildNodes(const OrderedType &ocn_to_append)
+void EvaluableNode::AppendOrderedChildNodes(OrderedRef ocn_to_append)
 {
 	if(!IsOrderedArray()) [[unlikely]]
 		return;
@@ -840,7 +852,7 @@ void EvaluableNode::AppendOrderedChildNodes(const OrderedType &ocn_to_append)
 
 EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const std::string &id)
 {
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesViewOnAssoc();
 
 	//create a reference in case it doesn't exist yet
 	StringInternPool::StringID sid = string_intern_pool.CreateStringReference(id);
@@ -857,7 +869,7 @@ EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const std::string &id)
 
 EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const StringInternPool::StringID sid)
 {
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesViewOnAssoc();
 	auto [inserted_node, inserted] = mcn.emplace(sid, nullptr);
 
 	//if the node was inserted, then create a reference
@@ -867,12 +879,13 @@ EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const StringInternPool
 	return &inserted_node->second;
 }
 
-void EvaluableNode::SetMappedChildNodes(AssocType &new_mcn, bool copy, bool need_cycle_check, bool is_idempotent)
+void EvaluableNode::SetMappedChildNodes(EvaluableNode::AssocRef new_mcn,
+	bool copy, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsAssociativeArray()) [[unlikely]]
 		return;
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesViewOnAssoc();
 
 	//create new references before freeing old ones
 	string_intern_pool.CreateStringReferences(new_mcn, [](auto n) { return n.first; });
@@ -882,9 +895,42 @@ void EvaluableNode::SetMappedChildNodes(AssocType &new_mcn, bool copy, bool need
 
 	//swap map heap memory with new_mcn
 	if(copy)
-		mcn = new_mcn;
+	{
+		EvaluableNode::SmallAssocType copied_mcn = new_mcn;
+		mcn = std::move(copied_mcn);
+	}
 	else
+	{
 		mcn.swap(new_mcn);
+	}
+
+	SetNeedCycleCheck(need_cycle_check);
+
+	if(is_idempotent && !IsEvaluableNodeTypePotentiallyIdempotent(type))
+		SetIsIdempotent(false);
+	else
+		SetIsIdempotent(is_idempotent);
+}
+
+void EvaluableNode::SetMappedChildNodes(LargeAssocType &new_mcn,
+		bool copy, bool need_cycle_check, bool is_idempotent)
+{
+	if(!IsAssociativeArray()) [[unlikely]]
+		return;
+
+	auto mcn = GetMappedChildNodesViewOnAssoc();
+
+	//create new references before freeing old ones
+	string_intern_pool.CreateStringReferences(new_mcn, [](auto n) { return n.first; });
+
+	//destroy any string refs for map
+	string_intern_pool.DestroyStringReferences(mcn, [](auto n) { return n.first; });
+
+	//swap map heap memory with new_mcn
+	if(copy)
+		mcn = new_mcn.GetVectorMap();
+	else
+		mcn = new_mcn.ExtractVectorMap();
 
 	SetNeedCycleCheck(need_cycle_check);
 
@@ -899,7 +945,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::s
 	if(!IsAssociativeArray()) [[unlikely]]
 		return {false, nullptr};
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesViewOnAssoc();
 
 	StringInternPool::StringID sid = string_intern_pool.CreateStringReference(id);
 
@@ -924,7 +970,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const String
 	if(!IsAssociativeArray()) [[unlikely]]
 		return {false, nullptr};
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesViewOnAssoc();
 
 	auto [inserted_node, inserted] = mcn.emplace(sid, node);
 
@@ -955,7 +1001,7 @@ bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPoo
 		return false;
 	}
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesViewOnAssoc();
 	auto [inserted_node, inserted] = mcn.emplace(sid, node);
 
 	if(!inserted)
@@ -979,7 +1025,7 @@ void EvaluableNode::ClearMappedChildNodes()
 	if(!IsAssociativeArray()) [[unlikely]]
 		return;
 
-	auto &map = GetMappedChildNodesReference();
+	auto map = GetMappedChildNodesViewOnAssoc();
 	string_intern_pool.DestroyStringReferences(map, [](auto n) { return n.first; });
 	map.clear();
 
@@ -990,7 +1036,7 @@ void EvaluableNode::ClearMappedChildNodes()
 
 EvaluableNode *EvaluableNode::EraseMappedChildNode(const StringInternPool::StringID sid)
 {
-	auto &mcn = GetMappedChildNodes();
+	auto mcn = GetMappedChildNodesView();
 	//attempt to find
 	auto found = mcn.find(sid);
 	if(found == end(mcn))
@@ -1007,12 +1053,12 @@ EvaluableNode *EvaluableNode::EraseMappedChildNode(const StringInternPool::Strin
 	return erased_value;
 }
 
-void EvaluableNode::AppendMappedChildNodes(AssocType &mcn_to_append)
+void EvaluableNode::AppendMappedChildNodes(AssocRef mcn_to_append)
 {
 	if(!IsAssociativeArray())
 		return;
 
-	auto &mcn = GetMappedChildNodesReference();
+	auto mcn = GetMappedChildNodesViewOnAssoc();
 	mcn.reserve(mcn.size() + mcn_to_append.size());
 
 	//insert everything
@@ -1029,7 +1075,7 @@ void EvaluableNode::AppendMappedChildNodes(AssocType &mcn_to_append)
 	}
 }
 
-void EvaluableNode::EnsureHasAnnotationsAndCommentsStorage()
+void EvaluableNode::EnsureHasExtendedValue()
 {
 	if(HasCompactAnnotationsAndCommentsStorage())
 		return;
@@ -1039,13 +1085,10 @@ void EvaluableNode::EnsureHasAnnotationsAndCommentsStorage()
 
 	if(GetType() == ENT_ASSOC)
 	{
-		AssocType temp_mcn = std::move(value.mappedChildNodes);
+		SmallAssocType temp_mcn = std::move(value.mappedChildNodes);
 		value.DestructMappedChildNodes();
-		new (&value.extendedMappedChildNodes.mappedChildNodes) std::unique_ptr<AssocType>(
-			std::make_unique<AssocType>(std::move(temp_mcn))
-		);
-
-		AnnotationsAndComments::Construct(value.extendedMappedChildNodes.annotationsAndComments);
+		value.extendedMappedChildNodes.Construct();
+		value.extendedMappedChildNodes.mappedChildNodes = std::make_unique<LargeAssocType>(std::move(temp_mcn));
 	}
 	else //ordered
 	{
@@ -1059,6 +1102,38 @@ void EvaluableNode::EnsureHasAnnotationsAndCommentsStorage()
 	}
 
 	SetExtendedValue(true);
+}
+
+void EvaluableNode::RemoveExtendedValueIfPossible()
+{
+	if(!HasExtendedValue())
+		return;
+
+	//can't reduce if either ordered or assoc and has a comment or annotation
+	if(HasMetadata())
+		return;
+
+	if(GetType() == ENT_ASSOC)
+	{
+		if(value.extendedMappedChildNodes.mappedChildNodes->size() > largestSmallAssocSize)
+			return;
+
+		SmallAssocType temp_mcn = value.extendedMappedChildNodes.mappedChildNodes->ExtractVectorMap();
+		value.extendedMappedChildNodes.mappedChildNodes.reset();
+
+		value.ConstructMappedChildNodes();
+		value.mappedChildNodes = std::move(temp_mcn);
+	}
+	else //ordered
+	{
+		OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
+		value.extendedOrderedChildNodes.orderedChildNodes.reset();
+
+		value.ConstructOrderedChildNodes();
+		value.orderedChildNodes = std::move(temp_ocn);
+	}
+
+	SetExtendedValue(false);
 }
 
 bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *a, EvaluableNode *b, ReferenceAssocType *checked)
@@ -1083,8 +1158,8 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqualAndNotImmediate(EvaluableNode *
 	if(a->IsAssociativeArray())
 	{
 		//if a is associative, b must be too, since they're shallow equal
-		auto &a_mcn = a->GetMappedChildNodesReference();
-		auto &b_mcn = b->GetMappedChildNodesReference();
+		auto a_mcn = a->GetMappedChildNodesViewOnAssoc();
+		auto b_mcn = b->GetMappedChildNodesViewOnAssoc();
 		size_t a_size = a_mcn.size();
 		if(a_size != b_mcn.size())
 			return false;
@@ -1268,7 +1343,7 @@ bool EvaluableNode::CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<
 	//check child nodes
 	if(n->IsAssociativeArray())
 	{
-		for(auto &e : n->GetMappedChildNodesReference() | std::views::values)
+		for(auto &e : n->GetMappedChildNodesViewOnAssoc() | std::views::values)
 		{
 			if(e == nullptr)
 				continue;
@@ -1310,7 +1385,7 @@ size_t EvaluableNode::GetDeepSizeWithCycles(EvaluableNode *n, ReferenceSetType &
 
 		if(cur->IsAssociativeArray())
 		{
-			for(auto [_, e] : cur->GetMappedChildNodesReference())
+			for(auto [_, e] : cur->GetMappedChildNodesViewOnAssoc())
 			{
 				if(e == nullptr)
 				{
@@ -1365,7 +1440,7 @@ size_t EvaluableNode::GetDeepSizeNoCycles(EvaluableNode *n)
 
 		if(cur->IsAssociativeArray())
 		{
-			auto &mcn = cur->GetMappedChildNodesReference();
+			auto mcn = cur->GetMappedChildNodesViewOnAssoc();
 			total += mcn.size();
 			for(auto [_, e] : mcn)
 			{

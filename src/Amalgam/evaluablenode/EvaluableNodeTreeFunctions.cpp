@@ -25,8 +25,8 @@ bool CustomEvaluableNodeComparator::operator()(EvaluableNode *a, EvaluableNode *
 
 //performs a top-down stable merge on the sub-lists from start_index to middle_index and middle_index to _end_index
 //  from source into destination using cenc
-static void CustomEvaluableNodeOrderedChildNodesTopDownMerge(EvaluableNode::OrderedType &source,
-	size_t start_index, size_t middle_index, size_t end_index, EvaluableNode::OrderedType &destination, CustomEvaluableNodeComparator &cenc)
+static void CustomEvaluableNodeOrderedChildNodesTopDownMerge(EvaluableNode::OrderedRef source,
+	size_t start_index, size_t middle_index, size_t end_index, EvaluableNode::OrderedRef destination, CustomEvaluableNodeComparator &cenc)
 {
 	size_t left_pos = start_index;
 	size_t right_pos = middle_index;
@@ -50,8 +50,8 @@ static void CustomEvaluableNodeOrderedChildNodesTopDownMerge(EvaluableNode::Orde
 
 //performs a stable merge sort of source (which *will* be modified and is not constant)
 // from start_index to end_index into destination; uses cenc for comparison
-static void CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedType &source,
-	size_t start_index, size_t end_index, EvaluableNode::OrderedType &destination, CustomEvaluableNodeComparator &cenc)
+static void CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedRef source,
+	size_t start_index, size_t end_index, EvaluableNode::OrderedRef destination, CustomEvaluableNodeComparator &cenc)
 {
 	//if one element, then sorted
 	if(start_index + 1 >= end_index)
@@ -68,7 +68,7 @@ static void CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedType 
 	CustomEvaluableNodeOrderedChildNodesTopDownMerge(source, start_index, middle_index, end_index, destination, cenc);
 }
 
-EvaluableNode::OrderedType CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedType &list, CustomEvaluableNodeComparator &cenc)
+EvaluableNode::OrderedType CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedRef list, CustomEvaluableNodeComparator &cenc)
 {
 	//must make two copies of the list to edit, because switch back and forth and there is a chance that an element may be invalid
 	// in either list.  Therefore, can't use the original list in the off chance that something is garbage collected
@@ -245,7 +245,7 @@ EvaluableNode *GetTraversalPathListFromAToB(EvaluableNodeManager *enm, Evaluable
 		{
 			//look up which key corresponds to the value
 			StringInternPool::StringID key_sid = StringInternPool::NOT_A_STRING_ID;
-			for(auto &[s_id, s] : b_ancestor_parent->GetMappedChildNodesReference())
+			for(auto &[s_id, s] : b_ancestor_parent->GetMappedChildNodesViewOnAssoc())
 			{
 				if(s == b_ancestor)
 				{
@@ -318,7 +318,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 
 		if(EvaluableNode::IsAssociativeArray(*destination))
 		{
-			auto &mcn = (*destination)->GetMappedChildNodesReference();
+			auto mcn = (*destination)->GetMappedChildNodesViewOnAssoc();
 
 			if(enm == nullptr)
 			{
@@ -448,14 +448,14 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		{
 			if(EvaluableNode::IsAssociativeArray(variable_value_node))
 			{
-				auto &vvn_mcn = variable_value_node->GetMappedChildNodes();
-				value_destination_node->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodesReference().size()
+				auto vvn_mcn = variable_value_node->GetMappedChildNodesViewOnAssoc();
+				value_destination_node->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodesViewOnAssoc().size()
 																+ vvn_mcn.size());
 				value_destination_node->AppendMappedChildNodes(vvn_mcn);
 			}
 			else if(variable_value_node != nullptr) //treat ordered pairs as new entries as long as not nullptr
 			{
-				value_destination_node->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodesReference().size()
+				value_destination_node->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodesViewOnAssoc().size()
 																+ variable_value_node->GetOrderedChildNodes().size() / 2);
 
 				//iterate as long as pairs exist
@@ -496,9 +496,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			{
 				//expand out into pairs
 				value_destination_node->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size()
-																+ 2 * variable_value_node->GetMappedChildNodesReference().size());
+																+ 2 * variable_value_node->GetMappedChildNodesViewOnAssoc().size());
 
-				for(auto &[cn_id, cn] : variable_value_node->GetMappedChildNodesReference())
+				for(auto &[cn_id, cn] : variable_value_node->GetMappedChildNodesViewOnAssoc())
 				{
 					EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(cn_id, enm);
 					value_destination_node->AppendOrderedChildNode(key_node);
@@ -543,7 +543,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
-			new_list->AppendMappedChildNodes(variable_value_node->GetMappedChildNodesReference());
+			new_list->AppendMappedChildNodes(variable_value_node->GetMappedChildNodesViewOnAssoc());
 		}
 		else if(variable_value_node != nullptr) //treat ordered pairs as new entries as long as not nullptr
 		{
@@ -585,7 +585,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		EvaluableNodeReference new_list(enm->AllocNode(value_destination_node), true);
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
-			auto &vvn_mcn = variable_value_node->GetMappedChildNodesReference();
+			auto vvn_mcn = variable_value_node->GetMappedChildNodesViewOnAssoc();
 			//expand out into pairs
 			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + 2 * vvn_mcn.size());
 			for(auto &[cn_id, cn] : vvn_mcn)

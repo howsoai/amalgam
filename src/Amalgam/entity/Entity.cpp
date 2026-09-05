@@ -135,7 +135,7 @@ std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(EvaluableNodeReference::Null(), false);
 
-	auto &label_index = GetLabelIndex();
+	auto label_index = GetLabelIndexView();
 	const auto &label = label_index.find(label_sid);
 
 	if(label == end(label_index))
@@ -160,7 +160,7 @@ std::pair<bool, bool> Entity::GetValueAtLabelAsBool(StringInternPool::StringID l
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(false, false);
 
-	auto &label_index = GetLabelIndex();
+	auto label_index = GetLabelIndexView();
 	const auto &label = label_index.find(label_sid);
 	if(label == end(label_index))
 		return std::pair(false, false);
@@ -178,7 +178,7 @@ std::pair<double, bool> Entity::GetValueAtLabelAsNumber(StringInternPool::String
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(value_if_not_found, false);
 
-	auto &label_index = GetLabelIndex();
+	auto label_index = GetLabelIndexView();
 	const auto &label = label_index.find(label_sid);
 	if(label == end(label_index))
 		return std::pair(value_if_not_found, false);
@@ -195,7 +195,7 @@ std::pair<std::string, bool> Entity::GetValueAtLabelAsString(
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair("", false);
 
-	auto &label_index = GetLabelIndex();
+	auto label_index = GetLabelIndexView();
 	const auto &label = label_index.find(label_sid);
 	if(label == end(label_index))
 		return std::pair("", false);
@@ -212,7 +212,7 @@ std::pair<StringInternPool::StringID, bool> Entity::GetValueAtLabelAsStringIdWit
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
 
-	auto &label_index = GetLabelIndex();
+	auto label_index = GetLabelIndexView();
 	const auto &label = label_index.find(label_sid);
 	if(label == end(label_index))
 		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
@@ -226,7 +226,7 @@ std::pair<EvaluableNodeImmediateValueWithType, bool> Entity::GetValueAtLabelAsIm
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST), false);
 
-	auto &label_index = GetLabelIndex();
+	auto label_index = GetLabelIndexView();
 	const auto &label = label_index.find(label_sid);
 	if(label == end(label_index))
 		return std::pair(EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST), false);
@@ -250,7 +250,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 	bool any_successful_assignment = false;
 	bool all_successful_assignments = true;
-	auto &new_label_values_mcn = new_label_values->GetMappedChildNodesReference();
+	auto new_label_values_mcn = new_label_values->GetMappedChildNodesViewOnAssoc();
 
 	for(auto &[label_sid, new_value_node] : new_label_values_mcn)
 	{
@@ -261,7 +261,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		}
 
 		//re-retrieve label_index each iteration in case root changes
-		auto &label_index = GetLabelIndex();
+		auto label_index = GetLabelIndexView();
 		const auto &label_iterator = label_index.find(label_sid);
 
 		EvaluableNodeReference new_value_reference(new_value_node, false);
@@ -279,7 +279,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			EvaluableNode *new_root = evaluableNodeManager.AllocNode(evaluableNodeManager.rootNode);
 			//ensure flags are updated before new_root is exposed
 			new_root->UpdateFlagsBasedOnNewChildNode(new_value_reference);
-			auto &new_root_mcn = new_root->GetMappedChildNodesReference();
+			auto new_root_mcn = new_root->GetMappedChildNodesViewOnAssoc();
 			new_root_mcn.emplace(label_sid, new_value_reference);
 			string_intern_pool.CreateStringReference(label_sid);
 
@@ -378,7 +378,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 	label_sids_and_values_to_remove.reserve(labels_to_remove_ocn.size());
 
 	EvaluableNodeReference new_root(evaluableNodeManager.AllocNode(GetRoot()), false, true);
-	auto &new_root_mcn = new_root->GetMappedChildNodesReference();
+	auto new_root_mcn = new_root->GetMappedChildNodesViewOnAssoc();
 
 	//captures all of the label data to remove and remove from new_root
 	for(auto label_node : labels_to_remove_ocn)

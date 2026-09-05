@@ -195,28 +195,28 @@ AmalgamExample{ R"&((seq
 		(flatten_entity "test2" .false)
 	)
 ))&", R"((declare
-	{create_new_entity .true new_entity .null require_version_compatibility .false}
-	(let
-		{
-			_ (lambda
-					{
-						a {a 3}
-						b @(target 1 "a")
-					}
+		{new_entity .null create_new_entity .true require_version_compatibility .false}
+		(let
+				{
+						_ (lambda
+										{
+												a {a 3}
+												b @(target 1 "a")
+										}
+								)
+				}
+				(if
+						create_new_entity
+						(assign
+								"new_entity"
+								(first
+										(create_entities new_entity _)
+								)
+						)
+						(assign_entity_roots new_entity _)
 				)
-		}
-		(if
-			create_new_entity
-			(assign
-				"new_entity"
-				(first
-					(create_entities new_entity _)
-				)
-			)
-			(assign_entity_roots new_entity _)
 		)
-	)
-	new_entity
+		new_entity
 ))", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(declare
@@ -520,14 +520,14 @@ AmalgamExample{ R"&((seq
 		)
 	]
 ))&", R"([
-	{a1 1.4142135623730951 a2 2 a3 1.4142135623730951}
-	{a1 1.4142135623730951 a3 1.4142135623730951}
-	{a3 1.4142135623730951}
-	{a1 5.0990195135927845 a2 2 a3 5.0990195135927845}
-	[
-		["nan_queries" "a4"]
-	]
-	{a1 1 a3 1 a4 0}
+		{a1 1.4142135623730951 a3 1.4142135623730951 a2 2}
+		{a1 1.4142135623730951 a3 1.4142135623730951}
+		{a3 1.4142135623730951}
+		{a2 2 a1 5.0990195135927845 a3 5.0990195135927845}
+		[
+				["nan_queries" "a4"]
+		]
+		{a4 0 a3 1 a1 1}
 ])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "bool_test" .null)
@@ -747,7 +747,7 @@ AmalgamExample{ R"&((seq
 			)
 		]
 	)
-))&", R"({point1 1036.1581794564518 point2 978.5569789822398 point3 1036.1581794564518})", "", R"((apply "destroy_entities" (contained_entities)))" },
+))&", R"({point2 978.55697898224 point3 1036.1581794564518 point1 1036.1581794564518})", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "DistanceSymmetryContainer" .null)
 	(create_entities
@@ -875,26 +875,26 @@ AmalgamExample{ R"&((seq
 		)
 	]
 ))&", R"([
-	{
-		A 1
-		B 0
-		C 1
-		D 1
-		F 1
-		G 1024
-		H 1024
-		I 1
-	}
-	{
-		A 1
-		B 0
-		C 1
-		D 1
-		E 1024
-		F 1
-		I 1
-		J 1024
-	}
+		{
+				B 0
+				I 1
+				F 1
+				A 1
+				D 1
+				C 1
+				G 1024
+				H 1024
+		}
+		{
+				B 0
+				F 1
+				C 1
+				I 1
+				D 1
+				A 1
+				J 1024
+				E 1024
+		}
 ])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "BoxConvictionTestContainer" .null)
@@ -2688,7 +2688,7 @@ AmalgamExample{ R"&((seq
 		)
 		buds
 	)
-))&", R"({"155" "155: 0.1 {deg 0}" "190" "190: 0.045454545454545456 {deg 12}" "200" "200: 0.05555555555555555 {deg 8}"})", "", R"((destroy_entities "CyclicTestEntity"))" },
+))&", R"({"155" "155: 0.1 {deg 0}" "200" "200: 0.05555555555555555 {deg 8}" "190" "190: 0.045454545454545456 {deg 12}"})", "", R"((destroy_entities "CyclicTestEntity"))" },
 
 //sorting an opcode's unordered parameters must not step past the end when the opcode has no
 //parameters at all, since it then has fewer child nodes than leading positional parameters;

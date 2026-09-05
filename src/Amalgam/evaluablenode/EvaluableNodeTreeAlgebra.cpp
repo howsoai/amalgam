@@ -60,7 +60,7 @@ constexpr auto MakeRuleEntry()
 //returns an iterator to the first divisor of ocn that is an immediate zero, or the end iterator if
 //there is none; a runtime division stops at a zero divisor, leaving the remaining divisors unevaluated,
 //so no divisor can be moved across one
-static EvaluableNode::OrderedType::iterator FindFirstZeroDivisor(EvaluableNode::OrderedType &ocn)
+static EvaluableNode::OrderedType::iterator FindFirstZeroDivisor(EvaluableNode::OrderedRef ocn)
 {
 	return std::find_if(begin(ocn) + 1, end(ocn),
 		[](EvaluableNode *cn) { return (EvaluableNode::IsImmediate(cn) && EvaluableNode::ToNumber(cn) == 0.0); });
@@ -766,7 +766,7 @@ struct SimplifySelfContainedWithImmediates final
 		bool any_non_immediate = false;
 		if(en->IsAssociativeArray())
 		{
-			for(auto &cn : en->GetMappedChildNodesReference() | std::views::values)
+			for(auto &cn : en->GetMappedChildNodesViewOnAssoc() | std::views::values)
 			{
 				if(cn != nullptr && !cn->IsImmediate())
 				{
@@ -838,12 +838,12 @@ struct SortParameters final
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(GetChildNodeStructureType(en->GetType()) == OpcodeDetails::ChildNodeStructureType::UNORDERED)
-			std::sort(begin(ocn), end(ocn), EvaluableNode::IsStrictlyLessThan);
+			std::stable_sort(begin(ocn), end(ocn), EvaluableNode::IsStrictlyLessThan);
 		else if(ocn.size() > 2)
 		{
 			//a zero divisor ends the division, so the divisors from the first zero onward keep their order
 			auto sort_end = (en->GetType() == ENT_DIVIDE ? FindFirstZeroDivisor(ocn) : end(ocn));
-			std::sort(begin(ocn) + 1, sort_end, EvaluableNode::IsStrictlyLessThan);
+			std::stable_sort(begin(ocn) + 1, sort_end, EvaluableNode::IsStrictlyLessThan);
 		}
 
 		//sorting alone shouldn't trigger a another analysis
@@ -924,7 +924,7 @@ EvaluableNode *EvaluableNodeTreeAlgebra::SimplifyTree(EvaluableNode *tree, Evalu
 			//traverse further down the tree
 			if(cur->IsAssociativeArray())
 			{
-				for(auto &cn : cur->GetMappedChildNodesReference() | std::views::values)
+				for(auto &cn : cur->GetMappedChildNodesViewOnAssoc() | std::views::values)
 				{
 					if(cn && !cn->IsTerminal())
 						node_stack.emplace_back(cn, false);

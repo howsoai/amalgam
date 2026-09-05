@@ -669,6 +669,8 @@
     <ClInclude Include="entity\EntityQueryCaches.h" />
     <ClInclude Include="entity\EntityWriteListener.h" />
     <ClInclude Include="evaluablenode\EvaluableNode.h" />
+    <ClInclude Include="evaluablenode\EvaluableNodeAssocRef.h" />
+    <ClInclude Include="evaluablenode\EvaluableNodeInlines.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeManagement.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeReference.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeAlgebra.h" />
@@ -692,6 +694,7 @@
     <ClInclude Include="Merger.h" />
     <ClInclude Include="OpcodeDetails.h" />
     <ClInclude Include="Opcodes.h" />
+    <ClInclude Include="OrderedHashMap.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="PartialSum.h" />
     <ClInclude Include="PerformanceProfiler.h" />
@@ -706,6 +709,7 @@
     <ClInclude Include="string\StringManipulation.h" />
     <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="UninitializedArray.h" />
+    <ClInclude Include="VectorMap.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="out.txt" />

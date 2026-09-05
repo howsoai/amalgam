@@ -69,7 +69,7 @@ public:
 
 	//updates the labels for the entity to the new_values specified based on the keys in new_values
 	//note that it obtains the entity's labels directly rather than using what is in new_values
-	inline void UpdateEntityLabels(Entity *entity, size_t entity_index, EvaluableNode::AssocType &new_values)
+	inline void UpdateEntityLabels(Entity *entity, size_t entity_index, EvaluableNode::AssocRef new_values)
 	{
 	#if defined(MULTITHREAD_SUPPORT)
 		Concurrency::WriteLock write_lock(mutex);
@@ -122,17 +122,21 @@ public:
 
 	//returns the set matching_entities of entity ids in the cache that match the provided query condition cond, will fill compute_results with numeric results if KNN query
 	//if is_first is true, optimizes to skip unioning results with matching_entities (just overwrites instead).
-	void GetMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities, std::vector<DistanceReferencePair<size_t>> &compute_results, bool is_first, bool update_matching_entities);
+	void GetMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
+		std::vector<DistanceReferencePair<size_t>> &compute_results, bool is_first, bool update_matching_entities);
 
 	//like GetMatchingEntities, but returns a string id
-	EvaluableNode *ComputeValueFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities, EvaluableNodeManager *enm, bool is_first);
+	EvaluableNode *ComputeValueFromMatchingEntities(EntityQueryCondition *cond,
+		BitArrayIntegerSet &matching_entities, EvaluableNodeManager *enm, bool is_first);
 
 	//like GetMatchingEntities, but returns a flat_hash_map of string ids to numbers
 	//returns true if value was computed, false if not valid
-	void ComputeValuesFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities, FastHashMap<StringInternPool::StringID, double> &compute_results, bool is_first);
+	void ComputeValuesFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
+		OrderedHashMap<StringInternPool::StringID, double> &compute_results, bool is_first);
 
 	//like GetMatchingEntities, but returns entity_indices_sampled
-	void GetMatchingEntitiesViaSamplingWithReplacement(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities, std::vector<size_t> &entity_indices_sampled, bool is_first, bool update_matching_entities);
+	void GetMatchingEntitiesViaSamplingWithReplacement(EntityQueryCondition *cond,
+		BitArrayIntegerSet &matching_entities, std::vector<size_t> &entity_indices_sampled, bool is_first, bool update_matching_entities);
 
 	//searches container for contained entities matching query.
 	// if return_query_value is false, then returns a list of all IDs of matching contained entities

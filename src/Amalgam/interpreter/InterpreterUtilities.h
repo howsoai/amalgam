@@ -160,7 +160,7 @@ public:
 	ViolationType constraintViolation;
 
 	//maps warnings to the count of their occurrence 
-	FastHashMap<std::string, size_t> warnings;
+	OrderedHashMap<std::string, size_t> warnings;
 
 private:
 #ifdef MULTITHREAD_SUPPORT

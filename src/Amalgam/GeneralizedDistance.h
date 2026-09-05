@@ -55,7 +55,7 @@ public:
 	//contains the deviations for a given nominal value for each other nominal value
 		//if the nominal value is not found, then the attribute defaultDeviation should be used
 	template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
-	class SparseNominalDeviationValues : public SmallMap<NominalValueType, double, EqualComparison>
+	class SparseNominalDeviationValues : public VectorMap<NominalValueType, double, EqualComparison>
 	{
 	public:
 		inline SparseNominalDeviationValues()
@@ -67,7 +67,7 @@ public:
 
 	template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
 	class SparseNominalDeviationMatrix
-		: public SmallMap<NominalValueType, SparseNominalDeviationValues<NominalValueType, EqualComparison>, EqualComparison>
+		: public VectorMap<NominalValueType, SparseNominalDeviationValues<NominalValueType, EqualComparison>, EqualComparison>
 	{
 	public:
 		inline SparseNominalDeviationMatrix()
@@ -1718,8 +1718,10 @@ public:
 		std::vector<double> internedDistanceTerms;
 
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix
-		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;
-		FastHashMap<double, double, FastHasher<double>, DoubleNanHashComparator> nominalNumberDistanceTerms;
+		OrderedHashMap<StringInternPool::StringID, double, FastHasher<StringInternPool::StringID>,
+			std::equal_to<StringInternPool::StringID>, FastHashMap, FastHashSet> nominalStringDistanceTerms;
+		OrderedHashMap<double, double, FastHasher<double>, DoubleNanHashComparator,
+			FastHashMap, FastHashSet> nominalNumberDistanceTerms;
 	};
 
 	//for each feature, precomputed distance terms for each interned value looked up by intern index

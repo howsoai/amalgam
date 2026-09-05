@@ -252,7 +252,7 @@ public:
 		return n;
 	}
 
-	inline EvaluableNode *AllocNode(EvaluableNode::OrderedType &child_nodes,
+	inline EvaluableNode *AllocNode(EvaluableNode::OrderedRef child_nodes,
 		bool need_cycle_check = true, bool is_idempotent = false)
 	{
 		EvaluableNode *n = AllocNode(ENT_LIST);
@@ -346,7 +346,7 @@ public:
 
 		if(tree->IsAssociativeArray())
 		{
-			for(auto &[cn_id, cn] : tree->GetMappedChildNodesReference())
+			for(auto &[cn_id, cn] : tree->GetMappedChildNodesViewOnAssoc())
 			{
 				if(cn == nullptr)
 					continue;
@@ -499,7 +499,7 @@ public:
 
 				if(cur->IsAssociativeArray())
 				{
-					for(auto &child : cur->GetMappedChildNodesReference() | std::views::values)
+					for(auto &child : cur->GetMappedChildNodesViewOnAssoc() | std::views::values)
 					{
 						if(child != nullptr)
 							node_stack.push_back(child);
@@ -541,7 +541,7 @@ public:
 
 				if(cur->IsAssociativeArray())
 				{
-					for(auto &e : cur->GetMappedChildNodesReference() | std::views::values)
+					for(auto &e : cur->GetMappedChildNodesViewOnAssoc() | std::views::values)
 					{
 						if(e != nullptr && !e->IsNodeDeallocated())
 							node_stack.push_back(e);
@@ -584,7 +584,7 @@ public:
 		//seed the buffer with the direct children of tree
 		if(tree->IsAssociativeArray())
 		{
-			for(auto &e : tree->GetMappedChildNodesReference() | std::views::values)
+			for(auto &e : tree->GetMappedChildNodesViewOnAssoc() | std::views::values)
 			{
 				if(e != nullptr)
 					node_stack.push_back(e);
@@ -612,7 +612,7 @@ public:
 
 			if(cur->IsAssociativeArray())
 			{
-				for(auto &child : cur->GetMappedChildNodesReference() | std::views::values)
+				for(auto &child : cur->GetMappedChildNodesViewOnAssoc() | std::views::values)
 				{
 					if(child != nullptr)
 						node_stack.push_back(child);

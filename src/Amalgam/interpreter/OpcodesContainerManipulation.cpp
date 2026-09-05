@@ -357,7 +357,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			if(start_offset < list_ocn.size())
 				new_list.assign(list_ocn.begin() + start_offset, list_ocn.end());
 
-			EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_LIST), list.unique, true);
+			EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
 			new_list_node->GetOrderedChildNodesReference() = std::move(new_list);
 			new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
 			if(list->GetNeedCycleCheck())
@@ -396,7 +396,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			if(start_offset < list_mcn.size())
 				new_assoc_vec.assign(list_mcn.begin() + start_offset, list_mcn.end());
 
-			EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_ASSOC), list.unique, true);
+			EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
 			string_intern_pool.CreateStringReferences(new_assoc, [](auto n) { return n.first; });
 			new_list_node->GetMappedChildNodesViewOnAssoc() = std::move(new_assoc);
 			new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
@@ -813,7 +813,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 		if(end_offset > 0)
 			new_list.assign(list_ocn.begin(), list_ocn.begin() + end_offset);
 
-		EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_LIST), list.unique, true);
+		EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
 		new_list_node->GetOrderedChildNodesReference() = std::move(new_list);
 		new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
 		if(list->GetNeedCycleCheck())
@@ -850,7 +850,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 		if(end_offset > 0)
 			new_assoc_vec.assign(list_mcn.begin(), list_mcn.begin() + end_offset);
 
-		EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(ENT_ASSOC), list.unique, true);
+		EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
 		string_intern_pool.CreateStringReferences(new_assoc, [](auto n) { return n.first; });
 		new_list_node->GetMappedChildNodesViewOnAssoc() = std::move(new_assoc);
 		new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
@@ -2284,7 +2284,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 		{
 			StringInternPool::StringID key_to_remove = indices.GetValue().GetValueAsStringIDIfExists(true);
 
-			new_container.SetReference(evaluableNodeManager->AllocNode(ENT_ASSOC));
+			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 			EvaluableNode::SmallAssocType new_container_mcn;
 
 			auto mcn = container->GetMappedChildNodesViewOnAssoc();
@@ -2314,7 +2314,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			else
 				absolute_pos = static_cast<size_t>(container_ocn.size() + relative_pos);
 
-			new_container.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
+			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 			EvaluableNode::OrderedType new_container_ocn;
 
 			//if the position is valid, erase it
@@ -2349,7 +2349,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 				indices_to_erase.emplace(key_sid);
 			}
 
-			new_container.SetReference(evaluableNodeManager->AllocNode(ENT_ASSOC));
+			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 			EvaluableNode::SmallAssocType new_container_mcn;
 
 			auto mcn = container->GetMappedChildNodesViewOnAssoc();
@@ -2396,7 +2396,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			auto [first_dupe, last_dupe] = std::ranges::unique(indices_to_erase);
 			indices_to_erase.erase(first_dupe, last_dupe);
 
-			new_container.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
+			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 			EvaluableNode::OrderedType new_container_ocn;
 
 			size_t j = 0;
@@ -2542,7 +2542,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 	//get indices (or index) to keep
 	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
 
-	EvaluableNodeReference new_container;
+	EvaluableNodeReference new_container(nullptr, container.unique, true);
 
 	//if immediate then just keep individual element
 	if(indices.IsTerminalValueType())
@@ -2552,7 +2552,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDWithReference(true);
 			auto container_mcn = container->GetMappedChildNodesViewOnAssoc();
 
-			new_container = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), container.unique, true);
+			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 
 			//find what should be kept, or clear key_sid if not found
 			auto found_to_keep = container_mcn.find(key_sid);
@@ -2576,7 +2576,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			double relative_pos = indices.GetValue().GetValueAsNumber();
 			auto &container_ocn = container->GetOrderedChildNodesReference();
 
-			new_container = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), container.unique, true);
+			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 			
 			//get relative position
 			size_t actual_pos = 0;
@@ -2609,7 +2609,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 		{
 			auto container_mcn = container->GetMappedChildNodesViewOnAssoc();
 
-			new_container = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), container.unique, true);
+			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 
 			//if container is freeable, make copy and free if appropriate
 			EvaluableNode::LargeAssocType nodes_to_free;
@@ -2661,7 +2661,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			//sort to keep in order and remove duplicates
 			std::sort(begin(indices_to_keep), end(indices_to_keep));
 
-			new_container = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), container.unique, true);
+			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 			auto &new_container_ocn = new_container->GetOrderedChildNodesReference();
 			new_container_ocn.reserve(indices_to_keep.size());
 

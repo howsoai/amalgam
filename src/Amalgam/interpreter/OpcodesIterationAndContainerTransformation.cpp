@@ -1522,7 +1522,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			result_list->SetMappedChildNode(cn_id, cn);
 	}
 
-	PopConstructionContextAndGetExecutionSideEffectFlag();
+	had_side_effects = PopConstructionContextAndGetExecutionSideEffectFlag();
 
 	//free anything not in filtered list,
 	// but only free nodes if the result is still unique, and it won't be if it was accessed

@@ -2526,6 +2526,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 	auto container = InterpretNode(ocn[0]);
 	if(EvaluableNode::IsNull(container))
 		return EvaluableNodeReference::Null();
+	if(container->IsTerminal())
+		return container;
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 

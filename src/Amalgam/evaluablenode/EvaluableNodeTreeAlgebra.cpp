@@ -838,12 +838,12 @@ struct SortParameters final
 	{
 		auto &ocn = en->GetOrderedChildNodesReference();
 		if(GetChildNodeStructureType(en->GetType()) == OpcodeDetails::ChildNodeStructureType::UNORDERED)
-			std::sort(begin(ocn), end(ocn), EvaluableNode::IsStrictlyLessThan);
+			std::stable_sort(begin(ocn), end(ocn), EvaluableNode::IsStrictlyLessThan);
 		else if(ocn.size() > 2)
 		{
 			//a zero divisor ends the division, so the divisors from the first zero onward keep their order
 			auto sort_end = (en->GetType() == ENT_DIVIDE ? FindFirstZeroDivisor(ocn) : end(ocn));
-			std::sort(begin(ocn) + 1, sort_end, EvaluableNode::IsStrictlyLessThan);
+			std::stable_sort(begin(ocn) + 1, sort_end, EvaluableNode::IsStrictlyLessThan);
 		}
 
 		//sorting alone shouldn't trigger a another analysis

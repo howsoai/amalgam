@@ -573,13 +573,13 @@ public:
 				if((computeSurprisal && surprisalToProbability)
 					|| distanceWeightExponent <= 0)
 				{
-					std::sort(begin_iter, end_iter,
+					std::stable_sort(begin_iter, end_iter,
 						[](auto a, auto b) {return a.distance > b.distance; }
 					);
 				}
 				else //surprisal or regular distance, sort by smallest first
 				{
-					std::sort(begin_iter, end_iter,
+					std::stable_sort(begin_iter, end_iter,
 						[](auto a, auto b) {return a.distance < b.distance; }
 					);
 				}

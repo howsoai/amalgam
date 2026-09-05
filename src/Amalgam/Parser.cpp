@@ -1274,7 +1274,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				std::swap(previous_code, upd.result);
 
 				//clamp in case there are fewer child nodes than leading positional parameters
-				std::sort(begin(unordered_code) + std::min(starting_index, unordered_code.size()),
+				std::stable_sort(begin(unordered_code) + std::min(starting_index, unordered_code.size()),
 					end(unordered_code), StringManipulation::StringNaturalCompareSort);
 				for(auto &uc : unordered_code)
 					upd.result.append(uc);

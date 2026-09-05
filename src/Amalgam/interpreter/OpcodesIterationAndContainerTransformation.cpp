@@ -2740,9 +2740,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		else
 		{
 			if(ascending)
-				std::sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+				std::stable_sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyLessThan);
 			else
-				std::sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
+				std::stable_sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
 		}
 
 		return list;

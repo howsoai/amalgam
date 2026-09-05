@@ -219,7 +219,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		//if not using SBFDS, make sure always return in the same order for consistency, regardless of cashing, hashing, etc.
 		//if using SBFDS, then the order is assumed to not matter for other queries, so don't pay the cost of sorting here
 		if(!_enable_SBF_datastore)
-			std::sort(begin(result->GetOrderedChildNodes()), end(result->GetOrderedChildNodes()), EvaluableNode::IsStrictlyLessThan);
+			std::stable_sort(begin(result->GetOrderedChildNodes()), end(result->GetOrderedChildNodes()), EvaluableNode::IsStrictlyLessThan);
 
 		return result;
 	}

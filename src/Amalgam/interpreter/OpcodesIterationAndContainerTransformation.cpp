@@ -1248,7 +1248,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			for(auto &[key, value] : list_mcn)
 			{
 				if(EvaluableNode::AreDeepEqual(value, function) != match_on_not_value)
-					result_mcn.emplace(key, value);
+					result_mcn.EmplaceUnique(key, value);
 				else if(free_unkept_nodes)
 					evaluableNodeManager->FreeNodeTree(value);
 			}

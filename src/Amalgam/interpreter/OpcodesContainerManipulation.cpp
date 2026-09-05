@@ -791,8 +791,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 	if(ocn.size() > 1)
 	{
 		double value = InterpretNodeIntoNumberValue(ocn[1]);
-		if(value >= static_cast<double>(std::numeric_limits<int64_t>::min()) &&
-			value <= static_cast<double>(std::numeric_limits<int64_t>::max()))
+		if(value >= static_cast<double>(std::numeric_limits<int64_t>::min())
+				&& value <= static_cast<double>(std::numeric_limits<int64_t>::max()))
 			truncate_to = static_cast<int64_t>(value);
 	}
 

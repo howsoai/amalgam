@@ -1271,7 +1271,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			auto &result_list_ocn = result_list->GetOrderedChildNodesReference();
 			auto &list_ocn = list->GetOrderedChildNodesReference();
 
-			bool free_unkept_nodes = (result_list.unique && !result_list->GetNeedCycleCheck());
+			bool free_unkept_nodes = (list.unique && !list->GetNeedCycleCheck());
 
 			for(size_t i = 0; i < list_ocn.size(); i++)
 			{

@@ -9,6 +9,9 @@
 //implements a map via a vector, where entries are looked up sequentially for brute force
 //useful for standing in for hash maps when the data is very small (generally less than 20 entries)
 // and for hash maps where entries are only iterated over or found once
+//it keeps track of elements' order, governed by insertion order but with a pop-and-swap delete;
+// note that for any implementation that needs to preserve inserted order, copies
+// should be made instead of relying on erase methods
 //note that, like flat hash maps, iterators may be invalidated when the map is altered
 //the order of the elements is as inserted, but when an element is deleted, it swaps it with the last element
 template<typename K, typename V, typename KeyEqual = std::equal_to<K>>

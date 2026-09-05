@@ -12,7 +12,9 @@
 #include <vector>
 
 //implements a hash map specified by HashMapType that also keeps track of
-//elements' order, governed by insertion order but with a pop-and-swap delete
+//elements' order, governed by insertion order but with a pop-and-swap delete;
+// note that for any implementation that needs to preserve inserted order, copies
+// should be made instead of relying on erase methods
 //it leverages a secondary VectorMap to preserve order and fast iteration
 //it is designed to interoperate with VectorMap and allow for custom
 //hash maps and hash sets

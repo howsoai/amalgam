@@ -2647,6 +2647,34 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 	return d;
 });
 
+//implements a stable version of partial_sort
+template<typename RandomIt, typename Compare>
+void StablePartialSort(RandomIt first, RandomIt middle, RandomIt last, Compare comp)
+{
+	if(first == last || middle == first)
+		return;
+
+	if(middle == last)
+	{
+		std::stable_sort(first, last, comp);
+		return;
+	}
+
+	//pivot the elements using nth_element
+	//assume that iterators are in memory order to ensure conssistent tie-breaking
+	auto stable_comp = [first, comp](const auto &a, const auto &b) {
+		if(comp(a, b))
+			return true;
+		if(comp(b, a))
+			return false;
+		return &a < &b;
+	};
+
+	std::nth_element(first, middle, last, stable_comp);
+
+	std::stable_sort(first, middle, stable_comp);
+}
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();
@@ -2705,10 +2733,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		if(highest_k > 0 && highest_k < list_ocn.size())
 		{
 			if(ascending)
-				std::partial_sort(begin(list_ocn), begin(list_ocn) + highest_k,
+				StablePartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
 			else
-				std::partial_sort(begin(list_ocn), begin(list_ocn) + highest_k,
+				StablePartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
 
 			if(list.unique && !list->GetNeedCycleCheck())
@@ -2723,10 +2751,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		else if(lowest_k > 0 && lowest_k < list_ocn.size())
 		{
 			if(ascending)
-				std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
+				StablePartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
 			else
-				std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
+				StablePartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
 
 			if(list.unique && !list->GetNeedCycleCheck())

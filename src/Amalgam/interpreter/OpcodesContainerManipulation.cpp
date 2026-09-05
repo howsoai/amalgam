@@ -358,6 +358,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 				new_list.assign(list_ocn.begin() + start_offset, list_ocn.end());
 
 			EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
+			new_list_node->CopyMetadataFrom(list);
 			new_list_node->GetOrderedChildNodesReference() = std::move(new_list);
 			new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
 			if(list->GetNeedCycleCheck())
@@ -397,6 +398,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 				new_assoc_vec.assign(list_mcn.begin() + start_offset, list_mcn.end());
 
 			EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
+			new_list_node->CopyMetadataFrom(list);
 			string_intern_pool.CreateStringReferences(new_assoc, [](auto n) { return n.first; });
 			new_list_node->GetMappedChildNodesViewOnAssoc() = std::move(new_assoc);
 			new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
@@ -2275,7 +2277,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	EvaluableNodeReference removed_node(static_cast<EvaluableNode *>(nullptr),
 		container.unique && !container->GetNeedCycleCheck());
 
-	EvaluableNodeReference new_container(static_cast<EvaluableNode *>(nullptr), container.unique, true);
+	EvaluableNodeReference new_container(evaluableNodeManager->AllocNode(container->GetType()),
+		container.unique, true);
+	new_container->CopyMetadataFrom(container);
 
 	//if not a list, then just remove individual element
 	if(indices.IsTerminalValueType())
@@ -2284,7 +2288,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 		{
 			StringInternPool::StringID key_to_remove = indices.GetValue().GetValueAsStringIDIfExists(true);
 
-			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 			EvaluableNode::SmallAssocType new_container_mcn;
 
 			auto mcn = container->GetMappedChildNodesViewOnAssoc();
@@ -2349,7 +2352,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 				indices_to_erase.emplace(key_sid);
 			}
 
-			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 			EvaluableNode::SmallAssocType new_container_mcn;
 
 			auto mcn = container->GetMappedChildNodesViewOnAssoc();
@@ -2542,7 +2544,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 	//get indices (or index) to keep
 	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
 
-	EvaluableNodeReference new_container(nullptr, container.unique, true);
+	EvaluableNodeReference new_container(evaluableNodeManager->AllocNode(container->GetType()),
+		container.unique, true);
+	new_container->CopyMetadataFrom(container);
 
 	//if immediate then just keep individual element
 	if(indices.IsTerminalValueType())
@@ -2551,8 +2555,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 		{
 			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDWithReference(true);
 			auto container_mcn = container->GetMappedChildNodesViewOnAssoc();
-
-			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 
 			//find what should be kept, or clear key_sid if not found
 			auto found_to_keep = container_mcn.find(key_sid);
@@ -2661,7 +2663,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			//sort to keep in order and remove duplicates
 			std::sort(begin(indices_to_keep), end(indices_to_keep));
 
-			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 			auto &new_container_ocn = new_container->GetOrderedChildNodesReference();
 			new_container_ocn.reserve(indices_to_keep.size());
 

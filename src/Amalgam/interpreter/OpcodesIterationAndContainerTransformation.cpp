@@ -1268,6 +1268,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		else if(list->IsOrderedArray())
 		{
 			EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
+			result_list->CopyMetadataFrom(list);
 			auto &result_list_ocn = result_list->GetOrderedChildNodesReference();
 			auto &list_ocn = list->GetOrderedChildNodesReference();
 
@@ -1304,7 +1305,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 	//create result_list as a copy of the current list, but without child nodes
 	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()),
-		list.unique, list.uniqueUnreferencedTopNode);
+		list.unique, true);
+	result_list->CopyMetadataFrom(list);
 	result_list->SetNeedCycleCheck(list->GetNeedCycleCheck());
 	result_list->SetIsIdempotent(list->GetIsIdempotent());
 	bool had_side_effects = false;
@@ -2648,32 +2650,64 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 	return d;
 });
 
-//implements a stable version of partial_sort
-template<typename RandomIt, typename Compare>
-void StablePartialSort(RandomIt first, RandomIt middle, RandomIt last, Compare comp)
+//ensures a max-heap is built in-place
+template<class RandomIt, class Compare>
+void DeterministicSiftDown(RandomIt first, size_t n, size_t i, Compare const &comp)
 {
-	if(first == last || middle == first)
+	while(2 * i + 1 < n)
+	{
+		size_t child = 2 * i + 1;
+		//pick the larger child (max heap)
+		if(child + 1 < n && comp(*(first + child), *(first + child + 1)))
+			child++;
+
+		if(comp(*(first + i), *(first + child)))
+		{
+			std::iter_swap(first + i, first + child);
+			i = child;
+		}
+		else
+		{
+			break;
+		}
+	}
+}
+
+//like std::partial_sort, but guaranteed to behave the same regardless of the platform
+template<class RandomIt, class Compare>
+void DeterministicPartialSort(RandomIt first, RandomIt middle, RandomIt last, Compare comp)
+{
+	if(first == middle)
 		return;
 
-	if(middle == last)
-	{
-		std::stable_sort(first, last, comp);
+	size_t k = static_cast<size_t>(std::distance(first, middle));
+	if(k <= 1)
 		return;
+
+	//build a max-heap of the first k elements, make sure to include i = 0
+	for(size_t i = (k / 2); i-- > 0;)
+		DeterministicSiftDown(first, k, i, comp);
+
+	//process the remaining elements
+	//for each element, if it's smaller than the heap root, replace root and sift down
+	for(RandomIt it = middle; it != last; ++it)
+	{
+		if(comp(*it, *first))
+		{
+			//it is smaller than current max
+			std::iter_swap(first, it);
+			DeterministicSiftDown(first, k, 0, comp);
+		}
 	}
 
-	//pivot the elements using nth_element
-	//assume that iterators are in memory order to ensure conssistent tie-breaking
-	auto stable_comp = [first, comp](const auto &a, const auto &b) {
-		if(comp(a, b))
-			return true;
-		if(comp(b, a))
-			return false;
-		return &a < &b;
-	};
-
-	std::nth_element(first, middle, last, stable_comp);
-
-	std::stable_sort(first, middle, stable_comp);
+	//the first k elements are now the smallest, but in max-heap order
+	//sort into ascending order
+	for(size_t i = k - 1; i > 0; --i)
+	{
+		//move max to the end of the heap
+		std::iter_swap(first, first + i);
+		DeterministicSiftDown(first, i, 0, comp);
+	}
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
@@ -2734,10 +2768,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		if(highest_k > 0 && highest_k < list_ocn.size())
 		{
 			if(ascending)
-				StablePartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
+				DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
 			else
-				StablePartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
+				DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
 
 			if(list.unique && !list->GetNeedCycleCheck())
@@ -2752,10 +2786,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		else if(lowest_k > 0 && lowest_k < list_ocn.size())
 		{
 			if(ascending)
-				StablePartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
+				DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
 			else
-				StablePartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
+				DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
 
 			if(list.unique && !list->GetNeedCycleCheck())

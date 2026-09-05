@@ -2354,7 +2354,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 					continue;
 				}
 
-				new_container_mcn.emplace(key, value);
+				new_container_mcn.EmplaceUnique(key, value);
 			}
 
 			string_intern_pool.CreateStringReferences(new_container_mcn, [](auto n) { return n.first; });

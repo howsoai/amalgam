@@ -331,7 +331,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 	//default to tailing to all but the first element
 	int64_t tail_by = -1;
 	if(ocn.size() > 1)
-		tail_by = static_cast<int64_t>(InterpretNodeIntoNumberValue(ocn[1]));
+	{
+		double value = InterpretNodeIntoNumberValue(ocn[1]);
+		if(value >= static_cast<double>(std::numeric_limits<int64_t>::min())
+				&& value <= static_cast<double>(std::numeric_limits<int64_t>::max()))
+			tail_by = static_cast<int64_t>(value);
+	}
 
 	if(list->IsOrderedArray())
 	{
@@ -784,7 +789,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 	//default to truncating to all but the last element
 	int64_t truncate_to = -1;
 	if(ocn.size() > 1)
-		truncate_to = static_cast<int64_t>(InterpretNodeIntoNumberValue(ocn[1]));
+	{
+		double value = InterpretNodeIntoNumberValue(ocn[1]);
+		if(value >= static_cast<double>(std::numeric_limits<int64_t>::min()) &&
+			value <= static_cast<double>(std::numeric_limits<int64_t>::max()))
+			truncate_to = static_cast<int64_t>(value);
+	}
 
 	if(list->IsOrderedArray())
 	{

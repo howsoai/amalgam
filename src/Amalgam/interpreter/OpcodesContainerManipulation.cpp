@@ -333,8 +333,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 	if(ocn.size() > 1)
 	{
 		double value = InterpretNodeIntoNumberValue(ocn[1]);
-		if(value >= static_cast<double>(std::numeric_limits<int64_t>::min())
-				&& value <= static_cast<double>(std::numeric_limits<int64_t>::max()))
+		if(std::abs(value) < static_cast<double>(std::numeric_limits<int64_t>::max()))
 			tail_by = static_cast<int64_t>(value);
 	}
 
@@ -791,8 +790,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 	if(ocn.size() > 1)
 	{
 		double value = InterpretNodeIntoNumberValue(ocn[1]);
-		if(value >= static_cast<double>(std::numeric_limits<int64_t>::min())
-				&& value <= static_cast<double>(std::numeric_limits<int64_t>::max()))
+		if(std::abs(value) < static_cast<double>(std::numeric_limits<int64_t>::max()))
 			truncate_to = static_cast<int64_t>(value);
 	}
 

@@ -1239,7 +1239,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 		if(list->IsAssociativeArray())
 		{
-			EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(ENT_ASSOC), list.unique, true);
+			EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
 			EvaluableNode::SmallAssocType result_mcn;
 			auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 
@@ -1267,7 +1267,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		}
 		else if(list->IsOrderedArray())
 		{
-			EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(ENT_LIST), list.unique, true);
+			EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
 			auto &result_list_ocn = result_list->GetOrderedChildNodesReference();
 			auto &list_ocn = list->GetOrderedChildNodesReference();
 
@@ -1509,7 +1509,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			return retval;
 	}
 
-	PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
+	PushNewConstructionContext(list, result_list,
+		EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
 	//result_list is a copy of list, so it should already be the same size (no need to reserve)
 	for(auto &[cn_id, cn] : list_mcn)

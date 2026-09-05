@@ -473,13 +473,13 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		{
 			if(singleLabelType == ENIVT_NUMBER)
 			{
-				std::sort(begin(entity_values), end(entity_values),
+				std::stable_sort(begin(entity_values), end(entity_values),
 					[](std::pair<Entity *, EvaluableNodeImmediateValue> a, std::pair<Entity *, EvaluableNodeImmediateValue> b) -> bool
 					{	return a.second.number > b.second.number;	});
 			}
 			else if(singleLabelType == ENIVT_STRING_ID)
 			{
-				std::sort(begin(entity_values), end(entity_values),
+				std::stable_sort(begin(entity_values), end(entity_values),
 					[](std::pair<Entity *, EvaluableNodeImmediateValue> a, std::pair<Entity *, EvaluableNodeImmediateValue> b) -> bool
 					{	return StringIDNaturalCompareSortReverse(a.second.stringID, b.second.stringID);	});
 			}

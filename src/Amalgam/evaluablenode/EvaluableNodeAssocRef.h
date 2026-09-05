@@ -215,6 +215,14 @@ public:
 		}
 	}
 
+	template<class... Args> inline iterator EmplaceUnique(key_type key, Args &&...args)
+	{
+		if(IsSmall())
+			return GetSmallMap().EmplaceUnique(key, std::forward<Args>(args)...);
+		else
+			return GetLargeMap().EmplaceUnique(key, std::forward<Args>(args)...);
+	}
+
 	inline std::pair<iterator, bool> insert_or_assign(const key_type &key, mapped_type &&value)
 	{
 		if(IsSmall())

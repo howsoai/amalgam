@@ -223,7 +223,7 @@ namespace EntityQueryBuilder
 				double weight = EvaluableNode::ToNumber(weight_node, 0.0);
 				if(weight > 0.0)
 				{
-					unused_weights_by_name.emplace(sid, weight);
+					unused_weights_by_name.EmplaceUnique(sid, weight);
 					total_probability_mass += weight;
 				}
 			}

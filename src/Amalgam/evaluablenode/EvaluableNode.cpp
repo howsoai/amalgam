@@ -624,8 +624,8 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 		{
 			auto ocn = std::move(GetOrderedChildNodesReference());
 
-			type = new_type;
 			InitMappedChildNodes(ocn.size());
+			type = new_type;
 
 			//need to set type so that the view works properly
 			auto mcn = GetMappedChildNodesViewOnAssoc();
@@ -635,8 +635,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, bool attempt_to_preserve
 				StringInternPool::StringID sid = string_intern_pool.CreateStringReference(index_string);
 
 				//this should never fail since every number is unique
-				if(!mcn.emplace(sid, ocn[i]).second)
-					string_intern_pool.DestroyStringReference(sid);
+				mcn.EmplaceUnique(sid, ocn[i]);
 			}
 		}
 		else //just set up empty assoc

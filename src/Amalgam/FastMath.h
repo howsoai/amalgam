@@ -529,7 +529,7 @@ __forceinline static double Quantile(ValueIterator first, ValueIterator last,
 		return std::numeric_limits<double>::quiet_NaN();
 
 	//sorts on .first - value, not weight
-	std::sort(std::begin(*value_weights), std::end(*value_weights));
+	std::stable_sort(std::begin(*value_weights), std::end(*value_weights));
 
 	//early outs for edge cases
 	if(value_weights->size() == 1 || q_percentage == 0.0)

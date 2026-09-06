@@ -520,14 +520,14 @@ AmalgamExample{ R"&((seq
 		)
 	]
 ))&", R"([
-		{a1 1.4142135623730951 a3 1.4142135623730951 a2 2}
-		{a1 1.4142135623730951 a3 1.4142135623730951}
-		{a3 1.4142135623730951}
-		{a2 2 a1 5.0990195135927845 a3 5.0990195135927845}
-		[
-				["nan_queries" "a4"]
-		]
-		{a4 0 a3 1 a1 1}
+        {a1 1.4142135623730951 a3 1.4142135623730951 a2 2}
+        {a1 1.4142135623730951 a3 1.4142135623730951}
+        {a3 1.4142135623730951}
+        {a2 2 a1 5.0990195135927845 a3 5.0990195135927845}
+        [
+                ["nan_queries" "a4"]
+        ]
+        {a4 0 a1 1 a3 1}
 ])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "bool_test" .null)
@@ -875,26 +875,26 @@ AmalgamExample{ R"&((seq
 		)
 	]
 ))&", R"([
-		{
-				B 0
-				I 1
-				F 1
-				A 1
-				D 1
-				C 1
-				G 1024
-				H 1024
-		}
-		{
-				B 0
-				F 1
-				C 1
-				I 1
-				D 1
-				A 1
-				J 1024
-				E 1024
-		}
+        {
+                B 0
+                C 1
+                D 1
+                A 1
+                F 1
+                I 1
+                G 1024
+                H 1024
+        }
+        {
+                B 0
+                D 1
+                I 1
+                C 1
+                F 1
+                A 1
+                J 1024
+                E 1024
+        }
 ])", "", R"((apply "destroy_entities" (contained_entities)))" },
 AmalgamExample{ R"&((seq
 	(create_entities "BoxConvictionTestContainer" .null)

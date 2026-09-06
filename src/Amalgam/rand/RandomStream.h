@@ -101,68 +101,118 @@ template<class T, class Container = std::vector<T>, class Compare = std::less<ty
 class FlexiblePriorityQueue
 {
 public:
-
 	FlexiblePriorityQueue() = default;
 	explicit FlexiblePriorityQueue(const Compare &compare) : comp(compare)
-	{}
+	{ }
+
 	explicit FlexiblePriorityQueue(size_t count, const Compare &compare) : comp(compare)
 	{
 		c.reserve(count);
 	}
-	explicit FlexiblePriorityQueue(const Compare &compare, const Container &cont) : c(cont), comp(compare)
+
+	template<typename... Args> void emplace(Args &&...args)
 	{
-		std::stable_sort(c.begin(), c.end(), comp);
+		c.emplace_back(std::forward<Args>(args)...);
+		SiftUp(c.size() - 1);
 	}
 
-	template<typename... Args>
-	__forceinline void emplace(Args&&... args)
+	void push(const T &value)
 	{
-		T item(std::forward<Args>(args)...);
-		auto it = std::lower_bound(c.begin(), c.end(), item, comp);
-		c.insert(it, std::move(item));
+		c.push_back(value);
+		SiftUp(c.size() - 1);
 	}
 
-	__forceinline void push(const T &value)
+	void pop()
 	{
-		auto it = std::lower_bound(c.begin(), c.end(), value, comp);
-		c.insert(it, value);
-	}
+		if(c.empty())
+			return;
 
-	__forceinline void pop()
-	{
-		//the top element is always at the end
+		//move last element to top and sift down
+		c[0] = std::move(c.back());
 		c.pop_back();
+		if(!c.empty())
+			SiftDown(0);
 	}
 
-	__forceinline const T &top() const
+	const T &top() const
 	{
-		//the largest element according to comp is always the last element
-		return c.back();
+		return c[0];
 	}
 
-	__forceinline size_t size() const
+	size_t size() const
 	{
 		return c.size();
 	}
-	__forceinline bool empty() const
+
+	bool empty() const
 	{
 		return c.empty();
 	}
 
-	__forceinline void Reserve(size_t reserve_size)
+	void Reserve(size_t reserve_size)
 	{
 		c.reserve(reserve_size);
 	}
 
-	__forceinline void clear()
+	void clear()
 	{
 		c.clear();
 	}
 
 private:
+	void SiftUp(size_t index)
+	{
+		while(index > 0)
+		{
+			size_t parent = (index - 1) / 2;
+
+			//use strict weak ordering; only swap if child is strictly greater than parent
+			if(comp(c[parent], c[index]))
+			{
+				std::swap(c[index], c[parent]);
+				index = parent;
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+
+	void SiftDown(size_t index)
+	{
+		size_t size = c.size();
+		while(true)
+		{
+			size_t left = 2 * index + 1;
+			size_t right = 2 * index + 2;
+			size_t largest = index;
+
+			if(left < size && comp(c[largest], c[left]))
+			{
+				largest = left;
+			}
+			if(right < size && comp(c[largest], c[right]))
+			{
+				largest = right;
+			}
+
+			if(largest != index)
+			{
+				std::swap(c[index], c[largest]);
+				index = largest;
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+
 	Container c;
 	Compare comp;
 };
+
 
 //Priority queue that, when receiving values of equal priority, will randomize the order they are stored and popped off the queue
 //Requires the type QueueElementType to have both the < and == operators

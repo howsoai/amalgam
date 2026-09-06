@@ -426,5 +426,6 @@ int StringManipulation::StringNaturalCompare(std::string_view a, std::string_vie
 		b_index++;
 	}
 
-	return 0;
+	//strings are identical in natural compare but if so, compare normally just in case there are differences
+	return (a < b);
 }

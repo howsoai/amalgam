@@ -789,7 +789,7 @@ public:
 	__forceinline AssocRef GetMappedChildNodesView();
 
 	static __forceinline AssocRef GetMappedChildNodesView(EvaluableNode *en);
-	
+
 	//if the id exists, returns a pointer to the pointer of the child node
 	// returns nullptr if the id doesn't exist
 	inline EvaluableNode **GetMappedChildNode(const std::string &id);

@@ -346,13 +346,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 
 	if(list->IsOrderedArray())
 	{
-		if(list->GetOrderedChildNodesReference().size() > 0)
+		auto &list_ocn = list->GetOrderedChildNodesReference();
+		if(list_ocn.size() > 0)
 		{
 			//swap on the stack in case list changed
 			node_stack.PopEvaluableNode();
 			node_stack.PushEvaluableNode(list);
-
-			auto &list_ocn = list->GetOrderedChildNodesReference();
 
 			size_t start_offset = 0;
 			if(tail_by > 0 && static_cast<size_t>(tail_by) < list_ocn.size())
@@ -386,14 +385,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 	}
 	else if(list->IsAssociativeArray())
 	{
-		if(list->GetMappedChildNodesViewOnAssoc().size() > 0)
+		auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
+		if(list_mcn.size() > 0)
 		{
 			//swap on the stack in case list changed
 			node_stack.PopEvaluableNode();
 			node_stack.PushEvaluableNode(list);
 
-			auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
-			
 			size_t start_offset = 0;
 			if(tail_by > 0 && static_cast<size_t>(tail_by) < list_mcn.size())
 				start_offset = list_mcn.size() - tail_by;
@@ -2608,7 +2606,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			auto &container_ocn = container->GetOrderedChildNodesReference();
 
 			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
-			
+
 			//get relative position
 			size_t actual_pos = 0;
 			if(relative_pos >= 0)

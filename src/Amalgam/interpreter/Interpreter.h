@@ -465,6 +465,10 @@ public:
 					mcn = cur_context->GetMappedChildNodesViewOnAssoc();
 					found = mcn.find(symbol_sid);
 
+					//if the symbol happened to be removed before lock was acquired, keep descending
+					if(found == end(mcn))
+						continue;
+
 					//not freeable because it could be accessed by multiple threads concurrently
 					if(found->second != nullptr)
 						found->second->SetIsFreeableAndIsFreeableTopNodeAtomic(false);

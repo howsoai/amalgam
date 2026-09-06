@@ -97,12 +97,12 @@ value in a list.  The order of items in an assoc is based on insertion order, ex
 
         indices_of_my_list (indices [10 20 30 40])          ;returns [0 1 2 3]
 
-        indices_of_my_assoc (indices { "x" 2 "y" 3 "z" 4})  ;returns just the 'keys', ["x" "z" "y"],
+        indices_of_my_assoc (indices { "x" 2 "y" 3 "z" 4})  ;returns just the 'keys', ["x" "y" "z"],
 
         values_of_my_list (values [10 20 30 40])            ;returns the same list [10 20 30 40] since the values
                                                             ;of a list are the list itself
 
-        values_of_my_assoc (values { "x" 2 "y" 3 "z" 4})    ;returns just the values [4 3 2]
+        values_of_my_assoc (values { "x" 2 "y" 3 "z" 4})    ;returns just the values [2 3 4]
 
     ))
 

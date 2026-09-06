@@ -1,5 +1,6 @@
 #pragma once
 //this file is intended to be included only by EvaluableNode.h
+#include <iterator>
 
 //This class implements a view of EvaluableNode that dispatches
 //API requests for assoc data structures regardless of how it is stored in
@@ -187,7 +188,16 @@ public:
 			auto result = GetSmallMap().try_emplace(key, std::forward<Args>(args)...);
 
 			if(GetSmallMap().size() > EvaluableNode::largestSmallAssocSize)
+			{
+				//since the results will be stored in the same order in the large map,
+				//just get the difference.  need to get the new iterator just in case
+				//there was a reallocation
+				size_t offset = std::distance(GetSmallMap().begin(), result.first);
+				//a new value was likely inserted to achieve promotion, but retrieve just in case
+				bool inserted = result.second;
 				PromoteToLarge();
+				return { GetLargeMap().begin() + offset, inserted };
+			}
 
 			return result;
 		}
@@ -205,7 +215,16 @@ public:
 			auto result = GetSmallMap().emplace(std::forward<Args>(args)...);
 
 			if(GetSmallMap().size() > EvaluableNode::largestSmallAssocSize)
+			{
+				//since the results will be stored in the same order in the large map,
+				//just get the difference.  need to get the new iterator just in case
+				//there was a reallocation
+				size_t offset = std::distance(GetSmallMap().begin(), result.first);
+				//a new value was likely inserted to achieve promotion, but retrieve just in case
+				bool inserted = result.second;
 				PromoteToLarge();
+				return { GetLargeMap().begin() + offset, inserted };
+			}
 
 			return result;
 		}
@@ -230,7 +249,16 @@ public:
 			auto result = GetSmallMap().insert_or_assign(key, std::move(value));
 
 			if(GetSmallMap().size() > EvaluableNode::largestSmallAssocSize)
+			{
+				//since the results will be stored in the same order in the large map,
+				//just get the difference.  need to get the new iterator just in case
+				//there was a reallocation
+				size_t offset = std::distance(GetSmallMap().begin(), result.first);
+				//a new value was likely inserted to achieve promotion, but retrieve just in case
+				bool inserted = result.second;
 				PromoteToLarge();
+				return { GetLargeMap().begin() + offset, inserted };
+			}
 
 			return result;
 		}
@@ -247,7 +275,16 @@ public:
 			auto result = GetSmallMap().insert(value);
 
 			if(GetSmallMap().size() > EvaluableNode::largestSmallAssocSize)
+			{
+				//since the results will be stored in the same order in the large map,
+				//just get the difference.  need to get the new iterator just in case
+				//there was a reallocation
+				size_t offset = std::distance(GetSmallMap().begin(), result.first);
+				//a new value was likely inserted to achieve promotion, but retrieve just in case
+				bool inserted = result.second;
 				PromoteToLarge();
+				return { GetLargeMap().begin() + offset, inserted };
+			}
 
 			return result;
 		}
@@ -264,7 +301,16 @@ public:
 			auto result = GetSmallMap().insert(key, value);
 
 			if(GetSmallMap().size() > EvaluableNode::largestSmallAssocSize)
+			{
+				//since the results will be stored in the same order in the large map,
+				//just get the difference.  need to get the new iterator just in case
+				//there was a reallocation
+				size_t offset = std::distance(GetSmallMap().begin(), result.first);
+				//a new value was likely inserted to achieve promotion, but retrieve just in case
+				bool inserted = result.second;
 				PromoteToLarge();
+				return { GetLargeMap().begin() + offset, inserted };
+			}
 
 			return result;
 		}

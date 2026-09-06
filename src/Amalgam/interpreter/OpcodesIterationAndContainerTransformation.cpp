@@ -2681,7 +2681,7 @@ void DeterministicPartialSort(RandomIt first, RandomIt middle, RandomIt last, Co
 		return;
 
 	size_t k = static_cast<size_t>(std::distance(first, middle));
-	if(k <= 1)
+	if(k == 0)
 		return;
 
 	//build a max-heap of the first k elements, make sure to include i = 0

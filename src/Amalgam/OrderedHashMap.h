@@ -271,6 +271,9 @@ public:
 		size_type index_to_remove = it->second;
 		size_type last_index = vec.size() - 1;
 
+		//erase from hashMap before invalidating the iterator by modifying hashMap
+		hashMap.erase(it);
+
 		//move the last element into the slot of the element being removed
 		if(index_to_remove != last_index)
 		{
@@ -279,7 +282,6 @@ public:
 		}
 
 		vec.pop_back();
-		hashMap.erase(key);
 
 		return 1;
 	}

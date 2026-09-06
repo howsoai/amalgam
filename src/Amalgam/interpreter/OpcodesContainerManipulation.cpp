@@ -364,12 +364,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			if(list->GetNeedCycleCheck())
 				new_list_node->SetNeedCycleCheck(true);
 
-			if(list.unique && !list->GetNeedCycleCheck())
+			if(!list->GetNeedCycleCheck())
 			{
-				for(size_t i = 0; i < start_offset; i++)
-					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+				if(list.unique)
+				{
+					for(size_t i = 0; i < start_offset; i++)
+						evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+				}
+				evaluableNodeManager->FreeNodeIfPossible(list);
 			}
-			evaluableNodeManager->FreeNodeIfPossible(list);
 
 			return new_list_node;
 		}
@@ -405,13 +408,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			if(list->GetNeedCycleCheck())
 				new_list_node->SetNeedCycleCheck(true);
 
-			if(list.unique && !list->GetNeedCycleCheck())
+			if(!list->GetNeedCycleCheck())
 			{
-				auto &list_mcn_vec = list_mcn.GetVector();
-				for(size_t i = 0; i < start_offset; i++)
-					evaluableNodeManager->FreeNodeTree(list_mcn_vec[i].second);
+				if(list.unique)
+				{
+					auto &list_mcn_vec = list_mcn.GetVector();
+					for(size_t i = 0; i < start_offset; i++)
+						evaluableNodeManager->FreeNodeTree(list_mcn_vec[i].second);
+				}
+				evaluableNodeManager->FreeNodeIfPossible(list);
 			}
-			evaluableNodeManager->FreeNodeIfPossible(list);
 
 			return new_list_node;
 		}
@@ -816,17 +822,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 			new_list.assign(list_ocn.begin(), list_ocn.begin() + end_offset);
 
 		EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
+		new_list_node->CopyMetadataFrom(list);
 		new_list_node->GetOrderedChildNodesReference() = std::move(new_list);
 		new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
 		if(list->GetNeedCycleCheck())
 			new_list_node->SetNeedCycleCheck(true);
 
-		if(list.unique && !list->GetNeedCycleCheck())
+		if(!list->GetNeedCycleCheck())
 		{
-			for(size_t i = end_offset; i < list_ocn.size(); i++)
-				evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+			if(list.unique && !list->GetNeedCycleCheck())
+			{
+				for(size_t i = end_offset; i < list_ocn.size(); i++)
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+			}
+			evaluableNodeManager->FreeNodeIfPossible(list);
 		}
-		evaluableNodeManager->FreeNodeIfPossible(list);
 
 		return new_list_node;
 	}
@@ -853,19 +863,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 			new_assoc_vec.assign(list_mcn.begin(), list_mcn.begin() + end_offset);
 
 		EvaluableNodeReference new_list_node(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
+		new_list_node->CopyMetadataFrom(list);
 		string_intern_pool.CreateStringReferences(new_assoc, [](auto n) { return n.first; });
 		new_list_node->GetMappedChildNodesViewOnAssoc() = std::move(new_assoc);
 		new_list_node->UpdateAllFlagsBasedOnNoReferencingChildNodes();
 		if(list->GetNeedCycleCheck())
 			new_list_node->SetNeedCycleCheck(true);
 
-		if(list.unique && !list->GetNeedCycleCheck())
+		if(!list->GetNeedCycleCheck())
 		{
-			auto &list_mcn_vec = list_mcn.GetVector();
-			for(size_t i = end_offset; i < list_mcn_vec.size(); i++)
-				evaluableNodeManager->FreeNodeTree(list_mcn_vec[i].second);
+			if(list.unique)
+			{
+				auto &list_mcn_vec = list_mcn.GetVector();
+				for(size_t i = end_offset; i < list_mcn_vec.size(); i++)
+					evaluableNodeManager->FreeNodeTree(list_mcn_vec[i].second);
+			}
+			evaluableNodeManager->FreeNodeIfPossible(list);
 		}
-		evaluableNodeManager->FreeNodeIfPossible(list);
+
 		return new_list_node;
 	}
 	else //if(list->IsTerminal())

@@ -333,7 +333,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 	if(ocn.size() > 1)
 	{
 		double value = InterpretNodeIntoNumberValue(ocn[1]);
-		if(std::abs(value) < static_cast<double>(std::numeric_limits<int64_t>::max()))
+
+		if(FastIsNaN(value))
+			tail_by = 0;
+		else if(value >= static_cast<double>(std::numeric_limits<int64_t>::max()))
+			tail_by = std::numeric_limits<int64_t>::max();
+		else if(value <= -static_cast<double>(std::numeric_limits<int64_t>::max()))
+			tail_by = -std::numeric_limits<int64_t>::max();
+		else
 			tail_by = static_cast<int64_t>(value);
 	}
 
@@ -798,7 +805,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 	if(ocn.size() > 1)
 	{
 		double value = InterpretNodeIntoNumberValue(ocn[1]);
-		if(std::abs(value) < static_cast<double>(std::numeric_limits<int64_t>::max()))
+
+		if(FastIsNaN(value))
+			truncate_to = 0;
+		else if(value >= static_cast<double>(std::numeric_limits<int64_t>::max()))
+			truncate_to = std::numeric_limits<int64_t>::max();
+		else if(value <= -static_cast<double>(std::numeric_limits<int64_t>::max()))
+			truncate_to = -std::numeric_limits<int64_t>::max();
+		else
 			truncate_to = static_cast<int64_t>(value);
 	}
 

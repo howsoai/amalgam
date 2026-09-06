@@ -214,12 +214,16 @@ public:
 
 	inline iterator erase(iterator it)
 	{
-		//only swap if not the last element
+		if(it == data.end())
+			return data.end();
+
+		size_type index = static_cast<size_type>(it - data.begin());
+
 		if(it != std::prev(data.end()))
 			std::swap(*it, data.back());
 
 		data.pop_back();
-		return it;
+		return data.begin() + index;
 	}
 
 	size_t erase(const key_type &key)

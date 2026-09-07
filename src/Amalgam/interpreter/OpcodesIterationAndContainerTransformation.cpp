@@ -2801,10 +2801,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		}
 		else
 		{
+			//use deterministic sorting to guarantee it will break ties or possible intransitivities
+			// the same on all platforms
 			if(ascending)
-				std::stable_sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+				DeterministicPartialSort(begin(list_ocn), end(list_ocn), end(list_ocn),
+					EvaluableNode::IsStrictlyLessThan);
 			else
-				std::stable_sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
+				DeterministicPartialSort(begin(list_ocn), end(list_ocn), end(list_ocn),
+					EvaluableNode::IsStrictlyGreaterThan);
 		}
 
 		return list;

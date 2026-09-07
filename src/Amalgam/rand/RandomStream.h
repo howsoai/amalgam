@@ -181,26 +181,22 @@ private:
 
 	void SiftDown(size_t index)
 	{
-		size_t size = c.size();
-		while(true)
+		size_t n = c.size();
+
+		while(2 * index + 1 < n)
 		{
-			size_t left = 2 * index + 1;
-			size_t right = 2 * index + 2;
-			size_t largest = index;
+			size_t child = 2 * index + 1;
 
-			if(left < size && comp(c[largest], c[left]))
-			{
-				largest = left;
-			}
-			if(right < size && comp(c[largest], c[right]))
-			{
-				largest = right;
-			}
+			//if children are equal, child stays as the left child (2*index + 1)
+			//only move to the right child if right is strictly greater than left
+			if(child + 1 < n && comp(c[child], c[child + 1]))
+				child++;
 
-			if(largest != index)
+			//only swap if the chosen child is strictly greater than the parent
+			if(comp(c[index], c[child]))
 			{
-				std::swap(c[index], c[largest]);
-				index = largest;
+				std::swap(c[index], c[child]);
+				index = child;
 			}
 			else
 			{
@@ -212,7 +208,6 @@ private:
 	Container c;
 	Compare comp;
 };
-
 
 //Priority queue that, when receiving values of equal priority, will randomize the order they are stored and popped off the queue
 //Requires the type QueueElementType to have both the < and == operators

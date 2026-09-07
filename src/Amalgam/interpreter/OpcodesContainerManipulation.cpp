@@ -2344,7 +2344,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			else
 				absolute_pos = static_cast<size_t>(container_ocn.size() + relative_pos);
 
-			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 			EvaluableNode::OrderedType new_container_ocn;
 
 			//if the position is valid, erase it
@@ -2425,7 +2424,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			auto [first_dupe, last_dupe] = std::ranges::unique(indices_to_erase);
 			indices_to_erase.erase(first_dupe, last_dupe);
 
-			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 			EvaluableNode::OrderedType new_container_ocn;
 
 			size_t j = 0;
@@ -2605,8 +2603,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			double relative_pos = indices.GetValue().GetValueAsNumber();
 			auto &container_ocn = container->GetOrderedChildNodesReference();
 
-			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
-
 			//get relative position
 			size_t actual_pos = 0;
 			if(relative_pos >= 0)
@@ -2637,8 +2633,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 		if(container->IsAssociativeArray())
 		{
 			auto container_mcn = container->GetMappedChildNodesViewOnAssoc();
-
-			new_container.SetReference(evaluableNodeManager->AllocNode(container->GetType()));
 
 			//if container is freeable, make copy and free if appropriate
 			EvaluableNode::LargeAssocType nodes_to_free;

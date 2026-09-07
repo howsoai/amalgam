@@ -1240,6 +1240,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		if(list->IsAssociativeArray())
 		{
 			EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique, true);
+			result_list->CopyMetadataFrom(list);
 			EvaluableNode::SmallAssocType result_mcn;
 			auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 

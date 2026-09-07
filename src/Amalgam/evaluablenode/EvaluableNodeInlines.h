@@ -205,7 +205,7 @@ __forceinline void EvaluableNode::ClearAnnotationsAndComments()
 		else //reduce to small
 		{
 			SmallAssocType temp_mcn = value.extendedMappedChildNodes.mappedChildNodes->ExtractVectorMap();
-			value.extendedMappedChildNodes.mappedChildNodes.reset();
+			value.extendedMappedChildNodes.Destruct();
 			new (&value.mappedChildNodes) SmallAssocType(std::move(temp_mcn));
 
 			SetExtendedValue(false);
@@ -214,7 +214,7 @@ __forceinline void EvaluableNode::ClearAnnotationsAndComments()
 	else //ordered
 	{
 		OrderedType temp_ocn = std::move(*value.extendedOrderedChildNodes.orderedChildNodes);
-		value.extendedOrderedChildNodes.orderedChildNodes.~unique_ptr<OrderedType>();
+		value.extendedOrderedChildNodes.Destruct();
 		new (&value.orderedChildNodes) OrderedType(std::move(temp_ocn));
 
 		SetExtendedValue(false);

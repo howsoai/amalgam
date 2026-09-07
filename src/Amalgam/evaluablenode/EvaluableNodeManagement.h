@@ -452,7 +452,10 @@ public:
 		AmlgAssert(enr == nullptr || enr->IsNodeValid());
 	#endif
 
-		if((enr.unique || enr.uniqueUnreferencedTopNode) && enr != nullptr)
+		//must be unique and known to not be in a cycle
+		if(enr != nullptr &&
+			(enr.unique ||
+				(enr.uniqueUnreferencedTopNode && !enr->GetNeedCycleCheck()) ))
 		{
 			enr->Invalidate();
 			AddNodeToLocalAllocationBuffer(enr);

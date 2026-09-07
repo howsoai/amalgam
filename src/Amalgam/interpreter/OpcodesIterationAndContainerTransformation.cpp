@@ -2195,9 +2195,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 	}
 	else //not a function
 	{
-		if(value_list.unique
-				&& value_list_is_a_list
-				&& !value_list->GetNeedCycleCheck())
+		if(value_list_is_a_list)
 			free_value_list_node = true;
 	}
 

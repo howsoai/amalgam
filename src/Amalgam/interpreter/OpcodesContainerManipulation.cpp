@@ -370,15 +370,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			if(list->GetNeedCycleCheck())
 				new_list_node->SetNeedCycleCheck(true);
 
-			if(!list->GetNeedCycleCheck())
+			if(list.unique && !list->GetNeedCycleCheck())
 			{
-				if(list.unique)
-				{
-					for(size_t i = 0; i < start_offset; i++)
-						evaluableNodeManager->FreeNodeTree(list_ocn[i]);
-				}
-				evaluableNodeManager->FreeNodeIfPossible(list);
+				for(size_t i = 0; i < start_offset; i++)
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
 			}
+			evaluableNodeManager->FreeNodeIfPossible(list);
 
 			return new_list_node;
 		}
@@ -413,16 +410,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			if(list->GetNeedCycleCheck())
 				new_list_node->SetNeedCycleCheck(true);
 
-			if(!list->GetNeedCycleCheck())
+			if(list.unique && !list->GetNeedCycleCheck())
 			{
-				if(list.unique)
-				{
-					auto &list_mcn_vec = list_mcn.GetVector();
-					for(size_t i = 0; i < start_offset; i++)
-						evaluableNodeManager->FreeNodeTree(list_mcn_vec[i].second);
-				}
-				evaluableNodeManager->FreeNodeIfPossible(list);
+				auto &list_mcn_vec = list_mcn.GetVector();
+				for(size_t i = 0; i < start_offset; i++)
+					evaluableNodeManager->FreeNodeTree(list_mcn_vec[i].second);
 			}
+			evaluableNodeManager->FreeNodeIfPossible(list);
 
 			return new_list_node;
 		}
@@ -840,15 +834,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 		if(list->GetNeedCycleCheck())
 			new_list_node->SetNeedCycleCheck(true);
 
-		if(!list->GetNeedCycleCheck())
+		if(list.unique && !list->GetNeedCycleCheck())
 		{
-			if(list.unique && !list->GetNeedCycleCheck())
-			{
-				for(size_t i = end_offset; i < list_ocn.size(); i++)
-					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
-			}
-			evaluableNodeManager->FreeNodeIfPossible(list);
+			for(size_t i = end_offset; i < list_ocn.size(); i++)
+				evaluableNodeManager->FreeNodeTree(list_ocn[i]);
 		}
+		evaluableNodeManager->FreeNodeIfPossible(list);
 
 		return new_list_node;
 	}
@@ -882,16 +873,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 		if(list->GetNeedCycleCheck())
 			new_list_node->SetNeedCycleCheck(true);
 
-		if(!list->GetNeedCycleCheck())
+		if(list.unique  && !list->GetNeedCycleCheck())
 		{
-			if(list.unique)
-			{
-				auto &list_mcn_vec = list_mcn.GetVector();
-				for(size_t i = end_offset; i < list_mcn_vec.size(); i++)
-					evaluableNodeManager->FreeNodeTree(list_mcn_vec[i].second);
-			}
-			evaluableNodeManager->FreeNodeIfPossible(list);
+			auto &list_mcn_vec = list_mcn.GetVector();
+			for(size_t i = end_offset; i < list_mcn_vec.size(); i++)
+				evaluableNodeManager->FreeNodeTree(list_mcn_vec[i].second);
 		}
+		evaluableNodeManager->FreeNodeIfPossible(list);
 
 		return new_list_node;
 	}

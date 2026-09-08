@@ -13,8 +13,8 @@
 
 //implements a hash map specified by HashMapType that also keeps track of
 //elements' order, governed by insertion order but with a pop-and-swap delete;
-// note that for any implementation that needs to preserve inserted order, copies
-// should be made instead of relying on erase methods
+// note that for any implementation that needs to preserve inserted order, there is an extra
+// optional parameter to erase, or copies can be made without the elements
 //it leverages a secondary VectorMap to preserve order and fast iteration
 //it is designed to interoperate with VectorMap and allow for custom
 //hash maps and hash sets
@@ -261,7 +261,7 @@ public:
 		return emplace(key, value);
 	}
 
-	size_t erase(const key_type &key)
+	size_t erase(const key_type &key, bool preserve_insertion_order = false)
 	{
 		auto it = hashMap.find(key);
 		if(it == hashMap.end())
@@ -269,24 +269,37 @@ public:
 
 		auto &vec = vectorMap.GetVector();
 		size_type index_to_remove = it->second;
-		size_type last_index = vec.size() - 1;
 
 		//erase from hashMap before invalidating the iterator by modifying hashMap
 		hashMap.erase(it);
 
-		//move the last element into the slot of the element being removed
-		if(index_to_remove != last_index)
+		if(preserve_insertion_order)
 		{
-			vec[index_to_remove] = std::move(vec[last_index]);
-			hashMap[vec[index_to_remove].first] = index_to_remove;
-		}
+			//shift elements to maintain order
+			vec.erase(vec.begin() + index_to_remove);
 
-		vec.pop_back();
+			//update indices for all elements that shifted left
+			for(size_type i = index_to_remove; i < vec.size(); i++)
+				hashMap[vec[i].first] = i;
+		}
+		else //swap and pop
+		{
+			size_type last_index = vec.size() - 1;
+
+			//move the last element into the slot of the element being removed
+			if(index_to_remove != last_index)
+			{
+				vec[index_to_remove] = std::move(vec[last_index]);
+				hashMap[vec[index_to_remove].first] = index_to_remove;
+			}
+
+			vec.pop_back();
+		}
 
 		return 1;
 	}
 
-	iterator erase(iterator pos)
+	iterator erase(iterator pos, bool preserve_insertion_order = false)
 	{
 		if(pos == vectorMap.end())
 			return vectorMap.end();
@@ -295,18 +308,30 @@ public:
 		if(hash_map_it == hashMap.end())
 			return vectorMap.end();
 
-		//swap with last
 		auto &vec = vectorMap.GetVector();
 		size_type index_to_remove = hash_map_it->second;
-		size_type last_index = vec.size() - 1;
-		if(index_to_remove != last_index)
-		{
-			vec[index_to_remove] = std::move(vec[last_index]);
-			hashMap[vec[index_to_remove].first] = index_to_remove;
-		}
 
-		vec.pop_back();
+		//erase from hashMap before invalidating the iterator by modifying hashMap
 		hashMap.erase(hash_map_it);
+
+		if(preserve_insertion_order)
+		{
+			vec.erase(pos);
+
+			//update indices for all elements that shifted left
+			for(size_type i = index_to_remove; i < vec.size(); i++)
+				hashMap[vec[i].first] = i;
+		}
+		else //swap and pop
+		{
+			size_type last_index = vec.size() - 1;
+			if(index_to_remove != last_index)
+			{
+				vec[index_to_remove] = std::move(vec[last_index]);
+				hashMap[vec[index_to_remove].first] = index_to_remove;
+			}
+			vec.pop_back();
+		}
 
 		return (index_to_remove == vec.size()) ? vectorMap.end() : vectorMap.begin() + index_to_remove;
 	}

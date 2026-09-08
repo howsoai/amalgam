@@ -10,8 +10,8 @@
 //useful for standing in for hash maps when the data is very small (generally less than 20 entries)
 // and for hash maps where entries are only iterated over or found once
 //it keeps track of elements' order, governed by insertion order but with a pop-and-swap delete;
-// note that for any implementation that needs to preserve inserted order, copies
-// should be made instead of relying on erase methods
+// note that for any implementation that needs to preserve inserted order, there is an extra
+// optional parameter to erase, or copies can be made without the elements
 //note that, like flat hash maps, iterators may be invalidated when the map is altered
 //the order of the elements is as inserted, but when an element is deleted, it swaps it with the last element
 template<typename K, typename V, typename KeyEqual = std::equal_to<K>>
@@ -212,26 +212,33 @@ public:
 		}
 	}
 
-	inline iterator erase(iterator it)
+	inline iterator erase(iterator it, bool preserve_insertion_order = false)
 	{
 		if(it == data.end())
 			return data.end();
 
 		size_type index = static_cast<size_type>(it - data.begin());
 
-		if(it != std::prev(data.end()))
-			std::swap(*it, data.back());
+		if(preserve_insertion_order)
+		{
+			data.erase(it);
+		}
+		else
+		{
+			if(it != std::prev(data.end()))
+				std::swap(*it, data.back());
+			data.pop_back();
+		}
 
-		data.pop_back();
 		return data.begin() + index;
 	}
 
-	size_t erase(const key_type &key)
+	size_t erase(const key_type &key, bool preserve_insertion_order = false)
 	{
 		auto it = find(key);
 		if(it != end())
 		{
-			erase(it);
+			erase(it, preserve_insertion_order);
 			return 1;
 		}
 		return 0;

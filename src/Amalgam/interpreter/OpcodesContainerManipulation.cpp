@@ -2359,11 +2359,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 
 		if(container->IsAssociativeArray())
 		{
-			FastHashSet<StringInternPool::StringID> indices_to_erase;
+			FastHashSet<StringInternPool::StringID> indices_to_remove;
 			for(auto &cn : indices_ocn)
 			{
 				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn, true);
-				indices_to_erase.emplace(key_sid);
+				indices_to_remove.emplace(key_sid);
 			}
 
 			EvaluableNode::SmallAssocType new_container_mcn;
@@ -2371,7 +2371,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			auto mcn = container->GetMappedChildNodesViewOnAssoc();
 			for(auto &[key, value] : mcn)
 			{
-				if(indices_to_erase.count(key) > 0)
+				if(indices_to_remove.count(key) > 0)
 				{
 					removed_node.SetReference(value);
 					evaluableNodeManager->FreeNodeTreeIfPossible(removed_node);
@@ -2389,8 +2389,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			auto &container_ocn = container->GetOrderedChildNodesReference();
 
 			//get valid indices to erase
-			std::vector<size_t> indices_to_erase;
-			indices_to_erase.reserve(indices_ocn.size());
+			std::vector<size_t> indices_to_remove;
+			indices_to_remove.reserve(indices_ocn.size());
 			for(auto &cn : indices_ocn)
 			{
 				double relative_pos = EvaluableNode::ToNumber(cn);
@@ -2404,22 +2404,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 
 				//if the position is valid, mark it to be erased
 				if(actual_pos >= 0 && actual_pos < container_ocn.size())
-					indices_to_erase.push_back(actual_pos);
+					indices_to_remove.push_back(actual_pos);
 			}
 
 			//sort and remove duplicates
-			std::ranges::sort(indices_to_erase);
-			auto [first_dupe, last_dupe] = std::ranges::unique(indices_to_erase);
-			indices_to_erase.erase(first_dupe, last_dupe);
+			std::ranges::sort(indices_to_remove);
+			auto [first_dupe, last_dupe] = std::ranges::unique(indices_to_remove);
+			indices_to_remove.erase(first_dupe, last_dupe);
 
 			EvaluableNode::OrderedType new_container_ocn;
 
 			size_t j = 0;
 			for(size_t i = 0; i < container_ocn.size(); i++)
 			{
-				if(j < indices_to_erase.size())
+				if(j < indices_to_remove.size())
 				{
-					if(i == indices_to_erase[j])
+					if(i == indices_to_remove[j])
 					{
 						removed_node.SetReference(container_ocn[i]);
 						evaluableNodeManager->FreeNodeTreeIfPossible(removed_node);

@@ -320,27 +320,27 @@ public:
 		}
 	}
 
-	inline size_t erase(const key_type &key)
+	inline size_t erase(const key_type &key, bool preserve_insertion_order = false)
 	{
 		if(IsSmall())
 		{
-			return GetSmallMap().erase(key);
+			return GetSmallMap().erase(key, preserve_insertion_order);
 		}
 		else
 		{
-			return GetLargeMap().erase(key);
+			return GetLargeMap().erase(key, preserve_insertion_order);
 		}
 	}
 
-	inline iterator erase(iterator pos)
+	inline iterator erase(iterator pos, bool preserve_insertion_order = false)
 	{
 		if(IsSmall())
 		{
-			return GetSmallMap().erase(pos);
+			return GetSmallMap().erase(pos, preserve_insertion_order);
 		}
 		else
 		{
-			return GetLargeMap().erase(pos);
+			return GetLargeMap().erase(pos, preserve_insertion_order);
 		}
 	}
 

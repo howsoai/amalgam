@@ -296,35 +296,32 @@ private:
 	std::vector<std::pair<key_type, mapped_type>> data;
 };
 
-namespace
+template<typename K, typename V, typename E>
+inline auto begin(VectorMap<K, V, E> &m)
 {
-	template<typename K, typename V, typename E>
-	inline auto begin(VectorMap<K, V, E> &m)
-	{
-		return m.begin();
-	}
+	return m.begin();
+}
 
-	template<typename K, typename V, typename E>
-	inline auto cbegin(const VectorMap<K, V, E> &m)
-	{
-		return m.cbegin();
-	}
+template<typename K, typename V, typename E>
+inline auto cbegin(const VectorMap<K, V, E> &m)
+{
+	return m.cbegin();
+}
 
-	template<typename K, typename V, typename E>
-	inline auto end(VectorMap<K, V, E> &m)
-	{
-		return m.end();
-	}
+template<typename K, typename V, typename E>
+inline auto end(VectorMap<K, V, E> &m)
+{
+	return m.end();
+}
 
-	template<typename K, typename V, typename E>
-	inline auto cend(const VectorMap<K, V, E> &m)
-	{
-		return m.cend();
-	}
+template<typename K, typename V, typename E>
+inline auto cend(const VectorMap<K, V, E> &m)
+{
+	return m.cend();
+}
 
-	template<typename K, typename V, typename E>
-	inline auto swap(VectorMap<K, V, E> &a,VectorMap<K, V, E> &b)
-	{
-		return a.swap(b);
-	}
+template<typename K, typename V, typename E>
+inline auto swap(VectorMap<K, V, E> &a,VectorMap<K, V, E> &b)
+{
+	return a.swap(b);
 }

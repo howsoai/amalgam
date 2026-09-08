@@ -499,25 +499,27 @@ private:
 	EvaluableNode *en;
 };
 
-namespace
+inline auto begin(EvaluableNode::AssocRef &m)
 {
-	inline auto begin(EvaluableNode::AssocRef &m)
-	{
-		return m.begin();
-	}
+	return m.begin();
+}
 
-	inline auto cbegin(const EvaluableNode::AssocRef &m)
-	{
-		return m.cbegin();
-	}
+inline auto cbegin(const EvaluableNode::AssocRef &m)
+{
+	return m.cbegin();
+}
 
-	inline auto end(EvaluableNode::AssocRef &m)
-	{
-		return m.end();
-	}
+inline auto end(EvaluableNode::AssocRef &m)
+{
+	return m.end();
+}
 
-	inline auto cend(const EvaluableNode::AssocRef &m)
-	{
-		return m.cend();
-	}
+inline auto cend(const EvaluableNode::AssocRef &m)
+{
+	return m.cend();
+}
+
+namespace std::ranges
+{
+	template<> inline constexpr bool enable_borrowed_range<EvaluableNode::AssocRef> = true;
 }

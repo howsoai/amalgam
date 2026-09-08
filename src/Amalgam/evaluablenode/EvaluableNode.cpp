@@ -1088,17 +1088,14 @@ void EvaluableNode::EnsureHasExtendedValue()
 		SmallAssocType temp_mcn = std::move(value.mappedChildNodes);
 		value.DestructMappedChildNodes();
 		value.extendedMappedChildNodes.Construct();
-		value.extendedMappedChildNodes.mappedChildNodes = std::make_unique<LargeAssocType>(std::move(temp_mcn));
+		*value.extendedMappedChildNodes.mappedChildNodes = std::move(temp_mcn);
 	}
 	else //ordered
 	{
 		OrderedType temp_ocn = std::move(value.orderedChildNodes);
 		value.DestructOrderedChildNodes();
-		new (&value.extendedOrderedChildNodes.orderedChildNodes) std::unique_ptr<OrderedType>(
-			std::make_unique<OrderedType>(std::move(temp_ocn))
-		);
-
-		AnnotationsAndComments::Construct(value.extendedOrderedChildNodes.annotationsAndComments);
+		value.extendedOrderedChildNodes.Construct();
+		*value.extendedOrderedChildNodes.orderedChildNodes = std::move(temp_ocn);
 	}
 
 	SetExtendedValue(true);

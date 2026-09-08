@@ -411,6 +411,13 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		for(auto &cn : indices_ocn)
 		{
 			StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(cn, true);
+
+			if(!on_self && IsLabelPrivate(label_sid))
+			{
+				all_successful_removes = false;
+				continue;
+			}
+
 			labels_to_erase.emplace(label_sid);
 		}
 
@@ -421,9 +428,6 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		{
 			if(auto it = labels_to_erase.find(label_sid); it != end(labels_to_erase))
 			{
-				if(!on_self && IsLabelPrivate(label_sid))
-					continue;
-
 				label_sids_and_values_to_remove.emplace_back(label_sid, value);
 				any_successful_remove = true;
 
@@ -471,7 +475,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		evaluableNodeManager.FreeNode(new_root);
 	}
 
-	return {any_successful_remove, all_successful_removes};
+	return { any_successful_remove, all_successful_removes };
 }
 
 EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,

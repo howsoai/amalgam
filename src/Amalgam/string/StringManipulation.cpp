@@ -383,9 +383,9 @@ int StringManipulation::StringNaturalCompare(std::string_view a, std::string_vie
 
 		if(a_index >= a.size())
 		{
-			//if both are out of characters and made it here, then equal
+			//if both are out of characters and made it here, then equal under natural comparison
 			if(b_index >= b.size())
-				return a.compare(b);
+				break;
 
 			//a is out, so it is first
 			return -1;
@@ -427,5 +427,9 @@ int StringManipulation::StringNaturalCompare(std::string_view a, std::string_vie
 	}
 
 	//strings are identical in natural compare but if so, compare normally just in case there are differences
+	if(a.size() < b.size())
+		return -1;
+	if(b.size() < a.size())
+		return 1;
 	return a.compare(b);
 }

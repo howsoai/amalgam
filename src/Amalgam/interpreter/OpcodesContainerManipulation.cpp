@@ -359,6 +359,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			else if(tail_by < 0)
 				start_offset = std::min(static_cast<size_t>(-tail_by), list_ocn.size());
 
+			//if nothing else references this node or its children, trunc in place
+			if(list.unique && !list->GetNeedCycleCheck())
+			{
+				for(size_t i = 0; i < start_offset; i++)
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+				list_ocn.erase(begin(list_ocn), begin(list_ocn) + start_offset);
+				return list;
+			}
+
 			std::vector<EvaluableNode *> new_list;
 			if(start_offset < list_ocn.size())
 				new_list.assign(list_ocn.begin() + start_offset, list_ocn.end());
@@ -370,11 +379,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 			if(list->GetNeedCycleCheck())
 				new_list_node->SetNeedCycleCheck(true);
 
-			if(list.unique && !list->GetNeedCycleCheck())
-			{
-				for(size_t i = 0; i < start_offset; i++)
-					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
-			}
 			evaluableNodeManager->FreeNodeIfPossible(list);
 
 			return new_list_node;
@@ -821,6 +825,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 			end_offset = (static_cast<size_t>(-truncate_to) < list_ocn.size())
 				? list_ocn.size() - static_cast<size_t>(-truncate_to): 0;
 
+		//if nothing else references this node or its children, trunc in place
+		if(list.unique && !list->GetNeedCycleCheck())
+		{
+			for(size_t i = end_offset; i < list_ocn.size(); i++)
+				evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+			list_ocn.erase(begin(list_ocn) + end_offset, end(list_ocn));
+			return list;
+		}
+
 		std::vector<EvaluableNode *> new_list;
 		if(end_offset > 0)
 			new_list.assign(list_ocn.begin(), list_ocn.begin() + end_offset);
@@ -832,11 +845,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 		if(list->GetNeedCycleCheck())
 			new_list_node->SetNeedCycleCheck(true);
 
-		if(list.unique && !list->GetNeedCycleCheck())
-		{
-			for(size_t i = end_offset; i < list_ocn.size(); i++)
-				evaluableNodeManager->FreeNodeTree(list_ocn[i]);
-		}
 		evaluableNodeManager->FreeNodeIfPossible(list);
 
 		return new_list_node;

@@ -2685,7 +2685,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 				new_container_ocn.push_back(container_ocn[index]);
 
 				//if container is unique, set to null so it won't be cleared later
-				if(container.unique)
+				if(container.unique && !container->GetNeedCycleCheck())
 					container_ocn[index] = nullptr;
 
 				prev_index = index;

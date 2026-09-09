@@ -928,9 +928,9 @@ void EvaluableNode::SetMappedChildNodes(LargeAssocType &new_mcn,
 
 	//swap map heap memory with new_mcn
 	if(copy)
-		mcn = new_mcn.GetVectorMap();
+		mcn = new_mcn;
 	else
-		mcn = new_mcn.ExtractVectorMap();
+		mcn = std::move(new_mcn);
 
 	SetNeedCycleCheck(need_cycle_check);
 

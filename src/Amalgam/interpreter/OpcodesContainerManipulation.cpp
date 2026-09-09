@@ -530,8 +530,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 		auto list_mcn = list->GetMappedChildNodesViewOnAssoc();
 		if(list_mcn.size() > 0)
 		{
-			//just take the first, because it's more efficient and the order does not matter for maps
-			//keep reference to first of map before free rest of it
 			EvaluableNode *last_en = std::prev(end(list_mcn))->second;
 
 			if(list.unique && !list->GetNeedCycleCheck())

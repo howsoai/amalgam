@@ -218,7 +218,7 @@ public:
 			return { vectorMap.begin() + new_index, true };
 		}
 
-		// Key already present – return iterator to existing element.
+		//key already present so return iterator to existing element
 		return { vectorMap.begin() + map_it->second, false };
 	}
 

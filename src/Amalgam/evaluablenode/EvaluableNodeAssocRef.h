@@ -344,7 +344,7 @@ public:
 		}
 	}
 
-	inline void swap(AssocRef &other) noexcept
+	inline void swap(AssocRef &other)
 	{
 		if(IsSmall())
 		{

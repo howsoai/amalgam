@@ -379,6 +379,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		if(!on_self && IsLabelPrivate(label_to_remove))
 		{
 			all_successful_removes = false;
+			evaluableNodeManager.FreeNode(new_root);
 			return { false, false };
 		}
 
@@ -442,8 +443,8 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		string_intern_pool.CreateStringReferences(new_root_mcn, [](auto n) { return n.first; });
 		new_root->GetMappedChildNodesViewOnAssoc() = std::move(new_root_mcn);
 
-		if(label_sids_and_values_to_remove.size() == 0)
-			all_successful_removes = true;
+		if(label_sids_and_values_to_remove.size() > 0)
+			all_successful_removes = false;
 	}
 
 	new_root->UpdateAllFlagsBasedOnNoReferencingChildNodes();

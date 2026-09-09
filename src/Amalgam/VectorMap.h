@@ -260,15 +260,6 @@ public:
 		return it->second;
 	}
 
-	const mapped_type &at(const key_type &key) const
-	{
-		auto it = find(key);
-		if(it == end())
-			throw std::out_of_range("VectorMap::at: key not found");
-
-		return it->second;
-	}
-
 	inline mapped_type &operator[](const key_type &key)
 	{
 		auto it = find(key);

@@ -454,8 +454,8 @@ public:
 
 		//must be unique and known to not be in a cycle
 		if(enr != nullptr &&
-			(enr.uniqueUnreferencedTopNode ||
-				(enr.unique && !enr->GetNeedCycleCheck()) ))
+			(enr.uniqueUnreferencedTopNode || enr.unique)
+			&& !enr->GetNeedCycleCheck() )
 		{
 			enr->Invalidate();
 			AddNodeToLocalAllocationBuffer(enr);

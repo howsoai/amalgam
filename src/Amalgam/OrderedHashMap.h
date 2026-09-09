@@ -21,8 +21,8 @@
 //note that, like flat hash maps, iterators may be invalidated when the map is altered
 template<typename KeyType, typename ValueType,
 	typename Hasher = FastHasher<KeyType>, typename Equality = std::equal_to<KeyType>,
-	template<typename, typename, typename, typename> typename HashMapType = CompactHashMap,
-	template<typename, typename, typename> typename HashSetType = CompactHashSet>
+	template<typename...> typename HashMapType = CompactHashMap,
+	template<typename...> typename HashSetType = CompactHashSet>
 class OrderedHashMap
 {
 public:
@@ -452,8 +452,8 @@ private:
 
 template<typename KeyType, typename ValueType,
 	typename Hasher, typename Equality,
-	template<typename, typename, typename, typename> typename HashMapType,
-	template<typename, typename, typename> typename HashSetType>
+	template<typename...> typename HashMapType,
+	template<typename...> typename HashSetType>
 inline auto begin(OrderedHashMap<KeyType, ValueType, Hasher, Equality, HashMapType, HashSetType> &m)
 {
 	return m.begin();
@@ -461,8 +461,8 @@ inline auto begin(OrderedHashMap<KeyType, ValueType, Hasher, Equality, HashMapTy
 
 template<typename KeyType, typename ValueType,
 	typename Hasher, typename Equality,
-	template<typename, typename, typename, typename> typename HashMapType,
-	template<typename, typename, typename> typename HashSetType>
+	template<typename...> typename HashMapType,
+	template<typename...> typename HashSetType>
 inline auto cbegin(const OrderedHashMap<KeyType, ValueType, Hasher, Equality, HashMapType, HashSetType> &m)
 {
 	return m.cbegin();
@@ -470,8 +470,8 @@ inline auto cbegin(const OrderedHashMap<KeyType, ValueType, Hasher, Equality, Ha
 
 template<typename KeyType, typename ValueType,
 	typename Hasher, typename Equality,
-	template<typename, typename, typename, typename> typename HashMapType,
-	template<typename, typename, typename> typename HashSetType>
+	template<typename...> typename HashMapType,
+	template<typename...> typename HashSetType>
 inline auto end(OrderedHashMap<KeyType, ValueType, Hasher, Equality, HashMapType, HashSetType> &m)
 {
 	return m.end();
@@ -479,8 +479,8 @@ inline auto end(OrderedHashMap<KeyType, ValueType, Hasher, Equality, HashMapType
 
 template<typename KeyType, typename ValueType,
 	typename Hasher, typename Equality,
-	template<typename, typename, typename, typename> typename HashMapType,
-	template<typename, typename, typename> typename HashSetType>
+	template<typename...> typename HashMapType,
+	template<typename...> typename HashSetType>
 inline auto cend(const OrderedHashMap<KeyType, ValueType, Hasher, Equality, HashMapType, HashSetType> &m)
 {
 	return m.cend();
@@ -488,8 +488,8 @@ inline auto cend(const OrderedHashMap<KeyType, ValueType, Hasher, Equality, Hash
 
 template<typename KeyType, typename ValueType,
 	typename Hasher, typename Equality,
-	template<typename, typename, typename, typename> typename HashMapType,
-	template<typename, typename, typename> typename HashSetType>
+	template<typename...> typename HashMapType,
+	template<typename...> typename HashSetType>
 inline auto swap(OrderedHashMap<KeyType, ValueType, Hasher, Equality, HashMapType, HashSetType> &a,
 	OrderedHashMap<KeyType, ValueType, Hasher, Equality, HashMapType, HashSetType> &b)
 {

@@ -182,15 +182,11 @@ Amalgam containers are values. `modify` (create/update/deep-copy) and `remove` d
 ```
 A bare `(modify data)` with no replacements is the idiomatic deep copy of `data` and its referenced structures, preserving internal aliases and cycles.
 
-## Assoc order is not insertion order
-An assoc has no insertion order: `indices` and `values` only guarantee that, for a given assoc, they return their elements aligned with each other — the key at one position lines up with the value at the same position. That order is **not** insertion order and should not be relied on for human-meaningful output. When output order matters, make it explicit — sort the keys, or build an ordered list of `[key value]` rows and sort with a comparator:
-```amalgam
-(sort (indices counts))                   ; keys in a defined order
-```
-A comparator lambda compares `(current_value)` (left) against `(current_value 1)` (right), returning negative, zero, or positive:
-```amalgam
-(sort (lambda (- (current_value) (current_value 1))) [4 9 3 5 1]) ; [1 3 4 5 9]
-```
+## Assoc iteration follows insertion order
+An assoc preserves insertion order. `indices` and `values` return aligned keys and values in that order. When another output order is required, sort the keys or materialize and sort `[key value]` rows.
+
+## Initialize dependent bindings in order
+Within a single `let` or `declare` binding block, initializers are evaluated in insertion order. Later initializers can use bindings initialized earlier in that block. Grouped `assign` and `accum` updates also execute in listed order; place prerequisite updates before updates that depend on them.
 
 ## Accessing characters in a string
 Indexing a string with `get` does not return a character. Use `substr` for a single character, taking the half-open range `[i, i+1)`:

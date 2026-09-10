@@ -172,6 +172,7 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 		{
 			new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(new_scope, false), false, true);
 			new_scope->SetIsFreeableTopNode(true);
+			scopeStack.back() = new_scope;
 
 			//set not freeable in case any are referenced elsewhere
 			for(auto &[id, cn] : new_scope->GetMappedChildNodesViewOnAssoc())

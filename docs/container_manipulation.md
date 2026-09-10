@@ -402,7 +402,7 @@ Output:
 #### Returns
 `any`
 #### Description
-Evaluates to the last element of `node`.  If `node` is a list, it will be the last element.  If `node` is an assoc, it will evaluate to the first element by insertion order.  If `node` is a string, it will be the last character.  If `node` is a number, it will evaluate to 1 if nonzero, 0 if zero.
+Evaluates to the last element of `node`.  If `node` is a list, it will be the last element.  If `node` is an assoc, it will evaluate to the last element by insertion order.  If `node` is a string, it will be the last character.  If `node` is a number, it will evaluate to 1 if nonzero, 0 if zero.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

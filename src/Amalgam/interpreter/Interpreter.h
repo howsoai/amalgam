@@ -88,7 +88,9 @@ public:
 	//interprets new_context_node and pushes a new scope onto the stack
 	//new_context_node should be a unique associative array,
 	//but if not, it will attempt to put an appropriate unique associative array on scopeStack
-	void InterpretAndPushNewScopeStackNode(EvaluableNode *new_context_node);
+	//if interpret_with_new_scope will push the new scope before interpreting if needed (e.g., ENT_LET),
+	// otherwise it will push after interpreting (e.g., ENT_CALL)
+	void InterpretAndPushNewScopeStackNode(EvaluableNode *new_context_node, bool interpret_with_new_scope);
 
 	//pops the top context off the stack
 	//if returning_unique_value, then can potentially free the whole scope

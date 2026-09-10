@@ -79,7 +79,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	return retval;
 }
 
-void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_node)
+void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_node, bool interpret_with_new_scope)
 {
 	EvaluableNodeReference new_scope = EvaluableNodeReference::Null();
 	bool need_to_interpret_new_scope = false;
@@ -159,7 +159,8 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 		//just in case a variable is added which needs cycle checks
 		new_scope_on_stack->SetNeedCycleCheck(true);
 
-		scopeStack.push_back(new_scope_on_stack);
+		if(interpret_with_new_scope)
+			scopeStack.push_back(new_scope_on_stack);
 
 		auto new_scope_mcn = new_scope->GetMappedChildNodesViewOnAssoc();
 		new_scope_on_stack->ReserveMappedChildNodes(new_scope_mcn.size());
@@ -189,7 +190,9 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 		{
 			new_scope_on_stack = EvaluableNodeReference(evaluableNodeManager->AllocNode(new_scope_on_stack, false), false, true);
 			new_scope_on_stack->SetIsFreeableTopNode(true);
-			scopeStack.back() = new_scope_on_stack;
+
+			if(interpret_with_new_scope)
+				scopeStack.back() = new_scope_on_stack;
 
 			//set not freeable in case any are referenced elsewhere
 			for(auto &[id, cn] : new_scope_on_stack->GetMappedChildNodesViewOnAssoc())
@@ -205,6 +208,9 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 				}
 			}
 		}
+
+		if(!interpret_with_new_scope)
+			scopeStack.push_back(new_scope_on_stack);
 	}
 }
 

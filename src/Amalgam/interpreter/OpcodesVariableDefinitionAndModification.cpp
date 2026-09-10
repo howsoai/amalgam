@@ -104,7 +104,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	InterpretAndPushNewScopeStackNode(ocn[0]);
+	InterpretAndPushNewScopeStackNode(ocn[0], true);
 
 	//run code
 	EvaluableNodeReference result = EvaluableNodeReference::Null();

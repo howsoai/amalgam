@@ -161,14 +161,20 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 
 		scopeStack.push_back(new_scope_on_stack);
 
+		auto new_scope_mcn = new_scope->GetMappedChildNodesViewOnAssoc();
+		new_scope_on_stack->ReserveMappedChildNodes(new_scope_mcn.size());
+
 		//need to interpret nodes
 		PushNewConstructionContext(new_scope_node, new_scope_on_stack,
 				EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-		for(auto &[cn_id, cn] : new_scope->GetMappedChildNodesViewOnAssoc())
+		for(auto &[cn_id, cn] : new_scope_mcn)
 		{
 			if(cn == nullptr || cn->GetIsIdempotent())
+			{
+				new_scope_on_stack->SetMappedChildNode(cn_id, cn);
 				continue;
+			}
 
 			//need to interpret
 			SetTopCurrentIndexInConstructionStack(cn_id);

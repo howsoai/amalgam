@@ -1383,7 +1383,7 @@ static OpcodeInitializer _ENT_ARGS(ENT_ARGS, &Interpreter::InterpretNode_ENT_ARG
 		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::NUMBER, true})
 	};
 	d.returns = OpcodeDetails::DataType::ASSOC;
-	d.description = R"(Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments.  If `stack_distance` is specified, then it evaluates to the context that many layers up the stack.)";
+	d.description = R"(Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments.  If `stack_distance` is specified, then it evaluates to the context that many layers up the stack.  Note that if `args` is used in the variable declaration section of `let`, it will refer to that new scope being created; if the outer scope is intended then `(args 1)` is needed.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((call
 	(lambda

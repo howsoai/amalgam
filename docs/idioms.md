@@ -45,22 +45,6 @@ When traversing a string by character repeatedly, `explode` it once into a list 
 (explode "hello")                         ; ["h" "e" "l" "l" "o"]
 ```
 
-## Sibling bindings are not visible to each other
-Within a single `let` or `declare` binding block, or any other operation that uses an `assoc`.  The key-value pairs are evaluated and pushed onto the scope stack as a set: one value's expression cannot see a sibling key being defined in the same block, and there is no guaranteed order of evaluation among siblings. Use `declare` to extend the current scope when a binding depends on an earlier one; a sequence of `declare`s is preferable to nested `let`s:
-```amalgam
-; Wrong: `need` cannot see the sibling `base`
-(let {base (get nums i) need (- target base)}
-	; ...
-)
-
-; Right: `declare` extends the scope so `base` is visible before `need` is computed
-(let {base (get nums i)}
-	(declare {need (- target base)})
-	; ...
-)
-```
-The same rule applies to grouped `assign` and `accum`: group only independent updates, and split dependent ones into ordered steps.
-
 ## Concise assoc literals and calls
 `{ ... }` is identical to `(assoc ...)`, and quotes around bareword keys are optional when the key has no whitespace or reserved characters. Prefer the brace form for ordinary literals and for passing named parameters:
 ```amalgam

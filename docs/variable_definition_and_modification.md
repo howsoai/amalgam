@@ -732,7 +732,7 @@ Output:
 #### Returns
 `assoc`
 #### Description
-Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments.  If `stack_distance` is specified, then it evaluates to the context that many layers up the stack.
+Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments.  If `stack_distance` is specified, then it evaluates to the context that many layers up the stack.  Note that if `args` is used in the variable declaration section of `let`, it will refer to that new scope being created; if the outer scope is intended then `(args 1)` is needed.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false

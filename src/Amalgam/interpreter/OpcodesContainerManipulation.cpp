@@ -2624,31 +2624,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 	else //not immediate, keep all of the child nodes of the index
 	{
 		auto &indices_ocn = indices->GetOrderedChildNodes();
+		bool free_unkept_nodes = (container.unique && !container->GetNeedCycleCheck());
 		if(container->IsAssociativeArray())
 		{
 			auto container_mcn = container->GetMappedChildNodesViewOnAssoc();
 
-			//if container is freeable, make copy and free if appropriate
-			EvaluableNode::LargeAssocType nodes_to_free;
-			if(container.unique && !container->GetNeedCycleCheck())
-				nodes_to_free = container_mcn;
-
+			//get valid indices to keep
+			FastHashSet<StringInternPool::StringID> indices_to_keep;
+			indices_to_keep.reserve(indices_ocn.size());
 			for(auto &cn : indices_ocn)
 			{
 				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn, true);
-
-				//if found, move it over to the new container
-				auto found_to_keep = container_mcn.find(key_sid);
-				if(found_to_keep != end(container_mcn))
-				{
-					new_container->SetMappedChildNode(key_sid, found_to_keep->second, false);
-					nodes_to_free.erase(key_sid);
-				}
+				indices_to_keep.emplace(key_sid);
 			}
 
-			//anything left should be freed if possible
-			for(auto &cn : nodes_to_free | std::views::values)
-				evaluableNodeManager->FreeNodeTree(cn);
+			new_container->ReserveMappedChildNodes(indices_to_keep.size());
+			//walk the container in its own order so the result preserves insertion order
+			for(auto &[key, value] : container_mcn)
+			{
+				if(indices_to_keep.count(key) > 0)
+					new_container->SetMappedChildNode(key, value, false);
+				else if(free_unkept_nodes)
+					evaluableNodeManager->FreeNodeTree(value);
+			}
 		}
 		else if(container->IsOrderedArray())
 		{

@@ -443,7 +443,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		string_intern_pool.CreateStringReferences(new_root_mcn, [](auto n) { return n.first; });
 		new_root->GetMappedChildNodesViewOnAssoc() = std::move(new_root_mcn);
 
-		if(labels_to_erase.empty())
+		if(!labels_to_erase.empty())
 			all_successful_removes = false;
 	}
 

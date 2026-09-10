@@ -186,7 +186,7 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 		}
 
 		//if there was a side-effect, then need to make another copy of the context in case something is referencing it
-		if(PopConstructionContextAndGetExecutionSideEffectFlag() || !new_scope->GetIsFreeableTopNode())
+		if(PopConstructionContextAndGetExecutionSideEffectFlag() || !new_scope_on_stack->GetIsFreeableTopNode())
 		{
 			new_scope_on_stack = EvaluableNodeReference(evaluableNodeManager->AllocNode(new_scope_on_stack, false), false, true);
 			new_scope_on_stack->SetIsFreeableTopNode(true);

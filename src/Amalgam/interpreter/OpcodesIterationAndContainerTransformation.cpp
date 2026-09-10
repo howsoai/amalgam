@@ -1978,7 +1978,7 @@ static OpcodeInitializer _ENT_ASSOCIATE(ENT_ASSOCIATE, &Interpreter::InterpretNo
 		4
 		"d"
 	)
-))&", R"("{4 \"d\" a 1 b 2 c 3}")"}
+))&", R"("{a 1 b 2 c 3 4 \"d\"}")"}
 		});
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;

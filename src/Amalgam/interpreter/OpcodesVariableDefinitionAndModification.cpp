@@ -66,7 +66,7 @@ static OpcodeInitializer _ENT_LET(ENT_LET, &Interpreter::InterpretNode_ENT_LET, 
 		OpcodeDetails::ParameterGroup({"code", OpcodeDetails::DataType::ANY_BASIC, true}, true)
 	});
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
-	d.description = R"(Pushes the key-value pairs of `variables` onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
+	d.description = R"(Pushes the key-value pairs of `variables` onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Variables are added to the stack in declaration order such that variables can depend on the fact that variables earlier in the ordering will already be initialized.  Note that the last step will not consume a concluded value.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
 	{x 4 y 6}
@@ -78,7 +78,17 @@ static OpcodeInitializer _ENT_LET(ENT_LET, &Interpreter::InterpretNode_ENT_LET, 
 		{x 5 z 1}
 		(+ x y z)
 	)
-))&", R"(11)"}
+))&", R"(11)"},
+		{R"&((let
+	{
+		a 1
+		b (seq (assign "a" 2) (+ a 1))
+		c (+ b 1)
+		d (+ c 1)
+	}
+	d
+))&",
+			R"(5)"}
 		});
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
@@ -139,7 +149,7 @@ static OpcodeInitializer _ENT_DECLARE(ENT_DECLARE, &Interpreter::InterpretNode_E
 		OpcodeDetails::ParameterGroup({"code", OpcodeDetails::DataType::ANY_BASIC, true}, true)
 	});
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
-	d.description = R"(For each key-value pair of `variables`, if not already in the current context in the scope stack, it will define them.  Then it runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
+	d.description = R"(For each key-value pair of `variables`, if not already in the current context in the scope stack, it will define them.  Then it runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Variables are added to the stack in declaration order such that variables can depend on the fact that variables earlier in the ordering will already be initialized.  Note that the last step will not consume a concluded value.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(declare
@@ -349,7 +359,7 @@ static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT
 			{"value", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2),
 	});
 	d.returns = OpcodeDetails::DataType::NULL_TYPE;
-	d.description = R"(If `variables` is an assoc, then for each key-value pair it assigns the value to the variable represented by the key found by tracing upward on the stack.  If a variable is not found, it will create a variable on the top of the stack with that name.  If `variables` is a string and there are two parameters, it will assign the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of `index` and `value` to assign `value` to that part of the variable's structure.)";
+	d.description = R"(If `variables` is an assoc, then for each key-value pair it assigns the value to the variable represented by the key found by tracing upward on the stack.  If a variable is not found, it will create a variable on the top of the stack with that name.  If `variables` is a string and there are two parameters, it will assign the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of `index` and `value` to assign `value` to that part of the variable's structure.  Variables are assigned in declaration order such that variables can depend on the fact that variables earlier in the ordering will already be assigned.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
 	{x 0}
@@ -430,7 +440,7 @@ static OpcodeInitializer _ENT_ACCUM(ENT_ACCUM, &Interpreter::InterpretNode_ENT_A
 			{"value", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2),
 	});
 	d.returns = OpcodeDetails::DataType::NULL_TYPE;
-	d.description = R"(If `variables` is an assoc, then for each key-value pair of data, it assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the result in the variable.  It searches for the variable name tracing up the stack to find the variable. If the variable is not found, it will create a variable on the top of the stack.  Accumulation is performed differently based on the type.  For numeric values it adds, for strings it concatenates, for lists and assocs it appends.  If `variables` is a string and there are two parameters, then it will accum the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of the corresponding walk path and accum value to that part of the variable's structure.)";
+	d.description = R"(If `variables` is an assoc, then for each key-value pair of data, it assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the result in the variable.  It searches for the variable name tracing up the stack to find the variable. If the variable is not found, it will create a variable on the top of the stack.  Accumulation is performed differently based on the type.  For numeric values it adds, for strings it concatenates, for lists and assocs it appends.  If `variables` is a string and there are two parameters, then it will accum the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of the corresponding walk path and accum value to that part of the variable's structure.  Variables are accumulated in declaration order such that variables can depend on the fact that variables earlier in the ordering will already be accumulated.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(assign

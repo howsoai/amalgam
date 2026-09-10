@@ -112,15 +112,15 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 		return;
 	}
 
-	evaluableNodeManager->EnsureNodeIsModifiable(new_scope, true, false);
-	new_scope->SetIsFreeableTopNode(true);
-	//just in case a variable is added which needs cycle checks
-	new_scope->SetNeedCycleCheck(true);
-
-	scopeStack.push_back(new_scope);
-
 	if(!need_to_interpret_new_scope)
 	{
+		evaluableNodeManager->EnsureNodeIsModifiable(new_scope, true, false);
+		new_scope->SetIsFreeableTopNode(true);
+		//just in case a variable is added which needs cycle checks
+		new_scope->SetNeedCycleCheck(true);
+
+		scopeStack.push_back(new_scope);
+
 		auto new_scope_mcn = new_scope->GetMappedChildNodesViewOnAssoc();
 		if(new_scope.unique)
 		{
@@ -149,8 +149,20 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 	}
 	else //need_to_interpret_new_scope
 	{
+		//since need_to_interpret_new_scope is true, then a copy must be made
+		// and we want to ensure that variables are not put on the stack prematurely
+		// such that a variable can be initialized with the visibility of an outer scope variable
+		// with the same id
+		EvaluableNodeReference new_scope_on_stack(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
+
+		new_scope_on_stack->SetIsFreeableTopNode(true);
+		//just in case a variable is added which needs cycle checks
+		new_scope_on_stack->SetNeedCycleCheck(true);
+
+		scopeStack.push_back(new_scope_on_stack);
+
 		//need to interpret nodes
-		PushNewConstructionContext(new_scope_node, new_scope,
+		PushNewConstructionContext(new_scope_node, new_scope_on_stack,
 				EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
 		for(auto &[cn_id, cn] : new_scope->GetMappedChildNodesViewOnAssoc())
@@ -163,19 +175,18 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 			EvaluableNodeReference value = InterpretNodeWithoutCopyingImmediates(cn);
 			value.SetFreeableFlagsBasedOnUniqueness();
 
-			cn = value;
-			new_scope->UpdateFlagsBasedOnNewChildNode(cn);
+			new_scope_on_stack->SetMappedChildNode(cn_id, value);
 		}
 
 		//if there was a side-effect, then need to make another copy of the context in case something is referencing it
 		if(PopConstructionContextAndGetExecutionSideEffectFlag() || !new_scope->GetIsFreeableTopNode())
 		{
-			new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(new_scope, false), false, true);
-			new_scope->SetIsFreeableTopNode(true);
-			scopeStack.back() = new_scope;
+			new_scope_on_stack = EvaluableNodeReference(evaluableNodeManager->AllocNode(new_scope_on_stack, false), false, true);
+			new_scope_on_stack->SetIsFreeableTopNode(true);
+			scopeStack.back() = new_scope_on_stack;
 
 			//set not freeable in case any are referenced elsewhere
-			for(auto &[id, cn] : new_scope->GetMappedChildNodesViewOnAssoc())
+			for(auto &[id, cn] : new_scope_on_stack->GetMappedChildNodesViewOnAssoc())
 			{
 				if(cn != nullptr)
 				{

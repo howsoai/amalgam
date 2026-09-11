@@ -243,14 +243,13 @@ const date::time_zone *GetTimeZoneFromString(std::string timezone)
 	return tz;
 }
 
-
 //don't pass locale by reference so can default it
 double GetNumSecondsSinceEpochFromDateTimeString(std::string &datetime_str,
 	std::string &format, std::string &locale, std::string &timezone)
 {
 	bool has_time_offset = ConstrainDateTimeStringToValidFormat(format);
 
-	std::chrono::system_clock::time_point dt;
+	date::sys_time<std::chrono::nanoseconds> dt;
 	std::string in_date_timezone = "";
 
 #if defined(MULTITHREAD_SUPPORT)

@@ -243,14 +243,13 @@ const date::time_zone *GetTimeZoneFromString(std::string timezone)
 	return tz;
 }
 
-
 //don't pass locale by reference so can default it
 double GetNumSecondsSinceEpochFromDateTimeString(std::string &datetime_str,
 	std::string &format, std::string &locale, std::string &timezone)
 {
 	bool has_time_offset = ConstrainDateTimeStringToValidFormat(format);
 
-	std::chrono::system_clock::time_point dt;
+	date::sys_time<std::chrono::nanoseconds> dt{};
 	std::string in_date_timezone = "";
 
 #if defined(MULTITHREAD_SUPPORT)
@@ -280,15 +279,15 @@ double GetNumSecondsSinceEpochFromDateTimeString(std::string &datetime_str,
 		if(IsFormatMonthAndYearOnly(format))
 		{
 			//month and year only dates must be parsed specifically into year_month 
-			date::year_month ym;
-			cached_locale.stringStream >> date::parse(format, ym, in_date_timezone);
+			date::year_month ym{};
+			date::from_stream(cached_locale.stringStream, format.c_str(), ym, &in_date_timezone);
 			//convert to time_point by specifying the day to be 1 for the parsed year month
 			dt = date::sys_days{ ym / 1 };
 		}
 		else
 		{
 			//parse string into dt and if there was a timezone in the string, stores that into in_date_timezone
-			cached_locale.stringStream >> date::parse(format, dt, in_date_timezone);
+			date::from_stream(cached_locale.stringStream, format.c_str(), dt, &in_date_timezone);
 		}
 	}
 	catch(...)
@@ -435,8 +434,8 @@ double GetNumSecondsSinceMidnight(std::string &time_str, std::string &format, st
 
 	try
 	{
-		std::chrono::nanoseconds tp;
-		cached_locale.stringStream >> date::parse(format, tp);
+		std::chrono::nanoseconds tp{};
+		date::from_stream(cached_locale.stringStream, format.c_str(), tp);
 
 		if(cached_locale.stringStream.fail())
 			return 0.0;

@@ -279,7 +279,7 @@ double GetNumSecondsSinceEpochFromDateTimeString(std::string &datetime_str,
 		if(IsFormatMonthAndYearOnly(format))
 		{
 			//month and year only dates must be parsed specifically into year_month 
-			date::year_month ym;
+			date::year_month ym{};
 			date::from_stream(cached_locale.stringStream, format.c_str(), ym, &in_date_timezone);
 			//convert to time_point by specifying the day to be 1 for the parsed year month
 			dt = date::sys_days{ ym / 1 };

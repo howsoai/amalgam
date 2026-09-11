@@ -249,7 +249,7 @@ double GetNumSecondsSinceEpochFromDateTimeString(std::string &datetime_str,
 {
 	bool has_time_offset = ConstrainDateTimeStringToValidFormat(format);
 
-	date::sys_time<std::chrono::nanoseconds> dt;
+	date::sys_time<std::chrono::nanoseconds> dt{};
 	std::string in_date_timezone = "";
 
 #if defined(MULTITHREAD_SUPPORT)
@@ -434,7 +434,7 @@ double GetNumSecondsSinceMidnight(std::string &time_str, std::string &format, st
 
 	try
 	{
-		std::chrono::nanoseconds tp;
+		std::chrono::nanoseconds tp{};
 		date::from_stream(cached_locale.stringStream, format.c_str(), tp);
 
 		if(cached_locale.stringStream.fail())

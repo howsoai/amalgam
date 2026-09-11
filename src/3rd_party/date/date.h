@@ -157,6 +157,14 @@ namespace date
 #  endif
 #endif  // HAS_VOID_T
 
+#ifndef HAS_TM_ZONE
+#  if defined(__GLIBC__) || defined(__ANDROID__) || (defined(__GNUC__) && __GNUC__ > 4)
+#    define HAS_TM_ZONE 1
+#  else
+#    define HAS_TM_ZONE 0
+#  endif
+#endif  // HAS_TM_ZONE
+
 // Protect from Oracle sun macro
 #ifdef sun
 #  undef sun
@@ -5159,6 +5167,16 @@ to_stream(std::basic_ostream<CharT, Traits>& os, const CharT* fmt,
                     if (os.fail())
                         return os;
                     tm.tm_yday = static_cast<int>((ld - local_days(ymd.year()/1/1)).count());
+                    // Some locales will include the time zone in the combined date-time format.
+                    // POSIX includes an extension to the tm struct we can use to pass that information.
+                    // Some platforms will ignore this, and like non-POSIX platforms, they will likely
+                    // fall back to displaying the system time zone. This will not be correct, but
+                    // short of overriding the system time zone temporarilly, we cannot fix this.
+                    // This is better handled in C++20 std::chrono.
+#  if HAS_TM_ZONE
+                    tm.tm_zone = abbrev != nullptr ? abbrev->c_str() : nullptr;
+                    tm.tm_gmtoff = offset_sec != nullptr ? static_cast<int>(offset_sec->count()) : 0;
+#  endif
                     CharT f[3] = {'%'};
                     auto fe = std::begin(f) + 1;
                     if (modified == CharT{'E'})
@@ -5932,11 +5950,18 @@ to_stream(std::basic_ostream<CharT, Traits>& os, const CharT* fmt,
                 {
                     if (!fds.has_tod)
                         os.setstate(std::ios::failbit);
+                    else
+                    {
 #if !ONLY_C_LOCALE
                     tm = std::tm{};
                     tm.tm_sec = static_cast<int>(fds.tod.seconds().count());
                     tm.tm_min = static_cast<int>(fds.tod.minutes().count());
                     tm.tm_hour = static_cast<int>(fds.tod.hours().count());
+                    // See comment in %c and %x formats.
+#  if HAS_TM_ZONE
+                    tm.tm_zone = abbrev != nullptr ? abbrev->c_str() : nullptr;
+                    tm.tm_gmtoff = offset_sec != nullptr ? static_cast<int>(offset_sec->count()) : 0;
+#  endif
                     CharT f[3] = {'%'};
                     auto fe = std::begin(f) + 1;
                     if (modified == CharT{'E'})
@@ -5946,6 +5971,7 @@ to_stream(std::basic_ostream<CharT, Traits>& os, const CharT* fmt,
 #else
                     os << fds.tod;
 #endif
+                    }
                 }
                 command = nullptr;
                 modified = CharT{};
@@ -6375,58 +6401,6 @@ read_signed(std::basic_istream<CharT, Traits>& is, unsigned m = 1, unsigned M = 
     return 0;
 }
 
-template <class CharT, class Traits>
-long double
-read_long_double(std::basic_istream<CharT, Traits>& is, unsigned m = 1, unsigned M = 10)
-{
-    unsigned count = 0;
-    unsigned fcount = 0;
-    unsigned long long i = 0;
-    unsigned long long f = 0;
-    bool parsing_fraction = false;
-#if ONLY_C_LOCALE
-    typename Traits::int_type decimal_point = '.';
-#else
-    auto decimal_point = Traits::to_int_type(
-        std::use_facet<std::numpunct<CharT>>(is.getloc()).decimal_point());
-#endif
-    while (true)
-    {
-        auto ic = is.peek();
-        if (Traits::eq_int_type(ic, Traits::eof()))
-            break;
-        if (Traits::eq_int_type(ic, decimal_point))
-        {
-            decimal_point = Traits::eof();
-            parsing_fraction = true;
-        }
-        else
-        {
-            auto c = static_cast<char>(Traits::to_char_type(ic));
-            if (!('0' <= c && c <= '9'))
-                break;
-            if (!parsing_fraction)
-            {
-                i = 10*i + static_cast<unsigned>(c - '0');
-            }
-            else
-            {
-                f = 10*f + static_cast<unsigned>(c - '0');
-                ++fcount;
-            }
-        }
-        (void)is.get();
-        if (++count == M)
-            break;
-    }
-    if (count < m)
-    {
-        is.setstate(std::ios::failbit);
-        return 0;
-    }
-    return static_cast<long double>(i) + static_cast<long double>(f)/std::pow(10.L, fcount);
-}
-
 struct rs
 {
     int& i;
@@ -6437,13 +6411,6 @@ struct rs
 struct ru
 {
     int& i;
-    unsigned m;
-    unsigned M;
-};
-
-struct rld
-{
-    long double& i;
     unsigned m;
     unsigned M;
 };
@@ -6469,10 +6436,6 @@ read(std::basic_istream<CharT, Traits>& is, ru a0, Args&& ...args);
 template <class CharT, class Traits, class ...Args>
 void
 read(std::basic_istream<CharT, Traits>& is, int a0, Args&& ...args);
-
-template <class CharT, class Traits, class ...Args>
-void
-read(std::basic_istream<CharT, Traits>& is, rld a0, Args&& ...args);
 
 template <class CharT, class Traits, class ...Args>
 void
@@ -6548,15 +6511,125 @@ read(std::basic_istream<CharT, Traits>& is, int a0, Args&& ...args)
         read(is, std::forward<Args>(args)...);
 }
 
-template <class CharT, class Traits, class ...Args>
-void
-read(std::basic_istream<CharT, Traits>& is, rld a0, Args&& ...args)
+// Parse a Duration out of the istream of the form sss.ffff where the number
+//    of s decimal digits and the number of f decimal digits can vary from 0
+//    to the limits set by m and M.  Return that Duration if failbit is not
+//    set, else return Duration{}.
+// m is the minimum number number of decimal digits read
+// M is the maximum number of characters read
+// Only the digits '0' thru '9' can be parsed, plus exactly 0 or 1 decimal
+//    points as specified by the locale associated with the istream.
+// No more than 18 decimal digits can be read after the decimal point
+// failbit is set if less than m decimal digits are consumed.
+// failbit is set if M is large enough to allow more than 18 fractional
+//    digits to be parsed, and such digits exist in the stream.
+// For integral-based Durations, a finer precision than what Duration can hold
+//    may be parsed, and in this case, the finer precision will be rounded into
+//    Duration.  I.e. Duration may have seconds precision, but if milliseconds
+//    are parsed, that result will be rounded to the nearest second.
+// For floating-point-based Durations, the conversion from the parsed stream to
+//    the requested duration has only potential round-off error, and no
+//    truncation error.
+// The requirements on Duration::rep are homogenous +, -, *, /, and explicit
+//    construction from int using ().
+// The requirements on Duration::period are only that it not overflow intmax_t,
+//    which is already enforced by std::ratio.
+template <class Duration, class CharT, class Traits>
+Duration
+read_seconds(std::basic_istream<CharT, Traits>& is, unsigned const m, unsigned const M)
 {
-    auto x = read_long_double(is, a0.m, a0.M);
-    if (is.fail())
-        return;
-    a0.i = x;
-    read(is, std::forward<Args>(args)...);
+    using Rep = typename Duration::rep;
+#if ONLY_C_LOCALE
+    typename Traits::int_type const decimal_point = '.';
+#else
+    auto const decimal_point = Traits::to_int_type(
+        std::use_facet<std::numpunct<CharT>>(is.getloc()).decimal_point());
+#endif
+    unsigned count = 0;
+    unsigned icount = 0;
+    unsigned fcount = 0;
+    Rep i(0);
+    Rep f(0);
+    bool parsing_fraction = false;
+    while (true)
+    {
+        auto const ic = is.peek();
+        if (Traits::eq_int_type(ic, Traits::eof()))
+            break;
+        if (!parsing_fraction && Traits::eq_int_type(ic, decimal_point))
+        {
+            parsing_fraction = true;
+        }
+        else
+        {
+            auto const c = static_cast<char>(Traits::to_char_type(ic));
+            if (!('0' <= c && c <= '9'))
+                break;
+            if (!parsing_fraction)
+            {
+                i = Rep(10)*i + Rep(c - '0');
+                ++icount;
+            }
+            else
+            {
+                f = Rep(10)*f + Rep(c - '0');
+                ++fcount;
+            }
+        }
+        (void)is.get();
+        if (++count == M)
+            break;
+    }
+    if (icount + fcount >= m)
+    {
+        std::chrono::duration<Rep> const di{i};
+        switch (fcount)
+        {
+            using std::chrono::duration;
+            using std::ratio;
+            using D = Duration;
+        case 0:
+            return round_i<D>(di);
+        case 1:
+            return round_i<D>(di + duration<Rep, ratio<1, 10>>{f});
+        case 2:
+            return round_i<D>(di + duration<Rep, ratio<1, 100>>{f});
+        case 3:
+            return round_i<D>(di + duration<Rep, ratio<1, 1'000>>{f});
+        case 4:
+            return round_i<D>(di + duration<Rep, ratio<1, 10'000>>{f});
+        case 5:
+            return round_i<D>(di + duration<Rep, ratio<1, 100'000>>{f});
+        case 6:
+            return round_i<D>(di + duration<Rep, ratio<1, 1'000'000>>{f});
+        case 7:
+            return round_i<D>(di + duration<Rep, ratio<1, 10'000'000>>{f});
+        case 8:
+            return round_i<D>(di + duration<Rep, ratio<1, 100'000'000>>{f});
+        case 9:
+            return round_i<D>(di + duration<Rep, ratio<1, 1'000'000'000>>{f});
+        case 10:
+            return round_i<D>(di + duration<Rep, ratio<1, 10'000'000'000>>{f});
+        case 11:
+            return round_i<D>(di + duration<Rep, ratio<1, 100'000'000'000>>{f});
+        case 12:
+            return round_i<D>(di + duration<Rep, ratio<1, 1'000'000'000'000>>{f});
+        case 13:
+            return round_i<D>(di + duration<Rep, ratio<1, 10'000'000'000'000>>{f});
+        case 14:
+            return round_i<D>(di + duration<Rep, ratio<1, 100'000'000'000'000>>{f});
+        case 15:
+            return round_i<D>(di + duration<Rep, ratio<1, 1'000'000'000'000'000>>{f});
+        case 16:
+            return round_i<D>(di + duration<Rep, ratio<1, 10'000'000'000'000'000>>{f});
+        case 17:
+            return round_i<D>(di + duration<Rep, ratio<1, 100'000'000'000'000'000>>{f});
+        case 18:
+            return round_i<D>(di + duration<Rep, ratio<1, 1'000'000'000'000'000'000>>{f});
+        }
+    }
+    is.setstate(std::ios::failbit);
+    return Duration{};
 }
 
 template <class T, class CharT, class Traits>
@@ -6642,7 +6715,6 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
         using detail::read;
         using detail::rs;
         using detail::ru;
-        using detail::rld;
         using detail::checked_set;
         for (; *fmt != CharT{} && !is.fail(); ++fmt)
         {
@@ -6797,12 +6869,10 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                         CONSTDATA auto w = Duration::period::den == 1 ? 2 : 3 + dfs::width;
                         int tH;
                         int tM;
-                        long double S{};
-                        read(is, ru{tH, 1, 2}, CharT{':'}, ru{tM, 1, 2},
-                                               CharT{':'}, rld{S, 1, w});
+                        read(is, ru{tH, 1, 2}, CharT{':'}, ru{tM, 1, 2}, CharT{':'});
                         checked_set(H, tH, not_a_hour, is);
                         checked_set(M, tM, not_a_minute, is);
-                        checked_set(s, round_i<Duration>(duration<long double>{S}),
+                        checked_set(s, detail::read_seconds<Duration>(is, 1, w),
                                     not_a_second, is);
                         ws(is);
                         int tY = not_a_year;
@@ -6879,12 +6949,10 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                         CONSTDATA auto w = Duration::period::den == 1 ? 2 : 3 + dfs::width;
                         int tH = not_a_hour;
                         int tM = not_a_minute;
-                        long double S{};
-                        read(is, ru{tH, 1, 2}, CharT{':'}, ru{tM, 1, 2},
-                                               CharT{':'}, rld{S, 1, w});
+                        read(is, ru{tH, 1, 2}, CharT{':'}, ru{tM, 1, 2}, CharT{':'});
                         checked_set(H, tH, not_a_hour, is);
                         checked_set(M, tM, not_a_minute, is);
-                        checked_set(s, round_i<Duration>(duration<long double>{S}),
+                        checked_set(s, detail::read_seconds<Duration>(is, 1, w),
                                     not_a_second, is);
 #endif
                     }
@@ -7235,14 +7303,12 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                         // "%I:%M:%S %p"
                         using dfs = detail::decimal_format_seconds<Duration>;
                         CONSTDATA auto w = Duration::period::den == 1 ? 2 : 3 + dfs::width;
-                        long double S{};
                         int tI = not_a_hour_12_value;
                         int tM = not_a_minute;
-                        read(is, ru{tI, 1, 2}, CharT{':'}, ru{tM, 1, 2},
-                                               CharT{':'}, rld{S, 1, w});
+                        read(is, ru{tI, 1, 2}, CharT{':'}, ru{tM, 1, 2}, CharT{':'});
                         checked_set(I, tI, not_a_hour_12_value, is);
                         checked_set(M, tM, not_a_minute, is);
-                        checked_set(s, round_i<Duration>(duration<long double>{S}),
+                        checked_set(s, detail::read_seconds<Duration>(is, 1, w),
                                     not_a_second, is);
                         ws(is);
                         auto nm = detail::ampm_names();
@@ -7291,9 +7357,8 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                     {
                         using dfs = detail::decimal_format_seconds<Duration>;
                         CONSTDATA auto w = Duration::period::den == 1 ? 2 : 3 + dfs::width;
-                        long double S{};
-                        read(is, rld{S, 1, width == -1 ? w : static_cast<unsigned>(width)});
-                        checked_set(s, round_i<Duration>(duration<long double>{S}),
+                        checked_set(s, detail::read_seconds<Duration>(is, 1,
+                                          width == -1 ? w : static_cast<unsigned>(width)),
                                     not_a_second, is);
                     }
 #if !ONLY_C_LOCALE
@@ -7325,12 +7390,10 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                         CONSTDATA auto w = Duration::period::den == 1 ? 2 : 3 + dfs::width;
                         int tH = not_a_hour;
                         int tM = not_a_minute;
-                        long double S{};
-                        read(is, ru{tH, 1, 2}, CharT{':'}, ru{tM, 1, 2},
-                                               CharT{':'}, rld{S, 1, w});
+                        read(is, ru{tH, 1, 2}, CharT{':'}, ru{tM, 1, 2}, CharT{':'});
                         checked_set(H, tH, not_a_hour, is);
                         checked_set(M, tM, not_a_minute, is);
-                        checked_set(s, round_i<Duration>(duration<long double>{S}),
+                        checked_set(s, detail::read_seconds<Duration>(is, 1, w),
                                     not_a_second, is);
                     }
                     else
@@ -7636,8 +7699,14 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                     if (width == -1 && modified == CharT{} && '0' <= *fmt && *fmt <= '9')
                     {
                         width = static_cast<char>(*fmt) - '0';
-                        while ('0' <= fmt[1] && fmt[1] <= '9')
+                        if ('0' <= fmt[1] && fmt[1] <= '9')
+                        {
                             width = 10*width + static_cast<char>(*++fmt) - '0';
+                            if ('0' <= fmt[1] && fmt[1] <= '9')
+                            {
+                                is.setstate(ios::failbit);
+                            }
+                        }
                     }
                     else
                     {
@@ -8248,14 +8317,14 @@ std::basic_istream<CharT, Traits>&
 operator>>(std::basic_istream<CharT, Traits>& is,
            const parse_manip<Parsable, CharT, Traits, Alloc>& x)
 {
-    return date::from_stream(is, x.format_.c_str(), x.tp_, x.abbrev_, x.offset_);
+    return from_stream(is, x.format_.c_str(), x.tp_, x.abbrev_, x.offset_);
 }
 
 template <class Parsable, class CharT, class Traits, class Alloc>
 inline
 auto
 parse(const std::basic_string<CharT, Traits, Alloc>& format, Parsable& tp)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
                             format.c_str(), tp),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp})
 {
@@ -8267,7 +8336,7 @@ inline
 auto
 parse(const std::basic_string<CharT, Traits, Alloc>& format, Parsable& tp,
       std::basic_string<CharT, Traits, Alloc>& abbrev)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
                             format.c_str(), tp, &abbrev),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev})
 {
@@ -8279,7 +8348,7 @@ inline
 auto
 parse(const std::basic_string<CharT, Traits, Alloc>& format, Parsable& tp,
       std::chrono::minutes& offset)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
                             format.c_str(), tp,
                             std::declval<std::basic_string<CharT, Traits, Alloc>*>(),
                             &offset),
@@ -8293,7 +8362,7 @@ inline
 auto
 parse(const std::basic_string<CharT, Traits, Alloc>& format, Parsable& tp,
       std::basic_string<CharT, Traits, Alloc>& abbrev, std::chrono::minutes& offset)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
                             format.c_str(), tp, &abbrev, &offset),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev, &offset})
 {
@@ -8306,7 +8375,7 @@ template <class Parsable, class CharT>
 inline
 auto
 parse(const CharT* format, Parsable& tp)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT>&>(), format, tp),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT>&>(), format, tp),
                 parse_manip<Parsable, CharT>{format, tp})
 {
     return {format, tp};
@@ -8316,7 +8385,7 @@ template <class Parsable, class CharT, class Traits, class Alloc>
 inline
 auto
 parse(const CharT* format, Parsable& tp, std::basic_string<CharT, Traits, Alloc>& abbrev)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format,
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format,
                             tp, &abbrev),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev})
 {
@@ -8327,7 +8396,7 @@ template <class Parsable, class CharT>
 inline
 auto
 parse(const CharT* format, Parsable& tp, std::chrono::minutes& offset)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT>&>(), format,
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT>&>(), format,
                             tp, std::declval<std::basic_string<CharT>*>(), &offset),
                 parse_manip<Parsable, CharT>{format, tp, nullptr, &offset})
 {
@@ -8339,7 +8408,7 @@ inline
 auto
 parse(const CharT* format, Parsable& tp,
       std::basic_string<CharT, Traits, Alloc>& abbrev, std::chrono::minutes& offset)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format,
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format,
                             tp, &abbrev, &offset),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev, &offset})
 {

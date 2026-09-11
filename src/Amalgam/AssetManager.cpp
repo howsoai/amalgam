@@ -60,7 +60,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		escapeContainedResourceNames = true;
 		transactional = false;
 		prettyPrint = true;
-		sortKeys = true;
+		sortKeys = false;
 		flatten = false;
 		parallelCreate = false;
 		executeOnLoad = false;
@@ -76,7 +76,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		escapeContainedResourceNames = false;
 		transactional = false;
 		prettyPrint = false;
-		sortKeys = true;
+		sortKeys = false;
 		flatten = false;
 		parallelCreate = false;
 		executeOnLoad = false;
@@ -118,7 +118,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 	UpdateResources();
 }
 
-void AssetManager::AssetParameters::SetParams(EvaluableNode::AssocType &params)
+void AssetManager::AssetParameters::SetParams(EvaluableNode::AssocRef params)
 {
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_include_rand_seeds, includeRandSeeds);
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_escape_resource_name, escapeResourceName);

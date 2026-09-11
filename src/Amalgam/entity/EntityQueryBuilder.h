@@ -52,7 +52,7 @@ namespace EntityQueryBuilder
 	inline void PopulateFeatureDeviationNominalValueAssocData(
 		NominalDeviationValuesType &ndd, EvaluableNode *value_deviation_assoc)
 	{
-		auto &mcn = value_deviation_assoc->GetMappedChildNodesReference();
+		auto mcn = value_deviation_assoc->GetMappedChildNodesViewOnAssoc();
 		ndd.reserve(mcn.size());
 		for(auto &cn : mcn)
 		{
@@ -115,7 +115,7 @@ namespace EntityQueryBuilder
 		string_sdm.clear();
 		number_sdm.clear();
 
-		auto &mcn = deviation_node->GetMappedChildNodesReference();
+		auto mcn = deviation_node->GetMappedChildNodesViewOnAssoc();
 		if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
 		{
 			number_sdm.reserve(mcn.size());
@@ -125,8 +125,8 @@ namespace EntityQueryBuilder
 				if(cn.first != string_intern_pool.emptyStringId)
 					value = Parser::ParseNumberFromKeyStringId(cn.first);
 
-				number_sdm.emplace(value);
-				PopulateFeatureDeviationNominalValueData(number_sdm.back().second, cn.second);
+				auto it = number_sdm.EmplaceUnique(value);
+				PopulateFeatureDeviationNominalValueData(it->second, cn.second);
 			}
 		}
 		else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL
@@ -134,10 +134,10 @@ namespace EntityQueryBuilder
 			|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
 			string_sdm.reserve(mcn.size());
-			for(auto &cn : deviation_node->GetMappedChildNodes())
+			for(auto &cn : deviation_node->GetMappedChildNodesView())
 			{
-				string_sdm.emplace(cn.first);
-				PopulateFeatureDeviationNominalValueData(string_sdm.back().second, cn.second);
+				auto it = string_sdm.EmplaceUnique(cn.first);
+				PopulateFeatureDeviationNominalValueData(it->second, cn.second);
 			}
 		}
 	}
@@ -179,7 +179,7 @@ namespace EntityQueryBuilder
 		size_t num_elements, std::vector<StringInternPool::StringID> &element_names,
 		StringInternPool::StringID weights_selection_feature)
 	{
-		auto &weights_matrix = weights_node->GetMappedChildNodesReference();
+		auto weights_matrix = weights_node->GetMappedChildNodesViewOnAssoc();
 		auto weights_for_feature_node_entry = weights_matrix.find(weights_selection_feature);
 
 		//if entry not found or only one feature, just default to 1/n
@@ -211,10 +211,10 @@ namespace EntityQueryBuilder
 			return;
 		}
 
-		auto &weights_for_feature_node_mcn = weights_for_feature_node->GetMappedChildNodesReference();
+		auto weights_for_feature_node_mcn = weights_for_feature_node->GetMappedChildNodesViewOnAssoc();
 
 		//collect all weights that contribute to this feature, but leave weights_selection_feature out
-		FastHashMap<StringInternPool::StringID, double> unused_weights_by_name;
+		OrderedHashMap<StringInternPool::StringID, double> unused_weights_by_name;
 		double total_probability_mass = 0.0;
 		for(auto &[sid, weight_node] : weights_for_feature_node_mcn)
 		{
@@ -223,7 +223,7 @@ namespace EntityQueryBuilder
 				double weight = EvaluableNode::ToNumber(weight_node, 0.0);
 				if(weight > 0.0)
 				{
-					unused_weights_by_name.emplace(sid, weight);
+					unused_weights_by_name.EmplaceUnique(sid, weight);
 					total_probability_mass += weight;
 				}
 			}
@@ -268,7 +268,7 @@ namespace EntityQueryBuilder
 			auto unused_weights_for_feature_node = unused_weights_for_feature_entry->second;
 			if(!EvaluableNode::IsAssociativeArray(unused_weights_for_feature_node))
 				continue;
-			auto &unused_weights_for_feature_mcn = unused_weights_for_feature_node->GetMappedChildNodesReference();
+			auto unused_weights_for_feature_mcn = unused_weights_for_feature_node->GetMappedChildNodesViewOnAssoc();
 
 			//get total probability mass to normalize this feature
 			double total_probability_mass_for_feature = 0.0;
@@ -401,7 +401,7 @@ namespace EntityQueryBuilder
 
 					if(EvaluableNode::IsAssociativeArray(en))
 					{
-						auto &mcn = en->GetMappedChildNodesReference();
+						auto mcn = en->GetMappedChildNodesViewOnAssoc();
 
 						StringInternPool::StringID difference_type = string_intern_pool.NOT_A_STRING_ID;
 						EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_difference_type, difference_type);

@@ -237,13 +237,13 @@ Output:
 {
 		change_type 0.15
 		insert 0.14
-		insert_element 0.14
 		remove 0.14
-		remove_all_elements 0.0001
-		remove_element 0.14
-		replace_element_with_copy 0.0999
 		simplify_node 0.05
+		replace_element_with_copy 0.0999
+		insert_element 0.14
+		remove_element 0.14
 		swap_elements 0.14
+		remove_all_elements 0.0001
 }
 ```
 
@@ -891,7 +891,7 @@ Output:
 [
 	1
 	(- 4 2)
-	{a 3 b 4 c 3}
+	{b 4 a 3 c 3}
 ]
 ```
 Example:
@@ -948,7 +948,7 @@ Output:
 	1
 	2
 	3
-	{a 3 b 4 c 3}
+	{b 4 a 3 c 3}
 	(if
 		true
 		1
@@ -1125,7 +1125,7 @@ Example:
 ```
 Output:
 ```amalgam
-(+ a b)
+(+ b a)
 ```
 Example:
 ```amalgam
@@ -2120,8 +2120,8 @@ Output:
 ```amalgam
 (+
 		(*
-				(exp a)
 				2
+				(exp a)
 		)
 		(* 4 a)
 		20

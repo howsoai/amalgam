@@ -400,7 +400,7 @@ template<typename ValueIterator,
 __forceinline static std::pair<bool, ValueType> Mode(ValueIterator first, ValueIterator last,
 	ValueFunction get_value, bool has_weight, WeightFunction get_weight, ValueType value_if_not_found)
 {
-	FastHashMap<ValueType, double, ValueHash, ValueEquality> value_weights;
+	OrderedHashMap<ValueType, double, ValueHash, ValueEquality> value_weights;
 
 	if(!has_weight)
 	{
@@ -529,7 +529,7 @@ __forceinline static double Quantile(ValueIterator first, ValueIterator last,
 		return std::numeric_limits<double>::quiet_NaN();
 
 	//sorts on .first - value, not weight
-	std::sort(std::begin(*value_weights), std::end(*value_weights));
+	std::stable_sort(std::begin(*value_weights), std::end(*value_weights));
 
 	//early outs for edge cases
 	if(value_weights->size() == 1 || q_percentage == 0.0)

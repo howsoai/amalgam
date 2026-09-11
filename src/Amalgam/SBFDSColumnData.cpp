@@ -779,7 +779,7 @@ void SBFDSColumnData::FindMinMax(EvaluableNodeImmediateValueType value_type, siz
 		for(auto &id : stringIdValueEntries | std::views::keys)
 			all_sids.push_back(id);
 
-		std::sort(begin(all_sids), end(all_sids), StringIDNaturalCompareSort);
+		std::stable_sort(begin(all_sids), end(all_sids), StringIDNaturalCompareSort);
 
 		//search right to left for max (bucket size - 1 is largest) or left to right for min
 		int64_t value_index = find_max ? all_sids.size() - 1 : 0;

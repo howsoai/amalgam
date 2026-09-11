@@ -71,10 +71,12 @@ ValueType WeightedDiscreteRandomSampleMap(ContainerType &probabilities_map, Rand
 	return selected_element;
 }
 
-//Class for creating a stream of random values (of type ValueType) based on weighted buckets of values specified by ValueType
-//Implements the Alias method as described in
-// Vose, Michael D. (September 1991). "A linear algorithm for generating random numbers with a given distribution" (PDF). IEEE Transactions on Software Engineering. 17 (9): 972–975.
-template<typename ValueType, typename MapType = std::map<ValueType, double>, typename ProbabilityAsDoubleFunctor = DoubleAsDouble>
+//Class for creating a stream of random values (of type ValueType) based on weighted buckets of
+//values specified by ValueType.  It implements the "alias method" as described in
+// Vose, Michael D. (September 1991). "A linear algorithm for generating random numbers with a given distribution".
+// IEEE Transactions on Software Engineering. 17 (9): 972–975.
+template<typename ValueType, typename MapType = std::map<ValueType, double>,
+	typename ProbabilityAsDoubleFunctor = DoubleAsDouble>
 class WeightedDiscreteRandomStreamTransform
 {
 public:

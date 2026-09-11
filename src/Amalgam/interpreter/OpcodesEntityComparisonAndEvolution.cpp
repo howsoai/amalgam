@@ -194,18 +194,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 		mutation_rate = InterpretNodeIntoNumberValue(ocn[1]);
 
 	bool ow_exists = false;
-	CompactHashMap<EvaluableNodeType, double> opcode_weights;
+	VectorMap<EvaluableNodeType, double> opcode_weights;
 	if(ocn.size() > 3)
 	{
 		auto opcode_weights_node = InterpretNodeForImmediateUse(ocn[3]);
-		if(!EvaluableNode::IsNull(opcode_weights_node))
+		if(EvaluableNode::IsAssociativeArray(opcode_weights_node))
 		{
+			auto mcn = opcode_weights_node->GetMappedChildNodesViewOnAssoc();
+			opcode_weights.reserve(mcn.size());
+
 			ow_exists = true;
-			for(auto &[node_id, node] : opcode_weights_node->GetMappedChildNodes())
+			for(auto &[node_id, node] : mcn)
 			{
 				EvaluableNodeType t = GetEvaluableNodeTypeFromStringId(node_id);
 				if(IsEvaluableNodeTypeValid(t))
-					opcode_weights[t] = EvaluableNode::ToNumber(node);
+					opcode_weights.EmplaceUnique(t, EvaluableNode::ToNumber(node));
 			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(opcode_weights_node);
@@ -213,18 +216,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	}
 
 	bool mtw_exists = false;
-	CompactHashMap<EvaluableNodeBuiltInStringId, double> mutation_type_weights;
+	VectorMap<EvaluableNodeBuiltInStringId, double> mutation_type_weights;
 	if(ocn.size() > 4)
 	{
 		auto mutation_weights_node = InterpretNodeForImmediateUse(ocn[4]);
-		if(!EvaluableNode::IsNull(mutation_weights_node))
+		if(EvaluableNode::IsAssociativeArray(mutation_weights_node))
 		{
+			auto mcn = mutation_weights_node->GetMappedChildNodesViewOnAssoc();
+			mutation_type_weights.reserve(mcn.size());
 			mtw_exists = true;
-			for(auto &[node_id, node] : mutation_weights_node->GetMappedChildNodes())
+			for(auto &[node_id, node] : mcn)
 			{
 				auto bisid = GetBuiltInStringIdFromStringId(node_id);
 				if(bisid != ENBISI_NOT_A_STRING)
-					mutation_type_weights[bisid] = EvaluableNode::ToNumber(node);
+					mutation_type_weights.EmplaceUnique(bisid, EvaluableNode::ToNumber(node));
 			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(mutation_weights_node);
@@ -241,7 +246,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	{
 		auto imm_number_weights_node = InterpretNodeForImmediateUse(ocn[6]);
 		if(EvaluableNode::IsAssociativeArray(imm_number_weights_node))
-			imm_number_weights.Initialize(imm_number_weights_node->GetMappedChildNodesReference(), true);
+			imm_number_weights.Initialize(imm_number_weights_node->GetMappedChildNodesViewOnAssoc(), true);
 	}
 
 	EvaluableNodeTreeManipulation::MutationParameters::WeightedRandValueType imm_string_weights;
@@ -249,7 +254,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	{
 		auto imm_string_weights_node = InterpretNodeForImmediateUse(ocn[7]);
 		if(EvaluableNode::IsAssociativeArray(imm_string_weights_node))
-			imm_string_weights.Initialize(imm_string_weights_node->GetMappedChildNodesReference(), true);
+			imm_string_weights.Initialize(imm_string_weights_node->GetMappedChildNodesViewOnAssoc(), true);
 	}
 
 	//retrieve the entities after other parameters to minimize time in locks
@@ -397,7 +402,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(Evalu
 		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
-			auto &mcn = params->GetMappedChildNodesReference();
+			auto mcn = params->GetMappedChildNodesViewOnAssoc();
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
@@ -517,7 +522,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(Eva
 		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
-			auto &mcn = params->GetMappedChildNodesReference();
+			auto mcn = params->GetMappedChildNodesViewOnAssoc();
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
@@ -644,7 +649,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
-			auto &mcn = params->GetMappedChildNodesReference();
+			auto mcn = params->GetMappedChildNodesViewOnAssoc();
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
@@ -781,7 +786,7 @@ static OpcodeInitializer _ENT_UNION_ENTITIES(ENT_UNION_ENTITIES, &Interpreter::I
 		]
 	)
 ))&", R"([
-	{a 3 b 4 c .null}
+	{b 4 c .null a 3}
 	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
 ])", "", R"((destroy_entities "MergeEntity1" "MergeEntity2" "UnionedEntity")"}
 		});
@@ -812,7 +817,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 		auto params = InterpretNodeForImmediateUse(ocn[2]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
-			auto &mcn = params->GetMappedChildNodesReference();
+			auto mcn = params->GetMappedChildNodesViewOnAssoc();
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);
@@ -1185,7 +1190,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 		auto params = InterpretNodeForImmediateUse(ocn[4]);
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
-			auto &mcn = params->GetMappedChildNodesReference();
+			auto mcn = params->GetMappedChildNodesViewOnAssoc();
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_types_must_match, types_must_match);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_numbers, nominal_numbers);
 			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_nominal_strings, nominal_strings);

@@ -540,7 +540,7 @@ Example:
 Output:
 ```amalgam
 [
-	{a 3 b 4 c .null}
+	{b 4 c .null a 3}
 	["MergeEntityChild1" "MergeEntityChild2" "_2bW5faQkVxs" "_ldZa276M1io"]
 ]
 ```

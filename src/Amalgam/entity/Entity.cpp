@@ -135,7 +135,7 @@ std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(EvaluableNodeReference::Null(), false);
 
-	auto &label_index = GetLabelIndex();
+	auto label_index = GetLabelIndexView();
 	const auto &label = label_index.find(label_sid);
 
 	if(label == end(label_index))
@@ -160,7 +160,7 @@ std::pair<bool, bool> Entity::GetValueAtLabelAsBool(StringInternPool::StringID l
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(false, false);
 
-	auto &label_index = GetLabelIndex();
+	auto label_index = GetLabelIndexView();
 	const auto &label = label_index.find(label_sid);
 	if(label == end(label_index))
 		return std::pair(false, false);
@@ -178,7 +178,7 @@ std::pair<double, bool> Entity::GetValueAtLabelAsNumber(StringInternPool::String
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(value_if_not_found, false);
 
-	auto &label_index = GetLabelIndex();
+	auto label_index = GetLabelIndexView();
 	const auto &label = label_index.find(label_sid);
 	if(label == end(label_index))
 		return std::pair(value_if_not_found, false);
@@ -195,7 +195,7 @@ std::pair<std::string, bool> Entity::GetValueAtLabelAsString(
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair("", false);
 
-	auto &label_index = GetLabelIndex();
+	auto label_index = GetLabelIndexView();
 	const auto &label = label_index.find(label_sid);
 	if(label == end(label_index))
 		return std::pair("", false);
@@ -212,7 +212,7 @@ std::pair<StringInternPool::StringID, bool> Entity::GetValueAtLabelAsStringIdWit
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
 
-	auto &label_index = GetLabelIndex();
+	auto label_index = GetLabelIndexView();
 	const auto &label = label_index.find(label_sid);
 	if(label == end(label_index))
 		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
@@ -226,7 +226,7 @@ std::pair<EvaluableNodeImmediateValueWithType, bool> Entity::GetValueAtLabelAsIm
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST), false);
 
-	auto &label_index = GetLabelIndex();
+	auto label_index = GetLabelIndexView();
 	const auto &label = label_index.find(label_sid);
 	if(label == end(label_index))
 		return std::pair(EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST), false);
@@ -250,7 +250,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 	bool any_successful_assignment = false;
 	bool all_successful_assignments = true;
-	auto &new_label_values_mcn = new_label_values->GetMappedChildNodesReference();
+	auto new_label_values_mcn = new_label_values->GetMappedChildNodesViewOnAssoc();
 
 	for(auto &[label_sid, new_value_node] : new_label_values_mcn)
 	{
@@ -261,7 +261,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		}
 
 		//re-retrieve label_index each iteration in case root changes
-		auto &label_index = GetLabelIndex();
+		auto label_index = GetLabelIndexView();
 		const auto &label_iterator = label_index.find(label_sid);
 
 		EvaluableNodeReference new_value_reference(new_value_node, false);
@@ -279,7 +279,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			EvaluableNode *new_root = evaluableNodeManager.AllocNode(evaluableNodeManager.rootNode);
 			//ensure flags are updated before new_root is exposed
 			new_root->UpdateFlagsBasedOnNewChildNode(new_value_reference);
-			auto &new_root_mcn = new_root->GetMappedChildNodesReference();
+			auto new_root_mcn = new_root->GetMappedChildNodesViewOnAssoc();
 			new_root_mcn.emplace(label_sid, new_value_reference);
 			string_intern_pool.CreateStringReference(label_sid);
 
@@ -365,43 +365,91 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 	bool any_successful_remove = false;
 	bool all_successful_removes = true;
 
-	EvaluableNode::OrderedType labels_to_remove_vector;
-	auto &labels_to_remove_ocn = labels_to_remove_vector;
-	if(EvaluableNode::IsString(labels_to_remove))
-		labels_to_remove_ocn.emplace_back(labels_to_remove);
-	else if(EvaluableNode::IsOrderedArray(labels_to_remove))
-		labels_to_remove_ocn = labels_to_remove->GetOrderedChildNodesReference();
-	else
-		return {false, false};
-
 	std::vector<std::pair<StringInternPool::StringID, EvaluableNode *>> label_sids_and_values_to_remove;
-	label_sids_and_values_to_remove.reserve(labels_to_remove_ocn.size());
 
-	EvaluableNodeReference new_root(evaluableNodeManager.AllocNode(GetRoot()), false, true);
-	auto &new_root_mcn = new_root->GetMappedChildNodesReference();
+	EvaluableNode *prev_root = GetRoot();
+	EvaluableNodeReference new_root(evaluableNodeManager.AllocNode(prev_root->GetType()), false, true);
+	new_root->CopyMetadataFrom(prev_root);
 
-	//captures all of the label data to remove and remove from new_root
-	for(auto label_node : labels_to_remove_ocn)
+	//if not a list, then just remove individual element
+	if(labels_to_remove.IsTerminalValueType())
 	{
-		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(label_node, true);
-		if(!on_self && IsLabelPrivate(label_sid))
+		StringInternPool::StringID label_to_remove = labels_to_remove.GetValue().GetValueAsStringIDIfExists(true);
+
+		if(!on_self && IsLabelPrivate(label_to_remove))
 		{
 			all_successful_removes = false;
-			continue;
+			evaluableNodeManager.FreeNode(new_root);
+			return { false, false };
 		}
 
-		auto found = new_root_mcn.find(label_sid);
-		if(found == end(new_root_mcn))
-			continue;
+		EvaluableNode::SmallAssocType new_root_mcn;
 
-		label_sids_and_values_to_remove.emplace_back(label_sid, found->second);
+		auto mcn = prev_root->GetMappedChildNodesViewOnAssoc();
+		for(auto &[key, value] : mcn)
+		{
+			if(key == label_to_remove)
+			{
+				label_sids_and_values_to_remove.emplace_back(key, value);
+				any_successful_remove = true;
+				continue;
+			}
 
-		new_root_mcn.erase(found);
-		string_intern_pool.DestroyStringReference(label_sid);
-		any_successful_remove = true;
+			new_root_mcn.EmplaceUnique(key, value);
+		}
+
+		string_intern_pool.CreateStringReferences(new_root_mcn, [](auto n) { return n.first; });
+		new_root->GetMappedChildNodesViewOnAssoc() = std::move(new_root_mcn);
+
+		if(!any_successful_remove)
+			all_successful_removes = false;
+	}
+	else //remove all of the child nodes of the index
+	{
+		auto &indices_ocn = labels_to_remove->GetOrderedChildNodes();
+
+		FastHashSet<StringInternPool::StringID> labels_to_erase;
+		for(auto &cn : indices_ocn)
+		{
+			StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(cn, true);
+
+			if(!on_self && IsLabelPrivate(label_sid))
+			{
+				all_successful_removes = false;
+				continue;
+			}
+
+			labels_to_erase.emplace(label_sid);
+		}
+
+		EvaluableNode::SmallAssocType new_root_mcn;
+
+		auto mcn = prev_root->GetMappedChildNodesViewOnAssoc();
+		for(auto &[label_sid, value] : mcn)
+		{
+			if(auto it = labels_to_erase.find(label_sid); it != end(labels_to_erase))
+			{
+				label_sids_and_values_to_remove.emplace_back(label_sid, value);
+				any_successful_remove = true;
+
+				//remove it from the list to erase
+				labels_to_erase.erase(it);
+				continue;
+			}
+
+			new_root_mcn.EmplaceUnique(label_sid, value);
+		}
+
+		string_intern_pool.CreateStringReferences(new_root_mcn, [](auto n) { return n.first; });
+		new_root->GetMappedChildNodesViewOnAssoc() = std::move(new_root_mcn);
+
+		if(!labels_to_erase.empty())
+			all_successful_removes = false;
 	}
 
 	new_root->UpdateAllFlagsBasedOnNoReferencingChildNodes();
+	if(prev_root->GetNeedCycleCheck())
+		new_root->SetNeedCycleCheck(true);
 
 	if(any_successful_remove)
 	{
@@ -428,7 +476,7 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		evaluableNodeManager.FreeNode(new_root);
 	}
 
-	return {any_successful_remove, all_successful_removes};
+	return { any_successful_remove, all_successful_removes };
 }
 
 EvaluableNodeReference Entity::ExecuteOnEntity(EvaluableNode *code,

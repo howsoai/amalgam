@@ -18,20 +18,20 @@ static OpcodeInitializer _ENT_HELP(ENT_HELP, &Interpreter::InterpretNode_ENT_HEL
 	d.description = R"(If no parameter is specified it returns a string of the topics that can be used.  For given a `topic`, returns a string or relevant data that describes the given topic.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((help "+"))", R"&({
-	allows_concurrency .true
-	description "Evaluates to the sum of all numbers.  If no parameters are provided it returns 0.0."
-	examples [
-			{example "(+ 1 2 3 4)" output "10"}
-		]
-	frequency_per_10000_opcodes 18
-	new_scope .false
-	new_target_scope .false
-	opcode_group "Basic Math"
-	parameters "[number x1] [number x2] ..."
-	permissions "none"
-	requires_entity .false
-	returns "number"
-	value_newness "new"
+		description "Evaluates to the sum of all numbers.  If no parameters are provided it returns 0.0."
+		parameters "[number x1] [number x2] ..."
+		returns "number"
+		allows_concurrency .true
+		requires_entity .false
+		new_scope .false
+		new_target_scope .false
+		frequency_per_10000_opcodes 18
+		opcode_group "Basic Math"
+		permissions "none"
+		value_newness "new"
+		examples [
+						{example "(+ 1 2 3 4)" output "10"}
+				]
 })&"}
 		});
 	d.permissions = ExecutionPermissions::Permission::ALL;
@@ -84,7 +84,7 @@ An entity has complete abilities to perform reads and writes to any other Entity
 
 Entities may be explicitly named and may be used as code libraries.  For example, a library named MyLibrary with function MyFunction can be called as `(call_entity "MyLibrary" "MyFunction" { parameter_a 1 parameter_b 2 })`.  Entity names are called entity ids, and nested entities can be accessed via an entity walk path, which is a list of ids, and the list of ids can be used any place an entity id is used.  When using null as the entity name, it will refer to the current entity.  Entities that begin with an underscore are "unnamed" which means that when entities are merged via any entity comparison method such as `mix_entities`, unnamed entities are compared to other unnamed entities to potentially merge.
 
-Variables are accessed in from the closest immediate scope, which means if there is a global variable named x and a function parameter named x, the function parameter will be used.  Entity labels are considered the global-most scope.  If a variable name cannot be found, then it will look at the entity's labels instead.  Scope is handled as a stack, and some opcodes may modify the scope.  Note that when declaring variables in a singular block such as a `let` or `declare`, the order of their evaluation is not guaranteed, so variables that depend on previous values should be implemented either functionally or as a sequence of `declare` opcodes.  Setting multiple values within a complex variable at the same time can be done by specifying multiple parameters to `assign`, and the opcodes `set` and `remove` return entirely new copies of the data structure with modifications.
+Variables are accessed in from the closest immediate scope, which means if there is a global variable named x and a function parameter named x, the function parameter will be used.  Entity labels are considered the global-most scope.  If a variable name cannot be found, then it will look at the entity's labels instead.  Scope is handled as a stack, and some opcodes may modify the scope.  As assoc data structures are initialized by insertion order, when declaring variables in a singular block such as a `let` or `declare` or assigning or accumulating variables, the order of their evaluation will occur in the order that they are listed.  Setting multiple values within a complex variable at the same time can be done by specifying multiple parameters to `assign`, and the opcodes `set` and `remove` return entirely new copies of the data structure with modifications.
 
 In addition to the stack scope, there is a target scope, which can be accessed via the target opcodes to access the data being iterated over.  Some opcodes will add one or more layers to the target stack, so care must be taken to count back up the target stack an appropriate number of levels if the target is being used directly as opposed to being accessed via a variable.
 
@@ -182,15 +182,11 @@ Amalgam containers are values. `modify` (create/update/deep-copy) and `remove` d
 ```
 A bare `(modify data)` with no replacements is the idiomatic deep copy of `data` and its referenced structures, preserving internal aliases and cycles.
 
-## Assoc order is not insertion order
-An assoc has no insertion order: `indices` and `values` only guarantee that, for a given assoc, they return their elements aligned with each other — the key at one position lines up with the value at the same position. That order is **not** insertion order and should not be relied on for human-meaningful output. When output order matters, make it explicit — sort the keys, or build an ordered list of `[key value]` rows and sort with a comparator:
-```amalgam
-(sort (indices counts))                   ; keys in a defined order
-```
-A comparator lambda compares `(current_value)` (left) against `(current_value 1)` (right), returning negative, zero, or positive:
-```amalgam
-(sort (lambda (- (current_value) (current_value 1))) [4 9 3 5 1]) ; [1 3 4 5 9]
-```
+## Assoc iteration follows insertion order
+An assoc preserves insertion order. `indices` and `values` return aligned keys and values in that order. When another output order is required, sort the keys or materialize and sort `[key value]` rows.
+
+## Initialize dependent bindings in order
+Within a single `let` or `declare` binding block, initializers are evaluated in insertion order. Later initializers can use bindings initialized earlier in that block. Grouped `assign` and `accum` updates also execute in listed order; place prerequisite updates before updates that depend on them.
 
 ## Accessing characters in a string
 Indexing a string with `get` does not return a character. Use `substr` for a single character, taking the half-open range `[i, i+1)`:
@@ -201,22 +197,6 @@ When traversing a string by character repeatedly, `explode` it once into a list 
 ```amalgam
 (explode "hello")                         ; ["h" "e" "l" "l" "o"]
 ```
-
-## Sibling bindings are not visible to each other
-Within a single `let` or `declare` binding block, or any other operation that uses an `assoc`.  The key-value pairs are evaluated and pushed onto the scope stack as a set: one value's expression cannot see a sibling key being defined in the same block, and there is no guaranteed order of evaluation among siblings. Use `declare` to extend the current scope when a binding depends on an earlier one; a sequence of `declare`s is preferable to nested `let`s:
-```amalgam
-; Wrong: `need` cannot see the sibling `base`
-(let {base (get nums i) need (- target base)}
-	; ...
-)
-
-; Right: `declare` extends the scope so `base` is visible before `need` is computed
-(let {base (get nums i)}
-	(declare {need (- target base)})
-	; ...
-)
-```
-The same rule applies to grouped `assign` and `accum`: group only independent updates, and split dependent ones into ordered steps.
 
 ## Concise assoc literals and calls
 `{ ... }` is identical to `(assoc ...)`, and quotes around bareword keys are optional when the key has no whitespace or reserved characters. Prefer the brace form for ordinary literals and for passing named parameters:
@@ -406,7 +386,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, E
 			else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
 				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
 			else //only print attributes if not debugSources
-				s = Parser::Unparse(cur, true, false, true);
+				s = Parser::Unparse(cur, true, false, false);
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 		}

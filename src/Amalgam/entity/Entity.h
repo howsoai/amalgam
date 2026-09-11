@@ -223,7 +223,7 @@ public:
 		}
 		else //get code at label
 		{
-			auto &label_index = GetLabelIndex();
+			auto label_index = GetLabelIndexView();
 			const auto &label = label_index.find(label_sid);
 
 			if(label != end(label_index))
@@ -319,7 +319,7 @@ public:
 	//returns true if the label specified by label_sid exists
 	bool DoesLabelExist(StringInternPool::StringID label_sid)
 	{
-		auto &label_index = GetLabelIndex();
+		auto label_index = GetLabelIndexView();
 		auto cur_value_it = label_index.find(label_sid);
 		return (cur_value_it != end(label_index));
 	}
@@ -327,7 +327,7 @@ public:
 	//returns the label for given code if it exists, followed by a boolean indicating its existance
 	std::pair<StringInternPool::StringID, bool> GetLabelForNodeIfExists(EvaluableNode *en)
 	{
-		for(auto &label : GetLabelIndex())
+		for(auto &label : GetLabelIndexView())
 		{
 			if(label.second == en)
 				return {label.first, true};
@@ -366,9 +366,9 @@ public:
 		StringInternPool::StringID label_sid, bool on_self = false, EvaluableNodeManager *destination_temp_enm = nullptr);
 
 	//returns an assoc of the labels
-	inline EvaluableNode::AssocType &GetLabelIndex()
+	inline EvaluableNode::AssocRef GetLabelIndexView()
 	{
-		return evaluableNodeManager.rootNode->GetMappedChildNodesReference();
+		return evaluableNodeManager.rootNode->GetMappedChildNodesViewOnAssoc();
 	}
 
 	//Iterates over all of the labels, calling GetValueAtLabel for each,
@@ -377,7 +377,7 @@ public:
 	inline void IterateFunctionOverLabels(LabelFunc func,
 		EvaluableNodeManager *destination_temp_enm = nullptr, bool on_self = false)
 	{
-		for(auto &label_id : GetLabelIndex() | std::views::keys)
+		for(auto &label_id : GetLabelIndexView() | std::views::keys)
 		{
 			EvaluableNode *node = GetValueAtLabel(label_id, destination_temp_enm,
 				EvaluableNodeRequestedValueTypes::Type::NONE, on_self, true).first;

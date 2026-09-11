@@ -29,15 +29,11 @@ Amalgam containers are values. `modify` (create/update/deep-copy) and `remove` d
 ```
 A bare `(modify data)` with no replacements is the idiomatic deep copy of `data` and its referenced structures, preserving internal aliases and cycles.
 
-## Assoc order is not insertion order
-An assoc has no insertion order: `indices` and `values` only guarantee that, for a given assoc, they return their elements aligned with each other — the key at one position lines up with the value at the same position. That order is **not** insertion order and should not be relied on for human-meaningful output. When output order matters, make it explicit — sort the keys, or build an ordered list of `[key value]` rows and sort with a comparator:
-```amalgam
-(sort (indices counts))                   ; keys in a defined order
-```
-A comparator lambda compares `(current_value)` (left) against `(current_value 1)` (right), returning negative, zero, or positive:
-```amalgam
-(sort (lambda (- (current_value) (current_value 1))) [4 9 3 5 1]) ; [1 3 4 5 9]
-```
+## Assoc iteration follows insertion order
+An assoc preserves insertion order. `indices` and `values` return aligned keys and values in that order. When another output order is required, sort the keys or materialize and sort `[key value]` rows.
+
+## Initialize dependent bindings in order
+Within a single `let` or `declare` binding block, initializers are evaluated in insertion order. Later initializers can use bindings initialized earlier in that block. Grouped `assign` and `accum` updates also execute in listed order; place prerequisite updates before updates that depend on them.
 
 ## Accessing characters in a string
 Indexing a string with `get` does not return a character. Use `substr` for a single character, taking the half-open range `[i, i+1)`:
@@ -48,22 +44,6 @@ When traversing a string by character repeatedly, `explode` it once into a list 
 ```amalgam
 (explode "hello")                         ; ["h" "e" "l" "l" "o"]
 ```
-
-## Sibling bindings are not visible to each other
-Within a single `let` or `declare` binding block, or any other operation that uses an `assoc`.  The key-value pairs are evaluated and pushed onto the scope stack as a set: one value's expression cannot see a sibling key being defined in the same block, and there is no guaranteed order of evaluation among siblings. Use `declare` to extend the current scope when a binding depends on an earlier one; a sequence of `declare`s is preferable to nested `let`s:
-```amalgam
-; Wrong: `need` cannot see the sibling `base`
-(let {base (get nums i) need (- target base)}
-	; ...
-)
-
-; Right: `declare` extends the scope so `base` is visible before `need` is computed
-(let {base (get nums i)}
-	(declare {need (- target base)})
-	; ...
-)
-```
-The same rule applies to grouped `assign` and `accum`: group only independent updates, and split dependent ones into ordered steps.
 
 ## Concise assoc literals and calls
 `{ ... }` is identical to `(assoc ...)`, and quotes around bareword keys are optional when the key has no whitespace or reserved characters. Prefer the brace form for ordinary literals and for passing named parameters:

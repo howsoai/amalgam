@@ -142,7 +142,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 	{
 		json_str += '{';
 
-		auto &mcn = en->GetMappedChildNodesReference();
+		auto mcn = en->GetMappedChildNodesViewOnAssoc();
 
 		if(!sort_keys)
 		{

@@ -183,7 +183,7 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 		}
 
 		//replace any mapped
-		for(auto &[cn_id, cn] : tree2_node->GetMappedChildNodes())
+		for(auto &[cn_id, cn] : tree2_node->GetMappedChildNodesView())
 		{
 			auto merged = tree2_to_merged_node.find(cn);
 			if(merged == end(tree2_to_merged_node))
@@ -224,7 +224,7 @@ void EvaluableNodeTreeDifference::FindParentReferences(EvaluableNode *tree, Eval
 
 	if(tree->IsAssociativeArray())
 	{
-		for(auto &cn : tree->GetMappedChildNodesReference() | std::views::values)
+		for(auto &cn : tree->GetMappedChildNodesViewOnAssoc() | std::views::values)
 			FindParentReferences(cn, references_with_parents, tree);
 	}
 	else
@@ -260,12 +260,12 @@ void EvaluableNodeTreeDifference::FindTopNodesExcluded(EvaluableNode *tree, Eval
 		}
 
 		auto &tree_ocn = tree->GetOrderedChildNodes();
-		auto &tree_mcn = tree->GetMappedChildNodes();
+		auto tree_mcn = tree->GetMappedChildNodesView();
 
 		if(matching->GetOrderedChildNodes().size() != tree_ocn.size())
 			top_nodes_excluded.push_back(tree);
 
-		auto &matching_mcn = matching->GetMappedChildNodes();
+		auto matching_mcn = matching->GetMappedChildNodesView();
 
 		if(matching_mcn.size() != tree_mcn.size())
 			top_nodes_excluded.push_back(tree);

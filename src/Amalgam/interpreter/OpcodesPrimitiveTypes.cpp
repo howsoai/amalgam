@@ -112,7 +112,7 @@ static OpcodeInitializer _ENT_LIST(ENT_LIST, &Interpreter::InterpretNode_ENT_LIS
 	});
 	d.returns = OpcodeDetails::DataType::LIST;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to a list with the parameters as elements.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the list itself, the current index, and the current value.  If `[]`'s are used instead of parenthesis, the keyword `list` may be omitted.  `[]` are considered identical to `(list)`.)";
+	d.description = R"(Evaluates to a list with the parameters as elements.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the list itself, the current index, and the current value.  If `[]`'s are used instead of parenthesis, the keyword `list` may be omitted.  `[]` are considered identical to `(list)`.  Note that because this is an opcode that constructs a new list rather than modifying one, it will not retain metadata of the constructing list.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&(["a" 1 "b"])&", R"(["a" 1 "b"])"}
 		});
@@ -132,7 +132,7 @@ static OpcodeInitializer _ENT_UNORDERED_LIST(ENT_UNORDERED_LIST, &Interpreter::I
 	});
 	d.returns = OpcodeDetails::DataType::UNORDERED_LIST;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to the list specified by parameters as elements.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the unordered list itself, the current index, and the current value.  It operates like a list, except any operations that would normally consider a list's order.  For example, union, intersect, and mix, will consider the values unordered.)";
+	d.description = R"(Evaluates to the list specified by parameters as elements.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the unordered list itself, the current index, and the current value.  It operates like a list, except any operations that would normally consider a list's order.  For example, union, intersect, and mix, will consider the values unordered.  Note that because this is an opcode that constructs a new list rather than modifying one, it will not retain metadata of the constructing list.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unordered_list 4 4 5))&", R"((unordered_list 4 4 5))"},
 		{R"&((unordered_list
@@ -243,7 +243,7 @@ static OpcodeInitializer _ENT_ASSOC(ENT_ASSOC, &Interpreter::InterpretNode_ENT_A
 	});
 	d.returns = OpcodeDetails::DataType::ASSOC;
 	d.allowsConcurrency = true;
-	d.description = R"(Evaluates to an associative list, where each pair of parameters (e.g., `index1` and `value1`) comprises a index-value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.  If any index does not have reserved characters or whitespace, then quotes are optional; if whitespace or reserved characters are present, then quotes are required.  If `{}`'s are used instead of parenthesis, the keyword assoc may be omitted.  `{}` are considered identical to `(assoc)`)";
+	d.description = R"(Evaluates to an associative list, where each pair of parameters (e.g., `index1` and `value1`) comprises a index-value pair.  Pushes a new target scope such that `(target)`, `(current_index)`, and `(current_value)` access the assoc, the current index, and the current value.  If any index does not have reserved characters or whitespace, then quotes are optional; if whitespace or reserved characters are present, then quotes are required.  If `{}`'s are used instead of parenthesis, the keyword assoc may be omitted.  `{}` are considered identical to `(assoc)`.  The iteration order of an assoc is the same as insertion order.  If code is used for keys, the code will be stripped of comments and annotations and the order of any assocs will lose insertion order and instead be ordered by a natural string sort.  Further, if a list is used as the outer opcode of a key, any opcodes that access elements of the assoc via keys that accept walk paths will need to surround the list with another list.  For example, if a key is `[1]`, it will need to be accessed via a walk path as `[[1]]`.  Note that because this is an opcode that constructs a new assoc rather than modifying one, it will not retain metadata of the constructing assoc.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unparse
 	{b 2 c 3}
@@ -270,7 +270,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, E
 	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(en, false), true);
 
 	//copy of the original evaluable node's mcn
-	auto &new_mcn = new_assoc->GetMappedChildNodesReference();
+	auto new_mcn = new_assoc->GetMappedChildNodesViewOnAssoc();
 	size_t num_nodes = new_mcn.size();
 
 	if(num_nodes > 0)

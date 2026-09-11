@@ -139,6 +139,8 @@ set(COMMON_SOURCE
     src/Amalgam/entity/EntityWriteListener.h
     src/Amalgam/evaluablenode/EvaluableNode.cpp
     src/Amalgam/evaluablenode/EvaluableNode.h
+    src/Amalgam/evaluablenode/EvaluableNodeAssocRef.h
+    src/Amalgam/evaluablenode/EvaluableNodeInlines.h
     src/Amalgam/evaluablenode/EvaluableNodeManagement.cpp
     src/Amalgam/evaluablenode/EvaluableNodeManagement.h
     src/Amalgam/evaluablenode/EvaluableNodeReference.h
@@ -188,6 +190,7 @@ set(COMMON_SOURCE
     src/Amalgam/interpreter/OpcodesSystemAndRuntime.cpp
     src/Amalgam/interpreter/OpcodesTrigonometry.cpp
     src/Amalgam/interpreter/OpcodesVariableDefinitionAndModification.cpp
+    src/Amalgam/OrderedHashMap.h
     src/Amalgam/KnnCache.h
     src/Amalgam/Merger.h
     src/Amalgam/OpcodeDetails.cpp
@@ -214,6 +217,7 @@ set(COMMON_SOURCE
     src/Amalgam/string/StringManipulation.cpp
     src/Amalgam/string/StringManipulation.h
     src/Amalgam/UninitializedArray.h
+    src/Amalgam/VectorMap.h
 )
 set(COMMON_SOURCE_THREADS
     ${COMMON_SOURCE}

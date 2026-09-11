@@ -1,3 +1,10 @@
+---
+layout: default
+title: Iteration and Container Transform
+parent: Opcodes
+nav_order: 11
+---
+
 ### Opcode: `range`
 #### Parameters
 `[any function] number low_endpoint number high_endpoint [number step_size]`
@@ -968,7 +975,7 @@ Example:
 ```
 Output:
 ```amalgam
-"{4 \"d\" a 1 b 2 c 3}"
+"{a 1 b 2 c 3 4 \"d\"}"
 ```
 
 [Amalgam Opcodes](./opcodes.md)

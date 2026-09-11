@@ -1,3 +1,10 @@
+---
+layout: default
+title: Metadata
+parent: Opcodes
+nav_order: 15
+---
+
 ### Opcode: `get_annotations`
 #### Parameters
 `any node`

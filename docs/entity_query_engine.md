@@ -1,3 +1,10 @@
+---
+layout: default
+title: Entity Query Engine
+parent: Opcodes
+nav_order: 14
+---
+
 ### Opcode: `contained_entities`
 #### Parameters
 `[entity_id entity] [query|list_of_queries condition1] [query|list_of_queries condition2] ...`
@@ -1604,13 +1611,13 @@ Example:
 Output:
 ```amalgam
 [
-	{vert2 1 vert3 1.4142135623730951 vert5 1.4142135623730951}
-	{
-		vert2 1
-		vert3 1.4142135623730951
-		vert4 1.5811388300841898
-		vert5 1.4142135623730951
-	}
+		{vert2 1 vert3 1.4142135623730951 vert5 1.4142135623730951}
+		{
+				vert2 1
+				vert5 1.4142135623730951
+				vert3 1.4142135623730951
+				vert4 1.5811388300841898
+		}
 ]
 ```
 Example:
@@ -1681,7 +1688,7 @@ Example:
 ```
 Output:
 ```amalgam
-{vert0 3 vert1 2 vert4 3.5}
+{vert1 2 vert0 3 vert4 3.5}
 ```
 
 [Amalgam Opcodes](./opcodes.md)

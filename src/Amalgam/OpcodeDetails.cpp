@@ -35,7 +35,7 @@ std::pair<ExecutionPermissions, ExecutionPermissions> ExecutionPermissions::Eval
 
 	if(EvaluableNode::IsAssociativeArray(en))
 	{
-		for(auto [permission_type, allow_en] : en->GetMappedChildNodesReference())
+		for(auto [permission_type, allow_en] : en->GetMappedChildNodesViewOnAssoc())
 		{
 			bool allow = EvaluableNode::ToBool(allow_en);
 
@@ -363,7 +363,7 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 
 	std::cout << "Executing... ";
 	auto result = entity->ExecuteOnEntity(code, nullptr);
-	std::string result_str = Parser::Unparse(result, true, true, true);
+	std::string result_str = Parser::Unparse(result, true, true, false);
 
 	if(regexMatch.empty())
 	{
@@ -409,7 +409,7 @@ bool AmalgamExample::ValidateExample(Entity *entity)
 	if(query_caches != nullptr)
 		query_caches->sbfds.VerifyAllEntitiesForAllColumns();
 
-	if(entity->GetLabelIndex().size() != 0)
+	if(entity->GetLabelIndexView().size() != 0)
 	{
 		std::cerr << "Failed: Labels remain in entity after test" << std::endl;
 		test_succeeded = false;

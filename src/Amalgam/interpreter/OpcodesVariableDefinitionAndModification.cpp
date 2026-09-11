@@ -66,7 +66,7 @@ static OpcodeInitializer _ENT_LET(ENT_LET, &Interpreter::InterpretNode_ENT_LET, 
 		OpcodeDetails::ParameterGroup({"code", OpcodeDetails::DataType::ANY_BASIC, true}, true)
 	});
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
-	d.description = R"(Pushes the key-value pairs of `variables` onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
+	d.description = R"(Pushes the key-value pairs of `variables` onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Variables are added to the stack in declaration order such that variables can depend on the fact that variables earlier in the ordering will already be initialized.  Note that the last step will not consume a concluded value.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
 	{x 4 y 6}
@@ -78,7 +78,17 @@ static OpcodeInitializer _ENT_LET(ENT_LET, &Interpreter::InterpretNode_ENT_LET, 
 		{x 5 z 1}
 		(+ x y z)
 	)
-))&", R"(11)"}
+))&", R"(11)"},
+		{R"&((let
+	{
+		a 1
+		b (seq (assign "a" 2) (+ a 1))
+		c (+ b 1)
+		d (+ c 1)
+	}
+	d
+))&",
+			R"(5)"}
 		});
 	d.newScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::EXISTING;
@@ -94,7 +104,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	InterpretAndPushNewScopeStackNode(ocn[0], false);
+	InterpretAndPushNewScopeStackNode(ocn[0], true, false);
 
 	//run code
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -139,7 +149,7 @@ static OpcodeInitializer _ENT_DECLARE(ENT_DECLARE, &Interpreter::InterpretNode_E
 		OpcodeDetails::ParameterGroup({"code", OpcodeDetails::DataType::ANY_BASIC, true}, true)
 	});
 	d.returns = OpcodeDetails::DataType::ANY_BASIC;
-	d.description = R"(For each key-value pair of `variables`, if not already in the current context in the scope stack, it will define them.  Then it runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Note that the last step will not consume a concluded value.)";
+	d.description = R"(For each key-value pair of `variables`, if not already in the current context in the scope stack, it will define them.  Then it runs each code block sequentially, evaluating to the last code block run, unless it encounters a `conclude` or `return`, in which case it will halt processing and evaluate to the value returned by `conclude` or propagate the `return`.  Variables are added to the stack in declaration order such that variables can depend on the fact that variables earlier in the ordering will already be initialized.  Note that the last step will not consume a concluded value.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(declare
@@ -219,7 +229,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		if(!need_to_interpret_required_vars)
 		{
 			//check each of the required variables and put into the stack if appropriate
-			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
+			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesViewOnAssoc())
 			{
 				auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
 				if(inserted)
@@ -247,13 +257,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		}
 		else //need_to_interpret_required_vars
 		{
-			auto &scope_mcn = scope->GetMappedChildNodesReference();
+			auto scope_mcn = scope->GetMappedChildNodesViewOnAssoc();
 
 			PushNewConstructionContext(required_vars, required_vars,
 				EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
 			//check each of the required variables and put into the stack if appropriate
-			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
+			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesViewOnAssoc())
 			{
 				if(cn == nullptr || cn->GetIsIdempotent())
 				{
@@ -349,7 +359,7 @@ static OpcodeInitializer _ENT_ASSIGN(ENT_ASSIGN, &Interpreter::InterpretNode_ENT
 			{"value", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2),
 	});
 	d.returns = OpcodeDetails::DataType::NULL_TYPE;
-	d.description = R"(If `variables` is an assoc, then for each key-value pair it assigns the value to the variable represented by the key found by tracing upward on the stack.  If a variable is not found, it will create a variable on the top of the stack with that name.  If `variables` is a string and there are two parameters, it will assign the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of `index` and `value` to assign `value` to that part of the variable's structure.)";
+	d.description = R"(If `variables` is an assoc, then for each key-value pair it assigns the value to the variable represented by the key found by tracing upward on the stack.  If a variable is not found, it will create a variable on the top of the stack with that name.  If `variables` is a string and there are two parameters, it will assign the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of `index` and `value` to assign `value` to that part of the variable's structure.  Variables are assigned in declaration order such that variables can depend on the fact that variables earlier in the ordering will already be assigned.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
 	{x 0}
@@ -430,7 +440,7 @@ static OpcodeInitializer _ENT_ACCUM(ENT_ACCUM, &Interpreter::InterpretNode_ENT_A
 			{"value", OpcodeDetails::DataType::ANY_BASIC, true}, true, 2),
 	});
 	d.returns = OpcodeDetails::DataType::NULL_TYPE;
-	d.description = R"(If `variables` is an assoc, then for each key-value pair of data, it assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the result in the variable.  It searches for the variable name tracing up the stack to find the variable. If the variable is not found, it will create a variable on the top of the stack.  Accumulation is performed differently based on the type.  For numeric values it adds, for strings it concatenates, for lists and assocs it appends.  If `variables` is a string and there are two parameters, then it will accum the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of the corresponding walk path and accum value to that part of the variable's structure.)";
+	d.description = R"(If `variables` is an assoc, then for each key-value pair of data, it assigns the value of the pair accumulated with the current value of the variable represented by the key on the stack, and stores the result in the variable.  It searches for the variable name tracing up the stack to find the variable. If the variable is not found, it will create a variable on the top of the stack.  Accumulation is performed differently based on the type.  For numeric values it adds, for strings it concatenates, for lists and assocs it appends.  If `variables` is a string and there are two parameters, then it will accum the second parameter to the variable represented by the first.  If `variables` is a string and there are three or more parameters, then it will find the variable by tracing up the stack and then use each pair of the corresponding walk path and accum value to that part of the variable's structure.  Variables are accumulated in declaration order such that variables can depend on the fact that variables earlier in the ordering will already be accumulated.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
 	(assign
@@ -569,7 +579,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		bool any_nonunique_assignments = false;
 
 		//iterate over every variable being assigned
-		for(auto &[cn_id, cn] : assigned_vars->GetMappedChildNodesReference())
+		for(auto &[cn_id, cn] : assigned_vars->GetMappedChildNodesViewOnAssoc())
 		{
 			StringInternPool::StringID variable_sid = cn_id;
 			if(variable_sid == StringInternPool::NOT_A_STRING_ID)
@@ -881,7 +891,7 @@ static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter:
 		OpcodeDetails::ParameterGroup({"value_to_assign", OpcodeDetails::DataType::ANY_BASIC})
 	};
 	d.returns = OpcodeDetails::DataType::BOOL;
-	d.description = R"(Compares the value in variable to value_to_compare, and if equal, assigns the variable atomically to value_to_assign.  Returns true if the value in variable is equal to value_to_compare and the assignment was successful, false otherwise.)";
+	d.description = R"(Compares the value in `variable` to `value_to_compare`, and if equal, assigns the `variable` atomically to `value_to_assign`.  Returns true if the value in `variable` is equal to `value_to_compare` and the assignment was successful, false otherwise.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((let
 	{lock 0}
@@ -896,7 +906,7 @@ static OpcodeInitializer _ENT_ASSIGN_IF_EQUAL(ENT_ASSIGN_IF_EQUAL, &Interpreter:
 		});
 	d.retrievesData = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::NEW;
-	d.frequencyPer10000Opcodes = 3.0;
+	d.frequencyPer10000Opcodes = 1.0;
 	d.opcodeGroup = _opcode_group;
 	return d;
 });
@@ -1022,7 +1032,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered
-		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesReference())
+		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesViewOnAssoc())
 		{
 			//if there are values passed in, free them to be clobbered
 			EvaluableNodeReference cnr(cn, to_lookup.unique);
@@ -1143,7 +1153,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNASSIGN(EvaluableNode *en
 		auto symbol_location = GetScopeStackSymbolLocation(variable_sid, true, false);
 	#endif
 
-		symbol_location.containingAssoc->erase(variable_sid);
+		//remove string if variable was erased
+		if(symbol_location.containingAssoc.erase(variable_sid, true) > 0)
+			string_intern_pool.DestroyStringReference(variable_sid);
 	}
 
 	return AllocReturn(all_unassigned, immediate_result);
@@ -1369,7 +1381,7 @@ static OpcodeInitializer _ENT_ARGS(ENT_ARGS, &Interpreter::InterpretNode_ENT_ARG
 		OpcodeDetails::ParameterGroup({"stack_distance", OpcodeDetails::DataType::NUMBER, true})
 	};
 	d.returns = OpcodeDetails::DataType::ASSOC;
-	d.description = R"(Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments.  If `stack_distance` is specified, then it evaluates to the context that many layers up the stack.)";
+	d.description = R"(Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments.  If `stack_distance` is specified, then it evaluates to the context that many layers up the stack.  Note that if `args` is used in the variable declaration section of `let`, it will refer to that new scope being created; if the outer scope is intended then `(args 1)` is needed.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((call
 	(lambda
@@ -2054,7 +2066,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				std::string timezone;
 				if(EvaluableNode::IsAssociativeArray(from_params))
 				{
-					auto &mcn = from_params->GetMappedChildNodesReference();
+					auto mcn = from_params->GetMappedChildNodesViewOnAssoc();
 					EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
 					EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_time_zone, timezone);
 				}
@@ -2068,7 +2080,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				std::string locale;
 				if(EvaluableNode::IsAssociativeArray(from_params))
 				{
-					auto &mcn = from_params->GetMappedChildNodesReference();
+					auto mcn = from_params->GetMappedChildNodesViewOnAssoc();
 					EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
 				}
 
@@ -2128,7 +2140,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			bool sort_keys = false;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
-				auto &mcn = to_params->GetMappedChildNodesReference();
+				auto mcn = to_params->GetMappedChildNodesViewOnAssoc();
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 			}
 
@@ -2170,7 +2182,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 		//if using code, just reuse string value
 		if(use_code)
-			string_value = Parser::Unparse(code_value, false, false, true);
+			string_value = Parser::Unparse(code_value, false, false, false);
 
 		if(to_type == GetStringIdFromBuiltInStringId(ENBISI_base16))
 			string_value = StringManipulation::BinaryStringToBase16(string_value);
@@ -2342,7 +2354,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			bool sort_keys = false;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
-				auto &mcn = to_params->GetMappedChildNodesReference();
+				auto mcn = to_params->GetMappedChildNodesViewOnAssoc();
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 			}
 
@@ -2376,7 +2388,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			bool sort_keys = false;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
-				auto &mcn = to_params->GetMappedChildNodesReference();
+				auto mcn = to_params->GetMappedChildNodesViewOnAssoc();
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 			}
 
@@ -2395,7 +2407,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			std::string timezone;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
-				auto &mcn = to_params->GetMappedChildNodesReference();
+				auto mcn = to_params->GetMappedChildNodesViewOnAssoc();
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_time_zone, timezone);
 			}
@@ -2414,7 +2426,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			std::string locale;
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
-				auto &mcn = to_params->GetMappedChildNodesReference();
+				auto mcn = to_params->GetMappedChildNodesViewOnAssoc();
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
 			}
 

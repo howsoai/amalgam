@@ -79,7 +79,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	return retval;
 }
 
-void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_node, bool scope_break)
+void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_node, bool interpret_with_new_scope, bool scope_break)
 {
 	EvaluableNodeReference new_scope = EvaluableNodeReference::Null();
 	bool need_to_interpret_new_scope = false;
@@ -96,70 +96,8 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 		}
 	}
 
-	if(EvaluableNode::IsAssociativeArray(new_scope))
-	{
-		evaluableNodeManager->EnsureNodeIsModifiable(new_scope, true, false);
-		new_scope->SetIsFreeableTopNode(true);
-		//just in case a variable is added which needs cycle checks
-		new_scope->SetNeedCycleCheck(true);
-
-		if(!need_to_interpret_new_scope)
-		{
-			auto &new_scope_mcn = new_scope->GetMappedChildNodesReference();
-			if(new_scope.unique)
-			{
-				for(auto &[id, cn] : new_scope_mcn)
-				{
-					if(cn != nullptr)
-						cn->SetIsFreeableAndIsFreeableTopNode(true);
-				}
-			}
-			else //!new_scope.unique
-			{
-				//set not freeable in case referenced elsewhere
-				for(auto &[id, cn] : new_scope_mcn)
-				{
-					if(cn != nullptr)
-					{
-					#ifdef MULTITHREAD_SUPPORT
-						//not unique, so should set atomically if other threads may be accessing it
-						cn->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
-					#else
-						cn->SetIsFreeableAndIsFreeableTopNode(false);
-					#endif
-					}
-				}
-			}
-		}
-		else //need_to_interpret_new_scope
-		{
-			//need to interpret nodes
-			PushNewConstructionContext(new_scope_node, new_scope,
-					EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
-
-			for(auto &[cn_id, cn] : new_scope->GetMappedChildNodesReference())
-			{
-				if(cn == nullptr || cn->GetIsIdempotent())
-					continue;
-
-				//need to interpret
-				SetTopCurrentIndexInConstructionStack(cn_id);
-				EvaluableNodeReference value = InterpretNodeWithoutCopyingImmediates(cn);
-				value.SetFreeableFlagsBasedOnUniqueness();
-
-				cn = value;
-				new_scope->UpdateFlagsBasedOnNewChildNode(cn);
-			}
-
-			//if there was a side-effect, then need to make another copy of the context in case something is referencing it
-			if(PopConstructionContextAndGetExecutionSideEffectFlag() || !new_scope->GetIsFreeableTopNode())
-			{
-				new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(new_scope, false), false, true);
-				new_scope->SetIsFreeableTopNode(true);
-			}
-		}
-	}
-	else //not assoc, make a new one
+	//if didn't get the correct type, just make a new empty scope
+	if(!EvaluableNode::IsAssociativeArray(new_scope))
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(new_scope);
 		new_scope = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
@@ -168,11 +106,116 @@ void Interpreter::InterpretAndPushNewScopeStackNode(EvaluableNode *new_scope_nod
 		new_scope->SetIsFreeableTopNode(true);
 		//just in case a variable is added which needs cycle checks
 		new_scope->SetNeedCycleCheck(true);
+
+		new_scope->SetScopeBreak(scope_break);
+		scopeStack.push_back(new_scope);
+
+		return;
 	}
 
-	new_scope->SetScopeBreak(scope_break);
+	if(!need_to_interpret_new_scope)
+	{
+		evaluableNodeManager->EnsureNodeIsModifiable(new_scope, true, false);
+		new_scope->SetIsFreeableTopNode(true);
+		//just in case a variable is added which needs cycle checks
+		new_scope->SetNeedCycleCheck(true);
 
-	scopeStack.push_back(new_scope);
+		new_scope->SetScopeBreak(scope_break);
+		scopeStack.push_back(new_scope);
+
+		auto new_scope_mcn = new_scope->GetMappedChildNodesViewOnAssoc();
+		if(new_scope.unique)
+		{
+			for(auto &[id, cn] : new_scope_mcn)
+			{
+				if(cn != nullptr)
+					cn->SetIsFreeableAndIsFreeableTopNode(true);
+			}
+		}
+		else //!new_scope.unique
+		{
+			//set not freeable in case referenced elsewhere
+			for(auto &[id, cn] : new_scope_mcn)
+			{
+				if(cn != nullptr)
+				{
+				#ifdef MULTITHREAD_SUPPORT
+					//not unique, so should set atomically if other threads may be accessing it
+					cn->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+				#else
+					cn->SetIsFreeableAndIsFreeableTopNode(false);
+				#endif
+				}
+			}
+		}
+	}
+	else //need_to_interpret_new_scope
+	{
+		//since need_to_interpret_new_scope is true, then a copy must be made
+		// and we want to ensure that variables are not put on the stack prematurely
+		// such that a variable can be initialized with the visibility of an outer scope variable
+		// with the same id
+		EvaluableNodeReference new_scope_on_stack(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
+
+		new_scope_on_stack->SetIsFreeableTopNode(true);
+		//just in case a variable is added which needs cycle checks
+		new_scope_on_stack->SetNeedCycleCheck(true);
+
+		new_scope_on_stack->SetScopeBreak(scope_break);
+
+		if(interpret_with_new_scope)
+			scopeStack.push_back(new_scope_on_stack);
+
+		auto new_scope_mcn = new_scope->GetMappedChildNodesViewOnAssoc();
+		new_scope_on_stack->ReserveMappedChildNodes(new_scope_mcn.size());
+
+		//need to interpret nodes
+		PushNewConstructionContext(new_scope_node, new_scope_on_stack,
+				EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
+
+		for(auto &[cn_id, cn] : new_scope_mcn)
+		{
+			if(cn == nullptr || cn->GetIsIdempotent())
+			{
+				new_scope_on_stack->SetMappedChildNode(cn_id, cn);
+				continue;
+			}
+
+			//need to interpret
+			SetTopCurrentIndexInConstructionStack(cn_id);
+			EvaluableNodeReference value = InterpretNodeWithoutCopyingImmediates(cn);
+			value.SetFreeableFlagsBasedOnUniqueness();
+
+			new_scope_on_stack->SetMappedChildNode(cn_id, value);
+		}
+
+		//if there was a side-effect, then need to make another copy of the context in case something is referencing it
+		if(PopConstructionContextAndGetExecutionSideEffectFlag() || !new_scope_on_stack->GetIsFreeableTopNode())
+		{
+			new_scope_on_stack = EvaluableNodeReference(evaluableNodeManager->AllocNode(new_scope_on_stack, false), false, true);
+			new_scope_on_stack->SetIsFreeableTopNode(true);
+
+			if(interpret_with_new_scope)
+				scopeStack.back() = new_scope_on_stack;
+
+			//set not freeable in case any are referenced elsewhere
+			for(auto &[id, cn] : new_scope_on_stack->GetMappedChildNodesViewOnAssoc())
+			{
+				if(cn != nullptr)
+				{
+				#ifdef MULTITHREAD_SUPPORT
+					//not unique, so should set atomically if other threads may be accessing it
+					cn->SetIsFreeableAndIsFreeableTopNodeAtomic(false);
+				#else
+					cn->SetIsFreeableAndIsFreeableTopNode(false);
+				#endif
+				}
+			}
+		}
+
+		if(!interpret_with_new_scope)
+			scopeStack.push_back(new_scope_on_stack);
+	}
 }
 
 //pops the top context off the stack
@@ -185,7 +228,7 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 	//so can't be guaranteed that everything is freeable
 	if(returning_unique_value && scope->GetIsFreeableTopNode())
 	{
-		for(auto &[id, cn] : scope->GetMappedChildNodesReference())
+		for(auto &[id, cn] : scope->GetMappedChildNodesViewOnAssoc())
 		{
 			if(cn != nullptr)
 			{
@@ -198,7 +241,7 @@ void Interpreter::PopScopeStack(bool returning_unique_value)
 	}
 	else //can't free scope variables, need to clear freeability flags so they don't cause issues later
 	{
-		for(auto &[id, cn] : scope->GetMappedChildNodesReference())
+		for(auto &[id, cn] : scope->GetMappedChildNodesViewOnAssoc())
 		{
 			if(cn != nullptr)
 			{
@@ -242,7 +285,7 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth
 	#endif
 			scope_stack->SetIsFreeableTopNode(false);
 
-		for(auto &[sid, cn] : scope_stack->GetMappedChildNodesReference())
+		for(auto &[sid, cn] : scope_stack->GetMappedChildNodesViewOnAssoc())
 		{
 			if(cn == nullptr)
 				continue;
@@ -587,7 +630,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 		{
 			PushNewConstructionContext(nullptr, cur_node, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-			for(auto &[e_id, e] : cur_node->GetMappedChildNodesReference())
+			for(auto &[e_id, e] : cur_node->GetMappedChildNodesViewOnAssoc())
 			{
 				SetTopCurrentIndexInConstructionStack(e_id);
 				SetTopCurrentValueInConstructionStack(e);
@@ -667,7 +710,7 @@ void Interpreter::PopulateInterpreterConstraintsFromParams(EvaluableNode::Ordere
 
 	if(constraints->IsAssociativeArray())
 	{
-		auto &mcn = constraints->GetMappedChildNodesReference();
+		auto mcn = constraints->GetMappedChildNodesViewOnAssoc();
 
 		EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_max_node_operations,
 			interpreter_constraints.maxNodeOperations);

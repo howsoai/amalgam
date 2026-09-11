@@ -404,6 +404,18 @@
     <ClInclude Include="evaluablenode\EvaluableNodeTreeAlgebra.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="VectorMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OrderedHashMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="evaluablenode\EvaluableNodeAssocRef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="evaluablenode\EvaluableNodeInlines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

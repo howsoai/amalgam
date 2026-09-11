@@ -145,10 +145,12 @@ R"&(\[\s*
 });
 
 
-//given an assoc of StringID -> value representing the probability weight of each, and a random stream, it randomly selects from the assoc
-// if it can't find an appropriate probability, it returns an empty string
-// if normalize is true, then it will accumulate the probability and then normalize
-static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType &assoc, RandomStream &rs, bool normalize)
+//given an assoc of StringID -> value representing the probability weight of each, and a
+// random stream, it randomly selects from the assoc
+//if it can't find an appropriate probability, it returns an empty string
+//if normalize is true, then it will accumulate the probability and then normalize
+template<typename MapType>
+static StringInternPool::StringID GetRandomWeightedKey(MapType &assoc, RandomStream &rs, bool normalize)
 {
 	double probability_target = rs.RandFull();
 	double accumulated_probability = 0.0;
@@ -238,8 +240,8 @@ static EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeR
 	{
 		if(param->IsAssociativeArray())
 		{
-			StringInternPool::StringID id_selected = GetRandomWeightedKey(param->GetMappedChildNodesReference(),
-				random_stream, true);
+			auto mcn = param->GetMappedChildNodesViewOnAssoc();
+			StringInternPool::StringID id_selected = GetRandomWeightedKey(mcn, random_stream, true);
 			return Parser::ParseFromKeyStringId(id_selected, interpreter->evaluableNodeManager);
 		}
 		else if(param->IsOrderedArray())
@@ -325,7 +327,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 			retval_ocn.reserve(number_to_generate);
 
 			//make a copy of all of the probabilities so they can be removed one at a time
-			EvaluableNode::AssocType assoc(param->GetMappedChildNodesReference());
+			EvaluableNode::LargeAssocType assoc = param->GetMappedChildNodesViewOnAssoc().CopyAsLargeAssoc();
 
 			for(size_t i = 0; i < number_to_generate; i++)
 			{
@@ -393,14 +395,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 	//get information to determine which mechanism to use to generate
 	size_t num_weighted_values = 0;
 	if(EvaluableNode::IsAssociativeArray(param))
-		num_weighted_values = param->GetMappedChildNodesReference().size();
+		num_weighted_values = param->GetMappedChildNodesViewOnAssoc().size();
 
 	if(num_weighted_values > 0
 		&& (number_to_generate > 10 || (number_to_generate > 3 && num_weighted_values > 200)))
 	{
 		//use fast repeated generation technique
+		auto mcn = param->GetMappedChildNodesViewOnAssoc();
 		WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
-			EvaluableNode::AssocType, EvaluableNodeAsDouble> wdrst(param->GetMappedChildNodesReference(), false);
+			EvaluableNode::AssocRef, EvaluableNodeAsDouble> wdrst(mcn, false);
 		for(size_t i = 0; i < number_to_generate; i++)
 		{
 			EvaluableNodeReference rand_value(Parser::ParseFromKeyStringId(wdrst.WeightedDiscreteRand(randomStream), evaluableNodeManager));

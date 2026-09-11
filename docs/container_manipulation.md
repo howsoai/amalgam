@@ -1,10 +1,17 @@
+---
+layout: default
+title: Container Manipulation
+parent: Opcodes
+nav_order: 10
+---
+
 ### Opcode: `first`
 #### Parameters
 `any node`
 #### Returns
 `any`
 #### Description
-Evaluates to the first element of `node`.  If `node` is a list, it will be the first element.  If `node` is an assoc, it will evaluate to the first element by assoc storage, but order does not matter.  If `node` is a string, it will be the first character.  If `node` is a number, it will evaluate to 1 if nonzero, 0 if zero.
+Evaluates to the first element of `node`.  If `node` is a list, it will be the first element.  If `node` is an assoc, it will evaluate to the first element by insertion order.  If `node` is a string, it will be the first character.  If `node` is a number, it will evaluate to 1 if nonzero, 0 if zero.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -74,7 +81,7 @@ Output:
 #### Returns
 `list`
 #### Description
-Evaluates to everything but the first element.  If `node` is a list, it will be a list of all but the first element.  If `node` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, but order does not matter.  If `node` is a string, it will be all but the first character.  If `node` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero.  If a `retain_count` is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first element).
+Evaluates to everything but the first element.  If `node` is a list, it will be a list of all but the first element.  If `node` is an assoc, it will evaluate to the assoc without the first element by insertion order.  If `node` is a string, it will be all but the first character.  If `node` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero.  If a `retain_count` is specified, it will be the number of elements to retain.  A positive number means from the end, a negative number means from the beginning.  The default value is -1 (all but the first element).
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -395,7 +402,7 @@ Output:
 #### Returns
 `any`
 #### Description
-Evaluates to the last element of `node`.  If `node` is a list, it will be the last element.  If `node` is an assoc, it will evaluate to the first element by assoc storage, because order does not matter.  If `node` is a string, it will be the last character.  If `node` is a number, it will evaluate to 1 if nonzero, 0 if zero.
+Evaluates to the last element of `node`.  If `node` is a list, it will be the last element.  If `node` is an assoc, it will evaluate to the last element by insertion order.  If `node` is a string, it will be the last character.  If `node` is a number, it will evaluate to 1 if nonzero, 0 if zero.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -465,7 +472,7 @@ Output:
 #### Returns
 `list`
 #### Description
-Truncates, evaluates to everything in `node` but the last element. If `node` is a list, it will be a list of all but the last element.  If `node` is an assoc, it will evaluate to the assoc without the first element by assoc storage order, because order does not matter.  If `node` is a string, it will be all but the last character.  If `node` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If `truncate_count` is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1, indicating all but the last.
+Truncates, evaluates to everything in `node` but the last element. If `node` is a list, it will be a list of all but the last element.  If `node` is an assoc, it will evaluate to the assoc without the last element by insertion order.  If `node` is a string, it will be all but the last character.  If `node` is a number, it will evaluate to the value minus 1 if nonzero, 0 if zero. If `truncate_count` is specified, it will be the number of elements to retain.  A positive number means from the beginning, a negative number means from the end.  The default value is -1, indicating all but the last.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -829,17 +836,17 @@ Example:
 Output:
 ```amalgam
 {
-	0 1
-	1 2
-	2 3
-	3 7
-	4 8
-	5 9
-	a 4
-	b 5
-	c 6
-	d 10
-	e 11
+		0 1
+		1 2
+		2 3
+		a 4
+		b 5
+		c 6
+		3 7
+		4 8
+		5 9
+		d 10
+		e 11
 }
 ```
 Example:
@@ -1140,11 +1147,11 @@ Example:
 Output:
 ```amalgam
 {
-	4 "d"
-	a 1
-	b 2
-	c 3
-	e 5
+		a 1
+		b 2
+		c 3
+		4 "d"
+		e 5
 }
 ```
 Example:

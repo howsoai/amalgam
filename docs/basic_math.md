@@ -1,4 +1,11 @@
-### Opcode: `+`
+---
+layout: default
+title: Basic Math
+parent: Opcodes
+nav_order: 6
+---
+
+### Opcode: `+` {#opcode-add}
 #### Parameters
 `[number x1] [number x2] ...`
 #### Returns
@@ -24,7 +31,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `-`
+### Opcode: `-` {#opcode-subtract}
 #### Parameters
 `[number x1] [number x2] ...`
 #### Returns
@@ -58,7 +65,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `*`
+### Opcode: `*` {#opcode-multiply}
 #### Parameters
 `[number x1] [number x2] ...`
 #### Returns
@@ -84,7 +91,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `/`
+### Opcode: `/` {#opcode-divide}
 #### Parameters
 `[number x1] [number x2] ...`
 #### Returns

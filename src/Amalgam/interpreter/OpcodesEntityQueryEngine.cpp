@@ -219,7 +219,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		//if not using SBFDS, make sure always return in the same order for consistency, regardless of cashing, hashing, etc.
 		//if using SBFDS, then the order is assumed to not matter for other queries, so don't pay the cost of sorting here
 		if(!_enable_SBF_datastore)
-			std::sort(begin(result->GetOrderedChildNodes()), end(result->GetOrderedChildNodes()), EvaluableNode::IsStrictlyLessThan);
+			std::stable_sort(begin(result->GetOrderedChildNodes()), end(result->GetOrderedChildNodes()), EvaluableNode::IsStrictlyLessThan);
 
 		return result;
 	}
@@ -1593,13 +1593,13 @@ static OpcodeInitializer _ENT_QUERY_NEAREST_GENERALIZED_DISTANCE(ENT_QUERY_NEARE
 		)
 	]
 ))&", R"([
-	{vert2 1 vert3 1.4142135623730951 vert5 1.4142135623730951}
-	{
-		vert2 1
-		vert3 1.4142135623730951
-		vert4 1.5811388300841898
-		vert5 1.4142135623730951
-	}
+		{vert2 1 vert3 1.4142135623730951 vert5 1.4142135623730951}
+		{
+				vert2 1
+				vert5 1.4142135623730951
+				vert3 1.4142135623730951
+				vert4 1.5811388300841898
+		}
 ])", "", R"((apply "destroy_entities" (contained_entities)))"},
 {R"&((seq
 	(create_entities
@@ -1663,7 +1663,7 @@ static OpcodeInitializer _ENT_QUERY_NEAREST_GENERALIZED_DISTANCE(ENT_QUERY_NEARE
 			"random seed 1234"
 		)
 	)
-))&", R"({vert0 3 vert1 2 vert4 3.5})", "", R"((apply "destroy_entities" (contained_entities)))"}
+))&", R"({vert1 2 vert0 3 vert4 3.5})", "", R"((apply "destroy_entities" (contained_entities)))"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.isQuery = true;

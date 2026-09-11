@@ -66,7 +66,7 @@ namespace EntityClustering
 	//algorithm.  Returns accepted edges in ascending weight order.
 	inline std::vector<Edge> BuildMST(size_t m, std::vector<Edge> edges)
 	{
-		std::sort(edges.begin(), edges.end(),
+		std::stable_sort(edges.begin(), edges.end(),
 			[](const Edge &a, const Edge &b) { return a.weight < b.weight; });
 
 		std::vector<size_t> parent(m);
@@ -387,7 +387,7 @@ namespace EntityClustering
 		std::vector<size_t> order(count);
 		for(size_t ci = 0; ci < count; ci++)
 			order[ci] = m + ci;
-		std::sort(order.begin(), order.end(),
+		std::stable_sort(order.begin(), order.end(),
 			[&](size_t a, size_t b) { return birth[a - m] > birth[b - m]; });
 
 		std::vector<double> propagated(count, 0.0);

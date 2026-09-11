@@ -95,26 +95,118 @@ protected:
 	uint64_t state;
 };
 
-//class to enable std::priority_queue to be able to clear and reserve buffers, but requires containers that
-//support those operations
-template<class T, class Container = std::vector<T>, class Compare = std::less<typename Container::value_type> >
-class FlexiblePriorityQueue : public std::priority_queue<T, Container, Compare>
+//class that operates like std::priority_queue but can clear and reserve buffers
+//and works exactly the same across all platforms (Apple's implementation is known to operate differently than others)
+template<class T, class Container = std::vector<T>, class Compare = std::less<typename Container::value_type>>
+class FlexiblePriorityQueue
 {
 public:
-	//inherit all constructors
-	using std::priority_queue<T, Container, Compare>::priority_queue;
+	FlexiblePriorityQueue() = default;
+	explicit FlexiblePriorityQueue(const Compare &compare) : comp(compare)
+	{ }
 
-	__forceinline void Reserve(size_t reserve_size)
+	explicit FlexiblePriorityQueue(size_t count, const Compare &compare) : comp(compare)
 	{
-		//this-> is needed for some compilers to give access due to how the STL is implemented
-		this->c.reserve(reserve_size);
+		c.reserve(count);
 	}
 
-	__forceinline void clear()
+	template<typename... Args> void emplace(Args &&...args)
 	{
-		//this-> is needed for some compilers to give access due to how the STL is implemented
-		this->c.clear();
+		c.emplace_back(std::forward<Args>(args)...);
+		SiftUp(c.size() - 1);
 	}
+
+	void push(const T &value)
+	{
+		c.push_back(value);
+		SiftUp(c.size() - 1);
+	}
+
+	void pop()
+	{
+		if(c.empty())
+			return;
+
+		//move last element to top and sift down
+		c[0] = std::move(c.back());
+		c.pop_back();
+		if(!c.empty())
+			SiftDown(0);
+	}
+
+	const T &top() const
+	{
+		return c[0];
+	}
+
+	size_t size() const
+	{
+		return c.size();
+	}
+
+	bool empty() const
+	{
+		return c.empty();
+	}
+
+	void Reserve(size_t reserve_size)
+	{
+		c.reserve(reserve_size);
+	}
+
+	void clear()
+	{
+		c.clear();
+	}
+
+private:
+	void SiftUp(size_t index)
+	{
+		while(index > 0)
+		{
+			size_t parent = (index - 1) / 2;
+
+			//use strict weak ordering; only swap if child is strictly greater than parent
+			if(comp(c[parent], c[index]))
+			{
+				std::swap(c[index], c[parent]);
+				index = parent;
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+
+	void SiftDown(size_t index)
+	{
+		size_t n = c.size();
+
+		while(2 * index + 1 < n)
+		{
+			size_t child = 2 * index + 1;
+
+			//if children are equal, child stays as the left child (2*index + 1)
+			//only move to the right child if right is strictly greater than left
+			if(child + 1 < n && comp(c[child], c[child + 1]))
+				child++;
+
+			//only swap if the chosen child is strictly greater than the parent
+			if(comp(c[index], c[child]))
+			{
+				std::swap(c[index], c[child]);
+				index = child;
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+
+	Container c;
+	Compare comp;
 };
 
 //Priority queue that, when receiving values of equal priority, will randomize the order they are stored and popped off the queue

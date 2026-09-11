@@ -1,3 +1,10 @@
+---
+layout: default
+title: Trigonometry
+parent: Opcodes
+nav_order: 8
+---
+
 ### Opcode: `sin`
 #### Parameters
 `number theta`

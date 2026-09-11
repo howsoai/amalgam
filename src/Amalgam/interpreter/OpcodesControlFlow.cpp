@@ -314,9 +314,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 	}
 
 	if(ocn.size() > 1 && !EvaluableNode::IsNull(ocn[1]))
-		InterpretAndPushNewScopeStackNode(ocn[1], true);
+		InterpretAndPushNewScopeStackNode(ocn.size() > 1 ? ocn[1] : nullptr, false, true);
 	else
-		InterpretAndPushNewScopeStackNode(nullptr, false);
+		InterpretAndPushNewScopeStackNode(ocn.size() > 1 ? ocn[1] : nullptr, false, false);
 
 	//call the code
 	auto result = InterpretNode(function, immediate_result);

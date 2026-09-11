@@ -38,32 +38,32 @@ static std::string GetUsage()
 Options:
     -h, --help       Show help
 
-    -v, --version    Show version
+    -v, --version    Shows version.
 
-    -q, --quiet      Silence all stdio
+    -q, --quiet      Silences all stdio.
 
-    -l [file]        Specify a log file
+    -l [file]        Specifies a log file.
 
-    -s [seed]        Specify a particular random number seed. Can be any alphanumeric string
+    -s [seed]        Specifies a particular random number seed. Can be any alphanumeric string.
 
-    -t [file]        Specify a code-based transaction log file
+    -t [file]        Specifies a code-based transaction log file.
 
-    --repl           Execute with a run-eval-print loop. Default mode if file is not specified,
+    --repl           Executes with a run-eval-print loop. Default mode if file is not specified,
                      but --repl can be used with a file and will run the loop on the entity loaded
                      from the file.
 
-    --p-opcodes      Display engine profiling information for opcodes upon completion (one profiling
-                     type allowed at a time); when used with --debug-sources, reports line numbers
+    --p-opcodes      Displays engine profiling information for opcodes upon completion (one profiling
+                     type allowed at a time); when used with --debug-sources, reports line numbers.
 
-    --p-labels       Display engine profiling information for labels upon completion (one profiling
-                     type allowed at a time)
+    --p-labels       Displays engine profiling information for labels upon completion (one profiling
+                     type allowed at a time).
 
     --p-count [number]
                      When used with --p-opcodes or --p-labels, specifies the count of the top profile
                      information elements to display; the default is 20 for command line, all when
-                     --p-file is specified
+                     --p-file is specified.
 
-    --p-file [file]  When used with --p-opcodes or --p-labels, writes the profile information to a file
+    --p-file [file]  When used with --p-opcodes or --p-labels, writes the profile information to a file.
 
     --permissions [permissions]
                      Sets the permission for the file being run.  By default all permissions are granted.
@@ -79,7 +79,7 @@ Options:
                          a: alter_performance
                          x: system (e[x]ecute)
                      For example, -xe would yield all permissions but remove environment and system permissions,
-                     whereas +io would only allow console input and output
+                     whereas +io would only allow console input and output.
 
     --max-node-operations [number]
                      Specifies the maximum number of nodes that can be executed.  If the limit is exceeded,
@@ -106,19 +106,20 @@ Options:
                      Specifies the maximum length of an entity id.  If the limit is exceeded, the entity will
                      not be created.
 
-    --debug          When specified, begins in debugging mode
+    --debug          When specified, begins in debugging mode.
 
-    --debug-minimal  When specified, begins in debugging mode with minimal output while stepping
+    --debug-minimal  When specified, begins in debugging mode with minimal output while stepping.
 
-    --debug-sources  When specified, prepends all node comments with the source of the node when applicable
+    --debug-sources  When specified, prepends all node comments with the source of the node when applicable.
 
     --warn-on-undefined
-                     When specified, amalgam will emit warnings for undefined variables
+                     When specified, amalgam will emit warnings for undefined variables.  When used with
+                     --debug-sources, reports line numbers
 
-    --trace          Uses commands via stdio to act as if it were being called as a library
+    --trace          Uses commands via stdio to act as if it were being called as a library.
 
     --tracefile [file]
-                     Like trace, but pulls the data from the file specified
+                     Like trace, but pulls the data from the file specified.
 
     --validate-amalgam
                      Runs a test suite, validating the opcodes and running unit tests based on examples
@@ -460,9 +461,11 @@ PLATFORM_MAIN_CONSOLE
 		if(!run_as_repl)
 		{
 			//don't need a return value
-			entity->Execute(StringInternPool::NOT_A_STRING_ID, &scope_stack, false, nullptr,
+			auto result = entity->Execute(StringInternPool::NOT_A_STRING_ID, &scope_stack, false, nullptr,
 				&write_listeners, print_listener, interpreter_constraints_ptr,
 				EvaluableNodeRequestedValueTypes::Type::NULL_VALUE);
+
+			entity->evaluableNodeManager.FreeNodeTreeIfPossible(result);
 		}
 		else //repl
 		{
@@ -529,7 +532,7 @@ PLATFORM_MAIN_CONSOLE
 
 				auto result = entity->ExecuteOnEntity(code, &scope_stack, nullptr,
 					&write_listeners, print_listener, interpreter_constraints_ptr);
-				std::cout << Parser::Unparse(result, true, true, true);
+				std::cout << Parser::Unparse(result, true, true, false);
 				running = !(result != nullptr && result->GetType() == ENT_CONCLUDE);
 				entity->evaluableNodeManager.FreeNodeTreeIfPossible(result);
 			}

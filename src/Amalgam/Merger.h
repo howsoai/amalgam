@@ -170,11 +170,12 @@ inline void ComputeSequenceCommonalityMatrix(FlatMatrix<MergeResultType> &sequen
 }
 
 //Merges elements of type T
-// AssocType should be some map where the variables are pointers to T
+// *AssocType should be some map where the variables are pointers to T
 template<typename T,
 	T NullValue = nullptr,
 	typename OrderedType = std::vector<T>,
-	typename AssocType = CompactHashMap<StringInternPool::StringID, T *>>
+	typename InputAssocType = CompactHashMap<StringInternPool::StringID, T *>,
+	typename OutputAssocType = CompactHashMap<StringInternPool::StringID, T *>>
 class Merger
 {
 public:
@@ -609,9 +610,9 @@ public:
 	}
 
 	//Merges two mappings based on the specified MergeMethods
-	AssocType MergeMaps(AssocType &map_a, AssocType &map_b)
+	OutputAssocType MergeMaps(InputAssocType &map_a, InputAssocType &map_b)
 	{
-		AssocType merged;
+		OutputAssocType merged;
 
 		if(map_a.empty() && map_b.empty())
 			return merged;

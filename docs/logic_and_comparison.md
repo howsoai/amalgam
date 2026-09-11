@@ -1,3 +1,10 @@
+---
+layout: default
+title: Logic and Comparison
+parent: Opcodes
+nav_order: 5
+---
+
 ### Opcode: `and`
 #### Parameters
 `[bool condition1] [bool condition2] ...`
@@ -190,7 +197,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `=`
+### Opcode: `=` {#opcode-equal}
 #### Parameters
 `[any node1] [any node2] ...`
 #### Returns
@@ -259,7 +266,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `!=`
+### Opcode: `!=` {#opcode-not_equal}
 #### Parameters
 `[any node1] [any node2] ...`
 #### Returns
@@ -341,7 +348,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `<`
+### Opcode: `<` {#opcode-less_than}
 #### Parameters
 `[number|string node1] [number|string node2] ...`
 #### Returns
@@ -391,7 +398,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `<=`
+### Opcode: `<=` {#opcode-less_than_or_equal}
 #### Parameters
 `[number|string node1] [number|string node2] ...`
 #### Returns
@@ -457,7 +464,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `>`
+### Opcode: `>` {#opcode-greater_than}
 #### Parameters
 `[number|string node1] [number|string node2] ...`
 #### Returns
@@ -507,7 +514,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `>=`
+### Opcode: `>=` {#opcode-greater_than_or_equal}
 #### Parameters
 `[number|string node1] [number|string node2] ...`
 #### Returns
@@ -573,7 +580,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `~`
+### Opcode: `~` {#opcode-type_equal}
 #### Parameters
 `[any node1] [any node2] ...`
 #### Returns
@@ -607,7 +614,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `!~`
+### Opcode: `!~` {#opcode-type_not_equal}
 #### Parameters
 `[any node1] [any node2] ...`
 #### Returns

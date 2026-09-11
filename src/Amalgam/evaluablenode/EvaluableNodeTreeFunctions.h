@@ -38,7 +38,7 @@ private:
 // does not require weak ordering from cenc
 // merge sort is the preferrable sort due to the lack of weak ordering and bottleneck being interpretation
 //returns a newly sorted list
-EvaluableNode::OrderedType CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedType &list, CustomEvaluableNodeComparator &cenc);
+EvaluableNode::OrderedType CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedRef list, CustomEvaluableNodeComparator &cenc);
 
 class EvaluableNodeIDPathTraverser
 {

@@ -1,3 +1,10 @@
+---
+layout: default
+title: Control Flow
+parent: Opcodes
+nav_order: 4
+---
+
 ### Opcode: `if`
 #### Parameters
 `[any condition_or_node1] [any node1] [any condition_or_node2] [any node2] ...`

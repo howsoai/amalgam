@@ -104,7 +104,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, Eva
 	if(ocn_size == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	InterpretAndPushNewScopeStackNode(ocn[0], true);
+	InterpretAndPushNewScopeStackNode(ocn[0], true, false);
 
 	//run code
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -1359,8 +1359,6 @@ static OpcodeInitializer _ENT_STACK(ENT_STACK, &Interpreter::InterpretNode_ENT_S
 	)
 	{x 1}
 ))&", R"([
-	{}
-	{x 1}
 	{a 1}
 ])"}
 		});

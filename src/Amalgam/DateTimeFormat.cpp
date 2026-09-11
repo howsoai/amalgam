@@ -280,14 +280,14 @@ double GetNumSecondsSinceEpochFromDateTimeString(std::string &datetime_str,
 		{
 			//month and year only dates must be parsed specifically into year_month 
 			date::year_month ym;
-			cached_locale.stringStream >> date::parse(format, ym, in_date_timezone);
+			date::from_stream(cached_locale.stringStream, format.c_str(), ym, &in_date_timezone);
 			//convert to time_point by specifying the day to be 1 for the parsed year month
 			dt = date::sys_days{ ym / 1 };
 		}
 		else
 		{
 			//parse string into dt and if there was a timezone in the string, stores that into in_date_timezone
-			cached_locale.stringStream >> date::parse(format, dt, in_date_timezone);
+			date::from_stream(cached_locale.stringStream, format.c_str(), dt, &in_date_timezone);
 		}
 	}
 	catch(...)
@@ -435,7 +435,7 @@ double GetNumSecondsSinceMidnight(std::string &time_str, std::string &format, st
 	try
 	{
 		std::chrono::nanoseconds tp;
-		cached_locale.stringStream >> date::parse(format, tp);
+		date::from_stream(cached_locale.stringStream, format.c_str(), tp);
 
 		if(cached_locale.stringStream.fail())
 			return 0.0;

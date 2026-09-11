@@ -197,7 +197,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `=` {#opcode-equal}
+### Opcode: `=`
 #### Parameters
 `[any node1] [any node2] ...`
 #### Returns
@@ -266,7 +266,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `!=` {#opcode-not_equal}
+### Opcode: `!=`
 #### Parameters
 `[any node1] [any node2] ...`
 #### Returns
@@ -348,7 +348,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `<` {#opcode-less_than}
+### Opcode: `<`
 #### Parameters
 `[number|string node1] [number|string node2] ...`
 #### Returns
@@ -398,7 +398,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `<=` {#opcode-less_than_or_equal}
+### Opcode: `<=`
 #### Parameters
 `[number|string node1] [number|string node2] ...`
 #### Returns
@@ -464,7 +464,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `>` {#opcode-greater_than}
+### Opcode: `>`
 #### Parameters
 `[number|string node1] [number|string node2] ...`
 #### Returns
@@ -514,7 +514,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `>=` {#opcode-greater_than_or_equal}
+### Opcode: `>=`
 #### Parameters
 `[number|string node1] [number|string node2] ...`
 #### Returns
@@ -580,7 +580,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `~` {#opcode-type_equal}
+### Opcode: `~`
 #### Parameters
 `[any node1] [any node2] ...`
 #### Returns
@@ -614,7 +614,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `!~` {#opcode-type_not_equal}
+### Opcode: `!~`
 #### Parameters
 `[any node1] [any node2] ...`
 #### Returns

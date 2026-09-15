@@ -986,7 +986,7 @@ Output:
 #### Returns
 `assoc`
 #### Description
-Evaluates to a new assoc where `indices` are the keys and `values` are the values, with corresponding positions in the list matched.  If the `values` is omitted and only one parameter is specified, then it will use nulls for each of the values.  If `values` is not a list, then all of the values in the assoc returned are set to the same value.  When two parameters are specified, it is the `indices` and `values`.  When three values are specified, it is the `function`, indices, and values.  The parameter `values` defaults to null and `function` defaults to `(lambda (current_value))`.  When there is a collision of indices, `function` is called with a of new target scope pushed onto the stack, so that `(current_value)` accesses a list of elements from the list, `(current_index)` accesses the list or assoc index if it is not already reduced, and `(target)` represents the original list or assoc.  When evaluating `function`, existing indices will be overwritten.
+Evaluates to a new assoc where `indices` are the keys and `values` are the values, with corresponding positions in the list matched.  If the `values` is omitted and only one parameter is specified, then it will use nulls for each of the values.  If `values` is not a list, then all of the values in the assoc returned are set to the same value.  When two parameters are specified, it is the `indices` and `values`.  When three values are specified, it is the `function`, indices, and values.  The parameter `values` defaults to null and `function` defaults to `(lambda (current_value))`.  When there is a collision of indices, `function` is called with a of new target scope pushed onto the stack, so that `(current_value)` accesses a list of elements from the list, `(current_index)` accesses the list or assoc index if it is not already reduced, and `(target)` represents the original list or assoc.  When evaluating `function`, existing indices will be overwritten.  If `function` is a simple sum of values, i.e. `(lambda (+ (current_value) (current_value 1))), it will use an accelerated path and return a list of uniquely referenced accumulated numbers.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -1083,7 +1083,7 @@ Example:
 ```
 Output:
 ```amalgam
-"{a 2 b 1 c (target .true \"b\") d (target .true \"b\")}"
+"{a 2 b 1 c 1 d 1}"
 ```
 
 [Amalgam Opcodes](./opcodes.md)

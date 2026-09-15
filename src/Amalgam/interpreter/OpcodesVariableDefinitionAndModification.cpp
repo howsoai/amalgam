@@ -231,7 +231,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 			//check each of the required variables and put into the stack if appropriate
 			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesViewOnAssoc())
 			{
-				auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
+				auto [node_ptr, inserted] = scope->SetMappedChildNode(cn_id, cn, false);
 				if(inserted)
 				{
 					//not unique so just set to true
@@ -267,7 +267,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 			{
 				if(cn == nullptr || cn->GetIsIdempotent())
 				{
-					auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
+					auto [node_ptr, inserted] = scope->SetMappedChildNode(cn_id, cn, false);
 					if(inserted)
 						any_nonunique_assignments = true;
 					//if not inserted, don't need to free it since it wasn't interpreted

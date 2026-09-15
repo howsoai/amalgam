@@ -2080,7 +2080,7 @@ static OpcodeInitializer _ENT_ZIP(ENT_ZIP, &Interpreter::InterpretNode_ENT_ZIP, 
 		OpcodeDetails::ParameterGroup({"values", OpcodeDetails::DataType::ANY_BASIC, true})
 	});
 	d.returns = OpcodeDetails::DataType::ASSOC;
-	d.description = R"(Evaluates to a new assoc where `indices` are the keys and `values` are the values, with corresponding positions in the list matched.  If the `values` is omitted and only one parameter is specified, then it will use nulls for each of the values.  If `values` is not a list, then all of the values in the assoc returned are set to the same value.  When two parameters are specified, it is the `indices` and `values`.  When three values are specified, it is the `function`, indices, and values.  The parameter `values` defaults to null and `function` defaults to `(lambda (current_value))`.  When there is a collision of indices, `function` is called with a of new target scope pushed onto the stack, so that `(current_value)` accesses a list of elements from the list, `(current_index)` accesses the list or assoc index if it is not already reduced, and `(target)` represents the original list or assoc.  When evaluating `function`, existing indices will be overwritten.)";
+	d.description = R"(Evaluates to a new assoc where `indices` are the keys and `values` are the values, with corresponding positions in the list matched.  If the `values` is omitted and only one parameter is specified, then it will use nulls for each of the values.  If `values` is not a list, then all of the values in the assoc returned are set to the same value.  When two parameters are specified, it is the `indices` and `values`.  When three values are specified, it is the `function`, indices, and values.  The parameter `values` defaults to null and `function` defaults to `(lambda (current_value))`.  When there is a collision of indices, `function` is called with a of new target scope pushed onto the stack, so that `(current_value)` accesses a list of elements from the list, `(current_index)` accesses the list or assoc index if it is not already reduced, and `(target)` represents the original list or assoc.  When evaluating `function`, existing indices will be overwritten.  If `function` is a simple sum of values, i.e. `(lambda (+ (current_value) (current_value 1))), it will use an accelerated path and return a list of uniquely referenced accumulated numbers.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((unparse
 	(zip
@@ -2129,7 +2129,7 @@ static OpcodeInitializer _ENT_ZIP(ENT_ZIP, &Interpreter::InterpretNode_ENT_ZIP, 
 		["a" "b" "c" "d" "a"]
 		1
 	)
-))&", R"("{a 2 b 1 c (target .true \"b\") d (target .true \"b\")}")"}
+))&", R"("{a 2 b 1 c 1 d 1}")"}
 		});
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -2188,10 +2188,46 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 	bool value_list_is_a_list = (value_list != nullptr && value_list->GetType() == ENT_LIST);
 	bool free_value_list_node = false;
 
+	bool combine_with_addition = false;
+	bool combine_with_function = false;
+
 	if(!EvaluableNode::IsNull(function))
 	{
-		node_stack.PushEvaluableNode(index_list);
-		node_stack.PushEvaluableNode(value_list);
+		//if combining collisions by addition, a common operation, use this fast path
+		if(function->GetType() == ENT_ADD)
+		{
+			auto &function_ocn = function->GetOrderedChildNodesReference();
+			if(function_ocn.size() == 2)
+			{
+				bool current_value_with_0 = false;
+				bool current_value_with_1 = false;
+
+				for(size_t i = 0; i < 2; i++)
+				{
+					if(function_ocn[i] != nullptr && function_ocn[i]->GetType() == ENT_CURRENT_VALUE)
+					{
+						auto &cv_ocn = function_ocn[i]->GetOrderedChildNodesReference();
+						if(cv_ocn.size() >= 1 && EvaluableNode::ToNumber(cv_ocn[0]) == 1.0)
+							current_value_with_1 = true;
+						else if(cv_ocn.size() == 0 || EvaluableNode::ToNumber(cv_ocn[0]) == 0.0)
+							current_value_with_0 = true;
+					}
+				}
+
+				if(current_value_with_0 && current_value_with_1)
+				{
+					combine_with_addition = true;
+					free_value_list_node = true;
+				}
+			}
+		}
+
+		if(!combine_with_addition && !EvaluableNode::IsNull(function))
+		{
+			node_stack.PushEvaluableNode(index_list);
+			node_stack.PushEvaluableNode(value_list);
+			combine_with_function = true;
+		}
 	}
 	else //not a function
 	{
@@ -2229,19 +2265,31 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 		}
 
 		//if no function, then just put value into the appropriate slot for the index
-		if(EvaluableNode::IsNull(function))
+		if(combine_with_addition)
+		{
+			auto [location, inserted] = result->SetMappedChildNodeWithReferenceHandoff(index_sid, value, false);
+
+			//if inserted, need to make a copy because it is possible that future indicies
+			// will modify the value, otherwise accumulate
+			if(inserted)
+				(*location) = evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(value));
+			else
+				(*location)->GetNumberValueReference() += EvaluableNode::ToNumber(value);
+
+			//don't need to call result.UpdatePropertiesBasedOnAttachedNode
+			// because it remains unique, idempotent, and cycle-free
+		}
+		else if(!combine_with_function)
 		{
 			result->SetMappedChildNodeWithReferenceHandoff(index_sid, value, true);
 		}
 		else //has a function, so handle collisions appropriately
 		{
-			//try to insert without overwriting
-			if(!result->SetMappedChildNodeWithReferenceHandoff(index_sid, value, false))
+			auto [location, inserted] = result->SetMappedChildNodeWithReferenceHandoff(index_sid, value, false);
+			if(!inserted)
 			{
 				//collision occurred, so call function
-				EvaluableNode **cur_value_ptr = result->GetOrCreateMappedChildNode(index_sid);
-
-				PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(index_sid), *cur_value_ptr);
+				PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(index_sid), *location);
 				PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(index_sid), value);
 
 				EvaluableNodeReference collision_result = InterpretNode(function);
@@ -2249,7 +2297,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 				PopConstructionContextAndGetExecutionSideEffectFlag();
 				PopConstructionContextAndGetExecutionSideEffectFlag();
 
-				*cur_value_ptr = collision_result;
+				*location = collision_result;
 				result.UpdatePropertiesBasedOnAttachedNode(collision_result);
 			}
 		}
@@ -2258,7 +2306,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, Eva
 	//the index list has been converted to strings, so therefore can be freed
 	evaluableNodeManager->FreeNodeTreeIfPossible(index_list);
 
-	if(free_value_list_node)
+	//if combined with addition, then every value inserted was unique
+	if(combine_with_addition && value_list.unique)
+		evaluableNodeManager->FreeNodeTreeIfPossible(value_list);
+	else if(free_value_list_node)
 		evaluableNodeManager->FreeNodeIfPossible(value_list);
 
 	return result;

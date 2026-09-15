@@ -940,10 +940,10 @@ void EvaluableNode::SetMappedChildNodes(LargeAssocType &new_mcn,
 		SetIsIdempotent(is_idempotent);
 }
 
-std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::string &id, EvaluableNode *node, bool overwrite)
+std::pair<EvaluableNode **, bool> EvaluableNode::SetMappedChildNode(const std::string &id, EvaluableNode *node, bool overwrite)
 {
 	if(!IsAssociativeArray()) [[unlikely]]
-		return {false, nullptr};
+		return {nullptr, false};
 
 	auto mcn = GetMappedChildNodesViewOnAssoc();
 
@@ -955,20 +955,20 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::s
 	{
 		string_intern_pool.DestroyStringReference(sid);
 		if(!overwrite)
-			return {false, &inserted_node->second};
+			return {&inserted_node->second, false};
 	}
 
 	//set node regardless of whether it was added
 	inserted_node->second = node;
 	UpdateFlagsBasedOnNewChildNode(node);
 
-	return {true, &inserted_node->second};
+	return {&inserted_node->second, true};
 }
 
-std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite)
+std::pair<EvaluableNode **, bool> EvaluableNode::SetMappedChildNode(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite)
 {
 	if(!IsAssociativeArray()) [[unlikely]]
-		return {false, nullptr};
+		return { nullptr, false };
 
 	auto mcn = GetMappedChildNodesViewOnAssoc();
 
@@ -982,7 +982,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const String
 	{
 		//if not overwriting, return if sid is already found
 		if(!overwrite)
-			return {false, &inserted_node->second};
+			return {&inserted_node->second, false};
 
 		//update the value
 		inserted_node->second = node;
@@ -990,15 +990,15 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const String
 
 	UpdateFlagsBasedOnNewChildNode(node);
 
-	return {true, &inserted_node->second};
+	return {&inserted_node->second, true};
 }
 
-bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite)
+std::pair<EvaluableNode **, bool> EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite)
 {
 	if(!IsAssociativeArray()) [[unlikely]]
 	{
 		string_intern_pool.DestroyStringReference(sid);
-		return false;
+		return {nullptr, false};
 	}
 
 	auto mcn = GetMappedChildNodesViewOnAssoc();
@@ -1009,7 +1009,7 @@ bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPoo
 		//destroy the reference that was passed in, since this node already has a reference
 		string_intern_pool.DestroyStringReference(sid);
 		if(!overwrite)
-			return false; //if not overwriting, return if sid is already found
+			return {&inserted_node->second, false}; //if not overwriting, return if sid is already found
 
 		//update the value
 		inserted_node->second = node;
@@ -1017,7 +1017,7 @@ bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPoo
 
 	UpdateFlagsBasedOnNewChildNode(node);
 
-	return true;
+	return {&inserted_node->second, true};
 }
 
 void EvaluableNode::ClearMappedChildNodes()

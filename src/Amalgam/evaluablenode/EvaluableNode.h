@@ -813,11 +813,12 @@ public:
 	//if overwrite is true, then it will overwrite the value, otherwise it will only set it if it does not exist
 	// will return true if it was successfully written (false if overwrite is set to false and the key already exists),
 	// as well as a pointer to where the pointer is stored
-	std::pair<bool, EvaluableNode **> SetMappedChildNode(const std::string &id, EvaluableNode *node, bool overwrite = true);
-	std::pair<bool, EvaluableNode **> SetMappedChildNode(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite = true);
+	std::pair<EvaluableNode **, bool> SetMappedChildNode(const std::string &id, EvaluableNode *node, bool overwrite = true);
+	std::pair<EvaluableNode **, bool> SetMappedChildNode(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite = true);
 
 	//like SetMappedChildNode, except the sid already has a reference that is being handed off to this EvaluableNode to manage
-	bool SetMappedChildNodeWithReferenceHandoff(const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite = true);
+	std::pair<EvaluableNode **, bool> SetMappedChildNodeWithReferenceHandoff(
+		const StringInternPool::StringID sid, EvaluableNode *node, bool overwrite = true);
 
 	void ClearMappedChildNodes();
 

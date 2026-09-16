@@ -718,8 +718,6 @@ Example:
 Output:
 ```amalgam
 [
-	{}
-	{x 1}
 	{a 1}
 ]
 ```

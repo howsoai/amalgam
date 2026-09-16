@@ -5,7 +5,7 @@ parent: Opcodes
 nav_order: 6
 ---
 
-### Opcode: `+` {#opcode-add}
+### Opcode: `+`
 #### Parameters
 `[number x1] [number x2] ...`
 #### Returns
@@ -31,7 +31,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `-` {#opcode-subtract}
+### Opcode: `-`
 #### Parameters
 `[number x1] [number x2] ...`
 #### Returns
@@ -65,7 +65,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `*` {#opcode-multiply}
+### Opcode: `*`
 #### Parameters
 `[number x1] [number x2] ...`
 #### Returns
@@ -91,7 +91,7 @@ Output:
 
 [Amalgam Opcodes](./opcodes.md)
 
-### Opcode: `/` {#opcode-divide}
+### Opcode: `/`
 #### Parameters
 `[number x1] [number x2] ...`
 #### Returns

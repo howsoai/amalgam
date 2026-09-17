@@ -416,6 +416,9 @@
     <ClInclude Include="evaluablenode\EvaluableNodeInlines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ConcurrentHashMaps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

@@ -51,6 +51,39 @@ using CompactHashSet = std::unordered_set<T, H, E, A>;
 template<typename K, typename V, typename H = FastHasher<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using CompactHashMap = std::unordered_map<K, V, H, E, A>;
 
+//wrapper that includes method specializations of _with_hash to enable the use of std::unordered_set with ConcurrentFastHashSet
+template<
+	typename K,
+	typename H = std::hash<K>,
+	typename E = std::equal_to<K>,
+	typename A = std::allocator<const K>>
+class FastHashSetWithHashInserts : public std::unordered_set<K, H, E, A>
+{
+	using Base = std::unordered_set<K, H, E, A>;
+
+public:
+	using Base::Base;
+
+	bool erase_with_hash(const K &key, std::size_t /*key_hash*/)
+	{
+		return this->erase(key) != 0;    // returns true if something was erased
+	}
+
+	std::pair<typename Base::iterator, bool> insert_with_hash(const K &value, std::size_t /*key_hash*/)
+	{
+		return this->insert(value);
+	}
+
+	template<class... Args>
+	std::pair<typename Base::iterator, bool> emplace_with_hash(const K &key, std::size_t /*key_hash*/, Args&&... args)
+	{
+		// Forward to the normal emplace; the hash argument is discarded.
+		return this->emplace(std::piecewise_construct,
+							 std::forward_as_tuple(key),
+							 std::forward_as_tuple(std::forward<Args>(args)...));
+	}
+};
+
 //wrapper that includes method specializations of _with_hash to enable the use of std::unordered_set with ConcurrentFastHashMap
 template<
 	typename K,
@@ -185,6 +218,9 @@ using FastHashSet = ska::flat_hash_set<T, H, E, A>;
 
 template<typename K, typename V, typename H = FastHasher<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using FastHashMap = ska::flat_hash_map<K, V, H, E, A>;
+
+template<typename T, typename H = FastHasher<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
+using FastHashSetWithHashInserts = ska::flat_hash_set<T, H, E, A>;
 
 template<typename K, typename V, typename H = FastHasher<K>, typename E = std::equal_to<K>, typename A = std::allocator<std::pair<const K, V> > >
 using FastHashMapWithHashInserts = ska::flat_hash_map<K, V, H, E, A>;

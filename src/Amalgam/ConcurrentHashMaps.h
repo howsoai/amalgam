@@ -446,6 +446,56 @@ protected:
 	allocator_type alloc;
 };
 
+//A hash set based on a custom version of FastHashMapWithHashInserts that uses an extended variant of the
+// std::unordered_set interface that exposes methods that accept precomputed hashes of values via insert_with_hash.
+//It allows consistent concurrent access for all access types, though iteration locks one shard at a time.
+//This class mostly works like the std::unordered_map interface, however
+//only one iterator may be used at a time due to each iterator containing a lock.
+//Larger values of ShardCount require more memory but allow more concurrency.
+//ShardCount must be a power of 2
+template<
+	typename K,
+	typename H = FastHasher<K>,
+	typename E = std::equal_to<K>,
+	typename A = std::allocator<const K>,
+
+	//if USE_STL_HASH_MAPS, then it's debugging, want a single unordered map to make it easy to debug
+#ifdef USE_STL_HASH_MAPS
+	size_t ShardCount = 1
+#else
+	size_t ShardCount = 256
+#endif
+>
+class ConcurrentFastHashSet : public ConcurrentFastHashBase<FastHashSetWithHashInserts<K, H, E, A>, ShardCount>
+{
+public:
+
+	using InnerHash = FastHashSetWithHashInserts<K, H, E, A>;
+	using BaseClass = ConcurrentFastHashBase<InnerHash, ShardCount>;
+
+	using key_type = K;
+	using value_type = K;
+	using size_type = size_t;
+	using difference_type = std::ptrdiff_t;
+	using hasher = H;
+	using key_equal = E;
+	using allocator_type = A;
+	using reference = value_type &;
+	using const_reference = const value_type &;
+	using pointer = typename std::allocator_traits<A>::pointer;
+	using const_pointer = typename std::allocator_traits<A>::const_pointer;
+
+	using iterator = BaseClass::iterator;
+	using const_iterator = BaseClass::const_iterator;
+
+	inline ConcurrentFastHashSet(
+		const H &hash = H(),
+		const E &equal = E(),
+		const A &alloc = A())
+		: ConcurrentFastHashBase<FastHashSetWithHashInserts<K, H, E, A>, ShardCount>(hash, equal, alloc)
+	{}
+};
+
 //A hash map based on a custom version of FastHashMapWithHashInserts that uses an extended variant of the
 // std::unordered_map interface that exposes methods that accept precomputed hashes of values via insert_with_hash.
 //It allows consistent concurrent access for all access types, though iteration locks one shard at a time.

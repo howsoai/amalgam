@@ -60,10 +60,10 @@ public:
 		// so that the memory can be traversed
 		Concurrency::ReadWriteMutex memoryModificationMutex;
 
-		//mutex to modify activeInterpreters
-		Concurrency::SingleMutex activeInterpretersMutex;
-	#endif
+		ConcurrentFastHashSet<Interpreter *> activeInterpreters;
+	#else
 		CompactHashSet<Interpreter *> activeInterpreters;
+	#endif
 
 	#ifdef MULTITHREAD_SUPPORT
 		//singular flag to select which thread will collect garbage
@@ -710,21 +710,12 @@ public:
 			#endif
 				activeInterpreters = std::make_unique<ActiveInterpreters>();
 		}
-
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(activeInterpreters->activeInterpretersMutex);
-	#endif
-
 		activeInterpreters->activeInterpreters.insert(interpreter);
 	}
 
 	//removes the interpreter from the active list for tracking EvaluableNode references
 	void RemoveActiveInterpreter(Interpreter *interpreter)
 	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::Lock lock(activeInterpreters->activeInterpretersMutex);
-	#endif
-
 		activeInterpreters->activeInterpreters.erase(interpreter);
 	}
 

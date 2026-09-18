@@ -655,6 +655,7 @@
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="BinaryPacking.h" />
     <ClInclude Include="Concurrency.h" />
+    <ClInclude Include="ConcurrentHashMaps.h" />
     <ClInclude Include="Cryptography.h" />
     <ClInclude Include="DateTimeFormat.h" />
     <ClInclude Include="DistanceReferencePair.h" />

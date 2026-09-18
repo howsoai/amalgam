@@ -5,6 +5,43 @@
 #include <mutex>
 #include <shared_mutex>
 
+template<
+	typename K,
+	typename H,
+	typename E,
+	typename A,
+	size_t ShardCount
+>
+class ConcurrentFastHashBase
+{
+public:
+	using key_type = K;
+
+protected:
+	ConcurrentFastHashBase(const H &h, const E &e, const A &a)
+		: hash(h), equal(e), alloc(a)
+	{}
+
+	inline std::pair<size_t, size_t> get_hash_and_shard_index(const key_type &key) const
+	{
+		size_t full_hash = hash(key);
+
+		//SplitMix64 scramble for shard selection
+		std::size_t x = full_hash + 0x9e3779b97f4a7c15ULL;
+		x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+		x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+		std::size_t scrambled = x ^ (x >> 31);
+
+		//ShardCount must be a power of 2
+		std::size_t shard = scrambled & (ShardCount - 1);
+		return { full_hash, shard };
+	}
+
+	H hash;
+	E equal;
+	A alloc;
+};
+
 //A hash map based on a custom version of FastHashMapWithHashInserts that uses an extended variant of the
 // std::unordered_map interface that exposes methods that accept precomputed hashes of values via insert_with_hash.
 //It allows consistent concurrent access for all access types, though iteration locks one shard at a time.
@@ -26,7 +63,7 @@ template<
 	size_t ShardCount = 256
 #endif
 >
-class ConcurrentFastHashMap
+class ConcurrentFastHashMap : public ConcurrentFastHashBase<K, H, E, A, ShardCount>
 {
 public:
 
@@ -262,14 +299,11 @@ public:
 	friend class iterator;
 	friend class const_iterator;
 
-	ConcurrentFastHashMap() = default;
-
-	inline explicit ConcurrentFastHashMap(
-		size_t bucket_count,
+	inline ConcurrentFastHashMap(
 		const H &hash = H(),
 		const E &equal = E(),
 		const A &alloc = A())
-		: hash(hash), equal(equal), alloc(alloc)
+		: ConcurrentFastHashBase<K, H, E, A, ShardCount>(hash, equal, alloc)
 	{}
 
 	bool empty() const
@@ -305,21 +339,21 @@ public:
 
 	inline mapped_type &operator[](const key_type &key)
 	{
-		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 		return shards[shard_index].map[key];
 	}
 
 	inline mapped_type &operator[](key_type &&key)
 	{
-		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 		return shards[shard_index].map[std::move(key)];
 	}
 
 	inline mapped_type &at(const key_type &key)
 	{
-		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 		auto it = shards[shard_index].map.find_with_hash(key, full_hash);
 		return it->second;
@@ -327,7 +361,7 @@ public:
 
 	inline const mapped_type &at(const key_type &key) const
 	{
-		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 		auto it = shards[shard_index].map.find_with_hash(key, full_hash);
 		return it->second;
@@ -344,7 +378,7 @@ public:
 
 	inline std::pair<iterator, bool> insert(const value_type &value)
 	{
-		auto [full_hash, shard_index] = get_hash_and_shard_index(value.first);
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(value.first);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 
 		auto result = shards[shard_index].map.insert_with_hash(value, full_hash);
@@ -356,7 +390,7 @@ public:
 
 	inline std::pair<iterator, bool> insert(value_type &&value)
 	{
-		auto [full_hash, shard_index] = get_hash_and_shard_index(value.first);
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(value.first);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 
 		//keep the pair in a temporary; the map *does* move‑construct the value,
@@ -371,7 +405,7 @@ public:
 	template<class KArg, class... Rest>
 	inline std::pair<iterator, bool> emplace(KArg &&key, Rest&&... rest)
 	{
-		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 
 		//store the whole pair first; no structured‑binding that mixes move
@@ -386,7 +420,7 @@ public:
 	template<class... Args>
 	inline std::pair<iterator, bool> try_emplace(const key_type &key, Args&&... args)
 	{
-		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 
 		//store the whole pair first; no structured‑binding that mixes move
@@ -400,7 +434,7 @@ public:
 
 	inline size_type erase(const key_type &key)
 	{
-		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 		return shards[shard_index].map.erase_with_hash(key, full_hash);
 	}
@@ -419,7 +453,7 @@ public:
 
 	inline iterator find(const key_type &key)
 	{
-		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 		auto it = shards[shard_index].map.find(key);
 		if(it == shards[shard_index].map.end())
@@ -429,7 +463,7 @@ public:
 
 	inline const_iterator find(const key_type &key) const
 	{
-		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
 		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
 		auto it = shards[shard_index].map.find(key);
 		if(it == shards[shard_index].map.end())
@@ -439,7 +473,7 @@ public:
 
 	size_type count(const key_type &key) const
 	{
-		auto [full_hash, shard_index] = get_hash_and_shard_index(key);
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
 		std::lock_guard<std::mutex> lk(shards[shard_index].mtx);
 		return shards[shard_index].map.count(key);
 	}
@@ -494,22 +528,6 @@ public:
 		return !(*this == other);
 	}
 
-protected:
-	inline std::pair<size_t, size_t> get_hash_and_shard_index(const key_type &key) const
-	{
-		size_t full_hash = hash(key);
-
-		//SplitMix64 scramble for shard selection
-		std::size_t x = full_hash + 0x9e3779b97f4a7c15ULL;
-		x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
-		x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
-		std::size_t scrambled = x ^ (x >> 31);
-
-		//ShardCount must be a power of 2
-		std::size_t shard = scrambled & (ShardCount - 1);
-		return { full_hash, shard };
-	}
-
 private:
 
 	//a shard that can be locked independently
@@ -519,9 +537,6 @@ private:
 		FastHashMapWithHashInserts<K, V, H, E, A> map;
 	};
 
-	H hash;
-	E equal;
-	A alloc;
 	std::array<Shard, ShardCount> shards;
 };
 

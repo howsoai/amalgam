@@ -280,32 +280,6 @@ public:
 		return iterator(parent, shardIdx, inner, std::move(lk));
 	}
 
-	inline std::pair<iterator, bool> insert(const value_type &value)
-	{
-		auto [full_hash, shard_index] = this->get_hash_and_shard_index(value.first);
-		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
-
-		auto result = shards[shard_index].map.insert_with_hash(value, full_hash);
-		auto inner_it = result.first;
-		bool inserted = result.second;
-
-		return { make_iterator(this, shard_index, inner_it, std::move(lk)), inserted };
-	}
-
-	inline std::pair<iterator, bool> insert(value_type &&value)
-	{
-		auto [full_hash, shard_index] = this->get_hash_and_shard_index(value.first);
-		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
-
-		//keep the pair in a temporary; the map *does* move‑construct the value,
-		//but the iterator itself is just copied out
-		auto result = shards[shard_index].map.insert_with_hash(std::move(value), full_hash);
-		auto inner_it = result.first;
-		bool inserted = result.second;
-
-		return { make_iterator(this, shard_index, inner_it, std::move(lk)), inserted };
-	}
-
 	template<class KArg, class... Rest>
 	inline std::pair<iterator, bool> emplace(KArg &&key, Rest&&... rest)
 	{
@@ -457,7 +431,7 @@ template<
 	typename K,
 	typename H = FastHasher<K>,
 	typename E = std::equal_to<K>,
-	typename A = std::allocator<const K>,
+	typename A = std::allocator<K>,
 
 	//if USE_STL_HASH_MAPS, then it's debugging, want a single unordered map to make it easy to debug
 #ifdef USE_STL_HASH_MAPS
@@ -494,6 +468,33 @@ public:
 		const A &alloc = A())
 		: ConcurrentFastHashBase<FastHashSetWithHashInserts<K, H, E, A>, ShardCount>(hash, equal, alloc)
 	{}
+
+	inline std::pair<iterator, bool> insert(const value_type &value)
+	{
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(value);
+		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx);
+
+		auto result = this->shards[shard_index].map.insert_with_hash(value, full_hash);
+		auto inner_it = result.first;
+		bool inserted = result.second;
+
+		return { this->make_iterator(this, shard_index, inner_it, std::move(lk)), inserted };
+	}
+
+	inline std::pair<iterator, bool> insert(value_type &&value)
+	{
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(value);
+		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx);
+
+		//keep the pair in a temporary; the map *does* move‑construct the value,
+		//but the iterator itself is just copied out
+		auto result = this->shards[shard_index].map.insert_with_hash(std::move(value), full_hash);
+		auto inner_it = result.first;
+		bool inserted = result.second;
+
+		return { this->make_iterator(this, shard_index, inner_it, std::move(lk)), inserted };
+	}
+
 };
 
 //A hash map based on a custom version of FastHashMapWithHashInserts that uses an extended variant of the
@@ -546,6 +547,32 @@ public:
 		const A &alloc = A())
 		: ConcurrentFastHashBase<FastHashMapWithHashInserts<K, V, H, E, A>, ShardCount>(hash, equal, alloc)
 	{}
+
+	inline std::pair<iterator, bool> insert(const value_type &value)
+	{
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(value.first);
+		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx);
+
+		auto result = this->shards[shard_index].map.insert_with_hash(value, full_hash);
+		auto inner_it = result.first;
+		bool inserted = result.second;
+
+		return { this->make_iterator(this, shard_index, inner_it, std::move(lk)), inserted };
+	}
+
+	inline std::pair<iterator, bool> insert(value_type &&value)
+	{
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(value.first);
+		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx);
+
+		//keep the pair in a temporary; the map *does* move‑construct the value,
+		//but the iterator itself is just copied out
+		auto result = this->shards[shard_index].map.insert_with_hash(std::move(value), full_hash);
+		auto inner_it = result.first;
+		bool inserted = result.second;
+
+		return { this->make_iterator(this, shard_index, inner_it, std::move(lk)), inserted };
+	}
 
 	inline mapped_type &operator[](const key_type &key)
 	{

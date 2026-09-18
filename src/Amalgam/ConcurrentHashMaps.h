@@ -6,79 +6,38 @@
 #include <shared_mutex>
 
 template<
-	typename K,
-	typename H,
-	typename E,
-	typename A,
+	typename FastHashType,
 	size_t ShardCount
 >
 class ConcurrentFastHashBase
 {
 public:
-	using key_type = K;
-
-protected:
-	ConcurrentFastHashBase(const H &h, const E &e, const A &a)
-		: hash(h), equal(e), alloc(a)
-	{}
-
-	inline std::pair<size_t, size_t> get_hash_and_shard_index(const key_type &key) const
-	{
-		size_t full_hash = hash(key);
-
-		//SplitMix64 scramble for shard selection
-		std::size_t x = full_hash + 0x9e3779b97f4a7c15ULL;
-		x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
-		x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
-		std::size_t scrambled = x ^ (x >> 31);
-
-		//ShardCount must be a power of 2
-		std::size_t shard = scrambled & (ShardCount - 1);
-		return { full_hash, shard };
-	}
-
-	H hash;
-	E equal;
-	A alloc;
-};
-
-//A hash map based on a custom version of FastHashMapWithHashInserts that uses an extended variant of the
-// std::unordered_map interface that exposes methods that accept precomputed hashes of values via insert_with_hash.
-//It allows consistent concurrent access for all access types, though iteration locks one shard at a time.
-//This class mostly works like the std::unordered_map interface, however
-//only one iterator may be used at a time due to each iterator containing a lock.
-//Larger values of ShardCount require more memory but allow more concurrency.
-//ShardCount must be a power of 2
-template<
-	typename K,
-	typename V,
-	typename H = FastHasher<K>,
-	typename E = std::equal_to<K>,
-	typename A = std::allocator<std::pair<const K, V>>,
-
-	//if USE_STL_HASH_MAPS, then it's debugging, want a single unordered map to make it easy to debug
-#ifdef USE_STL_HASH_MAPS
-	size_t ShardCount = 1
-#else
-	size_t ShardCount = 256
-#endif
->
-class ConcurrentFastHashMap : public ConcurrentFastHashBase<K, H, E, A, ShardCount>
-{
-public:
+	using key_type = FastHashType::key_type;
+	using value_type = FastHashType::value_type;
+	using size_type = FastHashType::size_type;
+	using difference_type = std::ptrdiff_t;
+	using hasher = FastHashType::hasher;
+	using key_equal = FastHashType::key_equal;
+	using allocator_type = FastHashType::allocator_type;
+	using reference = value_type &;
+	using const_reference = const value_type &;
+	using pointer = FastHashType::pointer;
+	using const_pointer = FastHashType::const_pointer;
 
 	class iterator;
 	class const_iterator;
+	friend class iterator;
+	friend class const_iterator;
 
 	class iterator
 	{
-		using InnerIter = typename FastHashMapWithHashInserts<K, V, H, E, A>::iterator;
+		using InnerIter = typename FastHashType::iterator;
 		friend class const_iterator;
-		friend class ConcurrentFastHashMap<K, V, H, E, A>;
+		friend class ConcurrentFastHashBase<FastHashType, ShardCount>;
 
 	public:
 		using iterator_category = std::forward_iterator_tag;
-		using value_type = std::pair<const K, V>;
+		using value_type = FastHashType::value_type;
 		using difference_type = std::ptrdiff_t;
 		using pointer = typename std::iterator_traits<InnerIter>::pointer;
 		using reference = typename std::iterator_traits<InnerIter>::reference;
@@ -93,7 +52,7 @@ public:
 		iterator(iterator &&) = default;
 		iterator &operator=(iterator &&) = default;
 
-		inline iterator(ConcurrentFastHashMap *parent,
+		inline iterator(ConcurrentFastHashBase *parent,
 				 size_t shardIdx,
 				 InnerIter inner,
 				 std::unique_lock<std::mutex> lk) noexcept
@@ -168,7 +127,7 @@ public:
 				lock.unlock();
 		}
 
-		ConcurrentFastHashMap *parent = nullptr;
+		ConcurrentFastHashBase *parent = nullptr;
 		size_t shardIdx = ShardCount;
 		InnerIter inner;
 		std::unique_lock<std::mutex> lock;
@@ -176,13 +135,13 @@ public:
 
 	class const_iterator
 	{
-		using InnerIter = typename FastHashMapWithHashInserts<K, V, H, E, A>::const_iterator;
+		using InnerIter = typename FastHashType::const_iterator;
 		friend class iterator;
-		friend class ConcurrentFastHashMap<K, V, H, E, A>;
+		friend class ConcurrentFastHashBase<FastHashType, ShardCount>;
 
 	public:
 		using iterator_category = std::forward_iterator_tag;
-		using value_type = std::pair<const K, V>;
+		using value_type = FastHashType::value_type;
 		using difference_type = std::ptrdiff_t;
 		using pointer = typename std::iterator_traits<InnerIter>::pointer;
 		using reference = typename std::iterator_traits<InnerIter>::reference;
@@ -197,7 +156,7 @@ public:
 		const_iterator(const_iterator &&) = default;
 		const_iterator &operator=(const_iterator &&) = default;
 
-		inline const_iterator(const ConcurrentFastHashMap *parent,
+		inline const_iterator(const ConcurrentFastHashBase *parent,
 					   size_t shardIdx,
 					   InnerIter inner,
 					   std::unique_lock<std::mutex> lk) noexcept
@@ -275,36 +234,11 @@ public:
 				lock.unlock();
 		}
 
-		const ConcurrentFastHashMap *parent = nullptr;
-		size_t                     shardIdx = ShardCount;
-		InnerIter                       inner;
-		std::unique_lock<std::mutex>    lock;
+		const ConcurrentFastHashBase *parent = nullptr;
+		size_t shardIdx = ShardCount;
+		InnerIter inner;
+		std::unique_lock<std::mutex> lock;
 	};
-
-	using key_type = K;
-	using mapped_type = V;
-	using value_type = std::pair<const K, V>;
-	using size_type = size_t;
-	using difference_type = std::ptrdiff_t;
-	using hasher = H;
-	using key_equal = E;
-	using allocator_type = A;
-	using reference = value_type &;
-	using const_reference = const value_type &;
-	using pointer = typename std::allocator_traits<A>::pointer;
-	using const_pointer = typename std::allocator_traits<A>::const_pointer;
-	using iterator = iterator;
-	using const_iterator = const_iterator;
-
-	friend class iterator;
-	friend class const_iterator;
-
-	inline ConcurrentFastHashMap(
-		const H &hash = H(),
-		const E &equal = E(),
-		const A &alloc = A())
-		: ConcurrentFastHashBase<K, H, E, A, ShardCount>(hash, equal, alloc)
-	{}
 
 	bool empty() const
 	{
@@ -337,38 +271,8 @@ public:
 		}
 	}
 
-	inline mapped_type &operator[](const key_type &key)
-	{
-		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
-		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
-		return shards[shard_index].map[key];
-	}
-
-	inline mapped_type &operator[](key_type &&key)
-	{
-		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
-		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
-		return shards[shard_index].map[std::move(key)];
-	}
-
-	inline mapped_type &at(const key_type &key)
-	{
-		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
-		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
-		auto it = shards[shard_index].map.find_with_hash(key, full_hash);
-		return it->second;
-	}
-
-	inline const mapped_type &at(const key_type &key) const
-	{
-		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
-		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
-		auto it = shards[shard_index].map.find_with_hash(key, full_hash);
-		return it->second;
-	}
-
 	template<class InnerIter>
-	inline static iterator make_iterator(ConcurrentFastHashMap *parent,
+	inline static iterator make_iterator(ConcurrentFastHashBase *parent,
 								  size_t shardIdx,
 								  InnerIter inner,
 								  std::unique_lock<std::mutex> lk) noexcept
@@ -451,26 +355,6 @@ public:
 		shards[shard_index].map.erase(pos.inner);
 	}
 
-	inline iterator find(const key_type &key)
-	{
-		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
-		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
-		auto it = shards[shard_index].map.find(key);
-		if(it == shards[shard_index].map.end())
-			return end();
-		return iterator(this, shard_index, it, std::move(lk));
-	}
-
-	inline const_iterator find(const key_type &key) const
-	{
-		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
-		std::unique_lock<std::mutex> lk(shards[shard_index].mtx);
-		auto it = shards[shard_index].map.find(key);
-		if(it == shards[shard_index].map.end())
-			return end();
-		return const_iterator(this, shard_index, it, std::move(lk));
-	}
-
 	size_type count(const key_type &key) const
 	{
 		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
@@ -511,7 +395,7 @@ public:
 		return const_iterator();
 	}
 
-	inline bool operator==(const ConcurrentFastHashMap &other) const
+	inline bool operator==(const ConcurrentFastHashBase &other) const
 	{
 		if(size() != other.size()) return false;
 		for(size_t i = 0; i < ShardCount; ++i)
@@ -523,21 +407,145 @@ public:
 		return true;
 	}
 
-	inline bool operator!=(const ConcurrentFastHashMap &other) const
+	inline bool operator!=(const ConcurrentFastHashBase &other) const
 	{
 		return !(*this == other);
 	}
 
-private:
+protected:
+	ConcurrentFastHashBase(const hasher &h, const key_equal &e, const allocator_type &a)
+		: hash(h), equal(e), alloc(a)
+	{}
+
+	inline std::pair<size_t, size_t> get_hash_and_shard_index(const key_type &key) const
+	{
+		size_t full_hash = hash(key);
+
+		//SplitMix64 scramble for shard selection
+		std::size_t x = full_hash + 0x9e3779b97f4a7c15ULL;
+		x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+		x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+		std::size_t scrambled = x ^ (x >> 31);
+
+		//ShardCount must be a power of 2
+		std::size_t shard = scrambled & (ShardCount - 1);
+		return { full_hash, shard };
+	}
 
 	//a shard that can be locked independently
 	struct Shard
 	{
 		mutable std::mutex mtx;
-		FastHashMapWithHashInserts<K, V, H, E, A> map;
+		FastHashType map;
 	};
 
 	std::array<Shard, ShardCount> shards;
+
+	hasher hash;
+	key_equal equal;
+	allocator_type alloc;
+};
+
+//A hash map based on a custom version of FastHashMapWithHashInserts that uses an extended variant of the
+// std::unordered_map interface that exposes methods that accept precomputed hashes of values via insert_with_hash.
+//It allows consistent concurrent access for all access types, though iteration locks one shard at a time.
+//This class mostly works like the std::unordered_map interface, however
+//only one iterator may be used at a time due to each iterator containing a lock.
+//Larger values of ShardCount require more memory but allow more concurrency.
+//ShardCount must be a power of 2
+template<
+	typename K,
+	typename V,
+	typename H = FastHasher<K>,
+	typename E = std::equal_to<K>,
+	typename A = std::allocator<std::pair<const K, V>>,
+
+	//if USE_STL_HASH_MAPS, then it's debugging, want a single unordered map to make it easy to debug
+#ifdef USE_STL_HASH_MAPS
+	size_t ShardCount = 1
+#else
+	size_t ShardCount = 256
+#endif
+>
+class ConcurrentFastHashMap : public ConcurrentFastHashBase<FastHashMapWithHashInserts<K, V, H, E, A>, ShardCount>
+{
+public:
+
+	using InnerHash = FastHashMapWithHashInserts<K, V, H, E, A>;
+	using BaseClass = ConcurrentFastHashBase<InnerHash, ShardCount>;
+
+	using key_type = K;
+	using mapped_type = V;
+	using value_type = std::pair<const K, V>;
+	using size_type = size_t;
+	using difference_type = std::ptrdiff_t;
+	using hasher = H;
+	using key_equal = E;
+	using allocator_type = A;
+	using reference = value_type &;
+	using const_reference = const value_type &;
+	using pointer = typename std::allocator_traits<A>::pointer;
+	using const_pointer = typename std::allocator_traits<A>::const_pointer;
+
+	using iterator = BaseClass::iterator;
+	using const_iterator = BaseClass::const_iterator;
+
+	inline ConcurrentFastHashMap(
+		const H &hash = H(),
+		const E &equal = E(),
+		const A &alloc = A())
+		: ConcurrentFastHashBase<FastHashMapWithHashInserts<K, V, H, E, A>, ShardCount>(hash, equal, alloc)
+	{}
+
+	inline mapped_type &operator[](const key_type &key)
+	{
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
+		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx);
+		return this->shards[shard_index].map[key];
+	}
+
+	inline mapped_type &operator[](key_type &&key)
+	{
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
+		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx);
+		return this->shards[shard_index].map[std::move(key)];
+	}
+
+	inline mapped_type &at(const key_type &key)
+	{
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
+		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx);
+		auto it = this->shards[shard_index].map.find_with_hash(key, full_hash);
+		return it->second;
+	}
+
+	inline const mapped_type &at(const key_type &key) const
+	{
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
+		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx);
+		auto it = this->shards[shard_index].map.find_with_hash(key, full_hash);
+		return it->second;
+	}
+
+	inline iterator find(const key_type &key)
+	{
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
+		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx);
+		auto it = this->shards[shard_index].map.find(key);
+		if(it == this->shards[shard_index].map.end())
+			return this->end();
+		return iterator(this, shard_index, it, std::move(lk));
+	}
+
+	inline const_iterator find(const key_type &key) const
+	{
+		auto [full_hash, shard_index] = this->get_hash_and_shard_index(key);
+		std::unique_lock<std::mutex> lk(this->shards[shard_index].mtx);
+		auto it = this->shards[shard_index].map.find(key);
+		if(it == this->shards[shard_index].map.end())
+			return this->end();
+		return const_iterator(this, shard_index, it, std::move(lk));
+	}
 };
 
 #endif

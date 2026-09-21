@@ -1,10 +1,9 @@
 #pragma once
 
 //system headers:
+#include <array>
 #include <condition_variable>
 #include <cstring>
-#include <functional>
-#include <future>
 #include <mutex>
 #include <new>
 #include <queue>
@@ -275,8 +274,6 @@ protected:
 
 	struct Task
 	{
-		static constexpr size_t INLINE_SIZE = 64;
-
 		inline Task()
 			: buffer({}), execute(nullptr), destroy(nullptr)
 		{ }
@@ -291,7 +288,8 @@ protected:
 			std::memcpy(&buffer[0], &other.buffer[0], INLINE_SIZE);
 			execute = other.execute;
 			destroy = other.destroy;
-			other.destroy = nullptr; // Prevent other from destroying our moved data
+			//prevent other from destroying our moved data
+			other.destroy = nullptr;
 		}
 
 		inline Task &operator=(Task &&other) noexcept
@@ -359,12 +357,13 @@ protected:
 			return t;
 		}
 
-		alignas(std::max_align_t) uint8_t buffer[INLINE_SIZE];
+		//make the buffer size align cleanly while leaving space for execute and destroy
+		static constexpr size_t INLINE_SIZE = 128 - 2 * sizeof(void *);
 
 		void (*execute)(void *);
 		void (*destroy)(void *);
+		uint8_t buffer[INLINE_SIZE];
 	};
-
 
 	//tasks for the thread pool to complete
 	std::queue<Task> taskQueue;

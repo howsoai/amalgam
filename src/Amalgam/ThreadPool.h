@@ -2,11 +2,15 @@
 
 //system headers:
 #include <condition_variable>
+#include <cstring>
 #include <functional>
 #include <future>
 #include <mutex>
+#include <new>
 #include <queue>
 #include <thread>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 //Creates a flexible thread pool for generic tasks aimed at making sure a specified
@@ -149,7 +153,7 @@ public:
 		//new scope for the lock
 		{
 			std::unique_lock<std::mutex> lock(threadsMutex);
-			taskQueue.push(std::make_unique<Task<std::decay_t<Func>>>(std::forward<Func>(function)));
+			taskQueue.push(Task::create(std::forward<Func>(function)));
 		}
 		waitForTask.notify_one();
 	}
@@ -177,10 +181,11 @@ public:
 
 	//enqueues a task into the thread pool
 	//it is up to the caller to determine when the task is complete
+	//AcquireTaskLock must be called to protect the calls to this method
 	template <typename Func>
 	inline void BatchEnqueueTask(Func &&function)
 	{
-		taskQueue.push(std::make_unique<Task<std::decay_t<Func>>>(std::forward<Func>(function)));
+		taskQueue.push(Task::create(std::forward<Func>(function)));
 	}
 
 	//implements a counter for a set of tasks
@@ -268,28 +273,101 @@ protected:
 	//condition to notify threads when to move from reserved to active
 	std::condition_variable waitForActivate;
 
-	struct TaskBase
+	struct Task
 	{
-		virtual void execute() = 0;
-		virtual ~TaskBase() = default;
-	};
+		static constexpr size_t INLINE_SIZE = 64;
 
-	template <typename F>
-	struct Task : TaskBase
-	{
-		inline Task(F &&f) : func(std::forward<F>(f))
-		{}
+		inline Task()
+			: buffer({}), execute(nullptr), destroy(nullptr)
+		{ }
 
-		inline void execute() override
+		//prevent accidental copying to avoid double-destruction
+		Task(const Task &) = delete;
+
+		Task &operator=(const Task &) = delete;
+
+		inline Task(Task &&other) noexcept
 		{
-			func();
+			std::memcpy(&buffer[0], &other.buffer[0], INLINE_SIZE);
+			execute = other.execute;
+			destroy = other.destroy;
+			other.destroy = nullptr; // Prevent other from destroying our moved data
 		}
 
-		F func;
+		inline Task &operator=(Task &&other) noexcept
+		{
+			if(this != &other)
+			{
+				if(destroy != nullptr)
+					(*destroy)(buffer);
+				std::memcpy(&buffer[0], &other.buffer[0], INLINE_SIZE);
+				execute = other.execute;
+				destroy = other.destroy;
+				other.destroy = nullptr;
+			}
+			return *this;
+		}
+
+		inline ~Task()
+		{
+			if(destroy)
+				(*destroy)(buffer);
+		}
+
+		inline void operator()()
+		{
+			(*execute)(buffer);
+		}
+
+		template <typename F>
+		inline static Task create(F &&f)
+		{
+			Task t;
+			using FuncType = std::decay_t<F>;
+
+			if constexpr(sizeof(FuncType) <= INLINE_SIZE)
+			{
+				//use new to place into the buffer
+				new (t.buffer) FuncType(std::forward<F>(f));
+
+				t.execute = [](void *p) {
+					auto *func = std::launder(reinterpret_cast<FuncType *>(p));
+					(*func)();
+					};
+
+				t.destroy = [](void *p) {
+					auto *func = std::launder(reinterpret_cast<FuncType *>(p));
+					func->~FuncType();
+					};
+			}
+			else
+			{
+				//heap fallback for large tasks
+				FuncType *heapFunc = new FuncType(std::forward<F>(f));
+				std::memcpy(t.buffer, &heapFunc, sizeof(FuncType *));
+
+				t.execute = [](void *p) {
+					FuncType **ptr_to_func = std::launder(reinterpret_cast<FuncType **>(p));
+					(**ptr_to_func)();
+					};
+
+				t.destroy = [](void *p) {
+					FuncType **ptr_to_func = std::launder(reinterpret_cast<FuncType **>(p));
+					delete *ptr_to_func;
+					};
+			}
+			return t;
+		}
+
+		alignas(std::max_align_t) uint8_t buffer[INLINE_SIZE];
+
+		void (*execute)(void *);
+		void (*destroy)(void *);
 	};
 
+
 	//tasks for the thread pool to complete
-	std::queue<std::unique_ptr<TaskBase>> taskQueue;
+	std::queue<Task> taskQueue;
 
 	//the number of threads that can be active at any time
 	//the total number of threads is

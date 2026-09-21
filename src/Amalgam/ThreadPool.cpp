@@ -135,12 +135,11 @@ void ThreadPool::AddNewThread()
 					}
 
 					//take ownership of the task so it can be destructed when complete
-					// (won't increment shared_ptr counter)
-					std::unique_ptr<TaskBase> task = std::move(taskQueue.front());
+					auto task = std::move(taskQueue.front());
 					taskQueue.pop();
 
 					lock.unlock();
-					task->execute();
+					task();
 					lock.lock();
 				}
 			}

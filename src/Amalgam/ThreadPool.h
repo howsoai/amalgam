@@ -143,39 +143,15 @@ public:
 
 	//enqueues a task into the thread pool
 	//it is up to the caller to determine when the task is complete
-	template<typename Func, typename... Args>
-	inline void EnqueueTask(Func func, Args... args)
+	template<typename Func>
+	inline void EnqueueTask(Func &&function)
 	{
 		//new scope for the lock
 		{
 			std::unique_lock<std::mutex> lock(threadsMutex);
-			taskQueue.emplace([=]() mutable { func(args...); });
+			taskQueue.push(std::make_unique<Task<std::decay_t<Func>>>(std::forward<Func>(function)));
 		}
 		waitForTask.notify_one();
-	}
-
-	template<class FunctionType, class ...ArgsType>
-	[[nodiscard]] std::future<typename std::invoke_result<FunctionType, ArgsType...>::type>
-		EnqueueTaskWithResult(FunctionType &&function, ArgsType&&... args)
-	{
-		using return_type = typename std::invoke_result<FunctionType, ArgsType...>::type;
-
-		//create a shared packaged_task that will hold the callable
-		//the lambda captures the function and a tuple of its arguments, then uses std::apply to invoke it
-		auto task = std::make_shared<std::packaged_task<return_type()>>(
-			[func = std::forward<FunctionType>(function),
-			 tup = std::make_tuple(std::forward<ArgsType>(args)...)]() mutable {
-					 return std::apply(std::move(func), std::move(tup));
-			});
-
-		std::future<return_type> result = task->get_future();
-
-		EnqueueTask(
-			[task]() mutable {
-					(*task)();
-			});
-
-		return result;
 	}
 
 	//acquire a lock to begin enqueueing tasks or querying thread availability
@@ -201,35 +177,10 @@ public:
 
 	//enqueues a task into the thread pool
 	//it is up to the caller to determine when the task is complete
-	inline void BatchEnqueueTask(std::function<void()> &&function)
+	template <typename Func>
+	inline void BatchEnqueueTask(Func &&function)
 	{
-		taskQueue.emplace(std::move(function));
-	}
-
-	//enqueues a task into the thread pool comprised of a function and arguments, automatically inferring the function type
-	template<class FunctionType, class ...ArgsType>
-	inline std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> BatchEnqueueTaskWithResult(FunctionType &&function, ArgsType &&...args)
-	{
-		using return_type = typename std::invoke_result<FunctionType, ArgsType ...>::type;
-
-		//create a shared pointer of the task, as we don't know which could happen first, either
-		// this function will return and the thread will free the memory, or the thread could return really fast
-		// and this function will need to clean up the memory, but both need a valid reference
-		auto task = std::make_shared< std::packaged_task<return_type()> >(
-										std::bind(std::forward<FunctionType>(function), std::forward<ArgsType>(args) ...)
-		);
-
-		//hold the future to return
-		std::future<return_type> result = task->get_future();
-
-		BatchEnqueueTask(
-			[task]()
-			{
-				(*task)();
-			}
-		);
-
-		return result;
+		taskQueue.push(std::make_unique<Task<std::decay_t<Func>>>(std::forward<Func>(function)));
 	}
 
 	//implements a counter for a set of tasks
@@ -317,8 +268,28 @@ protected:
 	//condition to notify threads when to move from reserved to active
 	std::condition_variable waitForActivate;
 
+	struct TaskBase
+	{
+		virtual void execute() = 0;
+		virtual ~TaskBase() = default;
+	};
+
+	template <typename F>
+	struct Task : TaskBase
+	{
+		inline Task(F &&f) : func(std::forward<F>(f))
+		{}
+
+		inline void execute() override
+		{
+			func();
+		}
+
+		F func;
+	};
+
 	//tasks for the thread pool to complete
-	std::queue<std::function<void()>> taskQueue;
+	std::queue<std::unique_ptr<TaskBase>> taskQueue;
 
 	//the number of threads that can be active at any time
 	//the total number of threads is

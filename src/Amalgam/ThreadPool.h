@@ -275,7 +275,7 @@ protected:
 	struct Task
 	{
 		inline Task()
-			: buffer({}), execute(nullptr), destroy(nullptr)
+			: execute(nullptr), destroy(nullptr), buffer({})
 		{ }
 
 		//prevent accidental copying to avoid double-destruction

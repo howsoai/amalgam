@@ -85,7 +85,7 @@ public:
 			: lastEvaluableNodeManager(nullptr)
 		{
 		#ifdef MULTITHREAD_SUPPORT
-			Concurrency::Lock lock(registryMutex);
+			Concurrency::SpinLock lock(registryMutex);
 			registry.push_back(this);
 		#endif
 		}
@@ -93,7 +93,7 @@ public:
 		~LocalAllocationBuffer()
 		{
 		#ifdef MULTITHREAD_SUPPORT
-			Concurrency::Lock lock(registryMutex);
+			Concurrency::SpinLock lock(registryMutex);
 
 			auto it = std::find(registry.begin(), registry.end(), this);
 			if(it != registry.end())
@@ -113,6 +113,19 @@ public:
 			//set to null so nothing matches until more nodes are added
 			lastEvaluableNodeManager = nullptr;
 		}
+
+	#ifdef MULTITHREAD_SUPPORT
+		//removes all EvaluableNodes from all local allocation buffers
+		//it will clear each buffer if only_clear_if_current_enm is nullptr
+		//or if that buffer's lastEvaluableNodeManager is the same as
+		//only_clear_if_current_enm
+		static inline void ClearAllRegisteredLabs(EvaluableNodeManager *only_clear_if_current_enm = nullptr)
+		{
+			Concurrency::SpinLock lock(registryMutex);
+			for(auto lab : LocalAllocationBuffer::registry)
+				lab->Clear(only_clear_if_current_enm);
+		}
+	#endif
 
 		//gets a pointer to the next available node from the local allocation buffer
 		//nullptr if it cannot
@@ -146,18 +159,7 @@ public:
 			buffer.push_back(en);
 		}
 
-	#ifdef MULTITHREAD_SUPPORT
-		//calls func on all registered local allocation buffers for each thread
-		template<typename Func>
-		static inline void IterateFunctionOverRegisteredLabs(Func func)
-		{
-			Concurrency::Lock lock(registryMutex);
-			for(auto lab : LocalAllocationBuffer::registry)
-				func(lab);
-		}
-	#endif
-
-		// Keeps track of the the last EvaluableNodeManager that accessed 
+		// Keeps track of the the last EvaluableNodeManager that accessed
 		// the local allocation buffer for a each thread.
 		// A given local allocation buffer should only have nodes associated with one manager.
 		// If a different manager accesses the buffer, it is cleared to maintain this invariant.
@@ -171,7 +173,13 @@ public:
 	#ifdef MULTITHREAD_SUPPORT
 		//registry that keeps track of all local allocation buffers
 		static inline std::vector<LocalAllocationBuffer *> registry;
-		static inline Concurrency::SingleMutex registryMutex;
+		//spinlock to manage access to registry
+		//if this is integrated into other libraries, it is possible
+		//individual LABs in thread-local variables will be destroyed after
+		//this object's destructor fires; use a spinlock since regular
+		//std::mutex can be invalidated at destruction but std::atomic_flag
+		//if just an int
+		static inline Concurrency::SpinMutex registryMutex;
 	#endif
 	};
 
@@ -422,7 +430,7 @@ public:
 
 		ShrinkMemoryToCurrentUtilizationWithLock();
 	}
-	
+
 	//frees an EvaluableNode (must be owned by this EvaluableNodeManager)
 	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it
 	inline void FreeNode(EvaluableNode *en, bool place_nodes_in_lab = true)
@@ -915,7 +923,7 @@ protected:
 	thread_local inline static LocalAllocationBuffer localAllocationBuffer;
 #else
 	inline static LocalAllocationBuffer localAllocationBuffer;
-#endif		
+#endif
 
 	//debug diagnostic variables for localAllocationBuffer
 #ifdef DEBUG_REPORT_LAB_USAGE

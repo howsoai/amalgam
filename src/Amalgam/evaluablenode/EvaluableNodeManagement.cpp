@@ -24,11 +24,7 @@ EvaluableNodeManager::~EvaluableNodeManager()
 	Concurrency::WriteLock lock(managerAttributesMutex);
 
 	//clear from any threads
-	LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
-		[this](LocalAllocationBuffer *lab)
-	{
-		lab->Clear(this);
-	});
+	LocalAllocationBuffer::ClearAllRegisteredLabs(this);
 #else
 	localAllocationBuffer.Clear(this);
 #endif
@@ -73,13 +69,9 @@ void EvaluableNodeManager::CollectGarbage()
 
 	//clear regardless of what's in the buffer
 	localAllocationBuffer.Clear();
-	//clear all threads' local allocation buffers that are using this enm
 #ifdef MULTITHREAD_SUPPORT
-	LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
-		[this](LocalAllocationBuffer *lab)
-		{
-			lab->Clear(this);
-		});
+	//clear all threads' local allocation buffers that are using this enm
+	LocalAllocationBuffer::ClearAllRegisteredLabs(this);
 #endif
 
 	MarkAllReferencedNodesInUse(firstUnusedNodeIndex);
@@ -123,11 +115,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 		Concurrency::WriteLock write_lock(activeInterpreters->memoryModificationMutex);
 
 		//clear all threads' local allocation buffers that are using this enm
-		LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
-			[this](LocalAllocationBuffer *lab)
-		{
-			lab->Clear(this);
-		});
+		LocalAllocationBuffer::ClearAllRegisteredLabs(this);
 
 		size_t cur_first_unused_node_index = firstUnusedNodeIndex;
 		//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
@@ -141,7 +129,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 		MarkAllReferencedNodesInUse(cur_first_unused_node_index);
 		FreeAllNodesExceptReferencedNodes(cur_first_unused_node_index);
 
-		//wake up remaining threads 
+		//wake up remaining threads
 		{
 			//lock the notification mutex to prevent other threads from waking up and seeing
 			//an outdated state of garbageCollectionThreadSelectionFlag

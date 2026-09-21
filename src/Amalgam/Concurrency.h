@@ -44,6 +44,31 @@ namespace Concurrency
 	//standard write lock on a read-write shared mutex
 	typedef std::unique_lock<ReadWriteMutex> WriteLock;
 
+	//backing flag for spinlock
+	//needed only when a lock could be required to release a thread local
+	typedef std::atomic_flag SpinMutex;
+
+	//spinlock for access to SpinMutex
+	//guaranteed to be lock-free, but may require arbitrary CPU cycles to
+	//claim the lock.  RAII semantics.
+	class SpinLock {
+	public:
+		inline SpinLock(SpinMutex &flag) noexcept : flag(flag)
+		{
+			while(flag.test_and_set(std::memory_order_acquire))
+				std::this_thread::yield();
+		}
+
+		SpinLock(const SpinLock &other) = delete;
+
+		inline ~SpinLock() noexcept {
+			flag.clear(std::memory_order_release);
+		}
+
+	private:
+		SpinMutex &flag;
+	};
+
 	//Object to perform scope-based unlocking of a vector of locks of LockType for an existing buffer
 	template<typename LockBufferType>
 	class MultipleLockBufferObject

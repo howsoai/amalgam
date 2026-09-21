@@ -173,11 +173,25 @@ public:
 
 	#ifdef MULTITHREAD_SUPPORT
 		//registry that keeps track of all local allocation buffers
-		struct Registry {
+		struct Registry
+		{
+			//list of all of the LABs
 			std::vector<LocalAllocationBuffer *> registry;
+			//mutex to protect access to registry
 			Concurrency::SingleMutex mutex;
+			//singleton instance of this object
+			//the LABs live in thread-local variables; if another shared
+			//library maintains its own thread pool and creates threads that
+			//invoke Amalgam, it's possible those libraries and threads will
+			//be unloaded _after_ Amalgam.  This reference-counted pointer
+			//ensures that the registry stays alive until all LABs are done
+			//unregistering themselves from it.
 			static inline std::shared_ptr<Registry> instance = std::make_shared<Registry>();
 		};
+
+		//pointer to the registry
+		//a reference count is owned by this instance, which potentially
+		//outlives globals owned by the Amalgam library
 		std::shared_ptr<Registry> registry;
 	#endif
 	};

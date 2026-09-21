@@ -83,21 +83,24 @@ public:
 	public:
 		LocalAllocationBuffer()
 			: lastEvaluableNodeManager(nullptr)
+		#ifdef MULTITHREAD_SUPPORT
+			, registry(Registry::instance)
+		#endif
 		{
 		#ifdef MULTITHREAD_SUPPORT
-			Concurrency::Lock lock(registryMutex);
-			registry.push_back(this);
+			Concurrency::Lock lock(registry->mutex);
+			registry->registry.push_back(this);
 		#endif
 		}
 
 		~LocalAllocationBuffer()
 		{
 		#ifdef MULTITHREAD_SUPPORT
-			Concurrency::Lock lock(registryMutex);
+			Concurrency::Lock lock(registry->mutex);
 
-			auto it = std::find(registry.begin(), registry.end(), this);
-			if(it != registry.end())
-				registry.erase(it);
+			auto it = std::find(registry->registry.begin(), registry->registry.end(), this);
+			if(it != registry->registry.end())
+				registry->registry.erase(it);
 		#endif
 		}
 
@@ -151,13 +154,13 @@ public:
 		template<typename Func>
 		static inline void IterateFunctionOverRegisteredLabs(Func func)
 		{
-			Concurrency::Lock lock(registryMutex);
-			for(auto lab : LocalAllocationBuffer::registry)
+			Concurrency::Lock lock(Registry::instance->mutex);
+			for(auto lab : Registry::instance->registry)
 				func(lab);
 		}
 	#endif
 
-		// Keeps track of the the last EvaluableNodeManager that accessed 
+		// Keeps track of the the last EvaluableNodeManager that accessed
 		// the local allocation buffer for a each thread.
 		// A given local allocation buffer should only have nodes associated with one manager.
 		// If a different manager accesses the buffer, it is cleared to maintain this invariant.
@@ -170,8 +173,26 @@ public:
 
 	#ifdef MULTITHREAD_SUPPORT
 		//registry that keeps track of all local allocation buffers
-		static inline std::vector<LocalAllocationBuffer *> registry;
-		static inline Concurrency::SingleMutex registryMutex;
+		struct Registry
+		{
+			//list of all of the LABs
+			std::vector<LocalAllocationBuffer *> registry;
+			//mutex to protect access to registry
+			Concurrency::SingleMutex mutex;
+			//singleton instance of this object
+			//the LABs live in thread-local variables; if another shared
+			//library maintains its own thread pool and creates threads that
+			//invoke Amalgam, it's possible those libraries and threads will
+			//be unloaded _after_ Amalgam.  This reference-counted pointer
+			//ensures that the registry stays alive until all LABs are done
+			//unregistering themselves from it.
+			static inline std::shared_ptr<Registry> instance = std::make_shared<Registry>();
+		};
+
+		//pointer to the registry
+		//a reference count is owned by this instance, which potentially
+		//outlives globals owned by the Amalgam library
+		std::shared_ptr<Registry> registry;
 	#endif
 	};
 
@@ -422,7 +443,7 @@ public:
 
 		ShrinkMemoryToCurrentUtilizationWithLock();
 	}
-	
+
 	//frees an EvaluableNode (must be owned by this EvaluableNodeManager)
 	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it
 	inline void FreeNode(EvaluableNode *en, bool place_nodes_in_lab = true)
@@ -915,7 +936,7 @@ protected:
 	thread_local inline static LocalAllocationBuffer localAllocationBuffer;
 #else
 	inline static LocalAllocationBuffer localAllocationBuffer;
-#endif		
+#endif
 
 	//debug diagnostic variables for localAllocationBuffer
 #ifdef DEBUG_REPORT_LAB_USAGE

@@ -105,6 +105,7 @@ public:
 				if(numReservedThreads > 0)
 				{
 					numThreadsToTransitionToReserved--;
+					waitForActivate.notify_one();
 				}
 				else
 				{

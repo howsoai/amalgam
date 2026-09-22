@@ -2,15 +2,145 @@
 
 //system headers:
 #include <array>
+#include <atomic>
 #include <condition_variable>
 #include <cstring>
+#include <memory>
 #include <mutex>
 #include <new>
+#include <optional>
 #include <queue>
 #include <thread>
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+template <typename T, size_t BlockSize = 1024>
+class MultiproducerMulticonsumerQueue
+{
+	//storage of a given element
+	struct Slot
+	{
+		T storage;
+		//even values = empty/read, odd values = written/ready
+		std::atomic<size_t> sequence{ 0 };
+	};
+
+	//node of a given BlockSize
+	struct Node
+	{
+		Node(size_t id) : blockId(id)
+		{
+			//prepopulate even values matching the slot index sequence formula
+			for(size_t i = 0; i < BlockSize; ++i)
+				slots[i].sequence.store(i * 2, std::memory_order_relaxed);
+		}
+
+		std::array<Slot, BlockSize> slots;
+		std::atomic<Node *> next{ nullptr };
+		size_t blockId;
+	};
+
+	Node *GetOrAllocateNode(size_t blockId)
+	{
+		Node *current = headNode;
+
+		//traverse down the linked chain
+		while(current->blockId < blockId)
+		{
+			Node *next_node = current->next.load(std::memory_order_acquire);
+			if(next_node == nullptr)
+			{
+				//reached the end of the chain, allocate next segment
+				std::lock_guard<std::mutex> lock(allocationMutex);
+				next_node = current->next.load(std::memory_order_relaxed);
+				//double-check in case assigned by another thread
+				if(next_node == nullptr)
+				{
+					next_node = new Node(current->blockId + 1);
+					current->next.store(next_node, std::memory_order_release);
+				}
+			}
+			current = next_node;
+		}
+
+		return current;
+	}
+
+public:
+	MultiproducerMulticonsumerQueue()
+		: headNode(new Node(0))
+	{ }
+
+	~MultiproducerMulticonsumerQueue()
+	{
+		Node *current = headNode;
+		while(current != nullptr)
+		{
+			Node *next = current->next.load(std::memory_order_relaxed);
+			delete current;
+			current = next;
+		}
+	}
+
+	void push(T &&item)
+	{
+		//secure place in the global chronological timeline
+		size_t ticket = producerTicket.fetch_add(1, std::memory_order_relaxed);
+		size_t blockId = ticket / BlockSize;
+		size_t slot_id = ticket % BlockSize;
+
+		Node *node = GetOrAllocateNode(blockId);
+		Slot &slot = node->slots[slot_id];
+
+		//the state of the slot: even means empty/available for producer and odd means filled/available for consumer
+		size_t expected_seq = blockId * (BlockSize * 2) + (slot_id * 2);
+
+		//if the current sequence doesn't match what we expect, block until it changes
+		while(slot.sequence.load(std::memory_order_acquire) != expected_seq)
+			slot.sequence.wait(expected_seq, std::memory_order_acquire);
+
+		//write data safely
+		slot.storage = std::move(item);
+
+		//update state to odd value and wake up the next consumer thread in line
+		slot.sequence.store(expected_seq + 1, std::memory_order_release);
+		slot.sequence.notify_one();
+	}
+
+	std::optional<T> pop()
+	{
+		size_t ticket = consumerTicket.fetch_add(1, std::memory_order_relaxed);
+		size_t blockId = ticket / BlockSize;
+		size_t slot_id = ticket % BlockSize;
+
+		Node *node = GetNode(blockId);
+		Slot &slot = node->slots[slot_id];
+
+		//the state of the slot: even means empty/available for producer and odd means filled/available for consumer
+		size_t expected_seq = blockId * (BlockSize * 2) + (slot_id * 2) + 1;
+
+		//if sequence is not expected_seq, the producer hasn't finished the write
+		// so block the thread until the producer finishes the write
+		while(slot.sequence.load(std::memory_order_acquire) != expected_seq)
+			slot.sequence.wait(expected_seq, std::memory_order_acquire);
+
+		T item = std::move(slot.storage);
+
+		//move back to even state for the next producer cycle
+		slot.sequence.store(expected_seq + 1, std::memory_order_release);
+		slot.sequence.notify_one();
+
+		return item;
+	}
+
+	std::mutex allocationMutex;
+
+	alignas(64) Node *headNode;
+	//cache-line aligned to prevent false sharing across threads
+	alignas(64) std::atomic<size_t> producerTicket{ 0 };
+	alignas(64) std::atomic<size_t> consumerTicket{ 0 };
+};
 
 //Creates a flexible thread pool for generic tasks aimed at making sure a specified
 // number of CPU cores worth of compute can be active at any one time.  Because threads

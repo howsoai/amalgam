@@ -152,7 +152,7 @@ public:
 		//new scope for the lock
 		{
 			std::unique_lock<std::mutex> lock(threadsMutex);
-			taskQueue.push(Task::create(std::forward<Func>(function)));
+			taskQueue.push(Task::Create(std::forward<Func>(function)));
 		}
 		waitForTask.notify_one();
 	}
@@ -184,7 +184,7 @@ public:
 	template <typename Func>
 	inline void BatchEnqueueTask(Func &&function)
 	{
-		taskQueue.push(Task::create(std::forward<Func>(function)));
+		taskQueue.push(Task::Create(std::forward<Func>(function)));
 	}
 
 	//implements a counter for a set of tasks
@@ -272,11 +272,18 @@ protected:
 	//condition to notify threads when to move from reserved to active
 	std::condition_variable waitForActivate;
 
+	//constant memory sized holder for a task that is big enough to
+	//cover most small tasks via small buffer optimization, but will allocate on the heap
+	//if needed.  note that for performance, it assumes it will be given a valid task
+	//before being executed
 	struct Task
 	{
-		inline Task()
-			: execute(nullptr), destroy(nullptr), buffer {}
-		{ }
+		using ExecuteFunc = void (*)(void *p);
+		using MoveFunc = void (*)(void *dst, const void *src);
+		using DestroyFunc = void (*)(void *p);
+
+		inline Task() : execute(nullptr), destroy(nullptr), move(nullptr)
+		{}
 
 		//prevent accidental copying to avoid double-destruction
 		Task(const Task &) = delete;
@@ -285,11 +292,17 @@ protected:
 
 		inline Task(Task &&other) noexcept
 		{
-			std::memcpy(&buffer[0], &other.buffer[0], INLINE_SIZE);
+			if(other.move != nullptr)
+				(*other.move)(buffer, other.buffer);
+			else
+				std::memcpy(buffer, other.buffer, INLINE_SIZE);
+
 			execute = other.execute;
 			destroy = other.destroy;
-			//prevent other from destroying our moved data
+			move = other.move;
+
 			other.destroy = nullptr;
+			other.move = nullptr;
 		}
 
 		inline Task &operator=(Task &&other) noexcept
@@ -298,71 +311,103 @@ protected:
 			{
 				if(destroy != nullptr)
 					(*destroy)(buffer);
-				std::memcpy(&buffer[0], &other.buffer[0], INLINE_SIZE);
+
+				if(other.move != nullptr)
+					(*other.move)(buffer, other.buffer);
+				else
+					std::memcpy(buffer, other.buffer, INLINE_SIZE);
+
 				execute = other.execute;
 				destroy = other.destroy;
+				move = other.move;
+
 				other.destroy = nullptr;
+				other.move = nullptr;
 			}
 			return *this;
 		}
 
 		inline ~Task()
 		{
-			if(destroy)
+			if(destroy != nullptr)
 				(*destroy)(buffer);
 		}
 
+		//assumes execute is not nullptr; otherwise it wouldn't be a task
 		inline void operator()()
 		{
 			(*execute)(buffer);
 		}
 
-		template <typename F>
-		inline static Task create(F &&f)
+		//creates the task from a lambda function
+		template<typename F>
+		inline static Task Create(F &&f)
 		{
 			Task t;
 			using FuncType = std::decay_t<F>;
 
-			if constexpr(sizeof(FuncType) <= INLINE_SIZE)
+			if constexpr(sizeof(FuncType) <= INLINE_SIZE && alignof(FuncType) <= alignof(decltype(Task::buffer)))
 			{
-				//use new to place into the buffer
 				new (t.buffer) FuncType(std::forward<F>(f));
 
 				t.execute = [](void *p) {
 					auto *func = std::launder(reinterpret_cast<FuncType *>(p));
 					(*func)();
-					};
+				};
 
-				t.destroy = [](void *p) {
-					auto *func = std::launder(reinterpret_cast<FuncType *>(p));
-					func->~FuncType();
+				if constexpr(!std::is_trivially_destructible_v<FuncType>)
+				{
+					t.destroy = [](void *p) {
+						auto *func = std::launder(reinterpret_cast<FuncType *>(p));
+						func->~FuncType();
 					};
+				}
+				else
+				{
+					t.destroy = nullptr;
+				}
+
+				if constexpr(!std::is_trivially_copyable_v<FuncType>)
+				{
+					t.move = [](void *dst, const void *src) {
+						auto *source_obj = std::launder(reinterpret_cast<const FuncType *>(src));
+						new (dst) FuncType(std::move(*source_obj));
+						source_obj->~FuncType();
+					};
+				}
+				else
+				{
+					t.move = nullptr;
+				}
 			}
 			else
 			{
-				//heap fallback for large tasks
 				FuncType *heapFunc = new FuncType(std::forward<F>(f));
 				std::memcpy(t.buffer, &heapFunc, sizeof(FuncType *));
 
 				t.execute = [](void *p) {
-					FuncType **ptr_to_func = std::launder(reinterpret_cast<FuncType **>(p));
+					auto **ptr_to_func = std::launder(reinterpret_cast<FuncType **>(p));
 					(**ptr_to_func)();
-					};
+				};
 
+				//heap storage always requires a destroy call
 				t.destroy = [](void *p) {
-					FuncType **ptr_to_func = std::launder(reinterpret_cast<FuncType **>(p));
+					auto **ptr_to_func = std::launder(reinterpret_cast<FuncType **>(p));
 					delete *ptr_to_func;
-					};
+				};
+
+				t.move = nullptr;
 			}
 			return t;
 		}
 
-		//make the buffer size align cleanly while leaving space for execute and destroy
-		static constexpr size_t INLINE_SIZE = 128 - 2 * sizeof(void *);
+		static constexpr size_t INLINE_SIZE = 128 - 3 * sizeof(void *);
 
-		void (*execute)(void *);
-		void (*destroy)(void *);
-		uint8_t buffer[INLINE_SIZE];
+		ExecuteFunc execute;
+		DestroyFunc destroy;
+		MoveFunc move;
+
+		alignas(std::max_align_t) uint8_t buffer[INLINE_SIZE];
 	};
 
 	//tasks for the thread pool to complete

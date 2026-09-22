@@ -105,6 +105,8 @@ public:
 				if(numReservedThreads > 0)
 				{
 					numThreadsToTransitionToReserved--;
+					//reserved threads wait for activation, not for tasks
+					waitForActivate.notify_one();
 				}
 				else
 				{

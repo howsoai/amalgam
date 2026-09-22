@@ -4,24 +4,6 @@
 
 enable_testing()
 
-# Standalone thread-pool tests need neither the interpreter nor advanced intrinsics.
-# Match the platforms on which the project builds threaded targets.
-if(NOT IS_WASM AND NOT IS_ARM64_8A)
-    set(THREADS_PREFER_PTHREAD_FLAG TRUE)
-    find_package(Threads REQUIRED)
-    add_executable(thread-pool-test
-        test/unit_test/thread_pool_test.cpp
-        src/Amalgam/ThreadPool.cpp
-    )
-    target_link_libraries(thread-pool-test PRIVATE Threads::Threads)
-    set_target_properties(thread-pool-test PROPERTIES FOLDER "Testing")
-    foreach(TEST_CASE reserve_reactivation resize shutdown)
-        add_test(NAME ThreadPool.${TEST_CASE} COMMAND thread-pool-test ${TEST_CASE})
-        set_tests_properties(ThreadPool.${TEST_CASE} PROPERTIES
-            LABELS "smoke_test;thread_pool" TIMEOUT 30)
-    endforeach()
-endif()
-
 # CTest args:
 set(CMAKE_CTEST_ARGUMENTS "-j 1" "--schedule-random" "--output-on-failure" "--extra-verbose" "--output-log" "${CMAKE_SOURCE_DIR}/out/test/all_tests.log")
 

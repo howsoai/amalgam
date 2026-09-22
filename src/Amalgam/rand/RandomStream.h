@@ -210,14 +210,17 @@ private:
 };
 
 //Priority queue that, when receiving values of equal priority, will randomize the order they are stored and popped off the queue
-//Requires the type QueueElementType to have both the < and == operators
+//Ties are broken by a key derived from each element's entity index and a seed,
+// so for a given seed the result is independent of the order elements are pushed
+//Requires the type QueueElementType to have both the < and == operators, and a GetEntityIndex method
 //The constructor requires a seed
 template<typename QueueElementType, typename ComparisonValueType>
 class StochasticTieBreakingPriorityQueue
 {
 public:
 
-	typedef std::vector<std::pair<QueueElementType, uint32_t>> PriorityQueueContainerType;
+	typedef std::pair<QueueElementType, uint64_t> KeyedElementType;
+	typedef std::vector<KeyedElementType> PriorityQueueContainerType;
 
 	StochasticTieBreakingPriorityQueue() :
 		priorityQueue(StochasticTieBreakingComparator())
@@ -225,21 +228,26 @@ public:
 
 	//seeds the priority queue
 	StochasticTieBreakingPriorityQueue(std::string seed)
-		: priorityQueue(StochasticTieBreakingComparator()), randomStream(seed)
-	{}
+		: priorityQueue(StochasticTieBreakingComparator())
+	{
+		SetSeed(seed);
+	}
 
 	StochasticTieBreakingPriorityQueue(RandomStream stream)
-		: priorityQueue(StochasticTieBreakingComparator()), randomStream(stream)
-	{}
+		: priorityQueue(StochasticTieBreakingComparator())
+	{
+		SetStream(stream);
+	}
 
 	__forceinline void SetSeed(std::string seed)
 	{
-		randomStream.SetState(seed);
+		SetStream(RandomStream(seed));
 	}
 
+	//takes a single seed from stream for the tie-breaking keys
 	__forceinline void SetStream(RandomStream stream)
 	{
-		randomStream = stream;
+		tieBreakSeed = (static_cast<uint64_t>(stream.RandUInt32()) << 32) | stream.RandUInt32();
 	}
 
 	__forceinline void SetIncludeAllThreshold(ComparisonValueType threshold)
@@ -286,7 +294,7 @@ public:
 
 	__forceinline void Push(const QueueElementType &val)
 	{
-		priorityQueue.emplace(val, randomStream.RandUInt32());
+		priorityQueue.emplace(val, GetTieBreakKey(val.GetEntityIndex()));
 	}
 
 	//like Push, but retains the current size of the priority queue
@@ -322,20 +330,20 @@ public:
 		{
 			//better, so exchange it
 			priorityQueue.pop();
-			priorityQueue.emplace(val, randomStream.RandUInt32());
+			priorityQueue.emplace(val, GetTieBreakKey(val.GetEntityIndex()));
 
 			return priorityQueue.top().first;
 		}
 		else if(val == top.first)
 		{
-			//good enough to consider for top, check random
-			uint32_t r = randomStream.RandUInt32();
+			//good enough to consider for top, check key
+			uint64_t key = GetTieBreakKey(val.GetEntityIndex());
 
-			//if won the random selection, then push it on the stack
-			if(r < top.second)
+			//if won the tie break, then push it on the stack
+			if(key < top.second)
 			{
 				priorityQueue.pop();
-				priorityQueue.emplace(val, r);
+				priorityQueue.emplace(val, key);
 
 				//return new top of stack
 				return priorityQueue.top().first;
@@ -360,11 +368,22 @@ public:
 
 protected:
 
-	//used to compare first by the value, second by the random number if equal
+	//deterministically maps entity_index to a pseudorandom key based on tieBreakSeed
+	//for a fixed seed this is a bijection over uint64_t (multiplying by an odd constant and xoring
+	// with the seed are each invertible), so distinct indices never collide and ties are broken
+	// independently of the order elements are pushed
+	//relies on tieBreakSeed being well mixed, as it comes from a RandomStream
+	__forceinline uint64_t GetTieBreakKey(uint64_t entity_index) const
+	{
+		uint64_t x = (entity_index * 0x9e3779b97f4a7c15ULL) ^ tieBreakSeed;
+		return x * 0xd6e8feb86659fd93ULL;
+	}
+
+	//used to compare first by the value, second by the tie-break key if equal
 	class StochasticTieBreakingComparator
 	{
 	public:
-		constexpr bool operator()(const std::pair<QueueElementType, uint32_t> &a, const std::pair<QueueElementType, uint32_t> &b)
+		constexpr bool operator()(const KeyedElementType &a, const KeyedElementType &b)
 		{
 			if(a.first == b.first)
 				return a.second < b.second;
@@ -372,10 +391,11 @@ protected:
 		}
 	};
 
-	FlexiblePriorityQueue<std::pair<QueueElementType, uint32_t>, PriorityQueueContainerType, StochasticTieBreakingComparator> priorityQueue;
+	FlexiblePriorityQueue<KeyedElementType, PriorityQueueContainerType, StochasticTieBreakingComparator> priorityQueue;
 
 	//threshold below which all elements should be kept by PushAndPopToThreshold
 	ComparisonValueType includeAllThreshold;
 
-	RandomStream randomStream;
+	//seed for GetTieBreakKey
+	uint64_t tieBreakSeed = 0;
 };

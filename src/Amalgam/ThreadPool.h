@@ -1,12 +1,15 @@
 #pragma once
 
 //system headers:
+#include <array>
 #include <condition_variable>
-#include <functional>
-#include <future>
+#include <cstring>
 #include <mutex>
+#include <new>
 #include <queue>
 #include <thread>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 //Creates a flexible thread pool for generic tasks aimed at making sure a specified
@@ -143,39 +146,15 @@ public:
 
 	//enqueues a task into the thread pool
 	//it is up to the caller to determine when the task is complete
-	template<typename Func, typename... Args>
-	inline void EnqueueTask(Func func, Args... args)
+	template<typename Func>
+	inline void EnqueueTask(Func &&function)
 	{
 		//new scope for the lock
 		{
 			std::unique_lock<std::mutex> lock(threadsMutex);
-			taskQueue.emplace([=]() mutable { func(args...); });
+			taskQueue.push(Task::Create(std::forward<Func>(function)));
 		}
 		waitForTask.notify_one();
-	}
-
-	template<class FunctionType, class ...ArgsType>
-	[[nodiscard]] std::future<typename std::invoke_result<FunctionType, ArgsType...>::type>
-		EnqueueTaskWithResult(FunctionType &&function, ArgsType&&... args)
-	{
-		using return_type = typename std::invoke_result<FunctionType, ArgsType...>::type;
-
-		//create a shared packaged_task that will hold the callable
-		//the lambda captures the function and a tuple of its arguments, then uses std::apply to invoke it
-		auto task = std::make_shared<std::packaged_task<return_type()>>(
-			[func = std::forward<FunctionType>(function),
-			 tup = std::make_tuple(std::forward<ArgsType>(args)...)]() mutable {
-					 return std::apply(std::move(func), std::move(tup));
-			});
-
-		std::future<return_type> result = task->get_future();
-
-		EnqueueTask(
-			[task]() mutable {
-					(*task)();
-			});
-
-		return result;
 	}
 
 	//acquire a lock to begin enqueueing tasks or querying thread availability
@@ -201,35 +180,11 @@ public:
 
 	//enqueues a task into the thread pool
 	//it is up to the caller to determine when the task is complete
-	inline void BatchEnqueueTask(std::function<void()> &&function)
+	//AcquireTaskLock must be called to protect the calls to this method
+	template <typename Func>
+	inline void BatchEnqueueTask(Func &&function)
 	{
-		taskQueue.emplace(std::move(function));
-	}
-
-	//enqueues a task into the thread pool comprised of a function and arguments, automatically inferring the function type
-	template<class FunctionType, class ...ArgsType>
-	inline std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> BatchEnqueueTaskWithResult(FunctionType &&function, ArgsType &&...args)
-	{
-		using return_type = typename std::invoke_result<FunctionType, ArgsType ...>::type;
-
-		//create a shared pointer of the task, as we don't know which could happen first, either
-		// this function will return and the thread will free the memory, or the thread could return really fast
-		// and this function will need to clean up the memory, but both need a valid reference
-		auto task = std::make_shared< std::packaged_task<return_type()> >(
-										std::bind(std::forward<FunctionType>(function), std::forward<ArgsType>(args) ...)
-		);
-
-		//hold the future to return
-		std::future<return_type> result = task->get_future();
-
-		BatchEnqueueTask(
-			[task]()
-			{
-				(*task)();
-			}
-		);
-
-		return result;
+		taskQueue.push(Task::Create(std::forward<Func>(function)));
 	}
 
 	//implements a counter for a set of tasks
@@ -317,8 +272,148 @@ protected:
 	//condition to notify threads when to move from reserved to active
 	std::condition_variable waitForActivate;
 
+	//constant memory sized holder for a task that is big enough to
+	//cover most small tasks via small buffer optimization, but will allocate on the heap
+	//if needed.  note that for performance, it assumes it will be given a valid task
+	//before being executed
+	struct Task
+	{
+		using ExecuteFunc = void (*)(void *p);
+		using MoveFunc = void (*)(void *dst, void *src);
+		using DestroyFunc = void (*)(void *p);
+
+		inline Task() : execute(nullptr), destroy(nullptr), move(nullptr)
+		{}
+
+		//prevent accidental copying to avoid double-destruction
+		Task(const Task &) = delete;
+
+		Task &operator=(const Task &) = delete;
+
+		inline Task(Task &&other) noexcept
+		{
+			if(other.move != nullptr)
+				(*other.move)(buffer, other.buffer);
+			else
+				std::memcpy(buffer, other.buffer, INLINE_SIZE);
+
+			execute = other.execute;
+			destroy = other.destroy;
+			move = other.move;
+
+			other.destroy = nullptr;
+			other.move = nullptr;
+		}
+
+		inline Task &operator=(Task &&other) noexcept
+		{
+			if(this != &other)
+			{
+				if(destroy != nullptr)
+					(*destroy)(buffer);
+
+				if(other.move != nullptr)
+					(*other.move)(buffer, other.buffer);
+				else
+					std::memcpy(buffer, other.buffer, INLINE_SIZE);
+
+				execute = other.execute;
+				destroy = other.destroy;
+				move = other.move;
+
+				other.destroy = nullptr;
+				other.move = nullptr;
+			}
+			return *this;
+		}
+
+		inline ~Task()
+		{
+			if(destroy != nullptr)
+				(*destroy)(buffer);
+		}
+
+		//assumes execute is not nullptr; otherwise it wouldn't be a task
+		inline void operator()()
+		{
+			(*execute)(buffer);
+		}
+
+		//creates the task from a lambda function
+		template<typename F>
+		inline static Task Create(F &&f)
+		{
+			Task t;
+			using FuncType = std::decay_t<F>;
+
+			if constexpr(sizeof(FuncType) <= INLINE_SIZE
+				&& alignof(FuncType) <= alignof(std::max_align_t)
+				&& std::is_nothrow_move_constructible_v<FuncType>)
+			{
+				new (t.buffer) FuncType(std::forward<F>(f));
+
+				t.execute = [](void *p) {
+					auto *func = std::launder(reinterpret_cast<FuncType *>(p));
+					(*func)();
+				};
+
+				if constexpr(!std::is_trivially_destructible_v<FuncType>)
+				{
+					t.destroy = [](void *p) {
+						auto *func = std::launder(reinterpret_cast<FuncType *>(p));
+						func->~FuncType();
+					};
+				}
+				else
+				{
+					t.destroy = nullptr;
+				}
+
+				if constexpr(!std::is_trivially_copyable_v<FuncType>)
+				{
+					t.move = [](void *dst, void *src) {
+						auto *source_obj = std::launder(reinterpret_cast<FuncType *>(src));
+						new (dst) FuncType(std::move(*source_obj));
+						source_obj->~FuncType();
+					};
+				}
+				else
+				{
+					t.move = nullptr;
+				}
+			}
+			else
+			{
+				FuncType *heapFunc = new FuncType(std::forward<F>(f));
+				std::memcpy(t.buffer, &heapFunc, sizeof(FuncType *));
+
+				t.execute = [](void *p) {
+					auto **ptr_to_func = std::launder(reinterpret_cast<FuncType **>(p));
+					(**ptr_to_func)();
+				};
+
+				//heap storage always requires a destroy call
+				t.destroy = [](void *p) {
+					auto **ptr_to_func = std::launder(reinterpret_cast<FuncType **>(p));
+					delete *ptr_to_func;
+				};
+
+				t.move = nullptr;
+			}
+			return t;
+		}
+
+		static constexpr size_t INLINE_SIZE = 128 - 3 * sizeof(void *);
+
+		ExecuteFunc execute;
+		DestroyFunc destroy;
+		MoveFunc move;
+
+		alignas(std::max_align_t) uint8_t buffer[INLINE_SIZE];
+	};
+
 	//tasks for the thread pool to complete
-	std::queue<std::function<void()>> taskQueue;
+	std::queue<Task> taskQueue;
 
 	//the number of threads that can be active at any time
 	//the total number of threads is

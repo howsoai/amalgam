@@ -279,7 +279,7 @@ protected:
 	struct Task
 	{
 		using ExecuteFunc = void (*)(void *p);
-		using MoveFunc = void (*)(void *dst, const void *src);
+		using MoveFunc = void (*)(void *dst, void *src);
 		using DestroyFunc = void (*)(void *p);
 
 		inline Task() : execute(nullptr), destroy(nullptr), move(nullptr)
@@ -346,7 +346,9 @@ protected:
 			Task t;
 			using FuncType = std::decay_t<F>;
 
-			if constexpr(sizeof(FuncType) <= INLINE_SIZE && alignof(FuncType) <= alignof(decltype(Task::buffer)))
+			if constexpr(sizeof(FuncType) <= INLINE_SIZE
+				&& alignof(FuncType) <= alignof(std::max_align_t)
+				&& std::is_nothrow_move_constructible_v<FuncType>)
 			{
 				new (t.buffer) FuncType(std::forward<F>(f));
 
@@ -370,7 +372,7 @@ protected:
 				if constexpr(!std::is_trivially_copyable_v<FuncType>)
 				{
 					t.move = [](void *dst, const void *src) {
-						auto *source_obj = std::launder(reinterpret_cast<const FuncType *>(src));
+						auto *source_obj = std::launder(reinterpret_cast<FuncType *>(src));
 						new (dst) FuncType(std::move(*source_obj));
 						source_obj->~FuncType();
 					};

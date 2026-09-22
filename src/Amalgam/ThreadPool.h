@@ -371,7 +371,7 @@ protected:
 
 				if constexpr(!std::is_trivially_copyable_v<FuncType>)
 				{
-					t.move = [](void *dst, const void *src) {
+					t.move = [](void *dst, void *src) {
 						auto *source_obj = std::launder(reinterpret_cast<FuncType *>(src));
 						new (dst) FuncType(std::move(*source_obj));
 						source_obj->~FuncType();

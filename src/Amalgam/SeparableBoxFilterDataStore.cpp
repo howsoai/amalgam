@@ -546,7 +546,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 	//reuse, clear, and set up sorted_results
 	auto &sorted_results = parametersAndBuffers.sortedResults;
 	//assume there's an error in each addition and subtraction
-	sorted_results.Reset(&rand_stream, top_k, std::numeric_limits<double>::epsilon());
+	sorted_results.Reset(rand_stream, top_k, std::numeric_limits<double>::epsilon());
 
 	//parse the sparse inline hash of good match nodes directly into the compacted vector of good matches
 	while(potential_good_matches.size() > 0)

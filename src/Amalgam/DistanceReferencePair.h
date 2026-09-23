@@ -2,7 +2,6 @@
 
 //system headers:
 #include <cstddef>
-#include <type_traits>
 
 //used to manage pairs of distance and a reference
 // where operations take place more frequently via distance first, such that cache access is optimized
@@ -74,14 +73,10 @@ public:
 		return reference == drp.reference;
 	}
 
-	//returns the entity index of the reference
-	//if the reference is an index, returns it, otherwise assumes it is an Entity * and returns its index in its container
-	inline size_t GetEntityIndex() const
+	//returns the reference as an integer; only valid when ReferenceType is an integral type
+	constexpr size_t GetReferenceAsInteger() const
 	{
-		if constexpr(std::is_integral_v<ReferenceType>)
-			return static_cast<size_t>(reference);
-		else
-			return reference->GetEntityIndexOfContainer();
+		return static_cast<size_t>(reference);
 	}
 
 	//returns a reference that will always be invalid, that should, for all practical purposes, always return

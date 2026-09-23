@@ -1485,7 +1485,7 @@ public:
 	{
 		auto &sorted_results = parametersAndBuffers.sortedResults;
 		sorted_results.clear();
-		sorted_results.SetSeed(&rand_stream);
+		sorted_results.SetSeed(rand_stream);
 
 		bool high_accuracy = (r_dist_eval.distEvaluator->highAccuracyDistances || r_dist_eval.distEvaluator->recomputeAccurateDistances);
 

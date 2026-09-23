@@ -214,12 +214,24 @@ private:
 	Compare comp;
 };
 
+//default for StochasticTieBreakingPriorityQueue's ReferenceToInteger, uses QueueElementType's GetReferenceAsInteger method
+template<typename QueueElementType>
+struct DefaultReferenceToInteger
+{
+	constexpr size_t operator()(const QueueElementType &val) const
+	{
+		return val.GetReferenceAsInteger();
+	}
+};
+
 //Priority queue that, when receiving values of equal priority, will randomize the order they are stored and popped off the queue
-//Ties are broken by a key derived from each element's entity index and a seed,
-// so for a given seed the result is independent of the order elements are pushed
-//Requires the type QueueElementType to have both the < and == operators, and a GetEntityIndex method
+//Ties are broken by a key derived from each element's reference, converted to an integer via ReferenceToInteger,
+// and a seed, so for a given seed the result is independent of the order elements are pushed
+//Requires the type QueueElementType to have both the < and == operators
+//ReferenceToInteger must return a unique integer for each element's reference
 //The constructor requires a seed
-template<typename QueueElementType, typename ComparisonValueType>
+template<typename QueueElementType, typename ComparisonValueType,
+	typename ReferenceToInteger = DefaultReferenceToInteger<QueueElementType>>
 class StochasticTieBreakingPriorityQueue
 {
 public:
@@ -231,17 +243,17 @@ public:
 	{}
 
 	//seeds the priority queue
-	StochasticTieBreakingPriorityQueue(RandomStream* stream)
+	StochasticTieBreakingPriorityQueue(RandomStream &stream)
 		: priorityQueue(StochasticTieBreakingComparator())
 	{
 		SetSeed(stream);
 	}
 
-	__forceinline void SetSeed(RandomStream* stream)
+	__forceinline void SetSeed(RandomStream &stream)
 	{
 		clear();
 		priorityQueue.GetComparator().tieBreakSeed
-			= (static_cast<uint64_t>(stream->RandUInt32()) << 32) | stream->RandUInt32();
+			= (static_cast<uint64_t>(stream.RandUInt32()) << 32) | stream.RandUInt32();
 	}
 
 	__forceinline void SetIncludeAllThreshold(ComparisonValueType threshold)
@@ -261,7 +273,7 @@ public:
 	}
 
 	//resets the object, as well as the same effect of calling all appropriate the setters
-	inline void Reset(RandomStream* stream, size_t reserve_size, ComparisonValueType threshold)
+	inline void Reset(RandomStream &stream, size_t reserve_size, ComparisonValueType threshold)
 	{
 		SetSeed(stream);
 		Reserve(reserve_size);
@@ -350,18 +362,18 @@ protected:
 		inline bool operator()(const QueueElementType &a, const QueueElementType &b) const
 		{
 			if(a == b)
-				return GetTieBreakKey(a.GetEntityIndex()) < GetTieBreakKey(b.GetEntityIndex());
+				return GetTieBreakKey(ReferenceToInteger()(a)) < GetTieBreakKey(ReferenceToInteger()(b));
 			return a < b;
 		}
 
-		//deterministically maps entity_index to a pseudorandom key based on tieBreakSeed
+		//deterministically maps index to a pseudorandom key based on tieBreakSeed
 		//for a fixed seed this is a bijection over uint64_t (multiplying by an odd constant and xoring
 		// with the seed are each invertible), so distinct indices never collide and ties are broken
 		// independently of the order elements are pushed
 		//relies on tieBreakSeed being well mixed, as it comes from a RandomStream
-		__forceinline uint64_t GetTieBreakKey(uint64_t entity_index) const
+		__forceinline uint64_t GetTieBreakKey(uint64_t index) const
 		{
-			uint64_t x = (entity_index * 0x9e3779b97f4a7c15ULL) ^ tieBreakSeed;
+			uint64_t x = (index * 0x9e3779b97f4a7c15ULL) ^ tieBreakSeed;
 			return x * 0xd6e8feb86659fd93ULL;
 		}
 

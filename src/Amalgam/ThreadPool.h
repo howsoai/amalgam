@@ -32,8 +32,9 @@ class MultiproducerMulticonsumerQueue
 		Node(size_t id) : blockId(id)
 		{
 			//prepopulate even values matching the slot index sequence formula
+			size_t blockOffset = id * (BlockSize * 2);
 			for(size_t i = 0; i < BlockSize; ++i)
-				slots[i].sequence.store(i * 2, std::memory_order_relaxed);
+				slots[i].sequence.store(blockOffset + (i * 2), std::memory_order_relaxed);
 		}
 
 		std::array<Slot, BlockSize> slots;
@@ -114,7 +115,7 @@ public:
 		size_t blockId = ticket / BlockSize;
 		size_t slot_id = ticket % BlockSize;
 
-		Node *node = GetNode(blockId);
+		Node *node = GetOrAllocateNode(blockId);
 		Slot &slot = node->slots[slot_id];
 
 		//the state of the slot: even means empty/available for producer and odd means filled/available for consumer
@@ -132,6 +133,28 @@ public:
 		slot.sequence.notify_one();
 
 		return item;
+	}
+
+	inline size_t empty()
+	{
+		//use a relaxed, non-locking implementation for performance
+		size_t p = producerTicket.load(std::memory_order_relaxed);
+		size_t c = consumerTicket.load(std::memory_order_relaxed);
+
+		return (p == c);
+	}
+
+	inline size_t size()
+	{
+		//use a relaxed, non-locking implementation for performance
+		size_t p = producerTicket.load(std::memory_order_relaxed);
+		size_t c = consumerTicket.load(std::memory_order_relaxed);
+
+		//ensure underflow didn't happen if the queue is being produced and consumed quickly
+		if(p >= c)
+			return p - c;
+
+		return 0;
 	}
 
 	std::mutex allocationMutex;
@@ -544,7 +567,7 @@ protected:
 	};
 
 	//tasks for the thread pool to complete
-	std::queue<Task> taskQueue;
+	MultiproducerMulticonsumerQueue<Task> taskQueue;
 
 	//the number of threads that can be active at any time
 	//the total number of threads is

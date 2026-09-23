@@ -135,12 +135,12 @@ void ThreadPool::AddNewThread()
 					}
 
 					//take ownership of the task so it can be destructed when complete
-					auto task = std::move(taskQueue.front());
-					taskQueue.pop();
-
-					lock.unlock();
-					task();
-					lock.lock();
+					if(auto task = taskQueue.pop())
+					{
+						lock.unlock();
+						(*task)();
+						lock.lock();
+					}
 				}
 			}
 		}

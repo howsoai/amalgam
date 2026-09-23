@@ -11,7 +11,7 @@
 
 //Implements a stateful stream of random numbers that can be serialized/deserialized easily into a
 // very small amount of data, based on:
-//  O’Neill, Melissa E. "PCG: A family of simple fast space-efficient statistically good algorithms
+//  O'Neill, Melissa E. "PCG: A family of simple fast space-efficient statistically good algorithms
 //  for random number generation." ACM Transactions on Mathematical Software(2014).
 //More info at https://www.pcg-random.org
 class RandomStream
@@ -159,6 +159,11 @@ public:
 		c.clear();
 	}
 
+	Compare &GetComparator()
+	{
+		return comp;
+	}
+
 private:
 	void SiftUp(size_t index)
 	{
@@ -209,37 +214,46 @@ private:
 	Compare comp;
 };
 
+//default for StochasticTieBreakingPriorityQueue's ReferenceToInteger, uses QueueElementType's GetReferenceAsInteger method
+template<typename QueueElementType>
+struct DefaultReferenceToInteger
+{
+	constexpr size_t operator()(const QueueElementType &val) const
+	{
+		return val.GetReferenceAsInteger();
+	}
+};
+
 //Priority queue that, when receiving values of equal priority, will randomize the order they are stored and popped off the queue
+//Ties are broken by a key derived from each element's reference, converted to an integer via ReferenceToInteger,
+// and a seed, so for a given seed the result is independent of the order elements are pushed
 //Requires the type QueueElementType to have both the < and == operators
+//ReferenceToInteger must return a unique integer for each element's reference
 //The constructor requires a seed
-template<typename QueueElementType, typename ComparisonValueType>
+template<typename QueueElementType, typename ComparisonValueType,
+	typename ReferenceToInteger = DefaultReferenceToInteger<QueueElementType>>
 class StochasticTieBreakingPriorityQueue
 {
 public:
 
-	typedef std::vector<std::pair<QueueElementType, uint32_t>> PriorityQueueContainerType;
+	typedef std::vector<QueueElementType> PriorityQueueContainerType;
 
 	StochasticTieBreakingPriorityQueue() :
 		priorityQueue(StochasticTieBreakingComparator())
 	{}
 
 	//seeds the priority queue
-	StochasticTieBreakingPriorityQueue(std::string seed)
-		: priorityQueue(StochasticTieBreakingComparator()), randomStream(seed)
-	{}
-
-	StochasticTieBreakingPriorityQueue(RandomStream stream)
-		: priorityQueue(StochasticTieBreakingComparator()), randomStream(stream)
-	{}
-
-	__forceinline void SetSeed(std::string seed)
+	StochasticTieBreakingPriorityQueue(RandomStream &stream)
+		: priorityQueue(StochasticTieBreakingComparator())
 	{
-		randomStream.SetState(seed);
+		SetSeed(stream);
 	}
 
-	__forceinline void SetStream(RandomStream stream)
+	__forceinline void SetSeed(RandomStream &stream)
 	{
-		randomStream = stream;
+		clear();
+		priorityQueue.GetComparator().tieBreakSeed
+			= (static_cast<uint64_t>(stream.RandUInt32()) << 32) | stream.RandUInt32();
 	}
 
 	__forceinline void SetIncludeAllThreshold(ComparisonValueType threshold)
@@ -259,10 +273,9 @@ public:
 	}
 
 	//resets the object, as well as the same effect of calling all appropriate the setters
-	inline void Reset(RandomStream stream, size_t reserve_size, ComparisonValueType threshold)
+	inline void Reset(RandomStream &stream, size_t reserve_size, ComparisonValueType threshold)
 	{
-		SetStream(stream);
-		clear();
+		SetSeed(stream);
 		Reserve(reserve_size);
 		SetIncludeAllThreshold(threshold);
 	}
@@ -275,7 +288,7 @@ public:
 
 	__forceinline const QueueElementType &Top() const
 	{
-		return priorityQueue.top().first;
+		return priorityQueue.top();
 	}
 
 	__forceinline const bool TopMeetsThreshold() const
@@ -286,7 +299,7 @@ public:
 
 	__forceinline void Push(const QueueElementType &val)
 	{
-		priorityQueue.emplace(val, randomStream.RandUInt32());
+		priorityQueue.push(val);
 	}
 
 	//like Push, but retains the current size of the priority queue
@@ -317,35 +330,16 @@ public:
 		}
 		//not expanding to include threshold all below
 
+		//if better than the top, including winning a tie break, then exchange it
 		auto &top = priorityQueue.top();
-		if(val < top.first)
+		if(priorityQueue.GetComparator()(val, top))
 		{
-			//better, so exchange it
 			priorityQueue.pop();
-			priorityQueue.emplace(val, randomStream.RandUInt32());
-
-			return priorityQueue.top().first;
-		}
-		else if(val == top.first)
-		{
-			//good enough to consider for top, check random
-			uint32_t r = randomStream.RandUInt32();
-
-			//if won the random selection, then push it on the stack
-			if(r < top.second)
-			{
-				priorityQueue.pop();
-				priorityQueue.emplace(val, r);
-
-				//return new top of stack
-				return priorityQueue.top().first;
-			}
-
-			//current top of stack won, return current top
+			priorityQueue.push(val);
 		}
 		//otherwise don't need to do anything, val is not better than the worst on the stack
 
-		return top.first;
+		return priorityQueue.top();
 	}
 
 	__forceinline void Pop()
@@ -360,22 +354,34 @@ public:
 
 protected:
 
-	//used to compare first by the value, second by the random number if equal
+	//used to compare first by the value, second by the tie-break key if equal
+	//tie-break keys are only computed when values are equal, since ties are rare
 	class StochasticTieBreakingComparator
 	{
 	public:
-		constexpr bool operator()(const std::pair<QueueElementType, uint32_t> &a, const std::pair<QueueElementType, uint32_t> &b)
+		inline bool operator()(const QueueElementType &a, const QueueElementType &b) const
 		{
-			if(a.first == b.first)
-				return a.second < b.second;
-			return a.first < b.first;
+			if(a == b)
+				return GetTieBreakKey(ReferenceToInteger()(a)) < GetTieBreakKey(ReferenceToInteger()(b));
+			return a < b;
 		}
+
+		//deterministically maps index to a pseudorandom key based on tieBreakSeed
+		//for a fixed seed this is a bijection over uint64_t (multiplying by an odd constant and xoring
+		// with the seed are each invertible), so distinct indices never collide and ties are broken
+		// independently of the order elements are pushed
+		//relies on tieBreakSeed being well mixed, as it comes from a RandomStream
+		__forceinline uint64_t GetTieBreakKey(uint64_t index) const
+		{
+			uint64_t x = (index * 0x9e3779b97f4a7c15ULL) ^ tieBreakSeed;
+			return x * 0xd6e8feb86659fd93ULL;
+		}
+
+		uint64_t tieBreakSeed = 0;
 	};
 
-	FlexiblePriorityQueue<std::pair<QueueElementType, uint32_t>, PriorityQueueContainerType, StochasticTieBreakingComparator> priorityQueue;
+	FlexiblePriorityQueue<QueueElementType, PriorityQueueContainerType, StochasticTieBreakingComparator> priorityQueue;
 
 	//threshold below which all elements should be kept by PushAndPopToThreshold
 	ComparisonValueType includeAllThreshold;
-
-	RandomStream randomStream;
 };

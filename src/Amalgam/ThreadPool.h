@@ -15,8 +15,8 @@
 #include <utility>
 #include <vector>
 
-template <typename T, size_t BlockSize = 1024>
-class MultiproducerMulticonsumerQueue
+template <typename T, size_t BlockSize = 4096>
+class MultiProducerMultiConsumerQueue
 {
 	//storage of a given element
 	struct Slot
@@ -31,14 +31,14 @@ class MultiproducerMulticonsumerQueue
 	{
 		Node(size_t id) : blockId(id)
 		{
-			//prepopulate even values matching the slot index sequence formula
-			size_t blockOffset = id * (BlockSize * 2);
-			for(size_t i = 0; i < BlockSize; ++i)
-				slots[i].sequence.store(blockOffset + (i * 2), std::memory_order_relaxed);
+			//all slots start at 0 (ready for producer)
+			for(auto &s : slots)
+				s.sequence.store(0, std::memory_order_relaxed);
 		}
 
 		std::array<Slot, BlockSize> slots;
 		std::atomic<Node *> next{ nullptr };
+		std::atomic<size_t> slotsConsumed{ 0 };
 		size_t blockId;
 	};
 
@@ -69,11 +69,11 @@ class MultiproducerMulticonsumerQueue
 	}
 
 public:
-	MultiproducerMulticonsumerQueue()
+	MultiProducerMultiConsumerQueue()
 		: headNode(new Node(0))
 	{ }
 
-	~MultiproducerMulticonsumerQueue()
+	~MultiProducerMultiConsumerQueue()
 	{
 		Node *current = headNode;
 		while(current != nullptr)
@@ -86,26 +86,20 @@ public:
 
 	void push(T &&item)
 	{
-		//secure place in the global chronological timeline
 		size_t ticket = producerTicket.fetch_add(1, std::memory_order_relaxed);
-		size_t blockId = ticket / BlockSize;
+		size_t block_id = ticket / BlockSize;
 		size_t slot_id = ticket % BlockSize;
 
-		Node *node = GetOrAllocateNode(blockId);
+		Node *node = GetOrAllocateNode(block_id);
 		Slot &slot = node->slots[slot_id];
 
-		//the state of the slot: even means empty/available for producer and odd means filled/available for consumer
-		size_t expected_seq = blockId * (BlockSize * 2) + (slot_id * 2);
+		//wait for the slot to be 0 (empty)
+		while(slot.sequence.load(std::memory_order_acquire) != 0)
+			slot.sequence.wait(0, std::memory_order_acquire);
 
-		//if the current sequence doesn't match what we expect, block until it changes
-		while(slot.sequence.load(std::memory_order_acquire) != expected_seq)
-			slot.sequence.wait(expected_seq, std::memory_order_acquire);
-
-		//write data safely
 		slot.storage = std::move(item);
-
-		//update state to odd value and wake up the next consumer thread in line
-		slot.sequence.store(expected_seq + 1, std::memory_order_release);
+		//mark as filled
+		slot.sequence.store(1, std::memory_order_release);
 		slot.sequence.notify_one();
 	}
 
@@ -118,19 +112,32 @@ public:
 		Node *node = GetOrAllocateNode(blockId);
 		Slot &slot = node->slots[slot_id];
 
-		//the state of the slot: even means empty/available for producer and odd means filled/available for consumer
-		size_t expected_seq = blockId * (BlockSize * 2) + (slot_id * 2) + 1;
-
-		//if sequence is not expected_seq, the producer hasn't finished the write
-		// so block the thread until the producer finishes the write
-		while(slot.sequence.load(std::memory_order_acquire) != expected_seq)
-			slot.sequence.wait(expected_seq, std::memory_order_acquire);
+		//wait for the relative sequence to be 1 (filled by producer)
+		while(slot.sequence.load(std::memory_order_acquire) != 1)
+			slot.sequence.wait(1, std::memory_order_acquire);
 
 		T item = std::move(slot.storage);
 
-		//move back to even state for the next producer cycle
-		slot.sequence.store(expected_seq + 1, std::memory_order_release);
+		//reset sequence to 0 (empty) to allow the producer to reuse this slot
+		slot.sequence.store(0, std::memory_order_release);
 		slot.sequence.notify_one();
+
+		//attempt to reclaim the block if done
+		if(node->slotsConsumed.fetch_add(1, std::memory_order_acq_rel) == BlockSize - 1)
+		{
+			std::lock_guard<std::mutex> lock(allocationMutex);
+
+			//only delete if this node is still the head (oldest) node
+			if(headNode == node)
+			{
+				Node *next_node = node->next.load(std::memory_order_acquire);
+				if(next_node != nullptr)
+				{
+					headNode = next_node;
+					delete node;
+				}
+			}
+		}
 
 		return item;
 	}
@@ -567,7 +574,7 @@ protected:
 	};
 
 	//tasks for the thread pool to complete
-	MultiproducerMulticonsumerQueue<Task> taskQueue;
+	MultiProducerMultiConsumerQueue<Task> taskQueue;
 
 	//the number of threads that can be active at any time
 	//the total number of threads is

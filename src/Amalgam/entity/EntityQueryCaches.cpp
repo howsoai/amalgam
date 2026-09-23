@@ -330,14 +330,14 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					sbfds.FindEntitiesNearestToIndexedEntity(cond->distEvaluator, cond->positionLabels, entity_index,
 						distance_transform.GetNumToRetrieve(), cond->singleLabel, matching_entities, false, false,
 						cond->interpreter, cond->entity, compute_results,
-						std::numeric_limits<size_t>::max(), cond->randomStream.CreateOtherStreamViaRand());
+						std::numeric_limits<size_t>::max(), cond->randomStream);
 				}
 				else
 				{
 					sbfds.FindEntitiesNearestToPosition(cond->distEvaluator, cond->positionLabels, cond->valuesToCompare,
 						distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->exclusionEntityIndex,
 						matching_entities, false, false, cond->interpreter, cond->entity, compute_results,
-						cond->randomStream.CreateOtherStreamViaRand());
+						cond->randomStream);
 				}
 			}
 			else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE

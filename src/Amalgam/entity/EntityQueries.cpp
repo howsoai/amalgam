@@ -392,7 +392,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			}
 		}
 
-		//swap samples vector with the matching_entities 
+		//swap samples vector with the matching_entities
 		std::swap(matching_entities, samples);
 		return EvaluableNodeReference::Null();
 	}
@@ -635,8 +635,17 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 		distEvaluator.InitializeParametersAndFeatureParams();
 
+		//break ties by each entity's index in its container
+		struct EntityReferenceToIndex
+		{
+			inline size_t operator()(const DistanceReferencePair<Entity *> &drp) const
+			{
+				return drp.reference->GetEntityIndexOfContainer();
+			}
+		};
+
 		//get values for each entity
-		StochasticTieBreakingPriorityQueue<DistanceReferencePair<Entity *>, double> nearest_entities(randomStream.CreateOtherStreamViaRand());
+		StochasticTieBreakingPriorityQueue<DistanceReferencePair<Entity *>, double, EntityReferenceToIndex> nearest_entities(randomStream);
 		for(size_t i = 0; i < matching_entities.size(); i++)
 		{
 			double value = GetConditionDistanceMeasure(matching_entities[i], distEvaluator.highAccuracyDistances);

@@ -589,7 +589,7 @@ public:
 	}
 
 	//Finds the top_k nearest neighbors results to the entity at search_index.
-	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
+	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	inline void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval,
@@ -706,7 +706,7 @@ public:
 protected:
 
 	//Finds the top_k nearest neighbors results to the entity at search_index.
-	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
+	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	//if compute_surprisal is true, it will use a faster execution path
@@ -1309,7 +1309,7 @@ protected:
 		auto [num_calculated_features, distance] = partial_sums.GetNumFilledAndSum(entity_index);
 
 		//complete known sums with worst and best possibilities
-		//calculate the number of features for which the Minkowski distance term has not yet been calculated 
+		//calculate the number of features for which the Minkowski distance term has not yet been calculated
 		size_t num_uncalculated_features = (num_features - num_calculated_features);
 		//if have already calculated everything, then already have the distance
 		if(num_uncalculated_features == 0)
@@ -1485,7 +1485,7 @@ public:
 	{
 		auto &sorted_results = parametersAndBuffers.sortedResults;
 		sorted_results.clear();
-		sorted_results.SetStream(rand_stream);
+		sorted_results.SetSeed(rand_stream);
 
 		bool high_accuracy = (r_dist_eval.distEvaluator->highAccuracyDistances || r_dist_eval.distEvaluator->recomputeAccurateDistances);
 

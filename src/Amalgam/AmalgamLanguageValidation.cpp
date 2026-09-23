@@ -877,21 +877,21 @@ AmalgamExample{ R"&((seq
 ))&", R"([
 		{
 				B 0
-				C 1
-				D 1
 				A 1
+				D 1
+				C 1
 				F 1
 				I 1
-				G 1024
+				J 1024
 				H 1024
 		}
 		{
 				B 0
 				D 1
-				I 1
-				C 1
 				F 1
 				A 1
+				C 1
+				I 1
 				J 1024
 				E 1024
 		}

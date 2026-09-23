@@ -73,6 +73,12 @@ public:
 		return reference == drp.reference;
 	}
 
+	//returns the reference as an integer; only valid when ReferenceType is an integral type
+	constexpr size_t GetReferenceAsInteger() const
+	{
+		return static_cast<size_t>(reference);
+	}
+
 	//returns a reference that will always be invalid, that should, for all practical purposes, always return
 	// false if compared via equality against a valid reference
 	static constexpr ReferenceType InvalidReference()

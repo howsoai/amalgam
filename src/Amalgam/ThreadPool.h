@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-template <typename T, size_t BlockSize = 4096>
+template <typename T, size_t BlockSize = 1024>
 class MultiProducerMultiConsumerQueue
 {
 	//storage of a given element

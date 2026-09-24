@@ -4,214 +4,157 @@
 #include <array>
 #include <atomic>
 #include <condition_variable>
+#include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <memory>
 #include <mutex>
 #include <new>
 #include <optional>
-#include <queue>
 #include <thread>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
+// Producers serialize insertion/publication; consumers claim only published FIFO
+// tickets. Blocks never wrap or reuse slots. Dequeue uses only integer/pointer
+// atomics (no shared_ptr locks, allocation, waiting, or reclamation).
 template <typename T, size_t BlockSize = 1024>
 class MultiProducerMultiConsumerQueue
 {
-	//storage of a given element
-	struct Slot
-	{
-		T storage;
-		//even values = empty/read, odd values = written/ready
-		std::atomic<size_t> sequence{ 0 };
-	};
+	static_assert(BlockSize > 0);
+	static_assert(std::is_nothrow_move_constructible_v<T>);
 
-	//node of a given BlockSize
 	struct Node
 	{
-		Node(size_t id) : blockId(id)
-		{
-			//all slots start at 0 (ready for producer)
-			for(auto &s : slots)
-				s.sequence.store(0, std::memory_order_relaxed);
-		}
-
-		std::array<Slot, BlockSize> slots;
-		std::atomic<std::shared_ptr<Node>> next{ nullptr };
-		size_t blockId;
+		explicit Node(size_t first) : firstTicket(first) {}
+		const size_t firstTicket;
+		std::array<std::optional<T>, BlockSize> slots;
+		std::atomic<Node *> next{nullptr};
 	};
 
-	std::shared_ptr<Node> GetOrAllocateNode(size_t blockId)
+	// A consumer must enter before loading head and leave after its last node
+	// access. Sequential consistency with head advancement and the reclaimer's
+	// reader check ensures that a new reader cannot acquire a retired node.
+	struct Reader
 	{
-		std::shared_ptr<Node> current = headNode.load(std::memory_order_acquire);
+		explicit Reader(std::atomic<size_t> &count) : count(count) { ++count; }
+		~Reader() { --count; }
+		std::atomic<size_t> &count;
+	};
 
-		//traverse down the linked chain
-		while(current && current->blockId < blockId)
+	// Called only with producerMutex held. Capture the retirement boundary
+	// BEFORE checking readers. A later reader can only see this head or a newer
+	// one; an earlier reader either finished or prevents reclamation entirely.
+	void ReclaimConsumedNodes()
+	{
+		Node *end = headNode.load();
+		if(readers.load() != 0)
+			return;
+		while(oldestNode != end)
 		{
-			std::shared_ptr<Node> next_node = current->next.load(std::memory_order_acquire);
-			if(next_node == nullptr)
-			{
-				//reached the end of the chain, allocate next segment
-				std::lock_guard<std::mutex> lock(allocationMutex);
-				next_node = current->next.load(std::memory_order_relaxed);
-				//double-check in case assigned by another thread
-				if(next_node == nullptr)
-				{
-					next_node = std::make_shared<Node>(current->blockId + 1);
-					current->next.store(next_node, std::memory_order_release);
-				}
-			}
-			current = next_node;
+			Node *next = oldestNode->next.load(std::memory_order_relaxed);
+			delete oldestNode;
+			oldestNode = next;
 		}
-
-		return current;
 	}
 
 public:
 	MultiProducerMultiConsumerQueue()
-		: headNode(std::make_shared<Node>(0))
-	{ }
+		: oldestNode(new Node(0)), tailNode(oldestNode), headNode(oldestNode) {}
 
+	// As with ThreadPool itself, destruction requires all users to have joined.
 	~MultiProducerMultiConsumerQueue()
 	{
-		std::shared_ptr<Node> current = headNode.load();
-		//"lock" via shared pointer in order to ensure linear and efficient deletion
-		while(current)
+		while(oldestNode)
 		{
-			std::shared_ptr<Node> next = current->next.load();
-			current = next;
+			Node *next = oldestNode->next.load(std::memory_order_relaxed);
+			delete oldestNode;
+			oldestNode = next;
 		}
 	}
 
 	void push(T &&item)
 	{
-		size_t ticket = producerTicket.fetch_add(1, std::memory_order_relaxed);
-		size_t block_id = ticket / BlockSize;
-		size_t slot_id = ticket % BlockSize;
-
-		std::shared_ptr<Node> node = GetOrAllocateNode(block_id);
-		Slot &slot = node->slots[slot_id];
-
-		//wait for the slot to be 0 (empty)
-		while(slot.sequence.load(std::memory_order_acquire) != 0)
-			slot.sequence.wait(0, std::memory_order_acquire);
-
-		slot.storage = std::move(item);
-
-		//mark as filled
-		slot.sequence.store(1, std::memory_order_release);
-		slot.sequence.notify_one();
+		std::lock_guard<std::mutex> lock(producerMutex);
+		size_t ticket = producerTicket.load(std::memory_order_relaxed);
+		if(ticket == tailNode->firstTicket + BlockSize)
+		{
+			// Allocate before publishing a ticket so allocation failure leaves
+			// neither a hole nor a consumer waiting for an unpublished slot.
+			Node *next = new Node(ticket);
+			tailNode->next.store(next, std::memory_order_release);
+			tailNode = next;
+			ReclaimConsumedNodes();
+		}
+		tailNode->slots[ticket - tailNode->firstTicket].emplace(std::move(item));
+		// This release is insertion's linearization point and publishes a
+		// contiguous prefix: a later producer cannot overtake an earlier one.
+		producerTicket.store(ticket + 1, std::memory_order_release);
 	}
 
 	std::optional<T> pop()
 	{
-		size_t ticket = consumerTicket.fetch_add(1, std::memory_order_relaxed);
-
-		while(true)
+		Reader reader(readers);
+		Node *head = headNode.load();
+		Node *node = head;
+		size_t ticket = consumerTicket.load(std::memory_order_relaxed);
+		for(;;)
 		{
-			size_t p = producerTicket.load(std::memory_order_acquire);
-
-			//if the consumer has caught up to the producer, the queue is empty
-			if(ticket >= p)
+			if(ticket >= producerTicket.load(std::memory_order_acquire))
 				return std::nullopt;
 
-			//try to claim the ticket; if another consumer took it,
-			// ticket is updated and we loop to check against producer again.
+			while(ticket - node->firstTicket >= BlockSize)
+				node = node->next.load(std::memory_order_acquire);
+
+			// Tickets are monotonic. Advancing the lookup head is safe even
+			// while an older consumer still moves its task: Reader protects it.
+			if(head->firstTicket < node->firstTicket)
+				headNode.compare_exchange_strong(head, node);
+
+			// The CAS is dequeue's linearization point. In particular, empty
+			// polls never modify the cursor and publication precedes claiming.
 			if(consumerTicket.compare_exchange_weak(ticket, ticket + 1, std::memory_order_relaxed))
-				break;
-		}
-
-		size_t block_id = ticket / BlockSize;
-		size_t slot_id = ticket % BlockSize;
-
-		std::shared_ptr<Node> node = GetOrAllocateNode(block_id);
-		if(!node)
-			return std::nullopt;
-		Slot *slot = &node->slots[slot_id];
-
-		//wait for the relative sequence to be 1 (filled by producer)
-		while(true)
-		{
-			size_t seq = slot->sequence.load(std::memory_order_acquire);
-			if(seq == 1)
-				break;
-
-			//check if this node is still part of the active chain
-			//if headNode has moved past this node's blockId, this ticket is technically invalid or the node is stale
-			if(headNode.load(std::memory_order_acquire)->blockId > block_id)
 			{
-				//resync node if the head moved past us while we were waiting
-				node = GetOrAllocateNode(block_id);
-				if(!node)
-					return std::nullopt;
-				slot = &node->slots[slot_id];
-			}
-			else
-			{
-				slot->sequence.wait(seq, std::memory_order_acquire);
+				auto &slot = node->slots[ticket - node->firstTicket];
+				std::optional<T> item(std::move(*slot));
+				slot.reset();
+				return item;
 			}
 		}
-
-		T item = std::move(slot->storage);
-
-		//reset sequence to 0 (empty) to allow the producer to reuse this slot
-		slot->sequence.store(0, std::memory_order_release);
-		slot->sequence.notify_one();
-
-		//attempt to reclaim the block if done
-		std::shared_ptr<Node> currentHead = headNode.load(std::memory_order_acquire);
-		size_t headBlockId = currentHead->blockId;
-		size_t headThreshold = (headBlockId + 1) * BlockSize;
-
-		//if the oldest claimed ticket is already in a newer block, the current head node can be safely reclaimed
-		if(consumerTicket.load(std::memory_order_acquire) >= headThreshold)
-		{
-			std::lock_guard<std::mutex> lock(allocationMutex);
-
-			//reverify inside lock
-			std::shared_ptr<Node> expected = currentHead;
-			std::shared_ptr<Node> desired = currentHead->next.load(std::memory_order_acquire);
-
-			if(desired)
-			{
-				//move head forward; use a loop here because multiple nodes might need to be reclaimed at once
-				while(desired && consumerTicket.load(std::memory_order_acquire) >= (desired->blockId + 1) * BlockSize)
-					desired = desired->next.load(std::memory_order_acquire);
-				headNode.compare_exchange_strong(expected, desired, std::memory_order_release);
-			}
-		}
-
-		return item;
 	}
 
-	inline size_t empty()
+	bool empty() const
 	{
-		//use a relaxed, non-locking implementation for performance
-		size_t p = producerTicket.load(std::memory_order_relaxed);
-		size_t c = consumerTicket.load(std::memory_order_relaxed);
-
-		return (p == c);
+		size_t consumer = consumerTicket.load(std::memory_order_relaxed);
+		return consumer >= producerTicket.load(std::memory_order_acquire);
 	}
 
-	inline size_t size()
+	// An advisory snapshot during concurrent dequeue, exact at quiescence.
+	size_t size() const
 	{
-		//use a relaxed, non-locking implementation for performance
-		size_t p = producerTicket.load(std::memory_order_relaxed);
-		size_t c = consumerTicket.load(std::memory_order_relaxed);
-
-		//ensure underflow didn't happen if the queue is being produced and consumed quickly
-		if(p >= c)
-			return p - c;
-
-		return 0;
+		size_t consumer = consumerTicket.load(std::memory_order_relaxed);
+		size_t producer = producerTicket.load(std::memory_order_acquire);
+		return producer >= consumer ? producer - consumer : 0;
 	}
 
-	std::mutex allocationMutex;
+	// Idle workers reclaim on the slow path, never on dequeue or execution.
+	// If a consumer is stalled, retirement is deferred until a later call.
+	void reclaim()
+	{
+		std::lock_guard<std::mutex> lock(producerMutex);
+		ReclaimConsumedNodes();
+	}
 
-	std::atomic<std::shared_ptr<Node>> headNode;
-	//cache-line aligned to prevent false sharing across threads
-	alignas(64) std::atomic<size_t> producerTicket{ 0 };
-	alignas(64) std::atomic<size_t> consumerTicket{ 0 };
+private:
+	std::mutex producerMutex;
+	Node *oldestNode;
+	Node *tailNode;
+	// Keep consumer metadata off the cache line written by producerMutex.
+	alignas(64) std::atomic<Node *> headNode;
+	alignas(64) std::atomic<size_t> readers{0};
+	alignas(64) std::atomic<size_t> producerTicket{0};
+	alignas(64) std::atomic<size_t> consumerTicket{0};
 };
 
 //Creates a flexible thread pool for generic tasks aimed at making sure a specified
@@ -236,7 +179,10 @@ public:
 	//destroys all the threads and waits to join them
 	~ThreadPool()
 	{
-		shutdownThreads = true;
+		{
+			std::unique_lock<std::mutex> lock(threadsMutex);
+			shutdownThreads = true;
+		}
 
 		//have threads shut themselves down
 		waitForTask.notify_all();
@@ -297,7 +243,7 @@ public:
 			//compute and compare the current thread pool size to that which is needed
 			int32_t cur_thread_pool_size = static_cast<int32_t>(threads.size());
 			int32_t needed_thread_pool_size = (numReservedThreads + numThreadsToTransitionToReserved) + num_threads_needed;
-			if(cur_thread_pool_size < needed_thread_pool_size)
+			if(!shutdownThreads.load(std::memory_order_acquire) && cur_thread_pool_size < needed_thread_pool_size)
 			{
 				//if there are reserved threads, use them, otherwise create a new thread
 				if(numReservedThreads > 0)
@@ -315,8 +261,8 @@ public:
 			numActiveThreads--;
 		}
 
-		//awaken another thread
-		waitForTask.notify_one();
+		//Wake the batch, including independent producers that did not take TaskLock.
+		waitForTask.notify_all();
 	}
 
 	//changes the current thread state from waiting to active
@@ -348,7 +294,11 @@ public:
 	template<typename Func>
 	inline void EnqueueTask(Func &&function)
 	{
-		taskQueue.push(Task::Create(std::forward<Func>(function)));
+		{
+			// Synchronize publication with the worker's empty-check/wait.
+			std::unique_lock<std::mutex> lock(threadsMutex);
+			taskQueue.push(Task::Create(std::forward<Func>(function)));
+		}
 		waitForTask.notify_one();
 	}
 
@@ -375,7 +325,9 @@ public:
 
 	//enqueues a task into the thread pool
 	//it is up to the caller to determine when the task is complete
-	//AcquireTaskLock must be called to protect the calls to this method
+	//AcquireTaskLock serializes availability checks and dependent batches.
+	//Independent producers may also call this without the lock, then WaitForTasks.
+	//The queue synchronizes insertion; this method deliberately does not notify.
 	template <typename Func>
 	inline void BatchEnqueueTask(Func &&function)
 	{
@@ -606,10 +558,10 @@ protected:
 	//the number of threads that can be active at any time
 	//the total number of threads is
 	//numActiveThreads + numReservedThreads + number of idle threads
-	int32_t maxNumActiveThreads;
+	std::atomic<int32_t> maxNumActiveThreads;
 
 	//number of threads running
-	int32_t numActiveThreads;
+	std::atomic<int32_t> numActiveThreads;
 
 	//number of threads that are currently in reserve
 	//that can be activated to replace an existing thread that is blocked

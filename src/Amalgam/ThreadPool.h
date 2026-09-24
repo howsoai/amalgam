@@ -361,8 +361,10 @@ public:
 
 			threadPool->ChangeCurrentThreadStateFromActiveToWaiting();
 
-			while(numTasksCompleted.load() < numTasks)
-				numTasksCompleted.wait(numTasksCompleted.load());
+			{
+				std::unique_lock<std::mutex> task_lock(mutex);
+				condVar.wait(task_lock, [this] { return numTasksCompleted >= numTasks; });
+			}
 
 			threadPool->ChangeCurrentThreadStateFromWaitingToActive();
 		}
@@ -370,14 +372,26 @@ public:
 		//marks one task as completed
 		inline void MarkTaskCompleted()
 		{
+			//call the notify_all under a lock to prevent other references to condVar
+			//in other threads from attempting to call it on a deallocated object
+			std::unique_lock<std::mutex> lock(mutex);
 			if(++numTasksCompleted == numTasks)
-				numTasksCompleted.notify_all();
+				condVar.notify_all();
+		}
+
+		//marks one task as completed, but can be called from the thread setting up the tasks
+		inline void MarkTaskCompletedBeforeWaitForTasks()
+		{
+			std::unique_lock<std::mutex> lock(mutex);
+			numTasksCompleted++;
 		}
 
 	protected:
+		//the counters are not atomic as the condVar needs a mutex around any change of value anyway
 		size_t numTasks;
-		//numTasksCompleted is used as both the counter and the waiting variable
-		std::atomic<size_t> numTasksCompleted;
+		size_t numTasksCompleted;
+		std::mutex mutex;
+		std::condition_variable condVar;
 		ThreadPool *threadPool;
 	};
 

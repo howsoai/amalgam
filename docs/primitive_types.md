@@ -39,7 +39,7 @@ Output:
 Example:
 ```amalgam
 (lambda
-	
+
 	#annotation
 	.null
 )
@@ -182,7 +182,7 @@ Output:
 
 ### Opcode: `list`
 #### Parameters
-`any node1 any node2 ...`
+`[any node1] [any node2] ...`
 #### Returns
 `list`
 #### Description

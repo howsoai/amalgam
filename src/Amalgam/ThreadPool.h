@@ -194,11 +194,7 @@ public:
 	//destroys all the threads and waits to join them
 	~ThreadPool()
 	{
-		//initiate shutdown
-		{
-			std::unique_lock<std::mutex> lock(threadsMutex);
-			shutdownThreads = true;
-		}
+		shutdownThreads = true;
 
 		//have threads shut themselves down
 		waitForTask.notify_all();
@@ -310,11 +306,7 @@ public:
 	template<typename Func>
 	inline void EnqueueTask(Func &&function)
 	{
-		//new scope for the lock
-		{
-			std::unique_lock<std::mutex> lock(threadsMutex);
-			taskQueue.push(Task::Create(std::forward<Func>(function)));
-		}
+		taskQueue.push(Task::Create(std::forward<Func>(function)));
 		waitForTask.notify_one();
 	}
 
@@ -328,7 +320,7 @@ public:
 	bool AreThreadsAvailable()
 	{
 		//don't spin up new threads if shutting down, since that could cause a deadlock
-		if(shutdownThreads) [[unlikely]]
+		if(shutdownThreads.load(std::memory_order_acquire)) [[unlikely]]
 			return false;
 
 		//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
@@ -595,7 +587,7 @@ protected:
 	int32_t numThreadsToTransitionToReserved;
 
 	//if true, then all threads should end work so they can be joined
-	bool shutdownThreads;
+	std::atomic<bool> shutdownThreads;
 
 	//id of the main thread
 	std::thread::id mainThreadId;

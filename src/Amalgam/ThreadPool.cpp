@@ -82,18 +82,24 @@ void ThreadPool::AddNewThread()
 	threads.emplace_back(
 		[this]
 		{
-			std::unique_lock<std::mutex> lock(threadsMutex);
-
 			//count this thread as active during startup
 			//this is important, as the inner loop assumes the default state of the thread is to count itself
 			//so the number of threads doesn't change when switching between a completed task and a new one
-			numActiveThreads++;
+			{
+				std::unique_lock<std::mutex> lock(threadsMutex);
+				numActiveThreads++;
+			}
 
-			//infinite loop waiting for work
+			//infinite loop waiting for work; lock is unlocked for going around the loop
 			for(;;)
 			{
 				if(numThreadsToTransitionToReserved > 0)
 				{
+					std::unique_lock<std::mutex> lock(threadsMutex);
+					//double check transition under lock
+					if(numThreadsToTransitionToReserved == 0)
+						continue;
+
 					//go into reserved
 					numActiveThreads--;
 					numThreadsToTransitionToReserved--;
@@ -114,15 +120,25 @@ void ThreadPool::AddNewThread()
 				}
 				else //fetching task
 				{
-					//if no more work, wait until shutdown or more work
-					if(taskQueue.empty())
+					//take ownership of the task so it can be destructed when complete
+					if(auto task = taskQueue.pop())
 					{
+						(*task)();
+					}
+					else //no more work, wait until shutdown or more work
+					{
+						std::unique_lock<std::mutex> lock(threadsMutex);
+
+						//double check if empty under lock
+						if(!taskQueue.empty())
+							continue;
+
 						numActiveThreads--;
 
 						//wait until either shutting down or more work has been added
 						waitForTask.wait(lock, [this] {
 							return !taskQueue.empty() || numThreadsToTransitionToReserved > 0 ||
-								   shutdownThreads.load(std::memory_order_acquire);
+								shutdownThreads.load(std::memory_order_acquire);
 						});
 
 						//only can make it here if shutting down (otherwise taskQueue has something in it)
@@ -135,14 +151,6 @@ void ThreadPool::AddNewThread()
 						//if transitioning to reserved, don't grab a task
 						if(numThreadsToTransitionToReserved > 0)
 							continue;
-					}
-
-					//take ownership of the task so it can be destructed when complete
-					if(auto task = taskQueue.pop())
-					{
-						lock.unlock();
-						(*task)();
-						lock.lock();
 					}
 				}
 			}

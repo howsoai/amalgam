@@ -37,19 +37,18 @@ class MultiProducerMultiConsumerQueue
 		}
 
 		std::array<Slot, BlockSize> slots;
-		std::atomic<Node *> next{ nullptr };
-		std::atomic<size_t> slotsConsumed{ 0 };
+		std::atomic<std::shared_ptr<Node>> next{ nullptr };
 		size_t blockId;
 	};
 
-	Node *GetOrAllocateNode(size_t blockId)
+	std::shared_ptr<Node> GetOrAllocateNode(size_t blockId)
 	{
-		Node *current = headNode;
+		std::shared_ptr<Node> current = headNode.load(std::memory_order_acquire);
 
 		//traverse down the linked chain
-		while(current->blockId < blockId)
+		while(current && current->blockId < blockId)
 		{
-			Node *next_node = current->next.load(std::memory_order_acquire);
+			std::shared_ptr<Node> next_node = current->next.load(std::memory_order_acquire);
 			if(next_node == nullptr)
 			{
 				//reached the end of the chain, allocate next segment
@@ -58,7 +57,7 @@ class MultiProducerMultiConsumerQueue
 				//double-check in case assigned by another thread
 				if(next_node == nullptr)
 				{
-					next_node = new Node(current->blockId + 1);
+					next_node = std::make_shared<Node>(current->blockId + 1);
 					current->next.store(next_node, std::memory_order_release);
 				}
 			}
@@ -70,16 +69,16 @@ class MultiProducerMultiConsumerQueue
 
 public:
 	MultiProducerMultiConsumerQueue()
-		: headNode(new Node(0))
+		: headNode(std::make_shared<Node>(0))
 	{ }
 
 	~MultiProducerMultiConsumerQueue()
 	{
-		Node *current = headNode;
-		while(current != nullptr)
+		std::shared_ptr<Node> current = headNode.load();
+		//"lock" via shared pointer in order to ensure linear and efficient deletion
+		while(current)
 		{
-			Node *next = current->next.load(std::memory_order_relaxed);
-			delete current;
+			std::shared_ptr<Node> next = current->next.load();
 			current = next;
 		}
 	}
@@ -90,7 +89,7 @@ public:
 		size_t block_id = ticket / BlockSize;
 		size_t slot_id = ticket % BlockSize;
 
-		Node *node = GetOrAllocateNode(block_id);
+		std::shared_ptr<Node> node = GetOrAllocateNode(block_id);
 		Slot &slot = node->slots[slot_id];
 
 		//wait for the slot to be 0 (empty)
@@ -98,6 +97,7 @@ public:
 			slot.sequence.wait(0, std::memory_order_acquire);
 
 		slot.storage = std::move(item);
+
 		//mark as filled
 		slot.sequence.store(1, std::memory_order_release);
 		slot.sequence.notify_one();
@@ -106,36 +106,78 @@ public:
 	std::optional<T> pop()
 	{
 		size_t ticket = consumerTicket.fetch_add(1, std::memory_order_relaxed);
-		size_t blockId = ticket / BlockSize;
+
+		while(true)
+		{
+			size_t p = producerTicket.load(std::memory_order_acquire);
+
+			//if the consumer has caught up to the producer, the queue is empty
+			if(ticket >= p)
+				return std::nullopt;
+
+			//try to claim the ticket; if another consumer took it,
+			// ticket is updated and we loop to check against producer again.
+			if(consumerTicket.compare_exchange_weak(ticket, ticket + 1, std::memory_order_relaxed))
+				break;
+		}
+
+		size_t block_id = ticket / BlockSize;
 		size_t slot_id = ticket % BlockSize;
 
-		Node *node = GetOrAllocateNode(blockId);
-		Slot &slot = node->slots[slot_id];
+		std::shared_ptr<Node> node = GetOrAllocateNode(block_id);
+		if(!node)
+			return std::nullopt;
+		Slot *slot = &node->slots[slot_id];
 
 		//wait for the relative sequence to be 1 (filled by producer)
-		while(slot.sequence.load(std::memory_order_acquire) != 1)
-			slot.sequence.wait(1, std::memory_order_acquire);
+		while(true)
+		{
+			size_t seq = slot->sequence.load(std::memory_order_acquire);
+			if(seq == 1)
+				break;
 
-		T item = std::move(slot.storage);
+			//check if this node is still part of the active chain
+			//if headNode has moved past this node's blockId, this ticket is technically invalid or the node is stale
+			if(headNode.load(std::memory_order_acquire)->blockId > block_id)
+			{
+				//resync node if the head moved past us while we were waiting
+				node = GetOrAllocateNode(block_id);
+				if(!node)
+					return std::nullopt;
+				slot = &node->slots[slot_id];
+			}
+			else
+			{
+				slot->sequence.wait(seq, std::memory_order_acquire);
+			}
+		}
+
+		T item = std::move(slot->storage);
 
 		//reset sequence to 0 (empty) to allow the producer to reuse this slot
-		slot.sequence.store(0, std::memory_order_release);
-		slot.sequence.notify_one();
+		slot->sequence.store(0, std::memory_order_release);
+		slot->sequence.notify_one();
 
 		//attempt to reclaim the block if done
-		if(node->slotsConsumed.fetch_add(1, std::memory_order_acq_rel) == BlockSize - 1)
+		std::shared_ptr<Node> currentHead = headNode.load(std::memory_order_acquire);
+		size_t headBlockId = currentHead->blockId;
+		size_t headThreshold = (headBlockId + 1) * BlockSize;
+
+		//if the oldest claimed ticket is already in a newer block, the current head node can be safely reclaimed
+		if(consumerTicket.load(std::memory_order_acquire) >= headThreshold)
 		{
 			std::lock_guard<std::mutex> lock(allocationMutex);
 
-			//only delete if this node is still the head (oldest) node
-			if(headNode == node)
+			//reverify inside lock
+			std::shared_ptr<Node> expected = currentHead;
+			std::shared_ptr<Node> desired = currentHead->next.load(std::memory_order_acquire);
+
+			if(desired)
 			{
-				Node *next_node = node->next.load(std::memory_order_acquire);
-				if(next_node != nullptr)
-				{
-					headNode = next_node;
-					delete node;
-				}
+				//move head forward; use a loop here because multiple nodes might need to be reclaimed at once
+				while(desired && consumerTicket.load(std::memory_order_acquire) >= (desired->blockId + 1) * BlockSize)
+					desired = desired->next.load(std::memory_order_acquire);
+				headNode.compare_exchange_strong(expected, desired, std::memory_order_release);
 			}
 		}
 
@@ -166,7 +208,7 @@ public:
 
 	std::mutex allocationMutex;
 
-	alignas(64) Node *headNode;
+	std::atomic<std::shared_ptr<Node>> headNode;
 	//cache-line aligned to prevent false sharing across threads
 	alignas(64) std::atomic<size_t> producerTicket{ 0 };
 	alignas(64) std::atomic<size_t> consumerTicket{ 0 };
@@ -577,7 +619,7 @@ protected:
 	//if positive, as threads become available they can decrement the value
 	//transition to reserved.  if negative, then reserved threads can increment
 	//the value to become available
-	int32_t numThreadsToTransitionToReserved;
+	std::atomic<int32_t> numThreadsToTransitionToReserved;
 
 	//if true, then all threads should end work so they can be joined
 	std::atomic<bool> shutdownThreads;

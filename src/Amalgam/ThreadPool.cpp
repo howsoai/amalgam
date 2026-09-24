@@ -12,9 +12,9 @@ ThreadPool::ThreadPool(int32_t max_num_active_threads)
 	numReservedThreads = 0;
 	numThreadsToTransitionToReserved = 0;
 
-	SetMaxNumActiveThreads(max_num_active_threads);
-
 	mainThreadId = std::this_thread::get_id();
+
+	SetMaxNumActiveThreads(max_num_active_threads);
 }
 
 void ThreadPool::SetMaxNumActiveThreads(int32_t new_max_num_active_threads)
@@ -62,6 +62,7 @@ void ThreadPool::SetMaxNumActiveThreads(int32_t new_max_num_active_threads)
 		maxNumActiveThreads = 1;
 		numActiveThreads = 1;
 		numReservedThreads = 0;
+		numThreadsToTransitionToReserved = 0;
 	}
 
 	//place an empty idle task for each thread waiting for work
@@ -78,71 +79,81 @@ void ThreadPool::SetMaxNumActiveThreads(int32_t new_max_num_active_threads)
 
 void ThreadPool::AddNewThread()
 {
-	threads.emplace_back(
-		[this]
-		{
-			std::unique_lock<std::mutex> lock(threadsMutex);
-
-			//count this thread as active during startup
-			//this is important, as the inner loop assumes the default state of the thread is to count itself
-			//so the number of threads doesn't change when switching between a completed task and a new one
-			numActiveThreads++;
-
-			//infinite loop waiting for work
-			for(;;)
+	// Count starting workers before releasing threadsMutex.
+	++numActiveThreads;
+	try
+	{
+		threads.emplace_back(
+			[this]
 			{
-				if(numThreadsToTransitionToReserved > 0)
+				//infinite loop waiting for work; lock is unlocked for going around the loop
+				for(;;)
 				{
-					//go into reserved
-					numActiveThreads--;
-					numThreadsToTransitionToReserved--;
-					numReservedThreads++;
-
-					//wait until either shutting down or a thread is requested to come out of reserved
-					waitForActivate.wait(lock,
-						[this] { return numThreadsToTransitionToReserved < 0 || shutdownThreads; });
-
-					//only can make it here if shutting down (otherwise taskQueue has something in it)
-					if(shutdownThreads) [[unlikely]]
-						return;
-
-					//coming out of reserved
-					numActiveThreads++;
-					numThreadsToTransitionToReserved++;
-					numReservedThreads--;
-				}
-				else //fetching task
-				{
-					//if no more work, wait until shutdown or more work
-					if(taskQueue.empty())
+					if(numThreadsToTransitionToReserved > 0 && !shutdownThreads.load(std::memory_order_acquire))
 					{
-						numActiveThreads--;
-
-						//wait until either shutting down or more work has been added
-						waitForTask.wait(lock,
-							[this] { return !taskQueue.empty() || numThreadsToTransitionToReserved > 0 || shutdownThreads; });
-
-						//only can make it here if shutting down (otherwise taskQueue has something in it)
-						if(shutdownThreads) [[unlikely]]
-							return;
-
-						//got a task, resuming the thread
-						numActiveThreads++;
-
-						//if transitioning to reserved, don't grab a task
-						if(numThreadsToTransitionToReserved > 0)
+						std::unique_lock<std::mutex> lock(threadsMutex);
+						//double check transition under lock
+						if(numThreadsToTransitionToReserved <= 0 || shutdownThreads.load(std::memory_order_acquire))
 							continue;
+
+						//go into reserved
+						numActiveThreads--;
+						numThreadsToTransitionToReserved--;
+						numReservedThreads++;
+
+						//wait until either shutting down or a thread is requested to come out of reserved
+						waitForActivate.wait(lock,
+							[this] { return numThreadsToTransitionToReserved < 0 || shutdownThreads.load(std::memory_order_acquire); });
+
+						//On shutdown reserved workers also drain already accepted work.
+						numActiveThreads++;
+						if(!shutdownThreads.load(std::memory_order_acquire))
+							numThreadsToTransitionToReserved++;
+						numReservedThreads--;
 					}
+					else //fetching task
+					{
+						//take ownership of the task so it can be destructed when complete
+						if(auto task = taskQueue.pop())
+						{
+							(*task)();
+						}
+						else //no more work, wait until shutdown or more work
+						{
+							std::unique_lock<std::mutex> lock(threadsMutex);
 
-					//take ownership of the task so it can be destructed when complete
-					auto task = std::move(taskQueue.front());
-					taskQueue.pop();
+							//double check if empty under lock
+							if(!taskQueue.empty())
+								continue;
 
-					lock.unlock();
-					task();
-					lock.lock();
+							taskQueue.reclaim();
+							numActiveThreads--;
+
+							//wait until either shutting down or more work has been added
+							waitForTask.wait(lock, [this] {
+								return !taskQueue.empty() || numThreadsToTransitionToReserved > 0 ||
+									shutdownThreads.load(std::memory_order_acquire);
+							});
+
+							//Exit only after accepted work has been dispatched.
+							if(shutdownThreads.load(std::memory_order_acquire) && taskQueue.empty()) [[unlikely]]
+								return;
+
+							//got a task, resuming the thread
+							numActiveThreads++;
+
+							//if transitioning to reserved, don't grab a task
+							if(numThreadsToTransitionToReserved > 0)
+								continue;
+						}
+					}
 				}
 			}
-		}
-	);
+		);
+	}
+	catch(...)
+	{
+		--numActiveThreads;
+		throw;
+	}
 }

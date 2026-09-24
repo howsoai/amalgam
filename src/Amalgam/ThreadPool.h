@@ -197,13 +197,6 @@ public:
 			: numTasks(num_tasks), numTasksCompleted(0), threadPool(thread_pool)
 		{}
 
-		//increments the number of tasks by num_new_tasks
-		inline void AddTask(size_t num_new_tasks = 1)
-		{
-			std::unique_lock<std::mutex> lock(mutex);
-			numTasks += num_new_tasks;
-		}
-
 		//returns when all the tasks have been completed
 		//if task_enqueue_lock is not nullptr, it will unlock it and begin execution
 		inline void WaitForTasks(TaskLock *task_enqueue_lock = nullptr)

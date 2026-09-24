@@ -194,11 +194,7 @@ public:
 	//destroys all the threads and waits to join them
 	~ThreadPool()
 	{
-		//initiate shutdown
-		{
-			std::unique_lock<std::mutex> lock(threadsMutex);
-			shutdownThreads = true;
-		}
+		shutdownThreads = true;
 
 		//have threads shut themselves down
 		waitForTask.notify_all();
@@ -310,11 +306,7 @@ public:
 	template<typename Func>
 	inline void EnqueueTask(Func &&function)
 	{
-		//new scope for the lock
-		{
-			std::unique_lock<std::mutex> lock(threadsMutex);
-			taskQueue.push(Task::Create(std::forward<Func>(function)));
-		}
+		taskQueue.push(Task::Create(std::forward<Func>(function)));
 		waitForTask.notify_one();
 	}
 
@@ -328,7 +320,7 @@ public:
 	bool AreThreadsAvailable()
 	{
 		//don't spin up new threads if shutting down, since that could cause a deadlock
-		if(shutdownThreads) [[unlikely]]
+		if(shutdownThreads.load(std::memory_order_acquire)) [[unlikely]]
 			return false;
 
 		//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
@@ -357,13 +349,6 @@ public:
 			: numTasks(num_tasks), numTasksCompleted(0), threadPool(thread_pool)
 		{}
 
-		//increments the number of tasks by num_new_tasks
-		inline void AddTask(size_t num_new_tasks = 1)
-		{
-			std::unique_lock<std::mutex> lock(mutex);
-			numTasks += num_new_tasks;
-		}
-
 		//returns when all the tasks have been completed
 		//if task_enqueue_lock is not nullptr, it will unlock it and begin execution
 		inline void WaitForTasks(TaskLock *task_enqueue_lock = nullptr)
@@ -376,10 +361,8 @@ public:
 
 			threadPool->ChangeCurrentThreadStateFromActiveToWaiting();
 
-			{
-				std::unique_lock<std::mutex> task_lock(mutex);
-				condVar.wait(task_lock, [this] { return numTasksCompleted >= numTasks; });
-			}
+			while(numTasksCompleted.load() < numTasks)
+				numTasksCompleted.wait(numTasksCompleted.load());
 
 			threadPool->ChangeCurrentThreadStateFromWaitingToActive();
 		}
@@ -387,26 +370,14 @@ public:
 		//marks one task as completed
 		inline void MarkTaskCompleted()
 		{
-			//call the notify_all under a lock to prevent other references to condVar
-			//in other threads from attempting to call it on a deallocated object
-			std::unique_lock<std::mutex> lock(mutex);
 			if(++numTasksCompleted == numTasks)
-				condVar.notify_all();
-		}
-
-		//marks one task as completed, but can be called from the thread setting up the tasks
-		inline void MarkTaskCompletedBeforeWaitForTasks()
-		{
-			std::unique_lock<std::mutex> lock(mutex);
-			numTasksCompleted++;
+				numTasksCompleted.notify_all();
 		}
 
 	protected:
-		//the counters are not atomic as the condVar needs a mutex around any change of value anyway
 		size_t numTasks;
-		size_t numTasksCompleted;
-		std::mutex mutex;
-		std::condition_variable condVar;
+		//numTasksCompleted is used as both the counter and the waiting variable
+		std::atomic<size_t> numTasksCompleted;
 		ThreadPool *threadPool;
 	};
 
@@ -595,7 +566,7 @@ protected:
 	int32_t numThreadsToTransitionToReserved;
 
 	//if true, then all threads should end work so they can be joined
-	bool shutdownThreads;
+	std::atomic<bool> shutdownThreads;
 
 	//id of the main thread
 	std::thread::id mainThreadId;

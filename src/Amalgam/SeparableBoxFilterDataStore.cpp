@@ -63,8 +63,6 @@ void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::String
 	if(num_columns_added > 1 && (numEntities > 10000 || (numEntities > 200 && num_columns_added > 10)))
 	{
 		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_columns_added);
-
-		auto enqueue_task_lock = Concurrency::urgentThreadPool.AcquireTaskLock();
 		for(size_t i = num_previous_columns; i < num_columns; i++)
 		{
 			Concurrency::urgentThreadPool.BatchEnqueueTask([this, &entities, i, &task_set]()
@@ -74,8 +72,6 @@ void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::String
 			}
 			);
 		}
-
-		task_set.WaitForTasks(&enqueue_task_lock);
 		return;
 	}
 	//not running concurrently
@@ -332,7 +328,6 @@ void SeparableBoxFilterDataStore::VerifyAllEntitiesForAllColumns()
 	{
 		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_columns);
 
-		auto enqueue_task_lock = Concurrency::urgentThreadPool.AcquireTaskLock();
 		for(auto &column_data : columnData)
 		{
 			Concurrency::urgentThreadPool.BatchEnqueueTask([this, &column_data, &task_set]()
@@ -342,7 +337,7 @@ void SeparableBoxFilterDataStore::VerifyAllEntitiesForAllColumns()
 			});
 		}
 
-		task_set.WaitForTasks(&enqueue_task_lock);
+		task_set.WaitForTasks();
 		return;
 	}
 	//not running concurrently

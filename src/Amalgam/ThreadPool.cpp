@@ -36,12 +36,13 @@ void ThreadPool::SetMaxNumActiveThreads(int32_t new_max_num_active_threads)
 	//if reducing thread count, clean up all jobs and clear out all threads
 	if(new_max_num_active_threads < maxNumActiveThreads)
 	{
+		lock.unlock();
+
 		//can't reduce number of threads if this isn't the main thread
 		if(mainThreadId != std::this_thread::get_id())
 			return;
 
 		shutdownThreads = true;
-		lock.unlock();
 
 		//have threads shut themselves down
 		waitForTask.notify_all();
@@ -100,10 +101,10 @@ void ThreadPool::AddNewThread()
 
 					//wait until either shutting down or a thread is requested to come out of reserved
 					waitForActivate.wait(lock,
-						[this] { return numThreadsToTransitionToReserved < 0 || shutdownThreads; });
+						[this] { return numThreadsToTransitionToReserved < 0 || shutdownThreads.load(std::memory_order_acquire); });
 
 					//only can make it here if shutting down (otherwise taskQueue has something in it)
-					if(shutdownThreads) [[unlikely]]
+					if(shutdownThreads.load(std::memory_order_acquire)) [[unlikely]]
 						return;
 
 					//coming out of reserved
@@ -119,11 +120,13 @@ void ThreadPool::AddNewThread()
 						numActiveThreads--;
 
 						//wait until either shutting down or more work has been added
-						waitForTask.wait(lock,
-							[this] { return !taskQueue.empty() || numThreadsToTransitionToReserved > 0 || shutdownThreads; });
+						waitForTask.wait(lock, [this] {
+							return !taskQueue.empty() || numThreadsToTransitionToReserved > 0 ||
+								   shutdownThreads.load(std::memory_order_acquire);
+						});
 
 						//only can make it here if shutting down (otherwise taskQueue has something in it)
-						if(shutdownThreads) [[unlikely]]
+						if(shutdownThreads.load(std::memory_order_acquire)) [[unlikely]]
 							return;
 
 						//got a task, resuming the thread

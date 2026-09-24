@@ -72,6 +72,8 @@ void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::String
 			}
 			);
 		}
+
+		task_set.WaitForTasks();
 		return;
 	}
 	//not running concurrently

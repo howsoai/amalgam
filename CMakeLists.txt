@@ -106,6 +106,39 @@ set(COMMON_SOURCE
     src/3rd_party/skarupke_maps/flat_hash_map.hpp
     src/3rd_party/swiftdtoa/SwiftDtoa.cpp
     src/3rd_party/swiftdtoa/SwiftDtoa.h
+    src/3rd_party/taskflow/algorithm/algorithm.hpp
+    src/3rd_party/taskflow/algorithm/partitioner.hpp
+    src/3rd_party/taskflow/core/async.hpp
+    src/3rd_party/taskflow/core/async_task.hpp
+    src/3rd_party/taskflow/core/atomic_notifier.hpp
+    src/3rd_party/taskflow/core/declarations.hpp
+    src/3rd_party/taskflow/core/environment.hpp
+    src/3rd_party/taskflow/core/error.hpp
+    src/3rd_party/taskflow/core/executor.hpp
+    src/3rd_party/taskflow/core/flow_builder.hpp
+    src/3rd_party/taskflow/core/graph.hpp
+    src/3rd_party/taskflow/core/nonblocking_notifier.hpp
+    src/3rd_party/taskflow/core/runtime.hpp
+    src/3rd_party/taskflow/core/semaphore.hpp
+    src/3rd_party/taskflow/core/task.hpp
+    src/3rd_party/taskflow/core/taskflow.hpp
+    src/3rd_party/taskflow/core/task_group.hpp
+    src/3rd_party/taskflow/core/topology.hpp
+    src/3rd_party/taskflow/core/worker.hpp
+    src/3rd_party/taskflow/core/wsq.hpp
+    src/3rd_party/taskflow/observer/interface.hpp
+    src/3rd_party/taskflow/observer/tfprof.hpp
+    src/3rd_party/taskflow/taskflow.hpp
+    src/3rd_party/taskflow/utility/iterator.hpp
+    src/3rd_party/taskflow/utility/lazy_string.hpp
+    src/3rd_party/taskflow/utility/macros.hpp
+    src/3rd_party/taskflow/utility/math.hpp
+    src/3rd_party/taskflow/utility/object_pool.hpp
+    src/3rd_party/taskflow/utility/os.hpp
+    src/3rd_party/taskflow/utility/serializer.hpp
+    src/3rd_party/taskflow/utility/small_vector.hpp
+    src/3rd_party/taskflow/utility/stream.hpp
+    src/3rd_party/taskflow/utility/traits.hpp
     src/3rd_party/tweetnacl/tweetnacl.cpp
     src/3rd_party/tweetnacl/tweetnacl.h
     src/Amalgam/Amalgam.h
@@ -272,18 +305,6 @@ include_directories(
 #
 # Compiled targets
 #
-
-# Pinned, vendored Taskflow CPU headers. Normal builds never access the network.
-add_library(amalgam-taskflow INTERFACE)
-target_compile_features(amalgam-taskflow INTERFACE cxx_std_20)
-target_include_directories(amalgam-taskflow SYSTEM INTERFACE
-    "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/3rd_party>")
-if(NOT IS_WASM)
-    find_package(Threads REQUIRED)
-    target_link_libraries(amalgam-taskflow INTERFACE Threads::Threads)
-endif()
-install(FILES src/3rd_party/taskflow/LICENSE
-    DESTINATION share/licenses/amalgam/taskflow COMPONENT ThirdPartyLicenses)
 
 include(custom_add_target)
 

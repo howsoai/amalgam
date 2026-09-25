@@ -27,9 +27,8 @@
    * https://github.com/apple/swift/blob/master/include/swift/Runtime/SwiftDtoa.h
    * https://github.com/apple/swift/blob/master/stdlib/public/runtime/SwiftDtoa.cpp
    * Location: ./src/third_party/swiftdtoa
-* Taskflow v4.1.0 (MIT)
+* Taskflow v4.1.0
    * Source: https://github.com/taskflow/taskflow
-   * Commit: 45366fe5bc4f2f8ec9aa590b40c504e296886865
    * Location: ./src/3rd_party/taskflow
 * TweetNaCl
    * Source:

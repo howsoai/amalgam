@@ -5,18 +5,6 @@ VisualStudioVersion = 17.2.32519.379
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Amalgam", "src\Amalgam\Amalgam.vcxproj", "{640515C4-B87F-4210-A603-F091804FAE5A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Concurrency", "Concurrency", "{A0142E21-3936-4D3B-945D-3A0D4B4C9D98}"
-	ProjectSection(SolutionItems) = preProject
-		src\Amalgam\Concurrency.md = src\Amalgam\Concurrency.md
-		src\3rd_party\taskflow\README.amalgam.md = src\3rd_party\taskflow\README.amalgam.md
-		src\3rd_party\taskflow\LICENSE = src\3rd_party\taskflow\LICENSE
-		test\unit_test\concurrency_test.cpp = test\unit_test\concurrency_test.cpp
-		test\unit_test\interpreter_concurrency_test.cpp = test\unit_test\interpreter_concurrency_test.cpp
-		test\unit_test\taskflow_exception_test.cpp = test\unit_test\taskflow_exception_test.cpp
-		test\concurrency\nested.amlg = test\concurrency\nested.amlg
-		test\concurrency\convictions.amlg = test\concurrency\convictions.amlg
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		MT_Debug_DLL|x64 = MT_Debug_DLL|x64

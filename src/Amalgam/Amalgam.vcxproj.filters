@@ -257,39 +257,6 @@
     <ClInclude Include="rand\RandomStream.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\3rd_party\taskflow\algorithm\algorithm.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\algorithm\partitioner.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\async.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\async_task.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\atomic_notifier.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\declarations.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\environment.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\error.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\executor.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\flow_builder.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\graph.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\nonblocking_notifier.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\runtime.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\semaphore.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\task.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\task_group.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\taskflow.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\topology.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\worker.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\core\wsq.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\observer\interface.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\observer\tfprof.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\taskflow.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\utility\iterator.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\utility\lazy_string.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\utility\macros.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\utility\math.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\utility\object_pool.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\utility\os.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\utility\serializer.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\utility\small_vector.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\utility\stream.hpp" />
-    <ClInclude Include="..\3rd_party\taskflow\utility\traits.hpp" />
     <ClInclude Include="Concurrency.h">
       <Filter>Header Files</Filter>
     </ClInclude>

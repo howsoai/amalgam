@@ -11,7 +11,7 @@ set(ALL_SHAREDLIB_TARGETS)
 set(ALL_APP_TARGETS)
 function(add_compiled_target)
     set(options AUTO_NAME USE_THREADS USE_OPENMP USE_PGC USE_AFMI_MT USE_AFMI_ST USE_ADVANCED_ARCH_INTRINSICS NO_INSTALL)
-    set(oneValueArgs NAME TYPE OUTPUT_NAME_BASE IDE_FOLDER OBJECT_LIBRARY)
+    set(oneValueArgs NAME TYPE OUTPUT_NAME_BASE IDE_FOLDER)
     set(multiValueArgs INCLUDE_DIRS COMPILER_DEFINES LINK_LIBRARIES SOURCE APP_ONLY_SOURCE)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -150,9 +150,6 @@ function(add_compiled_target)
 
         if(USE_OBJECT_LIBS)
             string(REPLACE "-app" "-objlib" OBJ_LIB_TARGET_NAME ${TARGET_NAME})
-            if(args_OBJECT_LIBRARY)
-                set(OBJ_LIB_TARGET_NAME ${args_OBJECT_LIBRARY})
-            endif()
             add_executable(${TARGET_NAME} ${args_APP_ONLY_SOURCE} $<TARGET_OBJECTS:${OBJ_LIB_TARGET_NAME}>)
         else()
             add_executable(${TARGET_NAME} ${args_APP_ONLY_SOURCE} ${args_SOURCE})
@@ -202,11 +199,6 @@ function(add_compiled_target)
     # Note: objlibs don't have output names
     if(NOT IS_OBJLIB)
         set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "${OUTPUT_NAME_BASE}")
-    endif()
-
-    # Taskflow is an implementation dependency, including AFMI threaded builds.
-    if(USE_THREADS OR USE_AFMI_MT)
-        target_link_libraries(${TARGET_NAME} PRIVATE amalgam-taskflow)
     endif()
 
     # Threads:

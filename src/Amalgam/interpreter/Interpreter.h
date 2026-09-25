@@ -121,6 +121,39 @@ public:
 		constructionStack.emplace_back(target_origin, &target, current_index, current_value, previous_result);
 	}
 
+	//The caller must own the target reference, or have joined all children
+	//borrowing it, before updating its uniqueness and node flags.
+	static inline void FinalizeConstructionTarget(EvaluableNodeReference &target_ref, bool execution_side_effects)
+	{
+		//if something accessed target, the top node is no longer freeable
+		//and further logic must assess the state of target_ref
+		if(target_ref != nullptr && !target_ref->GetIsFreeableTopNode())
+		{
+			//if something accessed target, the top node is no longer freeable
+			//and needs to be marked as potentially containing a cycle
+			if(target_ref.uniqueUnreferencedTopNode)
+			{
+				target_ref.uniqueUnreferencedTopNode = false;
+				target_ref->SetNeedCycleCheck(true);
+			}
+
+			//if something could have stored the target somewhere, then can't be unique
+			if(execution_side_effects)
+			{
+				target_ref.unique = false;
+				target_ref.uniqueUnreferencedTopNode = false;
+			}
+
+			//clear freeability for use in other places
+		#ifdef MULTITHREAD_SUPPORT
+			//not unique, so should set atomically if other threads may be accessing it
+			target_ref->SetIsFreeableTopNodeAtomic(false);
+		#else
+			target_ref->SetIsFreeableTopNode(false);
+		#endif
+		}
+	}
+
 	//pops the top construction context off the stack
 	//and returns true if that construction stack node had memory write side effects
 	inline bool PopConstructionContextAndGetExecutionSideEffectFlag()
@@ -131,33 +164,7 @@ public:
 			bool execution_side_effects = back.executionSideEffects;
 			EvaluableNodeReference &target_ref = *back.targetRefPtr;
 
-			//if something accessed target, the top node is no longer freeable
-			//and further logic must assess the state of target_ref
-			if(target_ref != nullptr && !target_ref->GetIsFreeableTopNode())
-			{
-				//if something accessed target, the top node is no longer freeable
-				//and needs to be marked as potentially containing a cycle
-				if(target_ref.uniqueUnreferencedTopNode)
-				{
-					target_ref.uniqueUnreferencedTopNode = false;
-					target_ref->SetNeedCycleCheck(true);
-				}
-
-				//if something could have stored the target somewhere, then can't be unique
-				if(execution_side_effects)
-				{
-					target_ref.unique = false;
-					target_ref.uniqueUnreferencedTopNode = false;
-				}
-
-				//clear freeability for use in other places
-			#ifdef MULTITHREAD_SUPPORT
-				//not unique, so should set atomically if other threads may be accessing it
-				target_ref->SetIsFreeableTopNodeAtomic(false);
-			#else
-				target_ref->SetIsFreeableTopNode(false);
-			#endif
-			}
+			FinalizeConstructionTarget(target_ref, execution_side_effects);
 
 			constructionStack.pop_back();
 			return execution_side_effects;

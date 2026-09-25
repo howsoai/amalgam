@@ -44,23 +44,22 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 	size_t max_from_current = extraMemoryCapacityFactor * GetNumberOfUsedNodes() + 1;
 
 	size_t cur_num_nodes = GetNumberOfUsedNodes();
-	if(numNodesToRunGarbageCollection > cur_num_nodes)
+	//Use one snapshot, even if a concurrent forced-collection request changes the hint.
+	size_t previous_trigger = numNodesToRunGarbageCollection;
+	size_t next_trigger = max_from_current;
+	if(previous_trigger > cur_num_nodes)
 	{
 		//scale down the number of nodes previously allocated, because there is always a chance that
 		//a large allocation goes beyond that size and so the memory keeps growing
 		//by using a fraction less than 1, it reduces the chances of a slow memory increase
-		size_t diff_from_current = (numNodesToRunGarbageCollection - cur_num_nodes);
+		size_t diff_from_current = previous_trigger - cur_num_nodes;
 		size_t max_from_previous = cur_num_nodes + static_cast<size_t>(.95 * diff_from_current);
 
-		numNodesToRunGarbageCollection = std::max<size_t>(max_from_previous, max_from_current);
-	}
-	else
-	{
-		numNodesToRunGarbageCollection = max_from_current;
+		next_trigger = std::max<size_t>(max_from_previous, max_from_current);
 	}
 
 	//make sure doesn't go below the threshold
-	numNodesToRunGarbageCollection = std::max(minNodesToCollectGarbage, numNodesToRunGarbageCollection);
+	numNodesToRunGarbageCollection = std::max(minNodesToCollectGarbage, next_trigger);
 }
 
 void EvaluableNodeManager::CollectGarbage()
@@ -103,14 +102,17 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 	// the clear by the thread that gets selected for GC below will catch and clear any threads that have gone inactive
 	localAllocationBuffer.Clear();
 
-	//free lock so can attempt to enter write lock to collect garbage
-	memory_modification_lock.unlock();
-
-	//the first thread to set the flag becomes the garbage collector
+	//Check the threshold and elect a collector while still holding the read
+	//lock: a previous collector cannot update the threshold between these steps.
+	//The selection flag prevents readers from electing duplicate collectors.
 	bool gc_on_this_thread = false;
 	if(RecommendGarbageCollection())
 		gc_on_this_thread =
 			!activeInterpreters->garbageCollectionThreadSelectionFlag.test_and_set(std::memory_order_acquire);
+
+	//Release only after the threshold decision; the elected collector needs
+	//exclusive access and must wait for every interpreter reader to yield.
+	memory_modification_lock.unlock();
 
 	if(gc_on_this_thread)
 	{
@@ -653,7 +655,9 @@ static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
 	AmlgAssert(tree->IsNodeValid());
 #endif
 
-	tree->SetKnownToBeInUseAtomic(true);
+	//A shared root is subject to the same claim rule as any shared child.
+	if(!tree->TrySetKnownToBeInUseAtomic())
+		return;
 	auto &node_stack = EvaluableNode::reusableBuffer;
 	//A previous traversal may have unwound after an allocation failure.
 	node_stack.clear();

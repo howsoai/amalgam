@@ -80,6 +80,27 @@ ownership intact without requiring a coroutine conversion of every opcode.
 Destroying a manager before submission discards its closures without starting
 side effects. GC failures release waiters and discard partial marks as before.
 
+Construction tasks write side effects into separate, preallocated records. They
+borrow the parent's target reference without changing its uniqueness or node
+flags when popping their copied construction entry. After joining every child,
+the parent holds the memory read lock again and applies the existing construction
+finalization rules. Target references, result slots and their registered GC roots
+outlive that join, including when a child throws.
+
+GC threshold checks and collector election both run under the memory read lock;
+only then does a candidate release it. The election flag excludes a second
+collector while the winner waits for exclusive access. The threshold itself is
+atomic in multithreaded builds because forced-GC requests can write it alongside
+readers; its default sequentially consistent accesses match the used-node counter.
+Trigger recalculation uses one snapshot and publishes one final value. The exclusive lock freezes
+node contents throughout marking and sweeping. In multithreaded builds, attribute
+queries use atomic loads because immutable layout bits share a byte with
+the mark bit. Relaxed loads and mark-claim RMWs suffice: they select who traverses
+a node, without publishing its contents. Task submission publishes the frozen
+graph and the maintenance join completes all traversals before sweeping or
+ordinary mark resets. Initialization and other exclusive node writes remain
+ordinary accesses; single-thread builds retain ordinary attribute reads.
+
 ## Maintenance and configuration
 
 A process-wide generation has two executors. Interpreter roots use one;
@@ -134,6 +155,10 @@ every worker with an actual nested Interpreter while queuing unrelated writers
 against retained locks, checks graph successors wait for those writers, and tests
 nested exceptions and recovery. It repeats overlap and saturation 20 times at
 each of 1/2/4 workers (one worker checks correctness without requiring overlap).
+It also checks that shared construction targets stay unchanged while children
+execute (a deterministic check at one worker), and repeatedly collects a shared
+12,000-value cyclic graph with extended list/assoc storage and simultaneous
+collector requests, including forced requests under shared read locks. Every retained value, cycle edge and cleared mark is checked.
 The print listener is the normal production output interface, with an override
 for synchronization; there is no test-specific scheduling path.
 

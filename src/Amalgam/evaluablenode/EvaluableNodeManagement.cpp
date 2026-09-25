@@ -44,23 +44,22 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 	size_t max_from_current = extraMemoryCapacityFactor * GetNumberOfUsedNodes() + 1;
 
 	size_t cur_num_nodes = GetNumberOfUsedNodes();
-	if(numNodesToRunGarbageCollection > cur_num_nodes)
+	//Use one snapshot, even if a concurrent forced-collection request changes the hint.
+	size_t previous_trigger = numNodesToRunGarbageCollection;
+	size_t next_trigger = max_from_current;
+	if(previous_trigger > cur_num_nodes)
 	{
 		//scale down the number of nodes previously allocated, because there is always a chance that
 		//a large allocation goes beyond that size and so the memory keeps growing
 		//by using a fraction less than 1, it reduces the chances of a slow memory increase
-		size_t diff_from_current = (numNodesToRunGarbageCollection - cur_num_nodes);
+		size_t diff_from_current = previous_trigger - cur_num_nodes;
 		size_t max_from_previous = cur_num_nodes + static_cast<size_t>(.95 * diff_from_current);
 
-		numNodesToRunGarbageCollection = std::max<size_t>(max_from_previous, max_from_current);
-	}
-	else
-	{
-		numNodesToRunGarbageCollection = max_from_current;
+		next_trigger = std::max<size_t>(max_from_previous, max_from_current);
 	}
 
 	//make sure doesn't go below the threshold
-	numNodesToRunGarbageCollection = std::max(minNodesToCollectGarbage, numNodesToRunGarbageCollection);
+	numNodesToRunGarbageCollection = std::max(minNodesToCollectGarbage, next_trigger);
 }
 
 void EvaluableNodeManager::CollectGarbage()
@@ -103,14 +102,17 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 	// the clear by the thread that gets selected for GC below will catch and clear any threads that have gone inactive
 	localAllocationBuffer.Clear();
 
-	//free lock so can attempt to enter write lock to collect garbage
-	memory_modification_lock.unlock();
-
-	//the first thread to set the flag becomes the garbage collector
+	//Check the threshold and elect a collector while still holding the read
+	//lock: a previous collector cannot update the threshold between these steps.
+	//The selection flag prevents readers from electing duplicate collectors.
 	bool gc_on_this_thread = false;
 	if(RecommendGarbageCollection())
 		gc_on_this_thread =
 			!activeInterpreters->garbageCollectionThreadSelectionFlag.test_and_set(std::memory_order_acquire);
+
+	//Release only after the threshold decision; the elected collector needs
+	//exclusive access and must wait for every interpreter reader to yield.
+	memory_modification_lock.unlock();
 
 	if(gc_on_this_thread)
 	{
@@ -122,34 +124,53 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 
 		Concurrency::WriteLock write_lock(activeInterpreters->memoryModificationMutex);
 
-		//clear all threads' local allocation buffers that are using this enm
-		LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
-			[this](LocalAllocationBuffer *lab)
+		auto finish_collection = [this]
 		{
-			lab->Clear(this);
-		});
+			{
+				Concurrency::SingleLock lock(activeInterpreters->garbageCollectionNotificationMutex);
+				activeInterpreters->garbageCollectionInProgress.store(false, std::memory_order_release);
+				activeInterpreters->garbageCollectionThreadSelectionFlag.clear(std::memory_order_release);
+			}
+			activeInterpreters->garbageCollectionConditionVar.notify_all();
+		};
 
 		size_t cur_first_unused_node_index = firstUnusedNodeIndex;
-		//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
-		firstUnusedNodeIndex = 0;
-
-		//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
-		while(cur_first_unused_node_index > 0 && nodes[cur_first_unused_node_index - 1] != nullptr
-				&& nodes[cur_first_unused_node_index - 1]->IsNodeDeallocated())
-			cur_first_unused_node_index--;
-
-		MarkAllReferencedNodesInUse(cur_first_unused_node_index);
-		FreeAllNodesExceptReferencedNodes(cur_first_unused_node_index);
-
-		//wake up remaining threads 
+		try
 		{
-			//lock the notification mutex to prevent other threads from waking up and seeing
-			//an outdated state of garbageCollectionThreadSelectionFlag
-			Concurrency::SingleLock lock(activeInterpreters->garbageCollectionNotificationMutex);
-			activeInterpreters->garbageCollectionInProgress.store(false, std::memory_order_release);
-			activeInterpreters->garbageCollectionThreadSelectionFlag.clear(std::memory_order_release);
+			//clear all threads' local allocation buffers that are using this enm
+			LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
+				[this](LocalAllocationBuffer *lab)
+			{
+				lab->Clear(this);
+			});
+
+			//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
+			firstUnusedNodeIndex = 0;
+
+			//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
+			while(cur_first_unused_node_index > 0 && nodes[cur_first_unused_node_index - 1] != nullptr
+					&& nodes[cur_first_unused_node_index - 1]->IsNodeDeallocated())
+				cur_first_unused_node_index--;
+
+			MarkAllReferencedNodesInUse(cur_first_unused_node_index);
+			FreeAllNodesExceptReferencedNodes(cur_first_unused_node_index);
 		}
-		activeInterpreters->garbageCollectionConditionVar.notify_all();
+		catch(...)
+		{
+			//Taskflow has joined all running GC tasks before propagating failure.
+			//Discard partial marks so a later collection can traverse every root.
+			firstUnusedNodeIndex = std::min(cur_first_unused_node_index, nodes.size());
+			for(size_t i = 0; i < firstUnusedNodeIndex; ++i)
+				if(nodes[i] != nullptr)
+					nodes[i]->SetKnownToBeInUse(false);
+			finish_collection();
+			write_lock.unlock();
+			memory_modification_lock.lock();
+			if(PerformanceProfiler::IsProfilingEnabled())
+				PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());
+			throw;
+		}
+		finish_collection();
 
 		write_lock.unlock();
 	}
@@ -317,14 +338,13 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	size_t num_nodes_to_invalidate = last_active_index - next_write_index;
 	if(Concurrency::GetMaxNumThreads() > 1 && num_nodes_to_invalidate > 2 * _invalidate_nodes_task_size)
 	{
-		size_t num_tasks = (num_nodes_to_invalidate + (_invalidate_nodes_task_size - 1)) / _invalidate_nodes_task_size;
-		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_tasks);
+		tf::Taskflow graph;
 
 		//free each full block of _invalidate_nodes_task_size
 		size_t start_index = next_write_index;
 		for(; start_index + _invalidate_nodes_task_size < last_active_index; start_index += _invalidate_nodes_task_size)
-			Concurrency::urgentThreadPool.EnqueueTask(
-				[this, &task_set, start_index]
+			graph.emplace(
+				[this, start_index]
 				{
 					size_t end_index = start_index + _invalidate_nodes_task_size;
 					for(size_t i = start_index; i < end_index; i++)
@@ -332,23 +352,21 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 						if(!nodes[i]->IsNodeDeallocated())
 							nodes[i]->Invalidate();
 					}
-					task_set.MarkTaskCompleted();
 				});
 
 		//invalidate any remaining that are fewer than _invalidate_nodes_task_size
 		if(start_index < last_active_index)
-			Concurrency::urgentThreadPool.EnqueueTask(
-				[this, &task_set, start_index, last_active_index]
+			graph.emplace(
+				[this, start_index, last_active_index]
 				{
 					for(size_t i = start_index; i < last_active_index; i++)
 					{
 						if(!nodes[i]->IsNodeDeallocated())
 							nodes[i]->Invalidate();
 					}
-					task_set.MarkTaskCompleted();
 				});
 
-		task_set.WaitForTasks();
+		Concurrency::RunMaintenanceTaskflow(graph);
 	}
 	else
 #endif
@@ -591,6 +609,8 @@ static void MarkAllReferencedNodesInUseForNode(EvaluableNode *tree)
 {
 	tree->SetKnownToBeInUse(true);
 	auto &node_stack = EvaluableNode::reusableBuffer;
+	//A previous traversal may have unwound after an allocation failure.
+	node_stack.clear();
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())
@@ -635,8 +655,12 @@ static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
 	AmlgAssert(tree->IsNodeValid());
 #endif
 
-	tree->SetKnownToBeInUseAtomic(true);
+	//A shared root is subject to the same claim rule as any shared child.
+	if(!tree->TrySetKnownToBeInUseAtomic())
+		return;
 	auto &node_stack = EvaluableNode::reusableBuffer;
+	//A previous traversal may have unwound after an allocation failure.
+	node_stack.clear();
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())
@@ -681,13 +705,13 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
 	if(Concurrency::GetMaxNumThreads() > 1 && num_active_interpreters >= 1 && estimated_nodes_in_use >= 10000)
 	{
-		//allocate all the tasks assuming they will happen, but mark when they can be skipped
-		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_active_interpreters + 1);
+		//The graph join completes marking before sweeping can start.
+		tf::Taskflow graph;
 
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
-			Concurrency::urgentThreadPool.EnqueueTask(
-				[interpreter, &task_set]
+			graph.emplace(
+				[interpreter]
 				{
 					for(EvaluableNode *en : interpreter->scopeStack)
 					{
@@ -721,21 +745,19 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 						MarkAllReferencedNodesInUseConcurrentForNode(en);
 					}
 
-					task_set.MarkTaskCompleted();
 				}
 			);
 		}
 
 		//add the root node last since references above are more likely to mark pieces of it concurrently
-		Concurrency::urgentThreadPool.EnqueueTask(
-			[this, &task_set]
+		graph.emplace(
+			[this]
 			{
 				MarkAllReferencedNodesInUseConcurrentForNode(rootNode);
-				task_set.MarkTaskCompleted();
 			}
 		);
 
-		task_set.WaitForTasks();
+		Concurrency::RunMaintenanceTaskflow(graph);
 		return;
 	}
 #endif

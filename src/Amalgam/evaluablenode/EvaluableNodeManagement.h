@@ -430,7 +430,8 @@ public:
 	void CollectGarbage();
 
 #ifdef MULTITHREAD_SUPPORT
-	//if multithreaded, then memory_modification_lock is the lock used for memoryModificationMutex if not nullptr
+	//Requires a held memoryModificationMutex read lock; restores ownership
+	//before returning or propagating a collection failure.
 	void CollectGarbageWithConcurrentAccess(Concurrency::ReadLock &memory_modification_lock);
 #endif
 
@@ -776,8 +777,13 @@ public:
 	//verifies integrity of all referenced nodes
 	void VerifyEvaluableNodeIntegrityForAllReferencedNodes();
 
-	//when numNodesToRunGarbageCollection are allocated, then it is time to run garbage collection
+	//Forced collection requests can update this while other interpreters hold
+	//memory read locks. Keep the threshold atomic as well as electing a single collector.
+#ifdef MULTITHREAD_SUPPORT
+	std::atomic<size_t> numNodesToRunGarbageCollection;
+#else
 	size_t numNodesToRunGarbageCollection;
+#endif
 
 	//Uses an EvaluableNode as a stack which may already have elements in it
 	// upon destruction it restores the stack back to the state it was when constructed

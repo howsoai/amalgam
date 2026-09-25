@@ -7,6 +7,7 @@
 #include "PlatformSpecific.h"
 
 //system headers:
+#include <limits>
 #include <string>
 
 EntityExternalInterface entint;
@@ -346,7 +347,8 @@ extern "C"
 	void SetMaxNumThreads(size_t max_num_threads)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
-		Concurrency::SetMaxNumThreads(max_num_threads);
+		if(max_num_threads <= static_cast<size_t>(std::numeric_limits<int>::max()))
+			Concurrency::SetMaxNumThreads(max_num_threads);
 	#endif
 	}
 }

@@ -73,7 +73,16 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		constructionStack = std::move(*construction_stack);
 
 	evaluableNodeManager->AddActiveInterpreter(this);
-	auto retval = InterpretNode(en, immediate_result);
+	EvaluableNodeReference retval;
+	try
+	{
+		retval = InterpretNode(en, immediate_result);
+	}
+	catch(...)
+	{
+		evaluableNodeManager->RemoveActiveInterpreter(this);
+		throw;
+	}
 	evaluableNodeManager->RemoveActiveInterpreter(this);
 
 	return retval;
@@ -775,8 +784,8 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 	if(interpreter_constraints->ConstrainedAllocatedNodes())
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		//if multiple threads, the other threads could be eating into this
-		interpreter_constraints->maxNumAllocatedNodes *= Concurrency::threadPool.GetNumActiveThreads();
+		//Retain the sampled active-Interpreter allowance, not configured capacity.
+		interpreter_constraints->maxNumAllocatedNodes *= Concurrency::GetActiveInterpreterThreadCount();
 	#endif
 
 		//offset the max appropriately
@@ -891,24 +900,20 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 	EvaluableNode::OrderedType &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 	EvaluableNodeRequestedValueTypes immediate_results)
 {
-	if(!parent_node->GetConcurrency())
+	if(!parent_node->GetConcurrency() || !Concurrency::CanRunInterpreterConcurrently())
 		return false;
 
 	size_t num_tasks = nodes.size();
 	if(num_tasks < 2)
 		return false;
 
-	auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
-	if(!Concurrency::threadPool.AreThreadsAvailable())
-		return false;
-
-	InterpreterConcurrencyManager concurrency_manager(this, num_tasks, enqueue_task_lock);
+	InterpreterConcurrencyManager concurrency_manager(this, num_tasks);
 
 	interpreted_nodes.resize(num_tasks);
 
 	//kick off interpreters
 	for(size_t i = 0; i < num_tasks; i++)
-		concurrency_manager.EnqueueTask<EvaluableNodeReference>(nodes[i], &interpreted_nodes[i], immediate_results);
+		concurrency_manager.AddTask<EvaluableNodeReference>(nodes[i], &interpreted_nodes[i], immediate_results);
 
 	concurrency_manager.EndConcurrency();
 	return true;

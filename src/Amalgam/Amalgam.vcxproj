@@ -637,7 +637,6 @@
     <ClCompile Include="SBFDSColumnData.cpp" />
     <ClCompile Include="SeparableBoxFilterDataStore.cpp" />
     <ClCompile Include="string\StringManipulation.cpp" />
-    <ClCompile Include="ThreadPool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\3rd_party\date\date.h" />
@@ -708,7 +707,6 @@
     <ClInclude Include="SeparableBoxFilterDataStore.h" />
     <ClInclude Include="string\StringInternPool.h" />
     <ClInclude Include="string\StringManipulation.h" />
-    <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="UninitializedArray.h" />
     <ClInclude Include="VectorMap.h" />
   </ItemGroup>

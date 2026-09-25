@@ -701,8 +701,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	{
 		double max_num_threads_raw = InterpretNodeIntoNumberValue(ocn[1]);
 		size_t max_num_threads = 0;
-		if(max_num_threads >= 0)
+		if(max_num_threads_raw >= 0 && max_num_threads_raw <= std::numeric_limits<int>::max())
 			max_num_threads = static_cast<size_t>(max_num_threads_raw);
+		else
+			return AllocReturn(static_cast<double>(Concurrency::GetMaxNumThreads()), immediate_result);
 		Concurrency::SetMaxNumThreads(max_num_threads);
 
 		max_num_threads_raw = static_cast<double>(Concurrency::GetMaxNumThreads());

@@ -397,7 +397,7 @@ __forceinline void EvaluableNode::SetAttributeAtomic(Attribute attr, bool enable
 
 __forceinline bool EvaluableNode::TrySetAttributeAtomic(Attribute attr)
 {
-	constexpr AttributeStorageType mask = static_cast<AttributeStorageType>(Attribute::KNOWN_TO_BE_IN_USE);
+	const AttributeStorageType mask = static_cast<AttributeStorageType>(attr);
 
 	//check if already set, relaxed is fine for early-out
 	std::atomic_ref atomic_ref(attributes);
@@ -405,9 +405,10 @@ __forceinline bool EvaluableNode::TrySetAttributeAtomic(Attribute attr)
 	if(current_flags & mask)
 		return false;
 
-	//slow path to actually set the value
+	//Claim traversal only; graph publication protects contents and the join
+	//completes every claimed traversal before sweeping. No data is published here.
 	while(!atomic_ref.compare_exchange_weak(
-		current_flags, current_flags | mask, std::memory_order_acquire, std::memory_order_relaxed))
+		current_flags, current_flags | mask, std::memory_order_relaxed, std::memory_order_relaxed))
 	{
 		//see if another thread set it
 		if(current_flags & mask)

@@ -8,7 +8,7 @@
 #endif
 
 #ifdef MULTITHREAD_SUPPORT
-	#include "ThreadPool.h"
+	#include <taskflow/taskflow.hpp>
 #endif
 
 //system headers:
@@ -19,6 +19,7 @@
 
 //system headers:
 #include <atomic>
+#include <functional>
 #include <mutex>
 #include <shared_mutex>
 #include <thread>
@@ -65,19 +66,36 @@ namespace Concurrency
 	size_t GetMaxNumThreads();
 
 	//sets the maximum number of threads to use
-	// if zero is specified, then it uses a heuristic default based on the system
+	//Zero selects a system default (at least one). Values beyond INT_MAX throw.
+	//MT changes apply at the next external graph submission; descendants keep their generation.
 	void SetMaxNumThreads(size_t max_num_threads);
 
 #ifdef MULTITHREAD_SUPPORT
-	//threadPool is the primary thread pool shared for common tasks
-	//any tasks that have interdependencies should be enqueued as one batch
-	//to make sure that interdependency deadlocks do not occur
-	extern ThreadPool threadPool;
+	//Maintenance workers cannot enter the Interpreter domain. Interpreter workers
+	//may fork recursively, including with one configured worker.
+	bool CanRunInterpreterConcurrently();
 
-	//urgentThreadPool is intended for short urgent tasks, such as building
-	//data structures or collecting garbage, where the tasks do not kick off other tasks,
-	//and tasks can be comingled freely
-	extern ThreadPool urgentThreadPool;
+	//Bind an Interpreter entry to a Taskflow runtime. Graph tasks that invoke the
+	//Interpreter use this entry; descendants inherit it through RunInterpreterTasks.
+	void RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void()> &entry);
+
+	//Fork/join independent children in submission order. A waiting caller helps
+	//only this group, never an unrelated task from an executor queue.
+	void RunInterpreterTasks(std::vector<std::function<void()>> tasks);
+
+	//Run a complete root graph and publish results. Worker submissions throw.
+	void RunTaskflow(tf::Taskflow &graph);
+
+	//For GC/cache/query graphs whose caller retains locks. Tasks in this domain
+	//must not execute Interpreter code or depend on the calling thread's locks.
+	void RunMaintenanceTaskflow(tf::Taskflow &graph);
+
+	//Worker count of the current execution generation (including during resize).
+	size_t GetExecutionThreadCount();
+
+	//Sample active tasks (excluding synchronous joins), with a serial caller counted.
+	size_t GetActiveInterpreterThreadCount();
+	size_t GetActiveThreadCount();
 #endif
 };
 #endif
@@ -86,33 +104,20 @@ namespace Concurrency
 //the container's size is bigger than 1 and run_concurrently is true
 template<typename ContainerType, typename FunctionType>
 inline void IterateOverConcurrentlyIfPossible(ContainerType &container, FunctionType func,
-	bool run_concurrently = false, bool urgent = false)
+	bool run_concurrently = false)
 {
 	size_t index = 0;
 #ifdef MULTITHREAD_SUPPORT
-	if(run_concurrently && container.size() > 1)
+	if(run_concurrently && container.size() > 1 && Concurrency::GetMaxNumThreads() > 1)
 	{
-		auto &thread_pool = (urgent ? Concurrency::urgentThreadPool : Concurrency::threadPool);
-		auto enqueue_task_lock = thread_pool.AcquireTaskLock();
-		if(thread_pool.AreThreadsAvailable())
+		tf::Taskflow graph;
+		for(auto value : container)
 		{
-			auto task_set = thread_pool.CreateCountableTaskSet(container.size());
-			for(auto value : container)
-			{
-				thread_pool.BatchEnqueueTask(
-					[index, value, &func, &task_set]
-					{
-						func(index, value);
-						task_set.MarkTaskCompleted();
-					}
-				);
-
-				index++;
-			}
-
-			task_set.WaitForTasks(&enqueue_task_lock);
-			return;
+			graph.emplace([index, value, &func] { func(index, value); });
+			index++;
 		}
+		Concurrency::RunMaintenanceTaskflow(graph);
+		return;
 	}
 	//not running concurrently
 #endif

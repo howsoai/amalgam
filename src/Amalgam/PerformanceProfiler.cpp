@@ -100,8 +100,7 @@ void PerformanceProfiler::EndOperation(size_t memory_use = 0)
 		perf_counter.totalMemChangeInclusive += total_operation_memory_inclusive;
 
 	#if defined(MULTITHREAD_SUPPORT)
-		auto num_active_threads = Concurrency::threadPool.GetNumActiveThreads()
-			+ Concurrency::urgentThreadPool.GetNumActiveThreads();
+		auto num_active_threads = Concurrency::GetActiveThreadCount();
 		perf_counter.elapsedTimeExclusive += total_operation_time_exclusive / num_active_threads;
 		perf_counter.elapsedTimeInclusive += total_operation_time_inclusive / num_active_threads;
 	#endif

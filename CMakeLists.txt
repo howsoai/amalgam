@@ -225,8 +225,6 @@ set(COMMON_SOURCE_THREADS
     ${COMMON_SOURCE}
     src/Amalgam/Concurrency.cpp
     src/Amalgam/Concurrency.h
-    src/Amalgam/ThreadPool.cpp
-    src/Amalgam/ThreadPool.h
 )
 set(RESOURCE_SOURCE)
 if(IS_MSVC)
@@ -274,6 +272,18 @@ include_directories(
 #
 # Compiled targets
 #
+
+# Pinned, vendored Taskflow CPU headers. Normal builds never access the network.
+add_library(amalgam-taskflow INTERFACE)
+target_compile_features(amalgam-taskflow INTERFACE cxx_std_20)
+target_include_directories(amalgam-taskflow SYSTEM INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/3rd_party>")
+if(NOT IS_WASM)
+    find_package(Threads REQUIRED)
+    target_link_libraries(amalgam-taskflow INTERFACE Threads::Threads)
+endif()
+install(FILES src/3rd_party/taskflow/LICENSE
+    DESTINATION share/licenses/amalgam/taskflow COMPONENT ThirdPartyLicenses)
 
 include(custom_add_target)
 

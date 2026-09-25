@@ -201,6 +201,11 @@ function(add_compiled_target)
         set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "${OUTPUT_NAME_BASE}")
     endif()
 
+    # Taskflow is an implementation dependency, including AFMI threaded builds.
+    if(USE_THREADS OR USE_AFMI_MT)
+        target_link_libraries(${TARGET_NAME} PRIVATE amalgam-taskflow)
+    endif()
+
     # Threads:
     if(USE_THREADS)
         target_compile_definitions(${TARGET_NAME} PUBLIC MULTITHREAD_SUPPORT)

@@ -103,3 +103,38 @@ foreach(TEST_TARGET ${ALL_TEST_TARGETS})
     endif()
     set_tests_properties(${TEST_TARGET} PROPERTIES LABELS "${TEST_LABELS}")
 endforeach()
+
+# Scheduler probes use production Concurrency.cpp without rebuilding the Interpreter.
+# Keep smoke_test so the existing native CI test filter includes them.
+if(TARGET amalgam-mt-app AND NOT IS_WASM)
+    add_executable(amalgam-concurrency-test
+        test/unit_test/concurrency_test.cpp src/Amalgam/Concurrency.cpp)
+    target_compile_definitions(amalgam-concurrency-test PRIVATE MULTITHREAD_SUPPORT)
+    target_link_libraries(amalgam-concurrency-test PRIVATE amalgam-taskflow)
+    set_target_properties(amalgam-concurrency-test PROPERTIES FOLDER "Testing")
+    add_test(NAME Concurrency.Taskflow COMMAND amalgam-concurrency-test)
+    set_tests_properties(Concurrency.Taskflow PROPERTIES LABELS "smoke_test;concurrency" TIMEOUT 120)
+    set(INTERPRETER_CONCURRENCY_LABELS "smoke_test;concurrency")
+    if(IS_AMD64)
+        list(APPEND INTERPRETER_CONCURRENCY_LABELS "advanced_intrinsics")
+    endif()
+    foreach(WORKERS 1 2 4)
+        add_test(NAME Concurrency.Interpreter.${WORKERS}
+            COMMAND $<TARGET_FILE:amalgam-mt-app> --numthreads ${WORKERS}
+                ${CMAKE_SOURCE_DIR}/test/concurrency/nested.amlg
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test_workspace)
+        set_tests_properties(Concurrency.Interpreter.${WORKERS} PROPERTIES
+            LABELS "${INTERPRETER_CONCURRENCY_LABELS}" TIMEOUT 120
+            PASS_REGULAR_EXPRESSION "^[.]true" FAIL_REGULAR_EXPRESSION "false")
+        add_test(NAME Concurrency.Convictions.${WORKERS}
+            COMMAND $<TARGET_FILE:amalgam-mt-app> --numthreads ${WORKERS}
+                ${CMAKE_SOURCE_DIR}/test/concurrency/convictions.amlg
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test_workspace)
+        set_tests_properties(Concurrency.Convictions.${WORKERS} PROPERTIES
+            LABELS "${INTERPRETER_CONCURRENCY_LABELS}" TIMEOUT 120
+            PASS_REGULAR_EXPRESSION "^[.]true" FAIL_REGULAR_EXPRESSION "false")
+    endforeach()
+    add_custom_target(concurrency-stress
+        COMMAND $<TARGET_FILE:amalgam-concurrency-test> --stress
+        DEPENDS amalgam-concurrency-test USES_TERMINAL)
+endif()

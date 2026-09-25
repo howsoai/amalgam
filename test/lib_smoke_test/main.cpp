@@ -10,6 +10,7 @@
 #include <cctype>
 #include <functional>
 #include <iostream>
+#include <limits>
 #include <string>
 
 // A wrapper around a C string that DeleteString() on exit.
@@ -570,6 +571,18 @@ static void RoundTripCamlToMemory(TestResult &test_result)
 	}
 }
 
+static void ThreadCountEdges(TestResult &test_result)
+{
+	size_t original = GetMaxNumThreads();
+	SetMaxNumThreads(1);
+	test_result.Require("one thread", GetMaxNumThreads() == 1);
+	SetMaxNumThreads(std::numeric_limits<size_t>::max());
+	test_result.Require("invalid C API count ignored", GetMaxNumThreads() == 1);
+	SetMaxNumThreads(0);
+	test_result.Require("nonzero default", GetMaxNumThreads() >= 1);
+	SetMaxNumThreads(original);
+}
+
 int main(int argc, char *argv[])
 {
 	bool verbose = false;
@@ -598,6 +611,7 @@ int main(int argc, char *argv[])
 
 	SuiteResult suite(verbose);
 	suite.Run("DumpVersion", DumpVersion);
+	suite.Run("ThreadCountEdges", ThreadCountEdges);
 	suite.Run("LoadAndEval", LoadAndEval);
 	suite.Run("InitializeCounter", InitializeCounter);
 	suite.Run("ExecuteEntityJsonWithValue", ExecuteEntityJsonWithValue);

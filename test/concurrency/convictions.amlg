@@ -1,0 +1,34 @@
+; The first query MUST be concurrent: a serial warmup masks the cache bug.
+(seq
+  (create_entities "c" (lambda 1))
+  (create_entities ["c" "e0"] (lambda 1)) (assign_to_entities ["c" "e0"] {x 0 y 0})
+  (create_entities ["c" "e1"] (lambda 1)) (assign_to_entities ["c" "e1"] {x 1 y 0})
+  (create_entities ["c" "e2"] (lambda 1)) (assign_to_entities ["c" "e2"] {x 0 y 1})
+  (create_entities ["c" "e3"] (lambda 1)) (assign_to_entities ["c" "e3"] {x 1 y 1})
+  (create_entities ["c" "e4"] (lambda 1)) (assign_to_entities ["c" "e4"] {x 0.5 y 0.5})
+  (let {first (compute_on_contained_entities "c" ||(query_entity_convictions 2 ["x" "y"] .null 2 .null .null .null .null -1))}
+    (print (and
+      (= (size first) 5)
+      (= first (compute_on_contained_entities "c" (query_entity_convictions 2 ["x" "y"] .null 2 .null .null .null .null -1)))
+      (= (size (compute_on_contained_entities "c" ||(query_entity_convictions 1 ["y"] .null 1 .null .null .null .null -1))) 5)
+      ; Reuse the cache with a callback whose body contains nested concurrency.
+      ; The callback must stay on the calling Interpreter, then numeric queries
+      ; must pick up their own evaluator again.
+      (= (size (compute_on_contained_entities "c"
+           ||(query_entity_convictions 2 ["x" "y"] .null 2 .null
+             {y {difference_type "continuous" data_type "number"
+                 call_entity (lambda (call_on_entity .null ||(+ y 0)))}}
+             .null .null -1))) 5)
+      ; Reach the query-cache read lock on Interpreter workers too. Their nested
+      ; callback arithmetic must take the serial path even at saturation.
+      (= ||(map (lambda
+           (size (compute_on_contained_entities "c"
+             ||(query_entity_convictions 2 ["x" "y"] .null 2 .null
+               {y {difference_type "continuous" data_type "number"
+                   call_entity (lambda (call_on_entity .null ||(+ y 0)))}}
+               .null .null -1))))
+           [0 1 2 3])
+         [5 5 5 5])
+      (= first (compute_on_contained_entities "c" ||(query_entity_convictions 2 ["x" "y"] .null 2 .null .null .null .null -1)))
+    )))
+)

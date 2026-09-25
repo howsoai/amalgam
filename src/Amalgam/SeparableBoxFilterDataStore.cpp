@@ -60,27 +60,26 @@ void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::String
 
 #ifdef MULTITHREAD_SUPPORT
 	//if big enough (enough entities and/or enough columns), try to use multithreading
-	if(num_columns_added > 1 && (numEntities > 10000 || (numEntities > 200 && num_columns_added > 10)))
+	if(Concurrency::GetMaxNumThreads() > 1 && num_columns_added > 1 && (numEntities > 10000 || (numEntities > 200 && num_columns_added > 10)))
 	{
-		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_columns_added);
+		tf::Taskflow graph;
 		for(size_t i = num_previous_columns; i < num_columns; i++)
 		{
-			Concurrency::urgentThreadPool.BatchEnqueueTask([this, &entities, i, &task_set]()
+			graph.emplace([this, &entities, i]()
 			{
 				BuildLabel(i, entities);
-				task_set.MarkTaskCompleted();
 			}
 			);
 		}
 
-		task_set.WaitForTasks();
-		return;
+		Concurrency::RunMaintenanceTaskflow(graph);
 	}
-	//not running concurrently
+	else
 #endif
-
-	for(size_t i = num_previous_columns; i < num_columns; i++)
-		BuildLabel(i, entities);
+	{
+		for(size_t i = num_previous_columns; i < num_columns; i++)
+			BuildLabel(i, entities);
+	}
 
 	//remove any that have no values in case an invalid query was done
 	RemoveAnyUnusedLabels();
@@ -326,20 +325,19 @@ void SeparableBoxFilterDataStore::VerifyAllEntitiesForAllColumns()
 #ifdef MULTITHREAD_SUPPORT
 	//if big enough (enough entities and/or enough columns), try to use multithreading
 	size_t num_columns = columnData.size();
-	if(num_columns > 1)
+	if(Concurrency::GetMaxNumThreads() > 1 && num_columns > 1)
 	{
-		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_columns);
+		tf::Taskflow graph;
 
 		for(auto &column_data : columnData)
 		{
-			Concurrency::urgentThreadPool.BatchEnqueueTask([this, &column_data, &task_set]()
+			graph.emplace([this, column = column_data.get()]()
 			{
-				column_data->VerifyAllEntities(numEntities);
-				task_set.MarkTaskCompleted();
+				column->VerifyAllEntities(numEntities);
 			});
 		}
 
-		task_set.WaitForTasks();
+		Concurrency::RunMaintenanceTaskflow(graph);
 		return;
 	}
 	//not running concurrently

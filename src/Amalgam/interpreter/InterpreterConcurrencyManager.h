@@ -9,9 +9,7 @@ class InterpreterConcurrencyManager
 public:
 
 	//constructs the concurrency manager.  Assumes parent_interpreter is NOT null
-	InterpreterConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks,
-		ThreadPool::TaskLock &task_enqueue_lock)
-		: taskSet(&Concurrency::threadPool, num_tasks)
+	InterpreterConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks)
 	{
 		resultsUnique = true;
 		resultsUniqueUnreferencedTopNode = true;
@@ -21,8 +19,7 @@ public:
 
 		parentInterpreter = parent_interpreter;
 		numTasks = num_tasks;
-		curNumTasksEnqueued = 0;
-		taskEnqueueLock = &task_enqueue_lock;
+		curNumTasksAdded = 0;
 
 		//create space to store all of these nodes on the stack, but won't copy these over to the other interpreters
 		resultsSaver = parent_interpreter->CreateOpcodeStackStateSaver();
@@ -42,21 +39,28 @@ public:
 		parentInterpreter->scopeStackMutex = std::make_unique<Concurrency::SingleMutex>();
 	}
 
-	//Enqueues a concurrent task that needs a construction stack, using the relative interpreter
+	~InterpreterConcurrencyManager()
+	{
+		//An abandoned graph has never run; do not start side effects during unwinding.
+		if(!completed)
+			parentInterpreter->scopeStackMutex.reset();
+	}
+
+	//Adds a child task to the graph that needs a construction stack, using the relative interpreter
 	// executes node_to_execute with the following parameters matching those of pushing on the construction stack
 	// will allocate an appropriate node matching the type of current_index
 	//result is set to the result of the task
 	template<typename EvaluableNodeRefType>
-	void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
+	void AddTaskWithConstructionStack(EvaluableNode *node_to_execute,
 		EvaluableNode *target_origin, EvaluableNodeReference *target,
 		EvaluableNodeImmediateValueWithType current_index,
 		EvaluableNode *current_value,
 		EvaluableNodeRefType &result)
 	{
 		size_t results_saver_location = resultsSaverCurrentTaskOffset++;
-		RandomStream rand_seed = randomSeeds[curNumTasksEnqueued++];
+		RandomStream rand_seed = randomSeeds[curNumTasksAdded++];
 
-		Concurrency::threadPool.BatchEnqueueTask(
+		graph.emplace(
 			[this, rand_seed, node_to_execute, target_origin, target, current_index,
 			current_value, &result, results_saver_location]
 		{
@@ -103,21 +107,20 @@ public:
 			resultsSaver.SetStackElement(results_saver_location, result);
 
 			interpreter.memoryModificationLock.unlock();
-			taskSet.MarkTaskCompleted();
 		}
 		);
 	}
 
-	//like the previous definition of EnqueueTaskWithConstructionStack,
+	//like the previous definition of AddTaskWithConstructionStack,
 	//but without keeping results or building a target
 	template<typename EvaluableNodeRefType>
-	void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
+	void AddTaskWithConstructionStack(EvaluableNode *node_to_execute,
 		EvaluableNodeImmediateValueWithType current_index,
 		EvaluableNode *current_value)
 	{
-		RandomStream rand_seed = randomSeeds[curNumTasksEnqueued++];
+		RandomStream rand_seed = randomSeeds[curNumTasksAdded++];
 
-		Concurrency::threadPool.BatchEnqueueTask(
+		graph.emplace(
 			[this, rand_seed, node_to_execute, current_index, current_value]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
@@ -142,24 +145,23 @@ public:
 			enm->FreeNodeTreeIfPossible(result);
 
 			interpreter.memoryModificationLock.unlock();
-			taskSet.MarkTaskCompleted();
 		}
 		);
 	}
 
-	//Enqueues a concurrent task using the relative interpreter, executing node_to_execute
+	//Adds a child task to the graph using the relative interpreter, executing node_to_execute
 	//if result is specified, it will store the result there, otherwise it will free it
 	template<typename EvaluableNodeRefType>
-	void EnqueueTask(EvaluableNode *node_to_execute,
+	void AddTask(EvaluableNode *node_to_execute,
 		EvaluableNodeRefType *result = nullptr, EvaluableNodeRequestedValueTypes immediate_results = false)
 	{
 		//save the node to execute, but also save the location
 		//so the location can be used later to save the result
 		size_t results_saver_location = resultsSaverCurrentTaskOffset++;
 
-		RandomStream rand_seed = randomSeeds[curNumTasksEnqueued++];
+		RandomStream rand_seed = randomSeeds[curNumTasksAdded++];
 
-		Concurrency::threadPool.BatchEnqueueTask(
+		graph.emplace(
 			[this, rand_seed, node_to_execute, result, immediate_results, results_saver_location]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
@@ -208,7 +210,6 @@ public:
 			}
 
 			interpreter.memoryModificationLock.unlock();
-			taskSet.MarkTaskCompleted();
 		}
 		);
 	}
@@ -216,9 +217,22 @@ public:
 	//ends concurrency from all interpreters and waits for them to finish
 	inline void EndConcurrency()
 	{
-		//allow other threads to perform garbage collection
+		if(completed)
+			return;
+		completed = true;
+
+		//The graph join is the child-before-parent dependency. Release the parent's
+		//read lock before waiting for children, including children that need GC.
 		parentInterpreter->memoryModificationLock.unlock();
-		taskSet.WaitForTasks(taskEnqueueLock);
+		std::exception_ptr failure;
+		try
+		{
+			Concurrency::RunTaskflow(graph);
+		}
+		catch(...)
+		{
+			failure = std::current_exception();
+		}
 		parentInterpreter->memoryModificationLock.lock();
 
 		//release scope stack mutex
@@ -227,6 +241,8 @@ public:
 		//propagate side effects back up
 		if(resultsSideEffect)
 			parentInterpreter->SetSideEffectsFlags();
+		if(failure)
+			std::rethrow_exception(failure);
 	}
 
 	//updates the aggregated result reference's properties based on all of the child nodes
@@ -254,8 +270,9 @@ protected:
 	//random seed for each task, the size of numTasks
 	std::vector<RandomStream> randomSeeds;
 
-	//a barrier to wait for the tasks being run
-	ThreadPool::CountableTaskSet taskSet;
+	//Children belong to this graph; execution starts only at EndConcurrency.
+	tf::Taskflow graph;
+	bool completed = false;
 
 	//structure to keep track of the stack to prevent results from being garbage collected
 	EvaluableNodeStackStateSaver resultsSaver;
@@ -288,10 +305,8 @@ protected:
 	//current task offset, which started at resultsSaverFirstTaskOffset
 	size_t resultsSaverCurrentTaskOffset;
 
-	//number of tasks enqueued so far
-	size_t curNumTasksEnqueued;
+	//number of tasks added so far
+	size_t curNumTasksAdded;
 
-	//lock for enqueueing tasks
-	ThreadPool::TaskLock *taskEnqueueLock;
 };
 #endif

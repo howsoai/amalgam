@@ -87,7 +87,7 @@ public:
 		radiusLabel = radius_label;
 
 #ifdef MULTITHREAD_SUPPORT
-		runConcurrently = run_concurrently;
+		runConcurrently = run_concurrently && cache.CanComputeConcurrently();
 #endif
 	}
 

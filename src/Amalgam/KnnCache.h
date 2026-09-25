@@ -10,6 +10,8 @@
 //caches nearest neighbor results for every entity in the provided data structure
 class KnnCache
 {
+	//Snapshot query capability during ResetCache; never inspect an expired evaluator.
+	bool canComputeConcurrently = false;
 public:
 	KnnCache()
 	{
@@ -27,11 +29,21 @@ public:
 		distEvaluator = &dist_eval;
 		interpreter = _interpreter;
 		entity = _entity;
+		canComputeConcurrently = true;
+		for(const auto &feature : dist_eval.featureAttribs)
+			if(feature.callEntityOpcode != nullptr)
+				canComputeConcurrently = false;
 		positionLabelIds = &position_label_ids;
 		radiusLabelId = radius_label;
 
 		cachedNeighbors.clear();
 		cachedNeighbors.resize(sbfDataStore->GetNumInsertedEntities());
+	}
+
+	//Distance callbacks mutate the calling Interpreter and must stay on its thread.
+	bool CanComputeConcurrently() const
+	{
+		return canComputeConcurrently;
 	}
 
 	//gets the nearest neighbors to the index and caches them for each of entities_to_compute
@@ -57,7 +69,7 @@ public:
 			}
 	#ifdef MULTITHREAD_SUPPORT
 			,
-			run_concurrently
+			run_concurrently && CanComputeConcurrently()
 	#endif
 		);
 	}

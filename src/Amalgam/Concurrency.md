@@ -1,55 +1,84 @@
 # Taskflow execution
 
 Taskflow 4.1.0 is vendored under `src/3rd_party/taskflow`; builds are offline.
-Call sites own ordinary `tf::Taskflow` graphs. Synchronous joins publish child
-results before the caller continues. There are no detached tasks. External
-callers submit root graphs with `run(...).get()`. Taskflow propagates the first
-exception after running tasks finish; pending work may be cancelled. Successful
-graphs execute each node exactly once per run.
+Maintenance call sites own `tf::Taskflow` graphs. Interpreter forks use runtime
+child groups in a single root topology. Only external callers use `run(...).get()`;
+no nested Interpreter submits another root graph. There are no detached tasks.
 
-## Interpreter lock invariant
+## Interpreter runtime and lock invariant
 
-**An Interpreter worker never submits or helps another Interpreter graph.** Every
-Interpreter concurrency entry checks `CanRunInterpreterConcurrently()`. Within a
-worker, nested `||` uses the opcode's ordinary serial path on that same thread.
-This guarantees progress even with every worker occupied, without running an
-unrelated task on a stack retaining entity, query-cache, or scope locks.
-`RunTaskflow` rejects worker submissions with `logic_error` before executing work;
-this also rejects maintenance -> Interpreter submissions. Root parallelism is
-retained; inner parallelism is deliberately sacrificed for this lock invariant.
-Graphs must not contain blocking dependencies on separately queued Interpreter
-work. Explicit DAG edges are appropriate for dependencies within a root graph.
+**A synchronous Interpreter join executes only its own unclaimed children.**
+`InterpreterConcurrencyManager` collects child closures, then submits them through
+`RunInterpreterTasks` at `EndConcurrency`. External entries create one runtime
+root. Entries already executing in a graph use `RunInterpreterRuntime` to bind
+that graph's runtime; nested forks inherit it. Bare worker submissions and
+maintenance -> Interpreter submissions remain rejected.
 
-The review's `corun` concern is real, and was introduced by the migration:
+Each group reserves its first child for the submitting worker and publishes at
+most `min(children - 1, workers - 1)` Taskflow runtime runners before executing
+child 0. Runners claim the remaining children in submission order using a
+monotonic atomic index. The owner
+executes its reserved child and drains unclaimed siblings. A short outer sibling
+can return its worker to Taskflow while the first child recursively forks inner
+work. Runtime runners can execute those inner children concurrently, even while
+the outer Interpreter call remains active. Each child is executed exactly once;
+there is no bounded queue capacity at which producers wait for consumers.
+Tiny groups can therefore incur bounded wake/runner overhead even when the owner
+finishes all children before a runner starts; such a late runner simply retires.
 
-- Old `ThreadPool::CountableTaskSet::WaitForTasks` waited on a condition variable;
-  `ChangeCurrentThreadStateFromActiveToWaiting` made replacement capacity available.
-  It never executed another task on the waiting stack. `AreThreadsAvailable` let
-  nested opcodes fall back to serial execution when saturated.
-- Vendored `core/executor.hpp`, `Executor::_corun_until`, pops its worker queue
-  and steals from *all* worker queues and external buffers, invoking any task it
-  finds. It does not restrict helping to descendants of the joined graph.
-- `OpcodesEntityQueryEngine.cpp` retains `source_entity` (`EntityReadReference`)
-  across `GetEntitiesMatchingQuery`. `EntityQueryCaches::GetMatchingEntities`
-  retains its cache read lock during distance callbacks. The called entity's own
-  read lock is explicitly released in `ComputeDistanceTermFromEvaluatingOnEntity`,
-  but the outer container/cache locks remain. `InterpretNode_ENT_MOVE_ENTITIES`
-  retains the source write reference while interpreting the destination.
-  Releasing only the Interpreter memory lock does not release those locks.
+After draining its group, the caller sleeps using C++20 atomic wait/notify for
+children already executing on other workers. It never waits for *unclaimed*
+children in an executor queue. Inductively, a saturated worker can evaluate every
+finite descendant tree itself, including at one worker, without replacement
+threads, admission retries, polling, or arbitrary queue helping. As with ordinary
+fork/join, child code must not block on an unstarted sibling or a resource retained
+by its ancestor. Busy workers may cause a particular inner fork to run on one
+worker; available runtime runners provide actual inner parallelism. A sleeping
+ancestor does not steal another branch's work.
 
-Thus an unrelated writer stolen by `corun` could block on its own suspended
-caller's lock. Separating maintenance from Interpreter work alone was insufficient.
-The enforced serial nested path removes that scheduler-induced lock cycle. It
-cannot make programs that explicitly access a lock held by their own caller safe;
-that is a pre-existing entity/callback restriction, not a scheduling guarantee.
+The group completion counter publishes all result slots before the synchronous
+opcode continuation. Exceptions are retained per child; unstarted work may be cancelled, and all
+children are drained and joined before the first failure in submission order is
+rethrown. Failed runtime submissions roll back their anchor reference; already
+published children are joined before caller captures can unwind. The manager
+restores the memory lock and shared-scope state before propagation. Execution
+registration is removed on both normal and exceptional exits.
 
-InterpreterConcurrencyManager builds a graph without starting tasks. Its explicit
-completion point releases the parent's memory read lock, waits for the root graph,
-then restores the lock and releases the shared-scope mutex, also on exceptions.
-Destroying an unsubmitted graph cancels construction without running side effects.
-Graph captures and result slots outlive the join. Interpreter registration is
-removed on both normal and exceptional exits. GC failures release waiters and
-discard partial marks before propagating.
+Taskflow's runtime implicit anchor supplies the outer graph dependency: the
+runtime task's successors cannot execute until its runners and their runtime
+descendants retire. In `core/runtime.hpp`, `_invoke_runtime_task_impl` preempts
+that graph node **after its callable returns** when its join counter is nonzero;
+`core/async.hpp` reactivates it when its final child retires. No suspended C++
+Interpreter stack is handed to the general scheduler. Late runners retain only a
+shared group whose completed closures have been cleared; they cannot dereference
+destroyed Interpreters, result slots or managers. External root completion also
+waits for those runners, so generation retirement and shutdown remain safe.
+
+The lock distinction matters:
+
+- `Executor::_corun_until` steals from every worker and external queue. Both
+  executor and runtime `corun` can invoke an unrelated writer on a stack holding
+  the very entity/query lock that writer needs. Neither is used by Interpreter
+  joins. Runtime `async` futures alone would instead deadlock at saturation.
+- `move_entities` retains the source write reference while interpreting the
+  destination. Query distance callbacks retain container and query-cache read
+  locks. These remain held; descendants may compute under them, but unrelated
+  queued writers run only after returning to Taskflow's scheduler on that worker.
+- Before draining/waiting, `EndConcurrency` releases the parent's memory read
+  lock. Child Interpreters acquire their own locks, and the registered parent
+  opcode/result stacks remain GC roots. Scope mutexes protect shared ancestor
+  contexts until the final child finishes. No entity or scope lock is silently
+  unlocked and reacquired to accommodate scheduling.
+
+Taskflow dependent async, subflows, modules and explicit preemption were also
+considered. They express successor dependencies, but cannot suspend the middle of
+an existing recursive synchronous opcode implementation. A joined subflow or
+explicit runtime `corun` still enters unrestricted helping. Using implicit runtime
+anchoring plus a descendant-only synchronous group keeps the opcode APIs and lock
+ownership intact without requiring a coroutine conversion of every opcode.
+
+Destroying a manager before submission discards its closures without starting
+side effects. GC failures release waiters and discard partial marks as before.
 
 ## Maintenance and configuration
 
@@ -63,9 +92,9 @@ without helping. Distance callbacks execute on the calling Interpreter thread.
 KnnCache snapshots callback capability in every ResetCache, before constructing
 the density processor; no capability check dereferences a previous query's evaluator.
 
-At one configured thread, Interpreter opcodes and maintenance loop call sites use
-their serial paths, preserving the old no-graph/no-worker-handoff behavior. Direct
-scheduler unit-test submissions can still exercise a one-worker executor.
+At one configured thread, marked Interpreter operations use the same runtime
+groups and execute their children on the single worker. Maintenance loop call
+sites retain their serial paths.
 `SetMaxNumThreads(0)` selects hardware concurrency (at least one); OMP-only keeps
 its half-core default. Counts beyond INT_MAX throw internally before changing
 configuration; the void C API ignores them and the language rejects negative or
@@ -81,7 +110,7 @@ calls before unloading, as with other library state.
 
 Allocation allowances retain the old sampled **active Interpreter count** policy,
 not configured capacity. Taskflow observers count active tasks across generations;
-synchronous maintenance waits are excluded. A serial caller counts itself, and the
+synchronous group and maintenance waits are excluded. A serial caller counts itself, and the
 factor is at least one. Idle workers do not inflate constrained allocations.
 Numeric maintenance tasks are intentionally excluded because they do not allocate
 Interpreter nodes; the old primary pool could include them in its sample.
@@ -94,13 +123,24 @@ two. Multiple external host threads are only counted when executing graph tasks
 The debugger distinguishes configured capacity from execution generation size.
 
 `Concurrency.Taskflow` checks exact-once execution/visibility, exception recovery,
-resize, maintenance isolation, nested serial progress at saturation, rejection of
-worker Interpreter submissions, and sampled allowances at 1/2/4 workers.
+resize, maintenance isolation, descendant progress at saturation, rejection of
+nested root submissions, and sampled allowances at 1/2/4 workers.
+`Concurrency.InterpreterOverlap` links the production Interpreter and runtime.
+A recursive Amalgam function forks at each level; two print callbacks from the
+same innermost opcode rendezvous with a five-second failure deadline. The listener
+checks simultaneous activity on two distinct threads, and both opcode and graph
+continuations check completed children and result visibility. The test also fills
+every worker with an actual nested Interpreter while queuing unrelated writers
+against retained locks, checks graph successors wait for those writers, and tests
+nested exceptions and recovery. It repeats overlap and saturation 20 times at
+each of 1/2/4 workers (one worker checks correctness without requiring overlap).
+The print listener is the normal production output interface, with an override
+for synchronization; there is no test-specific scheduling path.
+
 `nested.amlg` checks nested arithmetic/containers, scope writes, retained allocations,
 and move destination interpretation. `convictions.amlg` starts with the exact
 concurrent query that previously crashed, then compares serial results and reuses
 the cache with different dimensions and callback capability. Callback queries also
 run within an outer parallel map, reaching nested `||` on lock-holding workers.
-CTest runs both files
-in fresh processes at 1/2/4 threads. `concurrency-stress` runs a 500,000-node graph
-twice with exact-once and visibility checks.
+CTest runs both files in fresh processes at 1/2/4 threads. `concurrency-stress`
+runs a 500,000-node graph twice with exact-once and visibility checks.

@@ -45,6 +45,85 @@ private:
 struct ExecutionGeneration;
 thread_local ExecutionGeneration *worker_generation = nullptr;
 thread_local bool maintenance_worker = false;
+thread_local tf::Runtime *interpreter_runtime = nullptr;
+
+class PauseActivity
+{
+public:
+	PauseActivity() : count(maintenance_worker ? active_maintenance_tasks : active_interpreter_tasks),
+		depth(active_task_depth)
+	{
+		if(depth) --count;
+		active_task_depth = 0;
+	}
+	~PauseActivity()
+	{
+		active_task_depth = depth;
+		if(depth) ++count;
+	}
+private:
+	std::atomic<size_t> &count;
+	size_t depth;
+};
+
+//The synchronous opcode stack cannot be preempted. Give it access only to its
+//own children, while Taskflow runtime runners can claim those same children.
+//A claimed child is never queued waiting for capacity: its claimant executes it.
+class InterpreterTaskGroup
+{
+public:
+	explicit InterpreterTaskGroup(std::vector<std::function<void()>> tasks)
+		: tasks(std::move(tasks)), failures(this->tasks.size()), remaining(this->tasks.size()) {}
+
+	void Cancel() { cancelled.store(true, std::memory_order_relaxed); }
+
+	void Drain()
+	{
+		for(size_t i = next.fetch_add(1); i < tasks.size(); i = next.fetch_add(1))
+			Execute(i);
+	}
+
+	void Join()
+	{
+		//Keep the first child on the submitting stack. A worker that takes a
+		//short sibling can return to Taskflow and pick up inner runtime work.
+		if(!tasks.empty()) Execute(0);
+		Drain();
+		{
+			PauseActivity pause;
+			for(size_t count = remaining.load(std::memory_order_acquire); count != 0;
+				count = remaining.load(std::memory_order_acquire))
+				remaining.wait(count, std::memory_order_acquire);
+		}
+		for(auto &failure : failures)
+			if(failure) std::rethrow_exception(failure);
+	}
+
+private:
+	void Execute(size_t i)
+	{
+		try
+		{
+			if(!cancelled.load(std::memory_order_relaxed)) tasks[i]();
+		}
+		catch(...)
+		{
+			failures[i] = std::current_exception();
+			Cancel();
+		}
+		//No queued runner may retain references to an Interpreter stack after
+		//Join returns, including the captures in completed callbacks.
+		tasks[i] = nullptr;
+		if(remaining.fetch_sub(1, std::memory_order_acq_rel) == 1)
+			remaining.notify_all();
+	}
+
+	std::vector<std::function<void()>> tasks;
+	std::vector<std::exception_ptr> failures;
+	std::atomic<size_t> next{1};
+	std::atomic<size_t> remaining;
+	std::atomic<bool> cancelled{false};
+};
 
 //A worker borrows its generation; only external synchronous callers own it.
 //Consequently the last owner can never destroy an executor on its own worker.
@@ -150,7 +229,59 @@ size_t Concurrency::GetExecutionThreadCount()
 
 bool Concurrency::CanRunInterpreterConcurrently()
 {
-	return !worker_generation && GetMaxNumThreads() > 1;
+	return !worker_generation || interpreter_runtime != nullptr;
+}
+
+void Concurrency::RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void()> &entry)
+{
+	if(!worker_generation || maintenance_worker
+		|| &runtime.executor() != &worker_generation->interpreter
+		|| runtime.executor().this_worker() != &runtime.worker())
+		throw std::logic_error("Interpreter entry requires its owning Interpreter runtime worker");
+	struct RuntimeScope
+	{
+		tf::Runtime *previous;
+		~RuntimeScope() { interpreter_runtime = previous; }
+	} scope{std::exchange(interpreter_runtime, &runtime)};
+	entry();
+}
+
+void Concurrency::RunInterpreterTasks(std::vector<std::function<void()>> tasks)
+{
+	if(worker_generation && !interpreter_runtime)
+		throw std::logic_error("Interpreter children require an Interpreter runtime");
+	if(!interpreter_runtime)
+	{
+		tf::Taskflow graph;
+		graph.emplace([&](tf::Runtime &runtime)
+		{
+			RunInterpreterRuntime(runtime, [&] { RunInterpreterTasks(std::move(tasks)); });
+		});
+		RunTaskflow(graph);
+		return;
+	}
+	const size_t runners = tasks.empty() ? 0 : std::min(tasks.size() - 1, GetExecutionThreadCount() - 1);
+	auto group = std::make_shared<InterpreterTaskGroup>(std::move(tasks));
+	//Runtime's implicit anchor keeps every runner (including late empty runners)
+	//in the root DAG. Successors and external shutdown wait for their retirement.
+	//Only the owning worker accesses this runtime, even when draining inline.
+	try
+	{
+		for(size_t i = 0; i < runners; ++i)
+			interpreter_runtime->silent_async([group](tf::Runtime &runtime)
+			{
+				RunInterpreterRuntime(runtime, [&] { group->Drain(); });
+			});
+	}
+	catch(...)
+	{
+		//Already published children must finish before their captures unwind.
+		auto failure = std::current_exception();
+		group->Cancel();
+		try { group->Join(); } catch(...) {}
+		std::rethrow_exception(failure);
+	}
+	group->Join();
 }
 
 size_t Concurrency::GetActiveInterpreterThreadCount()
@@ -166,10 +297,9 @@ size_t Concurrency::GetActiveThreadCount()
 
 void Concurrency::RunTaskflow(tf::Taskflow &graph)
 {
-	//No helping on a stack that can retain entity/query/scope locks. Interpreter
-	//opcodes use their ordinary serial implementation within a worker instead.
+	//Nested Interpreter work belongs to the current runtime, not a new topology.
 	if(worker_generation)
-		throw std::logic_error("Workers cannot submit Interpreter graphs; use the serial path");
+		throw std::logic_error("Workers cannot submit root graphs; use Interpreter runtime children");
 	auto generation = AcquireGeneration();
 	generation->interpreter.run(graph).get();
 }
@@ -179,21 +309,7 @@ void Concurrency::RunMaintenanceTaskflow(tf::Taskflow &graph)
 	if(worker_generation)
 	{
 		//A waiting task is not active. Nested maintenance tasks count their own work.
-		struct PauseActivity
-		{
-			std::atomic<size_t> &count;
-			size_t depth = active_task_depth;
-			PauseActivity() : count(maintenance_worker ? active_maintenance_tasks : active_interpreter_tasks)
-			{
-				if(depth) --count;
-				active_task_depth = 0;
-			}
-			~PauseActivity()
-			{
-				active_task_depth = depth;
-				if(depth) ++count;
-			}
-		} pause;
+		PauseActivity pause;
 		if(maintenance_worker)
 			worker_generation->maintenance.corun(graph);
 		else

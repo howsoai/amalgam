@@ -20,7 +20,7 @@
                  call_entity (lambda (call_on_entity .null ||(+ y 0)))}}
              .null .null -1))) 5)
       ; Reach the query-cache read lock on Interpreter workers too. Their nested
-      ; callback arithmetic must take the serial path even at saturation.
+      ; callback arithmetic must retain inner parallelism and progress at saturation.
       (= ||(map (lambda
            (size (compute_on_contained_entities "c"
              ||(query_entity_convictions 2 ["x" "y"] .null 2 .null

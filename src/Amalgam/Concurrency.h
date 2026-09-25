@@ -19,6 +19,7 @@
 
 //system headers:
 #include <atomic>
+#include <functional>
 #include <mutex>
 #include <shared_mutex>
 #include <thread>
@@ -70,9 +71,17 @@ namespace Concurrency
 	void SetMaxNumThreads(size_t max_num_threads);
 
 #ifdef MULTITHREAD_SUPPORT
-	//Interpreter opcodes must use their serial path when this is false.
-	//Workers cannot help arbitrary Interpreter tasks while retaining entity locks.
+	//Maintenance workers cannot enter the Interpreter domain. Interpreter workers
+	//may fork recursively, including with one configured worker.
 	bool CanRunInterpreterConcurrently();
+
+	//Bind an Interpreter entry to a Taskflow runtime. Graph tasks that invoke the
+	//Interpreter use this entry; descendants inherit it through RunInterpreterTasks.
+	void RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void()> &entry);
+
+	//Fork/join independent children in submission order. A waiting caller helps
+	//only this group, never an unrelated task from an executor queue.
+	void RunInterpreterTasks(std::vector<std::function<void()>> tasks);
 
 	//Run a complete root graph and publish results. Worker submissions throw.
 	void RunTaskflow(tf::Taskflow &graph);

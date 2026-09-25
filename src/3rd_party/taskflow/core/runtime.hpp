@@ -676,9 +676,17 @@ void Runtime::silent_async(F&& f) {
 template <typename P, typename F>
 void Runtime::silent_async(P&& params, F&& f) {
   _node->_join_counter.fetch_add(1, std::memory_order_relaxed);
-  _executor._silent_async(
-    std::forward<P>(params), std::forward<F>(f), _node->_topology, _node
-  );
+  try {
+    _executor._silent_async(
+      std::forward<P>(params), std::forward<F>(f), _node->_topology, _node
+    );
+  }
+  catch(...) {
+    // Amalgam: a child that was never published cannot retire this reference.
+    // The runtime callable still owns its implicit anchor during submission.
+    _node->_join_counter.fetch_sub(1, std::memory_order_relaxed);
+    throw;
+  }
 }
 
 // ------------------------------------------------------------------------------------------------

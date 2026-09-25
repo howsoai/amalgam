@@ -1,4 +1,4 @@
-; Outer Interpreter graphs and serial nested operations publish all child results.
+; Outer and nested Interpreter runtime groups publish all child results.
 ; Allocating retained nested lists also exercises concurrent garbage collection.
 (print
  (and

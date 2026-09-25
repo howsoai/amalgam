@@ -20,6 +20,7 @@ public:
 		parentInterpreter = parent_interpreter;
 		numTasks = num_tasks;
 		curNumTasksAdded = 0;
+		tasks.reserve(num_tasks);
 
 		//create space to store all of these nodes on the stack, but won't copy these over to the other interpreters
 		resultsSaver = parent_interpreter->CreateOpcodeStackStateSaver();
@@ -41,12 +42,12 @@ public:
 
 	~InterpreterConcurrencyManager()
 	{
-		//An abandoned graph has never run; do not start side effects during unwinding.
+		//An abandoned group has never run; do not start side effects during unwinding.
 		if(!completed)
 			parentInterpreter->scopeStackMutex.reset();
 	}
 
-	//Adds a child task to the graph that needs a construction stack, using the relative interpreter
+	//Adds a child task to the runtime group that needs a construction stack, using the relative interpreter
 	// executes node_to_execute with the following parameters matching those of pushing on the construction stack
 	// will allocate an appropriate node matching the type of current_index
 	//result is set to the result of the task
@@ -60,7 +61,7 @@ public:
 		size_t results_saver_location = resultsSaverCurrentTaskOffset++;
 		RandomStream rand_seed = randomSeeds[curNumTasksAdded++];
 
-		graph.emplace(
+		tasks.emplace_back(
 			[this, rand_seed, node_to_execute, target_origin, target, current_index,
 			current_value, &result, results_saver_location]
 		{
@@ -120,7 +121,7 @@ public:
 	{
 		RandomStream rand_seed = randomSeeds[curNumTasksAdded++];
 
-		graph.emplace(
+		tasks.emplace_back(
 			[this, rand_seed, node_to_execute, current_index, current_value]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
@@ -149,7 +150,7 @@ public:
 		);
 	}
 
-	//Adds a child task to the graph using the relative interpreter, executing node_to_execute
+	//Adds a child task to the runtime group using the relative interpreter, executing node_to_execute
 	//if result is specified, it will store the result there, otherwise it will free it
 	template<typename EvaluableNodeRefType>
 	void AddTask(EvaluableNode *node_to_execute,
@@ -161,7 +162,7 @@ public:
 
 		RandomStream rand_seed = randomSeeds[curNumTasksAdded++];
 
-		graph.emplace(
+		tasks.emplace_back(
 			[this, rand_seed, node_to_execute, result, immediate_results, results_saver_location]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
@@ -221,13 +222,13 @@ public:
 			return;
 		completed = true;
 
-		//The graph join is the child-before-parent dependency. Release the parent's
+		//The group join is the child-before-parent dependency. Release the parent's
 		//read lock before waiting for children, including children that need GC.
 		parentInterpreter->memoryModificationLock.unlock();
 		std::exception_ptr failure;
 		try
 		{
-			Concurrency::RunTaskflow(graph);
+			Concurrency::RunInterpreterTasks(std::move(tasks));
 		}
 		catch(...)
 		{
@@ -270,8 +271,8 @@ protected:
 	//random seed for each task, the size of numTasks
 	std::vector<RandomStream> randomSeeds;
 
-	//Children belong to this graph; execution starts only at EndConcurrency.
-	tf::Taskflow graph;
+	//Children join the current runtime; execution starts only at EndConcurrency.
+	std::vector<std::function<void()>> tasks;
 	bool completed = false;
 
 	//structure to keep track of the stack to prevent results from being garbage collected

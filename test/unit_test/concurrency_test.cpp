@@ -76,32 +76,51 @@ static size_t Nested(size_t width, size_t depth, bool maintenance = false)
 {
 	if(depth == 0)
 		return 1;
-	//The same invariant used by Interpreter opcodes: nested and one-thread work
-	//uses the serial path, so saturated workers never wait on queued children.
-	if(!maintenance && !Concurrency::CanRunInterpreterConcurrently())
-	{
-		size_t total = 0;
-		for(size_t i = 0; i < width; ++i) total += Nested(width, depth - 1);
-		return total;
-	}
 	std::vector<size_t> results(width);
-	tf::Taskflow graph;
 	size_t total = 0;
-	auto parent = graph.emplace([&]
-	{
-		for(auto result : results)
-		{
-			Check(result != 0);
-			total += result;
-		}
-	});
-	for(size_t i = 0; i < width; ++i)
-		graph.emplace([&, i] { results[i] = Nested(width, depth - 1, maintenance); }).precede(parent);
 	if(maintenance)
+	{
+		tf::Taskflow graph;
+		for(size_t i = 0; i < width; ++i)
+			graph.emplace([&, i] { results[i] = Nested(width, depth - 1, true); });
 		Concurrency::RunMaintenanceTaskflow(graph);
+	}
 	else
-		Concurrency::RunTaskflow(graph);
+	{
+		std::vector<std::function<void()>> children;
+		for(size_t i = 0; i < width; ++i)
+			children.emplace_back([&, i] { results[i] = Nested(width, depth - 1); });
+		Concurrency::RunInterpreterTasks(std::move(children));
+	}
+	for(auto result : results)
+	{
+		Check(result != 0);
+		total += result;
+	}
 	return total;
+}
+
+//A runtime reference must be rolled back when its child cannot be constructed.
+struct ThrowOnCopy
+{
+	ThrowOnCopy() = default;
+	ThrowOnCopy(const ThrowOnCopy &) { throw std::runtime_error("submission exception"); }
+	void operator()(tf::Runtime &) const {}
+};
+
+static void TestSubmissionException()
+{
+	tf::Taskflow graph;
+	bool caught = false, continued = false;
+	auto parent = graph.emplace([&](tf::Runtime &runtime)
+	{
+		ThrowOnCopy work;
+		try { runtime.silent_async(work); }
+		catch(const std::runtime_error &e) { caught = std::string_view(e.what()) == "submission exception"; }
+	});
+	parent.precede(graph.emplace([&] { continued = true; }));
+	Concurrency::RunTaskflow(graph);
+	Check(caught && continued);
 }
 
 static void TestExceptions()
@@ -165,13 +184,16 @@ static void TestResize()
 	Concurrency::SetMaxNumThreads(1);
 	Check(Concurrency::GetExecutionThreadCount() == 1);
 	tf::Taskflow graph;
-	graph.emplace([]
+	graph.emplace([](tf::Runtime &runtime)
 	{
-		Check(Concurrency::GetExecutionThreadCount() == 1);
-		Concurrency::SetMaxNumThreads(3);
-		Check(Concurrency::GetMaxNumThreads() == 3);
-		Check(Nested(4, 3) == 64);
-		Check(Concurrency::GetExecutionThreadCount() == 1);
+		Concurrency::RunInterpreterRuntime(runtime, []
+		{
+			Check(Concurrency::GetExecutionThreadCount() == 1);
+			Concurrency::SetMaxNumThreads(3);
+			Check(Concurrency::GetMaxNumThreads() == 3);
+			Check(Nested(4, 3) == 64);
+			Check(Concurrency::GetExecutionThreadCount() == 1);
+		});
 	});
 	Concurrency::RunTaskflow(graph);
 	Check(Concurrency::GetExecutionThreadCount() == 1);
@@ -188,24 +210,29 @@ static void TestResize()
 		try
 		{
 			tf::Taskflow old;
-			old.emplace([&]
+			old.emplace([&](tf::Runtime &runtime)
 			{
-				started = true;
-				while(!release.load()) std::this_thread::yield();
-				Check(Concurrency::GetExecutionThreadCount() == 3);
-				Check(Nested(2, 4) == 16);
+				Concurrency::RunInterpreterRuntime(runtime, [&]
+				{
+					started = true;
+					started.notify_one();
+					release.wait(false);
+					Check(Concurrency::GetExecutionThreadCount() == 3);
+					Check(Nested(2, 4) == 16);
+				});
 			});
 			Concurrency::RunTaskflow(old);
 		}
 		catch(...) { failure = std::current_exception(); }
 	});
-	while(!started.load()) std::this_thread::yield();
+	started.wait(false);
 	Concurrency::SetMaxNumThreads(2);
 	graph.clear();
 	graph.emplace([] { Check(Concurrency::GetExecutionThreadCount() == 2); });
 	try { Concurrency::RunTaskflow(graph); }
-	catch(...) { release = true; caller.join(); throw; }
+	catch(...) { release = true; release.notify_one(); caller.join(); throw; }
 	release = true;
+	release.notify_one();
 	caller.join();
 	if(failure) std::rethrow_exception(failure);
 
@@ -220,35 +247,38 @@ static void TestResize()
 	Check(Nested(2, 3) == 8);
 }
 
-//All workers hold locks at once. Nested work must run on the same stack without
-//helping unrelated writers. Explicit submission must fail before running a node.
+//All workers hold locks at once. Each can drain its own descendants without
+//helping unrelated writers. Nested root submission remains forbidden.
 static void TestNestedLockSafety(size_t threads)
 {
 	Concurrency::SetMaxNumThreads(threads);
-	Check(Concurrency::CanRunInterpreterConcurrently() == (threads > 1));
+	Check(Concurrency::CanRunInterpreterConcurrently());
 	std::barrier ready(static_cast<std::ptrdiff_t>(threads));
 	std::vector<std::mutex> locks(threads);
 	std::vector<size_t> results(threads);
 	std::atomic<size_t> forbidden{0};
 	tf::Taskflow graph;
 	for(size_t i = 0; i < threads; ++i)
-		graph.emplace([&, i]
+		graph.emplace([&, i](tf::Runtime &runtime)
 		{
-			std::lock_guard lock(locks[i]);
-			ready.arrive_and_wait();
-			Check(!Concurrency::CanRunInterpreterConcurrently());
-			const size_t active = Concurrency::GetActiveInterpreterThreadCount();
-			//Keep every worker active through the sample; assert after the barrier
-			//so a failure cannot strand another participant.
-			ready.arrive_and_wait();
-			Check(active == threads);
-			tf::Taskflow child;
-			child.emplace([&] { ++forbidden; });
-			bool rejected = false;
-			try { Concurrency::RunTaskflow(child); }
-			catch(const std::logic_error &) { rejected = true; }
-			Check(rejected);
-			results[i] = Nested(4, 5);
+			Concurrency::RunInterpreterRuntime(runtime, [&]
+			{
+				std::lock_guard lock(locks[i]);
+				ready.arrive_and_wait();
+				Check(Concurrency::CanRunInterpreterConcurrently());
+				const size_t active = Concurrency::GetActiveInterpreterThreadCount();
+				//Keep every worker active through the sample; assert after the barrier
+				//so a failure cannot strand another participant.
+				ready.arrive_and_wait();
+				Check(active == threads);
+				tf::Taskflow child;
+				child.emplace([&] { ++forbidden; });
+				bool rejected = false;
+				try { Concurrency::RunTaskflow(child); }
+				catch(const std::logic_error &) { rejected = true; }
+				Check(rejected);
+				results[i] = Nested(4, 5);
+			});
 		});
 	Concurrency::RunTaskflow(graph);
 	Check(forbidden == 0);
@@ -258,10 +288,13 @@ static void TestNestedLockSafety(size_t threads)
 
 	//An unrelated writer queued with a holder cannot be stolen by a nested join.
 	graph.clear();
-	graph.emplace([&]
+	graph.emplace([&](tf::Runtime &runtime)
 	{
-		std::lock_guard lock(locks[0]);
-		Check(Nested(3, 5) == 243);
+		Concurrency::RunInterpreterRuntime(runtime, [&]
+		{
+			std::lock_guard lock(locks[0]);
+			Check(Nested(3, 5) == 243);
+		});
 	});
 	graph.emplace([&] { std::lock_guard lock(locks[0]); });
 	Concurrency::RunTaskflow(graph);
@@ -328,6 +361,7 @@ int main(int argc, char **argv)
 						Check(Nested(width, depth) == expected);
 					}
 				TestExceptions();
+				TestSubmissionException();
 				TestNestedLockSafety(threads);
 			}
 			TestMaintenanceIsolation();

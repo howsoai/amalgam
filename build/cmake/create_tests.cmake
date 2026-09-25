@@ -114,10 +114,23 @@ if(TARGET amalgam-mt-app AND NOT IS_WASM)
     set_target_properties(amalgam-concurrency-test PROPERTIES FOLDER "Testing")
     add_test(NAME Concurrency.Taskflow COMMAND amalgam-concurrency-test)
     set_tests_properties(Concurrency.Taskflow PROPERTIES LABELS "smoke_test;concurrency" TIMEOUT 120)
+    # Isolate allocation-failure injection from the production Interpreter.
+    add_executable(amalgam-taskflow-exception-test test/unit_test/taskflow_exception_test.cpp)
+    target_link_libraries(amalgam-taskflow-exception-test PRIVATE amalgam-taskflow)
+    set_target_properties(amalgam-taskflow-exception-test PROPERTIES FOLDER "Testing")
+    add_test(NAME Concurrency.TaskflowExceptions COMMAND amalgam-taskflow-exception-test)
+    set_tests_properties(Concurrency.TaskflowExceptions PROPERTIES LABELS "smoke_test;concurrency" TIMEOUT 30)
     set(INTERPRETER_CONCURRENCY_LABELS "smoke_test;concurrency")
     if(IS_AMD64)
         list(APPEND INTERPRETER_CONCURRENCY_LABELS "advanced_intrinsics")
     endif()
+    add_compiled_target(NAME amalgam-interpreter-concurrency-test TYPE app
+        USE_ADVANCED_ARCH_INTRINSICS USE_THREADS NO_INSTALL IDE_FOLDER "Testing"
+        OBJECT_LIBRARY amalgam-mt-objlib SOURCE ${COMMON_SOURCE_THREADS}
+        APP_ONLY_SOURCE test/unit_test/interpreter_concurrency_test.cpp)
+    add_test(NAME Concurrency.InterpreterOverlap COMMAND amalgam-interpreter-concurrency-test)
+    set_tests_properties(Concurrency.InterpreterOverlap PROPERTIES
+        LABELS "${INTERPRETER_CONCURRENCY_LABELS}" TIMEOUT 120)
     foreach(WORKERS 1 2 4)
         add_test(NAME Concurrency.Interpreter.${WORKERS}
             COMMAND $<TARGET_FILE:amalgam-mt-app> --numthreads ${WORKERS}

@@ -12,9 +12,11 @@ public:
 	//stores all prints to file
 	PrintListener(const std::string &filename = std::string(), bool mirror_to_stdio = false);
 
-	~PrintListener();
+	virtual ~PrintListener();
 
-	void LogPrint(std::string &print_string);
+	//Listeners can consume Interpreter output directly. Concurrent Interpreters
+	//may call this simultaneously; overrides must provide their own synchronization.
+	virtual void LogPrint(std::string &print_string);
 
 	void FlushLogFile();
 

@@ -11,7 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Concurrency", "Concurrency"
 		src\3rd_party\taskflow\README.amalgam.md = src\3rd_party\taskflow\README.amalgam.md
 		src\3rd_party\taskflow\LICENSE = src\3rd_party\taskflow\LICENSE
 		test\unit_test\concurrency_test.cpp = test\unit_test\concurrency_test.cpp
+		test\unit_test\interpreter_concurrency_test.cpp = test\unit_test\interpreter_concurrency_test.cpp
+		test\unit_test\taskflow_exception_test.cpp = test\unit_test\taskflow_exception_test.cpp
 		test\concurrency\nested.amlg = test\concurrency\nested.amlg
+		test\concurrency\convictions.amlg = test\concurrency\convictions.amlg
 	EndProjectSection
 EndProject
 Global

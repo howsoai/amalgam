@@ -12,16 +12,24 @@ namespace tf {
 // Procedure: _schedule_async_task
 template <typename... ArgsT>
 void Executor::_schedule_async_task(ArgsT&&... args) {  
-  // caller is a worker of the executor
-  if(auto w = this_worker(); w) {
-    // We don't do per-worker cache as it can cause bugs in corun that are very difficult to 
-    // track. For example, when a worker invokes an async task and then immediately enter corun,
-    // it becomes very difficult to get the task out of its cache correctly.
-    _schedule(*w, animate(std::forward<ArgsT>(args)...));
+  auto node = animate(std::forward<ArgsT>(args)...);
+  try {
+    // caller is a worker of the executor
+    if(auto w = this_worker(); w) {
+      // We don't do per-worker cache as it can cause bugs in corun that are very difficult to
+      // track. For example, when a worker invokes an async task and then immediately enter corun,
+      // it becomes very difficult to get the task out of its cache correctly.
+      _schedule(*w, node);
+    }
+    // caller is a freelance thread
+    else{
+      _schedule(node);
+    }
   }
-  // caller is a freelance thread
-  else{
-    _schedule(animate(std::forward<ArgsT>(args)...));
+  catch(...) {
+    // Amalgam: queue allocation failed before publication; release the node.
+    recycle(node);
+    throw;
   }
 }
 
@@ -43,16 +51,24 @@ AsyncTask Executor::_schedule_dependent_async_task(I first, I last, size_t num_p
   }
   
   if(num_predecessors == 0) {
-    // caller is a worker of the executor
-    if(auto w = this_worker(); w) {
-      // We don't do per-worker cache as it can cause bugs in corun that are very difficult to 
-      // track. For example, when a worker invokes an async task and then immediately enter corun,
-      // it becomes very difficult to get the task out of its cache correctly.
-      _schedule(*w, task._node);
+    try {
+      // caller is a worker of the executor
+      if(auto w = this_worker(); w) {
+        // We don't do per-worker cache as it can cause bugs in corun that are very difficult to
+        // track. For example, when a worker invokes an async task and then immediately enter corun,
+        // it becomes very difficult to get the task out of its cache correctly.
+        _schedule(*w, task._node);
+      }
+      // caller is a freelance thread
+      else {
+        _schedule(task._node);
+      }
     }
-    // caller is a freelance thread
-    else {
-      _schedule(task._node);
+    catch(...) {
+      // Amalgam: publication failed; release the executor's ownership.
+      // The local AsyncTask releases the remaining reference on unwind.
+      task._decref();
+      throw;
     }
   }
   
@@ -108,7 +124,14 @@ auto Executor::async(F&& f) {
 template <typename P, typename F>
 auto Executor::async(P&& params, F&& f) {
   _increment_topology();
-  return _async(std::forward<P>(params), std::forward<F>(f), nullptr, nullptr);
+  try {
+    return _async(std::forward<P>(params), std::forward<F>(f), nullptr, nullptr);
+  }
+  catch(...) {
+    // Amalgam: an unpublished task cannot retire its topology reference.
+    _decrement_topology();
+    throw;
+  }
 }
 
 // Function: _async
@@ -172,7 +195,13 @@ void Executor::silent_async(F&& f) {
 template <typename P, typename F>
 void Executor::silent_async(P&& params, F&& f) {
   _increment_topology();
-  _silent_async(std::forward<P>(params), std::forward<F>(f), nullptr, nullptr);
+  try {
+    _silent_async(std::forward<P>(params), std::forward<F>(f), nullptr, nullptr);
+  }
+  catch(...) {
+    _decrement_topology();
+    throw;
+  }
 }
 
 // Function: _silent_async
@@ -234,9 +263,15 @@ tf::AsyncTask Executor::silent_dependent_async(
   P&& params, F&& func, I first, I last
 ) {
   _increment_topology();
-  return _silent_dependent_async(
-    std::forward<P>(params), std::forward<F>(func), first, last, nullptr, nullptr
-  );
+  try {
+    return _silent_dependent_async(
+      std::forward<P>(params), std::forward<F>(func), first, last, nullptr, nullptr
+    );
+  }
+  catch(...) {
+    _decrement_topology();
+    throw;
+  }
 }
 
 // Function: _silent_dependent_async
@@ -285,7 +320,13 @@ template <TaskParamsLike P, typename F, typename I>
 requires (!std::same_as<std::decay_t<I>, AsyncTask>)
 auto Executor::dependent_async(P&& params, F&& func, I first, I last) {
   _increment_topology();
-  return _dependent_async(std::forward<P>(params), std::forward<F>(func), first, last, nullptr, nullptr);
+  try {
+    return _dependent_async(std::forward<P>(params), std::forward<F>(func), first, last, nullptr, nullptr);
+  }
+  catch(...) {
+    _decrement_topology();
+    throw;
+  }
 }
 
 // Function: _dependent_async

@@ -609,7 +609,7 @@ static void MarkAllReferencedNodesInUseForNode(EvaluableNode *tree)
 {
 	tree->SetKnownToBeInUse(true);
 	auto &node_stack = EvaluableNode::reusableBuffer;
-	//A previous traversal may have unwound after an allocation failure.
+	//a previous traversal may have unwound after an allocation failure.
 	node_stack.clear();
 	node_stack.push_back(tree);
 
@@ -655,11 +655,10 @@ static void MarkAllReferencedNodesInUseConcurrentForNode(EvaluableNode *tree)
 	AmlgAssert(tree->IsNodeValid());
 #endif
 
-	//A shared root is subject to the same claim rule as any shared child.
 	if(!tree->TrySetKnownToBeInUseAtomic())
 		return;
 	auto &node_stack = EvaluableNode::reusableBuffer;
-	//A previous traversal may have unwound after an allocation failure.
+
 	node_stack.clear();
 	node_stack.push_back(tree);
 

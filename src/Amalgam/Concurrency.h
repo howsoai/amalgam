@@ -66,8 +66,7 @@ namespace Concurrency
 	size_t GetMaxNumThreads();
 
 	//sets the maximum number of threads to use
-	//Zero selects a system default (at least one). Values beyond INT_MAX throw.
-	//MT changes apply at the next external graph submission; descendants keep their generation.
+	// if zero is specified, then it uses a heuristic default based on the system
 	void SetMaxNumThreads(size_t max_num_threads);
 
 #ifdef MULTITHREAD_SUPPORT

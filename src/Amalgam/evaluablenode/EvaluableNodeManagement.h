@@ -430,8 +430,8 @@ public:
 	void CollectGarbage();
 
 #ifdef MULTITHREAD_SUPPORT
-	//Requires a held memoryModificationMutex read lock; restores ownership
-	//before returning or propagating a collection failure.
+	//requires a held memoryModificationMutex read lock; restores ownership
+	//before returning or propagating a collection failure
 	void CollectGarbageWithConcurrentAccess(Concurrency::ReadLock &memory_modification_lock);
 #endif
 

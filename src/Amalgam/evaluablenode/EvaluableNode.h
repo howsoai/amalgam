@@ -543,9 +543,7 @@ public:
 	__forceinline bool HasAttribute(Attribute attr) const
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		//GC marking changes another bit in this same byte. Even immutable
-		//layout flags must be read atomically while marking workers overlap.
-		//Locks/task publication protect node contents; these bits publish no data.
+		//ensure atomic reads with relaxed to ensure the compiler treats things properly
 		auto flags = std::atomic_ref<AttributeStorageType>(attributes).load(std::memory_order_relaxed);
 		return (flags & static_cast<AttributeStorageType>(attr)) != 0;
 	#else
@@ -1183,8 +1181,8 @@ protected:
 
 	//fields contained within the current set of data
 #ifdef MULTITHREAD_SUPPORT
-	//Meet atomic_ref's alignment requirement, which may exceed the type's.
-	//Mutable permits C++20 atomic_ref<T> loads in const queries without a cast.
+	//meet atomic_ref's alignment requirement;
+	//mutable permits atomic_ref<T> loads in const queries without a cast
 	alignas(std::atomic_ref<AttributeStorageType>::required_alignment)
 	mutable AttributeStorageType attributes;
 #else

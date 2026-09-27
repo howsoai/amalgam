@@ -784,7 +784,7 @@ void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interprete
 	if(interpreter_constraints->ConstrainedAllocatedNodes())
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		//Retain the sampled active-Interpreter allowance, not configured capacity.
+		//scale appropriately for the number of threads
 		interpreter_constraints->maxNumAllocatedNodes *= Concurrency::GetActiveInterpreterThreadCount();
 	#endif
 

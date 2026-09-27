@@ -29,14 +29,19 @@ class TaskActivity : public tf::ObserverInterface
 {
 public:
 	explicit TaskActivity(bool maintenance) : count(maintenance ? active_maintenance_tasks : active_interpreter_tasks) {}
+
 	void set_up(size_t) override {}
+
 	void on_entry(tf::WorkerView, tf::TaskView) override
 	{
-		if(active_task_depth++ == 0) ++count;
+		if(active_task_depth++ == 0)
+			++count;
 	}
+
 	void on_exit(tf::WorkerView, tf::TaskView) override
 	{
-		if(--active_task_depth == 0) --count;
+		if(--active_task_depth == 0)
+			--count;
 	}
 private:
 	std::atomic<size_t> &count;
@@ -56,11 +61,13 @@ public:
 		if(depth) --count;
 		active_task_depth = 0;
 	}
+
 	~PauseActivity()
 	{
 		active_task_depth = depth;
 		if(depth) ++count;
 	}
+
 private:
 	std::atomic<size_t> &count;
 	size_t depth;
@@ -87,7 +94,9 @@ public:
 	{
 		//Keep the first child on the submitting stack. A worker that takes a
 		//short sibling can return to Taskflow and pick up inner runtime work.
-		if(!tasks.empty()) Execute(0);
+		if(!tasks.empty())
+			Execute(0);
+
 		Drain();
 		{
 			PauseActivity pause;
@@ -95,6 +104,7 @@ public:
 				count = remaining.load(std::memory_order_acquire))
 				remaining.wait(count, std::memory_order_acquire);
 		}
+
 		for(auto &failure : failures)
 			if(failure) std::rethrow_exception(failure);
 	}
@@ -111,6 +121,7 @@ private:
 			failures[i] = std::current_exception();
 			Cancel();
 		}
+
 		//No queued runner may retain references to an Interpreter stack after
 		//Join returns, including the captures in completed callbacks.
 		tasks[i] = nullptr;

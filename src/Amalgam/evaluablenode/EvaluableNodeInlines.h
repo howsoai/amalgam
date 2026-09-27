@@ -405,8 +405,7 @@ __forceinline bool EvaluableNode::TrySetAttributeAtomic(Attribute attr)
 	if(current_flags & mask)
 		return false;
 
-	//Claim traversal only; graph publication protects contents and the join
-	//completes every claimed traversal before sweeping. No data is published here.
+	//slow path to actually set the value
 	while(!atomic_ref.compare_exchange_weak(
 		current_flags, current_flags | mask, std::memory_order_relaxed, std::memory_order_relaxed))
 	{

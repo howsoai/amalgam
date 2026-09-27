@@ -28,20 +28,23 @@ thread_local size_t active_task_depth = 0;
 class TaskActivity : public tf::ObserverInterface
 {
 public:
-	explicit TaskActivity(bool maintenance) : count(maintenance ? active_maintenance_tasks : active_interpreter_tasks) {}
+	explicit TaskActivity(bool maintenance)
+		: count(maintenance ? active_maintenance_tasks : active_interpreter_tasks)
+	{}
 
-	void set_up(size_t) override {}
+	void set_up(size_t) override
+	{}
 
 	void on_entry(tf::WorkerView, tf::TaskView) override
 	{
 		if(active_task_depth++ == 0)
-			++count;
+			count++;
 	}
 
 	void on_exit(tf::WorkerView, tf::TaskView) override
 	{
 		if(--active_task_depth == 0)
-			--count;
+			count--;
 	}
 private:
 	std::atomic<size_t> &count;
@@ -58,14 +61,16 @@ public:
 	PauseActivity() : count(maintenance_worker ? active_maintenance_tasks : active_interpreter_tasks),
 		depth(active_task_depth)
 	{
-		if(depth) --count;
+		if(depth)
+			count--;
 		active_task_depth = 0;
 	}
 
 	~PauseActivity()
 	{
 		active_task_depth = depth;
-		if(depth) ++count;
+		if(depth)
+			count++;
 	}
 
 private:
@@ -142,7 +147,8 @@ class WorkerContext : public tf::WorkerInterface
 {
 public:
 	WorkerContext(ExecutionGeneration *generation, bool maintenance)
-		: generation(generation), maintenance(maintenance) {}
+		: generation(generation), maintenance(maintenance)
+	{}
 
 	void scheduler_prologue(tf::Worker &) override
 	{
@@ -198,13 +204,14 @@ std::shared_ptr<ExecutionGeneration> AcquireGeneration()
 		size_t count = configured_threads.load();
 		if(!state.current || state.current->numThreads != count)
 		{
-			//Construction failure leaves the previous generation usable.
+			//construction failure leaves the previous generation usable
 			auto replacement = std::make_shared<ExecutionGeneration>(count);
 			retired = std::exchange(state.current, std::move(replacement));
 		}
 		result = state.current;
 	}
-	//Join retired workers outside the state mutex.
+
+	//join retired workers outside the state mutex
 	return result;
 }
 #endif
@@ -219,7 +226,8 @@ void Concurrency::SetMaxNumThreads(size_t max_num_threads)
 {
 	if(max_num_threads == 0)
 		max_num_threads = DefaultThreadCount();
-	//Reject values that previously narrowed to negative thread counts.
+
+	//reject values that previously narrowed to negative thread counts
 	if(max_num_threads > static_cast<size_t>(std::numeric_limits<int>::max()))
 		throw std::invalid_argument("Thread count exceeds supported range");
 
@@ -243,17 +251,23 @@ bool Concurrency::CanRunInterpreterConcurrently()
 	return !worker_generation || interpreter_runtime != nullptr;
 }
 
-void Concurrency::RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void()> &entry)
+void RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void()> &entry)
 {
 	if(!worker_generation || maintenance_worker
-		|| &runtime.executor() != &worker_generation->interpreter
-		|| runtime.executor().this_worker() != &runtime.worker())
+			|| &runtime.executor() != &worker_generation->interpreter
+			|| runtime.executor().this_worker() != &runtime.worker())
 		throw std::logic_error("Interpreter entry requires its owning Interpreter runtime worker");
+
 	struct RuntimeScope
 	{
+		~RuntimeScope()
+		{
+			interpreter_runtime = previous;
+		}
+
 		tf::Runtime *previous;
-		~RuntimeScope() { interpreter_runtime = previous; }
 	} scope{std::exchange(interpreter_runtime, &runtime)};
+
 	entry();
 }
 
@@ -261,14 +275,16 @@ void Concurrency::RunInterpreterTasks(std::vector<std::function<void()>> tasks)
 {
 	if(worker_generation && !interpreter_runtime)
 		throw std::logic_error("Interpreter children require an Interpreter runtime");
+
 	if(!interpreter_runtime)
 	{
-		tf::Taskflow graph;
-		graph.emplace([&](tf::Runtime &runtime)
+		TaskSet task_set;
+		task_set.emplace([&](tf::Runtime &runtime)
 		{
 			RunInterpreterRuntime(runtime, [&] { RunInterpreterTasks(std::move(tasks)); });
 		});
-		RunTaskflow(graph);
+
+		RunTaskSet(task_set);
 		return;
 	}
 	const size_t runners = tasks.empty() ? 0 : std::min(tasks.size() - 1, GetExecutionThreadCount() - 1);
@@ -286,10 +302,13 @@ void Concurrency::RunInterpreterTasks(std::vector<std::function<void()>> tasks)
 	}
 	catch(...)
 	{
-		//Already published children must finish before their captures unwind.
+		//already published children must finish before their captures unwind
 		auto failure = std::current_exception();
 		group->Cancel();
-		try { group->Join(); } catch(...) {}
+		try {
+			group->Join();
+		} catch(...) {}
+
 		std::rethrow_exception(failure);
 	}
 	group->Join();
@@ -306,31 +325,34 @@ size_t Concurrency::GetActiveThreadCount()
 		+ (worker_generation ? 0 : 1));
 }
 
-void Concurrency::RunTaskflow(tf::Taskflow &graph)
+void Concurrency::RunTaskSet(TaskSet &task_set)
 {
-	//Nested Interpreter work belongs to the current runtime, not a new topology.
+	//nested Interpreter work belongs to the current runtime
 	if(worker_generation)
 		throw std::logic_error("Workers cannot submit root graphs; use Interpreter runtime children");
+
 	auto generation = AcquireGeneration();
-	generation->interpreter.run(graph).get();
+	generation->interpreter.run(task_set).get();
 }
 
-void Concurrency::RunMaintenanceTaskflow(tf::Taskflow &graph)
+void Concurrency::RunMaintenanceTasks(TaskSet &task_set)
 {
 	if(worker_generation)
 	{
-		//A waiting task is not active. Nested maintenance tasks count their own work.
+		//a waiting task is not active
+		//nested maintenance tasks count their own work
 		PauseActivity pause;
+
 		if(maintenance_worker)
-			worker_generation->maintenance.corun(graph);
+			worker_generation->maintenance.corun(task_set);
 		else
-			//One-way dependency: maintenance tasks never wait on Interpreter tasks.
-			worker_generation->maintenance.run(graph).get();
+			//one-way dependency; maintenance tasks don't wait on Interpreter tasks
+			worker_generation->maintenance.run(task_set).get();
 	}
 	else
 	{
 		auto generation = AcquireGeneration();
-		generation->maintenance.run(graph).get();
+		generation->maintenance.run(task_set).get();
 	}
 }
 #endif

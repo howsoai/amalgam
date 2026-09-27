@@ -62,17 +62,17 @@ void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::String
 	//if big enough (enough entities and/or enough columns), try to use multithreading
 	if(Concurrency::GetMaxNumThreads() > 1 && num_columns_added > 1 && (numEntities > 10000 || (numEntities > 200 && num_columns_added > 10)))
 	{
-		tf::Taskflow graph;
+		Concurrency::TaskSet task_set;
 		for(size_t i = num_previous_columns; i < num_columns; i++)
 		{
-			graph.emplace([this, &entities, i]()
+			task_set.emplace([this, &entities, i]()
 			{
 				BuildLabel(i, entities);
 			}
 			);
 		}
 
-		Concurrency::RunMaintenanceTaskflow(graph);
+		Concurrency::RunMaintenanceTasks(task_set);
 	}
 	else
 #endif
@@ -327,17 +327,17 @@ void SeparableBoxFilterDataStore::VerifyAllEntitiesForAllColumns()
 	size_t num_columns = columnData.size();
 	if(Concurrency::GetMaxNumThreads() > 1 && num_columns > 1)
 	{
-		tf::Taskflow graph;
+		Concurrency::TaskSet task_set;
 
 		for(auto &column_data : columnData)
 		{
-			graph.emplace([this, column = column_data.get()]()
+			task_set.emplace([this, column = column_data.get()]()
 			{
 				column->VerifyAllEntities(numEntities);
 			});
 		}
 
-		Concurrency::RunMaintenanceTaskflow(graph);
+		Concurrency::RunMaintenanceTasks(task_set);
 		return;
 	}
 	//not running concurrently

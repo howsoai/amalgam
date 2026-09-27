@@ -63,6 +63,9 @@ namespace Concurrency
 		LockBufferType *buffer;
 	};
 
+	//a set of potentially concurrent tasks at a given level of the execution graph
+	using TaskSet = tf::Taskflow;
+
 	size_t GetMaxNumThreads();
 
 	//sets the maximum number of threads to use
@@ -74,20 +77,15 @@ namespace Concurrency
 	//may fork recursively, including with one configured worker.
 	bool CanRunInterpreterConcurrently();
 
-	//Bind an Interpreter entry to a Taskflow runtime. Graph tasks that invoke the
-	//Interpreter use this entry; descendants inherit it through RunInterpreterTasks.
-	void RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void()> &entry);
-
 	//Fork/join independent children in submission order. A waiting caller helps
 	//only this group, never an unrelated task from an executor queue.
 	void RunInterpreterTasks(std::vector<std::function<void()>> tasks);
 
-	//Run a complete root graph and publish results. Worker submissions throw.
-	void RunTaskflow(tf::Taskflow &graph);
+	//run the set of tasks
+	void RunTaskSet(TaskSet &task_set);
 
-	//For GC/cache/query graphs whose caller retains locks. Tasks in this domain
-	//must not execute Interpreter code or depend on the calling thread's locks.
-	void RunMaintenanceTaskflow(tf::Taskflow &graph);
+	//for garbage collection, cache, query tasks whose caller retains locks and may not execute interpreter code
+	void RunMaintenanceTasks(TaskSet &task_set);
 
 	//Worker count of the current execution generation (including during resize).
 	size_t GetExecutionThreadCount();
@@ -109,13 +107,13 @@ inline void IterateOverConcurrentlyIfPossible(ContainerType &container, Function
 #ifdef MULTITHREAD_SUPPORT
 	if(run_concurrently && container.size() > 1 && Concurrency::GetMaxNumThreads() > 1)
 	{
-		tf::Taskflow graph;
+		Concurrency::TaskSet task_set;
 		for(auto value : container)
 		{
-			graph.emplace([index, value, &func] { func(index, value); });
+			task_set.emplace([index, value, &func] { func(index, value); });
 			index++;
 		}
-		Concurrency::RunMaintenanceTaskflow(graph);
+		Concurrency::RunMaintenanceTasks(task_set);
 		return;
 	}
 	//not running concurrently

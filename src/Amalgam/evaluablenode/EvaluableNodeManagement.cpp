@@ -157,12 +157,13 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 		}
 		catch(...)
 		{
-			//Taskflow has joined all running GC tasks before propagating failure.
-			//Discard partial marks so a later collection can traverse every root.
+			//all running GC should be joined before propagating a failure
+			//discard partial marks so a later collection can traverse every root
 			firstUnusedNodeIndex = std::min(cur_first_unused_node_index, nodes.size());
 			for(size_t i = 0; i < firstUnusedNodeIndex; ++i)
 				if(nodes[i] != nullptr)
 					nodes[i]->SetKnownToBeInUse(false);
+
 			finish_collection();
 			write_lock.unlock();
 			memory_modification_lock.lock();
@@ -170,8 +171,8 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 				PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());
 			throw;
 		}
-		finish_collection();
 
+		finish_collection();
 		write_lock.unlock();
 	}
 	else //wait for GC to finish
@@ -338,12 +339,12 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	size_t num_nodes_to_invalidate = last_active_index - next_write_index;
 	if(Concurrency::GetMaxNumThreads() > 1 && num_nodes_to_invalidate > 2 * _invalidate_nodes_task_size)
 	{
-		tf::Taskflow graph;
+		Concurrency::TaskSet task_set;
 
 		//free each full block of _invalidate_nodes_task_size
 		size_t start_index = next_write_index;
 		for(; start_index + _invalidate_nodes_task_size < last_active_index; start_index += _invalidate_nodes_task_size)
-			graph.emplace(
+			task_set.emplace(
 				[this, start_index]
 				{
 					size_t end_index = start_index + _invalidate_nodes_task_size;
@@ -356,7 +357,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 
 		//invalidate any remaining that are fewer than _invalidate_nodes_task_size
 		if(start_index < last_active_index)
-			graph.emplace(
+			task_set.emplace(
 				[this, start_index, last_active_index]
 				{
 					for(size_t i = start_index; i < last_active_index; i++)
@@ -366,7 +367,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 					}
 				});
 
-		Concurrency::RunMaintenanceTaskflow(graph);
+		Concurrency::RunMaintenanceTasks(task_set);
 	}
 	else
 #endif
@@ -704,12 +705,10 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
 	if(Concurrency::GetMaxNumThreads() > 1 && num_active_interpreters >= 1 && estimated_nodes_in_use >= 10000)
 	{
-		//The graph join completes marking before sweeping can start.
-		tf::Taskflow graph;
-
+		Concurrency::TaskSet task_set;
 		for(Interpreter *interpreter : activeInterpreters->activeInterpreters)
 		{
-			graph.emplace(
+			task_set.emplace(
 				[interpreter]
 				{
 					for(EvaluableNode *en : interpreter->scopeStack)
@@ -749,14 +748,14 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		}
 
 		//add the root node last since references above are more likely to mark pieces of it concurrently
-		graph.emplace(
+		task_set.emplace(
 			[this]
 			{
 				MarkAllReferencedNodesInUseConcurrentForNode(rootNode);
 			}
 		);
 
-		Concurrency::RunMaintenanceTaskflow(graph);
+		Concurrency::RunMaintenanceTasks(task_set);
 		return;
 	}
 #endif

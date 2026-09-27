@@ -653,8 +653,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 	#ifdef MULTITHREAD_SUPPORT
 		else if(command == "threads")
 		{
-			std::cout << "Configured Taskflow workers per domain: " << Concurrency::GetMaxNumThreads() << std::endl;
-			std::cout << "Current execution concurrency: " << Concurrency::GetExecutionThreadCount() << std::endl;
+			std::cout << "Maximum concurrent threads: " << Concurrency::GetMaxNumThreads() << std::endl;
+			std::cout << "Currently executing threads: " << Concurrency::GetExecutionThreadCount() << std::endl;
 			std::cout << "Current thread: " << std::this_thread::get_id() << std::endl;
 		}
 	#endif

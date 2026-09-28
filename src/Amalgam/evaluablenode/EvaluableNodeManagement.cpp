@@ -367,7 +367,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 					}
 				});
 
-		Concurrency::RunMaintenanceTasks(task_set);
+		Concurrency::RunSystemTasks(task_set);
 	}
 	else
 #endif
@@ -755,7 +755,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 			}
 		);
 
-		Concurrency::RunMaintenanceTasks(task_set);
+		Concurrency::RunSystemTasks(task_set);
 		return;
 	}
 #endif

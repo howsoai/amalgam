@@ -72,7 +72,7 @@ void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::String
 			);
 		}
 
-		Concurrency::RunMaintenanceTasks(task_set);
+		Concurrency::RunSystemTasks(task_set);
 	}
 	else
 #endif
@@ -337,7 +337,7 @@ void SeparableBoxFilterDataStore::VerifyAllEntitiesForAllColumns()
 			});
 		}
 
-		Concurrency::RunMaintenanceTasks(task_set);
+		Concurrency::RunSystemTasks(task_set);
 		return;
 	}
 	//not running concurrently

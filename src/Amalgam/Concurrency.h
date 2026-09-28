@@ -73,7 +73,7 @@ namespace Concurrency
 	void SetMaxNumThreads(size_t max_num_threads);
 
 #ifdef MULTITHREAD_SUPPORT
-	//Maintenance workers cannot enter the Interpreter domain. Interpreter workers
+	//system workers cannot enter the Interpreter domain. Interpreter workers
 	//may fork recursively, including with one configured worker.
 	bool CanRunInterpreterConcurrently();
 
@@ -85,7 +85,7 @@ namespace Concurrency
 	void RunTaskSet(TaskSet &task_set);
 
 	//for garbage collection, cache, query tasks whose caller retains locks and may not execute interpreter code
-	void RunMaintenanceTasks(TaskSet &task_set);
+	void RunSystemTasks(TaskSet &task_set);
 
 	//Worker count of the current execution generation (including during resize).
 	size_t GetExecutionThreadCount();
@@ -113,7 +113,7 @@ inline void IterateOverConcurrentlyIfPossible(ContainerType &container, Function
 			task_set.emplace([index, value, &func] { func(index, value); });
 			index++;
 		}
-		Concurrency::RunMaintenanceTasks(task_set);
+		Concurrency::RunSystemTasks(task_set);
 		return;
 	}
 	//not running concurrently

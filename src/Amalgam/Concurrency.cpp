@@ -19,17 +19,18 @@ size_t DefaultThreadCount()
 	return std::max<size_t>(1, count);
 }
 
-std::atomic<size_t> configured_threads{DefaultThreadCount()};
+std::atomic<size_t> max_thread_count{DefaultThreadCount()};
 
 #ifdef MULTITHREAD_SUPPORT
-std::atomic<size_t> active_interpreter_tasks{0}, active_maintenance_tasks{0};
+std::atomic<size_t> active_interpreter_tasks{ 0 };
+std::atomic<size_t> active_system_tasks{ 0 };
 thread_local size_t active_task_depth = 0;
 
 class TaskActivity : public tf::ObserverInterface
 {
 public:
-	explicit TaskActivity(bool maintenance)
-		: count(maintenance ? active_maintenance_tasks : active_interpreter_tasks)
+	explicit TaskActivity(bool is_system)
+		: count(is_system ? active_system_tasks : active_interpreter_tasks)
 	{}
 
 	void set_up(size_t) override
@@ -52,13 +53,14 @@ private:
 
 struct ExecutionGeneration;
 thread_local ExecutionGeneration *worker_generation = nullptr;
-thread_local bool maintenance_worker = false;
+thread_local bool is_system_worker = false;
 thread_local tf::Runtime *interpreter_runtime = nullptr;
 
 class PauseActivity
 {
 public:
-	PauseActivity() : count(maintenance_worker ? active_maintenance_tasks : active_interpreter_tasks),
+	PauseActivity()
+		: count(is_system_worker ? active_system_tasks : active_interpreter_tasks),
 		depth(active_task_depth)
 	{
 		if(depth)
@@ -87,7 +89,10 @@ public:
 	explicit InterpreterTaskGroup(std::vector<std::function<void()>> tasks)
 		: tasks(std::move(tasks)), failures(this->tasks.size()), remaining(this->tasks.size()) {}
 
-	void Cancel() { cancelled.store(true, std::memory_order_relaxed); }
+	void Cancel()
+	{
+		cancelled.store(true, std::memory_order_relaxed);
+	}
 
 	void Drain()
 	{
@@ -103,15 +108,20 @@ public:
 			Execute(0);
 
 		Drain();
+
 		{
 			PauseActivity pause;
-			for(size_t count = remaining.load(std::memory_order_acquire); count != 0;
-				count = remaining.load(std::memory_order_acquire))
+
+			for(size_t count = remaining.load(std::memory_order_acquire);
+					count != 0; count = remaining.load(std::memory_order_acquire))
 				remaining.wait(count, std::memory_order_acquire);
 		}
 
 		for(auto &failure : failures)
-			if(failure) std::rethrow_exception(failure);
+		{
+			if(failure)
+				std::rethrow_exception(failure);
+		}
 	}
 
 private:
@@ -146,14 +156,14 @@ private:
 class WorkerContext : public tf::WorkerInterface
 {
 public:
-	WorkerContext(ExecutionGeneration *generation, bool maintenance)
-		: generation(generation), maintenance(maintenance)
+	WorkerContext(ExecutionGeneration *generation, bool is_system)
+		: generation(generation), isSystem(is_system)
 	{}
 
 	void scheduler_prologue(tf::Worker &) override
 	{
 		worker_generation = generation;
-		maintenance_worker = maintenance;
+		is_system_worker = isSystem;
 	}
 
 	void scheduler_epilogue(tf::Worker &, std::exception_ptr) override
@@ -163,7 +173,7 @@ public:
 
 private:
 	ExecutionGeneration *generation;
-	bool maintenance;
+	bool isSystem;
 };
 
 struct ExecutionGeneration
@@ -171,15 +181,15 @@ struct ExecutionGeneration
 	explicit ExecutionGeneration(size_t count)
 		: numThreads(count),
 		  interpreter(count, std::make_shared<WorkerContext>(this, false)),
-		  maintenance(count, std::make_shared<WorkerContext>(this, true))
+		  system(count, std::make_shared<WorkerContext>(this, true))
 	{
 		interpreter.make_observer<TaskActivity>(false);
-		maintenance.make_observer<TaskActivity>(true);
+		system.make_observer<TaskActivity>(true);
 	}
 
 	size_t numThreads;
 	tf::Executor interpreter;
-	tf::Executor maintenance;
+	tf::Executor system;
 };
 
 struct ExecutionState
@@ -201,7 +211,7 @@ std::shared_ptr<ExecutionGeneration> AcquireGeneration()
 	std::shared_ptr<ExecutionGeneration> result;
 	{
 		std::lock_guard lock(state.mutex);
-		size_t count = configured_threads.load();
+		size_t count = max_thread_count.load();
 		if(!state.current || state.current->numThreads != count)
 		{
 			//construction failure leaves the previous generation usable
@@ -219,7 +229,7 @@ std::shared_ptr<ExecutionGeneration> AcquireGeneration()
 
 size_t Concurrency::GetMaxNumThreads()
 {
-	return configured_threads.load();
+	return max_thread_count.load();
 }
 
 void Concurrency::SetMaxNumThreads(size_t max_num_threads)
@@ -231,7 +241,7 @@ void Concurrency::SetMaxNumThreads(size_t max_num_threads)
 	if(max_num_threads > static_cast<size_t>(std::numeric_limits<int>::max()))
 		throw std::invalid_argument("Thread count exceeds supported range");
 
-	configured_threads.store(max_num_threads);
+	max_thread_count.store(max_num_threads);
 #ifdef _OPENMP
 	omp_set_num_threads(static_cast<int>(max_num_threads));
 #endif
@@ -253,7 +263,7 @@ bool Concurrency::CanRunInterpreterConcurrently()
 
 void RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void()> &entry)
 {
-	if(!worker_generation || maintenance_worker
+	if(!worker_generation || is_system_worker
 			|| &runtime.executor() != &worker_generation->interpreter
 			|| runtime.executor().this_worker() != &runtime.worker())
 		throw std::logic_error("Interpreter entry requires its owning Interpreter runtime worker");
@@ -321,7 +331,7 @@ size_t Concurrency::GetActiveInterpreterThreadCount()
 
 size_t Concurrency::GetActiveThreadCount()
 {
-	return std::max<size_t>(1, active_interpreter_tasks.load() + active_maintenance_tasks.load()
+	return std::max<size_t>(1, active_interpreter_tasks.load() + active_system_tasks.load()
 		+ (worker_generation ? 0 : 1));
 }
 
@@ -335,24 +345,24 @@ void Concurrency::RunTaskSet(TaskSet &task_set)
 	generation->interpreter.run(task_set).get();
 }
 
-void Concurrency::RunMaintenanceTasks(TaskSet &task_set)
+void Concurrency::RunSystemTasks(TaskSet &task_set)
 {
 	if(worker_generation)
 	{
 		//a waiting task is not active
-		//nested maintenance tasks count their own work
+		//nested system tasks count their own work
 		PauseActivity pause;
 
-		if(maintenance_worker)
-			worker_generation->maintenance.corun(task_set);
+		if(is_system_worker)
+			worker_generation->system.corun(task_set);
 		else
-			//one-way dependency; maintenance tasks don't wait on Interpreter tasks
-			worker_generation->maintenance.run(task_set).get();
+			//one-way dependency; system tasks don't wait on Interpreter tasks
+			worker_generation->system.run(task_set).get();
 	}
 	else
 	{
 		auto generation = AcquireGeneration();
-		generation->maintenance.run(task_set).get();
+		generation->system.run(task_set).get();
 	}
 }
 #endif

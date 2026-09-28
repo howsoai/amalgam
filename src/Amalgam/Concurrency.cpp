@@ -256,11 +256,6 @@ size_t Concurrency::GetExecutionThreadCount()
 	return worker_generation ? worker_generation->numThreads : 1;
 }
 
-bool Concurrency::CanRunInterpreterConcurrently()
-{
-	return !worker_generation || interpreter_runtime != nullptr;
-}
-
 void RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void()> &entry)
 {
 	if(!worker_generation || is_system_worker

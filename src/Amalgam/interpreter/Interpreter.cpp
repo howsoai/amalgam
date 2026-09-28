@@ -900,7 +900,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 	EvaluableNode::OrderedType &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 	EvaluableNodeRequestedValueTypes immediate_results)
 {
-	if(!parent_node->GetConcurrency() || !Concurrency::CanRunInterpreterConcurrently())
+	if(!parent_node->GetConcurrency())
 		return false;
 
 	size_t num_tasks = nodes.size();

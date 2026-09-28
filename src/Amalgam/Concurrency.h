@@ -73,10 +73,6 @@ namespace Concurrency
 	void SetMaxNumThreads(size_t max_num_threads);
 
 #ifdef MULTITHREAD_SUPPORT
-	//system workers cannot enter the Interpreter domain. Interpreter workers
-	//may fork recursively, including with one configured worker.
-	bool CanRunInterpreterConcurrently();
-
 	//Fork/join independent children in submission order. A waiting caller helps
 	//only this group, never an unrelated task from an executor queue.
 	void RunInterpreterTasks(std::vector<std::function<void()>> tasks);

@@ -138,7 +138,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	if(immediate_result.NoValueRequested())
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		if(en->GetConcurrency() && num_nodes > 1 && Concurrency::CanRunInterpreterConcurrently())
+		if(en->GetConcurrency() && num_nodes > 1)
 		{
 			InterpreterConcurrencyManager concurrency_manager(this, num_nodes);
 
@@ -169,7 +169,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, E
 	}
 
 #ifdef MULTITHREAD_SUPPORT
-	if(en->GetConcurrency() && num_nodes > 1 && Concurrency::CanRunInterpreterConcurrently())
+	if(en->GetConcurrency() && num_nodes > 1)
 	{
 		EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
 		auto &result_ocn = result->GetOrderedChildNodesReference();
@@ -550,7 +550,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			size_t num_nodes = list_ocn.size();
 
 		#ifdef MULTITHREAD_SUPPORT
-			if(en->GetConcurrency() && num_nodes > 1 && Concurrency::CanRunInterpreterConcurrently())
+			if(en->GetConcurrency() && num_nodes > 1)
 			{
 				node_stack.PushEvaluableNode(list);
 				InterpreterConcurrencyManager concurrency_manager(this, num_nodes);
@@ -661,7 +661,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, Eva
 			size_t num_nodes = list_mcn.size();
 
 		#ifdef MULTITHREAD_SUPPORT
-			if(en->GetConcurrency() && num_nodes > 1 && Concurrency::CanRunInterpreterConcurrently())
+			if(en->GetConcurrency() && num_nodes > 1)
 			{
 				node_stack.PushEvaluableNode(list);
 				InterpreterConcurrencyManager concurrency_manager(this, num_nodes);
@@ -1306,7 +1306,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 	#ifdef MULTITHREAD_SUPPORT
 		size_t num_nodes = list_ocn.size();
-		if(en->GetConcurrency() && num_nodes > 1 && Concurrency::CanRunInterpreterConcurrently())
+		if(en->GetConcurrency() && num_nodes > 1)
 		{
 			node_stack.PushEvaluableNode(list);
 			node_stack.PushEvaluableNode(result_list);
@@ -1417,7 +1417,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 #ifdef MULTITHREAD_SUPPORT
 	size_t num_nodes = list_mcn.size();
-	if(en->GetConcurrency() && num_nodes > 1 && Concurrency::CanRunInterpreterConcurrently())
+	if(en->GetConcurrency() && num_nodes > 1)
 	{
 		node_stack.PushEvaluableNode(list);
 		node_stack.PushEvaluableNode(result_list);
@@ -1976,7 +1976,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 		new_assoc->ReserveMappedChildNodes(num_nodes / 2);
 
 	#ifdef MULTITHREAD_SUPPORT
-		if(en->GetConcurrency() && num_nodes > 1 && Concurrency::CanRunInterpreterConcurrently())
+		if(en->GetConcurrency() && num_nodes > 1)
 		{
 			auto node_stack = CreateOpcodeStackStateSaver(new_assoc);
 			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished

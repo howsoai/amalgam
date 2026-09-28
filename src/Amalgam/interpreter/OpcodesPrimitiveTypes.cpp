@@ -191,7 +191,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(Ev
 		new_list_ocn.resize(num_nodes);
 
 	#ifdef MULTITHREAD_SUPPORT
-		if(en->GetConcurrency() && num_nodes > 1 && Concurrency::CanRunInterpreterConcurrently())
+		if(en->GetConcurrency() && num_nodes > 1)
 		{
 			auto node_stack = CreateOpcodeStackStateSaver(new_list);
 			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
@@ -273,7 +273,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, E
 	{
 
 	#ifdef MULTITHREAD_SUPPORT
-		if(en->GetConcurrency() && num_nodes > 1 && Concurrency::CanRunInterpreterConcurrently())
+		if(en->GetConcurrency() && num_nodes > 1)
 		{
 			auto node_stack = CreateOpcodeStackStateSaver(new_assoc);
 			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished

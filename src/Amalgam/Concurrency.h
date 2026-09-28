@@ -94,19 +94,33 @@ namespace Concurrency
 //the container's size is bigger than 1 and run_concurrently is true
 template<typename ContainerType, typename FunctionType>
 inline void IterateOverConcurrentlyIfPossible(ContainerType &container, FunctionType func,
-	bool run_concurrently = false)
+	bool run_concurrently = false, bool is_system = true)
 {
 	size_t index = 0;
 #ifdef MULTITHREAD_SUPPORT
 	if(run_concurrently && container.size() > 1 && Concurrency::GetMaxNumThreads() > 1)
 	{
-		Concurrency::TaskSet task_set;
-		for(auto value : container)
+		if(is_system)
 		{
-			task_set.emplace([index, value, &func] { func(index, value); });
-			index++;
+			Concurrency::TaskSet task_set;
+			for(auto value : container)
+			{
+				task_set.emplace([index, value, &func] { func(index, value); });
+				index++;
+			}
+			Concurrency::RunSystemTasks(task_set);
 		}
-		Concurrency::RunSystemTasks(task_set);
+		else
+		{
+			std::vector<std::function<void()>> tasks;
+			tasks.reserve(container.size());
+			for(auto value : container)
+			{
+				tasks.push_back([index, value, &func] { func(index, value); });
+				index++;
+			}
+			Concurrency::RunInterpreterTasks(std::move(tasks));
+		}
 		return;
 	}
 	//not running concurrently

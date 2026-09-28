@@ -81,18 +81,13 @@ private:
 };
 
 //The synchronous opcode stack cannot be preempted. Give it access only to its
-//own children, while Taskflow runtime runners can claim those same children.
+//own children, while Taskflow workers can claim those same children.
 //A claimed child is never queued waiting for capacity: its claimant executes it.
 class InterpreterTaskGroup
 {
 public:
 	explicit InterpreterTaskGroup(std::vector<std::function<void()>> tasks)
-		: tasks(std::move(tasks)), failures(this->tasks.size()), remaining(this->tasks.size()) {}
-
-	void Cancel()
-	{
-		cancelled.store(true, std::memory_order_relaxed);
-	}
+		: tasks(std::move(tasks)), remaining(this->tasks.size()) {}
 
 	void Drain()
 	{
@@ -116,28 +111,14 @@ public:
 					count != 0; count = remaining.load(std::memory_order_acquire))
 				remaining.wait(count, std::memory_order_acquire);
 		}
-
-		for(auto &failure : failures)
-		{
-			if(failure)
-				std::rethrow_exception(failure);
-		}
 	}
 
 private:
 	void Execute(size_t i)
 	{
-		try
-		{
-			if(!cancelled.load(std::memory_order_relaxed)) tasks[i]();
-		}
-		catch(...)
-		{
-			failures[i] = std::current_exception();
-			Cancel();
-		}
+		tasks[i]();
 
-		//No queued runner may retain references to an Interpreter stack after
+		//No queued worker may retain references to an Interpreter stack after
 		//Join returns, including the captures in completed callbacks.
 		tasks[i] = nullptr;
 		if(remaining.fetch_sub(1, std::memory_order_acq_rel) == 1)
@@ -145,10 +126,8 @@ private:
 	}
 
 	std::vector<std::function<void()>> tasks;
-	std::vector<std::exception_ptr> failures;
 	std::atomic<size_t> next{1};
 	std::atomic<size_t> remaining;
-	std::atomic<bool> cancelled{false};
 };
 
 //A worker borrows its generation; only external synchronous callers own it.
@@ -239,14 +218,14 @@ void Concurrency::SetMaxNumThreads(size_t max_num_threads)
 
 	//reject values that previously narrowed to negative thread counts
 	if(max_num_threads > static_cast<size_t>(std::numeric_limits<int>::max()))
-		throw std::invalid_argument("Thread count exceeds supported range");
+		return;
 
 	max_thread_count.store(max_num_threads);
 #ifdef _OPENMP
 	omp_set_num_threads(static_cast<int>(max_num_threads));
 #endif
-	//A new generation is created at the next external graph submission. In-flight
-	//graphs and all their descendants keep the old generation until they finish.
+	//a new generation is created at the next external graph submission
+	//currently executing graphs and all their descendants keep the old generation until they finish
 }
 
 #ifdef MULTITHREAD_SUPPORT
@@ -289,33 +268,22 @@ void Concurrency::RunInterpreterTasks(std::vector<std::function<void()>> tasks)
 			RunInterpreterRuntime(runtime, [&] { RunInterpreterTasks(std::move(tasks)); });
 		});
 
-		RunTaskSet(task_set);
+		auto generation = AcquireGeneration();
+		generation->interpreter.run(task_set).get();
 		return;
 	}
-	const size_t runners = tasks.empty() ? 0 : std::min(tasks.size() - 1, GetExecutionThreadCount() - 1);
+
+	const size_t num_workers = tasks.empty() ? 0 : std::min(tasks.size() - 1, GetExecutionThreadCount() - 1);
 	auto group = std::make_shared<InterpreterTaskGroup>(std::move(tasks));
-	//Runtime's implicit anchor keeps every runner (including late empty runners)
+	//Runtime's implicit anchor keeps every worker (including late empty workers)
 	//in the root DAG. Successors and external shutdown wait for their retirement.
 	//Only the owning worker accesses this runtime, even when draining inline.
-	try
-	{
-		for(size_t i = 0; i < runners; ++i)
-			interpreter_runtime->silent_async([group](tf::Runtime &runtime)
-			{
-				RunInterpreterRuntime(runtime, [&] { group->Drain(); });
-			});
-	}
-	catch(...)
-	{
-		//already published children must finish before their captures unwind
-		auto failure = std::current_exception();
-		group->Cancel();
-		try {
-			group->Join();
-		} catch(...) {}
+	for(size_t i = 0; i < num_workers; i++)
+		interpreter_runtime->silent_async([group](tf::Runtime &runtime)
+		{
+			RunInterpreterRuntime(runtime, [&] { group->Drain(); });
+		});
 
-		std::rethrow_exception(failure);
-	}
 	group->Join();
 }
 
@@ -328,16 +296,6 @@ size_t Concurrency::GetActiveThreadCount()
 {
 	return std::max<size_t>(1, active_interpreter_tasks.load() + active_system_tasks.load()
 		+ (worker_generation ? 0 : 1));
-}
-
-void Concurrency::RunTaskSet(TaskSet &task_set)
-{
-	//nested Interpreter work belongs to the current runtime
-	if(worker_generation)
-		throw std::logic_error("Workers cannot submit root graphs; use Interpreter runtime children");
-
-	auto generation = AcquireGeneration();
-	generation->interpreter.run(task_set).get();
 }
 
 void Concurrency::RunSystemTasks(TaskSet &task_set)

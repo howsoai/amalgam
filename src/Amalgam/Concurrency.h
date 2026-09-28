@@ -77,9 +77,6 @@ namespace Concurrency
 	//only this group, never an unrelated task from an executor queue.
 	void RunInterpreterTasks(std::vector<std::function<void()>> tasks);
 
-	//run the set of tasks
-	void RunTaskSet(TaskSet &task_set);
-
 	//for garbage collection, cache, query tasks whose caller retains locks and may not execute interpreter code
 	void RunSystemTasks(TaskSet &task_set);
 

@@ -81,6 +81,8 @@ private:
 	size_t depth;
 };
 
+//TODO: replace std::function<void()> with task from main branch
+
 //The synchronous opcode stack cannot be preempted. Give it access only to its
 //own children, while Taskflow workers can claim those same children.
 //A claimed child is never queued waiting for capacity: its claimant executes it.

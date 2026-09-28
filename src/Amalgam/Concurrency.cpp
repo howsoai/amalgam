@@ -33,20 +33,21 @@ public:
 		: count(is_system ? active_system_tasks : active_interpreter_tasks)
 	{}
 
-	void set_up(size_t) override
+	inline void set_up(size_t) override
 	{}
 
-	void on_entry(tf::WorkerView, tf::TaskView) override
+	inline void on_entry(tf::WorkerView, tf::TaskView) override
 	{
 		if(active_task_depth++ == 0)
 			count++;
 	}
 
-	void on_exit(tf::WorkerView, tf::TaskView) override
+	inline void on_exit(tf::WorkerView, tf::TaskView) override
 	{
 		if(--active_task_depth == 0)
 			count--;
 	}
+
 private:
 	std::atomic<size_t> &count;
 };
@@ -59,7 +60,7 @@ thread_local tf::Runtime *interpreter_runtime = nullptr;
 class PauseActivity
 {
 public:
-	PauseActivity()
+	inline PauseActivity()
 		: count(is_system_worker ? active_system_tasks : active_interpreter_tasks),
 		depth(active_task_depth)
 	{
@@ -68,7 +69,7 @@ public:
 		active_task_depth = 0;
 	}
 
-	~PauseActivity()
+	inline ~PauseActivity()
 	{
 		active_task_depth = depth;
 		if(depth)
@@ -89,13 +90,13 @@ public:
 	explicit InterpreterTaskGroup(std::vector<std::function<void()>> tasks)
 		: tasks(std::move(tasks)), remaining(this->tasks.size()) {}
 
-	void Drain()
+	inline void Drain()
 	{
 		for(size_t i = next.fetch_add(1); i < tasks.size(); i = next.fetch_add(1))
 			Execute(i);
 	}
 
-	void Join()
+	inline void Join()
 	{
 		//Keep the first child on the submitting stack. A worker that takes a
 		//short sibling can return to Taskflow and pick up inner runtime work.
@@ -114,7 +115,8 @@ public:
 	}
 
 private:
-	void Execute(size_t i)
+
+	inline void Execute(size_t i)
 	{
 		tasks[i]();
 
@@ -135,22 +137,23 @@ private:
 class WorkerContext : public tf::WorkerInterface
 {
 public:
-	WorkerContext(ExecutionGeneration *generation, bool is_system)
+	inline WorkerContext(ExecutionGeneration *generation, bool is_system)
 		: generation(generation), isSystem(is_system)
 	{}
 
-	void scheduler_prologue(tf::Worker &) override
+	inline void scheduler_prologue(tf::Worker &) override
 	{
 		worker_generation = generation;
 		is_system_worker = isSystem;
 	}
 
-	void scheduler_epilogue(tf::Worker &, std::exception_ptr) override
+	inline void scheduler_epilogue(tf::Worker &, std::exception_ptr) override
 	{
 		worker_generation = nullptr;
 	}
 
 private:
+
 	ExecutionGeneration *generation;
 	bool isSystem;
 };
@@ -235,7 +238,7 @@ size_t Concurrency::GetExecutionThreadCount()
 	return worker_generation ? worker_generation->numThreads : 1;
 }
 
-void RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void()> &entry)
+static void RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void()> &entry)
 {
 	if(!worker_generation || is_system_worker
 			|| &runtime.executor() != &worker_generation->interpreter

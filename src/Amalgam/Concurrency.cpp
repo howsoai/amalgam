@@ -240,11 +240,6 @@ size_t Concurrency::GetExecutionThreadCount()
 
 static void RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void()> &entry)
 {
-	if(!worker_generation || is_system_worker
-			|| &runtime.executor() != &worker_generation->interpreter
-			|| runtime.executor().this_worker() != &runtime.worker())
-		throw std::logic_error("Interpreter entry requires its owning Interpreter runtime worker");
-
 	struct RuntimeScope
 	{
 		~RuntimeScope()
@@ -260,9 +255,6 @@ static void RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void
 
 void Concurrency::RunInterpreterTasks(std::vector<std::function<void()>> tasks)
 {
-	if(worker_generation && !interpreter_runtime)
-		throw std::logic_error("Interpreter children require an Interpreter runtime");
-
 	if(!interpreter_runtime)
 	{
 		TaskSet task_set;

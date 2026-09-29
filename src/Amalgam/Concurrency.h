@@ -113,7 +113,7 @@ inline void IterateOverConcurrentlyIfPossible(ContainerType &container, Function
 			tasks.reserve(container.size());
 			for(auto value : container)
 			{
-				tasks.push_back([index, value, &func] { func(index, value); });
+				tasks.emplace_back([index, value, &func] { func(index, value); });
 				index++;
 			}
 			Concurrency::RunInterpreterTasks(std::move(tasks));

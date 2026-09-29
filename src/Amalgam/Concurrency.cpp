@@ -19,7 +19,7 @@ size_t DefaultThreadCount()
 	return std::max<size_t>(1, count);
 }
 
-std::atomic<size_t> max_thread_count{DefaultThreadCount()};
+std::atomic<size_t> max_thread_count{ DefaultThreadCount() };
 
 #ifdef MULTITHREAD_SUPPORT
 std::atomic<size_t> active_interpreter_tasks{ 0 };
@@ -83,6 +83,57 @@ private:
 
 //TODO: replace std::function<void()> with task from main branch
 
+//The synchronous opcode stack cannot be preempted. Give it access only to its
+//own children, while Taskflow workers can claim those same children.
+//A claimed child is never queued waiting for capacity: its claimant executes it.
+template<typename FuncType>
+class InterpreterTaskGroup
+{
+public:
+	explicit InterpreterTaskGroup(std::vector<FuncType> &&tasks)
+		: tasks(std::move(tasks)), remaining(this->tasks.size()) {}
+
+	inline void Drain()
+	{
+		for(size_t i = next.fetch_add(1); i < tasks.size(); i = next.fetch_add(1))
+			Execute(i);
+	}
+
+	inline void Join()
+	{
+		//Keep the first child on the submitting stack. A worker that takes a
+		//short sibling can return to Taskflow and pick up inner runtime work.
+		if(!tasks.empty())
+			Execute(0);
+
+		Drain();
+
+		{
+			PauseActivity pause;
+
+			for(size_t count = remaining.load(std::memory_order_acquire);
+					count != 0; count = remaining.load(std::memory_order_acquire))
+				remaining.wait(count, std::memory_order_acquire);
+		}
+	}
+
+private:
+
+	inline void Execute(size_t i)
+	{
+		tasks[i]();
+
+		//mark task as done and if done, notify all that it's all done
+		tasks[i] = nullptr;
+		if(remaining.fetch_sub(1, std::memory_order_acq_rel) == 1)
+			remaining.notify_all();
+	}
+
+	std::vector<FuncType> tasks;
+	std::atomic<size_t> next{1};
+	std::atomic<size_t> remaining;
+};
+
 //A worker borrows its generation; only external synchronous callers own it.
 //Consequently the last owner can never destroy an executor on its own worker.
 class WorkerContext : public tf::WorkerInterface
@@ -140,22 +191,13 @@ ExecutionState &GetExecutionState()
 std::shared_ptr<ExecutionGeneration> AcquireGeneration()
 {
 	auto &state = GetExecutionState();
-	std::shared_ptr<ExecutionGeneration> retired;
-	std::shared_ptr<ExecutionGeneration> result;
-	{
-		std::lock_guard lock(state.mutex);
-		size_t count = max_thread_count.load();
-		if(!state.current || state.current->numThreads != count)
-		{
-			//construction failure leaves the previous generation usable
-			auto replacement = std::make_shared<ExecutionGeneration>(count);
-			retired = std::exchange(state.current, std::move(replacement));
-		}
-		result = state.current;
-	}
+	std::lock_guard lock(state.mutex);
+	size_t count = max_thread_count.load();
 
-	//join retired workers outside the state mutex
-	return result;
+	if(!state.current || state.current->numThreads != count)
+		state.current = std::make_shared<ExecutionGeneration>(count);
+
+	return state.current;
 }
 #endif
 }
@@ -187,21 +229,18 @@ void Concurrency::SetMaxNumThreads(size_t max_num_threads)
 template<typename FuncType>
 static void RunInterpreterRuntime(tf::Runtime &runtime, const FuncType &entry)
 {
-	struct RuntimeScope
-	{
-		~RuntimeScope()
-		{
-			interpreter_runtime = previous;
-		}
-
-		tf::Runtime *previous;
-	} scope{std::exchange(interpreter_runtime, &runtime)};
+	auto previous = std::exchange(interpreter_runtime, &runtime);
+	auto cleanup = [&] { interpreter_runtime = previous; };
 
 	entry();
+	cleanup();
 }
 
 void Concurrency::RunInterpreterTasks(std::vector<std::function<void()>> tasks)
 {
+	if(tasks.empty())
+		return;
+
 	if(!interpreter_runtime)
 	{
 		TaskSet task_set;
@@ -215,46 +254,20 @@ void Concurrency::RunInterpreterTasks(std::vector<std::function<void()>> tasks)
 		return;
 	}
 
-	if(tasks.empty())
-		return;
-
 	size_t total_tasks = tasks.size();
 	size_t available_worker_count = (worker_generation ? worker_generation->numThreads : 1);
+	const size_t num_workers = std::min(total_tasks, available_worker_count) - 1;
 
-	//initialize next to 1 and don't count self in peer workers, since this thread will start executing the first task
-	std::atomic<size_t> next{ 1 };
-	std::atomic<size_t> remaining{ total_tasks };
-	const size_t num_peer_workers = std::min(total_tasks, available_worker_count) - 1;
-
-	auto execute_task = [&](size_t i) {
-		tasks[i]();
-		tasks[i] = nullptr;
-		if(remaining.fetch_sub(1, std::memory_order_acq_rel) == 1)
-			remaining.notify_all();
-	};
-
-	auto drain = [&]() {
-		for(size_t i = next.fetch_add(1); i < total_tasks; i = next.fetch_add(1))
-			execute_task(i);
-	};
-
-	for(size_t i = 0; i < num_peer_workers; i++)
-		interpreter_runtime->silent_async([&]() { RunInterpreterRuntime(*interpreter_runtime, [&] { drain(); }); });
-
-	//execute the first task here
-	execute_task(0);
-	drain();
-
-	//wait for the remaining tasks
+	auto group = std::make_shared<InterpreterTaskGroup<std::function<void()>>>(std::move(tasks));
+	for(size_t i = 0; i < num_workers; i++)
 	{
-		PauseActivity pause;
-		size_t count = remaining.load(std::memory_order_acquire);
-		while(count != 0)
+		interpreter_runtime->silent_async([group](tf::Runtime &runtime)
 		{
-			remaining.wait(count, std::memory_order_acquire);
-			count = remaining.load(std::memory_order_acquire);
-		}
+			RunInterpreterRuntime(runtime, [&] { group->Drain(); });
+		});
 	}
+
+	group->Join();
 }
 
 size_t Concurrency::GetActiveInterpreterThreadCount()

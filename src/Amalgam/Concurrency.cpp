@@ -86,10 +86,11 @@ private:
 //The synchronous opcode stack cannot be preempted. Give it access only to its
 //own children, while Taskflow workers can claim those same children.
 //A claimed child is never queued waiting for capacity: its claimant executes it.
+template<typename FuncType>
 class InterpreterTaskGroup
 {
 public:
-	explicit InterpreterTaskGroup(std::vector<std::function<void()>> tasks)
+	explicit InterpreterTaskGroup(std::vector<FuncType> &&tasks)
 		: tasks(std::move(tasks)), remaining(this->tasks.size()) {}
 
 	inline void Drain()
@@ -122,14 +123,13 @@ private:
 	{
 		tasks[i]();
 
-		//No queued worker may retain references to an Interpreter stack after
-		//Join returns, including the captures in completed callbacks.
+		//mark task as done and if done, notify all that it's all done
 		tasks[i] = nullptr;
 		if(remaining.fetch_sub(1, std::memory_order_acq_rel) == 1)
 			remaining.notify_all();
 	}
 
-	std::vector<std::function<void()>> tasks;
+	std::vector<FuncType> tasks;
 	std::atomic<size_t> next{1};
 	std::atomic<size_t> remaining;
 };
@@ -240,7 +240,8 @@ size_t Concurrency::GetExecutionThreadCount()
 	return worker_generation ? worker_generation->numThreads : 1;
 }
 
-static void RunInterpreterRuntime(tf::Runtime &runtime, const std::function<void()> &entry)
+template<typename FuncType>
+static void RunInterpreterRuntime(tf::Runtime &runtime, const FuncType &entry)
 {
 	struct RuntimeScope
 	{
@@ -271,7 +272,7 @@ void Concurrency::RunInterpreterTasks(std::vector<std::function<void()>> tasks)
 	}
 
 	const size_t num_workers = tasks.empty() ? 0 : std::min(tasks.size() - 1, GetExecutionThreadCount() - 1);
-	auto group = std::make_shared<InterpreterTaskGroup>(std::move(tasks));
+	auto group = std::make_shared<InterpreterTaskGroup<std::function<void()>>>(std::move(tasks));
 	//Runtime's implicit anchor keeps every worker (including late empty workers)
 	//in the root DAG. Successors and external shutdown wait for their retirement.
 	//Only the owning worker accesses this runtime, even when draining inline.

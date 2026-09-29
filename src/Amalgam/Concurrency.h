@@ -63,25 +63,54 @@ namespace Concurrency
 		LockBufferType *buffer;
 	};
 
-	size_t GetMaxNumThreads();
+	inline size_t DefaultThreadCount()
+	{
+		size_t count = std::thread::hardware_concurrency();
+	#if !defined(MULTITHREAD_SUPPORT) && defined(_OPENMP)
+		count = (count + 1) / 2;
+	#endif
+		return std::max<size_t>(1, count);
+	}
+
+	inline std::atomic<size_t> max_thread_count{ DefaultThreadCount() };
+
+	inline size_t GetMaxNumThreads()
+	{
+		return max_thread_count.load();
+	}
 
 	//sets the maximum number of threads to use
 	// if zero is specified, then it uses a heuristic default based on the system
-	void SetMaxNumThreads(size_t max_num_threads);
+	inline void SetMaxNumThreads(size_t max_num_threads)
+	{
+		if(max_num_threads == 0)
+			max_num_threads = DefaultThreadCount();
+
+		//reject values that previously narrowed to negative thread counts
+		if(max_num_threads > static_cast<size_t>(std::numeric_limits<int>::max()))
+			return;
+
+		max_thread_count.store(max_num_threads);
+	#ifdef _OPENMP
+		omp_set_num_threads(static_cast<int>(max_num_threads));
+	#endif
+		//a new generation is created at the next external graph submission
+		//currently executing graphs and all their descendants keep the old generation until they finish
+	}
 
 #ifdef MULTITHREAD_SUPPORT
 	//a set of potentially concurrent tasks at a given level of the execution graph
 	using TaskSet = tf::Taskflow;
 
 	struct ExecutionGeneration;
-	extern thread_local ExecutionGeneration *worker_generation;
-	extern thread_local bool is_system_worker;
-	extern thread_local tf::Runtime *interpreter_runtime;
+	inline thread_local ExecutionGeneration *worker_generation = nullptr;
+	inline thread_local bool is_system_worker = false;
+	inline thread_local tf::Runtime *interpreter_runtime = nullptr;
 
 	//internal activity trackers for thread counting
-	extern std::atomic<size_t> active_interpreter_tasks;
-	extern std::atomic<size_t> active_system_tasks;
-	extern thread_local size_t active_task_depth;
+	inline std::atomic<size_t> active_interpreter_tasks{ 0 };
+	inline std::atomic<size_t> active_system_tasks{ 0 };
+	inline thread_local size_t active_task_depth{ 0 };
 
 	//internal state management
 	class TaskActivity : public tf::ObserverInterface
@@ -151,7 +180,29 @@ namespace Concurrency
 		tf::Executor system;
 	};
 
-	std::shared_ptr<ExecutionGeneration> AcquireGeneration();
+	struct ExecutionState
+	{
+		std::mutex mutex;
+		std::shared_ptr<ExecutionGeneration> current;
+	};
+
+	inline ExecutionState &GetExecutionState()
+	{
+		static ExecutionState state;
+		return state;
+	}
+
+	inline std::shared_ptr<ExecutionGeneration> AcquireGeneration()
+	{
+		auto &state = GetExecutionState();
+		std::lock_guard lock(state.mutex);
+		size_t count = max_thread_count.load();
+
+		if(!state.current || state.current->numThreads != count)
+			state.current = std::make_shared<ExecutionGeneration>(count);
+
+		return state.current;
+	}
 
 	//internal mechanism to pause activity
 	class PauseActivity

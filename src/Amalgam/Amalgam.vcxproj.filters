@@ -48,9 +48,6 @@
     <ClCompile Include="rand\RandomStream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Concurrency.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SeparableBoxFilterDataStore.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

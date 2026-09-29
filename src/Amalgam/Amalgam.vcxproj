@@ -586,7 +586,6 @@
     <ClCompile Include="AmalgamTrace.cpp" />
     <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="BinaryPacking.cpp" />
-    <ClCompile Include="Concurrency.cpp" />
     <ClCompile Include="Cryptography.cpp" />
     <ClCompile Include="DateTimeFormat.cpp" />
     <ClCompile Include="entity\Entity.cpp" />

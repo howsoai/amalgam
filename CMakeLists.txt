@@ -256,7 +256,6 @@ set(COMMON_SOURCE
 )
 set(COMMON_SOURCE_THREADS
     ${COMMON_SOURCE}
-    src/Amalgam/Concurrency.cpp
     src/Amalgam/Concurrency.h
 )
 set(RESOURCE_SOURCE)

@@ -8,8 +8,6 @@
 #include <stdexcept>
 #include <utility>
 
-namespace
-{
 size_t DefaultThreadCount()
 {
 	size_t count = std::thread::hardware_concurrency();
@@ -22,164 +20,18 @@ size_t DefaultThreadCount()
 std::atomic<size_t> max_thread_count{ DefaultThreadCount() };
 
 #ifdef MULTITHREAD_SUPPORT
-std::atomic<size_t> active_interpreter_tasks{ 0 };
-std::atomic<size_t> active_system_tasks{ 0 };
-thread_local size_t active_task_depth = 0;
+std::atomic<size_t> Concurrency::active_interpreter_tasks{ 0 };
+std::atomic<size_t> Concurrency::active_system_tasks{ 0 };
+thread_local size_t Concurrency::active_task_depth = 0;
 
-class TaskActivity : public tf::ObserverInterface
-{
-public:
-	explicit TaskActivity(bool is_system)
-		: count(is_system ? active_system_tasks : active_interpreter_tasks)
-	{}
-
-	inline void set_up(size_t) override
-	{}
-
-	inline void on_entry(tf::WorkerView, tf::TaskView) override
-	{
-		if(active_task_depth++ == 0)
-			count++;
-	}
-
-	inline void on_exit(tf::WorkerView, tf::TaskView) override
-	{
-		if(--active_task_depth == 0)
-			count--;
-	}
-
-private:
-	std::atomic<size_t> &count;
-};
-
-struct ExecutionGeneration;
-thread_local ExecutionGeneration *worker_generation = nullptr;
-thread_local bool is_system_worker = false;
-thread_local tf::Runtime *interpreter_runtime = nullptr;
-
-class PauseActivity
-{
-public:
-	inline PauseActivity()
-		: count(is_system_worker ? active_system_tasks : active_interpreter_tasks),
-		depth(active_task_depth)
-	{
-		if(depth)
-			count--;
-		active_task_depth = 0;
-	}
-
-	inline ~PauseActivity()
-	{
-		active_task_depth = depth;
-		if(depth)
-			count++;
-	}
-
-private:
-	std::atomic<size_t> &count;
-	size_t depth;
-};
-
-//TODO: replace std::function<void()> with task from main branch
-
-//The synchronous opcode stack cannot be preempted. Give it access only to its
-//own children, while Taskflow workers can claim those same children.
-//A claimed child is never queued waiting for capacity: its claimant executes it.
-template<typename FuncType>
-class InterpreterTaskGroup
-{
-public:
-	explicit InterpreterTaskGroup(std::vector<FuncType> &&tasks)
-		: tasks(std::move(tasks)), remaining(this->tasks.size()) {}
-
-	inline void Drain()
-	{
-		for(size_t i = next.fetch_add(1); i < tasks.size(); i = next.fetch_add(1))
-			Execute(i);
-	}
-
-	inline void Join()
-	{
-		//Keep the first child on the submitting stack. A worker that takes a
-		//short sibling can return to Taskflow and pick up inner runtime work.
-		if(!tasks.empty())
-			Execute(0);
-
-		Drain();
-
-		{
-			PauseActivity pause;
-
-			for(size_t count = remaining.load(std::memory_order_acquire);
-					count != 0; count = remaining.load(std::memory_order_acquire))
-				remaining.wait(count, std::memory_order_acquire);
-		}
-	}
-
-private:
-
-	inline void Execute(size_t i)
-	{
-		tasks[i]();
-
-		//mark task as done and if done, notify all that it's all done
-		tasks[i] = nullptr;
-		if(remaining.fetch_sub(1, std::memory_order_acq_rel) == 1)
-			remaining.notify_all();
-	}
-
-	std::vector<FuncType> tasks;
-	std::atomic<size_t> next{1};
-	std::atomic<size_t> remaining;
-};
-
-//A worker borrows its generation; only external synchronous callers own it.
-//Consequently the last owner can never destroy an executor on its own worker.
-class WorkerContext : public tf::WorkerInterface
-{
-public:
-	inline WorkerContext(ExecutionGeneration *generation, bool is_system)
-		: generation(generation), isSystem(is_system)
-	{}
-
-	inline void scheduler_prologue(tf::Worker &) override
-	{
-		worker_generation = generation;
-		is_system_worker = isSystem;
-	}
-
-	inline void scheduler_epilogue(tf::Worker &, std::exception_ptr) override
-	{
-		worker_generation = nullptr;
-	}
-
-private:
-
-	ExecutionGeneration *generation;
-	bool isSystem;
-};
-
-struct ExecutionGeneration
-{
-	explicit ExecutionGeneration(size_t count)
-		: numThreads(count),
-		  interpreter(count, std::make_shared<WorkerContext>(this, false)),
-		  system(count, std::make_shared<WorkerContext>(this, true))
-	{
-		interpreter.make_observer<TaskActivity>(false);
-		system.make_observer<TaskActivity>(true);
-	}
-
-	size_t numThreads;
-	tf::Executor interpreter;
-	tf::Executor system;
-};
+thread_local Concurrency::ExecutionGeneration *Concurrency::worker_generation = nullptr;
+thread_local bool Concurrency::is_system_worker = false;
+thread_local tf::Runtime *Concurrency::interpreter_runtime = nullptr;
 
 struct ExecutionState
 {
 	std::mutex mutex;
-	std::shared_ptr<ExecutionGeneration> current;
+	std::shared_ptr<Concurrency::ExecutionGeneration> current;
 };
 
 ExecutionState &GetExecutionState()
@@ -188,7 +40,7 @@ ExecutionState &GetExecutionState()
 	return state;
 }
 
-std::shared_ptr<ExecutionGeneration> AcquireGeneration()
+std::shared_ptr<Concurrency::ExecutionGeneration> Concurrency::AcquireGeneration()
 {
 	auto &state = GetExecutionState();
 	std::lock_guard lock(state.mutex);
@@ -200,7 +52,6 @@ std::shared_ptr<ExecutionGeneration> AcquireGeneration()
 	return state.current;
 }
 #endif
-}
 
 size_t Concurrency::GetMaxNumThreads()
 {
@@ -224,82 +75,4 @@ void Concurrency::SetMaxNumThreads(size_t max_num_threads)
 	//currently executing graphs and all their descendants keep the old generation until they finish
 }
 
-#ifdef MULTITHREAD_SUPPORT
-
-template<typename FuncType>
-static void RunInterpreterRuntime(tf::Runtime &runtime, const FuncType &entry)
-{
-	auto previous = std::exchange(interpreter_runtime, &runtime);
-	auto cleanup = [&] { interpreter_runtime = previous; };
-
-	entry();
-	cleanup();
-}
-
-void Concurrency::RunInterpreterTasks(std::vector<std::function<void()>> tasks)
-{
-	if(tasks.empty())
-		return;
-
-	if(!interpreter_runtime)
-	{
-		TaskSet task_set;
-		task_set.emplace([&](tf::Runtime &runtime)
-		{
-			RunInterpreterRuntime(runtime, [&] { RunInterpreterTasks(std::move(tasks)); });
-		});
-
-		auto generation = AcquireGeneration();
-		generation->interpreter.run(task_set).get();
-		return;
-	}
-
-	size_t total_tasks = tasks.size();
-	size_t available_worker_count = (worker_generation ? worker_generation->numThreads : 1);
-	const size_t num_workers = std::min(total_tasks, available_worker_count) - 1;
-
-	auto group = std::make_shared<InterpreterTaskGroup<std::function<void()>>>(std::move(tasks));
-	for(size_t i = 0; i < num_workers; i++)
-	{
-		interpreter_runtime->silent_async([group](tf::Runtime &runtime)
-		{
-			RunInterpreterRuntime(runtime, [&] { group->Drain(); });
-		});
-	}
-
-	group->Join();
-}
-
-size_t Concurrency::GetActiveInterpreterThreadCount()
-{
-	return std::max<size_t>(1, active_interpreter_tasks.load() + (worker_generation ? 0 : 1));
-}
-
-size_t Concurrency::GetActiveThreadCount()
-{
-	return std::max<size_t>(1, active_interpreter_tasks.load() + active_system_tasks.load()
-		+ (worker_generation ? 0 : 1));
-}
-
-void Concurrency::RunSystemTasks(TaskSet &task_set)
-{
-	if(worker_generation)
-	{
-		//a waiting task is not active
-		//nested system tasks count their own work
-		PauseActivity pause;
-
-		if(is_system_worker)
-			worker_generation->system.corun(task_set);
-		else
-			//one-way dependency; system tasks don't wait on Interpreter tasks
-			worker_generation->system.run(task_set).get();
-	}
-	else
-	{
-		auto generation = AcquireGeneration();
-		generation->system.run(task_set).get();
-	}
-}
-#endif
 #endif

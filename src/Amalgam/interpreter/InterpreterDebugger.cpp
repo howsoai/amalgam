@@ -654,7 +654,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 		else if(command == "threads")
 		{
 			std::cout << "Maximum concurrent threads: " << Concurrency::GetMaxNumThreads() << std::endl;
-			std::cout << "Currently executing threads: " << Concurrency::GetExecutionThreadCount() << std::endl;
+			std::cout << "Currently executing threads: " << Concurrency::GetActiveInterpreterThreadCount() << std::endl;
 			std::cout << "Current thread: " << std::this_thread::get_id() << std::endl;
 		}
 	#endif

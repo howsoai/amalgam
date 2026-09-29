@@ -80,9 +80,6 @@ namespace Concurrency
 	//for garbage collection, cache, query tasks whose caller retains locks and may not execute interpreter code
 	void RunSystemTasks(TaskSet &task_set);
 
-	//Worker count of the current execution generation (including during resize).
-	size_t GetExecutionThreadCount();
-
 	//Sample active tasks (excluding synchronous joins), with a serial caller counted.
 	size_t GetActiveInterpreterThreadCount();
 	size_t GetActiveThreadCount();

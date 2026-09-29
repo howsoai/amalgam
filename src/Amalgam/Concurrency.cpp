@@ -234,9 +234,10 @@ void Concurrency::SetMaxNumThreads(size_t max_num_threads)
 }
 
 #ifdef MULTITHREAD_SUPPORT
-size_t Concurrency::GetExecutionThreadCount()
+
+//worker count of the current execution generation (including during resize)
+static size_t GetContextualWorkerCount()
 {
-	//A serial caller is not executing in a graph, even if workers are configured.
 	return worker_generation ? worker_generation->numThreads : 1;
 }
 
@@ -271,7 +272,7 @@ void Concurrency::RunInterpreterTasks(std::vector<std::function<void()>> tasks)
 		return;
 	}
 
-	const size_t num_workers = tasks.empty() ? 0 : std::min(tasks.size() - 1, GetExecutionThreadCount() - 1);
+	const size_t num_workers = tasks.empty() ? 0 : std::min(tasks.size() - 1, GetContextualWorkerCount() - 1);
 	auto group = std::make_shared<InterpreterTaskGroup<std::function<void()>>>(std::move(tasks));
 	//Runtime's implicit anchor keeps every worker (including late empty workers)
 	//in the root DAG. Successors and external shutdown wait for their retirement.

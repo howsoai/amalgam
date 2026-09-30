@@ -795,7 +795,7 @@ protected:
 	inline bool HasSharedScopeStackTop()
 	{
 		//if this interpreter has a mutex, then it's shared
-		if(scopeStackMutex.get() != nullptr)
+		if(scopeStackMutex != nullptr)
 			return false;
 
 		//if doesn't own any scope stack of its own, then it's shared
@@ -1212,8 +1212,9 @@ public:
 
 protected:
 
-	//if the scope stack is shared, then this will be allocated and not nullptr
-	std::unique_ptr<Concurrency::SingleMutex> scopeStackMutex;
+	//if the scope stack is shared, then this is not nullptr
+	//Borrowed from the active concurrency manager; cleared/restored after its join.
+	Concurrency::SingleMutex *scopeStackMutex = nullptr;
 
 	//if true, then callingInterpreter uses a different scope stack
 	bool bottomOfScopeStack;

@@ -37,9 +37,11 @@ worker; available runtime runners provide actual inner parallelism. A sleeping
 ancestor does not steal another branch's work.
 
 The group completion counter publishes all result slots before the synchronous
-opcode continuation. Exceptions are retained per child; unstarted work may be cancelled, and all
-children are drained and joined before the first failure in submission order is
-rethrown. Failed runtime submissions roll back their anchor reference; already
+opcode continuation. Exceptions retain the lowest failing child index under a
+mutex among tasks that began execution before observing cancellation. Unstarted
+work may be skipped, so this is not unconditional submission-order failure
+selection. All children are drained and joined before that failure is rethrown.
+Failed runtime submissions roll back their anchor reference; already
 published children are joined before caller captures can unwind. The manager
 restores the memory lock and shared-scope state before propagation. Execution
 registration is removed on both normal and exceptional exits.
@@ -117,7 +119,7 @@ At one configured thread, marked Interpreter operations use the same runtime
 groups and execute their children on the single worker. Maintenance loop call
 sites retain their serial paths.
 `SetMaxNumThreads(0)` selects hardware concurrency (at least one); OMP-only keeps
-its half-core default. Counts beyond INT_MAX throw internally before changing
+its half-core default. Counts beyond INT_MAX are ignored before changing
 configuration; the void C API ignores them and the language rejects negative or
 nonfinite counts. The next external submission creates a generation at the new
 count. Existing work and maintenance descendants retain their old generation.
@@ -141,31 +143,95 @@ wall time. Unlike the old two pools' permanently counted main threads, idle doma
 contribute zero, so a serial operation divides by one rather than an artificial
 two. Multiple external host threads are only counted when executing graph tasks
 (or when the querying caller counts itself); this is not full host-thread tracking.
-The debugger distinguishes configured capacity from execution generation size.
+The debugger reports configured capacity and the sampled active Interpreter count.
 
-`Concurrency.Taskflow` checks exact-once execution/visibility, exception recovery,
-resize, maintenance isolation, descendant progress at saturation, rejection of
-nested root submissions, and sampled allowances at 1/2/4 workers.
-`Concurrency.InterpreterOverlap` links the production Interpreter and runtime.
-A recursive Amalgam function forks at each level; two print callbacks from the
-same innermost opcode rendezvous with a five-second failure deadline. The listener
-checks simultaneous activity on two distinct threads, and both opcode and graph
-continuations check completed children and result visibility. The test also fills
-every worker with an actual nested Interpreter while queuing unrelated writers
-against retained locks, checks graph successors wait for those writers, and tests
-nested exceptions and recovery. It repeats overlap and saturation 20 times at
-each of 1/2/4 workers (one worker checks correctness without requiring overlap).
-It also checks that shared construction targets stay unchanged while children
-execute (a deterministic check at one worker), and repeatedly collects a shared
-12,000-value cyclic graph with extended list/assoc storage and simultaneous
-collector requests, including forced requests under shared read locks. Every retained value, cycle edge and cleared mark is checked.
-The print listener is the normal production output interface, with an override
-for synchronization; there is no test-specific scheduling path.
+`Concurrency.Storage` builds directly against the production header and vendored
+Taskflow. It checks inline move-only closure lifetime, allocation counts after
+reserve, nested overlap, saturation and late runners at 1/2/4 workers, retained-lock safety,
+failure ordering among started tasks, runtime restoration, and allocation-failure recovery.
+It is included in the native CTest smoke tests and needs no testing framework.
 
-`nested.amlg` checks nested arithmetic/containers, scope writes, retained allocations,
-and move destination interpretation. `convictions.amlg` starts with the exact
-concurrent query that previously crashed, then compares serial results and reuses
-the cache with different dimensions and callback capability. Callback queries also
-run within an outer parallel map, reaching nested `||` on lock-holding workers.
-CTest runs both files in fresh processes at 1/2/4 threads. `concurrency-stress`
-runs a 500,000-node graph twice with exact-once and visibility checks.
+## Task storage and allocation boundary
+
+`FixedSizeTask` has 96 bytes of inline capture storage and one pointer to a static
+operations table. Construction checks size, alignment, nonthrowing move and
+nonthrowing destruction at every production closure instantiation. There is no
+heap fallback. Seed captures use indices into the manager's already-reserved
+seed vector. Immediate-value copies only copy scalar bits and are declared
+`noexcept`, allowing construction-index captures to move without throwing.
+
+Task vectors still reserve at their original ownership sites. Moving a vector
+into the group transfers that same contiguous allocation; closures never move to
+a second task container. A child destroys its closure before decrementing the
+completion counter. The vector size is immutable while runners exist, so a late
+runner can safely discover that no unclaimed children remain. Results, seed
+storage and the manager may then unwind without a late runner accessing them.
+The scope mutex lives in the manager and is borrowed by the parent Interpreter
+only until all children have joined (or until an unsubmitted manager is discarded).
+
+One non-Taskflow allocation remains **per group that submits runtime runners**:
+`make_shared<InterpreterTaskGroup>` combines the group and its ownership control
+block. Its lifetime is distinct from child completion. The owning join can return
+while runners are queued, or after the last child's decrement but before that
+runner's notify/return. Every runner holds ownership until its callable is retired;
+Taskflow's runtime anchor also retains descendants until graph completion.
+
+A stack/raw-pointer replacement cannot just wait for runner retirement: at
+saturation all workers can be inside nested joins with their runners still queued.
+Unrestricted `corun` would run unrelated writers under retained locks. Taskflow's
+public runtime API provides neither selective runner removal nor a synchronous
+join that only helps this group. Retaining one shared allocation is the bounded
+lifetime cost of preserving this scheduling/locking model without changing the
+vendored scheduler or adding a separate reclamation pool. Groups with no runners
+(one child or one worker) use stack storage and allocate nothing after reserve.
+
+Generation creation/resizing still allocates executors, observers and worker
+contexts once per generation. Taskflow owns graph/topology/node/callable/queue
+allocations, including runtime runners. The allocation probe reports those
+submission costs separately from its direct measurement of shared group storage.
+On Linux amd64 with GCC 14/libstdc++, the probe measures a 112-byte task
+holder and one 120-byte shared group allocation. At 1 worker, groups of
+1/4/4096 tasks allocate zero bytes after reserve. At 2 workers, 4 and 4096 tasks
+both use 3 allocations / 352 bytes including Taskflow; at 4 workers they both use
+7 allocations / 816 bytes. Thus only 120 bytes are non-Taskflow plumbing, independent
+of task count; the remaining 232 bytes per submitted runner belong to Taskflow's
+node and callable storage. These byte counts are ABI-specific, not portable limits.
+
+Vector reserves (tasks, seeds, construction effects, opcode/construction stacks)
+and allocations performed by interpreted code are outside the zero-per-closure
+claim. Thrown exception objects may allocate in the C++ runtime; the success path
+has no exception-vector allocation.
+
+Build and run the focused probe without CMake:
+
+```sh
+mkdir -p out/taskflow-probe
+g++-14 -std=c++20 -O2 -pthread -DMULTITHREAD_SUPPORT \
+  -Isrc/Amalgam -Isrc/3rd_party -Wall -Wextra -Werror \
+  test/unit_test/concurrency_storage_test.cpp -o out/taskflow-probe/concurrency-storage
+out/taskflow-probe/concurrency-storage
+```
+
+For CI or the canonical Linux build container
+`ghcr.io/howsoai/amalgam-build-container-linux:2.0.10`:
+
+```sh
+cmake --preset amd64-release-linux
+cmake --build --preset amd64-release-linux
+ctest --preset amd64-release-linux -R 'Concurrency[.]|App.FullTest|Lib.SmokeTest'
+```
+
+`Concurrency.Convictions.1/2/4` restores the `203f3fb` query regression: the
+first query is concurrent, then the cache is reused with changed dimensions and
+callback capability, including callbacks with nested `||` inside an outer
+parallel map. Callback-bearing query loops are intentionally serial: callbacks
+mutate the shared calling Interpreter's stacks and memory lock. This corrects the
+callback fan-out introduced in `68b51e0`. Only numeric loops use the maintenance
+executor; a callback's own nested concurrent opcodes still parallelize through
+Interpreter runtime groups.
+
+The earlier `203f3fb` commit also contains additional Interpreter/GC probes and
+`nested.amlg`, deleted by subsequent cleanup. Those are not current CTest targets.
+Their graph entry calls need adaptation to the current header API, and the old
+listener-based overlap/exception checks also require the virtual print-listener
+interface removed by subsequent cleanup.

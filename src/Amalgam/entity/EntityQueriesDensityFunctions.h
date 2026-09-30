@@ -87,8 +87,9 @@ public:
 		radiusLabel = radius_label;
 
 #ifdef MULTITHREAD_SUPPORT
-		runConcurrently = run_concurrently;
-		computationRequiresEntityCall = knnCache->GetComputationRequiresEntityCall();
+		//Callbacks mutate the shared calling Interpreter, so only numeric loops run concurrently.
+		//Nested concurrent opcodes within callbacks still use Interpreter runtime groups.
+		runConcurrently = run_concurrently && !knnCache->GetComputationRequiresEntityCall();
 #endif
 	}
 
@@ -136,7 +137,7 @@ public:
 				contribs_out[index] = ComputeDistanceContribution(entity);
 			}
 		#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently, computationRequiresEntityCall
+			, runConcurrently
 		#endif
 		);
 
@@ -160,7 +161,7 @@ public:
 				contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 			}
 		#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently, computationRequiresEntityCall
+			, runConcurrently
 		#endif
 		);
 	}
@@ -183,7 +184,7 @@ public:
 			contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, 1.0);
 		}
 	#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently, computationRequiresEntityCall
+			, runConcurrently
 	#endif
 		);
 	}
@@ -245,7 +246,7 @@ public:
 				fetch_add_double(entity_probabilities[n.reference], n.distance * weight_multiplier);
 		}
 	#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently, computationRequiresEntityCall
+			, runConcurrently
 	#endif
 		);
 
@@ -296,7 +297,7 @@ public:
 				fetch_add_double(entity_probabilities[n.reference], n.distance * weight_multiplier);
 		}
 	#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently, computationRequiresEntityCall
+			, runConcurrently
 	#endif
 		);
 
@@ -326,7 +327,7 @@ public:
 					contribs_out[index] = ComputeDistanceContribution(entity, included_entities);
 			}
 		#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently, computationRequiresEntityCall
+			, runConcurrently
 		#endif
 		);
 
@@ -519,7 +520,7 @@ public:
 					convictions_out[convictions_out_index] = kld_total;
 			}
 		#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently, computationRequiresEntityCall
+			, runConcurrently
 		#endif
 		);
 
@@ -637,8 +638,6 @@ public:
 	#ifdef MULTITHREAD_SUPPORT
 		//if true, attempt to run with concurrency
 		bool runConcurrently;
-		//if true, distances require an entity call
-		bool computationRequiresEntityCall;
 	#endif
 
 		//for multithreading, there should be one of these per thread

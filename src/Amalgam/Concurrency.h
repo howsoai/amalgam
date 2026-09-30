@@ -18,11 +18,18 @@
 #if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 
 //system headers:
+#include <algorithm>
 #include <atomic>
-#include <functional>
+#include <exception>
+#include <limits>
+#include <memory>
 #include <mutex>
+#include <new>
 #include <shared_mutex>
+#include <stdexcept>
 #include <thread>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace Concurrency
@@ -102,144 +109,79 @@ namespace Concurrency
 	//a set of potentially concurrent tasks at a given level of the execution graph
 	using TaskSet = tf::Taskflow;
 
-	//constant memory sized holder for a task that is big enough to
-	//cover most small tasks via small buffer optimization, but will allocate on the heap
-	//if needed.  note that for performance, it assumes it will be given a valid task
-	//before being executed
-	struct FixedSizeTask
+	//Move-only, inline-only task storage. Every production closure is checked at
+	//its emplace_back site; larger or throwing-move captures must be redesigned.
+	class FixedSizeTask
 	{
-		using ExecuteFunc = void (*)(void *p);
-		using MoveFunc = void (*)(void *dst, void *src);
-		using DestroyFunc = void (*)(void *p);
+	public:
+		static constexpr size_t INLINE_SIZE = 96;
 
-		inline FixedSizeTask() : execute(nullptr), destroy(nullptr), move(nullptr)
-		{}
-
-		//prevent accidental copying to avoid double-destruction
+		FixedSizeTask() = default;
 		FixedSizeTask(const FixedSizeTask &) = delete;
-
 		FixedSizeTask &operator=(const FixedSizeTask &) = delete;
 
-		inline FixedSizeTask(FixedSizeTask &&other) noexcept
+		template<typename F> requires (!std::is_same_v<std::decay_t<F>, FixedSizeTask>)
+		explicit FixedSizeTask(F &&f)
 		{
-			if(other.move != nullptr)
-				(*other.move)(buffer, other.buffer);
-			else
-				std::memcpy(buffer, other.buffer, INLINE_SIZE);
-
-			execute = other.execute;
-			destroy = other.destroy;
-			move = other.move;
-
-			other.destroy = nullptr;
-			other.move = nullptr;
+			using FuncType = std::decay_t<F>;
+			static_assert(sizeof(FuncType) <= INLINE_SIZE, "Task capture exceeds inline storage");
+			static_assert(alignof(FuncType) <= alignof(std::max_align_t), "Task capture is over-aligned");
+			static_assert(std::is_nothrow_move_constructible_v<FuncType>, "Task capture must move without throwing");
+			static_assert(std::is_nothrow_destructible_v<FuncType>);
+			static_assert(std::is_invocable_r_v<void, FuncType &>);
+			static constexpr Operations operations = {
+				[](void *p) { (*std::launder(reinterpret_cast<FuncType *>(p)))(); },
+				[](void *dst, void *src)
+				{
+					auto *source = std::launder(reinterpret_cast<FuncType *>(src));
+					new (dst) FuncType(std::move(*source));
+					source->~FuncType();
+				},
+				[](void *p) { std::launder(reinterpret_cast<FuncType *>(p))->~FuncType(); }
+			};
+			new (buffer) FuncType(std::forward<F>(f));
+			ops = &operations;
 		}
 
-		inline FixedSizeTask &operator=(FixedSizeTask &&other) noexcept
+		FixedSizeTask(FixedSizeTask &&other) noexcept
+			: ops(std::exchange(other.ops, nullptr))
+		{
+			if(ops)
+				ops->move(buffer, other.buffer);
+		}
+
+		FixedSizeTask &operator=(FixedSizeTask &&other) noexcept
 		{
 			if(this != &other)
 			{
-				if(destroy != nullptr)
-					(*destroy)(buffer);
-
-				if(other.move != nullptr)
-					(*other.move)(buffer, other.buffer);
-				else
-					std::memcpy(buffer, other.buffer, INLINE_SIZE);
-
-				execute = other.execute;
-				destroy = other.destroy;
-				move = other.move;
-
-				other.destroy = nullptr;
-				other.move = nullptr;
+				Reset();
+				ops = std::exchange(other.ops, nullptr);
+				if(ops)
+					ops->move(buffer, other.buffer);
 			}
 			return *this;
 		}
 
-		inline ~FixedSizeTask()
+		~FixedSizeTask() { Reset(); }
+
+		void Reset() noexcept
 		{
-			if(destroy != nullptr)
-				(*destroy)(buffer);
+			if(ops)
+				std::exchange(ops, nullptr)->destroy(buffer);
 		}
 
-		//assumes execute is not nullptr; otherwise it wouldn't be a task
-		inline void operator()()
+		//Only populated tasks may be invoked.
+		void operator()() { ops->execute(buffer); }
+
+	private:
+		struct Operations
 		{
-			(*execute)(buffer);
-		}
-
-		//creates the task from a lambda function
-		template<typename F>
-		inline static FixedSizeTask Create(F &&f)
-		{
-			FixedSizeTask t;
-			using FuncType = std::decay_t<F>;
-
-			if constexpr(sizeof(FuncType) <= INLINE_SIZE
-				&& alignof(FuncType) <= alignof(std::max_align_t)
-				&& std::is_nothrow_move_constructible_v<FuncType>)
-			{
-				new (t.buffer) FuncType(std::forward<F>(f));
-
-				t.execute = [](void *p) {
-					auto *func = std::launder(reinterpret_cast<FuncType *>(p));
-					(*func)();
-					};
-
-				if constexpr(!std::is_trivially_destructible_v<FuncType>)
-				{
-					t.destroy = [](void *p) {
-						auto *func = std::launder(reinterpret_cast<FuncType *>(p));
-						func->~FuncType();
-						};
-				}
-				else
-				{
-					t.destroy = nullptr;
-				}
-
-				if constexpr(!std::is_trivially_copyable_v<FuncType>)
-				{
-					t.move = [](void *dst, void *src) {
-						auto *source_obj = std::launder(reinterpret_cast<FuncType *>(src));
-						new (dst) FuncType(std::move(*source_obj));
-						source_obj->~FuncType();
-						};
-				}
-				else
-				{
-					t.move = nullptr;
-				}
-			}
-			else
-			{
-				FuncType *heapFunc = new FuncType(std::forward<F>(f));
-				std::memcpy(t.buffer, &heapFunc, sizeof(FuncType *));
-
-				t.execute = [](void *p) {
-					auto **ptr_to_func = std::launder(reinterpret_cast<FuncType **>(p));
-					(**ptr_to_func)();
-					};
-
-				//heap storage always requires a destroy call
-				t.destroy = [](void *p) {
-					auto **ptr_to_func = std::launder(reinterpret_cast<FuncType **>(p));
-					delete *ptr_to_func;
-					};
-
-				t.move = nullptr;
-			}
-			return t;
-		}
-
-		static constexpr size_t INLINE_SIZE = 128 - 3 * sizeof(void *);
-
-		ExecuteFunc execute;
-		DestroyFunc destroy;
-		MoveFunc move;
-
-		alignas(std::max_align_t) uint8_t buffer[INLINE_SIZE];
+			void (*execute)(void *);
+			void (*move)(void *, void *);
+			void (*destroy)(void *);
+		};
+		alignas(std::max_align_t) std::byte buffer[INLINE_SIZE];
+		const Operations *ops = nullptr;
 	};
 
 	struct ExecutionGeneration;
@@ -335,13 +277,16 @@ namespace Concurrency
 	inline std::shared_ptr<ExecutionGeneration> AcquireGeneration()
 	{
 		auto &state = GetExecutionState();
-		std::lock_guard lock(state.mutex);
-		size_t count = max_thread_count.load();
-
-		if(!state.current || state.current->numThreads != count)
-			state.current = std::make_shared<ExecutionGeneration>(count);
-
-		return state.current;
+		std::shared_ptr<ExecutionGeneration> retired, result;
+		{
+			std::lock_guard lock(state.mutex);
+			size_t count = max_thread_count.load();
+			if(!state.current || state.current->numThreads != count)
+				retired = std::exchange(state.current, std::make_shared<ExecutionGeneration>(count));
+			result = state.current;
+		}
+		//Retired executors join outside the configuration mutex.
+		return result;
 	}
 
 	//internal mechanism to pause activity
@@ -369,68 +314,96 @@ namespace Concurrency
 		size_t depth;
 	};
 
-	//group of tasks for a given interpreter
-	template<typename FuncType>
+	//Owns the original vector storage until even late runtime runners retire.
+	//A stack group is safe only when no runners are submitted: waiting for queued
+	//runners at a nested join would deadlock saturated workers.
 	class InterpreterTaskGroup
 	{
 	public:
-		explicit InterpreterTaskGroup(std::vector<FuncType> &&tasks)
+		explicit InterpreterTaskGroup(std::vector<FixedSizeTask> &&tasks)
 			: tasks(std::move(tasks)), remaining(this->tasks.size())
 		{}
 
-		inline void Drain()
+		void Cancel() { cancelled.store(true, std::memory_order_relaxed); }
+
+		void Drain()
 		{
 			for(size_t i = next.fetch_add(1); i < tasks.size(); i = next.fetch_add(1))
 				Execute(i);
 		}
 
-		inline void Join()
+		void Join()
 		{
-			//this thread will take the first task
-			if(!tasks.empty())
-				Execute(0);
-
+			Execute(0);
 			Drain();
-
-			PauseActivity pause;
-
-			for(size_t count = remaining.load(std::memory_order_acquire);
+			{
+				PauseActivity pause;
+				for(size_t count = remaining.load(std::memory_order_acquire);
 					count != 0; count = remaining.load(std::memory_order_acquire))
-				remaining.wait(count, std::memory_order_acquire);
+					remaining.wait(count, std::memory_order_acquire);
+			}
+			if(failure)
+				std::rethrow_exception(failure);
 		}
 
 	private:
-
-		inline void Execute(size_t i)
+		void Execute(size_t i)
 		{
-			tasks[i]();
-
-			//mark task as done and if done, notify all that it's all done
+			try
+			{
+				if(!cancelled.load(std::memory_order_relaxed))
+					tasks[i]();
+			}
+			catch(...)
+			{
+				//Only failing tasks contend here. Keep submission order without
+				//a per-task exception vector or any allocation on the success path.
+				std::lock_guard lock(failureMutex);
+				if(i < failureIndex)
+				{
+					failureIndex = i;
+					failure = std::current_exception();
+				}
+				Cancel();
+			}
+			//End every capture's lifetime before publishing child completion.
+			//Late runners only inspect the unchanged vector size and claim index.
+			tasks[i].Reset();
 			if(remaining.fetch_sub(1, std::memory_order_acq_rel) == 1)
 				remaining.notify_all();
 		}
 
-		std::vector<FuncType> tasks;
+		std::vector<FixedSizeTask> tasks;
 		std::atomic<size_t> next{ 1 };
 		std::atomic<size_t> remaining;
+		std::atomic<bool> cancelled{ false };
+		std::mutex failureMutex;
+		size_t failureIndex = std::numeric_limits<size_t>::max();
+		std::exception_ptr failure;
 	};
 
+	//Bind nested forks to the currently executing runtime, including on unwind.
 	template<typename FuncType>
 	inline void RunInterpreterRuntime(tf::Runtime &runtime, const FuncType &entry)
 	{
-		auto previous = std::exchange(interpreter_runtime, &runtime);
-		auto cleanup = [&] { interpreter_runtime = previous; };
-
+		if(!worker_generation || is_system_worker
+			|| &runtime.executor() != &worker_generation->interpreter
+			|| runtime.executor().this_worker() != &runtime.worker())
+			throw std::logic_error("Interpreter entry requires its owning runtime worker");
+		struct RuntimeScope
+		{
+			tf::Runtime *previous;
+			~RuntimeScope() { interpreter_runtime = previous; }
+		} scope{ std::exchange(interpreter_runtime, &runtime) };
 		entry();
-		cleanup();
 	}
 
-	//runs the tasks for the current interpreter
-	template<typename FuncType>
-	inline void RunInterpreterTasks(std::vector<FuncType> tasks)
+	inline void RunInterpreterTasks(std::vector<FixedSizeTask> tasks)
 	{
 		if(tasks.empty())
 			return;
+		if(worker_generation && !interpreter_runtime)
+			throw std::logic_error("Interpreter children require an Interpreter runtime");
 
 		if(!interpreter_runtime)
 		{
@@ -439,25 +412,38 @@ namespace Concurrency
 			{
 				RunInterpreterRuntime(runtime, [&] { RunInterpreterTasks(std::move(tasks)); });
 			});
-
 			auto generation = AcquireGeneration();
 			generation->interpreter.run(task_set).get();
 			return;
 		}
 
-		size_t total_tasks = tasks.size();
-		size_t available_worker_count = (worker_generation ? worker_generation->numThreads : 1);
-		const size_t num_workers = std::min(total_tasks, available_worker_count) - 1;
-
-		auto group = std::make_shared<InterpreterTaskGroup<FuncType>>(std::move(tasks));
-		for(size_t i = 0; i < num_workers; i++)
+		const size_t num_workers = std::min(tasks.size(), worker_generation->numThreads) - 1;
+		if(num_workers == 0)
 		{
-			interpreter_runtime->silent_async([group](tf::Runtime &runtime)
-			{
-				RunInterpreterRuntime(runtime, [&] { group->Drain(); });
-			});
+			InterpreterTaskGroup group(std::move(tasks));
+			group.Join();
+			return;
 		}
 
+		//One shared allocation per parallel group; no allocation per user task.
+		//Taskflow's implicit anchor keeps late runners and descendants in the DAG.
+		auto group = std::make_shared<InterpreterTaskGroup>(std::move(tasks));
+		try
+		{
+			for(size_t i = 0; i < num_workers; i++)
+				interpreter_runtime->silent_async([group](tf::Runtime &runtime)
+				{
+					RunInterpreterRuntime(runtime, [&] { group->Drain(); });
+				});
+		}
+		catch(...)
+		{
+			//Submission failure must not unwind captures still used by children.
+			auto failure = std::current_exception();
+			group->Cancel();
+			try { group->Join(); } catch(...) {}
+			std::rethrow_exception(failure);
+		}
 		group->Join();
 	}
 

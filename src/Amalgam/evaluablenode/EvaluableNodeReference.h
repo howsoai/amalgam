@@ -188,7 +188,7 @@ union EvaluableNodeImmediateValue
 		: code(_code)
 	{}
 
-	__forceinline constexpr EvaluableNodeImmediateValue(const EvaluableNodeImmediateValue &eniv)
+	__forceinline constexpr EvaluableNodeImmediateValue(const EvaluableNodeImmediateValue &eniv) noexcept
 		: code(eniv.code)
 	{}
 
@@ -383,7 +383,7 @@ public:
 		: nodeValue(code), nodeType(ENIVT_CODE)
 	{}
 
-	constexpr EvaluableNodeImmediateValueWithType(const EvaluableNodeImmediateValueWithType &enimvwt)
+	constexpr EvaluableNodeImmediateValueWithType(const EvaluableNodeImmediateValueWithType &enimvwt) noexcept
 		: nodeValue(enimvwt.nodeValue), nodeType(enimvwt.nodeType)
 	{}
 

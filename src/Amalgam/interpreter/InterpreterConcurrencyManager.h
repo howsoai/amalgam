@@ -38,14 +38,14 @@ public:
 		parentInterpreter->RemoveUniquenessFromPreviousResultsInConstructionStack();
 
 		//need to create a mutex for all interpreters that will be called
-		parentInterpreter->scopeStackMutex = std::make_unique<Concurrency::SingleMutex>();
+		previousScopeStackMutex = std::exchange(parentInterpreter->scopeStackMutex, &scopeStackMutex);
 	}
 
 	~InterpreterConcurrencyManager()
 	{
 		//An abandoned group has never run; do not start side effects during unwinding.
 		if(!completed)
-			parentInterpreter->scopeStackMutex.reset();
+			parentInterpreter->scopeStackMutex = previousScopeStackMutex;
 	}
 
 	//Adds a child task to the runtime group that needs a construction stack, using the relative interpreter
@@ -61,16 +61,15 @@ public:
 	{
 		size_t results_saver_location = resultsSaverCurrentTaskOffset++;
 		size_t task_index = curNumTasksAdded++;
-		RandomStream rand_seed = randomSeeds[task_index];
 		constructionEffects[task_index].target = target;
 
 		tasks.emplace_back(
-			[this, rand_seed, node_to_execute, target_origin, target, current_index,
-			current_value, &result, results_saver_location, task_index]
+			[this, task_index, node_to_execute, target_origin, target, current_index,
+			current_value, &result, results_saver_location]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
-			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
+			Interpreter interpreter(parentInterpreter->evaluableNodeManager, randomSeeds[task_index],
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
@@ -128,14 +127,14 @@ public:
 		EvaluableNodeImmediateValueWithType current_index,
 		EvaluableNode *current_value)
 	{
-		RandomStream rand_seed = randomSeeds[curNumTasksAdded++];
+		size_t task_index = curNumTasksAdded++;
 
 		tasks.emplace_back(
-			[this, rand_seed, node_to_execute, current_index, current_value]
+			[this, task_index, node_to_execute, current_index, current_value]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
-			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
+			Interpreter interpreter(parentInterpreter->evaluableNodeManager, randomSeeds[task_index],
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
@@ -169,14 +168,14 @@ public:
 		//so the location can be used later to save the result
 		size_t results_saver_location = resultsSaverCurrentTaskOffset++;
 
-		RandomStream rand_seed = randomSeeds[curNumTasksAdded++];
+		size_t task_index = curNumTasksAdded++;
 
 		tasks.emplace_back(
-			[this, rand_seed, node_to_execute, result, immediate_results, results_saver_location]
+			[this, task_index, node_to_execute, result, immediate_results, results_saver_location]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
-			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
+			Interpreter interpreter(parentInterpreter->evaluableNodeManager, randomSeeds[task_index],
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
@@ -234,7 +233,15 @@ public:
 		//The group join is the child-before-parent dependency. Release the parent's
 		//read lock before waiting for children, including children that need GC.
 		parentInterpreter->memoryModificationLock.unlock();
-		Concurrency::RunInterpreterTasks(std::move(tasks));
+		std::exception_ptr failure;
+		try
+		{
+			Concurrency::RunInterpreterTasks(std::move(tasks));
+		}
+		catch(...)
+		{
+			failure = std::current_exception();
+		}
 		parentInterpreter->memoryModificationLock.lock();
 
 		//Each child wrote only its own effect record. The join publishes those
@@ -244,11 +251,13 @@ public:
 				Interpreter::FinalizeConstructionTarget(*effect.target, effect.sideEffects);
 
 		//release scope stack mutex
-		parentInterpreter->scopeStackMutex.reset();
+		parentInterpreter->scopeStackMutex = previousScopeStackMutex;
 
 		//propagate side effects back up
 		if(resultsSideEffect)
 			parentInterpreter->SetSideEffectsFlags();
+		if(failure)
+			std::rethrow_exception(failure);
 	}
 
 	//updates the aggregated result reference's properties based on all of the child nodes
@@ -273,6 +282,10 @@ public:
 	}
 
 protected:
+	//The parent and children borrow this mutex until the synchronous join.
+	Concurrency::SingleMutex scopeStackMutex;
+	Concurrency::SingleMutex *previousScopeStackMutex;
+
 	struct ConstructionEffect
 	{
 		EvaluableNodeReference *target = nullptr;

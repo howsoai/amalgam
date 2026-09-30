@@ -58,6 +58,8 @@ public:
 		if(entities_to_compute == nullptr)
 			entities_to_compute = relevantIndices;
 
+		//Entity callbacks mutate the calling Interpreter and must stay on its thread.
+		//Their nested concurrent opcodes still parallelize through Interpreter runtime groups.
 		IterateOverConcurrentlyIfPossible(*entities_to_compute,
 			[this, top_k, expand_to_first_nonzero_distance](auto index, auto entity_index)
 			{
@@ -68,7 +70,7 @@ public:
 			}
 	#ifdef MULTITHREAD_SUPPORT
 			,
-			run_concurrently, !computationRequiresEntityCall
+			run_concurrently && !computationRequiresEntityCall
 	#endif
 		);
 	}

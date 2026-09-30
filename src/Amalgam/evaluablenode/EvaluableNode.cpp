@@ -209,17 +209,19 @@ std::pair<bool, std::string> EvaluableNode::ToValidString(EvaluableNode *e)
 	return {true, Parser::Unparse(e, false, false, true)};
 }
 
-StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e, bool key_string)
+std::pair<bool, StringInternPool::StringID> EvaluableNode::ToStringIDIfExists(EvaluableNode *e, bool key_string)
 {
 	if(EvaluableNode::IsNull(e))
-		return StringInternPool::NOT_A_STRING_ID;
+		return { true, StringInternPool::NOT_A_STRING_ID };
 
 	if(e->GetType() == ENT_STRING)
-		return e->GetStringIDReference();
+		return { true, e->GetStringIDReference() };
 
 	std::string str_value = ToString(e, key_string);
 	//will return empty string if not found
-	return string_intern_pool.GetIDFromString(str_value);
+	auto id = string_intern_pool.GetIDFromString(str_value);
+	//since nulls were already checked above, a null here means it's not valid
+	return { id != StringInternPool::NOT_A_STRING_ID, id };
 }
 
 StringInternPool::StringID EvaluableNode::ToStringIDWithReference(EvaluableNode *e, bool key_string)

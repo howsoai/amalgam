@@ -298,9 +298,11 @@ public:
 	//converts the node to a string, returning true if it is a valid string
 	static std::pair<bool, std::string> ToValidString(EvaluableNode *e);
 
-	//converts node to an existing string. If it doesn't exist or it's null, it returns NOT_A_STRING_ID
+	//converts node to an existing string. If it doesn't exist, it returns false and StringInternPool::NOT_A_STRING_ID,
+	// otherwise returns true and the StringID; if the value is null, StringInternPool::NOT_A_STRING_ID is
+	// a valid StringID, so it will return that value and true
 	//if key_string is true, then it will generate a string used for comparing in assoc keys
-	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e, bool key_string = false);
+	static std::pair<bool, StringInternPool::StringID> ToStringIDIfExists(EvaluableNode *e, bool key_string = false);
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the
 	// string existed or not (if it did not exist, then it creates one)

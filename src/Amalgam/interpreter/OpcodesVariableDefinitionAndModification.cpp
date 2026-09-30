@@ -918,7 +918,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_IF_EQUAL(EvaluableN
 		return EvaluableNodeReference::Null();
 
 	auto variable_string_node = InterpretNodeForImmediateUse(ocn[0]);
-	StringInternPool::StringID variable_sid = EvaluableNode::ToStringIDIfExists(variable_string_node, true);
+	auto [valid, variable_sid] = EvaluableNode::ToStringIDIfExists(variable_string_node, true);
+	if(!valid) [[unlikely]]
+		return EvaluableNodeReference::Null();
+
 	auto node_stack = CreateOpcodeStackStateSaver(variable_string_node);
 
 	auto value_to_compare = InterpretNodeForImmediateUse(ocn[1]);
@@ -1018,7 +1021,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	//get the value(s)
 	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeTerminalNode(to_lookup->GetType()))
 	{
-		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
+		auto [valid, symbol_name_sid] = EvaluableNode::ToStringIDIfExists(to_lookup, true);
+		if(!valid)
+			return EvaluableNodeReference::Null();
 
 		//when retrieving symbol, only need to retain the node if it's not an immediate type
 		bool retain_node = !immediate_result.AnyImmediateType();
@@ -1051,8 +1056,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 		//overwrite values in the ordered
 		for(auto &cn : to_lookup->GetOrderedChildNodesReference())
 		{
-			StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(cn, true);
-			if(symbol_name_sid == StringInternPool::NOT_A_STRING_ID)
+			auto [valid, symbol_name_sid] = EvaluableNode::ToStringIDIfExists(cn, true);
+			if(!valid)
 			{
 				cn = nullptr;
 				continue;
@@ -1097,7 +1102,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXISTS(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
-	StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
+	auto [valid, symbol_name_sid] = EvaluableNode::ToStringIDIfExists(to_lookup, true);
+	if(!valid)
+		return AllocReturn(false, immediate_result);
 
 	auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid, false);
 
@@ -1134,7 +1141,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNASSIGN(EvaluableNode *en
 	for(auto &to_unassign : en->GetOrderedChildNodesReference())
 	{
 		auto string_node_to_unassign = InterpretNodeForImmediateUse(to_unassign);
-		StringInternPool::StringID variable_sid = EvaluableNode::ToStringIDIfExists(string_node_to_unassign, true);
+		auto [valid, variable_sid] = EvaluableNode::ToStringIDIfExists(string_node_to_unassign, true);
+		if(!valid)
+			continue;
 
 		//retrieve the symbol location
 	#ifdef MULTITHREAD_SUPPORT

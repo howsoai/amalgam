@@ -898,7 +898,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 	if(num_tasks < 2)
 		return false;
 
-	InterpreterConcurrencyManager concurrency_manager(this, num_tasks);
+	InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::NoStack> concurrency_manager(this, num_tasks);
 
 	interpreted_nodes.resize(num_tasks);
 

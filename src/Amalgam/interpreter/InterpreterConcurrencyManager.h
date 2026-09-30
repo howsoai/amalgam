@@ -3,7 +3,46 @@
 #include "Interpreter.h"
 
 #ifdef MULTITHREAD_SUPPORT
+
+namespace InterpreterConcurrencyManagerTraits
+{
+	//base traits - can be left empty or used for defaults
+	struct Default
+	{
+		static constexpr size_t BufferSize = 96;
+		using ModeTag = void;
+	};
+
+	struct NoStack : Default
+	{
+		//must match the parameter size of the tasks.emplace_back lambda in 
+		static constexpr size_t BufferSize = 6 * sizeof(size_t);
+		struct SimpleMode
+		{};
+		using ModeTag = SimpleMode;
+	};
+
+	struct StackWithoutResults : Default
+	{
+		//must match the parameter size of the tasks.emplace_back lambda in 
+		static constexpr size_t BufferSize = 5 * sizeof(size_t);
+		struct StackWithoutResultsMode
+		{};
+		using ModeTag = StackWithoutResultsMode;
+	};
+
+	struct StackWithResults : Default
+	{
+		//must match the parameter size of the tasks.emplace_back lambda in 
+		static constexpr size_t BufferSize = 9 * sizeof(size_t);
+		struct StackWithResultMode
+		{};
+		using ModeTag = StackWithResultMode;
+	};
+}
+
 //class to manage the data for concurrent execution by an interpreter
+template<typename Traits = InterpreterConcurrencyManagerTraits::Default>
 class InterpreterConcurrencyManager
 {
 public:
@@ -53,7 +92,9 @@ public:
 	// will allocate an appropriate node matching the type of current_index
 	//result is set to the result of the task
 	template<typename EvaluableNodeRefType>
-	void AddTaskWithConstructionStack(EvaluableNode *node_to_execute,
+		requires std::is_same_v<typename Traits::ModeTag,
+			typename InterpreterConcurrencyManagerTraits::StackWithResults::ModeTag>
+	void AddTaskWithConstructionStackWithResult(EvaluableNode *node_to_execute,
 		EvaluableNode *target_origin, EvaluableNodeReference *target,
 		EvaluableNodeImmediateValueWithType current_index,
 		EvaluableNode *current_value,
@@ -63,6 +104,8 @@ public:
 		size_t task_index = curNumTasksAdded++;
 		constructionEffects[task_index].target = target;
 
+		//must keep InterpreterConcurrencyManagerTraits::StackWithResults up to date with the
+		// number of params of the following lambda
 		tasks.emplace_back(
 			[this, task_index, node_to_execute, target_origin, target, current_index,
 			current_value, &result, results_saver_location]
@@ -117,15 +160,19 @@ public:
 		);
 	}
 
-	//like the previous definition of AddTaskWithConstructionStack,
+	//like the previous definition of AddTaskWithConstructionStackWithResult,
 	//but without keeping results or building a target
 	template<typename EvaluableNodeRefType>
-	void AddTaskWithConstructionStack(EvaluableNode *node_to_execute,
+		requires std::is_same_v<typename Traits::ModeTag,
+			typename InterpreterConcurrencyManagerTraits::StackWithoutResults::ModeTag>
+	void AddTaskWithConstructionStackWithoutResult(EvaluableNode *node_to_execute,
 		EvaluableNodeImmediateValueWithType current_index,
 		EvaluableNode *current_value)
 	{
 		size_t task_index = curNumTasksAdded++;
 
+		//must keep InterpreterConcurrencyManagerTraits::StackWithoutResults up to date with the
+		// number of params of the following lambda
 		tasks.emplace_back(
 			[this, task_index, node_to_execute, current_index, current_value]
 		{
@@ -158,6 +205,8 @@ public:
 	//Adds a child task to the runtime group using the relative interpreter, executing node_to_execute
 	//if result is specified, it will store the result there, otherwise it will free it
 	template<typename EvaluableNodeRefType>
+		requires std::is_same_v<typename Traits::ModeTag,
+			typename InterpreterConcurrencyManagerTraits::NoStack::ModeTag>
 	void AddTask(EvaluableNode *node_to_execute,
 		EvaluableNodeRefType *result = nullptr, EvaluableNodeRequestedValueTypes immediate_results = false)
 	{
@@ -167,6 +216,8 @@ public:
 
 		size_t task_index = curNumTasksAdded++;
 
+		//must keep InterpreterConcurrencyManagerTraits::NoStack up to date with the
+		// number of params of the following lambda
 		tasks.emplace_back(
 			[this, task_index, node_to_execute, result, immediate_results, results_saver_location]
 		{

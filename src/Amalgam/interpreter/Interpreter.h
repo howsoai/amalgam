@@ -1164,6 +1164,7 @@ public:
 	EvaluableNodeReference InterpretNode_PROFILE(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result);
 
 	//allow the concurrency manager access to the necessary attributes
+	template<typename Traits>
 	friend class InterpreterConcurrencyManager;
 	//allow EvaluableNodeManager to access referencing nodes
 	friend class EvaluableNodeManager;

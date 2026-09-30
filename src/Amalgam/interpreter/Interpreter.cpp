@@ -73,16 +73,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		constructionStack = std::move(*construction_stack);
 
 	evaluableNodeManager->AddActiveInterpreter(this);
-	EvaluableNodeReference retval;
-	try
-	{
-		retval = InterpretNode(en, immediate_result);
-	}
-	catch(...)
-	{
-		evaluableNodeManager->RemoveActiveInterpreter(this);
-		throw;
-	}
+	EvaluableNodeReference retval = InterpretNode(en, immediate_result);
 	evaluableNodeManager->RemoveActiveInterpreter(this);
 
 	return retval;

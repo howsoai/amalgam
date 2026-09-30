@@ -85,9 +85,6 @@ public:
 			auto result_ref = interpreter.ExecuteNode(node_to_execute,
 				nullptr, &opcode_stack, &construction_stack, EvaluableNodeRequestedValueTypes::Type::NONE, false);
 
-			//This entry points at the parent's shared construction target. Only
-			//collect local effects here; the parent finalizes target flags after join.
-			AmlgAssert(!interpreter.constructionStack.empty());
 			bool side_effects = interpreter.constructionStack.back().executionSideEffects;
 			constructionEffects[task_index].sideEffects = side_effects;
 			interpreter.constructionStack.pop_back();

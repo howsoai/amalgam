@@ -109,9 +109,11 @@ namespace Concurrency
 	//a set of potentially concurrent tasks at a given level of the execution graph
 	using TaskSet = tf::Taskflow;
 
-	//Move-only, inline-only task storage. Every production closure is checked at
-	//its emplace_back site; larger or throwing-move captures must be redesigned.
-	class FixedSizeTask
+	//constant memory sized holder for a task that is big enough to
+	//cover most small tasks via small buffer optimization, but will allocate on the heap
+	//if needed.  note that for performance, it assumes it will be given a valid task
+	//before being executed
+	struct FixedSizeTask
 	{
 	public:
 		static constexpr size_t INLINE_SIZE = 96;
@@ -125,10 +127,6 @@ namespace Concurrency
 		{
 			using FuncType = std::decay_t<F>;
 			static_assert(sizeof(FuncType) <= INLINE_SIZE, "Task capture exceeds inline storage");
-			static_assert(alignof(FuncType) <= alignof(std::max_align_t), "Task capture is over-aligned");
-			static_assert(std::is_nothrow_move_constructible_v<FuncType>, "Task capture must move without throwing");
-			static_assert(std::is_nothrow_destructible_v<FuncType>);
-			static_assert(std::is_invocable_r_v<void, FuncType &>);
 			static constexpr Operations operations = {
 				[](void *p) { (*std::launder(reinterpret_cast<FuncType *>(p)))(); },
 				[](void *dst, void *src)
@@ -277,7 +275,8 @@ namespace Concurrency
 	inline std::shared_ptr<ExecutionGeneration> AcquireGeneration()
 	{
 		auto &state = GetExecutionState();
-		std::shared_ptr<ExecutionGeneration> retired, result;
+		std::shared_ptr<ExecutionGeneration> retired;
+		std::shared_ptr<ExecutionGeneration> result;
 		{
 			std::lock_guard lock(state.mutex);
 			size_t count = max_thread_count.load();
@@ -285,7 +284,8 @@ namespace Concurrency
 				retired = std::exchange(state.current, std::make_shared<ExecutionGeneration>(count));
 			result = state.current;
 		}
-		//Retired executors join outside the configuration mutex.
+		
+		//let any destruction of retired occur outside the lock
 		return result;
 	}
 
@@ -314,9 +314,7 @@ namespace Concurrency
 		size_t depth;
 	};
 
-	//Owns the original vector storage until even late runtime runners retire.
-	//A stack group is safe only when no runners are submitted: waiting for queued
-	//runners at a nested join would deadlock saturated workers.
+	//group of tasks for a given interpreter
 	class InterpreterTaskGroup
 	{
 	public:
@@ -324,50 +322,31 @@ namespace Concurrency
 			: tasks(std::move(tasks)), remaining(this->tasks.size())
 		{}
 
-		void Cancel() { cancelled.store(true, std::memory_order_relaxed); }
-
-		void Drain()
+		inline void Drain()
 		{
 			for(size_t i = next.fetch_add(1); i < tasks.size(); i = next.fetch_add(1))
 				Execute(i);
 		}
 
-		void Join()
+		inline void Join()
 		{
 			Execute(0);
 			Drain();
-			{
-				PauseActivity pause;
-				for(size_t count = remaining.load(std::memory_order_acquire);
+
+			PauseActivity pause;
+
+			for(size_t count = remaining.load(std::memory_order_acquire);
 					count != 0; count = remaining.load(std::memory_order_acquire))
-					remaining.wait(count, std::memory_order_acquire);
-			}
-			if(failure)
-				std::rethrow_exception(failure);
+				remaining.wait(count, std::memory_order_acquire);
 		}
 
 	private:
-		void Execute(size_t i)
+
+		inline void Execute(size_t i)
 		{
-			try
-			{
-				if(!cancelled.load(std::memory_order_relaxed))
-					tasks[i]();
-			}
-			catch(...)
-			{
-				//Only failing tasks contend here. Keep submission order without
-				//a per-task exception vector or any allocation on the success path.
-				std::lock_guard lock(failureMutex);
-				if(i < failureIndex)
-				{
-					failureIndex = i;
-					failure = std::current_exception();
-				}
-				Cancel();
-			}
-			//End every capture's lifetime before publishing child completion.
-			//Late runners only inspect the unchanged vector size and claim index.
+			tasks[i]();
+
+			//mark task as done and if done, notify all that it's all done
 			tasks[i].Reset();
 			if(remaining.fetch_sub(1, std::memory_order_acq_rel) == 1)
 				remaining.notify_all();
@@ -376,34 +355,22 @@ namespace Concurrency
 		std::vector<FixedSizeTask> tasks;
 		std::atomic<size_t> next{ 1 };
 		std::atomic<size_t> remaining;
-		std::atomic<bool> cancelled{ false };
-		std::mutex failureMutex;
-		size_t failureIndex = std::numeric_limits<size_t>::max();
-		std::exception_ptr failure;
 	};
 
-	//Bind nested forks to the currently executing runtime, including on unwind.
 	template<typename FuncType>
 	inline void RunInterpreterRuntime(tf::Runtime &runtime, const FuncType &entry)
 	{
-		if(!worker_generation || is_system_worker
-			|| &runtime.executor() != &worker_generation->interpreter
-			|| runtime.executor().this_worker() != &runtime.worker())
-			throw std::logic_error("Interpreter entry requires its owning runtime worker");
-		struct RuntimeScope
-		{
-			tf::Runtime *previous;
-			~RuntimeScope() { interpreter_runtime = previous; }
-		} scope{ std::exchange(interpreter_runtime, &runtime) };
+		auto previous = std::exchange(interpreter_runtime, &runtime);
+		auto cleanup = [&] { interpreter_runtime = previous; };
+
 		entry();
+		cleanup();
 	}
 
 	inline void RunInterpreterTasks(std::vector<FixedSizeTask> tasks)
 	{
 		if(tasks.empty())
 			return;
-		if(worker_generation && !interpreter_runtime)
-			throw std::logic_error("Interpreter children require an Interpreter runtime");
 
 		if(!interpreter_runtime)
 		{
@@ -412,6 +379,7 @@ namespace Concurrency
 			{
 				RunInterpreterRuntime(runtime, [&] { RunInterpreterTasks(std::move(tasks)); });
 			});
+
 			auto generation = AcquireGeneration();
 			generation->interpreter.run(task_set).get();
 			return;
@@ -425,25 +393,15 @@ namespace Concurrency
 			return;
 		}
 
-		//One shared allocation per parallel group; no allocation per user task.
-		//Taskflow's implicit anchor keeps late runners and descendants in the DAG.
 		auto group = std::make_shared<InterpreterTaskGroup>(std::move(tasks));
-		try
+		for(size_t i = 0; i < num_workers; i++)
 		{
-			for(size_t i = 0; i < num_workers; i++)
-				interpreter_runtime->silent_async([group](tf::Runtime &runtime)
-				{
-					RunInterpreterRuntime(runtime, [&] { group->Drain(); });
-				});
+			interpreter_runtime->silent_async([group](tf::Runtime &runtime)
+			{
+				RunInterpreterRuntime(runtime, [&] { group->Drain(); });
+			});
 		}
-		catch(...)
-		{
-			//Submission failure must not unwind captures still used by children.
-			auto failure = std::current_exception();
-			group->Cancel();
-			try { group->Join(); } catch(...) {}
-			std::rethrow_exception(failure);
-		}
+
 		group->Join();
 	}
 

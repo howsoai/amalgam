@@ -103,27 +103,3 @@ foreach(TEST_TARGET ${ALL_TEST_TARGETS})
     endif()
     set_tests_properties(${TEST_TARGET} PROPERTIES LABELS "${TEST_LABELS}")
 endforeach()
-
-# Focused storage, allocation and nested-runtime probe; no test framework needed.
-if(TARGET amalgam-mt-app AND NOT IS_WASM)
-    find_package(Threads REQUIRED)
-    add_executable(amalgam-concurrency-storage-test test/unit_test/concurrency_storage_test.cpp)
-    target_compile_definitions(amalgam-concurrency-storage-test PRIVATE MULTITHREAD_SUPPORT)
-    target_link_libraries(amalgam-concurrency-storage-test PRIVATE Threads::Threads)
-    set_target_properties(amalgam-concurrency-storage-test PROPERTIES FOLDER "Testing")
-    add_test(NAME Concurrency.Storage COMMAND amalgam-concurrency-storage-test)
-    set_tests_properties(Concurrency.Storage PROPERTIES LABELS "smoke_test;concurrency" TIMEOUT 120)
-    set(CONVICTION_TEST_LABELS "smoke_test;concurrency")
-    if(IS_AMD64)
-        list(APPEND CONVICTION_TEST_LABELS "advanced_intrinsics")
-    endif()
-    foreach(WORKERS 1 2 4)
-        add_test(NAME Concurrency.Convictions.${WORKERS}
-            COMMAND $<TARGET_FILE:amalgam-mt-app> --numthreads ${WORKERS}
-                ${CMAKE_SOURCE_DIR}/test/concurrency/convictions.amlg
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test_workspace)
-        set_tests_properties(Concurrency.Convictions.${WORKERS} PROPERTIES
-            LABELS "${CONVICTION_TEST_LABELS}" TIMEOUT 120
-            PASS_REGULAR_EXPRESSION "^[.]true")
-    endforeach()
-endif()

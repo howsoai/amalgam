@@ -233,15 +233,7 @@ public:
 		//The group join is the child-before-parent dependency. Release the parent's
 		//read lock before waiting for children, including children that need GC.
 		parentInterpreter->memoryModificationLock.unlock();
-		std::exception_ptr failure;
-		try
-		{
-			Concurrency::RunInterpreterTasks(std::move(tasks));
-		}
-		catch(...)
-		{
-			failure = std::current_exception();
-		}
+		Concurrency::RunInterpreterTasks(std::move(tasks));
 		parentInterpreter->memoryModificationLock.lock();
 
 		//Each child wrote only its own effect record. The join publishes those
@@ -256,8 +248,6 @@ public:
 		//propagate side effects back up
 		if(resultsSideEffect)
 			parentInterpreter->SetSideEffectsFlags();
-		if(failure)
-			std::rethrow_exception(failure);
 	}
 
 	//updates the aggregated result reference's properties based on all of the child nodes

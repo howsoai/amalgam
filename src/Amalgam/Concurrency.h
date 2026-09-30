@@ -188,8 +188,8 @@ namespace Concurrency
 		const Operations *operations = nullptr;
 	};
 
-	struct ExecutionGeneration;
-	inline thread_local ExecutionGeneration *worker_generation = nullptr;
+	struct ConcurrentExecutor;
+	inline thread_local ConcurrentExecutor *concurrent_executor = nullptr;
 	inline thread_local bool is_system_worker = false;
 	inline thread_local tf::Runtime *interpreter_runtime = nullptr;
 
@@ -225,34 +225,35 @@ namespace Concurrency
 		std::atomic<size_t> &count;
 	};
 
-	//a worker which borrows its generation
+	//a worker which borrows its executor
 	class WorkerContext : public tf::WorkerInterface
 	{
 	public:
-		inline WorkerContext(ExecutionGeneration *generation, bool is_system)
-			: generation(generation), isSystem(is_system)
+		inline WorkerContext(ConcurrentExecutor *exec, bool is_system)
+			: executor(exec), isSystem(is_system)
 		{}
 
 		inline void scheduler_prologue(tf::Worker &) override
 		{
-			worker_generation = generation;
+			concurrent_executor = executor;
 			is_system_worker = isSystem;
 		}
 
 		inline void scheduler_epilogue(tf::Worker &, std::exception_ptr) override
 		{
-			worker_generation = nullptr;
+			concurrent_executor = nullptr;
 		}
 
 	private:
 
-		ExecutionGeneration *generation;
+		ConcurrentExecutor *executor;
 		bool isSystem;
 	};
 
-	struct ExecutionGeneration
+	//manager of execution based on Taskflow
+	struct ConcurrentExecutor
 	{
-		explicit ExecutionGeneration(size_t count)
+		explicit ConcurrentExecutor(size_t count)
 			: numThreads(count),
 			interpreter(count, std::make_shared<WorkerContext>(this, false)),
 			system(count, std::make_shared<WorkerContext>(this, true))
@@ -269,7 +270,7 @@ namespace Concurrency
 	struct ExecutionState
 	{
 		std::mutex mutex;
-		std::shared_ptr<ExecutionGeneration> current;
+		std::shared_ptr<ConcurrentExecutor> current;
 	};
 
 	inline ExecutionState &GetExecutionState()
@@ -278,16 +279,17 @@ namespace Concurrency
 		return state;
 	}
 
-	inline std::shared_ptr<ExecutionGeneration> AcquireGeneration()
+	//returns an executor
+	inline std::shared_ptr<ConcurrentExecutor> AcquireConcurrentExecutor()
 	{
 		auto &state = GetExecutionState();
-		std::shared_ptr<ExecutionGeneration> retired;
-		std::shared_ptr<ExecutionGeneration> result;
+		std::shared_ptr<ConcurrentExecutor> retired;
+		std::shared_ptr<ConcurrentExecutor> result;
 		{
 			std::lock_guard lock(state.mutex);
 			size_t count = max_thread_count.load();
 			if(!state.current || state.current->numThreads != count)
-				retired = std::exchange(state.current, std::make_shared<ExecutionGeneration>(count));
+				retired = std::exchange(state.current, std::make_shared<ConcurrentExecutor>(count));
 			result = state.current;
 		}
 		
@@ -337,6 +339,7 @@ namespace Concurrency
 
 		inline void Join()
 		{
+			//first element is accounted for by default value of next
 			Execute(0);
 			Drain();
 
@@ -360,6 +363,7 @@ namespace Concurrency
 		}
 
 		std::vector<FuncType> tasks;
+		//default to 1 since the dispatching thread will take the first element
 		std::atomic<size_t> next{ 1 };
 		std::atomic<size_t> remaining;
 	};
@@ -388,12 +392,12 @@ namespace Concurrency
 				RunInterpreterRuntime(runtime, [&] { RunInterpreterTasks(std::move(tasks)); });
 			});
 
-			auto generation = AcquireGeneration();
-			generation->interpreter.run(task_set).get();
+			auto exec = AcquireConcurrentExecutor();
+			exec->interpreter.run(task_set).get();
 			return;
 		}
 
-		const size_t num_workers = std::min(tasks.size(), worker_generation->numThreads) - 1;
+		const size_t num_workers = std::min(tasks.size(), concurrent_executor->numThreads) - 1;
 		if(num_workers == 0)
 		{
 			InterpreterTaskGroup group(std::move(tasks));
@@ -416,34 +420,34 @@ namespace Concurrency
 	//for garbage collection, cache, query tasks whose caller retains locks and may not execute interpreter code
 	inline void RunSystemTasks(TaskSet &task_set)
 	{
-		if(worker_generation)
+		if(concurrent_executor)
 		{
 			//a waiting task is not active
 			//nested system tasks count their own work
 			PauseActivity pause;
 
 			if(is_system_worker)
-				worker_generation->system.corun(task_set);
+				concurrent_executor->system.corun(task_set);
 			else
 				//one-way dependency; system tasks don't wait on Interpreter tasks
-				worker_generation->system.run(task_set).get();
+				concurrent_executor->system.run(task_set).get();
 		}
 		else
 		{
-			auto generation = AcquireGeneration();
-			generation->system.run(task_set).get();
+			auto exec = AcquireConcurrentExecutor();
+			exec->system.run(task_set).get();
 		}
 	}
 
 	inline size_t GetActiveInterpreterThreadCount()
 	{
-		return std::max<size_t>(1, active_interpreter_tasks.load() + (worker_generation ? 0 : 1));
+		return std::max<size_t>(1, active_interpreter_tasks.load() + (concurrent_executor ? 0 : 1));
 	}
 
 	inline size_t GetActiveThreadCount()
 	{
 		return std::max<size_t>(1, active_interpreter_tasks.load() + active_system_tasks.load()
-			+ (worker_generation ? 0 : 1));
+			+ (concurrent_executor ? 0 : 1));
 	}
 
 #endif

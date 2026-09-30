@@ -196,7 +196,9 @@ TraverseToEntityReferenceAndContainerViaEvaluableNodeID(Entity *from_entity,
 	//get the string id, get a reference if returning it
 	if(dest_sid_ref == nullptr)
 	{
-		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(id_node);
+		auto [valid, sid] = EvaluableNode::ToStringIDIfExists(id_node);
+		if(!valid)
+			return { EntityReferenceType(nullptr), EntityReferenceType(nullptr) };
 
 		//need to lock the container first
 		EntityReferenceType container_reference(from_entity);
@@ -237,19 +239,28 @@ TraverseToEntityReferenceAndContainerViaEvaluableNodeID(Entity *from_entity,
 		EntityReadReference container_container(from_entity);
 
 		//assume id_node_1 references container
-		StringInternPool::StringID sid_1 = EvaluableNode::ToStringIDIfExists(id_node_1);
+		auto [valid_1, sid_1] = EvaluableNode::ToStringIDIfExists(id_node_1);
+		if(!valid_1)
+			return { EntityReferenceType(nullptr), EntityReferenceType(nullptr) };
+
 		EntityReferenceType container(container_container->GetContainedEntity(sid_1));
 		if(container == nullptr)
 			return {EntityReferenceType(nullptr), EntityReferenceType(nullptr)};
 
 		//assume id_node_2 references entity
-		StringInternPool::StringID sid_2 = EvaluableNode::ToStringIDIfExists(id_node_2);
+		auto [valid_2, sid_2] = EvaluableNode::ToStringIDIfExists(id_node_2);
+		if(!valid_2)
+			return { EntityReferenceType(nullptr), EntityReferenceType(nullptr) };
+
 		return {EntityReferenceType(container->GetContainedEntity(sid_2)), std::move(container)};
 	}
 	else
 	{
 		//assume from_entity might be the container
-		StringInternPool::StringID sid_1 = EvaluableNode::ToStringIDIfExists(id_node_1);
+		auto [valid_1, sid_1] = EvaluableNode::ToStringIDIfExists(id_node_1);
+		if(!valid_1)
+			return { EntityReferenceType(nullptr), EntityReferenceType(nullptr) };
+
 		EntityReferenceType possible_container(from_entity->GetContainedEntity(sid_1));
 
 		//if didn't find a valid possible_container, return nothing
@@ -305,7 +316,10 @@ TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath(
 	while(true)
 	{
 		EvaluableNode *cur_node_id = traverser.GetCurId();
-		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(cur_node_id);
+		auto [valid, sid] = EvaluableNode::ToStringIDIfExists(cur_node_id);
+		if(!valid)
+			break;
+
 		Entity *next_entity = relative_entity_container->GetContainedEntity(sid);
 		if(next_entity == nullptr)
 			break;

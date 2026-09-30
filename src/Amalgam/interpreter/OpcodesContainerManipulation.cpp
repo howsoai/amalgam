@@ -2368,8 +2368,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			FastHashSet<StringInternPool::StringID> indices_to_remove;
 			for(auto &cn : indices_ocn)
 			{
-				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn, true);
-				indices_to_remove.emplace(key_sid);
+				auto [valid, key_sid] = EvaluableNode::ToStringIDIfExists(cn, true);
+				if(valid)
+					indices_to_remove.emplace(key_sid);
 			}
 
 			EvaluableNode::SmallAssocType new_container_mcn;
@@ -2634,8 +2635,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 			indices_to_keep.reserve(indices_ocn.size());
 			for(auto &cn : indices_ocn)
 			{
-				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn, true);
-				indices_to_keep.emplace(key_sid);
+				auto [valid, key_sid] = EvaluableNode::ToStringIDIfExists(cn, true);
+				if(valid)
+					indices_to_keep.emplace(key_sid);
 			}
 
 			new_container->ReserveMappedChildNodes(indices_to_keep.size());

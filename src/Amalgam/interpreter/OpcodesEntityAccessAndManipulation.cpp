@@ -331,7 +331,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITY_IF_EQUAL(
 	bool specifies_entity = (ocn.size() == 4);
 
 	auto label_name_node = InterpretNodeForImmediateUse(ocn[specifies_entity ? 1 : 0]);
-	StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(label_name_node, true);
+	auto [valid_label_sid, label_sid] = EvaluableNode::ToStringIDIfExists(label_name_node, true);
+	if(!valid_label_sid)
+		return EvaluableNodeReference::Null();
+
 	auto node_stack = CreateOpcodeStackStateSaver(label_name_node);
 
 	auto value_to_compare = InterpretNodeForImmediateUse(ocn[specifies_entity ? 2 : 1]);
@@ -454,7 +457,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 	//get the value(s)
 	if(EvaluableNode::IsTerminal(to_lookup))
 	{
-		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
+		auto [valid_label_sid, label_sid] = EvaluableNode::ToStringIDIfExists(to_lookup);
+		if(!valid_label_sid)
+			return EvaluableNodeReference::Null();
+
 		EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager,
 			immediate_result, target_entity == curEntity).first;
 
@@ -499,7 +505,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 		for(size_t i = 0; i < lookup_ocn.size(); i++)
 		{
 			auto &cn = lookup_ocn[i];
-			StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(cn);
+
+			auto [valid_label_sid, label_sid] = EvaluableNode::ToStringIDIfExists(cn);
+			if(!valid_label_sid)
+			{
+				cn = nullptr;
+				continue;
+			}
 
 			//if there are values passed in, free them to be clobbered
 			cnr.SetReference(cn);

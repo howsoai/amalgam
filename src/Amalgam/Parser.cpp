@@ -1350,7 +1350,10 @@ static EvaluableNode *GetNodeRelativeToIndex(EvaluableNode *node, EvaluableNode 
 	//if it's an assoc, then treat the index as a string
 	if(node->IsAssociativeArray())
 	{
-		StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index_node, true);
+		auto [valid, index_sid] = EvaluableNode::ToStringIDIfExists(index_node, true);
+		if(!valid)
+			return nullptr;
+
 		auto node_mcn = node->GetMappedChildNodesViewOnAssoc();
 		auto found = node_mcn.find(index_sid);
 		if(found != end(node_mcn))

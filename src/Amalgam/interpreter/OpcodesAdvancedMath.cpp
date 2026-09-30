@@ -1866,7 +1866,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 			value_names.reserve(vnn_ocn.size());
 			for(auto &vn : vnn_ocn)
 			{
-				StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(vn);
+				StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(vn).second;
 				if(label_sid != string_intern_pool.NOT_A_STRING_ID)
 					value_names.push_back(label_sid);
 			}
@@ -2080,11 +2080,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 				q_copied_values.reserve(p_num_elements);
 				for(size_t index = 0; index < p_num_elements; index++)
 				{
-					StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists((*p_values)[index], true);
-
-					EvaluableNode **found = q_node->GetMappedChildNode(key_sid);
-					if(found != nullptr)
-						q_copied_values.push_back(*found);
+					auto [valid, key_sid] = EvaluableNode::ToStringIDIfExists((*p_values)[index], true);
+					if(valid)
+					{
+						EvaluableNode **found = q_node->GetMappedChildNode(key_sid);
+						if(found != nullptr)
+							q_copied_values.push_back(*found);
+					}
 				}
 			}
 		}

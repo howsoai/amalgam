@@ -411,9 +411,9 @@ std::pair<bool, bool> Entity::RemoveLabels(EvaluableNodeReference labels_to_remo
 		FastHashSet<StringInternPool::StringID> labels_to_erase;
 		for(auto &cn : indices_ocn)
 		{
-			StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(cn, true);
+			auto [valid, label_sid] = EvaluableNode::ToStringIDIfExists(cn, true);
 
-			if(!on_self && IsLabelPrivate(label_sid))
+			if(!valid || (!on_self && IsLabelPrivate(label_sid)))
 			{
 				all_successful_removes = false;
 				continue;

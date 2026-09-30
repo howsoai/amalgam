@@ -556,11 +556,15 @@ public:
 		}
 		else if(a.nodeType == ENIVT_CODE && b.nodeType == ENIVT_CODE)
 		{
-			StringInternPool::StringID a_sid = EvaluableNode::ToStringIDIfExists(a.nodeValue.code, true);
-			StringInternPool::StringID b_sid = EvaluableNode::ToStringIDIfExists(b.nodeValue.code, true);
-			std::tie(prob_class_given_match, prob_class_given_nonmatch)
-				= ComputeProbClassGivenMatchAndNonMatchFromSDM(
-					feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);
+			auto [a_valid, a_sid] = EvaluableNode::ToStringIDIfExists(a.nodeValue.code, true);
+			if(a_valid)
+			{
+				auto [b_valid, b_sid] = EvaluableNode::ToStringIDIfExists(b.nodeValue.code, true);
+				if(b_valid)
+					std::tie(prob_class_given_match, prob_class_given_nonmatch)
+						= ComputeProbClassGivenMatchAndNonMatchFromSDM(
+							feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);
+			}
 		}
 
 		if(!FastIsNaN(prob_class_given_match))

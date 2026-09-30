@@ -325,10 +325,10 @@ namespace EntityQueryBuilder
 		{
 			if(weights_selection_features->GetType() == ENT_STRING)
 			{
-				StringInternPool::StringID weights_selection_feature_sid
+				auto [valid, weights_selection_feature_sid]
 					= EvaluableNode::ToStringIDIfExists(weights_selection_features);
 
-				if(weights_selection_feature_sid != string_intern_pool.NOT_A_STRING_ID)
+				if(valid)
 				{
 					PopulateWeightsFromSelectionFeature(dist_eval,
 						weights_node, num_elements, element_names, weights_selection_feature_sid);
@@ -344,7 +344,9 @@ namespace EntityQueryBuilder
 				std::vector<double> accumulated_feature_weights(dist_eval.featureAttribs.size(), 0.0);
 				for(EvaluableNode *feature_id_node : weights_selection_features->GetOrderedChildNodesReference())
 				{
-					StringInternPool::StringID weights_selection_feature_sid = EvaluableNode::ToStringIDIfExists(feature_id_node);
+					auto [valid, weights_selection_feature_sid] = EvaluableNode::ToStringIDIfExists(feature_id_node);
+					if(!valid)
+						continue;
 
 					PopulateWeightsFromSelectionFeature(dist_eval,
 						weights_node, num_elements, element_names, weights_selection_feature_sid);
@@ -478,7 +480,7 @@ namespace EntityQueryBuilder
 					}
 					else //not an assoc, just assume string for type
 					{
-						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
+						auto [valid, feature_type_id] = EvaluableNode::ToStringIDIfExists(en);
 						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal))
 							feature_attribs.featureType = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
 						else
@@ -651,8 +653,8 @@ namespace EntityQueryBuilder
 			cur_condition->positionLabels.reserve(pos_labels_ocn.size());
 			for(auto &pl : pos_labels_ocn)
 			{
-				StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(pl);
-				if(Entity::IsLabelValidAndPublic(label_sid))
+				auto [valid, label_sid] = EvaluableNode::ToStringIDIfExists(pl);
+				if(valid && Entity::IsLabelValidAndPublic(label_sid))
 					cur_condition->positionLabels.push_back(label_sid);
 				else
 					cur_condition->queryType = ENT_NULL;
@@ -674,7 +676,11 @@ namespace EntityQueryBuilder
 				auto &entities_ocn = entities->GetOrderedChildNodesReference();
 				cur_condition->existLabels.reserve(entities_ocn.size());
 				for(auto &entity_en : entities_ocn)
-					cur_condition->existLabels.push_back(EvaluableNode::ToStringIDIfExists(entity_en));
+				{
+					auto [valid, entity_id] = EvaluableNode::ToStringIDIfExists(entity_en);
+					if(valid)
+						cur_condition->existLabels.push_back(entity_id);
+				}
 			}
 		}
 		else if(condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
@@ -777,7 +783,7 @@ namespace EntityQueryBuilder
 
 		cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
 		if(ocn.size() > ENTITY_WEIGHT_LABEL_NAME)
-			cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[ENTITY_WEIGHT_LABEL_NAME]);
+			cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[ENTITY_WEIGHT_LABEL_NAME]).second;
 
 		//set random seed
 		cur_condition->hasRandomStream = (ocn.size() > RANDOM_SEED && !EvaluableNode::IsNull(ocn[RANDOM_SEED]));
@@ -788,7 +794,7 @@ namespace EntityQueryBuilder
 
 		//set radius label
 		if(ocn.size() > RADIUS_LABEL)
-			cur_condition->singleLabel = EvaluableNode::ToStringIDIfExists(ocn[RADIUS_LABEL]);
+			cur_condition->singleLabel = EvaluableNode::ToStringIDIfExists(ocn[RADIUS_LABEL]).second;
 		else
 			cur_condition->singleLabel = StringInternPool::NOT_A_STRING_ID;
 
@@ -797,7 +803,7 @@ namespace EntityQueryBuilder
 		cur_condition->distEvaluator.recomputeAccurateDistances = true;
 		if(ocn.size() > NUMERICAL_PRECISION)
 		{
-			StringInternPool::StringID np_sid = EvaluableNode::ToStringIDIfExists(ocn[NUMERICAL_PRECISION]);
+			auto np_sid = EvaluableNode::ToStringIDIfExists(ocn[NUMERICAL_PRECISION]).second;
 			if(np_sid == GetStringIdFromBuiltInStringId(ENBISI_precise))
 			{
 				cur_condition->distEvaluator.highAccuracyDistances = true;
@@ -833,7 +839,11 @@ namespace EntityQueryBuilder
 					else
 					{
 						for(auto label_node : list_param->GetOrderedChildNodes())
-							cur_condition->additionalSortedListLabels.push_back(EvaluableNode::ToStringIDIfExists(label_node));
+						{
+							auto [valid, sid] = EvaluableNode::ToStringIDIfExists(label_node);
+							if(valid)
+								cur_condition->additionalSortedListLabels.push_back(sid);
+						}
 					}
 				}
 			}
@@ -861,7 +871,11 @@ namespace EntityQueryBuilder
 						else
 						{
 							for(auto label_node : list_param->GetOrderedChildNodes())
-								cur_condition->additionalSortedListLabels.push_back(EvaluableNode::ToStringIDIfExists(label_node));
+							{
+								auto [valid, sid] = EvaluableNode::ToStringIDIfExists(label_node);
+								if(valid)
+									cur_condition->additionalSortedListLabels.push_back(sid);
+							}
 						}
 					}
 				}
@@ -965,7 +979,7 @@ namespace EntityQueryBuilder
 			|| type == ENT_QUERY_NOT_AMONG)
 		{
 			if(ocn.size() >= 1)
-				label_sid = EvaluableNode::ToStringIDIfExists(ocn[0]);
+				label_sid = EvaluableNode::ToStringIDIfExists(ocn[0]).second;
 
 			if(!Entity::IsLabelValidAndPublic(label_sid)) [[unlikely]]
 			{
@@ -995,7 +1009,7 @@ namespace EntityQueryBuilder
 		case ENT_QUERY_SAMPLE:
 		{
 			cur_condition->maxToRetrieve = (ocn.size() > 0) ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1)) : 1;
-			cur_condition->singleLabel = (ocn.size() > 1) ? EvaluableNode::ToStringIDIfExists(ocn[1]) : StringInternPool::NOT_A_STRING_ID;
+			cur_condition->singleLabel = (ocn.size() > 1) ? EvaluableNode::ToStringIDIfExists(ocn[1]).second : StringInternPool::NOT_A_STRING_ID;
 
 			cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]));
 			if(cur_condition->hasRandomStream)
@@ -1016,8 +1030,9 @@ namespace EntityQueryBuilder
 					cur_condition->existLabels.reserve(entity_sids_ocn.size());
 					for(auto &esid : entity_sids_ocn)
 					{
-						StringInternPool::StringID entity_sid = EvaluableNode::ToStringIDIfExists(esid);
-						cur_condition->existLabels.push_back(entity_sid);
+						auto [valid, entity_sid] = EvaluableNode::ToStringIDIfExists(esid);
+						if(valid)
+							cur_condition->existLabels.push_back(entity_sid);
 					}
 				}
 			}
@@ -1036,7 +1051,8 @@ namespace EntityQueryBuilder
 					EvaluableNode::ToNumber(low_value), EvaluableNode::ToNumber(high_value));
 			else
 				cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_STRING_ID,
-					EvaluableNode::ToStringIDIfExists(low_value), EvaluableNode::ToStringIDIfExists(high_value));
+					EvaluableNode::ToStringIDIfExists(low_value).second,
+					EvaluableNode::ToStringIDIfExists(high_value).second);
 			break;
 		}
 
@@ -1104,10 +1120,10 @@ namespace EntityQueryBuilder
 			{
 				if(type == ENT_QUERY_LESS_OR_EQUAL_TO)
 					cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_STRING_ID,
-						string_intern_pool.NOT_A_STRING_ID, EvaluableNode::ToStringIDIfExists(compare_value));
+						string_intern_pool.NOT_A_STRING_ID, EvaluableNode::ToStringIDIfExists(compare_value).second);
 				else
 					cur_condition->labelBetweenValues.emplace_back(label_sid, ENIVT_STRING_ID,
-						EvaluableNode::ToStringIDIfExists(compare_value), string_intern_pool.NOT_A_STRING_ID);
+						EvaluableNode::ToStringIDIfExists(compare_value).second, string_intern_pool.NOT_A_STRING_ID);
 			}
 
 			cur_condition->queryType = ENT_QUERY_BETWEEN;
@@ -1155,7 +1171,7 @@ namespace EntityQueryBuilder
 
 			cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
 			if(ocn.size() >= 2)
-				cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[1]);
+				cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[1]).second;
 
 			break;
 		}
@@ -1170,7 +1186,7 @@ namespace EntityQueryBuilder
 
 			cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
 			if(ocn.size() >= 3)
-				cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[2]);
+				cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[2]).second;
 
 			break;
 		}
@@ -1185,7 +1201,7 @@ namespace EntityQueryBuilder
 
 			cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
 			if(ocn.size() >= 3)
-				cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[2]);
+				cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[2]).second;
 
 			cur_condition->center = 0.0;
 			if(ocn.size() >= 4)

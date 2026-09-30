@@ -102,6 +102,146 @@ namespace Concurrency
 	//a set of potentially concurrent tasks at a given level of the execution graph
 	using TaskSet = tf::Taskflow;
 
+	//constant memory sized holder for a task that is big enough to
+	//cover most small tasks via small buffer optimization, but will allocate on the heap
+	//if needed.  note that for performance, it assumes it will be given a valid task
+	//before being executed
+	struct FixedSizeTask
+	{
+		using ExecuteFunc = void (*)(void *p);
+		using MoveFunc = void (*)(void *dst, void *src);
+		using DestroyFunc = void (*)(void *p);
+
+		inline FixedSizeTask() : execute(nullptr), destroy(nullptr), move(nullptr)
+		{}
+
+		//prevent accidental copying to avoid double-destruction
+		FixedSizeTask(const FixedSizeTask &) = delete;
+
+		FixedSizeTask &operator=(const FixedSizeTask &) = delete;
+
+		inline FixedSizeTask(FixedSizeTask &&other) noexcept
+		{
+			if(other.move != nullptr)
+				(*other.move)(buffer, other.buffer);
+			else
+				std::memcpy(buffer, other.buffer, INLINE_SIZE);
+
+			execute = other.execute;
+			destroy = other.destroy;
+			move = other.move;
+
+			other.destroy = nullptr;
+			other.move = nullptr;
+		}
+
+		inline FixedSizeTask &operator=(FixedSizeTask &&other) noexcept
+		{
+			if(this != &other)
+			{
+				if(destroy != nullptr)
+					(*destroy)(buffer);
+
+				if(other.move != nullptr)
+					(*other.move)(buffer, other.buffer);
+				else
+					std::memcpy(buffer, other.buffer, INLINE_SIZE);
+
+				execute = other.execute;
+				destroy = other.destroy;
+				move = other.move;
+
+				other.destroy = nullptr;
+				other.move = nullptr;
+			}
+			return *this;
+		}
+
+		inline ~FixedSizeTask()
+		{
+			if(destroy != nullptr)
+				(*destroy)(buffer);
+		}
+
+		//assumes execute is not nullptr; otherwise it wouldn't be a task
+		inline void operator()()
+		{
+			(*execute)(buffer);
+		}
+
+		//creates the task from a lambda function
+		template<typename F>
+		inline static FixedSizeTask Create(F &&f)
+		{
+			FixedSizeTask t;
+			using FuncType = std::decay_t<F>;
+
+			if constexpr(sizeof(FuncType) <= INLINE_SIZE
+				&& alignof(FuncType) <= alignof(std::max_align_t)
+				&& std::is_nothrow_move_constructible_v<FuncType>)
+			{
+				new (t.buffer) FuncType(std::forward<F>(f));
+
+				t.execute = [](void *p) {
+					auto *func = std::launder(reinterpret_cast<FuncType *>(p));
+					(*func)();
+					};
+
+				if constexpr(!std::is_trivially_destructible_v<FuncType>)
+				{
+					t.destroy = [](void *p) {
+						auto *func = std::launder(reinterpret_cast<FuncType *>(p));
+						func->~FuncType();
+						};
+				}
+				else
+				{
+					t.destroy = nullptr;
+				}
+
+				if constexpr(!std::is_trivially_copyable_v<FuncType>)
+				{
+					t.move = [](void *dst, void *src) {
+						auto *source_obj = std::launder(reinterpret_cast<FuncType *>(src));
+						new (dst) FuncType(std::move(*source_obj));
+						source_obj->~FuncType();
+						};
+				}
+				else
+				{
+					t.move = nullptr;
+				}
+			}
+			else
+			{
+				FuncType *heapFunc = new FuncType(std::forward<F>(f));
+				std::memcpy(t.buffer, &heapFunc, sizeof(FuncType *));
+
+				t.execute = [](void *p) {
+					auto **ptr_to_func = std::launder(reinterpret_cast<FuncType **>(p));
+					(**ptr_to_func)();
+					};
+
+				//heap storage always requires a destroy call
+				t.destroy = [](void *p) {
+					auto **ptr_to_func = std::launder(reinterpret_cast<FuncType **>(p));
+					delete *ptr_to_func;
+					};
+
+				t.move = nullptr;
+			}
+			return t;
+		}
+
+		static constexpr size_t INLINE_SIZE = 128 - 3 * sizeof(void *);
+
+		ExecuteFunc execute;
+		DestroyFunc destroy;
+		MoveFunc move;
+
+		alignas(std::max_align_t) uint8_t buffer[INLINE_SIZE];
+	};
+
 	struct ExecutionGeneration;
 	inline thread_local ExecutionGeneration *worker_generation = nullptr;
 	inline thread_local bool is_system_worker = false;
@@ -266,7 +406,6 @@ namespace Concurrency
 			tasks[i]();
 
 			//mark task as done and if done, notify all that it's all done
-			tasks[i] = nullptr;
 			if(remaining.fetch_sub(1, std::memory_order_acq_rel) == 1)
 				remaining.notify_all();
 		}
@@ -310,7 +449,7 @@ namespace Concurrency
 		size_t available_worker_count = (worker_generation ? worker_generation->numThreads : 1);
 		const size_t num_workers = std::min(total_tasks, available_worker_count) - 1;
 
-		auto group = std::make_shared<InterpreterTaskGroup<std::function<void()>>>(std::move(tasks));
+		auto group = std::make_shared<InterpreterTaskGroup<FuncType>>(std::move(tasks));
 		for(size_t i = 0; i < num_workers; i++)
 		{
 			interpreter_runtime->silent_async([group](tf::Runtime &runtime)
@@ -381,7 +520,7 @@ inline void IterateOverConcurrentlyIfPossible(ContainerType &container, Function
 		}
 		else
 		{
-			std::vector<std::function<void()>> tasks;
+			std::vector<Concurrency::FixedSizeTask> tasks;
 			tasks.reserve(container.size());
 			for(auto value : container)
 			{

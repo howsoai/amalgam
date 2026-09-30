@@ -60,7 +60,6 @@ public:
 		numTasks = num_tasks;
 		curNumTasksAdded = 0;
 		tasks.reserve(num_tasks);
-		constructionEffects.resize(num_tasks);
 
 		//create space to store all of these nodes on the stack, but won't copy these over to the other interpreters
 		resultsSaver = parent_interpreter->CreateOpcodeStackStateSaver();
@@ -80,13 +79,6 @@ public:
 		previousScopeStackMutex = std::exchange(parentInterpreter->scopeStackMutex, &scopeStackMutex);
 	}
 
-	~InterpreterConcurrencyManager()
-	{
-		//An abandoned group has never run; do not start side effects during unwinding.
-		if(!completed)
-			parentInterpreter->scopeStackMutex = previousScopeStackMutex;
-	}
-
 	//Adds a child task to the runtime group that needs a construction stack, using the relative interpreter
 	// executes node_to_execute with the following parameters matching those of pushing on the construction stack
 	// will allocate an appropriate node matching the type of current_index
@@ -102,7 +94,6 @@ public:
 	{
 		size_t results_saver_location = resultsSaverCurrentTaskOffset++;
 		size_t task_index = curNumTasksAdded++;
-		constructionEffects[task_index].target = target;
 
 		//must keep InterpreterConcurrencyManagerTraits::StackWithResults up to date with the
 		// number of params of the following lambda
@@ -128,10 +119,7 @@ public:
 			auto result_ref = interpreter.ExecuteNode(node_to_execute,
 				nullptr, &opcode_stack, &construction_stack, EvaluableNodeRequestedValueTypes::Type::NONE, false);
 
-			bool side_effects = interpreter.constructionStack.back().executionSideEffects;
-			constructionEffects[task_index].sideEffects = side_effects;
-			interpreter.constructionStack.pop_back();
-			if(side_effects)
+			if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 			{
 				resultsSideEffect = true;
 				resultsUnique = false;
@@ -274,21 +262,10 @@ public:
 	//ends concurrency from all interpreters and waits for them to finish
 	inline void EndConcurrency()
 	{
-		if(completed)
-			return;
-		completed = true;
-
-		//The group join is the child-before-parent dependency. Release the parent's
-		//read lock before waiting for children, including children that need GC.
+		//allow other threads to perform garbage collection
 		parentInterpreter->memoryModificationLock.unlock();
 		Concurrency::RunInterpreterTasks(std::move(tasks));
 		parentInterpreter->memoryModificationLock.lock();
-
-		//Each child wrote only its own effect record. The join publishes those
-		//records and ends every borrow of the parent's construction targets.
-		for(auto &effect : constructionEffects)
-			if(effect.target != nullptr)
-				Interpreter::FinalizeConstructionTarget(*effect.target, effect.sideEffects);
 
 		//release scope stack mutex
 		parentInterpreter->scopeStackMutex = previousScopeStackMutex;
@@ -324,20 +301,11 @@ protected:
 	Concurrency::SingleMutex scopeStackMutex;
 	Concurrency::SingleMutex *previousScopeStackMutex;
 
-	struct ConstructionEffect
-	{
-		EvaluableNodeReference *target = nullptr;
-		bool sideEffects = false;
-	};
-	//Stable slots: children never resize this vector or write a sibling's slot.
-	std::vector<ConstructionEffect> constructionEffects;
-
 	//random seed for each task, the size of numTasks
 	std::vector<RandomStream> randomSeeds;
 
-	//Children join the current runtime; execution starts only at EndConcurrency.
+	//concurrent tasks to be completed
 	std::vector<Concurrency::FixedSizeTask<>> tasks;
-	bool completed = false;
 
 	//structure to keep track of the stack to prevent results from being garbage collected
 	EvaluableNodeStackStateSaver resultsSaver;

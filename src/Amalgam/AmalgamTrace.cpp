@@ -336,18 +336,11 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		{
 		#if defined(MULTITHREAD_SUPPORT)
 			response = SUCCESS_RESPONSE;
-			try
-			{
-				auto num_threads = std::stoll(input);
-				if(num_threads >= 0)
-					Concurrency::SetMaxNumThreads(static_cast<size_t>(num_threads));
-				else
-					response = FAILURE_RESPONSE;
-			}
-			catch(...)
-			{
+			auto num_threads = std::stoll(input);
+			if(num_threads >= 0)
+				Concurrency::SetMaxNumThreads(static_cast<size_t>(num_threads));
+			else
 				response = FAILURE_RESPONSE;
-			}
 		#else
 			response = FAILURE_RESPONSE;
 		#endif

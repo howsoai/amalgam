@@ -328,7 +328,7 @@ namespace EntityQueryBuilder
 				auto [valid, weights_selection_feature_sid]
 					= EvaluableNode::ToStringIDIfExists(weights_selection_features);
 
-				if(valid)
+				if(valid) [[likely]]
 				{
 					PopulateWeightsFromSelectionFeature(dist_eval,
 						weights_node, num_elements, element_names, weights_selection_feature_sid);
@@ -345,7 +345,7 @@ namespace EntityQueryBuilder
 				for(EvaluableNode *feature_id_node : weights_selection_features->GetOrderedChildNodesReference())
 				{
 					auto [valid, weights_selection_feature_sid] = EvaluableNode::ToStringIDIfExists(feature_id_node);
-					if(!valid)
+					if(!valid) [[unlikely]]
 						continue;
 
 					PopulateWeightsFromSelectionFeature(dist_eval,
@@ -678,7 +678,7 @@ namespace EntityQueryBuilder
 				for(auto &entity_en : entities_ocn)
 				{
 					auto [valid, entity_id] = EvaluableNode::ToStringIDIfExists(entity_en);
-					if(valid)
+					if(valid) [[likely]]
 						cur_condition->existLabels.push_back(entity_id);
 				}
 			}
@@ -841,7 +841,7 @@ namespace EntityQueryBuilder
 						for(auto label_node : list_param->GetOrderedChildNodes())
 						{
 							auto [valid, sid] = EvaluableNode::ToStringIDIfExists(label_node);
-							if(valid)
+							if(valid) [[likely]]
 								cur_condition->additionalSortedListLabels.push_back(sid);
 						}
 					}
@@ -873,7 +873,7 @@ namespace EntityQueryBuilder
 							for(auto label_node : list_param->GetOrderedChildNodes())
 							{
 								auto [valid, sid] = EvaluableNode::ToStringIDIfExists(label_node);
-								if(valid)
+								if(valid) [[likely]]
 									cur_condition->additionalSortedListLabels.push_back(sid);
 							}
 						}
@@ -1031,7 +1031,7 @@ namespace EntityQueryBuilder
 					for(auto &esid : entity_sids_ocn)
 					{
 						auto [valid, entity_sid] = EvaluableNode::ToStringIDIfExists(esid);
-						if(valid)
+						if(valid) [[likely]]
 							cur_condition->existLabels.push_back(entity_sid);
 					}
 				}

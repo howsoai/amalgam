@@ -2081,7 +2081,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 				for(size_t index = 0; index < p_num_elements; index++)
 				{
 					auto [valid, key_sid] = EvaluableNode::ToStringIDIfExists((*p_values)[index], true);
-					if(valid)
+					if(valid) [[likely]]
 					{
 						EvaluableNode **found = q_node->GetMappedChildNode(key_sid);
 						if(found != nullptr)

@@ -557,10 +557,10 @@ public:
 		else if(a.nodeType == ENIVT_CODE && b.nodeType == ENIVT_CODE)
 		{
 			auto [a_valid, a_sid] = EvaluableNode::ToStringIDIfExists(a.nodeValue.code, true);
-			if(a_valid)
+			if(a_valid) [[likely]]
 			{
 				auto [b_valid, b_sid] = EvaluableNode::ToStringIDIfExists(b.nodeValue.code, true);
-				if(b_valid)
+				if(b_valid) [[likely]]
 					std::tie(prob_class_given_match, prob_class_given_nonmatch)
 						= ComputeProbClassGivenMatchAndNonMatchFromSDM(
 							feature_attribs.nominalStringSparseDeviationMatrix, index, a_sid, b_sid);

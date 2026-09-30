@@ -472,7 +472,15 @@ inline void IterateOverConcurrentlyIfPossible(ContainerType &container, Function
 		}
 		else
 		{
-			std::vector<Concurrency::FixedSizeTask<>> tasks;
+			//determine how big FixedSizeTask needs to be
+			using ValueType = typename ContainerType::value_type;
+			using TaskLambda = decltype([
+				index = std::declval<size_t>(),
+				value = std::declval<ValueType>(),
+				&func = std::declval<FunctionType &>()
+			] {});
+
+			std::vector<Concurrency::FixedSizeTask<sizeof(TaskLambda)>> tasks;
 			tasks.reserve(container.size());
 			for(auto value : container)
 			{

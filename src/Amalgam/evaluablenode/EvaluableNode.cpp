@@ -209,7 +209,6 @@ std::pair<bool, std::string> EvaluableNode::ToValidString(EvaluableNode *e)
 	return {true, Parser::Unparse(e, false, false, true)};
 }
 
-//TODO: need to return tuple of found to prevent not found from colliding with null
 StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e, bool key_string)
 {
 	if(EvaluableNode::IsNull(e))

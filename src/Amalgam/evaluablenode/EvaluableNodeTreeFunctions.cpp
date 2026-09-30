@@ -109,10 +109,16 @@ EvaluableNode *id_path_1, EvaluableNode *id_path_2)
 	while(true)
 	{
 		EvaluableNode *cur_node_id_1 = traverser_1.GetCurId();
-		StringInternPool::StringID sid_1 = EvaluableNode::ToStringIDIfExists(cur_node_id_1);
+		auto [valid_1, sid_1] = EvaluableNode::ToStringIDIfExists(cur_node_id_1);
+		if(!valid_1)
+			return { nullptr, nullptr,
+				Entity::EntityReferenceBufferReference<EntityReadReference>() };
 
 		EvaluableNode *cur_node_id_2 = traverser_2.GetCurId();
-		StringInternPool::StringID sid_2 = EvaluableNode::ToStringIDIfExists(cur_node_id_2);
+		auto [valid_2, sid_2] = EvaluableNode::ToStringIDIfExists(cur_node_id_2);
+		if(!valid_2)
+			return { nullptr, nullptr,
+				Entity::EntityReferenceBufferReference<EntityReadReference>() };
 
 		if(sid_1 != sid_2)
 		{
@@ -326,8 +332,9 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 				if(!addr_empty)
 				{
 					//string must already exist if can't create anything
-					key_sid = EvaluableNode::ToStringIDIfExists(addr, true);
-					if(key_sid == StringInternPool::NOT_A_STRING_ID)
+					bool valid = false;
+					std::tie(valid, key_sid) = EvaluableNode::ToStringIDIfExists(addr, true);
+					if(!valid)
 					{
 						destination = nullptr;
 						break;

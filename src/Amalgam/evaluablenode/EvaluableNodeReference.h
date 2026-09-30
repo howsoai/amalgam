@@ -251,7 +251,10 @@ union EvaluableNodeImmediateValue
 				else if(type_2 == ENIVT_NUMBER)
 					return (value_2.number == EvaluableNode::ToNumber(value_1.code));
 				else if(type_2 == ENIVT_STRING_ID)
-					return (value_2.stringID == EvaluableNode::ToStringIDIfExists(value_1.code));
+				{
+					auto [valid, id] = EvaluableNode::ToStringIDIfExists(value_1.code);
+					return (valid && value_2.stringID == id);
+				}
 			}
 			else if(type_2 == ENIVT_CODE)
 			{
@@ -262,7 +265,10 @@ union EvaluableNodeImmediateValue
 				else if(type_1 == ENIVT_NUMBER)
 					return (value_1.number == EvaluableNode::ToNumber(value_2.code));
 				else if(type_1 == ENIVT_STRING_ID)
-					return (value_1.stringID == EvaluableNode::ToStringIDIfExists(value_2.code));
+				{
+					auto [valid, id] = EvaluableNode::ToStringIDIfExists(value_2.code);
+					return (valid && value_1.stringID == id);
+				}
 			}
 
 			return false;
@@ -529,7 +535,13 @@ public:
 			{
 				//first check for key strings
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
-					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en, true));
+				{
+					auto [valid, id] = EvaluableNode::ToStringIDIfExists(en, true);
+					if(valid)
+						return EvaluableNodeReference(id);
+					else
+						return EvaluableNodeReference(en, false);
+				}
 
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::KEY_STRING_ID))
 					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en, true), true);
@@ -559,13 +571,25 @@ public:
 			if(!immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::CODE))
 			{
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_KEY_STRING_ID))
-					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en, true));
+				{
+					auto [valid, id] = EvaluableNode::ToStringIDIfExists(en, true);
+					if(valid)
+						return EvaluableNodeReference(id);
+					else
+						return EvaluableNodeReference(en, false);
+				}
 
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::KEY_STRING_ID))
 					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en, true), true);
 
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::EXISTING_STRING_ID))
-					return EvaluableNodeReference(EvaluableNode::ToStringIDIfExists(en));
+				{
+					auto [valid, id] = EvaluableNode::ToStringIDIfExists(en, true);
+					if(valid)
+						return EvaluableNodeReference(id);
+					else
+						return EvaluableNodeReference(en, false);
+				}
 
 				if(immediate_result.Allows(EvaluableNodeRequestedValueTypes::Type::STRING_ID))
 					return EvaluableNodeReference(EvaluableNode::ToStringIDWithReference(en), true);

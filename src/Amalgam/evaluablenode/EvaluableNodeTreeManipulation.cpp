@@ -1785,9 +1785,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 			{
 				if(n_ocn[1] == nullptr || n_ocn[1]->IsTerminal())
 				{
-					auto label_sid = EvaluableNode::ToStringIDIfExists(n_ocn[1], true);
-					if(Entity::IsLabelPrivate(label_sid)
-						|| !entity_to_call->DoesLabelExist(label_sid))
+					auto [valid, label_sid] = EvaluableNode::ToStringIDIfExists(n_ocn[1], true);
+					if(valid && (Entity::IsLabelPrivate(label_sid)
+						|| !entity_to_call->DoesLabelExist(label_sid)))
 					{
 						replace_with_valid_label = true;
 					}

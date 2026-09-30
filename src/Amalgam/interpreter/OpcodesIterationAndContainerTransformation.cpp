@@ -2348,7 +2348,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 					auto zipped_mcn = zipped->GetMappedChildNodesViewOnAssoc();
 					for(auto &index : index_list_ocn)
 					{
-						StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index, true);
+						auto [valid, index_sid] = EvaluableNode::ToStringIDIfExists(index, true);
+						if(!valid)
+						{
+							operation.template Step<false>(*this, nullptr, acc);
+							continue;
+						}
 
 						auto found_index = zipped_mcn.find(index_sid);
 						if(found_index != end(zipped_mcn))
@@ -2402,7 +2407,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 		auto zipped_mcn = zipped->GetMappedChildNodesViewOnAssoc();
 		for(auto &index : index_list_ocn)
 		{
-			StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index, true);
+			auto [valid, index_sid] = EvaluableNode::ToStringIDIfExists(index, true);
+			if(!valid)
+			{
+				result_ocn.push_back(nullptr);
+				continue;
+			}
 
 			auto found_index = zipped_mcn.find(index_sid);
 			if(found_index != end(zipped_mcn))

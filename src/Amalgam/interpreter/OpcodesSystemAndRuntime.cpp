@@ -804,7 +804,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(Evaluabl
 			if(clear_select_query_caches)
 			{
 				for(auto cn : clear_query_caches_node->GetOrderedChildNodesReference())
-					target_entity->ClearQueryCacheForLabel(EvaluableNode::ToStringIDIfExists(cn));
+				{
+					auto [valid, label_sid] = EvaluableNode::ToStringIDIfExists(cn);
+					if(!valid) [[unlikely]]
+						continue;
+
+					target_entity->ClearQueryCacheForLabel(label_sid);
+				}
 			}
 		}
 	}
@@ -814,7 +820,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(Evaluabl
 		if(clear_select_query_caches)
 		{
 			for(auto cn : clear_query_caches_node->GetOrderedChildNodesReference())
-				target_entity->ClearQueryCacheForLabel(EvaluableNode::ToStringIDIfExists(cn));
+			{
+				auto [valid, label_sid] = EvaluableNode::ToStringIDIfExists(cn);
+				if(!valid) [[unlikely]]
+					continue;
+
+				target_entity->ClearQueryCacheForLabel(label_sid);
+			}
 		}
 	}
 

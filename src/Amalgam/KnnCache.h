@@ -10,10 +10,17 @@
 //caches nearest neighbor results for every entity in the provided data structure
 class KnnCache
 {
+	//Snapshot query capability during ResetCache; never inspect an expired evaluator.
+	bool computationRequiresEntityCall = false;
 public:
 	KnnCache()
 	{
 		sbfDataStore = nullptr;
+	}
+
+	inline bool GetComputationRequiresEntityCall()
+	{
+		return computationRequiresEntityCall;
 	}
 
 	//clears all buffers and resizes and resets them based on the datastore of entities and the particular
@@ -27,6 +34,10 @@ public:
 		distEvaluator = &dist_eval;
 		interpreter = _interpreter;
 		entity = _entity;
+		computationRequiresEntityCall = false;
+		for(const auto &feature : dist_eval.featureAttribs)
+			if(feature.callEntityOpcode != nullptr)
+				computationRequiresEntityCall = true;
 		positionLabelIds = &position_label_ids;
 		radiusLabelId = radius_label;
 
@@ -57,7 +68,7 @@ public:
 			}
 	#ifdef MULTITHREAD_SUPPORT
 			,
-			run_concurrently
+			run_concurrently, !computationRequiresEntityCall
 	#endif
 		);
 	}

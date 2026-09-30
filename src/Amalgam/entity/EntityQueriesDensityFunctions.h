@@ -88,6 +88,7 @@ public:
 
 #ifdef MULTITHREAD_SUPPORT
 		runConcurrently = run_concurrently;
+		computationRequiresEntityCall = knnCache->GetComputationRequiresEntityCall();
 #endif
 	}
 
@@ -135,7 +136,7 @@ public:
 				contribs_out[index] = ComputeDistanceContribution(entity);
 			}
 		#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently
+			, runConcurrently, computationRequiresEntityCall
 		#endif
 		);
 
@@ -159,7 +160,7 @@ public:
 				contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 			}
 		#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently
+			, runConcurrently, computationRequiresEntityCall
 		#endif
 		);
 	}
@@ -182,7 +183,7 @@ public:
 			contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, 1.0);
 		}
 	#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently
+			, runConcurrently, computationRequiresEntityCall
 	#endif
 		);
 	}
@@ -244,7 +245,7 @@ public:
 				fetch_add_double(entity_probabilities[n.reference], n.distance * weight_multiplier);
 		}
 	#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently
+			, runConcurrently, computationRequiresEntityCall
 	#endif
 		);
 
@@ -295,7 +296,7 @@ public:
 				fetch_add_double(entity_probabilities[n.reference], n.distance * weight_multiplier);
 		}
 	#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently
+			, runConcurrently, computationRequiresEntityCall
 	#endif
 		);
 
@@ -325,7 +326,7 @@ public:
 					contribs_out[index] = ComputeDistanceContribution(entity, included_entities);
 			}
 		#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently
+			, runConcurrently, computationRequiresEntityCall
 		#endif
 		);
 
@@ -399,7 +400,8 @@ public:
 	//if normalize_convictions is false, it will return the kl divergences, if true, it will return the convictions
 	//if conviction_of_removal is true, then it will compute the conviction as if the entities not in base_group_entities were removed,
 	// if false, then will compute the conviction as if those entities were added or included
-	inline void ComputeCaseKLDivergences(EntityReferenceSet &entities_to_compute, std::vector<double> &convictions_out, bool normalize_convictions, bool conviction_of_removal)
+	inline void ComputeCaseKLDivergences(EntityReferenceSet &entities_to_compute, std::vector<double> &convictions_out,
+		bool normalize_convictions, bool conviction_of_removal)
 	{
 		//prime the cache, including one extra case so each can be left out
 	#ifdef MULTITHREAD_SUPPORT
@@ -517,7 +519,7 @@ public:
 					convictions_out[convictions_out_index] = kld_total;
 			}
 		#ifdef MULTITHREAD_SUPPORT
-			, runConcurrently
+			, runConcurrently, computationRequiresEntityCall
 		#endif
 		);
 
@@ -635,6 +637,8 @@ public:
 	#ifdef MULTITHREAD_SUPPORT
 		//if true, attempt to run with concurrency
 		bool runConcurrently;
+		//if true, distances require an entity call
+		bool computationRequiresEntityCall;
 	#endif
 
 		//for multithreading, there should be one of these per thread

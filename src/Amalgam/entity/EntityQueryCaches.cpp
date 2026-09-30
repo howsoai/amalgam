@@ -414,6 +414,10 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 			}
 
+			//Rebind the thread-local cache before the processor inspects this query.
+			buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->interpreter, cond->entity,
+				cond->positionLabels, cond->singleLabel);
+
 		#ifdef MULTITHREAD_SUPPORT
 			EntityQueriesDensityProcessor conviction_processor(buffers.knnCache,
 				distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->useConcurrency);
@@ -421,8 +425,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			EntityQueriesDensityProcessor conviction_processor(buffers.knnCache,
 				distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel);
 		#endif
-			buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->interpreter, cond->entity,
-				cond->positionLabels, cond->singleLabel);
 
 			auto &results_buffer = buffers.doubleVector;
 			results_buffer.clear();

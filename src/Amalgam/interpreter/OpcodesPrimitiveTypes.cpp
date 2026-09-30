@@ -193,26 +193,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(Ev
 	#ifdef MULTITHREAD_SUPPORT
 		if(en->GetConcurrency() && num_nodes > 1)
 		{
-			auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
-			if(Concurrency::threadPool.AreThreadsAvailable())
-			{
-				auto node_stack = CreateOpcodeStackStateSaver(new_list);
-				//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
-				new_list->SetNeedCycleCheck(true);
+			auto node_stack = CreateOpcodeStackStateSaver(new_list);
+			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+			new_list->SetNeedCycleCheck(true);
 
-				InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+			InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults> concurrency_manager(this, num_nodes);
 
-				//kick off interpreters
-				for(size_t node_index = 0; node_index < num_nodes; node_index++)
-					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(ocn[node_index], en,
-						&new_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), nullptr,
-						new_list_ocn[node_index]);
+			//kick off interpreters
+			for(size_t node_index = 0; node_index < num_nodes; node_index++)
+				concurrency_manager.AddTaskWithConstructionStackWithResult<EvaluableNode *>(ocn[node_index], en,
+					&new_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), nullptr,
+					new_list_ocn[node_index]);
 
-				concurrency_manager.EndConcurrency();
+			concurrency_manager.EndConcurrency();
 
-				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(new_list);
-				return new_list;
-			}
+			concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(new_list);
+			return new_list;
 		}
 	#endif
 
@@ -279,25 +275,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, E
 	#ifdef MULTITHREAD_SUPPORT
 		if(en->GetConcurrency() && num_nodes > 1)
 		{
-			auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
-			if(Concurrency::threadPool.AreThreadsAvailable())
-			{
-				auto node_stack = CreateOpcodeStackStateSaver(new_assoc);
-				//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
-				new_assoc->SetNeedCycleCheck(true);
+			auto node_stack = CreateOpcodeStackStateSaver(new_assoc);
+			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+			new_assoc->SetNeedCycleCheck(true);
 
-				InterpreterConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
+			InterpreterConcurrencyManager<InterpreterConcurrencyManagerTraits::StackWithResults> concurrency_manager(this, num_nodes);
 
-				//kick off interpreters
-				for(auto &[cn_id, cn] : new_mcn)
-					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(cn,
-						en, &new_assoc, EvaluableNodeImmediateValueWithType(cn_id), nullptr, cn);
+			//kick off interpreters
+			for(auto &[cn_id, cn] : new_mcn)
+				concurrency_manager.AddTaskWithConstructionStackWithResult<EvaluableNode *>(cn,
+					en, &new_assoc, EvaluableNodeImmediateValueWithType(cn_id), nullptr, cn);
 
-				concurrency_manager.EndConcurrency();
+			concurrency_manager.EndConcurrency();
 
-				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(new_assoc);
-				return new_assoc;
-			}
+			concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(new_assoc);
+			return new_assoc;
 		}
 	#endif
 

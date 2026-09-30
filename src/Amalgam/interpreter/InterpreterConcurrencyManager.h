@@ -3,15 +3,52 @@
 #include "Interpreter.h"
 
 #ifdef MULTITHREAD_SUPPORT
+
+namespace InterpreterConcurrencyManagerTraits
+{
+	//base traits - can be left empty or used for defaults
+	struct Default
+	{
+		static constexpr size_t BufferSize = 96;
+		using ModeTag = void;
+	};
+
+	struct NoStack : Default
+	{
+		//must match the parameter size of the tasks.emplace_back lambda in 
+		static constexpr size_t BufferSize = 6 * sizeof(size_t);
+		struct SimpleMode
+		{};
+		using ModeTag = SimpleMode;
+	};
+
+	struct StackWithoutResults : Default
+	{
+		//must match the parameter size of the tasks.emplace_back lambda in 
+		static constexpr size_t BufferSize = 5 * sizeof(size_t);
+		struct StackWithoutResultsMode
+		{};
+		using ModeTag = StackWithoutResultsMode;
+	};
+
+	struct StackWithResults : Default
+	{
+		//must match the parameter size of the tasks.emplace_back lambda in 
+		static constexpr size_t BufferSize = 9 * sizeof(size_t);
+		struct StackWithResultMode
+		{};
+		using ModeTag = StackWithResultMode;
+	};
+}
+
 //class to manage the data for concurrent execution by an interpreter
+template<typename Traits = InterpreterConcurrencyManagerTraits::Default>
 class InterpreterConcurrencyManager
 {
 public:
 
 	//constructs the concurrency manager.  Assumes parent_interpreter is NOT null
-	InterpreterConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks,
-		ThreadPool::TaskLock &task_enqueue_lock)
-		: taskSet(&Concurrency::threadPool, num_tasks)
+	InterpreterConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks)
 	{
 		resultsUnique = true;
 		resultsUniqueUnreferencedTopNode = true;
@@ -21,8 +58,8 @@ public:
 
 		parentInterpreter = parent_interpreter;
 		numTasks = num_tasks;
-		curNumTasksEnqueued = 0;
-		taskEnqueueLock = &task_enqueue_lock;
+		curNumTasksAdded = 0;
+		tasks.reserve(num_tasks);
 
 		//create space to store all of these nodes on the stack, but won't copy these over to the other interpreters
 		resultsSaver = parent_interpreter->CreateOpcodeStackStateSaver();
@@ -39,30 +76,34 @@ public:
 		parentInterpreter->RemoveUniquenessFromPreviousResultsInConstructionStack();
 
 		//need to create a mutex for all interpreters that will be called
-		parentInterpreter->scopeStackMutex = std::make_unique<Concurrency::SingleMutex>();
+		previousScopeStackMutex = std::exchange(parentInterpreter->scopeStackMutex, &scopeStackMutex);
 	}
 
-	//Enqueues a concurrent task that needs a construction stack, using the relative interpreter
+	//Adds a child task to the runtime group that needs a construction stack, using the relative interpreter
 	// executes node_to_execute with the following parameters matching those of pushing on the construction stack
 	// will allocate an appropriate node matching the type of current_index
 	//result is set to the result of the task
 	template<typename EvaluableNodeRefType>
-	void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
+		requires std::is_same_v<typename Traits::ModeTag,
+			typename InterpreterConcurrencyManagerTraits::StackWithResults::ModeTag>
+	void AddTaskWithConstructionStackWithResult(EvaluableNode *node_to_execute,
 		EvaluableNode *target_origin, EvaluableNodeReference *target,
 		EvaluableNodeImmediateValueWithType current_index,
 		EvaluableNode *current_value,
 		EvaluableNodeRefType &result)
 	{
 		size_t results_saver_location = resultsSaverCurrentTaskOffset++;
-		RandomStream rand_seed = randomSeeds[curNumTasksEnqueued++];
+		size_t task_index = curNumTasksAdded++;
 
-		Concurrency::threadPool.BatchEnqueueTask(
-			[this, rand_seed, node_to_execute, target_origin, target, current_index,
+		//must keep InterpreterConcurrencyManagerTraits::StackWithResults up to date with the
+		// number of params of the following lambda
+		tasks.emplace_back(
+			[this, task_index, node_to_execute, target_origin, target, current_index,
 			current_value, &result, results_saver_location]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
-			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
+			Interpreter interpreter(parentInterpreter->evaluableNodeManager, randomSeeds[task_index],
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
@@ -103,26 +144,29 @@ public:
 			resultsSaver.SetStackElement(results_saver_location, result);
 
 			interpreter.memoryModificationLock.unlock();
-			taskSet.MarkTaskCompleted();
 		}
 		);
 	}
 
-	//like the previous definition of EnqueueTaskWithConstructionStack,
+	//like the previous definition of AddTaskWithConstructionStackWithResult,
 	//but without keeping results or building a target
 	template<typename EvaluableNodeRefType>
-	void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
+		requires std::is_same_v<typename Traits::ModeTag,
+			typename InterpreterConcurrencyManagerTraits::StackWithoutResults::ModeTag>
+	void AddTaskWithConstructionStackWithoutResult(EvaluableNode *node_to_execute,
 		EvaluableNodeImmediateValueWithType current_index,
 		EvaluableNode *current_value)
 	{
-		RandomStream rand_seed = randomSeeds[curNumTasksEnqueued++];
+		size_t task_index = curNumTasksAdded++;
 
-		Concurrency::threadPool.BatchEnqueueTask(
-			[this, rand_seed, node_to_execute, current_index, current_value]
+		//must keep InterpreterConcurrencyManagerTraits::StackWithoutResults up to date with the
+		// number of params of the following lambda
+		tasks.emplace_back(
+			[this, task_index, node_to_execute, current_index, current_value]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
-			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
+			Interpreter interpreter(parentInterpreter->evaluableNodeManager, randomSeeds[task_index],
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
@@ -142,29 +186,32 @@ public:
 			enm->FreeNodeTreeIfPossible(result);
 
 			interpreter.memoryModificationLock.unlock();
-			taskSet.MarkTaskCompleted();
 		}
 		);
 	}
 
-	//Enqueues a concurrent task using the relative interpreter, executing node_to_execute
+	//Adds a child task to the runtime group using the relative interpreter, executing node_to_execute
 	//if result is specified, it will store the result there, otherwise it will free it
 	template<typename EvaluableNodeRefType>
-	void EnqueueTask(EvaluableNode *node_to_execute,
+		requires std::is_same_v<typename Traits::ModeTag,
+			typename InterpreterConcurrencyManagerTraits::NoStack::ModeTag>
+	void AddTask(EvaluableNode *node_to_execute,
 		EvaluableNodeRefType *result = nullptr, EvaluableNodeRequestedValueTypes immediate_results = false)
 	{
 		//save the node to execute, but also save the location
 		//so the location can be used later to save the result
 		size_t results_saver_location = resultsSaverCurrentTaskOffset++;
 
-		RandomStream rand_seed = randomSeeds[curNumTasksEnqueued++];
+		size_t task_index = curNumTasksAdded++;
 
-		Concurrency::threadPool.BatchEnqueueTask(
-			[this, rand_seed, node_to_execute, result, immediate_results, results_saver_location]
+		//must keep InterpreterConcurrencyManagerTraits::NoStack up to date with the
+		// number of params of the following lambda
+		tasks.emplace_back(
+			[this, task_index, node_to_execute, result, immediate_results, results_saver_location]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
-			Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
+			Interpreter interpreter(parentInterpreter->evaluableNodeManager, randomSeeds[task_index],
 				parentInterpreter->writeListeners, parentInterpreter->printListener,
 				parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
@@ -208,7 +255,6 @@ public:
 			}
 
 			interpreter.memoryModificationLock.unlock();
-			taskSet.MarkTaskCompleted();
 		}
 		);
 	}
@@ -218,11 +264,11 @@ public:
 	{
 		//allow other threads to perform garbage collection
 		parentInterpreter->memoryModificationLock.unlock();
-		taskSet.WaitForTasks(taskEnqueueLock);
+		Concurrency::RunInterpreterTasks(std::move(tasks));
 		parentInterpreter->memoryModificationLock.lock();
 
 		//release scope stack mutex
-		parentInterpreter->scopeStackMutex.reset();
+		parentInterpreter->scopeStackMutex = previousScopeStackMutex;
 
 		//propagate side effects back up
 		if(resultsSideEffect)
@@ -251,11 +297,15 @@ public:
 	}
 
 protected:
+	//The parent and children borrow this mutex until the synchronous join.
+	Concurrency::SingleMutex scopeStackMutex;
+	Concurrency::SingleMutex *previousScopeStackMutex;
+
 	//random seed for each task, the size of numTasks
 	std::vector<RandomStream> randomSeeds;
 
-	//a barrier to wait for the tasks being run
-	ThreadPool::CountableTaskSet taskSet;
+	//concurrent tasks to be completed
+	std::vector<Concurrency::FixedSizeTask<>> tasks;
 
 	//structure to keep track of the stack to prevent results from being garbage collected
 	EvaluableNodeStackStateSaver resultsSaver;
@@ -288,10 +338,8 @@ protected:
 	//current task offset, which started at resultsSaverFirstTaskOffset
 	size_t resultsSaverCurrentTaskOffset;
 
-	//number of tasks enqueued so far
-	size_t curNumTasksEnqueued;
+	//number of tasks added so far
+	size_t curNumTasksAdded;
 
-	//lock for enqueueing tasks
-	ThreadPool::TaskLock *taskEnqueueLock;
 };
 #endif

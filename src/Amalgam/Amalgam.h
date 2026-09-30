@@ -108,6 +108,7 @@ extern "C"
 	//if set to 0, will use however many cores are detected
 	//if reducing the number of threads, this must be called from the main thread,
 	//otherwise it will have no effect
+	//it will not take effect immediately but as the current tasks are spawned or wind down
 	AMALGAM_EXPORT void SetMaxNumThreads(size_t max_num_threads);
 
 	//for APIs that pass strings back, that memory needs to be cleaned up by the caller

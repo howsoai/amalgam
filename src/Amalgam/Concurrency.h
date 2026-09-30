@@ -113,21 +113,20 @@ namespace Concurrency
 	//cover most small tasks via small buffer optimization, but will allocate on the heap
 	//if needed.  note that for performance, it assumes it will be given a valid task
 	//before being executed
+	template<size_t bufferSize = 96>
 	struct FixedSizeTask
 	{
 	public:
-		static constexpr size_t INLINE_SIZE = 96;
-
 		FixedSizeTask() = default;
 		FixedSizeTask(const FixedSizeTask &) = delete;
 		FixedSizeTask &operator=(const FixedSizeTask &) = delete;
 
-		template<typename F> requires (!std::is_same_v<std::decay_t<F>, FixedSizeTask>)
+		template<typename F> requires (!std::is_same_v<std::decay_t<F>, FixedSizeTask<bufferSize>>)
 		explicit FixedSizeTask(F &&f)
 		{
 			using FuncType = std::decay_t<F>;
-			static_assert(sizeof(FuncType) <= INLINE_SIZE, "Task capture exceeds inline storage");
-			static constexpr Operations operations = {
+			static_assert(sizeof(FuncType) <= bufferSize, "Task capture exceeds inline storage");
+			static constexpr Operations new_operations = {
 				[](void *p) { (*std::launder(reinterpret_cast<FuncType *>(p)))(); },
 				[](void *dst, void *src)
 				{
@@ -138,48 +137,55 @@ namespace Concurrency
 				[](void *p) { std::launder(reinterpret_cast<FuncType *>(p))->~FuncType(); }
 			};
 			new (buffer) FuncType(std::forward<F>(f));
-			ops = &operations;
+			operations = &new_operations;
 		}
 
-		FixedSizeTask(FixedSizeTask &&other) noexcept
-			: ops(std::exchange(other.ops, nullptr))
+		FixedSizeTask(FixedSizeTask<bufferSize> &&other) noexcept
+			: operations(std::exchange(other.operations, nullptr))
 		{
-			if(ops)
-				ops->move(buffer, other.buffer);
+			if(operations)
+				operations->move(buffer, other.buffer);
 		}
 
-		FixedSizeTask &operator=(FixedSizeTask &&other) noexcept
+		FixedSizeTask &operator=(FixedSizeTask<bufferSize> &&other) noexcept
 		{
 			if(this != &other)
 			{
 				Reset();
-				ops = std::exchange(other.ops, nullptr);
-				if(ops)
-					ops->move(buffer, other.buffer);
+				operations = std::exchange(other.operations, nullptr);
+				if(operations)
+					operations->move(buffer, other.buffer);
 			}
 			return *this;
 		}
 
-		~FixedSizeTask() { Reset(); }
+		~FixedSizeTask()
+		{
+			Reset();
+		}
 
 		void Reset() noexcept
 		{
-			if(ops)
-				std::exchange(ops, nullptr)->destroy(buffer);
+			if(operations)
+				std::exchange(operations, nullptr)->destroy(buffer);
 		}
 
-		//Only populated tasks may be invoked.
-		void operator()() { ops->execute(buffer); }
+		//only populated tasks may be invoked
+		void operator()()
+		{
+			operations->execute(buffer);
+		}
 
 	private:
+		alignas(std::max_align_t) std::byte buffer[bufferSize];
+
 		struct Operations
 		{
 			void (*execute)(void *);
 			void (*move)(void *, void *);
 			void (*destroy)(void *);
 		};
-		alignas(std::max_align_t) std::byte buffer[INLINE_SIZE];
-		const Operations *ops = nullptr;
+		const Operations *operations = nullptr;
 	};
 
 	struct ExecutionGeneration;
@@ -315,10 +321,11 @@ namespace Concurrency
 	};
 
 	//group of tasks for a given interpreter
+	template<typename FuncType>
 	class InterpreterTaskGroup
 	{
 	public:
-		explicit InterpreterTaskGroup(std::vector<FixedSizeTask> &&tasks)
+		explicit InterpreterTaskGroup(std::vector<FuncType> &&tasks)
 			: tasks(std::move(tasks)), remaining(this->tasks.size())
 		{}
 
@@ -352,7 +359,7 @@ namespace Concurrency
 				remaining.notify_all();
 		}
 
-		std::vector<FixedSizeTask> tasks;
+		std::vector<FuncType> tasks;
 		std::atomic<size_t> next{ 1 };
 		std::atomic<size_t> remaining;
 	};
@@ -367,7 +374,8 @@ namespace Concurrency
 		cleanup();
 	}
 
-	inline void RunInterpreterTasks(std::vector<FixedSizeTask> tasks)
+	template<typename FuncType>
+	inline void RunInterpreterTasks(std::vector<FuncType> tasks)
 	{
 		if(tasks.empty())
 			return;
@@ -393,7 +401,7 @@ namespace Concurrency
 			return;
 		}
 
-		auto group = std::make_shared<InterpreterTaskGroup>(std::move(tasks));
+		auto group = std::make_shared<InterpreterTaskGroup<FuncType>>(std::move(tasks));
 		for(size_t i = 0; i < num_workers; i++)
 		{
 			interpreter_runtime->silent_async([group](tf::Runtime &runtime)
@@ -464,7 +472,7 @@ inline void IterateOverConcurrentlyIfPossible(ContainerType &container, Function
 		}
 		else
 		{
-			std::vector<Concurrency::FixedSizeTask> tasks;
+			std::vector<Concurrency::FixedSizeTask<>> tasks;
 			tasks.reserve(container.size());
 			for(auto value : container)
 			{

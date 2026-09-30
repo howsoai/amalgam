@@ -285,7 +285,7 @@ protected:
 	std::vector<RandomStream> randomSeeds;
 
 	//Children join the current runtime; execution starts only at EndConcurrency.
-	std::vector<Concurrency::FixedSizeTask> tasks;
+	std::vector<Concurrency::FixedSizeTask<>> tasks;
 	bool completed = false;
 
 	//structure to keep track of the stack to prevent results from being garbage collected

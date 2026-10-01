@@ -68,8 +68,8 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 	}
 
 	//make sure doesn't go below the threshold
-	numNodesToRunGarbageCollection = std::max(minGarbageCollectionNodesThreshold, next_trigger);
-	numNodesToRunGarbageCollection = std::min(minGarbageCollectionNodesThreshold, maxGarbageCollectionNodesThreshold);
+	next_trigger = std::max(minGarbageCollectionNodesThreshold, next_trigger);
+	numNodesToRunGarbageCollection = std::min(next_trigger, maxGarbageCollectionNodesThreshold);
 }
 
 void EvaluableNodeManager::CollectGarbage()

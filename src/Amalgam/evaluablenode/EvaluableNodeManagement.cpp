@@ -11,9 +11,9 @@
 
 constexpr size_t _min_gc_nodes_threshold_default = 64;
 constexpr size_t _max_gc_nodes_threshold_default = 1000000000;
-constexpr float _extra_memory_capacity_factor_default = 3.0;
-constexpr float _min_memory_retention_factor_default = 0.95;
-constexpr float _alloc_expansion_factor_default = 1.5;
+constexpr float _extra_memory_capacity_factor_default = 3.0f;
+constexpr float _min_memory_retention_factor_default = 0.95f;
+constexpr float _alloc_expansion_factor_default = 1.5f;
 
 size_t EvaluableNodeManager::minGarbageCollectionNodesThreshold = _min_gc_nodes_threshold_default;
 size_t EvaluableNodeManager::maxGarbageCollectionNodesThreshold = _max_gc_nodes_threshold_default;
@@ -435,7 +435,7 @@ void EvaluableNodeManager::SetGarbageCollectionParamsByEvaluableNode(EvaluableNo
 			{
 				double value_num = EvaluableNode::ToNumber(value);
 				if(value_num >= 1.0 && value_num < 1e9)
-					extraMemoryCapacityFactor = value_num;
+					extraMemoryCapacityFactor = static_cast<float>(value_num);
 				else
 					extraMemoryCapacityFactor = _extra_memory_capacity_factor_default;
 			}
@@ -443,7 +443,7 @@ void EvaluableNodeManager::SetGarbageCollectionParamsByEvaluableNode(EvaluableNo
 			{
 				double value_num = EvaluableNode::ToNumber(value);
 				if(value_num >= 0 && value_num <= 1.0)
-					minMemoryRetentionFactor = value_num;
+					minMemoryRetentionFactor = static_cast<float>(value_num);
 				else
 					minMemoryRetentionFactor = _min_memory_retention_factor_default;
 			}
@@ -451,7 +451,7 @@ void EvaluableNodeManager::SetGarbageCollectionParamsByEvaluableNode(EvaluableNo
 			{
 				double value_num = EvaluableNode::ToNumber(value);
 				if(value_num > 1.0 && value_num <= 1e9)
-					allocExpansionFactor = value_num;
+					allocExpansionFactor = static_cast<float>(value_num);
 				else
 					allocExpansionFactor = _alloc_expansion_factor_default;
 			}

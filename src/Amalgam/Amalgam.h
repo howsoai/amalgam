@@ -114,7 +114,7 @@ extern "C"
 	AMALGAM_EXPORT void SetMaxNumThreads(size_t max_num_threads);
 
 	//returns the current number of threads actively executing
-	//that this is an instantaneous measurement and is only a handful of CPU instructions
+	//this is an instantaneous measurement and is only a handful of CPU instructions
 	//due to the nature of task dispatching and task decomposition, it is possible that the number of active
 	//threads can change very rapidly.  the best way to use this method is to aggregate many samples per
 	//second with some form of average or rolling average over a time period

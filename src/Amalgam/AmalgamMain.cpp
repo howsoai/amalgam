@@ -298,6 +298,32 @@ PLATFORM_MAIN_CONSOLE
 			run_tracefile = true;
 			tracefile = args[++i];
 		}
+		else if(args[i] == "--min_gc_nodes_threshold" && i + 1 < args.size())
+		{
+			EvaluableNodeManager::minGarbageCollectionNodesThreshold = std::atoi(args[++i].data());
+		}
+		else if(args[i] == "--max_gc_nodes_threshold" && i + 1 < args.size())
+		{
+			EvaluableNodeManager::maxGarbageCollectionNodesThreshold = std::atoi(args[++i].data());
+		}
+		else if(args[i] == "--extra_memory_capacity_factor" && i + 1 < args.size())
+		{
+			float value_num = static_cast<float>(std::atof(args[++i].data()));
+			if(value_num >= 1.0 && value_num < 1e9)
+				EvaluableNodeManager::extraMemoryCapacityFactor = value_num;
+		}
+		else if(args[i] == "--min_memory_retention_factor" && i + 1 < args.size())
+		{
+			float value_num = static_cast<float>(std::atof(args[++i].data()));
+			if(value_num >= 0 && value_num <= 1)
+				EvaluableNodeManager::minMemoryRetentionFactor = value_num;
+		}
+		else if(args[i] == "--alloc_expansion_factor" && i + 1 < args.size())
+		{
+			float value_num = static_cast<float>(std::atof(args[++i].data()));
+			if(value_num >= 1.0 && value_num < 1e9)
+				EvaluableNodeManager::allocExpansionFactor = value_num;
+		}
 		else if(args[i] == "--validate-amalgam")
 			run_validate_amalgam = true;
 	#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)

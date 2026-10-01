@@ -305,8 +305,24 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 		return 0;
 
 	size_t total_size = sizeof(EvaluableNode);
+
+	if(n->IsNodeDeallocated())
+		return total_size;
+
+	//if has an extended value, estimate 3x storage due to 1x in ordered, and 2x in flat hash map
+	int extended_assoc_multiplier = 1;
 	if(n->HasExtendedValue())
-		total_size += sizeof(EvaluableNode::EvaluableNodeValue);
+	{
+		if(n->GetType() == ENT_ASSOC)
+		{
+			total_size += sizeof(LargeAssocType);
+			extended_assoc_multiplier = 3;
+		}
+		else
+		{
+			total_size += sizeof(OrderedType);
+		}
+	}
 
 	auto &a_and_c = n->GetAnnotationsAndCommentsStorage();
 	size_t annotation_size = a_and_c.GetAnnotations().size();
@@ -320,7 +336,7 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 	total_size += annotation_size + comment_size;
 
 	total_size += n->GetOrderedChildNodes().capacity() * sizeof(EvaluableNode *);
-	total_size += n->GetMappedChildNodesView().size() * (sizeof(StringInternPool::StringID) + sizeof(EvaluableNode *));
+	total_size += n->GetMappedChildNodesView().size() * extended_assoc_multiplier * (sizeof(StringInternPool::StringID) + sizeof(EvaluableNode *));
 
 	return total_size;
 }

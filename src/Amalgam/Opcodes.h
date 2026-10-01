@@ -347,6 +347,13 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_max_contained_entity_depth,
 	ENBISI_max_entity_id_length,
 
+	//garbage collection parameters
+	ENBISI_min_gc_nodes_threshold,
+	ENBISI_max_gc_nodes_threshold,
+	ENBISI_extra_memory_capacity_factor,
+	ENBISI_min_memory_retention_factor,
+	ENBISI_alloc_expansion_factor,
+
 	//entity access parameters
 	ENBISI_accessing_entity,
 

@@ -121,6 +121,14 @@ extern "C"
 	//this does not include OpenMP threads in the count
 	AMALGAM_EXPORT size_t GetNumActiveThreads();
 
+	//returns a json object with the settable garbage collection parameters
+	AMALGAM_EXPORT char *GetGarbageCollectionParams();
+
+	//updates the garbage collection parameters specified in json_params;
+	//will only update those values passed in
+	//use GetGarbageCollectionParams() to obtain the current parameters
+	AMALGAM_EXPORT void SetGarbageCollectionParams(char *json_params);
+
 	//for APIs that pass strings back, that memory needs to be cleaned up by the caller
 	AMALGAM_EXPORT void DeleteString(char *p);
 }

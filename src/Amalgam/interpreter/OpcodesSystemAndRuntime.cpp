@@ -473,6 +473,8 @@ static OpcodeInitializer _ENT_SYSTEM(ENT_SYSTEM, &Interpreter::InterpretNode_ENT
  - debugging_info:      Returns a list of two values. The first is true if a debugger is present, false if it is not. The second is true if debugging sources is enabled, which means that source code location information is prepended to opcodes comments for any opcodes loaded from a file.
  - get_max_num_threads: Returns the current maximum number of threads.
  - set_max_num_threads: Attempts to set the current maximum number of threads to `parameter`, where 0 means to use the number of processor cores reported by the operating system. Returns the maximum number of threads after it has been set.
+ - get_gc_params:       Returns a data structure with the global parameters for garbage collection.
+ - set_gc_params:       Sets the garbage collection parameters specified by `parameter`, which should be in the same format as the value returned by `get_gc_params`.
  - built_in_data:       Returns built-in data compiled along with the version information.)";
 	d.examples = MakeAmalgamExamples({
 		{R"((system "debugging_info"))", R"([.false .false])"}
@@ -711,6 +713,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		return AllocReturn(max_num_threads_raw, immediate_result);
 	}
 #endif
+	else if(command == "get_gc_params" && permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
+	{
+		return EvaluableNodeReference(evaluableNodeManager->GetGarbageCollectionParamsAsEvaluableNode(), true);
+	}
+	else if(command == "set_gc_params" && ocn.size() > 1 && permissions.HasPermission(ExecutionPermissions::Permission::ALTER_PERFORMANCE))
+	{
+		auto params = InterpretNodeForImmediateUse(ocn[1]);
+		EvaluableNodeManager::SetGarbageCollectionParamsByEvaluableNode(params);
+		evaluableNodeManager->FreeNodeTreeIfPossible(params);
+	}
 	else if(command == "built_in_data" && permissions.HasPermission(ExecutionPermissions::Permission::ENVIRONMENT))
 	{
 		uint8_t built_in_data[] = AMALGAM_BUILT_IN_DATA;

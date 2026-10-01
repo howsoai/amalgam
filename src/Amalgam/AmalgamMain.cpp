@@ -121,6 +121,21 @@ Options:
     --tracefile [file]
                      Like trace, but pulls the data from the file specified.
 
+    --min_gc_nodes_threshold
+                     Sets the minimum number of nodes before which garbage collection can be triggered.
+
+    --max_gc_nodes_threshold
+                     Sets the maximum number of nodes allowed after which will trigger garbage collection.
+
+    --extra_memory_capacity_factor
+                     Sets the amount of room to leave free when performing garbage collection as a multiple of the working set.
+
+    --min_memory_retention_factor
+                     Sets the percent of storage to always keep after each garbage collection to gracefully handle intermittent memory spikes.
+
+    --alloc_expansion_factor
+                     Sets the amount of extra memory to allocate to reduce reallocations.
+
     --validate-amalgam
                      Runs a test suite, validating the opcodes and running unit tests based on examples
                      in documentation as well as additional stress tests.  Will report any issues found.

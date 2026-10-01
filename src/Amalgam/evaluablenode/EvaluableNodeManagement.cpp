@@ -9,9 +9,17 @@
 #include <vector>
 #include <utility>
 
-const size_t EvaluableNodeManager::minNodesToCollectGarbage = 200;
-const double EvaluableNodeManager::allocExpansionFactor = 1.5;
-const int EvaluableNodeManager::extraMemoryCapacityFactor = 3;
+constexpr size_t _min_gc_nodes_threshold_default = 64;
+constexpr size_t _max_gc_nodes_threshold_default = 1000000000;
+constexpr float _extra_memory_capacity_factor_default = 3.0;
+constexpr float _min_memory_retention_factor_default = 0.95;
+constexpr float _alloc_expansion_factor_default = 1.5;
+
+size_t EvaluableNodeManager::minGarbageCollectionNodesThreshold = _min_gc_nodes_threshold_default;
+size_t EvaluableNodeManager::maxGarbageCollectionNodesThreshold = _max_gc_nodes_threshold_default;
+float EvaluableNodeManager::extraMemoryCapacityFactor = _extra_memory_capacity_factor_default;
+float EvaluableNodeManager::minMemoryRetentionFactor = _min_memory_retention_factor_default;
+float EvaluableNodeManager::allocExpansionFactor = _alloc_expansion_factor_default;
 
 #ifdef MULTITHREAD_SUPPORT
 //tunable parameter for how many nodes to have a garbage collection sweep perform at a time
@@ -41,7 +49,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 {
 	//assume at least a factor larger than the base memory usage for the entity
 	//add 1 for good measure and to make sure the smallest size isn't zero
-	size_t max_from_current = extraMemoryCapacityFactor * GetNumberOfUsedNodes() + 1;
+	size_t max_from_current = static_cast<size_t>(extraMemoryCapacityFactor * GetNumberOfUsedNodes()) + 1;
 
 	size_t cur_num_nodes = GetNumberOfUsedNodes();
 	//use snapshot, in the off chance that a concurrent collection occurred
@@ -53,13 +61,15 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 		//a large allocation goes beyond that size and so the memory keeps growing
 		//by using a fraction less than 1, it reduces the chances of a slow memory increase
 		size_t diff_from_current = previous_trigger - cur_num_nodes;
-		size_t max_from_previous = cur_num_nodes + static_cast<size_t>(.95 * diff_from_current);
+		size_t max_from_previous = cur_num_nodes
+			+ static_cast<size_t>(minMemoryRetentionFactor * diff_from_current);
 
 		next_trigger = std::max<size_t>(max_from_previous, max_from_current);
 	}
 
 	//make sure doesn't go below the threshold
-	numNodesToRunGarbageCollection = std::max(minNodesToCollectGarbage, next_trigger);
+	numNodesToRunGarbageCollection = std::max(minGarbageCollectionNodesThreshold, next_trigger);
+	numNodesToRunGarbageCollection = std::min(minGarbageCollectionNodesThreshold, maxGarbageCollectionNodesThreshold);
 }
 
 void EvaluableNodeManager::CollectGarbage()
@@ -366,7 +376,9 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 
 void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 {
-	size_t new_size = std::min(nodes.size(), firstUnusedNodeIndex * extraMemoryCapacityFactor + 1);
+	size_t new_size = std::min(nodes.size(),
+		static_cast<size_t>(firstUnusedNodeIndex * extraMemoryCapacityFactor) + 1);
+
 	if(new_size == nodes.size())
 		return;
 
@@ -378,6 +390,73 @@ void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 
 	nodes.resize(new_size);
 	nodes.shrink_to_fit();
+}
+
+EvaluableNode *EvaluableNodeManager::GetGarbageCollectionParamsAsEvaluableNode()
+{
+	EvaluableNode *params_en = AllocNode(ENT_ASSOC);
+	params_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_min_gc_nodes_threshold),
+		AllocNode(static_cast<double>(minGarbageCollectionNodesThreshold)));
+	params_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_max_gc_nodes_threshold),
+		AllocNode(static_cast<double>(maxGarbageCollectionNodesThreshold)));
+	params_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_extra_memory_capacity_factor),
+		AllocNode(extraMemoryCapacityFactor));
+	params_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_min_memory_retention_factor),
+		AllocNode(minMemoryRetentionFactor));
+	params_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_alloc_expansion_factor),
+		AllocNode(allocExpansionFactor));
+
+	return params_en;
+}
+
+void EvaluableNodeManager::SetGarbageCollectionParamsByEvaluableNode(EvaluableNode *en)
+{
+	if(EvaluableNode::IsAssociativeArray(en))
+	{
+		for(auto [parameter, value] : en->GetMappedChildNodesViewOnAssoc())
+		{
+			if(parameter == GetStringIdFromBuiltInStringId(ENBISI_min_gc_nodes_threshold))
+			{
+				double value_num = EvaluableNode::ToNumber(value);
+				if(value_num >= 0 && value_num < std::numeric_limits<size_t>::max())
+					minGarbageCollectionNodesThreshold = static_cast<size_t>(value_num);
+				else
+					minGarbageCollectionNodesThreshold = _min_gc_nodes_threshold_default;
+			}
+			else if(parameter == GetStringIdFromBuiltInStringId(ENBISI_max_gc_nodes_threshold))
+			{
+				double value_num = EvaluableNode::ToNumber(value);
+				if(value_num >= 0 && value_num < std::numeric_limits<size_t>::max())
+					maxGarbageCollectionNodesThreshold = static_cast<size_t>(value_num);
+				else
+					maxGarbageCollectionNodesThreshold = _max_gc_nodes_threshold_default;
+			}
+			else if(parameter == GetStringIdFromBuiltInStringId(ENBISI_extra_memory_capacity_factor))
+			{
+				double value_num = EvaluableNode::ToNumber(value);
+				if(value_num >= 1.0 && value_num < 1e9)
+					extraMemoryCapacityFactor = value_num;
+				else
+					extraMemoryCapacityFactor = _extra_memory_capacity_factor_default;
+			}
+			else if(parameter == GetStringIdFromBuiltInStringId(ENBISI_min_memory_retention_factor))
+			{
+				double value_num = EvaluableNode::ToNumber(value);
+				if(value_num >= 0 && value_num <= 1.0)
+					minMemoryRetentionFactor = value_num;
+				else
+					minMemoryRetentionFactor = _min_memory_retention_factor_default;
+			}
+			else if(parameter == GetStringIdFromBuiltInStringId(ENBISI_alloc_expansion_factor))
+			{
+				double value_num = EvaluableNode::ToNumber(value);
+				if(value_num > 1.0 && value_num <= 1e9)
+					allocExpansionFactor = value_num;
+				else
+					allocExpansionFactor = _alloc_expansion_factor_default;
+			}
+		}
+	}
 }
 
 size_t EvaluableNodeManager::GetEstimatedTotalReservedSizeInBytes()

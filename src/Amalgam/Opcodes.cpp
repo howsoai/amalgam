@@ -337,6 +337,13 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_max_contained_entity_depth, "max_contained_entity_depth");
 	EmplaceStaticString(ENBISI_max_entity_id_length, "max_entity_id_length");
 
+	//garbage collection parameters
+	EmplaceStaticString(ENBISI_min_gc_nodes_threshold, "min_gc_nodes_threshold");
+	EmplaceStaticString(ENBISI_max_gc_nodes_threshold, "max_gc_nodes_threshold");
+	EmplaceStaticString(ENBISI_extra_memory_capacity_factor, "extra_memory_capacity_factor");
+	EmplaceStaticString(ENBISI_min_memory_retention_factor, "min_memory_retention_factor");
+	EmplaceStaticString(ENBISI_alloc_expansion_factor, "alloc_expansion_factor");
+
 	//entity access parameters
 	EmplaceStaticString(ENBISI_accessing_entity, "accessing_entity");
 

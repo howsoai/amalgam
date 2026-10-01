@@ -197,7 +197,7 @@ public:
 	};
 
 	EvaluableNodeManager() :
-		numNodesToRunGarbageCollection(minNodesToCollectGarbage), firstUnusedNodeIndex(0)
+		numNodesToRunGarbageCollection(minGarbageCollectionNodesThreshold), firstUnusedNodeIndex(0)
 	{}
 
 	~EvaluableNodeManager();
@@ -758,6 +758,14 @@ public:
 		return std::vector<EvaluableNode *>(begin(nodes), begin(nodes) + firstUnusedNodeIndex);
 	}
 
+	//returns a data structure of the current garbage collection parameters
+	//even though the parameters are global, the method is not static since it allocates from this EvaluableNodeManager
+	EvaluableNode *GetGarbageCollectionParamsAsEvaluableNode();
+
+	//sets the garbage collection parameters by the data specified by en
+	// since the parameters are global, the method is static
+	static void SetGarbageCollectionParamsByEvaluableNode(EvaluableNode *en);
+
 	//returns an estimate of the amount of memory allocated by the nodes managed
 	// only an estimate because the platform's underlying memory management system may need to allocate additional
 	// memory that cannot be easily accounted for
@@ -904,6 +912,23 @@ public:
 	//root of the entity
 	EvaluableNode *rootNode;
 
+	//garbage collection parameters
+
+	//minimum number of nodes before which garbage collection can be triggered
+	static size_t minGarbageCollectionNodesThreshold;
+
+	//maximum number of nodes allowed after which will trigger garbage collection
+	static size_t maxGarbageCollectionNodesThreshold;
+
+	//amount of room to leave free when performing garbage collection as a multiple of the working set
+	static float extraMemoryCapacityFactor;
+
+	//percent of storage to always keep after each garbage collection to gracefully handle intermittent memory spikes
+	static float minMemoryRetentionFactor;
+
+	//amount of extra memory to allocate to reduce reallocations
+	static float allocExpansionFactor;
+
 protected:
 
 #ifdef MULTITHREAD_SUPPORT
@@ -924,15 +949,6 @@ protected:
 	//keeps track of all of the nodes currently referenced by any resource or interpreter
 	//only allocated if needed
 	std::unique_ptr<ActiveInterpreters> activeInterpreters;
-
-	//minimum number of nodes before which garbage collection can be triggered
-	static const size_t minNodesToCollectGarbage;
-
-	//amount to scale up nodes when allocating
-	static const double allocExpansionFactor;
-
-	//amount of room to leave free when performing garbage collection (integer for performance)
-	static const int extraMemoryCapacityFactor;
 
 	//number of nodes to allocate at once for the local allocation buffer
 	static const int labBlockAllocationSize = 24;

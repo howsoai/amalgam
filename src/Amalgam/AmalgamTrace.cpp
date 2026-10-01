@@ -345,6 +345,16 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 			response = FAILURE_RESPONSE;
 		#endif
 		}
+		else if(command == "GET_GARBAGE_COLLECTION_PARAMS")
+		{
+			response = EntityExternalInterface::GetGarbageCollectionParams();
+		}
+		else if(command == "SET_GARBAGE_COLLECTION_PARAMS")
+		{
+			json_payload = input;  // json data
+			EntityExternalInterface::SetGarbageCollectionParams(json_payload);
+			response = SUCCESS_RESPONSE;
+		}
 		else if(command == "EXIT")
 		{
 			break;

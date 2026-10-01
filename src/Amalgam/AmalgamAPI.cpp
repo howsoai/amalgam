@@ -351,4 +351,13 @@ extern "C"
 			Concurrency::SetMaxNumThreads(max_num_threads);
 	#endif
 	}
+
+	size_t GetNumActiveThreads()
+	{
+	#if defined(MULTITHREAD_SUPPORT)
+		return Concurrency::GetActiveThreadCount();
+	#else
+		return 1;
+	#endif
+	}
 }

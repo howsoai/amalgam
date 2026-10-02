@@ -418,7 +418,7 @@ void EvaluableNodeManager::SetGarbageCollectionParamsByEvaluableNode(EvaluableNo
 			if(parameter == GetStringIdFromBuiltInStringId(ENBISI_min_gc_nodes_threshold))
 			{
 				double value_num = EvaluableNode::ToNumber(value);
-				if(value_num >= 0 && value_num < std::numeric_limits<size_t>::max())
+				if(value_num >= 0 && value_num < static_cast<double>(std::numeric_limits<size_t>::max()))
 					minGarbageCollectionNodesThreshold = static_cast<size_t>(value_num);
 				else
 					minGarbageCollectionNodesThreshold = _min_gc_nodes_threshold_default;
@@ -426,7 +426,7 @@ void EvaluableNodeManager::SetGarbageCollectionParamsByEvaluableNode(EvaluableNo
 			else if(parameter == GetStringIdFromBuiltInStringId(ENBISI_max_gc_nodes_threshold))
 			{
 				double value_num = EvaluableNode::ToNumber(value);
-				if(value_num >= 0 && value_num < std::numeric_limits<size_t>::max())
+				if(value_num >= 0 && value_num < static_cast<double>(std::numeric_limits<size_t>::max()))
 					maxGarbageCollectionNodesThreshold = static_cast<size_t>(value_num);
 				else
 					maxGarbageCollectionNodesThreshold = _max_gc_nodes_threshold_default;

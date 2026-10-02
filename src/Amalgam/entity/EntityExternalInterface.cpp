@@ -469,6 +469,24 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	return (converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
 }
 
+std::string EntityExternalInterface::GetGarbageCollectionParams()
+{
+	EvaluableNodeManager enm;
+	auto params_en = enm.GetGarbageCollectionParamsAsEvaluableNode();
+
+	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(params_en);
+	if(converted)
+		return result;
+	return "null";
+}
+
+void EntityExternalInterface::SetGarbageCollectionParams(std::string &json_params)
+{
+	EvaluableNodeManager enm;
+	EvaluableNode *params_en = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_params);
+	EvaluableNodeManager::SetGarbageCollectionParamsByEvaluableNode(params_en);
+}
+
 EntityExternalInterface::EntityListenerBundle::~EntityListenerBundle()
 {
 	if(entity != nullptr)

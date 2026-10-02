@@ -102,6 +102,8 @@ extern "C"
 
 	AMALGAM_EXPORT void SetSBFDataStoreEnabled(bool enable_SBF_datastore);
 	AMALGAM_EXPORT bool IsSBFDataStoreEnabled();
+
+	//sets the soft maximum number of threads that can be active at any given point
 	AMALGAM_EXPORT size_t GetMaxNumThreads();
 
 	//changes the maximum number of threads to max_num_threads
@@ -110,6 +112,22 @@ extern "C"
 	//otherwise it will have no effect
 	//it will not take effect immediately but as the current tasks are spawned or wind down
 	AMALGAM_EXPORT void SetMaxNumThreads(size_t max_num_threads);
+
+	//returns the current number of threads actively executing
+	//this is an instantaneous measurement and is only a handful of CPU instructions
+	//due to the nature of task dispatching and task decomposition, it is possible that the number of active
+	//threads can change very rapidly.  the best way to use this method is to aggregate many samples per
+	//second with some form of average or rolling average over a time period
+	//this does not include OpenMP threads in the count
+	AMALGAM_EXPORT size_t GetNumActiveThreads();
+
+	//returns a json object with the settable garbage collection parameters
+	AMALGAM_EXPORT char *GetGarbageCollectionParams();
+
+	//updates the garbage collection parameters specified in json_params;
+	//will only update those values passed in
+	//use GetGarbageCollectionParams() to obtain the current parameters
+	AMALGAM_EXPORT void SetGarbageCollectionParams(char *json_params);
 
 	//for APIs that pass strings back, that memory needs to be cleaned up by the caller
 	AMALGAM_EXPORT void DeleteString(char *p);

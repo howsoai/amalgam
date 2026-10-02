@@ -316,15 +316,6 @@ extern "C"
 		return return_entities;
 	}
 
-	void DeleteString(char *p)
-	{
-		delete[] p;
-	}
-
-	// ************************************
-	// Amalgam Engine Flags
-	// ************************************
-
 	void SetSBFDataStoreEnabled(bool enable_SBF_datastore)
 	{
 		_enable_SBF_datastore = enable_SBF_datastore;
@@ -350,5 +341,31 @@ extern "C"
 		if(max_num_threads <= static_cast<size_t>(std::numeric_limits<int>::max()))
 			Concurrency::SetMaxNumThreads(max_num_threads);
 	#endif
+	}
+
+	size_t GetNumActiveThreads()
+	{
+	#if defined(MULTITHREAD_SUPPORT)
+		return Concurrency::GetActiveThreadCount();
+	#else
+		return 1;
+	#endif
+	}
+
+	char *GetGarbageCollectionParams()
+	{
+		std::string ret = EntityExternalInterface::GetGarbageCollectionParams();
+		return StringToCharPtr(ret);
+	}
+
+	void SetGarbageCollectionParams(char *json_params)
+	{
+		std::string params(json_params);
+		return EntityExternalInterface::SetGarbageCollectionParams(params);
+	}
+
+	void DeleteString(char *p)
+	{
+		delete[] p;
 	}
 }

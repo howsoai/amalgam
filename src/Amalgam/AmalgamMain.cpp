@@ -121,6 +121,21 @@ Options:
     --tracefile [file]
                      Like trace, but pulls the data from the file specified.
 
+    --min_gc_nodes_threshold
+                     Sets the minimum number of nodes before which garbage collection can be triggered.
+
+    --max_gc_nodes_threshold
+                     Sets the maximum number of nodes allowed after which will trigger garbage collection.
+
+    --extra_memory_capacity_factor
+                     Sets the amount of room to leave free when performing garbage collection as a multiple of the working set.
+
+    --min_memory_retention_factor
+                     Sets the percent of storage to always keep after each garbage collection to gracefully handle intermittent memory spikes.
+
+    --alloc_expansion_factor
+                     Sets the amount of extra memory to allocate to reduce reallocations.
+
     --validate-amalgam
                      Runs a test suite, validating the opcodes and running unit tests based on examples
                      in documentation as well as additional stress tests.  Will report any issues found.
@@ -282,6 +297,32 @@ PLATFORM_MAIN_CONSOLE
 		{
 			run_tracefile = true;
 			tracefile = args[++i];
+		}
+		else if(args[i] == "--min_gc_nodes_threshold" && i + 1 < args.size())
+		{
+			EvaluableNodeManager::minGarbageCollectionNodesThreshold = std::atoi(args[++i].data());
+		}
+		else if(args[i] == "--max_gc_nodes_threshold" && i + 1 < args.size())
+		{
+			EvaluableNodeManager::maxGarbageCollectionNodesThreshold = std::atoi(args[++i].data());
+		}
+		else if(args[i] == "--extra_memory_capacity_factor" && i + 1 < args.size())
+		{
+			float value_num = static_cast<float>(std::atof(args[++i].data()));
+			if(value_num >= 1.0 && value_num < 1e9)
+				EvaluableNodeManager::extraMemoryCapacityFactor = value_num;
+		}
+		else if(args[i] == "--min_memory_retention_factor" && i + 1 < args.size())
+		{
+			float value_num = static_cast<float>(std::atof(args[++i].data()));
+			if(value_num >= 0 && value_num <= 1)
+				EvaluableNodeManager::minMemoryRetentionFactor = value_num;
+		}
+		else if(args[i] == "--alloc_expansion_factor" && i + 1 < args.size())
+		{
+			float value_num = static_cast<float>(std::atof(args[++i].data()));
+			if(value_num >= 1.0 && value_num < 1e9)
+				EvaluableNodeManager::allocExpansionFactor = value_num;
 		}
 		else if(args[i] == "--validate-amalgam")
 			run_validate_amalgam = true;

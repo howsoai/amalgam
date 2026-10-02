@@ -136,6 +136,8 @@ Executes system command specified by `command` passing in `parameter` if appropr
  - debugging_info:      Returns a list of two values. The first is true if a debugger is present, false if it is not. The second is true if debugging sources is enabled, which means that source code location information is prepended to opcodes comments for any opcodes loaded from a file.
  - get_max_num_threads: Returns the current maximum number of threads.
  - set_max_num_threads: Attempts to set the current maximum number of threads to `parameter`, where 0 means to use the number of processor cores reported by the operating system. Returns the maximum number of threads after it has been set.
+ - get_gc_params:       Returns a data structure with the global parameters for garbage collection.
+ - set_gc_params:       Sets the garbage collection parameters specified by `parameter`, which should be in the same format as the value returned by `get_gc_params`.
  - built_in_data:       Returns built-in data compiled along with the version information.
 #### Details
  - Permissions required:  all

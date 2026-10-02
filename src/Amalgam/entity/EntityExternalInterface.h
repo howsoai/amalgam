@@ -104,6 +104,9 @@ public:
 	std::pair<std::string, std::string> ExecuteEntityJSONLogged(const std::string &handle, const std::string &label, std::string_view json);
 	std::string EvalOnEntity(const std::string &handle, const std::string &amlg);
 
+	static std::string GetGarbageCollectionParams();
+	static void SetGarbageCollectionParams(std::string &json_params);
+
 protected:
 
 	//a class that manages the entity

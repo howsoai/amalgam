@@ -15,6 +15,120 @@ MakeAmalgamUnitTests(Ts... elems)
 }
 
 auto _amalgam_unit_tests = MakeAmalgamUnitTests(
+//Empty-context distance queries must honor exclusions, including fused singleton exclusions.
+AmalgamExample{ R"&((seq
+	(create_entities "a" (assoc "x" 1))
+	(create_entities "b" (assoc "x" 2))
+	;Initialize the distance cache before exercising the empty-context shortcut (issue #657).
+	(compute_on_contained_entities (query_nearest_generalized_distance 2 ["x"] [0] 1))
+	[
+		;singleton exclusion, k exceeds eligible count
+		(= {b 0}
+			(compute_on_contained_entities
+				(query_not_in_entity_list ["a"])
+				(query_nearest_generalized_distance 2 [] [] 1)
+			)
+		)
+		;singleton exclusion with k = 1
+		(= {b 0}
+			(compute_on_contained_entities
+				(query_not_in_entity_list ["a"])
+				(query_nearest_generalized_distance 1 [] [] 1)
+			)
+		)
+		;exclude the last entity index
+		(= {a 0}
+			(compute_on_contained_entities
+				(query_not_in_entity_list ["b"])
+				(query_nearest_generalized_distance 2 [] [] 1)
+			)
+		)
+		;multiple exclusions
+		(= {}
+			(compute_on_contained_entities
+				(query_not_in_entity_list ["a" "b"])
+				(query_nearest_generalized_distance 2 [] [] 1)
+			)
+		)
+		;exclusion leaves no eligible entities
+		(= {}
+			(compute_on_contained_entities
+				(query_in_entity_list ["a"])
+				(query_not_in_entity_list ["a"])
+				(query_nearest_generalized_distance 2 [] [] 1)
+			)
+		)
+		;already excluded entity
+		(= {b 0}
+			(compute_on_contained_entities
+				(query_in_entity_list ["b"])
+				(query_not_in_entity_list ["a"])
+				(query_nearest_generalized_distance 2 [] [] 1)
+			)
+		)
+		;nonexistent excluded entity
+		(= {a 0 b 0}
+			(compute_on_contained_entities
+				(query_not_in_entity_list ["missing"])
+				(query_nearest_generalized_distance 2 [] [] 1)
+			)
+		)
+		;no exclusion
+		(= {a 0 b 0}
+			(compute_on_contained_entities
+				(query_nearest_generalized_distance 2 [] [] 1)
+			)
+		)
+		;zero requested neighbors
+		(= {}
+			(compute_on_contained_entities
+				(query_not_in_entity_list ["a"])
+				(query_nearest_generalized_distance 0 [] [] 1)
+			)
+		)
+		;explicit inclusion control
+		(= {b 0}
+			(compute_on_contained_entities
+				(query_in_entity_list ["b"])
+				(query_nearest_generalized_distance 2 [] [] 1)
+			)
+		)
+		;nonempty context control
+		(= {b 2}
+			(compute_on_contained_entities
+				(query_not_in_entity_list ["a"])
+				(query_nearest_generalized_distance 2 ["x"] [0] 1)
+			)
+		)
+		;within-distance uses the same empty-context shortcut
+		(= {b 0}
+			(compute_on_contained_entities
+				(query_not_in_entity_list ["a"])
+				(query_within_generalized_distance 1 [] [] 1)
+			)
+		)
+		;indexed position excludes itself
+		(= {b 0}
+			(compute_on_contained_entities
+				(query_nearest_generalized_distance 2 [] "a" 1)
+			)
+		)
+	]
+))&", R"([
+	.true
+	.true
+	.true
+	.true
+	.true
+	.true
+	.true
+	.true
+	.true
+	.true
+	.true
+	.true
+	.true
+])", "", R"((apply "destroy_entities" (contained_entities)))" },
 	AmalgamExample{ R"&((apply "concat" (unzip {a 1 b 2 c 3} ["a" "b" "c"])))&", R"("123")" },
 	AmalgamExample{ R"&((associate "a" 1 "b" 2))&", R"({a 1 b 2})" },
 	AmalgamExample{ R"&((lambda

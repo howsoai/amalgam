@@ -308,6 +308,8 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			{
 				BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
 				temp = matching_entities;
+				//honor fused exclusions and indexed-position self-exclusion before sampling
+				temp.erase(cond->exclusionEntityIndex);
 				matching_entities.clear();
 
 				auto rand_stream = cond->randomStream.CreateOtherStreamViaRand();

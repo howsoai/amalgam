@@ -15,6 +15,26 @@ MakeAmalgamUnitTests(Ts... elems)
 }
 
 auto _amalgam_unit_tests = MakeAmalgamUnitTests(
+AmalgamExample{ R"&((seq
+	(create_entities "a" (assoc "x" 1))
+	(create_entities "b" (assoc "x" 2))
+	;warm the distance cache before checking the empty-context exclusion
+	(compute_on_contained_entities (query_nearest_generalized_distance 2 ["x"] [0] 1))
+	(and
+		(= {b 0}
+			(compute_on_contained_entities
+				(query_not_in_entity_list ["a"])
+				(query_nearest_generalized_distance 2 [] [] 1)
+			)
+		)
+		(= {b 2}
+			(compute_on_contained_entities
+				(query_not_in_entity_list ["a"])
+				(query_nearest_generalized_distance 2 ["x"] [0] 1)
+			)
+		)
+	)
+))&", R"(.true)", "", R"((apply "destroy_entities" (contained_entities)))" },
 	AmalgamExample{ R"&((apply "concat" (unzip {a 1 b 2 c 3} ["a" "b" "c"])))&", R"("123")" },
 	AmalgamExample{ R"&((associate "a" 1 "b" 2))&", R"({a 1 b 2})" },
 	AmalgamExample{ R"&((lambda

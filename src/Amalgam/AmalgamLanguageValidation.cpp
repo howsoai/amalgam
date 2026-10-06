@@ -18,7 +18,7 @@ auto _amalgam_unit_tests = MakeAmalgamUnitTests(
 AmalgamExample{ R"&((seq
 	(create_entities "a" (assoc "x" 1))
 	(create_entities "b" (assoc "x" 2))
-	;Warm the distance cache before checking the empty-context exclusion (issue #657).
+	;warm the distance cache before checking the empty-context exclusion
 	(compute_on_contained_entities (query_nearest_generalized_distance 2 ["x"] [0] 1))
 	(and
 		(= {b 0}

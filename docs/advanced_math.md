@@ -1636,6 +1636,36 @@ Output:
 ```
 Example:
 ```amalgam
+(generalized_distance [1 0] [0 0] 1
+	{T {A 0.5 B 0.25 C 0.25}} .null .null ["A" "B"] "T"
+)
+```
+Output:
+```amalgam
+0.6666666666666666
+```
+Example:
+```amalgam
+(generalized_distance [1 0] [0 0] 1
+	{T {A 0.5 B 0.25 C 0.25} C {A 0 B 0}} .null .null ["A" "B"] "T"
+)
+```
+Output:
+```amalgam
+0.6666666666666666
+```
+Example:
+```amalgam
+(generalized_distance [1 0] [0 0] 1
+	{T {A 0.5 B 0.25 C 0.25} C {A 0 B 1}} .null .null ["A" "B"] "T"
+)
+```
+Output:
+```amalgam
+0.5
+```
+Example:
+```amalgam
 (generalized_distance
 	[
 		[1.5 2 3 4 5 "s12"]

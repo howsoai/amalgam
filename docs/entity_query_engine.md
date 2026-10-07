@@ -1548,21 +1548,6 @@ When used as a query argument, selects the closest entities to the given point. 
 Example:
 ```amalgam
 (seq
-	(create_entities "candidate_A" {A 1 B 0})
-	(create_entities "candidate_B" {A 0 B 1})
-	(contained_entities
-		(query_nearest_generalized_distance 1 ["A" "B"] [0 0] 1
-			{T {A 0.5 B 0.25 C 0.25} C {A 0 B 0}} .null .null "T" 1)
-	)
-)
-```
-Output:
-```amalgam
-["candidate_B"]
-```
-Example:
-```amalgam
-(seq
 	(create_entities
 		"vert0"
 		{object 1 x 0 y 0}

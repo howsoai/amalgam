@@ -1664,6 +1664,16 @@ static OpcodeInitializer _ENT_GENERALIZED_DISTANCE(ENT_GENERALIZED_DISTANCE, &In
 	;surprisal_space
 	.true
 ))&", R"(0.8383382080915319)"},
+			//Omitted features with zero transfer mass must behave like missing routes.
+			{R"&((generalized_distance [1 0] [0 0] 1
+	{T {A 0.5 B 0.25 C 0.25}} .null .null ["A" "B"] "T"
+))&", R"(0.6666666666666666)"},
+			{R"&((generalized_distance [1 0] [0 0] 1
+	{T {A 0.5 B 0.25 C 0.25} C {A 0 B 0}} .null .null ["A" "B"] "T"
+))&", R"(0.6666666666666666)"},
+			{R"&((generalized_distance [1 0] [0 0] 1
+	{T {A 0.5 B 0.25 C 0.25} C {A 0 B 1}} .null .null ["A" "B"] "T"
+))&", R"(0.5)"},
 			{R"&((generalized_distance
 	[
 		[1.5 2 3 4 5 "s12"]

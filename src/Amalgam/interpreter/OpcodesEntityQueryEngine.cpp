@@ -1534,6 +1534,14 @@ static OpcodeInitializer _ENT_QUERY_NEAREST_GENERALIZED_DISTANCE(ENT_QUERY_NEARE
 	d.description = R"(When used as a query argument, selects the closest entities to the given point.  The parameter `axis_values_or_entity_id` specifies the corresponding values for the point to test from, or if `axis_values_or_entity_id` is a string the entity to collect the labels from.  See Distance and Surprisal Calculations for details on the other parameters and how distance is computed.  If `output_sorted_list` is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if `output_sorted_list` is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether `distance_weight_exponent` is positive or negative respectively). If `output_sorted_list` is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity.  If `output_sorted_list` is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((seq
+	(create_entities "candidate_A" {A 1 B 0})
+	(create_entities "candidate_B" {A 0 B 1})
+	(contained_entities
+		(query_nearest_generalized_distance 1 ["A" "B"] [0 0] 1
+			{T {A 0.5 B 0.25 C 0.25} C {A 0 B 0}} .null .null "T" 1)
+	)
+))&", R"(["candidate_B"])", "", R"((destroy_entities "candidate_A" "candidate_B"))"},
+		{R"&((seq
 	(create_entities
 		"vert0"
 		{object 1 x 0 y 0}

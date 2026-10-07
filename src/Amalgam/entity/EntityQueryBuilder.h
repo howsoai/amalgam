@@ -285,6 +285,10 @@ namespace EntityQueryBuilder
 				total_probability_mass_for_feature += EvaluableNode::ToNumber(unused_element_entry->second, 0.0);
 			}
 
+			//A zero-mass route cannot redistribute influence; treat it like a missing route.
+			if(total_probability_mass_for_feature <= 0.0)
+				continue;
+
 			//accumulate the normalized probability of this feature influencing the unused feature and accumulate
 			//that probability mass back into the corresponding feature that will be used
 			for(size_t i = 0; i < element_names.size(); i++)

@@ -345,6 +345,24 @@ AmalgamExample{ R"&((seq
 	["EntityNull" "EntityNaN"]
 	["Entity3" "EntityNull" "EntityNaN"]
 ])", "", R"((apply "destroy_entities" (contained_entities)))" },
+//validate zero feature weights
+AmalgamExample{ R"&((generalized_distance [1 0] [0 0] 1
+	{T {A 0.5 B 0.25 C 0.25}} .null .null ["A" "B"] "T"
+))&", R"(0.6666666666666666)" },
+AmalgamExample{ R"&((generalized_distance [1 0] [0 0] 1
+	{T {A 0.5 B 0.25 C 0.25} C {A 0 B 0}} .null .null ["A" "B"] "T"
+))&", R"(0.6666666666666666)" },
+AmalgamExample{ R"&((generalized_distance [1 0] [0 0] 1
+	{T {A 0.5 B 0.25 C 0.25} C {A 0 B 1}} .null .null ["A" "B"] "T"
+))&", R"(0.5)" },
+AmalgamExample{ R"&((seq
+	(create_entities "candidate_A" {A 1 B 0})
+	(create_entities "candidate_B" {A 0 B 1})
+	(contained_entities
+		(query_nearest_generalized_distance 1 ["A" "B"] [0 0] 1
+			{T {A 0.5 B 0.25 C 0.25} C {A 0 B 0}} .null .null "T" 1)
+	)
+))&", R"(["candidate_B"])", "", R"((destroy_entities "candidate_A" "candidate_B"))" },
 AmalgamExample{ R"&((call
 	(set_type
 		[1 0.5 "3"]

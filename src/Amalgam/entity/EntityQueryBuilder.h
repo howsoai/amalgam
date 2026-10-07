@@ -285,7 +285,7 @@ namespace EntityQueryBuilder
 				total_probability_mass_for_feature += EvaluableNode::ToNumber(unused_element_entry->second, 0.0);
 			}
 
-			//A zero-mass route cannot redistribute influence; treat it like a missing route.
+			//if no probability mass, nothing to redistribute; skip to prevent a divide by zero which can corrupt weights
 			if(total_probability_mass_for_feature <= 0.0)
 				continue;
 

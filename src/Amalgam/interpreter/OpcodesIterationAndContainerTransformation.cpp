@@ -2607,17 +2607,17 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 	)
 	(range 0 10)
 ))&", R"([
-	8
-	10
-	6
-	9
-	7
-	5
-	1
-	0
-	2
-	4
-	3
+		10
+		8
+		9
+		1
+		6
+		4
+		7
+		5
+		3
+		2
+		0
 ])"},
 			{R"&((sort
 	[
@@ -2772,62 +2772,82 @@ void DeterministicPartialSort(RandomIt first, RandomIt middle, RandomIt last, Co
 	}
 }
 
-//performs a top-down stable merge on the sub-lists from start_index to middle_index and middle_index to _end_index
-//  from source into destination using comp
-template<class Compare>
-static void DeterministicSortTopDownMerge(EvaluableNode::OrderedRef source,
-	size_t start_index, size_t middle_index, size_t end_index, EvaluableNode::OrderedRef destination, Compare &comp)
+//helper function for DeterministicSort
+template<class RandomIt, class Compare>
+void DeterministicMergeInPlace(RandomIt first, RandomIt mid, RandomIt last,
+							   typename std::iterator_traits<RandomIt>::value_type *buffer,
+							   Compare &comp)
 {
-	size_t left_pos = start_index;
-	size_t right_pos = middle_index;
+	using ValueType = typename std::iterator_traits<RandomIt>::value_type;
 
-	//for all elements, pull from the appropriate buffer (left or right)
-	for(size_t cur_index = start_index; cur_index < end_index; cur_index++)
+	//copy the left partition into the temporary buffer
+	size_t left_size = std::distance(first, mid);
+	for(size_t i = 0; i < left_size; ++i)
+		buffer[i] = std::move(*(first + i));
+
+	auto left_it = buffer;
+	auto left_end = buffer + left_size;
+	auto right_it = mid;
+	auto target_it = first;
+
+	while(left_it != left_end && right_it != last)
 	{
-		//if left_pos has elements left and is less than the right, use it
-		if(left_pos < middle_index && (right_pos >= end_index || comp(source[left_pos], source[right_pos])))
+		if(comp(*left_it, *right_it))
 		{
-			destination[cur_index] = source[left_pos];
-			left_pos++;
+			*target_it = std::move(*left_it);
+			++left_it;
 		}
-		else //the right is less, use that
+		else
 		{
-			destination[cur_index] = source[right_pos];
-			right_pos++;
+			*target_it = std::move(*right_it);
+			++right_it;
 		}
+		++target_it;
+	}
+
+	//move any remaining elements from the buffer back to the container
+	while(left_it != left_end)
+	{
+		*target_it = std::move(*left_it);
+		++left_it;
+		++target_it;
 	}
 }
 
-//performs a stable merge sort of source (which *will* be modified and is not constant)
+//performs a stable merge sort of source which will be modified and is not constant
 // from start_index to end_index into destination; uses comp for comparison
-template<class Compare>
-static void DeterministicSort(EvaluableNode::OrderedRef source,
-	size_t start_index, size_t end_index, EvaluableNode::OrderedRef destination, Compare &cenc)
+//performs a bottom-up merge sort
+template<class RandomIt, class Compare>
+void DeterministicSort(RandomIt first, RandomIt last, Compare &comp)
 {
-	//if one element, then sorted
-	if(start_index + 1 >= end_index)
+	size_t n = std::distance(first, last);
+	if(n < 2)
 		return;
 
-	size_t middle_index = (start_index + end_index) / 2;
+	//allocate buffers
+	using ValueType = typename std::iterator_traits<RandomIt>::value_type;
+	std::vector<ValueType> temp_buffer;
+	temp_buffer.reserve(n / 2 + 1);
 
-	//sort left into list
-	DeterministicSort(destination, start_index, middle_index, source, cenc);
-	//sort right into list
-	DeterministicSort(destination, middle_index, end_index, source, cenc);
+	std::vector<ValueType> full_buffer(n);
+	ValueType *buffer_ptr = full_buffer.data();
 
-	//merge buffers back into buffer
-	DeterministicSortTopDownMerge(source, start_index, middle_index, end_index, destination, cenc);
-}
+	for(size_t width = 1; width < n; width *= 2)
+	{
+		for(RandomIt i = first; i < last; i += 2 * width)
+		{
+			RandomIt mid = i + width;
+			RandomIt end = i + 2 * width;
 
-template<class Compare>
-EvaluableNode::OrderedType DeterministicSort(EvaluableNode::OrderedRef list, Compare &cenc)
-{
-	//must make two copies of the list to edit, because switch back and forth and there is a chance that an element may be invalid
-	// in either list.  Therefore, can't use the original list in the off chance that something is garbage collected
-	EvaluableNode::OrderedType list_copy_1(list);
-	EvaluableNode::OrderedType list_copy_2(list);
-	DeterministicSort(list_copy_1, 0, list.size(), list_copy_2, cenc);
-	return list_copy_2;
+			if(mid >= last)
+				break;
+
+			if(end > last)
+				end = last;
+
+			DeterministicMergeInPlace(i, mid, end, buffer_ptr, comp);
+		}
+	}
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
@@ -2925,11 +2945,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 				else
 				{
 					if(ascending)
-						DeterministicPartialSort(begin(container), end(container), end(container),
-							comp_less);
+						DeterministicSort(begin(container), end(container), comp_less);
 					else
-						DeterministicPartialSort(begin(container), end(container), end(container),
-							comp_greater);
+						DeterministicSort(begin(container), end(container), comp_greater);
 				}
 			};
 
@@ -2972,6 +2990,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		evaluableNodeManager->EnsureNodeIsModifiable(list, true, false);
 		CustomEvaluableNodeComparator comparator(this, function, list);
 
+		node_stack.PushEvaluableNode(list);
+
 		if(list->IsAssociativeArray())
 		{
 			//TODO 26124: finish this for assocs
@@ -2980,21 +3000,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		{
 			//sort list; can't use the C++ sort function because it requires weak ordering and will crash otherwise
 			// the custom comparator does not guarantee this
-			EvaluableNode::OrderedType sorted =
-				DeterministicSort(list->GetOrderedChildNodesReference(), comparator);
+			auto &list_ocn = list->GetOrderedChildNodesReference();
+			DeterministicSort(begin(list_ocn), end(list_ocn), comparator);
 
 			//TODO 26124: free any nodes possible if selecting only top k
-			if(highest_k > 0 && highest_k < sorted.size())
+			if(highest_k > 0 && highest_k < list_ocn.size())
 			{
-				sorted.erase(begin(sorted), begin(sorted) + (sorted.size() - highest_k));
-				std::reverse(begin(sorted), end(sorted));
+				list_ocn.erase(begin(list_ocn), begin(list_ocn) + (list_ocn.size() - highest_k));
+				std::reverse(begin(list_ocn), end(list_ocn));
 			}
-			else if(lowest_k > 0 && lowest_k < sorted.size())
+			else if(lowest_k > 0 && lowest_k < list_ocn.size())
 			{
-				sorted.erase(begin(sorted) + lowest_k, end(sorted));
+				list_ocn.erase(begin(list_ocn) + lowest_k, end(list_ocn));
 			}
-
-			list->SetOrderedChildNodes(std::move(sorted), list->GetNeedCycleCheck(), list->GetIsIdempotent());
 
 			if(comparator.DidAnyComparisonHaveExecutionSideEffects())
 			{

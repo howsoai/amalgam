@@ -2737,7 +2737,7 @@ void DeterministicSiftDown(RandomIt first, size_t n, size_t i, Compare const &co
 
 //like std::partial_sort, but guaranteed to behave the same regardless of the platform
 template<class RandomIt, class Compare>
-void DeterministicPartialSort(RandomIt first, RandomIt middle, RandomIt last, Compare comp)
+void DeterministicPartialSort(RandomIt first, RandomIt middle, RandomIt last, Compare &comp)
 {
 	if(first == middle)
 		return;
@@ -2773,9 +2773,10 @@ void DeterministicPartialSort(RandomIt first, RandomIt middle, RandomIt last, Co
 }
 
 //performs a top-down stable merge on the sub-lists from start_index to middle_index and middle_index to _end_index
-//  from source into destination using cenc
-static void CustomEvaluableNodeOrderedChildNodesTopDownMerge(EvaluableNode::OrderedRef source,
-	size_t start_index, size_t middle_index, size_t end_index, EvaluableNode::OrderedRef destination, CustomEvaluableNodeComparator &cenc)
+//  from source into destination using comp
+template<class Compare>
+static void DeterministicSortTopDownMerge(EvaluableNode::OrderedRef source,
+	size_t start_index, size_t middle_index, size_t end_index, EvaluableNode::OrderedRef destination, Compare &comp)
 {
 	size_t left_pos = start_index;
 	size_t right_pos = middle_index;
@@ -2784,7 +2785,7 @@ static void CustomEvaluableNodeOrderedChildNodesTopDownMerge(EvaluableNode::Orde
 	for(size_t cur_index = start_index; cur_index < end_index; cur_index++)
 	{
 		//if left_pos has elements left and is less than the right, use it
-		if(left_pos < middle_index && (right_pos >= end_index || cenc(source[left_pos], source[right_pos])))
+		if(left_pos < middle_index && (right_pos >= end_index || comp(source[left_pos], source[right_pos])))
 		{
 			destination[cur_index] = source[left_pos];
 			left_pos++;
@@ -2798,9 +2799,10 @@ static void CustomEvaluableNodeOrderedChildNodesTopDownMerge(EvaluableNode::Orde
 }
 
 //performs a stable merge sort of source (which *will* be modified and is not constant)
-// from start_index to end_index into destination; uses cenc for comparison
-static void CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedRef source,
-	size_t start_index, size_t end_index, EvaluableNode::OrderedRef destination, CustomEvaluableNodeComparator &cenc)
+// from start_index to end_index into destination; uses comp for comparison
+template<class Compare>
+static void DeterministicSort(EvaluableNode::OrderedRef source,
+	size_t start_index, size_t end_index, EvaluableNode::OrderedRef destination, Compare &cenc)
 {
 	//if one element, then sorted
 	if(start_index + 1 >= end_index)
@@ -2809,21 +2811,22 @@ static void CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedRef s
 	size_t middle_index = (start_index + end_index) / 2;
 
 	//sort left into list
-	CustomEvaluableNodeOrderedChildNodesSort(destination, start_index, middle_index, source, cenc);
+	DeterministicSort(destination, start_index, middle_index, source, cenc);
 	//sort right into list
-	CustomEvaluableNodeOrderedChildNodesSort(destination, middle_index, end_index, source, cenc);
+	DeterministicSort(destination, middle_index, end_index, source, cenc);
 
 	//merge buffers back into buffer
-	CustomEvaluableNodeOrderedChildNodesTopDownMerge(source, start_index, middle_index, end_index, destination, cenc);
+	DeterministicSortTopDownMerge(source, start_index, middle_index, end_index, destination, cenc);
 }
 
-EvaluableNode::OrderedType CustomEvaluableNodeOrderedChildNodesSort(EvaluableNode::OrderedRef list, CustomEvaluableNodeComparator &cenc)
+template<class Compare>
+EvaluableNode::OrderedType DeterministicSort(EvaluableNode::OrderedRef list, Compare &cenc)
 {
 	//must make two copies of the list to edit, because switch back and forth and there is a chance that an element may be invalid
 	// in either list.  Therefore, can't use the original list in the off chance that something is garbage collected
 	EvaluableNode::OrderedType list_copy_1(list);
 	EvaluableNode::OrderedType list_copy_2(list);
-	CustomEvaluableNodeOrderedChildNodesSort(list_copy_1, 0, list.size(), list_copy_2, cenc);
+	DeterministicSort(list_copy_1, 0, list.size(), list_copy_2, cenc);
 	return list_copy_2;
 }
 
@@ -2978,7 +2981,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 			//sort list; can't use the C++ sort function because it requires weak ordering and will crash otherwise
 			// the custom comparator does not guarantee this
 			EvaluableNode::OrderedType sorted =
-				CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodesReference(), comparator);
+				DeterministicSort(list->GetOrderedChildNodesReference(), comparator);
 
 			//TODO 26124: free any nodes possible if selecting only top k
 			if(highest_k > 0 && highest_k < sorted.size())

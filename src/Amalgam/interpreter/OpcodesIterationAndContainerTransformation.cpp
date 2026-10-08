@@ -2473,12 +2473,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en,
 
 	//get the list to reverse
 	auto list = InterpretNode(ocn[0]);
-	if(list == nullptr) [[unlikely]]
+	if(EvaluableNode::IsNull(list) || list->IsTerminal()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
 	//make sure it is an editable copy
 	evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 
+	//TODO 26124: check if assoc
 	auto &list_ocn = list->GetOrderedChildNodes();
 	std::reverse(begin(list_ocn), end(list_ocn));
 

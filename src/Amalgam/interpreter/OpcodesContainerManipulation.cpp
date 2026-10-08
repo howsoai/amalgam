@@ -1820,6 +1820,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			if(container.uniqueUnreferencedTopNode)
 			{
 				container->ClearMetadata();
+				//TODO 26124: inline this method and remove from EvaluableNode
 				container->ConvertAssocToList();
 				return container;
 			}
@@ -2168,21 +2169,19 @@ static OpcodeInitializer _ENT_REMOVE(ENT_REMOVE, &Interpreter::InterpretNode_ENT
 	d.returns = OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Removes the index-value pair with `index` being the index in assoc or index of `collection`, returning a new list or assoc with `index` removed.  If `index` is a list of numbers or strings, then it will remove each of the requested indices.  Negative numbered indices will count back from the end of a list.)";
 	d.examples = MakeAmalgamExamples({
-		{R"&((sort
-	(remove
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
+		{R"&((remove
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
 		4
+		"d"
 	)
-))&", R"([1 2 3])"},
+	4
+))&", R"({a 1 b 2 c 3})"},
 			{R"&((remove
 	[
 		"a"
@@ -2204,21 +2203,19 @@ static OpcodeInitializer _ENT_REMOVE(ENT_REMOVE, &Interpreter::InterpretNode_ENT
 	4
 	"d"
 ])"},
-			{R"&((sort
-	(remove
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
-		[4 "a"]
+			{R"&((remove
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
 	)
-))&", R"([2 3])"},
+	[4 "a"]
+))&", R"({b 2 c 3})"},
 			{R"&((remove
 	[
 		"a"
@@ -2482,21 +2479,19 @@ static OpcodeInitializer _ENT_KEEP(ENT_KEEP, &Interpreter::InterpretNode_ENT_KEE
 	]
 	4
 ))&", R"(["c"])"},
-			{R"&((sort
-	(keep
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
-		[4 "a"]
+			{R"&((keep
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
 	)
-))&", R"([1 "d"])"},
+	[4 "a"]
+))&", R"({a 1 4 "d"})"},
 			{R"&((keep
 	[
 		"a"

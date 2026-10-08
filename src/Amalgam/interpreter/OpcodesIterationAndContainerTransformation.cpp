@@ -2486,7 +2486,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en,
 		return EvaluableNodeReference::Null();
 
 	//make sure it is an editable copy
-	evaluableNodeManager->EnsureNodeIsModifiable(list, true);
+	evaluableNodeManager->EnsureNodeIsModifiable(list, true, false);
 
 	if(list->IsAssociativeArray())
 	{
@@ -2512,8 +2512,8 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
 		OpcodeDetails::ParameterGroup({"k", OpcodeDetails::DataType::NUMBER, true})
 	});
-	d.returns = OpcodeDetails::DataType::LIST;
-	d.description = "Returns a new list containing the elements from `collection` sorted in increasing order, regardless of whether `collection` is an assoc or list.  If `function` is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with `(current_value)` and `(current_value 1)` accessing a pair of elements from the list, and evaluates `function`.  The function should return a number, positive if `(current_value)` is greater meaning that `(current_value)` should come after `(current_value 1)`, negative if `(current_value 1)` is greater and should come after `(current_value)`, or 0 if equal.  If `k` is specified in addition to `function` and not null, then it will only return the `k` smallest values sorted in order, or, if `k` is negative, it will return the highest `k` values using the absolute value of `k`.";
+	d.returns = (OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC);
+	d.description = "Returns a new list or assoc containing the elements from `collection` sorted in increasing order by value, regardless of whether `collection` is an assoc or list.  If `function` is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with `(current_value)` and `(current_value 1)` accessing a pair of elements from the list, and evaluates `function`.  The function should return a number, positive if `(current_value)` is greater meaning that `(current_value)` should come after `(current_value 1)`, negative if `(current_value 1)` is greater and should come after `(current_value)`, or 0 if equal.  If `k` is specified in addition to `function` and not null, then it will only return the `k` smallest values sorted in order, or, if `k` is negative, it will return the highest `k` values using the absolute value of `k`.";
 	d.examples = MakeAmalgamExamples({
 		{R"&((sort
 	[4 9 3 5 1]
@@ -2526,7 +2526,11 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 		d 5
 		e 1
 	}
-))&", R"([1 3 4 5 9])"},
+))&", R"({e 1
+		c 3
+		a 4
+		d 5
+		b 9})"},
 			{R"&((sort
 	[
 		"n"
@@ -2810,64 +2814,68 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 	{
 		//get list
 		auto list = InterpretNode(ocn[list_index]);
-		if(EvaluableNode::IsNull(list))
+		if(EvaluableNode::IsNull(list)) [[unlikely]]
 			return EvaluableNodeReference::Null();
+		if(list->IsTerminal()) [[unlikely]]
+			return list;
 
 		//make sure it is a clean editable copy and all the data is in a list
-		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
-		list->ClearMetadata();
+		evaluableNodeManager->EnsureNodeIsModifiable(list, true, false);
 		if(list->IsAssociativeArray())
-			list->ConvertAssocToList();
-
-		auto &list_ocn = list->GetOrderedChildNodes();
-
-		if(highest_k > 0 && highest_k < list_ocn.size())
 		{
-			if(ascending)
-				DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
-					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
-			else
-				DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
-					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
-
-			if(list.unique && !list->GetNeedCycleCheck())
-			{
-				for(size_t i = highest_k; i < list_ocn.size(); i++)
-					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
-			}
-
-			list_ocn.erase(begin(list_ocn) + highest_k, end(list_ocn));
-			std::reverse(begin(list_ocn), end(list_ocn));
-		}
-		else if(lowest_k > 0 && lowest_k < list_ocn.size())
-		{
-			if(ascending)
-				DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
-					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
-			else
-				DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
-					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
-
-			if(list.unique && !list->GetNeedCycleCheck())
-			{
-				for(size_t i = lowest_k; i < list_ocn.size(); i++)
-					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
-			}
-
-			list_ocn.erase(begin(list_ocn) + lowest_k, end(list_ocn));
+			//TODO 26124: finish this for assocs
 		}
 		else
 		{
-			//use deterministic sorting to guarantee it will break ties or possible intransitivities
-			// the same on all platforms
-			if(ascending)
-				DeterministicPartialSort(begin(list_ocn), end(list_ocn), end(list_ocn),
-					EvaluableNode::IsStrictlyLessThan);
-			else
-				DeterministicPartialSort(begin(list_ocn), end(list_ocn), end(list_ocn),
-					EvaluableNode::IsStrictlyGreaterThan);
-		}
+			auto &list_ocn = list->GetOrderedChildNodes();
 
+			if(highest_k > 0 && highest_k < list_ocn.size())
+			{
+				if(ascending)
+					DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
+						end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
+				else
+					DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
+						end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+
+				if(list.unique && !list->GetNeedCycleCheck())
+				{
+					for(size_t i = highest_k; i < list_ocn.size(); i++)
+						evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+				}
+
+				list_ocn.erase(begin(list_ocn) + highest_k, end(list_ocn));
+				std::reverse(begin(list_ocn), end(list_ocn));
+			}
+			else if(lowest_k > 0 && lowest_k < list_ocn.size())
+			{
+				if(ascending)
+					DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
+						end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+				else
+					DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
+						end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
+
+				if(list.unique && !list->GetNeedCycleCheck())
+				{
+					for(size_t i = lowest_k; i < list_ocn.size(); i++)
+						evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+				}
+
+				list_ocn.erase(begin(list_ocn) + lowest_k, end(list_ocn));
+			}
+			else
+			{
+				//use deterministic sorting to guarantee it will break ties or possible intransitivities
+				// the same on all platforms
+				if(ascending)
+					DeterministicPartialSort(begin(list_ocn), end(list_ocn), end(list_ocn),
+						EvaluableNode::IsStrictlyLessThan);
+				else
+					DeterministicPartialSort(begin(list_ocn), end(list_ocn), end(list_ocn),
+						EvaluableNode::IsStrictlyGreaterThan);
+			}
+		}
 		return list;
 	}
 	else
@@ -2876,37 +2884,43 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 
 		//get list
 		auto list = InterpretNode(ocn[list_index]);
-		if(EvaluableNode::IsNull(list))
+		if(EvaluableNode::IsNull(list)) [[unlikely]]
 			return EvaluableNodeReference::Null();
+		if(list->IsTerminal()) [[unlikely]]
+			return list;
 
 		//make sure it is an editable copy
-		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
-		list->ClearMetadata();
-		if(list->IsAssociativeArray())
-			list->ConvertAssocToList();
-
+		evaluableNodeManager->EnsureNodeIsModifiable(list, true, false);
 		CustomEvaluableNodeComparator comparator(this, function, list);
 
-		//sort list; can't use the C++ sort function because it requires weak ordering and will crash otherwise
-		// the custom comparator does not guarantee this
-		EvaluableNode::OrderedType sorted = CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodes(), comparator);
-
-		if(highest_k > 0 && highest_k < sorted.size())
+		if(list->IsAssociativeArray())
 		{
-			sorted.erase(begin(sorted), begin(sorted) + (sorted.size() - highest_k));
-			std::reverse(begin(sorted), end(sorted));
+			//TODO 26124: finish this for assocs
 		}
-		else if(lowest_k > 0 && lowest_k < sorted.size())
+		else
 		{
-			sorted.erase(begin(sorted) + lowest_k, end(sorted));
-		}
+			//sort list; can't use the C++ sort function because it requires weak ordering and will crash otherwise
+			// the custom comparator does not guarantee this
+			EvaluableNode::OrderedType sorted =
+				CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodes(), comparator);
 
-		list->SetOrderedChildNodes(std::move(sorted), list->GetNeedCycleCheck(), list->GetIsIdempotent());
+			if(highest_k > 0 && highest_k < sorted.size())
+			{
+				sorted.erase(begin(sorted), begin(sorted) + (sorted.size() - highest_k));
+				std::reverse(begin(sorted), end(sorted));
+			}
+			else if(lowest_k > 0 && lowest_k < sorted.size())
+			{
+				sorted.erase(begin(sorted) + lowest_k, end(sorted));
+			}
 
-		if(comparator.DidAnyComparisonHaveExecutionSideEffects())
-		{
-			list.unique = false;
-			list.uniqueUnreferencedTopNode = false;
+			list->SetOrderedChildNodes(std::move(sorted), list->GetNeedCycleCheck(), list->GetIsIdempotent());
+
+			if(comparator.DidAnyComparisonHaveExecutionSideEffects())
+			{
+				list.unique = false;
+				list.uniqueUnreferencedTopNode = false;
+			}
 		}
 
 		return list;

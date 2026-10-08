@@ -457,6 +457,15 @@ public:
 			return GetLargeMap().GetVector();
 	}
 
+	//moves the vector map out and clears the data structure
+	inline EvaluableNode::SmallAssocType &&ExtractVectorMap()
+	{
+		if(IsSmall())
+			return std::move(GetSmallMap());
+		else
+			return std::move(GetLargeMap().ExtractVectorMap());
+	}
+
 	//used for more advanced manipulation
 	inline EvaluableNode::LargeAssocType CopyAsLargeAssoc()
 	{

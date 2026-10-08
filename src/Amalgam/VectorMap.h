@@ -290,6 +290,12 @@ public:
 		return data;
 	}
 
+	//moves the vector map out and clears the data structure
+	inline std::vector<std::pair<key_type, mapped_type>> &&ExtractVectorMap()
+	{
+		return std::move(data);
+	}
+
 private:
 	std::vector<std::pair<key_type, mapped_type>> data;
 };

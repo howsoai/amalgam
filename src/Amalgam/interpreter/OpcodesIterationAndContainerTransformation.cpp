@@ -2450,14 +2450,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 static OpcodeInitializer _ENT_REVERSE(ENT_REVERSE, &Interpreter::InterpretNode_ENT_REVERSE, []() {
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema{
-		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST}),
+		OpcodeDetails::ParameterGroup({"collection", OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC}),
 	};
-	d.returns = OpcodeDetails::DataType::LIST;
-	d.description = R"(Returns a new list containing the `collection` with its elements in reversed order.)";
+	d.returns = (OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC);
+	d.description = R"(Returns a new list or assoc containing the `collection` with its elements in reversed order.)";
 	d.examples = MakeAmalgamExamples({
 		{R"&((reverse
 	[1 2 3 4 5]
-))&", R"([5 4 3 2 1])"}
+))&", R"([5 4 3 2 1])"},
+{R"&((reverse
+	{a 1 b 2 c 3 d 4 e 5}
+))&", R"({
+		e 5
+		d 4
+		c 3
+		b 2
+		a 1
+})"}
 		});
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
 	d.frequencyPer10000Opcodes = 0.5;
@@ -2479,9 +2488,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en,
 	//make sure it is an editable copy
 	evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 
-	//TODO 26124: check if assoc
-	auto &list_ocn = list->GetOrderedChildNodes();
-	std::reverse(begin(list_ocn), end(list_ocn));
+	if(list->IsAssociativeArray())
+	{
+		auto list_mcn = list->GetMappedChildNodesView();
+		auto vec_map = std::move(list_mcn.ExtractVectorMap());
+		std::reverse(begin(vec_map), end(vec_map));
+		list_mcn = std::move(vec_map);
+	}
+	else if(list->IsOrderedArray())
+	{
+		auto &list_ocn = list->GetOrderedChildNodesReference();
+		std::reverse(begin(list_ocn), end(list_ocn));
+	}
 
 	return list;
 }

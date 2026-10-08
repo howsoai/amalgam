@@ -1820,7 +1820,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			if(container.uniqueUnreferencedTopNode)
 			{
 				container->ClearMetadata();
-				//TODO 26124: inline this method and remove from EvaluableNode
 				container->ConvertAssocToList();
 				return container;
 			}

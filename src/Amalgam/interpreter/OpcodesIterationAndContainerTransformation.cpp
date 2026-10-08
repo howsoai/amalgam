@@ -2824,7 +2824,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		if(list->IsAssociativeArray())
 		{
 			auto assoc_mcn = list->GetMappedChildNodesView();
-			//TODO 26124: finish this for assocs
+			auto vector_assoc = std::move(assoc_mcn.ExtractVectorMap());
+			//TODO 26124: make this like the branch for list_ocn, but then at the end assign vector_assoc back into assoc_mcn
 		}
 		else //must be a list because terminals were ruled out above
 		{

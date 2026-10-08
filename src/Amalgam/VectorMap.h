@@ -244,6 +244,14 @@ public:
 		return 0;
 	}
 
+	inline iterator erase(iterator first, iterator last)
+	{
+		if(first == last)
+			return data.begin();
+
+		return data.erase(first, last);
+	}
+
 	inline void swap(VectorMap &other) noexcept
 	{
 		std::swap(this->data, other.data);

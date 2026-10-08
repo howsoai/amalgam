@@ -2526,11 +2526,13 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 		d 5
 		e 1
 	}
-))&", R"({e 1
+))&", R"({
+		e 1
 		c 3
 		a 4
 		d 5
-		b 9})"},
+		b 9
+})"},
 			{R"&((sort
 	[
 		"n"
@@ -2821,63 +2823,80 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 
 		//make sure it is a clean editable copy and all the data is in a list
 		evaluableNodeManager->EnsureNodeIsModifiable(list, true, false);
+
+		auto process_sort = [&](auto &container, auto comp_less, auto comp_greater, auto get_node)
+			{
+				auto size = container.size();
+				if(highest_k > 0 && highest_k < size)
+				{
+					auto split_it = begin(container) + highest_k;
+					if(ascending)
+						DeterministicPartialSort(begin(container), split_it,
+							end(container), comp_greater);
+					else
+						DeterministicPartialSort(begin(container), split_it,
+							end(container), comp_less);
+
+					if(list.unique && !list->GetNeedCycleCheck())
+					{
+						for(auto it = split_it; it != end(container); ++it)
+							evaluableNodeManager->FreeNodeTree(get_node(*it));
+					}
+
+					container.erase(split_it, end(container));
+					std::reverse(begin(container), end(container));
+				}
+				else if(lowest_k > 0 && lowest_k < size)
+				{
+					auto split_it = begin(container) + lowest_k;
+					if(ascending)
+						DeterministicPartialSort(begin(container), split_it,
+							end(container), comp_less);
+					else
+						DeterministicPartialSort(begin(container), split_it,
+							end(container), comp_greater);
+
+					if(list.unique && !list->GetNeedCycleCheck())
+					{
+						for(auto it = split_it; it != end(container); ++it)
+							evaluableNodeManager->FreeNodeTree(get_node(*it));
+					}
+
+					container.erase(split_it, end(container));
+				}
+				else
+				{
+					if(ascending)
+						DeterministicPartialSort(begin(container), end(container), end(container),
+							comp_less);
+					else
+						DeterministicPartialSort(begin(container), end(container), end(container),
+							comp_greater);
+				}
+			};
+
 		if(list->IsAssociativeArray())
 		{
 			auto assoc_mcn = list->GetMappedChildNodesView();
 			auto vector_assoc = std::move(assoc_mcn.ExtractVectorMap());
-			//TODO 26124: make this like the branch for list_ocn, but then at the end assign vector_assoc back into assoc_mcn
+
+			process_sort(vector_assoc,
+						 [](auto &a, auto &b) { return EvaluableNode::IsIteratorValueStrictlyLessThan(a, b); },
+						 [](auto &a, auto &b) { return EvaluableNode::IsIteratorValueStrictlyGreaterThan(a, b); },
+						 [](auto &item) { return item.second; });
+
+			assoc_mcn = std::move(vector_assoc);
 		}
-		else //must be a list because terminals were ruled out above
+		else
 		{
 			auto &list_ocn = list->GetOrderedChildNodesReference();
 
-			if(highest_k > 0 && highest_k < list_ocn.size())
-			{
-				if(ascending)
-					DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
-						end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
-				else
-					DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + highest_k,
-						end(list_ocn), EvaluableNode::IsStrictlyLessThan);
-
-				if(list.unique && !list->GetNeedCycleCheck())
-				{
-					for(size_t i = highest_k; i < list_ocn.size(); i++)
-						evaluableNodeManager->FreeNodeTree(list_ocn[i]);
-				}
-
-				list_ocn.erase(begin(list_ocn) + highest_k, end(list_ocn));
-				std::reverse(begin(list_ocn), end(list_ocn));
-			}
-			else if(lowest_k > 0 && lowest_k < list_ocn.size())
-			{
-				if(ascending)
-					DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
-						end(list_ocn), EvaluableNode::IsStrictlyLessThan);
-				else
-					DeterministicPartialSort(begin(list_ocn), begin(list_ocn) + lowest_k,
-						end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
-
-				if(list.unique && !list->GetNeedCycleCheck())
-				{
-					for(size_t i = lowest_k; i < list_ocn.size(); i++)
-						evaluableNodeManager->FreeNodeTree(list_ocn[i]);
-				}
-
-				list_ocn.erase(begin(list_ocn) + lowest_k, end(list_ocn));
-			}
-			else
-			{
-				//use deterministic sorting to guarantee it will break ties or possible intransitivities
-				// the same on all platforms
-				if(ascending)
-					DeterministicPartialSort(begin(list_ocn), end(list_ocn), end(list_ocn),
-						EvaluableNode::IsStrictlyLessThan);
-				else
-					DeterministicPartialSort(begin(list_ocn), end(list_ocn), end(list_ocn),
-						EvaluableNode::IsStrictlyGreaterThan);
-			}
+			process_sort(list_ocn,
+						 EvaluableNode::IsStrictlyLessThan,
+						 EvaluableNode::IsStrictlyGreaterThan,
+						 [](auto &item) { return item; });
 		}
+
 		return list;
 	}
 	else

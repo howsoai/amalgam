@@ -2823,11 +2823,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		evaluableNodeManager->EnsureNodeIsModifiable(list, true, false);
 		if(list->IsAssociativeArray())
 		{
+			auto assoc_mcn = list->GetMappedChildNodesView();
 			//TODO 26124: finish this for assocs
 		}
-		else
+		else //must be a list because terminals were ruled out above
 		{
-			auto &list_ocn = list->GetOrderedChildNodes();
+			auto &list_ocn = list->GetOrderedChildNodesReference();
 
 			if(highest_k > 0 && highest_k < list_ocn.size())
 			{
@@ -2897,13 +2898,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		{
 			//TODO 26124: finish this for assocs
 		}
-		else
+		else //must be a list because terminals were ruled out above
 		{
 			//sort list; can't use the C++ sort function because it requires weak ordering and will crash otherwise
 			// the custom comparator does not guarantee this
 			EvaluableNode::OrderedType sorted =
-				CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodes(), comparator);
+				CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodesReference(), comparator);
 
+			//TODO 26124: free any nodes possible if selecting only top k
 			if(highest_k > 0 && highest_k < sorted.size())
 			{
 				sorted.erase(begin(sorted), begin(sorted) + (sorted.size() - highest_k));

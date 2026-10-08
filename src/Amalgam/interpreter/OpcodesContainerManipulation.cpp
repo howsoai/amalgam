@@ -2010,13 +2010,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 
-	//get index to look up (will attempt to reuse this node below)
-	auto index = InterpretNodeForImmediateUse(ocn[1]);
-
-	EvaluableNode **target = TraverseToDestinationFromTraversalPathList(&container.GetReference(), index, false);
+	EvaluableNode **target = InterpretNodeIntoDestination(&container.GetReference(), ocn[1], false);
 	bool found = (target != nullptr);
-
-	evaluableNodeManager->FreeNodeTreeIfPossible(index);
 	evaluableNodeManager->FreeNodeTreeIfPossible(container);
 	return AllocReturn(found, immediate_result);
 }

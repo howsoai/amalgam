@@ -2877,21 +2877,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 	EvaluableNodeType function_type = ENT_BOOL;
 	bool ascending = true;
 
-	size_t highest_k = 0;
-	size_t lowest_k = 0;
-	if(ocn.size() > 2)
-	{
-		double k = InterpretNodeIntoNumberValue(ocn[2]);
-		if(k > 0)
-			lowest_k = static_cast<size_t>(k);
-		else if(k < 0)
-			highest_k = static_cast<size_t>(-k);
-		//else nan, leave both as zero
-	}
-
+	//if evaluating function comparisons, it is possible that list is in an unusual state
+	//that might be missing nodes, which could be garbage collected
+	//in that case, this will contain a copy for garbage collection protection that can be freed at the end
+	EvaluableNode *reference_list = nullptr;
 	if(ocn.size() >= 2)
 	{
 		node_stack.PushEvaluableNode(list);
+
+		reference_list = evaluableNodeManager->AllocNode(list);
+		node_stack.PushEvaluableNode(reference_list);
+
 		function = InterpretNodeForImmediateUse(ocn[0]);
 
 		if(EvaluableNode::IsNull(function))
@@ -2906,6 +2902,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 			else //will need to execute function, so save it
 				node_stack.PushEvaluableNode(function);
 		}
+	}
+
+	size_t highest_k = 0;
+	size_t lowest_k = 0;
+	if(ocn.size() > 2)
+	{
+		double k = InterpretNodeIntoNumberValue(ocn[2]);
+		if(k > 0)
+			lowest_k = static_cast<size_t>(k);
+		else if(k < 0)
+			highest_k = static_cast<size_t>(-k);
+		//else nan, leave both as zero
 	}
 
 	CustomEvaluableNodeComparator comparator_ascending(this, function, list, true);
@@ -3004,6 +3012,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 				});
 	}
 
+	evaluableNodeManager->FreeNode(reference_list);
 	return list;
 }
 

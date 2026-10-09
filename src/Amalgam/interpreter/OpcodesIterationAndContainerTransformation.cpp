@@ -2910,16 +2910,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		}
 	}
 
-	CustomEvaluableNodeComparator comparator(this, function, list, ascending);
+	CustomEvaluableNodeComparator comparator_ascending(this, function, list, true);
+	CustomEvaluableNodeComparator comparator_descending(this, function, list, false);
 
-	auto process_sort = [&](auto &container, auto comp_less, auto comp_greater,
+	auto process_sort = [&](auto &container, auto comp_ascending, auto comparator_descending,
 			auto get_node, auto free_child_nodes)
 		{
 			auto size = container.size();
 			if(highest_k > 0 && highest_k < size)
 			{
 				auto split_it = begin(container) + highest_k;
-				DeterministicPartialSort(begin(container), split_it, end(container), comp_greater);
+				if(ascending)
+					DeterministicSort(begin(container), end(container), comparator_descending);
+				else
+					DeterministicSort(begin(container), end(container), comp_ascending);
 
 				if(free_child_nodes())
 				{
@@ -2929,13 +2933,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 
 				container.erase(split_it, end(container));
 
-				if(ascending)
-					std::reverse(begin(container), end(container));
+				std::reverse(begin(container), end(container));
 			}
 			else if(lowest_k > 0 && lowest_k < size)
 			{
 				auto split_it = begin(container) + lowest_k;
-				DeterministicPartialSort(begin(container), split_it, end(container), comp_less);
+				if(ascending)
+					DeterministicSort(begin(container), end(container), comp_ascending);
+				else
+					DeterministicSort(begin(container), end(container), comparator_descending);
 
 				if(free_child_nodes())
 				{
@@ -2944,16 +2950,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 				}
 
 				container.erase(split_it, end(container));
-
-				if(!ascending)
-					std::reverse(begin(container), end(container));
 			}
 			else
 			{
 				if(ascending)
-					DeterministicSort(begin(container), end(container), comp_less);
+					DeterministicSort(begin(container), end(container), comp_ascending);
 				else
-					DeterministicSort(begin(container), end(container), comp_greater);
+					DeterministicSort(begin(container), end(container), comparator_descending);
 			}
 		};
 
@@ -2970,10 +2973,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 				[&]() { return child_nodes_freeable;} );
 		else
 			process_sort(vector_assoc,
-				[&comparator](auto &a, auto &b) { return comparator(a.second, b.second); },
-				[&comparator](auto &a, auto &b) { return comparator(b.second, a.second); },
+				[&comparator_ascending](auto &a, auto &b) { return comparator_ascending(a.second, b.second); },
+				[&comparator_descending](auto &a, auto &b) { return comparator_descending(a.second, b.second); },
 				[](auto &item) { return item.second; },
-				[&]() { return child_nodes_freeable && !comparator.DidAnyComparisonHaveExecutionSideEffects();});
+				[&]() {
+					return child_nodes_freeable
+					&& !comparator_ascending.DidAnyComparisonHaveExecutionSideEffects()
+					&& !comparator_descending.DidAnyComparisonHaveExecutionSideEffects();
+				});
 
 		assoc_mcn = std::move(vector_assoc);
 	}
@@ -2989,10 +2996,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 				[&]() { return child_nodes_freeable;});
 		else
 			process_sort(list_ocn,
-				[&comparator](auto &a, auto &b) { return comparator(a, b); },
-				[&comparator](auto &a, auto &b) { return comparator(b, a); },
+				[&comparator_ascending](auto &a, auto &b) { return comparator_ascending(a, b); },
+				[&comparator_descending](auto &a, auto &b) { return comparator_descending(a, b); },
 				[](auto &item) { return item; },
-				[&]() { return child_nodes_freeable && !comparator.DidAnyComparisonHaveExecutionSideEffects();});
+				[&]() {
+					return child_nodes_freeable
+						&& !comparator_ascending.DidAnyComparisonHaveExecutionSideEffects()
+						&& !comparator_descending.DidAnyComparisonHaveExecutionSideEffects();
+				});
 	}
 
 	return list;

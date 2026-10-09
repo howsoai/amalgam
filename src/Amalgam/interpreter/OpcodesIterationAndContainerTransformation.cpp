@@ -2724,7 +2724,7 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 
 //ensures a max-heap is built in-place
 template<class RandomIt, class Compare>
-void DeterministicSiftDown(RandomIt first, size_t n, size_t i, Compare const &comp)
+static inline void DeterministicSiftDown(RandomIt first, size_t n, size_t i, Compare const &comp)
 {
 	while(2 * i + 1 < n)
 	{
@@ -2747,7 +2747,7 @@ void DeterministicSiftDown(RandomIt first, size_t n, size_t i, Compare const &co
 
 //like std::partial_sort, but guaranteed to behave the same regardless of the platform
 template<class RandomIt, class Compare>
-void DeterministicPartialSort(RandomIt first, RandomIt middle, RandomIt last, Compare &comp)
+static inline void DeterministicPartialSort(RandomIt first, RandomIt middle, RandomIt last, Compare &comp)
 {
 	if(first == middle)
 		return;
@@ -2784,9 +2784,8 @@ void DeterministicPartialSort(RandomIt first, RandomIt middle, RandomIt last, Co
 
 //helper function for DeterministicSort
 template<class RandomIt, class Compare>
-void DeterministicMergeInPlace(RandomIt first, RandomIt mid, RandomIt last,
-							   typename std::iterator_traits<RandomIt>::value_type *buffer,
-							   Compare &comp)
+static inline void DeterministicMergeInPlace(RandomIt first, RandomIt mid, RandomIt last,
+	typename std::iterator_traits<RandomIt>::value_type *buffer, Compare &comp)
 {
 	using ValueType = typename std::iterator_traits<RandomIt>::value_type;
 
@@ -2827,7 +2826,8 @@ void DeterministicMergeInPlace(RandomIt first, RandomIt mid, RandomIt last,
 //performs a stable merge sort of source which will be modified and is not constant
 // from start_index to end_index into destination; uses comp for comparison
 //performs a bottom-up merge sort
-template<class RandomIt, class Compare> void DeterministicSort(RandomIt first, RandomIt last, Compare comp)
+template<class RandomIt, class Compare>
+static inline void DeterministicSort(RandomIt first, RandomIt last, Compare comp)
 {
 	size_t n = std::distance(first, last);
 	if(n < 2)

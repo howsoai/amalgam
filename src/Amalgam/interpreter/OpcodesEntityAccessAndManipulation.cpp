@@ -380,6 +380,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITY_IF_EQUAL(
 		success = true;
 	}
 
+	lab_pause.Resume();
+
 	evaluableNodeManager->FreeNodeTreeIfPossible(label_name_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(value_to_compare);
 	if(target_entity != curEntity)

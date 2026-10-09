@@ -2787,8 +2787,6 @@ template<class RandomIt, class Compare>
 static inline void DeterministicMergeInPlace(RandomIt first, RandomIt mid, RandomIt last,
 	typename std::iterator_traits<RandomIt>::value_type *buffer, Compare &comp)
 {
-	using ValueType = typename std::iterator_traits<RandomIt>::value_type;
-
 	//copy the left partition into the temporary buffer
 	size_t left_size = std::distance(first, mid);
 	for(size_t i = 0; i < left_size; ++i)

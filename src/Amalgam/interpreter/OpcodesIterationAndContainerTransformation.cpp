@@ -2703,7 +2703,17 @@ static OpcodeInitializer _ENT_SORT(ENT_SORT, &Interpreter::InterpretNode_ENT_SOR
 	)
 	[4 9 3 5 1]
 	-2
-))&", R"([9 5])"}
+))&", R"([5 9])"},
+			{ R"&((sort
+	(lambda
+		(-
+			(current_value)
+			(current_value 1)
+		)
+	)
+	{c 4 e 9 b 3 d 5 a 1}
+	-2
+))&", R"({d 5 e 9})" }
 		});
 	d.newTargetScope = true;
 	d.valueNewness = OpcodeDetails::OpcodeReturnNewnessType::PARTIAL;
@@ -2900,7 +2910,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 		}
 	}
 
-	CustomEvaluableNodeComparator comparator(this, function, list);
+	CustomEvaluableNodeComparator comparator(this, function, list, ascending);
 
 	auto process_sort = [&](auto &container, auto comp_less, auto comp_greater,
 			auto get_node, auto free_child_nodes)

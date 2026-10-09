@@ -13,7 +13,9 @@ bool CustomEvaluableNodeComparator::operator()(EvaluableNode *a, EvaluableNode *
 	interpreter->PushNewConstructionContext(*targetList, *targetList, EvaluableNodeImmediateValueWithType(), b);
 
 	//compare
-	bool retval = (interpreter->InterpretNodeIntoNumberValue(function) > 0);
+	bool retval = (ascending ?
+		(interpreter->InterpretNodeIntoNumberValue(function) > 0)
+		: (interpreter->InterpretNodeIntoNumberValue(function) < 0) );
 
 	if(interpreter->PopConstructionContextAndGetExecutionSideEffectFlag())
 		hadExecutionSideEffects = true;

@@ -2817,38 +2817,36 @@ void DeterministicMergeInPlace(RandomIt first, RandomIt mid, RandomIt last,
 //performs a stable merge sort of source which will be modified and is not constant
 // from start_index to end_index into destination; uses comp for comparison
 //performs a bottom-up merge sort
-template<class RandomIt, class Compare>
-void DeterministicSort(RandomIt first, RandomIt last, Compare &comp)
+template<class RandomIt, class Compare> void DeterministicSort(RandomIt first, RandomIt last, Compare comp)
 {
 	size_t n = std::distance(first, last);
 	if(n < 2)
 		return;
 
-	//allocate buffers
 	using ValueType = typename std::iterator_traits<RandomIt>::value_type;
-	std::vector<ValueType> temp_buffer;
-	temp_buffer.reserve(n / 2 + 1);
 
-	std::vector<ValueType> full_buffer(n);
-	ValueType *buffer_ptr = full_buffer.data();
+	std::vector<ValueType> buffer(n);
+	ValueType *buffer_ptr = buffer.data();
 
 	for(size_t width = 1; width < n; width *= 2)
 	{
-		for(RandomIt i = first; i < last; i += 2 * width)
+		for(size_t i = 0; i < n; i += 2 * width)
 		{
-			RandomIt mid = i + width;
-			RandomIt end = i + 2 * width;
+			RandomIt it_start = first + i;
 
-			if(mid >= last)
+			if(i + width >= n)
 				break;
 
-			if(end > last)
-				end = last;
+			RandomIt it_mid = first + (i + width);
 
-			DeterministicMergeInPlace(i, mid, end, buffer_ptr, comp);
+			size_t end_offset = std::min(i + 2 * width, (size_t)n);
+			RandomIt it_end = first + end_offset;
+
+			DeterministicMergeInPlace(it_start, it_mid, it_end, buffer_ptr + i, comp);
 		}
 	}
 }
+
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {

@@ -246,8 +246,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REM
 										assigned_vars, accum_to_entities, writeListeners,
 										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity);
 
-		lab_pause.Resume();
-
 		if(any_success)
 		{
 			if(ConstrainedAllocatedNodes())
@@ -274,6 +272,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REM
 		//clear write lock as soon as possible, but pull out pointer first to compare for gc
 		Entity *target_entity_raw_ptr = target_entity;
 		target_entity.ReleaseReference();
+
+		//resume after having collected garbage on another entity to make sure the buffer isn't cleared
+		lab_pause.Resume();
 
 		//if assigning to a different entity, it can be cleared
 		if(target_entity_raw_ptr != curEntity)

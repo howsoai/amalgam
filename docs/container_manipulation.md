@@ -1781,25 +1781,23 @@ Removes the index-value pair with `index` being the index in assoc or index of `
 #### Examples
 Example:
 ```amalgam
-(sort
-	(remove
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
+(remove
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
 		4
+		"d"
 	)
+	4
 )
 ```
 Output:
 ```amalgam
-[1 2 3]
+{a 1 b 2 c 3}
 ```
 Example:
 ```amalgam
@@ -1831,25 +1829,23 @@ Output:
 ```
 Example:
 ```amalgam
-(sort
-	(remove
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
-		[4 "a"]
+(remove
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
 	)
+	[4 "a"]
 )
 ```
 Output:
 ```amalgam
-[2 3]
+{b 2 c 3}
 ```
 Example:
 ```amalgam
@@ -1992,25 +1988,23 @@ Output:
 ```
 Example:
 ```amalgam
-(sort
-	(keep
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
-		[4 "a"]
+(keep
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
 	)
+	[4 "a"]
 )
 ```
 Output:
 ```amalgam
-[1 "d"]
+{a 1 4 "d"}
 ```
 Example:
 ```amalgam

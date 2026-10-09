@@ -2847,7 +2847,6 @@ template<class RandomIt, class Compare> void DeterministicSort(RandomIt first, R
 	}
 }
 
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, EvaluableNodeRequestedValueTypes immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodesReference();

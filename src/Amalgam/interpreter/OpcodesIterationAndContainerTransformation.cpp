@@ -2858,6 +2858,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 
 	size_t list_index = (ocn.size() == 1 ? 0 : 1);
 
+	auto list = InterpretNode(ocn[list_index]);
+	if(EvaluableNode::IsNull(list)) [[unlikely]]
+		return EvaluableNodeReference::Null();
+	if(list->IsTerminal()) [[unlikely]]
+		return list;
+
+	bool child_nodes_freeable = list.unique && !list->GetNeedCycleCheck();
+	evaluableNodeManager->EnsureNodeIsModifiable(list, true, false);
+
+	auto node_stack = CreateOpcodeStackStateSaver();
 	EvaluableNodeReference function = EvaluableNodeReference::Null();
 	EvaluableNodeType function_type = ENT_BOOL;
 	bool ascending = true;
@@ -2876,6 +2886,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 
 	if(ocn.size() >= 2)
 	{
+		node_stack.PushEvaluableNode(list);
 		function = InterpretNodeForImmediateUse(ocn[0]);
 
 		if(EvaluableNode::IsNull(function))
@@ -2887,142 +2898,97 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 			function_type = function->GetType();
 			if(function_type == ENT_BOOL)
 				ascending = EvaluableNode::ToBool(function);
+			else //will need to execute function, so save it
+				node_stack.PushEvaluableNode(function);
 		}
 	}
 
-	if(function_type == ENT_BOOL)
-	{
-		//get list
-		auto list = InterpretNode(ocn[list_index]);
-		if(EvaluableNode::IsNull(list)) [[unlikely]]
-			return EvaluableNodeReference::Null();
-		if(list->IsTerminal()) [[unlikely]]
-			return list;
+	CustomEvaluableNodeComparator comparator(this, function, list);
 
-		//make sure it is a clean editable copy and all the data is in a list
-		evaluableNodeManager->EnsureNodeIsModifiable(list, true, false);
-
-		auto process_sort = [&](auto &container, auto comp_less, auto comp_greater, auto get_node)
+	auto process_sort = [&](auto &container, auto comp_less, auto comp_greater,
+			auto get_node, auto free_child_nodes)
+		{
+			auto size = container.size();
+			if(highest_k > 0 && highest_k < size)
 			{
-				auto size = container.size();
-				if(highest_k > 0 && highest_k < size)
+				auto split_it = begin(container) + highest_k;
+				DeterministicPartialSort(begin(container), split_it, end(container), comp_greater);
+
+				if(free_child_nodes())
 				{
-					auto split_it = begin(container) + highest_k;
-					if(ascending)
-						DeterministicPartialSort(begin(container), split_it,
-							end(container), comp_greater);
-					else
-						DeterministicPartialSort(begin(container), split_it,
-							end(container), comp_less);
+					for(auto it = split_it; it != end(container); ++it)
+						evaluableNodeManager->FreeNodeTree(get_node(*it));
+				}
 
-					if(list.unique && !list->GetNeedCycleCheck())
-					{
-						for(auto it = split_it; it != end(container); ++it)
-							evaluableNodeManager->FreeNodeTree(get_node(*it));
-					}
+				container.erase(split_it, end(container));
 
-					container.erase(split_it, end(container));
+				if(ascending)
 					std::reverse(begin(container), end(container));
-				}
-				else if(lowest_k > 0 && lowest_k < size)
+			}
+			else if(lowest_k > 0 && lowest_k < size)
+			{
+				auto split_it = begin(container) + lowest_k;
+				DeterministicPartialSort(begin(container), split_it, end(container), comp_less);
+
+				if(free_child_nodes())
 				{
-					auto split_it = begin(container) + lowest_k;
-					if(ascending)
-						DeterministicPartialSort(begin(container), split_it,
-							end(container), comp_less);
-					else
-						DeterministicPartialSort(begin(container), split_it,
-							end(container), comp_greater);
-
-					if(list.unique && !list->GetNeedCycleCheck())
-					{
-						for(auto it = split_it; it != end(container); ++it)
-							evaluableNodeManager->FreeNodeTree(get_node(*it));
-					}
-
-					container.erase(split_it, end(container));
+					for(auto it = split_it; it != end(container); ++it)
+						evaluableNodeManager->FreeNodeTree(get_node(*it));
 				}
+
+				container.erase(split_it, end(container));
+
+				if(!ascending)
+					std::reverse(begin(container), end(container));
+			}
+			else
+			{
+				if(ascending)
+					DeterministicSort(begin(container), end(container), comp_less);
 				else
-				{
-					if(ascending)
-						DeterministicSort(begin(container), end(container), comp_less);
-					else
-						DeterministicSort(begin(container), end(container), comp_greater);
-				}
-			};
+					DeterministicSort(begin(container), end(container), comp_greater);
+			}
+		};
 
-		if(list->IsAssociativeArray())
-		{
-			auto assoc_mcn = list->GetMappedChildNodesView();
-			auto vector_assoc = std::move(assoc_mcn.ExtractVectorMap());
+	if(list->IsAssociativeArray())
+	{
+		auto assoc_mcn = list->GetMappedChildNodesView();
+		auto vector_assoc = std::move(assoc_mcn.ExtractVectorMap());
 
+		if(function_type == ENT_BOOL)
 			process_sort(vector_assoc,
-						 [](auto &a, auto &b) { return EvaluableNode::IsIteratorValueStrictlyLessThan(a, b); },
-						 [](auto &a, auto &b) { return EvaluableNode::IsIteratorValueStrictlyGreaterThan(a, b); },
-						 [](auto &item) { return item.second; });
-
-			assoc_mcn = std::move(vector_assoc);
-		}
+				[](auto &a, auto &b) { return EvaluableNode::IsIteratorValueStrictlyLessThan(a, b); },
+				[](auto &a, auto &b) { return EvaluableNode::IsIteratorValueStrictlyGreaterThan(a, b); },
+				[](auto &item) { return item.second; },
+				[&]() { return child_nodes_freeable;} );
 		else
-		{
-			auto &list_ocn = list->GetOrderedChildNodesReference();
+			process_sort(vector_assoc,
+				[&comparator](auto &a, auto &b) { return comparator(a.second, b.second); },
+				[&comparator](auto &a, auto &b) { return comparator(b.second, a.second); },
+				[](auto &item) { return item.second; },
+				[&]() { return child_nodes_freeable && !comparator.DidAnyComparisonHaveExecutionSideEffects();});
 
-			process_sort(list_ocn,
-						 EvaluableNode::IsStrictlyLessThan,
-						 EvaluableNode::IsStrictlyGreaterThan,
-						 [](auto &item) { return item; });
-		}
-
-		return list;
+		assoc_mcn = std::move(vector_assoc);
 	}
 	else
 	{
-		auto node_stack = CreateOpcodeStackStateSaver(function);
+		auto &list_ocn = list->GetOrderedChildNodesReference();
 
-		//get list
-		auto list = InterpretNode(ocn[list_index]);
-		if(EvaluableNode::IsNull(list)) [[unlikely]]
-			return EvaluableNodeReference::Null();
-		if(list->IsTerminal()) [[unlikely]]
-			return list;
-
-		//make sure it is an editable copy
-		evaluableNodeManager->EnsureNodeIsModifiable(list, true, false);
-		CustomEvaluableNodeComparator comparator(this, function, list);
-
-		node_stack.PushEvaluableNode(list);
-
-		if(list->IsAssociativeArray())
-		{
-			//TODO 26124: finish this for assocs
-		}
-		else //must be a list because terminals were ruled out above
-		{
-			//sort list; can't use the C++ sort function because it requires weak ordering and will crash otherwise
-			// the custom comparator does not guarantee this
-			auto &list_ocn = list->GetOrderedChildNodesReference();
-			DeterministicSort(begin(list_ocn), end(list_ocn), comparator);
-
-			//TODO 26124: free any nodes possible if selecting only top k
-			if(highest_k > 0 && highest_k < list_ocn.size())
-			{
-				list_ocn.erase(begin(list_ocn), begin(list_ocn) + (list_ocn.size() - highest_k));
-				std::reverse(begin(list_ocn), end(list_ocn));
-			}
-			else if(lowest_k > 0 && lowest_k < list_ocn.size())
-			{
-				list_ocn.erase(begin(list_ocn) + lowest_k, end(list_ocn));
-			}
-
-			if(comparator.DidAnyComparisonHaveExecutionSideEffects())
-			{
-				list.unique = false;
-				list.uniqueUnreferencedTopNode = false;
-			}
-		}
-
-		return list;
+		if(function_type == ENT_BOOL)
+			process_sort(list_ocn,
+				EvaluableNode::IsStrictlyLessThan,
+				EvaluableNode::IsStrictlyGreaterThan,
+				[](auto &item) { return item; },
+				[&]() { return child_nodes_freeable;});
+		else
+			process_sort(list_ocn,
+				[&comparator](auto &a, auto &b) { return comparator(a, b); },
+				[&comparator](auto &a, auto &b) { return comparator(b, a); },
+				[](auto &item) { return item; },
+				[&]() { return child_nodes_freeable && !comparator.DidAnyComparisonHaveExecutionSideEffects();});
 	}
+
+	return list;
 }
 
 static OpcodeInitializer _ENT_CURRENT_INDEX(ENT_CURRENT_INDEX, &Interpreter::InterpretNode_ENT_CURRENT_INDEX, []() {

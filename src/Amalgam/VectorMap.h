@@ -244,6 +244,14 @@ public:
 		return 0;
 	}
 
+	inline iterator erase(iterator first, iterator last)
+	{
+		if(first == last)
+			return data.begin();
+
+		return data.erase(first, last);
+	}
+
 	inline void swap(VectorMap &other) noexcept
 	{
 		std::swap(this->data, other.data);
@@ -288,6 +296,12 @@ public:
 	inline std::vector<std::pair<key_type, mapped_type>> &GetVector()
 	{
 		return data;
+	}
+
+	//moves the vector map out and clears the data structure
+	inline std::vector<std::pair<key_type, mapped_type>> &&ExtractVectorMap()
+	{
+		return std::move(data);
 	}
 
 private:

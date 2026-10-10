@@ -281,7 +281,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, Ev
 		number_to_generate = static_cast<size_t>(num_value);
 		generate_list = true;
 		//because generating a list, can no longer return an immediate
-		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE;
 	}
 	//make sure not eating up too much memory
 	if(ConstrainedAllocatedNodes())
@@ -640,7 +640,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 		deep_set = InterpretNodeIntoBoolValue(ocn[2], true);
 
 	//the opcode parameter index of the seed
-	auto seed_node = InterpretNode(ocn[num_params > 1 ? 1 : 0]);
+	auto seed_node = InterpretNode(ocn[num_params > 1 ? 1 : 0], immediate_result.ToSimplestNodeValue());
 	std::string seed_string;
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
 		seed_string = seed_node->GetStringView();

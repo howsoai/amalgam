@@ -136,7 +136,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAMBDA(EvaluableNode *en, 
 		return EvaluableNodeReference(ocn[0], false);
 
 	//evaluate and then wrap in a lambda
-	EvaluableNodeReference evaluated_value = InterpretNode(ocn[0]);
+	EvaluableNodeReference evaluated_value = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 
 	//need to evaluate its parameter and return a new node encapsulating it
 	EvaluableNodeReference lambda(evaluableNodeManager->AllocNode(ENT_LAMBDA), true);
@@ -254,12 +254,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, Ev
 		{
 			//need to return a more complex data structure, can't return immediate
 			if(interpreter_constraints.collectWarnings)
-				immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
+				immediate_result = EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE;
 
 			//if have a scope stack context of variables specified, then use it
 			EvaluableNodeReference args = EvaluableNodeReference::Null();
 			if(ocn.size() > 1)
-				args = InterpretNode(ocn[1]);
+				args = InterpretNodeWithoutCopyingImmediates(ocn[1]);
 
 			//build scope stack from parameters
 			auto scope_stack = ConvertArgsToScopeStack(args, *evaluableNodeManager);
@@ -523,7 +523,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN(Evalua
 	if(en->GetIsIdempotent())
 		return evaluableNodeManager->DeepAllocCopy(en, false);
 
-	EvaluableNodeReference value = InterpretNode(ocn[0]);
+	EvaluableNodeReference value = InterpretNode(ocn[0], immediate_result.ToSimplestNodeValue());
 
 	//need to evaluate its parameter and return a new node encapsulating it
 	auto node_type = en->GetType();

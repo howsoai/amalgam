@@ -1130,11 +1130,11 @@ Output:
 
 ### Opcode: `reverse`
 #### Parameters
-`list collection`
+`list|assoc collection`
 #### Returns
-`list`
+`list|assoc`
 #### Description
-Returns a new list containing the `collection` with its elements in reversed order.
+Returns a new list or assoc containing the `collection` with its elements in reversed order.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -1153,6 +1153,22 @@ Output:
 ```amalgam
 [5 4 3 2 1]
 ```
+Example:
+```amalgam
+(reverse
+	{a 1 b 2 c 3 d 4 e 5}
+)
+```
+Output:
+```amalgam
+{
+		e 5
+		d 4
+		c 3
+		b 2
+		a 1
+}
+```
 
 [Amalgam Opcodes](./opcodes.md)
 
@@ -1160,9 +1176,9 @@ Output:
 #### Parameters
 `[any function] list|assoc collection [number k]`
 #### Returns
-`list`
+`list|assoc`
 #### Description
-Returns a new list containing the elements from `collection` sorted in increasing order, regardless of whether `collection` is an assoc or list.  If `function` is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with `(current_value)` and `(current_value 1)` accessing a pair of elements from the list, and evaluates `function`.  The function should return a number, positive if `(current_value)` is greater meaning that `(current_value)` should come after `(current_value 1)`, negative if `(current_value 1)` is greater and should come after `(current_value)`, or 0 if equal.  If `k` is specified in addition to `function` and not null, then it will only return the `k` smallest values sorted in order, or, if `k` is negative, it will return the highest `k` values using the absolute value of `k`.
+Returns a new list or assoc containing the elements from `collection` sorted in increasing order by value, regardless of whether `collection` is an assoc or list.  If `function` is null or true it sorts ascending, if false it sorts descending, and if any other value it pushes a pair of new scope onto the stack with `(current_value)` and `(current_value 1)` accessing a pair of elements from the list, and evaluates `function`.  The function should return a number, positive if `(current_value)` is greater meaning that `(current_value)` should come after `(current_value 1)`, negative if `(current_value 1)` is greater and should come after `(current_value)`, or 0 if equal.  If `k` is specified in addition to `function` and not null, then it will only return the `k` smallest values sorted in order, or, if `k` is negative, it will return the highest `k` values using the absolute value of `k`.
 #### Details
  - Permissions required:  none
  - Allows concurrency: false
@@ -1195,7 +1211,13 @@ Example:
 ```
 Output:
 ```amalgam
-[1 3 4 5 9]
+{
+		e 1
+		c 3
+		a 4
+		d 5
+		b 9
+}
 ```
 Example:
 ```amalgam
@@ -1305,17 +1327,17 @@ Example:
 Output:
 ```amalgam
 [
-	8
-	10
-	6
-	9
-	7
-	5
-	1
-	0
-	2
-	4
-	3
+		10
+		8
+		9
+		1
+		6
+		4
+		7
+		5
+		3
+		2
+		0
 ]
 ```
 Example:
@@ -1436,7 +1458,24 @@ Example:
 ```
 Output:
 ```amalgam
-[9 5]
+[5 9]
+```
+Example:
+```amalgam
+(sort
+	(lambda
+		(-
+			(current_value)
+			(current_value 1)
+		)
+	)
+	{c 4 e 9 b 3 d 5 a 1}
+	-2
+)
+```
+Output:
+```amalgam
+{d 5 e 9}
 ```
 
 [Amalgam Opcodes](./opcodes.md)

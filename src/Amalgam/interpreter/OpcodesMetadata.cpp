@@ -79,7 +79,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ANNOTATIONS(EvaluableN
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto source = InterpretNode(ocn[0]);
+	auto source = InterpretNode(ocn[0], immediate_result.ToSimplestNodeValue());
 	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateOpcodeStackStateSaver(source);
@@ -168,7 +168,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto source = InterpretNode(ocn[0]);
+	auto source = InterpretNode(ocn[0], immediate_result.ToSimplestNodeValue());
 	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateOpcodeStackStateSaver(source);
@@ -274,7 +274,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableN
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto source = InterpretNode(ocn[0]);
+	auto source = InterpretNode(ocn[0], immediate_result.ToSimplestNodeValue());
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 	else
@@ -322,7 +322,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *e
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto n = InterpretNode(ocn[0]);
+	auto n = InterpretNode(ocn[0], immediate_result.ToSimplestNodeValue());
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -367,7 +367,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *e
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto source = InterpretNode(ocn[0]);
+	auto source = InterpretNode(ocn[0], immediate_result.ToSimplestNodeValue());
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 	else
@@ -376,7 +376,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *e
 	auto node_stack = CreateOpcodeStackStateSaver(source);
 
 	//get the new value
-	auto value_node = InterpretNode(ocn[1]);
+	auto value_node = InterpretNode(ocn[1], immediate_result.ToSimplestNodeValue());
 	source->CopyValueFrom(value_node);
 	source.UpdatePropertiesBasedOnAttachedNode(value_node, true);
 

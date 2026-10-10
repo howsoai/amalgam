@@ -2391,7 +2391,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_opcodes(EvaluableNod
 	auto &qc_ocn = query_command->GetOrderedChildNodesReference();
 	for(size_t i = 0; i < ocn.size(); i++)
 	{
-		auto value = InterpretNode(ocn[i]);
+		auto value = InterpretNode(ocn[i], immediate_result.ToSimplestNodeValue());
 		qc_ocn.push_back(value);
 		query_command.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
 	}

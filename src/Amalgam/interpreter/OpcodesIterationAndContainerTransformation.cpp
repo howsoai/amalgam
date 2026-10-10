@@ -1711,7 +1711,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, E
 
 	//single list, return itself
 	if(ocn.size() == 1)
-		return InterpretNode(ocn[0]);
+		return InterpretNode(ocn[0], immediate_result.ToSimplestNodeValue());
 
 	//get the index of the first list to weave based on how many parameters there are
 	size_t index_of_first_list = 0;
@@ -2323,7 +2323,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, E
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto zipped = InterpretNode(ocn[0]);
+	EvaluableNodeReference zipped = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+
 	if(EvaluableNode::IsNull(zipped)) [[unlikely]]
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
@@ -2481,7 +2482,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en,
 		return EvaluableNodeReference::Null();
 
 	//get the list to reverse
-	auto list = InterpretNode(ocn[0]);
+	auto list = InterpretNode(ocn[0], immediate_result.ToSimplestNodeValue());
 	if(EvaluableNode::IsNull(list) || list->IsTerminal()) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
@@ -2863,7 +2864,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, Ev
 
 	size_t list_index = (ocn.size() == 1 ? 0 : 1);
 
-	auto list = InterpretNode(ocn[list_index]);
+	auto list = InterpretNode(ocn[list_index], immediate_result.ToSimplestNodeValue());
 	if(EvaluableNode::IsNull(list)) [[unlikely]]
 		return EvaluableNodeReference::Null();
 	if(list->IsTerminal()) [[unlikely]]

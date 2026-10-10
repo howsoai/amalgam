@@ -480,7 +480,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluabl
 				sid), true);
 	}
 
-	auto result = InterpretNode(n);
+	auto result = InterpretNodeWithoutCopyingImmediates(n);
 
 	if(result == nullptr || !result.unique)
 		return EvaluableNodeReference(evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
@@ -514,7 +514,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueNumberValueOrNullEval
 	if(n == nullptr || n->GetIsIdempotent())
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(n)), true);
 
-	auto result = InterpretNode(n);
+	auto result = InterpretNodeWithoutCopyingImmediates(n);
 
 	if(result == nullptr || !result.unique)
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(result)), true);

@@ -27,8 +27,8 @@ public:
 
 	enum class Type : TypeContainer
 	{
-		//there is nothing to even hold the data
-		NONE = 0,
+		//must be a node
+		EVALUABLE_NODE = 0,
 		//no data being held
 		NULL_VALUE = 1 << 0,
 		//boolean value
@@ -75,7 +75,7 @@ public:
 	};
 
 	constexpr EvaluableNodeRequestedValueTypes() noexcept
-		: requestedValueTypes(Type::NONE)
+		: requestedValueTypes(Type::EVALUABLE_NODE)
 	{}
 
 	constexpr EvaluableNodeRequestedValueTypes(Type t) noexcept
@@ -88,7 +88,7 @@ public:
 
 	//boolean implies all or none
 	constexpr EvaluableNodeRequestedValueTypes(bool all_or_none) noexcept
-		: requestedValueTypes(all_or_none ? Type::ANY_PRIMITIVE_IMMEDIATE : Type::NONE)
+		: requestedValueTypes(all_or_none ? Type::ANY_PRIMITIVE_IMMEDIATE : Type::EVALUABLE_NODE)
 	{}
 
 	//bit‑wise operators
@@ -153,6 +153,15 @@ public:
 	{
 		return (static_cast<TypeContainer>(requestedValueTypes)
 			& static_cast<TypeContainer>(Type::ANY_IMMEDIATE)) != 0;
+	}
+
+	//returns a EvaluableNodeRequestedValueTypes that is the most primitive type
+	//that is still an EvaluableNode
+	constexpr EvaluableNodeRequestedValueTypes ToSimplestNodeValue()
+	{
+		if(AnyImmediateType())
+			return EvaluableNodeRequestedValueTypes(Type::IMMEDIATE_USE_ONLY);
+		return EvaluableNodeRequestedValueTypes();
 	}
 
 	constexpr bool NoValueRequested() const noexcept

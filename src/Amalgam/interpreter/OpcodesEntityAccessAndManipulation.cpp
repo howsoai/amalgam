@@ -487,7 +487,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
 			auto [value, _] = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager,
-				EvaluableNodeRequestedValueTypes::Type::NONE, target_entity == curEntity);
+				EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE, target_entity == curEntity);
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, first_node);
@@ -521,7 +521,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
 			auto [value, _] = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager,
-				EvaluableNodeRequestedValueTypes::Type::NONE, target_entity == curEntity);
+				EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE, target_entity == curEntity);
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
@@ -716,7 +716,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 
 	//need to return a more complex data structure, can't return immediate
 	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->collectWarnings)
-		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -759,7 +759,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 		cur_write_listeners = &get_changes_write_listeners;
 
 		//ensure not returning an immediate value
-		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE;
 	}
 
 	//get a read lock on the entity
@@ -989,7 +989,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 	//need to return a more complex data structure, can't return immediate
 	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->collectWarnings)
-		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();

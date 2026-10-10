@@ -117,7 +117,7 @@ public:
 				begin(parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 
 			auto result_ref = interpreter.ExecuteNode(node_to_execute,
-				nullptr, &opcode_stack, &construction_stack, EvaluableNodeRequestedValueTypes::Type::NONE, false);
+				nullptr, &opcode_stack, &construction_stack, EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE, false);
 
 			if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 			{

@@ -653,14 +653,13 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, Evalu
 	#ifdef MULTITHREAD_SUPPORT
 		else if(command == "threads")
 		{
-			std::cout << "Current thread: " << std::this_thread::get_id() << std::endl;
 			std::cout << "Maximum concurrent threads: " << Concurrency::GetMaxNumThreads() << std::endl;
 			std::cout << "Current number of executing threads: " << Concurrency::GetActiveInterpreterThreadCount() << std::endl;
 			std::cout << "All available threads:" << std::endl;
 			EvaluableNodeManager::LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
-				[this](EvaluableNodeManager::LocalAllocationBuffer *lab)
+				[](EvaluableNodeManager::LocalAllocationBuffer *lab)
 			{
-				std::cout << " " << lab->threadId << std::endl;
+				std::cout << "  " << lab->threadId << std::endl;
 			});
 		}
 	#endif

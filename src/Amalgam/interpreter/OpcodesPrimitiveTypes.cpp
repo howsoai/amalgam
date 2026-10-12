@@ -14,7 +14,7 @@ static OpcodeInitializer _ENT_NULL(ENT_NULL, &Interpreter::InterpretNode_ENT_NUL
 		{R"&(.null)&", R"(.null)"},
 		{R"&((lambda .null ))&", R"(.null)"},
 			{R"&((lambda
-	
+
 	#annotation
 	.null
 ))&", R"(#annotation
@@ -108,7 +108,7 @@ static OpcodeInitializer _ENT_LIST(ENT_LIST, &Interpreter::InterpretNode_ENT_LIS
 	OpcodeDetails d;
 	d.parameters = OpcodeDetails::ParameterSchema(OpcodeDetails::ChildNodeStructureType::ORDERED,
 	{
-		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC}, true)
+		OpcodeDetails::ParameterGroup({"node", OpcodeDetails::DataType::ANY_BASIC, true}, true)
 	});
 	d.returns = OpcodeDetails::DataType::LIST;
 	d.allowsConcurrency = true;

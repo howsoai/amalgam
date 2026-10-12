@@ -380,7 +380,7 @@ public:
 		for(auto &label_id : GetLabelIndexView() | std::views::keys)
 		{
 			EvaluableNode *node = GetValueAtLabel(label_id, destination_temp_enm,
-				EvaluableNodeRequestedValueTypes::Type::NONE, on_self, true).first;
+				EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE, on_self, true).first;
 			if(node != nullptr)
 				func(label_id, node);
 		}

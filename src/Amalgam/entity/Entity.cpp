@@ -272,10 +272,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		//if label doesn't exist, create new root to contain it
 		if(label_iterator == end(label_index))
 		{
-			//need to make sure unique before attaching
-			if(!new_value_reference.unique)
-				new_value_reference = evaluableNodeManager.DeepAllocCopy(new_value_reference);
-
 			EvaluableNode *new_root = evaluableNodeManager.AllocNode(evaluableNodeManager.rootNode);
 			//ensure flags are updated before new_root is exposed
 			new_root->UpdateFlagsBasedOnNewChildNode(new_value_reference);

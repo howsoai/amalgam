@@ -384,7 +384,7 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
 	EvaluableNodeReference returned_value = bundle->entity->Execute(label, &scope_stack, false, nullptr,
-		&bundle->writeListeners, bundle->printListener, nullptr, EvaluableNodeRequestedValueTypes::Type::NONE
+		&bundle->writeListeners, bundle->printListener, nullptr, EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif
@@ -417,7 +417,7 @@ std::pair<std::string, std::string> EntityExternalInterface::ExecuteEntityJSONLo
 	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
 	EvaluableNodeReference returned_value = bundle->entity->Execute(label, &scope_stack, false, nullptr,
-		&listeners, bundle->printListener, nullptr, EvaluableNodeRequestedValueTypes::Type::NONE
+		&listeners, bundle->printListener, nullptr, EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif
@@ -455,7 +455,7 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
 	EvaluableNodeReference returned_value = bundle->entity->ExecuteOnEntity(code, &scope_stack, nullptr,
-		&bundle->writeListeners, bundle->printListener, nullptr, EvaluableNodeRequestedValueTypes::Type::NONE
+		&bundle->writeListeners, bundle->printListener, nullptr, EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif

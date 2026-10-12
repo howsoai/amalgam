@@ -378,7 +378,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 			p_value = num_value;
 	}
 
-	auto container = InterpretNode(ocn[0]);
+	auto container = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsTerminal(container))
 		return EvaluableNodeReference::Null();
 

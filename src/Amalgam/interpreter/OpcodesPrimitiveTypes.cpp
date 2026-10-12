@@ -179,7 +179,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST_and_UNORDERED_LIST(Ev
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
+	{
+		//if not using it elsewhere, just return en
+		if(immediate_result.AnyImmediateType())
+			return { en, false };
 		return evaluableNodeManager->DeepAllocCopy(en, false);
+	}
 
 	EvaluableNodeReference new_list(evaluableNodeManager->AllocNode(en->GetType()), true);
 
@@ -260,7 +265,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, E
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
+	{
+		//if not using it elsewhere, just return en
+		if(immediate_result.AnyImmediateType())
+			return { en, false };
 		return evaluableNodeManager->DeepAllocCopy(en, false);
+	}
 
 	//create a new assoc from the previous
 	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(en, false), true);

@@ -39,11 +39,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, E
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference list;
-	if(immediate_result.AnyImmediateType())
-		list = InterpretNodeForImmediateUse(ocn[0]);
-	else
-		list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+	EvaluableNodeReference list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 
 	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
@@ -317,11 +313,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, Ev
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference list;
-	if(immediate_result.AnyImmediateType())
-		list = InterpretNodeForImmediateUse(ocn[0]);
-	else
-		list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+	EvaluableNodeReference list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 
 	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
@@ -503,11 +495,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, Ev
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference list;
-	if(immediate_result.AnyImmediateType())
-		list = InterpretNodeForImmediateUse(ocn[0]);
-	else
-		list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+	EvaluableNodeReference list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 
 	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
@@ -783,11 +771,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, E
 	if(ocn.size() == 0) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference list;
-	if(immediate_result.AnyImmediateType())
-		list = InterpretNodeForImmediateUse(ocn[0]);
-	else
-		list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+	EvaluableNodeReference list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 
 	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
@@ -1009,7 +993,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 	//pull the first element and reuse its memory if possible;
 	//this can drastically reduce memory and improve efficiency for flows that recurse on append
 	bool first_append = true;
-	EvaluableNodeReference new_list = InterpretNode(ocn[0]);
+	EvaluableNodeReference new_list = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(new_list != nullptr
 		&& (new_list->GetType() == ENT_LIST || new_list->GetType() == ENT_ASSOC))
 	{
@@ -1035,7 +1019,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 			return EvaluableNodeReference::Null();
 
 		//get evaluated parameter
-		auto new_elements = InterpretNode(ocn[param_index]);
+		auto new_elements = InterpretNodeWithoutCopyingImmediates(ocn[param_index]);
 
 		if(EvaluableNode::IsAssociativeArray(new_elements))
 		{
@@ -1305,11 +1289,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, Eva
 	if(ocn_size < 1) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference source;
-	if(immediate_result.AnyImmediateType())
-		source = InterpretNodeForImmediateUse(ocn[0]);
-	else
-		source = InterpretNodeWithoutCopyingImmediates(ocn[0]);
+	EvaluableNodeReference source = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 
 	if(ocn_size < 2 || source == nullptr)
 		return source;
@@ -1782,7 +1762,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 	if(ocn.size() >= 2)
 		only_unique_values = InterpretNodeIntoBoolValue(ocn[1]);
 
-	auto container = InterpretNode(ocn[0]);
+	auto container = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 
 	//exit early if wrong type
 	if(EvaluableNode::IsTerminal(container))
@@ -2010,13 +1990,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 
-	//get index to look up (will attempt to reuse this node below)
-	auto index = InterpretNodeForImmediateUse(ocn[1]);
-
-	EvaluableNode **target = TraverseToDestinationFromTraversalPathList(&container.GetReference(), index, false);
+	EvaluableNode **target = InterpretNodeIntoDestination(&container.GetReference(), ocn[1], false);
 	bool found = (target != nullptr);
-
-	evaluableNodeManager->FreeNodeTreeIfPossible(index);
 	evaluableNodeManager->FreeNodeTreeIfPossible(container);
 	return AllocReturn(found, immediate_result);
 }
@@ -2173,21 +2148,19 @@ static OpcodeInitializer _ENT_REMOVE(ENT_REMOVE, &Interpreter::InterpretNode_ENT
 	d.returns = OpcodeDetails::DataType::LIST | OpcodeDetails::DataType::ASSOC;
 	d.description = R"(Removes the index-value pair with `index` being the index in assoc or index of `collection`, returning a new list or assoc with `index` removed.  If `index` is a list of numbers or strings, then it will remove each of the requested indices.  Negative numbered indices will count back from the end of a list.)";
 	d.examples = MakeAmalgamExamples({
-		{R"&((sort
-	(remove
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
+		{R"&((remove
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
 		4
+		"d"
 	)
-))&", R"([1 2 3])"},
+	4
+))&", R"({a 1 b 2 c 3})"},
 			{R"&((remove
 	[
 		"a"
@@ -2209,21 +2182,19 @@ static OpcodeInitializer _ENT_REMOVE(ENT_REMOVE, &Interpreter::InterpretNode_ENT
 	4
 	"d"
 ])"},
-			{R"&((sort
-	(remove
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
-		[4 "a"]
+			{R"&((remove
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
 	)
-))&", R"([2 3])"},
+	[4 "a"]
+))&", R"({b 2 c 3})"},
 			{R"&((remove
 	[
 		"a"
@@ -2283,7 +2254,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto container = InterpretNode(ocn[0]);
+	auto container = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(EvaluableNode::IsNull(container))
 		return EvaluableNodeReference::Null();
 	if(container->IsTerminal())
@@ -2487,21 +2458,19 @@ static OpcodeInitializer _ENT_KEEP(ENT_KEEP, &Interpreter::InterpretNode_ENT_KEE
 	]
 	4
 ))&", R"(["c"])"},
-			{R"&((sort
-	(keep
-		(associate
-			"a"
-			1
-			"b"
-			2
-			"c"
-			3
-			4
-			"d"
-		)
-		[4 "a"]
+			{R"&((keep
+	(associate
+		"a"
+		1
+		"b"
+		2
+		"c"
+		3
+		4
+		"d"
 	)
-))&", R"([1 "d"])"},
+	[4 "a"]
+))&", R"({a 1 4 "d"})"},
 			{R"&((keep
 	[
 		"a"
@@ -2553,7 +2522,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, Ev
 	if(ocn.size() < 2) [[unlikely]]
 		return EvaluableNodeReference::Null();
 
-	auto container = InterpretNode(ocn[0]);
+	auto container = InterpretNodeWithoutCopyingImmediates(ocn[0]);
 	if(EvaluableNode::IsNull(container))
 		return EvaluableNodeReference::Null();
 	if(container->IsTerminal())

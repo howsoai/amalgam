@@ -1579,7 +1579,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en
 		return EvaluableNodeReference::Null();
 
 	//get the target
-	auto source = InterpretNode(ocn[0]);
+	auto source = InterpretNode(ocn[0], immediate_result.ToSimplestNodeValue());
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 

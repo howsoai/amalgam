@@ -246,8 +246,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REM
 										assigned_vars, accum_to_entities, writeListeners,
 										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity);
 
-		lab_pause.Resume();
-
 		if(any_success)
 		{
 			if(ConstrainedAllocatedNodes())
@@ -274,6 +272,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_REM
 		//clear write lock as soon as possible, but pull out pointer first to compare for gc
 		Entity *target_entity_raw_ptr = target_entity;
 		target_entity.ReleaseReference();
+
+		//resume after having collected garbage on another entity to make sure the buffer isn't cleared
+		lab_pause.Resume();
 
 		//if assigning to a different entity, it can be cleared
 		if(target_entity_raw_ptr != curEntity)
@@ -378,6 +379,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITY_IF_EQUAL(
 
 		success = true;
 	}
+
+	lab_pause.Resume();
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(label_name_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(value_to_compare);
@@ -484,7 +487,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
 			auto [value, _] = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager,
-				EvaluableNodeRequestedValueTypes::Type::NONE, target_entity == curEntity);
+				EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE, target_entity == curEntity);
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, first_node);
@@ -518,7 +521,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY(Evalu
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
 			auto [value, _] = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager,
-				EvaluableNodeRequestedValueTypes::Type::NONE, target_entity == curEntity);
+				EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE, target_entity == curEntity);
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
@@ -713,7 +716,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 
 	//need to return a more complex data structure, can't return immediate
 	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->collectWarnings)
-		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -756,7 +759,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ON_EN
 		cur_write_listeners = &get_changes_write_listeners;
 
 		//ensure not returning an immediate value
-		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE;
 	}
 
 	//get a read lock on the entity
@@ -986,7 +989,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 	//need to return a more complex data structure, can't return immediate
 	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->collectWarnings)
-		immediate_result = EvaluableNodeRequestedValueTypes::Type::NONE;
+		immediate_result = EvaluableNodeRequestedValueTypes::Type::EVALUABLE_NODE;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();

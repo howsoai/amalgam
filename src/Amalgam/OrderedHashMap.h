@@ -422,17 +422,17 @@ public:
 		return vectorMap;
 	}
 
+	//used for more advanced manipulation
+	inline std::vector<std::pair<key_type, mapped_type>> &GetVector()
+	{
+		return vectorMap.GetVector();
+	}
+
 	//moves the vector map out and clears the data structure
 	inline VecMap &&ExtractVectorMap()
 	{
 		hashMap.clear();
 		return std::move(vectorMap);
-	}
-
-	//used for more advanced manipulation
-	inline std::vector<std::pair<key_type, mapped_type>> &GetVector()
-	{
-		return vectorMap.GetVector();
 	}
 
 private:

@@ -238,9 +238,21 @@ public:
 		return IsLessThan(a, b, false);
 	}
 
+	template<typename MapIterator>
+	static inline bool IsIteratorValueStrictlyLessThan(MapIterator a, MapIterator b)
+	{
+		return IsLessThan(a.second, b.second, false);
+	}
+
 	static inline bool IsStrictlyGreaterThan(EvaluableNode *a, EvaluableNode *b)
 	{
 		return !IsLessThan(a, b, true);
+	}
+
+	template<typename MapIterator>
+	static inline bool IsIteratorValueStrictlyGreaterThan(MapIterator a, MapIterator b)
+	{
+		return !IsLessThan(a.second, b.second, true);
 	}
 
 	//if the node's contents can be represented as a number, which includes numbers, infinity, then return true

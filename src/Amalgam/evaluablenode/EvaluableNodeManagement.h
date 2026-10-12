@@ -90,6 +90,7 @@ public:
 		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::Lock lock(registry->mutex);
 			registry->registry.push_back(this);
+			threadId = std::this_thread::get_id();
 		#endif
 		}
 
@@ -169,9 +170,11 @@ public:
 		//the buffer itself
 		std::vector<EvaluableNode *> buffer;
 
-	protected:
-
 	#ifdef MULTITHREAD_SUPPORT
+		//thread id of the allocation buffer
+		std::thread::id threadId;
+
+	protected:
 		//registry that keeps track of all local allocation buffers
 		struct Registry
 		{

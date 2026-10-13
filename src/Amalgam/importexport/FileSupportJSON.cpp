@@ -11,7 +11,6 @@
 
 //system headers:
 #include <iostream>
-#include <utility>
 #include <vector>
 
 //per simdjson documentation, for multithreading, there should be one of these per thread
@@ -53,8 +52,7 @@ EvaluableNode *JsonToEvaluableNodeRecurse(EvaluableNodeManager *enm, simdjson::o
 	case simdjson::ondemand::json_type::string:
 	{
 		std::string_view str_view = element.get_string();
-		std::string str(str_view);
-		return enm->AllocNode(ENT_STRING, str);
+		return enm->AllocNode(ENT_STRING, str_view);
 	}
 
 	case simdjson::ondemand::json_type::boolean:
@@ -301,8 +299,7 @@ EvaluableNode *EvaluableNodeJSONTranslation::JsonToEvaluableNode(EvaluableNodeMa
 			case simdjson::ondemand::json_type::string:
 			{
 				std::string_view str_view = json_top_element.get_string();
-				std::string str(str_view);
-				return enm->AllocNode(ENT_STRING, str);
+				return enm->AllocNode(ENT_STRING, str_view);
 			}
 
 			case simdjson::ondemand::json_type::boolean:
@@ -336,7 +333,7 @@ std::pair<std::string, bool> EvaluableNodeJSONTranslation::EvaluableNodeToJson(E
 
 	std::string json_str;
 	if(EvaluableNodeToJsonStringRecurse(code, json_str, sort_keys))
-		return {std::move(json_str), true};
+		return {json_str, true};
 	else
 		return {"", false};
 }

@@ -1204,7 +1204,9 @@ protected:
 #endif
 
 	//when the number of elements in a SmallAssocType exceeds this value, it should be promoted to a LargeAssocType
-	static constexpr size_t largestSmallAssocSize = 8;
+	//this value has been tuned by performance testing across a variety of workloads, so any change to this value
+	// should also be tuned by performance testing
+	static constexpr size_t largestSmallAssocSize = 32;
 
 	//values used to be able to return a reference
 	static bool falseBoolValue;

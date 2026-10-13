@@ -52,7 +52,8 @@ EvaluableNode *JsonToEvaluableNodeRecurse(EvaluableNodeManager *enm, simdjson::o
 	case simdjson::ondemand::json_type::string:
 	{
 		std::string_view str_view = element.get_string();
-		return enm->AllocNode(ENT_STRING, str_view);
+		std::string str(str_view);
+		return enm->AllocNode(ENT_STRING, str);
 	}
 
 	case simdjson::ondemand::json_type::boolean:
@@ -299,7 +300,8 @@ EvaluableNode *EvaluableNodeJSONTranslation::JsonToEvaluableNode(EvaluableNodeMa
 			case simdjson::ondemand::json_type::string:
 			{
 				std::string_view str_view = json_top_element.get_string();
-				return enm->AllocNode(ENT_STRING, str_view);
+				std::string str(str_view);
+				return enm->AllocNode(ENT_STRING, str);
 			}
 
 			case simdjson::ondemand::json_type::boolean:

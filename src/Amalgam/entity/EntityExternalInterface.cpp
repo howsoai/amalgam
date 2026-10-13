@@ -11,6 +11,7 @@
 
 //system headers:
 #include <string>
+#include <utility>
 #include <vector>
 
 EntityExternalInterface::LoadEntityStatus::LoadEntityStatus()
@@ -365,7 +366,7 @@ std::string EntityExternalInterface::GetJSONFromLabel(std::string &handle, std::
 
 	EvaluableNode *label_val = bundle->entity->GetValueAtLabel(label, nullptr, false).first;
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(label_val);
-	return (converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
+	return (converted ? std::move(result) : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
 }
 
 std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std::string &label, std::string_view json)
@@ -394,7 +395,7 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
 	enm.FreeNodeTreeIfPossible(returned_value);
-	return (converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
+	return (converted ? std::move(result) : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
 }
 
 std::pair<std::string, std::string> EntityExternalInterface::ExecuteEntityJSONLogged(const std::string &handle, const std::string &label, std::string_view json)
@@ -426,11 +427,11 @@ std::pair<std::string, std::string> EntityExternalInterface::ExecuteEntityJSONLo
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
 	enm.FreeNodeTreeIfPossible(returned_value);
-	std::string json_out = converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID);
+	std::string json_out = converted ? std::move(result) : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID);
 
 	std::string log = Parser::Unparse(logger.GetWrites(), false);
 
-	return std::pair(json_out, log);
+	return std::pair(std::move(json_out), std::move(log));
 }
 
 std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, const std::string &amlg)
@@ -466,7 +467,7 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
 	enm.FreeNodeTreeIfPossible(returned_value);
-	return (converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
+	return (converted ? std::move(result) : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
 }
 
 std::string EntityExternalInterface::GetGarbageCollectionParams()

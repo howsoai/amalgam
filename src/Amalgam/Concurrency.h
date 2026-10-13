@@ -113,7 +113,7 @@ namespace Concurrency
 	//cover most small tasks via small buffer optimization, but will allocate on the heap
 	//if needed.  note that for performance, it assumes it will be given a valid task
 	//before being executed
-	template<size_t bufferSize = 96>
+	template<size_t bufferSize = 72>
 	struct FixedSizeTask
 	{
 	public:

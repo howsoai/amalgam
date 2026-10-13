@@ -64,7 +64,6 @@ public:
 		//create space to store all of these nodes on the stack, but won't copy these over to the other interpreters
 		resultsSaver = parent_interpreter->CreateOpcodeStackStateSaver();
 		resultsSaverFirstTaskOffset = resultsSaver.GetIndexOfFirstElement();
-		resultsSaverCurrentTaskOffset = resultsSaverFirstTaskOffset;
 		resultsSaver.ReserveNodes(num_tasks);
 
 		randomSeeds.reserve(numTasks);
@@ -92,14 +91,13 @@ public:
 		EvaluableNode *current_value,
 		EvaluableNodeRefType &result)
 	{
-		size_t results_saver_location = resultsSaverCurrentTaskOffset++;
 		size_t task_index = curNumTasksAdded++;
 
 		//must keep InterpreterConcurrencyManagerTraits::StackWithResults up to date with the
 		// number of params of the following lambda
 		tasks.emplace_back(
 			[this, task_index, node_to_execute, target_origin, target, current_index,
-			current_value, &result, results_saver_location]
+			current_value, &result]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
@@ -141,7 +139,7 @@ public:
 				resultsIdempotent = false;
 
 			result = result_ref;
-			resultsSaver.SetStackElement(results_saver_location, result);
+			resultsSaver.SetStackElement(resultsSaverFirstTaskOffset + task_index, result);
 
 			interpreter.memoryModificationLock.unlock();
 		}
@@ -198,16 +196,12 @@ public:
 	void AddTask(EvaluableNode *node_to_execute,
 		EvaluableNodeRefType *result = nullptr, EvaluableNodeRequestedValueTypes immediate_results = false)
 	{
-		//save the node to execute, but also save the location
-		//so the location can be used later to save the result
-		size_t results_saver_location = resultsSaverCurrentTaskOffset++;
-
 		size_t task_index = curNumTasksAdded++;
 
 		//must keep InterpreterConcurrencyManagerTraits::NoStack up to date with the
 		// number of params of the following lambda
 		tasks.emplace_back(
-			[this, task_index, node_to_execute, result, immediate_results, results_saver_location]
+			[this, task_index, node_to_execute, result, immediate_results]
 		{
 			EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
 
@@ -251,7 +245,7 @@ public:
 
 				//only save the result if it's not immediate
 				if(!result_ref.IsImmediateValue())
-					resultsSaver.SetStackElement(results_saver_location, *result);
+					resultsSaver.SetStackElement(resultsSaverFirstTaskOffset + task_index, *result);
 			}
 
 			interpreter.memoryModificationLock.unlock();

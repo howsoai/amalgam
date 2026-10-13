@@ -11,7 +11,6 @@
 
 //system headers:
 #include <iostream>
-#include <utility>
 #include <vector>
 
 //per simdjson documentation, for multithreading, there should be one of these per thread
@@ -336,7 +335,7 @@ std::pair<std::string, bool> EvaluableNodeJSONTranslation::EvaluableNodeToJson(E
 
 	std::string json_str;
 	if(EvaluableNodeToJsonStringRecurse(code, json_str, sort_keys))
-		return {std::move(json_str), true};
+		return {json_str, true};
 	else
 		return {"", false};
 }

@@ -15,6 +15,9 @@ constexpr float _extra_memory_capacity_factor_default = 3.0f;
 constexpr float _min_memory_retention_factor_default = 0.95f;
 constexpr float _alloc_expansion_factor_default = 1.5f;
 
+//number of nodes allocated per slab block to reduce memory fragmentation
+constexpr int _num_nodes_per_slab = 8;
+
 size_t EvaluableNodeManager::minGarbageCollectionNodesThreshold = _min_gc_nodes_threshold_default;
 size_t EvaluableNodeManager::maxGarbageCollectionNodesThreshold = _max_gc_nodes_threshold_default;
 float EvaluableNodeManager::extraMemoryCapacityFactor = _extra_memory_capacity_factor_default;
@@ -40,6 +43,18 @@ EvaluableNodeManager::~EvaluableNodeManager()
 #else
 	localAllocationBuffer.Clear(this);
 #endif
+
+	//sort by the slab starts and only delete those; will ensure all memory is freed
+	auto slab_end_it = std::partition(begin(nodes), end(nodes),
+		[](EvaluableNode *n)
+		{ return n != nullptr && n->GetIsSlabStart(); });
+
+	for(auto it = begin(nodes); it != slab_end_it; ++it)
+	{
+		EvaluableNode *slab_start = *it;
+		std::destroy_n(slab_start, _num_nodes_per_slab);
+		operator delete(slab_start);
+	}
 
 	for(auto &n : nodes)
 		delete n;
@@ -218,32 +233,44 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 #endif
 
 	EvaluableNode *lab_node = AllocNodeFromLocalAllocationBufferIfAvailable();
-
-	//fast path; get node from thread local buffer
 	if(lab_node != nullptr)
 		return lab_node;
+
+	//round up to the next nearest slab
+	constexpr int num_slabs_to_allocate = (labBlockAllocationSize + _num_nodes_per_slab - 1) / _num_nodes_per_slab;
+	constexpr int num_nodes_to_allocate = num_slabs_to_allocate * _num_nodes_per_slab;
 
 	//attempt to allocate enough nodes to refill local allocation buffer
 #ifdef MULTITHREAD_SUPPORT
 	//slow path allocation; attempt to allocate using an atomic without write locking
 	Concurrency::ReadLock read_lock(managerAttributesMutex);
 
-	size_t first_index_to_allocate = firstUnusedNodeIndex.fetch_add(labBlockAllocationSize);
+	size_t first_index_to_allocate = firstUnusedNodeIndex.fetch_add(num_nodes_to_allocate);
 #else
 	size_t first_index_to_allocate = firstUnusedNodeIndex;
-	firstUnusedNodeIndex += labBlockAllocationSize;
+	firstUnusedNodeIndex += num_nodes_to_allocate;
 #endif
 
-	size_t last_index_to_allocate = first_index_to_allocate + labBlockAllocationSize;
+	size_t last_index_to_allocate = first_index_to_allocate + num_nodes_to_allocate;
 
 	if(last_index_to_allocate < nodes.size())
 	{
-		for(size_t i = first_index_to_allocate; i < last_index_to_allocate; i++)
+		for(size_t i = first_index_to_allocate; i < last_index_to_allocate; i += _num_nodes_per_slab)
 		{
 			if(nodes[i] == nullptr)
-				nodes[i] = new EvaluableNode(ENT_DEALLOCATED);
+			{
+				EvaluableNode *slab_memory = static_cast<EvaluableNode *>(
+						operator new(sizeof(EvaluableNode) * _num_nodes_per_slab)
+					);
 
-			AddNodeToLocalAllocationBuffer(nodes[i]);
+				for(size_t j = 0; j < _num_nodes_per_slab; j++)
+					nodes[i + j] = new (&slab_memory[j]) EvaluableNode(ENT_DEALLOCATED);
+
+				nodes[i]->SetIsSlabStart(true);
+			}
+
+			for(size_t j = 0; j < _num_nodes_per_slab; j++)
+				AddNodeToLocalAllocationBuffer(nodes[i + j]);
 		}
 
 	#ifdef MULTITHREAD_SUPPORT
@@ -266,18 +293,30 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		//add extra node at the end in case of rounding down
 		//preallocate additional resources, making sure to at least add one block
 		size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * (num_nodes + labBlockAllocationSize)) + 1;
+		
+		//round new_num_nodes up to nearest _num_nodes_per_slab
+		size_t new_num_slabs = (new_num_nodes + _num_nodes_per_slab - 1) / _num_nodes_per_slab;
 
 		//fill new EvaluableNode slots with nullptr
-		nodes.resize(new_num_nodes, nullptr);
+		nodes.resize(new_num_slabs * _num_nodes_per_slab, nullptr);
 	}
 
-	//transfer nodes already allocated by this call into local allocation buffer
-	for(size_t i = first_index_to_allocate; i < last_index_to_allocate; i++)
+	for(size_t i = first_index_to_allocate; i < last_index_to_allocate; i += _num_nodes_per_slab)
 	{
 		if(nodes[i] == nullptr)
-			nodes[i] = new EvaluableNode(ENT_DEALLOCATED);
+		{
+			EvaluableNode *slab_memory = static_cast<EvaluableNode *>(
+					operator new(sizeof(EvaluableNode) * _num_nodes_per_slab)
+				);
 
-		AddNodeToLocalAllocationBuffer(nodes[i]);
+			for(size_t j = 0; j < _num_nodes_per_slab; j++)
+				nodes[i + j] = new (&slab_memory[j]) EvaluableNode(ENT_DEALLOCATED);
+
+			nodes[i]->SetIsSlabStart(true);
+		}
+
+		for(size_t j = 0; j < _num_nodes_per_slab; j++)
+			AddNodeToLocalAllocationBuffer(nodes[i + j]);
 	}
 
 #ifdef MULTITHREAD_SUPPORT

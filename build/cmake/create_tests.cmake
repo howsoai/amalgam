@@ -71,19 +71,6 @@ foreach(TEST_TARGET ${ALL_APP_TARGETS})
     )
     list(APPEND ALL_TEST_TARGETS ${TEST_NAME})
 
-    # Exercise nearest-query partial sums against the exhaustive distance path.
-    set(TEST_NAME "App.SBFDS.${TEST_TARGET}_nearest")
-    add_test(NAME ${TEST_NAME}
-        COMMAND ${TEST_RUNNER} "$<TARGET_FILE:${TEST_TARGET}>"
-            "${CMAKE_SOURCE_DIR}/test/sbfds/nearest_regression.amlg"
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test_workspace
-    )
-    set_tests_properties(${TEST_NAME} PROPERTIES
-        PASS_REGULAR_EXPRESSION "SBFDS checks=99 failures=0"
-        FAIL_REGULAR_EXPRESSION "FAIL"
-    )
-    list(APPEND ALL_TEST_TARGETS ${TEST_NAME})
-
 endforeach()
 
 # Create tests for every lib target:

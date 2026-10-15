@@ -532,7 +532,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 	// and populate the vectors of smallest possible distances that haven't been computed yet
 	auto &min_unpopulated_distances = parametersAndBuffers.minUnpopulatedDistances;
 	auto &min_distance_by_unpopulated_count = parametersAndBuffers.minDistanceByUnpopulatedCount;
-	PopulateInitialPartialSums(r_dist_eval, top_k, radius_column_index, high_accuracy,
+	PopulateInitialPartialSums<compute_surprisal>(r_dist_eval, top_k, radius_column_index, high_accuracy,
 		enabled_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
 
 	auto &potential_good_matches = parametersAndBuffers.potentialGoodMatches;
@@ -699,7 +699,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 
 	} // sorted_results.Size() == top_k
 
-	ConvertSortedDistanceSumsToDistancesAndCacheResults(sorted_results, r_dist_eval, radius_column_index, distances_out);
+	ConvertSortedDistanceSumsToDistancesAndCacheResults<compute_surprisal>(sorted_results, r_dist_eval, radius_column_index, distances_out);
 }
 
 template void SeparableBoxFilterDataStore::FindNearestEntities<true, true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
@@ -870,7 +870,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//else value_type == ENIVT_NULL and already covered above
 
 		//return the value that the remainder of the entities have
-		double nonmatch_dist_term = feature_attribs.typeAttributes.nominal.symmetricNonMatchDistanceTerm;
+		double nonmatch_dist_term = feature_precomp_data.defaultNominalNonMatchDistanceTerm;
 		feature_precomp_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
 		return nonmatch_dist_term;
 	}
@@ -882,7 +882,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				r_dist_eval, enabled_indices, comparison_value, query_feature_index, *column);
 
 		size_t num_true = column->trueBoolIndices.size();
-		size_t num_false = column->trueBoolIndices.size();
+		size_t num_false = column->falseBoolIndices.size();
 		size_t num_non_bool = (numEntities - column->invalidIndices.size()) - (num_true + num_false);
 		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominal(
 			EvaluableNodeImmediateValueWithType(!comparison_value), query_feature_index);
@@ -928,7 +928,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				//don't want to double-accumulate the exact match
 				if(sid != value.nodeValue.stringID)
 					AccumulatePartialSumsForNominalStringIdValue(
-						r_dist_eval, enabled_indices, value.nodeValue.stringID, query_feature_index, *column);
+						r_dist_eval, enabled_indices, sid, query_feature_index, *column);
 			});
 
 		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest<compute_surprisal>(nonmatch_dist_term, query_feature_index);
@@ -955,7 +955,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				//don't want to double-accumulate the exact match
 				if(!EqualIncludingNaN(number_value, value.nodeValue.number))
 					AccumulatePartialSumsForNominalNumberValue(
-						r_dist_eval, enabled_indices, value.nodeValue.number, query_feature_index, *column);
+						r_dist_eval, enabled_indices, number_value, query_feature_index, *column);
 			});
 
 		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest<compute_surprisal>(nonmatch_dist_term, query_feature_index);
@@ -1270,7 +1270,7 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralized
 			//if the value is not a null, need to accumulate null distance terms if it's a symmetric nominal feature,
 			// because then there's only one value left, or if the nulls are closer than what has already been considered
 			if(feature_attribs.IsFeatureSymmetricNominal()
-				|| feature_attribs.knownToUnknownDistanceTerm.deviation <= next_closest_distance)
+				|| feature_attribs.knownToUnknownDistanceTerm.distanceTerm <= next_closest_distance)
 			{
 				double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(i);
 				AccumulatePartialSums(enabled_indices, columnData[feature_attribs.featureDataIndex]->nullIndices, i, known_unknown_term);

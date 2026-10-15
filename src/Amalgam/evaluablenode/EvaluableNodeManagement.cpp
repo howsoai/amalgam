@@ -19,7 +19,7 @@ constexpr float _min_memory_retention_factor_default = 0.95f;
 constexpr float _alloc_expansion_factor_default = 1.5f;
 
 //number of nodes allocated per slab block to reduce memory fragmentation
-constexpr int _num_nodes_per_slab = 8;
+constexpr int _num_nodes_per_slab = 4;
 
 static constexpr size_t RoundNodeIndexToNextSlab(size_t index)
 {

@@ -1,0 +1,211 @@
+; Compare the partial-sum/pruning path (k < eligible count) with the exhaustive
+; path (k >= eligible count). Check distances AND each returned ID's distance;
+; equal-distance ties may legitimately select different IDs across the paths.
+(seq
+	(system "set_max_num_threads" 4)
+	(declare (assoc
+		checks 0
+		failures 0
+		check_nearest
+		(lambda (seq
+			(declare (assoc
+				all_results (compute_on_contained_entities
+					(query_in_entity_list rows)
+					(query_nearest_generalized_distance
+						(size rows) features target p weights attributes deviations
+						.null transform .null "sbfds regression" .null precision .true))
+				nearest (compute_on_contained_entities
+					(query_in_entity_list rows)
+					(query_nearest_generalized_distance
+						k features target p weights attributes deviations
+						.null transform .null "sbfds regression" .null precision .true))
+			))
+			; Occasionally rebuild the oracle from the entities after the optimized
+			; query, so stale cached values cannot make both sides agree incorrectly.
+			(if verify_fresh (seq
+				(reclaim_resources .null .false .true)
+				(assign (assoc all_results (compute_on_contained_entities
+					(query_in_entity_list rows)
+					(query_nearest_generalized_distance
+						(size rows) features target p weights attributes deviations
+						.null transform .null "sbfds regression" .null precision .true))))
+			))
+			(declare (assoc
+				all_by_id (zip (first all_results) (last all_results))
+				expected_distances (trunc (last all_results) k)
+				actual_distances (last nearest)
+			))
+			(accum (assoc checks 1))
+			(if (not (and
+				(= (size (first nearest)) (min k (size (first all_results))))
+				(= (size expected_distances) (size actual_distances))
+				(<= (apply "max" (append [0] (map (lambda (abs (- (first (current_value)) (last (current_value)))))
+					expected_distances actual_distances))) 1e-9)
+				(<= (apply "max" (append [0] (map (lambda (abs (- (get all_by_id (first (current_value))) (last (current_value)))))
+					(first nearest) actual_distances))) 1e-9)
+			))
+				(seq
+					(accum (assoc failures 1))
+					(print "FAIL " name " p=" p " k=" k " expected=" (unparse (list (trunc (first all_results) k) expected_distances)) " nearest=" (unparse nearest) "\n")
+				)
+			)
+		))
+		verify_fresh .false p 1 weights .null transform 1 precision "precise" k 2
+		features ["x" "y"] target ["a" 0]
+		attributes {x {difference_type "nominal" data_type "string" nominal_count 4} y "continuous"}
+		deviations {x [{a [{a 0.4 b 0.4 c 0.8} 0.9]} 0.9 0.9] y [0 20 20]}
+	))
+
+	; A1: ties with a positive match distance must populate the iterated bucket,
+	; without adding the match distance to the target bucket a second time.
+	(create_entities "a" {x "a" y 0} "b" {x "b" y 0.1}
+		"c" {x "c" y 0.2} "d" {x "d" y 0.3})
+	(call check_nearest (assoc name "A1 string" rows (contained_entities)))
+	(assign_to_entities "a" {x 1})
+	(assign_to_entities "b" {x 2})
+	(assign_to_entities "c" {x 3})
+	(assign_to_entities "d" {x 4})
+	(assign (assoc target [1 0]
+		attributes {x {difference_type "nominal" data_type "number" nominal_count 4} y "continuous"}
+		deviations {x [{1 [{1 0.4 2 0.4 3 0.8} 0.9]} 0.9 0.9] y [0 20 20]}))
+	(call check_nearest (assoc name "A1 number" rows (contained_entities)))
+
+	; A2: asymmetric bools, with true/false/null populations that differ.
+	(apply "destroy_entities" (contained_entities))
+	(create_entities "a" {x .true y 0} "b" {x .false y 2}
+		"c" {x .true y 0.2} "d" {x .null y 0.3})
+	(assign (assoc target [.true 0]
+		attributes {x {difference_type "nominal" data_type "bool" nominal_count 2} y "continuous"}
+		deviations {x [{.true [{.true 0.1 .false 0.8} 0.9]} 0.9 0.9] y [0 20 20]}))
+	(call check_nearest (assoc name "A2 bool SDM" rows (contained_entities) k 3))
+
+	; A3: null deviations and weighted/p-powered distance terms use different units.
+	(apply "destroy_entities" (contained_entities))
+	(create_entities "a" {x 10 y 0} "b" {x 20 y 0.1}
+		"c" {x .null y 0.15} "d" {x 30 y 0.2} "e" {x 40 y 0.3})
+	(assign (assoc target [0 0] attributes {x "continuous" y "continuous"}
+		deviations {x [0 2 2] y [0 10 10]} weights {x 0.01 y 0.1} k 1))
+	(call check_nearest (assoc name "A3 weighted null" rows (contained_entities)))
+
+	; A4: p must not exponentiate partial sums or invert summed surprisal.
+	(apply "destroy_entities" (contained_entities))
+	(create_entities "a" {x 0 y 4} "b" {x 3 y 3}
+		"c" {x 4 y 0} "d" {x 0 y 5} "e" {x 5 y 0})
+	(assign (assoc deviations {x [1 9 9] y [1 9 9]} weights .null transform "surprisal" k 2))
+	(map (lambda
+		(call check_nearest (assoc name "A4 continuous surprisal" rows (contained_entities) p (current_value 1))))
+		[0.5 1 2])
+
+	; Surprisal propagation must also preserve the query evaluator's nominal
+	; remainder term, rather than the general evaluator's p-powered cache.
+	(apply "destroy_entities" (contained_entities))
+	(create_entities "a" {x "a" y 3} "b" {x "b" y 0}
+		"c" {x "b" y 5} "d" {x "a" y 6})
+	(assign (assoc target ["a" 0] k 1
+		attributes {x {difference_type "nominal" data_type "string" nominal_count 2} y "continuous"}
+		deviations {x [0.2 0.9 0.9] y [1 9 9]}))
+	(map (lambda
+		(call check_nearest (assoc name "surprisal nominal remainder" rows (contained_entities) p (current_value 1))))
+		[0.5 1 2])
+
+	; A5 control: these nominal-code queries use ComputeAndAccumulatePartialSums.
+	; Its returned count is unused; clipped and sparse buckets must still work.
+	(apply "destroy_entities" (contained_entities))
+	(create_entities "a" (assoc x (lambda (+ 1 2))) "b" (assoc x (lambda (+ 1 3)))
+		"c" (assoc x (lambda (+ 2 3))) "d" (assoc x (lambda (+ 2 4))))
+	(assign (assoc features ["x"] target (list (lambda (+ 1 2))) transform 1 p 1
+		attributes {x {difference_type "nominal" data_type "code" nominal_count 4}}
+		deviations {x [0.1 0.9 0.9]} k 1))
+	(call check_nearest (assoc name "A5 clipped code bucket" rows ["a" "b"]))
+	(call check_nearest (assoc name "A5 sparse code bucket" rows ["a" "d"]))
+
+	; Exercise index movement on swap-delete, late column population, value-type
+	; changes, sparse spans and rapid changes to the row/feature selections.
+	(apply "destroy_entities" (contained_entities))
+	(map (lambda
+		(create_entities (concat "r" (current_value))
+			(assoc x (if (= 0 (mod (current_value 1) 11)) .null (/ (current_value 1) 13))
+				y (/ (mod (* (current_value 1) 37) 641) 17)
+				s (if (= 0 (mod (current_value 1) 3)) "a" "b")
+				b (= 0 (mod (current_value 1) 5)))))
+		(range 0 639))
+	(assign (assoc
+		attributes {x "continuous" y "continuous"
+			s {difference_type "nominal" data_type "string" nominal_count 2}
+			b {difference_type "nominal" data_type "bool" nominal_count 2}}
+		deviations {x [1 2 2] y [1 3 3] s [0.2 0.9 0.9] b [0.1 0.9 0.9]}
+	))
+	(map (lambda (let
+		(assoc iteration (current_value 1))
+		(assign_to_entities (concat "r" (+ 100 iteration))
+			(assoc x (if (= 0 (mod iteration 2)) .null (/ iteration 7))
+				s (if (= 0 (mod iteration 2)) "b" "a")))
+		(destroy_entities (concat "r" iteration))
+		(create_entities (concat "new" iteration)
+			(assoc x (/ iteration 3) y (/ iteration 5) s "a" b .true))
+		(if (= 0 (mod iteration 3))
+			(remove_from_entities (concat "r" (+ 100 iteration)) "y"))
+		(declare (assoc
+			rows (if (= 0 (mod iteration 2)) (contained_entities)
+				(filter (lambda (= 0 (mod (current_index) 7))) (contained_entities)))
+			features (get [["x"] ["s" "y"] ["b" "x" "y"] ["y" "s" "x"]] (mod iteration 4))
+		))
+		(map (lambda
+			(call check_nearest (assoc name (concat "churn " iteration)
+					verify_fresh (= 0 (mod iteration 4))
+				p (current_value 1) k (+ 1 (mod iteration 7))
+				target (unzip {x 1.3 y 2.7 s "a" b .true} features)
+				weights (if (= 0 (mod iteration 5)) {x 0 y 1 s 1 b 1} .null)
+				transform (if (= 0 (mod iteration 3)) 1 "surprisal"))))
+			[0.5 1 2])
+		; Drop the cached columns after querying to expose stale-index reuse on
+		; the next iteration as well as reuse within a warmed iteration.
+		(if (= 0 (mod iteration 4)) (reclaim_resources .null .false .true))
+	)) (range 0 23))
+
+	; Exercise the indexed-entity entry point after all mutations.
+	(map (lambda
+		(call check_nearest (assoc name "indexed after churn" rows (contained_entities)
+			features ["x" "y"] target "r300" p (current_value 1) k 3 transform "surprisal")))
+		[0.5 1 2])
+
+	; Concurrent reads use independent per-query row sets, targets and p values.
+	; Collect results before asserting, so counters are never mutated in parallel.
+	(declare (assoc parallel_results
+		||(map (lambda (let (assoc
+			rows (if (= 0 (mod (current_value 1) 2)) (contained_entities)
+				(filter (lambda (= 0 (mod (current_index) 7))) (contained_entities)))
+			p (get [0.5 1 2] (mod (current_value 1) 3))
+			target (list (/ (current_value 2) 7) (/ (current_value 2) 11))
+		)
+			(list
+				(compute_on_contained_entities (query_in_entity_list rows)
+					(query_nearest_generalized_distance (size rows) ["x" "y"] target
+						p .null attributes deviations .null "surprisal" .null "parallel sbfds" .null "precise" .true))
+				(compute_on_contained_entities (query_in_entity_list rows)
+					(query_nearest_generalized_distance 3 ["x" "y"] target
+						p .null attributes deviations .null "surprisal" .null "parallel sbfds" .null "precise" .true))
+			)
+		)) (range 0 11))
+	))
+	(map (lambda (let (assoc
+		all_results (first (current_value 1))
+		nearest (last (current_value 1))
+	)
+		(declare (assoc all_by_id (zip (first all_results) (last all_results))))
+		(accum (assoc checks 1))
+		(if (not (and
+			(= 3 (size (first nearest)))
+			(<= (apply "max" (map (lambda (abs (- (first (current_value)) (last (current_value)))))
+				(trunc (last all_results) 3) (last nearest))) 1e-9)
+			(<= (apply "max" (map (lambda (abs (- (get all_by_id (first (current_value))) (last (current_value)))))
+				(first nearest) (last nearest))) 1e-9)
+		)) (seq
+			(accum (assoc failures 1))
+			(print "FAIL concurrent query " (unparse nearest) "\n")
+		))
+	)) parallel_results)
+
+	(print "SBFDS checks=" checks " failures=" failures "\n")
+	(if (= failures 0) (print "PASSED: SBFDS nearest regression\n"))
+)

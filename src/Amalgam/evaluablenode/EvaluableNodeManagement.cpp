@@ -11,7 +11,6 @@
 
 //TODO 26165: assert lab size is a multiple of _num_nodes_per_slab
 //TODO 26165: reduce alloc code by lambda
-//TODO 26165: make constexpr for size scaling
 
 constexpr size_t _min_gc_nodes_threshold_default = 64;
 constexpr size_t _max_gc_nodes_threshold_default = 1000000000;
@@ -21,6 +20,12 @@ constexpr float _alloc_expansion_factor_default = 1.5f;
 
 //number of nodes allocated per slab block to reduce memory fragmentation
 constexpr int _num_nodes_per_slab = 8;
+
+static constexpr size_t RoundNodeIndexToNextSlab(size_t index)
+{
+	size_t slab_index = (index + _num_nodes_per_slab - 1) / _num_nodes_per_slab;
+	return slab_index * _num_nodes_per_slab;
+}
 
 size_t EvaluableNodeManager::minGarbageCollectionNodesThreshold = _min_gc_nodes_threshold_default;
 size_t EvaluableNodeManager::maxGarbageCollectionNodesThreshold = _max_gc_nodes_threshold_default;
@@ -238,8 +243,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		return lab_node;
 
 	//round up to the next nearest slab
-	constexpr int num_slabs_to_allocate = (labBlockAllocationSize + _num_nodes_per_slab - 1) / _num_nodes_per_slab;
-	constexpr int num_nodes_to_allocate = num_slabs_to_allocate * _num_nodes_per_slab;
+	constexpr size_t num_nodes_to_allocate = RoundNodeIndexToNextSlab(labBlockAllocationSize);
 
 	//attempt to allocate enough nodes to refill local allocation buffer
 #ifdef MULTITHREAD_SUPPORT
@@ -305,10 +309,10 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * (num_nodes + labBlockAllocationSize)) + 1;
 		
 		//round new_num_nodes up to nearest _num_nodes_per_slab
-		size_t new_num_slabs = (new_num_nodes + _num_nodes_per_slab - 1) / _num_nodes_per_slab;
+		new_num_nodes = RoundNodeIndexToNextSlab(new_num_nodes);
 
 		//fill new EvaluableNode slots with nullptr
-		nodes.resize(new_num_slabs * _num_nodes_per_slab, nullptr);
+		nodes.resize(new_num_nodes, nullptr);
 	}
 
 	for(size_t i = first_index_to_allocate; i < last_index_to_allocate; i++)
@@ -423,7 +427,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 		}
 	}
 
-	firstUnusedNodeIndex = next_write_index;
+	firstUnusedNodeIndex = RoundNodeIndexToNextSlab(next_write_index);
 	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
 
 	//if have more yet another entire extraMemoryCapacityFactor available, free it
@@ -436,9 +440,7 @@ void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 	size_t new_size = std::min(nodes.size(),
 		static_cast<size_t>(firstUnusedNodeIndex * extraMemoryCapacityFactor) + 1);
 
-	//make sure to find the next size that is a multiple of _num_nodes_per_slab
-	size_t new_num_slabs = (new_size + _num_nodes_per_slab - 1) / _num_nodes_per_slab;
-	new_size = new_num_slabs * _num_nodes_per_slab;
+	new_size = RoundNodeIndexToNextSlab(new_size);
 
 	//look for any empty space that can be trimmed
 	for(; new_size < nodes.size(); new_size += _num_nodes_per_slab)

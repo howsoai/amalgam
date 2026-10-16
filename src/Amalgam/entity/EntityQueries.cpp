@@ -400,15 +400,8 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 	case ENT_QUERY_EXISTS:
 	{
 		//find those that match
-		for(size_t i = 0; i < matching_entities.size(); i++)
-		{
-			//if it doesn't match the condition, then remove it
-			if(!DoesEntityMatchCondition(matching_entities[i]))
-			{
-				matching_entities.erase(begin(matching_entities) + i);
-				i--;
-			}
-		}
+		std::erase_if(matching_entities,
+			[this](Entity *entity) { return !DoesEntityMatchCondition(entity); });
 
 		if(enm == nullptr)
 			return EvaluableNodeReference::Null();
@@ -508,7 +501,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		if(enm == nullptr)
 			return EvaluableNodeReference::Null();
 
-		auto get_value = [matching_entities, this]
+		auto get_value = [&matching_entities, this]
 		(size_t i, double &value)
 			{
 				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(singleLabel);
@@ -517,7 +510,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 				return found;
 			};
 
-		auto get_weight = [matching_entities, this]
+		auto get_weight = [&matching_entities, this]
 		(size_t i, double &weight_value)
 			{
 				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
@@ -536,7 +529,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		}
 		case ENT_QUERY_MODE:
 		{
-			auto get_key_string_value = [matching_entities, this]
+			auto get_key_string_value = [&matching_entities, this]
 			(size_t i, std::string &value)
 				{
 					auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsString(singleLabel, false, true);
@@ -587,7 +580,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		if(enm == nullptr)
 			return EvaluableNodeReference::Null();
 
-		auto get_key_string_value = [matching_entities, this]
+		auto get_key_string_value = [&matching_entities, this]
 		(size_t i, StringInternPool::StringID &value)
 			{
 				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsStringIdWithReference(singleLabel, false, true);
@@ -596,7 +589,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 				return found;
 			};
 
-		auto get_weight = [matching_entities, this]
+		auto get_weight = [&matching_entities, this]
 		(size_t i, double &weight_value)
 			{
 				auto [ret_value, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
@@ -721,15 +714,8 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 		distEvaluator.InitializeParametersAndFeatureParams();
 		//find those that match
-		for(size_t i = 0; i < matching_entities.size(); i++)
-		{
-			//if it doesn't match the condition, then remove it
-			if(!DoesEntityMatchCondition(matching_entities[i]))
-			{
-				matching_entities.erase(begin(matching_entities) + i);
-				i--;
-			}
-		}
+		std::erase_if(matching_entities,
+			[this](Entity *entity) { return !DoesEntityMatchCondition(entity); });
 
 		if(enm == nullptr)
 			return EvaluableNodeReference::Null();
@@ -767,15 +753,8 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 	}
 
 	default:
-		for(size_t i = 0; i < matching_entities.size(); i++)
-		{
-			//if it doesn't match the condition, then remove it
-			if(!DoesEntityMatchCondition(matching_entities[i]))
-			{
-				matching_entities.erase(begin(matching_entities) + i);
-				i--;
-			}
-		}
+		std::erase_if(matching_entities,
+			[this](Entity *entity) { return !DoesEntityMatchCondition(entity); });
 
 		return EvaluableNodeReference::Null();
 	}

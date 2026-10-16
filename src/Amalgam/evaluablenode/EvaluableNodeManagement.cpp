@@ -452,6 +452,9 @@ void EvaluableNodeManager::ShrinkMemoryToCurrentUtilizationWithLock()
 	if(new_size == nodes.size())
 		return;
 
+	//TODO 26165: sort remaining nodes by address, look for groups of _num_nodes_per_slab and if all are accounted for, delete
+	//TODO 26165: then make another null removal pass
+
 	nodes.resize(new_size);
 	nodes.shrink_to_fit();
 }

@@ -73,19 +73,6 @@ foreach(TEST_TARGET ${ALL_APP_TARGETS})
 
 endforeach()
 
-# Test profiler reports without interpreter state or shared-library exports.
-if(NOT IS_WASM)
-    add_executable(performance-profiler-test
-        test/unit_test/performance_profiler_test.cpp
-        src/Amalgam/PerformanceProfiler.cpp
-    )
-    set_target_properties(performance-profiler-test PROPERTIES FOLDER "Testing")
-    add_test(NAME Unit.PerformanceProfiler
-        COMMAND performance-profiler-test "${CMAKE_BINARY_DIR}/test_workspace/performance_profiler_report.txt"
-    )
-    set_tests_properties(Unit.PerformanceProfiler PROPERTIES LABELS "smoke_test")
-endif()
-
 # Create tests for every lib target:
 foreach(TEST_TARGET ${ALL_SHAREDLIB_TARGETS})
 

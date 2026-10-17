@@ -56,7 +56,7 @@ public:
 	};
 
 	//column needs to be named when it is created
-	inline SBFDSColumnData(StringInternPool::StringID sid)
+	inline SBFDSColumnData(StringInternPool::StringID sid) noexcept
 		: stringId(sid), indexWithLongestString(0), longestStringLength(0),
 		indexWithLargestCode(0), largestCodeSize(0)
 	{}
@@ -610,7 +610,7 @@ public:
 	class InternedValues
 	{
 	public:
-		InternedValues()
+		InternedValues() noexcept
 			: valueInterningEnabled(false)
 		{}
 

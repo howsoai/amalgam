@@ -17,13 +17,12 @@
 class RandomStream
 {
 public:
-	constexpr RandomStream()
+	constexpr RandomStream() noexcept
 		: increment(0), state(0)
 	{}
 
-	RandomStream(const std::string initial_state);
+	RandomStream(const std::string initial_state) noexcept;
 
-	//Keep copies nonthrowing so vector growth can move containing query conditions.
 	constexpr RandomStream(const RandomStream &stream) noexcept
 		: increment(stream.increment), state(stream.state)
 	{}

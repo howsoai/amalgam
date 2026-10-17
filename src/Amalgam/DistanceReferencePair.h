@@ -10,11 +10,11 @@ template<typename ReferenceType = size_t>
 class DistanceReferencePair
 {
 public:
-	constexpr DistanceReferencePair()
+	constexpr DistanceReferencePair() noexcept
 		: distance(0), reference(0)
 	{}
 
-	constexpr DistanceReferencePair(double _distance, ReferenceType _reference)
+	constexpr DistanceReferencePair(double _distance, ReferenceType _reference) noexcept
 		: distance(_distance), reference(_reference)
 	{}
 

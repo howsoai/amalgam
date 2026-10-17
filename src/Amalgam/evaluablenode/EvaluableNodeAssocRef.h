@@ -22,10 +22,12 @@ public:
 
 	//--- Construction & Lifecycle ---
 
-	AssocRef(EvaluableNode *_en) : en(_en)
+	AssocRef(EvaluableNode *_en)  noexcept
+		: en(_en)
 	{ }
 
-	AssocRef(const AssocRef &other) : en(other.en)
+	AssocRef(const AssocRef &other)  noexcept
+		: en(other.en)
 	{ }
 
 	AssocRef &operator=(const AssocRef &other)

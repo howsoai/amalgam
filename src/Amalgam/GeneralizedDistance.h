@@ -44,7 +44,7 @@ public:
 	class DistanceTermWithDeviation
 	{
 	public:
-		__forceinline DistanceTermWithDeviation(double initial_value = 0.0)
+		__forceinline DistanceTermWithDeviation(double initial_value = 0.0) noexcept
 			: distanceTerm(initial_value), deviation(initial_value)
 		{}
 
@@ -58,7 +58,7 @@ public:
 	class SparseNominalDeviationValues : public VectorMap<NominalValueType, double, EqualComparison>
 	{
 	public:
-		inline SparseNominalDeviationValues()
+		inline SparseNominalDeviationValues() noexcept
 			: defaultDeviation(std::numeric_limits<double>::quiet_NaN())
 		{}
 
@@ -70,7 +70,7 @@ public:
 		: public VectorMap<NominalValueType, SparseNominalDeviationValues<NominalValueType, EqualComparison>, EqualComparison>
 	{
 	public:
-		inline SparseNominalDeviationMatrix()
+		inline SparseNominalDeviationMatrix() noexcept
 		{}
 
 		//updates smallest_deviation with any deviation smaller found in this SDM
@@ -93,7 +93,7 @@ public:
 	class FeatureAttributes
 	{
 	public:
-		inline FeatureAttributes()
+		inline FeatureAttributes() noexcept
 			: featureType(FDT_CONTINUOUS_NUMBER),
 			featureDataIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
@@ -1673,7 +1673,7 @@ public:
 	{
 	public:
 
-		FeaturePrecomputedData()
+		FeaturePrecomputedData() noexcept
 			: effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC)
 		{}
 

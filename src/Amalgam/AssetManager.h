@@ -52,7 +52,7 @@ public:
 			bool is_entity, std::string_view relative_to_file = {});
 
 		//copy constructor
-		AssetParameters(const AssetParameters &other)
+		AssetParameters(const AssetParameters &other) noexcept
 			: topEntity(other.topEntity),
 			writeListener(nullptr),
 			resourcePath(other.resourcePath),

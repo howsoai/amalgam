@@ -379,15 +379,15 @@ public:
 	//set of parameters for an opcode
 	struct ParameterSchema
 	{
-		ParameterSchema()
+		ParameterSchema() noexcept
 			: childNodeStructure(ChildNodeStructureType::POSITION)
 		{}
 
-		ParameterSchema(ChildNodeStructureType cns, std::initializer_list<ParameterGroup> il)
+		ParameterSchema(ChildNodeStructureType cns, std::initializer_list<ParameterGroup> il) noexcept
 			: childNodeStructure(cns), groups(il)
 		{}
 
-		ParameterSchema(std::initializer_list<ParameterGroup> il)
+		ParameterSchema(std::initializer_list<ParameterGroup> il) noexcept
 			: childNodeStructure(ChildNodeStructureType::POSITION), groups(il)
 		{}
 

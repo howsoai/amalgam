@@ -17,11 +17,11 @@ class SortedIntegerSet
 {
 public:
 
-	SortedIntegerSet()
+	SortedIntegerSet() noexcept
 	{}
 
 	template<typename Collection>
-	SortedIntegerSet(const Collection &other)
+	SortedIntegerSet(const Collection &other) noexcept
 	{
 		integers.reserve(other.size());
 		for(const size_t element : other)
@@ -333,7 +333,7 @@ public:
 	//defined to keep compatibility with stl containers
 	using value_type = size_t;
 
-	BitArrayIntegerSet()
+	BitArrayIntegerSet() noexcept
 	{
 		numElements = 0;
 		curMaxNumIndices = 0;
@@ -390,7 +390,7 @@ public:
 	};
 
 	//assignment operator, deep copies bit buffer
-	inline void operator =(const BitArrayIntegerSet &other)
+	inline void operator =(const BitArrayIntegerSet &other) noexcept
 	{
 		numElements = other.numElements;
 		curMaxNumIndices = other.curMaxNumIndices;

@@ -48,19 +48,19 @@ public:
 	inline OrderedHashMap(const OrderedHashMap &other) = default;
 	inline OrderedHashMap(OrderedHashMap &&other) noexcept = default;
 
-	inline OrderedHashMap(size_type initial_capacity)
+	inline OrderedHashMap(size_type initial_capacity) noexcept
 	{
 		vectorMap.reserve(initial_capacity);
 		hashMap.reserve(initial_capacity);
 	}
 
-	inline OrderedHashMap(const VecMap &other)
+	inline OrderedHashMap(const VecMap &other) noexcept
 	{
 		vectorMap = other;
 		BuildHashMapFromVectorMap();
 	}
 
-	inline OrderedHashMap(VecMap &&other)
+	inline OrderedHashMap(VecMap &&other) noexcept
 	{
 		vectorMap = std::move(other);
 		BuildHashMapFromVectorMap();
